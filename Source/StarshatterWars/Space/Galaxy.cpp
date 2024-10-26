@@ -70,14 +70,14 @@ AGalaxy::GetInstance()
 void
 AGalaxy::Load()
 {
-	DataLoader* loader = new DataLoader();
-	loader->GetLoader();
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->loader->GetLoader();
 	
 	ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Galaxy/"));
 	FString FileName = ProjectPath;
 	FileName.Append(FilePath);
-	loader->SetDataPath(FileName);
+	SSWInstance->loader->SetDataPath(FileName);
 	const char* result = TCHAR_TO_ANSI(*FileName);
 	Load(result);
 }
@@ -85,14 +85,14 @@ AGalaxy::Load()
 void
 AGalaxy::Load(const char* FileName)
 {
-	DataLoader* loader = new DataLoader();
-	loader->GetLoader();
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->loader->GetLoader(); 
 
 	FString fs = FString(ANSI_TO_TCHAR(FileName));
 	FString FileString;
 	BYTE* block = 0;
 	
-	loader->LoadBuffer(FileName, block, true);
+	SSWInstance->loader->LoadBuffer(FileName, block, true);
 
 	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy: %s"), *fs);
 
@@ -126,7 +126,8 @@ AGalaxy::Load(const char* FileName)
 		do {
 			delete term;
 			term = parser.ParseTerm();
-			
+			FVector fv;
+
 			if (term) {
 				TermDef* def = term->isDef();
 				if (def) {
@@ -159,6 +160,7 @@ AGalaxy::Load(const char* FileName)
 									else if (pdef->name()->value() == "loc") {
 										
 										GetDefVec(sys_loc, pdef, filename);
+										fv = FVector(sys_loc.x, sys_loc.y, sys_loc.z);
 									}
 									else if (pdef->name()->value() == "iff") {
 										GetDefNumber(sys_iff, pdef, filename);
@@ -199,14 +201,19 @@ AGalaxy::Load(const char* FileName)
 								}
 							}
 
-							/*if (sys_name[0]) {
+							if (sys_name[0]) {
 								StarSystem* star_system = new StarSystem(sys_name, sys_loc, sys_iff, star_class);
-								star_system->Load();
-								systems.append(star_system);
 
-								Star* star = new Star(sys_name, sys_loc, star_class);
-								stars.append(star);
-							}*/
+								//SpawnSystem(FString(sys_name));
+
+								SpawnSystem(FString(sys_name), fv, sys_iff, star_class);
+
+								//star_system->Load();
+								//systems.append(star_system);
+
+								//Star* star = new Star(sys_name, sys_loc, star_class);
+								//stars.append(star);
+							}
 						}
 					}
 
@@ -283,7 +290,50 @@ AGalaxy::Load(const char* FileName)
 		} while (term);
 }
 
+void AGalaxy::SpawnSystem(FString sysName)
+{
+	UWorld* World = GetWorld();
+
+	FVector location = FVector::ZeroVector;
+	FRotator rotate = FRotator::ZeroRotator;
+
+	FActorSpawnParameters SpawnInfo;
+
+	AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), location, rotate, SpawnInfo);
+
+
+	if (System)
+	{
+		UE_LOG(LogTemp, Log, TEXT("System Spawned"));
+		System->Initialize(TCHAR_TO_ANSI(*sysName));
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
+	}
+}
+
 // +--------------------------------------------------------------------+
+
+void AGalaxy::SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starClass)
+{
+	UWorld* World = GetWorld();
+
+	FRotator rotate = FRotator::ZeroRotator;
+
+	FActorSpawnParameters SpawnInfo;
+
+		AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), sysLoc, rotate, SpawnInfo);
+
+
+	if (System)
+	{
+		UE_LOG(LogTemp, Log, TEXT("System Spawned"));
+		System->Initialize(TCHAR_TO_ANSI(*sysName));
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
+	}	
+}
 
 void
 AGalaxy::ExecFrame()

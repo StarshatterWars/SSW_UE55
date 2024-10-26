@@ -21,6 +21,7 @@
 
  class AUniverse;
  class AGalaxy;
+ class DataLoader;
 
 /************************************************************************/
 /* ENUMS                                                                */
@@ -345,6 +346,11 @@ public:
 	AUniverse* GameUniverse;
 	AGalaxy* GameGalaxy;
 
+	UPROPERTY()
+	double StarDate;
+
+	DataLoader* loader;
+
 protected:
 	virtual void Init() override;
 	virtual void Shutdown() override;
@@ -377,5 +383,5 @@ protected:
 	bool              bIsDeviceRestored;
 
 	EGAMESTATUS Status;
-	
+
 };

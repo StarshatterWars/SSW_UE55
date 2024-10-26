@@ -192,12 +192,6 @@ DataLoader::FindFile(const char* name)
 // +--------------------------------------------------------------------+
 
 int
-DataLoader::ListFiles(const char* filter, List<Text>& list, bool recurse)
-{
-	
-}
-
-int
 DataLoader::ListArchiveFiles(const char* archive_name, const char* filter, List<Text>& list)
 {
 	int            pathlen = datapath.length();
@@ -329,15 +323,11 @@ DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path,
 // +--------------------------------------------------------------------+
 */
 
-/*int
-DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bool optional)
-{
-	
-}
+
 
 // +--------------------------------------------------------------------+
 
-int
+/*int
 DataLoader::LoadPartialFile(const char* name, BYTE*& buf, int max_load, bool optional)
 {
 	buf = 0;
@@ -1003,4 +993,10 @@ int DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bo
 	if (!optional)
 		Print("WARNING - DataLoader could not load buffer '%s'\n", filename); 
 	return 0;
+}
+
+void DataLoader::ReleaseBuffer(BYTE*& buf)
+{
+	delete[] buf;
+	buf = 0;
 }

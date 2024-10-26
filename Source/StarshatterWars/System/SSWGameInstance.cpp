@@ -112,6 +112,11 @@ void USSWGameInstance::StartGame()
 
 void USSWGameInstance::Init()
 {
+	if (!DataLoader::GetLoader())
+		DataLoader::Initialize();
+
+	loader = DataLoader::GetLoader();
+	
 	Status = EGAMESTATUS::OK;
 	UE_LOG(LogTemp, Log, TEXT("Initializing Game\n."));
 
@@ -132,9 +137,6 @@ void USSWGameInstance::Shutdown()
 
 bool USSWGameInstance::InitContent()
 {
-	DataLoader* loader = new DataLoader();
-	
-	loader->GetLoader();
 	List<Text>  bundles;
 	
 	ProjectPath = FPaths::ProjectDir();

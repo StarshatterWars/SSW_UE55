@@ -44,6 +44,10 @@ public:
 	virtual void         Load();
 	virtual void         Load(const char* filename);
 
+	void				 SpawnSystem(FString name);
+
+	void				 SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starClass);
+
 	virtual void         ExecFrame();
 	
 	// Called every frame
