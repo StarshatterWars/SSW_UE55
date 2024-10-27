@@ -28,6 +28,11 @@ void Print(const char* fmt, ...)
     UE_LOG(LogTemp, Log, TEXT("%s"), *Fs);
 }
 
+bool ProfileGameLoop(void)
+{
+    return false;
+}
+
 // +-------------------------------------------------------------------+
 
 Text

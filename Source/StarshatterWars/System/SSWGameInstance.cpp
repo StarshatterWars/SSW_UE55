@@ -82,6 +82,8 @@ void USSWGameInstance::SpawnGalaxy()
 	FRotator rotate = FRotator::ZeroRotator;
 
 	FActorSpawnParameters SpawnInfo;
+	FName Name("Starshatter Galaxy");
+	SpawnInfo.Name = Name;
 
 	if (GameGalaxy == nullptr) {
 		GameGalaxy = GetWorld()->SpawnActor<AGalaxy>(AGalaxy::StaticClass(), location, rotate, SpawnInfo);

@@ -21,7 +21,7 @@
 // +--------------------------------------------------------------------+
 
 class Star;
-class StarSystem;
+class AStarSystem;
 class Graphic;
 class Light;
 class Scene;
@@ -56,12 +56,12 @@ public:
 	// accessors:
 	const char* Name()         const { return name; }
 	const char* Description()  const { return description; }
-	//List<StarSystem>& GetSystemList() { return systems; }
-	//List<Star>& Stars() { return stars; }
+	List<AStarSystem>& GetSystemList() { return systems; }
+	List<Star>& Stars() { return stars; }
 	double               Radius()       const { return radius; }
 
-	//StarSystem* GetSystem(const char* name);
-	//StarSystem* FindSystemByRegion(const char* rgn_name);
+	AStarSystem* GetSystem(const char* name);
+	AStarSystem* FindSystemByRegion(const char* rgn_name);
 
 	static void         Close();
 	static AGalaxy*		GetInstance();
@@ -72,10 +72,13 @@ protected:
 	Text                 description;
 	double               radius;           // radius in parsecs
 
-	List<StarSystem>     systems;
+	List<AStarSystem>    systems;
 	List<Star>           stars;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY()
+	USceneComponent* Root;
 };
 

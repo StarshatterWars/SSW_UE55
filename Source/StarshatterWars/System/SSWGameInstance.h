@@ -283,6 +283,29 @@ enum class EEMPIRE_NAME : uint8
 	Pirate UMETA(DisplayName = "Pirate"),
 };
 
+UENUM(BlueprintType)
+enum EWEATHER_STATE : uint8 
+{
+	CLEAR UMETA(DisplayName = "Clear"), 
+	HIGH_CLOUDS UMETA(DisplayName = "High Clouds"), 
+	MODERATE_CLOUDS UMETA(DisplayName = "Moderate Clouds"), 
+	OVERCAST UMETA(DisplayName = "Overcast"), 
+	FOG UMETA(DisplayName = "Fog"), 
+	STORM UMETA(DisplayName = "Storm"), 
+	NUM_STATES
+};
+
+UENUM(BlueprintType)
+enum EOrbitalType : uint8 
+{ 
+	NOTHING UMETA(DisplayName = "Nothing"),
+	STAR UMETA(DisplayName = "Star"),
+	PLANET UMETA(DisplayName = "Planet"),
+	MOON UMETA(DisplayName = "Moon"),
+	REGION UMETA(DisplayName = "Region"),
+	TERRAIN UMETA(DisplayName = "Terrain")
+};
+
 USTRUCT(BlueprintType)
 struct FS_Galaxy {
 	GENERATED_BODY()
@@ -294,14 +317,14 @@ struct FS_Galaxy {
 };
 
 USTRUCT(BlueprintType)
-struct FS_System {
+struct FS_System : public FTableRowBase {
 	GENERATED_BODY()
 
 	FString System;
-	FVector3d Location;
+	FVector Location;
 	ESPECTRAL_CLASS Class;
 	EEMPIRE_NAME Empire;
-	ESTAR_SIZE sIZE;
+	ESTAR_SIZE Size;
 	FString Name;
 
 	FS_System() {
@@ -350,6 +373,7 @@ public:
 	double StarDate;
 
 	DataLoader* loader;
+	FS_Galaxy* Galaxy;
 
 protected:
 	virtual void Init() override;

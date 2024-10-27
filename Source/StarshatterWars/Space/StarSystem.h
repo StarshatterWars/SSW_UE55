@@ -21,10 +21,10 @@
 class StarSystem;
 class Color;
 class DataLoader;
-//class Orbital;
-//class OrbitalBody;
-//class OrbitalRegion;
-//class TerrainRegion;
+class Orbital;
+class OrbitalBody;
+class OrbitalRegion;
+class TerrainRegion;
 
 //class Graphic;
 //class Light;
@@ -49,6 +49,11 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	//virtual void      Activate(Scene& scene);
+	//virtual void      Deactivate();
+
+	virtual void      ExecFrame();
+	
 	// operations:
 	virtual void      Load();
 	void			  Load(const char* FileName);
@@ -67,15 +72,15 @@ public:
 	int NumDust()      const { return sky_dust; }
 	Color Ambient()      const;
 
-	//List<OrbitalBody>&   Bodies()       { return bodies;  }
-	///List<OrbitalRegion>& Regions()      { return regions; }
-	//List<OrbitalRegion>& AllRegions()   { return all_regions;   }
-	//OrbitalRegion*       ActiveRegion() { return active_region; }
+	List<OrbitalBody>&   Bodies()       { return bodies;  }
+	List<OrbitalRegion>& Regions()      { return regions; }
+	List<OrbitalRegion>& AllRegions()   { return all_regions;   }
+	OrbitalRegion*       ActiveRegion() { return active_region; }
 
-	//Orbital*          FindOrbital(const char* name);
-	//OrbitalRegion*    FindRegion(const char* name);
+	Orbital*          FindOrbital(const char* name);
+	OrbitalRegion*    FindRegion(const char* name);
 
-	//void              SetActiveRegion(OrbitalRegion* rgn);
+	void              SetActiveRegion(OrbitalRegion* rgn);
 
 	UFUNCTION()
 	static void SetBaseTime(double t, bool absolute = false);
@@ -141,145 +146,32 @@ protected:
 	//Solid*            nebula;
 	//Solid*            haze;
 
-	//List<OrbitalBody>    bodies;
-	//List<OrbitalRegion>  regions;
-	//List<OrbitalRegion>  all_regions;
+	List<OrbitalBody>    bodies;
+	List<OrbitalRegion>  regions;
+	List<OrbitalRegion>  all_regions;
 
-	//Orbital*          center;
-	//OrbitalRegion*    active_region;
+	Orbital*          center;
+	OrbitalRegion*    active_region;
 
 	Point             tvpn, tvup, tvrt;
 	
 	FString ProjectPath;
 	FString FilePath;
+
+	UPROPERTY()
+	USceneComponent* Root;
 };
 
 // +--------------------------------------------------------------------+
 
-class STARSHATTERWARS_API StarSystem
+class Star 
 {
-public:
-	static const char* TYPENAME() { return "StarSystem"; }
 
-	StarSystem(const char* name, Point loc, int iff=0, int s=4);
-	virtual ~StarSystem();
-
-	int operator == (const StarSystem& s) const { return name == s.name; }
-
-	// operations:
-	virtual void      Load();
-	virtual void      Load(const char* FileName);
-	virtual void      Create();
-	virtual void      Destroy();
-
-	//virtual void      Activate(Scene& scene);
-	//virtual void      Deactivate();
-
-	virtual void      ExecFrame();
-
-	// accessors:
-	const char*       Name()         const { return name; }
-	const char*       Govt()         const { return govt; }
-	const char*       Description()  const { return description; }
-	int               Affiliation()  const { return affiliation; }
-	int               Sequence()     const { return seq;        }
-	Point             Location()     const { return loc;  }
-	int               NumStars()     const { return sky_stars; }
-	int               NumDust()      const { return sky_dust;  }
-	Color             Ambient()      const;
-
-	//List<OrbitalBody>&   Bodies()       { return bodies;  }
-	///List<OrbitalRegion>& Regions()      { return regions; }
-	//List<OrbitalRegion>& AllRegions()   { return all_regions;   }
-	//OrbitalRegion*       ActiveRegion() { return active_region; }
-
-	//Orbital*          FindOrbital(const char* name);
-	//OrbitalRegion*    FindRegion(const char* name);
-
-	//void              SetActiveRegion(OrbitalRegion* rgn);
-
-	static void       SetBaseTime(double t, bool absolute=false);
-	static double     GetBaseTime();
-	//static double     Stardate()           { return StarDate; }
-	static void       CalcStardate();
-	double            Radius()       const { return radius;   }
-
-	void              SetSunlight(Color color, double brightness=1);
-	void              SetBacklight(Color color, double brightness=1);
-	void              RestoreTrueSunColor();
-	bool              HasLinkTo(StarSystem* s) const;
-	FString			  GetDataPath() const { return DataPath; }
-
-	static double     StarDate;
-
-protected:
-	void              ParseStar(TermStruct* val);
-	void              ParsePlanet(TermStruct* val);
-	void              ParseMoon(TermStruct* val);
-	void              ParseRegion(TermStruct* val);
-	void              ParseTerrain(TermStruct* val);
-	//void              ParseLayer(TerrainRegion* rgn, TermStruct* val);
-
-	//void              CreateBody(OrbitalBody& body);
-	//Point             TerrainTransform(const Point& loc);
-
-	char              filename[64];
-	Text              name;
-	Text              govt;
-	Text              description;
-	FString           DataPath;
-	int               affiliation;
-	int               seq;
-	Point             loc;
-	
-	double            radius;
-	bool              instantiated;
-
-	int               sky_stars;
-	int               sky_dust;
-	Text              sky_poly_stars;
-	Text              sky_nebula;
-	Text              sky_haze;
-	double            sky_uscale;
-	double            sky_vscale;
-	Color             ambient;
-	Color             sun_color;
-	double            sun_brightness;
-	double            sun_scale;
-	//List<Light>       sun_lights;
-	//List<Light>       back_lights;
-
-	//Graphic*          point_stars;
-	//Solid*            poly_stars;
-	//Solid*            nebula;
-	//Solid*            haze;
-
-	//List<OrbitalBody>    bodies;
-	//List<OrbitalRegion>  regions;
-	//List<OrbitalRegion>  all_regions;
-
-	//Orbital*          center;
-	//OrbitalRegion*    active_region;
-
-	Point             tvpn, tvup, tvrt;
-
-	FString ProjectPath;
-	FString FilePath;
-
-};
-
-// +--------------------------------------------------------------------+
-
-class Star
-{
 public:
 	static const char* TYPENAME() { return "Star"; }
 
 	Star(const char* n, const Point& l, int s) : name(n), loc(l), seq(s) { }
 	virtual ~Star() { }
-
-	enum SPECTRAL_CLASS   { BLACK_HOLE, WHITE_DWARF, RED_GIANT, 
-		O, B, A, F, G, K, M };
 
 	int operator == (const Star& s)     const { return name == s.name; }
 
@@ -301,7 +193,7 @@ protected:
 
 // +--------------------------------------------------------------------+
 
-/*class Orbital
+class Orbital
 {
 	friend class StarSystem;
 
@@ -319,11 +211,11 @@ public:
 
 	// operations:
 	virtual void      Update();
-	//Point             PredictLocation(double delta_t);
+	Point             PredictLocation(double delta_t);
 
 	// accessors:
 	const char*       Name()         const { return name;       }
-	//OrbitalType       Type()         const { return type;       }
+	OrbitalType       Type()         const { return type;       }
 	int               SubType()      const { return subtype;    }
 
 	const char*       Description()  const { return description; }
@@ -342,10 +234,9 @@ public:
 	//void              SetMapIcon(const Bitmap& img);
 
 	StarSystem*       System()       const { return system;     }
-	//Orbital*          Primary()      const { return primary;    }
-	//ListIter<OrbitalRegion> Regions()      { return regions;    }
+	Orbital*          Primary()      const { return primary;    }
+	ListIter<OrbitalRegion> Regions()      { return regions;    }
 
-protected:
 	Text              name;
 	OrbitalType       type;
 	int               subtype;
@@ -365,21 +256,21 @@ protected:
 	//Bitmap            map_icon;
 
 	StarSystem*       system;
-	//Orbital*          primary;
+	Orbital*          primary;
 
-	//List<OrbitalRegion>   regions;
+	List<OrbitalRegion>   regions;
 };
 
 // +--------------------------------------------------------------------+
 
-/*class OrbitalBody : public Orbital
+class OrbitalBody : public Orbital
 {
 	friend class StarSystem;
 
 public:
 	static const char* TYPENAME() { return "OrbitalBody"; }
 
-	OrbitalBody(StarSystem* sys, const char* n, OrbitalType t, double m, double r, double o, Orbital* prime=0);
+	OrbitalBody(AStarSystem* sys, const char* n, OrbitalType t, double m, double r, double o, Orbital* prime=0);
 	virtual ~OrbitalBody();
 
 	// operations:
@@ -396,7 +287,6 @@ public:
 	Color                   LightColor()     const { return color;    }
 	bool                    Luminous()       const { return luminous; }
 
-protected:
 	Text              map_name;
 	Text              tex_name;
 	Text              tex_high_res;
@@ -417,7 +307,7 @@ protected:
 	Color             atmosphere;
 	bool              luminous;
 
-	//List<OrbitalBody> satellites;
+	List<OrbitalBody> satellites;
 };
 
 // +--------------------------------------------------------------------+
@@ -442,7 +332,7 @@ protected:
 	double            inclination;
 	int               asteroids;
 	List<Text>        links;
-};*/
+};
 
 	
 

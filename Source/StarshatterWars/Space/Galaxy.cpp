@@ -1,4 +1,12 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Games
+	Copyright (C) 2024. All Rights Reserved.
+
+	SUBSYSTEM:    Space
+	FILE:         Galaxy.cpp
+	AUTHOR:       Carlos Bott
+*/
+
 
 
 #include "Galaxy.h"
@@ -34,7 +42,8 @@ static AGalaxy* galaxy = 0;
 
 AGalaxy::AGalaxy()
 {
-
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("StarSystem Scene Component"));
+	RootComponent = Root;
 }
 
 AGalaxy::AGalaxy(const char* n)
@@ -202,7 +211,6 @@ AGalaxy::Load(const char* FileName)
 							}
 
 							if (sys_name[0]) {
-								StarSystem* star_system = new StarSystem(sys_name, sys_loc, sys_iff, star_class);
 
 								//SpawnSystem(FString(sys_name));
 
@@ -322,15 +330,19 @@ void AGalaxy::SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starC
 
 	FRotator rotate = FRotator::ZeroRotator;
 
+	FVector SystemLoc = sysLoc * 1e7;
+
 	FActorSpawnParameters SpawnInfo;
+	FName Name(sysName);
+	SpawnInfo.Name = Name;
 
-		AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), sysLoc, rotate, SpawnInfo);
-
-
+	AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), SystemLoc, rotate, SpawnInfo);
+	
+	System->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+		
 	if (System)
 	{
-		UE_LOG(LogTemp, Log, TEXT("System Spawned"));
-		System->Initialize(TCHAR_TO_ANSI(*sysName));
+		System->Initialize(TCHAR_TO_ANSI(*sysName));	
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
@@ -340,20 +352,20 @@ void AGalaxy::SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starC
 void
 AGalaxy::ExecFrame()
 {
-	//ListIter<StarSystem> sys = systems;
-	//while (++sys) {
-	//	sys->ExecFrame();
-	//}
+	ListIter<AStarSystem> sys = systems;
+	while (++sys) {
+		sys->ExecFrame();
+	}
 }
 
 // +--------------------------------------------------------------------+
 
-/*StarSystem*
-AGalaxy::GetSystem(const char* name)
+AStarSystem*
+AGalaxy::GetSystem(const char* Name)
 {
-	ListIter<StarSystem> sys = systems;
+	ListIter<AStarSystem> sys = systems;
 	while (++sys) {
-		if (!strcmp(sys->Name(), name))
+		if (!strcmp(sys->Name(), Name))
 			return sys.value();
 	}
 
@@ -362,17 +374,17 @@ AGalaxy::GetSystem(const char* name)
 
 // +--------------------------------------------------------------------+
 
-StarSystem*
+AStarSystem*
 AGalaxy::FindSystemByRegion(const char* rgn_name)
 {
-	ListIter<StarSystem> iter = systems;
+	ListIter<AStarSystem> iter = systems;
 	while (++iter) {
-		StarSystem* sys = iter.value();
-		if (sys->FindRegion(rgn_name))
-			return sys;
+		AStarSystem* sys = iter.value();
+		//if (sys->FindRegion(rgn_name))
+		//	return sys;
 	}
 
 	return 0;
-}*/
+}
 
 
