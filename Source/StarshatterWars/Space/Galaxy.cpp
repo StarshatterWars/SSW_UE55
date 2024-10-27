@@ -279,6 +279,7 @@ AGalaxy::Load(const char* FileName)
 								}
 							}
 
+							
 							//if (star_name[0]) {
 							//	Star* star = new Star(star_name, star_loc, star_class);
 							//	stars.append(star);
@@ -286,6 +287,7 @@ AGalaxy::Load(const char* FileName)
 						}
 					}
 				}
+				UE_LOG(LogTemp, Log, TEXT("------------------------------------------------------------"));
 			}
 		} while (term);
 }

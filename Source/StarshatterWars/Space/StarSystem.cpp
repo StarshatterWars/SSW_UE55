@@ -136,6 +136,132 @@ void AStarSystem::Load(const char* FileName)
 		}
 	}
 
+	// parse the system:
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "name") {
+					char namebuf[NAMELEN];
+					namebuf[0] = 0;
+					GetDefText(namebuf, def, filename);
+
+					if (namebuf[0])
+						name = namebuf;
+				}
+
+				else if (def->name()->value() == "sky") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: sky struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+
+						char  imgname[NAMELEN];
+						char  magname[NAMELEN];
+						char  hazname[NAMELEN];
+
+						imgname[0] = 0;
+						magname[0] = 0;
+						hazname[0] = 0;
+
+						for (int i = 0; i < val->elements()->size(); i++) {
+							TermDef* pdef = val->elements()->at(i)->isDef();
+							if (pdef) {
+								if (pdef->name()->value() == "poly_stars")
+									GetDefText(imgname, pdef, filename);
+
+								else if (pdef->name()->value() == "nebula")
+									GetDefText(magname, pdef, filename);
+
+								else if (pdef->name()->value() == "haze")
+									GetDefText(hazname, pdef, filename);
+							}
+						}
+
+						if (imgname[0])
+							sky_poly_stars = imgname;
+
+						if (magname[0])
+							sky_nebula = magname;
+
+						if (hazname[0])
+							sky_haze = hazname;
+					}
+				}
+
+				else if (def->name()->value() == "stars") {
+					GetDefNumber(sky_stars, def, filename);
+				}
+
+				else if (def->name()->value() == "ambient") {
+					Vec3 a;
+					GetDefVec(a, def, filename);
+
+					ambient = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z) * 2.5;
+				}
+
+				else if (def->name()->value() == "dust") {
+					GetDefNumber(sky_dust, def, filename);
+				}
+
+				else if (def->name()->value() == "star") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: star struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseStar(val);
+					}
+				}
+
+				else if (def->name()->value() == "planet") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: planet struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParsePlanet(val);
+					}
+				}
+
+				else if (def->name()->value() == "moon") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: moon struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseMoon(val);
+					}
+				}
+
+				else if (def->name()->value() == "region") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: region struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseRegion(val);
+					}
+				}
+
+				else if (def->name()->value() == "terrain") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: terrain struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseTerrain(val);
+					}
+				}
+
+			}
+		}
+	} while (term);
+
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
@@ -207,17 +333,327 @@ bool AStarSystem::HasLinkTo(StarSystem* s) const
 
 void AStarSystem::ParseStar(TermStruct* val)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
+	char  star_name[NAMELEN];
+	char  img_name[NAMELEN];
+	char  map_name[NAMELEN];
+	double light = 0.0;
+	double Radius = 0.0;
+	double rot = 0.0;
+	double mass = 0.0;
+	double orbit = 0.0;
+	double tscale = 1.0;
+	bool   retro = false;
+	Color  color;
+	Color  back;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name")
+				GetDefText(star_name, pdef, filename);
+
+			else if (pdef->name()->value() == "map" || pdef->name()->value() == "icon")
+				GetDefText(map_name, pdef, filename);
+
+			else if (pdef->name()->value() == "image")
+				GetDefText(img_name, pdef, filename);
+
+			else if (pdef->name()->value() == "mass")
+				GetDefNumber(mass, pdef, filename);
+
+			else if (pdef->name()->value() == "orbit")
+				GetDefNumber(orbit, pdef, filename);
+
+			else if (pdef->name()->value() == "radius")
+				GetDefNumber(Radius, pdef, filename);
+
+			else if (pdef->name()->value() == "rotation")
+				GetDefNumber(rot, pdef, filename);
+
+			else if (pdef->name()->value() == "tscale")
+				GetDefNumber(tscale, pdef, filename);
+
+			else if (pdef->name()->value() == "light")
+				GetDefNumber(light, pdef, filename);
+
+			else if (pdef->name()->value() == "retro")
+				GetDefBool(retro, pdef, filename);
+
+			else if (pdef->name()->value() == "color") {
+				Vec3 a;
+				GetDefVec(a, pdef, filename);
+				color = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+			}
+
+			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
+				Vec3 a;
+				GetDefVec(a, pdef, filename);
+				back = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+			}
+		}
+	}
+
+	//OrbitalBody* star = new OrbitalBody(this, star_name, Orbital::STAR, mass, radius, orbit, center);
+	//star->map_name = map_name;
+	//star->tex_name = img_name;
+	//star->light = light;
+	//star->tscale = tscale;
+	//star->subtype = Star::G;
+	//star->retro = retro;
+	//star->rotation = rot * 3600;
+	//star->color = color;
+	//star->back = back;
+
+	// map icon:
+	//if (*map_name) {
+	//	SSWInstance->loader->GetLoader()->LoadBitmap(map_name, star->map_icon, Bitmap::BMP_TRANSLUCENT, true);
+	//}
+
+	//bodies.append(star);
+	//primary_star = star;
+	//primary_planet = 0;
+	//primary_moon = 0;
+
+	//if (orbit > StarSystem::radius)
+	//	StarSystem::radius = orbit;
+	//}
 }
 
 void AStarSystem::ParsePlanet(TermStruct* val)
 {
+	char   pln_name[NAMELEN];
+	char   img_name[NAMELEN];
+	char   map_name[NAMELEN];
+	char   hi_name[NAMELEN];
+	char   img_ring[NAMELEN];
+	char   glo_name[NAMELEN];
+	char   glo_hi_name[NAMELEN];
+	char   gloss_name[NAMELEN];
 
+	double Radius = 0.0;
+	double mass = 0.0;
+	double orbit = 0.0;
+	double rot = 0.0;
+	double minrad = 0.0;
+	double maxrad = 0.0;
+	double tscale = 1.0;
+	double tilt = 0.0;
+	bool   retro = false;
+	bool   lumin = false;
+	Color  atmos = Color::Black;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name")
+				GetDefText(pln_name, pdef, filename);
+
+			else if (pdef->name()->value() == "map" || pdef->name()->value() == "icon")
+				GetDefText(map_name, pdef, filename);
+
+			else if (pdef->name()->value() == "image")
+				GetDefText(img_name, pdef, filename);
+
+			else if (pdef->name()->value() == "image_west")
+				GetDefText(img_name, pdef, filename);
+
+			else if (pdef->name()->value() == "image_east")
+				GetDefText(img_name, pdef, filename);
+
+			else if (pdef->name()->value() == "glow")
+				GetDefText(glo_name, pdef, filename);
+
+			else if (pdef->name()->value() == "gloss")
+				GetDefText(gloss_name, pdef, filename);
+
+			else if (pdef->name()->value() == "high_res")
+				GetDefText(hi_name, pdef, filename);
+
+			else if (pdef->name()->value() == "high_res_west")
+				GetDefText(hi_name, pdef, filename);
+
+			else if (pdef->name()->value() == "high_res_east")
+				GetDefText(hi_name, pdef, filename);
+
+			else if (pdef->name()->value() == "glow_high_res")
+				GetDefText(glo_hi_name, pdef, filename);
+
+			else if (pdef->name()->value() == "mass")
+				GetDefNumber(mass, pdef, filename);
+
+			else if (pdef->name()->value() == "orbit")
+				GetDefNumber(orbit, pdef, filename);
+
+			else if (pdef->name()->value() == "retro")
+				GetDefBool(retro, pdef, filename);
+
+			else if (pdef->name()->value() == "luminous")
+				GetDefBool(lumin, pdef, filename);
+
+			else if (pdef->name()->value() == "rotation")
+				GetDefNumber(rot, pdef, filename);
+
+			else if (pdef->name()->value() == "radius")
+				GetDefNumber(Radius, pdef, filename);
+
+			else if (pdef->name()->value() == "ring")
+				GetDefText(img_ring, pdef, filename);
+
+			else if (pdef->name()->value() == "minrad")
+				GetDefNumber(minrad, pdef, filename);
+
+			else if (pdef->name()->value() == "maxrad")
+				GetDefNumber(maxrad, pdef, filename);
+
+			else if (pdef->name()->value() == "tscale")
+				GetDefNumber(tscale, pdef, filename);
+
+			else if (pdef->name()->value() == "tilt")
+				GetDefNumber(tilt, pdef, filename);
+
+			else if (pdef->name()->value() == "atmosphere") {
+				Vec3 a;
+				GetDefVec(a, pdef, filename);
+				atmos = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+			}
+		}
+	}
+
+	//OrbitalBody* planet = new OrbitalBody(this, pln_name, Orbital::PLANET, mass, radius, orbit, primary_star);
+	//planet->map_name = map_name;
+	//planet->tex_name = img_name;
+	//planet->tex_high_res = hi_name;
+	//planet->tex_ring = img_ring;
+	//planet->tex_glow = glo_name;
+	//planet->tex_glow_high_res = glo_hi_name;
+	//planet->tex_gloss = gloss_name;
+	//planet->ring_min = minrad;
+	//planet->ring_max = maxrad;
+	//planet->tscale = tscale;
+	//planet->tilt = tilt;
+	//planet->retro = retro;
+	//planet->luminous = lumin;
+	//planet->rotation = rot * 3600;
+	//planet->atmosphere = atmos;
+
+	//if (primary_star)
+	//	primary_star->satellites.append(planet);
+	//else
+	//	bodies.append(planet);
+
+	//primary_planet = planet;
+	//primary_moon = 0;
+
+	//if (orbit > StarSystem::radius)
+	//	StarSystem::radius = orbit;
+
+	// map icon:
+	//if (map_name[0]) {
+	//	DataLoader::GetLoader()->LoadBitmap(map_name, planet->map_icon, Bitmap::BMP_TRANSLUCENT, true);
+	//}
 }
 
 void AStarSystem::ParseMoon(TermStruct* val)
 {
+	char   map_name[NAMELEN];
+	char   pln_name[NAMELEN];
+	char   img_name[NAMELEN];
+	char   hi_name[NAMELEN];
+	char   glo_name[NAMELEN];
+	char   glo_hi_name[NAMELEN];
+	char   gloss_name[NAMELEN];
 
+	double Radius = 0.0;
+	double mass = 0.0;
+	double orbit = 0.0;
+	double rot = 0.0;
+	double tscale = 1.0;
+	double tilt = 0.0;
+	bool   retro = false;
+	Color  atmos = Color::Black;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name")
+				GetDefText(pln_name, pdef, filename);
+
+			else if (pdef->name()->value() == "map" || pdef->name()->value() == "icon")
+				GetDefText(map_name, pdef, filename);
+
+			else if (pdef->name()->value() == "image")
+				GetDefText(img_name, pdef, filename);
+
+			else if (pdef->name()->value() == "glow")
+				GetDefText(glo_name, pdef, filename);
+
+			else if (pdef->name()->value() == "high_res")
+				GetDefText(hi_name, pdef, filename);
+
+			else if (pdef->name()->value() == "glow_high_res")
+				GetDefText(glo_hi_name, pdef, filename);
+
+			else if (pdef->name()->value() == "gloss")
+				GetDefText(gloss_name, pdef, filename);
+
+			else if (pdef->name()->value() == "mass")
+				GetDefNumber(mass, pdef, filename);
+
+			else if (pdef->name()->value() == "orbit")
+				GetDefNumber(orbit, pdef, filename);
+
+			else if (pdef->name()->value() == "rotation")
+				GetDefNumber(rot, pdef, filename);
+
+			else if (pdef->name()->value() == "retro")
+				GetDefBool(retro, pdef, filename);
+
+			else if (pdef->name()->value() == "radius")
+				GetDefNumber(Radius, pdef, filename);
+
+			else if (pdef->name()->value() == "tscale")
+				GetDefNumber(tscale, pdef, filename);
+
+			else if (pdef->name()->value() == "inclination")
+				GetDefNumber(tilt, pdef, filename);
+
+			else if (pdef->name()->value() == "atmosphere") {
+				Vec3 a;
+				GetDefVec(a, pdef, filename);
+				atmos = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+			}
+		}
+	}
+
+	//OrbitalBody* moon = new(__FILE__, __LINE__) OrbitalBody(this, pln_name, Orbital::MOON, mass, radius, orbit, primary_planet);
+	//moon->map_name = map_name;
+	//moon->tex_name = img_name;
+	//moon->tex_high_res = hi_name;
+	//moon->tex_glow = glo_name;
+	//moon->tex_glow_high_res = glo_hi_name;
+	//moon->tex_gloss = gloss_name;
+	//moon->tscale = tscale;
+	//moon->retro = retro;
+	//moon->rotation = rot * 3600;
+	//moon->tilt = tilt;
+	//moon->atmosphere = atmos;
+
+	//if (primary_planet)
+	//	primary_planet->satellites.append(moon);
+	//else {
+	//	Print("WARNING: no planet for moon %s in '%s', deleted.\n", pln_name, filename);
+	//	delete moon;
+	//	moon = 0;
+	//}
+
+	//primary_moon = moon;
+
+	// map icon:
+	//if (map_name[0]) {
+	//	DataLoader::GetLoader()->LoadBitmap(map_name, moon->map_icon, Bitmap::BMP_TRANSLUCENT, true);
+	//}
 }
 
 void AStarSystem::ParseRegion(TermStruct* val)

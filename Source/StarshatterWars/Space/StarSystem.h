@@ -242,8 +242,8 @@ protected:
 	Text              sky_haze;
 	double            sky_uscale;
 	double            sky_vscale;
-	//Color             ambient;
-	//Color             sun_color;
+	Color             ambient;
+	Color             sun_color;
 	double            sun_brightness;
 	double            sun_scale;
 	//List<Light>       sun_lights;
