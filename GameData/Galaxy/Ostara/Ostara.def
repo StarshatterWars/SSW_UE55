@@ -17,7 +17,7 @@ dust:       300
 ambient:    (32, 8, 8)
 
 star: {
-   name:    Ostara,
+   name:    Ostram,
    image:   "Suns/M1.pcx",
    tscale:  6,
    radius:  12e8,

@@ -18,7 +18,7 @@ dust:       300
 ambient:    (10,  8,  8)
 
 star:        {
-   name:    Isham,
+   name:    Ishtar,
    map:     "Suns/StarK_map.pcx"
    image:   "Suns/K1.pcx",
    tscale:  6,

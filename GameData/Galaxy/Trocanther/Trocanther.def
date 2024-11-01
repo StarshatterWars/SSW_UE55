@@ -18,7 +18,7 @@ dust:       300
 ambient:    (30, 15,  0)
 
 star:        {
-   name:    Trocanther
+   name:    Trocantex
    map:     "Suns/StarK_map.pcx"
    image:   "Suns/K1.pcx",
    tscale:  6,

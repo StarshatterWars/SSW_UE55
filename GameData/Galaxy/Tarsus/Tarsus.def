@@ -17,7 +17,7 @@ dust:       220
 ambient:    (25, 22, 20)
 
 star: {
-   name:    Tarsus
+   name:    Tarset
    map:     "Suns/StarG_map.pcx"
    image:   "Suns/G3.pcx",
    tscale:  6,

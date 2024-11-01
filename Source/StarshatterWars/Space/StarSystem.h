@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 //#include "Solid.h"
 //#include "Bitmap.h"
+#include "Star.h"
 #include "../Foundation/Geometry.h"
 #include "../Foundation/Color.h"
 #include "../Foundation/Text.h"
@@ -107,6 +108,7 @@ protected:
 	void              ParseMoon(TermStruct* val);
 	void              ParseRegion(TermStruct* val);
 	void              ParseTerrain(TermStruct* val);
+	void			  SpawnStar(FString starName, EOrbitalType t, double m, double r, double o);
 	//void              ParseLayer(TerrainRegion* rgn, TermStruct* val);
 
 	//void              CreateBody(OrbitalBody& body);

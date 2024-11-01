@@ -17,7 +17,7 @@ dust:       300
 ambient:    (8,  8,  10)
 
 star:        {
-   name:    Nephrys
+   name:    Nephaas
    map:     "Suns/StarA_map.pcx"
    image:   "Suns/G3.pcx",
    tscale:  6,

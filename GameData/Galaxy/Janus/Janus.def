@@ -18,7 +18,7 @@ dust:       300
 ambient:    (16, 16, 21)
 
 star: {
-   name:    Janus,
+   name:    Janset,
    map:     "Suns/StarG_map.pcx"
    image:   "Suns/G3.pcx",
    tscale:  6,

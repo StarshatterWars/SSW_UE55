@@ -8,7 +8,7 @@
 //#include "TerrainRegion.h"
 //#include "TerrainHaze.h"
 //#include "Weather.h"
-
+#include "Star.h"
 #include "../System/Game.h"
 //#include "Sound.h"
 //#include "Solid.h"
@@ -606,8 +606,9 @@ void AStarSystem::ParseStar(TermStruct* val)
 		}
 	}
 
-	/*OrbitalBody* star = new OrbitalBody(this, star_name, Orbital::STAR, mass, radius, orbit, center);
-	star->map_name = map_name;
+	SpawnStar(FString(star_name), EOrbitalType::STAR, mass, radius, orbit);
+	//OrbitalBody* star = new OrbitalBody(this, star_name, Orbital::STAR, mass, radius, orbit, center);
+	/*star->map_name = map_name;
 	star->tex_name = img_name;
 	star->light = light;
 	star->tscale = tscale;
@@ -615,7 +616,7 @@ void AStarSystem::ParseStar(TermStruct* val)
 	star->retro = retro;
 	star->rotation = rot * 3600;
 	star->color = color;
-	star->back = back;
+	star->back = back;*/
 
 	// map icon:
 	//if (*map_name) {
@@ -627,9 +628,9 @@ void AStarSystem::ParseStar(TermStruct* val)
 	//primary_planet = 0;
 	//primary_moon = 0;
 
-	if (orbit > AStarSystem::radius)
-		AStarSystem::radius = orbit;
-	}*/
+	//if (orbit > AStarSystem::radius)
+	//	AStarSystem::radius = orbit;
+	//}*/
 }
 
 void AStarSystem::ParsePlanet(TermStruct* val)
@@ -1149,6 +1150,31 @@ void AStarSystem::ParseTerrain(TermStruct* val)
 
 	primary->regions.append(region);
 	all_regions.append(region);*/
+}
+
+void AStarSystem::SpawnStar(FString starName, EOrbitalType t, double m, double r, double o)
+{
+	UWorld* World = GetWorld();
+
+	FRotator rotate = FRotator::ZeroRotator;
+	FVector SystemLoc = FVector::ZeroVector;
+
+	FActorSpawnParameters StarInfo;
+	StarInfo.Name = FName(starName);
+
+	AStar* Star = GetWorld()->SpawnActor<AStar>(AStar::StaticClass(), SystemLoc, rotate, StarInfo);
+
+	Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+
+	if (Star)
+	{
+		Star->SetActorLabel(FString(starName));
+		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *starName);
+		//Star->Initialize(TCHAR_TO_ANSI(*starName));
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
+	}
 }
 
 
