@@ -333,8 +333,8 @@ void AGalaxy::SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starC
 	FVector SystemLoc = sysLoc * 1e7;
 
 	FActorSpawnParameters SpawnInfo;
-	FName Name(sysName);
-	SpawnInfo.Name = Name;
+
+	SpawnInfo.Name = FName(sysName);
 
 	AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), SystemLoc, rotate, SpawnInfo);
 	

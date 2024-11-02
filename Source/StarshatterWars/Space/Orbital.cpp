@@ -26,3 +26,12 @@ void AOrbital::Tick(float DeltaTime)
 
 }
 
+void AOrbital::Update()
+{
+}
+
+Point AOrbital::PredictLocation(double delta_t)
+{
+	return Point();
+}
+

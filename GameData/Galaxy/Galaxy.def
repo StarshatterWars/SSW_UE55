@@ -1,36 +1,36 @@
 GALAXY
 
 // TERRELIAN ALLIANCE
-system: { loc: ( 6.2,  0.3,  1.0), class: G, iff: 1, name: Jarnell      }
-system: { loc: ( 4.7, -1.9,  1.0), class: F, iff: 1, name: Borova       }
-system: { loc: ( 4.1,  1.7,  1.0), class: G, iff: 1, name: Athenar      }
-system: { loc: ( 6.8, -2.5,  1.0), class: G, iff: 1, name: Paragon      }
-system: { loc: ( 7.8,  2.3,  1.0), class: K, iff: 1, name: Thralis      }
-system: { loc: ( 2.8, -0.3,  0.0), class: G, iff: 1, name: Janus        }
+system: { loc: ( 6.2,  0.3,  1.0), class: G, iff: 1, name: "Jarnell System"     }
+system: { loc: ( 4.7, -1.9,  1.0), class: F, iff: 1, name: "Borova System"      }
+system: { loc: ( 4.1,  1.7,  1.0), class: G, iff: 1, name: "Athenar System"     }
+system: { loc: ( 6.8, -2.5,  1.0), class: G, iff: 1, name: "Paragon System"     }
+system: { loc: ( 7.8,  2.3,  1.0), class: K, iff: 1, name: "Thralis System"     }
+system: { loc: ( 2.8, -0.3,  0.0), class: G, iff: 1, name: "Janus System"       }
 
 // INDEPENDENT SYSTEMS
-system: { loc: ( 1.0, -1.8,  0.0), class: G, iff: 0, name: Solus        }
-system: { loc: ( 1.8, -3.1,  1.0), class: K, iff: 0, name: Silessia     }
-system: { loc: ( 0.0,  1.0,  1.0), class: K, iff: 0, name: Haiche       }
+system: { loc: ( 1.0, -1.8,  0.0), class: G, iff: 0, name: "Solus System"       }
+system: { loc: ( 1.8, -3.1,  1.0), class: K, iff: 0, name: "Silessia System"    }
+system: { loc: ( 0.0,  1.0,  1.0), class: K, iff: 0, name: "Haiche System"      }
 
 // MARAKAN HEGEMONY
-system: { loc: (-0.8, -1.5,  1.0), class: G, iff: 2, name: Renser       }
-system: { loc: (-1.2, -3.4,  1.0), class: G, iff: 2, name: Loris        }
-system: { loc: (-1.4,  2.8,  1.0), class: M, iff: 2, name: Ostara       }
-system: { loc: (-2.7,  1.1,  1.0), class: G, iff: 2, name: Kolchev      }
-system: { loc: (-2.5, -1.0,  1.0), class: G, iff: 2, name: Korius       }
-system: { loc: (-2.9,  2.6,  1.0), class: K, iff: 2, name: Tarsus       }
-system: { loc: (-4.0, -3.1,  1.0), class: A, iff: 2, name: Nephrys      }
+system: { loc: (-0.8, -1.5,  1.0), class: G, iff: 2, name: "Renser System"      }
+system: { loc: (-1.2, -3.4,  1.0), class: G, iff: 2, name: "Loris System"       }
+system: { loc: (-1.4,  2.8,  1.0), class: M, iff: 2, name: "Ostara System"      }
+system: { loc: (-2.7,  1.1,  1.0), class: G, iff: 2, name: "Kolchev System"     }
+system: { loc: (-2.5, -1.0,  1.0), class: G, iff: 2, name: "Korius System"      }
+system: { loc: (-2.9,  2.6,  1.0), class: K, iff: 2, name: "Tarsus System"      }
+system: { loc: (-4.0, -3.1,  1.0), class: A, iff: 2, name: "Nephrys System"     }
 
-system: { loc: (-4.6,  2.1,  1.0), class: G, iff: 2, name: Radix        }
-system: { loc: (-5.1,  0.5,  1.0), class: K, iff: 2, name: Isham        }
-system: { loc: (-6.5,  2.5,  1.0), class: G, iff: 2, name: Garrison     }
-system: { loc: (-7.2, -1.2,  1.0), class: K, iff: 2, name: Trocanther   }
-system: { loc: (-8.0, -2.6,  1.0), class: F, iff: 2, name: Marak        }
+system: { loc: (-4.6,  2.1,  1.0), class: G, iff: 2, name: "Radix System"        }
+system: { loc: (-5.1,  0.5,  1.0), class: K, iff: 2, name: "Isham System"        }
+system: { loc: (-6.5,  2.5,  1.0), class: G, iff: 2, name: "Garrison System"     }
+system: { loc: (-7.2, -1.2,  1.0), class: K, iff: 2, name: "Trocanther System"   }
+system: { loc: (-8.0, -2.6,  1.0), class: F, iff: 2, name: "Marak System"        }
 
 // for screenshots only!
-system: { loc: ( 102,  101,  0.0), class: O, iff: 100, name: Black      }
-system: { loc: ( 106,  107,  0.0), class: O, iff: 100, name: Museum     }
+system: { loc: ( 102,  101,  0.0), class: O, iff: 100, name: "Black System"      }
+system: { loc: ( 106,  107,  0.0), class: O, iff: 100, name: "Museum System"     }
 
 star:   { loc: ( 6.0,  6.0,  1.0), class: M, name: "GSC-3082" }
 star:   { loc: (-3.5,  5.0,  1.0), class: M, name: "GSC-0541" }

@@ -106,7 +106,8 @@ protected:
 	void              ParseMoon(TermStruct* val);
 	void              ParseRegion(TermStruct* val);
 	void              ParseTerrain(TermStruct* val);
-	void			  SpawnStar(FString starName, EOrbitalType t, double m, double r, double o);
+	void			  SpawnStar(FString Name, double m, double rad, double o, double r);
+	void			  SpawnPlanet(FString Name, double m, double rad, double o, double r);
 	//void              ParseLayer(TerrainRegion* rgn, TermStruct* val);
 
 	//void              CreateBody(OrbitalBody& body);

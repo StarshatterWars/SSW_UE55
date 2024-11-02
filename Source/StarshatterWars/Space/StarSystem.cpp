@@ -452,6 +452,7 @@ void AStarSystem::Load(const char* FileName)
 	} while (term);
 
 	SSWInstance->loader->ReleaseBuffer(block);
+	//this->SetActorLabel(FString(name).Append(" System"));
 }
 
 void AStarSystem::Initialize(const char* Name)
@@ -595,15 +596,13 @@ void AStarSystem::ParseStar(TermStruct* val)
 		}
 	}
 
-	SpawnStar(FString(star_name), mass, radius, orbit);
-	//OrbitalBody* star = new OrbitalBody(this, star_name, Orbital::STAR, mass, radius, orbit, center);
+	SpawnStar(FString(star_name), mass, Radius, orbit, rot);
 	/*star->map_name = map_name;
 	star->tex_name = img_name;
 	star->light = light;
 	star->tscale = tscale;
 	star->subtype = Star::G;
 	star->retro = retro;
-	star->rotation = rot * 3600;
 	star->color = color;
 	star->back = back;*/
 
@@ -722,6 +721,7 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 		}
 	}
 
+	SpawnPlanet(FString(pln_name), mass, Radius, orbit, rot);
 	//OrbitalBody* planet = new OrbitalBody(this, pln_name, Orbital::PLANET, mass, radius, orbit, primary_star);
 	//planet->map_name = map_name;
 	//planet->tex_name = img_name;
@@ -1141,7 +1141,7 @@ void AStarSystem::ParseTerrain(TermStruct* val)
 	all_regions.append(region);*/
 }
 
-void AStarSystem::SpawnStar(FString starName, double m, double r, double o)
+void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double r)
 {
 	UWorld* World = GetWorld();
 
@@ -1149,7 +1149,7 @@ void AStarSystem::SpawnStar(FString starName, double m, double r, double o)
 	FVector SystemLoc = FVector::ZeroVector;
 
 	FActorSpawnParameters StarInfo;
-	StarInfo.Name = FName(starName);
+	StarInfo.Name = FName(Name);
 
 	AOrbitalBody* Star = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, StarInfo);
 
@@ -1157,15 +1157,36 @@ void AStarSystem::SpawnStar(FString starName, double m, double r, double o)
 
 	if (Star)
 	{
-		Star->SetActorLabel(FString(starName));
-		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *starName);
-		Star->Initialize(this, starName, EOrbitalType::STAR, m, r, o, nullptr);
+		Star->SetActorLabel(FString(Name));
+		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
+		Star->InitializeStar(this, Name, EOrbitalType::STAR, m, rad, o, (r*3600), nullptr);
 	}
 	else {
-		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Star"));
 	}
 }
 
+void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, double r)
+{
+	UWorld* World = GetWorld();
 
+	FRotator rotate = FRotator::ZeroRotator;
+	FVector SystemLoc = FVector::ZeroVector;
 
+	FActorSpawnParameters Info;
+	Info.Name = FName(Name);
 
+	AOrbitalBody* Planet = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, Info);
+
+	Planet->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+
+	if (Planet)
+	{
+		Planet->SetActorLabel(FString(Name));
+		UE_LOG(LogTemp, Log, TEXT("Spawned Planet '%s'"), *Name);
+		//Planet->InitializePlanet(this, Name, EOrbitalType::STAR, m, rad, o, (r * 3600), nullptr);
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Planet"));
+	}
+}
