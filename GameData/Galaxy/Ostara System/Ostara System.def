@@ -19,6 +19,7 @@ ambient:    (32, 8, 8)
 star: {
    name:    Ostram,
    image:   "Suns/M1.pcx",
+   map:     "Suns/StarM_map.pcx"
    tscale:  6,
    radius:  12e8,
    mass:    1e30,

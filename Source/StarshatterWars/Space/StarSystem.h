@@ -168,6 +168,10 @@ protected:
 	AOrbitalBody* PlanetParent;
 	AOrbitalBody* MoonParent;
 	AStarSystem* SystemParent;
+
+	class UDataTable* StarsDataTable;
+	class UDataTable* PlanetsDataTable;
+	class UDataTable* MoonsDataTable;
 };
 
 // +--------------------------------------------------------------------+

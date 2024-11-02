@@ -20,6 +20,7 @@ ambient:    (32, 32, 32)
 
 star:        {
    name:    BlackStar,
+   map:     "Suns/StarG_map.pcx"
    image:   "Suns/G3.pcx",
    tscale:  6,
    radius:  16e8,

@@ -402,8 +402,65 @@ USTRUCT(BlueprintType)
 struct FS_Planet : public FTableRowBase {
 	GENERATED_BODY()
 
+	UPROPERTY(BlueprintReadWrite)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite)
+	FString Image;
+	UPROPERTY(BlueprintReadWrite)
+	FString Map;
+	UPROPERTY(BlueprintReadWrite)
+	FString High;
+	UPROPERTY(BlueprintReadWrite)
+	FString Rings;
+	UPROPERTY(BlueprintReadWrite)
+	FString Glow;
+	UPROPERTY(BlueprintReadWrite)
+	FString GlowHigh;
+	UPROPERTY(BlueprintReadWrite)
+	FString Gloss;
+	UPROPERTY(BlueprintReadWrite)
+	double Radius;
+	UPROPERTY(BlueprintReadWrite)
+	double Mass;
+	UPROPERTY(BlueprintReadWrite)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite)
+	double Rot;
+	UPROPERTY(BlueprintReadWrite)
+	double Minrad;
+	UPROPERTY(BlueprintReadWrite)
+	double Maxrad;
+	UPROPERTY(BlueprintReadWrite)
+	double Tscale;
+	UPROPERTY(BlueprintReadWrite)
+	double Tilt;
+	UPROPERTY(BlueprintReadWrite)
+	bool   Retro;
+	UPROPERTY(BlueprintReadWrite)
+	bool   Lumin;
+	UPROPERTY(BlueprintReadWrite)
+	FColor  Atmos;
 	FS_Planet() {
+		Name = "";
+		Image = "";
+		Map = "";
+		High = "";
+		Rings = "";
+		Glow = "";
+		GlowHigh = "";
+		Gloss = "";
 
+		Radius = 0.0;
+		Mass = 0.0;
+		Orbit = 0.0;
+		Rot = 0.0;
+		Minrad = 0.0;
+		Maxrad = 0.0;
+		Tscale = 1.0;
+		Tilt = 0.0;
+		Retro = false;
+		Lumin = false;
+		Atmos = FColor::Black;
 	}
 };
 
@@ -458,6 +515,10 @@ public:
 
 	DataLoader* loader;
 	FS_Galaxy* Galaxy;
+
+	class UDataTable* StarsDataTable;
+	class UDataTable* PlanetsDataTable;
+	class UDataTable* MoonsDataTable;
 
 protected:
 	virtual void Init() override;

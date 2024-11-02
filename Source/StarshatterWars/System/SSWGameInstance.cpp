@@ -20,7 +20,16 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIsDeviceRestored = false;
 	GameUniverse = nullptr;
 
-	
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
+
+	if (StarsDataTableObject.Succeeded())
+	{
+		StarsDataTable = StarsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Stars Data Table"));
+	}
 
 	SetProjectPath();
 	Init();

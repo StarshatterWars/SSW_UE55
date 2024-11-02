@@ -18,6 +18,7 @@ ambient:    (64, 48, 32)
 
 star:        {
    name:    Musette,
+   map:     "Suns/StarG_map.pcx"
    image:   "Suns/G3.pcx",
    tscale:  6,
    radius:  16,

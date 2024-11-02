@@ -41,6 +41,28 @@ AStarSystem::AStarSystem()
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("StarSystem Scene Component"));
 	RootComponent = Root;
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
+
+	if (StarsDataTableObject.Succeeded())
+	{
+		StarsDataTable = StarsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Stars Data Table"));
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> PlanetssDataTableObject(TEXT("DataTable'/Game/Game/DT_Planets.DT_Planets'"));
+
+	if (PlanetssDataTableObject.Succeeded())
+	{
+		PlanetsDataTable = PlanetssDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Planets Data Table"));
+	}
+
 }
 
 // Called when the game starts or when spawned
@@ -562,6 +584,8 @@ void AStarSystem::ParseStar(TermStruct* val)
 	bool   retro = false;
 	Color  color;
 	Color  back;
+	FColor StarColor;
+	FColor BackColor;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		SystemParent = this;
@@ -602,14 +626,37 @@ void AStarSystem::ParseStar(TermStruct* val)
 				Vec3 a;
 				GetDefVec(a, pdef, filename);
 				color = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+				StarColor = FColor(a.x, a.y, a.z, 1);
 			}
 
 			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
 				Vec3 a;
 				GetDefVec(a, pdef, filename);
 				back = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+				BackColor = FColor(a.x, a.y, a.z, 1);
 			}
 		}
+
+		// define our data table struct
+		FS_Star NewStarData;
+		NewStarData.Name = FString(star_name);
+		NewStarData.Map = FString(map_name);
+		NewStarData.Image = FString(img_name);
+		NewStarData.Light = light;
+		NewStarData.Radius = Radius;
+		NewStarData.Rot = rot;
+		NewStarData.Mass = mass;
+		NewStarData.Orbit = orbit;
+		NewStarData.Tscale = tscale;
+		NewStarData.Retro = retro;
+		NewStarData.Color = StarColor;
+		NewStarData.Back = BackColor;
+
+		FName RowName = FName(FString(star_name));
+
+
+		// call AddRow to insert the record
+		StarsDataTable->AddRow(RowName, NewStarData);
 	}
 
 	SpawnStar(FString(star_name), mass, Radius, orbit, rot);
@@ -663,6 +710,7 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 	bool   retro = false;
 	bool   lumin = false;
 	Color  atmos = Color::Black;
+	FColor AtmosColor;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -737,28 +785,40 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 				Vec3 a;
 				GetDefVec(a, pdef, filename);
 				atmos = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
+				AtmosColor = FColor(a.x, a.y, a.z, 1);
 			}
 		}
+
+		// define our data table struct
+		FS_Planet NewPlanetData;
+		NewPlanetData.Name = FString(pln_name);
+		NewPlanetData.Map = FString(map_name);
+		NewPlanetData.Image = FString(img_name);
+		NewPlanetData.High = FString(hi_name); 
+		NewPlanetData.Rings = FString(img_ring); 
+		NewPlanetData.Glow = FString(glo_name);
+		NewPlanetData.GlowHigh = FString(glo_hi_name);
+		NewPlanetData.Gloss = FString(gloss_name);
+		NewPlanetData.Radius = Radius;
+		NewPlanetData.Mass = mass;
+		NewPlanetData.Orbit = orbit;
+		NewPlanetData.Rot = rot * 3600;
+		NewPlanetData.Minrad = minrad;
+		NewPlanetData.Maxrad = maxrad;	
+		NewPlanetData.Tscale = tscale;
+		NewPlanetData.Tilt = tilt;
+		NewPlanetData.Retro = retro;
+		NewPlanetData.Lumin = lumin;
+		NewPlanetData.Atmos = AtmosColor;
+
+		FName RowName = FName(FString(pln_name));
+
+		// call AddRow to insert the record
+		PlanetsDataTable->AddRow(RowName, NewPlanetData);
 	}
 
 	SpawnPlanet(FString(pln_name), mass, Radius, orbit, rot);
-	//OrbitalBody* planet = new OrbitalBody(this, pln_name, Orbital::PLANET, mass, radius, orbit, primary_star);
-	//planet->map_name = map_name;
-	//planet->tex_name = img_name;
-	//planet->tex_high_res = hi_name;
-	//planet->tex_ring = img_ring;
-	//planet->tex_glow = glo_name;
-	//planet->tex_glow_high_res = glo_hi_name;
-	//planet->tex_gloss = gloss_name;
-	//planet->ring_min = minrad;
-	//planet->ring_max = maxrad;
-	//planet->tscale = tscale;
-	//planet->tilt = tilt;
-	//planet->retro = retro;
-	//planet->luminous = lumin;
-	//planet->rotation = rot * 3600;
-	//planet->atmosphere = atmos;
-
+	
 	//if (primary_star)
 	//	primary_star->satellites.append(planet);
 	//else
@@ -767,8 +827,8 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 	//primary_planet = planet;
 	//primary_moon = 0;
 
-	//if (orbit > StarSystem::radius)
-	//	StarSystem::radius = orbit;
+	if (orbit > AStarSystem::radius)
+		AStarSystem::radius = orbit;
 
 	// map icon:
 	//if (map_name[0]) {
