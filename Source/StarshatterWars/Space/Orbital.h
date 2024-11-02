@@ -4,6 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "../Foundation/Geometry.h"
+#include "../Foundation/Color.h"
+#include "../Foundation/Text.h"
+#include "../Foundation/Term.h"
+#include "../Foundation/List.h"
+#include "Starsystem.h"
+#include "../System/SSWGameInstance.h"
 #include "Orbital.generated.h"
 
 UCLASS()

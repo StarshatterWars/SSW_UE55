@@ -19,6 +19,10 @@ AOrbitalBody::AOrbitalBody()
 	RootComponent = Root;
 }
 
+void AOrbitalBody::Initialize(AStarSystem* sys, FString n, EOrbitalType t, double m, double r, double o, AOrbital* prime)
+{
+}
+
 // Called when the game starts or when spawned
 void AOrbitalBody::BeginPlay()
 {
@@ -31,5 +35,9 @@ void AOrbitalBody::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AOrbitalBody::Update()
+{
 }
 
