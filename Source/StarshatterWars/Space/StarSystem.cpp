@@ -3,6 +3,7 @@
 
 #include "StarSystem.h"
 #include "Galaxy.h"
+#include "OrbitalBody.h"
 //#include "Sky.h"
 //#include "Starshatter.h"
 //#include "TerrainRegion.h"
@@ -40,18 +41,6 @@ AStarSystem::AStarSystem()
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("StarSystem Scene Component"));
 	RootComponent = Root;
 
-}
-
-AStarSystem::AStarSystem(const char* sys_name, Point l, int iff, int s)
-	: name(sys_name), affiliation(iff), sky_stars(0), sky_dust(0), loc(l), seq(s),
-	 instantiated(false), ambient(0, 0, 0),
-	sun_color(255, 255, 255), sun_scale(1)
-{
-	//center = new Orbital(this, "CG", Orbital::NOTHING, 1.0e35f, 0.0f, 0.0f, 0);
-	radius = 0.0f;
-
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
 }
 
 // Called when the game starts or when spawned
@@ -1162,7 +1151,7 @@ void AStarSystem::SpawnStar(FString starName, EOrbitalType t, double m, double r
 	FActorSpawnParameters StarInfo;
 	StarInfo.Name = FName(starName);
 
-	AStar* Star = GetWorld()->SpawnActor<AStar>(AStar::StaticClass(), SystemLoc, rotate, StarInfo);
+	AOrbitalBody* Star = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, StarInfo);
 
 	Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 
@@ -1176,5 +1165,30 @@ void AStarSystem::SpawnStar(FString starName, EOrbitalType t, double m, double r
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
 	}
 }
+
+/*void AStarSystem::SpawnStar(FString starName, EOrbitalType t, double m, double r, double o)
+{
+	UWorld* World = GetWorld();
+
+	FRotator rotate = FRotator::ZeroRotator;
+	FVector SystemLoc = FVector::ZeroVector;
+
+	FActorSpawnParameters StarInfo;
+	StarInfo.Name = FName(starName);
+
+	AStar* Star = GetWorld()->SpawnActor<AStar>(AStar::StaticClass(), SystemLoc, rotate, StarInfo);
+
+	Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+
+	if (Star)
+	{
+		Star->SetActorLabel(FString(starName));
+		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *starName);
+		//Star->Initialize(TCHAR_TO_ANSI(*starName));
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
+	}
+}*/
 
 

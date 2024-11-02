@@ -11,6 +11,7 @@
 
 #include "CoreMinimal.h"
 #include "Orbital.h"
+//#include "GameFramework/Actor.h"
 #include "OrbitalBody.generated.h"
 
 UCLASS()
@@ -29,7 +30,5 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	
 	
 };

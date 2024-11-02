@@ -1,12 +1,4 @@
-/*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
-
-	SUBSYSTEM:    Space
-	FILE:         Orbital.cpp
-	AUTHOR:       Carlos Bott
-*/
-
+// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
 
 
 #include "Orbital.h"
@@ -20,28 +12,17 @@ AOrbital::AOrbital()
 
 }
 
-AOrbital::AOrbital(AStarSystem* sys, const char* n, EOrbitalType t, double m, double r, double o, AOrbital* p)
-{
-}
-
-void AOrbital::Update()
-{
-}
-
-Point AOrbital::PredictLocation(double delta_t)
-{
-	return Point();
-}
-
 // Called when the game starts or when spawned
 void AOrbital::BeginPlay()
 {
+	Super::BeginPlay();
 	
 }
 
 // Called every frame
 void AOrbital::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
 
 }
 

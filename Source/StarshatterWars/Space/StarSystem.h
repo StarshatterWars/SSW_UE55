@@ -40,8 +40,6 @@ public:
 	// Sets default values for this actor's properties
 	AStarSystem();
 
-	AStarSystem(const char* name, Point loc, int iff = 0, int s = 4);
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
