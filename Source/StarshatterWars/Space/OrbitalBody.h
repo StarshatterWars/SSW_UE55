@@ -25,7 +25,11 @@ public:
 	// Sets default values for this actor's properties
 	AOrbitalBody();
 
-	void InitializeStar(AStarSystem* sys, FString n, EOrbitalType t, double m, double rad, double o, double rot, AOrbital* prime = nullptr);
+	void InitializeStar(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime = nullptr);
+
+	void InitializePlanet(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime = nullptr);
+
+	void InitializeMoon(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime = nullptr);
 
 protected:
 	// Called when the game starts or when spawned

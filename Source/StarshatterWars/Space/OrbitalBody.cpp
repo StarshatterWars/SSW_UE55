@@ -19,9 +19,17 @@ AOrbitalBody::AOrbitalBody()
 	RootComponent = Root;
 }
 
-void AOrbitalBody::InitializeStar(AStarSystem* sys, FString n, EOrbitalType t, double m, double rad, double o, double rot, AOrbital* prime)
+void AOrbitalBody::InitializeStar(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime)
 {
 	rotation = rot;
+}
+
+void AOrbitalBody::InitializePlanet(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime)
+{
+}
+
+void AOrbitalBody::InitializeMoon(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime)
+{
 }
 
 // Called when the game starts or when spawned

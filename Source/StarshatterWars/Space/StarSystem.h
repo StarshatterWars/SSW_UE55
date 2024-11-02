@@ -108,6 +108,7 @@ protected:
 	void              ParseTerrain(TermStruct* val);
 	void			  SpawnStar(FString Name, double m, double rad, double o, double r);
 	void			  SpawnPlanet(FString Name, double m, double rad, double o, double r);
+	void			  SpawnMoon(FString Name, double m, double rad, double o, double r);
 	//void              ParseLayer(TerrainRegion* rgn, TermStruct* val);
 
 	//void              CreateBody(OrbitalBody& body);
@@ -163,6 +164,10 @@ protected:
 	USceneComponent* Root;
 
 	AOrbitalBody* Parent;
+	AOrbitalBody* StarParent;
+	AOrbitalBody* PlanetParent;
+	AOrbitalBody* MoonParent;
+	AStarSystem* SystemParent;
 };
 
 // +--------------------------------------------------------------------+
