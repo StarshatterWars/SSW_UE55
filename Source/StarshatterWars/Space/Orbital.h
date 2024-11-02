@@ -48,7 +48,7 @@ public:
 	// accessors:
 	const char* Name()         const { return name; }
 	EOrbitalType      Type()         const { return type; }
-	int               SubType()      const { return subtype; }
+	int               SubType()      const { return (int8) subtype; }
 
 	const char* Description()  const { return description; }
 	double            Mass()         const { return mass; }
@@ -71,18 +71,29 @@ public:
 
 	Text              name;
 	EOrbitalType      type;
-	int               subtype;
+	ESPECTRAL_CLASS   subtype;
 
 	Text              description;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            mass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            radius;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            rotation;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            theta;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            orbit;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            phase;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            period;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	double            velocity;
+	
 	Point             loc;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	bool              retro;
 	//Graphic*          rep;
 	//Bitmap            map_icon;

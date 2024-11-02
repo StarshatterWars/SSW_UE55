@@ -13,6 +13,7 @@
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 
+#include "Kismet/DataTableFunctionLibrary.h"
 #include "SSWGameInstance.generated.h"
 
 /**
@@ -307,28 +308,111 @@ enum EOrbitalType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FS_Galaxy {
+struct FS_Galaxy : public FTableRowBase {
 	GENERATED_BODY()
-	
-	TArray<FS_System> System;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString  Name;
+	UPROPERTY(BlueprintReadWrite)
+	int  Class;
+	UPROPERTY(BlueprintReadWrite)
+	FVector  Location;
+	UPROPERTY(BlueprintReadWrite)
+	int Iff;
+	UPROPERTY(BlueprintReadWrite)
+	EEMPIRE_NAME Empire;
 
 	FS_Galaxy() {
+		Name = "";
+		Class = (int) ESPECTRAL_CLASS::G;
+		Location = FVector::ZeroVector;
+		Iff = 0;
+		Empire = EEMPIRE_NAME::Terellian_Alliance;
 	}
 };
 
 USTRUCT(BlueprintType)
-struct FS_System : public FTableRowBase {
+struct FS_StarSystem : public FTableRowBase {
 	GENERATED_BODY()
 
+	UPROPERTY(BlueprintReadWrite)
 	FString System;
+	UPROPERTY(BlueprintReadWrite)
 	FVector Location;
+	UPROPERTY(BlueprintReadWrite)
 	ESPECTRAL_CLASS Class;
+	UPROPERTY(BlueprintReadWrite)
 	EEMPIRE_NAME Empire;
+	UPROPERTY(BlueprintReadWrite)
 	ESTAR_SIZE Size;
+	UPROPERTY(BlueprintReadWrite)
 	FString Name;
 
-	FS_System() {
+	FS_StarSystem() {
 	
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_Star : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	FString  Name;
+	UPROPERTY(BlueprintReadWrite)
+	FString  Image;
+	UPROPERTY(BlueprintReadWrite)
+	FString  Map;
+	UPROPERTY(BlueprintReadWrite)
+	double Light = 0.0;
+	UPROPERTY(BlueprintReadWrite)
+	double Radius = 0.0;
+	UPROPERTY(BlueprintReadWrite)
+	double Rot = 0.0;
+	UPROPERTY(BlueprintReadWrite)
+	double Mass = 0.0;
+	UPROPERTY(BlueprintReadWrite)
+	double Orbit = 0.0;
+	UPROPERTY(BlueprintReadWrite)
+	double Tscale = 1.0;
+	UPROPERTY(BlueprintReadWrite)
+	bool   Retro = false;
+	UPROPERTY(BlueprintReadWrite)
+	FColor  Color;
+	UPROPERTY(BlueprintReadWrite)
+	FColor  Back;
+
+	FS_Star() {
+		Name = "";
+		Image = "";
+		Map = "";
+		Light = 0.0;
+		Radius = 0.0;
+		Rot = 0.0;
+		Mass = 0.0;
+		Orbit = 0.0;
+		Tscale = 1.0;
+		Retro = false;
+		Color = FColor(0, 0, 0, 0);
+		Back = FColor(0, 0, 0, 0);
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_Planet : public FTableRowBase {
+	GENERATED_BODY()
+
+	FS_Planet() {
+
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_Moon : public FTableRowBase {
+	GENERATED_BODY()
+
+	FS_Moon() {
+
 	}
 };
 

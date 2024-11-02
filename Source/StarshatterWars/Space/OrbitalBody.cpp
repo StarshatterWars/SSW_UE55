@@ -48,5 +48,6 @@ void AOrbitalBody::Tick(float DeltaTime)
 
 void AOrbitalBody::Update()
 {
+
 }
 

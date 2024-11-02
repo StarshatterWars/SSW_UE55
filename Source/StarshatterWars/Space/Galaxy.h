@@ -12,6 +12,7 @@
 
 #include "CoreMinimal.h"
 #include "Universe.h"
+#include "../System/SSWGameInstance.h"
 #include "Galaxy.generated.h"
 
 /**
@@ -63,6 +64,8 @@ public:
 	AStarSystem* GetSystem(const char* name);
 	AStarSystem* FindSystemByRegion(const char* rgn_name);
 
+	EEMPIRE_NAME GetEmpireName(int32 emp);
+
 	static void         Close();
 	static AGalaxy*		GetInstance();
 
@@ -80,5 +83,7 @@ protected:
 
 	UPROPERTY()
 	USceneComponent* Root;
+
+	class UDataTable* GalaxyDataTable;
 };
 

@@ -478,6 +478,20 @@ Color AStarSystem::Ambient() const
 	return Color();
 }
 
+AOrbital* AStarSystem::FindOrbital(const char* oname)
+{
+	return nullptr;
+}
+
+AOrbitalRegion* AStarSystem::FindRegion(const char* regname)
+{
+	return nullptr;
+}
+
+void AStarSystem::SetActiveRegion(AOrbitalRegion* rgn)
+{
+}
+
 void AStarSystem::SetBaseTime(double t, bool absolute)
 {
 	if (absolute) {
@@ -599,28 +613,32 @@ void AStarSystem::ParseStar(TermStruct* val)
 	}
 
 	SpawnStar(FString(star_name), mass, Radius, orbit, rot);
-	/*star->map_name = map_name;
-	star->tex_name = img_name;
-	star->light = light;
-	star->tscale = tscale;
-	star->subtype = Star::G;
-	star->retro = retro;
-	star->color = color;
-	star->back = back;*/
+	
+	if(PlanetParent) {
+		PlanetParent->map_name = map_name;
+		PlanetParent->tex_name = img_name;
+		PlanetParent->light = light;
+		PlanetParent->tscale = tscale;
+		PlanetParent->subtype = ESPECTRAL_CLASS::G;
+		PlanetParent->retro = retro;
+		PlanetParent->color = color;
+		PlanetParent->back = back;
+
+		bodies.append(PlanetParent);
+	}
 
 	// map icon:
 	//if (*map_name) {
 	//	SSWInstance->loader->GetLoader()->LoadBitmap(map_name, star->map_icon, Bitmap::BMP_TRANSLUCENT, true);
 	//}
 
-	//bodies.append(star);
 	//primary_star = star;
 	//primary_planet = 0;
 	//primary_moon = 0;
 
-	//if (orbit > AStarSystem::radius)
-	//	AStarSystem::radius = orbit;
-	//}*/
+	if (orbit > AStarSystem::radius) {
+		AStarSystem::radius = orbit;
+	}
 }
 
 void AStarSystem::ParsePlanet(TermStruct* val)

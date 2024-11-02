@@ -14,6 +14,7 @@
 #include "../System/SSWGameInstance.h"
 #include "../Foundation/ParseUtil.h"
 #include "../Foundation/DataLoader.h"
+#include "Engine/DataTable.h"
 
 // Called when the game starts or when spawned
 void AGalaxy::BeginPlay()
@@ -44,6 +45,16 @@ AGalaxy::AGalaxy()
 {
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("StarSystem Scene Component"));
 	RootComponent = Root;
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_Galaxy.DT_Galaxy'"));
+
+	if (GalaxyDataTableObject.Succeeded())
+	{
+		GalaxyDataTable = GalaxyDataTableObject.Object;
+		GalaxyDataTable->EmptyTable();
+	}
+
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 AGalaxy::AGalaxy(const char* n)
@@ -210,6 +221,18 @@ AGalaxy::Load(const char* FileName)
 								}
 							}
 
+							// define our data table struct
+							FS_Galaxy NewGalaxyData;
+							NewGalaxyData.Name = FString(sys_name);
+							NewGalaxyData.Class = star_class;
+							NewGalaxyData.Iff = sys_iff;
+							NewGalaxyData.Location = fv;
+							NewGalaxyData.Empire = GetEmpireName(sys_iff);
+							FName RowName = FName(FString(sys_name));
+							
+							// call AddRow to insert the record
+							GalaxyDataTable->AddRow(RowName, NewGalaxyData);
+							
 							if (sys_name[0]) {
 
 								//SpawnSystem(FString(sys_name));
@@ -385,6 +408,35 @@ AGalaxy::FindSystemByRegion(const char* rgn_name)
 	}
 
 	return 0;
+}
+
+EEMPIRE_NAME
+AGalaxy::GetEmpireName(int32 emp)
+{
+	EEMPIRE_NAME empire_name;
+
+	switch (emp)
+	{
+	case 0:
+		empire_name = EEMPIRE_NAME::Terellian_Alliance;
+		break;
+	case 1:
+		empire_name = EEMPIRE_NAME::Marakan_Hegemony;
+		break;
+	case 2:
+		empire_name = EEMPIRE_NAME::Dantari_Separatists;
+		break;
+	case 3:
+		empire_name = EEMPIRE_NAME::Other;
+		break;
+	case 4:
+		empire_name = EEMPIRE_NAME::INDEPENDENT_SYSTEMS;
+		break;
+	default:
+		empire_name = EEMPIRE_NAME::Other;
+		break;
+	}
+	return empire_name;
 }
 
 
