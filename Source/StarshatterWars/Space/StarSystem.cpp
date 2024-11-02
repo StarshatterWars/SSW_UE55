@@ -61,13 +61,13 @@ void AStarSystem::ExecFrame()
 {
 	CalcStardate();
 
-	ListIter<OrbitalBody> star = bodies;
+	ListIter<AOrbitalBody> star = bodies;
 	while (++star)
 		star->Update();
 
-	ListIter<OrbitalRegion> region = regions;
-	while (++region)
-		region->Update();
+	//ListIter<AOrbitalRegion> region = regions;
+	//while (++region)
+	//	region->Update();
 
 	// update the graphic reps, relative to the active region:
 	/*if (instantiated && active_region) {
@@ -527,7 +527,7 @@ void AStarSystem::RestoreTrueSunColor()
 {
 }
 
-bool AStarSystem::HasLinkTo(StarSystem* s) const
+bool AStarSystem::HasLinkTo(AStarSystem* s) const
 {
 	return false;
 }
@@ -1160,6 +1160,7 @@ void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double
 		Star->SetActorLabel(FString(Name));
 		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
 		Star->InitializeStar(this, Name, EOrbitalType::STAR, m, rad, o, (r*3600), nullptr);
+		Parent = Star;
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Star"));
@@ -1178,10 +1179,12 @@ void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, doub
 
 	AOrbitalBody* Planet = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, Info);
 
-	Planet->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
-
 	if (Planet)
 	{
+		if (Parent) {
+			Planet->AttachToActor(Parent, FAttachmentTransformRules::KeepWorldTransform);
+		}
+
 		Planet->SetActorLabel(FString(Name));
 		UE_LOG(LogTemp, Log, TEXT("Spawned Planet '%s'"), *Name);
 		//Planet->InitializePlanet(this, Name, EOrbitalType::STAR, m, rad, o, (r * 3600), nullptr);

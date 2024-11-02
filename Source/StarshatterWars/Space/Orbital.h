@@ -65,8 +65,8 @@ public:
 	//const Bitmap&     GetMapIcon()   const { return map_icon;   }
 	//void              SetMapIcon(const Bitmap& img);
 
-	StarSystem* System()       const { return system; }
-	Orbital* Primary()      const { return primary; }
+	AStarSystem* System()       const { return system; }
+	AOrbital* Primary()      const { return primary; }
 	ListIter<AOrbitalRegion> Regions() { return regions; }
 
 	Text              name;
@@ -87,8 +87,8 @@ public:
 	//Graphic*          rep;
 	//Bitmap            map_icon;
 
-	StarSystem* system;
-	Orbital* primary;
+	AStarSystem* system;
+	AOrbital* primary;
 
 	List<AOrbitalRegion>   regions;
 };
