@@ -635,8 +635,7 @@ void AStarSystem::CalcStardate(double Sec)
 	
 	double sdate = Sec + base_time + epoch;
 
-	//StarDate = RealTimeSeconds;
-	//StarDate = sdate;
+	StarDate = sdate;
 	UE_LOG(LogTemp, Log, TEXT("Stardate: '%f'"), sdate);
 
 }
