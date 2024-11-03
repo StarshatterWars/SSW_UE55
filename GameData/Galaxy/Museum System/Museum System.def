@@ -42,6 +42,8 @@ planet:     {
 
 region:     {
    name:    Museum,
+   parent:  Mausoleum,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.55e8,

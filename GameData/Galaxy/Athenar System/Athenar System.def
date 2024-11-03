@@ -42,6 +42,8 @@ planet:     {
 
 region:     {
    name:    Athenar,
+   parent:  Athenar,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -74,6 +76,8 @@ planet:     {
 
 region:     {
    name:    Pallas,
+   parent:  Pallas,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   19e6,

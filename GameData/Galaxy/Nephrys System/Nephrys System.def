@@ -43,6 +43,8 @@ planet:     {
 
 region:     {
    name:    Nergal,
+   type:    Planet,
+   parent:  Nergal,
    radius:  480e3,
    grid:    20e3,
    orbit:   35e6,

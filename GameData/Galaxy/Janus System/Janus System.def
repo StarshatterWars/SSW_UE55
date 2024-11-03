@@ -42,6 +42,8 @@ planet: {
 
 region: {
    name:    Ilon,
+   parent:  Ilon,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   9.3e6,
@@ -62,6 +64,8 @@ planet: {
 
 region: {
    name:    Dante,
+   parent:  Dante,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -130,6 +134,8 @@ terrain: {
 
 region:     {
    name:    Janek,
+   parent:  Janek,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   17e6,
@@ -163,6 +169,8 @@ planet:     {
 
 region: {
    name:    Alystra,
+   parent:  Alystra,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.55e8,
@@ -194,6 +202,8 @@ moon: {
 
 region: {
    name:    Navara,
+   parent:  Navara,
+   type:    Moon,
    radius:  480e3,
    grid:    20e3,
    orbit:   20e6,

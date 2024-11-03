@@ -44,6 +44,8 @@ planet:       {
 
 region:     {
    name:    Silessia,
+   parent:  Silessia,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   19e6,
@@ -80,6 +82,8 @@ planet: {
 
 region: {
    name:    Prosenar,
+   parent:  Prosenar,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   55.53e6,
@@ -124,6 +128,8 @@ planet: {
 
 region: {
    name:    Vesta,
+   parent:  Vesta,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   65.3e6,
@@ -180,6 +186,8 @@ planet: {
 
 region: {
    name:    Nero,
+   parent:  Nero,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   15e6,

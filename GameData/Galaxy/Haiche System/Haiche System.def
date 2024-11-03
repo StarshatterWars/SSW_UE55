@@ -79,6 +79,8 @@ terrain: {
 
 region:     {
    name:    Haiche,
+   parent:  Haiche,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   19e6,
@@ -111,6 +113,8 @@ planet: {
 
 region: {
    name:    Cygnus,
+   parent:  Cygnus,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   100e6,
@@ -155,6 +159,8 @@ planet: {
 
 region: {
    name:    "Tal Amin",
+   parent:  "Tal Amin",
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   150e6,
@@ -185,6 +191,8 @@ moon: {
 
 region: {
    name:    Kala,
+   parent:  Kala,
+   type:    Moon,
    radius:  480e3,
    grid:    20e3,
    orbit:   11e6,

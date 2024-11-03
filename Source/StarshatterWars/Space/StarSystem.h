@@ -109,6 +109,8 @@ protected:
 	void			  SpawnStar(FString Name, double m, double rad, double o, double r);
 	void			  SpawnPlanet(FString Name, double m, double rad, double o, double r);
 	void			  SpawnMoon(FString Name, double m, double rad, double o, double r);
+
+	void			  SpawnRegion(FString Name);
 	//void              ParseLayer(TerrainRegion* rgn, TermStruct* val);
 
 	//void              CreateBody(OrbitalBody& body);
@@ -167,11 +169,13 @@ protected:
 	AOrbitalBody* StarParent;
 	AOrbitalBody* PlanetParent;
 	AOrbitalBody* MoonParent;
+	AOrbitalBody* RegionParent;
 	AStarSystem* SystemParent;
 
 	class UDataTable* StarsDataTable;
 	class UDataTable* PlanetsDataTable;
 	class UDataTable* MoonsDataTable;
+	class UDataTable* RegionsDataTable;
 };
 
 // +--------------------------------------------------------------------+

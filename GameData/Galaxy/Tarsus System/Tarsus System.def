@@ -30,6 +30,8 @@ star: {
 
 region: {
    name:    Sintar,
+   parent:  Tarset,
+   type:    Star,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.25e11,
@@ -51,6 +53,8 @@ planet: {
 
 region: {
    name:    Tarsus,
+   parent:  "Tarsus I",
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   17e6,
@@ -71,6 +75,8 @@ planet: {
 
 region: {
    name:    "Theramin",
+   parent:  "Tarsus II",
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   13e6,

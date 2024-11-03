@@ -52,15 +52,37 @@ AStarSystem::AStarSystem()
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Stars Data Table"));
 	}
 
-	static ConstructorHelpers::FObjectFinder<UDataTable> PlanetssDataTableObject(TEXT("DataTable'/Game/Game/DT_Planets.DT_Planets'"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> PlanetsDataTableObject(TEXT("DataTable'/Game/Game/DT_Planets.DT_Planets'"));
 
-	if (PlanetssDataTableObject.Succeeded())
+	if (PlanetsDataTableObject.Succeeded())
 	{
-		PlanetsDataTable = PlanetssDataTableObject.Object;
+		PlanetsDataTable = PlanetsDataTableObject.Object;
 		//StarsDataTable->EmptyTable();
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Planets Data Table"));
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> MoonsDataTableObject(TEXT("DataTable'/Game/Game/DT_Moons.DT_Moons'"));
+
+	if (MoonsDataTableObject.Succeeded())
+	{
+		MoonsDataTable = MoonsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Planets Data Table"));
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> RegionsDataTableObject(TEXT("DataTable'/Game/Game/DT_Regions.DT_Regions'"));
+
+	if (RegionsDataTableObject.Succeeded())
+	{
+		RegionsDataTable = RegionsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
 	}
 
 }
@@ -690,14 +712,14 @@ void AStarSystem::ParseStar(TermStruct* val)
 
 void AStarSystem::ParsePlanet(TermStruct* val)
 {
-	char   pln_name[NAMELEN];
-	char   img_name[NAMELEN];
-	char   map_name[NAMELEN];
-	char   hi_name[NAMELEN];
-	char   img_ring[NAMELEN];
-	char   glo_name[NAMELEN];
-	char   glo_hi_name[NAMELEN];
-	char   gloss_name[NAMELEN];
+	char   pln_name[NAMELEN] = "";
+	char   img_name[NAMELEN] = "";
+	char   map_name[NAMELEN] = "";
+	char   hi_name[NAMELEN] = "";
+	char   img_ring[NAMELEN] = "";
+	char   glo_name[NAMELEN] = "";
+	char   glo_hi_name[NAMELEN] = "";
+	char   gloss_name[NAMELEN] = "";
 
 	double Radius = 0.0;
 	double mass = 0.0;
@@ -710,7 +732,7 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 	bool   retro = false;
 	bool   lumin = false;
 	Color  atmos = Color::Black;
-	FColor AtmosColor;
+	FColor AtmosColor = FColor::Black;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -838,13 +860,13 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 
 void AStarSystem::ParseMoon(TermStruct* val)
 {
-	char   map_name[NAMELEN];
-	char   pln_name[NAMELEN];
-	char   img_name[NAMELEN];
-	char   hi_name[NAMELEN];
-	char   glo_name[NAMELEN];
-	char   glo_hi_name[NAMELEN];
-	char   gloss_name[NAMELEN];
+	char   map_name[NAMELEN] = "";
+	char   pln_name[NAMELEN] = "";
+	char   img_name[NAMELEN] = "";
+	char   hi_name[NAMELEN] = "";
+	char   glo_name[NAMELEN] = "";
+	char   glo_hi_name[NAMELEN] = "";
+	char   gloss_name[NAMELEN] = "";
 
 	double Radius = 0.0;
 	double mass = 0.0;
@@ -854,6 +876,7 @@ void AStarSystem::ParseMoon(TermStruct* val)
 	double tilt = 0.0;
 	bool   retro = false;
 	Color  atmos = Color::Black;
+	FColor AtmosColor = FColor::Black;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -906,22 +929,31 @@ void AStarSystem::ParseMoon(TermStruct* val)
 				atmos = Color((BYTE)a.x, (BYTE)a.y, (BYTE)a.z);
 			}
 		}
+		// define our data table struct
+		FS_Moon NewMoonData;
+		NewMoonData.Name = FString(pln_name);
+		NewMoonData.Map = FString(map_name);
+		NewMoonData.Image = FString(img_name);
+		NewMoonData.High = FString(hi_name);
+		NewMoonData.GlowHigh = FString(glo_hi_name);
+		NewMoonData.Gloss = FString(gloss_name);
+		NewMoonData.Radius = Radius;
+		NewMoonData.Mass = mass;
+		NewMoonData.Orbit = orbit;
+		NewMoonData.Rot = rot * 3600;
+		NewMoonData.Tscale = tscale;
+		NewMoonData.Tilt = tilt;
+		NewMoonData.Retro = retro;
+		NewMoonData.Atmos = AtmosColor;
+
+		FName RowName = FName(FString(pln_name));
+
+		// call AddRow to insert the record
+		MoonsDataTable->AddRow(RowName, NewMoonData);
 	}
 
 	SpawnMoon(FString(pln_name), mass, Radius, orbit, rot);
-	//OrbitalBody* moon = new(__FILE__, __LINE__) OrbitalBody(this, pln_name, Orbital::MOON, mass, radius, orbit, primary_planet);
-	//moon->map_name = map_name;
-	//moon->tex_name = img_name;
-	//moon->tex_high_res = hi_name;
-	//moon->tex_glow = glo_name;
-	//moon->tex_glow_high_res = glo_hi_name;
-	//moon->tex_gloss = gloss_name;
-	//moon->tscale = tscale;
-	//moon->retro = retro;
-	//moon->rotation = rot * 3600;
-	//moon->tilt = tilt;
-	//moon->atmosphere = atmos;
-
+	
 	//if (primary_planet)
 	//	primary_planet->satellites.append(moon);
 	//else {
@@ -940,14 +972,17 @@ void AStarSystem::ParseMoon(TermStruct* val)
 
 void AStarSystem::ParseRegion(TermStruct* val)
 {
-	char  rgn_name[NAMELEN];
-	char  lnk_name[NAMELEN];
+	char  rgn_name[NAMELEN] = "";
+	char  rgn_parent[NAMELEN] = "";
+	char  lnk_name[NAMELEN] = "";
+	char  parent_type[32];
 	double size = 1.0e6;
 	double orbit = 0.0;
 	double grid = 25000;
 	double inclination = 0.0;
 	int    asteroids = 0;
-
+	EOrbitalType parent_class = EOrbitalType::NOTHING;
+	TArray<FString> LinksName;
 	List<Text> links;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
@@ -956,10 +991,14 @@ void AStarSystem::ParseRegion(TermStruct* val)
 			if (pdef->name()->value() == "name")
 				GetDefText(rgn_name, pdef, filename);
 
+			else if (pdef->name()->value() == "parent")
+				GetDefText(rgn_parent, pdef, filename);
+
 			else if (pdef->name()->value() == "link") {
 				GetDefText(lnk_name, pdef, filename);
 				if (lnk_name[0]) {
 					links.append(new Text(lnk_name));
+					LinksName.Add(FString(lnk_name));
 				}
 			}
 
@@ -980,9 +1019,44 @@ void AStarSystem::ParseRegion(TermStruct* val)
 
 			else if (pdef->name()->value() == "asteroids")
 				GetDefNumber(asteroids, pdef, filename);
+			else if (pdef->name()->value() == "type") {
+				GetDefText(parent_type, pdef, filename);
+
+				switch (parent_type[0]) {
+				case 'S':
+					parent_class = EOrbitalType::STAR;
+					break;
+				case 'P':
+					parent_class = EOrbitalType::PLANET;
+					break;
+				case 'M':
+					parent_class = EOrbitalType::MOON;
+					break;
+				default:
+					parent_class = EOrbitalType::NOTHING;
+					break;
+				}
+			}
 		}
+
+		// define our data table struct
+		FS_Region NewRegionData;
+		NewRegionData.Name = FString(rgn_name);
+		NewRegionData.Parent = FString(rgn_name);
+		NewRegionData.Link = LinksName;	
+		NewRegionData.Size = size;
+		NewRegionData.Grid = grid;
+		NewRegionData.Inclination = inclination;
+		NewRegionData.Asteroids = asteroids;
+		NewRegionData.Type = parent_class;
+
+		FName RowName = FName(FString(rgn_name));
+
+		// call AddRow to insert the record
+		RegionsDataTable->AddRow(RowName, NewRegionData);
 	}
 
+	SpawnRegion(FString(rgn_name).Append(" Region"));
 	//Orbital* primary = primary_moon;
 	//if (!primary) primary = primary_planet;
 	//if (!primary) primary = primary_star;
@@ -1237,6 +1311,7 @@ void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double
 	if (Star)
 	{
 		PlanetParent = Star;
+		RegionParent = Star;
 		Star->AttachToActor(SystemParent, FAttachmentTransformRules::KeepWorldTransform);
 		Star->SetActorLabel(FString(Name));
 		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
@@ -1275,6 +1350,7 @@ void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, doub
 
 		Planet->InitializePlanet(this, Name, m, rad, o, (r * 3600), PlanetParent);
 		MoonParent = Planet;
+		RegionParent = Planet;
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Planet"));
@@ -1295,6 +1371,7 @@ void AStarSystem::SpawnMoon(FString Name, double m, double rad, double o, double
 
 	if (Moon)
 	{
+		RegionParent = Moon;
 		if (MoonParent) {
 			Moon->AttachToActor(MoonParent, FAttachmentTransformRules::KeepWorldTransform);
 		}
@@ -1307,5 +1384,32 @@ void AStarSystem::SpawnMoon(FString Name, double m, double rad, double o, double
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Moon"));
+	}
+}
+
+void AStarSystem::SpawnRegion(FString Name)
+{
+	UWorld* World = GetWorld();
+
+	FRotator rotate = FRotator::ZeroRotator;
+	FVector SystemLoc = FVector::ZeroVector;
+
+	FActorSpawnParameters Info;
+	Info.Name = FName(Name);
+
+	AOrbitalBody* Region = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, Info);
+
+	if (Region)
+	{
+		Region->AttachToActor(RegionParent, FAttachmentTransformRules::KeepWorldTransform);
+
+		Region->SetActorLabel(FString(Name));
+		UE_LOG(LogTemp, Log, TEXT("Spawned Region '%s'"), *Name);
+		Region->type = EOrbitalType::REGION;
+
+		//Moon->InitializeMoon(this, Name, m, rad, o, (r * 3600), MoonParent);
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Region"));
 	}
 }

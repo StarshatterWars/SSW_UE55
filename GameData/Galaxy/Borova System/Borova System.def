@@ -31,6 +31,8 @@ star:        {
 
 region: {
    name:    Tulkas,
+   parent:  Talantar,
+   type:    Star,
    radius:  480e3,
    grid:    20e3,
    orbit:   5.38e11,
@@ -55,6 +57,8 @@ planet:       {
 
 region:     {
    name:    Talistar,
+   parent:  Talistar,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   10.0e6,
@@ -74,6 +78,8 @@ planet:       {
 
 region:     {
    name:    Maraner,
+   parent:  Maraner,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   11.0e6,
@@ -133,6 +139,8 @@ terrain: {
 
 region:     {
    name:    Borova,
+   parent:  Borova,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18.5e6,
@@ -175,6 +183,8 @@ planet: {
 
 region: {
    name:    Danova,
+   parent:  Danova,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   49.53e6,
@@ -217,6 +227,8 @@ planet: {
 
 region: {
    name:    Zhalisal,
+   parent:  Zhalisal,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.2e8,

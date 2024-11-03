@@ -43,6 +43,8 @@ planet:     {
 
 region:     {
    name:    Senna,
+   parent:  Senna,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -112,6 +114,8 @@ terrain: {
 
 region:     {
    name:    Radix,
+   parent:  Radix,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -145,6 +149,8 @@ planet: {
 
 region: {
    name:    Cavenda,
+   parent:  Cavenda,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   55e6,

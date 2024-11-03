@@ -43,6 +43,8 @@ planet: {
 
 region: {
    name:    Rhofar,
+   parent:  Rhofar,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   16e6,
@@ -69,6 +71,8 @@ planet: {
 
 region: {
    name:    Garrison,
+   parent:  Garrison,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   20e6,
@@ -92,6 +96,8 @@ planet: {
 
 region: {
    name:    Korul,
+   parent:  Korul,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1e8,
@@ -114,6 +120,8 @@ planet: {
 
 region: {
    name:    Nerasil,
+   parent:  Nerasil,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   15e6,

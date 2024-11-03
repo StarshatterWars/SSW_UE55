@@ -166,3 +166,32 @@ bool USSWGameInstance::InitGame()
 {
 	return false;
 }
+
+FString
+USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
+{
+	FString empire_name;
+
+	switch (emp)
+	{
+	case EEMPIRE_NAME::Terellian_Alliance:
+		empire_name = "Terellian Alliance";
+		break;
+	case EEMPIRE_NAME::Marakan_Hegemony:
+		empire_name = "Marakan Hegemony";
+		break;
+	case EEMPIRE_NAME::Dantari_Separatists:
+		empire_name = "Dantari Separatists";
+		break;
+	case EEMPIRE_NAME::Other:
+		empire_name = "Other";
+		break;
+	case EEMPIRE_NAME::INDEPENDENT_SYSTEMS:
+		empire_name = "Independent Systems";
+		break;
+	default:
+		empire_name = "Other";
+		break;
+	}
+	return empire_name;
+}

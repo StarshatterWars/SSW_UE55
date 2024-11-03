@@ -208,7 +208,7 @@ AGalaxy::Load(const char* FileName)
 											star_class = (int8)ESPECTRAL_CLASS::M;
 											break;
 										case 'R':   
-											star_class = (int8)ESPECTRAL_CLASS::RED_GIANT;
+											star_class = (int8)				  ESPECTRAL_CLASS::RED_GIANT;
 											break;
 										case 'W':   
 											star_class = (int8)ESPECTRAL_CLASS::WHITE_DWARF;

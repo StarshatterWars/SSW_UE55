@@ -79,6 +79,8 @@ terrain: {
 
 region: {
    name:    Volante,
+   parent:  Volante,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -100,6 +102,8 @@ planet: {
 
 region: {
    name:    Narcissus,
+   parent:  Narcissus,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   55e6,
@@ -145,6 +149,8 @@ planet: {
 
 region: {
    name:    Path,
+   parent:  Path,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   15e6,

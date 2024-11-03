@@ -31,6 +31,8 @@ star:        {
 
 region: {
    name:    Solnas,
+   parent:  Koriset,
+   type:    Star,
    radius:  480e3,
    grid:    20e3,
    orbit:   4.18e11,
@@ -55,6 +57,8 @@ planet: {
 
 region:     {
    name:    Moneta,
+   parent:  Moneta,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   12e6,
@@ -102,6 +106,8 @@ moon:     {
 
 region:     {
    name:    Korius,
+   parent:  Korius,
+   type:    Moon,
    radius:  480e3,
    grid:    20e3,
    orbit:   15e6,
@@ -159,6 +165,8 @@ terrain: {
 
 region:     {
    name:    Adantar,
+   parent:  Adantar,
+   type:    Moon,
    radius:  480e3,
    grid:    20e3,
    orbit:   15e6,

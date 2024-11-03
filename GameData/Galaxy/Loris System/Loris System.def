@@ -42,6 +42,8 @@ planet:     {
 
 region:     {
    name:    Duna,
+   parent:  Duna,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   65e6,
@@ -89,6 +91,8 @@ planet:     {
 
 region:     {
    name:    Loris,
+   parent:  Loris,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   15e6,
@@ -137,6 +141,8 @@ planet:     {
 
 region:     {
    name:    Casalle,
+   parent:  Casalle,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   175e6,

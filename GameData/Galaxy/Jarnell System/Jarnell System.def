@@ -47,6 +47,8 @@ planet: {
 
 region: {
    name:    Adonis,
+   parent:  Adonis,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.15e8,
@@ -105,6 +107,8 @@ planet: {
 
 region: {
    name:    Jarnell,
+   parent:  Jarnell,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   19e6,
@@ -136,6 +140,8 @@ planet: {
 
 region: {
    name:    Caladan,
+   parent:  Caladan,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   12e6,
@@ -167,6 +173,9 @@ planet:     {
 
 region: {
    name:    Dawn,
+   parent:  Dawn,
+   parent:  Caladan,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.0e8,

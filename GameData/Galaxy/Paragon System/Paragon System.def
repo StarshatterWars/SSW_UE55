@@ -42,6 +42,8 @@ planet: {
 
 region: {
    name:    Dorrath,
+   parent:  Dorrath,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   16e6,
@@ -74,7 +76,9 @@ planet:     {
 }
 
 region:     {
-   name:    Paragoni City,
+   name:    Paragon,
+   parent:  Paragon,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   20e6,
@@ -113,6 +117,8 @@ planet: {
 
 region: {
    name:    Bryn,
+   parent:  "Bryn Mawr",
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   12.0e6,
@@ -136,6 +142,8 @@ planet:     {
 
 region:     {
    name:    Atlan,
+   parent:  Atlan,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.15e8,
@@ -145,7 +153,7 @@ region:     {
 }
 
 moon: {
-   name:    Synad
+   name:    Aklan,
    map:     "Moons/rock_map.pcx"
    image:   "Moons/rock_lo.pcx",
    high_res:"Moons/rock_hi.pcx",
@@ -156,7 +164,7 @@ moon: {
 }
 
 moon: {
-   name:    Olan,
+   name:    Azlan,
    map:     "Moons/lunar_map.pcx"
    image:   "Moons/lunar_lo.pcx",
    high_res:"Moons/lunar_hi.pcx",

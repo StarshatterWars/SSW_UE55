@@ -357,29 +357,29 @@ USTRUCT(BlueprintType)
 struct FS_Star : public FTableRowBase {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString  Name;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString  Image;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString  Map;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Light = 0.0;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Radius = 0.0;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot = 0.0;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Mass = 0.0;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit = 0.0;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Tscale = 1.0;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool   Retro = false;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Color;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Back;
 
 	FS_Star() {
@@ -402,43 +402,43 @@ USTRUCT(BlueprintType)
 struct FS_Planet : public FTableRowBase {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Image;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Map;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString High;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Rings;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Glow;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString GlowHigh;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Gloss;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Radius;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Mass;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Minrad;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Maxrad;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Tscale;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Tilt;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool   Retro;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool   Lumin;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Atmos;
 	FS_Planet() {
 		Name = "";
@@ -468,8 +468,86 @@ USTRUCT(BlueprintType)
 struct FS_Moon : public FTableRowBase {
 	GENERATED_BODY()
 
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Image;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Map;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString High;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString GlowHigh;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Gloss;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Radius;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Mass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Rot;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tscale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tilt;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool   Retro;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor  Atmos;
+	
 	FS_Moon() {
+		Name = "";
+		Image = "";
+		Map = "";
+		High = "";
+		GlowHigh = "";
+		Gloss = "";
 
+		Radius = 0.0;
+		Mass = 0.0;
+		Orbit = 0.0;
+		Rot = 0.0;
+		Tscale = 1.0;
+		Tilt = 0.0;
+		Retro = false;
+		Atmos = FColor::Black;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_Region : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FString> Link;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Size;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Grid;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Inclination;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Asteroids;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Parent;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TEnumAsByte<EOrbitalType> Type;
+	
+	FS_Region() {
+		Name = "";
+		Size = 1.0e6;
+		Orbit = 0.0;
+		Grid = 25000;
+		Inclination = 0;
+		Asteroids = 0;
+		Parent = "",
+		Type = EOrbitalType::NOTHING;
 	}
 };
 
@@ -519,6 +597,8 @@ public:
 	class UDataTable* StarsDataTable;
 	class UDataTable* PlanetsDataTable;
 	class UDataTable* MoonsDataTable;
+
+	FString GetEmpireNameFromType(EEMPIRE_NAME emp);
 
 protected:
 	virtual void Init() override;

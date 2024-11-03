@@ -41,6 +41,8 @@ planet: {
 
 region: {
    name:    Aram,
+   parent:  Aram,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   19e6,

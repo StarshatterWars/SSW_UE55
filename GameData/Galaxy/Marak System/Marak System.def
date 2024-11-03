@@ -30,6 +30,7 @@ star:        {
 
 region: {
    name:    Xanthe,
+   parent:  Marakanis,
    radius:  480e3,
    grid:    20e3,
    orbit:   4.38e11,
@@ -52,6 +53,8 @@ planet:     {
 
 region:     {
    name:    Marak,
+   parent:  Marak,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   21e6,

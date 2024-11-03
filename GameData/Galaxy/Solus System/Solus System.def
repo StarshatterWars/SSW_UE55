@@ -44,6 +44,8 @@ planet: {
 
 region: {
    name:    Meridian
+   parent:  Meridian,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   9.5e6,
@@ -104,6 +106,8 @@ terrain: {
 
 region: {
    name:    Solus,
+   parent:  Solus,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -123,6 +127,8 @@ moon: {
 
 region: {
    name:    Kalon
+   parent:  Kalon,
+   type:    Moon,
    radius:  480e3,
    grid:    20e3,
    orbit:   7.8e6,
@@ -153,6 +159,8 @@ planet: {
 
 region: {
    name:    Jalah,
+   parent:  Jalah,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   55.8e6,
@@ -176,6 +184,8 @@ planet: {
 
 region: {
    name:    Trellis,
+   parent:  Trellis,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.2e8,

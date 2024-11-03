@@ -42,6 +42,9 @@ planet:     {
 
 region:     {
    name:    Ilya,
+   parent:  Ilya,
+   parent:  Caladan,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -101,6 +104,8 @@ terrain: {
 
 region:     {
    name:    Kolchev,
+   parent:  Kolchev,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   21e6,
@@ -145,6 +150,8 @@ planet: {
 
 region: {
    name:    Anatoly,
+   parent:  Anatoly,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   79.53e6,
@@ -167,6 +174,8 @@ planet: {
 
 region: {
    name:    Volova,
+   parent:  Volova,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.2e8,

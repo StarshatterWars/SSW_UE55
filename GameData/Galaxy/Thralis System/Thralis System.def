@@ -30,6 +30,8 @@ star:        {
 
 region: {
    name:    Sparta,
+   parent:  Apollus,
+   type:    Star,
    radius:  480e3,
    grid:    20e3,
    orbit:   5.12e11,
@@ -52,6 +54,8 @@ planet: {
 
 region: {
    name:    Pollux,
+   parent:  Pollux,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   17.5e6,
@@ -83,6 +87,8 @@ planet:     {
 
 region:     {
    name:    Thrale,
+   parent:  Thrale,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   22e6,
@@ -104,6 +110,8 @@ planet: {
 
 region: {
    name:    Hera,
+   parent:  Hera,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   103.53e6,
@@ -127,6 +135,8 @@ planet: {
 
 region: {
    name:    Zeus,
+   parent:  Zeus,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   1.2e8,

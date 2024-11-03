@@ -30,6 +30,8 @@ star: {
 
 region: {
    name:    Lornas,
+   parent:  Renset,
+   type:    Star,
    radius:  480e3,
    grid:    20e3,
    orbit:   4.78e11,
@@ -56,6 +58,8 @@ planet: {
 
 region: {
    name:    Garana,
+   parent:  Garana,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   13.9e6,
@@ -76,6 +80,8 @@ planet: {
 
 region: {
    name:    Rhomindal,
+   parent:  Rhomindal,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   22.0e6,
@@ -98,6 +104,8 @@ planet: {
 
 region: {
    name:    Renser,
+   parent:  Renser,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
@@ -118,6 +126,8 @@ planet: {
 
 region: {
    name:    Marisol,
+   parent:  Marisol,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   0.75e8,
@@ -175,6 +185,8 @@ planet: {
 
 region: {
    name:    Khaital,
+   parent:  Khaital,
+   type:    Planet,
    radius:  480e3,
    grid:    20e3,
    orbit:   18e6,
