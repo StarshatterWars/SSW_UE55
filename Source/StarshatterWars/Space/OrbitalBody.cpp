@@ -48,6 +48,29 @@ void AOrbitalBody::Tick(float DeltaTime)
 
 void AOrbitalBody::Update()
 {
+	Super::Update();
 
+	theta = 0;
+
+	if (rotation > 0)
+		theta = -2 * PI * AStarSystem::GetStardate() / rotation;
+
+	ListIter<AOrbitalBody> body = satellites;
+	while (++body)
+		body->Update();
+
+	/*if (rep && theta != 0) {
+		Matrix m;
+		m.Pitch(tilt);
+		m.Roll(tilt / 2);
+		m.Yaw(theta);
+		rep->SetOrientation(m);
+	}
+
+	if (light_rep) {
+		Point bodyloc = loc;
+		bodyloc = bodyloc.OtherHand();
+		light_rep->MoveTo(bodyloc);
+	}*/
 }
 

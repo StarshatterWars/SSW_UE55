@@ -4,6 +4,7 @@
 #include "StarSystem.h"
 #include "Galaxy.h"
 #include "OrbitalBody.h"
+#include "OrbitalRegion.h"
 //#include "Sky.h"
 //#include "Starshatter.h"
 //#include "TerrainRegion.h"
@@ -11,6 +12,7 @@
 //#include "Weather.h"
 #include "Star.h"
 #include "../System/Game.h"
+#include "Engine/World.h"
 //#include "Sound.h"
 //#include "Solid.h"
 //#include "Light.h"
@@ -18,10 +20,12 @@
 #include "../Foundation/DataLoader.h"
 #include "../System/SSWGameInstance.h"
 //#include "Scene.h"
+#include "GameTime.h"
 #include "../Foundation/ParseUtil.h"
 
 const double epoch = 0.5e9;
 double AStarSystem::StarDate = 0;
+double AStarSystem::RealTimeSeconds = 0;
 static const double GRAV = 6.673e-11;
 static const int    NAMELEN = 64;
 
@@ -85,6 +89,8 @@ AStarSystem::AStarSystem()
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
 	}
 
+
+
 }
 
 // Called when the game starts or when spawned
@@ -103,15 +109,17 @@ void AStarSystem::Tick(float DeltaTime)
 
 void AStarSystem::ExecFrame()
 {
-	CalcStardate();
+	UWorld* World = GetWorld();
+	RealTimeSeconds = UGameplayStatics::GetTimeSeconds(World);
+	CalcStardate(RealTimeSeconds);
 
 	ListIter<AOrbitalBody> star = bodies;
 	while (++star)
 		star->Update();
 
-	//ListIter<AOrbitalRegion> region = regions;
-	//while (++region)
-	//	region->Update();
+	ListIter<AOrbitalRegion> region = regions;
+	while (++region)
+		region->Update();
 
 	// update the graphic reps, relative to the active region:
 	/*if (instantiated && active_region) {
@@ -176,20 +184,20 @@ void AStarSystem::ExecFrame()
 		}
 		else {
 			Game::SetScreenColor(Color::Black);
-		}
+		}*/
 
 		double star_alt = 0;
 
-		ListIter<OrbitalBody> star_iter = bodies;
+		ListIter<AOrbitalBody> star_iter = bodies;
 		while (++star_iter) {
-			OrbitalBody* star = star_iter.value();
+			AOrbitalBody* Star = star_iter.value();
 
 			if (active_region->Inclination() != 0) {
-				double distance = (active_region->Location() - star->Location()).length();
+				double distance = (active_region->Location() - Star->Location()).length();
 				star_alt = sin(active_region->Inclination()) * distance;
 			}
 
-			if (terrain) {
+			/*if (terrain) {
 				Point sloc = TerrainTransform(star->Location());
 
 				if (star->rep) {
@@ -239,9 +247,9 @@ void AStarSystem::ExecFrame()
 				}
 			}
 
-			ListIter<OrbitalBody> planet_iter = star->Satellites();
+			ListIter<AOrbitalBody> planet_iter = star->Satellites();
 			while (++planet_iter) {
-				OrbitalBody* planet = planet_iter.value();
+				AOrbitalBody* planet = planet_iter.value();
 
 				if (planet->rep) {
 					PlanetRep* pr = (PlanetRep*)planet->rep;
@@ -266,7 +274,7 @@ void AStarSystem::ExecFrame()
 					}
 				}
 
-				ListIter<OrbitalBody> moon_iter = planet->Satellites();
+				ListIter<AOrbitalBody> moon_iter = planet->Satellites();
 				while (++moon_iter) {
 					OrbitalBody* moon = moon_iter.value();
 
@@ -294,13 +302,13 @@ void AStarSystem::ExecFrame()
 					}
 				}
 			}
-		}
-	}*/
+		}*/
+	}
 }
 
 void AStarSystem::Load()
 {
-	CalcStardate();
+	CalcStardate(RealTimeSeconds);
 	//active_region = 0;
 	BYTE* block = 0;
 
@@ -524,12 +532,67 @@ Color AStarSystem::Ambient() const
 
 AOrbital* AStarSystem::FindOrbital(const char* oname)
 {
-	return nullptr;
+	if (!name || !name[0])
+		return 0;
+
+	ListIter<AOrbitalBody> star = bodies;
+	while (++star) {
+		if (!_stricmp(star->Name(), name))
+			return star.value();
+
+		ListIter<AOrbitalRegion> star_rgn = star->Regions();
+		while (++star_rgn) {
+			if (!_stricmp(star_rgn->Name(), name))
+				return star_rgn.value();
+		}
+
+		ListIter<AOrbitalBody> planet = star->Satellites();
+		while (++planet) {
+			if (!_stricmp(planet->Name(), name))
+				return planet.value();
+
+			ListIter<AOrbitalRegion> planet_rgn = planet->Regions();
+			while (++planet_rgn) {
+				if (!_stricmp(planet_rgn->Name(), name))
+					return planet_rgn.value();
+			}
+
+			ListIter<AOrbitalBody> moon = planet->Satellites();
+			while (++moon) {
+				if (!_stricmp(moon->Name(), name))
+					return moon.value();
+
+				ListIter<AOrbitalRegion> moon_rgn = moon->Regions();
+				while (++moon_rgn) {
+					if (!_stricmp(moon_rgn->Name(), name))
+						return moon_rgn.value();
+				}
+			}
+		}
+	}
+
+	ListIter<AOrbitalRegion> region = regions;
+	while (++region) {
+		if (!_stricmp(region->Name(), name))
+			return region.value();
+	}
+
+	return 0;
 }
 
 AOrbitalRegion* AStarSystem::FindRegion(const char* regname)
 {
-	return nullptr;
+
+	if (!name || !name[0])
+		return 0;
+
+	ListIter<AOrbitalRegion> region = all_regions;
+	while (++region) {
+		if (!_stricmp(region->Name(), name))
+			return region.value();
+	}
+
+	return 0;
 }
 
 void AStarSystem::SetActiveRegion(AOrbitalRegion* rgn)
@@ -540,13 +603,13 @@ void AStarSystem::SetBaseTime(double t, bool absolute)
 {
 	if (absolute) {
 		base_time = t;
-		CalcStardate();
+		CalcStardate(AStarSystem::RealTimeSeconds);
 	}
 
 	else if (t > 0) {
 		if (t > epoch) t -= epoch;
 		base_time = t;
-		CalcStardate();
+		CalcStardate(RealTimeSeconds);
 	}
 }
 
@@ -555,8 +618,9 @@ double AStarSystem::GetBaseTime()
 	return base_time;
 }
 
-void AStarSystem::CalcStardate()
+void AStarSystem::CalcStardate(double Sec)
 {
+	
 	if (base_time < 1) {
 		time_t clock_seconds;
 		time(&clock_seconds);
@@ -567,10 +631,14 @@ void AStarSystem::CalcStardate()
 			base_time += epoch;
 	}
 
-	double gtime = (double)Game::GameTime() / 1000.0;
-	double sdate = gtime + base_time + epoch;
+	double gtime = (double)Game::GameTime();
+	
+	double sdate = Sec + base_time + epoch;
 
-	StarDate = sdate;
+	//StarDate = RealTimeSeconds;
+	//StarDate = sdate;
+	UE_LOG(LogTemp, Log, TEXT("Stardate: '%f'"), sdate);
+
 }
 
 void AStarSystem::SetSunlight(Color color, double brightness)
@@ -587,6 +655,19 @@ void AStarSystem::RestoreTrueSunColor()
 
 bool AStarSystem::HasLinkTo(AStarSystem* s) const
 {
+	ListIter<AOrbitalRegion> iter = ((AStarSystem*)this)->all_regions;
+	while (++iter) {
+		AOrbitalRegion* rgn = iter.value();
+
+		ListIter<Text> lnk_iter = rgn->Links();
+		while (++lnk_iter) {
+			Text* t = lnk_iter.value();
+
+			if (s->FindRegion(*t))
+				return true;
+		}
+	}
+
 	return false;
 }
 
@@ -1397,7 +1478,7 @@ void AStarSystem::SpawnRegion(FString Name)
 	FActorSpawnParameters Info;
 	Info.Name = FName(Name);
 
-	AOrbitalBody* Region = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, Info);
+	AOrbitalRegion* Region = GetWorld()->SpawnActor<AOrbitalRegion>(AOrbitalRegion::StaticClass(), SystemLoc, rotate, Info);
 
 	if (Region)
 	{

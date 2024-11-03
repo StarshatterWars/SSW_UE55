@@ -23,15 +23,48 @@ void AOrbital::BeginPlay()
 void AOrbital::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	Update();
 
 }
 
 void AOrbital::Update()
 {
+	if (system && primary && orbit > 0) {
+		double grade = (retro) ? -1 : 1;
+
+		// orbits are counter clockwise:
+		phase = -2 * PI * grade * AStarSystem::GetStardate() / period;
+
+		loc = primary->Location() + Point((double)(orbit * cos(phase)),
+			(double)(orbit * sin(phase)),
+			0);
+	}
+
+	ListIter<AOrbitalRegion> region = regions;
+	//while (++region)
+	//	region->Update();
+
+	//if (rep)
+	//	rep->MoveTo(loc.OtherHand());
 }
 
 Point AOrbital::PredictLocation(double delta_t)
 {
-	return Point();
+	Point predicted_loc = Location();
+
+	if (system && primary && orbit > 0) {
+		predicted_loc = primary->PredictLocation(delta_t);
+
+		double grade = (retro) ? -1 : 1;
+
+		// orbits are(?) counter clockwise:
+		double predicted_phase = (double)(-2 * PI * grade * (AStarSystem::GetStardate() + delta_t) / period);
+
+		predicted_loc += Point((double)(orbit * cos(predicted_phase)),
+			(double)(orbit * sin(predicted_phase)),
+			0);
+	}
+
+	return predicted_loc;
 }
 

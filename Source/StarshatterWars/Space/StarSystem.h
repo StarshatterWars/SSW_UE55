@@ -16,6 +16,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "StarSystem.generated.h"
 
@@ -85,10 +86,11 @@ public:
 	static void SetBaseTime(double t, bool absolute = false);
 	UFUNCTION()
 	static double GetBaseTime();
-	static double Stardate() { return StarDate; }
+	UFUNCTION()
+	static double GetStardate() { return StarDate; }
 
 	UFUNCTION()
-	static void CalcStardate();
+	static void CalcStardate(double Sec);
 	UFUNCTION()
 	double Radius()       const { return radius; }
 
@@ -141,6 +143,7 @@ protected:
 	Color             sun_color;
 	double            sun_brightness;
 	double            sun_scale;
+	static double	  RealTimeSeconds;
 	
 	//List<Light>       sun_lights;
 	//List<Light>       back_lights;
