@@ -118,11 +118,8 @@ void List<T>::resize(int newsize)
     if (newsize > extent) {
         extent = 16 * (newsize / 16 + 1);
 
-#ifdef MEM_DEBUG
-        T** v = new(__FILE__, __LINE__) PTR[extent];
-#else
-        T** v = new PTR[extent];
-#endif
+     T** v = new PTR[extent];
+
         int i;
         for (i = 0; i < items; i++)
             v[i] = array[i];
