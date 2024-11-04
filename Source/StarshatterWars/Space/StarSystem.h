@@ -179,6 +179,10 @@ protected:
 	class UDataTable* PlanetsDataTable;
 	class UDataTable* MoonsDataTable;
 	class UDataTable* RegionsDataTable;
+
+	TSubclassOf<AOrbitalBody> CentralStar;
+	TSubclassOf<AOrbitalBody> PlanetObject;
+	TSubclassOf<AOrbitalBody> MoonObject;
 };
 
 // +--------------------------------------------------------------------+

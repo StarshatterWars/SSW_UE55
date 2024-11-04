@@ -89,8 +89,23 @@ AStarSystem::AStarSystem()
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
 	}
 
+	static ConstructorHelpers::FClassFinder<AOrbitalBody> StarObject(TEXT("/Script/Engine.Blueprint'/Game/Game/BP_Star.BP_Star_C'"));
+	if (StarObject.Succeeded())
+	{
+		CentralStar = StarObject.Class;
+	}
 
+	static ConstructorHelpers::FClassFinder<AOrbitalBody> PlanetObj(TEXT("/Script/Engine.Blueprint'/Game/Game/BP_Planet.BP_Planet_C'"));
+	if (PlanetObj.Succeeded())
+	{
+		PlanetObject = PlanetObj.Class;
+	}
 
+	static ConstructorHelpers::FClassFinder<AOrbitalBody> MoonObj(TEXT("/Script/Engine.Blueprint'/Game/Game/BP_Moon.BP_Moon_C'"));
+	if (MoonObj.Succeeded())
+	{
+		MoonObject = MoonObj.Class;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -1386,7 +1401,8 @@ void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double
 	FActorSpawnParameters StarInfo;
 	StarInfo.Name = FName(Name);
 
-	AOrbitalBody* Star = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, StarInfo);
+	AOrbitalBody* Star = GetWorld()->SpawnActor<AOrbitalBody>(CentralStar, SystemLoc, rotate, StarInfo);
+
 
 	if (Star)
 	{
@@ -1416,7 +1432,7 @@ void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, doub
 	FActorSpawnParameters Info;
 	Info.Name = FName(Name);
 
-	AOrbitalBody* Planet = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, Info);
+	AOrbitalBody* Planet = GetWorld()->SpawnActor<AOrbitalBody>(PlanetObject, SystemLoc, rotate, Info);
 
 	if (Planet)
 	{
@@ -1447,7 +1463,7 @@ void AStarSystem::SpawnMoon(FString Name, double m, double rad, double o, double
 	FActorSpawnParameters Info;
 	Info.Name = FName(Name);
 
-	AOrbitalBody* Moon = GetWorld()->SpawnActor<AOrbitalBody>(AOrbitalBody::StaticClass(), SystemLoc, rotate, Info);
+	AOrbitalBody* Moon = GetWorld()->SpawnActor<AOrbitalBody>(MoonObject, SystemLoc, rotate, Info);
 
 	if (Moon)
 	{
