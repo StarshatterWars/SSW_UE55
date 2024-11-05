@@ -57,7 +57,7 @@ public:
 	// operations:
 	virtual void      Load();
 	void			  Load(const char* FileName);
-	virtual void      Initialize(const char* Name);
+	virtual void      Initialize(const char* Name, FS_Galaxy Data);
 	virtual void      Create();
 	virtual void      Destroy();
 
@@ -102,6 +102,23 @@ public:
 
 	static double StarDate;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString           SystemName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int               affiliation;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int               seq;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool              instantiated;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int               sky_stars;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int               sky_dust;
+
+	FS_StarSystem StarSystemData;
+
 protected:
 	void              ParseStar(TermStruct* val);
 	void              ParsePlanet(TermStruct* val);
@@ -121,19 +138,17 @@ protected:
 	// +--------------------------------------------------------------------+
 
 	char              filename[64];
+	
 	Text              name;
 	Text              govt;
 	Text              description;
+	
 	FString           DataPath;
-	int               affiliation;
-	int               seq;
-	Point             loc;
+
 	
+
 	double            radius;
-	bool              instantiated;
-	
-	int               sky_stars;
-	int               sky_dust;
+	Point             loc;
 	Text              sky_poly_stars;
 	Text              sky_nebula;
 	Text              sky_haze;
@@ -175,6 +190,7 @@ protected:
 	AOrbitalBody* RegionParent;
 	AStarSystem* SystemParent;
 
+	class UDataTable* StarSystemDataTable;
 	class UDataTable* StarsDataTable;
 	class UDataTable* PlanetsDataTable;
 	class UDataTable* MoonsDataTable;

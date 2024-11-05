@@ -85,5 +85,11 @@ protected:
 	USceneComponent* Root;
 
 	class UDataTable* GalaxyDataTable;
+
+	TSubclassOf<AStarSystem> StarSystemObject;
+
+	FS_Galaxy GalaxyData;
+
+
 };
 

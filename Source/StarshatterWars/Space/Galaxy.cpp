@@ -54,6 +54,12 @@ AGalaxy::AGalaxy()
 		GalaxyDataTable->EmptyTable();
 	}
 
+	static ConstructorHelpers::FClassFinder<AStarSystem> StarSystemObj(TEXT("/Script/Engine.Blueprint'/Game/Game/BP_StarSystem.BP_StarSystem_C'"));
+	if (StarSystemObj.Succeeded())
+	{
+		StarSystemObject = StarSystemObj.Class;
+	}
+
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -233,11 +239,11 @@ AGalaxy::Load(const char* FileName)
 							// call AddRow to insert the record
 							GalaxyDataTable->AddRow(RowName, NewGalaxyData);
 							
+							GalaxyData = NewGalaxyData;
+
 							if (sys_name[0]) {
 
-								//SpawnSystem(FString(sys_name));
-
-								SpawnSystem(FString(sys_name), fv, sys_iff, star_class);
+								SpawnSystem(FString(sys_name));
 
 								//star_system->Load();
 								//systems.append(star_system);
@@ -330,15 +336,17 @@ void AGalaxy::SpawnSystem(FString sysName)
 	FVector location = FVector::ZeroVector;
 	FRotator rotate = FRotator::ZeroRotator;
 
+	FTransform ReturnTransform(rotate, location, FVector(1, 1, 1));
 	FActorSpawnParameters SpawnInfo;
 
-	AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), location, rotate, SpawnInfo);
+	AStarSystem* System = GetWorld()->SpawnActorDeferred<AStarSystem>(StarSystemObject, ReturnTransform);
 
 
 	if (System)
 	{
 		UE_LOG(LogTemp, Log, TEXT("System Spawned"));
-		System->Initialize(TCHAR_TO_ANSI(*sysName));
+		System->Initialize(TCHAR_TO_ANSI(*sysName), GalaxyData);
+		System->FinishSpawning(ReturnTransform, true);
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));
@@ -351,21 +359,21 @@ void AGalaxy::SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starC
 {
 	UWorld* World = GetWorld();
 
+	FVector location = FVector::ZeroVector;
 	FRotator rotate = FRotator::ZeroRotator;
 
-	FVector SystemLoc = sysLoc * 1e7;
-
+	FTransform ReturnTransform(rotate, location, FVector(1, 1, 1));
 	FActorSpawnParameters SpawnInfo;
 
-	SpawnInfo.Name = FName(sysName);
-
-	AStarSystem* System = GetWorld()->SpawnActor<AStarSystem>(AStarSystem::StaticClass(), SystemLoc, rotate, SpawnInfo);
-	
-	System->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+	AStarSystem* System = GetWorld()->SpawnActorDeferred<AStarSystem>(StarSystemObject, ReturnTransform);
 		
 	if (System)
 	{
-		System->Initialize(TCHAR_TO_ANSI(*sysName));	
+		System->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform); System->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+		UE_LOG(LogTemp, Log, TEXT("System Spawned: '%s'"), *sysName);
+		System->SystemName = sysName;
+		System->Initialize(TCHAR_TO_ANSI(*sysName), GalaxyData);
+		System->FinishSpawning(ReturnTransform, true);
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn System"));

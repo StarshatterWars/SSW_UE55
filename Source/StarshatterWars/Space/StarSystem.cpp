@@ -45,6 +45,17 @@ AStarSystem::AStarSystem()
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("StarSystem Scene Component"));
 	RootComponent = Root;
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_Galaxy.DT_Galaxy'"));
+
+	if (StarSystemDataTableObject.Succeeded())
+	{
+		StarSystemDataTable = StarSystemDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Starsystem Data Table"));
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
 	if (StarsDataTableObject.Succeeded())
@@ -112,7 +123,15 @@ AStarSystem::AStarSystem()
 void AStarSystem::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	FName RowName = this->GetClass()->GetFName();
+
+	UE_LOG(LogTemp, Log, TEXT("Star system to process: '%s'"), *RowName.ToString());
+
+	//static const FString ContextString(TEXT("Star System Data"));
+	//FS_StarSystem* StarSystemData = StarSystemDataTable->FindRow<FS_StarSystem>((this->GetClass()->GetFName()), ContextString, true);
+
+	//FString SystemName = ContextString;
+	//UE_LOG(LogTemp, Log, TEXT("Star system '%s'"), *FString(SystemName));
 }
 
 // Called every frame
@@ -522,10 +541,12 @@ void AStarSystem::Load(const char* FileName)
 	//this->SetActorLabel(FString(name).Append(" System"));
 }
 
-void AStarSystem::Initialize(const char* Name)
+void AStarSystem::Initialize(const char* Name, FS_Galaxy Data)
 {
 	name = Name;
-	UE_LOG(LogTemp, Log, TEXT("StarSystem Spawned: '%s'"), *FString(Name));
+	SystemName = Data.Name;
+
+	UE_LOG(LogTemp, Log, TEXT("StarSystem Initialized: '%s'"), *SystemName);
 	this->SetActorLabel(FString(Name));
 	Load();
 }

@@ -311,15 +311,15 @@ USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FString  Name;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	int  Class;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FVector  Location;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int Iff;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	EEMPIRE_NAME Empire;
 
 	FS_Galaxy() {
