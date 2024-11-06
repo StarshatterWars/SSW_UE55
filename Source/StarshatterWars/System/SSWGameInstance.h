@@ -581,6 +581,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void SpawnGalaxy();
 
+	void GetCampaignData();
+
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 

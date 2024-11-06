@@ -115,6 +115,11 @@ void USSWGameInstance::SpawnGalaxy()
 	//}		
 }
 
+void USSWGameInstance::GetCampaignData()
+{
+
+}
+
 void USSWGameInstance::StartGame()
 {
 	//SpawnUniverse();

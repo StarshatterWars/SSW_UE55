@@ -545,6 +545,10 @@ void AStarSystem::Initialize(const char* Name, FS_Galaxy Data)
 {
 	name = Name;
 	SystemName = Data.Name;
+	//ewGalaxyData.Class = Data.Class;
+	//NewGalaxyData.Iff = Data.Iff;
+	//NewGalaxyData.Location = Data.Location;
+	//NewGalaxyData.Empire = Data.Empire;
 
 	UE_LOG(LogTemp, Log, TEXT("StarSystem Initialized: '%s'"), *SystemName);
 	this->SetActorLabel(FString(Name));

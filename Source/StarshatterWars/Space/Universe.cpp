@@ -23,7 +23,7 @@ AUniverse::AUniverse()
 void AUniverse::BeginPlay()
 {
 	Super::BeginPlay();
-	//SpawnGalaxy();
+	SpawnGalaxy();
 }
 
 // Called every frame

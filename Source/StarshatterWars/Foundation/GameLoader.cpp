@@ -36,3 +36,9 @@ void AGameLoader::LoadGalaxy()
 	SSWInstance->SpawnGalaxy();
 }
 
+void AGameLoader::GetCampaignData()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->GetCampaignData();
+}
+
