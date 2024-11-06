@@ -551,6 +551,9 @@ struct FS_Region : public FTableRowBase {
 	}
 };
 
+
+
+
 UCLASS()
 class STARSHATTERWARS_API USSWGameInstance : public UGameInstance
 {

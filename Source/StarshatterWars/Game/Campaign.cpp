@@ -12,6 +12,61 @@ ACampaign::ACampaign()
 
 }
 
+void ACampaign::Load()
+{
+
+}
+
+void ACampaign::Prep()
+{
+
+}
+
+void ACampaign::Start()
+{
+
+}
+
+void ACampaign::ExecFrame()
+{
+
+}
+
+void ACampaign::Unload()
+{
+
+}
+
+void ACampaign::Clear()
+{
+
+}
+
+void ACampaign::CommitExpiredActions()
+{
+
+}
+
+void ACampaign::LockoutEvents(int seconds)
+{
+
+}
+
+void ACampaign::CheckPlayerGroup()
+{
+
+}
+
+void ACampaign::CreatePlanners()
+{
+
+}
+
+int ACampaign::GetPlayerTeamScore()
+{
+	return 0;
+}
+
 // Called when the game starts or when spawned
 void ACampaign::BeginPlay()
 {
