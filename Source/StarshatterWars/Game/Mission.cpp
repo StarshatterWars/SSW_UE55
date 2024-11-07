@@ -16,7 +16,7 @@
 #include "../System/Game.h"
 #include "../Foundation/DataLoader.h"
 #include "../Foundation/ParseUtil.h"
-//#include "FormatUtil.h"
+#include "../Foundation/FormatUtil.h"
 #include "../Foundation/Random.h"
 //#include "Skin.h"
 #include "MissionElement.h"

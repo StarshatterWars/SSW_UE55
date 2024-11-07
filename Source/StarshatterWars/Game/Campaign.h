@@ -24,7 +24,24 @@
 #include "../System/SSWGameInstance.h"
 #include "Campaign.generated.h"
 
+// +--------------------------------------------------------------------+
+
+class Campaign;
+class CampaignPlan;
+class Combatant;
+class CombatAction;
+class CombatEvent;
+class CombatGroup;
+class CombatUnit;
+class CombatZone;
+class DataLoader;
+class Mission;
+class MissionInfo;
+class TemplateList;
+class MissionTemplate;
 class AStarSystem;
+
+// +--------------------------------------------------------------------+
 
 UCLASS()
 class STARSHATTERWARS_API ACampaign : public AActor
@@ -65,38 +82,38 @@ public:
 	void                 SetOrders(const char* o) { orders = o; }
 
 	int                  GetPlayerTeamScore();
-	//List<MissionInfo>& GetMissionList() { return missions; }
-	//List<Combatant>& GetCombatants() { return combatants; }
+	List<MissionInfo>& GetMissionList() { return missions; }
+	List<Combatant>& GetCombatants() { return combatants; }
 	//List<CombatZone>& GetZones() { return zones; }
 	List<AStarSystem>& GetSystemList() { return systems; }
-	//List<CombatAction>& GetActions() { return actions; }
+	List<CombatAction>& GetActions() { return actions; }
 	//List<CombatEvent>& GetEvents() { return events; }
 	//CombatEvent* GetLastEvent();
 
-	//CombatAction* FindAction(int id);
+	CombatAction* FindAction(int id);
 
 	int                  CountNewEvents() const;
 
 	int                  GetPlayerIFF();
-	//CombatGroup* GetPlayerGroup() { return player_group; }
-	//void                 SetPlayerGroup(CombatGroup* pg);
-	//CombatUnit* GetPlayerUnit() { return player_unit; }
-	//void                 SetPlayerUnit(CombatUnit* pu);
+	CombatGroup* GetPlayerGroup() { return player_group; }
+	void                 SetPlayerGroup(CombatGroup* pg);
+	CombatUnit* GetPlayerUnit() { return player_unit; }
+	void                 SetPlayerUnit(CombatUnit* pu);
 
-	//Combatant* GetCombatant(const char* name);
-	//CombatGroup* FindGroup(int iff, int type, int id);
-	//CombatGroup* FindGroup(int iff, int type, CombatGroup* near_group = 0);
-	//CombatGroup* FindStrikeTarget(int iff, CombatGroup* strike_group);
+	Combatant* GetCombatant(const char* name);
+	CombatGroup* FindGroup(int iff, int type, int id);
+	CombatGroup* FindGroup(int iff, int type, CombatGroup* near_group = 0);
+	CombatGroup* FindStrikeTarget(int iff, CombatGroup* strike_group);
 
 	AStarSystem* GetSystem(const char* sys);
 	//CombatZone* GetZone(const char* rgn);
-	//MissionInfo* CreateNewMission();
-	//void                 DeleteMission(int id);
-	//Mission* GetMission();
-	//Mission* GetMission(int id);
-	//Mission* GetMissionByFile(const char* filename);
-	//MissionInfo* GetMissionInfo(int id);
-	//MissionInfo* FindMissionTemplate(int msn_type, CombatGroup* player_group);
+	MissionInfo* CreateNewMission();
+	void                 DeleteMission(int id);
+	Mission* GetMission();
+	Mission* GetMission(int id);
+	Mission* GetMissionByFile(const char* filename);
+	MissionInfo* GetMissionInfo(int id);
+	MissionInfo* FindMissionTemplate(int msn_type, CombatGroup* player_group);
 	void                 ReloadMission(int id);
 	void                 LoadNetMission(int id, const char* net_mission);
 	void                 StartMission();
@@ -129,7 +146,7 @@ public:
 	void                 SetStatus(int s);
 	int                  GetStatus()       const { return status; }
 
-	//int                  GetAllCombatUnits(int iff, List<CombatUnit>& units);
+	int                  GetAllCombatUnits(int iff, List<CombatUnit>& units);
 
 	static void          Initialize();
 	static void          Close();
@@ -146,11 +163,11 @@ protected:
 	void                 LoadTemplateList(DataLoader* loader);
 	void                 LoadMissionList(DataLoader* loader);
 	void                 LoadCustomMissions(DataLoader* loader);
-	//void                 ParseGroup(TermStruct* val, CombatGroup* force,CombatGroup* clone, const char* filename);
+	void                 ParseGroup(TermStruct* val, CombatGroup* force,CombatGroup* clone, const char* filename);
 	void                 ParseAction(TermStruct* val, const char* filename);
-	//CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
-	//void                 SelectDefaultPlayerGroup(CombatGroup* g, int type);
-	//TemplateList* GetTemplateList(int msn_type, int grp_type);
+	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
+	void                 SelectDefaultPlayerGroup(CombatGroup* g, int type);
+	TemplateList* GetTemplateList(int msn_type, int grp_type);
 
 	// attributes:
 	int                  campaign_id;
@@ -167,20 +184,20 @@ protected:
 	bool                 sequential;
 	bool                 loaded_from_savegame;
 
-	//List<Combatant>      combatants;
+	List<Combatant>      combatants;
 	List<AStarSystem>     systems;
 	//List<CombatZone>     zones;
 	//List<CampaignPlan>   planners;
-	//List<MissionInfo>    missions;
-	//List<TemplateList>   templates;
-	//List<CombatAction>   actions;
+	List<MissionInfo>    missions;
+	List<TemplateList>   templates;
+	List<CombatAction>   actions;
 	//List<CombatEvent>    events;
-	//CombatGroup* player_group;
-	//CombatUnit* player_unit;
+	CombatGroup* player_group;
+	CombatUnit* player_unit;
 
 	int                  mission_id;
-	//Mission* mission;
-	//Mission* net_mission;
+	Mission* mission;
+	Mission* net_mission;
 
 	double               time;
 	double               loadTime;
