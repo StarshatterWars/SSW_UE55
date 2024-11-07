@@ -380,3 +380,12 @@ CombatUnit::Kill(int n)
 	return value_killed;
 }*/
 
+int CombatUnit::GetShipClass() const
+{
+	return 0;
+}
+
+int CombatUnit::GetValue() const
+{
+	return 0;
+}

@@ -347,6 +347,15 @@ enum class CLASSIFICATION  : uint32
 	GROUND_UNITS = 0xfff00000
 };
 
+enum INTEL_TYPE {
+	NOINTEL,
+	RESERVE,       // out-system reserve: this group is not even here
+	SECRET,        // enemy is completely unaware of this group
+	KNOWN,         // enemy knows this group is in the system
+	LOCATED,       // enemy has located at least the lead ship
+	TRACKED        // enemy is tracking all elements
+};
+
 USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
 	GENERATED_BODY()

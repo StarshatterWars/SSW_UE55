@@ -17,7 +17,7 @@
 #include "CombatUnit.h"
 #include "CombatZone.h"
 #include "Combatant.h"
-//#include "CombatAssignment.h"
+#include "CombatAssignment.h"
 #include "Campaign.h"
 //#include "ShipDesign.h"
 //#include "Ship.h"
@@ -40,7 +40,7 @@ CombatGroup::CombatGroup(int t, int n, const char* s, int iff_code, int e, Comba
 
 CombatGroup::~CombatGroup()
 {
-	//assignments.destroy();
+	assignments.destroy();
 	components.destroy();
 	units.destroy();
 }
@@ -182,17 +182,17 @@ CombatGroup::IsStarshipGroup() const
 
 // +--------------------------------------------------------------------+
 
-/*bool
+bool
 CombatGroup::IsReserve() const
 {
-	if (enemy_intel <= Intel::RESERVE)
+	if (enemy_intel <= (int)INTEL_TYPE::RESERVE)
 		return true;
 
 	if (parent)
 		return parent->IsReserve();
 
 	return false;
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
@@ -692,7 +692,7 @@ CombatGroup::GetShortDescription() const
 
 // +--------------------------------------------------------------------+
 
-/*double
+double
 CombatGroup::GetNextJumpTime() const
 {
 	double t = 0;
@@ -780,7 +780,7 @@ CombatGroup::SetZoneLock(bool lock)
 void
 CombatGroup::SetIntelLevel(int n)
 {
-	if (n < Intel::RESERVE || n > Intel::TRACKED) return;
+	if (n < (int)INTEL_TYPE::RESERVE || n >(int)INTEL_TYPE::TRACKED) return;
 
 	enemy_intel = n;
 
@@ -789,11 +789,11 @@ CombatGroup::SetIntelLevel(int n)
 	// no missions would ever be planned against this
 	// combat group.
 
-	if (n > Intel::SECRET) {
+	if (n > INTEL_TYPE::SECRET) {
 		CombatGroup* p = parent;
 		while (p) {
-			if (p->enemy_intel < Intel::KNOWN)
-				p->enemy_intel = Intel::KNOWN;
+			if (p->enemy_intel < (int) INTEL_TYPE::KNOWN)
+				p->enemy_intel = (int) INTEL_TYPE::KNOWN;
 
 			p = p->parent;
 		}
@@ -846,11 +846,11 @@ CombatGroup::CountUnits() const
 	}
 
 	return n;
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CombatGroup::ClearAssignments()
 {
 	assignments.destroy();
@@ -868,9 +868,9 @@ CombatGroup::FindCarrier()
 	CombatGroup* p = GetParent();
 
 	while (p != 0 &&
-		p->Type() != CombatGroup::CARRIER_GROUP &&
-		p->Type() != CombatGroup::STATION &&
-		p->Type() != CombatGroup::STARBASE)
+		p->Type() != (int) ECOMBATGROUP_TYPE::CARRIER_GROUP &&
+		p->Type() != (int)ECOMBATGROUP_TYPE::STATION &&
+		p->Type() != (int)ECOMBATGROUP_TYPE::STARBASE)
 		p = p->GetParent();
 
 	if (p && p->GetUnits().size())
@@ -898,8 +898,8 @@ CombatGroup::GetRandomUnit()
 			result = live[index];
 
 			int ship_class = result->GetShipClass();
-			if (ship_class >= Ship::CRUISER &&
-				ship_class <= Ship::FARCASTER)
+			if (ship_class >= (int) CLASSIFICATION::CRUISER &&
+				ship_class <= (int) CLASSIFICATION::FARCASTER)
 				result = 0;
 		}
 	}
@@ -952,13 +952,13 @@ CombatGroup::GetNextUnit()
 }
 
 CombatUnit*
-CombatGroup::FindUnit(const char* name)
+CombatGroup::FindUnit(const char* unitname)
 {
 	if (units.size() > 0) {
 		ListIter<CombatUnit> iter = units;
 		while (++iter) {
 			CombatUnit* unit = iter.value();
-			if (unit->Name() == name) {
+			if (unit->Name() == unitname) {
 				if (unit->Count() - unit->DeadCount() > 0)
 					return unit;
 				else
@@ -1050,10 +1050,10 @@ CombatGroup::NameFromType(int type)
 
 // +--------------------------------------------------------------------+
 
-int ShipClassFromName(const char* type_name)
+/*int ShipClassFromName(const char* type_name)
 {
 	return Ship::ClassForName(type_name);
-}
+}*/
 
 // +--------------------------------------------------------------------+
 
@@ -1062,7 +1062,7 @@ int ShipClassFromName(const char* type_name)
 #define GET_DEF_NUM(n)  if (pdef->name()->value()==(#n)) GetDefNumber((n), pdef, filename)
 #define GET_DEF_VEC(n)  if (pdef->name()->value()==(#n)) GetDefVec((n),    pdef, filename)
 
-CombatGroup*
+/*CombatGroup*
 CombatGroup::LoadOrderOfBattle(const char* filename, int team, Combatant* combatant)
 {
 	CombatGroup* force = 0;
@@ -1070,7 +1070,7 @@ CombatGroup::LoadOrderOfBattle(const char* filename, int team, Combatant* combat
 	BYTE* block;
 	loader->LoadBuffer(filename, block, true);
 
-	Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block));
+	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
@@ -1562,7 +1562,7 @@ else GET_DEF_NUM(id);
 
 	if (force)
 		force->CalcValue();
-}
+}*/
 
 // +--------------------------------------------------------------------+
 
@@ -1584,7 +1584,7 @@ Text FormatNumber(double n)
 	return buffer;
 }
 
-void
+/*void
 SaveCombatUnit(FILE* f, CombatUnit* u)
 {
 	int type = u->Type();
@@ -1688,7 +1688,3 @@ CombatGroup::SaveOrderOfBattle(const char* filename, CombatGroup* force)
 	}
 }*/
 
-int CombatGroup::CalcValue()
-{
-	return 0;
-}
