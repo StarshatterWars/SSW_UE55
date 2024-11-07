@@ -26,7 +26,7 @@
 	Point    RandomDirection();
 	Point    RandomPoint();
 	Vec3     RandomVector(double radius);
-	double   Random(double min = 0, double max = 1);
+	double   RandomDouble(double min = 0, double max = 1);
 	int      RandomIndex();
 	bool     RandomChance(int wins = 1, int tries = 2);
 	int      RandomSequence(int current, int range);

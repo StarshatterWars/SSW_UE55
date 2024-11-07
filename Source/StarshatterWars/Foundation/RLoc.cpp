@@ -62,9 +62,9 @@ RLoc::Resolve()
 	}
 
 	if (dex > 0) {
-		double d = dex + Random(-dex_var, dex_var);
-		double a = az + Random(-az_var, az_var);
-		double e = el + Random(-el_var, el_var);
+		double d = dex + RandomDouble(-dex_var, dex_var);
+		double a = az + RandomDouble(-az_var, az_var);
+		double e = el + RandomDouble(-el_var, el_var);
 
 		Point  p = Point(d * sin(a),
 			d * -cos(a),

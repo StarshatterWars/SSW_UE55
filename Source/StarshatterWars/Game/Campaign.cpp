@@ -1,4 +1,16 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Games
+	Copyright (C) 2024. All Rights Reserved.
+
+	SUBSYSTEM:    Game
+	FILE:         Campaign.cpp
+	AUTHOR:       Carlos Bott
+
+	OVERVIEW
+	========
+	Campaign defines a strategic military scenario.
+*/
+
 
 
 #include "Campaign.h"

@@ -50,14 +50,14 @@ Vec3 RandomVector(double radius)
 	if (radius > 0)
 		v *= (float)radius;
 	else
-		v *= (float)Random(radius / 3, radius);
+		v *= (float)RandomDouble(radius / 3, radius);
 
 	return v;
 }
 
 // +----------------------------------------------------------------------+
 
-double RandomCalc(double min, double max)
+double RandomDouble(double min, double max)
 {
 	double delta = max - min;
 	double r = delta * rand() / 32768.0;
@@ -93,7 +93,7 @@ bool RandomChance(int wins, int tries)
 int RandomSequence(int current, int range)
 {
 	if (range > 1) {
-		int step = (int)Random(1, range - 1);
+		int step = (int)RandomDouble(1, range - 1);
 		return (current + step) % range;
 	}
 
@@ -125,7 +125,7 @@ int RandomShuffle(int count)
 
 		// shuffle the cards
 		for (int i = 0; i < set_size; i++) {
-			int n = (int)Random(0, set_size);
+			int n = (int)RandomDouble(0, set_size);
 			int tries = set_size;
 			while (tmp[n] < 0 && tries--) {
 				n = (n + 1) % set_size;
