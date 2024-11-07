@@ -14,6 +14,33 @@
 
 
 #include "Campaign.h"
+#include "Campaign.h"
+//#include "CampaignPlanStrategic.h"
+//#include "CampaignPlanAssignment.h"
+//#include "CampaignPlanEvent.h"
+//#include "CampaignPlanMission.h"
+//#include "CampaignPlanMovement.h"
+//#include "CampaignSituationReport.h"
+//#include "CampaignSaveGame.h"
+#include "Combatant.h"
+#include "CombatAction.h"
+#include "CombatEvent.h"
+#include "CombatGroup.h"
+//#include "CombatRoster.h"
+#include "CombatUnit.h"
+#include "CombatZone.h"
+#include "../Space/Galaxy.h"
+#include "Mission.h"
+#include "../Space/StarSystem.h"
+#include "../StarshatterWars.h"
+#include "PlayerData.h"
+
+#include "../System/Game.h"
+//#include "Bitmap.h"
+#include "../Foundation/DataLoader.h"
+#include "../Foundation/ParseUtil.h"
+#include "../Foundation/Random.h"
+#include "../Foundation/FormatUtil.h"
 
 static List<ACampaign>   campaigns;
 static ACampaign* current_campaign = 0;
@@ -152,6 +179,11 @@ ACampaign* ACampaign::SelectCampaign(const char* name)
 ACampaign* ACampaign::CreateCustomCampaign(const char* name, const char* path)
 {
 	return nullptr;
+}
+
+double ACampaign::Stardate()
+{
+	return AStarSystem::GetStardate();
 }
 
 AStarSystem* ACampaign::GetSystem(const char* sys)

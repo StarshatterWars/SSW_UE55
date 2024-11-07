@@ -5,7 +5,7 @@
 #include "CombatUnit.h"
 #include "CombatGroup.h"
 #include "Campaign.h"
-//#include "ShipDesign.h"
+#include "ShipDesign.h"
 //#include "Ship.h"
 
 #include "../System/Game.h"
@@ -43,7 +43,7 @@ CombatUnit::CombatUnit(const CombatUnit& u)
 
 // +----------------------------------------------------------------------+
 
-/*const ShipDesign*
+const ShipDesign*
 CombatUnit::GetDesign()
 {
 	if (!design)
@@ -59,9 +59,9 @@ CombatUnit::GetShipClass() const
 		return design->type;
 
 	return type;
-}*/
+}
 
-/*int
+int
 CombatUnit::GetValue() const
 {
 	return GetSingleValue() * LiveCount();
@@ -70,7 +70,8 @@ CombatUnit::GetValue() const
 int
 CombatUnit::GetSingleValue() const
 {
-	return Ship::Value(GetShipClass());
+	//return Ship::Value(GetShipClass());
+	return 0;
 }
 
 // +----------------------------------------------------------------------+
@@ -116,15 +117,17 @@ CombatUnit::CanLaunch() const
 	bool result = false;
 
 	switch (type) {
-	case Ship::FIGHTER:
-	case Ship::ATTACK:   result = (Campaign::Stardate() - launch_time) >= 300;
+	case (int) CLASSIFICATION::FIGHTER:
+	case (int)CLASSIFICATION::ATTACK:  
+		result = (ACampaign::Stardate() - launch_time) >= 300;
 		break;
 
-	case Ship::CORVETTE:
-	case Ship::FRIGATE:
-	case Ship::DESTROYER:
-	case Ship::CRUISER:
-	case Ship::CARRIER:  result = true;
+	case (int)CLASSIFICATION::CORVETTE:
+	case (int)CLASSIFICATION::FRIGATE:
+	case (int)CLASSIFICATION::DESTROYER:
+	case (int)CLASSIFICATION::CRUISER:
+	case (int)CLASSIFICATION::CARRIER:  
+		result = true;
 		break;
 	}
 
@@ -133,34 +136,34 @@ CombatUnit::CanLaunch() const
 
 // +----------------------------------------------------------------------+
 
-Color
+/*Color
 CombatUnit::MarkerColor() const
 {
 	return Ship::IFFColor(iff);
-}
+}*/
 
 bool
 CombatUnit::IsGroundUnit() const
 {
-	return (design && (design->type & Ship::GROUND_UNITS)) ? true : false;
+	return (design && (design->type & (int)CLASSIFICATION::GROUND_UNITS)) ? true : false;
 }
 
 bool
 CombatUnit::IsStarship() const
 {
-	return (design && (design->type & Ship::STARSHIPS)) ? true : false;
+	return (design && (design->type & (int)CLASSIFICATION::STARSHIPS)) ? true : false;
 }
 
 bool
 CombatUnit::IsDropship() const
 {
-	return (design && (design->type & Ship::DROPSHIPS)) ? true : false;
+	return (design && (design->type & (int)CLASSIFICATION::DROPSHIPS)) ? true : false;
 }
 
 bool
 CombatUnit::IsStatic() const
 {
-	return design && (design->type >= Ship::STATION);
+	return design && (design->type >= (int)CLASSIFICATION::STATION);
 }
 
 // +----------------------------------------------------------------------+
@@ -178,7 +181,7 @@ double CombatUnit::MaxEffectiveRange() const
 
 double CombatUnit::OptimumRange() const
 {
-	if (type == Ship::FIGHTER || type == Ship::ATTACK)
+	if (type == (int)CLASSIFICATION::FIGHTER || type == (int)CLASSIFICATION::ATTACK)
 		return 15e3;
 
 	return 30e3;
@@ -191,7 +194,7 @@ bool CombatUnit::CanDefend(CombatUnit* unit) const
 	if (unit == 0 || unit == this)
 		return false;
 
-	if (type > Ship::STATION)
+	if (type > (int)CLASSIFICATION::STATION)
 		return false;
 
 	double distance = (location - unit->location).length();
@@ -209,54 +212,55 @@ bool CombatUnit::CanDefend(CombatUnit* unit) const
 
 double CombatUnit::PowerVersus(CombatUnit* tgt) const
 {
+	double PowerReturn; 
 	if (tgt == 0 || tgt == this || available < 1)
-		return 0;
+		PowerReturn = 0;
 
-	if (type > Ship::STATION)
-		return 0;
+	if (type > (int) CLASSIFICATION::STATION)
+		PowerReturn = 0;
 
 	double effectiveness = 1;
 	double distance = (location - tgt->location).length();
 
 	if (distance > MaxRange())
-		return 0;
+		PowerReturn = 0;
 
 	if (distance > MaxEffectiveRange())
 		effectiveness = 0.5;
 
-	if (type == Ship::FIGHTER) {
-		if (tgt->type == Ship::FIGHTER || tgt->type == Ship::ATTACK)
-			return Ship::FIGHTER * 2 * available * effectiveness;
+	if (type == (int)CLASSIFICATION::FIGHTER) {
+		if (tgt->type == (int)CLASSIFICATION::FIGHTER || tgt->type == (int)CLASSIFICATION::ATTACK)
+			PowerReturn = (int)CLASSIFICATION::FIGHTER * 2 * available * effectiveness;
 		else
-			return 0;
+			PowerReturn = 0;
 	}
-	else if (type == Ship::ATTACK) {
-		if (tgt->type > Ship::ATTACK)
-			return Ship::ATTACK * 3 * available * effectiveness;
+	else if (type == (int)CLASSIFICATION::ATTACK) {
+		if (tgt->type > (int)CLASSIFICATION::ATTACK)
+			PowerReturn = (int)CLASSIFICATION::ATTACK * 3 * available * effectiveness;
 		else
-			return 0;
+			PowerReturn = 0;
 	}
-	else if (type == Ship::CARRIER) {
-		return 0;
+	else if (type == (int)CLASSIFICATION::CARRIER) {
+		PowerReturn = 0;
 	}
-	else if (type == Ship::SWACS) {
-		return 0;
+	else if (type == (int)CLASSIFICATION::SWACS) {
+		PowerReturn = 0;
 	}
-	else if (type == Ship::CRUISER) {
-		if (tgt->type <= Ship::ATTACK)
-			return type * effectiveness;
+	else if (type == (int)CLASSIFICATION::CRUISER) {
+		if (tgt->type <= (int)CLASSIFICATION::ATTACK)
+			PowerReturn = type * effectiveness;
 
 		else
-			return 0;
+			PowerReturn = 0;
 	}
 	else {
-		if (tgt->type > Ship::ATTACK)
-			return type * effectiveness;
+		if (tgt->type > (int)CLASSIFICATION::ATTACK)
+			PowerReturn = type * effectiveness;
 		else
-			return type * 0.1 * effectiveness;
+			PowerReturn = type * 0.1 * effectiveness;
 	}
 
-	return 0;
+	return PowerReturn;
 }
 
 // +----------------------------------------------------------------------+
@@ -271,7 +275,7 @@ CombatUnit::AssignMission()
 
 	if (assign > 0) {
 		available -= assign;
-		launch_time = Campaign::Stardate();
+		launch_time = ACampaign::Stardate();
 		return assign;
 	}
 
@@ -363,9 +367,9 @@ CombatUnit::Kill(int n)
 
 	if (killed) {
 		// if unit could support children, kill them too:
-		if (type == Ship::CARRIER ||
-			type == Ship::STATION ||
-			type == Ship::STARBASE) {
+		if (type == (int)CLASSIFICATION::CARRIER ||
+			type == (int)CLASSIFICATION::STATION ||
+			type == (int)CLASSIFICATION::STARBASE) {
 
 			if (group) {
 				ListIter<CombatGroup> iter = group->GetComponents();
@@ -378,14 +382,6 @@ CombatUnit::Kill(int n)
 	}
 
 	return value_killed;
-}*/
-
-int CombatUnit::GetShipClass() const
-{
-	return 0;
 }
 
-int CombatUnit::GetValue() const
-{
-	return 0;
-}
+

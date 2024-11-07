@@ -84,11 +84,11 @@ public:
 	int                  GetPlayerTeamScore();
 	List<MissionInfo>& GetMissionList() { return missions; }
 	List<Combatant>& GetCombatants() { return combatants; }
-	//List<CombatZone>& GetZones() { return zones; }
+	List<CombatZone>& GetZones() { return zones; }
 	List<AStarSystem>& GetSystemList() { return systems; }
 	List<CombatAction>& GetActions() { return actions; }
-	//List<CombatEvent>& GetEvents() { return events; }
-	//CombatEvent* GetLastEvent();
+	List<CombatEvent>& GetEvents() { return events; }
+	CombatEvent* GetLastEvent();
 
 	CombatAction* FindAction(int id);
 
@@ -106,7 +106,7 @@ public:
 	CombatGroup* FindStrikeTarget(int iff, CombatGroup* strike_group);
 
 	AStarSystem* GetSystem(const char* sys);
-	//CombatZone* GetZone(const char* rgn);
+	CombatZone* GetZone(const char* rgn);
 	MissionInfo* CreateNewMission();
 	void                 DeleteMission(int id);
 	Mission* GetMission();
@@ -186,12 +186,12 @@ protected:
 
 	List<Combatant>      combatants;
 	List<AStarSystem>     systems;
-	//List<CombatZone>     zones;
-	//List<CampaignPlan>   planners;
+	List<CombatZone>     zones;
+	List<CampaignPlan>   planners;
 	List<MissionInfo>    missions;
 	List<TemplateList>   templates;
 	List<CombatAction>   actions;
-	//List<CombatEvent>    events;
+	List<CombatEvent>    events;
 	CombatGroup* player_group;
 	CombatUnit* player_unit;
 
