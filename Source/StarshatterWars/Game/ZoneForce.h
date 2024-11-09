@@ -18,7 +18,6 @@
 #include "../Foundation/List.h"
 #include "../System/SSWGameInstance.h"
 
-
 class CombatGroup;
 
 /**

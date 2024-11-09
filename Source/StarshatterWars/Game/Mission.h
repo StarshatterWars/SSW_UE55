@@ -58,6 +58,35 @@ class STARSHATTERWARS_API Mission
 	static const char* TYPENAME() { return "Mission"; }
 
 public:
+	
+	enum TYPE
+	{
+		PATROL,
+		SWEEP,
+		INTERCEPT,
+		AIR_PATROL,
+		AIR_SWEEP,
+		AIR_INTERCEPT,
+		STRIKE,     // ground attack
+		ASSAULT,    // starship attack
+		DEFEND,
+		ESCORT,
+		ESCORT_FREIGHT,
+		ESCORT_SHUTTLE,
+		ESCORT_STRIKE,
+		INTEL,
+		SCOUT,
+		RECON,
+		BLOCKADE,
+		FLEET,
+		BOMBARDMENT,
+		FLIGHT_OPS,
+		TRANSPORT,
+		CARGO,
+		TRAINING,
+		OTHER
+	};
+	
 	Mission();
 	~Mission();
 

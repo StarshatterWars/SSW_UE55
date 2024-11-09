@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Campaign.h"
+#include "CampaignPlan.h"
 #include "CampaignPlanMission.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API ACampaignPlanMission : public ACampaign
+class STARSHATTERWARS_API UCampaignPlanMission : public UCampaignPlan
 {
 	GENERATED_BODY()
 	

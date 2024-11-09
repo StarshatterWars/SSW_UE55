@@ -14,7 +14,16 @@
 
 
 #include "ZoneForce.h"
+#include "CombatZone.h"
+#include "CombatGroup.h"
+#include "CombatUnit.h"
+#include "Campaign.h"
+#include "ShipDesign.h"
+//#include "Ship.h"
 
+#include "../System/Game.h"
+#include "../Foundation/DataLoader.h"
+#include "../Foundation/ParseUtil.h"
 
 ZoneForce::ZoneForce()
 {
@@ -61,12 +70,12 @@ int
 ZoneForce::GetNeed(int group_type) const
 {
 	switch (group_type) {
-	case ECOMBATGROUP_TYPE::CARRIER_GROUP:       return need[0];
-	case ECOMBATGROUP_TYPE::BATTLE_GROUP:        return need[1];
-	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  return need[2];
-	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:     return need[3];
-	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    return need[4];
-	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:  return need[5];
+	case (int)CombatGroup::CARRIER_GROUP:       return need[0];
+	case (int)CombatGroup::BATTLE_GROUP:        return need[1];
+	case (int)CombatGroup::DESTROYER_SQUADRON:  return need[2];
+	case (int)CombatGroup::ATTACK_SQUADRON:     return need[3];
+	case (int)CombatGroup::FIGHTER_SQUADRON:    return need[4];
+	case (int)CombatGroup::INTERCEPT_SQUADRON:  return need[5];
 	}
 
 	return 0;
@@ -76,12 +85,12 @@ void
 ZoneForce::SetNeed(int group_type, int needed)
 {
 	switch (group_type) {
-	case ECOMBATGROUP_TYPE::CARRIER_GROUP:       need[0] = needed; break;
-	case ECOMBATGROUP_TYPE::BATTLE_GROUP:        need[1] = needed; break;
-	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  need[2] = needed; break;
-	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:     need[3] = needed; break;
-	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    need[4] = needed; break;
-	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:  need[5] = needed; break;
+	case (int)CombatGroup::CARRIER_GROUP:       need[0] = needed; break;
+	case (int)CombatGroup::BATTLE_GROUP:        need[1] = needed; break;
+	case (int)CombatGroup::DESTROYER_SQUADRON:  need[2] = needed; break;
+	case (int)CombatGroup::ATTACK_SQUADRON:     need[3] = needed; break;
+	case (int)CombatGroup::FIGHTER_SQUADRON:    need[4] = needed; break;
+	case (int)CombatGroup::INTERCEPT_SQUADRON:  need[5] = needed; break;
 	}
 }
 
@@ -89,11 +98,11 @@ void
 ZoneForce::AddNeed(int group_type, int needed)
 {
 	switch (group_type) {
-	case ECOMBATGROUP_TYPE::CARRIER_GROUP:       need[0] += needed; break;
-	case ECOMBATGROUP_TYPE::BATTLE_GROUP:        need[1] += needed; break;
-	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  need[2] += needed; break;
-	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:     need[3] += needed; break;
-	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    need[4] += needed; break;
-	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:  need[5] += needed; break;
+	case (int)CombatGroup::CARRIER_GROUP:       need[0] += needed; break;
+	case (int)CombatGroup::BATTLE_GROUP:        need[1] += needed; break;
+	case (int)CombatGroup::DESTROYER_SQUADRON:  need[2] += needed; break;
+	case (int)CombatGroup::ATTACK_SQUADRON:     need[3] += needed; break;
+	case (int)CombatGroup::FIGHTER_SQUADRON:    need[4] += needed; break;
+	case (int)CombatGroup::INTERCEPT_SQUADRON:  need[5] += needed; break;
 	}
 }

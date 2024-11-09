@@ -8,8 +8,6 @@
 #include "../Foundation/DataLoader.h"
 #include "Engine/World.h"
 
-static const int    NAMELEN = 64;
-
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 {
 	bIsWindowed = false;

@@ -40,6 +40,58 @@ class STARSHATTERWARS_API CombatGroup
 public:
 	static const char* TYPENAME() { return "CombatGroup"; }
 
+	enum GROUP_TYPE {
+		FORCE = 1,           // Commander In Chief
+
+		WING,                // Air Force
+		INTERCEPT_SQUADRON,  // a2a fighter
+		FIGHTER_SQUADRON,    // multi-role fighter
+		ATTACK_SQUADRON,     // strike / attack
+		LCA_SQUADRON,        // landing craft
+
+		FLEET,               // Navy
+		DESTROYER_SQUADRON,  // destroyer
+		BATTLE_GROUP,        // heavy cruiser(s)
+		CARRIER_GROUP,       // fleet carrier
+
+		BATTALION,           // Army
+		MINEFIELD,
+		BATTERY,
+		MISSILE,
+		STATION,             // orbital station
+		STARBASE,            // planet-side base
+
+		C3I,                 // Command, Control, Communications, Intelligence
+		COMM_RELAY,
+		EARLY_WARNING,
+		FWD_CONTROL_CTR,
+		ECM,
+
+		SUPPORT,
+		COURIER,
+		MEDICAL,
+		SUPPLY,
+		REPAIR,
+
+		CIVILIAN,            // root for civilian groups
+
+		WAR_PRODUCTION,
+		FACTORY,
+		REFINERY,
+		RESOURCE,
+
+		INFRASTRUCTURE,
+		TRANSPORT,
+		NETWORK,
+		HABITAT,
+		STORAGE,
+
+		NON_COM,             // other civilian traffic
+		FREIGHT,
+		PASSENGER,
+		PRIVATE
+	};
+	
 	CombatGroup(int t, int n, const char* s, int i, int e, CombatGroup* p = 0);
 	~CombatGroup();
 
