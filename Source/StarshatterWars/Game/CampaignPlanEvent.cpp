@@ -719,10 +719,13 @@ UCampaignPlanEvent::CreateEventFighterAssault(CombatAssignment* a)
 	if (success) {
 		if (tgt) {
 			int killed = tgt->Kill(1 + tgt->Count() / 2);
-			if (killed > 0)
+			if (killed > 0 && tgt->GetSingleValue() > 0)
 				tgt_count += killed / tgt->GetSingleValue();
+			
 			Combatant* c = group->GetCombatant();
-			if (c)     c->AddScore(tgt->GetSingleValue());
+			if (c) {
+				c->AddScore(tgt->GetSingleValue());
+			}
 		}
 
 		if (unit && RandomChance(1, 5)) {

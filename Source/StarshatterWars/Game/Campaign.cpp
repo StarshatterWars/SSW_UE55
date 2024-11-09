@@ -199,6 +199,11 @@ CombatGroup* ACampaign::FindGroup(int iff, int type, CombatGroup* near_group)
 	return nullptr;
 }
 
+CombatGroup* ACampaign::FindStrikeTarget(int iff, CombatGroup* strike_group)
+{
+	return nullptr;
+}
+
 AStarSystem* ACampaign::GetSystem(const char* sys)
 {
 	return nullptr;

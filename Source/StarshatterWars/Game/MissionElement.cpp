@@ -22,3 +22,16 @@ MissionElement::MissionElement()
 MissionElement::~MissionElement()
 {
 }
+
+void MissionElement::SetLocation(const Point& p)
+{
+}
+
+void MissionElement::SetRLoc(const RLoc& r)
+{
+}
+
+bool MissionElement::IsSquadron() const
+{
+	return false;
+}
