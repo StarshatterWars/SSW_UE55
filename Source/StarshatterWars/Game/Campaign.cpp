@@ -121,6 +121,10 @@ void ACampaign::Tick(float DeltaTime)
 
 }
 
+void ACampaign::SetStatus(int s)
+{
+}
+
 void ACampaign::Initialize()
 {
 }
@@ -185,7 +189,22 @@ double ACampaign::Stardate()
 	return AStarSystem::GetStardate();
 }
 
+CombatGroup* ACampaign::FindGroup(int iff, int type, int id)
+{
+	return nullptr;
+}
+
+CombatGroup* ACampaign::FindGroup(int iff, int type, CombatGroup* near_group)
+{
+	return nullptr;
+}
+
 AStarSystem* ACampaign::GetSystem(const char* sys)
+{
+	return nullptr;
+}
+
+CombatZone* ACampaign::GetZone(const char* rgn)
 {
 	return nullptr;
 }
@@ -194,4 +213,9 @@ bool ACampaign::IsDynamic() const
 {
 	return campaign_id >= (int) CAMPAIGN_CONSTANTS::DYNAMIC_CAMPAIGN &&
 		campaign_id < (int) CAMPAIGN_CONSTANTS::SINGLE_MISSIONS;
+}
+
+int ACampaign::GetPlayerIFF()
+{
+	return 0;
 }

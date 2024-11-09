@@ -36,6 +36,28 @@ class STARSHATTERWARS_API CombatAction
 public:
 	static const char* TYPENAME() { return "CombatAction"; }
 
+	enum  TYPE
+	{
+		NO_ACTION,
+		STRATEGIC_DIRECTIVE,
+		ZONE_ASSIGNMENT,
+		SYSTEM_ASSIGNMENT,
+		MISSION_TEMPLATE,
+		COMBAT_EVENT,
+		INTEL_EVENT,
+		CAMPAIGN_SITUATION,
+		CAMPAIGN_ORDERS
+	};
+
+	enum  STATUS
+	{
+		PENDING,
+		ACTIVE,
+		SKIPPED,
+		FAILED,
+		COMPLETE
+	};
+
 	CombatAction();
 	~CombatAction();
 

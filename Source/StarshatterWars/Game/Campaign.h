@@ -49,6 +49,25 @@ class STARSHATTERWARS_API ACampaign : public AActor
 	GENERATED_BODY()
 	
 public:	
+	
+	enum CONSTANTS {
+		TRAINING_CAMPAIGN = 1,
+		DYNAMIC_CAMPAIGN,
+		MOD_CAMPAIGN = 100,
+		SINGLE_MISSIONS = 1000,
+		MULTIPLAYER_MISSIONS,
+		CUSTOM_MISSIONS,
+
+		NUM_IMAGES = 6
+	};
+
+	enum STATUS {
+		CAMPAIGN_INIT,
+		CAMPAIGN_ACTIVE,
+		CAMPAIGN_SUCCESS,
+		CAMPAIGN_FAILED
+	};
+	
 	// Sets default values for this actor's properties
 	ACampaign();
 

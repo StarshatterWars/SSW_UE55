@@ -39,6 +39,27 @@ public:
 	
 	static const char* TYPENAME() { return "CombatEvent"; }
 
+	enum EVENT_TYPE {
+		ATTACK,
+		DEFEND,
+		MOVE_TO,
+		CAPTURE,
+		STRATEGY,
+
+		CAMPAIGN_START,
+		STORY,
+		CAMPAIGN_END,
+		CAMPAIGN_FAIL
+	};
+
+	enum EVENT_SOURCE {
+		FORCOM,
+		TACNET,
+		INTEL,
+		MAIL,
+		NEWS
+	};
+
 	CombatEvent();
 	~CombatEvent();
 
