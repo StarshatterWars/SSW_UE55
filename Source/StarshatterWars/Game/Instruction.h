@@ -16,7 +16,7 @@
 #include "CoreMinimal.h"
 #include "../Foundation/Types.h"
 #include "../Foundation/Geometry.h"
-//#include "SimObject.h"
+#include "SimObject.h"
 #include "../Foundation/Text.h"
 #include "../Foundation/RLoc.h"
 

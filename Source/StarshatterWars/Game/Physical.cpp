@@ -24,6 +24,8 @@ double   UPhysical::sub_frame = 1.0 / 60.0;
 
 static const double GRAV = 6.673e-11;
 
+inline double Random() { return rand() - 16384; }
+
 // +--------------------------------------------------------------------+
 
 UPhysical::UPhysical() 
@@ -161,8 +163,6 @@ UPhysical::~UPhysical()
 }
 
 // +--------------------------------------------------------------------+
-
-inline double random() { return rand() - 16384; }
 
 void
 UPhysical::ExecFrame(double s)
@@ -471,7 +471,7 @@ UPhysical::AngularFrame(double seconds)
 		yaw = (float)(dy * seconds);
 
 		if (shake > 0.01) {
-			vibration = Point(random(), random(), random());
+			vibration = Point(Random(), Random(), Random());
 			vibration.Normalize();
 			vibration *= (float)(shake * seconds);
 

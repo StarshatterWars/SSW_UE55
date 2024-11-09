@@ -35,12 +35,13 @@
 #include "../Foundation/Random.h"
 
 static int pkg_id = 1000;
-static int dump_missions;
+static int dump_missions = 1;
 
 // +--------------------------------------------------------------------+
 
 CampaignMissionStarship::CampaignMissionStarship()
 {
+	dump_missions = 1;
 }
 
 CampaignMissionStarship::CampaignMissionStarship(ACampaign* c)
@@ -60,6 +61,7 @@ CampaignMissionStarship::CampaignMissionStarship(ACampaign* c)
 	ownside = 0;
 	enemy = -1;
 	mission_type = 0;
+	dump_missions = 1;
 
 	if (!campaign || !campaign->GetPlayerGroup()) {
 		//::Print("ERROR - CMS campaign=0x%08x player_group=0x%08x\n",

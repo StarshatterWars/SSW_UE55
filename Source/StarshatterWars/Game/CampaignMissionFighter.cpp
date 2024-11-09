@@ -43,14 +43,15 @@
 #include "../Foundation/Random.h"
 
 static int pkg_id = 1000;
-static int dump_missions;
 
 CampaignMissionFighter::CampaignMissionFighter()
 {
+	dump_missions = 1;
 }
 
 CampaignMissionFighter::CampaignMissionFighter(ACampaign* c)
 {
+	dump_missions = 1;
 	campaign = c;
 	squadron = 0;
 	mission = 0;

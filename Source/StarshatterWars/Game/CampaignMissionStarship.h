@@ -105,4 +105,6 @@ protected:
 	int               ownside;
 	int               enemy;
 	int               mission_type;
+
+	int dump_missions;
 };
