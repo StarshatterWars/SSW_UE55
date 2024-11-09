@@ -88,18 +88,17 @@ public:
 	};
 	
 	Mission();
-	~Mission();
 
 	Mission(int id, const char* filename = 0, const char* path = 0);
 
 	int operator== (const Mission& m)   const { return id == m.id; }
 
-	virtual void            Validate();
-	virtual bool            Load(const char* fn = 0, const char* fp = 0);
-	virtual bool            Save();
-	virtual bool            ParseMission(const char* buffer);
-	virtual void            SetPlayer(MissionElement* player_element);
-	virtual MissionElement* GetPlayer();
+	void            Validate();
+	bool            Load(const char* fn = 0, const char* fp = 0);
+	bool            Save();
+	bool            ParseMission(const char* buffer);
+	void            SetPlayer(MissionElement* player_element);
+	MissionElement* GetPlayer();
 
 	// accessors/mutators:
 	int                  Identity()      const { return id; }
@@ -123,8 +122,8 @@ public:
 	const char* GetRegion()     const { return region; }
 
 	List<MissionElement>& GetElements() { return elements; }
-	virtual MissionElement* FindElement(const char* elem_name);
-	virtual void            AddElement(MissionElement* elem);
+	MissionElement* FindElement(const char* elem_name);
+	void            AddElement(MissionElement* elem);
 
 	List<MissionEvent>& GetEvents() { return events; }
 	MissionEvent* FindEvent(int event_type) const;
@@ -165,11 +164,11 @@ public:
 
 protected:
 	MissionElement* ParseElement(TermStruct* val);
-	MissionEvent* ParseEvent(TermStruct* val);
-	MissionShip* ParseShip(TermStruct* val, MissionElement* element);
-	Instruction* ParseInstruction(TermStruct* val, MissionElement* element);
-	void                 ParseLoadout(TermStruct* val, MissionElement* element);
-	RLoc* ParseRLoc(TermStruct* val);
+	MissionEvent*	ParseEvent(TermStruct* val);
+	MissionShip*	ParseShip(TermStruct* val, MissionElement* element);
+	Instruction*	ParseInstruction(TermStruct* val, MissionElement* element);
+	void			ParseLoadout(TermStruct* val, MissionElement* element);
+	RLoc*			ParseRLoc(TermStruct* val);
 
 	int                  id;
 	char                 filename[64];

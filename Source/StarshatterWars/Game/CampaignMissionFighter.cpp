@@ -13,6 +13,8 @@
 	dynamic campaign.
 */
 
+#pragma warning( disable : 4390)
+
 #include "CampaignMissionFighter.h"
 #include "CampaignPlan.h"
 #include "CampaignMissionRequest.h"
@@ -23,14 +25,14 @@
 #include "CombatUnit.h"
 #include "CombatZone.h"
 #include "ZoneForce.h"
-//#include "Callsign.h"
+#include "Callsign.h"
 #include "../Space/Galaxy.h"
 #include "Mission.h"
 #include "MissionInfo.h"
 #include "MissionLoad.h"
 #include "MissionElement.h"
 //#include "MissionTemplate.h"
-//#include "Instruction.h"
+#include "Instruction.h"
 //#include "Ship.h"
 #include "ShipDesign.h"
 //#include "Starshatter.h"
@@ -42,16 +44,16 @@
 
 #include "../Foundation/Random.h"
 
-static int pkg_id = 1000;
-
 CampaignMissionFighter::CampaignMissionFighter()
 {
 	dump_missions = 1;
+	pkg_id = 1000;
 }
 
 CampaignMissionFighter::CampaignMissionFighter(ACampaign* c)
 {
 	dump_missions = 1;
+	pkg_id = 1000;
 	campaign = c;
 	squadron = 0;
 	mission = 0;
@@ -210,13 +212,13 @@ CampaignMissionFighter::GenerateMission(int id)
 		found = mission_info != 0;
 
 		if (found) {
-			MissionTemplate* mt = new(__FILE__, __LINE__) MissionTemplate(id, mission_info->script, campaign->Path());
+			MissionTemplate* mt = new MissionTemplate(id, mission_info->script, campaign->Path());
 			if (mt)
 				mt->SetPlayerSquadron(squadron);
 			mission = mt;
 		}
 		else {
-			mission = new(__FILE__, __LINE__) Mission(id);
+			mission = new Mission(id);
 			if (mission)
 				mission->SetType(mission_type);
 		}
@@ -263,7 +265,7 @@ CampaignMissionFighter::GenerateMission(int id)
 		else {
 			delete mission;
 
-			mission = new(__FILE__, __LINE__) Mission(id);
+			mission = new Mission(id);
 			mission->SetType(mission_type);
 			mission->SetName(name);
 			mission->SetTeam(squadron->GetIFF());
@@ -282,15 +284,6 @@ CampaignMissionFighter::GenerateMission(int id)
 }*/
 
 // +--------------------------------------------------------------------+
-
-void CampaignMissionFighter::CreateTargetsAssault()
-{
-}
-
-int CampaignMissionFighter::CreateRandomTarget(const char* rgn, Point base_loc)
-{
-	return 0;
-}
 
 bool
 CampaignMissionFighter::IsGroundObjective(CombatGroup* obj)
@@ -318,14 +311,6 @@ CampaignMissionFighter::IsGroundObjective(CombatGroup* obj)
 	}
 
 	return ground;
-}
-
-void CampaignMissionFighter::PlanetaryInsertion(MissionElement* elem)
-{
-}
-
-void CampaignMissionFighter::OrbitalInsertion(MissionElement* elem)
-{
 }
 
 // +--------------------------------------------------------------------+
@@ -498,13 +483,9 @@ CampaignMissionFighter::GenerateStandardElements()
 	}
 }
 
-void CampaignMissionFighter::GenerateMissionElements()
-{
-}
-
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::GenerateMissionElements()
 {
 	CreateWards();
@@ -520,11 +501,11 @@ CampaignMissionFighter::GenerateMissionElements()
 		if (obj)
 			player_elem->AddObjective(obj);
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::CreateElements(CombatGroup* g)
 {
 	MissionElement* elem = 0;
@@ -544,7 +525,7 @@ CampaignMissionFighter::CreateElements(CombatGroup* g)
 
 				if (g->Type() == CombatGroup::CARRIER_GROUP &&
 					elem->MissionRole() == Mission::ESCORT) {
-					Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, cmdr->Name());
+					Instruction* obj = new Instruction(Instruction::ESCORT, cmdr->Name());
 					if (obj)
 						elem->AddObjective(obj);
 				}
@@ -553,9 +534,9 @@ CampaignMissionFighter::CreateElements(CombatGroup* g)
 			mission->AddElement(elem);
 		}
 	}
-}*/
+}
 
-/*MissionElement*
+MissionElement*
 CampaignMissionFighter::CreateSingleElement(CombatGroup* g, CombatUnit* u)
 {
 	if (!g || g->IsReserve())     return 0;
@@ -677,7 +658,7 @@ CampaignMissionFighter::CreateSingleElement(CombatGroup* g, CombatUnit* u)
 	elem->SetCombatUnit(u);
 
 	return elem;
-}*/
+}
 
 CombatUnit*
 CampaignMissionFighter::FindCarrier(CombatGroup* g)
@@ -692,10 +673,6 @@ CampaignMissionFighter::FindCarrier(CombatGroup* g)
 	}
 
 	return 0;
-}
-
-void CampaignMissionFighter::CreateElements(CombatGroup* g)
-{
 }
 
 void
@@ -739,11 +716,7 @@ CampaignMissionFighter::CreateSquadron(CombatGroup* g)
 	mission->AddElement(elem);
 }
 
-void CampaignMissionFighter::CreatePlayer(CombatGroup* g)
-{
-}
-
-/*void
+void
 CampaignMissionFighter::CreatePlayer(CombatGroup* g)
 {
 	int pkg_size = 2;
@@ -781,7 +754,7 @@ CampaignMissionFighter::CreatePlayer(CombatGroup* g)
 				elem->AddNavPoint(n);
 			}
 
-			Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, ward->Name());
+			Instruction* obj = new Instruction(Instruction::ESCORT, ward->Name());
 
 			switch (mission->Type()) {
 			case Mission::ESCORT_FREIGHT:
@@ -817,7 +790,7 @@ CampaignMissionFighter::CreatePlayer(CombatGroup* g)
 
 		player_elem = elem;
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
@@ -892,19 +865,8 @@ CampaignMissionFighter::CreateWards()
 	}
 }
 
-void CampaignMissionFighter::CreateWardFreight()
-{
-}
 
-void CampaignMissionFighter::CreateWardShuttle()
-{
-}
-
-void CampaignMissionFighter::CreateWardStrike()
-{
-}
-
-/*void
+void
 CampaignMissionFighter::CreateWardFreight()
 {
 	if (!mission || !mission->GetStarSystem()) return;
@@ -972,9 +934,9 @@ CampaignMissionFighter::CreateWardFreight()
 		n->SetSpeed(750);
 		elem->AddNavPoint(n);
 	}
-}*/
+}
 
-/*void
+void
 CampaignMissionFighter::CreateWardShuttle()
 {
 	if (!mission || !mission->GetStarSystem()) return;
@@ -1039,16 +1001,16 @@ CampaignMissionFighter::CreateWardShuttle()
 
 		elem->SetLocation(src);
 
-		n = new(__FILE__, __LINE__) Instruction(elem->Region(), dst, Instruction::DOCK);
+		n = new Instruction(elem->Region(), dst, Instruction::DOCK);
 		if (n) {
 			n->SetTarget(carrier->Name());
 			n->SetSpeed(500);
 			elem->AddNavPoint(n);
 		}
 	}
-}*/
+}
 
-/*void
+void
 CampaignMissionFighter::CreateWardStrike()
 {
 	if (!mission || !mission->GetStarSystem()) return;
@@ -1162,11 +1124,11 @@ CampaignMissionFighter::CreateWardStrike()
 	if (strike_target) {
 		prime_target = mission->FindElement(strike_target->Name());
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::CreateEscorts()
 {
 	bool escort_needed = false;
@@ -1208,13 +1170,9 @@ CampaignMissionFighter::CreateEscorts()
 			}
 		}
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
-
-void CampaignMissionFighter::CreateEscorts()
-{
-}
 
 void
 CampaignMissionFighter::CreateTargets()
@@ -1235,15 +1193,7 @@ CampaignMissionFighter::CreateTargets()
 	}
 }
 
-void CampaignMissionFighter::CreateTargetsPatrol()
-{
-}
-
-void CampaignMissionFighter::CreateTargetsSweep()
-{
-}
-
-/*void
+void
 CampaignMissionFighter::CreateTargetsPatrol()
 {
 	if (!squadron || !player_elem) return;
@@ -1299,9 +1249,9 @@ CampaignMissionFighter::CreateTargetsPatrol()
 			player_elem->AddObjective(obj);
 		}
 	}
-}*/
+}
 
-/*void
+void
 CampaignMissionFighter::CreateTargetsSweep()
 {
 	if (!squadron || !player_elem) return;
@@ -1392,9 +1342,9 @@ CampaignMissionFighter::CreateTargetsSweep()
 			player_elem->AddObjective(obj);
 		}
 	}
-}*/
+}
 
-/*void
+void
 CampaignMissionFighter::CreateTargetsIntercept()
 {
 	if (!squadron || !player_elem) return;
@@ -1455,10 +1405,10 @@ CampaignMissionFighter::CreateTargetsIntercept()
 
 	if (second) {
 		// second friendly fighter package
-		CombatGroup* s = FindSquadron(ownside, CombatGroup::FIGHTER_SQUADRON);
+		CombatGroup* cg = FindSquadron(ownside, CombatGroup::FIGHTER_SQUADRON);
 
-		if (s) {
-			MissionElement* elem = CreateFighterPackage(s, 2, Mission::INTERCEPT);
+		if (cg) {
+			MissionElement* elem = CreateFighterPackage(cg, 2, Mission::INTERCEPT);
 			if (elem) {
 				PlayerData* p = PlayerData::GetCurrentPlayer();
 				elem->SetAlert(p ? !p->FlyingStart() : true);
@@ -1478,9 +1428,9 @@ CampaignMissionFighter::CreateTargetsIntercept()
 			player_elem->AddObjective(obj);
 		}
 	}
-}*/
+}
 
-/*void
+void
 CampaignMissionFighter::CreateTargetsFreightEscort()
 {
 	if (!squadron || !player_elem) return;
@@ -1529,14 +1479,6 @@ CampaignMissionFighter::CreateTargetsFreightEscort()
 		obj3->SetTargetDesc("enemy patrols");
 		player_elem->AddObjective(obj3);
 	}
-}*/
-
-void CampaignMissionFighter::CreateTargetsIntercept()
-{
-}
-
-void CampaignMissionFighter::CreateTargetsFreightEscort()
-{
 }
 
 void
@@ -1545,17 +1487,9 @@ CampaignMissionFighter::CreateTargetsShuttleEscort()
 	CreateTargetsFreightEscort();
 }
 
-void CampaignMissionFighter::CreateTargetsStrikeEscort()
-{
-}
-
-void CampaignMissionFighter::CreateTargetsStrike()
-{
-}
-
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::CreateTargetsStrikeEscort()
 {
 	if (!squadron || !player_elem) return;
@@ -1575,11 +1509,11 @@ CampaignMissionFighter::CreateTargetsStrikeEscort()
 			}
 		}
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::CreateTargetsStrike()
 {
 	if (!squadron || !player_elem) return;
@@ -1689,11 +1623,11 @@ CampaignMissionFighter::CreateTargetsStrike()
 			}
 		}
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::CreateTargetsAssault()
 {
 	if (!squadron || !player_elem) return;
@@ -1805,11 +1739,11 @@ CampaignMissionFighter::CreateTargetsAssault()
 			}
 		}
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*int
+int
 CampaignMissionFighter::CreateRandomTarget(const char* rgn, Point base_loc)
 {
 	if (!mission) return 0;
@@ -1969,11 +1903,11 @@ CampaignMissionFighter::CreateRandomTarget(const char* rgn, Point base_loc)
 	}
 
 	return ntargets;
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::PlanetaryInsertion(MissionElement* elem)
 {
 	if (!mission || !elem)         return;
@@ -2022,9 +1956,9 @@ CampaignMissionFighter::PlanetaryInsertion(MissionElement* elem)
 		n->SetSpeed(750);
 		elem->AddNavPoint(n);
 	}
-}*/
+}
 
-/*void
+void
 CampaignMissionFighter::OrbitalInsertion(MissionElement* elem)
 {
 	Instruction* n = new Instruction(air_region,
@@ -2034,17 +1968,17 @@ CampaignMissionFighter::OrbitalInsertion(MissionElement* elem)
 		n->SetSpeed(750);
 		elem->AddNavPoint(n);
 	}
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*MissionElement*
-CampaignMissionFighter::CreateFighterPackage(CombatGroup* squadron, int count, int role)
+MissionElement*
+CampaignMissionFighter::CreateFighterPackage(CombatGroup* squad, int count, int role)
 {
-	if (!squadron) return 0;
+	if (!squad) return 0;
 
-	CombatUnit* fighter = squadron->GetUnits().at(0);
-	CombatUnit* carrier = FindCarrier(squadron);
+	CombatUnit* fighter = squad->GetUnits().at(0);
+	CombatUnit* carrier = FindCarrier(squad);
 
 	if (!fighter)
 		return 0;
@@ -2056,8 +1990,7 @@ CampaignMissionFighter::CreateFighterPackage(CombatGroup* squadron, int count, i
 		actual = avail;
 
 	if (avail < 1) {
-		::Print("CMF - Insufficient fighters in squadron '%s' - %d required, %d available\n",
-			squadron->Name().data(), count, avail);
+		UE_LOG(LogTemp, Log, TEXT("CampaignMissionFighter::CreateFighterPackage - Insufficient fighters in squadron"));
 		return 0;
 	}
 
@@ -2081,9 +2014,9 @@ CampaignMissionFighter::CreateFighterPackage(CombatGroup* squadron, int count, i
 	elem->SetDesign(fighter->GetDesign());
 	elem->SetCount(actual);
 	elem->SetIFF(fighter->GetIFF());
-	elem->SetIntelLevel(squadron->IntelLevel());
+	elem->SetIntelLevel(squad->IntelLevel());
 	elem->SetRegion(fighter->GetRegion());
-	elem->SetSquadron(squadron->Name());
+	elem->SetSquadron(squad->Name());
 	elem->SetMissionRole(role);
 
 	switch (role) {
@@ -2114,11 +2047,11 @@ CampaignMissionFighter::CreateFighterPackage(CombatGroup* squadron, int count, i
 		elem->SetLocation(fighter->Location() + RandomPoint());
 	}
 
-	elem->SetCombatGroup(squadron);
+	elem->SetCombatGroup(squad);
 	elem->SetCombatUnit(fighter);
 
 	return elem;
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
@@ -2146,16 +2079,6 @@ static CombatGroup* FindCombatGroup(CombatGroup* g, int type)
 
 // +--------------------------------------------------------------------+
 
-MissionElement* CampaignMissionFighter::CreateSingleElement(CombatGroup* g, CombatUnit* u)
-{
-	return nullptr;
-}
-
-MissionElement* CampaignMissionFighter::CreateFighterPackage(CombatGroup* squad, int count, int role)
-{
-	return nullptr;
-}
-
 CombatGroup*
 CampaignMissionFighter::FindSquadron(int iff, int type)
 {
@@ -2182,7 +2105,7 @@ CampaignMissionFighter::FindSquadron(int iff, int type)
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 CampaignMissionFighter::DefineMissionObjectives()
 {
 	if (!mission || !player_elem) return;
@@ -2200,7 +2123,12 @@ CampaignMissionFighter::DefineMissionObjectives()
 	}
 
 	mission->SetObjective(objectives);
-}*/
+}
+
+MissionInfo* CampaignMissionFighter::DescribeMission()
+{
+	return nullptr;
+}
 
 // +--------------------------------------------------------------------+
 
@@ -2251,15 +2179,6 @@ CampaignMissionFighter::DescribeMission()
 }*/
 
 // +--------------------------------------------------------------------+
-
-void CampaignMissionFighter::DefineMissionObjectives()
-{
-}
-
-MissionInfo* CampaignMissionFighter::DescribeMission()
-{
-	return nullptr;
-}
 
 void
 CampaignMissionFighter::Exit()

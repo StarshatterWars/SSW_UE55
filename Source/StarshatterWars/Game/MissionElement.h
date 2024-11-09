@@ -20,7 +20,7 @@
 #include "../Space/Universe.h"
 //#include "Scene.h"
 //#include "Skin.h"
-//#include "Physical.h"
+#include "Physical.h"
 #include "../Foundation/Geometry.h"
 #include "../Foundation/Color.h"
 #include "../Foundation/List.h"

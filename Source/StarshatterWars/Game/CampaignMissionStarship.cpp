@@ -14,7 +14,6 @@
 */
 
 #include "CampaignMissionStarship.h"
-#include "CampaignMissionStarship.h"
 #include "CampaignMissionRequest.h"
 #include "Campaign.h"
 #include "Combatant.h"
@@ -25,8 +24,9 @@
 //#include "Callsign.h"
 #include "Mission.h"
 #include "MissionInfo.h"
+#include "MissionElement.h"
 //#include "MissionTemplate.h"
-//#include "Instruction.h"
+#include "Instruction.h"
 //#include "Ship.h"
 #include "ShipDesign.h"
 //#include "Starshatter.h"
@@ -34,14 +34,12 @@
 #include "PlayerData.h"
 #include "../Foundation/Random.h"
 
-static int pkg_id = 1000;
-static int dump_missions = 1;
-
 // +--------------------------------------------------------------------+
 
 CampaignMissionStarship::CampaignMissionStarship()
 {
 	dump_missions = 1;
+	pkg_id = 1000;
 }
 
 CampaignMissionStarship::CampaignMissionStarship(ACampaign* c)
@@ -209,13 +207,13 @@ CampaignMissionStarship::GenerateMission(int id)
 		found = mission_info != 0;
 
 		if (found) {
-			MissionTemplate* mt = new(__FILE__, __LINE__) MissionTemplate(id, mission_info->script, campaign->Path());
+			MissionTemplate* mt = new MissionTemplate(id, mission_info->script, campaign->Path());
 			if (mt)
 				mt->SetPlayerSquadron(player_group);
 			mission = mt;
 		}
 		else {
-			mission = new(__FILE__, __LINE__) Mission(id);
+			mission = new Mission(id);
 			if (mission)
 				mission->SetType(mission_type);
 		}
@@ -257,7 +255,7 @@ CampaignMissionStarship::GenerateMission(int id)
 		else {
 			delete mission;
 
-			mission = new(__FILE__, __LINE__) Mission(id);
+			mission = new Mission(id);
 
 			if (!mission) {
 				Exit();
@@ -496,7 +494,7 @@ CampaignMissionStarship::CreateElements(CombatGroup* g)
 
 				if (g->Type() == CombatGroup::CARRIER_GROUP &&
 					elem->MissionRole() == Mission::ESCORT) {
-					Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, cmdr->Name());
+					Instruction* obj = new Instruction(Instruction::ESCORT, cmdr->Name());
 					if (obj) {
 						obj->SetTargetDesc(Text("the ") + g->GetDescription());
 						elem->AddObjective(obj);
@@ -664,7 +662,7 @@ CampaignMissionStarship::CreateSquadron(CombatGroup* g)
 	int live_count = fighter->LiveCount();
 	int maint_count = (live_count > 4) ? live_count / 2 : 0;
 
-	MissionElement* elem = new(__FILE__, __LINE__) MissionElement;
+	MissionElement* elem = new MissionElement;
 
 	if (!elem) {
 		Exit();

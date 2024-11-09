@@ -20,7 +20,7 @@
 #include "../Space/Universe.h"
 //#include "Scene.h"
 //#include "Skin.h"
-//#include "Physical.h"
+#include "Physical.h"
 #include "../Foundation/Geometry.h"
 #include "../Foundation/List.h"
 #include "../Foundation/Text.h"
@@ -37,7 +37,7 @@ public:
 	static const char* TYPENAME() { return "MissionLoad"; }
 	
 	MissionLoad();
-	~MissionLoad();
+	MissionLoad(int s, const char* n);
 
 	void Initialize(int Ship = -1, const char* Name = 0);
 

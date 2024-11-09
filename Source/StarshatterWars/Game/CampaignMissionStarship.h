@@ -107,4 +107,5 @@ protected:
 	int               mission_type;
 
 	int dump_missions;
+	int pkg_id = 1000;
 };

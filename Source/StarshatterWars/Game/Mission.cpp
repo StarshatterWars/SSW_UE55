@@ -2,14 +2,14 @@
 
 
 #include "Mission.h"
-//#include "MissionEvent.h"
+#include "MissionEvent.h"
 #include "../Space/StarSystem.h"
 #include "../Space/Galaxy.h"
 #include "../StarshatterWars.h"
 //#include "Ship.h"
-//#include "ShipDesign.h"
+#include "ShipDesign.h"
 //#include "Element.h"
-//#include "Instruction.h"
+#include "Instruction.h"
 //#include "WeaponDesign.h"
 //#include "Sim.h"
 
@@ -20,6 +20,8 @@
 #include "../Foundation/Random.h"
 //#include "Skin.h"
 #include "MissionElement.h"
+#include "MissionLoad.h"
+
 
 static int elem_id = 351;
 
@@ -27,9 +29,6 @@ Mission::Mission()
 {
 }
 
-Mission::~Mission()
-{
-}
 
 Mission::Mission(int id, const char* filename, const char* path)
 {

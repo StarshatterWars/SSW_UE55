@@ -19,8 +19,15 @@ MissionLoad::MissionLoad()
 {
 }
 
-MissionLoad::~MissionLoad()
+MissionLoad::MissionLoad(int s, const char* n)
 {
+	ship = s;
+	for (int i = 0; i < 16; i++)
+		load[i] = -1; // default: no weapon mounted
+
+	if (n)
+		name = n;
+
 }
 
 void MissionLoad::Initialize(int s, const char* n)

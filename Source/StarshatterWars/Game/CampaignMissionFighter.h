@@ -48,44 +48,42 @@ public:
 	virtual void   CreateMission(CampaignMissionRequest* request);
 
 protected:
-	virtual Mission* GenerateMission(int id);
-	virtual void      SelectType();
-	virtual void      SelectRegion();
-	virtual void      GenerateStandardElements();
-	virtual void      GenerateMissionElements();
-	virtual void      CreateElements(CombatGroup* g);
-	virtual void      CreateSquadron(CombatGroup* g);
-	virtual void      CreatePlayer(CombatGroup* g);
+	Mission* GenerateMission(int id);
+	void		SelectType();
+	void		SelectRegion();
+	void		GenerateStandardElements();
+	void		GenerateMissionElements();
+	void		CreateElements(CombatGroup* g);
+	void		CreateSquadron(CombatGroup* g);
+	void		CreatePlayer(CombatGroup* g);
 
-	virtual void      CreatePatrols();
-	virtual void      CreateWards();
-	virtual void      CreateWardFreight();
-	virtual void      CreateWardShuttle();
-	virtual void      CreateWardStrike();
+	void		CreatePatrols();
+	void		CreateWards();
+	void		CreateWardFreight();
+	void		CreateWardShuttle();
+	void		CreateWardStrike();
 
-	virtual void      CreateEscorts();
+	void		CreateEscorts();
 
-	virtual void      CreateTargets();
-	virtual void      CreateTargetsPatrol();
-	virtual void      CreateTargetsSweep();
-	virtual void      CreateTargetsIntercept();
-	virtual void      CreateTargetsFreightEscort();
-	virtual void      CreateTargetsShuttleEscort();
-	virtual void      CreateTargetsStrikeEscort();
-	virtual void      CreateTargetsStrike();
-	virtual void      CreateTargetsAssault();
-	virtual int       CreateRandomTarget(const char* rgn, Point base_loc);
+	void	    CreateTargets();
+	void		CreateTargetsPatrol();
+	void	    CreateTargetsSweep();
+	void	    CreateTargetsIntercept();
+	void	    CreateTargetsFreightEscort();
+	void	    CreateTargetsShuttleEscort();
+	void		CreateTargetsStrikeEscort();
+	void	    CreateTargetsStrike();
+	void	    CreateTargetsAssault();
+	int			CreateRandomTarget(const char* rgn, Point base_loc);
 
-	virtual bool      IsGroundObjective(CombatGroup* obj);
+	bool		IsGroundObjective(CombatGroup* obj);
 
-	virtual void      PlanetaryInsertion(MissionElement* elem);
-	virtual void      OrbitalInsertion(MissionElement* elem);
+	void	    PlanetaryInsertion(MissionElement* elem);
+	void	    OrbitalInsertion(MissionElement* elem);
 
-	virtual MissionElement*
-		CreateSingleElement(CombatGroup* g,
+	virtual MissionElement* CreateSingleElement(CombatGroup* g,
 			CombatUnit* u);
-	virtual MissionElement*
-		CreateFighterPackage(CombatGroup* squadron,
+	virtual MissionElement* CreateFighterPackage(CombatGroup* squadron,
 			int            count,
 			int            role);
 
@@ -117,4 +115,5 @@ protected:
 	int               enemy;
 	int               mission_type;
 	int				  dump_missions;
+	int				  pkg_id;
 };
