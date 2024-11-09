@@ -71,7 +71,7 @@ const char* ship_design_class_name[32] = {
 
 // +--------------------------------------------------------------------+
 
-static const int     NAMELEN = 64;
+//static const int     NAMELEN = 64;
 static bool          degrees = false;
 
 
@@ -98,10 +98,10 @@ static List<ShipCatalogEntry> mod_catalog;
 
 // +--------------------------------------------------------------------+
 
-#define GET_DEF_BOOL(n) if (defname==(#n)) GetDefBool((n),   def, filename)
-#define GET_DEF_TEXT(n) if (defname==(#n)) GetDefText((n),   def, filename)
-#define GET_DEF_NUM(n)  if (defname==(#n)) GetDefNumber((n), def, filename)
-#define GET_DEF_VEC(n)  if (defname==(#n)) GetDefVec((n),    def, filename)
+//#define GET_DEF_BOOL(n) if (defname==(#n)) GetDefBool((n),   def, filename)
+//#define GET_DEF_TEXT(n) if (defname==(#n)) GetDefText((n),   def, filename)
+//#define GET_DEF_NUM(n)  if (defname==(#n)) GetDefNumber((n), def, filename)
+//#define GET_DEF_VEC(n)  if (defname==(#n)) GetDefVec((n),    def, filename)
 
 static char        cockpit_name[80];
 static List<Text>  detail[4];
