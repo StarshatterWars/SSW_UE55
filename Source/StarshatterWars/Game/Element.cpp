@@ -16,7 +16,7 @@
 //#include "RadioMessage.h"
 //#include "RadioHandler.h"
 //#include "Sim.h"
-//#include "Ship.h"
+#include "Ship.h"
 //#include "NetUtil.h"
 
 #include "../System/Game.h"
@@ -57,8 +57,8 @@ Element::Element(const char* call_sign, int a_iff, int a_type)
 
 // +----------------------------------------------------------------------+
 
-/*int
-Element::AddShip(Ship* ship, int index)
+int
+Element::AddShip(UShip* ship, int index)
 {
 	if (ship && !ships.contains(ship)) {
 		Observe(ship);
@@ -73,70 +73,70 @@ Element::AddShip(Ship* ship, int index)
 
 		ship->SetElement(this);
 
-		if (respawns < ship->RespawnCount())
-			respawns = ship->RespawnCount();
+		if (respawns < ship->GetRespawnCount())
+			respawns = ship->GetRespawnCount();
 	}
 
 	return index;
-}*/
+}
 
-/*void
-Element::DelShip(Ship* ship)
+void
+Element::DelShip(UShip* ship)
 {
 	if (ship && ships.contains(ship)) {
 		ships.remove(ship);
 		ship->SetElement(0);
 
 		if (ships.isEmpty())
-			respawns = ship->RespawnCount();
+			respawns = ship->GetRespawnCount();
 	}
-}*/
+}
 
-/*Ship*
+UShip*
 Element::GetShip(int index)
 {
 	if (index >= 1 && index <= ships.size())
 		return ships[index - 1];
 
 	return 0;
-}*/
+}
 
-/*int
+int
 Element::GetShipClass()
 {
 	if (ships.size())
-		return ships[0]->Class();
+		return ships[0]->GetShipClass();
 
 	return 0;
-}*/
+}
 
-/*int
-Element::FindIndex(const Ship* s)
+int
+Element::FindIndex(const UShip* s)
 {
 	return ships.index(s) + 1;
-}*/
+}
 
-/*bool
-Element::Contains(const Ship* s)
+bool
+Element::Contains(const UShip* s)
 {
 	return ships.contains(s);
-}*/
+}
 
-/*bool
+bool
 Element::IsActive() const
 {
 	bool active = false;
 
 	for (int i = 0; i < ships.size() && !active; i++) {
-		Ship* s = ships[i];
+		UShip* s = ships[i];
 		if (s->Life() && s->MissionClock())
 			active = true;
 	}
 
 	return active;
-}*/
+}
 
-/*bool
+bool
 Element::IsFinished() const
 {
 	bool finished = false;
@@ -146,8 +146,8 @@ Element::IsFinished() const
 
 		if (ships.size() > 0) {
 			for (int i = 0; i < ships.size() && finished; i++) {
-				Ship* s = ships[i];
-				if (s->RespawnCount() > 0 ||
+				UShip* s = ships[i];
+				if (s->GetRespawnCount() > 0 ||
 					s->MissionClock() == 0 ||
 					s->Life() && !s->GetInbound())
 					finished = false;
@@ -156,7 +156,7 @@ Element::IsFinished() const
 	}
 
 	return finished;
-}*/
+}
 
 /*bool
 Element::IsNetObserver() const
@@ -173,39 +173,29 @@ Element::IsNetObserver() const
 	return observer;
 }*/
 
-int Element::GetShipClass()
-{
-	return 0;
-}
-
-bool Element::IsFinished() const
-{
-	return false;
-}
-
 bool
 Element::IsSquadron() const
 {
 	return count > 0;
 }
 
-/*bool
+bool
 Element::IsStatic() const
 {
 	if (IsSquadron() || IsFinished())
 		return false;
 
-	const Ship* s = ships.at(0);
+	const UShip* s = ships.at(0);
 	if (s && s->IsStatic())
 		return true;
 
 	return false;
-}*/
+}
 
 // +----------------------------------------------------------------------+
 
-/*bool
-Element::IsHostileTo(const Ship* s) const
+bool
+Element::IsHostileTo(const UShip* s) const
 {
 	if (iff <= 0 || iff >= 100 || !s || launch_time == 0 || IsFinished())
 		return false;
@@ -225,7 +215,7 @@ Element::IsHostileTo(const Ship* s) const
 		return false;
 
 	return true;
-}*/
+}
 
 bool
 Element::IsHostileTo(int iff_code) const
@@ -242,8 +232,8 @@ Element::IsHostileTo(int iff_code) const
 	return true;
 }
 
-/*bool
-Element::IsObjectiveTargetOf(const Ship* s) const
+bool
+Element::IsObjectiveTargetOf(const UShip* s) const
 {
 	if (!s || launch_time == 0 || IsFinished())
 		return false;
@@ -288,7 +278,7 @@ Element::IsObjectiveTargetOf(const Ship* s) const
 	}
 
 	return false;
-}*/
+}
 
 // +----------------------------------------------------------------------+
 
@@ -338,7 +328,7 @@ Element::SetLoadout(int* l)
 
 // +----------------------------------------------------------------------+
 
-/*bool
+bool
 Element::Update(USimObject* obj)
 {
 	// false alarm, keep watching:
@@ -347,14 +337,14 @@ Element::Update(USimObject* obj)
 		return false;
 	}
 
-	Ship* s = (Ship*)obj;
+	UShip* s = (UShip*)obj;
 	ships.remove(s);
 
 	if (ships.isEmpty())
-		respawns = s->RespawnCount();
+		respawns = s->GetRespawnCount();
 
 	return SimObserver::Update(obj);
-}*/
+}
 
 const char*
 Element::GetObserverName() const
@@ -668,17 +658,12 @@ Element::ExecFrame(double seconds)
 	}
 }
 
-bool Element::Update(USimObject* obj)
-{
-	return false;
-}
-
 // +----------------------------------------------------------------------+
 
-/*void
-Element::SetIFF(int iff)
+void
+Element::SetIFF(int siff)
 {
 	for (int i = 0; i < ships.size(); i++)
-		ships[i]->SetIFF(iff);
-}*/
+		ships[i]->SetIFF(siff);
+}
 

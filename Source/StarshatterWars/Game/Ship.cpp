@@ -896,3 +896,41 @@ void UShip::SetTransZ(double t)
 void UShip::SetupAgility()
 {
 }
+
+int UShip::GetRespawnCount()
+{
+	return respawns;
+}
+
+DWORD UShip::MissionClock() const
+{
+	if (launch_time > 0)
+		return Game::GameTime() + 1 - launch_time;
+
+	return 0;
+}
+
+bool UShip::IsStatic() const
+{
+	return false;
+}
+
+bool UShip::IsRogue() const
+{
+	return false;
+}
+
+void UShip::SetElement(Element* e)
+{
+}
+
+Instruction* UShip::GetRadioOrders() const
+{
+	return nullptr;
+}
+
+UShip::CLASSIFICATION
+UShip::GetShipClass() const
+{
+	return (CLASSIFICATION)design->type;
+}

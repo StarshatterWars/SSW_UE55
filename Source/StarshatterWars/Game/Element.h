@@ -22,7 +22,7 @@
 
 // +--------------------------------------------------------------------+
 
-class Ship;
+class UShip;
 class Instruction;
 class RadioMessage;
 class Element;
@@ -57,24 +57,24 @@ public:
 	void              SetIntelLevel(int i) { intel = i; }
 
 	// ELEMENT COMPONENTS:
-	//int               NumShips()        const { return ships.size(); }
-	//int               AddShip(Ship*, int index = -1);
-	//void              DelShip(Ship*);
-	//Ship* GetShip(int index);
-	int                GetShipClass();
-	//int               FindIndex(const Ship* s);
-	//bool              Contains(const Ship* s);
-	bool               IsActive()        const;
-	bool               IsFinished()      const;
-	bool               IsNetObserver()   const;
-	bool               IsSquadron()      const;
-	bool               IsStatic()        const;
-	//bool              IsHostileTo(const Ship* s)          const;
-	bool               IsHostileTo(int iff_code)           const;
-	//bool              IsObjectiveTargetOf(const Ship* s)  const;
-	bool               IsRogue()         const { return rogue; }
-	bool               IsPlayable()      const { return playable; }
-	int*			   Loadout() { return load; }
+	int					NumShips() const { return ships.size(); }
+	int					AddShip(UShip*, int index = -1);
+	void				DelShip(UShip*);
+	UShip*				GetShip(int index);
+	int                 GetShipClass();
+	int					FindIndex(const UShip* s);
+	bool				Contains(const UShip* s);
+	bool                IsActive()        const;
+	bool                IsFinished()      const;
+	bool                IsNetObserver()   const;
+	bool                IsSquadron()      const;
+	bool                IsStatic()        const;
+	bool				IsHostileTo(const UShip* s)	const;
+	bool                IsHostileTo(int iff_code)	const;
+	bool				IsObjectiveTargetOf(const UShip* s)  const;
+	bool                IsRogue()         const { return rogue; }
+	bool                IsPlayable()      const { return playable; }
+	int*			    Loadout() { return load; }
 
 	void               SetRogue(bool r) { rogue = r; }
 	void               SetPlayable(bool p) { playable = p; }
@@ -118,8 +118,8 @@ public:
 	void				SetAssignment(Element* e) { assignment = e; }
 	void				ResumeAssignment();
 	bool				CanCommand(Element* e);
-	//Ship* GetCarrier()               const { return carrier; }
-	//void              SetCarrier(Ship* c) { carrier = c; }
+	UShip*				GetCarrier()               const { return carrier; }
+	void				SetCarrier(UShip* c) { carrier = c; }
 	int					GetCommandAILevel()        const { return command_ai; }
 	void				SetCommandAILevel(int n) { command_ai = n; }
 	const Text&			GetSquadron()              const { return squadron; }
@@ -148,7 +148,7 @@ protected:
 	// squadron elements only:
 	int               count;
 
-	//List<Ship>        ships;
+	List<UShip>        ships;
 	List<Text>        ship_names;
 	List<Text>        instructions;
 	List<Instruction> objectives;
@@ -156,7 +156,7 @@ protected:
 
 	Element* commander;
 	Element* assignment;
-	//Ship* carrier;
+	UShip* carrier;
 	Text              squadron;
 
 	CombatGroup* combat_group;

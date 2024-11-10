@@ -352,7 +352,7 @@ public:
 	static const char* ClassName(int c);
 	static int        ClassForName(const char* name);
 	const char* ClassName()       const;
-	CLASSIFICATION    Class()           const;
+	CLASSIFICATION    GetShipClass()    const;
 	bool              IsGroundUnit()    const;
 	bool              IsStarship()      const;
 	bool              IsDropship()      const;
@@ -377,7 +377,7 @@ public:
 	void              HideRep();
 	void              EnableShadows(bool enable);
 
-	int               RespawnCount()    const { return respawns; }
+	int               GetRespawnCount();
 	void              SetRespawnCount(int r) { respawns = r; }
 	const Point& RespawnLoc()      const { return respawn_loc; }
 	void              SetRespawnLoc(const Point& rl)
@@ -493,32 +493,32 @@ protected:
 	int               secondary;
 
 	//const Skin* skin;
-	Solid* cockpit;
-	Drive* main_drive;
-	QuantumDrive* quantum_drive;
-	Farcaster* farcaster;
-	Shield* shield;
-	ShieldRep* shieldRep;
-	NavSystem* navsys;
-	FlightComp* flcs;
-	Sensor* sensor;
-	LandingGear* gear;
-	Thruster* thruster;
-	Weapon* decoy;
-	Weapon* probe;
-	Drone* sensor_drone;
-	Hangar* hangar;
-	List<Shot>        decoy_list;
-	List<Shot>        threat_list;
+	Solid*				cockpit;
+	Drive*				main_drive;
+	QuantumDrive*		quantum_drive;
+	Farcaster*			farcaster;
+	Shield*				shield;
+	ShieldRep*			shieldRep;
+	NavSystem*			navsys;
+	FlightComp*			flcs;
+	Sensor*				sensor;
+	LandingGear*		gear;
+	Thruster*			thruster;
+	Weapon*				decoy;
+	Weapon*				probe;
+	Drone*				sensor_drone;
+	Hangar*				hangar;
+	List<Shot>			decoy_list;
+	List<Shot>			threat_list;
 
-	List<System>      systems;
-	List<PowerSource> reactors;
-	List<WeaponGroup> weapons;
-	List<Drive>       drives;
-	List<Computer>    computers;
-	List<FlightDeck>  flight_decks;
-	List<NavLight>    navlights;
-	List<System>      repair_queue;
+	List<System>		systems;
+	List<PowerSource>	reactors;
+	List<WeaponGroup>	weapons;
+	List<Drive>			drives;
+	List<Computer>		computers;
+	List<FlightDeck>	flight_decks;
+	List<NavLight>		navlights;
+	List<System>		repair_queue;
 
 	CombatUnit* combat_unit;
 	Element* element;
