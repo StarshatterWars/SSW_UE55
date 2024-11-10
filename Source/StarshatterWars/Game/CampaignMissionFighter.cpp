@@ -31,9 +31,9 @@
 #include "MissionInfo.h"
 #include "MissionLoad.h"
 #include "MissionElement.h"
-//#include "MissionTemplate.h"
+#include "MissionTemplate.h"
 #include "Instruction.h"
-//#include "Ship.h"
+#include "Ship.h"
 #include "ShipDesign.h"
 //#include "Starshatter.h"
 #include "../Space/StarSystem.h"
@@ -609,7 +609,7 @@ CampaignMissionFighter::CreateSingleElement(CombatGroup* g, CombatUnit* u)
 	}
 
 	if (g->Type() == CombatGroup::CARRIER_GROUP) {
-		if (u->Type() == (int) CLASSIFICATION::CARRIER) {
+		if (u->Type() == UShip::CARRIER) {
 			elem->SetMissionRole(Mission::FLIGHT_OPS);
 
 			if (squadron && elem->GetCombatGroup() == squadron->FindCarrier())
@@ -622,18 +622,18 @@ CampaignMissionFighter::CreateSingleElement(CombatGroup* g, CombatUnit* u)
 			elem->SetMissionRole(Mission::ESCORT);
 		}
 	}
-	else if (u->Type() == (int)CLASSIFICATION::STATION ||
-		u->Type() == (int)CLASSIFICATION::STARBASE) {
+	else if (u->Type() == UShip::STATION ||
+		u->Type() == UShip::STARBASE) {
 		elem->SetMissionRole(Mission::FLIGHT_OPS);
 
 		if (squadron && elem->GetCombatGroup() == squadron->FindCarrier()) {
 			carrier_elem = elem;
 
-			if (u->Type() == (int)CLASSIFICATION::STARBASE)
+			if (u->Type() == UShip::STARBASE)
 				airbase = true;
 		}
 	}
-	else if (u->Type() == (int)CLASSIFICATION::FARCASTER) {
+	else if (u->Type() == UShip::FARCASTER) {
 		elem->SetMissionRole(Mission::OTHER);
 
 		// link farcaster to other terminus:
@@ -650,7 +650,7 @@ CampaignMissionFighter::CreateSingleElement(CombatGroup* g, CombatUnit* u)
 		Instruction* obj = new Instruction(Instruction::VECTOR, dst + "-" + src);
 		elem->AddObjective(obj);
 	}
-	else if ((u->Type() & (int)CLASSIFICATION::STARSHIPS) != 0) {
+	else if ((u->Type() & UShip::STARSHIPS) != 0) {
 		elem->SetMissionRole(Mission::FLEET);
 	}
 

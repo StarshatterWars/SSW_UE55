@@ -20,7 +20,7 @@
 #include "CombatAssignment.h"
 #include "Campaign.h"
 //#include "ShipDesign.h"
-//#include "Ship.h"
+#include "Ship.h"
 
 #include "../System/Game.h"
 #include "../Foundation/DataLoader.h"
@@ -438,8 +438,8 @@ CombatGroup::Clone(bool deep)
 					for (int u = 0; u < g->GetUnits().size(); u++) {
 						CombatUnit* unit = g->GetUnits()[u];
 
-						if (unit->Type() >= (int) CLASSIFICATION::FIGHTER ||
-							unit->Type() <= (int) CLASSIFICATION::LCA) {
+						if (unit->Type() >= UShip::FIGHTER ||
+							unit->Type() <= UShip::LCA) {
 							unit->SetCarrier(carrier);
 							unit->SetRegion(carrier->GetRegion());
 						}
@@ -973,8 +973,8 @@ CombatGroup::GetRandomUnit()
 			result = live[index];
 
 			int ship_class = result->GetShipClass();
-			if (ship_class >= (int) CLASSIFICATION::CRUISER &&
-				ship_class <= (int) CLASSIFICATION::FARCASTER)
+			if (ship_class >= UShip::CRUISER &&
+				ship_class <= UShip::FARCASTER)
 				result = 0;
 		}
 	}

@@ -6,7 +6,7 @@
 #include "CombatGroup.h"
 #include "Campaign.h"
 #include "ShipDesign.h"
-//#include "Ship.h"
+#include "Ship.h"
 
 #include "../System/Game.h"
 
@@ -117,16 +117,16 @@ CombatUnit::CanLaunch() const
 	bool result = false;
 
 	switch (type) {
-	case (int) CLASSIFICATION::FIGHTER:
-	case (int)CLASSIFICATION::ATTACK:  
+	case UShip::FIGHTER:
+	case UShip::ATTACK:
 		result = (ACampaign::Stardate() - launch_time) >= 300;
 		break;
 
-	case (int)CLASSIFICATION::CORVETTE:
-	case (int)CLASSIFICATION::FRIGATE:
-	case (int)CLASSIFICATION::DESTROYER:
-	case (int)CLASSIFICATION::CRUISER:
-	case (int)CLASSIFICATION::CARRIER:  
+	case UShip::CORVETTE:
+	case UShip::FRIGATE:
+	case UShip::DESTROYER:
+	case UShip::CRUISER:
+	case UShip::CARRIER:
 		result = true;
 		break;
 	}
@@ -145,25 +145,25 @@ CombatUnit::MarkerColor() const
 bool
 CombatUnit::IsGroundUnit() const
 {
-	return (design && (design->type & (int)CLASSIFICATION::GROUND_UNITS)) ? true : false;
+	return (design && (design->type & UShip::GROUND_UNITS)) ? true : false;
 }
 
 bool
 CombatUnit::IsStarship() const
 {
-	return (design && (design->type & (int)CLASSIFICATION::STARSHIPS)) ? true : false;
+	return (design && (design->type & UShip::STARSHIPS)) ? true : false;
 }
 
 bool
 CombatUnit::IsDropship() const
 {
-	return (design && (design->type & (int)CLASSIFICATION::DROPSHIPS)) ? true : false;
+	return (design && (design->type & UShip::DROPSHIPS)) ? true : false;
 }
 
 bool
 CombatUnit::IsStatic() const
 {
-	return design && (design->type >= (int)CLASSIFICATION::STATION);
+	return design && (design->type >= UShip::STATION);
 }
 
 // +----------------------------------------------------------------------+
@@ -181,7 +181,7 @@ double CombatUnit::MaxEffectiveRange() const
 
 double CombatUnit::OptimumRange() const
 {
-	if (type == (int)CLASSIFICATION::FIGHTER || type == (int)CLASSIFICATION::ATTACK)
+	if (type == UShip::FIGHTER || type == (int)CLASSIFICATION::ATTACK)
 		return 15e3;
 
 	return 30e3;
@@ -194,7 +194,7 @@ bool CombatUnit::CanDefend(CombatUnit* unit) const
 	if (unit == 0 || unit == this)
 		return false;
 
-	if (type > (int)CLASSIFICATION::STATION)
+	if (type > UShip::STATION)
 		return false;
 
 	double distance = (location - unit->location).length();
@@ -216,7 +216,7 @@ double CombatUnit::PowerVersus(CombatUnit* tgt) const
 	if (tgt == 0 || tgt == this || available < 1)
 		PowerReturn = 0;
 
-	if (type > (int) CLASSIFICATION::STATION)
+	if (type > UShip::STATION)
 		PowerReturn = 0;
 
 	double effectiveness = 1;
@@ -228,33 +228,33 @@ double CombatUnit::PowerVersus(CombatUnit* tgt) const
 	if (distance > MaxEffectiveRange())
 		effectiveness = 0.5;
 
-	if (type == (int)CLASSIFICATION::FIGHTER) {
-		if (tgt->type == (int)CLASSIFICATION::FIGHTER || tgt->type == (int)CLASSIFICATION::ATTACK)
-			PowerReturn = (int)CLASSIFICATION::FIGHTER * 2 * available * effectiveness;
+	if (type == UShip::FIGHTER) {
+		if (tgt->type == UShip::FIGHTER || tgt->type == (int)CLASSIFICATION::ATTACK)
+			PowerReturn = UShip::FIGHTER * 2 * available * effectiveness;
 		else
 			PowerReturn = 0;
 	}
-	else if (type == (int)CLASSIFICATION::ATTACK) {
-		if (tgt->type > (int)CLASSIFICATION::ATTACK)
-			PowerReturn = (int)CLASSIFICATION::ATTACK * 3 * available * effectiveness;
+	else if (type == UShip::ATTACK) {
+		if (tgt->type > UShip::ATTACK)
+			PowerReturn = UShip::ATTACK * 3 * available * effectiveness;
 		else
 			PowerReturn = 0;
 	}
-	else if (type == (int)CLASSIFICATION::CARRIER) {
+	else if (type == UShip::CARRIER) {
 		PowerReturn = 0;
 	}
-	else if (type == (int)CLASSIFICATION::SWACS) {
+	else if (type == UShip::SWACS) {
 		PowerReturn = 0;
 	}
-	else if (type == (int)CLASSIFICATION::CRUISER) {
-		if (tgt->type <= (int)CLASSIFICATION::ATTACK)
+	else if (type == UShip::CRUISER) {
+		if (tgt->type <= UShip::ATTACK)
 			PowerReturn = type * effectiveness;
 
 		else
 			PowerReturn = 0;
 	}
 	else {
-		if (tgt->type > (int)CLASSIFICATION::ATTACK)
+		if (tgt->type > UShip::ATTACK)
 			PowerReturn = type * effectiveness;
 		else
 			PowerReturn = type * 0.1 * effectiveness;
@@ -367,9 +367,9 @@ CombatUnit::Kill(int n)
 
 	if (killed) {
 		// if unit could support children, kill them too:
-		if (type == (int)CLASSIFICATION::CARRIER ||
-			type == (int)CLASSIFICATION::STATION ||
-			type == (int)CLASSIFICATION::STARBASE) {
+		if (type == UShip::CARRIER ||
+			type == UShip::STATION ||
+			type == UShip::STARBASE) {
 
 			if (group) {
 				ListIter<CombatGroup> iter = group->GetComponents();
