@@ -20,7 +20,8 @@
  * 
  */
 
- class AUniverse;
+ class UUniverse;
+ class USim;
  class AGalaxy;
  class DataLoader;
 
@@ -628,9 +629,6 @@ public:
 	void Print(FString Msg, FString File);
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void SpawnUniverse();
-
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void SpawnGalaxy();
 
 	void GetCampaignData();
@@ -638,8 +636,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 
-	UPROPERTY()
-	AUniverse* GameUniverse;
+	UUniverse* GameUniverse = nullptr;
+	USim* Sim = nullptr;
+
 	AGalaxy* GameGalaxy;
 
 	UPROPERTY()

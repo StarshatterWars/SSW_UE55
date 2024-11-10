@@ -13,10 +13,10 @@
 
 
 #include "Instruction.h"
-//#include "Element.h"
+#include "Element.h"
 //#include "RadioMessage.h"
 //#include "Ship.h"
-//#include "Sim.h"
+#include "Sim.h"
 
 #include "../System/Game.h"
 #include "../Foundation/Text.h"
@@ -230,7 +230,7 @@ Instruction::GetObserverName() const
 // +----------------------------------------------------------------------+
 
 void
-Instruction::Evaluate(Ship* ship)
+Instruction::Evaluate(UShip* ship)
 {
 	/*Sim* sim = Sim::GetSim();
 

@@ -15,7 +15,7 @@
 #include "PlayerData.h"
 //#include "NetLobbyServer.h"
 //#include "NetLayer.h"
-//#include "Ship.h"
+#include "Ship.h"
 //#include "SimEvent.h"
 #include "Campaign.h"
 //#include "CampaignSaveGame.h"

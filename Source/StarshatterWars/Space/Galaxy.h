@@ -11,7 +11,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Universe.h"
+#include "GameFramework/Actor.h"
+#include "../Foundation/Text.h"
+#include "../Foundation/Term.h"
+#include "../Foundation/List.h"
+
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Engine/DataTable.h"
+
 #include "../System/SSWGameInstance.h"
 #include "Galaxy.generated.h"
 
@@ -30,7 +38,7 @@ class Scene;
 // +--------------------------------------------------------------------+
 
 UCLASS()
-class STARSHATTERWARS_API AGalaxy : public AUniverse
+class STARSHATTERWARS_API AGalaxy : public AActor
 {
 	GENERATED_BODY()
 
@@ -89,6 +97,9 @@ protected:
 	TSubclassOf<AStarSystem> StarSystemObject;
 
 	FS_Galaxy GalaxyData;
+
+	FString ProjectPath;
+	FString FilePath;
 
 
 };

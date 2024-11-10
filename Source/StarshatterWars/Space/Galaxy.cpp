@@ -63,9 +63,11 @@ AGalaxy::AGalaxy()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-AGalaxy::AGalaxy(const char* n)
-	: name(n), radius(10)
-{ }
+AGalaxy::AGalaxy(const char* n)	
+{ 
+	name = n;
+	radius = 10;
+}
 
 // +--------------------------------------------------------------------+
 

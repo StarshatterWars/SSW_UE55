@@ -24,12 +24,6 @@ USSWGameInstance* AGameLoader::GetSSWGameInstance()
 	return SSWInstance;
 }
 
-void AGameLoader::LoadUniverse()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->SpawnUniverse();
-}
-
 void AGameLoader::LoadGalaxy()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();

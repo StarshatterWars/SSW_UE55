@@ -15,11 +15,12 @@
 #include "Instruction.h"
 //#include "RadioMessage.h"
 //#include "RadioHandler.h"
-//#include "Sim.h"
+#include "Sim.h"
 #include "Ship.h"
 //#include "NetUtil.h"
 
 #include "../System/Game.h"
+#include "../System/SSWGameInstance.h"
 
 static int id_key = 1000;
 
@@ -32,7 +33,7 @@ Element::Element(const char* call_sign, int a_iff, int a_type)
 	command_ai = 1;
 	commander = 0;
 	assignment = 0;
-	//carrier = 0;
+	carrier = 0;
 	combat_group = 0;
 	combat_unit = 0;
 	launch_time = 0;
@@ -354,7 +355,7 @@ Element::GetObserverName() const
 
 // +----------------------------------------------------------------------+
 
-/*void
+void
 Element::AddNavPoint(Instruction* pt, Instruction* afterPoint, bool send)
 {
 	if (pt && !flight_plan.contains(pt)) {
@@ -373,13 +374,13 @@ Element::AddNavPoint(Instruction* pt, Instruction* afterPoint, bool send)
 			flight_plan.append(pt);
 		}
 
-		if (send) {
-			NetUtil::SendNavData(true, this, index, pt);
-		}
+		//if (send) {
+		//	NetUtil::SendNavData(true, this, index, pt);
+		//}
 	}
-}*/
+}
 
-/*void
+void
 Element::DelNavPoint(Instruction* pt, bool send)
 {
 	// XXX MEMORY LEAK
@@ -392,15 +393,15 @@ Element::DelNavPoint(Instruction* pt, bool send)
 		int index = flight_plan.index(pt);
 		flight_plan.remove(pt);
 
-		if (send) {
-			NetUtil::SendNavDelete(this, index);
-		}
+		//if (send) {
+		//	NetUtil::SendNavDelete(this, index);
+		//}
 	}
-}*/
+}
 
 // +----------------------------------------------------------------------+
 
-/*void
+void
 Element::ClearFlightPlan(bool send)
 {
 	hold_time = 0;
@@ -408,10 +409,10 @@ Element::ClearFlightPlan(bool send)
 	objectives.destroy();
 	instructions.destroy();
 
-	if (send) {
-		NetUtil::SendNavDelete(this, -1);
-	}
-}*/
+	//if (send) {
+	//	NetUtil::SendNavDelete(this, -1);
+	//}
+}
 
 // +----------------------------------------------------------------------+
 
@@ -554,10 +555,10 @@ Element::GetInstruction(int index)
 
 // +----------------------------------------------------------------------+
 
-/*void
+void
 Element::ResumeAssignment()
 {
-	SetAssignment(0);
+	/*SetAssignment(0);
 
 	if (objectives.isEmpty())
 		return;
@@ -579,20 +580,22 @@ Element::ResumeAssignment()
 	}
 
 	if (objective) {
-		Sim* sim = Sim::GetSim();
+		USim* sim = SSWInstance->Sim;
+		
+		//USim::GetSim();
 
 		ListIter<Element> iter = sim->GetElements();
 		while (++iter) {
 			Element* elem = iter.value();
-			SimObject* tgt = objective->GetTarget();
+			USimObject* tgt = objective->GetTarget();
 
-			if (tgt && tgt->Type() == SimObject::SIM_SHIP && elem->Contains((const Ship*)tgt)) {
+			if (tgt && tgt->Type() == USimObject::SIM_SHIP && elem->Contains((const UShip*)tgt)) {
 				SetAssignment(elem);
 				return;
 			}
 		}
-	}
-}*/
+	}*/
+}
 
 // +----------------------------------------------------------------------+
 

@@ -6,6 +6,7 @@
 #include "../Space/Universe.h"
 #include "../Space/Galaxy.h"
 #include "../Foundation/DataLoader.h"
+#include "../Game/Sim.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -19,6 +20,12 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIsDeviceInitialized = false;
 	bIsDeviceRestored = false;
 	GameUniverse = nullptr;
+	Sim = nullptr;
+
+	if (GameUniverse == nullptr)
+		NewObject<UUniverse>();
+	if (Sim == nullptr)
+		Sim = NewObject<USim>();
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
@@ -51,36 +58,6 @@ FString USSWGameInstance::GetProjectPath()
 void USSWGameInstance::Print(FString Msg, FString File)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s :%s"), *Msg, *File);
-}
-
-void USSWGameInstance::SpawnUniverse()
-{
-	UWorld* World = GetWorld();
-
-	FVector location = FVector::ZeroVector;
-	FRotator rotate = FRotator::ZeroRotator;
-
-	FActorSpawnParameters SpawnInfo;
-
-	if (GameUniverse == nullptr) {
-		GameUniverse = GetWorld()->SpawnActor<AUniverse>(AUniverse::StaticClass(), location, rotate, SpawnInfo);
-
-
-		if (GameUniverse)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Game Universe Spawned"));
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Game Universe"));
-		}
-	} 
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Game Universe already exists"));
-	}
-
-	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
-	//}		
 }
 
 void USSWGameInstance::SpawnGalaxy()

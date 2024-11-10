@@ -25,7 +25,7 @@
 //#include "HUDView.h"
 #include "Instruction.h"
 //#include "QuantumDrive.h"
-//#include "Sim.h"
+#include "Sim.h"
 //#include "AudioConfig.h"
 //#include "CameraDirector.h"
 //#include "RadioMessage.h"
@@ -82,7 +82,7 @@ MissionEvent::~MissionEvent()
 void
 MissionEvent::ExecFrame(double seconds)
 {
-	/*Sim* sim = Sim::GetSim();
+	USim* sim = USim::GetSim();
 
 	if (!sim) {
 		status = PENDING;
@@ -98,7 +98,7 @@ MissionEvent::ExecFrame(double seconds)
 
 		else
 			Execute();
-	}*/
+	}
 }
 
 // +--------------------------------------------------------------------+

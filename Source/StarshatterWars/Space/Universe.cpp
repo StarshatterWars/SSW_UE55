@@ -12,27 +12,47 @@
 #include "Galaxy.h"
 
 // Sets default values
-AUniverse::AUniverse()
+UUniverse::UUniverse()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-}
-
-
-// Called when the game starts or when spawned
-void AUniverse::BeginPlay()
-{
-	Super::BeginPlay();
 	//SpawnGalaxy();
+
+	UE_LOG(LogTemp, Log, TEXT("Universe Created"));
 }
 
-// Called every frame
-void AUniverse::Tick(float DeltaTime)
+
+void UUniverse::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);	
+
 }
 
-void AUniverse::SpawnGalaxy()
+bool UUniverse::IsTickable() const
+{
+	return false;
+}
+
+bool UUniverse::IsTickableInEditor() const
+{
+	return false;
+}
+
+bool UUniverse::IsTickableWhenPaused() const
+{
+	return false;
+}
+
+TStatId UUniverse::GetStatId() const
+{
+	return TStatId();
+}
+
+UWorld* UUniverse::GetWorld() const
+{
+	return GetOuter()->GetWorld();
+}
+
+
+void UUniverse::SpawnGalaxy()
 {
 	UWorld* World = GetWorld();
 

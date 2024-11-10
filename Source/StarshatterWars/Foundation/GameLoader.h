@@ -31,7 +31,6 @@ public:
 	USSWGameInstance* GetSSWGameInstance();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Loader")
-	void LoadUniverse();
 	void LoadGalaxy();
 	void GetCampaignData();
 };

@@ -23,7 +23,7 @@
 
 // +-------------------------------------------------------------------- +
 
-class Ship;
+class UShip;
 
 // +--------------------------------------------------------------------+
 
@@ -120,7 +120,7 @@ public:
 	const char* TargetDesc()      const { return tgt_desc; }
 	USimObject* GetTarget();
 
-	void              Evaluate(Ship* s);
+	void              Evaluate(UShip* s);
 	const char* GetShortDescription() const;
 	const char* GetDescription()  const;
 
