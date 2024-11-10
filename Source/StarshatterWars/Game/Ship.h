@@ -324,8 +324,8 @@ public:
 	int       GetContactID()    const { return contact_id; }
 	int       GetIFF()          const { return IFF_code; }
 	void      SetIFF(int iff);
-	Color     MarkerColor()     const;
-	Color     IFFColor(int iff);
+	virtual Color     MarkerColor()     const;
+	static  Color     IFFColor(int iff);
 	void      DoEMCON();
 	double    PCS()             const;
 	double    ACS()             const;

@@ -17,6 +17,7 @@
 #include "MissionShip.h"
 #include "MissionLoad.h"
 #include "ShipDesign.h"
+#include "Ship.h"
 #include "Instruction.h"
 
 // +====================================================================+
@@ -100,11 +101,11 @@ MissionElement::RoleName() const
 	return Mission::RoleName(mission_role);
 }
 
-/*Color
+Color
 MissionElement::MarkerColor() const
 {
-	return Ship::IFFColor(IFF_code);
-}*/
+	return UShip::IFFColor(IFF_code);
+}
 
 bool
 MissionElement::IsStatic() const

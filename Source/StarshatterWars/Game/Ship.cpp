@@ -86,6 +86,7 @@
 #include "../Foundation/Parser.h"
 #include "../Foundation/Reader.h"
 #include "../Foundation/List.h"
+#include "../Foundation/Color.h"
 
 // +----------------------------------------------------------------------+
 
@@ -752,9 +753,52 @@ void UShip::SetIFF(int iff)
 {
 }
 
-Color UShip::MarkerColor() const
+Color
+UShip::IFFColor(int iff)
 {
-	return Color();
+	Color c;
+
+	switch (iff) {
+	case 0:  // NEUTRAL, NON-COMBAT
+		c = Color(192, 192, 192);
+		break;
+
+	case 1:  // TERELLIAN ALLIANCE
+		c = Color(70, 70, 220);
+		break;
+
+	case 2:  // MARAKAN HEGEMONY
+		c = Color(220, 20, 20);
+		break;
+
+	case 3:  // BROTHERHOOD OF IRON
+		c = Color(200, 180, 20);
+		break;
+
+	case 4:  // ZOLON EMPIRE
+		c = Color(20, 200, 20);
+		break;
+
+	case 5:
+		c = Color(128, 0, 128);
+		break;
+
+	case 6:
+		c = Color(40, 192, 192);
+		break;
+
+	default:
+		c = Color(128, 128, 128);
+		break;
+	}
+
+	return c;
+}
+
+Color
+UShip::MarkerColor() const
+{
+	return IFFColor(IFF_code);
 }
 
 Weapon* UShip::GetDecoy() const
