@@ -42,7 +42,7 @@ CampaignMissionStarship::CampaignMissionStarship()
 	pkg_id = 1000;
 }
 
-CampaignMissionStarship::CampaignMissionStarship(ACampaign* c)
+CampaignMissionStarship::CampaignMissionStarship(UCampaign* c)
 {
 	campaign = c;
 	player_group = 0;

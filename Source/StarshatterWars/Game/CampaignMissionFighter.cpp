@@ -50,7 +50,7 @@ CampaignMissionFighter::CampaignMissionFighter()
 	pkg_id = 1000;
 }
 
-CampaignMissionFighter::CampaignMissionFighter(ACampaign* c)
+CampaignMissionFighter::CampaignMissionFighter(UCampaign* c)
 {
 	dump_missions = 1;
 	pkg_id = 1000;
@@ -2085,7 +2085,7 @@ CampaignMissionFighter::FindSquadron(int iff, int type)
 	if (!squadron) return 0;
 
 	CombatGroup* result = 0;
-	ACampaign* campn = ACampaign::GetCampaign();
+	UCampaign* campn = UCampaign::GetCampaign();
 
 	if (campn) {
 		ListIter<Combatant> combatant = campn->GetCombatants();

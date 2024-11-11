@@ -24,7 +24,7 @@
 
 // +--------------------------------------------------------------------+
 
-class ACampaign;
+class UCampaign;
 class CombatGroup;
 class CombatUnit;
 
@@ -63,7 +63,7 @@ public:
 	CombatEvent();
 	~CombatEvent();
 
-	CombatEvent(ACampaign* c, int type, int time, int team, int source, const char* rgn);
+	CombatEvent(UCampaign* c, int type, int time, int team, int source, const char* rgn);
 
 	int operator == (const CombatEvent& u)  const { return this == &u; }
 
@@ -109,7 +109,7 @@ public:
 	static const char* SourceName(int n);
 
 private:
-	ACampaign* campaign;
+	UCampaign* campaign;
 	int                  type;
 	int                  time;
 	int                  team;

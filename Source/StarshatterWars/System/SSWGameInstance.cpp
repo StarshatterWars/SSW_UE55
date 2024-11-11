@@ -19,13 +19,6 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIgnoreSizeChange = false;
 	bIsDeviceInitialized = false;
 	bIsDeviceRestored = false;
-	GameUniverse = nullptr;
-	Sim = nullptr;
-
-	if (GameUniverse == nullptr)
-		NewObject<UUniverse>();
-	if (Sim == nullptr)
-		Sim = NewObject<USim>();
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
@@ -141,6 +134,13 @@ bool USSWGameInstance::InitContent()
 	ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/"));
 	loader->SetDataPath(ProjectPath);
+
+	/*if (!bUniverseLoaded) {
+		bUniverseLoaded = true;
+		NewObject<UUniverse>();
+		Sim = NewObject<USim>(); 
+	}*/
+
 	return true;
 }
 

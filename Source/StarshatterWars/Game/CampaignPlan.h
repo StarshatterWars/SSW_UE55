@@ -26,7 +26,7 @@
 #include "../System/SSWGameInstance.h"
 #include "CampaignPlan.generated.h"
 
-class ACampaign;
+class UCampaign;
 /**
  * 
  */
@@ -39,7 +39,7 @@ public:
 	static const char* TYPENAME() { return "CampaignPlan"; }
 
 	UCampaignPlan();
-	UCampaignPlan(ACampaign* c) : campaign(c), exec_time(-1e6) { }
+	UCampaignPlan(UCampaign* c) : campaign(c), exec_time(-1e6) { }
 	virtual ~UCampaignPlan() { }
 
 	int operator == (const UCampaignPlan& p) const { return this == &p; }
@@ -57,7 +57,7 @@ public:
 	UWorld* GetWorld() const override;
 
 protected:
-	ACampaign* campaign;
+	UCampaign* campaign;
 	double     exec_time;
 
 };

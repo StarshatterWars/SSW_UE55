@@ -255,7 +255,7 @@ CombatGroup*
 MissionTemplate::FindCombatGroup(int iff, const ShipDesign* d)
 {
 	CombatGroup* result = 0;
-	ACampaign* campaign = ACampaign::GetCampaign();
+	UCampaign* campaign = UCampaign::GetCampaign();
 	List<CombatGroup> group_list;
 	static int        combat_group_index = 0;
 
@@ -386,7 +386,7 @@ MissionTemplate::Load(const char* fname, const char* pname)
 					char  sysname[64];
 					GetDefText(sysname, def, filename);
 
-					ACampaign* campaign = ACampaign::GetCampaign();
+					UCampaign* campaign = UCampaign::GetCampaign();
 
 					if (campaign) {
 						AGalaxy* galaxy = AGalaxy::GetInstance();
@@ -585,7 +585,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 		// by special code?
 		else if (code.length()) {
 			code.toLower();
-			ACampaign* campaign = ACampaign::GetCampaign();
+			UCampaign* campaign = UCampaign::GetCampaign();
 
 			if (code == "player") {
 				for (int i = 0; !elem && i < elements.size(); i++) {

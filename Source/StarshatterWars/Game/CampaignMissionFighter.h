@@ -24,7 +24,7 @@
 
 // +--------------------------------------------------------------------+
 
-class ACampaign;
+class UCampaign;
 class CampaignMissionRequest;
 class CombatGroup;
 class CombatUnit;
@@ -43,7 +43,7 @@ class STARSHATTERWARS_API CampaignMissionFighter
 {
 public:
 	CampaignMissionFighter();
-	CampaignMissionFighter(ACampaign* c);
+	CampaignMissionFighter(UCampaign* c);
 
 	virtual void   CreateMission(CampaignMissionRequest* request);
 
@@ -94,7 +94,7 @@ protected:
 	virtual MissionInfo* DescribeMission();
 	virtual void         Exit();
 
-	ACampaign* campaign;
+	UCampaign* campaign;
 	CampaignMissionRequest* request;
 	MissionInfo* mission_info;
 

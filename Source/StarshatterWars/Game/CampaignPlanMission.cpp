@@ -36,7 +36,7 @@ UCampaignPlanMission::UCampaignPlanMission()
 {
 }
 
-UCampaignPlanMission::UCampaignPlanMission(ACampaign* c)
+UCampaignPlanMission::UCampaignPlanMission(UCampaign* c)
 {
 	campaign = c;
 	start = 0;
@@ -63,7 +63,7 @@ UCampaignPlanMission::ExecFrame()
 				return;
 
 			// otherwise, once every few seconds is plenty:
-			if (ACampaign::Stardate() - exec_time < 1)
+			if (UCampaign::Stardate() - exec_time < 1)
 				return;
 		}
 
@@ -89,7 +89,7 @@ UCampaignPlanMission::ExecFrame()
 			delete request;
 		}
 
-		exec_time = ACampaign::Stardate();
+		exec_time = UCampaign::Stardate();
 	}
 }
 

@@ -23,7 +23,7 @@
 
 // +--------------------------------------------------------------------+
 
-class ACampaign;
+class UCampaign;
 class CombatGroup;
 class CombatUnit;
 class Mission;

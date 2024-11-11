@@ -27,7 +27,7 @@ class Combatant;
 class CombatGroup;
 class CombatUnit;
 class CombatZone;
-class ACampaign;
+class UCampaign;
 
 // +--------------------------------------------------------------------+
 
@@ -43,7 +43,7 @@ public:
 	static const char* TYPENAME() { return "CampaignPlanAssignment"; }
 
 	UCampaignPlanAssignment();
-	UCampaignPlanAssignment(ACampaign* c);
+	UCampaignPlanAssignment(UCampaign* c);
 	~UCampaignPlanAssignment() { }
 
 	// operations:

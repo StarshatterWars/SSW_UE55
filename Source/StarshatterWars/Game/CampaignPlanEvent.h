@@ -45,7 +45,7 @@ class STARSHATTERWARS_API UCampaignPlanEvent : public UCampaignPlan
 	static const char* TYPENAME() { return "CampaignPlanEvent"; }
 
 	UCampaignPlanEvent();
-	UCampaignPlanEvent(ACampaign* c);
+	UCampaignPlanEvent(UCampaign* c);
 	~UCampaignPlanEvent();
 
 	// operations:

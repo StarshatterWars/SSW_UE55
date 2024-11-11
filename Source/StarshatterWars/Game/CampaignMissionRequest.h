@@ -21,7 +21,7 @@
 
 // +-------------------------------------------------------------------- +
 
-class ACampaign;
+class UCampaign;
 class CombatGroup;
 class CombatUnit;
 class CombatZone;
@@ -41,10 +41,10 @@ public:
 	static const char* TYPENAME() { return "CampaignMissionRequest"; }
 
 	CampaignMissionRequest();
-	CampaignMissionRequest(ACampaign* c, int type, int start,
+	CampaignMissionRequest(UCampaign* c, int type, int start,
 		CombatGroup* primary, CombatGroup* tgt = 0);
 
-	ACampaign* GetCampaign() { return campaign; }
+	UCampaign* GetCampaign() { return campaign; }
 	int Type() { return type; }
 	int OpposingType() { return opp_type; }
 	int StartTime() { return start; }
@@ -69,7 +69,7 @@ public:
 	void              SetScript(const char* s) { script = s; }
 
 private:
-	ACampaign* campaign;
+	UCampaign* campaign;
 
 	int               type;             // type of mission
 	int               opp_type;         // opposing mission type

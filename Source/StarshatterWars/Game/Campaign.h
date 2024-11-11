@@ -20,13 +20,17 @@
 #include "../Foundation/Term.h"
 #include "../Foundation/List.h"
 #include "../Foundation/DataLoader.h"
-#include "GameFramework/Actor.h"
+#include "UObject/NoExportTypes.h"
+#include "Tickable.h"
+
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "../System/SSWGameInstance.h"
 #include "Campaign.generated.h"
 
 // +--------------------------------------------------------------------+
 
-class Campaign;
+class UCampaign;
 class CampaignPlan;
 class Combatant;
 class CombatAction;
@@ -44,12 +48,14 @@ class AStarSystem;
 // +--------------------------------------------------------------------+
 
 UCLASS()
-class STARSHATTERWARS_API ACampaign : public AActor
+class STARSHATTERWARS_API UCampaign : public UObject, public FTickableGameObject
 {
 	GENERATED_BODY()
+
+public:
 	
-public:	
-	
+	static const char* TYPENAME() { return "Campaign"; }
+
 	enum CONSTANTS {
 		TRAINING_CAMPAIGN = 1,
 		DYNAMIC_CAMPAIGN,
@@ -68,13 +74,24 @@ public:
 		CAMPAIGN_FAILED
 	};
 	
-	// Sets default values for this actor's properties
-	ACampaign();
+	UCampaign();
 
-	static const char* TYPENAME() { return "Campaign"; }
+	void CampaignSet(int id, const char* name = 0);
+	void CampaignSet(int id, const char* name, const char* path);
+
+
 	
-	int operator == (const ACampaign& s) const { return name == s.name; }
-	int operator <  (const ACampaign& s) const { return campaign_id < s.campaign_id; }
+	int operator == (const UCampaign& s) const { return name == s.name; }
+	int operator <  (const UCampaign& s) const { return campaign_id < s.campaign_id; }
+
+	void Tick(float DeltaTime) override;
+	bool IsTickable() const override;
+	bool IsTickableInEditor() const override;
+	bool IsTickableWhenPaused() const override;
+	TStatId GetStatId() const override;
+
+	UWorld* GetWorld() const override;
+
 
 	// operations:
 	virtual void         Load();
@@ -169,11 +186,11 @@ public:
 
 	static void          Initialize();
 	static void          Close();
-	static ACampaign* GetCampaign();
-	static List<ACampaign>&GetAllCampaigns();
+	static UCampaign* GetCampaign();
+	static List<UCampaign>&GetAllCampaigns();
 	static int           GetLastCampaignId();
-	static ACampaign* SelectCampaign(const char* name);
-	static ACampaign* CreateCustomCampaign(const char* name, const char* path);
+	static UCampaign* SelectCampaign(const char* name);
+	static UCampaign* CreateCustomCampaign(const char* name, const char* path);
 
 	static double        Stardate();
 
@@ -192,7 +209,7 @@ protected:
 	int                  campaign_id;
 	int                  status;
 	char                 filename[64];
-	char                 path[64];
+	Text                 path;
 	Text                 name;
 	Text                 description;
 	Text                 situation;
@@ -223,13 +240,4 @@ protected:
 	double               startTime;
 	double               updateTime;
 	int                  lockout;
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 };

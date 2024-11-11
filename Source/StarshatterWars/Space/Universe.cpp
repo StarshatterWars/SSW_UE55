@@ -10,6 +10,7 @@
 
 #include "Universe.h"
 #include "Galaxy.h"
+#include "../Game/Campaign.h"
 
 // Sets default values
 UUniverse::UUniverse()

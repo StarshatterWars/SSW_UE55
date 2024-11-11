@@ -24,7 +24,7 @@
 
 // +--------------------------------------------------------------------+
 
-class ACampaign;
+class UCampaign;
 class CampaignMissionRequest;
 class CombatGroup;
 class CombatUnit;
@@ -46,7 +46,7 @@ public:
 	static const char* TYPENAME() { return "CampaignMissionStarship"; }
 	
 	CampaignMissionStarship();
-	CampaignMissionStarship(ACampaign* c);
+	CampaignMissionStarship(UCampaign* c);
 
 	virtual void   CreateMission(CampaignMissionRequest* request);
 
@@ -87,7 +87,7 @@ protected:
 	virtual MissionInfo* DescribeMission();
 	virtual void         Exit();
 
-	ACampaign* campaign;
+	UCampaign* campaign;
 	CampaignMissionRequest* request;
 	MissionInfo* mission_info;
 

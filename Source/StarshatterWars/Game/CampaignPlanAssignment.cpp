@@ -28,7 +28,7 @@ UCampaignPlanAssignment::UCampaignPlanAssignment()
 {
 }
 
-UCampaignPlanAssignment::UCampaignPlanAssignment(ACampaign* c)
+UCampaignPlanAssignment::UCampaignPlanAssignment(UCampaign* c)
 {
 	campaign = c;
 }
@@ -38,7 +38,7 @@ UCampaignPlanAssignment::ExecFrame()
 {
 	if (campaign && campaign->IsActive()) {
 		// once every few minutes is plenty:
-		if (ACampaign::Stardate() - exec_time < 300)
+		if (UCampaign::Stardate() - exec_time < 300)
 			return;
 
 		ListIter<Combatant>  iter = campaign->GetCombatants();

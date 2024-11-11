@@ -18,7 +18,7 @@ CampaignMissionRequest::CampaignMissionRequest()
 {
 }
 
-CampaignMissionRequest::CampaignMissionRequest(ACampaign* c,
+CampaignMissionRequest::CampaignMissionRequest(UCampaign* c,
 	int          t,
 	int          s,
 	CombatGroup* p,

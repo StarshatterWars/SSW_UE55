@@ -24,7 +24,7 @@
 
 // +--------------------------------------------------------------------+
 
-class ACampaign;
+class UCampaign;
 class Mission;
 
 // +--------------------------------------------------------------------
@@ -36,7 +36,7 @@ class STARSHATTERWARS_API MissionInfo
 {
 public:
 	static const char* TYPENAME() { return "MissionInfo"; }
-
+		
 	MissionInfo();
 	~MissionInfo();
 

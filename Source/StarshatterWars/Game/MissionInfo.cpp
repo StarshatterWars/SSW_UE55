@@ -14,6 +14,8 @@
 
 #include "MissionInfo.h"
 #include "Campaign.h"
+#include "PlayerData.h"
+#include "CombatGroup.h"
 
 const int TIME_NEVER = (int)1e9;
 
@@ -41,9 +43,9 @@ MissionInfo::~MissionInfo()
 
 bool MissionInfo::IsAvailable()
 {
-	ACampaign* campaign = ACampaign::GetCampaign();
-	//APlayer* Aplayer = Player::GetCurrentPlayer();
-	//CombatGroup* player_group = campaign->GetPlayerGroup();
+	UCampaign* campaign = UCampaign::GetCampaign();
+	PlayerData* player = PlayerData::GetCurrentPlayer();
+	CombatGroup* player_group = campaign->GetPlayerGroup();
 
 	if (campaign->GetTime() < start_after)
 		return false;
@@ -51,14 +53,14 @@ bool MissionInfo::IsAvailable()
 	if (campaign->GetTime() > start_before)
 		return false;
 
-	//if (region.length() && player_group->GetRegion() != region)
-	//	return false;
+	if (region.length() && player_group->GetRegion() != region)
+		return false;
 
-	//if (min_rank && player->Rank() < min_rank)
-	//	return false;
+	if (min_rank && player->Rank() < min_rank)
+		return false;
 
-	//if (max_rank && player->Rank() > max_rank)
-	//	return false;
+	if (max_rank && player->Rank() > max_rank)
+		return false;
 
 	if (exec_once < 0)
 		return false;

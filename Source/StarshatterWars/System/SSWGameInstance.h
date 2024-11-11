@@ -636,9 +636,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 
-	UUniverse* GameUniverse = nullptr;
-	USim* Sim = nullptr;
-
 	AGalaxy* GameGalaxy;
 
 	UPROPERTY()
@@ -685,5 +682,8 @@ protected:
 	bool              bIsDeviceRestored;
 
 	EGAMESTATUS Status;
+
+	private:
+		bool bUniverseLoaded;
 
 };

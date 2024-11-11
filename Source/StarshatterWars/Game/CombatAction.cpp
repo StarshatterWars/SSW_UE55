@@ -61,7 +61,7 @@ CombatAction::IsAvailable() const
 			return false;
 	}
 
-	ACampaign* campaign = ACampaign::GetCampaign();
+	UCampaign* campaign = UCampaign::GetCampaign();
 	if (campaign) {
 		if (campaign->GetTime() < start_after) {
 			return false;
@@ -223,7 +223,7 @@ CombatAction::IsAvailable() const
 void
 CombatAction::FireAction()
 {
-	ACampaign* campaign = ACampaign::GetCampaign();
+	UCampaign* campaign = UCampaign::GetCampaign();
 	if (campaign)
 		time = (int)campaign->GetTime();
 
@@ -237,7 +237,7 @@ CombatAction::FireAction()
 void
 CombatAction::FailAction()
 {
-	ACampaign* campaign = ACampaign::GetCampaign();
+	UCampaign* campaign = UCampaign::GetCampaign();
 	if (campaign)
 		time = (int)campaign->GetTime();
 

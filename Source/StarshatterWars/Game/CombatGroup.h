@@ -23,7 +23,7 @@
 
 // +--------------------------------------------------------------------+
 
-class ACampaign;
+class UCampaign;
 class Combatant;
 class CombatGroup;
 class CombatUnit;
@@ -105,7 +105,7 @@ public:
 	// operations:
 	static CombatGroup* LoadOrderOfBattle(const char* fname, int iff, Combatant* combatant);
 	static void          SaveOrderOfBattle(const char* fname, CombatGroup* force);
-	static void          MergeOrderOfBattle(BYTE* block, const char* fname, int iff, Combatant* combatant, ACampaign* campaign);
+	static void          MergeOrderOfBattle(BYTE* block, const char* fname, int iff, Combatant* combatant, UCampaign* campaign);
 
 	void                 AddComponent(CombatGroup* g);
 	CombatGroup* FindGroup(int t, int n = -1);

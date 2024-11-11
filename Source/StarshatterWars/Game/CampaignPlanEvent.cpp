@@ -37,7 +37,7 @@ UCampaignPlanEvent::UCampaignPlanEvent()
 {
 }
 
-UCampaignPlanEvent::UCampaignPlanEvent(ACampaign* c) {
+UCampaignPlanEvent::UCampaignPlanEvent(UCampaign* c) {
 	campaign = c;
 	event_time = 0;
 
@@ -59,13 +59,13 @@ UCampaignPlanEvent::ExecFrame()
 			return;
 
 		// once every twenty minutes is plenty:
-		if (ACampaign::Stardate() - exec_time < 1200)
+		if (UCampaign::Stardate() - exec_time < 1200)
 			return;
 
 		if (!ExecScriptedEvents())
 			ExecStatisticalEvents();
 
-		exec_time = ACampaign::Stardate();
+		exec_time = UCampaign::Stardate();
 		event_time = (int)campaign->GetTime();
 	}
 }
@@ -73,7 +73,7 @@ UCampaignPlanEvent::ExecFrame()
 void
 UCampaignPlanEvent::SetLockout(int seconds)
 {
-	exec_time = ACampaign::Stardate() + seconds;
+	exec_time = UCampaign::Stardate() + seconds;
 }
 
 // +--------------------------------------------------------------------+
@@ -124,12 +124,12 @@ UCampaignPlanEvent::ExecScriptedEvents()
 
 					if (action->Subtype() == CombatEvent::CAMPAIGN_END) {
 						::Print(">>>>> CAMPAIGN %d END  (Action %03d) <<<<<\n", campaign->GetCampaignId(), action->Identity());
-						campaign->SetStatus(ACampaign::CAMPAIGN_SUCCESS);
+						campaign->SetStatus(UCampaign::CAMPAIGN_SUCCESS);
 					}
 
 					else if (action->Subtype() == CombatEvent::CAMPAIGN_FAIL) {
 						::Print(">>>>> CAMPAIGN %d FAIL (Action %03d) <<<<<\n", campaign->GetCampaignId(), action->Identity());
-						campaign->SetStatus(ACampaign::CAMPAIGN_FAILED);
+						campaign->SetStatus(UCampaign::CAMPAIGN_FAILED);
 					}
 				}
 				break;

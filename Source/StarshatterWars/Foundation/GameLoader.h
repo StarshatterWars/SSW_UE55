@@ -33,4 +33,5 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Loader")
 	void LoadGalaxy();
 	void GetCampaignData();
+	void InitializeGame();
 };

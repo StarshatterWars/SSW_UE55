@@ -8,9 +8,13 @@
 */
 
 #include "GameLoader.h"
+#include "../Space/Universe.h"
+#include "../Game/Sim.h"
+#include "../Game/Campaign.h"
 
 void AGameLoader::BeginPlay()
 {
+	InitializeGame();
 	LoadGalaxy();
 }
 
@@ -34,5 +38,16 @@ void AGameLoader::GetCampaignData()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->GetCampaignData();
+}
+
+void AGameLoader::InitializeGame()
+{
+	UUniverse* Universe;
+	Universe = NewObject<UUniverse>();
+
+	USim* Sim;
+	Sim = NewObject<USim>();
+
+	UCampaign::Initialize();
 }
 

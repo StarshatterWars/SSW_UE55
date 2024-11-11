@@ -40,115 +40,230 @@
 #include "../Foundation/ParseUtil.h"
 #include "../Foundation/Random.h"
 #include "../Foundation/FormatUtil.h"
+#include "../System/SSWGameInstance.h"
 
-static List<ACampaign>   campaigns;
-static ACampaign* current_campaign = 0;
+static List<UCampaign>   campaigns;
+static UCampaign* current_campaign = 0;
 
-// Sets default values
-ACampaign::ACampaign()
-{
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-}
-
-void ACampaign::Load()
+UCampaign::UCampaign()
 {
 
 }
 
-void ACampaign::Prep()
+void UCampaign::CampaignSet(int id, const char* n)
+{
+	campaign_id = id;
+	name = n;
+	mission_id = -1;
+	mission = 0;
+	net_mission = 0;
+
+	scripted = false;
+	sequential = false;
+	time = 0;
+	startTime = 0;
+	loadTime = 0;
+
+	player_group = 0;
+	player_unit = 0;
+	status = CAMPAIGN_INIT;
+	lockout = 0;
+	loaded_from_savegame = false;
+
+	Load();
+}
+
+void UCampaign::CampaignSet(int id, const char* n, const char* p)
+{
+	campaign_id = id;
+	name = n;
+	mission_id = -1;
+	mission = 0;
+	net_mission = 0;
+
+	scripted = false;
+	sequential = false;
+	time = 0;
+	startTime = 0;
+	loadTime = 0;
+
+	player_group = 0;
+	player_unit = 0;
+	status = CAMPAIGN_INIT;
+	lockout = 0;
+	loaded_from_savegame = false;
+
+	path = p;
+	Load();
+}
+
+// +--------------------------------------------------------------------+
+
+void
+UCampaign::Initialize()
+{	
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Campaigns/0"));
+	FString FileName = ProjectPath;
+
+	//DataLoader* loader = DataLoader::GetLoader();
+	
+	//loader->SetDataPath(FileName);
+	//const char* result = TCHAR_TO_ANSI(*FileName);
+
+	UE_LOG(LogTemp, Log, TEXT("Loading Campaign: %s"), *FileName);
+	
+	/*for (int i = 1; i < 6; i++) {
+		
+		FileName.Append(FString::FormatAsNumber(i));
+		const char* result = TCHAR_TO_ANSI(*FileName);
+
+		loader->UseFileSystem(true);
+		loader->SetDataPath(FileName);
+		UE_LOG(LogTemp, Log, TEXT("Loading Campaign: %s"), *FileName);
+
+		/*if (loader->FindFile("campaign.def")) {
+			char txt[256];
+			sprintf_s(txt, "Dynamic Campaign %02d", i);
+			
+			UCampaign* c;
+			c = NewObject<UCampaign>();
+			c->CampaignSet(i, txt);
+
+			if (c) {
+				campaigns.insertSort(c);
+			}
+		}
+	}
+
+	UCampaign* c;
+	c = NewObject<UCampaign>();
+	c->CampaignSet(SINGLE_MISSIONS, "Single Missions");
+	if (c) {
+		campaigns.insertSort(c);
+		current_campaign = c;
+	}
+
+	c->CampaignSet(MULTIPLAYER_MISSIONS, "Multiplayer Missions");
+	if (c) {
+		campaigns.insertSort(c);
+	}
+
+	c->CampaignSet(CUSTOM_MISSIONS, "Custom Missions");
+	if (c) {
+		campaigns.insertSort(c);
+	}*/
+}
+
+void UCampaign::Tick(float DeltaTime)
 {
 
 }
 
-void ACampaign::Start()
+bool UCampaign::IsTickable() const
+{
+	return false;
+}
+
+bool UCampaign::IsTickableInEditor() const
+{
+	return false;
+}
+
+bool UCampaign::IsTickableWhenPaused() const
+{
+	return false;
+}
+
+TStatId UCampaign::GetStatId() const
+{
+	return TStatId();
+}
+
+UWorld* UCampaign::GetWorld() const
+{
+	return GetOuter()->GetWorld();
+}
+
+void UCampaign::Load()
 {
 
 }
 
-void ACampaign::ExecFrame()
+void UCampaign::Prep()
 {
 
 }
 
-void ACampaign::Unload()
+void UCampaign::Start()
 {
 
 }
 
-void ACampaign::Clear()
+void UCampaign::ExecFrame()
 {
 
 }
 
-void ACampaign::CommitExpiredActions()
+void UCampaign::Unload()
 {
 
 }
 
-void ACampaign::LockoutEvents(int seconds)
+void UCampaign::Clear()
 {
 
 }
 
-void ACampaign::CheckPlayerGroup()
+void UCampaign::CommitExpiredActions()
 {
 
 }
 
-void ACampaign::CreatePlanners()
+void UCampaign::LockoutEvents(int seconds)
 {
 
 }
 
-int ACampaign::GetPlayerTeamScore()
+void UCampaign::CheckPlayerGroup()
+{
+
+}
+
+void UCampaign::CreatePlanners()
+{
+
+}
+
+int UCampaign::GetPlayerTeamScore()
 {
 	return 0;
 }
 
-// Called when the game starts or when spawned
-void ACampaign::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void ACampaign::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void ACampaign::SetStatus(int s)
+void UCampaign::SetStatus(int s)
 {
 }
 
-void ACampaign::Initialize()
+void UCampaign::Close()
 {
 }
 
-void ACampaign::Close()
-{
-}
-
-ACampaign* ACampaign::GetCampaign()
+UCampaign* UCampaign::GetCampaign()
 {
 	return current_campaign;
 }
 
-List<ACampaign>& ACampaign::GetAllCampaigns()
+List<UCampaign>& UCampaign::GetAllCampaigns()
 {
 	return campaigns;
 }
 
-int ACampaign::GetLastCampaignId()
+int UCampaign::GetLastCampaignId()
 {
 	int result = 0;
 
 	for (int i = 0; i < campaigns.size(); i++) {
-		ACampaign* c = campaigns.at(i);
+		UCampaign* c = campaigns.at(i);
 
 		if (c->IsDynamic() && c->GetCampaignId() > result) {
 			result = c->GetCampaignId();
@@ -158,10 +273,10 @@ int ACampaign::GetLastCampaignId()
 	return result;
 }
 
-ACampaign* ACampaign::SelectCampaign(const char* name)
+UCampaign* UCampaign::SelectCampaign(const char* name)
 {
-	ACampaign* c = 0;
-	ListIter<ACampaign>   iter = campaigns;
+	UCampaign* c = 0;
+	ListIter<UCampaign>   iter = campaigns;
 
 	while (++iter && !c) {
 		if (!_stricmp(iter->Name(), name))
@@ -179,48 +294,48 @@ ACampaign* ACampaign::SelectCampaign(const char* name)
 	return c;
 }
 
-ACampaign* ACampaign::CreateCustomCampaign(const char* name, const char* path)
+UCampaign* UCampaign::CreateCustomCampaign(const char* name, const char* path)
 {
 	return nullptr;
 }
 
-double ACampaign::Stardate()
+double UCampaign::Stardate()
 {
 	return AStarSystem::GetStardate();
 }
 
-CombatGroup* ACampaign::FindGroup(int iff, int type, int id)
+CombatGroup* UCampaign::FindGroup(int iff, int type, int id)
 {
 	return nullptr;
 }
 
-CombatGroup* ACampaign::FindGroup(int iff, int type, CombatGroup* near_group)
+CombatGroup* UCampaign::FindGroup(int iff, int type, CombatGroup* near_group)
 {
 	return nullptr;
 }
 
-CombatGroup* ACampaign::FindStrikeTarget(int iff, CombatGroup* strike_group)
+CombatGroup* UCampaign::FindStrikeTarget(int iff, CombatGroup* strike_group)
 {
 	return nullptr;
 }
 
-AStarSystem* ACampaign::GetSystem(const char* sys)
+AStarSystem* UCampaign::GetSystem(const char* sys)
 {
 	return nullptr;
 }
 
-CombatZone* ACampaign::GetZone(const char* rgn)
+CombatZone* UCampaign::GetZone(const char* rgn)
 {
 	return nullptr;
 }
 
-bool ACampaign::IsDynamic() const
+bool UCampaign::IsDynamic() const
 {
 	return campaign_id >= (int) CAMPAIGN_CONSTANTS::DYNAMIC_CAMPAIGN &&
 		campaign_id < (int) CAMPAIGN_CONSTANTS::SINGLE_MISSIONS;
 }
 
-int ACampaign::GetPlayerIFF()
+int UCampaign::GetPlayerIFF()
 {
 	return 0;
 }

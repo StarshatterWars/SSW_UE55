@@ -35,7 +35,7 @@ CombatEvent::~CombatEvent()
 
 // +----------------------------------------------------------------------+
 
-CombatEvent::CombatEvent(ACampaign* c, int typ, int tim, int tem,
+CombatEvent::CombatEvent(UCampaign* c, int typ, int tim, int tem,
 	int src, const char* rgn)
 	: campaign(c), type(typ), time(tim), team(tem), source(src),
 	region(rgn), points(0), visited(false)

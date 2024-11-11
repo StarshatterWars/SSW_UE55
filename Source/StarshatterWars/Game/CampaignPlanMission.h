@@ -29,7 +29,7 @@ class CombatGroup;
 class CombatUnit;
 class CombatZone;
 class ZoneForce;
-class ACampaign;
+class UCampaign;
 
 // +--------------------------------------------------------------------+
 /**
@@ -43,7 +43,7 @@ class STARSHATTERWARS_API UCampaignPlanMission : public UCampaignPlan
 	static const char* TYPENAME() { return "CampaignPlanMission"; }
 
 	UCampaignPlanMission();
-	UCampaignPlanMission(ACampaign* c); 
+	UCampaignPlanMission(UCampaign* c); 
 
 	// operations:
 	virtual void   ExecFrame();
