@@ -28,9 +28,13 @@ DataLoader* DataLoader::loader = nullptr;
 
 // +--------------------------------------------------------------------+
 
-DataLoader::DataLoader()
-	: DataPath(""), video(0), use_file_system(true), enable_media(true)
-{ }
+DataLoader::DataLoader()	
+{
+	datapath = "";
+	video = 0;
+	use_file_system = true;
+	enable_media = true;
+}
 
 // +--------------------------------------------------------------------+
 
@@ -152,7 +156,7 @@ DataLoader::DisableDatafile(const char* name)
 	}
 
 	return DATAFILE_NOTEXIST;
-}
+}*/
 
 
 
@@ -178,20 +182,20 @@ DataLoader::FindFile(const char* name)
 	}
 
 	// then check datafiles, from last to first:
-	int narchives = archives.size();
+	/*int narchives = archives.size();
 	for (int i = 0; i < narchives; i++) {
 		DataArchive* a = archives[narchives - 1 - i];
 		if (a->FindEntry(filename) > -1) {
 			return true;
 		}
-	}
+	}*/
 
 	return false;
 }
 
 // +--------------------------------------------------------------------+
 
-int
+/*int
 DataLoader::ListArchiveFiles(const char* archive_name, const char* filter, List<Text>& list)
 {
 	int            pathlen = datapath.length();
@@ -256,16 +260,24 @@ DataLoader::ListArchiveFiles(const char* archive_name, const char* filter, List<
 	}
 
 	return list.size();
-}
+}*/
 
 // +--------------------------------------------------------------------+
+
+const wchar_t* GetWC(const char* c)
+{
+	const size_t cSize = strlen(c) + 1;
+	wchar_t* wc = new wchar_t[cSize];
+	mbstowcs(wc, c, cSize);
+
+	return wc;
+}
 
 void
 DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path, bool recurse)
 {
 	if (use_file_system) {
 		char data_filter[256];
-		ZeroMemory(data_filter, 256);
 
 		const char* pf = filter;
 		char* pdf = data_filter;
@@ -282,14 +294,16 @@ DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path,
 		char win32_filter[1024];
 		strcpy_s(win32_filter, datapath);
 
+		
+
 		if (recurse)
 			strcat_s(win32_filter, "*.*");
 		else
 			strcat_s(win32_filter, filter);
 
 		// first check current directory:
-		WIN32_FIND_DATA data;
-		HANDLE hFind = FindFirstFile(win32_filter, &data);
+		WIN32_FIND_DATAA data;
+		HANDLE hFind = FindFirstFileA(win32_filter, &data);
 
 		if (hFind != INVALID_HANDLE_VALUE) {
 			do {
@@ -315,13 +329,13 @@ DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path,
 						list.append(new Text(full_name(pathlen, 1000)));
 					}
 				}
-			} while (FindNextFile(hFind, &data));
+			} while (FindNextFileA(hFind, &data));
 		}
 	}
 }
 
 // +--------------------------------------------------------------------+
-*/
+
 
 
 
@@ -372,7 +386,7 @@ DataLoader::fread(void* buffer, size_t size, size_t count, BYTE*& stream)
 	stream += size * count;
 
 	return size * count;
-}
+}*/
 
 // +--------------------------------------------------------------------+
 
@@ -384,7 +398,7 @@ DataLoader::ReleaseBuffer(BYTE*& buf)
 }
 
 // +--------------------------------------------------------------------+
-
+/*
 int
 DataLoader::CacheBitmap(const char* name, Bitmap*& bitmap, int type, bool optional)
 {
@@ -937,19 +951,18 @@ DataLoader::LoadOggStream(const char* name, Sound*& snd)
 
 int DataLoader::ListFiles(const char* filter, List<Text>& list, bool recurse)
 {
-	/*list.destroy();
+	//list.destroy();
 
 	ListFileSystem(filter, list, datapath, recurse);
 
 	// then check datafile(s):
-	int narchives = archives.size();
+	/*int narchives = archives.size();
 	for (int i = 0; i < narchives; i++) {
 		DataArchive* a = archives[narchives - 1 - i];
 		ListArchiveFiles(a->Name(), filter, list);
-	}
+	}*/
 
-	return list.size(); */
-	return 0;
+	return list.size(); 
 }
 
 int DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bool optional)
@@ -995,8 +1008,4 @@ int DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bo
 	return 0;
 }
 
-void DataLoader::ReleaseBuffer(BYTE*& buf)
-{
-	delete[] buf;
-	buf = 0;
-}
+

@@ -79,6 +79,7 @@ private:
 
 	
 	Video* video;
+	Text        datapath;
 	bool        use_file_system;
 	bool        enable_media;
 
