@@ -75,6 +75,8 @@ public:
 	};
 	
 	UCampaign();
+	~UCampaign();
+
 	UCampaign(int id, const char* name = 0);
 	UCampaign(int id, const char* name, const char* path);
 

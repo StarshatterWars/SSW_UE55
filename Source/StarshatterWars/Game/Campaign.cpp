@@ -116,6 +116,7 @@ void UCampaign::CampaignSet(int id, const char* n)
 	status = CAMPAIGN_INIT;
 	lockout = 0;
 	loaded_from_savegame = false;
+	UE_LOG(LogTemp, Log, TEXT("Initializing %s: %02d"), *FString(n), id);
 
 	Load();
 }
@@ -146,6 +147,26 @@ void UCampaign::CampaignSet(int id, const char* n, const char* p)
 
 // +--------------------------------------------------------------------+
 
+UCampaign::~UCampaign()
+{
+	//for (int i = 0; i < NUM_IMAGES; i++)
+	//	image[i].ClearImage();
+
+	//delete net_mission;
+
+	//actions.destroy();
+	//events.destroy();
+	//missions.destroy();
+	//templates.destroy();
+	//planners.destroy();
+	//zones.destroy();
+	//combatants.destroy();
+}
+
+// +--------------------------------------------------------------------+
+
+
+
 void
 UCampaign::Initialize()
 {	
@@ -161,35 +182,23 @@ UCampaign::Initialize()
 	//const char* result = TCHAR_TO_ANSI(*FileName);
 
 	
-	for (int i = 1; i < 100; i++) {
+	for (int i = 1; i < 6; i++) {
 				
 		const char* result = TCHAR_TO_ANSI(*FileName);
+		FileName = ProjectPath; FileName.Append("0");
+		FileName.Append(FString::FormatAsNumber(i));
+		FileName.Append("campaign.def");
+		UE_LOG(LogTemp, Log, TEXT("Setting Campaign Directory and file %s"), *FileName);
 		
-		if(i >= 10) {
-			FileName = ProjectPath; 
-			FileName.Append(FString::FormatAsNumber(i));
-		}
-		else {
-			
-			FileName = ProjectPath; FileName.Append("0");
-			FileName.Append(FString::FormatAsNumber(i));
-		}
-		
-		UE_LOG(LogTemp, Log, TEXT("Loading Campaign: %s"), *FileName);
 		loader->UseFileSystem(true);
 		loader->SetDataPath(FileName);
 		
-		if (loader->FindFile("campaign.def")) {
-			char txt[256];
-			sprintf_s(txt, "Dynamic Campaign %02d", i);
-			
-			UCampaign* c;
-			c = NewObject<UCampaign>();
-			c->CampaignSet(i, txt);
+		UCampaign* c;
+		c = NewObject<UCampaign>();
+		c->CampaignSet(i, "Dynamic Campaign");
 
-			if (c) {
-				campaigns.insertSort(c);
-			}
+		if (c) {
+			campaigns.insertSort(c);
 		}
 	}
 
@@ -244,7 +253,101 @@ UWorld* UCampaign::GetWorld() const
 
 void UCampaign::Load()
 {
+	// first, unload any existing data:
+	Unload();
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Campaigns/"));
+	FString FileName = ProjectPath;
 
+	if (!path[0]) {
+		// then load the campaign from files:
+		switch (campaign_id) {
+		case SINGLE_MISSIONS:      
+			ProjectPath.Append(TEXT("GameData/Missions/"));
+			break;
+
+		case CUSTOM_MISSIONS:      
+			ProjectPath.Append(TEXT("GameData/Mods/Missions/"));
+			break;
+
+		case MULTIPLAYER_MISSIONS: 
+			ProjectPath.Append(TEXT("GameData/Multiplayer/"));
+			break;
+
+		default:                   
+			ProjectPath.Append(TEXT("GameData/Campaigns/"));
+			ProjectPath.Append(TEXT("GameData/Multiplayer/"));
+			FileName = ProjectPath; FileName.Append("0");
+			FileName.Append(FString::FormatAsNumber(campaign_id));
+			break;
+		}
+	}
+
+	/*DataLoader* loader = DataLoader::GetLoader();
+	
+	loader->UseFileSystem(true);
+	loader->SetDataPath(path);
+	
+	systems.clear();
+
+	if (loader->FindFile("zones.def"))
+		zones.append(CombatZone::Load("zones.def"));
+
+	for (int i = 0; i < zones.size(); i++) {
+		Text s = zones[i]->System();
+		bool found = false;
+
+		for (int n = 0; !found && n < systems.size(); n++) {
+			if (s == systems[n]->Name())
+				found = true;
+		}
+
+		if (!found)
+			systems.append(AGalaxy::GetInstance()->GetSystem(s));
+	}
+
+	loader->UseFileSystem(true);
+
+	if (loader->FindFile("campaign.def"))
+		LoadCampaign(loader);
+
+	if (campaign_id == CUSTOM_MISSIONS) {
+		loader->SetDataPath(path);
+		LoadCustomMissions(loader);
+	}
+	else {
+		bool found = false;
+
+		if (loader->FindFile("missions.def")) {
+			loader->SetDataPath(path);
+			LoadMissionList(loader);
+			found = true;
+		}
+
+		if (loader->FindFile("templates.def")) {
+			loader->SetDataPath(path);
+			LoadTemplateList(loader);
+			found = true;
+		}
+
+		if (!found) {
+			loader->SetDataPath(path);
+			LoadCustomMissions(loader);
+		}
+	}
+
+	loader->UseFileSystem(true);
+	loader->SetDataPath(path);
+
+	if (loader->FindFile("image.pcx")) {
+		loader->LoadBitmap("image.pcx", image[0]);
+		loader->LoadBitmap("selected.pcx", image[1]);
+		loader->LoadBitmap("unavail.pcx", image[2]);
+		loader->LoadBitmap("banner.pcx", image[3]);
+	}
+
+	loader->SetDataPath(0);
+	loader->UseFileSystem(true);*/
 }
 
 void UCampaign::Prep()
