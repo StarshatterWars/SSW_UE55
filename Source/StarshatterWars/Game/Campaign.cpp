@@ -50,6 +50,53 @@ UCampaign::UCampaign()
 
 }
 
+UCampaign::UCampaign(int id, const char* n /*= 0*/)
+{
+	campaign_id = id;
+	name = n;
+	mission_id = -1;
+	mission = 0;
+	net_mission = 0;
+
+	scripted = false;
+	sequential = false;
+	time = 0;
+	startTime = 0;
+	loadTime = 0;
+
+	player_group = 0;
+	player_unit = 0;
+	status = CAMPAIGN_INIT;
+	lockout = 0;
+	loaded_from_savegame = false;
+
+	Load();
+}
+
+UCampaign::UCampaign(int id, const char* n, const char* p)
+{
+	campaign_id = id;
+	name = n;
+	mission_id = -1;
+	mission = 0;
+	net_mission = 0;
+
+	scripted = false;
+	sequential = false;
+	time = 0;
+	startTime = 0;
+	loadTime = 0;
+
+	player_group = 0;
+	player_unit = 0;
+	status = CAMPAIGN_INIT;
+	lockout = 0;
+	loaded_from_savegame = false;
+
+	path = p;
+	Load();
+}
+
 void UCampaign::CampaignSet(int id, const char* n)
 {
 	campaign_id = id;
@@ -102,27 +149,37 @@ void UCampaign::CampaignSet(int id, const char* n, const char* p)
 void
 UCampaign::Initialize()
 {	
+	UE_LOG(LogTemp, Log, TEXT("UCampaign::Initialize()"));
+
 	FString ProjectPath = FPaths::ProjectDir();
-	ProjectPath.Append(TEXT("GameData/Campaigns/0"));
+	ProjectPath.Append(TEXT("GameData/Campaigns/"));
 	FString FileName = ProjectPath;
 
-	//DataLoader* loader = DataLoader::GetLoader();
+	DataLoader* loader = DataLoader::GetLoader();
 	
 	//loader->SetDataPath(FileName);
 	//const char* result = TCHAR_TO_ANSI(*FileName);
 
-	UE_LOG(LogTemp, Log, TEXT("Loading Campaign: %s"), *FileName);
 	
-	/*for (int i = 1; i < 6; i++) {
-		
-		FileName.Append(FString::FormatAsNumber(i));
+	for (int i = 1; i < 100; i++) {
+				
 		const char* result = TCHAR_TO_ANSI(*FileName);
-
+		
+		if(i >= 10) {
+			FileName = ProjectPath; 
+			FileName.Append(FString::FormatAsNumber(i));
+		}
+		else {
+			
+			FileName = ProjectPath; FileName.Append("0");
+			FileName.Append(FString::FormatAsNumber(i));
+		}
+		
+		UE_LOG(LogTemp, Log, TEXT("Loading Campaign: %s"), *FileName);
 		loader->UseFileSystem(true);
 		loader->SetDataPath(FileName);
-		UE_LOG(LogTemp, Log, TEXT("Loading Campaign: %s"), *FileName);
-
-		/*if (loader->FindFile("campaign.def")) {
+		
+		if (loader->FindFile("campaign.def")) {
 			char txt[256];
 			sprintf_s(txt, "Dynamic Campaign %02d", i);
 			
@@ -152,7 +209,7 @@ UCampaign::Initialize()
 	c->CampaignSet(CUSTOM_MISSIONS, "Custom Missions");
 	if (c) {
 		campaigns.insertSort(c);
-	}*/
+	}
 }
 
 void UCampaign::Tick(float DeltaTime)

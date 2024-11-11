@@ -11,6 +11,7 @@
 #include "../Space/Universe.h"
 #include "../Game/Sim.h"
 #include "../Game/Campaign.h"
+#include "../Foundation/DataLoader.h"
 
 void AGameLoader::BeginPlay()
 {
@@ -48,6 +49,9 @@ void AGameLoader::InitializeGame()
 	USim* Sim;
 	Sim = NewObject<USim>();
 
+	if (!DataLoader::GetLoader())
+		DataLoader::Initialize();
+	
 	UCampaign::Initialize();
 }
 

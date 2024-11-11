@@ -49,6 +49,7 @@ DataLoader::UseVideo(Video* v)
 void
 DataLoader::Initialize()
 {
+	UE_LOG(LogTemp, Log, TEXT("DataLoader::Initialize()"));
 	def_loader = new DataLoader;
 	loader = def_loader;
 

@@ -75,12 +75,12 @@ public:
 	};
 	
 	UCampaign();
+	UCampaign(int id, const char* name = 0);
+	UCampaign(int id, const char* name, const char* path);
 
 	void CampaignSet(int id, const char* name = 0);
 	void CampaignSet(int id, const char* name, const char* path);
 
-
-	
 	int operator == (const UCampaign& s) const { return name == s.name; }
 	int operator <  (const UCampaign& s) const { return campaign_id < s.campaign_id; }
 
