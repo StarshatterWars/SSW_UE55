@@ -43,15 +43,14 @@ void AGameLoader::GetCampaignData()
 
 void AGameLoader::InitializeGame()
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	UUniverse* Universe;
 	Universe = NewObject<UUniverse>();
 
 	USim* Sim;
 	Sim = NewObject<USim>();
 
-	if (!DataLoader::GetLoader())
-		DataLoader::Initialize();
-	
 	UCampaign::Initialize();
 }
+
 

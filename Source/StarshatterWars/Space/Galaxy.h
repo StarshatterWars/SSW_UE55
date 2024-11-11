@@ -51,6 +51,7 @@ public:
 
 	// operations:
 	virtual void         Load();
+	static void			 Initialize();
 	virtual void         Load(const char* filename);
 
 	void				 SpawnSystem(FString name);

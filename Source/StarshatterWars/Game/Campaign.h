@@ -22,10 +22,10 @@
 #include "../Foundation/DataLoader.h"
 #include "UObject/NoExportTypes.h"
 #include "Tickable.h"
+#include "../System/SSWGameInstance.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
-#include "../System/SSWGameInstance.h"
 #include "Campaign.generated.h"
 
 // +--------------------------------------------------------------------+
@@ -93,7 +93,6 @@ public:
 	TStatId GetStatId() const override;
 
 	UWorld* GetWorld() const override;
-
 
 	// operations:
 	virtual void         Load();
@@ -197,7 +196,7 @@ public:
 	static double        Stardate();
 
 protected:
-	void                 LoadCampaign(DataLoader* loader, bool full = false);
+	void                 LoadCampaign(FString name, bool full = false);
 	void                 LoadTemplateList(DataLoader* loader);
 	void                 LoadMissionList(DataLoader* loader);
 	void                 LoadCustomMissions(DataLoader* loader);
@@ -223,7 +222,7 @@ protected:
 	bool                 loaded_from_savegame;
 
 	List<Combatant>      combatants;
-	List<AStarSystem>     systems;
+	List<AStarSystem>    systems;
 	List<CombatZone>     zones;
 	List<CampaignPlan>   planners;
 	List<MissionInfo>    missions;
@@ -242,4 +241,5 @@ protected:
 	double               startTime;
 	double               updateTime;
 	int                  lockout;
+
 };

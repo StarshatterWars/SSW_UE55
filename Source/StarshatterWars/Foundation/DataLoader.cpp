@@ -178,6 +178,7 @@ DataLoader::FindFile(const char* name)
 
 		if (f) {
 			::fclose(f);
+			UE_LOG(LogTemp, Log, TEXT("%s Found"), *FString(name));
 			return true;
 		}
 	}

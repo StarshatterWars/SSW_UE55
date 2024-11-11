@@ -40,6 +40,7 @@
 #include "../Foundation/ParseUtil.h"
 #include "../Foundation/Random.h"
 #include "../Foundation/FormatUtil.h"
+#include "../Foundation/GameLoader.h"
 #include "../System/SSWGameInstance.h"
 
 static List<UCampaign>   campaigns;
@@ -47,7 +48,7 @@ static UCampaign* current_campaign = 0;
 
 UCampaign::UCampaign()
 {
-
+	
 }
 
 UCampaign::UCampaign(int id, const char* n /*= 0*/)
@@ -169,29 +170,21 @@ UCampaign::~UCampaign()
 
 void
 UCampaign::Initialize()
-{	
+{		
+	DataLoader* loader = DataLoader::GetLoader();
+	
 	UE_LOG(LogTemp, Log, TEXT("UCampaign::Initialize()"));
-
+	
 	FString ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Campaigns/"));
 	FString FileName = ProjectPath;
-
-	DataLoader* loader = DataLoader::GetLoader();
-	
-	//loader->SetDataPath(FileName);
-	//const char* result = TCHAR_TO_ANSI(*FileName);
-
 	
 	for (int i = 1; i < 6; i++) {
 				
 		const char* result = TCHAR_TO_ANSI(*FileName);
 		FileName = ProjectPath; FileName.Append("0");
 		FileName.Append(FString::FormatAsNumber(i));
-		FileName.Append("campaign.def");
-		UE_LOG(LogTemp, Log, TEXT("Setting Campaign Directory and file %s"), *FileName);
-		
-		loader->UseFileSystem(true);
-		loader->SetDataPath(FileName);
+		FileName.Append("/");
 		
 		UCampaign* c;
 		c = NewObject<UCampaign>();
@@ -276,21 +269,19 @@ void UCampaign::Load()
 
 		default:                   
 			ProjectPath.Append(TEXT("GameData/Campaigns/"));
-			ProjectPath.Append(TEXT("GameData/Multiplayer/"));
 			FileName = ProjectPath; FileName.Append("0");
 			FileName.Append(FString::FormatAsNumber(campaign_id));
+			FileName.Append("/");;
 			break;
 		}
 	}
-
-	/*DataLoader* loader = DataLoader::GetLoader();
 	
-	loader->UseFileSystem(true);
-	loader->SetDataPath(path);
+	//loader->UseFileSystem(true);
+	//loader->SetDataPath(FileName);
 	
 	systems.clear();
 
-	if (loader->FindFile("zones.def"))
+	/*if (loader->FindFile("zones.def"))
 		zones.append(CombatZone::Load("zones.def"));
 
 	for (int i = 0; i < zones.size(); i++) {
@@ -304,14 +295,12 @@ void UCampaign::Load()
 
 		if (!found)
 			systems.append(AGalaxy::GetInstance()->GetSystem(s));
-	}
+	}*/
 
-	loader->UseFileSystem(true);
+	
+	LoadCampaign(TCHAR_TO_ANSI(*FileName));
 
-	if (loader->FindFile("campaign.def"))
-		LoadCampaign(loader);
-
-	if (campaign_id == CUSTOM_MISSIONS) {
+	/*if (campaign_id == CUSTOM_MISSIONS) {
 		loader->SetDataPath(path);
 		LoadCustomMissions(loader);
 	}
@@ -367,12 +356,35 @@ void UCampaign::ExecFrame()
 
 void UCampaign::Unload()
 {
+	SetStatus(CAMPAIGN_INIT);
 
+	Game::ResetGameTime();
+	AStarSystem::SetBaseTime(0);
+
+	startTime = Stardate();
+	loadTime = startTime;
+	lockout = 0;
+
+	//for (int i = 0; i < NUM_IMAGES; i++)
+	//	image[i].ClearImage();
+
+	Clear();
+
+	//zones.destroy();
 }
 
 void UCampaign::Clear()
 {
+	//missions.destroy();
+	//planners.destroy();
+	//combatants.destroy();
+	//events.destroy();
+	//actions.destroy();
 
+	player_group = 0;
+	player_unit = 0;
+
+	updateTime = time;
 }
 
 void UCampaign::CommitExpiredActions()
@@ -406,6 +418,9 @@ void UCampaign::SetStatus(int s)
 
 void UCampaign::Close()
 {
+	Print("Campaign::Close() - destroying all campaigns\n");
+	current_campaign = 0;
+	//campaigns.destroy();
 }
 
 UCampaign* UCampaign::GetCampaign()
@@ -462,6 +477,32 @@ UCampaign* UCampaign::CreateCustomCampaign(const char* name, const char* path)
 double UCampaign::Stardate()
 {
 	return AStarSystem::GetStardate();
+}
+
+void UCampaign::LoadCampaign(FString n, bool full /*= false*/)
+{		
+	DataLoader* loader = DataLoader::GetLoader();
+	
+
+	BYTE* block = 0;
+	FString fn = "campaign.def";
+	n.Append(fn);
+	FString FileString;
+
+	const char* result = TCHAR_TO_ANSI(*n);
+
+	UE_LOG(LogTemp, Log, TEXT("Loading Campaign %s"), *FString(n));
+	if (FFileHelper::LoadFileToString(FileString, *n, FFileHelper::EHashOptions::None))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
+	}
+
+	loader->SetDataPath(n);
+	loader->LoadBuffer(result, block, true);
+	//loader->UseFileSystem(true);
+	Parser parser(new BlockReader((const char*)block));
+
+	Term* term = parser.ParseTerm();
 }
 
 CombatGroup* UCampaign::FindGroup(int iff, int type, int id)

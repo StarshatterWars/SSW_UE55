@@ -12,6 +12,7 @@
 #include "CoreMinimal.h"
 #include "Engine/LevelScriptActor.h"
 #include "../System/SSWGameInstance.h"
+#include "../Foundation/DataLoader.h"
 #include "GameLoader.generated.h"
 
 /**
@@ -34,4 +35,6 @@ public:
 	void LoadGalaxy();
 	void GetCampaignData();
 	void InitializeGame();
+
+	static DataLoader* loader;
 };

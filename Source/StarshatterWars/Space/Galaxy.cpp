@@ -331,6 +331,13 @@ AGalaxy::Load(const char* FileName)
 		} while (term);
 }
 
+
+
+void AGalaxy::Initialize()
+{
+
+}
+
 void AGalaxy::SpawnSystem(FString sysName)
 {
 	UWorld* World = GetWorld();
