@@ -28,6 +28,8 @@
 #include "../System/SSWGameInstance.h"
 #include "GameDataLoader.generated.h"
 
+class Combatant;
+
 UCLASS()
 class STARSHATTERWARS_API AGameDataLoader : public AActor
 {
@@ -52,4 +54,15 @@ public:
 
 	void InitializeCampaignData();
 	USSWGameInstance* SSWInstance;
+
+protected:
+	char                 filename[64];
+	Text                 name;
+	Text                 description;
+	Text                 situation;
+	Text                 orders;
+	bool                 scripted;
+	bool                 sequential;
+
+	List<Combatant>      combatants;
 };
