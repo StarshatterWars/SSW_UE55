@@ -51,7 +51,7 @@ AGalaxy::AGalaxy()
 	if (GalaxyDataTableObject.Succeeded())
 	{
 		GalaxyDataTable = GalaxyDataTableObject.Object;
-		GalaxyDataTable->EmptyTable();
+		//GalaxyDataTable->EmptyTable();
 	}
 
 	static ConstructorHelpers::FClassFinder<AStarSystem> StarSystemObj(TEXT("/Script/Engine.Blueprint'/Game/Game/BP_StarSystem.BP_StarSystem_C'"));

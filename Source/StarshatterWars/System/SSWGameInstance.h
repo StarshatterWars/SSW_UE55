@@ -603,6 +603,74 @@ struct FS_Region : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_CampaignAction : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Id;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Subtype;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Team;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Text;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Source;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString File;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Image;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Scene;
+
+	FS_CampaignAction() {
+		Id = 0;
+		Type = "";
+		Subtype = 0;
+		Team = 0;
+		Region = "";
+		Text = "";
+		Source = "";
+		File = "";
+		Image = "";
+		Scene = "";
+	}
+};
+USTRUCT(BlueprintType)
+struct FS_CombatantGroup {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Id;
+
+	FS_CombatantGroup() {
+		Type = "";
+		Id = 0;
+	}
+};
+
+
+USTRUCT(BlueprintType)
+struct FS_Combatant : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	//TArray<FS_CombatantGroup> Group;
+	FS_Combatant() {
+		Name = "";
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_Campaign : public FTableRowBase {
 	GENERATED_BODY()
 	
@@ -618,6 +686,10 @@ struct FS_Campaign : public FTableRowBase {
 	bool Scripted;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool Sequential;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_Combatant> Combatant;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CampaignAction> Action;
 	
 	FS_Campaign() {
 		Name = "";

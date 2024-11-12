@@ -122,4 +122,6 @@ public:
 
 	protected:
 		class UDataTable* CampaignDataTable;
+
+		TArray<FS_CampaignAction> CampaignActionArray;
 };
