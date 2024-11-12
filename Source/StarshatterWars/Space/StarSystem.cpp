@@ -26,7 +26,6 @@
 const double epoch = 0.5e9;
 double AStarSystem::StarDate = 0;
 double AStarSystem::RealTimeSeconds = 0;
-static const double GRAV = 6.673e-11;
 static const int    NAMELEN = 64;
 
 // +====================================================================+

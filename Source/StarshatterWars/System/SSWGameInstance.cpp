@@ -7,6 +7,7 @@
 #include "../Space/Galaxy.h"
 #include "../Foundation/DataLoader.h"
 #include "../Game/Sim.h"
+#include "../Game/GameDataLoader.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -85,9 +86,36 @@ void USSWGameInstance::SpawnGalaxy()
 	//}		
 }
 
-void USSWGameInstance::GetCampaignData()
+void USSWGameInstance::GetGameData()
 {
+	UWorld* World = GetWorld();
 
+	FVector location = FVector::ZeroVector;
+	FRotator rotate = FRotator::ZeroRotator;
+
+	FActorSpawnParameters SpawnInfo;
+	FName Name("Starshatter Data");
+	SpawnInfo.Name = Name;
+
+	if (GameData == nullptr) {
+		GameData = GetWorld()->SpawnActor<AGameDataLoader>(AGameDataLoader::StaticClass(), location, rotate, SpawnInfo);
+
+
+		if (GameData)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Game Data Loader Spawned"));
+		}
+		else {
+			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Game Data Loader"));
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Game Data Loader  already exists"));
+	}
+
+	//} else {
+	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
+	//}		
 }
 
 void USSWGameInstance::StartGame()

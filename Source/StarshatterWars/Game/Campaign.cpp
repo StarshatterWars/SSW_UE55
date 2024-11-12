@@ -41,6 +41,7 @@
 #include "../Foundation/Random.h"
 #include "../Foundation/FormatUtil.h"
 #include "../Foundation/GameLoader.h"
+#include "../Game/GameDataLoader.h"
 #include "../System/SSWGameInstance.h"
 
 static List<UCampaign>   campaigns;
@@ -482,7 +483,6 @@ double UCampaign::Stardate()
 void UCampaign::LoadCampaign(FString n, bool full /*= false*/)
 {		
 	DataLoader* loader = DataLoader::GetLoader();
-	
 
 	BYTE* block = 0;
 	FString fn = "campaign.def";

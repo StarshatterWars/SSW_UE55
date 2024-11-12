@@ -15,6 +15,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "../Foundation/DataLoader.h"
+#include "../Foundation/ParseUtil.h"
+#include "../Foundation/Random.h"
+#include "../Foundation/FormatUtil.h"
+#include "../Foundation/GameLoader.h"
+
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Engine/DataTable.h"
+
+#include "../System/SSWGameInstance.h"
 #include "GameDataLoader.generated.h"
 
 UCLASS()
@@ -34,6 +45,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	
-	
+	void LoadCampaignData(const char* FileName);
+	void LoadGalaxyData();
 };

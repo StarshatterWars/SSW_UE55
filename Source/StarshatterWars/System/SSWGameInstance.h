@@ -23,6 +23,7 @@
  class UUniverse;
  class USim;
  class AGalaxy;
+ class AGameDataLoader;
  class DataLoader;
 
 /************************************************************************/
@@ -631,12 +632,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void SpawnGalaxy();
 
-	void GetCampaignData();
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void GetGameData();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 
 	AGalaxy* GameGalaxy;
+	AGameDataLoader* GameData;
 
 	UPROPERTY()
 	double StarDate;

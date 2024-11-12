@@ -15,8 +15,9 @@
 
 void AGameLoader::BeginPlay()
 {
-	InitializeGame();
+	GetGameData();
 	LoadGalaxy();
+	InitializeGame();
 }
 
 void AGameLoader::Tick(float DeltaTime)
@@ -35,15 +36,16 @@ void AGameLoader::LoadGalaxy()
 	SSWInstance->SpawnGalaxy();
 }
 
-void AGameLoader::GetCampaignData()
+void AGameLoader::GetGameData()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->GetCampaignData();
+	SSWInstance->GetGameData();
 }
 
 void AGameLoader::InitializeGame()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
 	UUniverse* Universe;
 	Universe = NewObject<UUniverse>();
 
