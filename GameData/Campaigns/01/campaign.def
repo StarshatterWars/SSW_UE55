@@ -7,13 +7,13 @@ desc: "The Third Fleet of the Terellian Alliance "
       "in the Janus star system."
 
 situation:
-   "\tThe Third Fleet of the Terellian Alliance "
+   "The Third Fleet of the Terellian Alliance "
    "Force:Space is participating in live fire training exercises "
    "in the Janus star system.  Operation Live Fire "
    "will give the fleet some much needed practice under conditions that are "
    "as close to combat reality as possible.\n\n"
 
-   "\tThe schedule of training scenarios in this campaign has been designed "
+   "The schedule of training scenarios in this campaign has been designed "
    "to bring you up to speed on Force:Space combat operations.  "
    "The first several missions will give you some practice in fighter "
    "operations, both in space and in atmosphere.  You will also get a chance "
@@ -25,7 +25,7 @@ situation:
    "of this screen.\n\n"
 
 orders:
-   "\t* Execute all of the training missions in this campaign."
+   "* Execute all of the training missions in this campaign."
 
 scripted: true
 

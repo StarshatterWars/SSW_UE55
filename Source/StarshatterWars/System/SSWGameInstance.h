@@ -602,8 +602,31 @@ struct FS_Region : public FTableRowBase {
 	}
 };
 
-
-
+USTRUCT(BlueprintType)
+struct FS_Campaign : public FTableRowBase {
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Description;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Situation;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FString> Orders;	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Scripted;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Sequential;
+	
+	FS_Campaign() {
+		Name = "";
+		Description = "";
+		Situation = "";
+		Scripted = false;
+		Sequential = false;
+	}
+};
 
 UCLASS()
 class STARSHATTERWARS_API USSWGameInstance : public UGameInstance

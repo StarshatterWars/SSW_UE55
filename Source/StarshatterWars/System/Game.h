@@ -117,6 +117,9 @@ public:
 	static double     max_frame_length;
 	static double     min_frame_length;
 
+	static const int TIME_NEVER = (int)1e9;
+	static const int ONE_DAY = (int)24 * 3600;
+
 protected:
 	friend  bool      ProfileGameLoop(void);
 	

@@ -12,7 +12,7 @@ desc:
    "stabilize the military situation."
 
 situation:
-   "\tThe Independent System of Solus has requested military "
+   "The Independent System of Solus has requested military "
    "assistance from Terellian Alliance Force:Command.  "
    "Dantari Separatists seeking to join the Hegemony "
    "Prefecture of Renser have gained control of much of the Solus "
@@ -20,16 +20,15 @@ situation:
    "Gate.  The Loyalist forces and many Alliance civilians have been "
    "trapped on the inner planets of the system.\n\n"
 
-   "\tForce:Intel believes that the Separatists are being backed "
+   "Force:Intel believes that the Separatists are being backed "
    "with military support from the Prefecture of Renser, a Hegemony "
    "border system.  All Force:Space units are instructed to be on "
    "the lookout for any Hegemony involvement in this conflict.\n"
 
-orders:
-   "\t* Protect civilian and allied assets in the Independent System of Solus.\n"
-   "\t* Break the Separatist blockade of the inner planets.\n"
-   "\t* Apprehend or destroy military units of the Dantari Separatists.\n"
-   "\t* Determine the extent of Hegemony involvement in this conflict.\n"
+orders: "* Protect civilian and allied assets in the Independent System of Solus."
+orders: "* Break the Separatist blockade of the inner planets."
+orders: "* Apprehend or destroy military units of the Dantari Separatists."
+orders: "* Determine the extent of Hegemony involvement in this conflict."
 
 combatant: {
    name:    "Terellian Alliance",

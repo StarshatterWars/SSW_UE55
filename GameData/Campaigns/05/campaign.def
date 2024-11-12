@@ -9,7 +9,7 @@ desc:
    "climactic battle."
 
 situation:
-   "\tOperation Firestorm was not the strategic success we once believed it to be. "
+   "Operation Firestorm was not the strategic success we once believed it to be. "
    "Force:Intel field agents have been unable to recover either the Borovan Archaelith "
    "or any of the illegal technite from the Korian and Kolchev systems.  We have now "
    "determined that the technite has already been shipped "
@@ -18,16 +18,15 @@ situation:
    "itself. We cannot estimate how long we have before the Hegemony will be able to produce "
    "a Quantum Disruptor weapon system.\n\n"
 
-   "\tWe are therefore commencing Operation Nightfall to recover the artifacts from the "
+   "We are therefore commencing Operation Nightfall to recover the artifacts from the "
    "Garrison system. Our first task is to gain military control of the Radix and Isham star "
    "systems. Force First Fleet will take the northern route and secure the Isham system, "
    "while Second Fleet holds their southern flank by controlling the Radix system. "
    "Our combined forces will then converge on the Garrison system as soon as they can manage it.\n"
 
-orders:
-   "\t* First Fleet: Engage military targets in the Isham system.\n"
-   "\t* Second Fleet: Secure the Radix system.\n"
-   "\t* Both fleets to converge on the Garrison system as soon as possible.\n"
+orders: "* First Fleet: Engage military targets in the Isham system."
+orders: "* Second Fleet: Secure the Radix system."
+orders: "* Both fleets to converge on the Garrison system as soon as possible."
 
 /*******
 

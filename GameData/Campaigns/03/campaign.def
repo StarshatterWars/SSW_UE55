@@ -12,22 +12,21 @@ desc:
    "counterattack."
 
 situation:
-   "\tThe Terellian Alliance is facing the first true interstellar "
+   "The Terellian Alliance is facing the first true interstellar "
    "war in nearly five hundred years.  Hegemony forces have begun to invade the core "
    "Alliance systems.  Starfleets from Loris and Kolchev, moving "
    "through the independent systems Silessia and Haiche, have attacked "
    "key targets in the Janus and Borovan systems.\n\n"
 
-   "\tForce:Space Fourth Fleet (Titan) is stationed in the Borovan "
+   "Force:Space Fourth Fleet (Titan) is stationed in the Borovan "
    "system, and is deploying in a defensive posture to meet the invasion "
    "threat. Fifth Fleet (Hyperion) is divided.  Task force TF5.15 is "
    "assigned to the Janus proving grounds for training exercises.  "
    "The remainder of Fifth Fleet is spread throughout the Athenar system."
 
-orders:
-   "\t* Protect Alliance civilians and assets in Janus and Borova.\n"
-   "\t* Evacuate civilians and government personnel as necessary.\n"
-   "\t* Stop the Hegemony advance until a counterattack can be mounted.\n"
+orders: "* Protect Alliance civilians and assets in Janus and Borova."
+orders: "* Evacuate civilians and government personnel as necessary."
+orders: "* Stop the Hegemony advance until a counterattack can be mounted."
 
 combatant: {
    name:    "Terellian Alliance",

@@ -8,17 +8,16 @@ desc:
    "territory as new forces are brought into the battle."
 
 situation:
-   "\tA small Hegemony outpost has been detected in the Ostara system.  "
+   "A small Hegemony outpost has been detected in the Ostara system.  "
    "Force:Space Sixth Fleet (Atlas) has been tasked with eliminating this "
    "threat, as a prelude to the planned invasion of the Tarsus system. "
    "Force 9th Carrier Group (Atlas) will reduce the Hegemony fighter "
    "component, while the 14th Battle Group (Stormwind) addresses the "
    "naval component."
 
-orders:
-   "\t* Reduce or eliminate the Hegemony presence in Ostara.\n"
-   "\t* Prepare the region for a general invasion of Tarsus.\n"
-   "\t* Protect Alliance assets in the area.\n"
+orders: "* Reduce or eliminate the Hegemony presence in Ostara."
+orders: "* Prepare the region for a general invasion of Tarsus."
+orders: "* Protect Alliance assets in the area.\n"
 
 combatant: {
    name:    "Terellian Alliance",

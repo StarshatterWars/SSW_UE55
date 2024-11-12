@@ -47,3 +47,12 @@ PlayerData* PlayerData::GetCurrentPlayer()
 {
 	return nullptr;
 }
+
+int PlayerData::RankFromName(const char* name)
+{
+	return 0;
+}
+
+void PlayerData::SetCampaignComplete(int id)
+{
+}
