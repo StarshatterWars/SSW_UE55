@@ -15,9 +15,10 @@
 
 void AGameLoader::BeginPlay()
 {
+	InitializeGame();
 	GetGameData();
 	LoadGalaxy();
-	InitializeGame();
+
 }
 
 void AGameLoader::Tick(float DeltaTime)
@@ -52,7 +53,7 @@ void AGameLoader::InitializeGame()
 	USim* Sim;
 	Sim = NewObject<USim>();
 
-	UCampaign::Initialize();
+	//UCampaign::Initialize();
 }
 
 

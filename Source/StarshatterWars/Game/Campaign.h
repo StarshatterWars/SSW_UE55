@@ -194,6 +194,7 @@ public:
 	static UCampaign* CreateCustomCampaign(const char* name, const char* path);
 
 	static double        Stardate();
+	AGameDataLoader* gl;
 
 protected:
 	void                 LoadCampaign(FString name, bool full = false);

@@ -47,4 +47,9 @@ public:
 
 	void LoadCampaignData(const char* FileName);
 	void LoadGalaxyData();
+
+	void GetSSWInstance();
+
+	void InitializeCampaignData();
+	USSWGameInstance* SSWInstance;
 };

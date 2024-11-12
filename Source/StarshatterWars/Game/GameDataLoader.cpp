@@ -14,6 +14,7 @@
 
 
 #include "GameDataLoader.h"
+#include "../System/SSWGameInstance.h"
 
 
 // Sets default values
@@ -28,7 +29,8 @@ AGameDataLoader::AGameDataLoader()
 void AGameDataLoader::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	GetSSWInstance();
+	InitializeCampaignData();
 }
 
 // Called every frame
@@ -42,10 +44,34 @@ void AGameDataLoader::LoadGalaxyData()
 {
 
 }
+
+void AGameDataLoader::GetSSWInstance()
+{
+	SSWInstance = (USSWGameInstance*)GetGameInstance();
+}
+
+void AGameDataLoader::InitializeCampaignData() {
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadCampaignData"));
+
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Campaigns/"));
+	FString FileName = ProjectPath;
+
+	for (int i = 1; i < 6; i++) {		
+		FileName = ProjectPath; 
+		FileName.Append("0");
+		FileName.Append(FString::FormatAsNumber(i));
+		FileName.Append("/");
+		FileName.Append("campaign.def");
+		LoadCampaignData(TCHAR_TO_ANSI(*FileName));
+	}
+}
+
 void AGameDataLoader::LoadCampaignData(const char* FileName)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadCampaignData"));
 	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(FileName);
 
 	FString fs = FString(ANSI_TO_TCHAR(FileName));
 	FString FileString;
@@ -53,7 +79,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName)
 
 	SSWInstance->loader->LoadBuffer(FileName, block, true);
 
-	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy: %s"), *fs);
+	UE_LOG(LogTemp, Log, TEXT("Loading Campaign Data: %s"), *fs);
 
 	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
 	{

@@ -272,7 +272,8 @@ void UCampaign::Load()
 			ProjectPath.Append(TEXT("GameData/Campaigns/"));
 			FileName = ProjectPath; FileName.Append("0");
 			FileName.Append(FString::FormatAsNumber(campaign_id));
-			FileName.Append("/");;
+			FileName.Append("/");
+			FileName.Append("campaign.def");
 			break;
 		}
 	}
@@ -299,7 +300,8 @@ void UCampaign::Load()
 	}*/
 
 	
-	LoadCampaign(TCHAR_TO_ANSI(*FileName));
+	
+	gl->LoadCampaignData(TCHAR_TO_ANSI(*FileName));
 
 	/*if (campaign_id == CUSTOM_MISSIONS) {
 		loader->SetDataPath(path);
