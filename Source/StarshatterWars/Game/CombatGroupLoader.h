@@ -16,6 +16,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "../Foundation/DataLoader.h"
+#include "../Foundation/ParseUtil.h"
+#include "../Foundation/Random.h"
+#include "../Foundation/FormatUtil.h"
+#include "../Foundation/Text.h"
+#include "../Foundation/Term.h"
+#include "../Foundation/GameLoader.h"
+
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Engine/DataTable.h"
+
+#include "../System/SSWGameInstance.h"
 #include "CombatGroupLoader.generated.h"
 
 UCLASS()
@@ -30,11 +43,19 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	class UDataTable* CombatGroupDataTable;
+
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	
-	
+	void LoadCombatGroups();
+	void GetSSWInstance();
+
+	FS_CombatGroup FS_CombatGroupUnit;
+
+protected:
+	USSWGameInstance* SSWInstance;
 };

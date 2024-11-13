@@ -800,6 +800,42 @@ struct FS_AwardInfo : public FTableRowBase {
 		Ceremony = false;
 	}
 };
+USTRUCT(BlueprintType)
+struct FS_CombatGroupUnit : public FTableRowBase {
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitRegnum;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitRegion;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitClass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitDesign;	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitSkin;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitCount;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitDamage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitHeading;
+
+	FS_CombatGroupUnit() {
+		UnitName = "";
+		UnitRegnum = "";
+		UnitRegion = "";
+		UnitClass = "";
+		UnitDesign = "";
+		UnitSkin = "";
+
+		UnitCount = 0;
+		UnitDamage = 0;
+		UnitHeading = 0;
+	}
+};
 
 UCLASS()
 class STARSHATTERWARS_API USSWGameInstance : public UGameInstance
@@ -846,7 +882,7 @@ public:
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
 	ACombatGroupLoader* CombatGroupData;
-	
+
 
 	UPROPERTY()
 	double StarDate;

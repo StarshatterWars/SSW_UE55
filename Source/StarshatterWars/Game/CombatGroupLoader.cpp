@@ -28,7 +28,7 @@ ACombatGroupLoader::ACombatGroupLoader()
 void ACombatGroupLoader::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	GetSSWInstance();
 }
 
 // Called every frame
@@ -36,5 +36,12 @@ void ACombatGroupLoader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+// +-------------------------------------------------------------------+
+
+void ACombatGroupLoader::GetSSWInstance()
+{
+	SSWInstance = (USSWGameInstance*)GetGameInstance();
 }
 

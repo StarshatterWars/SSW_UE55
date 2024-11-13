@@ -9,7 +9,7 @@
 	OVERVIEW
 	========
 	Loader and Parser class for initial generation of the Award Info Data Table
-	Will not be used after Dable Table is Generated.
+	Will not be used after Data Table is Generated.
 */
 
 #pragma once
