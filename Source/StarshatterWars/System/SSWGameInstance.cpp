@@ -128,7 +128,7 @@ void USSWGameInstance::GetCombatRosterData()
 	FRotator rotate = FRotator::ZeroRotator;
 
 	FActorSpawnParameters SpawnInfo;
-	FName Name("Combat Group Data");
+	FName Name("Combat Roster Data");
 	SpawnInfo.Name = Name;
 
 	if (CombatGroupData == nullptr) {

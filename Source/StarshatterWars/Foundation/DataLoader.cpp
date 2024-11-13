@@ -951,21 +951,21 @@ DataLoader::LoadOggStream(const char* name, Sound*& snd)
 	return snd != 0;
 }*/
 
-int DataLoader::ListFiles(const char* filter, List<Text>& list, bool recurse)
+/*int DataLoader::ListFiles(const char* filter, List<Text>& list, bool recurse)
 {
 	//list.destroy();
 
 	ListFileSystem(filter, list, datapath, recurse);
 
 	// then check datafile(s):
-	/*int narchives = archives.size();
+	int narchives = archives.size();
 	for (int i = 0; i < narchives; i++) {
 		DataArchive* a = archives[narchives - 1 - i];
 		ListArchiveFiles(a->Name(), filter, list);
-	}*/
+	}
 
-	return list.size(); 
-}
+	//return list.size(); 
+}*/
 
 int DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bool optional)
 {

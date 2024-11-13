@@ -25,6 +25,7 @@
 #include "../Foundation/GameLoader.h"
 
 #include "Misc/FileHelper.h"
+#include "HAL/FileManagerGeneric.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 
@@ -51,10 +52,12 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void LoadCombatGroups();
+	void LoadCombatRoster();
+
+	void LoadOrderOfBattle(const char* filename);
 	void GetSSWInstance();
 
-	FS_CombatGroup FS_CombatGroupUnit;
+	FS_CombatGroupUnit CombatGroupUnit;
 
 protected:
 	USSWGameInstance* SSWInstance;

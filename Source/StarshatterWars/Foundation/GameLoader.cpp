@@ -16,7 +16,8 @@
 void AGameLoader::BeginPlay()
 {
 	InitializeGame();
-	GetGameData();
+	GetCombatRosterData();
+	GetCampaignData();
 	GetAwardInfoData();
 	LoadGalaxy();
 
@@ -38,7 +39,13 @@ void AGameLoader::LoadGalaxy()
 	SSWInstance->SpawnGalaxy();
 }
 
-void AGameLoader::GetGameData()
+void AGameLoader::GetCombatRosterData()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->GetCombatRosterData();
+}
+
+void AGameLoader::GetCampaignData()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->GetCampaignData();

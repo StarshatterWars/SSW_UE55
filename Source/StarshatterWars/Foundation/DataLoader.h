@@ -53,7 +53,7 @@ public:
 	bool  IsMediaLoadEnabled()  const { return enable_media; }
 
 	bool  FindFile(const char* fname);
-	int   ListFiles(const char* filter, List<Text>& list, bool recurse = false);
+	//int   ListFiles(const char* filter, List<Text>& list, bool recurse = false);
 	int   ListArchiveFiles(const char* archive, const char* filter, List<Text>& list);
 	int   LoadBuffer(const char* name, BYTE*& buf, bool null_terminate = false, bool optional = false);
 	int   LoadBitmap(const char* name, Bitmap& bmp, int type = 0, bool optional = false);

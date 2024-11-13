@@ -28,7 +28,7 @@ static CombatRoster* roster = 0;
 
 CombatRoster::CombatRoster()
 {
-	DataLoader* loader = DataLoader::GetLoader();
+	/*DataLoader* loader = DataLoader::GetLoader();
 	loader->SetDataPath("Campaigns/");
 
 	List<Text> files;
@@ -44,7 +44,7 @@ CombatRoster::CombatRoster()
 		}
 	}
 
-	files.destroy();
+	files.destroy();*/
 }
 
 

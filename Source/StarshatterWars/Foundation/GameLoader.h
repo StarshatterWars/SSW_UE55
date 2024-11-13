@@ -33,7 +33,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game Loader")
 	void LoadGalaxy();
-	void GetGameData();
+	void GetCombatRosterData();
+	void GetCampaignData();
 	void GetAwardInfoData();
 	void InitializeGame();
 
