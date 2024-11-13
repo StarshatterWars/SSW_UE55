@@ -62,14 +62,14 @@ protected:
 	USSWGameInstance* SSWInstance;
 
 	int      AwardId;
-
+	int		 AwardGrant;
 	char	 filename[64];
 
 	Text     AwardType;
 	Text     AwardName;
 	Text     AwardAbrv;
 	Text     AwardDesc;
-	Text     AwardGrant;
+	Text     AwardText;
 
 	Text     DescSound;
 	Text     GrantSound;

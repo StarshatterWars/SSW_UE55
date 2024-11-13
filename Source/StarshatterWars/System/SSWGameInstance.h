@@ -718,7 +718,7 @@ struct FS_AwardInfo : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString     AwardDesc;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString     AwardGrant;
+	FString     AwardText;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString     DescSound;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -727,6 +727,8 @@ struct FS_AwardInfo : public FTableRowBase {
 	FString		LargeImage;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString		SmallImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		AwardGrant;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int		RequiredAwards;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -768,12 +770,14 @@ struct FS_AwardInfo : public FTableRowBase {
 		AwardName = "";
 		AwardAbrv = "";
 		AwardDesc = "";
-		AwardGrant = "";
+		AwardText = "";
 
 		DescSound = "";
 		GrantSound = "";
 		LargeImage = "";
 		SmallImage = "";
+
+		AwardGrant = 0;
 		RequiredAwards = 0;
 		Lottery = 0;
 		MinRank = 0;

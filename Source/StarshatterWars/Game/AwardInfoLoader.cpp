@@ -131,12 +131,14 @@ AAwardInfoLoader::LoadAwardTables()
 						AwardName = "";
 						AwardAbrv = "";
 						AwardDesc = "";
-						AwardGrant = "";
+						AwardText = "";
 
 						DescSound = "";
 						GrantSound = "";
 						LargeImage = "";
 						SmallImage = "";
+
+						AwardGrant = 0;
 						RequiredAwards = 0;
 						Lottery = 0;
 						MinRank = 0;
@@ -171,7 +173,7 @@ AAwardInfoLoader::LoadAwardTables()
 								}
 
 								else if (pdef->name()->value() == ("award")) {
-									GetDefText(AwardGrant, pdef, filename);
+									GetDefText(AwardText, pdef, filename);
 								}
 
 								else if (pdef->name()->value() == ("desc_sound"))
@@ -295,31 +297,32 @@ AAwardInfoLoader::LoadAwardTables()
 							
 							NewAwardData.AwardAbrv = FString(AwardAbrv);
 							NewAwardData.AwardDesc = FString(AwardDesc);
-							NewAwardData.AwardGrant = FString(AwardGrant);
-							NewAwardData.DescSound = "";
-							NewAwardData.GrantSound = "";
-							NewAwardData.LargeImage = "";
-							NewAwardData.SmallImage = "";
-							NewAwardData.RequiredAwards = 0;
-							NewAwardData.Lottery = 0;
-							NewAwardData.MinRank = 0;
-							NewAwardData.MaxRank = 0;
-							NewAwardData.MinShipClass = 0;
-							NewAwardData.MaxShipClass = 0;
-							NewAwardData.GrantedShipClasses = 0;
+							NewAwardData.AwardText = FString(AwardText);
+							NewAwardData.DescSound = FString(DescSound);
+							NewAwardData.GrantSound = FString(GrantSound);
+							NewAwardData.LargeImage = FString(LargeImage);
+							NewAwardData.SmallImage = FString(SmallImage);
+							NewAwardData.AwardGrant = AwardGrant;
+							NewAwardData.RequiredAwards = RequiredAwards;
+							NewAwardData.Lottery = Lottery;
+							NewAwardData.MinRank = MinRank;
+							NewAwardData.MaxRank = MaxRank;
+							NewAwardData.MinShipClass = MinShipClass;
+							NewAwardData.MaxShipClass = MaxShipClass;
+							NewAwardData.GrantedShipClasses = GrantedShipClasses;
 
-							NewAwardData.TotalPoints = 0;
-							NewAwardData.MissionPoints = 0;
-							NewAwardData.TotalMissions = 0;
+							NewAwardData.TotalPoints = TotalPoints;
+							NewAwardData.MissionPoints = MissionPoints;
+							NewAwardData.TotalMissions = TotalMissions;
 
-							NewAwardData.Kills = 0;
-							NewAwardData.Lost = 0;
-							NewAwardData.Collision = 0;
-							NewAwardData.CampaignId = 0;
+							NewAwardData.Kills = Kills;
+							NewAwardData.Lost = Lost;
+							NewAwardData.Collision = Collision;
+							NewAwardData.CampaignId = CampaignId;
 
-							NewAwardData.CampaignComplete = false;
-							NewAwardData.DynamicCampaign = false;
-							NewAwardData.Ceremony = false;
+							NewAwardData.CampaignComplete = CampaignComplete;
+							NewAwardData.DynamicCampaign = DynamicCampaign;
+							NewAwardData.Ceremony = Ceremony;
 
 							FName RowName = FName(FString(AwardName));
 							// call AddRow to insert the record
