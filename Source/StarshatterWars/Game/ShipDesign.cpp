@@ -1059,7 +1059,7 @@ ShipDesign::GetDesignList(int type, List<Text>& designs)
 	}
 
 	return designs.size();
-}
+}*/
 
 // +--------------------------------------------------------------------+
 
@@ -1098,7 +1098,7 @@ ShipDesign::ClassName(int type)
 
 // +--------------------------------------------------------------------+
 
-void
+/*void
 ShipDesign::ParseShip(TermDef* def)
 {
 	char           detail_name[NAMELEN];

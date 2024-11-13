@@ -978,3 +978,9 @@ UShip::GetShipClass() const
 {
 	return (CLASSIFICATION)design->type;
 }
+
+int
+UShip::ClassForName(const char* name)
+{
+	return ShipDesign::ClassForName(name);
+}

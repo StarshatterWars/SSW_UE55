@@ -24,6 +24,9 @@
  class USim;
  class AGalaxy;
  class AGameDataLoader;
+ class AAwardInfoLoader;
+ class ACombatGroupLoader;
+
  class DataLoader;
 
 /************************************************************************/
@@ -700,6 +703,100 @@ struct FS_Campaign : public FTableRowBase {
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FS_AwardInfo : public FTableRowBase {
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int      AwardId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     AwardType;	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     AwardName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     AwardAbrv;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     AwardDesc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     AwardGrant;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     DescSound;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString     GrantSound;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString		LargeImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString		SmallImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		RequiredAwards;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		Lottery;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		MinRank;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		MaxRank;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int     MinShipClass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int     MaxShipClass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		GrantedShipClasses;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		TotalPoints;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		MissionPoints;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		TotalMissions;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		Kills;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		Lost;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		Collision;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int		CampaignId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool	CampaignComplete;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool	DynamicCampaign;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool	Ceremony;
+
+	FS_AwardInfo() {
+		AwardId = 0;
+		AwardType = "";
+		AwardName = "";
+		AwardAbrv = "";
+		AwardDesc = "";
+		AwardGrant = "";
+
+		DescSound = "";
+		GrantSound = "";
+		LargeImage = "";
+		SmallImage = "";
+		RequiredAwards = 0;
+		Lottery = 0;
+		MinRank = 0;
+		MaxRank = 0;
+		MinShipClass = 0;
+		MaxShipClass = 0;
+		GrantedShipClasses = 0;
+	
+		TotalPoints = 0;
+		MissionPoints = 0;
+		TotalMissions = 0;
+	
+		Kills = 0;
+		Lost = 0;
+		Collision = 0;
+		CampaignId = 0;
+
+		CampaignComplete = false;
+		DynamicCampaign = false;
+		Ceremony = false;
+	}
+};
+
 UCLASS()
 class STARSHATTERWARS_API USSWGameInstance : public UGameInstance
 {
@@ -728,13 +825,24 @@ public:
 	void SpawnGalaxy();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void GetGameData();
+	void GetCampaignData();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void GetCombatRosterData();
+
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void GetAwardInfoData();
+
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
+	AAwardInfoLoader* AwardData;
+	ACombatGroupLoader* CombatGroupData;
+	
 
 	UPROPERTY()
 	double StarDate;

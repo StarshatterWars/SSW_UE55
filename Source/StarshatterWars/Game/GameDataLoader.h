@@ -121,7 +121,7 @@ public:
 	FS_Campaign CampaignData;
 
 	protected:
-		class UDataTable* CampaignDataTable;
+	class UDataTable* CampaignDataTable;
 
-		TArray<FS_CampaignAction> CampaignActionArray;
+	TArray<FS_CampaignAction> CampaignActionArray;
 };

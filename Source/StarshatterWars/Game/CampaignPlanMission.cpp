@@ -98,7 +98,7 @@ UCampaignPlanMission::ExecFrame()
 void
 UCampaignPlanMission::SelectStartTime()
 {
-	const int   HOUR = 3600;  // 60 minutes
+	///const int   HOUR = 3600;  // 60 minutes
 	const int   MISSION_DELAY = 1800;  // 30 minutes
 	double      base_time = 0;
 

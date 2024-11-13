@@ -17,6 +17,7 @@ void AGameLoader::BeginPlay()
 {
 	InitializeGame();
 	GetGameData();
+	GetAwardInfoData();
 	LoadGalaxy();
 
 }
@@ -40,7 +41,13 @@ void AGameLoader::LoadGalaxy()
 void AGameLoader::GetGameData()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->GetGameData();
+	SSWInstance->GetCampaignData();
+}
+
+void AGameLoader::GetAwardInfoData()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->GetAwardInfoData();
 }
 
 void AGameLoader::InitializeGame()

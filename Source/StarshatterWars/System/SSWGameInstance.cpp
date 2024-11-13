@@ -8,6 +8,8 @@
 #include "../Foundation/DataLoader.h"
 #include "../Game/Sim.h"
 #include "../Game/GameDataLoader.h"
+#include "../Game/AwardInfoLoader.h"
+#include "../Game/CombatGroupLoader.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -86,7 +88,7 @@ void USSWGameInstance::SpawnGalaxy()
 	//}		
 }
 
-void USSWGameInstance::GetGameData()
+void USSWGameInstance::GetCampaignData()
 {
 	UWorld* World = GetWorld();
 
@@ -94,7 +96,7 @@ void USSWGameInstance::GetGameData()
 	FRotator rotate = FRotator::ZeroRotator;
 
 	FActorSpawnParameters SpawnInfo;
-	FName Name("Starshatter Data");
+	FName Name("Campaign Data");
 	SpawnInfo.Name = Name;
 
 	if (GameData == nullptr) {
@@ -111,6 +113,70 @@ void USSWGameInstance::GetGameData()
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Game Data Loader  already exists"));
+	}
+
+	//} else {
+	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
+	//}		
+}
+
+void USSWGameInstance::GetCombatRosterData()
+{
+	UWorld* World = GetWorld();
+
+	FVector location = FVector::ZeroVector;
+	FRotator rotate = FRotator::ZeroRotator;
+
+	FActorSpawnParameters SpawnInfo;
+	FName Name("Combat Group Data");
+	SpawnInfo.Name = Name;
+
+	if (CombatGroupData == nullptr) {
+		CombatGroupData = GetWorld()->SpawnActor<ACombatGroupLoader>(ACombatGroupLoader::StaticClass(), location, rotate, SpawnInfo);
+
+
+		if (CombatGroupData)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Combat Group Info Loader Spawned"));
+		}
+		else {
+			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Combat Group Data Loader"));
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Combat Group Data Loader already exists"));
+	}
+
+	//} else {
+	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
+	//}		
+}
+
+void USSWGameInstance::GetAwardInfoData()
+{
+	UWorld* World = GetWorld();
+
+	FVector location = FVector::ZeroVector;
+	FRotator rotate = FRotator::ZeroRotator;
+
+	FActorSpawnParameters SpawnInfo;
+	FName Name("Award Data");
+	SpawnInfo.Name = Name;
+
+	if (AwardData == nullptr) {
+		AwardData = GetWorld()->SpawnActor<AAwardInfoLoader>(AAwardInfoLoader::StaticClass(), location, rotate, SpawnInfo);
+
+
+		if (AwardData)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Award Info Loader Spawned"));
+		}
+		else {
+			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Award Info Data Loader"));
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Award Info Data Loader already exists"));
 	}
 
 	//} else {
