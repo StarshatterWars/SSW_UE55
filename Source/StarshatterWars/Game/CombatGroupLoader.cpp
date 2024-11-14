@@ -14,6 +14,7 @@
 
 
 #include "CombatGroupLoader.h"
+#include "ShipDesign.h"
 
 
 // Sets default values
@@ -111,12 +112,13 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 			if (def) {
 				if (def->name()->value() == "group") {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: group struct missing in '%s'\n", filename);
+						UE_LOG(LogTemp, Log, TEXT("WARNING: group struct missing in '%s'"), *FString(filename));
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
 
 						FS_CombatGroup NewCombatGroup;
+						NewCombatUnitArray.Empty();
 
 						Name = "";
 						Type = "";
@@ -130,26 +132,9 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 						Iff = -1;
 						Loc = Vec3(1.0e9f, 0.0f, 0.0f);
 
-						//List<CombatUnit>  unit_list;
-						char              unit_name[64];
-						char              unit_regnum[16];
-						char              unit_design[64];
-						char              unit_skin[64];
-						int               unit_class = 0;
-						int               unit_count = 1;
-						int               unit_dead = 0;
-						int               unit_damage = 0;
-						int               unit_heading = 0;
-						int               unit_index = 0;
-
-						
-						*unit_name = 0;
-						*unit_regnum = 0;
-						*unit_design = 0;
-						*unit_skin = 0;
-
 						for (int i = 0; i < val->elements()->size(); i++) 
 						{
+							NewCombatGroup.UnitIndex = 0;
 							TermDef* pdef = val->elements()->at(i)->isDef();
 
 							if (pdef->name()->value() == ("name")) 
@@ -213,176 +198,114 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 
 							else if (pdef->name()->value() == ("unit"))
 							{
-								// Add Unit Stuff Here
-								TermStruct* unitval = pdef->term()->isStruct();
+								TermStruct* UnitTerm = pdef->term()->isStruct();
 
-								UnitName = "";
-								UnitRegnum = "";
-								UnitRegion = "";
-								UnitClass = "";
-								UnitDesign = "";
-								UnitSkin = "";
+								NewCombatGroup.UnitIndex = UnitTerm->elements()->size();
+							
+								if(NewCombatGroup.UnitIndex > 0 )
+								{
+									// Add Unit Stuff Here
+									
+									FS_CombatGroupUnit NewCombatUnit; 
+									
+									UnitName = "";
+									UnitRegnum = "";
+									UnitRegion = "";
+									UnitClass = "";
+									UnitDesign = "";
+									UnitSkin = "";
 
-								UnitCount = 1;
-								UnitDamage = 0;
-								UnitHeading = 0; 
+									UnitCount = 1;
+									UnitDamage = 0;
+									UnitDead = 0;
+									UnitHeading = 0;
+									UnitLoc = Vec3(1.0e9f, 0.0f, 0.0f);
 
-								UnitLoc = Vec3(1.0e9f, 0.0f, 0.0f);
-
-								//for (int i = 0; i < val->elements()->size(); i++) {
-								//	TermDef* pdef = val->elements()->at(i)->isDef();
+									for (int UnitIdx= 0; UnitIdx < NewCombatGroup.UnitIndex; UnitIdx++)
+									{
+										pdef = UnitTerm->elements()->at(UnitIdx)->isDef();
+										
+									
+										if (pdef->name()->value() == "name") {
+											GetDefText(UnitName, pdef, filename);
+											UE_LOG(LogTemp, Log, TEXT("unit name '%s'"), *FString(UnitName));
+											NewCombatUnit.UnitName = FString(UnitName);
+										}
+										else if (pdef->name()->value() == "regnum") {
+											GetDefText(UnitRegnum, pdef, filename);
+										}
+										else if (pdef->name()->value() == "region") {
+											GetDefText(UnitRegion, pdef, filename);
+										}
+										else if (pdef->name()->value() == "loc") {
+											GetDefVec(UnitLoc, pdef, filename);
+										}
+										else if (pdef->name()->value() == "type") {
+											//char typestr[32];
+											GetDefText(UnitClass, pdef, filename);
+											//UnitClass = ShipDesign::ClassForName(typestr);
+										}
+										else if (pdef->name()->value() == "design") {
+											GetDefText(UnitDesign, pdef, filename);
+										}
+										else if (pdef->name()->value() == "skin") {
+											GetDefText(UnitSkin, pdef, filename);
+															}
+										else if (pdef->name()->value() == "count") {
+											GetDefNumber(UnitCount, pdef, filename);
+															}
+										else if (pdef->name()->value() == "dead_count") {
+											GetDefNumber(UnitDead, pdef, filename);
+																}
+										else if (pdef->name()->value() == "damage") {
+											GetDefNumber(UnitDamage, pdef, filename);																}
+										else if (pdef->name()->value() == "heading") {
+											GetDefNumber(UnitHeading, pdef, filename);
+										}		
+									
+									
+										NewCombatUnit.UnitRegnum = FString(UnitRegnum);
+										NewCombatUnit.UnitRegion = FString(UnitRegion);
+										NewCombatUnit.UnitLoc.X = UnitLoc.x;
+										NewCombatUnit.UnitLoc.Y = UnitLoc.y;
+										NewCombatUnit.UnitLoc.Z = UnitLoc.z;
+										NewCombatUnit.UnitClass = FString(UnitClass);
+										NewCombatUnit.UnitDesign = FString(UnitDesign);
+										NewCombatUnit.UnitSkin = FString(UnitSkin);
+										NewCombatUnit.UnitCount = UnitCount;
+										NewCombatUnit.UnitDead = UnitDead;
+										NewCombatUnit.UnitDamage = UnitDamage;
+										NewCombatUnit.UnitHeading = UnitHeading;
+									}
+									NewCombatUnitArray.Add(NewCombatUnit);				
+								}
+								NewCombatGroup.Unit = NewCombatUnitArray;
 							}
-						
+							
 							FName RowName = FName(FString(Name) + " " + GetOrdinal(Id) + " " + FString(Type));
 							// call AddRow to insert the record
 							
-							if(Iff > 0) 
+							if(Iff > 0) {
 								CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
-
+							}
 							CombatGroupData = NewCombatGroup;
-						
-
-							/*else if ((iff == team || team < 0) && pdef->name()->value() == "unit") {
-									if (!pdef->term() || !pdef->term()->isStruct()) {
-										Print("WARNING: unit struct missing for group '%s' in '%s'\n", name, filename);
-									}
-									else {
-										TermStruct* val = pdef->term()->isStruct();
-
-										char unit_region[64];
-										char design[256];
-										Vec3 unit_loc = Vec3(1.0e9f, 0.0f, 0.0f);
-										unit_count = 1;
-
-										for (int i = 0; i < val->elements()->size(); i++) {
-											TermDef* pdef = val->elements()->at(i)->isDef();
-											if (pdef) {
-												if (pdef->name()->value() == "name") {
-													GetDefText(unit_name, pdef, filename);
-												}
-												else if (pdef->name()->value() == "regnum") {
-													GetDefText(unit_regnum, pdef, filename);
-												}
-												else if (pdef->name()->value() == "region") {
-													GetDefText(unit_region, pdef, filename);
-												}
-												else if (pdef->name()->value() == "loc") {
-													GetDefVec(unit_loc, pdef, filename);
-												}
-												else if (pdef->name()->value() == "type") {
-													char typestr[32];
-													GetDefText(typestr, pdef, filename);
-													unit_class = ShipDesign::ClassForName(typestr);
-												}
-												else if (pdef->name()->value() == "design") {
-													GetDefText(unit_design, pdef, filename);
-												}
-												else if (pdef->name()->value() == "skin") {
-													GetDefText(unit_skin, pdef, filename);
-												}
-												else if (pdef->name()->value() == "count") {
-													GetDefNumber(unit_count, pdef, filename);
-												}
-												else if (pdef->name()->value()=="dead_count") {
-													GetDefNumber(unit_dead, pdef, filename);
-												}
-												else if (pdef->name()->value() == "damage") {
-													GetDefNumber(unit_damage, pdef, filename);
-												}
-												else if (pdef->name()->value() == "heading") {
-													GetDefNumber(unit_heading, pdef, filename);
-												}
-											}
-										}
-
-										if (!ShipDesign::CheckName(unit_design)) {
-											Print("ERROR: invalid design '%s' for unit '%s' in '%s'\n", unit_design, unit_name, filename);
-											return 0;
-										}
-
-										CombatUnit* cu = new(__FILE__, __LINE__) CombatUnit(unit_name, unit_regnum, unit_class, unit_design, unit_count, iff);
-										cu->SetRegion(unit_region);
-										cu->SetSkin(unit_skin);
-										cu->MoveTo(unit_loc);
-										cu->Kill(unit_dead);
-										cu->SetSustainedDamage(unit_damage);
-										cu->SetHeading(unit_heading * DEGREES);
-										unit_list.append(cu);
-									}
-									}
-							}
-						}  // elements
-
-						if (iff >= 0 && (iff == team || team < 0)) {
-							CombatGroup* parent_group = 0;
-
-							if (force) {
-								parent_group = force->FindGroup(TypeFromName(parent_type), parent_id);
-							}
-
-							CombatGroup* g = new
-								CombatGroup(TypeFromName(type), id, name, iff, Intel::IntelFromName(intel), parent_group);
-
-							g->region = region;
-							g->combatant = combatant;
-							g->unit_index = unit_index;
-
-							if (loc.x >= 1e9) {
-								if (parent_group)
-									g->location = parent_group->location;
-								else
-									g->location = Vec3(0, 0, 0);
-							}
-							else {
-								g->location = loc;
-							}
-
-							if (unit_list.size()) {
-								unit_list[0]->SetLeader(true);
-
-								ListIter<CombatUnit> u = unit_list;
-								while (++u) {
-									u->SetCombatGroup(g);
-
-									if (u->GetRegion().length() < 1) {
-										u->SetRegion(g->GetRegion());
-										u->MoveTo(g->Location());
-									}
-
-									if (parent_group &&
-										(u->Type() == Ship::FIGHTER ||
-											u->Type() == Ship::ATTACK)) {
-
-										CombatUnit* carrier = 0;
-										CombatGroup* p = parent_group;
-
-										while (p && !carrier) {
-											if (p->units.size() && p->units[0]->Type() == Ship::CARRIER) {
-												carrier = p->units[0];
-												u->SetCarrier(carrier);
-												u->SetRegion(carrier->GetRegion());
-											}
-
-											p = p->parent;
-										}
-									}
-								}
-
-								g->units.append(unit_list);
-							} */
-					
+									
 						}  /// iff == team?
 					}    // group-struct
 				}          // group
 			}           // def
 		}             // term
 	} while (term);
-
+	SSWInstance->loader->ReleaseBuffer(block);
 }
 
 void ACombatGroupLoader::GetSSWInstance()
 {
 	SSWInstance = (USSWGameInstance*)GetGameInstance();
+}
+
+void ACombatGroupLoader::ParseCombatUnit()
+{
 }
 
 FString

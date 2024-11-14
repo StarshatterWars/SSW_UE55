@@ -817,9 +817,13 @@ struct FS_CombatGroupUnit : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString UnitSkin;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector UnitLoc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int UnitCount;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int UnitDamage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitDead;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int UnitHeading;
 
@@ -831,8 +835,10 @@ struct FS_CombatGroupUnit : public FTableRowBase {
 		UnitDesign = "";
 		UnitSkin = "";
 
+		UnitLoc = FVector::ZeroVector;
 		UnitCount = 0;
 		UnitDamage = 0;
+		UnitDead = 0;
 		UnitHeading = 0;
 	}
 };

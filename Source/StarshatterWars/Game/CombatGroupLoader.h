@@ -57,11 +57,14 @@ public:
 	void LoadOrderOfBattle(const char* filename, int team);
 	void GetSSWInstance();
 
+	void ParseCombatUnit();
+
 	FString GetOrdinal(int id);
 	FString GetNameFromType(FString name);
 
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
+	TArray<FS_CombatGroupUnit> NewCombatUnitArray;
 
 protected:
 	USSWGameInstance* SSWInstance;
@@ -87,5 +90,6 @@ protected:
 	Vec3 UnitLoc;
 	int  UnitCount;
 	int  UnitDamage;
+	int  UnitDead;
 	int  UnitHeading;
 };
