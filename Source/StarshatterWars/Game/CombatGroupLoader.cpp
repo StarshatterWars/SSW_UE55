@@ -282,7 +282,7 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 								NewCombatGroup.Unit = NewCombatUnitArray;
 							}
 							
-							FName RowName = FName(FString(Name) + " " + GetOrdinal(Id) + " " + FString(Type));
+							FName RowName = FName(GetOrdinal(Id) + " "+ FString(Name) + " " + +" " + FString(GetNameFromType(FString(Type))));
 							// call AddRow to insert the record
 							
 							if(Iff > 0) {
@@ -302,10 +302,6 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 void ACombatGroupLoader::GetSSWInstance()
 {
 	SSWInstance = (USSWGameInstance*)GetGameInstance();
-}
-
-void ACombatGroupLoader::ParseCombatUnit()
-{
 }
 
 FString
@@ -336,5 +332,41 @@ ACombatGroupLoader::GetOrdinal(int id)
 
 FString ACombatGroupLoader::GetNameFromType(FString name)
 {
-	return FString();
-}
+	FString TypeName;
+
+	if (name == "force") {
+		TypeName = "Force";
+	}
+	else if (name == "wing") {
+		TypeName = "Wing";
+	}
+	else if (name == "intercept_squadron") {
+		TypeName = "Intercept Squadron";
+	}
+	else if (name == "fighter_squadron") {
+		TypeName = "Fighter Squadron";
+	}
+	else if (name == "attack_squadron") {
+		TypeName = "Attack Squadron";
+	}
+	else if (name == "lca_squadron") {
+		TypeName = "LCA Squadron";
+	}
+	else if (name == "fleet") {
+		TypeName = "Fleet";
+	}
+	else if (name == "destroyer_squadron") {
+		TypeName = "DESRON";
+	}
+	else if (name == "battle_group") {
+		TypeName = "Battle Group";
+	}
+	else if (name == "carrier_group") {
+		TypeName = "CVBG";
+	}
+	else 
+	{
+		TypeName = name;
+	}
+	return TypeName;
+ }

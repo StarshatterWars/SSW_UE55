@@ -2046,7 +2046,7 @@ group: {
 group: {
   type:   wing,
   id:     22,
-  name:   "Paragon (22)",
+  name:   "Paragon",
   intel:  known,
   iff:    1,
   region: "Paragon",
