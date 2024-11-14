@@ -837,6 +837,53 @@ struct FS_CombatGroupUnit : public FTableRowBase {
 	}
 };
 
+
+USTRUCT(BlueprintType)
+struct FS_CombatGroup : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Id;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString System;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ParentId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitIndex;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CombatGroupUnit> Unit;
+
+	FS_CombatGroup() {
+		Type = "";
+		Id =  0;
+
+		Name = "";
+		Intel = "";
+		Iff = 0;
+		System = "";
+		Region = "";
+
+		Location = FVector::ZeroVector;
+		ParentType = "";
+		ParentId = 0;
+		UnitIndex = 0;
+	}
+};
+
 UCLASS()
 class STARSHATTERWARS_API USSWGameInstance : public UGameInstance
 {

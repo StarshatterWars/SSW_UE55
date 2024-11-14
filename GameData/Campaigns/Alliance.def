@@ -67,7 +67,7 @@ group: {
 group: {
   type:   wing,
   id:     15,
-  name:   "",
+  name:   "Tigers",
   intel:  known,
   iff:    1,
   region: "Jarnell",
@@ -431,7 +431,7 @@ group: {
 group: {
   type:   wing,
   id:     12,
-  name:   "",
+  name:   "Thrale",
   intel:  known,
   iff:    1,
   region: "Jarnell",
@@ -793,7 +793,7 @@ group: {
 group: {
   type:   wing,
   id:     18,
-  name:   "",
+  name:   "Trellis",
   intel:  known,
   iff:    1,
   region: "Trellis",
@@ -1156,7 +1156,7 @@ group: {
 group: {
   type:   wing,
   id:     21,
-  name:   "",
+  name:   "Danova",
   intel:  known,
   iff:    1,
   region: "Danova",
@@ -1303,7 +1303,7 @@ group: {
 group: {
   type:   wing,
   id:     29,
-  name:   "",
+  name:   "Jarnell",
   intel:  known,
   iff:    1,
   region: "Jarnell",
@@ -1647,7 +1647,7 @@ group: {
 group: {
   type:   wing,
   id:     27,
-  name:   "",
+  name:   "Athenar",
   intel:  known,
   iff:    1,
   region: "Athenar",
@@ -2046,7 +2046,7 @@ group: {
 group: {
   type:   wing,
   id:     22,
-  name:   "",
+  name:   "Paragon (22)",
   intel:  known,
   iff:    1,
   region: "Paragon",
@@ -2409,7 +2409,7 @@ group: {
 group: {
   type:   wing,
   id:     24,
-  name:   "",
+  name:   "Paragon",
   intel:  known,
   iff:    1,
   region: "Paragon",

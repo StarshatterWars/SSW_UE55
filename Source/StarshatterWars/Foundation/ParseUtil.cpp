@@ -376,7 +376,7 @@ bool GetDefText(Text& dst, TermDef* def, const char* file)
 	if (tn) {
 		
 		dst = tn->value();
-		UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(def->name()->value()), *FString(def->name()->value().data()));
+		//UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(def->name()->value()), *FString(def->name()->value().data()));
 		return true;
 	}
 	else {
@@ -397,7 +397,7 @@ bool GetDefText(char* dst, TermDef* def, const char* file)
 	TermText* tn = def->term()->isText();
 	if (tn) {
 		strcpy(dst, tn->value());
-		UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(def->name()->value()), *FString(dst));
+		//UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(def->name()->value()), *FString(dst));
 		return true;
 	}
 	else {
@@ -417,7 +417,7 @@ bool GetDefNumber(int& dst, TermDef* def, const char* file)
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (int)tr->value();
-		UE_LOG(LogTemp, Log, TEXT("%s: %i"), *FString(def->name()->value()), dst);
+		//UE_LOG(LogTemp, Log, TEXT("%s: %i"), *FString(def->name()->value()), dst);
 		return true;
 	}
 	else {
@@ -437,7 +437,7 @@ bool GetDefNumber(DWORD& dst, TermDef* def, const char* file)
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (DWORD)tr->value();
-		UE_LOG(LogTemp, Log, TEXT("%s: %lu"), *FString(def->name()->value()), dst);
+		//UE_LOG(LogTemp, Log, TEXT("%s: %lu"), *FString(def->name()->value()), dst);
 		return true;
 	}
 	else {
@@ -457,7 +457,7 @@ bool GetDefNumber(float& dst, TermDef* def, const char* file)
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (float)tr->value();
-		UE_LOG(LogTemp, Log, TEXT("%s: %f"), *FString(def->name()->value()), dst);
+		//UE_LOG(LogTemp, Log, TEXT("%s: %f"), *FString(def->name()->value()), dst);
 		return true;
 	}
 	else {
@@ -477,7 +477,7 @@ bool GetDefNumber(double& dst, TermDef* def, const char* file)
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (double)tr->value();
-		UE_LOG(LogTemp, Log, TEXT("%s: %lf"), *FString(def->name()->value()), dst);
+		//UE_LOG(LogTemp, Log, TEXT("%s: %lf"), *FString(def->name()->value()), dst);
 		return true;
 	}
 	else

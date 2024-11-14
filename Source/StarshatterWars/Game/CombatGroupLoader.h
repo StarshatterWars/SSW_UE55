@@ -54,11 +54,26 @@ public:
 
 	void LoadCombatRoster();
 
-	void LoadOrderOfBattle(const char* filename);
+	void LoadOrderOfBattle(const char* filename, int team);
 	void GetSSWInstance();
 
+	FString GetOrdinal(int id);
+
 	FS_CombatGroupUnit CombatGroupUnit;
+	FS_CombatGroup CombatGroupData;
 
 protected:
 	USSWGameInstance* SSWInstance;
+
+	Text  Name;
+	Text  Type;
+	Text  Intel;
+	Text  Region;
+	Text  System;
+	Text  ParentType;
+	int   ParentId;
+	int   UnitIndex;
+	int   Id;
+	int   Iff;
+	Vec3  Loc;
 };
