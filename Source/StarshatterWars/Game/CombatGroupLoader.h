@@ -58,6 +58,7 @@ public:
 	void GetSSWInstance();
 
 	FString GetOrdinal(int id);
+	FString GetNameFromType(FString name);
 
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
@@ -76,4 +77,15 @@ protected:
 	int   Id;
 	int   Iff;
 	Vec3  Loc;
+
+	Text UnitName;
+	Text UnitRegnum;
+	Text UnitRegion;
+	Text UnitClass;
+	Text UnitDesign;
+	Text UnitSkin;
+	Vec3 UnitLoc;
+	int  UnitCount;
+	int  UnitDamage;
+	int  UnitHeading;
 };

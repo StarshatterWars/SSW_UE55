@@ -148,15 +148,10 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 						*unit_design = 0;
 						*unit_skin = 0;
 
-						// all groups in this OOB default to the IFF of the main force
-						//if (force)
-						//	iff = force->GetIFF();
-
 						for (int i = 0; i < val->elements()->size(); i++) 
 						{
 							TermDef* pdef = val->elements()->at(i)->isDef();
-							//if (pdef && (Iff < 0 || team < 0 || Iff == team)) 
-							//{
+
 							if (pdef->name()->value() == ("name")) 
 							{
 								GetDefText(Name, pdef, filename);
@@ -216,7 +211,28 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 								NewCombatGroup.UnitIndex = UnitIndex;
 							}
 
-							//}
+							else if (pdef->name()->value() == ("unit"))
+							{
+								// Add Unit Stuff Here
+								TermStruct* unitval = pdef->term()->isStruct();
+
+								UnitName = "";
+								UnitRegnum = "";
+								UnitRegion = "";
+								UnitClass = "";
+								UnitDesign = "";
+								UnitSkin = "";
+
+								UnitCount = 1;
+								UnitDamage = 0;
+								UnitHeading = 0; 
+
+								UnitLoc = Vec3(1.0e9f, 0.0f, 0.0f);
+
+								//for (int i = 0; i < val->elements()->size(); i++) {
+								//	TermDef* pdef = val->elements()->at(i)->isDef();
+							}
+						
 							FName RowName = FName(FString(Name) + " " + GetOrdinal(Id) + " " + FString(Type));
 							// call AddRow to insert the record
 							
@@ -225,19 +241,6 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 
 							CombatGroupData = NewCombatGroup;
 						
-							/*GET_DEF_TEXT(name);
-							else GET_DEF_TEXT(type);
-							else GET_DEF_TEXT(intel);
-							else GET_DEF_TEXT(region);
-							else GET_DEF_TEXT(system);
-							else GET_DEF_VEC(loc);
-							else GET_DEF_TEXT(parent_type);
-							else GET_DEF_NUM(parent_id);
-							else GET_DEF_NUM(iff);
-							else GET_DEF_NUM(id);
-							else GET_DEF_NUM(unit_index);*/
-
-
 
 							/*else if ((iff == team || team < 0) && pdef->name()->value() == "unit") {
 									if (!pdef->term() || !pdef->term()->isStruct()) {
@@ -406,4 +409,9 @@ ACombatGroupLoader::GetOrdinal(int id)
 	}
 
 	return ordinal;
+}
+
+FString ACombatGroupLoader::GetNameFromType(FString name)
+{
+	return FString();
 }
