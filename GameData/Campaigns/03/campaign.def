@@ -28,8 +28,11 @@ orders: "* Protect Alliance civilians and assets in Janus and Borova."
 orders: "* Evacuate civilians and government personnel as necessary."
 orders: "* Stop the Hegemony advance until a counterattack can be mounted."
 
+combatant_groups: 3
+
 combatant: {
    name:    "Terellian Alliance",
+   size:	6,
    group:   { type: fleet,              id: 4    },
    group:   { type: fleet,              id: 5    },
    group:   { type: battalion,          id: 5    },
@@ -40,6 +43,7 @@ combatant: {
 
 combatant: {
    name:    "Marakan Hegemony",
+   size:	4,
    group:   { type: fleet,              id: 6    },
    group:   { type: fleet,              id: 7    },
    group:   { type: battalion,          id: 8    },
@@ -48,6 +52,7 @@ combatant: {
 
 combatant: {
    name:    "Brotherhood of Iron",
+   size:	1,
    group:   { type: fleet,              id: 2    },
 }
 

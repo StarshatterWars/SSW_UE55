@@ -30,35 +30,86 @@ orders: "* Break the Separatist blockade of the inner planets."
 orders: "* Apprehend or destroy military units of the Dantari Separatists."
 orders: "* Determine the extent of Hegemony involvement in this conflict."
 
+combatant_groups: 4
+
 combatant: {
-   name:    "Terellian Alliance",
-   group:   { type: carrier_group,      id:    6 },
-   group:   { type: destroyer_squadron, id:   43 },
-   group:   { type: destroyer_squadron, id:   60 },
-   group:   { type: freight,            id: 3000 },
+	name:    "Terellian Alliance",
+	size:	4,
+	group:	{
+		type: carrier_group,
+		id:    6 
+	},
+	group:	{
+		type: destroyer_squadron,
+		id:   43 
+	},
+	group:	{
+		type: destroyer_squadron,
+		id:   60 
+	},
+	group:	{
+		type: freight,
+		id: 3000
+	},
 }
 
 combatant: {
-   name:    "Dantari Separatists",
-   group:   { type: fleet,              id: 1    },
-   group:   { type: battalion,          id: 1    },
-   group:   { type: battalion,          id: 2    },
-   group:   { type: war_production,     id: 1    },
-   group:   { type: freight,            id: 3000 },
+	name:    "Dantari Separatists",
+	size:	5,
+	group:   { 
+		type: fleet,
+		id: 1    
+	},
+	group:	{
+		type: battalion,
+		id: 1 
+	},
+	group:	{
+		type: battalion,
+		id: 2
+	},
+	group:	{
+		type: war_production,
+		id: 1
+	},
+	group:	{
+		type: freight,
+		id: 3000 
+	},
 }
 
 combatant: {
-   name:    "Marakan Hegemony",
-   group:   { type: fleet,              id: 4    },
+	name:    "Marakan Hegemony",
+	size:	1,
+	group:	{
+		type: fleet,
+		id: 4
+	},
 }
 
 combatant: {
-   name:    "Independent System of Solus",
-   group:   { type: infrastructure,     id: 2000 },
-   group:   { type: transport,          id: 2100 },
-   group:   { type: civilian,           id: 2200 },
-   group:   { type: freight,            id: 3000 },
-   group:   { type: civilian,           id: 5000 },
+	name:    "Independent System of Solus",
+	size:	5,
+	group:	{
+		type: infrastructure,
+		id: 2000
+	},
+	group:	{
+		type: transport,
+		id: 2100
+	},
+	group:	{
+		type: civilian,
+		id: 2200
+	},
+	group:	{
+		type: freight,
+		id: 3000
+	},
+	group:	{
+		type: civilian,
+		id: 5000
+	},
 }
 
 action: {

@@ -19,14 +19,18 @@ orders: "* Reduce or eliminate the Hegemony presence in Ostara."
 orders: "* Prepare the region for a general invasion of Tarsus."
 orders: "* Protect Alliance assets in the area.\n"
 
+combatant_groups: 5
+
 combatant: {
    name:    "Terellian Alliance",
+   size:	2,
    group:   { type: fleet,              id: 6    }, // Ostara, Tarsus, Kolchev
    group:   { type: fleet,              id: 7    }, // Loris, Korius
 }
 
 combatant: {
    name:    "Marakan Hegemony",
+   size:	8,
    group:   { type: fleet,              id: 3    }, // Kolchev and Tarsus
    group:   { type: fleet,              id: 5    }, // Loris and Korius
    group:   { type: battalion,          id: 9    }, // Ostara Outpost
@@ -39,6 +43,7 @@ combatant: {
 
 combatant: {
    name:    "Dantari Separatists",
+   size:	3,
    group:   { type: fleet,              id: 2    }, // Adantar
    group:   { type: battalion,          id: 3    }, // Tanis Starbase
    group:   { type: war_production,     id: 3000 }, // Tanis
@@ -46,12 +51,14 @@ combatant: {
 
 combatant: {
    name:    "Brotherhood of Iron",
+   size:	2,
    group:   { type: fleet,              id: 2    }, // Loris
    group:   { type: fleet,              id: 3    }, // Loris
 }
 
 combatant: {
    name:    "Zolon Empire",
+   size:	2,
    group:   { type: fleet,              id: 1    },
    group:   { type: non_com,            id: 1    },
 }

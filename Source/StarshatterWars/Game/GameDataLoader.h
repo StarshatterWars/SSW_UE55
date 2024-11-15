@@ -63,10 +63,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void LoadCampaignData(const char* FileName, bool full = false);
-	void ParseGroup(TermStruct* val,
-		CombatGroup* force,
-		CombatGroup* clone,
-		const char* filename);
+	void ParseGroup(TermStruct* val, const char* filename);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -90,6 +87,9 @@ public:
 	Text                 description;
 	Text                 situation;
 	Text                 orders;
+
+	
+
 	//Bitmap               image[NUM_IMAGES];
 
 	bool                 scripted;
@@ -118,10 +118,23 @@ public:
 	int                  lockout;
 
 
+	
+
+protected:
+	
+	int ActionSize;
+	int CombatantSize;
+	int GroupSize;
+	
+	Text CombatantName;
+
 	FS_Campaign CampaignData;
-
-	protected:
 	class UDataTable* CampaignDataTable;
-
 	TArray<FS_CampaignAction> CampaignActionArray;
+	TArray<FS_CombatantGroup> CombatantGroupArray;
+	TArray<FS_Combatant> CombatantArray;
+
+	TermStruct* ActionTerm;
+
+	FS_CampaignAction NewCampaignAction;
 };

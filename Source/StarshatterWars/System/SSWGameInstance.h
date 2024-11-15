@@ -618,6 +618,32 @@ struct FS_CampaignAction : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Team;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int OppType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Count;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int StartBefore;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int StartAfter;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int MinRank;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int MaxRank;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Delay;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int AssetId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int TargetId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int TargetIff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Probability;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString System;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Region;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Text;
@@ -629,20 +655,50 @@ struct FS_CampaignAction : public FTableRowBase {
 	FString Image;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Scene;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString AssetType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TargetType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
 
 	FS_CampaignAction() {
 		Id = 0;
 		Type = "";
 		Subtype = 0;
 		Team = 0;
+		OppType = 0;
+		Iff = 0;
+		Count = 0;
+		StartBefore = 0;;
+		StartAfter = 0;
+		
+		MinRank = 0;
+		MaxRank = 0;
+
+		Delay = 0;
+		Probability = 0;
+
+		AssetId = 0;
+		TargetId = 0;
+		TargetIff = 0;
+
 		Region = "";
+		System = "";
+
 		Text = "";
 		Source = "";
 		File = "";
 		Image = "";
 		Scene = "";
+
+		AssetType = "";
+		TargetType = "";
+
+		Location = FVector::ZeroVector;
 	}
 };
+
 USTRUCT(BlueprintType)
 struct FS_CombatantGroup {
 	GENERATED_BODY()
@@ -666,10 +722,13 @@ struct FS_Combatant : public FTableRowBase {
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
-	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	//TArray<FS_CombatantGroup> Group;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Size;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CombatantGroup> Group;
 	FS_Combatant() {
 		Name = "";
+		Size = 0;
 	}
 };
 
@@ -690,6 +749,10 @@ struct FS_Campaign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool Sequential;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ActionSize;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int CombatantSize;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_Combatant> Combatant;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CampaignAction> Action;
@@ -700,6 +763,9 @@ struct FS_Campaign : public FTableRowBase {
 		Situation = "";
 		Scripted = false;
 		Sequential = false;
+
+		ActionSize = 0;
+		CombatantSize = 0;
 	}
 };
 

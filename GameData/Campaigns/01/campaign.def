@@ -29,6 +29,9 @@ orders:
 
 scripted: true
 
+combatant_groups: 0
+action_groups: 1
+
 action: {
    id:      0,
    type:    event,
@@ -37,4 +40,4 @@ action: {
    rgn:     Janus,
    source:  News,
    scene:   "Scenes/Intro.def"
-}
+},

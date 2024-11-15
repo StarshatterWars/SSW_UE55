@@ -124,8 +124,9 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	TArray<FString> OrdersArray;
 	OrdersArray.Empty();
 
-	TArray<FS_Combatant> CombatantArray;
+	CombatantGroupArray.Empty();
 	CombatantArray.Empty();
+	ActionSize = 0;
 
 	CampaignActionArray.Empty();
 
@@ -136,134 +137,113 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 		if (term) {
 			TermDef* def = term->isDef();
 			if (def) {
-
-
 				UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
 
 				if (def->name()->value() == "name") {
-					if (!def->term() || !def->term()->isText()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: name missing in '%s'"), *FString(FileName));
-					}
-					else {
 						GetDefText(name, def, filename);
-					}
+						NewCampaignData.Name = FString(name);
 				}
 				else if (def->name()->value() == "desc") {
-					if (!def->term() || !def->term()->isText()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: description missing in '%s'"), *FString(FileName));
-					}
-					else {
 						GetDefText(description, def, filename);
-					}
+						NewCampaignData.Description = FString(description);
 				}
 				else if (def->name()->value() == "situation") {
-					if (!def->term() || !def->term()->isText()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: situation missing in '%s'"), *FString(FileName)); 
-					}
-					else {
 						GetDefText(situation, def, filename);
-					}
+						NewCampaignData.Situation = FString(situation);
 				}
 				else if (def->name()->value() == "orders") {
-					if (!def->term() || !def->term()->isText()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: orders missing in '%s'"), *FString(FileName));
-					}
-					else {
 						GetDefText(orders, def, filename);
 						OrdersArray.Add(FString(orders));
-					}
+						NewCampaignData.Orders = OrdersArray;
 				}
 				else if (def->name()->value() == "scripted") {
 					if (def->term() && def->term()->isBool()) {
 						scripted = def->term()->isBool()->value();
+						NewCampaignData.Scripted = scripted;
 					}
 				}
 				else if (def->name()->value() == "sequential") {
 					if (def->term() && def->term()->isBool()) {
 						sequential = def->term()->isBool()->value();
+						NewCampaignData.Sequential = sequential;
 					}
 				}
 
+				else if (def->name()->value() == "combatant_groups") {
+					GetDefNumber(CombatantSize, def, filename);
+					NewCampaignData.CombatantSize = CombatantSize;
+				}
+	
+				else if (def->name()->value() == "action_groups") {
+					GetDefNumber(ActionSize, def, filename);
+					NewCampaignData.ActionSize = ActionSize;
+				}
 
-				else if (full && def->name()->value() == "combatant") {
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: combatant struct missing in '%s'"), *FString(FileName));
-					}
-					else {	
+				else if (def->name()->value() == "action") {
+					TermStruct* val = def->term()->isStruct();
+				}
 
-						TermStruct* val = def->term()->isStruct();
+				else if (def->name()->value() == "combatant") {
+					
+					TermStruct* CombatantTerm = def->term()->isStruct();
 
-						char           action_name[64];
-						int            iff = 0;
-						CombatGroup* force = 0;
-						CombatGroup* clone = 0;
+					NewCampaignData.CombatantSize = CombatantTerm->elements()->size();
 
-						for (int i = 0; i < val->elements()->size(); i++) {
+					if (NewCampaignData.CombatantSize > 0)
+					{
+						// Add Unit Stuff Here
+
+						FS_Combatant NewCombatUnit;
+
+						CombatantName = "";
+						CombatantSize = 0;
+						
+						for (int UnitIdx = 0; UnitIdx < NewCampaignData.CombatantSize; UnitIdx++)
+						{
 							
-							FS_Combatant CombatantEntry;
+							def = CombatantTerm->elements()->at(UnitIdx)->isDef();
 
-							TermDef* pdef = val->elements()->at(i)->isDef();
-							if (pdef) {
-								if (pdef->name()->value() == "name") {
-									GetDefText(action_name, pdef, filename);
-									UE_LOG(LogTemp, Log, TEXT("Combatant name is '%s'"), *FString(action_name));
-									
-									//force = CombatRoster::GetInstance()->GetForce(name);
+							if (def->name()->value() == "name") {
+								GetDefText(CombatantName, def, filename);
+								UE_LOG(LogTemp, Log, TEXT("combatant name '%s'"), *FString(CombatantName));
+								NewCombatUnit.Name = FString(CombatantName);
+							} else if (def->name()->value() == "size") {
+								GetDefNumber(CombatantSize, def, filename);
+								NewCombatUnit.Size = CombatantSize;
+							} else if (def->name()->value() == "group") {
+								TermStruct* GroupTerm = def->term()->isStruct();
+								//NewCombatUnit.Size = GroupTerm->elements()->size();
 
-									//if (force)
-									//	clone = force->Clone(false); // shallow copy
+								if (NewCombatUnit.Size > 0)
+								{
+									FS_CombatantGroup NewGroupUnit;
+									CombatantGroupArray.Empty();
+									for (int GroupIdx = 0; GroupIdx < NewCombatUnit.Size; GroupIdx++)
+									{
+										CombatantGroupArray.Add(NewGroupUnit);
+									}
+									NewCombatUnit.Group = CombatantGroupArray;
 								}
-
-								//else if (pdef->name()->value() == "group") {
-								//	ParseGroup(pdef->term()->isStruct(), force, clone, filename);
-								//}
-			
 							}
 						}
-
-						SSWInstance->loader->SetDataPath(FileName);
-						Combatant* c = new Combatant(name, clone);
-						if (c) {
-							combatants.append(c);
-						}
-						else {
-							Unload();
-							return;
-						}
-
+						CombatantArray.Add(NewCombatUnit);
 					}
+					NewCampaignData.Combatant = CombatantArray;
+					
 				}
-				else if (full && def->name()->value() == "action") {
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: action struct missing in '%s'"), *FString(FileName));
-					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-						ParseAction(val, FileName);
-					}
-				}
-
-				// define our data table struct
-				
-				NewCampaignData.Name = FString(name);
-				NewCampaignData.Description = FString(description);
-				NewCampaignData.Situation = FString(situation);
-				NewCampaignData.Orders = OrdersArray;
-			
-				NewCampaignData.Scripted = scripted;
-				NewCampaignData.Sequential = sequential;
-				NewCampaignData.Combatant = CombatantArray;
-				NewCampaignData.Action = CampaignActionArray;
-				FName RowName = FName(FString(name));
-
-				// call AddRow to insert the record
-				CampaignDataTable->AddRow(RowName, NewCampaignData);
-
-				CampaignData = NewCampaignData;
-
 			}
 		}
+
 	} while (term);
+
+	//for (int combatidx = 0; combatidx < CombatantSize; combatidx++) {
+	//	ParseGroup(CombatantTerm, filename);
+	//}
+	NewCampaignData.Action = CampaignActionArray;
+	// define our data table struct
+	FName RowName = FName(FString(name));
+	CampaignDataTable->AddRow(RowName, NewCampaignData);
+	CampaignData = NewCampaignData;
 
 	SSWInstance->loader->ReleaseBuffer(block);
 }
@@ -271,15 +251,14 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 // +--------------------------------------------------------------------+
 
 void
-AGameDataLoader::ParseGroup(TermStruct* val,
-	CombatGroup* force,
-	CombatGroup* clone,
-	const char* grp_fn)
+AGameDataLoader::ParseGroup(TermStruct* val, const char* grp_fn)
 {
-	if (!val) {
-		::Print("invalid combat group in campaign %s\n", name.data());
+	/*if (!val) {
+		UE_LOG(LogTemp, Log, TEXT("invalid combat group in campaign"));
 		return;
 	}
+
+	
 
 	int   type = 0;
 	int   id = 0;
@@ -307,7 +286,7 @@ AGameDataLoader::ParseGroup(TermStruct* val,
 			CombatGroup* parent = CloneOver(force, clone, g->GetParent());
 			parent->AddComponent(g->Clone());
 		}
-	}
+	}*/
 }
 
 // +--------------------------------------------------------------------+
@@ -316,7 +295,7 @@ void
 AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
 {
 	if (!val) {
-		::Print("invalid action in campaign %s\n", name.data());
+		UE_LOG(LogTemp, Log, TEXT("invalid action in campaign '%s'"), *FString(name.data()));
 		return;
 	}
 
@@ -347,24 +326,24 @@ AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
 	int   target_id = 0;
 	int   target_iff = 0;
 
-	CombatAction* action = 0;
+	//CombatAction* action = 0;
 
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		
-		FS_CampaignAction NewCampaignAction;
-
 		TermDef* pdef = val->elements()->at(i)->isDef();
 		if (pdef) {
 			if (pdef->name()->value() == "id") {
 				GetDefNumber(id, pdef, fn);
 				NewCampaignAction.Id = id;
+				UE_LOG(LogTemp, Log, TEXT("action id: '%d'"), id);
 			}
 			else if (pdef->name()->value() == "type") {
 				char txt[64];
 				GetDefText(txt, pdef, fn);
 				type = CombatAction::TypeFromName(txt);
 				NewCampaignAction.Type = FString(txt);
+				UE_LOG(LogTemp, Log, TEXT("action type: '%s'"), *FString(txt));
 			}
 			else if (pdef->name()->value() == "subtype") {
 				if (pdef->term()->isNumber()) {
@@ -385,13 +364,14 @@ AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
 					else if (type == CombatAction::INTEL_EVENT) {
 						//subtype = Intel::IntelFromName(txt);
 					}
-					NewCampaignAction.Subtype = subtype;
+					//NewCampaignAction.Subtype = subtype;
 				}
 				
 			}
 			else if (pdef->name()->value() == "opp_type") {
 				if (pdef->term()->isNumber()) {
 					GetDefNumber(opp_type, pdef, fn);
+					//NewCampaignAction.OppType = opp_type;
 				}
 
 				else if (pdef->term()->isText()) {
@@ -406,108 +386,141 @@ AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "source") {
 				char txt[64];
 				GetDefText(txt, pdef, fn);
-				source = CombatEvent::SourceFromName(txt);
+				//source = CombatEvent::SourceFromName(txt);
+				//NewCampaignAction.Source = txt;
 			}
 			else if (pdef->name()->value() == "team") {
 				GetDefNumber(team, pdef, fn);
+				//NewCampaignAction.Team = team;
 			}
 			else if (pdef->name()->value() == "iff") {
 				GetDefNumber(team, pdef, fn);
+				//NewCampaignAction.Iff = team;
 			}
 			else if (pdef->name()->value() == "count") {
 				GetDefNumber(count, pdef, fn);
+				//NewCampaignAction.Count = count;
 			}
 			else if (pdef->name()->value().contains("before")) {
 				if (pdef->term()->isNumber()) {
 					GetDefNumber(start_before, pdef, fn);
+					//NewCampaignAction.StartBefore = start_before;
 				}
 				else {
 					GetDefTime(start_before, pdef, fn);
 					start_before -= Game::ONE_DAY;
+					//NewCampaignAction.StartBefore = start_before;
 				}
 			}
 			else if (pdef->name()->value().contains("after")) {
 				if (pdef->term()->isNumber()) {
 					GetDefNumber(start_after, pdef, fn);
+					//NewCampaignAction.StartAfter = start_after;
 				}
 				else {
 					GetDefTime(start_after, pdef, fn);
 					start_after -= Game::ONE_DAY;
+					//NewCampaignAction.StartAfter = start_after;
 				}
 			}
 			else if (pdef->name()->value() == "min_rank") {
 				if (pdef->term()->isNumber()) {
 					GetDefNumber(min_rank, pdef, fn);
+					//NewCampaignAction.MinRank = min_rank;
 				}
 				else {
 					char rank_name[64];
 					GetDefText(rank_name, pdef, fn);
 					min_rank = PlayerData::RankFromName(rank_name);
+					//NewCampaignAction.MinRank = min_rank;
 				}
 			}
 			else if (pdef->name()->value() == "max_rank") {
 				if (pdef->term()->isNumber()) {
 					GetDefNumber(max_rank, pdef, fn);
+					//NewCampaignAction.MaxRank = max_rank;
 				}
 				else {
 					char rank_name[64];
 					GetDefText(rank_name, pdef, fn);
 					max_rank = PlayerData::RankFromName(rank_name);
+					//NewCampaignAction.MaxRank = max_rank;
 				}
 			}
 			else if (pdef->name()->value() == "delay") {
 				GetDefNumber(delay, pdef, fn);
+				//NewCampaignAction.Delay = delay;
 			}
 			else if (pdef->name()->value() == "probability") {
 				GetDefNumber(probability, pdef, fn);
+				//NewCampaignAction.Probability = probability;
 			}
 			else if (pdef->name()->value() == "asset_type") {
 				char type_name[64];
 				GetDefText(type_name, pdef, fn);
-				asset_type = CombatGroup::TypeFromName(type_name);
+				//asset_type = CombatGroup::TypeFromName(type_name);
+				//NewCampaignAction.AssetType = type_name;
 			}
 			else if (pdef->name()->value() == "target_type") {
 				char type_name[64];
 				GetDefText(type_name, pdef, fn);
-				target_type = CombatGroup::TypeFromName(type_name);
+				//NewCampaignAction.TargetType = type_name;
+				//target_type = CombatGroup::TypeFromName(type_name);
 			}
 			else if (pdef->name()->value() == "location" ||
 				pdef->name()->value() == "loc") {
 				GetDefVec(loc, pdef, fn);
+				//NewCampaignAction.Location.X = loc.x;
+				//NewCampaignAction.Location.Y = loc.y;
+				//NewCampaignAction.Location.Z = loc.z;
+
 			}
 			else if (pdef->name()->value() == "system" ||
 				pdef->name()->value() == "sys") {
 				GetDefText(system, pdef, fn);
+				//NewCampaignAction.System = FString(system);
 			}
 			else if (pdef->name()->value() == "region" ||
 				pdef->name()->value() == "rgn" ||
 				pdef->name()->value() == "zone") {
 				GetDefText(region, pdef, fn);
+				//NewCampaignAction.Region = FString(region);
 			}
 			else if (pdef->name()->value() == "file") {
 				GetDefText(file, pdef, fn);
+				//NewCampaignAction.File = FString(file);
 			}
 			else if (pdef->name()->value() == "image") {
 				GetDefText(image, pdef, fn);
+				//NewCampaignAction.Image = FString(image);
 			}
 			else if (pdef->name()->value() == "scene") {
 				GetDefText(scene, pdef, fn);
+				//NewCampaignAction.Scene = FString(scene);
 			}
 			else if (pdef->name()->value() == "text") {
 				GetDefText(text, pdef, fn);
 				text = Game::GetText(text);
+				//NewCampaignAction.Text = FString(text);
 			}
 			else if (pdef->name()->value() == "asset_id") {
 				GetDefNumber(asset_id, pdef, fn);
+				//NewCampaignAction.AssetId = asset_id;
 			}
 			else if (pdef->name()->value() == "target_id") {
 				GetDefNumber(target_id, pdef, fn);
+				//NewCampaignAction.TargetId = target_id;
 			}
+				
 			else if (pdef->name()->value() == "target_iff") {
 				GetDefNumber(target_iff, pdef, fn);
+				//NewCampaignAction.TargetIff = target_iff;
 			}
+		}
+		
+		CampaignActionArray.Add(NewCampaignAction);
 
-			else if (pdef->name()->value() == "asset_kill") {
+			/*else if (pdef->name()->value() == "asset_kill") {
 				if (!action)
 					action = new CombatAction(id, type, subtype, team);
 
@@ -615,40 +628,9 @@ AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
 					else
 						action->AddRequirement(c1, c2, comp, score);
 				}
-			}
-		}
-		CampaignActionArray.Add(NewCampaignAction);
+			}*/
 	}
-
-	if (!action)
-		action = new CombatAction(id, type, subtype, team);
-
-	if (action) {
-		action->SetSource(source);
-		action->SetOpposingType(opp_type);
-		action->SetLocation(loc);
-		action->SetSystem(system);
-		action->SetRegion(region);
-		action->SetFilename(file);
-		action->SetImageFile(image);
-		action->SetSceneFile(scene);
-		action->SetCount(count);
-		action->SetStartAfter(start_after);
-		action->SetStartBefore(start_before);
-		action->SetMinRank(min_rank);
-		action->SetMaxRank(max_rank);
-		action->SetDelay(delay);
-		action->SetProbability(probability);
-
-		action->SetAssetId(asset_id);
-		action->SetAssetType(asset_type);
-		action->SetTargetId(target_id);
-		action->SetTargetIFF(target_iff);
-		action->SetTargetType(target_type);
-		action->SetText(text);
-
-		actions.append(action);
-	}
+		
 }
 
 // +--------------------------------------------------------------------+
