@@ -606,6 +606,46 @@ struct FS_Region : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_CampaignReq : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Action;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Status;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool NotRequired;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Class1;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Class2;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString GroupType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int GroupId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Comp;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Score;
+
+	FS_CampaignReq() {
+		Action = 0;
+		Status = "";
+		NotRequired = false;
+
+		Class1 = "";
+		Class2 = "";
+		GroupType = "";
+		GroupId = 0;
+		Comp = "";
+		Intel = "";
+		Score = 0;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_CampaignAction : public FTableRowBase {
 	GENERATED_BODY()
 
@@ -660,6 +700,10 @@ struct FS_CampaignAction : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString TargetType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString AssetKill;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TargetKill;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FVector Location;
 
 	FS_CampaignAction() {
@@ -694,6 +738,9 @@ struct FS_CampaignAction : public FTableRowBase {
 
 		AssetType = "";
 		TargetType = "";
+
+		AssetKill = "";
+		TargetKill = "";
 
 		Location = FVector::ZeroVector;
 	}

@@ -212,6 +212,9 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						TargetId = 0;
 						TargetIff = 0;
 
+						AssetKill = "";
+						TargetKill = "";
+
 						for (int ActionIdx = 0; ActionIdx < NewCampaignData.ActionSize; ActionIdx++)
 						{
 							TermDef* pdef = ActionTerm->elements()->at(ActionIdx)->isDef();
@@ -336,14 +339,13 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								NewCampaignAction.Probability = Probability;
 							}
 							else if (pdef->name()->value() == "asset_type") {
-								char type_name[64];
-								GetDefText(type_name, pdef, filename);
+								GetDefText(AssetType, pdef, filename);
 								//asset_type = CombatGroup::TypeFromName(type_name);
-								//NewCampaignAction.AssetType = type_name;
+								NewCampaignAction.AssetType = FString(AssetType);
 							}
 							else if (pdef->name()->value() == "target_type") {
-								GetDefText(AssetType, pdef, filename);
-								NewCampaignAction.TargetType = FString(AssetType);
+								GetDefText(TargetType, pdef, filename);
+								NewCampaignAction.TargetType = FString(TargetType);
 								//target_type = CombatGroup::TypeFromName(type_name);
 							}
 							else if (pdef->name()->value() == "location" ||
@@ -393,6 +395,15 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 							else if (pdef->name()->value() == "target_iff") {
 								GetDefNumber(TargetIff, pdef, filename);
 								NewCampaignAction.TargetIff = TargetIff;
+							}
+							else if (pdef->name()->value() == "asset_kill") {
+								GetDefText(AssetKill, pdef, filename);
+								NewCampaignAction.AssetKill = FString(AssetKill);
+							}
+
+							else if (pdef->name()->value() == "target_kill") {
+								GetDefText(TargetKill, pdef, filename);
+								NewCampaignAction.TargetKill = FString(TargetKill);
 							}
 						}
 						CampaignActionArray.Add(NewCampaignAction);

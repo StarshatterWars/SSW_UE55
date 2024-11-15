@@ -168,4 +168,7 @@ protected:
 	Text  TargetType;
 	int   TargetId;
 	int   TargetIff;
+
+	Text  AssetKill;
+	Text  TargetKill;
 };
