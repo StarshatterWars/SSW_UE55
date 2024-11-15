@@ -130,11 +130,14 @@ protected:
 	int   GroupId;
 
 	Text CombatantName;
+	Text CombatantType;
+	int CombatantId;
+	FS_Combatant NewCombatUnit;
+	FS_CombatantGroup NewGroupUnit;
 
 	FS_Campaign CampaignData;
 	class UDataTable* CampaignDataTable;
 	TArray<FS_CampaignAction> CampaignActionArray;
-	TArray<FS_CombatantGroup> CombatantGroupArray;
 	TArray<FS_Combatant> CombatantArray;
 
 	TermStruct* ActionTerm;

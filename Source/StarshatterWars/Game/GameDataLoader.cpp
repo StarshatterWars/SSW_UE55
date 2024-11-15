@@ -124,7 +124,6 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	TArray<FString> OrdersArray;
 	OrdersArray.Empty();
 
-	CombatantGroupArray.Empty();
 	CombatantArray.Empty();
 	ActionSize = 0;
 
@@ -137,7 +136,6 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 		if (term) {
 			TermDef* def = term->isDef();
 			if (def) {
-				UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
 
 				if (def->name()->value() == "name") {
 						GetDefText(name, def, filename);
@@ -193,54 +191,45 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 					{
 						// Add Unit Stuff Here
 
-						FS_Combatant NewCombatUnit;
-
 						CombatantName = "";
 						CombatantSize = 0;
-						
+						NewCombatUnit.Group.Empty();
+
 						for (int UnitIdx = 0; UnitIdx < NewCampaignData.CombatantSize; UnitIdx++)
 						{	
 							def = CombatantTerm->elements()->at(UnitIdx)->isDef();
 
 							if (def->name()->value() == "name") {
 								GetDefText(CombatantName, def, filename);
-								UE_LOG(LogTemp, Log, TEXT("combatant name '%s'"), *FString(CombatantName));
 								NewCombatUnit.Name = FString(CombatantName);
 							} else if (def->name()->value() == "size") {
 								GetDefNumber(CombatantSize, def, filename);
 								NewCombatUnit.Size = CombatantSize;
 							} else if (def->name()->value() == "group") {
+								//ParseGroup(def->term()->isStruct(), filename);
 								TermStruct* GroupTerm = def->term()->isStruct();
-								//NewCombatUnit.Size = GroupTerm->elements()->size();
 
-								if (NewCombatUnit.Size > 0)
-								{				
-									CombatantGroupArray.Empty();
+								CombatantType = "";
+								CombatantId = 0;
+								
+								for (int i = 0; i < GroupTerm->elements()->size(); i++) {
 
-									GroupType = "";
-									GroupId = 0;
-
-									for (int GroupIdx = 0; GroupIdx < NewCombatUnit.Size; GroupIdx++)
-									{
-										def = GroupTerm->elements()->at(GroupIdx)->isDef();
-										
-										if (def->name()->value() == "type") {
-											GetDefText(GroupType, def, filename);
-											//type = CombatGroup::TypeFromName(type_name);				
-										}
-
-										else if (def->name()->value() == "id") {
-											GetDefNumber(GroupId, def, filename);	
-										}
-									
-										FS_CombatantGroup NewGroupUnit;
-										NewGroupUnit.Type = FString(GroupType);
-										NewGroupUnit.Id = GroupId;
-
-										CombatantGroupArray.Add(NewGroupUnit);
+									TermDef* pdef = GroupTerm->elements()->at(i)->isDef();
+									if (pdef->name()->value() == "type") {
+										GetDefText(CombatantType, pdef, filename);
+										NewGroupUnit.Type = FString(CombatantType);
+										UE_LOG(LogTemp, Log, TEXT("%s:  %s"), *FString(pdef->name()->value()), *FString(CombatantType));
+										//type = CombatGroup::TypeFromName(type_name);
 									}
-									NewCombatUnit.Group = CombatantGroupArray;
+
+									else if (pdef->name()->value() == "id") {
+										GetDefNumber(CombatantId, pdef, filename);
+										NewGroupUnit.Id = CombatantId;
+										UE_LOG(LogTemp, Log, TEXT("%s: %d"), *FString(pdef->name()->value()), CombatantId);
+									}
 								}
+								NewCombatUnit.Group.Add(NewGroupUnit);
+
 							}
 						}
 						CombatantArray.Add(NewCombatUnit);
@@ -267,43 +256,37 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 
 // +--------------------------------------------------------------------+
 
-void
+void //TArray<FS_CombatantGroup>
 AGameDataLoader::ParseGroup(TermStruct* val, const char* grp_fn)
 {
-	/*if (!val) {
-		UE_LOG(LogTemp, Log, TEXT("invalid combat group in campaign"));
-		return;
-	}
-
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseGroup()"));
 	
+	TArray<FS_CombatantGroup> NewCombatantGroup;
 
-	int   type = 0;
-	int   id = 0;
+	CombatantType = "";
+	CombatantId = 0;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
+
 		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "type") {
-				char type_name[64];
-				GetDefText(type_name, pdef, grp_fn);
-				type = CombatGroup::TypeFromName(type_name);
-			}
+		if (pdef->name()->value() == "type") {
+			GetDefText(CombatantType, pdef, grp_fn);
+			NewGroupUnit.Type = FString(CombatantType);
+			UE_LOG(LogTemp, Log, TEXT("%s:  %s"), *FString(pdef->name()->value()), *FString(CombatantType));
 
-			else if (pdef->name()->value() == "id") {
-				GetDefNumber(id, pdef, grp_fn);
-			}
+			//type = CombatGroup::TypeFromName(type_name);
 		}
+
+		else if (pdef->name()->value() == "id") {
+			GetDefNumber(CombatantId, pdef, grp_fn);
+			NewGroupUnit.Id = CombatantId;
+			UE_LOG(LogTemp, Log, TEXT("%s: %d"), *FString(pdef->name()->value()), CombatantId);
+		}	
+		NewCombatantGroup.Add(NewGroupUnit);
 	}
-
-	if (type && id) {
-		CombatGroup* g = force->FindGroup(type, id);
-
-		// found original group, now clone it over
-		if (g && g->GetParent()) {
-			CombatGroup* parent = CloneOver(force, clone, g->GetParent());
-			parent->AddComponent(g->Clone());
-		}
-	}*/
+	
+	NewCombatUnit.Group = NewCombatantGroup;
+	//return NewCombatantGroup;
 }
 
 // +--------------------------------------------------------------------+
