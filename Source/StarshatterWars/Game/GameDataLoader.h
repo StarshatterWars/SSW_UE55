@@ -126,6 +126,9 @@ protected:
 	int CombatantSize;
 	int GroupSize;
 	
+	Text  GroupType;
+	int   GroupId;
+
 	Text CombatantName;
 
 	FS_Campaign CampaignData;

@@ -199,8 +199,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						CombatantSize = 0;
 						
 						for (int UnitIdx = 0; UnitIdx < NewCampaignData.CombatantSize; UnitIdx++)
-						{
-							
+						{	
 							def = CombatantTerm->elements()->at(UnitIdx)->isDef();
 
 							if (def->name()->value() == "name") {
@@ -215,11 +214,29 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								//NewCombatUnit.Size = GroupTerm->elements()->size();
 
 								if (NewCombatUnit.Size > 0)
-								{
-									FS_CombatantGroup NewGroupUnit;
+								{				
 									CombatantGroupArray.Empty();
+
+									GroupType = "";
+									GroupId = 0;
+
 									for (int GroupIdx = 0; GroupIdx < NewCombatUnit.Size; GroupIdx++)
 									{
+										def = GroupTerm->elements()->at(GroupIdx)->isDef();
+										
+										if (def->name()->value() == "type") {
+											GetDefText(GroupType, def, filename);
+											//type = CombatGroup::TypeFromName(type_name);				
+										}
+
+										else if (def->name()->value() == "id") {
+											GetDefNumber(GroupId, def, filename);	
+										}
+									
+										FS_CombatantGroup NewGroupUnit;
+										NewGroupUnit.Type = FString(GroupType);
+										NewGroupUnit.Id = GroupId;
+
 										CombatantGroupArray.Add(NewGroupUnit);
 									}
 									NewCombatUnit.Group = CombatantGroupArray;
