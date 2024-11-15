@@ -31,6 +31,7 @@ orders: "* Apprehend or destroy military units of the Dantari Separatists."
 orders: "* Determine the extent of Hegemony involvement in this conflict."
 
 combatant_groups: 4
+action_groups: 83
 
 combatant: {
 	name:    "Terellian Alliance",

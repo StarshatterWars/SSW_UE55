@@ -63,7 +63,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void LoadCampaignData(const char* FileName, bool full = false);
-	void ParseGroup(TermStruct* val, const char* filename);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -140,7 +139,33 @@ protected:
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
 
-	TermStruct* ActionTerm;
-
 	FS_CampaignAction NewCampaignAction;
+
+	int   ActionId;
+	Text  ActionType;
+	int  ActionSubtype;
+	int   OppType;
+	int   ActionTeam;
+	Text  ActionSource;
+	Vec3  ActionLocation;
+	Text  ActionSystem;
+	Text  ActionRegion;
+	Text  ActionFile;
+	Text  ActionImage;
+	Text  ActionScene;
+	Text  ActionText;
+
+	int   ActionCount;
+	int   StartBefore;
+	int   StartAfter;
+	int   MinRank;
+	int   MaxRank;
+	int   Delay;
+	int   Probability;
+
+	Text  AssetType;
+	int   AssetId;
+	Text  TargetType;
+	int   TargetId;
+	int   TargetIff;
 };

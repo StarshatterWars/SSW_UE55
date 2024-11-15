@@ -125,8 +125,6 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	OrdersArray.Empty();
 
 	CombatantArray.Empty();
-	ActionSize = 0;
-
 	CampaignActionArray.Empty();
 
 	do {
@@ -178,7 +176,228 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 				}
 
 				else if (def->name()->value() == "action") {
-					TermStruct* val = def->term()->isStruct();
+					
+					TermStruct* ActionTerm = def->term()->isStruct();
+
+					NewCampaignData.ActionSize = ActionTerm->elements()->size();
+		
+					if (NewCampaignData.ActionSize > 0)
+					{
+						ActionId = 0;
+						ActionType = "";
+						ActionSubtype = 0;
+						OppType = -1;
+						ActionTeam = 0;
+						ActionSource = "";
+						ActionLocation = Vec3(0.0f, 0.0f, 0.0f);
+						
+						ActionSystem = "";
+						ActionRegion = "";
+						ActionFile = "";
+						ActionImage = "";
+						ActionScene = "";
+						ActionText = "";
+
+						ActionCount = 1;
+						StartBefore = Game::TIME_NEVER;
+						StartAfter = 0;
+						MinRank = 0;
+						MaxRank = 100;
+						Delay = 0 ;
+						Probability = 100;
+
+						AssetType = "";
+						AssetId = 0;
+						TargetType = "";
+						TargetId = 0;
+						TargetIff = 0;
+
+						for (int ActionIdx = 0; ActionIdx < NewCampaignData.ActionSize; ActionIdx++)
+						{
+							TermDef* pdef = ActionTerm->elements()->at(ActionIdx)->isDef();
+
+							if (pdef->name()->value() == "id") {
+								GetDefNumber(ActionId, pdef, filename);
+								NewCampaignAction.Id = ActionId;
+								UE_LOG(LogTemp, Log, TEXT("action id: '%d'"), ActionId);
+							}
+							else if (pdef->name()->value() == "type") {
+								GetDefText(ActionType, pdef, filename);
+								//type = CombatAction::TypeFromName(txt);
+								NewCampaignAction.Type = FString(ActionType);
+								UE_LOG(LogTemp, Log, TEXT("action type: '%s'"), *FString(ActionType));
+							}
+							else if (pdef->name()->value() == "subtype") {
+								if (pdef->term()->isNumber()) {
+									GetDefNumber(ActionSubtype, pdef, filename);
+									NewCampaignAction.Subtype = ActionSubtype;
+								}
+
+								/*else if (pdef->term()->isText()) {
+									char txt[64];
+									GetDefText(txt, pdef, fn);
+
+									if (type == CombatAction::MISSION_TEMPLATE) {
+										subtype = Mission::TypeFromName(txt);
+									}
+									else if (type == CombatAction::COMBAT_EVENT) {
+										subtype = CombatEvent::TypeFromName(txt);
+									}
+									else if (type == CombatAction::INTEL_EVENT) {
+										//subtype = Intel::IntelFromName(txt);
+									}
+									//NewCampaignAction.Subtype = subtype;
+								}*/
+
+							}
+							else if (pdef->name()->value() == "opp_type") {
+								if (pdef->term()->isNumber()) {
+									GetDefNumber(OppType, pdef, filename);
+									NewCampaignAction.OppType = OppType;
+								}
+
+								/*else if (pdef->term()->isText()) {
+									GetDefText(txt, pdef, filename);
+
+									if (type == CombatAction::MISSION_TEMPLATE) {
+										opp_type = Mission::TypeFromName(txt);
+									}
+								}*/
+							}
+							else if (pdef->name()->value() == "source") {
+								GetDefText(ActionSource, pdef, filename);
+								//source = CombatEvent::SourceFromName(txt);
+								NewCampaignAction.Source = FString(ActionSource);
+							}
+							else if (pdef->name()->value() == "team") {
+								GetDefNumber(ActionTeam, pdef, filename);
+								NewCampaignAction.Team = ActionTeam;
+							}
+							else if (pdef->name()->value() == "iff") {
+								GetDefNumber(ActionTeam, pdef, filename);
+								NewCampaignAction.Iff = ActionTeam;
+							}
+							else if (pdef->name()->value() == "count") {
+								GetDefNumber(ActionCount, pdef, filename);
+								NewCampaignAction.Count = ActionCount;
+							}
+							else if (pdef->name()->value().contains("before")) {
+								if (pdef->term()->isNumber()) {
+									GetDefNumber(StartBefore, pdef, filename);
+									NewCampaignAction.StartBefore = StartBefore;
+								}
+								else {
+									GetDefTime(StartBefore, pdef, filename);
+									StartBefore -= Game::ONE_DAY;
+									NewCampaignAction.StartBefore = StartBefore;
+								}
+							}
+							else if (pdef->name()->value().contains("after")) {
+								if (pdef->term()->isNumber()) {
+									GetDefNumber(StartAfter, pdef, filename);
+									NewCampaignAction.StartAfter = StartAfter;
+								}
+								else {
+									GetDefTime(StartAfter, pdef, filename);
+									StartAfter -= Game::ONE_DAY;
+									NewCampaignAction.StartAfter = StartAfter;
+								}
+							}
+							else if (pdef->name()->value() == "min_rank") {
+								if (pdef->term()->isNumber()) {
+									GetDefNumber(MinRank, pdef, filename);
+									NewCampaignAction.MinRank = MinRank;
+								}
+								else {
+									char rank_name[64];
+									GetDefText(rank_name, pdef, filename);
+									MinRank = PlayerData::RankFromName(rank_name);
+									NewCampaignAction.MinRank = MinRank;
+								}
+							}
+							else if (pdef->name()->value() == "max_rank") {
+								if (pdef->term()->isNumber()) {
+									GetDefNumber(MaxRank, pdef, filename);
+									NewCampaignAction.MaxRank = MaxRank;
+								}
+								else {
+									char rank_name[64];
+									GetDefText(rank_name, pdef, filename);
+									MaxRank = PlayerData::RankFromName(rank_name);
+									NewCampaignAction.MaxRank = MaxRank;
+								}
+							}
+							else if (pdef->name()->value() == "delay") {
+								GetDefNumber(Delay, pdef, filename);
+								NewCampaignAction.Delay = Delay;
+							}
+							else if (pdef->name()->value() == "probability") {
+								GetDefNumber(Probability, pdef, filename);
+								NewCampaignAction.Probability = Probability;
+							}
+							else if (pdef->name()->value() == "asset_type") {
+								char type_name[64];
+								GetDefText(type_name, pdef, filename);
+								//asset_type = CombatGroup::TypeFromName(type_name);
+								//NewCampaignAction.AssetType = type_name;
+							}
+							else if (pdef->name()->value() == "target_type") {
+								GetDefText(AssetType, pdef, filename);
+								NewCampaignAction.TargetType = FString(AssetType);
+								//target_type = CombatGroup::TypeFromName(type_name);
+							}
+							else if (pdef->name()->value() == "location" ||
+								pdef->name()->value() == "loc") {
+								GetDefVec(ActionLocation, pdef, filename);
+								NewCampaignAction.Location.X = ActionLocation.x;
+								NewCampaignAction.Location.Y = ActionLocation.y;
+								NewCampaignAction.Location.Z = ActionLocation.z;
+
+							}
+							else if (pdef->name()->value() == "system" ||
+								pdef->name()->value() == "sys") {
+								GetDefText(ActionSystem, pdef, filename);
+								NewCampaignAction.System = FString(ActionSystem);
+							}
+							else if (pdef->name()->value() == "region" ||
+								pdef->name()->value() == "rgn" ||
+								pdef->name()->value() == "zone") {
+								GetDefText(ActionRegion, pdef, filename);
+								NewCampaignAction.Region = FString(ActionRegion);
+							}
+							else if (pdef->name()->value() == "file") {
+								GetDefText(ActionFile, pdef, filename);
+								NewCampaignAction.File = FString(ActionFile);
+							}
+							else if (pdef->name()->value() == "image") {
+								GetDefText(ActionImage, pdef, filename);
+								NewCampaignAction.Image = FString(ActionImage);
+							}
+							else if (pdef->name()->value() == "scene") {
+								GetDefText(ActionScene, pdef, filename);
+								NewCampaignAction.Scene = FString(ActionScene);
+							}
+							else if (pdef->name()->value() == "text") {
+								GetDefText(ActionText, pdef, filename);
+								NewCampaignAction.Text = FString(ActionText);
+							}
+							else if (pdef->name()->value() == "asset_id") {
+								GetDefNumber(AssetId, pdef, filename);
+								NewCampaignAction.AssetId = AssetId;
+							}
+							else if (pdef->name()->value() == "target_id") {
+								GetDefNumber(TargetId, pdef, filename);
+								NewCampaignAction.TargetId = TargetId;
+							}
+
+							else if (pdef->name()->value() == "target_iff") {
+								GetDefNumber(TargetIff, pdef, filename);
+								NewCampaignAction.TargetIff = TargetIff;
+							}
+						}
+						CampaignActionArray.Add(NewCampaignAction);
+					}
+					NewCampaignData.Action = CampaignActionArray;
 				}
 
 				else if (def->name()->value() == "combatant") {
@@ -229,64 +448,23 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 									}
 								}
 								NewCombatUnit.Group.Add(NewGroupUnit);
-
 							}
 						}
 						CombatantArray.Add(NewCombatUnit);
 					}
-					NewCampaignData.Combatant = CombatantArray;
-					
+					NewCampaignData.Combatant = CombatantArray;	
 				}
 			}
 		}
 
 	} while (term);
 
-	//for (int combatidx = 0; combatidx < CombatantSize; combatidx++) {
-	//	ParseGroup(CombatantTerm, filename);
-	//}
-	NewCampaignData.Action = CampaignActionArray;
 	// define our data table struct
 	FName RowName = FName(FString(name));
 	CampaignDataTable->AddRow(RowName, NewCampaignData);
 	CampaignData = NewCampaignData;
 
 	SSWInstance->loader->ReleaseBuffer(block);
-}
-
-// +--------------------------------------------------------------------+
-
-void //TArray<FS_CombatantGroup>
-AGameDataLoader::ParseGroup(TermStruct* val, const char* grp_fn)
-{
-	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseGroup()"));
-	
-	TArray<FS_CombatantGroup> NewCombatantGroup;
-
-	CombatantType = "";
-	CombatantId = 0;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef->name()->value() == "type") {
-			GetDefText(CombatantType, pdef, grp_fn);
-			NewGroupUnit.Type = FString(CombatantType);
-			UE_LOG(LogTemp, Log, TEXT("%s:  %s"), *FString(pdef->name()->value()), *FString(CombatantType));
-
-			//type = CombatGroup::TypeFromName(type_name);
-		}
-
-		else if (pdef->name()->value() == "id") {
-			GetDefNumber(CombatantId, pdef, grp_fn);
-			NewGroupUnit.Id = CombatantId;
-			UE_LOG(LogTemp, Log, TEXT("%s: %d"), *FString(pdef->name()->value()), CombatantId);
-		}	
-		NewCombatantGroup.Add(NewGroupUnit);
-	}
-	
-	NewCombatUnit.Group = NewCombatantGroup;
-	//return NewCombatantGroup;
 }
 
 // +--------------------------------------------------------------------+
