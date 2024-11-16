@@ -3,22 +3,21 @@
 	Copyright (C) 2024. All Rights Reserved.
 
 	SUBSYSTEM:    Game
-	FILE:         CampaignDataLoader.cpp
+	FILE:         ShipDesignDataLoader.cpp
 	AUTHOR:       Carlos Bott
 
 	OVERVIEW
 	========
-	Loader and Parser class for initial generation of Campaign Data Table
+	Loader and Parser class for initial generation of Ship Design Data Table
 	Will not be used after Dable Table is Generated.
 */
 
 
-
-#include "CampaignDataLoader.h"
+#include "ShipDesignDataLoader.h"
 
 
 // Sets default values
-ACampaignDataLoader::ACampaignDataLoader()
+AShipDesignDataLoader::AShipDesignDataLoader()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -26,14 +25,14 @@ ACampaignDataLoader::ACampaignDataLoader()
 }
 
 // Called when the game starts or when spawned
-void ACampaignDataLoader::BeginPlay()
+void AShipDesignDataLoader::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
 // Called every frame
-void ACampaignDataLoader::Tick(float DeltaTime)
+void AShipDesignDataLoader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 

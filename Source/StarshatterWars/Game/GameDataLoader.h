@@ -8,7 +8,8 @@
 
 	OVERVIEW
 	========
-	Master Game Data Loader
+	Loader and Parser class for initial generation of Master Gamne Data Tables
+	Will not be used after Dable Table is Generated.
 */
 
 #pragma once

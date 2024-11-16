@@ -3,12 +3,12 @@
 	Copyright (C) 2024. All Rights Reserved.
 
 	SUBSYSTEM:    Game
-	FILE:         CampaignDataLoader.h
+	FILE:         ShipDataLoader.h
 	AUTHOR:       Carlos Bott
 
 	OVERVIEW
 	========
-	Loader and Parser class for initial generation of Campaign Data Table
+	Loader and Parser class for initial generation of Ship Data Table
 	Will not be used after Dable Table is Generated.
 */
 
@@ -16,16 +16,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "CampaignDataLoader.generated.h"
+#include "ShipDataLoader.generated.h"
 
 UCLASS()
-class STARSHATTERWARS_API ACampaignDataLoader : public AActor
+class STARSHATTERWARS_API AShipDataLoader : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ACampaignDataLoader();
+	AShipDataLoader();
 
 protected:
 	// Called when the game starts or when spawned
