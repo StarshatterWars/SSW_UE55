@@ -8,7 +8,15 @@ zone: {
 zone: {
    system: Solus,
    region: Solus,
+}
+
+zone: {
+   system: Solus,
    region: Telmera,
+}
+
+zone: {
+   system: Solus,
    region: Kalon
 }
 
@@ -21,8 +29,6 @@ zone: {
    system: Solus,
    region: Trellis
 }
-
-
 
 zone: {
    system: Renser,

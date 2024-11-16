@@ -13,6 +13,10 @@ zone: {
 zone: {
    system: Janus,
    region: "Janek",
+}
+
+zone: {
+   system: Janus,
    region: "Janek Station",
 }
 

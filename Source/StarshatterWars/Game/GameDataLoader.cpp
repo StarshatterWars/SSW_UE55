@@ -83,6 +83,7 @@ void AGameDataLoader::InitializeCampaignData() {
 		FileName.Append("0");
 		FileName.Append(FString::FormatAsNumber(i));
 		FileName.Append("/");
+		CampaignPath = FileName;
 		FileName.Append("campaign.def");
 		LoadCampaignData(TCHAR_TO_ANSI(*FileName), true);
 	}
@@ -478,10 +479,86 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 
 	} while (term);
 
+	LoadZones(CampaignPath);
+	NewCampaignData.Zone = ZoneArray;
 	// define our data table struct
 	FName RowName = FName(FString(name));
 	CampaignDataTable->AddRow(RowName, NewCampaignData);
 	CampaignData = NewCampaignData;
+
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
+void AGameDataLoader::LoadZones(FString Path)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadZones()"));
+	
+	FString FileName = Path;
+	FileName.Append("zones.def");
+
+	UE_LOG(LogTemp, Log, TEXT("Loading Campaign Zone: %s"), *FileName);
+
+	const char* fn = TCHAR_TO_ANSI(*FileName);
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	ZoneArray.Empty();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "ZONES") {
+			UE_LOG(LogTemp, Log, TEXT("Invalid Zone File %s"), *FString(fn));
+			return;
+		}
+	}
+
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def->name()->value() == "zone") {
+				if (!def->term() || !def->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: zone struct missing in '%s'"), *FString(filename));
+				}
+				else {
+					TermStruct* val = def->term()->isStruct();
+
+					FS_CampaignZone NewCampaignZone;
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+						TermDef* pdef = val->elements()->at(i)->isDef();
+						if (pdef) {
+							if (pdef->name()->value() == "region") {
+								GetDefText(ZoneRegion, pdef, fn);
+								NewCampaignZone.Region = FString(ZoneRegion);
+								//zone->AddRegion(rgn);
+							}
+							else if (pdef->name()->value() == "system") {
+								GetDefText(ZoneSystem, pdef, fn);
+								NewCampaignZone.System = FString(ZoneSystem);
+								//zone->system = rgn;
+							}
+						}	
+					}
+					ZoneArray.Add(NewCampaignZone);
+				}
+			}
+		}
+
+	} while (term);
 
 	SSWInstance->loader->ReleaseBuffer(block);
 }

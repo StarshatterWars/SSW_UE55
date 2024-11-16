@@ -6,6 +6,10 @@ ZONES
 zone: {
    system: Isham,
    region: Garden,
+}
+
+zone: {
+   system: Isham,
    region: "Tiger Bay",
 }
 
@@ -35,6 +39,10 @@ zone: {
 zone: {
    system: Radix,
    region: Radix,
+}
+
+zone: {
+   system: Radix,
    region: "Shadow Canyon",
 }
 
@@ -70,6 +78,10 @@ zone: {
 zone: {
    system: Trocanther,
    region: Volante,
+}
+
+zone: {
+   system: Trocanther,
    region: "Hell's Kitchen",
 }
 

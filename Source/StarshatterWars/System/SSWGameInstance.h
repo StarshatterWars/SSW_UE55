@@ -352,6 +352,20 @@ enum class CLASSIFICATION  : uint32
 	GROUND_UNITS = 0xfff00000
 };
 
+USTRUCT(BlueprintType)
+struct FS_CampaignZone : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  System;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Region;
+
+	FS_CampaignZone() {
+		System = "";
+		Region = "";
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
@@ -795,6 +809,8 @@ struct FS_Campaign : public FTableRowBase {
 	TArray<FS_Combatant> Combatant;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CampaignAction> Action;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CampaignZone> Zone;
 	
 	FS_Campaign() {
 		Name = "";

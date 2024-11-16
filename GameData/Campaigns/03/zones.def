@@ -27,6 +27,10 @@ zone: {
 zone: {
    system: Haiche,
    region: Haiche,
+}
+
+zone: {
+   system: Haiche,
    region: Tantalus,
 }
    
@@ -55,12 +59,20 @@ zone: {
 zone: {
    system: Janus,
    region: Janek,
+}
+
+zone: {
+   system: Janus,
    region: "Janek Station",
 }
 
 zone: {
    system: Janus,
    region: Alystra,
+}
+
+zone: {
+   system: Janus,
    region: Navara,
 }
 

@@ -64,6 +64,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void LoadCampaignData(const char* FileName, bool full = false);
+	void LoadZones(FString Path);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -139,6 +140,7 @@ protected:
 	class UDataTable* CampaignDataTable;
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
+	TArray<FS_CampaignZone> ZoneArray;
 
 	FS_CampaignAction NewCampaignAction;
 
@@ -173,6 +175,9 @@ protected:
 	Text  AssetKill;
 	Text  TargetKill;
 
+	Text ZoneRegion;
+	Text ZoneSystem;
+
 	int  act = 0;
 	Text Actionstatus;
 	bool not_action = false;
@@ -185,4 +190,6 @@ protected:
 	Text    intel = "";
 	int         gtype = 0;
 	int         gid = 0;
+
+	FString CampaignPath;
 };

@@ -28,7 +28,6 @@ ACombatGroupLoader::ACombatGroupLoader()
 	if (CombatGroupDataTableObject.Succeeded())
 	{
 		CombatGroupDataTable = CombatGroupDataTableObject.Object;
-		//GalaxyDataTable->EmptyTable();
 	}
 
 }
@@ -83,7 +82,6 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 
 	SSWInstance->loader->GetLoader();
 	SSWInstance->loader->SetDataPath(filename);
-
 
 	BYTE* block = 0;
 	SSWInstance->loader->LoadBuffer(filename, block, true);
@@ -298,6 +296,7 @@ void ACombatGroupLoader::LoadOrderOfBattle(const char* filename, int team)
 	} while (term);
 	SSWInstance->loader->ReleaseBuffer(block);
 }
+
 
 void ACombatGroupLoader::GetSSWInstance()
 {
