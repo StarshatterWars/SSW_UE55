@@ -779,9 +779,47 @@ struct FS_Combatant : public FTableRowBase {
 	int Size;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CombatantGroup> Group;
+	
 	FS_Combatant() {
 		Name = "";
 		Size = 0;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_CampaignMissionList : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Id;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Description;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString System;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Start;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Script;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Type;
+
+	FS_CampaignMissionList() {
+		
+		Id = 0;
+		Name = "";
+		Description = "";
+	
+		System = "Unknown";
+		Region = "Unknown";
+
+		Start = "";
+		Script = "";
+		Type = 0;
 	}
 };
 
@@ -811,6 +849,8 @@ struct FS_Campaign : public FTableRowBase {
 	TArray<FS_CampaignAction> Action;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CampaignZone> Zone;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CampaignMissionList> Mission;
 	
 	FS_Campaign() {
 		Name = "";

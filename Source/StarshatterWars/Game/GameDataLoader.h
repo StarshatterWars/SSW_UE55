@@ -27,6 +27,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
+#include "HAL/FileManagerGeneric.h"
 
 #include "../System/SSWGameInstance.h"
 #include "GameDataLoader.generated.h"
@@ -65,6 +66,8 @@ public:
 
 	void LoadCampaignData(const char* FileName, bool full = false);
 	void LoadZones(FString Path);
+	void LoadMissionList(FString Path);
+	void ParseMission(const char* filename);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -141,6 +144,7 @@ protected:
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
 	TArray<FS_CampaignZone> ZoneArray;
+	TArray<FS_CampaignMissionList> MissionListArray;
 
 	FS_CampaignAction NewCampaignAction;
 

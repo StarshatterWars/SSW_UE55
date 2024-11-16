@@ -480,7 +480,11 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	} while (term);
 
 	LoadZones(CampaignPath);
+	LoadMissionList(CampaignPath);
+
 	NewCampaignData.Zone = ZoneArray;
+	NewCampaignData.Mission = MissionListArray;
+
 	// define our data table struct
 	FName RowName = FName(FString(name));
 	CampaignDataTable->AddRow(RowName, NewCampaignData);
@@ -563,6 +567,271 @@ void AGameDataLoader::LoadZones(FString Path)
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+void
+AGameDataLoader::LoadMissionList(FString Path)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadZones()"));
+	MissionListArray.Empty();
+
+	FString FileName = Path;
+	FileName.Append("Missions.def");
+
+	UE_LOG(LogTemp, Log, TEXT("Loading Mission List : %s"), *FileName);
+
+	const char* fn = TCHAR_TO_ANSI(*FileName);
+
+	if(FFileManagerGeneric::Get().FileExists(*FileName) == false)
+	{ 
+		UE_LOG(LogTemp, Log, TEXT("Mission List does not exist"));
+		return;
+	}
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "MISSIONLIST") {
+			UE_LOG(LogTemp, Log, TEXT("WARNING: invalid mission list file '%s'"), *FString(fn));
+			return;
+		}
+	}
+
+	do {
+		delete term; term = 0;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def->name()->value() == "mission") {
+				if (!def->term() || !def->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: zone struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					TermStruct* val = def->term()->isStruct();
+
+					FS_CampaignMissionList NewMissionList;
+
+					int   Id = 0;
+					Text  Name;
+					Text  Desc;
+					Text  Script;
+					Text  System = "Unknown";
+					Text  Region = "Unknown";
+					int   Start = 0;
+					int   Type = 0;
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+						TermDef* pdef = val->elements()->at(i)->isDef();
+						if (pdef->name()->value() == "id") {
+							GetDefNumber(Id, pdef, fn);
+							NewMissionList.Id = Id;
+						}
+						else if (pdef->name()->value() == "name") {
+							GetDefText(Name, pdef, fn);
+							NewMissionList.Name = FString(Name);
+						}
+						else if (pdef->name()->value() == "desc") {
+							GetDefText(Desc, pdef, fn);
+							NewMissionList.Description = FString(Desc);
+						}
+						else if (pdef->name()->value() == "start") {
+							GetDefTime(Start, pdef, fn);
+							NewMissionList.Description = FString(Desc);
+						}
+						else if (pdef->name()->value() == "system") {
+							GetDefText(System, pdef, fn);
+							NewMissionList.System = FString(System);
+						}
+						else if (pdef->name()->value() == "region") {
+							GetDefText(Region, pdef, fn);
+							NewMissionList.Region = FString(Region);
+						}
+						else if (pdef->name()->value() == "script") {
+							GetDefText(Script, pdef, fn);
+							NewMissionList.Script = FString(Script);
+						}
+						else if (pdef->name()->value() == "type") {
+							char typestr[64];
+							GetDefText(typestr, pdef, fn);
+							Type = Mission::TypeFromName(typestr);
+							NewMissionList.Type = Type;
+						}
+					}
+					MissionListArray.Add(NewMissionList);
+				}
+			}
+		}
+	} while (term);
+
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
+void
+AGameDataLoader::ParseMission(const char* fn)
+{
+	/*Parser parser(new BlockReader(block));
+	Term* term = parser.ParseTerm();
+	char   err[256];
+
+	if (!term) {
+		sprintf_s(err, "ERROR: could not parse '%s'\n", filename);
+		AddError(err);
+		return ok;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "MISSION") {
+			sprintf_s(err, "ERROR: invalid mission file '%s'\n", filename);
+			AddError(err);
+			term->print(10);
+			return ok;
+		}
+	}
+
+	ok = true;
+
+	char  target_name[256];
+	char  ward_name[256];
+
+	target_name[0] = 0;
+	ward_name[0] = 0;
+
+	do {
+		delete term; term = 0;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				Text defname = def->name()->value();
+				defname.setSensitive(false);
+
+				if (defname == "name") {
+					GetDefText(name, def, filename);
+					name = Game::GetText(name);
+				}
+
+				else if (defname == "desc") {
+					GetDefText(desc, def, filename);
+					if (desc.length() > 0 && desc.length() < 32)
+						desc = Game::GetText(desc);
+				}
+
+				else if (defname == "type") {
+					char typestr[64];
+					GetDefText(typestr, def, filename);
+					type = TypeFromName(typestr);
+				}
+
+				else if (defname == "system") {
+					char  sysname[64];
+					GetDefText(sysname, def, filename);
+
+					AGalaxy* galaxy = AGalaxy::GetInstance();
+
+					if (galaxy) {
+						SetStarSystem(galaxy->GetSystem(sysname));
+					}
+				}
+
+				else if (defname == "degrees")
+					GetDefBool(degrees, def, filename);
+
+				else if (defname == "region")
+					GetDefText(region, def, filename);
+
+				else if (defname == "objective") {
+					GetDefText(objective, def, filename);
+					if (objective.length() > 0 && objective.length() < 32)
+						objective = Game::GetText(objective);
+				}
+
+				else if (defname == "sitrep") {
+					GetDefText(sitrep, def, filename);
+					if (sitrep.length() > 0 && sitrep.length() < 32)
+						sitrep = Game::GetText(sitrep);
+				}
+
+				else if (defname == "subtitles") {
+					Text        subtitles_path;
+					DataLoader* loader = DataLoader::GetLoader();
+					BYTE* block = 0;
+
+					GetDefText(subtitles_path, def, filename);
+					loader->SetDataPath(0);
+					loader->LoadBuffer(subtitles_path, block, true);
+
+					subtitles = Text("\n") + (const char*)block;
+
+					loader->ReleaseBuffer(block);
+				}
+
+				else if (defname == "start")
+					GetDefTime(start, def, filename);
+
+				else if (defname == "stardate")
+					GetDefNumber(stardate, def, filename);
+
+				else if (defname == "team")
+					GetDefNumber(team, def, filename);
+
+				else if (defname == "target")
+					GetDefText(target_name, def, filename);
+
+				else if (defname == "ward")
+					GetDefText(ward_name, def, filename);
+
+				else if ((defname == "element") ||
+					(defname == "ship") ||
+					(defname == "station")) {
+
+					if (!def->term() || !def->term()->isStruct()) {
+						sprintf_s(err, "ERROR: element struct missing in '%s'\n", filename);
+						AddError(err);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						MissionElement* elem = ParseElement(val);
+						AddElement(elem);
+					}
+				}
+
+				else if (defname == "event") {
+					if (!def->term() || !def->term()->isStruct()) {
+						sprintf_s(err, "ERROR: event struct missing in '%s'\n", filename);
+						AddError(err);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						MissionEvent* event = ParseEvent(val);
+						AddEvent(event);
+					}
+				}
+			}     // def
+		}        // term
+	} while (term);
+
+	if (ok) {
+		if (target_name[0])
+			target = FindElement(target_name);
+
+		if (ward_name[0])
+			ward = FindElement(ward_name);
+	}
+
+	return ok;*/
+}
 // +--------------------------------------------------------------------+
 
 void
