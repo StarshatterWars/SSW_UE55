@@ -14,7 +14,7 @@
 #pragma once
 
 #include "../Foundation/Types.h"
-//#include "Intel.h"
+#include "Intel.h"
 #include "../Foundation/RLoc.h"
 #include "../Space/Universe.h"
 //#include "Scene.h"

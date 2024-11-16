@@ -18,6 +18,7 @@
 #include "MissionLoad.h"
 #include "ShipDesign.h"
 #include "Ship.h"
+#include "Intel.h"
 #include "Instruction.h"
 
 // +====================================================================+
@@ -44,7 +45,7 @@ MissionElement::MissionElement()
 	zone_lock = 0;
 	heading = 0;
 	mission_role = Mission::OTHER;
-	intel = INTEL_TYPE::SECRET;
+	intel = Intel::SECRET;
 	command_ai = 1;
 	combat_group = 0;
 	combat_unit = 0;

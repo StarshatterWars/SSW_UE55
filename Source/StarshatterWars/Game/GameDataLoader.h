@@ -172,4 +172,17 @@ protected:
 
 	Text  AssetKill;
 	Text  TargetKill;
+
+	int  act = 0;
+	Text Actionstatus;
+	bool not_action = false;
+
+	Text Combatant1;
+	Text Combatant2;
+
+	Text	comp = "";
+	int     score = 0;
+	Text    intel = "";
+	int         gtype = 0;
+	int         gid = 0;
 };

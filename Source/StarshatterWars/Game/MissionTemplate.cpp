@@ -27,6 +27,7 @@
 #include "ShipDesign.h"
 #include "Element.h"
 #include "Instruction.h"
+#include "Intel.h"
 #include "../Foundation/Random.h"
 
 #include "../System/Game.h"
@@ -234,7 +235,7 @@ MissionTemplate::MapCallsign(const char* name, int iff)
 
 static void SelectCombatGroups(CombatGroup* g, const ShipDesign* d, List<CombatGroup>& list)
 {
-	if (g->IntelLevel() <= INTEL_TYPE::RESERVE)
+	if (g->IntelLevel() <= Intel::RESERVE)
 		return;
 
 	if (g->GetUnits().size() > 0) {

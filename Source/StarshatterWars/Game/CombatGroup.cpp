@@ -185,7 +185,7 @@ CombatGroup::IsStarshipGroup() const
 bool
 CombatGroup::IsReserve() const
 {
-	if (enemy_intel <= (int)INTEL_TYPE::RESERVE)
+	if (enemy_intel <= (int)Intel::RESERVE)
 		return true;
 
 	if (parent)
@@ -855,7 +855,7 @@ CombatGroup::SetZoneLock(bool lock)
 void
 CombatGroup::SetIntelLevel(int n)
 {
-	if (n < (int)INTEL_TYPE::RESERVE || n >(int)INTEL_TYPE::TRACKED) return;
+	if (n < (int)Intel::RESERVE || n >(int)Intel::TRACKED) return;
 
 	enemy_intel = n;
 
@@ -864,11 +864,11 @@ CombatGroup::SetIntelLevel(int n)
 	// no missions would ever be planned against this
 	// combat group.
 
-	if (n > INTEL_TYPE::SECRET) {
+	if (n > Intel::SECRET) {
 		CombatGroup* p = parent;
 		while (p) {
-			if (p->enemy_intel < (int) INTEL_TYPE::KNOWN)
-				p->enemy_intel = (int) INTEL_TYPE::KNOWN;
+			if (p->enemy_intel < (int)Intel::KNOWN)
+				p->enemy_intel = (int)Intel::KNOWN;
 
 			p = p->parent;
 		}

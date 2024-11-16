@@ -18,7 +18,7 @@
 #include "../Foundation/Geometry.h"
 #include "../Foundation/Text.h"
 #include "../Foundation/List.h"
-//#include "Intel.h"
+#include "Intel.h"
 #include "../System/SSWGameInstance.h"
 
 // +--------------------------------------------------------------------+

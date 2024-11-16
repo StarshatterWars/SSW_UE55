@@ -25,7 +25,7 @@
 #include "CombatEvent.h"
 #include "Combatant.h"
 #include "Mission.h"
-//#include "Intel.h"
+#include "Intel.h"
 #include "PlayerData.h"
 
 
@@ -236,22 +236,21 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 									GetDefNumber(ActionSubtype, pdef, filename);
 									NewCampaignAction.Subtype = ActionSubtype;
 								}
-
-								/*else if (pdef->term()->isText()) {
+								else if (pdef->term()->isText()) {
 									char txt[64];
-									GetDefText(txt, pdef, fn);
+									GetDefText(txt, pdef, filename);
 
-									if (type == CombatAction::MISSION_TEMPLATE) {
-										subtype = Mission::TypeFromName(txt);
+									//if (type == CombatAction::MISSION_TEMPLATE) {
+									//	ActionSubtype = Mission::TypeFromName(txt);
+									//}
+									//else if (type == CombatAction::COMBAT_EVENT) {
+									//	ActionSubtype = CombatEvent::TypeFromName(txt);
+									//}
+									if (ActionType == CombatAction::INTEL_EVENT) {
+										ActionSubtype = Intel::IntelFromName(txt);
 									}
-									else if (type == CombatAction::COMBAT_EVENT) {
-										subtype = CombatEvent::TypeFromName(txt);
-									}
-									else if (type == CombatAction::INTEL_EVENT) {
-										//subtype = Intel::IntelFromName(txt);
-									}
-									//NewCampaignAction.Subtype = subtype;
-								}*/
+									NewCampaignAction.Subtype = ActionSubtype;
+								}
 
 							}
 							else if (pdef->name()->value() == "opp_type") {
@@ -457,6 +456,14 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 										GetDefNumber(CombatantId, pdef, filename);
 										NewGroupUnit.Id = CombatantId;
 										UE_LOG(LogTemp, Log, TEXT("%s: %d"), *FString(pdef->name()->value()), CombatantId);
+									}
+									else if (pdef->name()->value() == "req") {
+										
+										TermStruct* val2 = pdef->term()->isStruct();
+
+						
+
+										
 									}
 								}
 								NewCombatUnit.Group.Add(NewGroupUnit);

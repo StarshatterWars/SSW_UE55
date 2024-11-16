@@ -352,14 +352,6 @@ enum class CLASSIFICATION  : uint32
 	GROUND_UNITS = 0xfff00000
 };
 
-enum INTEL_TYPE {
-	NOINTEL,
-	RESERVE,       // out-system reserve: this group is not even here
-	SECRET,        // enemy is completely unaware of this group
-	KNOWN,         // enemy knows this group is in the system
-	LOCATED,       // enemy has located at least the lead ship
-	TRACKED        // enemy is tracking all elements
-};
 
 USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
@@ -614,11 +606,11 @@ struct FS_CampaignReq : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Status;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool NotRequired;
+	bool NotAction;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Class1;
+	FString Combatant1;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Class2;
+	FString Combatant2;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString GroupType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -633,10 +625,10 @@ struct FS_CampaignReq : public FTableRowBase {
 	FS_CampaignReq() {
 		Action = 0;
 		Status = "";
-		NotRequired = false;
+		NotAction = false;
 
-		Class1 = "";
-		Class2 = "";
+		Combatant1 = "";
+		Combatant2 = "";
 		GroupType = "";
 		GroupId = 0;
 		Comp = "";
