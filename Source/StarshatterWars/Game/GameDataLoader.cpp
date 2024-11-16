@@ -481,9 +481,11 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 
 	LoadZones(CampaignPath);
 	LoadMissionList(CampaignPath);
+	LoadTemplateList(CampaignPath);
 
 	NewCampaignData.Zone = ZoneArray;
-	NewCampaignData.Mission = MissionListArray;
+	NewCampaignData.MissionList = MissionListArray;
+	NewCampaignData.TemplateList = TemplateListArray;
 
 	// define our data table struct
 	FName RowName = FName(FString(name));
@@ -570,7 +572,7 @@ void AGameDataLoader::LoadZones(FString Path)
 void
 AGameDataLoader::LoadMissionList(FString Path)
 {
-	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadZones()"));
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadMissionList()"));
 	MissionListArray.Empty();
 
 	FString FileName = Path;
@@ -669,6 +671,161 @@ AGameDataLoader::LoadMissionList(FString Path)
 						}
 					}
 					MissionListArray.Add(NewMissionList);
+				}
+			}
+		}
+	} while (term);
+
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
+void
+AGameDataLoader::LoadTemplateList(FString Path)
+{
+	
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadTemplateList()"));
+	TemplateListArray.Empty();
+
+	FString FileName = Path;
+	FileName.Append("Templates.def");
+
+	UE_LOG(LogTemp, Log, TEXT("Loading Template List : %s"), *FileName);
+
+	const char* fn = TCHAR_TO_ANSI(*FileName);
+
+	if (FFileManagerGeneric::Get().FileExists(*FileName) == false)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Template List does not exist"));
+		return;
+	}
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "TEMPLATELIST") {
+			UE_LOG(LogTemp, Log, TEXT("WARNING: invalid template list file '%s'"), *FString(fn));
+			return;
+		}
+	}
+
+	do {
+		delete term; 
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def->name()->value() == "mission") {
+				if (!def->term() || !def->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: mission struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					TermStruct* val = def->term()->isStruct();
+					
+					FS_CampaignTemplateList NewTemplateList;
+
+					Text  Name = "";
+					Text  Script = "";
+					Text  Region = "";
+					int   id = 0;
+					int   msn_type = 0;
+					int   grp_type = 0;
+
+					int   min_rank = 0;
+					int   max_rank = 0;
+					int   action_id = 0;
+					int   action_status = 0;
+					int   exec_once = 0;
+					int   start_before = Game::TIME_NEVER;
+					int   start_after = 0;
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+					TermDef* pdef = val->elements()->at(i)->isDef();
+						if (pdef->name()->value() == "id") {
+							GetDefNumber(id, pdef, fn);
+							NewTemplateList.Id = id;
+						}
+						else if (pdef->name()->value() == "name") {
+							GetDefText(Name, pdef, fn);
+							NewTemplateList.Name = FString(Name);
+						}
+						else if (pdef->name()->value() == "script") {
+							GetDefText(Script, pdef, fn);
+							NewTemplateList.Script = FString(Script);
+						}
+						else if (pdef->name()->value() == "rgn" || pdef->name()->value() == "region") {
+							GetDefText(Region, pdef, fn);
+							NewTemplateList.Region = FString(Region);
+						}
+						else if (pdef->name()->value() == "type") {
+							char typestr[64];
+							GetDefText(typestr, pdef, fn);
+							msn_type = Mission::TypeFromName(typestr);
+							NewTemplateList.MissionType = msn_type;
+						}
+
+						else if (pdef->name()->value() == "group") {
+							char typestr[64];
+							GetDefText(typestr, pdef, fn);
+							grp_type = CombatGroup::TypeFromName(typestr);
+							NewTemplateList.GroupType = grp_type;
+						}
+
+						else if (pdef->name()->value() == "min_rank") {
+							GetDefNumber(min_rank, pdef, fn);
+							NewTemplateList.MinRank = min_rank;
+						}
+						else if (pdef->name()->value() == "max_rank") {
+							GetDefNumber(max_rank, pdef, fn);
+							NewTemplateList.MaxRank = max_rank;
+						}
+						else if (pdef->name()->value() == "action_id") {
+							GetDefNumber(action_id, pdef, fn);
+							NewTemplateList.ActionId = action_id;
+						}
+						else if (pdef->name()->value() == "action_status") {
+							GetDefNumber(action_status, pdef, fn);
+							NewTemplateList.ActionStatus = action_status;
+						}
+						else if (pdef->name()->value() == "exec_once") {
+							GetDefNumber(exec_once, pdef, fn);
+							NewTemplateList.ExecOnce = exec_once;
+						}
+						else if (pdef->name()->value().contains("before")) {
+							if (pdef->term()->isNumber()) {
+								GetDefNumber(start_before, pdef, fn);
+								NewTemplateList.StartBefore = start_before;
+							}
+							else {
+								GetDefTime(start_before, pdef, fn);
+								start_before -= Game::ONE_DAY;
+								NewTemplateList.StartBefore = start_before;
+							}
+						}
+						else if (pdef->name()->value().contains("after")) {
+							if (pdef->term()->isNumber()) {
+								GetDefNumber(start_after, pdef, fn);
+								NewTemplateList.StartAfter = start_after;
+							}
+							else {
+								GetDefTime(start_after, pdef, fn);
+								start_after -= Game::ONE_DAY;
+								NewTemplateList.StartAfter = start_after;
+							}
+						}
+					}
+					TemplateListArray.Add(NewTemplateList);
 				}
 			}
 		}
