@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "07-Loris-Collapse"
 name:   "Cmpn04 Brief07 - Loris"
 type:   "Patrol"
 system: Loris

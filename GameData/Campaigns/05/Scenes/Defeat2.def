@@ -1,6 +1,7 @@
 MISSION
 
-name:   "Cmpn 05 Defeat 02"
+scene:  "Defeat2"
+name:   "Campaign 05 Defeat 02"
 type:   "Patrol"
 system: Garrison
 region: Garrison

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "M1-New-Job"
 name:   "Cmpn 04 Mail 01"
 type:   "Patrol"
 system: "Thralis"

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "07-Deadmans-Alley"
 name:   "Cmpn05 Brief07 - Deadman's Alley"
 type:   Patrol
 system: Radix

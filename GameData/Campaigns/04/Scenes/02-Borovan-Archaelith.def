@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "02-Borovan-Archaelith"
 name:   "Cmpn04 News02 - Borovan Archaelith"
 type:   "Patrol"
 system: "Museum"

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "10-Korius"
 name:   "Cmpn04 Brief10 - Korius"
 type:   "Patrol"
 system: Korius

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "02-Garden"
 name:   "Cmpn05 News02 - Garden"
 type:   Patrol
 system: Isham

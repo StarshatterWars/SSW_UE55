@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "M2-Final-Message"
 name:   "Cmpn 05 Mail 02"
 type:   "Patrol"
 system: "Black"

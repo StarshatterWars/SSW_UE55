@@ -1,6 +1,7 @@
 MISSION
 
-name:   "Cmpn 05 Defeat 03"
+scene:  "Defeat3"
+name:   "Campaign 05 Defeat 03"
 type:   "Patrol"
 system: Trocanther
 region: Volante

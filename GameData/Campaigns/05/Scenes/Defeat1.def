@@ -1,6 +1,7 @@
 MISSION
 
-name:   "Cmpn 05 Defeat 01"
+scene:  "Defeat1"
+name:   "Campaign 05 Defeat 01"
 type:   "Patrol"
 system: "Radix"
 system: "Isham"

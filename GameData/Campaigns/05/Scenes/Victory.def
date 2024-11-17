@@ -1,6 +1,7 @@
 MISSION
 
-name:   "Cmpn 05 Victory"
+scene:  "Victory1"
+name:   "Campaign 05 Victory"
 type:   "Patrol"
 system: "Jarnell"
 system: "Athenar"

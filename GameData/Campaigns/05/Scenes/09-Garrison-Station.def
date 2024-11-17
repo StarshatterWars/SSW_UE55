@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "09-Garrison-Station"
 name:   "Cmpn05 Brief09 - Garrison Station"
 type:   Patrol
 system: Garrison

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "05-Operation-Firestorm"
 name:   "Cmpn04 News05 - Operation Firestorm"
 type:   "Patrol"
 system: "Janus"

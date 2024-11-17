@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "10-Trocanther-Biodomes"
 name:   "Cmpn05 Brief10 - Trocanther Biodomes"
 type:   Patrol
 system: Trocanther

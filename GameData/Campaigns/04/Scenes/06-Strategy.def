@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "06-Strategy"
 name:   "Cmpn04 Brief06 - Strategy"
 type:   "Patrol"
 system: "Loris"

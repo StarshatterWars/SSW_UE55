@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "01-Campaign-Start"
 name:   "Cmpn04 News01 - Campaign Start"
 type:   "Patrol"
 system: "Ostara"

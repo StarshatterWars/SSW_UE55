@@ -1,6 +1,7 @@
 MISSION
 
-name:   "Cmpn 04 Victory"
+scene:  "Victory1"
+name:   "Campaign 04 Victory"
 type:   "Patrol"
 system: "Korius"
 region: "Adantar"

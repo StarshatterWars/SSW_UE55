@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "08-Ramek-Station"
 name:   "Cmpn05 Brief08 - Ramek Station"
 type:   Patrol
 system: Isham
