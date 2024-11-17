@@ -102,7 +102,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/01-operation-nightfall.txt"
    image:      "Actions/01-operation-nightfall.pcx"
-   scene:      "Scenes/01-Operation-Nightfall.def"
+   scene:      "01-Operation-Nightfall"
 }
 
 action: {
@@ -169,7 +169,7 @@ action: {
    source:     News,
    file:       "Actions/02-garden.txt",
    image:      "Actions/02-garden.pcx"
-   scene:      "Scenes/02-Garden.def"
+   scene:      "02-Garden"
 }
 
 action: {
@@ -183,7 +183,7 @@ action: {
    source:     News,
    file:       "Actions/03-radix.txt",
    image:      "Actions/03-radix.pcx"
-   scene:      "Scenes/03-Radix.def"
+   scene:      "03-Radix"
 }
 
 action: {
@@ -197,7 +197,7 @@ action: {
    source:     News,
    file:       "Actions/04-politics.txt",
    image:      "Actions/04-politics.pcx"
-   scene:      "Scenes/04-Politics.def"
+   scene:      "04-Politics"
 
    req: { action: 400, status: COMPLETE }
 }
@@ -239,7 +239,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/06-geothermal-platforms.txt",
    image:      "Actions/06-geothermal-platforms.pcx"
-   scene:      "Scenes/06-Geothermal-Platforms.def"
+   scene:      "06-Geothermal-Platforms"
 }
 
 action: {
@@ -287,7 +287,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/08-ramek-station.txt",
    image:      "Actions/08-ramek-station.pcx"
-   scene:      "Scenes/08-Ramek-Station.def"
+   scene:      "08-Ramek-Station"
 }
 
 action: {
@@ -361,7 +361,7 @@ action: {
    source:     SECURE,
    file:       "Actions/07-deadmans-alley.txt",
    image:      "Actions/07-deadmans-alley.pcx"
-   scene:      "Scenes/07-Deadmans-Alley.def"
+   scene:      "07-Deadmans-Alley"
 }
 
 action: {
@@ -438,7 +438,7 @@ action: {
    source:     SECURE,
    file:       "Actions/09-garrison-station.txt",
    image:      "Actions/09-garrison-station.pcx"
-   scene:      "Scenes/09-Garrison-Station.def"
+   scene:      "09-Garrison-Station"
 
    req: { action: 400, status: COMPLETE }
 }
@@ -579,7 +579,7 @@ action: {
    source:     Mail,
    file:       "Actions/m1-incommunicado.txt",
    image:      "Actions/m0-mail-icon.pcx",
-   scene:      "Scenes/m1-Incommunicado.def"
+   scene:      "M1-Incommunicado"
    delay:      60e3
 
    req: { action: 420, status: COMPLETE }
@@ -687,7 +687,7 @@ action: {
    source:     SECURE,
    file:       "Actions/10-trocanther-biodomes.txt",
    image:      "Actions/10-trocanther-biodomes.pcx"
-   scene:      "Scenes/10-Trocanther-Biodomes.def"
+   scene:      "10-Trocanther-Biodomes"
 
    req: { action: 600, status: COMPLETE }
 }
@@ -837,7 +837,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/12-endgame.txt",
    image:      "Actions/banner-alliance.pcx",
-   scene:      "Scenes/12-Endgame.def"
+   scene:      "12-Endgame"
 
    req: { c1: "Marakan Hegemony", group_type: fleet, group_id: 9, comp: LT, score: 4000 },
 }
@@ -1116,7 +1116,7 @@ action: {
    source:     Mail,
    file:       "Actions/m2-final-message.txt",
    image:      "Actions/m0-mail-icon.pcx",
-   scene:      "Scenes/m2-Final-Message.def"
+   scene:      "M2-Final-Message"
 
    delay:      50e3,
 
@@ -1133,7 +1133,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/15-disappearance.txt",
    image:      "Actions/banner-alliance.pcx",
-   scene:      "Scenes/15-Disappearance.def"
+   scene:      "15-Disappearance"
 
    delay:      200e3,
 
@@ -1156,7 +1156,7 @@ action: {
    text:       "Operation Nightfall Victory",
    file:       "Actions/victory.txt",
    image:      "Actions/victory",
-   scene:      "Scenes/Victory.def"
+   scene:      "Victory"
 
    delay:      250e3,
 
@@ -1174,7 +1174,7 @@ action: {
    text:       "Operation Nightfall Victory",
    file:       "Actions/victory.txt",
    image:      "Actions/victory",
-   scene:      "Scenes/Victory.def"
+   scene:      "Victory"
 
    req: { action: 800, status: COMPLETE }
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 4, comp: LT, score: 3000 },
@@ -1190,7 +1190,7 @@ action: {
    text:       "Operation Nightfall Victory",
    file:       "Actions/victory.txt",
    image:      "Actions/victory",
-   scene:      "Scenes/Victory.def"
+   scene:      "Victory"
 
    req: { action: 800, status: COMPLETE }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 1, comp: LT, score: 5000 },
@@ -1205,7 +1205,7 @@ action: {
    text:       "Operation Nightfall Victory",
    file:       "Actions/victory.txt",
    image:      "Actions/victory",
-   scene:      "Scenes/Victory.def"
+   scene:      "Victory"
 
    req: { action: 800, status: COMPLETE }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 2, comp: LT, score: 5000 },
@@ -1223,7 +1223,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def1.txt",
    image:      "Actions/def1",
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { action: 400, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2000 },
@@ -1238,7 +1238,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def1.txt",
    image:      "Actions/def1",
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { action: 400, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 4, comp: LT, score: 3000 },
@@ -1254,7 +1254,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def1.txt",
    image:      "Actions/def1",
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { action: 400, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 1, comp: LT, score: 5000 },
@@ -1269,7 +1269,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def1.txt",
    image:      "Actions/def1",
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { action: 400, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 2, comp: LT, score: 5000 },
@@ -1288,7 +1288,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def2.txt",
    image:      "Actions/def2",
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { action: 600, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2000 },
@@ -1303,7 +1303,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def2.txt",
    image:      "Actions/def2",
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { action: 600, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 4, comp: LT, score: 3000 },
@@ -1319,7 +1319,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def2.txt",
    image:      "Actions/def2",
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { action: 600, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 1, comp: LT, score: 5000 },
@@ -1334,7 +1334,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def2.txt",
    image:      "Actions/def2",
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { action: 600, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 2, comp: LT, score: 5000 },
@@ -1353,7 +1353,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def3.txt",
    image:      "Actions/def3",
-   scene:      "Scenes/Defeat3.def"
+   scene:      "Defeat3"
 
    req: { action: 800, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2000 },
@@ -1368,7 +1368,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def3.txt",
    image:      "Actions/def3",
-   scene:      "Scenes/Defeat3.def"
+   scene:      "Defeat3"
 
    req: { action: 800, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 4, comp: LT, score: 3000 },
@@ -1384,7 +1384,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def3.txt",
    image:      "Actions/def3",
-   scene:      "Scenes/Defeat3.def"
+   scene:      "Defeat3"
 
    req: { action: 800, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 1, comp: LT, score: 5000 },
@@ -1399,7 +1399,7 @@ action: {
    text:       "Operation Nightfall Defeat",
    file:       "Actions/def3.txt",
    image:      "Actions/def3",
-   scene:      "Scenes/Defeat3.def"
+   scene:      "Defeat3"
 
    req: { action: 800, status: COMPLETE, not: true }
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 2, comp: LT, score: 5000 },

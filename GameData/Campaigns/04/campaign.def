@@ -73,7 +73,7 @@ action: {
    source:     News,
    file:       "Actions/01-campaign-start.txt",
    image:      "Actions/01-campaign-start.pcx"
-   scene:      "Scenes/01-Campaign-Start.def"
+   scene:      "01-Campaign-Start"
 }
 
 action: {
@@ -168,7 +168,7 @@ action: {
    source:     News,
    file:       "Actions/02-borovan-archaelith.txt"
    image:      "Actions/02-borovan-archaelith.pcx"
-   scene:      "Scenes/02-Borovan-Archaelith.def"
+   scene:      "02-Borovan-Archaelith"
 }
 
 action: {
@@ -182,7 +182,7 @@ action: {
    source:     News,
    file:       "Actions/03-technite-found.txt"
    image:      "Actions/03-technite-found.pcx"
-   scene:      "Scenes/03-Technite-Found.def"
+   scene:      "03-Technite-Found"
 }
 
 action: {
@@ -196,7 +196,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/04-zolon-ambassador.txt",
    image:      "Actions/04-zolon-ambassador.pcx"
-   scene:      "Scenes/04-Zolon-Ambassador.def"
+   scene:      "04-Zolon-Ambassador"
 }
 
 
@@ -384,7 +384,7 @@ action: {
    source:     News,
    file:       "Actions/05-operation-firestorm.txt",
    image:      "Actions/banner-alliance.pcx"
-   scene:      "Scenes/05-Operation-Firestorm.def"
+   scene:      "05-Operation-Firestorm"
 }
 
 action: {
@@ -475,7 +475,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/06-strategy.txt"
    image:      "Actions/06-strategy.pcx"
-   scene:      "Scenes/06-Strategy.def"
+   scene:      "06-Strategy"
 }
 
 action: {
@@ -489,7 +489,7 @@ action: {
    source:     Mail,
    file:       "Actions/m1-new-job.txt"
    image:      "Actions/m0-mail-icon.pcx"
-   scene:      "Scenes/M1-New-Job.def"
+   scene:      "M1-New-Job"
 }
 
 action: {
@@ -503,7 +503,7 @@ action: {
    source:     SECURE,
    file:       "Actions/07-Loris-Collapse.txt"
    image:      "Actions/07-Loris-Collapse.pcx"
-   scene:      "Scenes/07-Loris-Collapse.def"
+   scene:      "07-Loris-Collapse"
 }
 
 action: {
@@ -576,7 +576,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/09-kolchev.txt"
    image:      "Actions/09-kolchev.pcx"
-   scene:      "Scenes/09-Kolchev.def"
+   scene:      "09-Kolchev"
 
    req: { action: 100, status: COMPLETE }
 }
@@ -592,7 +592,7 @@ action: {
    source:     Mail,
    file:       "Actions/m2-need-to-know.txt"
    image:      "Actions/m0-mail-icon.pcx"
-   scene:      "Scenes/M2-Need-to-Know.def"
+   scene:      "M2-Need-to-Know"
 }
 
 // START OF NORTHERN CAMPAIGN
@@ -675,7 +675,7 @@ action: {
    source:     Mail,
    file:       "Actions/08-masil-gannet.txt"
    image:      "Actions/08-masil-gannet.pcx"
-   scene:      "Scenes/08-Masil-Gannet.def"
+   scene:      "08-Masil-Gannet"
 
    req: { action: 200, status: COMPLETE }
 }
@@ -692,7 +692,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/10-korius.txt"
    image:      "Actions/10-korius.pcx"
-   scene:      "Scenes/10-Korius.def"
+   scene:      "10-Korius"
 
    req: { action: 200, status: COMPLETE }
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 5, comp: LT, score: 9000 },
@@ -799,7 +799,7 @@ action: {
    text:       "Operation Firestorm Victory"
    file:       "Actions/victory.txt"
    image:      "Actions/victory"
-   scene:      "Scenes/Victory.def"
+   scene:      "Victory"
 
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 3, comp: LT, score: 6000 },
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 5, comp: LT, score: 6000 },
@@ -818,7 +818,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def1.txt"
    image:      "Actions/def1"
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2000 },
    req: { action: 100, status: COMPLETE, not: true }
@@ -833,7 +833,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def1.txt"
    image:      "Actions/def1"
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 9, comp: LT, score: 3200 },
    req: { action: 100, status: COMPLETE, not: true }
@@ -848,7 +848,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def1.txt"
    image:      "Actions/def1"
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 11, comp: LT, score: 3200 },
    req: { action: 100, status: COMPLETE, not: true }
@@ -863,7 +863,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def1.txt"
    image:      "Actions/def1"
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 6, comp: LT, score: 7500 },
    req: { action: 100, status: COMPLETE, not: true }
@@ -878,7 +878,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def1.txt"
    image:      "Actions/def1"
-   scene:      "Scenes/Defeat1.def"
+   scene:      "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 7, comp: LT, score: 7500 },
    req: { action: 100, status: COMPLETE, not: true }
@@ -896,7 +896,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def2.txt"
    image:      "Actions/def2"
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2000 },
    req: { action: 100, status: COMPLETE }
@@ -911,7 +911,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def2.txt"
    image:      "Actions/def2"
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 9, comp: LT, score: 3200 },
    req: { action: 100, status: COMPLETE }
@@ -926,7 +926,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def2.txt"
    image:      "Actions/def2"
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 11, comp: LT, score: 3200 },
    req: { action: 100, status: COMPLETE }
@@ -941,7 +941,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def2.txt"
    image:      "Actions/def2"
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 6, comp: LT, score: 7500 },
    req: { action: 100, status: COMPLETE }
@@ -956,7 +956,7 @@ action: {
    text:       "Operation Firestorm Defeat"
    file:       "Actions/def2.txt"
    image:      "Actions/def2"
-   scene:      "Scenes/Defeat2.def"
+   scene:      "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 7, comp: LT, score: 7500 },
    req: { action: 100, status: COMPLETE }

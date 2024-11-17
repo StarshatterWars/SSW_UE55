@@ -685,7 +685,7 @@ action: {
    text:    "Operation Shining Fortress Victory",
    file:    "Actions/victory.txt"
    image:   "Actions/victory"
-   scene:   "Victory1"
+   scene:   "Victory"
 
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 6, comp: LT, score: 7000 },
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 7, comp: LT, score: 7000 },
