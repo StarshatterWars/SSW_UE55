@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "M2-New-Digs"
 name:   "Cmpn 02 Mail 02"
 type:   "Patrol"
 system: "Jarnell"

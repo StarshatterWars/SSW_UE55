@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "10-Haiche"
 name:   "Cmpn03 Brief 10 Haiche"
 type:   "Patrol"
 system: Haiche

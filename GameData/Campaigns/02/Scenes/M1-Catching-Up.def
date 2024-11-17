@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "M1-Catching-Up"
 name:   "Cmpn 02 Mail 01"
 type:   "Patrol"
 system: "Solus"

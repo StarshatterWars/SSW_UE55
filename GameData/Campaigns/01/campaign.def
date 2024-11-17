@@ -39,5 +39,5 @@ action: {
    team:    1,
    rgn:     Janus,
    source:  News,
-   scene:   "Scenes/Intro.def"
+   scene:   "Intro"
 },

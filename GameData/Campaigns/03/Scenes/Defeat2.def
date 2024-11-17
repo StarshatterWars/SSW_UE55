@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "Defeat2"
 name:   "Cmpn 03 Defeat 02"
 type:   "Patrol"
 system: Haiche

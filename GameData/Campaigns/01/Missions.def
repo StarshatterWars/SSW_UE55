@@ -5,7 +5,7 @@ mission: {
    name:    "1. Basic Space Flight",
    desc:    "Space-based fighters.  Practice launching, flying, docking, and basic spaceborne maneuvering.",
    start:   "01/09:23:00",
-   script:  "T1.def"
+   script:  "T1"
 }
 
 mission: {
@@ -13,7 +13,7 @@ mission: {
    name:    "2. Target Practice",
    desc:    "Space-based fighters.  Practice pairs combat against target drones.",
    start:   "01/11:15:00",
-   script:  "T2.def"
+   script:  "T2"
 }
 
 mission: {
@@ -21,7 +21,7 @@ mission: {
    name:    "3. Flight School",
    desc:    "Airborne fighters.  Practice takeoffs, landings, and basic atmospheric maneuvering.",
    start:   "01/16:23:00",
-   script:  "T3.def"
+   script:  "T3"
 }
 
 mission: {
@@ -29,7 +29,7 @@ mission: {
    name:    "4. Ground Strike",
    desc:    "Air-to-ground action. Practice destroying ground targets.",
    start:   "02/05:35:00",
-   script:  "T4.def"
+   script:  "T4"
 }
 
 mission: {
@@ -37,7 +37,7 @@ mission: {
    name:    "5. Training Cruise",
    desc:    "Learn to command starships. Practice engaging target drones with a Frigate class ship.",
    start:   "03/15:20:00",
-   script:  "T5.def"
+   script:  "T5"
 }
 
 mission: {
@@ -45,7 +45,7 @@ mission: {
    name:    "6. Advanced Starship Combat",
    desc:    "Learn to command starships. Practice engaging starship targets with a Destroyer class ship.",
    start:   "04/11:00:00",
-   script:  "T6.def"
+   script:  "T6"
 }
 
 mission: {
@@ -53,5 +53,5 @@ mission: {
    name:    "7. Carrier Operations",
    desc:    "Learn to direct fleet operations. Practice orbital carrier operations.",
    start:   "05/09:30:00",
-   script:  "T7.def"
+   script:  "T7"
 }

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "03-Titan-Destroyed"
 name:   "Cmpn03 News03 - Titan Destroyed"
 type:   "Patrol"
 system: Jarnell

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "05-Grand-Concourse"
 name:   "Cmpn03 News 05 Grand Concourse"
 type:   "Patrol"
 system: "Borova"

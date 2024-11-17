@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "Defeat1"
 name:   "Cmpn 03 Defeat 01"
 type:   "Patrol"
 system: "Borova"

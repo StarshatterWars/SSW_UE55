@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "Defeat1"
 name:   "Cmpn 02 Defeat 01"
 type:   "Patrol"
 system: "Solus"

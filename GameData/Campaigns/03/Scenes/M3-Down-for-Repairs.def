@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "M3-Down-for-Repairs"
 name:   "Cmpn 03 Mail 03"
 type:   "Patrol"
 system: Thralis

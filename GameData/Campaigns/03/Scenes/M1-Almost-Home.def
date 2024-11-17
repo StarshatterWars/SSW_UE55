@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "M1-Almost-Home"
 name:   "Cmpn 03 Mail 01"
 type:   "Patrol"
 system: "Janus"

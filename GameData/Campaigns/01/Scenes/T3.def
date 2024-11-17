@@ -1,5 +1,6 @@
 MISSION
 
+scene;  "T3"
 name:    "Flight School"
 type:    "Training"
 system:  "Janus"

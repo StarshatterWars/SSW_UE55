@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "02-Coup-Failure"
 name:   "Cmpn02 News02 - Coup Failure"
 type:   "Patrol"
 system: "Solus"

@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "03-Blockade-Broken"
 name:   "Cmpn02 News03 - Blockade Broken"
 type:   "Patrol"
 system: "Solus"

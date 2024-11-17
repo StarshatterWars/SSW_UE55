@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "12-Colony-Ship"
 name:   "Cmpn03 News 12 Colony Ship"
 type:   "Patrol"
 system: Silessia

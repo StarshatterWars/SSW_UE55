@@ -1,5 +1,6 @@
 MISSION
 
+scene:  "07-Research-Lab"
 name:   "Cmpn02 News07 Research Lab"
 type:   "Patrol"
 system: "Solus"

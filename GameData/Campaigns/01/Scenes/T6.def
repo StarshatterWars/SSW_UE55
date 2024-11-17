@@ -1,5 +1,6 @@
 MISSION
 
+scene;  "T6"
 name:   "Advanced Starship Combat"
 type:   "Training"
 system: "Janus"

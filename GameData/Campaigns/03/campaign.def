@@ -66,7 +66,7 @@ action: {
    source:  News,
    file:    "Actions/01-campaign-start.txt"
    image:   "Actions/01-campaign-start.pcx"
-   scene:   "Scenes/01-Campaign-Start.def"
+   scene:   "01-Campaign-Start"
 }
 
 action: {
@@ -121,7 +121,7 @@ action: {
    source:  Mail,
    file:    "Actions/m1-almost-home.txt"
    image:   "Actions/m0-mail-icon.pcx"
-   scene:   "Scenes/M1-Almost-Home.def"
+   scene:   "M1-Almost-Home"
 }
 
 action: {
@@ -135,7 +135,7 @@ action: {
    source:  News,
    file:    "Actions/02-president-speech.txt"
    image:   "Actions/Alliance.pcx"
-   scene:   "Scenes/02-President-Speech.def"
+   scene:   "02-President-Speech"
 }
 
 action: {
@@ -149,7 +149,7 @@ action: {
    source:  Mail,
    file:    "Actions/m2-back-to-borova.txt",
    image:   "Actions/m0-mail-icon.pcx"
-   scene:   "Scenes/M2-Back-to-Borova.def"
+   scene:   "M2-Back-to-Borova"
 }
 
 action: {
@@ -176,7 +176,7 @@ action: {
    asset_id:   93,
    count:      1,
 
-   text:       "Templates/IS_Defend_Titan.def",
+   text:       "Templates/IS_Defend_Titan",
 
    after:   "03/08:00:00",
    before:  "03/19:59:00",
@@ -194,7 +194,7 @@ action: {
    asset_id:   33,
    count:      1,
 
-   text:       "Templates/FS_Defend_Titan.def",
+   text:       "Templates/FS_Defend_Titan",
 
    after:   "03/08:00:00",
    before:  "03/19:59:00",
@@ -213,7 +213,7 @@ action: {
    source:  TACNET,
    file:    "Actions/03-titan-destroyed.txt"
    image:   "Actions/03-titan-destroyed.pcx"
-   scene:   "Scenes/03-Titan-Destroyed.def"
+   scene:   "03-Titan-Destroyed"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 7, comp: GT, score: 2000 },
 
@@ -303,7 +303,7 @@ action: {
    source:  News,
    file:    "Actions/05-grand-concourse.txt"
    image:   "Actions/05-grand-concourse.pcx"
-   scene:   "Scenes/05-Grand-Concourse.def"
+   scene:   "05-Grand-Concourse"
 }
 
 action: {
@@ -317,7 +317,7 @@ action: {
    source:  News,
    file:    "Actions/06-eleaan-diplomats.txt"
    image:   "Actions/06-eleaan-diplomats.pcx"
-   scene:   "Scenes/06-Eleaan-Diplomats.def"
+   scene:   "06-Eleaan-Diplomats"
 }
 
 
@@ -332,7 +332,7 @@ action: {
    source:  FORCOM,
    file:    "Actions/07-athenar.txt"
    image:   "Actions/07-athenar.pcx"
-   scene:   "Scenes/07-Athenar.def"
+   scene:   "07-Athenar"
 }
 
 action: {
@@ -431,7 +431,7 @@ action: {
    source:  Mail,
    file:    "Actions/m3-down-for-repairs.txt"
    image:   "Actions/m0-mail-icon.pcx"
-   scene:   "Scenes/M3-Down-for-Repairs.def"
+   scene:   "M3-Down-for-Repairs"
 }
 
 // ON TO HAICHE AND SILESSIA
@@ -447,7 +447,7 @@ action: {
    source:  News,
    file:    "Actions/08-liberation.txt"
    image:   "Actions/banner-alliance.pcx"
-   scene:   "Scenes/08-Liberation.def"
+   scene:   "08-Liberation"
 
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RGT, score: 1000 }
 }
@@ -569,7 +569,7 @@ action: {
    source:  FORCOM,
    file:    "Actions/11-tantalus.txt"
    image:   "Actions/11-Tantalus.pcx"
-   scene:   "Scenes/11-Tantalus.def"
+   scene:   "11-Tantalus"
 
    req: { action: 700, status: COMPLETE }
 }
@@ -597,7 +597,7 @@ action: {
    source:  News,
    file:    "Actions/12-colony-ship.txt"
    image:   "Actions/12-Colony-Ship.pcx"
-   scene:   "Scenes/12-Colony-Ship.def"
+   scene:   "12-Colony-Ship"
 
    req: { action: 750, status: COMPLETE }
 }
@@ -613,7 +613,7 @@ action: {
    source:  FORCOM,
    file:    "Actions/13-marauder.txt"
    image:   "Actions/13-Marauder.pcx"
-   scene:   "Scenes/13-Marauder.def"
+   scene:   "13-Marauder"
 
    req: { action: 770, status: COMPLETE }
 }
@@ -653,7 +653,7 @@ action: {
    asset_id:   133,
    count:      3,
 
-   text:       "Scripts/IS_Patrol_Iron.def",
+   text:       "Scripts/IS_Patrol_Iron",
 
    req: { action: 831, status: COMPLETE }
 }
@@ -668,7 +668,7 @@ action: {
    asset_id:   53,
    count:      3,
 
-   text:       "Scripts/FS_Patrol_Iron.def",
+   text:       "Scripts/FS_Patrol_Iron",
 
    req: { action: 831, status: COMPLETE }
 }
@@ -685,7 +685,7 @@ action: {
    text:    "Operation Shining Fortress Victory",
    file:    "Actions/victory.txt"
    image:   "Actions/victory"
-   scene:   "Scenes/Victory1.def"
+   scene:   "Victory1"
 
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 6, comp: LT, score: 7000 },
    req: { c1: "Marakan Hegemony",    group_type: fleet, group_id: 7, comp: LT, score: 7000 },
@@ -702,7 +702,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def2",
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
    after:   "11/12:00:00",
 
    req: { action: 590, status: COMPLETE, not: true }
@@ -716,7 +716,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def1",
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2500 },
    req: { action: 590, status: COMPLETE, not: true }
@@ -730,7 +730,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def1",
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
    before:  "03/08:00:00",
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 7, comp: LT, score: 3200 },
@@ -745,7 +745,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def1",
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 12, comp: LT, score: 3200 },
    req: { action: 590, status: COMPLETE, not: true }
@@ -759,7 +759,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def1",
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 4, comp: LT, score: 9000 },
    req: { action: 590, status: COMPLETE, not: true }
@@ -773,7 +773,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def1",
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 8, comp: LT, score: 3200 },
    req: { action: 590, status: COMPLETE, not: true }
@@ -789,7 +789,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def3",
-   scene:   "Scenes/Defeat2.def"
+   scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", c2: "Marakan Hegemony", comp: RLT, score: -2500 },
    req: { action: 590, status: COMPLETE }
@@ -803,7 +803,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def3",
-   scene:   "Scenes/Defeat2.def"
+   scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 12, comp: LT, score: 3200 },
    req: { action: 590, status: COMPLETE }
@@ -817,7 +817,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def3",
-   scene:   "Scenes/Defeat2.def"
+   scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: fleet, group_id: 4, comp: LT, score: 9000 },
    req: { action: 590, status: COMPLETE }
@@ -831,7 +831,7 @@ action: {
    rgn:     Jarnell,
    text:    "Operation Shining Fortress Defeat",
    image:   "Actions/def3",
-   scene:   "Scenes/Defeat2.def"
+   scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 8, comp: LT, score: 3200 },
    req: { action: 590, status: COMPLETE }

@@ -1,5 +1,6 @@
 MISSION
 
+scene;  "T7"
 name:   "Carrier Operations"
 type:   "Training"
 system: "Janus"

@@ -1,5 +1,6 @@
 MISSION
 
+scene;  "T5"
 name:    "Training Cruise"
 type:    "Training"
 system:  "Janus"

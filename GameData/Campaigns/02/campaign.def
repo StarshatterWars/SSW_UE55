@@ -123,7 +123,7 @@ action: {
    source:  News,
    file:    "Actions/01-campaign-start.txt",
    image:   "Actions/01-campaign-start.pcx"
-   scene:   "Scenes/01-News-Start.def"
+   scene:   "01-News-Start"
 }
 
 action: {
@@ -193,7 +193,7 @@ action: {
    source:     Mail
    file:       "Actions/m1-catching-up.txt"
    image:      "Actions/m0-mail-icon.pcx"
-   scene:      "Scenes/M1-Catching-Up.def"
+   scene:      "M1-Catching-Up"
 }
 
 
@@ -233,7 +233,7 @@ action: {
    source:     News,
    file:       "Actions/02-coup-failure.txt",
    image:      "Actions/02-coup-failure.pcx",
-   scene:      "Scenes/02-Coup-Failure.def"
+   scene:      "02-Coup-Failure"
 }
 
 action: {
@@ -372,7 +372,7 @@ action: {
    source:     Mail
    file:       "Actions/m2-new-digs.txt"
    image:      "Actions/m0-mail-icon.pcx"
-   scene:      "Scenes/M2-New-Digs.def"
+   scene:      "M2-New-Digs"
 }
 
 action: {
@@ -385,7 +385,7 @@ action: {
    source:     News,
    file:       "Actions/03-blockade-broken.txt",
    image:      "Actions/03-blockade-broken.pcx",
-   scene:      "Scenes/03-Blockade-Broken.def",
+   scene:      "03-Blockade-Broken",
 
    req: { c1: "Dantari Separatists", group_type: minefield, group_id: 1, comp: LT, score: 10 },
    req: { c1: "Dantari Separatists", group_type: minefield, group_id: 2, comp: LT, score: 10 },
@@ -475,7 +475,7 @@ action: {
    source:     SECURE,
    file:       "Actions/04-harmony-risk.txt",
    image:      "Actions/04-harmony-risk.pcx",
-   scene:      "Scenes/04-Harmony-Risk.def",
+   scene:      "04-Harmony-Risk",
 }
 
 action: {
@@ -511,7 +511,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/06-renser-buildup.txt",
    image:      "Actions/06-renser-buildup.pcx",
-   scene:      "Scenes/06-Renser-Buildup.def"
+   scene:      "06-Renser-Buildup"
 }
 
 action: {
@@ -545,7 +545,7 @@ action: {
    source:     SECURE,
    file:       "Actions/05-foothill-ridge.txt",
    image:      "Actions/05-foothill-ridge.pcx",
-   scene:      "Scenes/05-Foothill-Ridge.def",
+   scene:      "05-Foothill-Ridge",
 
    req: { c1: "Dantari Separatists", group_type: battalion, group_id: 2, comp: GT, intel: SECRET },
 }
@@ -594,7 +594,7 @@ action: {
    source:     SECURE,
    file:       "Actions/05-foothill-ridge.txt",
    image:      "Actions/05-foothill-ridge.pcx",
-   scene:      "Scenes/05-Foothill-Ridge.def",
+   scene:      "05-Foothill-Ridge",
 
    req: { action: 310, status: COMPLETE, not: true }
 }
@@ -610,7 +610,7 @@ action: {
    source:     News,
    file:       "Actions/07-research-lab.txt",
    image:      "Actions/07-research-lab.pcx",
-   scene:      "Scenes/07-Research-Lab.def"
+   scene:      "07-Research-Lab"
 }
 
 action: {
@@ -635,7 +635,7 @@ action: {
    source:     News,
    file:       "Actions/08-renser-accusation.txt",
    image:      "Actions/08-renser-accusation.pcx",
-   scene:      "Scenes/08-Renser-Accusation.def"
+   scene:      "08-Renser-Accusation"
 }
 
 action: {
@@ -649,7 +649,7 @@ action: {
    source:     News,
    file:       "Actions/09-senate-resolution.txt",
    image:      "Actions/09-senate-resolution.pcx",
-   scene:      "Scenes/09-Senate-Resolution.def"
+   scene:      "09-Senate-Resolution"
 }
 
 // RENSER TASK FORCE ARRIVES IN SOLUS (JALAH SECTOR)
@@ -812,7 +812,7 @@ action: {
    source:     FORCOM,
    file:       "Actions/11-dantari-pullback.txt",
    image:      "Actions/11-dantari-pullback.pcx",
-   scene:      "Scenes/11-Dantari-Pullback.def"
+   scene:      "11-Dantari-Pullback"
 }
 
 action: {
@@ -1080,7 +1080,7 @@ action: {
    source:     News,
    file:       "Actions/13-renser-invasion.txt",
    image:      "Actions/13-renser-invasion.pcx",
-   scene:      "Scenes/13-Renser-Invasion.def",
+   scene:      "13-Renser-Invasion",
    delay:      19800, // five and a half hours after 600
 
    req: { action: 600, status: COMPLETE }
@@ -1096,7 +1096,7 @@ action: {
    source:     Mail
    file:       "Actions/m3-why-renser.txt"
    image:      "Actions/m0-mail-icon.pcx"
-   scene:      "Scenes/M3-Why-Renser.def"
+   scene:      "M3-Why-Renser"
    delay:      21600 // six hours after 700
 
    req: { action: 700, status: COMPLETE }
@@ -1252,7 +1252,7 @@ action: {
    text:    "Operation Highland Defeat"
    file:    "Actions/def1.txt"
    image:   "Actions/def1"
-   scene:   "Scenes/Defeat1.def"
+   scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 6, comp: LT, score: 3000 },
    req: { action: 600, status: COMPLETE, not: true },
@@ -1267,7 +1267,7 @@ action: {
    text:    "Operation Highland Defeat"
    file:    "Actions/def2.txt"
    image:   "Actions/def2"
-   scene:   "Scenes/Defeat2.def"
+   scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 6, comp: LT, score: 3000 }
    req: { action: 600, status: COMPLETE }
@@ -1282,7 +1282,7 @@ action: {
    text:    "Operation Highland Victory"
    file:    "Actions/campaign_end.txt"
    image:   "Actions/victory"
-   scene:   "Scenes/Victory.def"
+   scene:   "Victory"
 
    req: { c1: "Marakan Hegemony", group_type: fleet, group_id: 4, comp: LT, score: 4000 }
 }
