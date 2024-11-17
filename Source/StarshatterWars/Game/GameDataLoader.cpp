@@ -8,7 +8,7 @@
 
 	OVERVIEW
 	========
-	Loader and Parser class for initial generation of Master Gamne Data Tables
+	Loader and Parser class for initial generation of Master Game Data Tables
 	Will not be used after Dable Table is Generated.
 */
 

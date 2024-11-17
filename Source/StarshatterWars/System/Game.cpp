@@ -36,9 +36,6 @@ static LARGE_INTEGER  perf_freq;
 static LARGE_INTEGER  perf_cnt1;
 static LARGE_INTEGER  perf_cnt2;
 
-const int TIME_NEVER = (int)1e9;
-const int ONE_DAY = (int)24 * 3600;
-
 Game::Game()
 {
 }
