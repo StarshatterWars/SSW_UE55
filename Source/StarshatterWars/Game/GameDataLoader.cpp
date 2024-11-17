@@ -1035,6 +1035,205 @@ AGameDataLoader::ParseMission(const char* fn)
 	MissionArray.Add(NewMission);
 
 }
+
+void
+AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
+{
+	Text  Name = "";
+	Text  Carrier = "";
+	Text  Commander = "";
+	Text  Squadron = "";
+	Text  Path = "";
+	Text  Design = "";
+	Text  SkinName = "";
+	Text  RoleName = "";
+	Text  RegionName = "";
+	Text  Instr = "";
+
+	Vec3  Loc(0.0f, 0.0f, 0.0f);
+
+	int   Deck = 1;
+	int   IFFCode = 0;
+	int   Count = 1;
+	int   MaintCount = 0;
+	int   DeadCount = 0;
+	int   Player = 0;
+	int   CommandAI = 0;
+	int   Respawns = 0;
+	int   HoldTime = 0;
+	int   ZoneLock = 0;
+
+	bool Alert = false;
+	bool Playable = false;
+	bool Rogue = false;
+	bool Invulnerable = false;
+	
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+
+			if (pdef->name()->value() == "name") {
+				GetDefText(Name, pdef, fn);
+			} 
+			else if (pdef->name()->value() == "carrier") {
+				GetDefText(Carrier, pdef, fn);
+			}
+			else if (pdef->name()->value() == "commander") {
+				GetDefText(Commander, pdef, fn);
+			}
+			else if (pdef->name()->value() == "squadron") {
+				GetDefText(Squadron, pdef, fn);
+			}
+			else if (pdef->name()->value() == "path") {
+				GetDefText(Path, pdef, fn);
+			}
+			else if (pdef->name()->value() == "design") {
+				GetDefText(Design, pdef, fn);
+		
+			}
+			else if (pdef->name()->value() == "skin") {
+					GetDefText(SkinName, pdef, fn);
+			}
+			else if (pdef->name()->value() == "mission") {
+				GetDefText(RoleName, pdef, fn);
+
+			}
+			else if (pdef->name()->value() == "intel") {
+				GetDefText(RoleName, pdef, fn);
+		
+			}
+
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(Loc, pdef, fn);
+
+			}
+
+			else if (pdef->name()->value() == "rloc") {
+				if (pdef->term()->isStruct()) {
+					
+					//RLoc* rloc = ParseRLoc(pdef->term()->isStruct());
+				}
+			}
+
+			else if (pdef->name()->value().indexOf("head") == 0) {
+				/*if (pdef->term()->isArray()) {
+					Vec3 head;
+					GetDefVec(head, pdef, filename);
+					if (degrees) head.z *= (float)DEGREES;
+					element->heading = head.z;
+				}
+				else if (pdef->term()->isNumber()) {
+					double heading = 0;
+					GetDefNumber(heading, pdef, filename);
+					if (degrees) heading *= DEGREES;
+					element->heading = heading;
+				}*/
+			}
+
+			else if (pdef->name()->value() == "region" || pdef->name()->value() == "rgn") {
+				GetDefText(RegionName, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "iff") {
+				GetDefNumber(IFFCode, pdef, fn);
+			
+			}
+			else if (pdef->name()->value() == "count") {
+				GetDefNumber(Count, pdef, fn);
+			
+			}
+			else if (pdef->name()->value() == "maint_count") {
+				GetDefNumber(MaintCount, pdef, fn);
+			}
+			else if (pdef->name()->value() == "dead_count") {
+				GetDefNumber(DeadCount, pdef, fn);
+			}
+			else if (pdef->name()->value() == "player") {
+				GetDefNumber(Player, pdef, fn);
+			}	
+			else if (pdef->name()->value() == "alert") {
+				GetDefBool(Alert, pdef, fn);
+			}
+			else if (pdef->name()->value() == "playable") {
+				GetDefBool(Playable, pdef, fn); 
+			}
+			else if (pdef->name()->value() == "rogue") {
+				GetDefBool(Rogue, pdef, fn);
+			}
+			else if (pdef->name()->value() == "invulnerable") {
+				GetDefBool(Invulnerable, pdef, fn);
+			}
+			else if (pdef->name()->value() == "command_ai") {
+				GetDefNumber(CommandAI, pdef, fn);
+			}
+			else if (pdef->name()->value().indexOf("respawn") == 0) {
+				GetDefNumber(Respawns, pdef, fn);
+			}
+			else if (pdef->name()->value().indexOf("hold") == 0) {
+				GetDefNumber(HoldTime, pdef, fn);
+			}
+			else if (pdef->name()->value().indexOf("zone") == 0) {
+				if (pdef->term() && pdef->term()->isBool()) {
+					bool locked = false;
+					GetDefBool(locked, pdef, fn);
+				}
+				else {
+					GetDefNumber(ZoneLock, pdef, fn);
+				}
+			}
+
+			else if (pdef->name()->value() == "objective") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("Mission error - No objective"));
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+					//Instruction* obj = ParseInstruction(val, element);
+				}
+			}
+			else if (pdef->name()->value() == "instr") {
+				GetDefText(Instr, pdef, fn);
+
+			}
+
+			else if (pdef->name()->value() == "ship") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("Mission error - no ship"));
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+					//MissionShip* s = ParseShip(val, element);
+					
+				}
+			}
+
+			else if (pdef->name()->value() == "order" || pdef->name()->value() == "navpt") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("Mission error - no navpt"));
+		
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+					//Instruction* npt = ParseInstruction(val, element);
+					//element->navlist.append(npt);
+				}
+			}
+
+			else if (pdef->name()->value() == "loadout") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("Mission error - no loadout"));
+				
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+					//ParseLoadout(val, element);
+				}
+			}
+		}
+	}
+
+}
 // +--------------------------------------------------------------------+
 
 void

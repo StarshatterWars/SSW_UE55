@@ -70,6 +70,7 @@ public:
 	void LoadTemplateList(FString Path);
 	void LoadMission(FString Name);
 	void ParseMission(const char* filename);
+	void ParseElement(TermStruct* val, const char* fn);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
