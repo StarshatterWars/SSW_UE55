@@ -1,6 +1,6 @@
 MISSION
 
-scene;  "T4"
+scene:  "T4"
 name:    "Ground Strike"
 type:    "Training"
 system:  "Janus"

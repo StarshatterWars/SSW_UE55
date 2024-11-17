@@ -24,6 +24,9 @@
 
 
 static int elem_id = 351;
+// +--------------------------------------------------------------------+
+
+#define MSN_CHECK(x)   if (!_stricmp(n, #x)) result = Mission::x;
 
 Mission::Mission()
 {
@@ -111,12 +114,97 @@ void Mission::DecreaseEventPriority(int index)
 
 const char* Mission::RoleName(int role)
 {
-	return nullptr;
+	switch (role) {
+		case PATROL:    
+			return "Patrol";
+		case SWEEP:  
+			return "Sweep";
+		case INTERCEPT:      
+			return "Intercept";
+		case AIR_PATROL:
+			return "Airborne Patrol";
+		case AIR_SWEEP:
+			return "Airborne Sweep";
+		case AIR_INTERCEPT:
+			return "Airborne Intercept";
+		case STRIKE: 
+			return "Strike";
+		case ASSAULT:
+			return "Assault";
+		case DEFEND:	
+			return "Defend";
+		case ESCORT:      
+			return "Escort";
+		case ESCORT_FREIGHT: 
+			return "Freight Escort";
+		case ESCORT_SHUTTLE: 
+			return "Shuttle Escort";
+		case ESCORT_STRIKE:  
+			return "Strike Escort";
+		case INTEL:     
+			return "Intel";
+		case SCOUT:       
+			return "Scout";
+		case RECON:       
+			return "Recon";
+		case BLOCKADE:    
+			return "Blockade";
+		case FLEET:        
+			return "Fleet";
+		case BOMBARDMENT:  
+			return "Attack";
+		case FLIGHT_OPS: 
+			return "Flight Ops";
+		case TRANSPORT:  
+			return "Transport";
+		case CARGO:   
+			return "Cargo";
+		case TRAINING:  
+			return "Training";
+		default:
+		case OTHER:   
+			return "Misc";
+	}
 }
 
 int Mission::TypeFromName(const char* n)
 {
-	return 0;
+	int result = -1;
+
+	MSN_CHECK(PATROL)
+	else MSN_CHECK(SWEEP)
+	else MSN_CHECK(INTERCEPT)
+	else MSN_CHECK(AIR_PATROL)
+	else MSN_CHECK(AIR_SWEEP)
+	else MSN_CHECK(AIR_INTERCEPT)
+	else MSN_CHECK(STRIKE)
+	else MSN_CHECK(ASSAULT)
+	else MSN_CHECK(DEFEND)
+	else MSN_CHECK(ESCORT)
+	else MSN_CHECK(ESCORT_FREIGHT)
+	else MSN_CHECK(ESCORT_SHUTTLE)
+	else MSN_CHECK(ESCORT_STRIKE)
+	else MSN_CHECK(INTEL)
+	else MSN_CHECK(SCOUT)
+	else MSN_CHECK(RECON)
+	else MSN_CHECK(BLOCKADE)
+	else MSN_CHECK(FLEET)
+	else MSN_CHECK(BOMBARDMENT)
+	else MSN_CHECK(FLIGHT_OPS)
+	else MSN_CHECK(TRANSPORT)
+	else MSN_CHECK(CARGO)
+	else MSN_CHECK(TRAINING)
+	else MSN_CHECK(OTHER)
+
+	if (result < PATROL) {
+		for (int i = PATROL; i <= OTHER && result < PATROL; i++) {
+			if (!_stricmp(n, RoleName(i))) {
+				result = i;
+			}
+		}
+	}
+
+	return result;
 }
 
 void Mission::AddError(Text err)

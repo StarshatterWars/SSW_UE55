@@ -68,6 +68,7 @@ public:
 	void LoadZones(FString Path);
 	void LoadMissionList(FString Path);
 	void LoadTemplateList(FString Path);
+	void LoadMission(FString Name);
 	void ParseMission(const char* filename);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
@@ -147,6 +148,7 @@ protected:
 	TArray<FS_CampaignZone> ZoneArray;
 	TArray<FS_CampaignMissionList> MissionListArray;
 	TArray<FS_CampaignTemplateList> TemplateListArray;
+	TArray<FS_CampaignMission> MissionArray;
 
 	FS_CampaignAction NewCampaignAction;
 

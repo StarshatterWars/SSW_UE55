@@ -1,6 +1,6 @@
 MISSION
 
-scene;  "T1"
+scene:  "T1"
 name:    "Basic Space Flight"
 type:    "Training"
 system:  "Janus"

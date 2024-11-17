@@ -1,6 +1,6 @@
 MISSION
 
-scene;  "Intro"
+scene:  "Intro"
 name:   "Campaign 01 - Intro"
 type:   "Patrol"
 system: Borova

@@ -875,6 +875,72 @@ struct FS_CampaignTemplateList : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_CampaignMission : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Id;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString System;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Scene;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Subtitles;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Desc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TargetName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString WardName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Objective;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Sitrep;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString StartTime;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Team;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Stardate;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Degrees;
+	
+
+	FS_CampaignMission() {
+
+		Id = 0;
+
+		Region = "";
+		System = "";
+		Scene = "";
+
+		Subtitles = "";
+		Name = "";
+		Desc = "";
+		TargetName = "";
+		WardName = "";
+		Objective = "";
+		Sitrep = "";
+		StartTime = ""; // time
+
+		Type = 0;
+		Team = 0;
+		
+		Stardate = 0;
+
+		Degrees = false;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_Campaign : public FTableRowBase {
 	GENERATED_BODY()
 	
@@ -904,6 +970,8 @@ struct FS_Campaign : public FTableRowBase {
 	TArray<FS_CampaignMissionList> MissionList;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CampaignTemplateList> TemplateList;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CampaignMission> Missions;
 	
 	FS_Campaign() {
 		Name = "";

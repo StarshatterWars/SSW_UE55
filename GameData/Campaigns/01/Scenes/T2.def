@@ -1,6 +1,6 @@
 MISSION
 
-scene;  "T2"
+scene:  "T2"
 name:    "Target Practice"
 type:    "Training"
 system:  "Janus"
