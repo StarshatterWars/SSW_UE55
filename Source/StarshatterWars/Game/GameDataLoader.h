@@ -150,6 +150,7 @@ protected:
 	TArray<FS_CampaignMissionList> MissionListArray;
 	TArray<FS_CampaignTemplateList> TemplateListArray;
 	TArray<FS_CampaignMission> MissionArray;
+	TArray<FS_CampaignReq> CampaignActionReqArray;
 
 	FS_CampaignAction NewCampaignAction;
 
@@ -187,18 +188,18 @@ protected:
 	Text ZoneRegion;
 	Text ZoneSystem;
 
-	int  act = 0;
-	Text Actionstatus;
-	bool not_action = false;
+	int  Action = 0;
+	Text ActionStatus;
+	bool NotAction = false;
 
 	Text Combatant1;
 	Text Combatant2;
 
-	Text	comp = "";
+	int		comp = 0;
 	int     score = 0;
-	Text    intel = "";
-	int         gtype = 0;
-	int         gid = 0;
+	int     intel = 0;
+	int     gtype = 0;
+	int     gid = 0;
 
 	FString CampaignPath;
 };

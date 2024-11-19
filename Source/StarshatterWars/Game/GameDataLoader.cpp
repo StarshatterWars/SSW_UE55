@@ -129,6 +129,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	CampaignActionArray.Empty();
 	MissionArray.Empty();
 
+
 	do {
 		delete term; 
 		term = parser.ParseTerm();
@@ -406,7 +407,102 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								GetDefText(TargetKill, pdef, filename);
 								NewCampaignAction.TargetKill = FString(TargetKill);
 							}
+							else if (pdef->name()->value() == "req") {
+								///if (!pdef->term() || !pdef->term()->isStruct()) {
+								//	UE_LOG(LogTemp, Log, TEXT("WARNING: action req struct missing in '%s'"), *FString(filename));
+								//}
+							//else {
+								TermStruct* val2 = pdef->term()->isStruct();
+								CampaignActionReqArray.Empty();
+								Action = 0;
+								ActionStatus = CombatAction::COMPLETE;
+								NotAction = false;
+
+								Combatant1 ="";
+								Combatant2 = "";
+
+								comp = 0;
+								score = 0;
+								intel = 0;
+								gtype = 0;
+								gid = 0;
+
+								FS_CampaignReq NewCampaignReq;
+
+								for (int index = 0; index < val2->elements()->size(); index++) {
+									TermDef* pdef2 = val2->elements()->at(index)->isDef();
+									
+									if (pdef2) {
+										if (pdef2->name()->value() == "action") {
+											GetDefNumber(Action, pdef2, filename);
+											NewCampaignReq.Action = Action;
+										}
+										else if (pdef2->name()->value() == "status") {
+											char txt[64];
+											GetDefText(txt, pdef2, filename);
+											ActionStatus = CombatAction::StatusFromName(txt);
+											NewCampaignReq.Status = FString(ActionStatus);
+
+										}
+										else if (pdef2->name()->value() == "not") {
+											GetDefBool(NotAction, pdef2, filename);
+											NewCampaignReq.NotAction = NotAction;
+										}
+
+										else if (pdef2->name()->value() == "c1") {
+											GetDefText(Combatant1, pdef2, filename);
+											NewCampaignReq.Combatant1 = FString(Combatant1);
+											//c1 = GetCombatant(txt);
+										}
+										else if (pdef2->name()->value() == "c2") {
+											GetDefText(Combatant2, pdef2, filename);
+											NewCampaignReq.Combatant2 = FString(Combatant2);
+											//c2 = GetCombatant(txt);
+										}
+										else if (pdef2->name()->value() == "comp") {
+											char txt[64];
+											GetDefText(txt, pdef2, filename);
+											comp = CombatActionReq::CompFromName(txt);
+											NewCampaignReq.Comp = comp;
+
+										}
+										else if (pdef2->name()->value() == "score") {
+											GetDefNumber(score, pdef2, filename);
+											NewCampaignReq.Score = score;
+
+										}
+										else if (pdef2->name()->value() == "intel") {
+											if (pdef2->term()->isNumber()) {
+												GetDefNumber(intel, pdef2, filename);
+												NewCampaignReq.Intel = intel;
+
+											}
+											else if (pdef2->term()->isText()) {
+												char txt[64];
+												GetDefText(txt, pdef2, filename);
+												intel = Intel::IntelFromName(txt);
+												NewCampaignReq.Intel = intel;
+
+											}
+										}
+										else if (pdef2->name()->value() == "group_type") {
+											char type_name[64];
+											GetDefText(type_name, pdef2, filename);
+											gtype = CombatGroup::TypeFromName(type_name);
+											NewCampaignReq.GroupType = gtype;
+
+										}
+										else if (pdef2->name()->value() == "group_id") {
+											GetDefNumber(gid, pdef2, filename);
+											NewCampaignReq.GroupId = gid;
+										}
+									}
+								}
+								CampaignActionReqArray.Add(NewCampaignReq);
+							}
 						}
+						NewCampaignAction.Requirement = CampaignActionReqArray;
+						CampaignActionReqArray.Empty();
 						CampaignActionArray.Add(NewCampaignAction);
 					}
 					NewCampaignData.Action = CampaignActionArray;
