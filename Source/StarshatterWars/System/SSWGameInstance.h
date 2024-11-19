@@ -626,13 +626,13 @@ struct FS_CampaignReq : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Combatant2;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString GroupType;
+	int GroupType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int GroupId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Comp;
+	int Comp;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Intel;
+	int Intel;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Score;
 
@@ -643,10 +643,10 @@ struct FS_CampaignReq : public FTableRowBase {
 
 		Combatant1 = "";
 		Combatant2 = "";
-		GroupType = "";
+		GroupType = 0;
 		GroupId = 0;
-		Comp = "";
-		Intel = "";
+		Comp = 0;
+		Intel = 0;
 		Score = 0;
 	}
 };
@@ -711,6 +711,8 @@ struct FS_CampaignAction : public FTableRowBase {
 	FString TargetKill;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CampaignReq> Requirement;
 
 	FS_CampaignAction() {
 		Id = 0;
