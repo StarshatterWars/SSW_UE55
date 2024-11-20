@@ -47,9 +47,8 @@ void ACombatGroupLoader::Tick(float DeltaTime)
 
 }
 
-//TArray<FString> Filelist = {
-//	"Alliance.def", "Dantari.def", "Haiche.def", "Hegemony.def", "Pirates.def"
-//}
+
+
 // +-------------------------------------------------------------------+
 
 void ACombatGroupLoader::LoadCombatRoster()

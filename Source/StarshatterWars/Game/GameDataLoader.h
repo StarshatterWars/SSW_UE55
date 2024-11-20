@@ -152,6 +152,7 @@ protected:
 	TArray<FS_CampaignTemplateList> TemplateListArray;
 	TArray<FS_CampaignMission> MissionArray;
 	TArray<FS_MissionElement> MissionElementArray;
+	TArray<FS_RLoc> MissionRLocArray;
 	TArray<FS_CampaignReq> CampaignActionReqArray;
 
 	FS_CampaignAction NewCampaignAction;

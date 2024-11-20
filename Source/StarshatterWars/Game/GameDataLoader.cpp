@@ -556,11 +556,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 									}
 									else if (pdef->name()->value() == "req") {
 										
-										TermStruct* val2 = pdef->term()->isStruct();
-
-						
-
-										
+										TermStruct* val2 = pdef->term()->isStruct();			
 									}
 								}
 								NewCombatUnit.Group.Add(NewGroupUnit);
@@ -1094,18 +1090,11 @@ AGameDataLoader::ParseMission(const char* fn)
 					(def->name()->value() == "ship") ||
 					(def->name()->value() == "station")) {
 
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("ERROR: element struct missing in '%s'"), *FString(fn));
-					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-						
-						ParseElement(val, filename);
-						NewMission.Element = MissionElementArray;
-						MissionElementArray.Empty();
-						////AddElement(elem);
-					}
+					 TermStruct* eval = def->term()->isStruct();
+					 ParseElement(eval, fn);
+				     NewMission.Element = MissionElementArray;
 				}
+				
 
 				else if (def->name()->value() == "event") {
 					if (!def->term() || !def->term()->isStruct()) {
@@ -1126,9 +1115,9 @@ AGameDataLoader::ParseMission(const char* fn)
 }
 
 void
-AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
+AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 {
-	Text  Name = "";
+	Text  ElementName = "";
 	Text  Carrier = "";
 	Text  Commander = "";
 	Text  Squadron = "";
@@ -1159,18 +1148,16 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 	bool Rogue = false;
 	bool Invulnerable = false;
 
-	
 
 	FS_MissionElement NewMissionElement;
- 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
 
+	for (int i = 0; i < eval->elements()->size(); i++) {
+		TermDef* pdef = eval->elements()->at(i)->isDef();
+		if (pdef) {
 			if (pdef->name()->value() == "name") {
-				GetDefText(Name, pdef, fn);
-				NewMissionElement.Name = FString(Name);
-			} 
+				GetDefText(ElementName, pdef, fn);
+				NewMissionElement.Name = FString(ElementName);
+			}
 			else if (pdef->name()->value() == "carrier") {
 				GetDefText(Carrier, pdef, fn);
 				NewMissionElement.Carrier = FString(Carrier);
@@ -1212,9 +1199,67 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 			}
 
 			else if (pdef->name()->value() == "rloc") {
-				if (pdef->term()->isStruct()) {			
+				if (pdef->term()->isStruct()) {
+
 					TermStruct* rval = pdef->term()->isStruct();
-					//ParseRLoc(rval, fn);
+					Vec3     BaseLocation;
+					Text     Reference;
+
+					double   dex = 0;
+					double   dex_var = 5e3;
+					double   az = 0;
+					double   az_var = 3.1415;
+					double   el = 0;
+					double   el_var = 0.1;
+					FS_RLoc NewRLocElement;
+
+					for (int index = 0; i < rval->elements()->size(); index++) {
+						TermDef* rdef = rval->elements()->at(index)->isDef();
+						if (rdef) {
+							if (rdef->name()->value() == "dex") {
+								GetDefNumber(dex, rdef, fn);
+								NewRLocElement.Dex = dex;
+
+							}
+							else if (rdef->name()->value() == "dex_var") {
+								GetDefNumber(dex_var, rdef, fn);
+								NewRLocElement.DexVar = dex_var;
+
+							}
+							else if (rdef->name()->value() == "az") {
+								GetDefNumber(az, rdef, fn);
+								NewRLocElement.Azimuth = az;
+
+							}
+							else if (rdef->name()->value() == "az_var") {
+								GetDefNumber(az_var, rdef, fn);
+								NewRLocElement.AzimuthVar = az_var;
+
+							}
+							else if (rdef->name()->value() == "el") {
+								GetDefNumber(el, rdef, fn);
+								NewRLocElement.Elevation = el;
+
+							}
+							else if (rdef->name()->value() == "el_var") {
+								GetDefNumber(el_var, rdef, fn);
+								NewRLocElement.ElevationVar = el_var;
+
+							}
+							else if (rdef->name()->value() == "loc") {
+								GetDefVec(BaseLocation, rdef, fn);
+								NewRLocElement.BaseLocation.X = BaseLocation.x;
+								NewRLocElement.BaseLocation.Y = BaseLocation.y;
+								NewRLocElement.BaseLocation.Z = BaseLocation.z;
+							}
+
+							else if (rdef->name()->value() == "ref") {
+								GetDefText(Reference, rdef, fn);
+								NewRLocElement.Reference = FString(Reference);
+							}
+						}
+					}
+					NewMissionElement.RLoc.Add(NewRLocElement);
 				}
 			}
 
@@ -1231,12 +1276,12 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "iff") {
 				GetDefNumber(IFFCode, pdef, fn);
 				NewMissionElement.IFFCode = IFFCode;
-			
+
 			}
 			else if (pdef->name()->value() == "count") {
 				GetDefNumber(Count, pdef, fn);
 				NewMissionElement.Count = Count;
-			
+
 			}
 			else if (pdef->name()->value() == "maint_count") {
 				GetDefNumber(MaintCount, pdef, fn);
@@ -1249,13 +1294,13 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "player") {
 				GetDefNumber(Player, pdef, fn);
 				NewMissionElement.Player = Player;
-			}	
+			}
 			else if (pdef->name()->value() == "alert") {
 				GetDefBool(Alert, pdef, fn);
 				NewMissionElement.Alert = Alert;
 			}
 			else if (pdef->name()->value() == "playable") {
-				GetDefBool(Playable, pdef, fn); 
+				GetDefBool(Playable, pdef, fn);
 				NewMissionElement.Playable = Playable;
 			}
 			else if (pdef->name()->value() == "rogue") {
@@ -1278,9 +1323,9 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 				GetDefNumber(HoldTime, pdef, fn);
 				NewMissionElement.HoldTime = HoldTime;
 			}
-			else if (pdef->name()->value() =="zone") {
-					GetDefNumber(ZoneLock, pdef, fn);
-					NewMissionElement.ZoneLock = ZoneLock;
+			else if (pdef->name()->value() == "zone") {
+				GetDefNumber(ZoneLock, pdef, fn);
+				NewMissionElement.ZoneLock = ZoneLock;
 			}
 			else if (pdef->name()->value() == "objective") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
@@ -1303,14 +1348,14 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 				else {
 					TermStruct* val = pdef->term()->isStruct();
 					//MissionShip* s = ParseShip(val, element);
-					
+
 				}
 			}
 
 			else if (pdef->name()->value() == "order" || pdef->name()->value() == "navpt") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
 					UE_LOG(LogTemp, Log, TEXT("Mission error - no navpt"));
-		
+
 				}
 				else {
 					TermStruct* val = pdef->term()->isStruct();
@@ -1322,15 +1367,16 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "loadout") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
 					UE_LOG(LogTemp, Log, TEXT("Mission error - no loadout"));
-				
+
 				}
 				else {
 					TermStruct* val = pdef->term()->isStruct();
 					//ParseLoadout(val, element);
 				}
 			}
-		}MissionElementArray.Add(NewMissionElement);
-	}	
+		}
+	}
+	MissionElementArray.Add(NewMissionElement);
 }
 // +--------------------------------------------------------------------+
 
@@ -1353,382 +1399,50 @@ AGameDataLoader::ParseRLoc(TermStruct* val, const char* fn)
 		if (pdef) {
 			if (pdef->name()->value() == "dex") {
 				GetDefNumber(dex, pdef, fn);
+				NewRLocElement.Dex = dex;
 			
 			}	
 			else if (pdef->name()->value() == "dex_var") {
 				GetDefNumber(dex_var, pdef, fn);
+				NewRLocElement.DexVar = dex_var;
 				
 			}
 			else if (pdef->name()->value() == "az") {
 				GetDefNumber(az, pdef, fn);
+				NewRLocElement.Azimuth = az;
 				
 			}
 			else if (pdef->name()->value() == "az_var") {
 				GetDefNumber(az_var, pdef, fn);
+				NewRLocElement.AzimuthVar = az_var;
 				
 			}
 			else if (pdef->name()->value() == "el") {
 				GetDefNumber(el, pdef, fn);
+				NewRLocElement.Elevation = el;
 				
 			}
 			else if (pdef->name()->value() == "el_var") {
 				GetDefNumber(el_var, pdef, fn);
+				NewRLocElement.ElevationVar = el_var;
 				
 			}
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(BaseLocation, pdef, fn);
+				NewRLocElement.BaseLocation.X = BaseLocation.x;
+				NewRLocElement.BaseLocation.Y = BaseLocation.y;
+				NewRLocElement.BaseLocation.Z = BaseLocation.z;
 			}
 
 			else if (pdef->name()->value() == "ref") {
-				Text refstr;
-				GetDefText(refstr, pdef, fn);
-
+				GetDefText(Reference, pdef, fn);
+				NewRLocElement.Reference = FString(Reference);
 			}
 		}
 	}
+	MissionRLocArray.Add(NewRLocElement);
 }
 
-void
-AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
-{
-	if (!val) {
-		UE_LOG(LogTemp, Log, TEXT("invalid action in campaign '%s'"), *FString(name.data()));
-		return;
-	}
-
-	int   id = 0;
-	int   type = 0;
-	int   subtype = 0;
-	int   opp_type = -1;
-	int   team = 0;
-	int   source = 0;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	Text  system;
-	Text  region;
-	Text  file;
-	Text  image;
-	Text  scene;
-	Text  text;
-	int   count = 1;
-	int   start_before = Game::TIME_NEVER;
-	int   start_after = 0;
-	int   min_rank = 0;
-	int   max_rank = 100;
-	int   delay = 0;
-	int   probability = 100;
-
-	int   asset_type = 0;
-	int   asset_id = 0;
-	int   target_type = 0;
-	int   target_id = 0;
-	int   target_iff = 0;
-
-	//CombatAction* action = 0;
-
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "id") {
-				GetDefNumber(id, pdef, fn);
-				NewCampaignAction.Id = id;
-				UE_LOG(LogTemp, Log, TEXT("action id: '%d'"), id);
-			}
-			else if (pdef->name()->value() == "type") {
-				char txt[64];
-				GetDefText(txt, pdef, fn);
-				type = CombatAction::TypeFromName(txt);
-				NewCampaignAction.Type = FString(txt);
-				UE_LOG(LogTemp, Log, TEXT("action type: '%s'"), *FString(txt));
-			}
-			else if (pdef->name()->value() == "subtype") {
-				if (pdef->term()->isNumber()) {
-					GetDefNumber(subtype, pdef, fn);
-					NewCampaignAction.Subtype = subtype;
-				}
-
-				else if (pdef->term()->isText()) {
-					char txt[64];
-					GetDefText(txt, pdef, fn);
-
-					if (type == CombatAction::MISSION_TEMPLATE) {
-						subtype = Mission::TypeFromName(txt);
-					}
-					else if (type == CombatAction::COMBAT_EVENT) {
-						subtype = CombatEvent::TypeFromName(txt);
-					}
-					else if (type == CombatAction::INTEL_EVENT) {
-						//subtype = Intel::IntelFromName(txt);
-					}
-					//NewCampaignAction.Subtype = subtype;
-				}
-				
-			}
-			else if (pdef->name()->value() == "opp_type") {
-				if (pdef->term()->isNumber()) {
-					GetDefNumber(opp_type, pdef, fn);
-					//NewCampaignAction.OppType = opp_type;
-				}
-
-				else if (pdef->term()->isText()) {
-					char txt[64];
-					GetDefText(txt, pdef, fn);
-
-					if (type == CombatAction::MISSION_TEMPLATE) {
-						opp_type = Mission::TypeFromName(txt);
-					}
-				}
-			}
-			else if (pdef->name()->value() == "source") {
-				char txt[64];
-				GetDefText(txt, pdef, fn);
-				//source = CombatEvent::SourceFromName(txt);
-				//NewCampaignAction.Source = txt;
-			}
-			else if (pdef->name()->value() == "team") {
-				GetDefNumber(team, pdef, fn);
-				//NewCampaignAction.Team = team;
-			}
-			else if (pdef->name()->value() == "iff") {
-				GetDefNumber(team, pdef, fn);
-				//NewCampaignAction.Iff = team;
-			}
-			else if (pdef->name()->value() == "count") {
-				GetDefNumber(count, pdef, fn);
-				//NewCampaignAction.Count = count;
-			}
-			else if (pdef->name()->value().contains("before")) {
-				if (pdef->term()->isNumber()) {
-					GetDefNumber(start_before, pdef, fn);
-					//NewCampaignAction.StartBefore = start_before;
-				}
-				else {
-					GetDefTime(start_before, pdef, fn);
-					start_before -= Game::ONE_DAY;
-					//NewCampaignAction.StartBefore = start_before;
-				}
-			}
-			else if (pdef->name()->value().contains("after")) {
-				if (pdef->term()->isNumber()) {
-					GetDefNumber(start_after, pdef, fn);
-					//NewCampaignAction.StartAfter = start_after;
-				}
-				else {
-					GetDefTime(start_after, pdef, fn);
-					start_after -= Game::ONE_DAY;
-					//NewCampaignAction.StartAfter = start_after;
-				}
-			}
-			else if (pdef->name()->value() == "min_rank") {
-				if (pdef->term()->isNumber()) {
-					GetDefNumber(min_rank, pdef, fn);
-					//NewCampaignAction.MinRank = min_rank;
-				}
-				else {
-					char rank_name[64];
-					GetDefText(rank_name, pdef, fn);
-					min_rank = PlayerData::RankFromName(rank_name);
-					//NewCampaignAction.MinRank = min_rank;
-				}
-			}
-			else if (pdef->name()->value() == "max_rank") {
-				if (pdef->term()->isNumber()) {
-					GetDefNumber(max_rank, pdef, fn);
-					//NewCampaignAction.MaxRank = max_rank;
-				}
-				else {
-					char rank_name[64];
-					GetDefText(rank_name, pdef, fn);
-					max_rank = PlayerData::RankFromName(rank_name);
-					//NewCampaignAction.MaxRank = max_rank;
-				}
-			}
-			else if (pdef->name()->value() == "delay") {
-				GetDefNumber(delay, pdef, fn);
-				//NewCampaignAction.Delay = delay;
-			}
-			else if (pdef->name()->value() == "probability") {
-				GetDefNumber(probability, pdef, fn);
-				//NewCampaignAction.Probability = probability;
-			}
-			else if (pdef->name()->value() == "asset_type") {
-				char type_name[64];
-				GetDefText(type_name, pdef, fn);
-				//asset_type = CombatGroup::TypeFromName(type_name);
-				//NewCampaignAction.AssetType = type_name;
-			}
-			else if (pdef->name()->value() == "target_type") {
-				char type_name[64];
-				GetDefText(type_name, pdef, fn);
-				//NewCampaignAction.TargetType = type_name;
-				//target_type = CombatGroup::TypeFromName(type_name);
-			}
-			else if (pdef->name()->value() == "location" ||
-				pdef->name()->value() == "loc") {
-				GetDefVec(loc, pdef, fn);
-				//NewCampaignAction.Location.X = loc.x;
-				//NewCampaignAction.Location.Y = loc.y;
-				//NewCampaignAction.Location.Z = loc.z;
-
-			}
-			else if (pdef->name()->value() == "system" ||
-				pdef->name()->value() == "sys") {
-				GetDefText(system, pdef, fn);
-				//NewCampaignAction.System = FString(system);
-			}
-			else if (pdef->name()->value() == "region" ||
-				pdef->name()->value() == "rgn" ||
-				pdef->name()->value() == "zone") {
-				GetDefText(region, pdef, fn);
-				//NewCampaignAction.Region = FString(region);
-			}
-			else if (pdef->name()->value() == "file") {
-				GetDefText(file, pdef, fn);
-				//NewCampaignAction.File = FString(file);
-			}
-			else if (pdef->name()->value() == "image") {
-				GetDefText(image, pdef, fn);
-				//NewCampaignAction.Image = FString(image);
-			}
-			else if (pdef->name()->value() == "scene") {
-				GetDefText(scene, pdef, fn);
-				//NewCampaignAction.Scene = FString(scene);
-			}
-			else if (pdef->name()->value() == "text") {
-				GetDefText(text, pdef, fn);
-				text = Game::GetText(text);
-				//NewCampaignAction.Text = FString(text);
-			}
-			else if (pdef->name()->value() == "asset_id") {
-				GetDefNumber(asset_id, pdef, fn);
-				//NewCampaignAction.AssetId = asset_id;
-			}
-			else if (pdef->name()->value() == "target_id") {
-				GetDefNumber(target_id, pdef, fn);
-				//NewCampaignAction.TargetId = target_id;
-			}
-				
-			else if (pdef->name()->value() == "target_iff") {
-				GetDefNumber(target_iff, pdef, fn);
-				//NewCampaignAction.TargetIff = target_iff;
-			}
-		}
-		
-		CampaignActionArray.Add(NewCampaignAction);
-
-			/*else if (pdef->name()->value() == "asset_kill") {
-				if (!action)
-					action = new CombatAction(id, type, subtype, team);
-
-				if (action) {
-					char txt[64];
-					GetDefText(txt, pdef, fn);
-					action->AssetKills().append(new Text(txt));
-				}
-			}
-
-			else if (pdef->name()->value() == "target_kill") {
-				if (!action)
-					action = new CombatAction(id, type, subtype, team);
-
-				if (action) {
-					char txt[64];
-					GetDefText(txt, pdef, fn);
-					action->TargetKills().append(new Text(txt));
-				}
-			}
-
-			else if (pdef->name()->value() == "req") {
-				if (!action)
-					action = new CombatAction(id, type, subtype, team);
-
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: action req struct missing in '%s'"), *FString(fn)); 
-
-				}
-				else if (action) {
-					TermStruct* val2 = pdef->term()->isStruct();
-
-					int  act = 0;
-					int  stat = CombatAction::COMPLETE;
-					bool not_action = false;
-
-					Combatant* c1 = 0;
-					Combatant* c2 = 0;
-					int         comp = 0;
-					int         score = 0;
-					int         intel = 0;
-					int         gtype = 0;
-					int         gid = 0;
-
-					for (int index = 0; index < val2->elements()->size(); index++) {
-						TermDef* pdef2 = val2->elements()->at(i)->isDef();
-						if (pdef2) {
-							if (pdef2->name()->value() == "action") {
-								GetDefNumber(act, pdef2, filename);
-							}
-							else if (pdef2->name()->value() == "status") {
-								char txt[64];
-								GetDefText(txt, pdef2, filename);
-								stat = CombatAction::StatusFromName(txt);
-							}
-							else if (pdef2->name()->value() == "not") {
-								GetDefBool(not_action, pdef2, filename);
-							}
-
-							else if (pdef2->name()->value() == "c1") {
-								char txt[64];
-								GetDefText(txt, pdef2, filename);
-								c1 = GetCombatant(txt);
-							}
-							else if (pdef2->name()->value() == "c2") {
-								char txt[64];
-								GetDefText(txt, pdef2, filename);
-								c2 = GetCombatant(txt);
-							}
-							else if (pdef2->name()->value() == "comp") {
-								char txt[64];
-								GetDefText(txt, pdef2, filename);
-								comp = CombatActionReq::CompFromName(txt);
-							}
-							else if (pdef2->name()->value() == "score") {
-								GetDefNumber(score, pdef2, filename);
-							}
-							else if (pdef2->name()->value() == "intel") {
-								if (pdef2->term()->isNumber()) {
-									GetDefNumber(intel, pdef2, filename);
-								}
-								else if (pdef2->term()->isText()) {
-									char txt[64];
-									GetDefText(txt, pdef2, filename);
-									//intel = Intel::IntelFromName(txt);
-								}
-							}
-							else if (pdef2->name()->value() == "group_type") {
-								char type_name[64];
-								GetDefText(type_name, pdef2, filename);
-								gtype = CombatGroup::TypeFromName(type_name);
-							}
-							else if (pdef2->name()->value() == "group_id") {
-								GetDefNumber(gid, pdef2, filename);
-							}
-						}
-					}
-
-					if (act)
-						action->AddRequirement(act, stat, not_action);
-
-					else if (gtype)
-						action->AddRequirement(c1, gtype, gid, comp, score, intel);
-
-					else
-						action->AddRequirement(c1, c2, comp, score);
-				}
-			}*/
-	}
-		
-}
 
 // +--------------------------------------------------------------------+
 

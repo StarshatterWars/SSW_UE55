@@ -896,6 +896,9 @@ struct FS_RLoc : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	float ElevationVar;
 
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector BaseLocation;
+
 	FS_RLoc() {
 		Reference = "";
 		Dex = 0;
@@ -904,6 +907,8 @@ struct FS_RLoc : public FTableRowBase {
 		AzimuthVar = 0;
 		Elevation = 0;
 		ElevationVar = 0;
+
+		BaseLocation = FVector::ZeroVector;
 	}
 };
 
@@ -969,7 +974,7 @@ struct FS_MissionElement : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool Invulnerable;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FS_RLoc RLoc;
+	TArray<FS_RLoc> RLoc;
 
 	FS_MissionElement() {
 		Name = "";
@@ -1215,6 +1220,7 @@ struct FS_AwardInfo : public FTableRowBase {
 		Ceremony = false;
 	}
 };
+
 USTRUCT(BlueprintType)
 struct FS_CombatGroupUnit : public FTableRowBase {
 	GENERATED_BODY()
