@@ -71,6 +71,7 @@ public:
 	void LoadMission(FString Name);
 	void ParseMission(const char* filename);
 	void ParseElement(TermStruct* val, const char* fn);
+	void ParseRLoc(TermStruct* val, const char* fn);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -150,6 +151,7 @@ protected:
 	TArray<FS_CampaignMissionList> MissionListArray;
 	TArray<FS_CampaignTemplateList> TemplateListArray;
 	TArray<FS_CampaignMission> MissionArray;
+	TArray<FS_MissionElement> MissionElementArray;
 	TArray<FS_CampaignReq> CampaignActionReqArray;
 
 	FS_CampaignAction NewCampaignAction;

@@ -877,6 +877,135 @@ struct FS_CampaignTemplateList : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_RLoc : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Reference;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Dex;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float DexVar;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Azimuth;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AzimuthVar;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Elevation;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float ElevationVar;
+
+	FS_RLoc() {
+		Reference = "";
+		Dex = 0;
+		DexVar = 0;
+		Azimuth = 0;
+		AzimuthVar = 0;
+		Elevation = 0;
+		ElevationVar = 0;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_MissionElement : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Carrier;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Commander;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Squadron;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Text;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Path;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Design;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString SkinName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString RoleName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString RegionName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Instr;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Deck;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int IFFCode;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Count;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int MaintCount;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int DeadCount;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Player;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int CommandAI;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Respawns;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int HoldTime;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ZoneLock;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Heading;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Alert;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Playable;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Rogue;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Invulnerable;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FS_RLoc RLoc;
+
+	FS_MissionElement() {
+		Name = "";
+		Carrier = "";
+		Commander = "";
+		Squadron = "";
+		Path = "";
+		Design = "";
+		SkinName = "";
+		RoleName = "";
+		RegionName = "";
+		Intel = "";
+		Instr = "";
+
+		Location = FVector::ZeroVector;
+
+		Deck = 1;
+		IFFCode = 0;
+		Count = 1;
+		MaintCount = 0;
+		DeadCount = 0;
+		Player = 0;
+		CommandAI = 0;
+		Respawns = 0;
+		HoldTime = 0;
+		ZoneLock = 0;
+		Heading = 0;
+
+		Alert = false;
+		Playable = false;
+		Rogue = false;
+		Invulnerable = false;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_CampaignMission : public FTableRowBase {
 
 	GENERATED_BODY()
@@ -912,10 +1041,12 @@ struct FS_CampaignMission : public FTableRowBase {
 	int Team;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Stardate;
+	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool Degrees;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionElement> Element;
 	
-
 	FS_CampaignMission() {
 
 		Id = 0;

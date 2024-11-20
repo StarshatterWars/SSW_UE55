@@ -971,6 +971,7 @@ AGameDataLoader::ParseMission(const char* fn)
 	FString fs = FString(ANSI_TO_TCHAR(fn));
 	FString FileString;
 
+	MissionElementArray.Empty();
 	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
@@ -984,17 +985,6 @@ AGameDataLoader::ParseMission(const char* fn)
 	else {
 		UE_LOG(LogTemp, Log, TEXT("MISSION file '%s'"), *FString(fn));
 	}
-
-	/*if (!term) {
-		return;
-	}
-	else {
-		TermText* file_type = term->isText();
-		if (!file_type || file_type->value() != "MISSION") {
-			UE_LOG(LogTemp, Log, TEXT("WARNING: invalid MISSION file '%s'"), *FString(fn));
-			return;
-		}
-	}*/
 
 	FS_CampaignMission NewMission;
 
@@ -1109,8 +1099,11 @@ AGameDataLoader::ParseMission(const char* fn)
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
-						//MissionElement* elem = ParseElement(val);
-						//AddElement(elem);
+						
+						ParseElement(val, filename);
+						NewMission.Element = MissionElementArray;
+						MissionElementArray.Empty();
+						////AddElement(elem);
 					}
 				}
 
@@ -1145,6 +1138,7 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 	Text  RoleName = "";
 	Text  RegionName = "";
 	Text  Instr = "";
+	Text  Intel = "";
 
 	Vec3  Loc(0.0f, 0.0f, 0.0f);
 
@@ -1158,127 +1152,136 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 	int   Respawns = 0;
 	int   HoldTime = 0;
 	int   ZoneLock = 0;
+	int   Heading = 0;
 
 	bool Alert = false;
 	bool Playable = false;
 	bool Rogue = false;
 	bool Invulnerable = false;
+
 	
 
+	FS_MissionElement NewMissionElement;
+ 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
 		if (pdef) {
 
 			if (pdef->name()->value() == "name") {
 				GetDefText(Name, pdef, fn);
+				NewMissionElement.Name = FString(Name);
 			} 
 			else if (pdef->name()->value() == "carrier") {
 				GetDefText(Carrier, pdef, fn);
+				NewMissionElement.Carrier = FString(Carrier);
 			}
 			else if (pdef->name()->value() == "commander") {
 				GetDefText(Commander, pdef, fn);
+				NewMissionElement.Commander = FString(Commander);
 			}
 			else if (pdef->name()->value() == "squadron") {
 				GetDefText(Squadron, pdef, fn);
+				NewMissionElement.Squadron = FString(Squadron);
 			}
 			else if (pdef->name()->value() == "path") {
 				GetDefText(Path, pdef, fn);
+				NewMissionElement.Path = FString(Path);
 			}
 			else if (pdef->name()->value() == "design") {
 				GetDefText(Design, pdef, fn);
-		
+				NewMissionElement.Design = FString(Design);
 			}
 			else if (pdef->name()->value() == "skin") {
-					GetDefText(SkinName, pdef, fn);
+				GetDefText(SkinName, pdef, fn);
+				NewMissionElement.SkinName = FString(SkinName);
 			}
 			else if (pdef->name()->value() == "mission") {
 				GetDefText(RoleName, pdef, fn);
-
+				NewMissionElement.RoleName = FString(RoleName);
 			}
 			else if (pdef->name()->value() == "intel") {
 				GetDefText(RoleName, pdef, fn);
-		
+				NewMissionElement.Intel = FString(Intel);
 			}
 
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(Loc, pdef, fn);
-
+				NewMissionElement.Location.X = Loc.x;
+				NewMissionElement.Location.Y = Loc.y;
+				NewMissionElement.Location.Z = Loc.z;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
-				if (pdef->term()->isStruct()) {
-					
-					//RLoc* rloc = ParseRLoc(pdef->term()->isStruct());
+				if (pdef->term()->isStruct()) {			
+					TermStruct* rval = pdef->term()->isStruct();
+					//ParseRLoc(rval, fn);
 				}
 			}
 
-			else if (pdef->name()->value().indexOf("head") == 0) {
-				/*if (pdef->term()->isArray()) {
-					Vec3 head;
-					GetDefVec(head, pdef, filename);
-					if (degrees) head.z *= (float)DEGREES;
-					element->heading = head.z;
-				}
-				else if (pdef->term()->isNumber()) {
-					double heading = 0;
-					GetDefNumber(heading, pdef, filename);
-					if (degrees) heading *= DEGREES;
-					element->heading = heading;
-				}*/
+			else if (pdef->name()->value() == "head") {
+				GetDefNumber(Heading, pdef, fn);
+				NewMissionElement.Heading = Heading;
 			}
 
 			else if (pdef->name()->value() == "region" || pdef->name()->value() == "rgn") {
 				GetDefText(RegionName, pdef, fn);
+				NewMissionElement.RegionName = FString(RegionName);
 			}
 
 			else if (pdef->name()->value() == "iff") {
 				GetDefNumber(IFFCode, pdef, fn);
+				NewMissionElement.IFFCode = IFFCode;
 			
 			}
 			else if (pdef->name()->value() == "count") {
 				GetDefNumber(Count, pdef, fn);
+				NewMissionElement.Count = Count;
 			
 			}
 			else if (pdef->name()->value() == "maint_count") {
 				GetDefNumber(MaintCount, pdef, fn);
+				NewMissionElement.MaintCount = MaintCount;
 			}
 			else if (pdef->name()->value() == "dead_count") {
 				GetDefNumber(DeadCount, pdef, fn);
+				NewMissionElement.DeadCount = DeadCount;
 			}
 			else if (pdef->name()->value() == "player") {
 				GetDefNumber(Player, pdef, fn);
+				NewMissionElement.Player = Player;
 			}	
 			else if (pdef->name()->value() == "alert") {
 				GetDefBool(Alert, pdef, fn);
+				NewMissionElement.Alert = Alert;
 			}
 			else if (pdef->name()->value() == "playable") {
 				GetDefBool(Playable, pdef, fn); 
+				NewMissionElement.Playable = Playable;
 			}
 			else if (pdef->name()->value() == "rogue") {
 				GetDefBool(Rogue, pdef, fn);
+				NewMissionElement.Rogue = Rogue;
 			}
 			else if (pdef->name()->value() == "invulnerable") {
 				GetDefBool(Invulnerable, pdef, fn);
+				NewMissionElement.Invulnerable = Invulnerable;
 			}
 			else if (pdef->name()->value() == "command_ai") {
 				GetDefNumber(CommandAI, pdef, fn);
+				NewMissionElement.CommandAI = CommandAI;
 			}
-			else if (pdef->name()->value().indexOf("respawn") == 0) {
+			else if (pdef->name()->value() == "respawn") {
 				GetDefNumber(Respawns, pdef, fn);
+				NewMissionElement.Respawns = Respawns;
 			}
-			else if (pdef->name()->value().indexOf("hold") == 0) {
+			else if (pdef->name()->value() == "hold") {
 				GetDefNumber(HoldTime, pdef, fn);
+				NewMissionElement.HoldTime = HoldTime;
 			}
-			else if (pdef->name()->value().indexOf("zone") == 0) {
-				if (pdef->term() && pdef->term()->isBool()) {
-					bool locked = false;
-					GetDefBool(locked, pdef, fn);
-				}
-				else {
+			else if (pdef->name()->value() =="zone") {
 					GetDefNumber(ZoneLock, pdef, fn);
-				}
+					NewMissionElement.ZoneLock = ZoneLock;
 			}
-
 			else if (pdef->name()->value() == "objective") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
 					UE_LOG(LogTemp, Log, TEXT("Mission error - No objective"));
@@ -1290,7 +1293,7 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 			}
 			else if (pdef->name()->value() == "instr") {
 				GetDefText(Instr, pdef, fn);
-
+				NewMissionElement.Instr = FString(Instr);
 			}
 
 			else if (pdef->name()->value() == "ship") {
@@ -1326,11 +1329,64 @@ AGameDataLoader::ParseElement(TermStruct* val, const char* fn)
 					//ParseLoadout(val, element);
 				}
 			}
-		}
-	}
-
+		}MissionElementArray.Add(NewMissionElement);
+	}	
 }
 // +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::ParseRLoc(TermStruct* val, const char* fn)
+{
+	Vec3     BaseLocation;
+	Text     Reference;
+
+	double   dex = 0;
+	double   dex_var = 5e3;
+	double   az = 0;
+	double   az_var = 3.1415;
+	double   el = 0;
+	double   el_var = 0.1;
+	FS_RLoc NewRLocElement;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "dex") {
+				GetDefNumber(dex, pdef, fn);
+			
+			}	
+			else if (pdef->name()->value() == "dex_var") {
+				GetDefNumber(dex_var, pdef, fn);
+				
+			}
+			else if (pdef->name()->value() == "az") {
+				GetDefNumber(az, pdef, fn);
+				
+			}
+			else if (pdef->name()->value() == "az_var") {
+				GetDefNumber(az_var, pdef, fn);
+				
+			}
+			else if (pdef->name()->value() == "el") {
+				GetDefNumber(el, pdef, fn);
+				
+			}
+			else if (pdef->name()->value() == "el_var") {
+				GetDefNumber(el_var, pdef, fn);
+				
+			}
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(BaseLocation, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "ref") {
+				Text refstr;
+				GetDefText(refstr, pdef, fn);
+
+			}
+		}
+	}
+}
 
 void
 AGameDataLoader::ParseAction(TermStruct* val, const char* fn)
