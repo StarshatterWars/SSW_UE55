@@ -190,39 +190,39 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Display,               image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (0,1,1), rect: (0,0,0,0) }
+event: { type: Display,               image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (0,1,1), rect: (0,0,0,0) }
 
-event: { event: Camera,                param: 3,  target: "Intruder", vec: (1.3, -0.15, 3e3)   }
-event: { event: Camera,                param: 5,                   vec: (-0.11, 0.015, 0.025)  }
+event: { type: Camera,                param: 3,  target: "Intruder", vec: (1.3, -0.15, 3e3)   }
+event: { type: Camera,                param: 5,                   vec: (-0.11, 0.015, 0.025)  }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
          message: "STRATPLAN BRIEFING" }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
          message: "Timestamp: $TIME\nSubject: Hegemony Forces Invade Athenar\nClassified: CONFIDENTIAL DND/CRYPTO" }
 
-event: { event: Message,    time:   3, sound: "Vox/Scenes/03/C3-B07-OK.ogg" }
+event: { Type: Sound,    time:   3, sound: "Vox/Scenes/03/C3-B07-OK.ogg" }
 
 
-event: { event: Camera,     time:  20, param: (6,23), target: "Royale"   }
+event: { type: Camera,     time:  20, param: (6,23), target: "Royale"   }
 
 
-event: { event: Camera,     time:  40, param: (6,12), target: "Furious"  }
+event: { type: Camera,     time:  40, param: (6,12), target: "Furious"  }
 
-event: { event: Display,    fade:  (1,7,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffff80,
+event: { type: Display,    fade:  (1,7,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffff80,
          message: "Force:Space 17th Battle Group 'Furious'" }
 
-event: { event: Camera,     time:  50, param: (6,12), target: "Valiant"  }
+event: { type: Camera,     time:  50, param: (6,12), target: "Valiant"  }
 
-event: { event: Camera,     time:  60, param: 3,      target: "Enigma", vec: (0.7,0.2,4e3)   }
-event: { event: Camera,                param: 5,                   vec: (0.12, -0.01, 0.02)  }
+event: { type: Camera,     time:  60, param: 3,      target: "Enigma", vec: (0.7,0.2,4e3)   }
+event: { type: Camera,                param: 5,                   vec: (0.12, -0.01, 0.02)  }
 
-event: { event: Display,    fade:  (1,7,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffff80,
+event: { type: Display,    fade:  (1,7,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffff80,
          message: "Force:Space 48TH DESTROYER SQUADRON 'ENIGMA'" }
 
-event: { event: EndScene,   time:  75, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  75, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

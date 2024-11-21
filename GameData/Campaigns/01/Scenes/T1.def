@@ -63,17 +63,17 @@ element: {
 // VOICE-OVER
 
 
-event: { event: Message, time:   2, sound: "Vox/Train/Train-01-01.ogg", message: "Please wait" }
-event: { event: Message, time:  35, sound: "Vox/Train/Train-01-02.ogg", message: "Raise your landing gear" }
-event: { event: Message, time:  50, sound: "Vox/Train/Train-01-03.ogg", message: "Basic controls" }
-event: { event: Message, time:  75, sound: "Vox/Train/Train-01-04.ogg", message: "Mouse steering" }
-event: { event: Message, time: 100, sound: "Vox/Train/Train-01-05.ogg", message: "Navigation system" }
-event: { event: Message, time: 125, sound: "Vox/Train/Train-01-06.ogg", message: "Disengage autonav" }
-event: { event: Message, time: 135, sound: "Vox/Train/Train-01-07.ogg", message: "Throttle and augmenter" }
-event: { event: Message, time: 170, sound: "Vox/Train/Train-01-08.ogg", message: "Lateral thrusters" }
-event: { event: Message, id:   100, sound: "Vox/Train/Train-01-09.ogg", message: "Return to base",
+event: { Type: Sound, time:   2, sound: "Vox/Train/Train-01-01.ogg", message: "Please wait" }
+event: { Type: Sound, time:  35, sound: "Vox/Train/Train-01-02.ogg", message: "Raise your landing gear" }
+event: { Type: Sound, time:  50, sound: "Vox/Train/Train-01-03.ogg", message: "Basic controls" }
+event: { Type: Sound, time:  75, sound: "Vox/Train/Train-01-04.ogg", message: "Mouse steering" }
+event: { Type: Sound, time: 100, sound: "Vox/Train/Train-01-05.ogg", message: "Navigation system" }
+event: { Type: Sound, time: 125, sound: "Vox/Train/Train-01-06.ogg", message: "Disengage autonav" }
+event: { Type: Sound, time: 135, sound: "Vox/Train/Train-01-07.ogg", message: "Throttle and augmenter" }
+event: { Type: Sound, time: 170, sound: "Vox/Train/Train-01-08.ogg", message: "Lateral thrusters" }
+event: { Type: Sound, id:   100, sound: "Vox/Train/Train-01-09.ogg", message: "Return to base",
          trigger: Navpoint, trigger_param: 5, trigger_ship: Delta }
-event: { event: Message,            sound: "Vox/Train/Train-01-10.ogg", message: "Docking procedure",
+event: { Type: Sound,            sound: "Vox/Train/Train-01-10.ogg", message: "Docking procedure",
          trigger: Event, trigger_param: 100, delay: 25 }
 
 

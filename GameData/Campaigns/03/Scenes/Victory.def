@@ -68,13 +68,13 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3, target: "body:Silessia",    vec: (1,0,2e7) }
-event: { event: Camera,                param: 5,                           vec: (0.06, 0.002, 0.01) }
+event: { type: Camera,                param: 3, target: "body:Silessia",    vec: (1,0,2e7) }
+event: { type: Camera,                param: 5,                           vec: (0.06, 0.002, 0.01) }
 
-event: { event: Display,    message: "Operation Shining Fortress", font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,20, 600,100) }
-event: { event: Display,    message: "Victory",            font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,42, 600,100) }
+event: { type: Display,    message: "Operation Shining Fortress", font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,20, 600,100) }
+event: { type: Display,    message: "Victory",            font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,42, 600,100) }
 
 event: {
    event: Message
@@ -82,11 +82,11 @@ event: {
    sound: "Vox/Scenes/03/End_01_Victory.ogg"
 }
 
-event: { event: Camera,     time:  15, param: (6,30), target: Archon }
+event: { type: Camera,     time:  15, param: (6,30), target: Archon }
 
-event: { event: Display,    time:  38, image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (1,10,0), rect: (0,0,0,0) }
+event: { type: Display,    time:  38, image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (1,10,0), rect: (0,0,0,0) }
 
-event: { event: EndScene,   time:  40, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  40, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

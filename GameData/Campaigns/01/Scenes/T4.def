@@ -158,28 +158,28 @@ element: {
 
 event: {
    id:              101,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Cooling Tower 1",
 }
 
 event: {
    id:              102,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Cooling Tower 2",
 }
 
 event: {
    id:              103,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Cooling Tower 3",
 }
 
 event: {
    id:              104,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Cooling Tower 4",
 }
@@ -188,17 +188,17 @@ event: {
 // VOICE-OVER
 
 
-event: { id: 200, event: Message, time:   2, sound: "Vox/Train/Train-04-01.ogg", message: "Please wait" }
-event: { id: 210, event: Message, time:  20, sound: "Vox/Train/Train-04-02.ogg", message: "Taking off" }
-event: { id: 220, event: Message, time:  40, sound: "Vox/Train/Train-04-03.ogg", message: "Raise your langing gear" }
-event: { id: 230, event: Message, time:  60, sound: "Vox/Train/Train-04-04.ogg", message: "Set sensor display to HSD mode" }
+event: { id: 200, Type: Sound, time:   2, sound: "Vox/Train/Train-04-01.ogg", message: "Please wait" }
+event: { id: 210, Type: Sound, time:  20, sound: "Vox/Train/Train-04-02.ogg", message: "Taking off" }
+event: { id: 220, Type: Sound, time:  40, sound: "Vox/Train/Train-04-03.ogg", message: "Raise your langing gear" }
+event: { id: 230, Type: Sound, time:  60, sound: "Vox/Train/Train-04-04.ogg", message: "Set sensor display to HSD mode" }
 
 /**
  ** THIS MESSAGE IS NONSENSE!
  **
 event: {
     id:             240,
-    event:          Message,
+    type:           Message,
     message:        "Steer towards ground targets"
     sound:          "Vox/Train/Train-04-05.ogg",
     trigger:        Navpoint,
@@ -210,7 +210,7 @@ event: {
 
 event: {
     id:             250,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-04-06.ogg",
     message:        "Air-to-ground combat skills",
     trigger:        Navpoint,
@@ -221,7 +221,7 @@ event: {
 
 event: {
     id:             260,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-04-07.ogg",
     message:        "Sort targets with your wingman",
     trigger:        Event,
@@ -231,7 +231,7 @@ event: {
 
 event: { 
     id:             270,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-04-08.ogg",
     message:        "Engage your target",
     trigger:        Event,
@@ -241,7 +241,7 @@ event: {
 
 event: { 
     id:             300,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-04-09.ogg",
     message:        "Engage a second target",
     trigger:        Event,
@@ -252,7 +252,7 @@ event: {
 
 event: {
     id:             310,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-04-10.ogg",
     message:        "Resume nav route",
     trigger:        "Event (ALL)",
@@ -262,7 +262,7 @@ event: {
 
 event: {
     id:             311,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-04-11.ogg",
     message:        "Return to base",
     trigger:        Event,

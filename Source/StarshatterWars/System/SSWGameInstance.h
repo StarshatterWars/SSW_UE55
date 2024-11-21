@@ -913,6 +913,130 @@ struct FS_RLoc : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_MissionInstruction : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Formation;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Speed;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Priority;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Farcast;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Hold;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int EMCON;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString OrderName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString StatusName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString OrderRegionName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TargetName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TargetDesc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_RLoc> RLoc;
+
+	FS_MissionInstruction() {
+		Formation = 0;
+		Speed = 0;
+		Priority = 1;
+		Farcast = 0;
+		Hold = 0;
+		EMCON = 0;
+		Location = FVector::ZeroVector;
+		OrderName ="";
+		StatusName = "";
+		OrderRegionName = "";
+		TargetName = "";
+		TargetDesc = "";
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_MissionShip : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ShipName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString SkinName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString RegNum;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Velocity;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Respawns;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Heading;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Integrity;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> Ammo;;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> Fuel;;
+
+	FS_MissionShip() {
+		ShipName = "";
+		SkinName = "";
+		RegNum = "";
+		Region = "";
+
+		Location = FVector(-1.0e9f, -1.0e9f, -1.0e9f);
+		Velocity = FVector(-1.0e9f, -1.0e9f, -1.0e9f);
+
+		Respawns = -1;
+		Heading = -1e9;
+		Integrity = -1;
+
+		Ammo.SetNum(16);
+		Fuel.SetNum(4);
+
+		for (int AmmoIndex = 0; AmmoIndex < Ammo.Num(); AmmoIndex++) {
+			Ammo[AmmoIndex] = 0;
+		}
+
+		for (int FuelIndex = 0; FuelIndex < Fuel.Num(); FuelIndex++) {
+			Fuel[FuelIndex] = 0;
+		}
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_MissionLoadout : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Ship;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString LoadoutName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> Stations;
+	FS_MissionLoadout() {
+		Ship = -1;
+		LoadoutName = "";
+		Stations.SetNum(16);
+		for (int i = 0; i < Stations.Num(); i++)
+			Stations[i] = 0;
+	}
+};
+
+
+
+USTRUCT(BlueprintType)
 struct FS_MissionElement : public FTableRowBase {
 
 	GENERATED_BODY()
@@ -975,6 +1099,14 @@ struct FS_MissionElement : public FTableRowBase {
 	bool Invulnerable;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_RLoc> RLoc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionLoadout> Loadout;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionInstruction> Instruction;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionInstruction> Navpoint;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionShip> Ship;
 
 	FS_MissionElement() {
 		Name = "";
@@ -1007,6 +1139,86 @@ struct FS_MissionElement : public FTableRowBase {
 		Playable = false;
 		Rogue = false;
 		Invulnerable = false;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_MissionEvent : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString EventType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	TriggerName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	EventShip;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	EventSource;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	EventTarget;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	EventMessage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	EventSound;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	TriggerShip;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TriggerTarget;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int	EventId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int	EventChance;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int	EventDelay;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double	EventTime;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector	EventPoint;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 EventRect;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> EventParam;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> TriggerParam;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int	EventNParams;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int	TriggerNParams;
+
+	FS_MissionEvent() {
+		EventType = "";
+		TriggerName = "";
+		EventShip = "";
+		EventSource = "";
+		EventTarget = "";
+		EventMessage = "";
+		EventSound = "";
+		TriggerShip = "";
+		TriggerTarget = "";
+
+		EventId = 1;
+		EventChance = 0;
+		EventDelay = 0;
+
+		EventTime = 0;
+
+		EventPoint = FVector::ZeroVector;
+		EventRect = FVector4::Zero();
+
+		EventNParams = 0;
+		TriggerNParams = 0;
+
+		EventParam.SetNum(10);
+		TriggerParam.SetNum(10);
+
+		for (int EventIndex = 0; EventIndex < EventParam.Num(); EventIndex++) {
+			EventParam[EventIndex] = 0;
+		}
+
+		for (int TriggerIndex = 0; TriggerIndex < TriggerParam.Num(); TriggerIndex++) {
+			TriggerParam[TriggerIndex] = 0;
+		}
 	}
 };
 
@@ -1051,6 +1263,8 @@ struct FS_CampaignMission : public FTableRowBase {
 	bool Degrees;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_MissionElement> Element;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionEvent> Event;
 	
 	FS_CampaignMission() {
 

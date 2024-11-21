@@ -193,37 +193,37 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Display,               image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (0,5,1), rect: (0,0,0,0) }
-event: { event: Display,               image: "Campaigns/03/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
+event: { type: Display,               image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (0,5,1), rect: (0,0,0,0) }
+event: { type: Display,               image: "Campaigns/03/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
 
-event: { event: Camera,                param: 3,  target: "body:Jarnell", vec: (1,0,1e7)            }
-event: { event: Camera,                param: 5,                          vec: (0.12, 0.015, 0.05)  }
+event: { type: Camera,                param: 3,  target: "body:Jarnell", vec: (1,0,1e7)            }
+event: { type: Camera,                param: 5,                          vec: (0.12, 0.015, 0.05)  }
 
-event: { event: Display,    time:   5, message: "Jarnell System", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "Alliance Capitol",      font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
-event: { event: Messasge,              sound: "Vox/Scenes/03/News_01_Campaign_Start.ogg" }
-
-
-event: { event: Display,    time:  10, image: "Campaigns/03/Scenes/Map.pcx", color: 0xffffffff, fade: (1,6,1), rect: (-280,-280,256,256) }
+event: { type: Display,    time:   5, message: "Jarnell System", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Alliance Capitol",      font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Messasge,              sound: "Vox/Scenes/03/News_01_Campaign_Start.ogg" }
 
 
-event: { event: Camera,     time:  20, param: (6, 40),  target: "Morningstar", vec: (300,0,1200)           }
-event: { event: Display,               message: "Hegemony 24th DESRON",  font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "Entering Janek Orbit",  font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Display,    time:  10, image: "Campaigns/03/Scenes/Map.pcx", color: 0xffffffff, fade: (1,6,1), rect: (-280,-280,256,256) }
 
 
-event: { event: Camera,     time:  45, param: (6, 40),  target: "Ascendance",  vec: (-400,10,800)           }
-event: { event: Display,               message: "Borovan Republic",      font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Camera,     time:  20, param: (6, 40),  target: "Morningstar", vec: (300,0,1200)           }
+event: { type: Display,               message: "Hegemony 24th DESRON",  font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Entering Janek Orbit",  font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
 
 
-event: { event: Camera,     time:  65, param: (6, 40),  target: "Archon",   vec: (0,0,1800) }
-event: { event: Display,               message: "Force:Space Fourth Fleet", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "7th Carrier Group 'Titan'", font: Limerick12,  color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Camera,     time:  45, param: (6, 40),  target: "Ascendance",  vec: (-400,10,800)           }
+event: { type: Display,               message: "Borovan Republic",      font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
 
 
-event: { event: EndScene,   time:  85, message: "Scene 1" }
-event: { event: Exit }
+event: { type: Camera,     time:  65, param: (6, 40),  target: "Archon",   vec: (0,0,1800) }
+event: { type: Display,               message: "Force:Space Fourth Fleet", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "7th Carrier Group 'Titan'", font: Limerick12,  color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+
+
+event: { type: EndScene,   time:  85, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

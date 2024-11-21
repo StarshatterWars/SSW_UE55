@@ -176,28 +176,28 @@ element: {
 
 event: {
    id:              101,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Sierra 1",
 }
 
 event: {
    id:              102,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Sierra 2",
 }
 
 event: {
    id:              103,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Sierra 3",
 }
 
 event: {
    id:              104,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Sierra 4",
 }
@@ -206,14 +206,14 @@ event: {
 // VOICE-OVER
 
 
-event: { id: 200, event: Message, time:   2, sound: "Vox/Train/Train-03-01.ogg", message: "Please wait" }
-event: { id: 210, event: Message, time:  20, sound: "Vox/Train/Train-03-02.ogg", message: "Taking off" }
-event: { id: 220, event: Message, time:  40, sound: "Vox/Train/Train-03-03.ogg", message: "Raise your langing gear" }
-event: { id: 230, event: Message, time:  65, sound: "Vox/Train/Train-03-04.ogg", message: "Engage autonav" }
+event: { id: 200, Type: Sound, time:   2, sound: "Vox/Train/Train-03-01.ogg", message: "Please wait" }
+event: { id: 210, Type: Sound, time:  20, sound: "Vox/Train/Train-03-02.ogg", message: "Taking off" }
+event: { id: 220, Type: Sound, time:  40, sound: "Vox/Train/Train-03-03.ogg", message: "Raise your langing gear" }
+event: { id: 230, Type: Sound, time:  65, sound: "Vox/Train/Train-03-04.ogg", message: "Engage autonav" }
 
 event: {
     id:             240,
-    event:          Message,
+    type:           Message,
     message:        "Disengage autonav"
     sound:          "Vox/Train/Train-03-05.ogg",
     trigger:        Navpoint,
@@ -223,7 +223,7 @@ event: {
 
 event: {
     id:             250,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-03-06.ogg",
     message:        "Airborne combat skills",
     trigger:        Event,
@@ -233,7 +233,7 @@ event: {
 
 event: {
     id:             260,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-03-07.ogg",
     message:        "Well done!",
     trigger:        "Event (ALL)",
@@ -243,7 +243,7 @@ event: {
 
 event: { 
     id:             270,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-03-08.ogg",
     message:        "Order your wingman to head for home",
     trigger:        Navpoint,
@@ -253,7 +253,7 @@ event: {
 
 event: { 
     id:             300,
-    event:          Message,
+    type:           Message,
     sound:          "Vox/Train/Train-03-09.ogg",
     message:        "Return to base",
     trigger:        Navpoint,
@@ -263,7 +263,7 @@ event: {
 
 event: {
     id:             310,
-    event:          Message,
+    type:           Message,
     time:           120,
     sound:          "Vox/Train/Train-03-10.ogg",
     message:        "Landing procedure",
@@ -276,7 +276,7 @@ event: {
 
 event: {
     id:             311,
-    event:          Message,
+    type:           Message,
     time:           120,
     sound:          "Vox/Train/Train-03-11.ogg",
     message:        "Final approach",

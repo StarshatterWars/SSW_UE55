@@ -126,47 +126,47 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Display,               image: "Campaigns/04/Scenes/Black.pcx", color: 0xffffffff, fade: (0,4,1), rect: (0,0,0,0) }
-event: { event: Display,               image: "Campaigns/04/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
+event: { type: Display,               image: "Campaigns/04/Scenes/Black.pcx", color: 0xffffffff, fade: (0,4,1), rect: (0,0,0,0) }
+event: { type: Display,               image: "Campaigns/04/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
 
-event: { event: Camera,                param: 3,  target: "body:Adantar",  vec: (2, -0.15, 2.1e7)   }
-event: { event: Camera,                param: 5,                           vec: (-0.11, 0.015, -0.015)  }
+event: { type: Camera,                param: 3,  target: "body:Adantar",  vec: (2, -0.15, 2.1e7)   }
+event: { type: Camera,                param: 5,                           vec: (-0.11, 0.015, -0.015)  }
 
-event: { event: Display,    time:   4, message: "Adantar Sector", font: Limerick18,   color: 0xffffff80, fade: (1,5,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "Korius System",  font: Limerick12,   color: 0xffffff80, fade: (1,5,1), rect: (20,40, 300,100) }
+event: { type: Display,    time:   4, message: "Adantar Sector", font: Limerick18,   color: 0xffffff80, fade: (1,5,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Korius System",  font: Limerick12,   color: 0xffffff80, fade: (1,5,1), rect: (20,40, 300,100) }
 
-event: { event: Message,    time:   5, sound: "Vox/Scenes/04/News_08_Masil_Gannet.ogg" }
-
-
-
-event: { event: Camera,     time:  10, param: 3,  target: "Tanis Mining Station", vec: (0,0.05,9e3)       }
-event: { event: Camera,                param: 5,                    vec: (-0.07, 0.007, -0.01) }
+event: { Type: Sound,    time:   5, sound: "Vox/Scenes/04/News_08_Masil_Gannet.ogg" }
 
 
 
-event: { event: Camera,     time:  30, param: 3,  target: "Downtown", vec: (1,0.1,7e3)       }
-event: { event: Camera,                param: 5,                    vec: (0.06, 0.007, 0.01) }
+event: { type: Camera,     time:  10, param: 3,  target: "Tanis Mining Station", vec: (0,0.05,9e3)       }
+event: { type: Camera,                param: 5,                    vec: (-0.07, 0.007, -0.01) }
 
 
 
-event: { event: Camera,     time:  50, param: 3,  target: "Tanis Base", vec: (3,0.125,7e3)       }
-event: { event: Camera,                param: 5,                    vec: (0.05, 0.007, 0.01) }
+event: { type: Camera,     time:  30, param: 3,  target: "Downtown", vec: (1,0.1,7e3)       }
+event: { type: Camera,                param: 5,                    vec: (0.06, 0.007, 0.01) }
+
+
+
+event: { type: Camera,     time:  50, param: 3,  target: "Tanis Base", vec: (3,0.125,7e3)       }
+event: { type: Camera,                param: 5,                    vec: (0.05, 0.007, 0.01) }
 
 
 
 
-event: { event: Camera,     time:  70, param: 3,  target: "SAM 1",  vec: (1,0.320,7e3)       }
-event: { event: Camera,                param: 5,                    vec: (0.07, 0.007, 0.01) }
+event: { type: Camera,     time:  70, param: 3,  target: "SAM 1",  vec: (1,0.320,7e3)       }
+event: { type: Camera,                param: 5,                    vec: (0.07, 0.007, 0.01) }
 
 
-event: { event: Camera,     time:  80, param: 3,  target: "AAA 1",  vec: (2,0.365,7e3)       }
-event: { event: Camera,                param: 5,                    vec: (-0.10, 0.007, 0.01) }
+event: { type: Camera,     time:  80, param: 3,  target: "AAA 1",  vec: (2,0.365,7e3)       }
+event: { type: Camera,                param: 5,                    vec: (-0.10, 0.007, 0.01) }
 
 
 
-event: { event: EndScene,   time:  90, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  90, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

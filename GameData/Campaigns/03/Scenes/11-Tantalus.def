@@ -203,38 +203,38 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Display,               image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (0,1,1), rect: (0,0,0,0) }
+event: { type: Display,               image: "Campaigns/03/Scenes/Black.pcx", color: 0xffffffff, fade: (0,1,1), rect: (0,0,0,0) }
 
-event: { event: Camera,                param: 3,  target: "body:Haiche",   vec: (2, -0.15, 2.7e7)   }
-event: { event: Camera,                param: 5,                           vec: (-0.11, 0.015, -0.015)  }
+event: { type: Camera,                param: 3,  target: "body:Haiche",   vec: (2, -0.15, 2.7e7)   }
+event: { type: Camera,                param: 5,                           vec: (-0.11, 0.015, -0.015)  }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
          message: "STRATPLAN BRIEFING" }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
          message: "Timestamp: $TIME\nSubject: Tantalus Sector\nClassified: CONFIDENTIAL DND/CRYPTO" }
 
-event: { event: Message,    time:   3, sound: "Vox/Scenes/03/C3-B11-OK.ogg" }
+event: { Type: Sound,    time:   3, sound: "Vox/Scenes/03/C3-B11-OK.ogg" }
 
 
-event: { event: Camera,     time:  20, param: 3,  target: "Broadsword",    vec: (2, -0.1, 5e3)   }
-event: { event: Camera,                param: 5,                           vec: (0.10, 0.02, -0.015)  }
+event: { type: Camera,     time:  20, param: 3,  target: "Broadsword",    vec: (2, -0.1, 5e3)   }
+event: { type: Camera,                param: 5,                           vec: (0.10, 0.02, -0.015)  }
 
 
-event: { event: Camera,     time:  30, param: 3,  target: "Tantalus Mining Station", vec: (0,0.005,9e3)       }
-event: { event: Camera,                param: 5,                    vec: (-0.07, 0.007, -0.01) }
-
-
-
-event: { event: Camera,     time:  50, param: 3,  target: "Downtown", vec: (1,0.005,7e3)       }
-event: { event: Camera,                param: 5,                    vec: (0.07, 0.007, 0.01) }
+event: { type: Camera,     time:  30, param: 3,  target: "Tantalus Mining Station", vec: (0,0.005,9e3)       }
+event: { type: Camera,                param: 5,                    vec: (-0.07, 0.007, -0.01) }
 
 
 
+event: { type: Camera,     time:  50, param: 3,  target: "Downtown", vec: (1,0.005,7e3)       }
+event: { type: Camera,                param: 5,                    vec: (0.07, 0.007, 0.01) }
 
-event: { event: EndScene,   time:  65, message: "Scene 1" }
-event: { event: Exit }
+
+
+
+event: { type: EndScene,   time:  65, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

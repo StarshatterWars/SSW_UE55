@@ -123,29 +123,29 @@ element: {
 }
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3,      target: "body:Garden", vec: (2, 0.1, 4e7)         }
-event: { event: Camera,                param: 5,                              vec: (-0.05, 0.007, -0.01) }
+event: { type: Camera,                param: 3,      target: "body:Garden", vec: (2, 0.1, 4e7)         }
+event: { type: Camera,                param: 5,                              vec: (-0.05, 0.007, -0.01) }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
          message: "STRATPLAN BRIEFING" }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
          message: "Timestamp: 03/21:00:00\nSubject: Tiger Bay Geothermal Platforms\nClassified: SECRET R2 NTK" }
 
-event: { event: Message,    time:   3, sound: "Vox/Scenes/05/Briefing_06_Tiger_Bay.ogg" }
+event: { Type: Sound,    time:   3, sound: "Vox/Scenes/05/Briefing_06_Tiger_Bay.ogg" }
 
-event: { event: Camera,     time:  15, param: 3,  target: "Platform 1", vec: ( 0.77, 0.05, 4e3) }
-event: { event: Camera,                param: 5,                        vec: (-0.07, 0.01, -0.01) }
+event: { type: Camera,     time:  15, param: 3,  target: "Platform 1", vec: ( 0.77, 0.05, 4e3) }
+event: { type: Camera,                param: 5,                        vec: (-0.07, 0.01, -0.01) }
 
-event: { event: Display,               message: "Offshore Power Rig",  font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Offshore Power Rig",  font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
 
-event: { event: Camera,     time:  30, param: 3,  target: "Platform 2", vec: ( 0.77, 0.05, 4e3) }
-event: { event: Camera,                param: 5,                        vec: ( 0.09, 0.01, -0.01) }
+event: { type: Camera,     time:  30, param: 3,  target: "Platform 2", vec: ( 0.77, 0.05, 4e3) }
+event: { type: Camera,                param: 5,                        vec: ( 0.09, 0.01, -0.01) }
 
 
-event: { event: EndScene,   time:  45, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  45, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

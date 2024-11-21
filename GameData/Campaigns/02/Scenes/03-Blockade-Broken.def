@@ -273,26 +273,26 @@ saying.
 
 ***/
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
-event: { event: Display,               image: "Campaigns/02/Scenes/Black.pcx", color: 0xffffffff, fade: (0,5,2), rect: (0,0,0,0) }
-event: { event: Display,               image: "Campaigns/02/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
+event: { type: Display,               image: "Campaigns/02/Scenes/Black.pcx", color: 0xffffffff, fade: (0,5,2), rect: (0,0,0,0) }
+event: { type: Display,               image: "Campaigns/02/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
 
-event: { event: Camera,                param: 3,  target: "Trellis-Solus", vec: (0,0,1000)           }
-event: { event: Camera,                param: 5,                           vec: (0.12, 0.01, 0.02)  }
+event: { type: Camera,                param: 3,  target: "Trellis-Solus", vec: (0,0,1000)           }
+event: { type: Camera,                param: 5,                           vec: (0.12, 0.01, 0.02)  }
 
-event: { event: Display,    time:   5, message: "Trellis-Solus Farcaster", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Messasge,              sound: "Vox/Scenes/02/News_03_Blockade_Broken.ogg" }
-
-
-event: { event: Camera,     time:  25, param: 3,  target: "Archon",        vec: (2,0,2700)           }
-event: { event: Camera,                param: 5,                           vec: (0.12, 0.006, -0.02) }
-
-event: { event: Display,    message: "Task Force 3.7",     font: Limerick18,   color: 0xffffff80, fade: (1,7,1),  rect: (20,20, 400,100) }
-event: { event: Display,    message: "CV-71 'Archon'",     font: Limerick12,   color: 0xffffff80, fade: (1,7,1),  rect: (20,40, 200,100) }
+event: { type: Display,    time:   5, message: "Trellis-Solus Farcaster", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Messasge,              sound: "Vox/Scenes/02/News_03_Blockade_Broken.ogg" }
 
 
+event: { type: Camera,     time:  25, param: 3,  target: "Archon",        vec: (2,0,2700)           }
+event: { type: Camera,                param: 5,                           vec: (0.12, 0.006, -0.02) }
 
-event: { event: EndScene,   time:  65, message: "Scene 1" }
-event: { event: Exit }
+event: { type: Display,    message: "Task Force 3.7",     font: Limerick18,   color: 0xffffff80, fade: (1,7,1),  rect: (20,20, 400,100) }
+event: { type: Display,    message: "CV-71 'Archon'",     font: Limerick12,   color: 0xffffff80, fade: (1,7,1),  rect: (20,40, 200,100) }
+
+
+
+event: { type: EndScene,   time:  65, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

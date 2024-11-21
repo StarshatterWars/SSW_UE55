@@ -91,30 +91,30 @@ element: {
     loc:    (-75e3, -58e3, 0),
 }
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3,      target: "body:Radix",  vec: (2, 0.1, 2.7e7)      }
-event: { event: Camera,                param: 5,                              vec: (-0.11, 0.007, -0.01) }
+event: { type: Camera,                param: 3,      target: "body:Radix",  vec: (2, 0.1, 2.7e7)      }
+event: { type: Camera,                param: 5,                              vec: (-0.11, 0.007, -0.01) }
 
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
          message: "FORCE:INTEL BRIEFING" }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
          message: "*************************************\n*** FLASH CODED +$TIME \n*** DEADMAN'S ALLEY MILITARY BASE\n*** SHADOW CANYON SECTOR \n*** CLASSIFIED: SECRET R3 NTK\n*************************************" }
 
-event: { event: Message,    time:   3, sound: "Vox/Scenes/05/Briefing_07_Deadmans_Alley_2.ogg" }
+event: { Type: Sound,    time:   3, sound: "Vox/Scenes/05/Briefing_07_Deadmans_Alley_2.ogg" }
 
-event: { event: Camera,     time:  15, param: 3,      target: "Radix Base",  vec: (2, 0.15, 7e3)       }
-event: { event: Camera,                param: 5,                             vec: (-0.11, 0.01, -0.01) }
+event: { type: Camera,     time:  15, param: 3,      target: "Radix Base",  vec: (2, 0.15, 7e3)       }
+event: { type: Camera,                param: 5,                             vec: (-0.11, 0.01, -0.01) }
 
-event: { event: Camera,     time:  30, param: 3,      target: "SAM 1",       vec: (2, 0.15, 7e3)       }
-event: { event: Camera,                param: 5,                             vec: ( 0.11, 0.01, -0.01) }
+event: { type: Camera,     time:  30, param: 3,      target: "SAM 1",       vec: (2, 0.15, 7e3)       }
+event: { type: Camera,                param: 5,                             vec: ( 0.11, 0.01, -0.01) }
 
-event: { event: Camera,     time:  45, param: 3,      target: "Reactor",     vec: (2, 0.20, 7e3)       }
-event: { event: Camera,                param: 5,                             vec: (-0.12, 0.01, -0.01) }
+event: { type: Camera,     time:  45, param: 3,      target: "Reactor",     vec: (2, 0.20, 7e3)       }
+event: { type: Camera,                param: 5,                             vec: (-0.12, 0.01, -0.01) }
 
-event: { event: EndScene,   time:  60, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  60, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

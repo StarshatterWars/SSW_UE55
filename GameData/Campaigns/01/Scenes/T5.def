@@ -100,7 +100,7 @@ element: {
 
 event: {
    id:              1,
-   event:           Message,
+   type:            Message,
    event_message:   "",
    trigger:         Destroyed,
    trigger_ship:    "Alpha 1",
@@ -108,7 +108,7 @@ event: {
 
 event: {
    id:              2,
-   event:           Message,
+   type:            Message,
    event_message:   "",
    trigger:         Destroyed,
    trigger_ship:    "Alpha 2",
@@ -116,7 +116,7 @@ event: {
 
 event: {
    id:              3,
-   event:           Message,
+   type:            Message,
    event_message:   "",
    trigger:         Destroyed,
    trigger_ship:    "Alpha 3",
@@ -124,7 +124,7 @@ event: {
 
 event: {
    id:              4,
-   event:           Message,
+   type:            Message,
    event_message:   "",
    trigger:         Destroyed,
    trigger_ship:    "Alpha 4",
@@ -134,7 +134,7 @@ event: {
    id:              5,
    time:            0.0,
    delay:           0.0,
-   event:           Message,
+   type:            Message,
    event_message:   "Alpha Drones Destroyed - Proceed to Janek Orbit",
    trigger:         "Event (ALL)",
    trigger_param:   (1, 2, 3, 4),
@@ -144,7 +144,7 @@ event: {
    id:              6,
    time:            0.0,
    delay:           0.5,
-   event:           Message,
+   type:            Message,
    event_message:   "(Press Q then 3)",
    trigger:         "Event",
    trigger_param:   5,
@@ -153,7 +153,7 @@ event: {
 event: {
    id:              7,
    delay:           3.0,
-   event:           Message,
+   type:            Message,
    event_message:   "Training Mission Complete",
    trigger:         "Jump",
    trigger_ship:    "Carlisle",
@@ -162,7 +162,7 @@ event: {
 event: {
    id:              8,
    delay:           2.0,
-   event:           Message,
+   type:            Message,
    event_message:   "Press ESC 1 to End the Mission",
    trigger:         "Event",
    trigger_param:   7,
@@ -171,7 +171,7 @@ event: {
 event: {
    id:              9,
    delay:           20.0,
-   event:           Message,
+   type:            Message,
    event_message:   "Press ESC 1 to End the Mission",
    trigger:         "Event",
    trigger_param:   8,
@@ -180,7 +180,7 @@ event: {
 event: {
    id:              10,
    delay:           30.0,
-   event:           Exit,
+   type:            Exit,
    trigger:         "Event",
    trigger_param:   8,
 }
@@ -190,18 +190,18 @@ event: {
 
 // VOICE-OVER
 
-event: { id: 101, event: Message, time:    2, sound: "Vox/Train/Train-05-01.ogg", message: "" }
-event: { id: 102, event: Message, delay:  10, sound: "Vox/Train/Train-05-02.ogg", message: "", trigger: Event,  trigger_param:  101 }
-event: { id: 103, event: Message, delay:  14, sound: "Vox/Train/Train-05-03.ogg", message: "", trigger: Event,  trigger_param:  102 }
-event: { id: 104, event: Message, delay:  16, sound: "Vox/Train/Train-05-04.ogg", message: "", trigger: Event,  trigger_param:  103 }
-event: { id: 105, event: Message, delay:  16, sound: "Vox/Train/Train-05-05.ogg", message: "", trigger: Event,  trigger_param:  104 }
-event: { id: 106, event: Message, delay:  10, sound: "Vox/Train/Train-05-06.ogg", message: "", trigger: Event,  trigger_param:  105 }
-event: { id: 107, event: Message, delay:   8, sound: "Vox/Train/Train-05-07.ogg", message: "", trigger: Event,  trigger_param:  106 }
-event: { id: 108, event: Message, delay:   8, sound: "Vox/Train/Train-05-08.ogg", message: "", trigger: Event,  trigger_param:  107 }
-event: { id: 109, event: Message, delay:  25, sound: "Vox/Train/Train-05-09.ogg", message: "", trigger: Event,  trigger_param:  108 }
-event: { id: 110, event: Message, delay:   2, sound: "Vox/Train/Train-05-10.ogg", message: "", trigger: "Event (ALL)",  trigger_param:  (5,109) }
-event: { id: 111, event: Message, delay:   1, sound: "Vox/Train/Train-05-11.ogg", message: "", trigger: "Event (ALL)",  trigger_param:  (7,110) }
-event: { id: 112, event: Message, delay:   5, sound: "Vox/Train/Train-05-12.ogg", message: "", trigger: Event,  trigger_param:  111 }
+event: { id: 101, Type: Sound, time:    2, sound: "Vox/Train/Train-05-01.ogg", message: "" }
+event: { id: 102, Type: Sound, delay:  10, sound: "Vox/Train/Train-05-02.ogg", message: "", trigger: Event,  trigger_param:  101 }
+event: { id: 103, Type: Sound, delay:  14, sound: "Vox/Train/Train-05-03.ogg", message: "", trigger: Event,  trigger_param:  102 }
+event: { id: 104, Type: Sound, delay:  16, sound: "Vox/Train/Train-05-04.ogg", message: "", trigger: Event,  trigger_param:  103 }
+event: { id: 105, Type: Sound, delay:  16, sound: "Vox/Train/Train-05-05.ogg", message: "", trigger: Event,  trigger_param:  104 }
+event: { id: 106, Type: Sound, delay:  10, sound: "Vox/Train/Train-05-06.ogg", message: "", trigger: Event,  trigger_param:  105 }
+event: { id: 107, Type: Sound, delay:   8, sound: "Vox/Train/Train-05-07.ogg", message: "", trigger: Event,  trigger_param:  106 }
+event: { id: 108, Type: Sound, delay:   8, sound: "Vox/Train/Train-05-08.ogg", message: "", trigger: Event,  trigger_param:  107 }
+event: { id: 109, Type: Sound, delay:  25, sound: "Vox/Train/Train-05-09.ogg", message: "", trigger: Event,  trigger_param:  108 }
+event: { id: 110, Type: Sound, delay:   2, sound: "Vox/Train/Train-05-10.ogg", message: "", trigger: "Event (ALL)",  trigger_param:  (5,109) }
+event: { id: 111, Type: Sound, delay:   1, sound: "Vox/Train/Train-05-11.ogg", message: "", trigger: "Event (ALL)",  trigger_param:  (7,110) }
+event: { id: 112, Type: Sound, delay:   5, sound: "Vox/Train/Train-05-12.ogg", message: "", trigger: Event,  trigger_param:  111 }
 
 
 /**********************/

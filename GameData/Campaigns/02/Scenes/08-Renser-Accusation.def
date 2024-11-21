@@ -153,32 +153,32 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
-event: { event: Display,               image: "Campaigns/02/Scenes/Black.pcx", color: 0xffffffff, fade: (0,5,2), rect: (0,0,0,0) }
-event: { event: Display,               image: "Campaigns/02/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
+event: { type: Display,               image: "Campaigns/02/Scenes/Black.pcx", color: 0xffffffff, fade: (0,5,2), rect: (0,0,0,0) }
+event: { type: Display,               image: "Campaigns/02/Scenes/News.pcx",  color: 0xffffffff, fade: (1,4,1), rect: (0,0, -512,-128) }
 
-event: { event: Camera,                param: 3,  target: "body:Renser",   vec: (1,0,1e7) }
-event: { event: Camera,                param: 5,                           vec: (-0.13, 0.01, 0.02) }
+event: { type: Camera,                param: 3,  target: "body:Renser",   vec: (1,0,1e7) }
+event: { type: Camera,                param: 5,                           vec: (-0.13, 0.01, 0.02) }
 
 event: {
    event: Message
    time:  6
    sound: "Vox/Scenes/02/News_08_Renser_Accusation.ogg"
 }
-event: { event: Display,               message: "Renser System",           font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "Marakan Hegemony",        font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Display,               message: "Renser System",           font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Marakan Hegemony",        font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
 
 
-event: { event: Camera,     time:  15, param: (6, 15),  target: "Ironhelm" }
+event: { type: Camera,     time:  15, param: (6, 15),  target: "Ironhelm" }
 
 
-event: { event: Camera,     time:  30, param: 3,  target: "Archon",  vec: (2,-0.05,8e3) }
-event: { event: Camera,                param: 5,                     vec: (0.15, 0.01, 0.02) }
-event: { event: Display,               message: "Archon Carrier Group",    font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "Solus Orbit",             font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Camera,     time:  30, param: 3,  target: "Archon",  vec: (2,-0.05,8e3) }
+event: { type: Camera,                param: 5,                     vec: (0.15, 0.01, 0.02) }
+event: { type: Display,               message: "Archon Carrier Group",    font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Solus Orbit",             font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
 
 
-event: { event: EndScene,   time:  55, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  55, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

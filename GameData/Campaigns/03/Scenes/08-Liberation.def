@@ -81,38 +81,38 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3, target: "body:Jarnell",   vec: (2, 0, 1.7e7) }
-event: { event: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
-event: { event: Display,               message: "The PRESIDENT of the TERELLIAN ALLIANCE",            font: Limerick18,     color: 0xffffff80, fade: (1,10,1), rect: (20,20, 300,300) }
+event: { type: Camera,                param: 3, target: "body:Jarnell",   vec: (2, 0, 1.7e7) }
+event: { type: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
+event: { type: Display,               message: "The PRESIDENT of the TERELLIAN ALLIANCE",            font: Limerick18,     color: 0xffffff80, fade: (1,10,1), rect: (20,20, 300,300) }
 
-event: { event: Messasge,   time:   2, sound: "Vox/Scenes/03/News_08_Liberation.ogg" }
-
-
-event: { event: Camera,     time:  10, param: (6,45), target: Chronos }
-
-event: { event: Camera,     time:  40, param: (6,50), target: Cargo   }
+event: { type: Messasge,   time:   2, sound: "Vox/Scenes/03/News_08_Liberation.ogg" }
 
 
-event: { event: Camera,     time:  85, param: 3, target: "body:Haiche",    vec: (5, -0.1, 2e7) }
-event: { event: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
-event: { event: Display,               message: "Haiche Protectorate",     font: Limerick18,     color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,300) }
-event: { event: Display,               message: "Independent",             font: Limerick12,     color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,300) }
+event: { type: Camera,     time:  10, param: (6,45), target: Chronos }
+
+event: { type: Camera,     time:  40, param: (6,50), target: Cargo   }
 
 
-event: { event: Camera,     time:  95, param: 3, target: "body:Silessia",  vec: (1.5, 0, 2e7) }
-event: { event: Camera,                param: 5,                           vec: (0.12, -0.01, 0.01) }
-event: { event: Display,               message: "Silessian Confederacy",   font: Limerick18,     color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,300) }
-event: { event: Display,               message: "Independent",             font: Limerick12,     color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,300) }
+event: { type: Camera,     time:  85, param: 3, target: "body:Haiche",    vec: (5, -0.1, 2e7) }
+event: { type: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
+event: { type: Display,               message: "Haiche Protectorate",     font: Limerick18,     color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,300) }
+event: { type: Display,               message: "Independent",             font: Limerick12,     color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,300) }
 
 
-event: { event: Camera,     time: 105, param: 3, target: "body:Jarnell",   vec: (1.5, 0, 2.2e7) }
-event: { event: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
+event: { type: Camera,     time:  95, param: 3, target: "body:Silessia",  vec: (1.5, 0, 2e7) }
+event: { type: Camera,                param: 5,                           vec: (0.12, -0.01, 0.01) }
+event: { type: Display,               message: "Silessian Confederacy",   font: Limerick18,     color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,300) }
+event: { type: Display,               message: "Independent",             font: Limerick12,     color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,300) }
 
 
-event: { event: EndScene,   time: 120, message: "Scene 1" }
-event: { event: Exit }
+event: { type: Camera,     time: 105, param: 3, target: "body:Jarnell",   vec: (1.5, 0, 2.2e7) }
+event: { type: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
+
+
+event: { type: EndScene,   time: 120, message: "Scene 1" }
+event: { type: Exit }
 
 
 // EOF

@@ -121,38 +121,38 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3,      target: "body:Volante",   vec: (2, 0.1, 2.8e7)      }
-event: { event: Camera,                param: 5,                                vec: (-0.11, 0.007, -0.01) }
+event: { type: Camera,                param: 3,      target: "body:Volante",   vec: (2, 0.1, 2.8e7)      }
+event: { type: Camera,                param: 5,                                vec: (-0.11, 0.007, -0.01) }
 
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
          message: "FORCE:INTEL BRIEFING" }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
          message: "*************************************\n*** FLASH CODED +$TIME \n*** TROCANTHER BIODOMES\n*** HELL'S KITCHEN SECTOR\n*** CLASSIFIED: SECRET R3 NTK\n*************************************" }
 
-event: { event: Message,    time:   3, sound: "Vox/Scenes/05/Briefing_10_Trocanther_Biodomes.ogg" }
+event: { Type: Sound,    time:   3, sound: "Vox/Scenes/05/Briefing_10_Trocanther_Biodomes.ogg" }
 
 
-event: { event: Camera,     time:  25, param: 3,      target: "Bio Dome 1",  vec: (2, 0.15, 17e3)      }
-event: { event: Camera,                param: 5,                             vec: ( 0.11, 0.01, -0.02) }
+event: { type: Camera,     time:  25, param: 3,      target: "Bio Dome 1",  vec: (2, 0.15, 17e3)      }
+event: { type: Camera,                param: 5,                             vec: ( 0.11, 0.01, -0.02) }
 
 
-event: { event: Camera,     time:  35, param: 3,      target: "Utility 1",   vec: (3, 0.19, 17e3)      }
-event: { event: Camera,                param: 5,                             vec: (-0.11, 0.01, -0.02) }
+event: { type: Camera,     time:  35, param: 3,      target: "Utility 1",   vec: (3, 0.19, 17e3)      }
+event: { type: Camera,                param: 5,                             vec: (-0.11, 0.01, -0.02) }
 
 
-event: { event: Camera,     time:  45, param: 3,      target: "Reactor",     vec: (4, 0.10,  5e3)      }
-event: { event: Camera,                param: 5,                             vec: ( 0.13, 0.01, -0.02) }
+event: { type: Camera,     time:  45, param: 3,      target: "Reactor",     vec: (4, 0.10,  5e3)      }
+event: { type: Camera,                param: 5,                             vec: ( 0.13, 0.01, -0.02) }
 
 
-event: { event: Camera,     time:  55, param: 3,      target: "Bio Dome 2",  vec: (5, 0.13, 15e3)      }
-event: { event: Camera,                param: 5,                             vec: (-0.12, 0.01, -0.02) }
+event: { type: Camera,     time:  55, param: 3,      target: "Bio Dome 2",  vec: (5, 0.13, 15e3)      }
+event: { type: Camera,                param: 5,                             vec: (-0.12, 0.01, -0.02) }
 
 
-event: { event: EndScene,   time:  65, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  65, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

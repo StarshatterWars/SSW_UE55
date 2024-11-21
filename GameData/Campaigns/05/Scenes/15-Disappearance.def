@@ -94,41 +94,41 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3,      target: "body:Marak", vec: (2, 0.1, 5e7)         }
-event: { event: Camera,                param: 5,                           vec: (-0.05, 0.007, -0.04) }
+event: { type: Camera,                param: 3,      target: "body:Marak", vec: (2, 0.1, 5e7)         }
+event: { type: Camera,                param: 5,                           vec: (-0.05, 0.007, -0.04) }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,20, 600,150), font: Limerick18, color: 0xffffffff,
          message: "STRATPLAN BRIEFING" }
 
-event: { event: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
+event: { type: Display,    time:   1, fade: (1,5,1), rect: (20,40, 600,150), font: OCRB, color: 0xffffff80,
          message: "Timestamp: $TIME\nSubject: Status of Marak Prime\nClassified: TOP SECRET R7 NTK/EO" }
 
-event: { event: Message,    time:   3, sound: "Vox/Scenes/05/Briefing_15.ogg" }
+event: { Type: Sound,    time:   3, sound: "Vox/Scenes/05/Briefing_15.ogg" }
 
 
-event: { event: Camera,     time:  10, param: 3,      target: "Dragon",     vec: (2, -0.1, 8e3)        }
-event: { event: Camera,                param: 5,                            vec: (-0.05, 0.007, 0.02)  }
+event: { type: Camera,     time:  10, param: 3,      target: "Dragon",     vec: (2, -0.1, 8e3)        }
+event: { type: Camera,                param: 5,                            vec: (-0.05, 0.007, 0.02)  }
 
 
-event: { event: Camera,     time:  22, param: 3,      target: "Broadsword", vec: (3,  0.2, 6e3)        }
-event: { event: Camera,                param: 5,                            vec: ( 0.06, -0.01, 0.02)  }
+event: { type: Camera,     time:  22, param: 3,      target: "Broadsword", vec: (3,  0.2, 6e3)        }
+event: { type: Camera,                param: 5,                            vec: ( 0.06, -0.01, 0.02)  }
 
 
-event: { event: Camera,     time:  34, param: 3,      target: "Imperial",   vec: (4, -0.1, 9e3)        }
-event: { event: Camera,                param: 5,                            vec: (-0.07, 0.007, 0.02)  }
+event: { type: Camera,     time:  34, param: 3,      target: "Imperial",   vec: (4, -0.1, 9e3)        }
+event: { type: Camera,                param: 5,                            vec: (-0.07, 0.007, 0.02)  }
 
 
-event: { event: Camera,     time:  50, param: 3,      target: "Orion", vec: (2, -0.1, 8e3)        }
-event: { event: Camera,                param: 5,                       vec: (-0.05, 0.007, 0.02)  }
+event: { type: Camera,     time:  50, param: 3,      target: "Orion", vec: (2, -0.1, 8e3)        }
+event: { type: Camera,                param: 5,                       vec: (-0.05, 0.007, 0.02)  }
 
 
-event: { event: Camera,     time:  80, param: 3,      target: "body:Marak", vec: (5, -0.1, 3e7)        }
-event: { event: Camera,                param: 5,                            vec: (-0.085, 0.002, 0.03) }
+event: { type: Camera,     time:  80, param: 3,      target: "body:Marak", vec: (5, -0.1, 3e7)        }
+event: { type: Camera,                param: 5,                            vec: (-0.085, 0.002, 0.03) }
 
 
-event: { event: EndScene,   time: 105, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time: 105, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

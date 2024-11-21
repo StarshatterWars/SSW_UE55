@@ -193,33 +193,33 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3, target: "body:Jarnell",   vec: (2,0,1e7) }
-event: { event: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
-event: { event: Display,               message: "The PRESIDENT of the TERELLIAN ALLIANCE",            font: Limerick18,     color: 0xffffff80, fade: (1,10,1), rect: (20,20, 300,300) }
+event: { type: Camera,                param: 3, target: "body:Jarnell",   vec: (2,0,1e7) }
+event: { type: Camera,                param: 5,                           vec: (-0.12, 0.01, 0.01) }
+event: { type: Display,               message: "The PRESIDENT of the TERELLIAN ALLIANCE",            font: Limerick18,     color: 0xffffff80, fade: (1,10,1), rect: (20,20, 300,300) }
 
-event: { event: Messasge,              sound: "Vox/Scenes/03/News_02_President_Speech.ogg" }
-
-
-event: { event: Display,    time:  10, image: "Campaigns/03/Scenes/Map.pcx", color: 0xffffffff, fade: (1,6,1), rect: (-280,-280,256,256) }
+event: { type: Messasge,              sound: "Vox/Scenes/03/News_02_President_Speech.ogg" }
 
 
-event: { event: Camera,     time:  20, param: (6, 40),  target: "Morningstar", vec: (300,0,1200)           }
-event: { event: Display,               message: "Hegemony 24th DESRON",  font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "Entering Janek Orbit",  font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Display,    time:  10, image: "Campaigns/03/Scenes/Map.pcx", color: 0xffffffff, fade: (1,6,1), rect: (-280,-280,256,256) }
 
 
-event: { event: Camera,     time:  45, param: (6, 40),  target: "Ascendance",  vec: (-400,10,800)           }
-event: { event: Display,               message: "Borovan Republic",      font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Camera,     time:  20, param: (6, 40),  target: "Morningstar", vec: (300,0,1200)           }
+event: { type: Display,               message: "Hegemony 24th DESRON",  font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "Entering Janek Orbit",  font: Limerick12,   color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
 
 
-event: { event: Camera,     time:  65, param: (6, 40),  target: "Archon",   vec: (0,0,1800) }
-event: { event: Display,               message: "Force:Space Fourth Fleet", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
-event: { event: Display,               message: "7th Carrier Group 'Titan'", font: Limerick12,  color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+event: { type: Camera,     time:  45, param: (6, 40),  target: "Ascendance",  vec: (-400,10,800)           }
+event: { type: Display,               message: "Borovan Republic",      font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
 
 
-event: { event: EndScene,   time:  90, message: "Scene 1" }
-event: { event: Exit }
+event: { type: Camera,     time:  65, param: (6, 40),  target: "Archon",   vec: (0,0,1800) }
+event: { type: Display,               message: "Force:Space Fourth Fleet", font: Limerick18,   color: 0xffffff80, fade: (1,7,1), rect: (20,20, 300,100) }
+event: { type: Display,               message: "7th Carrier Group 'Titan'", font: Limerick12,  color: 0xffffff80, fade: (1,7,1), rect: (20,40, 300,100) }
+
+
+event: { type: EndScene,   time:  90, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

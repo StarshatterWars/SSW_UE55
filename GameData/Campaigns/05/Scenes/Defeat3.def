@@ -65,13 +65,13 @@ element: {
 }
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3, target: "body:Volante",  vec: (1,0,2.5e7) }
-event: { event: Camera,                param: 5,                          vec: (0.06, 0.002, 0.01) }
+event: { type: Camera,                param: 3, target: "body:Volante",  vec: (1,0,2.5e7) }
+event: { type: Camera,                param: 5,                          vec: (0.06, 0.002, 0.01) }
 
-event: { event: Display,    message: "Operation Nightfall", font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,20, 600,100) }
-event: { event: Display,    message: "Defeat",                    font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,42, 600,100) }
+event: { type: Display,    message: "Operation Nightfall", font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,20, 600,100) }
+event: { type: Display,    message: "Defeat",                    font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,42, 600,100) }
 
 event: {
    event: Message
@@ -79,18 +79,18 @@ event: {
    sound: "Vox/Scenes/05/End_04_Defeat.ogg"
 }
 
-event: { event: Camera,     time:  10, param: (6,30,3), target: Broadsword }
+event: { type: Camera,     time:  10, param: (6,30,3), target: Broadsword }
 
-event: { event: Camera,     time:  20, param: (6,11,2.2), target: Devastator }
-event: { event: Damage,     time:  22, param: 2e4, ship: Devastator, target: Devastator }
-event: { event: Damage,     time:  24, param: 2e4, ship: Devastator, target: Devastator }
+event: { type: Camera,     time:  20, param: (6,11,2.2), target: Devastator }
+event: { type: Damage,     time:  22, param: 2e4, ship: Devastator, target: Devastator }
+event: { type: Damage,     time:  24, param: 2e4, ship: Devastator, target: Devastator }
 
-event: { event: Camera,     time:  30, param: (6,20,1.5), target: Courageous }
-event: { event: Damage,     time:  34, param: 4e4, ship: Devastator, target: Devastator }
+event: { type: Camera,     time:  30, param: (6,20,1.5), target: Courageous }
+event: { type: Damage,     time:  34, param: 4e4, ship: Devastator, target: Devastator }
 
-event: { event: Display,    time:  43, image: "Campaigns/05/Scenes/Black.pcx", color: 0xffffffff, fade: (1,10,0), rect: (0,0,0,0) }
+event: { type: Display,    time:  43, image: "Campaigns/05/Scenes/Black.pcx", color: 0xffffffff, fade: (1,10,0), rect: (0,0,0,0) }
 
-event: { event: EndScene,   time:  45, message: "Scene 1" }
-event: { event: Exit }
+event: { type: EndScene,   time:  45, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

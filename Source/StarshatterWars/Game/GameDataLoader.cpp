@@ -968,6 +968,8 @@ AGameDataLoader::ParseMission(const char* fn)
 	FString FileString;
 
 	MissionElementArray.Empty();
+	MissionEventArray.Empty();
+
 	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
@@ -1086,37 +1088,525 @@ AGameDataLoader::ParseMission(const char* fn)
 					GetDefText(WardName, def, filename);
 					NewMission.WardName = FString(WardName);
 				}
+				else if (def->name()->value() == "event") {
+					ParseEvent(def->term()->isStruct(), fn);
+					NewMission.Event = MissionEventArray;
+				}
+
 				else if ((def->name()->value() == "element") ||
 					(def->name()->value() == "ship") ||
 					(def->name()->value() == "station")) {
-
-					 TermStruct* eval = def->term()->isStruct();
-					 ParseElement(eval, fn);
-				     NewMission.Element = MissionElementArray;
-				}
-				
-
-				else if (def->name()->value() == "event") {
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("ERROR: event struct missing in '%s'"), *FString(fn));
-					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-						//MissionEvent* event = ParseEvent(val);
-						//AddEvent(event);
-					}
-				}
+					 
+					 ParseElement(def->term()->isStruct(), fn);
+					 NewMission.Element = MissionElementArray;
+				}	
 			}
 		}        // term
 	} while (term); 
 
 	MissionArray.Add(NewMission);
+}
 
+void
+AGameDataLoader::ParseNavpoint(TermStruct* val, const char* fn)
+{
+	
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseNavpoint()"));
+
+	int   formation = 0;
+	int   speed = 0;
+	int   priority = 1;
+	int   farcast = 0;
+	int   hold = 0;
+	int   emcon = 0;
+	Vec3  loc(0, 0, 0);
+	Text  order_name;
+	Text  status_name;
+	Text  order_rgn_name;
+	Text  tgt_name;
+	Text  tgt_desc;
+
+	MissionRLocArray.Empty();
+
+	FS_MissionInstruction NewMissionInstruction;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "cmd") {
+				GetDefText(order_name, pdef, fn);
+				NewMissionInstruction.OrderName = FString(order_name);
+			}
+
+			else if (pdef->name()->value() == "status") {
+				GetDefText(status_name, pdef, fn);
+				NewMissionInstruction.StatusName = FString(status_name);
+			}
+
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(loc, pdef, fn);
+				NewMissionInstruction.Location.X = loc.x;
+				NewMissionInstruction.Location.Y = loc.y;
+				NewMissionInstruction.Location.Z = loc.z;
+			}
+
+			else if (pdef->name()->value() == "rloc") {
+				if (pdef->term()->isStruct()) {
+					ParseRLoc(pdef->term()->isStruct(), fn);
+					NewMissionInstruction.RLoc = MissionRLocArray;
+				}
+			}
+
+			else if (pdef->name()->value() == "rgn") {
+				GetDefText(order_rgn_name, pdef, fn);
+				NewMissionInstruction.OrderRegionName = FString(order_rgn_name);
+			}
+			else if (pdef->name()->value() == "speed") {
+				GetDefNumber(speed, pdef, fn);
+				NewMissionInstruction.Speed = speed;
+			}
+			else if (pdef->name()->value() == "formation") {
+				GetDefNumber(formation, pdef, fn);
+				NewMissionInstruction.Formation = formation;
+			}
+			else if (pdef->name()->value() == "emcon") {
+				GetDefNumber(emcon, pdef, fn);
+				NewMissionInstruction.EMCON = emcon;
+			}
+			else if (pdef->name()->value() == "priority") {
+				GetDefNumber(priority, pdef, fn);
+				NewMissionInstruction.Priority = priority;
+			}
+			else if (pdef->name()->value() == "farcast") {
+				if (pdef->term()->isBool()) {
+					bool f = false;
+					GetDefBool(f, pdef, fn);
+					if (f)
+						farcast = 1;
+					else
+						farcast = 0;
+					NewMissionInstruction.Farcast = farcast;
+				}
+				else {
+					GetDefNumber(farcast, pdef, fn);
+					NewMissionInstruction.Farcast = farcast;
+				}
+			}
+			else if (pdef->name()->value() == "tgt") {
+				GetDefText(tgt_name, pdef, fn);
+				NewMissionInstruction.TargetName = FString(tgt_name);
+			}
+			else if (pdef->name()->value() == "tgt_desc") {
+				GetDefText(tgt_desc, pdef, fn);
+				NewMissionInstruction.TargetDesc = FString(tgt_desc);
+			}
+			else if (pdef->name()->value().indexOf("hold") == 0) {
+				GetDefNumber(hold, pdef, fn);
+				NewMissionInstruction.Hold = hold;
+			}
+		}
+	}
+	MissionNavpointArray.Add(NewMissionInstruction);
+}
+
+void
+AGameDataLoader::ParseInstruction(TermStruct* val, const char* fn)
+{
+	
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseInstruction()"));
+
+	int   formation = 0;
+	int   speed = 0;
+	int   priority = 1;
+	int   farcast = 0;
+	int   hold = 0;
+	int   emcon = 0;
+	Vec3  loc(0, 0, 0);
+	Text  order_name;
+	Text  status_name;
+	Text  order_rgn_name;
+	Text  tgt_name;
+	Text  tgt_desc;
+
+	MissionRLocArray.Empty();
+
+	FS_MissionInstruction NewMissionInstruction;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "cmd") {
+				GetDefText(order_name, pdef, fn);
+				NewMissionInstruction.OrderName = FString(order_name);
+			}
+
+			else if (pdef->name()->value() == "status") {
+				GetDefText(status_name, pdef, fn);
+				NewMissionInstruction.StatusName = FString(status_name);
+			}
+
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(loc, pdef, fn);
+				NewMissionInstruction.Location.X = loc.x;
+				NewMissionInstruction.Location.Y = loc.y;
+				NewMissionInstruction.Location.Z = loc.z;
+			}
+
+			else if (pdef->name()->value() == "rloc") {
+				if (pdef->term()->isStruct()) {
+					ParseRLoc(pdef->term()->isStruct(), fn);
+					NewMissionInstruction.RLoc = MissionRLocArray;
+				}
+			}
+
+			else if (pdef->name()->value() == "rgn") {
+				GetDefText(order_rgn_name, pdef, fn);
+				NewMissionInstruction.OrderRegionName = FString(order_rgn_name);
+			}
+			else if (pdef->name()->value() == "speed") {
+				GetDefNumber(speed, pdef, fn);
+				NewMissionInstruction.Speed = speed;
+			}
+			else if (pdef->name()->value() == "formation") {
+				GetDefNumber(formation, pdef, fn);
+				NewMissionInstruction.Formation = formation;
+			}
+			else if (pdef->name()->value() == "emcon") {
+				GetDefNumber(emcon, pdef, fn);
+				NewMissionInstruction.EMCON = emcon;
+			}
+			else if (pdef->name()->value() == "priority") {
+				GetDefNumber(priority, pdef, fn);
+				NewMissionInstruction.Priority = priority;
+			}
+			else if (pdef->name()->value() == "farcast") {
+				if (pdef->term()->isBool()) {
+					bool f = false;
+					GetDefBool(f, pdef, fn);
+					if(f) 
+						farcast = 1;
+					else 
+						farcast = 0;
+					NewMissionInstruction.Farcast = farcast;
+				}
+				else {
+					GetDefNumber(farcast, pdef, fn);
+					NewMissionInstruction.Farcast = farcast;
+				}
+			}
+			else if (pdef->name()->value() == "tgt") {
+				GetDefText(tgt_name, pdef, fn);
+				NewMissionInstruction.TargetName = FString(tgt_name);
+			}
+			else if (pdef->name()->value() == "tgt_desc") {
+				GetDefText(tgt_desc, pdef, fn);
+				NewMissionInstruction.TargetDesc = FString(tgt_desc);
+			}
+			else if (pdef->name()->value().indexOf("hold") == 0) {
+				GetDefNumber(hold, pdef, fn);
+				NewMissionInstruction.Hold = hold;
+			}
+		}
+	}
+	MissionInstructionArray.Add(NewMissionInstruction);
+}
+
+void
+AGameDataLoader::ParseShip(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseShip()"));
+
+	Text     ShipName;
+	Text     SkinName;
+	Text     RegNum;
+	Text     Region;
+
+	Vec3     Location(-1.0e9f, -1.0e9f, -1.0e9f);
+	Vec3     Velocity(-1.0e9f, -1.0e9f, -1.0e9f);
+
+	int      Respawns = -1;
+	double   Heading = -1e9;
+	double   Integrity = -1;
+	int      Ammo[16];
+	int      Fuel[4];
+	int      index;
+
+	FS_MissionShip NewMissionShip;
+
+	for (index = 0; index < 16; index++)
+		Ammo[index] = -10;
+
+	for (index = 0; index < 4; index++)
+		Fuel[index] = -10;
+
+	for (index = 0; index < val->elements()->size(); index++) {
+		TermDef* pdef = val->elements()->at(index)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(ShipName, pdef, fn);
+				NewMissionShip.ShipName = FString(ShipName);
+			}
+			else if (pdef->name()->value() == "skin") {
+				GetDefText(SkinName, pdef, fn);
+				NewMissionShip.SkinName = FString(SkinName);
+			}
+
+			else if (pdef->name()->value() == "regnum") {
+				GetDefText(RegNum, pdef, fn);
+				NewMissionShip.RegNum = FString(RegNum);
+			}
+			else if (pdef->name()->value() == "region") {
+				GetDefText(Region, pdef, fn);
+				NewMissionShip.Region = FString(Region);
+			}
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(Location, pdef, fn);
+				NewMissionShip.Location.X = Location.x;
+				NewMissionShip.Location.Y = Location.y;
+				NewMissionShip.Location.Z = Location.z;
+			
+			}
+			else if (pdef->name()->value() == "velocity") {
+				GetDefVec(Velocity, pdef, fn);
+				NewMissionShip.Velocity.X = Velocity.x;
+				NewMissionShip.Velocity.Y = Velocity.y;
+				NewMissionShip.Velocity.Z = Velocity.z;
+			}
+
+			else if (pdef->name()->value() == "respawns") {
+				GetDefNumber(Respawns, pdef, fn);
+				NewMissionShip.Respawns = Respawns;
+			
+			}
+			else if (pdef->name()->value() == "heading") {
+					GetDefNumber(Heading, pdef, fn);
+					NewMissionShip.Heading = Heading;
+			}
+
+			else if (pdef->name()->value() == "integrity") {
+				GetDefNumber(Integrity, pdef, fn);
+				NewMissionShip.Integrity = Integrity;
+			}
+
+			else if (pdef->name()->value() == "ammo") {
+				GetDefArray(Ammo, 16, pdef, fn);
+
+				for (int AmmoIndex = 0; AmmoIndex < 16; AmmoIndex++) {
+					NewMissionShip.Ammo[AmmoIndex] = Ammo[AmmoIndex];
+				}
+			}
+
+			else if (pdef->name()->value() == "fuel") {
+				GetDefArray(Fuel, 4, pdef, fn);
+			
+				for (int FuelIndex = 0; FuelIndex < 16; FuelIndex++) {
+					NewMissionShip.Fuel[FuelIndex] = Fuel[FuelIndex];
+				}
+			}
+		}
+	}
+	MissionShipArray.Add(NewMissionShip);
+}
+
+void
+AGameDataLoader::ParseLoadout(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseLoadout()"));
+
+	int  ship = -1;
+	int  stations[16];
+	Text LoadoutName;
+
+	FS_MissionLoadout NewLoadout;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "ship") {
+				GetDefNumber(ship, pdef, fn);
+				NewLoadout.Ship = ship;
+			}
+			else if (pdef->name()->value() == "name") {
+				GetDefText(LoadoutName, pdef, fn);
+				NewLoadout.LoadoutName = FString(LoadoutName);
+			}
+			else if (pdef->name()->value() == "stations") {
+				GetDefArray(stations, 16, pdef, fn);
+
+				for(int index = 0; index < 16; index++) {
+					NewLoadout.Stations[index] = stations[index];
+				}
+			}
+		}
+	}
+	MissionLoadoutArray.Add(NewLoadout);
+}
+
+void
+AGameDataLoader::ParseEvent(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseEvent()"));
+
+	Text			EventType = "";
+	Text			TriggerName = "";
+	Text			EventShip = "";
+	Text			EventSource = "";
+	Text			EventTarget = "";
+	Text			EventMessage = "";
+	Text			EventSound = "";
+	Text			TriggerShip = "";
+	Text			TriggerTarget = "";
+
+	int				EventId = 1;
+	int				EventChance = 0;
+	int				EventDelay = 0;
+
+	double			EventTime = 0;
+
+	Vec3			EventPoint;
+	Rect			EventRect;
+	int             EventParam[10];
+	int				EventNParams = 0;
+	int             TriggerParam[10];
+	int				TriggerNParams = 0;
+
+	FS_MissionEvent NewMissionEvent;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "type") {
+				GetDefText(EventType, pdef, fn);
+				NewMissionEvent.EventType = FString(EventType);
+			}
+
+			else if (pdef->name()->value() == "trigger") {
+				GetDefText(TriggerName, pdef, fn);
+				NewMissionEvent.TriggerName = FString(TriggerName);
+			}
+
+			else if (pdef->name()->value() == "id") {
+				GetDefNumber(EventId, pdef, fn);
+				NewMissionEvent.EventId = EventId;
+			
+			}
+
+			else if (pdef->name()->value() == "time") {
+				GetDefNumber(EventTime, pdef, fn);
+				NewMissionEvent.EventTime = EventTime;
+			}
+
+			else if (pdef->name()->value() == "delay") {
+				GetDefNumber(EventDelay, pdef, fn);
+				NewMissionEvent.EventDelay = EventDelay;
+			}
+			
+			else if (pdef->name()->value() == "event_param" || pdef->name()->value() == "param" || pdef->name()->value() == "color") {
+				if (pdef->term()->isNumber()) {
+					GetDefNumber(EventParam[0], pdef, fn);
+					EventNParams = 1;
+					NewMissionEvent.EventParam[0] = EventParam[0];
+					NewMissionEvent.EventNParams = EventNParams;
+				}
+
+				else if (pdef->term()->isArray()) {
+					std::vector<float> plist;
+					GetDefArray(plist, pdef, fn);
+					EventNParams = 0;
+
+					for (int idx = 0; i < 10 && idx < (int)plist.size(); idx++) {
+						float f = plist[idx];
+						EventParam[idx] = (int)f;
+						EventNParams = idx + 1;
+						NewMissionEvent.EventParam[idx] = EventParam[idx];
+					}
+					NewMissionEvent.EventNParams = EventNParams;
+				}
+			}
+
+			else if (pdef->name()->value() == "trigger_param") {
+				if (pdef->term()->isNumber()) {
+					GetDefNumber(TriggerParam[0], pdef, fn);
+					TriggerNParams = 1;
+					NewMissionEvent.TriggerParam[0] = TriggerParam[0];
+					NewMissionEvent.TriggerNParams = EventNParams;
+				}
+
+				else if (pdef->term()->isArray()) {
+					std::vector<float> plist;
+					GetDefArray(plist, pdef, fn);
+
+					for (int ti = 0; ti < 10 && i < (int)plist.size(); ti++) {
+						float f = plist[ti];
+						TriggerParam[ti] = (int)f;
+						TriggerNParams = ti + 1;
+						NewMissionEvent.TriggerParam[ti] = TriggerParam[ti];
+					}
+					NewMissionEvent.TriggerNParams = TriggerNParams;
+				}
+			}
+
+			else if (pdef->name()->value() == "event_ship" || pdef->name()->value() == "ship") {
+				GetDefText(EventShip, pdef, fn);
+				NewMissionEvent.EventShip = FString(EventShip);
+			}
+
+			else if (pdef->name()->value() == "event_source" || pdef->name()->value() == "source" || pdef->name()->value() == "font") {
+				GetDefText(EventSource, pdef, fn);
+				NewMissionEvent.EventSource = FString(EventSource);
+			}
+			else if (pdef->name()->value() == "event_target" || pdef->name()->value() == "target" || pdef->name()->value() == "image") {
+				GetDefText(EventTarget, pdef, fn);
+				NewMissionEvent.EventTarget = FString(EventTarget);
+			}
+
+			else if (pdef->name()->value() == "event_message" || pdef->name()->value() == "message") {
+				GetDefText(EventMessage, pdef, fn);
+				NewMissionEvent.EventMessage = FString(EventMessage);
+			}
+
+			else if (pdef->name()->value() == "event_chance" || pdef->name()->value() == "chance") {
+				GetDefNumber(EventChance, pdef, fn);
+				NewMissionEvent.EventChance = EventChance;
+			}
+			else if (pdef->name()->value() == "event_sound" || pdef->name()->value() == "sound") {
+				GetDefText(EventSound, pdef, fn);
+				NewMissionEvent.EventSound = FString(EventSound);
+			}
+
+			else if (pdef->name()->value() == "loc" || pdef->name()->value() == "vec" || pdef->name()->value() == "fade") {
+				GetDefVec(EventPoint, pdef, fn);
+				NewMissionEvent.EventPoint.X = EventPoint.x;
+				NewMissionEvent.EventPoint.Y = EventPoint.y;
+				NewMissionEvent.EventPoint.Z = EventPoint.z;
+			}
+
+			else if (pdef->name()->value() == "rect") {
+				GetDefRect(EventRect, pdef, fn);
+				NewMissionEvent.EventRect.X = EventRect.x;
+				NewMissionEvent.EventRect.Y = EventRect.y;
+				NewMissionEvent.EventRect.Z = EventRect.h;
+				NewMissionEvent.EventRect.W = EventRect.w;
+			}
+			else if (pdef->name()->value() == "trigger_ship") {
+				GetDefText(TriggerShip, pdef, fn);
+				NewMissionEvent.TriggerShip = FString(TriggerShip);
+			}
+
+			else if (pdef->name()->value() == "trigger_target") {
+				GetDefText(TriggerTarget, pdef, fn);
+				NewMissionEvent.TriggerTarget = FString(TriggerTarget);
+			}
+		}
+	}
+	MissionEventArray.Add(NewMissionEvent);
 }
 
 void
 AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 {
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseElement()"));
+
 	Text  ElementName = "";
 	Text  Carrier = "";
 	Text  Commander = "";
@@ -1148,6 +1638,11 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 	bool Rogue = false;
 	bool Invulnerable = false;
 
+	MissionLoadoutArray.Empty();
+	MissionRLocArray.Empty();
+	MissionInstructionArray.Empty();
+	MissionNavpointArray.Empty();
+	MissionShipArray.Empty();
 
 	FS_MissionElement NewMissionElement;
 
@@ -1200,66 +1695,8 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 
 			else if (pdef->name()->value() == "rloc") {
 				if (pdef->term()->isStruct()) {
-
-					TermStruct* rval = pdef->term()->isStruct();
-					Vec3     BaseLocation;
-					Text     Reference;
-
-					double   dex = 0;
-					double   dex_var = 5e3;
-					double   az = 0;
-					double   az_var = 3.1415;
-					double   el = 0;
-					double   el_var = 0.1;
-					FS_RLoc NewRLocElement;
-
-					for (int index = 0; i < rval->elements()->size(); index++) {
-						TermDef* rdef = rval->elements()->at(index)->isDef();
-						if (rdef) {
-							if (rdef->name()->value() == "dex") {
-								GetDefNumber(dex, rdef, fn);
-								NewRLocElement.Dex = dex;
-
-							}
-							else if (rdef->name()->value() == "dex_var") {
-								GetDefNumber(dex_var, rdef, fn);
-								NewRLocElement.DexVar = dex_var;
-
-							}
-							else if (rdef->name()->value() == "az") {
-								GetDefNumber(az, rdef, fn);
-								NewRLocElement.Azimuth = az;
-
-							}
-							else if (rdef->name()->value() == "az_var") {
-								GetDefNumber(az_var, rdef, fn);
-								NewRLocElement.AzimuthVar = az_var;
-
-							}
-							else if (rdef->name()->value() == "el") {
-								GetDefNumber(el, rdef, fn);
-								NewRLocElement.Elevation = el;
-
-							}
-							else if (rdef->name()->value() == "el_var") {
-								GetDefNumber(el_var, rdef, fn);
-								NewRLocElement.ElevationVar = el_var;
-
-							}
-							else if (rdef->name()->value() == "loc") {
-								GetDefVec(BaseLocation, rdef, fn);
-								NewRLocElement.BaseLocation.X = BaseLocation.x;
-								NewRLocElement.BaseLocation.Y = BaseLocation.y;
-								NewRLocElement.BaseLocation.Z = BaseLocation.z;
-							}
-
-							else if (rdef->name()->value() == "ref") {
-								GetDefText(Reference, rdef, fn);
-								NewRLocElement.Reference = FString(Reference);
-							}
-						}
-					}
-					NewMissionElement.RLoc.Add(NewRLocElement);
+					ParseLoadout(pdef->term()->isStruct(), fn);
+					NewMissionElement.RLoc = MissionRLocArray;
 				}
 			}
 
@@ -1332,8 +1769,8 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 					UE_LOG(LogTemp, Log, TEXT("Mission error - No objective"));
 				}
 				else {
-					TermStruct* val = pdef->term()->isStruct();
-					//Instruction* obj = ParseInstruction(val, element);
+					ParseInstruction(pdef->term()->isStruct(), fn);
+					NewMissionElement.Instruction = MissionInstructionArray;
 				}
 			}
 			else if (pdef->name()->value() == "instr") {
@@ -1346,9 +1783,8 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 					UE_LOG(LogTemp, Log, TEXT("Mission error - no ship"));
 				}
 				else {
-					TermStruct* val = pdef->term()->isStruct();
-					//MissionShip* s = ParseShip(val, element);
-
+					ParseShip(pdef->term()->isStruct(), fn);
+					NewMissionElement.Ship = MissionShipArray;
 				}
 			}
 
@@ -1358,9 +1794,8 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 
 				}
 				else {
-					TermStruct* val = pdef->term()->isStruct();
-					//Instruction* npt = ParseInstruction(val, element);
-					//element->navlist.append(npt);
+					ParseNavpoint(pdef->term()->isStruct(), fn);
+					NewMissionElement.Navpoint = MissionNavpointArray;
 				}
 			}
 
@@ -1370,18 +1805,224 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 
 				}
 				else {
-					TermStruct* val = pdef->term()->isStruct();
-					//ParseLoadout(val, element);
+					ParseLoadout(pdef->term()->isStruct(), fn);
+					NewMissionElement.Loadout = MissionLoadoutArray;
 				}
 			}
 		}
 	}
 	MissionElementArray.Add(NewMissionElement);
 }
+
+
 // +--------------------------------------------------------------------+
 
 void
-AGameDataLoader::ParseRLoc(TermStruct* val, const char* fn)
+AGameDataLoader::ParseMissionTemplate(const char* fname, const char* pname)
+{
+	/*ok = false;
+
+	if (fname)
+		strcpy_s(filename, fname);
+
+	if (pname)
+		strcpy_s(path, pname);
+
+	if (!filename[0]) {
+		Print("\nCan't Load Mission Template, script unspecified.\n");
+		return ok;
+	}
+
+	Print("\nLoad Mission Template: '%s'\n", filename);
+
+	int max_ships = (int)1e6;
+
+	DataLoader* loader = DataLoader::GetLoader();
+	bool        old_fs = loader->IsFileSystemEnabled();
+	BYTE* block = 0;
+
+	loader->UseFileSystem(true);
+	loader->SetDataPath(path);
+	loader->LoadBuffer(filename, block, true);
+	loader->SetDataPath(0);
+	loader->UseFileSystem(old_fs);
+
+	Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block));
+
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		Print("ERROR: could not parse '%s'\n", filename);
+		return ok;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "MISSION_TEMPLATE") {
+			Print("ERROR: invalid MISSION TEMPLATE file '%s'\n", filename);
+			term->print(10);
+			return ok;
+		}
+	}
+
+	ok = true;
+
+	char  target_name[256];
+	char  ward_name[256];
+
+	target_name[0] = 0;
+	ward_name[0] = 0;
+
+	do {
+		delete term; term = 0;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				Text defname = def->name()->value();
+
+				if (defname == "name")
+					GetDefText(name, def, filename);
+
+				else if (defname == "type") {
+					char typestr[64];
+					GetDefText(typestr, def, filename);
+					type = TypeFromName(typestr);
+				}
+
+				else if (defname == "system") {
+					char  sysname[64];
+					GetDefText(sysname, def, filename);
+
+					Campaign* campaign = Campaign::GetCampaign();
+
+					if (campaign) {
+						Galaxy* galaxy = Galaxy::GetInstance();
+
+						if (galaxy) {
+							star_system = galaxy->GetSystem(sysname);
+						}
+					}
+				}
+
+				else if (defname == "degrees")
+					GetDefBool(degrees, def, filename);
+
+				else if (defname == "region")
+					GetDefText(region, def, filename);
+
+				else if (defname == "objective")
+					GetDefText(objective, def, filename);
+
+				else if (defname == "sitrep")
+					GetDefText(sitrep, def, filename);
+
+				else if (defname == "start")
+					GetDefTime(start, def, filename);
+
+				else if (defname == "team")
+					GetDefNumber(team, def, filename);
+
+				else if (defname == "target")
+					GetDefText(target_name, def, filename);
+
+				else if (defname == "ward")
+					GetDefText(ward_name, def, filename);
+
+				else if ((defname == "alias")) {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: alias struct missing in '%s'\n", filename);
+						ok = false;
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseAlias(val);
+					}
+				}
+
+				else if ((defname == "callsign")) {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: callsign struct missing in '%s'\n", filename);
+						ok = false;
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseCallsign(val);
+					}
+				}
+
+				else if (defname == "optional") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: optional group struct missing in '%s'\n", filename);
+						ok = false;
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						ParseOptional(val);
+					}
+				}
+
+				else if (defname == "element") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: element struct missing in '%s'\n", filename);
+						ok = false;
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						MissionElement* elem = ParseElement(val);
+						if (MapElement(elem)) {
+							AddElement(elem);
+						}
+						else {
+							Print("WARNING: failed to map element %s '%s' in '%s'\n",
+								elem->GetDesign() ? elem->GetDesign()->name : "NO DSN",
+								elem->Name().data(),
+								filename);
+							val->print();
+							Print("\n");
+							delete elem;
+							ok = false;
+						}
+					}
+				}
+
+				else if (defname == "event") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: event struct missing in '%s'\n", filename);
+						ok = false;
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						MissionEvent* event = ParseEvent(val);
+
+						if (MapEvent(event))
+							AddEvent(event);
+					}
+				}
+			}     // def
+		}        // term
+	} while (term);
+
+	loader->ReleaseBuffer(block);
+
+	if (ok) {
+		CheckObjectives();
+
+		if (target_name[0])
+			target = FindElement(target_name);
+
+		if (ward_name[0])
+			ward = FindElement(ward_name);
+
+		Print("Mission Template Loaded.\n\n");
+	}
+
+	return ok;*/
+}
+// +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::ParseRLoc(TermStruct* rval, const char* fn)
 {
 	Vec3     BaseLocation;
 	Text     Reference;
@@ -1394,48 +2035,48 @@ AGameDataLoader::ParseRLoc(TermStruct* val, const char* fn)
 	double   el_var = 0.1;
 	FS_RLoc NewRLocElement;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "dex") {
-				GetDefNumber(dex, pdef, fn);
+	for (int index = 0; index < rval->elements()->size(); index++) {
+		TermDef* rdef = rval->elements()->at(index)->isDef();
+		if (rdef) {
+			if (rdef->name()->value() == "dex") {
+				GetDefNumber(dex, rdef, fn);
 				NewRLocElement.Dex = dex;
-			
-			}	
-			else if (pdef->name()->value() == "dex_var") {
-				GetDefNumber(dex_var, pdef, fn);
+
+			}
+			else if (rdef->name()->value() == "dex_var") {
+				GetDefNumber(dex_var, rdef, fn);
 				NewRLocElement.DexVar = dex_var;
-				
+
 			}
-			else if (pdef->name()->value() == "az") {
-				GetDefNumber(az, pdef, fn);
+			else if (rdef->name()->value() == "az") {
+				GetDefNumber(az, rdef, fn);
 				NewRLocElement.Azimuth = az;
-				
+
 			}
-			else if (pdef->name()->value() == "az_var") {
-				GetDefNumber(az_var, pdef, fn);
+			else if (rdef->name()->value() == "az_var") {
+				GetDefNumber(az_var, rdef, fn);
 				NewRLocElement.AzimuthVar = az_var;
-				
+
 			}
-			else if (pdef->name()->value() == "el") {
-				GetDefNumber(el, pdef, fn);
+			else if (rdef->name()->value() == "el") {
+				GetDefNumber(el, rdef, fn);
 				NewRLocElement.Elevation = el;
-				
+
 			}
-			else if (pdef->name()->value() == "el_var") {
-				GetDefNumber(el_var, pdef, fn);
+			else if (rdef->name()->value() == "el_var") {
+				GetDefNumber(el_var, rdef, fn);
 				NewRLocElement.ElevationVar = el_var;
-				
+
 			}
-			else if (pdef->name()->value() == "loc") {
-				GetDefVec(BaseLocation, pdef, fn);
+			else if (rdef->name()->value() == "loc") {
+				GetDefVec(BaseLocation, rdef, fn);
 				NewRLocElement.BaseLocation.X = BaseLocation.x;
 				NewRLocElement.BaseLocation.Y = BaseLocation.y;
 				NewRLocElement.BaseLocation.Z = BaseLocation.z;
 			}
 
-			else if (pdef->name()->value() == "ref") {
-				GetDefText(Reference, pdef, fn);
+			else if (rdef->name()->value() == "ref") {
+				GetDefText(Reference, rdef, fn);
 				NewRLocElement.Reference = FString(Reference);
 			}
 		}

@@ -105,28 +105,28 @@ element: {
 
 event: {
    id:              101,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Alpha 1",
 }
 
 event: {
    id:              102,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Alpha 2",
 }
 
 event: {
    id:              103,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Alpha 3",
 }
 
 event: {
    id:              104,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Alpha 4",
 }
@@ -135,28 +135,28 @@ event: {
 
 event: {
    id:              106,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Bravo 1",
 }
 
 event: {
    id:              107,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Bravo 2",
 }
 
 event: {
    id:              108,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Bravo 3",
 }
 
 event: {
    id:              109,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Bravo 4",
 }
@@ -164,14 +164,14 @@ event: {
 
 event: {
    id:              120,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Delta 1",
 }
 
 event: {
    id:              121,
-   event:           Message,
+   type:            Message,
    trigger:         Destroyed,
    trigger_ship:    "Delta 2",
 }
@@ -180,22 +180,22 @@ event: {
 // VOICE-OVER
 
 
-event: { id: 151, event: Message, time:   2, sound: "Vox/Train/Train-02-01.ogg",  message: "Please wait" }
-event: { id: 152, event: Message, time:  25, sound: "Vox/Train/Train-02-02a.ogg", message: "Raise your landing gear" }
-event: { id: 153, event: Message, time:  42, sound: "Vox/Train/Train-02-02b.ogg", message: "Maintain formation" }
-event: { id: 154, event: Message, time:  55, sound: "Vox/Train/Train-02-03.ogg",  message: "Sensor combat markers" }
-event: { id: 155, event: Message, time:  90, sound: "Vox/Train/Train-02-04.ogg",  message: "Missile Combat" }
+event: { id: 151, Type: Sound, time:   2, sound: "Vox/Train/Train-02-01.ogg",  message: "Please wait" }
+event: { id: 152, Type: Sound, time:  25, sound: "Vox/Train/Train-02-02a.ogg", message: "Raise your landing gear" }
+event: { id: 153, Type: Sound, time:  42, sound: "Vox/Train/Train-02-02b.ogg", message: "Maintain formation" }
+event: { id: 154, Type: Sound, time:  55, sound: "Vox/Train/Train-02-03.ogg",  message: "Sensor combat markers" }
+event: { id: 155, Type: Sound, time:  90, sound: "Vox/Train/Train-02-04.ogg",  message: "Missile Combat" }
 
 event: {
    id:              199,
-   event:           Message,
+   type:            Message,
    trigger:         "Event (ANY)",
    trigger_param:   (101, 102, 103, 104), 
 }
 
 event: {
    id:              200, 
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-05.ogg",  
    message:         "Good!",
    trigger:         "Event (ALL)",
@@ -205,7 +205,7 @@ event: {
 
 event: {
    id:              201,
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-06.ogg",  message: "Gun Combat",
    trigger:         Event,
    trigger_param:   200,
@@ -214,7 +214,7 @@ event: {
 
 event: { 
    id:              205,
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-07.ogg",
    message:         "Alpha Drones Destroyed - Proceed to next navpoint",
    trigger:         "Event (ALL)",
@@ -225,7 +225,7 @@ event: {
 
 event: {
    id:              210,
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-08.ogg",
    event_message:   "All Drones Destroyed",
    trigger:         "Event (ALL)",
@@ -234,7 +234,7 @@ event: {
 
 event: {
    id:              211,
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-09.ogg",
    message:         "Engage Vampires",
    trigger:         Event,
@@ -245,7 +245,7 @@ event: {
 
 event: {
    id:              212,
-   event:           IFF,
+   type:            IFF,
    event_param:     2,
    event_ship:      "Delta 1",
    trigger:         Event,
@@ -255,7 +255,7 @@ event: {
 
 event: {
    id:              213,
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-10.ogg",
    event_message:   "Inbound threat evasion techniques",
    trigger:         "Event",
@@ -265,7 +265,7 @@ event: {
 
 event: {
    id:              215,
-   event:           Message,
+   type:            Message,
    sound:           "Vox/Train/Train-02-11.ogg",
    event_message:   "Vampires Destroyed",
    trigger:         "Event (ALL)",
@@ -274,7 +274,7 @@ event: {
 
 event: { 
    id:              300,
-   event:           Message, 
+   type:            Message, 
    message:         "Return to base",
    sound:           "Vox/Train/Train-02-12.ogg", 
    trigger:         Navpoint,
@@ -282,12 +282,4 @@ event: {
    trigger_ship:    Echo
 }
 
-event: {
-   id:              301,
-   event:           Message,
-   message:         "Docking procedure",
-   sound:           "Vox/Train/Train-02-13.ogg",
-   trigger:         Event, 
-   trigger_param:   300, 
-   delay:           18
-}
+event: { id: 301, Type: Sound, message: "Docking procedure", sound: "Vox/Train/Train-02-13.ogg", trigger: Event, trigger_param: 300, delay: 18 }

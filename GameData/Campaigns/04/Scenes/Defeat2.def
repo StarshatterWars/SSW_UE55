@@ -53,13 +53,13 @@ element: {
    navpt:     { cmd: Assault, tgt: Broadsword, loc: (5e3,0,0), speed: 600 }
 }
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3, target: "body:Adantar",   vec: (1,0,2.5e7) }
-event: { event: Camera,                param: 5,                           vec: (0.06, 0.002, 0.01) }
+event: { type: Camera,                param: 3, target: "body:Adantar",   vec: (1,0,2.5e7) }
+event: { type: Camera,                param: 5,                           vec: (0.06, 0.002, 0.01) }
 
-event: { event: Display,    message: "Operation Firestorm", font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,20, 600,100) }
-event: { event: Display,    message: "Defeat",                    font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,42, 600,100) }
+event: { type: Display,    message: "Operation Firestorm", font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,20, 600,100) }
+event: { type: Display,    message: "Defeat",                    font: Limerick18, color: 0xffffff80, fade: (0,73,0), rect: (20,42, 600,100) }
 
 event: {
    event: Message
@@ -67,21 +67,21 @@ event: {
    sound: "Vox/Scenes/04/End_03_Defeat.ogg"
 }
 
-event: { event: Camera,     time:  10, param: (6,20), target: Vendetta }
+event: { type: Camera,     time:  10, param: (6,20), target: Vendetta }
 
-event: { event: Camera,     time:  20, param: (6,11), target: Heracles }
-event: { event: Damage,     time:  22, param: 2e4, ship: Heracles, target: Heracles }
-event: { event: Damage,     time:  24, param: 2e4, ship: Heracles, target: Heracles }
-event: { event: Damage,     time:  25, param: 1e4, ship: Heracles, target: Heracles }
-event: { event: Damage,     time:  27, param: 1e4, ship: Heracles, target: Heracles }
+event: { type: Camera,     time:  20, param: (6,11), target: Heracles }
+event: { type: Damage,     time:  22, param: 2e4, ship: Heracles, target: Heracles }
+event: { type: Damage,     time:  24, param: 2e4, ship: Heracles, target: Heracles }
+event: { type: Damage,     time:  25, param: 1e4, ship: Heracles, target: Heracles }
+event: { type: Damage,     time:  27, param: 1e4, ship: Heracles, target: Heracles }
 
-event: { event: Camera,     time:  30, param: 3, target: Devastator, vec: (2,0,5e3) }
-event: { event: Camera,                param: 5,                     vec: (0.1,0,0) }
+event: { type: Camera,     time:  30, param: 3, target: Devastator, vec: (2,0,5e3) }
+event: { type: Camera,                param: 5,                     vec: (0.1,0,0) }
 
-event: { event: Damage,     time:  32, param: 1e9, ship: Heracles, target: Heracles }
+event: { type: Damage,     time:  32, param: 1e9, ship: Heracles, target: Heracles }
 
-event: { event: Display,    time:  43, image: "Campaigns/04/Scenes/Black.pcx", color: 0xffffffff, fade: (1,10,0), rect: (0,0,0,0) }
-event: { event: EndScene,   time:  45, message: "Scene 1" }
-event: { event: Exit }
+event: { type: Display,    time:  43, image: "Campaigns/04/Scenes/Black.pcx", color: 0xffffffff, fade: (1,10,0), rect: (0,0,0,0) }
+event: { type: EndScene,   time:  45, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF

@@ -172,26 +172,26 @@ element: {
 
 // VOICE-OVER
 
-event: { id:  1, event: Message, time:    2, sound: "Vox/Train/Train-07-01.ogg" }
-event: { id:  2, event: Message, delay:  18, sound: "Vox/Train/Train-07-02.ogg", trigger: Event,  trigger_param:  1 }
-event: { id:  3, event: Message, delay:  15, sound: "Vox/Train/Train-07-03.ogg", trigger: Event,  trigger_param:  2 }
-event: { id:  4, event: Message, delay:  12, sound: "Vox/Train/Train-07-04.ogg", trigger: Event,  trigger_param:  3 }
-event: { id:  5, event: Message, delay:  17, sound: "Vox/Train/Train-07-05.ogg", trigger: Event,  trigger_param:  4 }
-event: { id:  6, event: Message, delay:  12, sound: "Vox/Train/Train-07-06.ogg", trigger: Event,  trigger_param:  5 }
-event: { id:  7, event: Message, delay:  18, sound: "Vox/Train/Train-07-07.ogg", trigger: Event,  trigger_param:  6 }
-event: { id:  8, event: Message, delay:  20, sound: "Vox/Train/Train-07-08.ogg", trigger: Event,  trigger_param:  7 }
-event: { id:  9, event: Message, delay:  30, sound: "Vox/Train/Train-07-09.ogg", trigger: Event,  trigger_param:  8 }
-event: { id: 10, event: Message, delay:  16, sound: "Vox/Train/Train-07-10.ogg", trigger: Event,  trigger_param:  9 }
-event: { id: 11, event: Message, delay:  12, sound: "Vox/Train/Train-07-11.ogg", trigger: Event,  trigger_param: 10 }
-event: { id: 12, event: Message, delay:  18, sound: "Vox/Train/Train-07-12.ogg", trigger: Event,  trigger_param: 11 }
-event: { id: 13, event: Message, delay:  20, sound: "Vox/Train/Train-07-13.ogg", trigger: Event,  trigger_param: 12 }
-event: { id: 14, event: Message, delay:  17, sound: "Vox/Train/Train-07-14.ogg", trigger: Event,  trigger_param: 13 }
-event: { id: 15, event: Message, delay:  16, sound: "Vox/Train/Train-07-15.ogg", trigger: Event,  trigger_param: 14 }
-event: { id: 16, event: Message, delay:  18, sound: "Vox/Train/Train-07-16.ogg", trigger: Event,  trigger_param: 15 }
-event: { id: 17, event: Message, delay:  30, sound: "Vox/Train/Train-07-17.ogg", trigger: Event,  trigger_param: 16 }
-event: { id: 18, event: Message, delay:  30, sound: "Vox/Train/Train-07-18.ogg", trigger: Event,  trigger_param: 17 }
+event: { id:  1, Type: Sound, time:    2, sound: "Vox/Train/Train-07-01.ogg" }
+event: { id:  2, Type: Sound, delay:  18, sound: "Vox/Train/Train-07-02.ogg", trigger: Event,  trigger_param:  1 }
+event: { id:  3, Type: Sound, delay:  15, sound: "Vox/Train/Train-07-03.ogg", trigger: Event,  trigger_param:  2 }
+event: { id:  4, Type: Sound, delay:  12, sound: "Vox/Train/Train-07-04.ogg", trigger: Event,  trigger_param:  3 }
+event: { id:  5, Type: Sound, delay:  17, sound: "Vox/Train/Train-07-05.ogg", trigger: Event,  trigger_param:  4 }
+event: { id:  6, Type: Sound, delay:  12, sound: "Vox/Train/Train-07-06.ogg", trigger: Event,  trigger_param:  5 }
+event: { id:  7, Type: Sound, delay:  18, sound: "Vox/Train/Train-07-07.ogg", trigger: Event,  trigger_param:  6 }
+event: { id:  8, Type: Sound, delay:  20, sound: "Vox/Train/Train-07-08.ogg", trigger: Event,  trigger_param:  7 }
+event: { id:  9, Type: Sound, delay:  30, sound: "Vox/Train/Train-07-09.ogg", trigger: Event,  trigger_param:  8 }
+event: { id: 10, Type: Sound, delay:  16, sound: "Vox/Train/Train-07-10.ogg", trigger: Event,  trigger_param:  9 }
+event: { id: 11, Type: Sound, delay:  12, sound: "Vox/Train/Train-07-11.ogg", trigger: Event,  trigger_param: 10 }
+event: { id: 12, Type: Sound, delay:  18, sound: "Vox/Train/Train-07-12.ogg", trigger: Event,  trigger_param: 11 }
+event: { id: 13, Type: Sound, delay:  20, sound: "Vox/Train/Train-07-13.ogg", trigger: Event,  trigger_param: 12 }
+event: { id: 14, Type: Sound, delay:  17, sound: "Vox/Train/Train-07-14.ogg", trigger: Event,  trigger_param: 13 }
+event: { id: 15, Type: Sound, delay:  16, sound: "Vox/Train/Train-07-15.ogg", trigger: Event,  trigger_param: 14 }
+event: { id: 16, Type: Sound, delay:  18, sound: "Vox/Train/Train-07-16.ogg", trigger: Event,  trigger_param: 15 }
+event: { id: 17, Type: Sound, delay:  30, sound: "Vox/Train/Train-07-17.ogg", trigger: Event,  trigger_param: 16 }
+event: { id: 18, Type: Sound, delay:  30, sound: "Vox/Train/Train-07-18.ogg", trigger: Event,  trigger_param: 17 }
 
-//event: { id: 50, event: Detect,  message: "Tarkis Detected", trigger_ship: Gerson, trigger_target: Tarkis }
+//event: { id: 50, type: Detect,  message: "Tarkis Detected", trigger_ship: Gerson, trigger_target: Tarkis }
 
 /**********************/
 

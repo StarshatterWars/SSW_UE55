@@ -70,7 +70,13 @@ public:
 	void LoadTemplateList(FString Path);
 	void LoadMission(FString Name);
 	void ParseMission(const char* filename);
+	void ParseNavpoint(TermStruct* val, const char* fn);
+	void ParseInstruction(TermStruct* val, const char* fn);
+	void ParseShip(TermStruct* val, const char* fn);
+	void ParseLoadout(TermStruct* val, const char* fn);
+	void ParseEvent(TermStruct* val, const char* fn);
 	void ParseElement(TermStruct* val, const char* fn);
+	void ParseMissionTemplate(const char* fname, const char* pname);
 	void ParseRLoc(TermStruct* val, const char* fn);
 	void ParseAction(TermStruct* val, const char* filename);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
@@ -152,8 +158,13 @@ protected:
 	TArray<FS_CampaignTemplateList> TemplateListArray;
 	TArray<FS_CampaignMission> MissionArray;
 	TArray<FS_MissionElement> MissionElementArray;
+	TArray<FS_MissionEvent> MissionEventArray;
+	TArray<FS_MissionLoadout> MissionLoadoutArray;
+	TArray<FS_MissionShip> MissionShipArray;
 	TArray<FS_RLoc> MissionRLocArray;
 	TArray<FS_CampaignReq> CampaignActionReqArray;
+	TArray<FS_MissionInstruction> MissionInstructionArray;
+	TArray<FS_MissionInstruction> MissionNavpointArray;
 
 	FS_CampaignAction NewCampaignAction;
 

@@ -68,14 +68,14 @@ element: {
 
 
 
-event: { event: BeginScene, time:   0, message: "Scene 1" }
+event: { type: BeginScene, time:   0, message: "Scene 1" }
 
-event: { event: Camera,                param: 3,      target: "body:Marak", vec: (5, -0.1, 3e7)        }
-event: { event: Camera,                param: 5,                            vec: (-0.085, 0.002, 0.03) }
+event: { type: Camera,                param: 3,      target: "body:Marak", vec: (5, -0.1, 3e7)        }
+event: { type: Camera,                param: 5,                            vec: (-0.085, 0.002, 0.03) }
 
 
-event: { event: Display,    message: "Operation Nightfall", font: Limerick18, color: 0xffffff80, fade: (0,15,1), rect: (20,20, 600,100) }
-event: { event: Display,    message: "Victory",            font: Limerick18, color: 0xffffff80, fade: (0,15,1), rect: (20,42, 600,100) }
+event: { type: Display,    message: "Operation Nightfall", font: Limerick18, color: 0xffffff80, fade: (0,15,1), rect: (20,20, 600,100) }
+event: { type: Display,    message: "Victory",            font: Limerick18, color: 0xffffff80, fade: (0,15,1), rect: (20,42, 600,100) }
 
 event: {
    event: Message
@@ -83,35 +83,35 @@ event: {
    sound: "Vox/Scenes/05/End_01_Victory.ogg"
 }
 
-event: { event: Camera,     time:  10, param: 3,      target: Orion, vec: (2,0,8e3) }
-event: { event: Camera,                param: 5,                            vec: ( 0.09, 0.002, 0.01)   }
+event: { type: Camera,     time:  10, param: 3,      target: Orion, vec: (2,0,8e3) }
+event: { type: Camera,                param: 5,                            vec: ( 0.09, 0.002, 0.01)   }
 
-event: { event: Camera,     time:  20, param: 3,      target: "body:Borova", vec: (1, -0.1, 2.5e7)      }
-event: { event: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.03)   }
-event: { event: Display,    message: "Borova", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
+event: { type: Camera,     time:  20, param: 3,      target: "body:Borova", vec: (1, -0.1, 2.5e7)      }
+event: { type: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.03)   }
+event: { type: Display,    message: "Borova", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
 
-event: { event: Camera,     time:  25, param: 3,      target: "body:Thrale", vec: (0, -0.1, 2.5e7)      }
-event: { event: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
-event: { event: Display,    message: "Thralis", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
+event: { type: Camera,     time:  25, param: 3,      target: "body:Thrale", vec: (0, -0.1, 2.5e7)      }
+event: { type: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
+event: { type: Display,    message: "Thralis", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
 
-event: { event: Camera,     time:  30, param: 3,      target: "body:Paragon", vec: (1, -0.1, 2.5e7)     }
-event: { event: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
-event: { event: Display,    message: "Paragon", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
+event: { type: Camera,     time:  30, param: 3,      target: "body:Paragon", vec: (1, -0.1, 2.5e7)     }
+event: { type: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
+event: { type: Display,    message: "Paragon", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
 
-event: { event: Camera,     time:  35, param: 3,      target: "body:Athenar", vec: (1, -0.1, 2.5e7)     }
-event: { event: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
-event: { event: Display,    message: "Athenar", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
+event: { type: Camera,     time:  35, param: 3,      target: "body:Athenar", vec: (1, -0.1, 2.5e7)     }
+event: { type: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
+event: { type: Display,    message: "Athenar", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
 
-event: { event: Camera,     time:  40, param: 3,      target: "body:Jarnell", vec: (1, -0.1, 2.5e7)     }
-event: { event: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
-event: { event: Display,    message: "Jarnell", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
-
-
-event: { event: Display,    time:  45, image: "Campaigns/05/Scenes/Black.pcx", color: 0xffffffff, fade: (1,20,0), rect: (0,0,0,0) }
-event: { event: Display,    time:  48, image: "Campaigns/05/Scenes/Alliance.pcx",  color: 0xffffffff, fade: (1,7,1), rect: (0,0, -256,-256) }
+event: { type: Camera,     time:  40, param: 3,      target: "body:Jarnell", vec: (1, -0.1, 2.5e7)     }
+event: { type: Camera,                param: 5,                            vec: (-0.09, 0.002, 0.01)   }
+event: { type: Display,    message: "Jarnell", font: Limerick18, color: 0xffffff80, fade: (1,4,1), rect: (20,20, 600,100) }
 
 
-event: { event: EndScene,   time:  60, message: "Scene 1" }
-event: { event: Exit }
+event: { type: Display,    time:  45, image: "Campaigns/05/Scenes/Black.pcx", color: 0xffffffff, fade: (1,20,0), rect: (0,0,0,0) }
+event: { type: Display,    time:  48, image: "Campaigns/05/Scenes/Alliance.pcx",  color: 0xffffffff, fade: (1,7,1), rect: (0,0, -256,-256) }
+
+
+event: { type: EndScene,   time:  60, message: "Scene 1" }
+event: { type: Exit }
 
 // EOF
