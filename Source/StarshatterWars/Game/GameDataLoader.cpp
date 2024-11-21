@@ -128,7 +128,8 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	CombatantArray.Empty();
 	CampaignActionArray.Empty();
 	MissionArray.Empty();
-
+	TemplateMissionArray.Empty();
+	ScriptedMissionArray.Empty();
 
 	do {
 		delete term; 
@@ -408,10 +409,6 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								NewCampaignAction.TargetKill = FString(TargetKill);
 							}
 							else if (pdef->name()->value() == "req") {
-								///if (!pdef->term() || !pdef->term()->isStruct()) {
-								//	UE_LOG(LogTemp, Log, TEXT("WARNING: action req struct missing in '%s'"), *FString(filename));
-								//}
-							//else {
 								TermStruct* val2 = pdef->term()->isStruct();
 								CampaignActionReqArray.Empty();
 								Action = 0;
@@ -575,10 +572,15 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	LoadMissionList(CampaignPath);
 	LoadTemplateList(CampaignPath);
 	LoadMission(CampaignPath);
+	LoadTemplateMission(CampaignPath);
+	LoadScriptedMission(CampaignPath);
+
 	NewCampaignData.Zone = ZoneArray;
 	NewCampaignData.MissionList = MissionListArray;
 	NewCampaignData.TemplateList = TemplateListArray;
 	NewCampaignData.Missions = MissionArray;
+	NewCampaignData.TemplateMissions = TemplateMissionArray;
+	NewCampaignData.ScriptedMissions = ScriptedMissionArray;
 
 	// define our data table struct
 	FName RowName = FName(FString(name));
@@ -949,6 +951,51 @@ void AGameDataLoader::LoadMission(FString Path)
 	}
 }
 
+void AGameDataLoader::LoadTemplateMission(FString Name)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadTemplateMission()"));
+	FString PathName = CampaignPath;
+	PathName.Append("Templates/");
+
+	TArray<FString> output;
+	output.Empty();
+
+	FString file = PathName + "*.def";
+	FFileManagerGeneric::Get().FindFiles(output, *file, true, false);
+
+	for (int i = 0; i < output.Num(); i++) {
+
+		FString FileName = PathName;
+		FileName.Append(output[i]);
+
+		char* fn = TCHAR_TO_ANSI(*FileName);
+
+		ParseMissionTemplate(fn);
+	}
+}
+
+void AGameDataLoader::LoadScriptedMission(FString Name)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadScriptedMission()"));
+	FString PathName = CampaignPath;
+	PathName.Append("Scripts/");
+
+	TArray<FString> output;
+	output.Empty();
+
+	FString file = PathName + "*.def";
+	FFileManagerGeneric::Get().FindFiles(output, *file, true, false);
+
+	for (int i = 0; i < output.Num(); i++) {
+
+		FString FileName = PathName;
+		FileName.Append(output[i]);
+
+		char* fn = TCHAR_TO_ANSI(*FileName);
+
+		ParseScriptedTemplate(fn);
+	}
+}
 
 void
 AGameDataLoader::ParseMission(const char* fn)
@@ -1015,7 +1062,7 @@ AGameDataLoader::ParseMission(const char* fn)
 			TermDef* def = term->isDef();
 			if (def) {
 				if (def->name()->value() == "name") {
-					GetDefText(Name, def, filename);
+					GetDefText(Name, def, fn);
 					NewMission.Name = FString(Name);
 					UE_LOG(LogTemp, Log, TEXT("mission name '%s'"), *FString(Name));
 				}
@@ -1104,6 +1151,7 @@ AGameDataLoader::ParseMission(const char* fn)
 		}        // term
 	} while (term); 
 
+	SSWInstance->loader->ReleaseBuffer(block);
 	MissionArray.Add(NewMission);
 }
 
@@ -1818,62 +1866,57 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 // +--------------------------------------------------------------------+
 
 void
-AGameDataLoader::ParseMissionTemplate(const char* fname, const char* pname)
+AGameDataLoader::ParseScriptedTemplate(const char* fn)
 {
-	/*ok = false;
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseMissionTemplate()"));
 
-	if (fname)
-		strcpy_s(filename, fname);
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
 
-	if (pname)
-		strcpy_s(path, pname);
-
-	if (!filename[0]) {
-		Print("\nCan't Load Mission Template, script unspecified.\n");
-		return ok;
-	}
-
-	Print("\nLoad Mission Template: '%s'\n", filename);
-
-	int max_ships = (int)1e6;
-
-	DataLoader* loader = DataLoader::GetLoader();
-	bool        old_fs = loader->IsFileSystemEnabled();
 	BYTE* block = 0;
+	SSWInstance->loader->LoadBuffer(fn, block, true);
 
-	loader->UseFileSystem(true);
-	loader->SetDataPath(path);
-	loader->LoadBuffer(filename, block, true);
-	loader->SetDataPath(0);
-	loader->UseFileSystem(old_fs);
-
-	Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block));
-
+	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
 
+	FString fs = FString(ANSI_TO_TCHAR(fn));
+	FString FileString;
+
+	MissionElementArray.Empty();
+	MissionEventArray.Empty();
+
+	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
+
+		const char* result = TCHAR_TO_ANSI(*FileString);
+	}
 	if (!term) {
-		Print("ERROR: could not parse '%s'\n", filename);
-		return ok;
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FString(fn));
+		return;
 	}
 	else {
-		TermText* file_type = term->isText();
-		if (!file_type || file_type->value() != "MISSION_TEMPLATE") {
-			Print("ERROR: invalid MISSION TEMPLATE file '%s'\n", filename);
-			term->print(10);
-			return ok;
-		}
+		UE_LOG(LogTemp, Log, TEXT("MISSIONTEMPLATE file '%s'"), *FString(fn));
 	}
 
-	ok = true;
+	Text  TargetName = "";
+	Text  WardName = "";
+	Text  TemplateName = "";
+	Text  TemplateSystem = "";
+	Text  TemplateRegion = "";
+	Text  TemplateObjective = "";
+	Text  TemplateSitrep = "";
+	Text  TemplateStart = "";
 
-	char  target_name[256];
-	char  ward_name[256];
+	int TemplateType = 0;
+	int TemplateTeam;
 
-	target_name[0] = 0;
-	ward_name[0] = 0;
+	bool TemplateDegrees = false;
+
+	FS_TemplateMission NewTemplateMission;
 
 	do {
-		delete term; term = 0;
+		delete term;
 		term = parser.ParseTerm();
 
 		if (term) {
@@ -1881,145 +1924,342 @@ AGameDataLoader::ParseMissionTemplate(const char* fname, const char* pname)
 			if (def) {
 				Text defname = def->name()->value();
 
-				if (defname == "name")
-					GetDefText(name, def, filename);
-
-				else if (defname == "type") {
+				if (def->name()->value() == "name") {
+					GetDefText(TemplateName, def, fn);
+					NewTemplateMission.TemplateName = FString(TemplateName);
+				}
+				else if (def->name()->value() == "type") {
 					char typestr[64];
-					GetDefText(typestr, def, filename);
-					type = TypeFromName(typestr);
+					GetDefText(typestr, def, fn);
+					TemplateType = Mission::TypeFromName(typestr);
+					NewTemplateMission.TemplateType = TemplateType;
 				}
 
-				else if (defname == "system") {
-					char  sysname[64];
-					GetDefText(sysname, def, filename);
+				else if (def->name()->value() == "system") {
+					GetDefText(TemplateSystem, def, fn);
+					NewTemplateMission.TemplateSystem = FString(TemplateSystem);
+				}
 
-					Campaign* campaign = Campaign::GetCampaign();
+				else if (def->name()->value() == "degrees") {
+					GetDefBool(TemplateDegrees, def, fn);
+					NewTemplateMission.TemplateDegrees = TemplateDegrees;
+				}
+				else if (def->name()->value() == "region") {
+					GetDefText(TemplateRegion, def, fn);
+					NewTemplateMission.TemplateRegion = FString(TemplateRegion);
+				}
 
-					if (campaign) {
-						Galaxy* galaxy = Galaxy::GetInstance();
+				else if (def->name()->value() == "objective") {
+					GetDefText(TemplateObjective, def, fn);
+					NewTemplateMission.TemplateObjective = FString(TemplateObjective);
+				}
 
-						if (galaxy) {
-							star_system = galaxy->GetSystem(sysname);
-						}
+				else if (def->name()->value() == "sitrep") {
+					GetDefText(TemplateSitrep, def, fn);
+					NewTemplateMission.TemplateSitrep = FString(TemplateSitrep);
+				}
+
+				else if (def->name()->value() == "start") {
+					//GetDefTime(start, def, fn);
+					GetDefText(TemplateStart, def, fn);
+					NewTemplateMission.TemplateStart = FString(TemplateStart);
+				}
+				else if (def->name()->value() == "team") {
+					GetDefNumber(TemplateTeam, def, fn);
+					NewTemplateMission.TemplateTeam = TemplateTeam;
+				}
+
+				else if (def->name()->value() == "target") {
+					GetDefText(TargetName, def, fn);
+					NewTemplateMission.TargetName = FString(TargetName);
+				}
+
+				else if (def->name()->value() == "ward") {
+					GetDefText(WardName, def, fn);
+					NewTemplateMission.WardName = FString(WardName);
+				}
+
+				else if ((def->name()->value() == "alias")) {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: alias struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						//ParseAlias(def->term()->isStruct(), fn);
 					}
 				}
 
-				else if (defname == "degrees")
-					GetDefBool(degrees, def, filename);
-
-				else if (defname == "region")
-					GetDefText(region, def, filename);
-
-				else if (defname == "objective")
-					GetDefText(objective, def, filename);
-
-				else if (defname == "sitrep")
-					GetDefText(sitrep, def, filename);
-
-				else if (defname == "start")
-					GetDefTime(start, def, filename);
-
-				else if (defname == "team")
-					GetDefNumber(team, def, filename);
-
-				else if (defname == "target")
-					GetDefText(target_name, def, filename);
-
-				else if (defname == "ward")
-					GetDefText(ward_name, def, filename);
-
-				else if ((defname == "alias")) {
+				else if ((def->name()->value() == "callsign")) {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: alias struct missing in '%s'\n", filename);
-						ok = false;
+						UE_LOG(LogTemp, Log, TEXT("WARNING: callsign struct missing in '%s'"), *FString(fn));
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
-						ParseAlias(val);
+						//ParseCallsign(val);
 					}
 				}
 
-				else if ((defname == "callsign")) {
+				else if (def->name()->value() == "optional") {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: callsign struct missing in '%s'\n", filename);
-						ok = false;
+						UE_LOG(LogTemp, Log, TEXT("WARNING: optional group struct missing in '%s'"), *FString(fn));
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
-						ParseCallsign(val);
+						//ParseOptional(val);
 					}
 				}
 
-				else if (defname == "optional") {
+				else if (def->name()->value() == "element") {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: optional group struct missing in '%s'\n", filename);
-						ok = false;
+						Print("WARNING: element struct missing in '%s'\n", fn);
 					}
 					else {
-						TermStruct* val = def->term()->isStruct();
-						ParseOptional(val);
+						ParseElement(def->term()->isStruct(), fn);
+						NewTemplateMission.Element = MissionElementArray;
 					}
 				}
 
-				else if (defname == "element") {
+				else if (def->name()->value() == "event") {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: element struct missing in '%s'\n", filename);
-						ok = false;
+						UE_LOG(LogTemp, Log, TEXT("WARNING: event struct missing in '%s'"), *FString(fn));
 					}
 					else {
-						TermStruct* val = def->term()->isStruct();
-						MissionElement* elem = ParseElement(val);
-						if (MapElement(elem)) {
-							AddElement(elem);
-						}
-						else {
-							Print("WARNING: failed to map element %s '%s' in '%s'\n",
-								elem->GetDesign() ? elem->GetDesign()->name : "NO DSN",
-								elem->Name().data(),
-								filename);
-							val->print();
-							Print("\n");
-							delete elem;
-							ok = false;
-						}
-					}
-				}
-
-				else if (defname == "event") {
-					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: event struct missing in '%s'\n", filename);
-						ok = false;
-					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-						MissionEvent* event = ParseEvent(val);
-
-						if (MapEvent(event))
-							AddEvent(event);
+						ParseEvent(def->term()->isStruct(), fn);
+						NewTemplateMission.Event = MissionEventArray;;
 					}
 				}
 			}     // def
 		}        // term
 	} while (term);
 
-	loader->ReleaseBuffer(block);
-
-	if (ok) {
-		CheckObjectives();
-
-		if (target_name[0])
-			target = FindElement(target_name);
-
-		if (ward_name[0])
-			ward = FindElement(ward_name);
-
-		Print("Mission Template Loaded.\n\n");
-	}
-
-	return ok;*/
+	SSWInstance->loader->ReleaseBuffer(block);
+	ScriptedMissionArray.Add(NewTemplateMission);
 }
 // +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::ParseMissionTemplate(const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseMissionTemplate()"));
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	FString fs = FString(ANSI_TO_TCHAR(fn));
+	FString FileString;
+
+	//MissionElementArray.Empty();
+	//MissionEventArray.Empty();
+
+	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
+
+		const char* result = TCHAR_TO_ANSI(*FileString);
+	}
+	if (!term) {
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FString(fn));
+		return;
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("MISSIONTEMPLATE file '%s'"), *FString(fn));
+	}
+
+	Text  TargetName = "";
+	Text  WardName = "";
+	Text  TemplateName = "";
+	Text  TemplateSystem = "";
+	Text  TemplateRegion = "";
+	Text  TemplateObjective = "";
+	Text  TemplateSitrep = "";
+	Text  TemplateStart = "";
+
+	int TemplateType = 0;
+	int TemplateTeam;
+
+	bool TemplateDegrees = false;
+
+	FS_TemplateMission NewTemplateMission;
+
+	do {
+		delete term; 
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				Text defname = def->name()->value();
+
+				if (def->name()->value() == "name") {
+					GetDefText(TemplateName, def, fn);
+					NewTemplateMission.TemplateName = FString(TemplateName);
+				}
+				else if (def->name()->value() == "type") {
+					char typestr[64];
+					GetDefText(typestr, def, fn);
+					TemplateType = Mission::TypeFromName(typestr);
+					NewTemplateMission.TemplateType = TemplateType;
+				}
+
+				else if (def->name()->value() == "system") {
+					GetDefText(TemplateSystem, def, fn);
+					NewTemplateMission.TemplateSystem = FString(TemplateSystem);
+				}
+
+				else if (def->name()->value() == "degrees") {
+					GetDefBool(TemplateDegrees, def, fn);
+					NewTemplateMission.TemplateDegrees = TemplateDegrees;
+				}
+				else if (def->name()->value() == "region") {
+					GetDefText(TemplateRegion, def, fn);
+					NewTemplateMission.TemplateRegion = FString(TemplateRegion);
+				}
+
+				else if (def->name()->value() == "objective") {
+					GetDefText(TemplateObjective, def, fn);
+					NewTemplateMission.TemplateObjective = FString(TemplateObjective);
+				}
+
+				else if (def->name()->value() == "sitrep") {
+					GetDefText(TemplateSitrep, def, fn);
+					NewTemplateMission.TemplateSitrep = FString(TemplateSitrep);
+				}
+
+				else if (def->name()->value() == "start") {
+					//GetDefTime(start, def, fn);
+					GetDefText(TemplateStart, def, fn);
+					NewTemplateMission.TemplateStart = FString(TemplateStart);
+				}
+				else if (def->name()->value() == "team") {
+					GetDefNumber(TemplateTeam, def, fn);
+					NewTemplateMission.TemplateTeam = TemplateTeam;
+				}
+
+				else if (def->name()->value() == "target") {
+					GetDefText(TargetName, def, fn);
+					NewTemplateMission.TargetName = FString(TargetName);
+				}
+
+				else if (def->name()->value() == "ward") {
+					GetDefText(WardName, def, fn);
+					NewTemplateMission.WardName = FString(WardName);
+				}
+
+				else if ((def->name()->value() == "alias")) {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: alias struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						//ParseAlias(def->term()->isStruct(), fn);
+					}
+				}
+
+				else if ((def->name()->value() == "callsign")) {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: callsign struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseCallsign(val);
+					}
+				}
+
+				else if (def->name()->value() == "optional") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: optional group struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseOptional(val);
+					}
+				}
+
+				else if (def->name()->value() == "element") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: element struct missing in '%s'\n", fn);
+					}
+					else {
+						ParseElement(def->term()->isStruct(), fn);
+						NewTemplateMission.Element = MissionElementArray;
+					}
+				}
+
+				else if (def->name()->value() == "event") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: event struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						ParseEvent(def->term()->isStruct(), fn);
+						NewTemplateMission.Event = MissionEventArray;
+					}
+				}
+			}     // def
+		}        // term
+	} while (term);
+
+	SSWInstance->loader->ReleaseBuffer(block);
+	TemplateMissionArray.Add(NewTemplateMission);
+}
+// +--------------------------------------------------------------------+
+void
+AGameDataLoader::ParseAlias(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseAlias()"));
+
+	Text  AliasName;
+	Text  design;
+	Text  code;
+	Text  elem_name;
+	int   iff = -1;
+	int   player = 0;
+	RLoc* rloc = 0;
+	bool  UseLocation = false;
+	Vec3  Location;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+
+			if (pdef->name()->value() == "name")
+				GetDefText(AliasName, pdef, fn);
+
+			else if (pdef->name()->value() == "elem")
+				GetDefText(elem_name, pdef, fn);
+
+			else if (pdef->name()->value() == "code")
+				GetDefText(code, pdef, fn);
+
+			else if (pdef->name()->value() == "design")
+				GetDefText(design, pdef, fn);
+
+			else if (pdef->name()->value() == "iff")
+				GetDefNumber(iff, pdef, fn);
+
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(Location, pdef, fn);
+				UseLocation = true;
+			}
+
+			else if (pdef->name()->value() == "rloc") {
+				if (pdef->term()->isStruct()) {
+					ParseRLoc(pdef->term()->isStruct(), fn);
+				}
+			}
+
+			else if (pdef->name()->value() == "player") {
+				GetDefNumber(player, pdef, fn);
+
+				if (player && !code.length())
+					code = "player";
+			}
+		}
+	}
+}
 
 void
 AGameDataLoader::ParseRLoc(TermStruct* rval, const char* fn)

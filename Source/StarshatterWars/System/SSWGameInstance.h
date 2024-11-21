@@ -1292,6 +1292,56 @@ struct FS_CampaignMission : public FTableRowBase {
 	}
 };
 
+
+USTRUCT(BlueprintType)
+struct FS_TemplateMission : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TemplateName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TargetName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString WardName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TemplateSystem;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TemplateRegion;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TemplateObjective;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TemplateSitrep;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TemplateStart;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int TemplateType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int TemplateTeam;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool TemplateDegrees = false;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionElement> Element;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionEvent> Event;
+
+	FS_TemplateMission() {
+		TargetName = "";
+		WardName = "";
+		TemplateName = "";
+		TemplateSystem = "";
+		TemplateRegion = "";
+		TemplateObjective = "";
+		TemplateSitrep = "";
+		TemplateStart = "";
+
+		TemplateType = 0;
+		TemplateTeam = 0;
+
+	    TemplateDegrees = false;
+	}
+};
+
 USTRUCT(BlueprintType)
 struct FS_Campaign : public FTableRowBase {
 	GENERATED_BODY()
@@ -1324,6 +1374,10 @@ struct FS_Campaign : public FTableRowBase {
 	TArray<FS_CampaignTemplateList> TemplateList;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CampaignMission> Missions;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_TemplateMission> TemplateMissions;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_TemplateMission> ScriptedMissions;
 	
 	FS_Campaign() {
 		Name = "";

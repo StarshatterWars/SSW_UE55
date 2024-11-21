@@ -269,7 +269,7 @@ action: {
    asset_id:   94,
    count:      4,
 
-   text:       "Scripts/Zolon_IS_Patrol.def",
+   text:       "Zolon_IS_Patrol.def",
 
    after:      "02/12:00:00",
    before:     "02/23:00:00",
@@ -286,7 +286,7 @@ action: {
    asset_id:   35,
    count:      1,
 
-   text:       "Scripts/Zolon_FS_Patrol.def",
+   text:       "Zolon_FS_Patrol.def",
 
    after:      "02/12:00:00",
    before:     "02/23:00:00",
@@ -302,7 +302,7 @@ action: {
    asset_id:   101,
    count:      1,
 
-   text:       "Scripts/Zolon_AS_Patrol.def",
+   text:       "Zolon_AS_Patrol.def",
 
    after:      "02/12:00:00",
    before:     "02/23:00:00",
@@ -318,7 +318,7 @@ action: {
    asset_id:   61,
    count:      4,
 
-   text:       "Scripts/Zolon_Asher_Patrol.def",
+   text:       "Zolon_Asher_Patrol.def",
 
    after:      "02/12:00:00",
    before:     "02/23:30:00",
@@ -334,7 +334,7 @@ action: {
    asset_id:   14,
    count:      4,
 
-   text:       "Scripts/Zolon_BG_Patrol.def",
+   text:       "Zolon_BG_Patrol.def",
 
    after:      "02/12:00:00",
    before:     "02/23:30:00",
@@ -350,7 +350,7 @@ action: {
    asset_id:   9,
    count:      4,
 
-   text:       "Scripts/Zolon_CVBG_Patrol.def",
+   text:       "Zolon_CVBG_Patrol.def",
 
    after:      "02/12:00:00",
    before:     "02/23:30:00",

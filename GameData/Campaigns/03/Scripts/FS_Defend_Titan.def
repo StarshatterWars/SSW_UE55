@@ -181,11 +181,11 @@ optional: {
 
 event: {
    id:              1,
-   event:           Message,
+   type:            Message,
    event_ship:      Player,
    event_source:    A1,
    sound:           "Vox/Misc/A02-01.ogg",
-   event_message:   "Mayday! Mayday! We are under attack!",
+   event_message:   "vox.misc.a02-01",
 
    trigger:         Time,
    time:            38,
@@ -193,7 +193,7 @@ event: {
 
 event: {
    id:              2,
-   event:           Damage,
+   type:            Damage,
    event_ship:      Defender,
    event_param:     40e3,
 
@@ -204,7 +204,7 @@ event: {
 
 event: {
    id:              3,
-   event:           Damage,
+   type:            Damage,
    event_ship:      A1,
    event_param:     30e3,
 
@@ -215,7 +215,7 @@ event: {
 
 event: {
    id:              4,
-   event:           Damage,
+   type:            Damage,
    event_ship:      A1,
    event_param:     30e3,
 
@@ -226,7 +226,7 @@ event: {
 
 event: {
    id:              5,
-   event:           Damage,
+   type:            Damage,
    event_ship:      A1,
    event_param:     30e3,
 

@@ -176,7 +176,7 @@ action: {
    asset_id:   93,
    count:      1,
 
-   text:       "Templates/IS_Defend_Titan",
+   text:       "IS_Defend_Titan",
 
    after:   "03/08:00:00",
    before:  "03/19:59:00",
@@ -194,7 +194,7 @@ action: {
    asset_id:   33,
    count:      1,
 
-   text:       "Templates/FS_Defend_Titan",
+   text:       "FS_Defend_Titan",
 
    after:   "03/08:00:00",
    before:  "03/19:59:00",
@@ -653,7 +653,7 @@ action: {
    asset_id:   133,
    count:      3,
 
-   text:       "Scripts/IS_Patrol_Iron",
+   text:       "IS_Patrol_Iron",
 
    req: { action: 831, status: COMPLETE }
 }
@@ -668,7 +668,7 @@ action: {
    asset_id:   53,
    count:      3,
 
-   text:       "Scripts/FS_Patrol_Iron",
+   text:       "FS_Patrol_Iron",
 
    req: { action: 831, status: COMPLETE }
 }
