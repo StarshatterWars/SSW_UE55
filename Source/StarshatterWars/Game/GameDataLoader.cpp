@@ -53,6 +53,50 @@ AGameDataLoader::AGameDataLoader()
 		GalaxyDataTable = GalaxyDataTableObject.Object;
 		//GalaxyDataTable->EmptyTable();
 	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
+
+	if (StarsDataTableObject.Succeeded())
+	{
+		StarsDataTable = StarsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Stars Data Table"));
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> PlanetsDataTableObject(TEXT("DataTable'/Game/Game/DT_Planets.DT_Planets'"));
+
+	if (PlanetsDataTableObject.Succeeded())
+	{
+		PlanetsDataTable = PlanetsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Planets Data Table"));
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> MoonsDataTableObject(TEXT("DataTable'/Game/Game/DT_Moons.DT_Moons'"));
+
+	if (MoonsDataTableObject.Succeeded())
+	{
+		MoonsDataTable = MoonsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Moons Data Table"));
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> RegionsDataTableObject(TEXT("DataTable'/Game/Game/DT_Regions.DT_Regions'"));
+
+	if (RegionsDataTableObject.Succeeded())
+	{
+		RegionsDataTable = RegionsDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -2755,6 +2799,305 @@ AGameDataLoader::LoadGalaxyMap()
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+void
+AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseStar()"));
+
+	Text  StarName = "";
+	Text  ImgName = "";
+	Text  MapName = "";
+	double Light = 0.0;
+	double Radius = 0.0;
+	double Rot = 0.0;
+	double Mass = 0.0;
+	double Orbit = 0.0;
+	double Tscale = 1.0;
+	bool   Retro = false;
+
+	FS_Star NewStarData;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		//SystemParent = this;
+
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(StarName, pdef, fn);
+				NewStarData.Name = FString(StarName);
+			}
+			else if (pdef->name()->value() == "map" || pdef->name()->value() == "icon") {
+				GetDefText(MapName, pdef, fn);
+				NewStarData.Map = FString(MapName);
+			}
+			else if (pdef->name()->value() == "image") {
+				GetDefText(ImgName, pdef, fn);
+				NewStarData.Image = FString(ImgName);
+			}
+			else if (pdef->name()->value() == "mass") {
+				GetDefNumber(Mass, pdef, fn);
+				NewStarData.Mass = Mass;
+			}
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+				NewStarData.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "radius") {
+				GetDefNumber(Radius, pdef, fn);
+				NewStarData.Radius = Radius;
+			}
+			else if (pdef->name()->value() == "rotation") {
+				GetDefNumber(Rot, pdef, fn);
+				NewStarData.Rot = Rot;
+			}
+			else if (pdef->name()->value() == "tscale") {
+				GetDefNumber(Tscale, pdef, fn);
+				NewStarData.Tscale = Tscale;
+			}
+			else if (pdef->name()->value() == "light") {
+				GetDefNumber(Light, pdef, fn);
+				NewStarData.Light = Light;
+			}
+			else if (pdef->name()->value() == "retro") {
+				GetDefBool(Retro, pdef, fn);
+				NewStarData.Retro = Retro;
+			}
+			else if (pdef->name()->value() == "color") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				NewStarData.Color = FColor(a.x, a.y, a.z, 1);
+			}
+
+			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				NewStarData.Back = FColor(a.x, a.y, a.z, 1);
+			}
+		}
+
+		// define our data table struct
+
+		FName RowName = FName(FString(StarName));
+
+		// call AddRow to insert the record
+		StarsDataTable->AddRow(RowName, NewStarData);
+	}
+}
+
+void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseStar()"));
+
+	Text   PlanetName = "";
+	Text   ImgName = "";
+	Text   MapName = "";
+	Text   HiName = "";
+	Text   ImgRing= "";
+	Text   GloName = "";
+	Text   GloHiName = "";
+	Text   GlossName = "";
+
+	double Radius = 0.0;
+	double Mass = 0.0;
+	double Orbit = 0.0;
+	double Rot = 0.0;
+	double Minrad = 0.0;
+	double Maxrad = 0.0;
+	double Tscale = 1.0;
+	double Tilt = 0.0;
+	bool   Retro = false;
+	bool   Lumin = false;
+	FColor AtmosColor = FColor::Black;
+
+	FS_Planet NewPlanetData;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(PlanetName, pdef, fn);
+				NewPlanetData.Name = FString(PlanetName);
+			}
+			else if (pdef->name()->value() == "map" || pdef->name()->value() == "icon") {
+				GetDefText(MapName, pdef, fn);
+				NewPlanetData.Map = FString(MapName);
+			}
+			else if (pdef->name()->value() == "image" || pdef->name()->value() == "image_west" || pdef->name()->value() == "image_east") {
+				GetDefText(ImgName, pdef, fn);
+				NewPlanetData.Image = FString(ImgName);
+			}
+			else if (pdef->name()->value() == "glow") {
+				GetDefText(GloName, pdef, fn);
+				NewPlanetData.Glow = FString(GloName);
+			}
+			else if (pdef->name()->value() == "gloss") {
+				GetDefText(GlossName, pdef, fn);
+				NewPlanetData.Gloss = FString(GlossName);
+			}
+			else if (pdef->name()->value() == "high_res" || pdef->name()->value() == "high_res_west" || pdef->name()->value() == "high_res_east") {
+				GetDefText(HiName, pdef, fn);
+				NewPlanetData.High = FString(HiName);
+			}
+			else if (pdef->name()->value() == "glow_high_res") {
+				GetDefText(GloHiName, pdef, fn);
+				NewPlanetData.GlowHigh = FString(GloHiName);
+			}
+			else if (pdef->name()->value() == "mass") {
+				GetDefNumber(Mass, pdef, fn);
+				NewPlanetData.Mass = Mass;
+			}
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+				NewPlanetData.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "retro") {
+				GetDefBool(Retro, pdef, fn);
+				NewPlanetData.Retro = Retro;
+			}
+			else if (pdef->name()->value() == "luminous") {
+				GetDefBool(Lumin, pdef, fn);
+				NewPlanetData.Lumin = Lumin;
+			}
+			else if (pdef->name()->value() == "rotation") {
+				GetDefNumber(Rot, pdef, fn);
+				NewPlanetData.Rot = Rot;
+			}
+			else if (pdef->name()->value() == "radius") {
+				GetDefNumber(Radius, pdef, fn);
+				NewPlanetData.Radius = Radius;
+			}	
+			else if (pdef->name()->value() == "ring") {
+				GetDefText(ImgRing, pdef, fn);
+				NewPlanetData.Rings = FString(ImgRing);
+			}
+			else if (pdef->name()->value() == "minrad") {
+				GetDefNumber(Minrad, pdef, fn);
+				NewPlanetData.Minrad = Minrad;
+			}
+			else if (pdef->name()->value() == "maxrad") {
+				GetDefNumber(Maxrad, pdef, fn);
+				NewPlanetData.Maxrad = Maxrad;
+			}
+			else if (pdef->name()->value() == "tscale") {
+				GetDefNumber(Tscale, pdef, fn);
+				NewPlanetData.Tscale = Tscale;
+			}
+			else if (pdef->name()->value() == "tilt") {
+				GetDefNumber(Tilt, pdef, fn);
+				NewPlanetData.Tilt = Tilt;
+			}
+			else if (pdef->name()->value() == "atmosphere") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				NewPlanetData.Atmos = AtmosColor;
+			}
+		}
+
+		// define our data table struct
+		NewPlanetData.Atmos = AtmosColor;
+
+		FName RowName = FName(FString(PlanetName));
+
+		// call AddRow to insert the record
+		PlanetsDataTable->AddRow(RowName, NewPlanetData);
+	}
+}
+
+void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
+{
+	Text   MapName = "";
+	Text   MoonName = "";
+	Text   ImgName = "";
+	Text   HiName = "";
+	Text   GloName = "";
+	Text   GloHiName = "";
+	Text   GlossName = "";
+
+	double Radius = 0.0;
+	double Mass = 0.0;
+	double Orbit = 0.0;
+	double Rot = 0.0;
+	double Tscale = 1.0;
+	double Tilt = 0.0;
+	bool   Retro = false;
+	FColor AtmosColor = FColor::Black;
+
+	FS_Moon NewMoonData;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(MoonName, pdef, fn);
+				NewMoonData.Name = FString(MoonName);
+			}
+			else if (pdef->name()->value() == "map" || pdef->name()->value() == "icon") {
+				GetDefText(MapName, pdef, fn);
+				NewMoonData.Map = FString(MapName);
+			}
+			else if (pdef->name()->value() == "image") {
+				GetDefText(ImgName, pdef, fn);
+				NewMoonData.Image = FString(ImgName);
+			}
+			else if (pdef->name()->value() == "glow") {
+				GetDefText(GloName, pdef, fn);
+				NewMoonData.Glo = FString(GloName);
+			}
+			else if (pdef->name()->value() == "high_res") {
+				GetDefText(HiName, pdef, fn);
+				NewMoonData.High = FString(HiName);
+			}
+			else if (pdef->name()->value() == "glow_high_res") {
+				GetDefText(GloHiName, pdef, fn);
+				NewMoonData.GlowHigh = FString(GloHiName);
+			}
+			else if (pdef->name()->value() == "gloss") {
+				GetDefText(GlossName, pdef, fn);
+				NewMoonData.Gloss = FString(GlossName);
+			}
+			else if (pdef->name()->value() == "mass") {
+				GetDefNumber(Mass, pdef, fn);
+				NewMoonData.Mass = Mass;
+			}
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+				NewMoonData.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "rotation") {
+				GetDefNumber(Rot, pdef, fn);
+				NewMoonData.Rot = Rot;
+			}
+			else if (pdef->name()->value() == "retro") {
+				GetDefBool(Retro, pdef, fn);
+				NewMoonData.Retro = Retro;
+			}
+			else if (pdef->name()->value() == "radius") {
+				GetDefNumber(Radius, pdef, fn);
+				NewMoonData.Radius = Radius;
+			}
+			else if (pdef->name()->value() == "tscale") {
+				GetDefNumber(Tscale, pdef, fn);
+				NewMoonData.Tscale = Tscale;
+			}
+			else if (pdef->name()->value() == "inclination") {
+				GetDefNumber(Tilt, pdef, fn);
+				NewMoonData.Tilt = Tilt;
+			}
+			else if (pdef->name()->value() == "atmosphere") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				NewMoonData.Atmos = AtmosColor;
+			}
+		}
+		// define our data table struct
+		FName RowName = FName(FString(MoonName));
+
+		// call AddRow to insert the record
+		MoonsDataTable->AddRow(RowName, NewMoonData);
+	}
+}
 // +--------------------------------------------------------------------+
 
 EEMPIRE_NAME

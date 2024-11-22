@@ -87,6 +87,8 @@ public:
 	void ParseAction(TermStruct* val, const char* filename);
 	void ParseOptional(TermStruct* val, const char* fn);
 	void LoadGalaxyMap();
+	void ParseStar(TermStruct* val, const char* fn);
+	void ParsePlanet(TermStruct* val, const char* fn);
 	EEMPIRE_NAME GetEmpireName(int32 emp);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -186,6 +188,11 @@ protected:
 	FS_CampaignAction NewCampaignAction;
 	
 	class UDataTable* GalaxyDataTable;
+	class UDataTable* StarSystemDataTable;
+	class UDataTable* StarsDataTable;
+	class UDataTable* PlanetsDataTable;
+	class UDataTable* MoonsDataTable;
+	class UDataTable* RegionsDataTable;
 	class UDataTable* CampaignDataTable;
 
 	int   ActionId;

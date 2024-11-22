@@ -415,7 +415,7 @@ struct FS_StarSystem : public FTableRowBase {
 		Class = ESPECTRAL_CLASS::G;;
 		Empire = EEMPIRE_NAME::Terellian_Alliance;
 		Size = ESTAR_SIZE::Ia;
-		UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+		UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)42
 	}
 };
 
