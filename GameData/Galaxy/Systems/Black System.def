@@ -28,17 +28,17 @@ star:        {
    light:   1.6e11,
    color:   (255, 250, 230),// - standard yellow
    back:    ( 70,  80, 130) // - nebula1
-   }
-
-planet:     {
-   name:    Blackout,
-   image_west:    "Moons/rock_w.pcx",
-   image_east:    "Moons/rock_e.pcx",
-   radius:  3e3,
-   mass:    5.6e26,
-   orbit:   1.8e11,
-   tscale:  2,
-   rotation: 16.3
+   
+   planet:     {
+	   name:    Blackout,
+	   image_west:    "Moons/rock_w.pcx",
+	   image_east:    "Moons/rock_e.pcx",
+	   radius:  3e3,
+	   mass:    5.6e26,
+	   orbit:   1.8e11,
+	   tscale:  2,
+	   rotation: 16.3
+	   }
    }
 
 region:     {

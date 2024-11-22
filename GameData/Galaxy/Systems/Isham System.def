@@ -27,20 +27,120 @@ star:        {
    light:   1.6e11,
    color:   (255, 250, 230),// - K
    back:    ( 30,  18,  12) // - nebula25
+
+   planet:     {
+	   name:    Garden
+	   map:     "Isham/garden_map.pcx"
+	   image:   "Isham/garden_lo.pcx",
+	   high_res:"Isham/garden_hi.jpg",
+	   gloss:   "Isham/garden_gloss.jpg",
+	   radius:  3.75e6,
+	   mass:    5.6e23,
+	   atmosphere: (145,170,190),
+	   orbit:   1.8e11,
+	   rotation: 26.3
+	}
+
+	planet: {
+	   name:    Senesca,
+	   map:     "Giants/GasGiant10_map.pcx"
+	   image:   "Giants/GasGiant10.jpg",
+	   radius:  14.1e6,
+	   mass:    3.6e26,
+	   tilt:    0.2,
+	   ring:    "Giants/Ring2.pcx",
+	   minrad:  1.5,
+	   maxrad:  1.8,
+	   orbit:   2.65e11,
+	   rotation: 61.3
+
+	   moon: {
+		   name:    Tarawa
+		   map:     "Moons/ice_map.pcx"
+		   image:   "Moons/ice_lo.pcx",
+		   high_res:"Moons/ice_hi.pcx",
+		   radius:  2.3e6,
+		   rotation: 16.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   4.11e8
+		}
+
+		moon: {
+		   name:    Maia,
+		   map:     "Jarnell/lanos_map.pcx",
+		   image:   "Jarnell/lanos_lo.pcx",
+		   high_res:"Jarnell/lanos_hi.pcx",
+		   radius:  4.2e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   6.24e8
+		}
+	}
+
+	planet: {
+	   name:    Ramek,
+	   map:     "Giants/GasGiant9_map.pcx",
+	   image:   "Giants/GasGiant9.jpg",
+	   radius:  18.1e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   3.35e11,
+	   rotation: 31.3
+
+	   moon: {
+		   name:    Alin
+		   map:     "Moons/ice_map.pcx"
+		   image:   "Moons/ice_lo.pcx",
+		   high_res:"Moons/ice_hi.pcx",
+		   radius:  5.3e6,
+		   rotation: 16.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   4.11e8
+		}
+
+		moon: {
+		   name:    Orpheus
+		   map:     "Jarnell/lanos_map.pcx"
+		   image:   "Jarnell/lanos_lo.pcx",
+		   high_res:"Jarnell/lanos_hi.pcx",
+		   radius:  3.1e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   6.24e8
+		}
+
+		moon: {
+		   name:    Tenebrus,
+		   map:     "Moons/ice_map.pcx"
+		   image:   "Moons/ice_lo.pcx",
+		   high_res:"Moons/ice_hi.pcx",
+		   radius:  6.1e6,
+		   rotation: 38.4,
+		   mass:    5.98e24,
+		   orbit:   13.24e8
+		}
+	}
+
+	planet:     {
+	   name:    Relay,
+	   map:     "Isham/relay_map.pcx",
+	   image:   "Isham/relay_lo.pcx",
+	   high_res:"Isham/relay_hi.jpg",
+	   gloss:   "Isham/relay_gloss.jpg",
+	   radius:  3.15e6,
+	   mass:    4.6e23,
+	   atmosphere: (130,120,110),
+	   orbit:   4.18e11,
+	   rotation: 14.3
+	}
 }
 
-planet:     {
-   name:    Garden
-   map:     "Isham/garden_map.pcx"
-   image:   "Isham/garden_lo.pcx",
-   high_res:"Isham/garden_hi.jpg",
-   gloss:   "Isham/garden_gloss.jpg",
-   radius:  3.75e6,
-   mass:    5.6e23,
-   atmosphere: (145,170,190),
-   orbit:   1.8e11,
-   rotation: 26.3
-}
+
 
 terrain: {
    name:          "Tiger Bay",
@@ -90,23 +190,6 @@ region:     {
    inclination: 0.4
 }
 
-
-// GAS GIANTS:
-
-planet: {
-   name:    Senesca,
-   map:     "Giants/GasGiant10_map.pcx"
-   image:   "Giants/GasGiant10.jpg",
-   radius:  14.1e6,
-   mass:    3.6e26,
-   tilt:    0.2,
-   ring:    "Giants/Ring2.pcx",
-   minrad:  1.5,
-   maxrad:  1.8,
-   orbit:   2.65e11,
-   rotation: 61.3
-}
-
 region: {
    name:    Senesca,
    parent:  Senesca,
@@ -117,43 +200,6 @@ region: {
    inclination: 0.3
 }
 
-moon: {
-   name:    Tarawa
-   map:     "Moons/ice_map.pcx"
-   image:   "Moons/ice_lo.pcx",
-   high_res:"Moons/ice_hi.pcx",
-   radius:  2.3e6,
-   rotation: 16.4,
-   atmosphere: (180,180,255),
-   mass:    5.98e24,
-   orbit:   4.11e8
-}
-
-moon: {
-   name:    Maia,
-   map:     "Jarnell/lanos_map.pcx",
-   image:   "Jarnell/lanos_lo.pcx",
-   high_res:"Jarnell/lanos_hi.pcx",
-   radius:  4.2e6,
-   rotation: 18.4,
-   atmosphere: (180,180,255),
-   mass:    3.28e24,
-   orbit:   6.24e8
-}
-
-
-planet: {
-   name:    Ramek,
-   map:     "Giants/GasGiant9_map.pcx",
-   image:   "Giants/GasGiant9.jpg",
-   radius:  18.1e6,
-   mass:    3.6e26,
-   tscale:  2,
-   tilt:    0.13,
-   orbit:   3.35e11,
-   rotation: 31.3
-}
-
 region: {
    name:    Ramek,
    parent:  Ramek,
@@ -162,56 +208,6 @@ region: {
    grid:    20e3,
    orbit:   65.3e6,
    inclination: 0.3
-}
-
-moon: {
-   name:    Alin
-   map:     "Moons/ice_map.pcx"
-   image:   "Moons/ice_lo.pcx",
-   high_res:"Moons/ice_hi.pcx",
-   radius:  5.3e6,
-   rotation: 16.4,
-   atmosphere: (180,180,255),
-   mass:    5.98e24,
-   orbit:   4.11e8
-}
-
-moon: {
-   name:    Orpheus
-   map:     "Jarnell/lanos_map.pcx"
-   image:   "Jarnell/lanos_lo.pcx",
-   high_res:"Jarnell/lanos_hi.pcx",
-   radius:  3.1e6,
-   rotation: 18.4,
-   atmosphere: (180,180,255),
-   mass:    3.28e24,
-   orbit:   6.24e8
-}
-
-moon: {
-   name:    Tenebrus,
-   map:     "Moons/ice_map.pcx"
-   image:   "Moons/ice_lo.pcx",
-   high_res:"Moons/ice_hi.pcx",
-   radius:  6.1e6,
-   rotation: 38.4,
-   mass:    5.98e24,
-   orbit:   13.24e8
-}
-
-
-
-planet:     {
-   name:    Relay,
-   map:     "Isham/relay_map.pcx",
-   image:   "Isham/relay_lo.pcx",
-   high_res:"Isham/relay_hi.jpg",
-   gloss:   "Isham/relay_gloss.jpg",
-   radius:  3.15e6,
-   mass:    4.6e23,
-   atmosphere: (130,120,110),
-   orbit:   4.18e11,
-   rotation: 14.3
 }
 
 region:     {

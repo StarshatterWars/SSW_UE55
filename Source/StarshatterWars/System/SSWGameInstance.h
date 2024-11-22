@@ -409,47 +409,92 @@ struct FS_StarSky : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
-struct FS_Star : public FTableRowBase {
+struct FS_Region : public FTableRowBase {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString  Name;
+	FString Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString  Image;
+	TArray<FString> Link;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString  Map;
+	double Size;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Light = 0.0;
+	double Orbit;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Radius = 0.0;
+	double Grid;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Rot = 0.0;
+	double Inclination;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Mass = 0.0;
+	int Asteroids;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Orbit = 0.0;
+	FString Parent;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Tscale = 1.0;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool   Retro = false;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FColor  Color;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FColor  Back;
+	TEnumAsByte<EOrbitalType> Type;
 
-	FS_Star() {
+	FS_Region() {
+		Name = "";
+		Size = 1.0e6;
+		Orbit = 0.0;
+		Grid = 25000;
+		Inclination = 0;
+		Asteroids = 0;
+		Parent = "",
+			Type = EOrbitalType::NOTHING;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_Moon : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Image;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Map;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString High;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Glow;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString GlowHigh;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Gloss;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Radius;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Mass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Rot;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tscale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tilt;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool   Retro;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor  Atmos;
+
+	FS_Moon() {
 		Name = "";
 		Image = "";
 		Map = "";
-		Light = 0.0;
+		High = "";
+		Glow = "";
+		GlowHigh = "";
+		Gloss = "";
+
 		Radius = 0.0;
-		Rot = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		Rot = 0.0;
 		Tscale = 1.0;
+		Tilt = 0.0;
 		Retro = false;
-		Color = FColor(0, 0, 0, 0);
-		Back = FColor(0, 0, 0, 0);
+		Atmos = FColor::Black;
 	}
 };
 
@@ -495,6 +540,9 @@ struct FS_Planet : public FTableRowBase {
 	bool   Lumin;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Atmos;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_Moon> Moon;
+
 	FS_Planet() {
 		Name = "";
 		Image = "";
@@ -520,94 +568,54 @@ struct FS_Planet : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
-struct FS_Moon : public FTableRowBase {
+struct FS_Star : public FTableRowBase {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Name;
+	FString  Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Image;
+	FString  Image;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Map;
+	FString  Map;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString High;
+	double Light = 0.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Glow;
+	double Radius = 0.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString GlowHigh;
+	double Rot = 0.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Gloss;
+	double Mass = 0.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Radius;
+	double Orbit = 0.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Mass;
+	double Tscale = 1.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Orbit;
+	bool   Retro = false;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Rot;
+	FColor  Color;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Tscale;
+	FColor  Back;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Tilt;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool   Retro;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FColor  Atmos;
-	
-	FS_Moon() {
+	TArray<FS_Planet> Planet;
+
+	FS_Star() {
 		Name = "";
 		Image = "";
 		Map = "";
-		High = "";
-		Glow = "";
-		GlowHigh = "";
-		Gloss = "";
-
+		Light = 0.0;
 		Radius = 0.0;
+		Rot = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
-		Rot = 0.0;
 		Tscale = 1.0;
-		Tilt = 0.0;
 		Retro = false;
-		Atmos = FColor::Black;
+		Color = FColor(0, 0, 0, 0);
+		Back = FColor(0, 0, 0, 0);
 	}
 };
 
-USTRUCT(BlueprintType)
-struct FS_Region : public FTableRowBase {
-	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Name;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray<FString> Link;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Size;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Orbit;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Grid;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	double Inclination;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int Asteroids;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Parent;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TEnumAsByte<EOrbitalType> Type;
-	
-	FS_Region() {
-		Name = "";
-		Size = 1.0e6;
-		Orbit = 0.0;
-		Grid = 25000;
-		Inclination = 0;
-		Asteroids = 0;
-		Parent = "",
-		Type = EOrbitalType::NOTHING;
-	}
-};
+
 
 USTRUCT(BlueprintType)
 struct FS_StarSystem : public FTableRowBase {
@@ -625,6 +633,8 @@ struct FS_StarSystem : public FTableRowBase {
 	FS_StarSky StarSky;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_Star> Star;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_Region> Region;
 	
 	FS_StarSystem() {
 		SystemName = "";

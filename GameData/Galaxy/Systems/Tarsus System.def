@@ -26,6 +26,29 @@ star: {
    light:   1.5e11,
    color:   (255, 250, 230),// - standard yellow
    back:    (170, 110,  50),// - nebula7
+
+   planet: {
+	   name:    "Tarsus I"
+	   map:     "Tarsus/tarsus_map.pcx"
+	   image:   "Tarsus/tarsus_lo.pcx",
+	   high_res:"Tarsus/tarsus_hi.jpg",
+	   atmosphere: (90,70,60),
+	   radius:  3.75e6,
+	   mass:    5.6e26,
+	   orbit:   1.95e11,
+	   rotation: 21.3
+	}
+
+	planet: {
+	   name:    "Tarsus II",
+	   map:     "Tarsus/oman_map.pcx"
+	   image:   "Tarsus/oman_lo.pcx",
+	   high_res:"Tarsus/oman_hi.jpg",
+	   radius:  2.15e6,
+	   mass:    3.96e26,
+	   orbit:   3.61e11,
+	   rotation: 11.1
+	}
 }
 
 region: {
@@ -39,18 +62,6 @@ region: {
    asteroids: 200
 }
 
-planet: {
-   name:    "Tarsus I"
-   map:     "Tarsus/tarsus_map.pcx"
-   image:   "Tarsus/tarsus_lo.pcx",
-   high_res:"Tarsus/tarsus_hi.jpg",
-   atmosphere: (90,70,60),
-   radius:  3.75e6,
-   mass:    5.6e26,
-   orbit:   1.95e11,
-   rotation: 21.3
-}
-
 region: {
    name:    Tarsus,
    parent:  "Tarsus I",
@@ -59,18 +70,6 @@ region: {
    grid:    20e3,
    orbit:   17e6,
    inclination: 0.45
-}
-
-
-planet: {
-   name:    "Tarsus II",
-   map:     "Tarsus/oman_map.pcx"
-   image:   "Tarsus/oman_lo.pcx",
-   high_res:"Tarsus/oman_hi.jpg",
-   radius:  2.15e6,
-   mass:    3.96e26,
-   orbit:   3.61e11,
-   rotation: 11.1
 }
 
 region: {

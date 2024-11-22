@@ -2793,12 +2793,6 @@ AGameDataLoader::LoadGalaxyMap()
 								}
 							}
 						}
-
-
-						//if (star_name[0]) {
-						//	Star* star = new Star(star_name, star_loc, star_class);
-						//	stars.append(star);
-						//}
 					}
 				}
 			}
@@ -2825,6 +2819,7 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 	bool   Retro = false;
 
 	FS_Star NewStarData;
+	PlanetDataArray.Empty();
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2880,6 +2875,15 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 				GetDefVec(a, pdef, fn);
 				NewStarData.Back = FColor(a.x, a.y, a.z, 1);
 			}
+			else if (pdef->name()->value() == "planet") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: planet struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					ParsePlanet(pdef->term()->isStruct(), fn);
+					NewStarData.Planet = PlanetDataArray;
+				}
+			}
 		}	
 	}
 	StarDataArray.Add(NewStarData);
@@ -2887,7 +2891,7 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 
 void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
 {
-	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseStar()"));
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParsePlanet()"));
 
 	Text   PlanetName = "";
 	Text   ImgName = "";
@@ -2909,8 +2913,9 @@ void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
 	bool   Retro = false;
 	bool   Lumin = false;
 	FColor AtmosColor = FColor::Black;
-
+	
 	FS_Planet NewPlanetData;
+	MoonDataArray.Empty();
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2993,20 +2998,24 @@ void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
 				AtmosColor = FColor(a.x, a.y, a.z, 1);
 				NewPlanetData.Atmos = AtmosColor;
 			}
+			else if (pdef->name()->value() == "moon") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: moon struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					ParseMoon(pdef->term()->isStruct(), fn);
+					NewPlanetData.Moon = MoonDataArray;
+				}
+			}
 		}
-
-		// define our data table struct
-		NewPlanetData.Atmos = AtmosColor;
-
-		FName RowName = FName(FString(PlanetName));
-
-		// call AddRow to insert the record
-		PlanetsDataTable->AddRow(RowName, NewPlanetData);
 	}
+	PlanetDataArray.Add(NewPlanetData);
 }
 
 void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 {
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseMoon()"));
+
 	Text   MapName = "";
 	Text   MoonName = "";
 	Text   ImgName = "";
@@ -3092,12 +3101,8 @@ void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 				NewMoonData.Atmos = AtmosColor;
 			}
 		}
-		// define our data table struct
-		FName RowName = FName(FString(MoonName));
-
-		// call AddRow to insert the record
-		MoonsDataTable->AddRow(RowName, NewMoonData);
 	}
+	MoonDataArray.Add(NewMoonData);
 }
 
 // +-------------------------------------------------------------------+
@@ -3173,6 +3178,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 	FColor AmbientColor = FColor::Black;
 	FS_StarSystem NewStarSystem;
 	StarDataArray.Empty();
+	MoonDataArray.Empty();
 
 	// parse the system:
 	do {
@@ -3239,25 +3245,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 						NewStarSystem.Star = StarDataArray;
 					}
 				}
-
-				else if (def->name()->value() == "planet") {
-					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: planet struct missing in '%s'\n", fn);
-					}
-					else {
-						ParsePlanet(def->term()->isStruct(), fn);
-					}
-				}
-
-				else if (def->name()->value() == "moon") {
-					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: moon struct missing in '%s'\n", fn);
-					}
-					else {
-						ParseMoon(def->term()->isStruct(), fn);
-					}
-				}
-
+				
 				else if (def->name()->value() == "region") {
 					if (!def->term() || !def->term()->isStruct()) {
 						Print("WARNING: region struct missing in '%s'\n", fn);

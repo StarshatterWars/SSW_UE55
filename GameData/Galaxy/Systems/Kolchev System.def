@@ -27,18 +27,116 @@ star:        {
    light:   1.6e11,
    color:   (255, 252, 250),// - G White
    back:    ( 50,  45,  35) // - nebula3
+
+   planet:     {
+	   name:    Ilya
+	   map:     "Kolchev/ilya_map.pcx"
+	   image:   "Kolchev/ilya_lo.pcx",
+	   high_res:"Kolchev/ilya_hi.pcx",
+	   radius:  3.6e6,
+	   mass:    4.1e26,
+	   orbit:   1.03e11,
+	   rotation: 19.3
+	}
+
+	planet:     {
+	   name:    Kolchev
+	   map:     "Kolchev/kolchev_map.pcx"
+	   image:   "Kolchev/kolchev_lo.pcx"
+	   high_res:"Kolchev/kolchev_hi.jpg"
+	   gloss:   "Kolchev/kolchev_gloss.jpg"
+	   glow_high_res: "Kolchev/kolchev_lights.jpg"
+	   atmosphere: (130,130,150)
+	   radius:  4.8e6,
+	   mass:    3.9e24,
+	   orbit:   1.95e11,
+	   rotation: 23.3
+
+	   moon: {
+		   name:    "Odin"
+		   map:     "Borova/maraner_map.pcx"
+		   image:   "Borova/maraner_lo.pcx",
+		   high_res:"Borova/maraner_hi.pcx",
+		   radius:  1.4e6,
+		   mass:    4.3e23,
+		   orbit:   40e6,
+		   rotation: 9.2
+		}
+
+		moon: {
+		   name:    "Dva"
+		   map:     "Moons/Moon2_map.pcx"
+		   high_res:"Moons/Moon2.jpg",
+		   radius:      0.85e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        0.6e24,
+		   orbit:       71e6
+		}
+	}
+	
+	planet: {
+	   name:    Anatoly
+	   map:     "Giants/GasGiant6_map.pcx"
+	   image:   "Giants/GasGiant6.jpg",
+	   radius:  29.1e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   2.95e11,
+	   rotation: 29.3
+	}
+
+	planet: {
+	   name:    Volova,
+	   map:     "Giants/GasGiant9_map.pcx"
+	   image:   "Giants/GasGiant9.jpg",
+	   radius:  20e6,
+	   mass:    5.42e26,
+	   orbit:   3.75e11,
+	   tilt:    0.25,
+	   ring:    "Giants/Ring2.pcx",
+	   minrad:  1.2,
+	   maxrad:  1.9,
+	   rotation: 19.5,
+
+	   moon: {
+		   name:    Anya
+		   map:     "Silessia/nero_map.pcx"
+		   image:   "Silessia/nero_lo.pcx",
+		   high_res:"Silessia/nero_hi.jpg",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   2.65e8,
+		   rotation: 100
+		}
+
+		moon: {
+		   name:    Vlad
+		   map:     "Moons/Moon1_map.pcx"
+		   image:   "Moons/Moon1_lo.pcx",
+		   high_res:"Moons/Moon1.jpg",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       4.31e8
+		}
+
+		moon: {
+		   name:    Dmitri,
+		   map:     "Moons/ice_map.pcx"
+		   image:   "Moons/ice_lo.pcx",
+		   high_res:"Moons/ice_hi.pcx",
+		   radius:  6e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   8.14e8
+		}
+	}
 }
 
-planet:     {
-   name:    Ilya
-   map:     "Kolchev/ilya_map.pcx"
-   image:   "Kolchev/ilya_lo.pcx",
-   high_res:"Kolchev/ilya_hi.pcx",
-   radius:  3.6e6,
-   mass:    4.1e26,
-   orbit:   1.03e11,
-   rotation: 19.3
-}
 
 region:     {
    name:    Ilya,
@@ -49,21 +147,6 @@ region:     {
    grid:    20e3,
    orbit:   18e6,
    inclination: 0.5
-}
-
-
-planet:     {
-   name:    Kolchev
-   map:     "Kolchev/kolchev_map.pcx"
-   image:   "Kolchev/kolchev_lo.pcx"
-   high_res:"Kolchev/kolchev_hi.jpg"
-   gloss:   "Kolchev/kolchev_gloss.jpg"
-   glow_high_res: "Kolchev/kolchev_lights.jpg"
-   atmosphere: (130,130,150)
-   radius:  4.8e6,
-   mass:    3.9e24,
-   orbit:   1.95e11,
-   rotation: 23.3
 }
 
 terrain: {
@@ -112,42 +195,6 @@ region:     {
    inclination: 0.4
 }
 
-moon: {
-   name:    "Odin"
-   map:     "Borova/maraner_map.pcx"
-   image:   "Borova/maraner_lo.pcx",
-   high_res:"Borova/maraner_hi.pcx",
-   radius:  1.4e6,
-   mass:    4.3e23,
-   orbit:   40e6,
-   rotation: 9.2
-}
-
-moon: {
-   name:    "Dva"
-   map:     "Moons/Moon2_map.pcx"
-   high_res:"Moons/Moon2.jpg",
-   radius:      0.85e6,
-   rotation:    19,
-   inclination: 0.0,
-   mass:        0.6e24,
-   orbit:       71e6
-}
-
-
-
-planet: {
-   name:    Anatoly
-   map:     "Giants/GasGiant6_map.pcx"
-   image:   "Giants/GasGiant6.jpg",
-   radius:  29.1e6,
-   mass:    3.6e26,
-   tscale:  2,
-   tilt:    0.13,
-   orbit:   2.95e11,
-   rotation: 29.3
-}
-
 region: {
    name:    Anatoly,
    parent:  Anatoly,
@@ -156,20 +203,6 @@ region: {
    grid:    20e3,
    orbit:   79.53e6,
    inclination: 0.2
-}
-
-planet: {
-   name:    Volova,
-   map:     "Giants/GasGiant9_map.pcx"
-   image:   "Giants/GasGiant9.jpg",
-   radius:  20e6,
-   mass:    5.42e26,
-   orbit:   3.75e11,
-   tilt:    0.25,
-   ring:    "Giants/Ring2.pcx",
-   minrad:  1.2,
-   maxrad:  1.9,
-   rotation: 19.5,
 }
 
 region: {
@@ -188,39 +221,6 @@ region: {
    link:    Cavenda,  // Radix
 }
 
-moon: {
-   name:    Anya
-   map:     "Silessia/nero_map.pcx"
-   image:   "Silessia/nero_lo.pcx",
-   high_res:"Silessia/nero_hi.jpg",
-   radius:  3e6,
-   mass:    3e22,
-   orbit:   2.65e8,
-   rotation: 100
-}
 
-moon: {
-   name:    Vlad
-   map:     "Moons/Moon1_map.pcx"
-   image:   "Moons/Moon1_lo.pcx",
-   high_res:"Moons/Moon1.jpg",
-   radius:      5.2e6,
-   rotation:    19,
-   inclination: 0.0,
-   mass:        6.0e24,
-   orbit:       4.31e8
-}
-
-moon: {
-   name:    Dmitri,
-   map:     "Moons/ice_map.pcx"
-   image:   "Moons/ice_lo.pcx",
-   high_res:"Moons/ice_hi.pcx",
-   radius:  6e6,
-   rotation: 18.4,
-   atmosphere: (180,180,255),
-   mass:    5.98e24,
-   orbit:   8.14e8
-}
 
 

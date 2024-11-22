@@ -26,18 +26,18 @@ star:        {
    light:   1.6e11,
    color:   (255, 250, 230),// - standard yellow
    back:    (170, 120,  70)
-   }
 
-planet:     {
-   name:    Mausoleum
-   map:     "Moons/rock_map.pcx"
-   image:   "Moons/rock_lo.pcx",
-   high_res:"Moons/rock_hi.pcx",
-   radius:  300,
-   mass:    5.6e26,
-   orbit:   1.8e11,
-   tscale:  2,
-   rotation: 16.3
+   planet:     {
+	   name:    Mausoleum
+	   map:     "Moons/rock_map.pcx"
+	   image:   "Moons/rock_lo.pcx",
+	   high_res:"Moons/rock_hi.pcx",
+	   radius:  300,
+	   mass:    5.6e26,
+	   orbit:   1.8e11,
+	   tscale:  2,
+	   rotation: 16.3
+	   }
    }
 
 region:     {

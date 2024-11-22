@@ -188,7 +188,10 @@ protected:
 	TArray<FS_MissionInstruction> MissionInstructionArray;
 	TArray<FS_MissionInstruction> MissionObjectiveArray;
 	TArray<FS_MissionInstruction> MissionNavpointArray;
+	
 	TArray<FS_Star> StarDataArray;
+	TArray<FS_Planet> PlanetDataArray;
+	TArray<FS_Moon> MoonDataArray;
 
 	TArray<FS_TemplateMission> TemplateMissionArray;
 	TArray<FS_TemplateMission> ScriptedMissionArray;

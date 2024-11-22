@@ -27,19 +27,99 @@ star:        {
    light:   7.8e10,
    color:   (255, 232, 224),
    back:    ( 44,  66,  88),
+
+   planet:       {
+	   name:    Haiche
+	   map:     "Haiche/haiche_map.pcx"
+	   image:   "Haiche/haiche_lo.pcx",
+	   high_res:"Haiche/haiche_hi.jpg",
+	   radius:  4.8e6,
+	   mass:    5.75e24,
+	   atmosphere: (200,180,160),
+	   orbit:   0.94e11,
+	   rotation: 17.3
+
+	   moon:       {
+		   name:    Eiller
+		   map:     "Moons/lunar_map.pcx"
+		   image:   "Moons/lunar_lo.pcx",
+		   high_res:"Moons/lunar_hi.pcx",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   85e6
+		}
+	}
+	
+	planet: {
+	   name:    Cygnus
+	   map:     "Giants/GasGiant5_map.pcx"
+	   image:   "Giants/GasGiant5.jpg",
+	   radius:  27.1e6,
+	   mass:    2.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   2.35e11,
+	   rotation: 31.3
+	   
+	   moon: {
+		   name:    Corvus
+		   map:     "Moons/rock_map.pcx"
+		   image:   "Moons/rock_lo.pcx",
+		   high_res:"Moons/rock_hi.pcx",
+		   radius:  1.3e6,
+		   rotation: 16.4,
+		   mass:    5.98e24,
+		   orbit:   4.81e8
+		}
+
+		moon: {
+		   name:    Aquilae,
+		   map:     "Moons/ice_map.pcx"
+		   image:   "Moons/ice_lo.pcx",
+		   high_res:"Moons/ice_hi.pcx",
+		   radius:  2.1e6,
+		   rotation: 28.4,
+		   mass:    5.98e24,
+		   orbit:   6.14e8
+		}
+	}
+	
+	planet: {
+	   name:    "Tal Amin"
+	   map:     "Giants/GasGiant11_map.pcx"
+	   image:   "Giants/GasGiant11.jpg",
+	   radius:  38.2e6,
+	   mass:    4.0e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   3.41e11,
+	   rotation: 31.3
+
+	   moon: {
+		   name:    Benares,
+		   map:     "Moons/rock_map.pcx"
+		   image:   "Moons/rock_lo.pcx",
+		   high_res:"Moons/rock_hi.pcx",
+		   radius:  2.3e6,
+		   rotation: 26.4,
+		   mass:    5.98e24,
+		   orbit:   4.21e8
+		}
+
+		moon: {
+		   name:    Kala
+		   map:     "Haiche/kala_map.pcx"
+		   image:   "Haiche/kala_lo.pcx",
+		   high_res:"Haiche/kala_hi.pcx",
+		   radius:  2.9e6,
+		   rotation: 18.4,
+		   mass:    5.98e24,
+		   orbit:   5.74e8
+		}
+	}
 }
 
-planet:       {
-   name:    Haiche
-   map:     "Haiche/haiche_map.pcx"
-   image:   "Haiche/haiche_lo.pcx",
-   high_res:"Haiche/haiche_hi.jpg",
-   radius:  4.8e6,
-   mass:    5.75e24,
-   atmosphere: (200,180,160),
-   orbit:   0.94e11,
-   rotation: 17.3
-}
+
 
 terrain: {
    name:          "Tantalus",
@@ -87,30 +167,6 @@ region:     {
    inclination: 0.45
 }
 
-moon:       {
-   name:    Eiller
-   map:     "Moons/lunar_map.pcx"
-   image:   "Moons/lunar_lo.pcx",
-   high_res:"Moons/lunar_hi.pcx",
-   radius:  1e6,
-   mass:    8e22,
-   orbit:   85e6
-}
-
-// GAS GIANTS:
-
-planet: {
-   name:    Cygnus
-   map:     "Giants/GasGiant5_map.pcx"
-   image:   "Giants/GasGiant5.jpg",
-   radius:  27.1e6,
-   mass:    2.6e26,
-   tscale:  2,
-   tilt:    0.13,
-   orbit:   2.35e11,
-   rotation: 31.3
-}
-
 region: {
    name:    Cygnus,
    parent:  Cygnus,
@@ -121,42 +177,6 @@ region: {
    inclination: 0.2
 }
 
-moon: {
-   name:    Corvus
-   map:     "Moons/rock_map.pcx"
-   image:   "Moons/rock_lo.pcx",
-   high_res:"Moons/rock_hi.pcx",
-   radius:  1.3e6,
-   rotation: 16.4,
-   mass:    5.98e24,
-   orbit:   4.81e8
-}
-
-moon: {
-   name:    Aquilae,
-   map:     "Moons/ice_map.pcx"
-   image:   "Moons/ice_lo.pcx",
-   high_res:"Moons/ice_hi.pcx",
-   radius:  2.1e6,
-   rotation: 28.4,
-   mass:    5.98e24,
-   orbit:   6.14e8
-}
-
-
-
-planet: {
-   name:    "Tal Amin"
-   map:     "Giants/GasGiant11_map.pcx"
-   image:   "Giants/GasGiant11.jpg",
-   radius:  38.2e6,
-   mass:    4.0e26,
-   tscale:  2,
-   tilt:    0.13,
-   orbit:   3.41e11,
-   rotation: 31.3
-}
-
 region: {
    name:    "Tal Amin",
    parent:  "Tal Amin",
@@ -165,28 +185,6 @@ region: {
    grid:    20e3,
    orbit:   150e6,
    inclination: 0.2
-}
-
-moon: {
-   name:    Benares,
-   map:     "Moons/rock_map.pcx"
-   image:   "Moons/rock_lo.pcx",
-   high_res:"Moons/rock_hi.pcx",
-   radius:  2.3e6,
-   rotation: 26.4,
-   mass:    5.98e24,
-   orbit:   4.21e8
-}
-
-moon: {
-   name:    Kala
-   map:     "Haiche/kala_map.pcx"
-   image:   "Haiche/kala_lo.pcx",
-   high_res:"Haiche/kala_hi.pcx",
-   radius:  2.9e6,
-   rotation: 18.4,
-   mass:    5.98e24,
-   orbit:   5.74e8
 }
 
 region: {

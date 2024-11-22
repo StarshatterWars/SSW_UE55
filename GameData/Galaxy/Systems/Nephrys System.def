@@ -26,19 +26,19 @@ star:        {
    light:   2.6e11,
    color:   (245, 245, 255),// - A Blue-White
    back:    ( 43,  40,  46) // - nebula18 (dark gray)
-}
 
-planet:     {
-   name:    Nergal
-   map:     "Nephrys/nergal_map.pcx"
-   image:   "Nephrys/nergal_lo.pcx",
-   high_res:"Nephrys/nergal_hi.jpg",
-   gloss:   "Nephrys/nergal_gloss.jpg",
-   glow_high_res: "Nephrys/nergal_fire.jpg",
-   radius:  9e6,
-   mass:    5.6e28,
-   orbit:   4.8e11,
-   rotation: 160.3,
+   planet:     {
+	   name:    Nergal
+	   map:     "Nephrys/nergal_map.pcx"
+	   image:   "Nephrys/nergal_lo.pcx",
+	   high_res:"Nephrys/nergal_hi.jpg",
+	   gloss:   "Nephrys/nergal_gloss.jpg",
+	   glow_high_res: "Nephrys/nergal_fire.jpg",
+	   radius:  9e6,
+	   mass:    5.6e28,
+	   orbit:   4.8e11,
+	   rotation: 160.3,
+	}
 }
 
 region:     {

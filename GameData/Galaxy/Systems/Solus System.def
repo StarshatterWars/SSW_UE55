@@ -27,19 +27,115 @@ star: {
    light:   1.6e11,
    color:   (255, 250, 225), // standard yellow
    back:    ( 20,  50,  90), // nebula15 blue
-}
 
+   planet: {
+	   name:    Meridian
+	   map:     "Solana/meridian_map.pcx"
+	   image:   "Solana/ur_lo.pcx",
+	   high_res:"Solana/ur_hi.pcx",
+	   radius:  3.5e6,
+	   mass:    2.18e24,
+	   atmosphere: (200,185,165),
+	   orbit:   6.80e10,
+	   rotation: 15.35
+	}
 
-planet: {
-   name:    Meridian
-   map:     "Solana/meridian_map.pcx"
-   image:   "Solana/ur_lo.pcx",
-   high_res:"Solana/ur_hi.pcx",
-   radius:  3.5e6,
-   mass:    2.18e24,
-   atmosphere: (200,185,165),
-   orbit:   6.80e10,
-   rotation: 15.35
+	planet: {
+	   name:    Solus
+	   map:     "Solus/solus_map.pcx",
+	   image:   "Solus/solus_lo.pcx",
+	   high_res:"Solus/solus_hi.jpg",
+	   gloss:   "Solus/solus_gloss.jpg",
+	   glow_high_res: "Solus/solus_lights.jpg",
+	   radius:  5.4e6,
+	   mass:    4.18e24,
+	   atmosphere: (155,175,220),
+	   orbit:   1.4e11,
+	   rotation: 21.3
+
+	   moon: {
+		   name:    Kalon
+		   map:     "Solus/omane_map.pcx",
+		   image:   "Solus/omane_lo.pcx",
+		   high_res:"Solus/omane_hi.pcx",
+		   radius:  1.83e6,
+		   mass:    8.12e22,
+		   orbit:   45e6,
+		   rotation: 8
+		}
+
+		moon: {
+		   name:    Alar
+		   map:     "Moons/lunar_map.pcx"
+		   image:   "Moons/lunar_lo.pcx",
+		   high_res:"Moons/lunar_hi.pcx",
+		   radius:  0.5e6,
+		   mass:    4.3e22,
+		   orbit:   59.5e6
+		}
+	}
+
+	planet: {
+	   name:    Jalah,
+	   map:     "Solus/jalah_map.pcx",
+	   image:   "Solus/jalah.pcx",
+	   radius:  19.1e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   2.95e11,
+	   rotation: 29.3
+	}
+
+	planet: {
+	   name:    Trellis
+	   map:     "Giants/GasGiant9_map.pcx"
+	   image:   "Giants/GasGiant9.jpg",
+	   radius:  30e6,
+	   mass:    5.42e26,
+	   orbit:   3.75e11,
+	   tscale:  2,
+	   tilt:    0.125,
+	   ring:    "Giants/Ring2.pcx",
+	   minrad:  1.2,
+	   maxrad:  1.9,
+	   rotation: 19.5,
+
+	   moon: {
+		   name:    Ovid,
+		   map:     "Moons/rock_map.pcx"
+		   image:   "Moons/rock_lo.pcx",
+		   high_res:"Moons/rock_hi.pcx",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   2.65e8,
+		   rotation: 100
+		}
+
+		moon: {
+		   name:    Archimedes
+		   map:     "Moons/lunar_map.pcx"
+		   image:   "Moons/lunar_lo.pcx",
+		   high_res:"Moons/lunar_hi.pcx",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       4.31e8
+		}
+
+		moon: {
+		   name:    Flor,
+		   map:     "Moons/ice_map.pcx"
+		   image:   "Moons/ice_lo.pcx",
+		   high_res:"Moons/ice_hi.pcx",
+		   radius:  6e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   8.14e8
+		}
+	}
 }
 
 region: {
@@ -52,19 +148,6 @@ region: {
    inclination: 0.70
 }
 
-planet: {
-   name:    Solus
-   map:     "Solus/solus_map.pcx",
-   image:   "Solus/solus_lo.pcx",
-   high_res:"Solus/solus_hi.jpg",
-   gloss:   "Solus/solus_gloss.jpg",
-   glow_high_res: "Solus/solus_lights.jpg",
-   radius:  5.4e6,
-   mass:    4.18e24,
-   atmosphere: (155,175,220),
-   orbit:   1.4e11,
-   rotation: 21.3
-}
 
 terrain: {
    name:          Telmera,
@@ -114,17 +197,6 @@ region: {
    inclination: 0.5
 }
 
-moon: {
-   name:    Kalon
-   map:     "Solus/omane_map.pcx",
-   image:   "Solus/omane_lo.pcx",
-   high_res:"Solus/omane_hi.pcx",
-   radius:  1.83e6,
-   mass:    8.12e22,
-   orbit:   45e6,
-   rotation: 8
-}
-
 region: {
    name:    Kalon
    parent:  Kalon,
@@ -135,28 +207,6 @@ region: {
    inclination: 0.5
 }
 
-moon: {
-   name:    Alar
-   map:     "Moons/lunar_map.pcx"
-   image:   "Moons/lunar_lo.pcx",
-   high_res:"Moons/lunar_hi.pcx",
-   radius:  0.5e6,
-   mass:    4.3e22,
-   orbit:   59.5e6
-}
-
-planet: {
-   name:    Jalah,
-   map:     "Solus/jalah_map.pcx",
-   image:   "Solus/jalah.pcx",
-   radius:  19.1e6,
-   mass:    3.6e26,
-   tscale:  2,
-   tilt:    0.13,
-   orbit:   2.95e11,
-   rotation: 29.3
-}
-
 region: {
    name:    Jalah,
    parent:  Jalah,
@@ -165,21 +215,6 @@ region: {
    grid:    20e3,
    orbit:   55.8e6,
    inclination: 0.2
-}
-
-planet: {
-   name:    Trellis
-   map:     "Giants/GasGiant9_map.pcx"
-   image:   "Giants/GasGiant9.jpg",
-   radius:  30e6,
-   mass:    5.42e26,
-   orbit:   3.75e11,
-   tscale:  2,
-   tilt:    0.125,
-   ring:    "Giants/Ring2.pcx",
-   minrad:  1.2,
-   maxrad:  1.9,
-   rotation: 19.5,
 }
 
 region: {
@@ -193,40 +228,5 @@ region: {
    link:    Navara, // Janus
    link:    Lornas, // Renser
    link:    Nero,   // Silessia
-}
-
-moon: {
-   name:    Ovid,
-   map:     "Moons/rock_map.pcx"
-   image:   "Moons/rock_lo.pcx",
-   high_res:"Moons/rock_hi.pcx",
-   radius:  3e6,
-   mass:    3e22,
-   orbit:   2.65e8,
-   rotation: 100
-}
-
-moon: {
-   name:    Archimedes
-   map:     "Moons/lunar_map.pcx"
-   image:   "Moons/lunar_lo.pcx",
-   high_res:"Moons/lunar_hi.pcx",
-   radius:      5.2e6,
-   rotation:    19,
-   inclination: 0.0,
-   mass:        6.0e24,
-   orbit:       4.31e8
-}
-
-moon: {
-   name:    Flor,
-   map:     "Moons/ice_map.pcx"
-   image:   "Moons/ice_lo.pcx",
-   high_res:"Moons/ice_hi.pcx",
-   radius:  6e6,
-   rotation: 18.4,
-   atmosphere: (180,180,255),
-   mass:    5.98e24,
-   orbit:   8.14e8
 }
 

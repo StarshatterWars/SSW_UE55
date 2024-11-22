@@ -26,19 +26,41 @@ star:        {
    light:   1.6e11,
    color:   (255, 250, 230),// - standard yellow
    back:    ( 50,  50,  90) // - nebula6
+   
+   planet:     {
+	   name:    Athenar,
+	   map:     "Athenar/athenar_map.pcx"
+	   image:   "Athenar/athenar_lo.pcx",
+	   high_res:"Athenar/athenar_hi.jpg",
+	   gloss:   "Athenar/athenar_gloss.jpg",
+	   radius:  5.72e6,
+	   mass:    3.53e24,
+	   atmosphere: (150,160,210),
+	   orbit:   1.95e11,
+
+		moon:       {
+		   name:    Nike
+		   map:     "Jarnell/lanos_map.pcx"
+		   image:   "Jarnell/lanos_lo.pcx",
+		   high_res:"Jarnell/lanos_hi.pcx",
+		   radius:  0.72e6,
+		   mass:    4.1e22,
+		   orbit:   81e6
+		}
+	}
+
+	planet:     {
+	   name:    Pallas
+	   map:     "Silessia/nero_map.pcx"
+	   image:   "Silessia/nero_lo.pcx",
+	   high_res:"Silessia/nero_hi.jpg",
+	   radius:  3.35e6,
+	   mass:    2.52e24,
+	   atmosphere: (80,120,150),
+	   orbit:   4.25e11,
+	}
 }
 
-planet:     {
-   name:    Athenar,
-   map:     "Athenar/athenar_map.pcx"
-   image:   "Athenar/athenar_lo.pcx",
-   high_res:"Athenar/athenar_hi.jpg",
-   gloss:   "Athenar/athenar_gloss.jpg",
-   radius:  5.72e6,
-   mass:    3.53e24,
-   atmosphere: (150,160,210),
-   orbit:   1.95e11,
-}
 
 region:     {
    name:    Athenar,
@@ -48,30 +70,6 @@ region:     {
    grid:    20e3,
    orbit:   18e6,
    inclination: 0.4
-}
-
-moon:       {
-   name:    Nike
-   map:     "Jarnell/lanos_map.pcx"
-   image:   "Jarnell/lanos_lo.pcx",
-   high_res:"Jarnell/lanos_hi.pcx",
-   radius:  0.72e6,
-   mass:    4.1e22,
-   orbit:   81e6
-}
-
-
-
-
-planet:     {
-   name:    Pallas
-   map:     "Silessia/nero_map.pcx"
-   image:   "Silessia/nero_lo.pcx",
-   high_res:"Silessia/nero_hi.jpg",
-   radius:  3.35e6,
-   mass:    2.52e24,
-   atmosphere: (80,120,150),
-   orbit:   4.25e11,
 }
 
 region:     {

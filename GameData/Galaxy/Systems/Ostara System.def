@@ -26,17 +26,26 @@ star: {
    light:   5e10,
    color:   (255, 170, 160),// - deep red
    back:    (130,  90,  50) // - nebula2
-}
 
-planet: {
-   name:    Aram,
-   image:   "Ostara/aram_lo.pcx",
-   high_res:"Ostara/aram_hi.pcx",
-   radius:  6.4e6,
-   mass:    5.98e24,
-   atmosphere: (180,90,60),
-   orbit:   10.34e10,
-   rotation: 15
+	   planet: {
+	   name:    Aram,
+	   image:   "Ostara/aram_lo.pcx",
+	   high_res:"Ostara/aram_hi.pcx",
+	   radius:  6.4e6,
+	   mass:    5.98e24,
+	   atmosphere: (180,90,60),
+	   orbit:   10.34e10,
+	   rotation: 15
+
+	   moon: {
+		   name:    Ur,
+		   image:   "Moons/lunar_lo.pcx",
+		   high_res:"Moons/lunar_hi.pcx",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   85e6
+		}
+	}
 }
 
 region: {
@@ -52,13 +61,6 @@ region: {
    link:    Theramin, // Tarsus
 }
 
-moon: {
-   name:    Ur,
-   image:   "Moons/lunar_lo.pcx",
-   high_res:"Moons/lunar_hi.pcx",
-   radius:  1e6,
-   mass:    8e22,
-   orbit:   85e6
-}
+
 
 
