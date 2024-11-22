@@ -227,4 +227,8 @@ region: {
    link:    Nero,    // Silessia
 }
 
-
+link:    Trellis, // Solus
+link:    Pallas,  // Athenar
+link:    Tulkas,  // Borova
+link:    Kala,    // Haiche
+link:    Nero,    // Silessia

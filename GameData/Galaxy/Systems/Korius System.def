@@ -181,3 +181,9 @@ region:     {
    orbit:   15e6,
    inclination: 0.4
 }
+
+link:    Nergal,  // Nephrys
+link:    Lornas,  // Renser
+link:    Casalle, // Loris
+link:    Volova,  // Kolchev
+link:    Relay,   // Isham

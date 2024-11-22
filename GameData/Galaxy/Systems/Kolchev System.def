@@ -221,6 +221,11 @@ region: {
    link:    Cavenda,  // Radix
 }
 
-
+link:    Kala,     // Haiche
+link:    Aram,     // Ostara
+link:    Solnas,   // Kolchev
+link:    Relay,    // Isham
+link:    Theramin, // Tarsus
+link:    Cavenda,  // Radix
 
 

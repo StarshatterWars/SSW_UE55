@@ -273,5 +273,10 @@ region: {
    inclination: 0.3,
 }
 
+link:    Navara, // Janus
+link:    Dawn,   // Jarnell
+link:    Atlan,  // Paragon
+link:    Nero,   // Silessia
+
 
 

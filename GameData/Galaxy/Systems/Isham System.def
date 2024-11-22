@@ -225,3 +225,8 @@ region:     {
    link:    Path,     // Trocanther
 }
 
+link:    Solnas,   // Korius
+link:    Volova,   // Kolchev
+link:    Cavenda,  // Radix
+link:    Nerasil,  // Garrison
+link:    Path,     // Trocanther

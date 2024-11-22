@@ -129,10 +129,14 @@ void AGameDataLoader::LoadGalaxyData()
 
 }
 
+// +--------------------------------------------------------------------+
+
 void AGameDataLoader::GetSSWInstance()
 {
 	SSWInstance = (USSWGameInstance*)GetGameInstance();
 }
+
+// +--------------------------------------------------------------------+
 
 void AGameDataLoader::InitializeCampaignData() {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::InitializeCampaignData()"));
@@ -727,6 +731,8 @@ void AGameDataLoader::LoadZones(FString Path)
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+// +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::LoadMissionList(FString Path)
 {
@@ -836,6 +842,8 @@ AGameDataLoader::LoadMissionList(FString Path)
 
 	SSWInstance->loader->ReleaseBuffer(block);
 }
+
+// +--------------------------------------------------------------------+
 
 void
 AGameDataLoader::LoadTemplateList(FString Path)
@@ -991,6 +999,8 @@ AGameDataLoader::LoadTemplateList(FString Path)
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+// +--------------------------------------------------------------------+
+
 void AGameDataLoader::LoadMission(FString Path)
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadMission()"));
@@ -1013,6 +1023,8 @@ void AGameDataLoader::LoadMission(FString Path)
 		ParseMission(fn);
 	}
 }
+
+// +--------------------------------------------------------------------+
 
 void AGameDataLoader::LoadTemplateMission(FString Name)
 {
@@ -1037,6 +1049,8 @@ void AGameDataLoader::LoadTemplateMission(FString Name)
 	}
 }
 
+// +--------------------------------------------------------------------+
+
 void AGameDataLoader::LoadScriptedMission(FString Name)
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadScriptedMission()"));
@@ -1059,6 +1073,8 @@ void AGameDataLoader::LoadScriptedMission(FString Name)
 		ParseScriptedTemplate(fn);
 	}
 }
+
+// +--------------------------------------------------------------------+
 
 void
 AGameDataLoader::ParseMission(const char* fn)
@@ -1218,6 +1234,8 @@ AGameDataLoader::ParseMission(const char* fn)
 	MissionArray.Add(NewMission);
 }
 
+// +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::ParseNavpoint(TermStruct* val, const char* fn)
 {
@@ -1319,6 +1337,8 @@ AGameDataLoader::ParseNavpoint(TermStruct* val, const char* fn)
 	}
 	MissionNavpointArray.Add(NewMissionInstruction);
 }
+
+// +--------------------------------------------------------------------+
 
 void
 AGameDataLoader::ParseObjective(TermStruct* val, const char* fn)
@@ -1422,6 +1442,8 @@ AGameDataLoader::ParseObjective(TermStruct* val, const char* fn)
 	MissionObjectiveArray.Add(NewMissionObjective);
 }
 
+// +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::ParseInstruction(TermStruct* val, const char* fn)
 {
@@ -1524,6 +1546,8 @@ AGameDataLoader::ParseInstruction(TermStruct* val, const char* fn)
 	MissionInstructionArray.Add(NewMissionInstruction);
 }
 
+// +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::ParseShip(TermStruct* val, const char* fn)
 {
@@ -1621,6 +1645,8 @@ AGameDataLoader::ParseShip(TermStruct* val, const char* fn)
 	MissionShipArray.Add(NewMissionShip);
 }
 
+// +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::ParseLoadout(TermStruct* val, const char* fn)
 {
@@ -1654,6 +1680,8 @@ AGameDataLoader::ParseLoadout(TermStruct* val, const char* fn)
 	}
 	MissionLoadoutArray.Add(NewLoadout);
 }
+
+// +--------------------------------------------------------------------+
 
 void
 AGameDataLoader::ParseEvent(TermStruct* val, const char* fn)
@@ -1814,6 +1842,8 @@ AGameDataLoader::ParseEvent(TermStruct* val, const char* fn)
 	}
 	MissionEventArray.Add(NewMissionEvent);
 }
+
+// +--------------------------------------------------------------------+
 
 void
 AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
@@ -2027,7 +2057,6 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 	MissionElementArray.Add(NewMissionElement);
 }
 
-
 // +--------------------------------------------------------------------+
 
 void
@@ -2205,6 +2234,7 @@ AGameDataLoader::ParseScriptedTemplate(const char* fn)
 	SSWInstance->loader->ReleaseBuffer(block);
 	ScriptedMissionArray.Add(NewTemplateMission);
 }
+
 // +--------------------------------------------------------------------+
 
 void
@@ -2380,7 +2410,9 @@ AGameDataLoader::ParseMissionTemplate(const char* fn)
 	SSWInstance->loader->ReleaseBuffer(block);
 	TemplateMissionArray.Add(NewTemplateMission);
 }
+
 // +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::ParseAlias(TermStruct* val, const char* fn)
 {
@@ -2471,6 +2503,8 @@ AGameDataLoader::ParseAlias(TermStruct* val, const char* fn)
 	}
 	MissionAliasArray.Add(NewMissionAlias);
 }
+
+// +--------------------------------------------------------------------+
 
 void
 AGameDataLoader::ParseRLoc(TermStruct* rval, const char* fn)
@@ -2802,6 +2836,8 @@ AGameDataLoader::LoadGalaxyMap()
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+// +--------------------------------------------------------------------+
+
 void
 AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 {
@@ -2888,6 +2924,8 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 	}
 	StarDataArray.Add(NewStarData);
 }
+
+// +--------------------------------------------------------------------+
 
 void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
 {
@@ -3012,6 +3050,8 @@ void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
 	PlanetDataArray.Add(NewPlanetData);
 }
 
+// +--------------------------------------------------------------------+
+
 void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseMoon()"));
@@ -3131,6 +3171,8 @@ void AGameDataLoader::LoadStarsystems()
 		ParseStarSystem(fn);
 	}
 }
+
+// +--------------------------------------------------------------------+
 
 void AGameDataLoader::ParseStarSystem(const char* fn)
 {
@@ -3306,6 +3348,8 @@ AGameDataLoader::GetEmpireName(int32 emp)
 	}
 	return empire_name;
 }
+
+// +--------------------------------------------------------------------+
 
 CombatGroup*
 AGameDataLoader::CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group)

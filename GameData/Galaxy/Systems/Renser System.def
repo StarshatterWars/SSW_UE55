@@ -190,3 +190,9 @@ region: {
    link:    Trellis
 }
 
+link:    Trellis
+link:    Kala,    // Haiche
+link:    Casalle, // Loris
+link:    Nero,    // Silessia
+link:    Trellis, // Solus
+link:    Solnas,  // Korius

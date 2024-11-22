@@ -634,6 +634,8 @@ struct FS_StarSystem : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_Star> Star;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FString> Link;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_Region> Region;
 	
 	FS_StarSystem() {

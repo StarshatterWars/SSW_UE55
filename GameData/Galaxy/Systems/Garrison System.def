@@ -126,3 +126,5 @@ region: {
    link:    Cavenda, // Radix
 }
 
+link:    Relay,   // Isham
+link:    Cavenda, // Radix
