@@ -86,6 +86,8 @@ public:
 	void ParseCallsign(TermStruct* val, const char* fn);
 	void ParseAction(TermStruct* val, const char* filename);
 	void ParseOptional(TermStruct* val, const char* fn);
+	void LoadGalaxyMap();
+	EEMPIRE_NAME GetEmpireName(int32 emp);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
 	void SetStatus(int s);
@@ -157,7 +159,8 @@ protected:
 	FS_CombatantGroup NewGroupUnit;
 
 	FS_Campaign CampaignData;
-	class UDataTable* CampaignDataTable;
+	FS_Galaxy GalaxyData;
+	
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
 	TArray<FS_CampaignZone> ZoneArray;
@@ -181,6 +184,9 @@ protected:
 	TArray<FS_TemplateMission> ScriptedMissionArray;
 
 	FS_CampaignAction NewCampaignAction;
+	
+	class UDataTable* GalaxyDataTable;
+	class UDataTable* CampaignDataTable;
 
 	int   ActionId;
 	Text  ActionType;

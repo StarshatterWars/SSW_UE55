@@ -18,6 +18,7 @@
 #include "../System/SSWGameInstance.h"
 #include "../System/Game.h"
 #include "../Space/Starsystem.h"
+#include "../Space/Galaxy.h"
 #include "CombatGroup.h"
 #include "CombatRoster.h"
 #include "CombatAction.h"
@@ -44,6 +45,13 @@ AGameDataLoader::AGameDataLoader()
 		CampaignDataTable->EmptyTable();
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_GalaxyMap.DT_GalaxyMap'"));
+
+	if (GalaxyDataTableObject.Succeeded())
+	{
+		GalaxyDataTable = GalaxyDataTableObject.Object;
+		GalaxyDataTable->EmptyTable();
+	}
 }
 
 // Called when the game starts or when spawned
@@ -51,6 +59,7 @@ void AGameDataLoader::BeginPlay()
 {
 	Super::BeginPlay();
 	GetSSWInstance();
+	LoadGalaxyMap();
 	InitializeCampaignData();
 }
 
@@ -72,7 +81,7 @@ void AGameDataLoader::GetSSWInstance()
 }
 
 void AGameDataLoader::InitializeCampaignData() {
-	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadCampaignData"));
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::InitializeCampaignData()"));
 
 	FString ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Campaigns/"));
@@ -2528,6 +2537,253 @@ AGameDataLoader::ParseOptional(TermStruct* val, const char* fn)
 }
 
 // +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::LoadGalaxyMap()
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadGalaxyMap()"));
+
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Galaxy/"));
+	FString FileName = ProjectPath;
+	FileName.Append("Galaxy.def");
+	const char* fn = TCHAR_TO_ANSI(*FileName);
+
+	SSWInstance->loader->GetLoader();
+
+	FString FileString;
+	BYTE* block = 0;
+
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy: %s"), *FileName);
+
+	if (FFileHelper::LoadFileToString(FileString, *FileName, FFileHelper::EHashOptions::None))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
+	}
+
+	Parser parser(new BlockReader((const char*)block));
+
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FileName);
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "GALAXY") {
+			UE_LOG(LogTemp, Log, TEXT("WARNING: invalid galaxy file '%s'"), *FileName);
+			return;
+		}
+		else {
+			UE_LOG(LogTemp, Log, TEXT("Galaxy file '%s'"), *FileName);
+		}
+	}
+
+	FS_Galaxy NewGalaxyData;
+
+	// parse the galaxy:
+	do {
+		delete term;
+		term = parser.ParseTerm();
+		FVector fv;
+
+		double Radius;
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "radius") {
+					GetDefNumber(Radius, def, fn);
+				}
+
+				else if (def->name()->value() == "system") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: system struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+
+						UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
+						Text  SystemName;
+						Text  ClassName;
+						Vec3  SystemLocation;
+						int   SystemIff = 0;
+						int   StarClass = (int8)ESPECTRAL_CLASS::G;
+
+						for (int i = 0; i < val->elements()->size(); i++) {
+							TermDef* pdef = val->elements()->at(i)->isDef();
+							if (pdef) {
+								if (pdef->name()->value() == "name") {
+									GetDefText(SystemName, pdef, fn);
+									NewGalaxyData.Name = FString(SystemName);
+								}
+								else if (pdef->name()->value() == "loc") {
+
+									GetDefVec(SystemLocation, pdef, fn);
+									fv = FVector(SystemLocation.x, SystemLocation.y, SystemLocation.z);
+									NewGalaxyData.Location = fv;
+								}
+								else if (pdef->name()->value() == "iff") {
+									GetDefNumber(SystemIff, pdef, fn);
+									NewGalaxyData.Iff = SystemIff;
+								}
+								else if (pdef->name()->value() == "class") {
+									GetDefText(ClassName, pdef, fn);
+
+									switch (ClassName[0]) {
+									case 'B':
+										StarClass = (int8)ESPECTRAL_CLASS::B;
+										break;
+									case 'A':
+										StarClass = (int8)ESPECTRAL_CLASS::A;
+										break;
+									case 'F':
+										StarClass = (int8)ESPECTRAL_CLASS::F;
+										break;
+									case 'G':
+										StarClass = (int8)ESPECTRAL_CLASS::G;
+										break;
+									case 'K':
+										StarClass = (int8)ESPECTRAL_CLASS::K;
+										break;
+									case 'M':
+										StarClass = (int8)ESPECTRAL_CLASS::M;
+										break;
+									case 'R':
+										StarClass = (int8)ESPECTRAL_CLASS::RED_GIANT;
+										break;
+									case 'W':
+										StarClass = (int8)ESPECTRAL_CLASS::WHITE_DWARF;
+										break;
+									case 'Z':
+										StarClass = (int8)ESPECTRAL_CLASS::BLACK_HOLE;
+										break;
+									}
+									NewGalaxyData.Class = StarClass;
+								}
+							}
+						}
+
+						// define our data table struct
+			
+						NewGalaxyData.Empire = GetEmpireName(SystemIff);
+						FName RowName = FName(FString(SystemName));
+
+						// call AddRow to insert the record
+						GalaxyDataTable->AddRow(RowName, NewGalaxyData);
+
+						GalaxyData = NewGalaxyData;
+					}
+				}
+
+				else if (def->name()->value() == "star") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: star struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
+						char  star_name[32];
+						char  classname[32];
+						Vec3  star_loc;
+						int   star_class = (int8)ESPECTRAL_CLASS::G;
+
+						star_name[0] = 0;
+
+						for (int i = 0; i < val->elements()->size(); i++) {
+							TermDef* pdef = val->elements()->at(i)->isDef();
+							if (pdef) {
+								if (pdef->name()->value() == "name")
+									GetDefText(star_name, pdef, fn);
+
+								else if (pdef->name()->value() == "loc")
+									GetDefVec(star_loc, pdef, fn);
+
+								else if (pdef->name()->value() == "class") {
+									GetDefText(classname, pdef, fn);
+
+									switch (classname[0]) {
+									case 'O':
+										star_class = (int8)ESPECTRAL_CLASS::O;
+										break;
+									case 'B':
+										star_class = (int8)ESPECTRAL_CLASS::B;
+										break;
+									case 'A':
+										star_class = (int8)ESPECTRAL_CLASS::A;
+										break;
+									case 'F':
+										star_class = (int8)ESPECTRAL_CLASS::F;
+										break;
+									case 'G':
+										star_class = (int8)ESPECTRAL_CLASS::G;
+										break;
+									case 'K':
+										star_class = (int8)ESPECTRAL_CLASS::K;
+										break;
+									case 'M':
+										star_class = (int8)ESPECTRAL_CLASS::M;
+										break;
+									case 'R':
+										star_class = (int8)ESPECTRAL_CLASS::RED_GIANT;
+										break;
+									case 'W':
+										star_class = (int8)ESPECTRAL_CLASS::WHITE_DWARF;
+										break;
+									case 'Z':
+										star_class = (int8)ESPECTRAL_CLASS::BLACK_HOLE;
+										break;
+									}
+								}
+							}
+						}
+
+
+						//if (star_name[0]) {
+						//	Star* star = new Star(star_name, star_loc, star_class);
+						//	stars.append(star);
+						//}
+					}
+				}
+			}
+			UE_LOG(LogTemp, Log, TEXT("------------------------------------------------------------"));
+		}
+	} while (term);
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
+// +--------------------------------------------------------------------+
+
+EEMPIRE_NAME
+AGameDataLoader::GetEmpireName(int32 emp)
+{
+	EEMPIRE_NAME empire_name;
+
+	switch (emp)
+	{
+	case 0:
+		empire_name = EEMPIRE_NAME::Terellian_Alliance;
+		break;
+	case 1:
+		empire_name = EEMPIRE_NAME::Marakan_Hegemony;
+		break;
+	case 2:
+		empire_name = EEMPIRE_NAME::Dantari_Separatists;
+		break;
+	case 3:
+		empire_name = EEMPIRE_NAME::Other;
+		break;
+	case 4:
+		empire_name = EEMPIRE_NAME::INDEPENDENT_SYSTEMS;
+		break;
+	default:
+		empire_name = EEMPIRE_NAME::Other;
+		break;
+	}
+	return empire_name;
+}
 
 CombatGroup*
 AGameDataLoader::CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group)
