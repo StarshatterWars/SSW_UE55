@@ -1258,6 +1258,108 @@ AGameDataLoader::ParseNavpoint(TermStruct* val, const char* fn)
 }
 
 void
+AGameDataLoader::ParseObjective(TermStruct* val, const char* fn)
+{
+
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseInstruction()"));
+
+	int   formation = 0;
+	int   speed = 0;
+	int   priority = 1;
+	int   farcast = 0;
+	int   hold = 0;
+	int   emcon = 0;
+	Vec3  loc(0, 0, 0);
+	Text  order_name;
+	Text  status_name;
+	Text  order_rgn_name;
+	Text  tgt_name;
+	Text  tgt_desc;
+
+	MissionRLocArray.Empty();
+
+	FS_MissionInstruction NewMissionObjective;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "cmd") {
+				GetDefText(order_name, pdef, fn);
+				NewMissionObjective.OrderName = FString(order_name);
+			}
+
+			else if (pdef->name()->value() == "status") {
+				GetDefText(status_name, pdef, fn);
+				NewMissionObjective.StatusName = FString(status_name);
+			}
+
+			else if (pdef->name()->value() == "loc") {
+				GetDefVec(loc, pdef, fn);
+				NewMissionObjective.Location.X = loc.x;
+				NewMissionObjective.Location.Y = loc.y;
+				NewMissionObjective.Location.Z = loc.z;
+			}
+
+			else if (pdef->name()->value() == "rloc") {
+				if (pdef->term()->isStruct()) {
+					ParseRLoc(pdef->term()->isStruct(), fn);
+					NewMissionObjective.RLoc = MissionRLocArray;
+				}
+			}
+
+			else if (pdef->name()->value() == "rgn") {
+				GetDefText(order_rgn_name, pdef, fn);
+				NewMissionObjective.OrderRegionName = FString(order_rgn_name);
+			}
+			else if (pdef->name()->value() == "speed") {
+				GetDefNumber(speed, pdef, fn);
+				NewMissionObjective.Speed = speed;
+			}
+			else if (pdef->name()->value() == "formation") {
+				GetDefNumber(formation, pdef, fn);
+				NewMissionObjective.Formation = formation;
+			}
+			else if (pdef->name()->value() == "emcon") {
+				GetDefNumber(emcon, pdef, fn);
+				NewMissionObjective.EMCON = emcon;
+			}
+			else if (pdef->name()->value() == "priority") {
+				GetDefNumber(priority, pdef, fn);
+				NewMissionObjective.Priority = priority;
+			}
+			else if (pdef->name()->value() == "farcast") {
+				if (pdef->term()->isBool()) {
+					bool f = false;
+					GetDefBool(f, pdef, fn);
+					if (f)
+						farcast = 1;
+					else
+						farcast = 0;
+					NewMissionObjective.Farcast = farcast;
+				}
+				else {
+					GetDefNumber(farcast, pdef, fn);
+					NewMissionObjective.Farcast = farcast;
+				}
+			}
+			else if (pdef->name()->value() == "tgt") {
+				GetDefText(tgt_name, pdef, fn);
+				NewMissionObjective.TargetName = FString(tgt_name);
+			}
+			else if (pdef->name()->value() == "tgt_desc") {
+				GetDefText(tgt_desc, pdef, fn);
+				NewMissionObjective.TargetDesc = FString(tgt_desc);
+			}
+			else if (pdef->name()->value().indexOf("hold") == 0) {
+				GetDefNumber(hold, pdef, fn);
+				NewMissionObjective.Hold = hold;
+			}
+		}
+	}
+	MissionObjectiveArray.Add(NewMissionObjective);
+}
+
+void
 AGameDataLoader::ParseInstruction(TermStruct* val, const char* fn)
 {
 	
@@ -1884,6 +1986,9 @@ AGameDataLoader::ParseScriptedTemplate(const char* fn)
 
 	MissionElementArray.Empty();
 	MissionEventArray.Empty();
+	MissionCallsignArray.Empty();
+	MissionOptionalArray.Empty();
+	MissionAliasArray.Empty();
 
 	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
 	{
@@ -1984,7 +2089,8 @@ AGameDataLoader::ParseScriptedTemplate(const char* fn)
 						UE_LOG(LogTemp, Log, TEXT("WARNING: alias struct missing in '%s'"), *FString(fn));
 					}
 					else {
-						//ParseAlias(def->term()->isStruct(), fn);
+						ParseAlias(def->term()->isStruct(), fn);
+						NewTemplateMission.Alias = MissionAliasArray;
 					}
 				}
 
@@ -1994,7 +2100,8 @@ AGameDataLoader::ParseScriptedTemplate(const char* fn)
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
-						//ParseCallsign(val);
+						ParseCallsign(val, fn);
+						NewTemplateMission.Callsign = MissionCallsignArray;
 					}
 				}
 
@@ -2004,7 +2111,8 @@ AGameDataLoader::ParseScriptedTemplate(const char* fn)
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
-						//ParseOptional(val);
+						ParseOptional(val, fn);
+						NewTemplateMission.Optional = MissionOptionalArray;
 					}
 				}
 
@@ -2053,8 +2161,11 @@ AGameDataLoader::ParseMissionTemplate(const char* fn)
 	FString fs = FString(ANSI_TO_TCHAR(fn));
 	FString FileString;
 
-	//MissionElementArray.Empty();
-	//MissionEventArray.Empty();
+	MissionElementArray.Empty();
+	MissionEventArray.Empty();
+	MissionCallsignArray.Empty();
+	MissionOptionalArray.Empty();
+	MissionAliasArray.Empty();
 
 	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
 	{
@@ -2155,7 +2266,8 @@ AGameDataLoader::ParseMissionTemplate(const char* fn)
 						UE_LOG(LogTemp, Log, TEXT("WARNING: alias struct missing in '%s'"), *FString(fn));
 					}
 					else {
-						//ParseAlias(def->term()->isStruct(), fn);
+						ParseAlias(def->term()->isStruct(), fn);
+						NewTemplateMission.Alias = MissionAliasArray;
 					}
 				}
 
@@ -2164,8 +2276,8 @@ AGameDataLoader::ParseMissionTemplate(const char* fn)
 						UE_LOG(LogTemp, Log, TEXT("WARNING: callsign struct missing in '%s'"), *FString(fn));
 					}
 					else {
-						TermStruct* val = def->term()->isStruct();
-						//ParseCallsign(val);
+						ParseCallsign(def->term()->isStruct(), fn);
+						NewTemplateMission.Callsign = MissionCallsignArray;
 					}
 				}
 
@@ -2174,8 +2286,8 @@ AGameDataLoader::ParseMissionTemplate(const char* fn)
 						UE_LOG(LogTemp, Log, TEXT("WARNING: optional group struct missing in '%s'"), *FString(fn));
 					}
 					else {
-						TermStruct* val = def->term()->isStruct();
-						//ParseOptional(val);
+						ParseOptional(def->term()->isStruct(), fn);
+						NewTemplateMission.Optional = MissionOptionalArray;
 					}
 				}
 
@@ -2212,53 +2324,89 @@ AGameDataLoader::ParseAlias(TermStruct* val, const char* fn)
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseAlias()"));
 
 	Text  AliasName;
-	Text  design;
-	Text  code;
-	Text  elem_name;
+	Text  Design;
+	Text  Code;
+	Text  ElementName;
+	Text  Mission;
 	int   iff = -1;
 	int   player = 0;
 	RLoc* rloc = 0;
 	bool  UseLocation = false;
 	Vec3  Location;
 
+	MissionRLocArray.Empty();
+	MissionNavpointArray.Empty();
+	MissionObjectiveArray.Empty();
+
+	FS_MissionAlias NewMissionAlias;
+
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
 		if (pdef) {
 
-			if (pdef->name()->value() == "name")
+			if (pdef->name()->value() == "name") {
 				GetDefText(AliasName, pdef, fn);
-
-			else if (pdef->name()->value() == "elem")
-				GetDefText(elem_name, pdef, fn);
-
-			else if (pdef->name()->value() == "code")
-				GetDefText(code, pdef, fn);
-
-			else if (pdef->name()->value() == "design")
-				GetDefText(design, pdef, fn);
-
-			else if (pdef->name()->value() == "iff")
+				NewMissionAlias.AliasName = FString(AliasName);
+			}
+			else if (pdef->name()->value() == "elem") {
+				GetDefText(ElementName, pdef, fn);
+				NewMissionAlias.ElementName = FString(ElementName);
+			}
+			else if (pdef->name()->value() == "code") {
+				GetDefText(Code, pdef, fn);
+				NewMissionAlias.Code = FString(Code);
+			}
+			else if (pdef->name()->value() == "design") {
+				GetDefText(Design, pdef, fn);
+				NewMissionAlias.Design = FString(Design);
+			}
+			else if (pdef->name()->value() == "mission") {
+				GetDefText(Mission, pdef, fn);
+				NewMissionAlias.Mission = FString(Mission);
+			}
+			else if (pdef->name()->value() == "iff") {
 				GetDefNumber(iff, pdef, fn);
-
+				NewMissionAlias.Iff = iff;
+			}
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(Location, pdef, fn);
 				UseLocation = true;
+				NewMissionAlias.Location.X = Location.x;
+				NewMissionAlias.Location.Y = Location.y;
+				NewMissionAlias.Location.Z = Location.z;
+				NewMissionAlias.UseLocation = UseLocation;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
 				if (pdef->term()->isStruct()) {
 					ParseRLoc(pdef->term()->isStruct(), fn);
+					NewMissionAlias.RLoc = MissionRLocArray;
 				}
 			}
 
 			else if (pdef->name()->value() == "player") {
 				GetDefNumber(player, pdef, fn);
-
-				if (player && !code.length())
-					code = "player";
+				if (player && !Code.length()) {
+					Code = "player";
+					NewMissionAlias.Code = FString(Code);
+					NewMissionAlias.Player = player;
+				}
+			}
+			else if (pdef->name()->value() == "navpt") {
+				if (pdef->term()->isStruct()) {
+					ParseNavpoint(pdef->term()->isStruct(), fn);
+					NewMissionAlias.Navpoint = MissionNavpointArray;
+				}
+			}
+			else if (pdef->name()->value() == "objective") {
+				if (pdef->term()->isStruct()) {
+					ParseObjective(pdef->term()->isStruct(), fn);
+					NewMissionAlias.Objective = MissionObjectiveArray;
+				}
 			}
 		}
 	}
+	MissionAliasArray.Add(NewMissionAlias);
 }
 
 void
@@ -2324,6 +2472,60 @@ AGameDataLoader::ParseRLoc(TermStruct* rval, const char* fn)
 	MissionRLocArray.Add(NewRLocElement);
 }
 
+// +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::ParseCallsign(TermStruct* val, const char* fn)
+{
+	Text  CallsignName;
+	int   Iff = -1;
+
+	FS_MissionCallsign NewMissionCallsign;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(CallsignName, pdef, fn);
+				NewMissionCallsign.Callsign = FString(CallsignName);
+			}
+
+			else if (pdef->name()->value() == "iff") {
+				GetDefNumber(Iff, pdef, fn);
+				NewMissionCallsign.Iff = Iff;
+			}
+		}
+	}
+	MissionCallsignArray.Add(NewMissionCallsign);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::ParseOptional(TermStruct* val, const char* fn)
+{
+	int   min = 0;
+	int   max = 1000;
+	int   total = val->elements()->size();
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "min") {
+				GetDefNumber(min, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "max") {
+				GetDefNumber(max, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "element") {
+				//ParseElement(pdef->term()->isStruct(), fn);
+
+			}
+		}
+	}
+}
 
 // +--------------------------------------------------------------------+
 

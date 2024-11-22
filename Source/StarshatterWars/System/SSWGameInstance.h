@@ -1015,6 +1015,23 @@ struct FS_MissionShip : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_MissionCallsign : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Callsign;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Iff;
+	
+	FS_MissionCallsign() {
+		Callsign = "";
+		Iff = 0;
+	}
+};
+
+
+USTRUCT(BlueprintType)
 struct FS_MissionLoadout : public FTableRowBase {
 
 	GENERATED_BODY()
@@ -1034,7 +1051,50 @@ struct FS_MissionLoadout : public FTableRowBase {
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FS_MissionAlias : public FTableRowBase {
 
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString AliasName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Design;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Code;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ElementName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Mission;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Player;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool UseLocation;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_RLoc> RLoc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionInstruction> Navpoint;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionInstruction> Objective;
+
+	FS_MissionAlias() {
+		AliasName = "";
+		Design = "";
+		Code = "";
+		ElementName = "";
+		Mission = "";
+		
+		Iff = -1;
+		Player = 0;
+
+		UseLocation = false;
+		Location = FVector::ZeroVector;
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FS_MissionElement : public FTableRowBase {
@@ -1139,6 +1199,27 @@ struct FS_MissionElement : public FTableRowBase {
 		Playable = false;
 		Rogue = false;
 		Invulnerable = false;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_MissionOptional : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Min;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Max;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Total;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionElement> Element; 
+	
+	FS_MissionOptional() {
+		Min = 0;
+		Max = 1000;
+		Total = 0;
 	}
 };
 
@@ -1292,7 +1373,6 @@ struct FS_CampaignMission : public FTableRowBase {
 	}
 };
 
-
 USTRUCT(BlueprintType)
 struct FS_TemplateMission : public FTableRowBase {
 
@@ -1324,6 +1404,12 @@ struct FS_TemplateMission : public FTableRowBase {
 	TArray<FS_MissionElement> Element;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_MissionEvent> Event;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionCallsign> Callsign;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionOptional> Optional;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MissionAlias> Alias;
 
 	FS_TemplateMission() {
 		TargetName = "";
