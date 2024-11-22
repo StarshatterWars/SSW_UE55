@@ -409,7 +409,13 @@ struct FS_StarSystem : public FTableRowBase {
 	FString Name;
 
 	FS_StarSystem() {
-	
+		System = "";
+		Name = "";
+		Location = FVector::ZeroVector;
+		Class = ESPECTRAL_CLASS::G;;
+		Empire = EEMPIRE_NAME::Terellian_Alliance;
+		Size = ESTAR_SIZE::Ia;
+		UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	}
 };
 

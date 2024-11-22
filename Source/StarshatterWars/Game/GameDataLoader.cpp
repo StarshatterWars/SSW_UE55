@@ -42,6 +42,7 @@ AGameDataLoader::AGameDataLoader()
 	if (CampaignDataTableObject.Succeeded())
 	{
 		CampaignDataTable = CampaignDataTableObject.Object;
+		
 		CampaignDataTable->EmptyTable();
 	}
 
@@ -50,7 +51,7 @@ AGameDataLoader::AGameDataLoader()
 	if (GalaxyDataTableObject.Succeeded())
 	{
 		GalaxyDataTable = GalaxyDataTableObject.Object;
-		GalaxyDataTable->EmptyTable();
+		//GalaxyDataTable->EmptyTable();
 	}
 }
 
