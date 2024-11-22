@@ -54,6 +54,14 @@ AGameDataLoader::AGameDataLoader()
 		//GalaxyDataTable->EmptyTable();
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
+
+	if (StarSystemDataTableObject.Succeeded())
+	{
+		StarSystemDataTable = StarSystemDataTableObject.Object;
+		//GalaxyDataTable->EmptyTable();
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
 	if (StarsDataTableObject.Succeeded())
@@ -105,6 +113,7 @@ void AGameDataLoader::BeginPlay()
 	Super::BeginPlay();
 	GetSSWInstance();
 	LoadGalaxyMap();
+	LoadStarsystems();
 	InitializeCampaignData();
 }
 
@@ -2818,8 +2827,6 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 	FS_Star NewStarData;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
-		//SystemParent = this;
-
 		TermDef* pdef = val->elements()->at(i)->isDef();
 		if (pdef) {
 			if (pdef->name()->value() == "name") {
@@ -2873,15 +2880,9 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 				GetDefVec(a, pdef, fn);
 				NewStarData.Back = FColor(a.x, a.y, a.z, 1);
 			}
-		}
-
-		// define our data table struct
-
-		FName RowName = FName(FString(StarName));
-
-		// call AddRow to insert the record
-		StarsDataTable->AddRow(RowName, NewStarData);
+		}	
 	}
+	StarDataArray.Add(NewStarData);
 }
 
 void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
@@ -3042,7 +3043,7 @@ void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 			}
 			else if (pdef->name()->value() == "glow") {
 				GetDefText(GloName, pdef, fn);
-				NewMoonData.Glo = FString(GloName);
+				NewMoonData.Glow = FString(GloName);
 			}
 			else if (pdef->name()->value() == "high_res") {
 				GetDefText(HiName, pdef, fn);
@@ -3097,6 +3098,195 @@ void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 		// call AddRow to insert the record
 		MoonsDataTable->AddRow(RowName, NewMoonData);
 	}
+}
+
+// +-------------------------------------------------------------------+
+
+void AGameDataLoader::LoadStarsystems()
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadStarsystems()"));
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Galaxy/Systems/"));
+	FString PathName = ProjectPath;
+
+	TArray<FString> output;
+	output.Empty();
+
+	FString SysPath = PathName + "*.def";
+	FFileManagerGeneric::Get().FindFiles(output, *SysPath, true, false);
+
+	for (int i = 0; i < output.Num(); i++) {
+
+		FString FileName = ProjectPath;
+		FileName.Append(output[i]);
+
+		char* fn = TCHAR_TO_ANSI(*FileName);
+		UE_LOG(LogTemp, Log, TEXT("Found StarSystem: '%s'"), *FString(FileName));
+
+		ParseStarSystem(fn);
+	}
+}
+
+void AGameDataLoader::ParseStarSystem(const char* fn)
+{
+	SSWInstance->loader->GetLoader();
+
+	FString fs = FString(ANSI_TO_TCHAR(fn));
+	FString FileString;
+	BYTE* block = 0;
+
+	if (FFileHelper::LoadFileToString(FileString, *fs, FFileHelper::EHashOptions::None))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
+	}
+
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	if (!block) {
+		UE_LOG(LogTemp, Log, TEXT("ERROR: invalid star system file '%s'"), *FString(fn));
+		return;
+	}
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		UE_LOG(LogTemp, Log, TEXT("ERROR: could not parse '%s'"), *FString(fn));
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "STARSYSTEM") {
+			UE_LOG(LogTemp, Log, TEXT("ERROR: invalid star system file '%s'"), *FString(fn));
+			return;
+		}
+	}
+
+	Text  SystemName = "";
+	Text SkyPolyStars = "";
+	Text SkyNebula = "";
+	Text SkyHaze = "";
+
+	int SkyStars = 0;
+	int SkyDust = 0;
+
+	FColor AmbientColor = FColor::Black;
+	FS_StarSystem NewStarSystem;
+	StarDataArray.Empty();
+
+	// parse the system:
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "name") {
+					GetDefText(SystemName, def, fn);
+					NewStarSystem.SystemName = FString(SystemName);
+				}
+
+				else if (def->name()->value() == "sky") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: sky struct missing in '%s'\n", filename);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						for (int i = 0; i < val->elements()->size(); i++) {
+							TermDef* pdef = val->elements()->at(i)->isDef();
+							if (pdef) {
+								if (pdef->name()->value() == "poly_stars") {
+									GetDefText(SkyPolyStars, pdef, fn);
+									NewStarSystem.StarSky.SkyPolyStars = FString(SkyPolyStars);
+								}
+								else if (pdef->name()->value() == "nebula") {
+									GetDefText(SkyNebula, pdef, fn);
+									NewStarSystem.StarSky.SkyNebula = FString(SkyNebula);
+								}	
+								else if (pdef->name()->value() == "haze") {
+									GetDefText(SkyHaze, pdef, fn);
+									NewStarSystem.StarSky.SkyHaze = FString(SkyHaze);
+								}
+							}
+						}
+					}
+				}
+
+				else if (def->name()->value() == "stars") {
+					GetDefNumber(SkyStars, def, fn);
+					NewStarSystem.SkyStars = SkyStars;
+				}
+
+				else if (def->name()->value() == "ambient") {
+					Vec3 a;
+					GetDefVec(a, def, fn);
+					AmbientColor = FColor((BYTE)a.x, (BYTE)a.y, (BYTE)a.z, 1);
+					NewStarSystem.AmbientColor = AmbientColor;
+				}
+
+				else if (def->name()->value() == "dust") {
+					GetDefNumber(SkyDust, def, fn);
+					NewStarSystem.SkyDust = SkyDust;
+				}
+
+				else if (def->name()->value() == "star") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: star struct missing in '%s'\n", fn);
+					}
+					else {
+						ParseStar(def->term()->isStruct(), fn);
+						NewStarSystem.Star = StarDataArray;
+					}
+				}
+
+				else if (def->name()->value() == "planet") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: planet struct missing in '%s'\n", fn);
+					}
+					else {
+						ParsePlanet(def->term()->isStruct(), fn);
+					}
+				}
+
+				else if (def->name()->value() == "moon") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: moon struct missing in '%s'\n", fn);
+					}
+					else {
+						ParseMoon(def->term()->isStruct(), fn);
+					}
+				}
+
+				else if (def->name()->value() == "region") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: region struct missing in '%s'\n", fn);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseRegion(val);
+					}
+				}
+
+				else if (def->name()->value() == "terrain") {
+					if (!def->term() || !def->term()->isStruct()) {
+						Print("WARNING: terrain struct missing in '%s'\n", fn);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseTerrain(val);
+					}
+				}
+				FName RowName = FName(FString(SystemName));
+
+				// call AddRow to insert the record
+				StarSystemDataTable->AddRow(RowName, NewStarSystem);
+			}
+		}
+	} while (term);
+	// define our data table struct
+	
+	SSWInstance->loader->ReleaseBuffer(block);
 }
 // +--------------------------------------------------------------------+
 

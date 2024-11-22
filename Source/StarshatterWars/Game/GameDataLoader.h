@@ -89,6 +89,12 @@ public:
 	void LoadGalaxyMap();
 	void ParseStar(TermStruct* val, const char* fn);
 	void ParsePlanet(TermStruct* val, const char* fn);
+	void ParseMoon(TermStruct* val, const char* fn);
+
+	void LoadStarsystems();
+
+	void ParseStarSystem(const char* FileName);
+
 	EEMPIRE_NAME GetEmpireName(int32 emp);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -162,6 +168,7 @@ protected:
 
 	FS_Campaign CampaignData;
 	FS_Galaxy GalaxyData;
+	FS_StarSystem StarSystemData;
 	
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
@@ -181,6 +188,7 @@ protected:
 	TArray<FS_MissionInstruction> MissionInstructionArray;
 	TArray<FS_MissionInstruction> MissionObjectiveArray;
 	TArray<FS_MissionInstruction> MissionNavpointArray;
+	TArray<FS_Star> StarDataArray;
 
 	TArray<FS_TemplateMission> TemplateMissionArray;
 	TArray<FS_TemplateMission> ScriptedMissionArray;

@@ -390,32 +390,21 @@ struct FS_Galaxy : public FTableRowBase {
 		Empire = EEMPIRE_NAME::Terellian_Alliance;
 	}
 };
-
 USTRUCT(BlueprintType)
-struct FS_StarSystem : public FTableRowBase {
+struct FS_StarSky : public FTableRowBase {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString System;
+	FString SkyPolyStars;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FVector Location;
+	FString SkyNebula;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	ESPECTRAL_CLASS Class;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	EEMPIRE_NAME Empire;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	ESTAR_SIZE Size;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Name;
+	FString SkyHaze;
 
-	FS_StarSystem() {
-		System = "";
-		Name = "";
-		Location = FVector::ZeroVector;
-		Class = ESPECTRAL_CLASS::G;;
-		Empire = EEMPIRE_NAME::Terellian_Alliance;
-		Size = ESTAR_SIZE::Ia;
-		UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)42
+	FS_StarSky() {
+		SkyPolyStars = "";
+		SkyNebula = "";
+		SkyHaze = "";
 	}
 };
 
@@ -543,6 +532,8 @@ struct FS_Moon : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString High;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Glow;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString GlowHigh;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Gloss;
@@ -568,6 +559,7 @@ struct FS_Moon : public FTableRowBase {
 		Image = "";
 		Map = "";
 		High = "";
+		Glow = "";
 		GlowHigh = "";
 		Gloss = "";
 
@@ -614,6 +606,31 @@ struct FS_Region : public FTableRowBase {
 		Asteroids = 0;
 		Parent = "",
 		Type = EOrbitalType::NOTHING;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_StarSystem : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString SystemName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int SkyStars;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int SkyDust;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor AmbientColor = FColor::Black;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FS_StarSky StarSky;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_Star> Star;
+	
+	FS_StarSystem() {
+		SystemName = "";
+		SkyStars = 0;
+		SkyDust = 0;
+		AmbientColor = FColor::Black;
 	}
 };
 
