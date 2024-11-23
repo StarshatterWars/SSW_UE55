@@ -57,7 +57,8 @@ public:
 	// operations:
 	virtual void      Load();
 	void			  Load(const char* FileName);
-	virtual void      Initialize(const char* Name, FS_Galaxy Data);
+	virtual void      Initialize(FString SysName);
+	void LoadSystemFromDT(FString Name);
 	virtual void      Create();
 	virtual void      Destroy();
 
@@ -98,6 +99,7 @@ public:
 	void SetBacklight(Color color, double brightness = 1);
 	void RestoreTrueSunColor();
 	bool HasLinkTo(AStarSystem* s) const;
+	void SetStarData();
 	FString GetDataPath() const { return DataPath; }
 
 	static double StarDate;
@@ -125,6 +127,8 @@ protected:
 	void              ParseMoon(TermStruct* val);
 	void              ParseRegion(TermStruct* val);
 	void              ParseTerrain(TermStruct* val);
+
+	void			  SpawnStar(FString Name, FS_Star StarData);
 	void			  SpawnStar(FString Name, double m, double rad, double o, double r);
 	void			  SpawnPlanet(FString Name, double m, double rad, double o, double r);
 	void			  SpawnMoon(FString Name, double m, double rad, double o, double r);

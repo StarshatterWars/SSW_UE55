@@ -15,6 +15,18 @@ AOrbitalBody::AOrbitalBody()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
+
+	if (StarSystemDataTableObject.Succeeded())
+	{
+		StarSystemDataTable = StarSystemDataTableObject.Object;
+		//StarsDataTable->EmptyTable();
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Starsystem Data Table"));
+	}
+
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Orbital Body"));
 	RootComponent = Root;
 }
@@ -22,6 +34,27 @@ AOrbitalBody::AOrbitalBody()
 void AOrbitalBody::InitializeStar(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime)
 {
 	rotation = rot;
+}
+
+void AOrbitalBody::InitializeStar(AStarSystem* sys, FS_Star StarData)
+{
+	UE_LOG(LogTemp, Log, TEXT("AOrbitalBody::InitializeStar()"));
+	UE_LOG(LogTemp, Log, TEXT("Initialized Star Data '%s'"), *StarData.Name);
+
+	name = TCHAR_TO_ANSI(*StarData.Name);
+	img_name = TCHAR_TO_ANSI(*StarData.Image);
+	map_name = TCHAR_TO_ANSI(*StarData.Map);
+
+	light = StarData.Light;
+	radius = StarData.Radius;
+	rotation = StarData.Rot;
+	mass = StarData.Mass;
+	orbit = StarData.Orbit;
+	tscale = StarData.Tscale;	
+	retro = StarData.Retro;
+	
+	color = Color(StarData.Color.R, StarData.Color.G, StarData.Color.B);
+	back = Color(StarData.Back.R, StarData.Back.G, StarData.Back.B);
 }
 
 void AOrbitalBody::InitializePlanet(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime)

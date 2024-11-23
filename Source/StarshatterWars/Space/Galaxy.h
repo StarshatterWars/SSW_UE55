@@ -90,6 +90,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void LoadGalaxyFromDT();
+
 	UPROPERTY()
 	USceneComponent* Root;
 
@@ -98,10 +100,9 @@ protected:
 	TSubclassOf<AStarSystem> StarSystemObject;
 
 	FS_Galaxy GalaxyData;
+	TArray<FS_Galaxy> GalaxyDataArray;
 
 	FString ProjectPath;
 	FString FilePath;
-
-
 };
 

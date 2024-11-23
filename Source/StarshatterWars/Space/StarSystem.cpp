@@ -44,7 +44,7 @@ AStarSystem::AStarSystem()
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("StarSystem Scene Component"));
 	RootComponent = Root;
 
-	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_Galaxy.DT_Galaxy'"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
 
 	if (StarSystemDataTableObject.Succeeded())
 	{
@@ -540,18 +540,33 @@ void AStarSystem::Load(const char* FileName)
 	//this->SetActorLabel(FString(name).Append(" System"));
 }
 
-void AStarSystem::Initialize(const char* Name, FS_Galaxy Data)
+void AStarSystem::Initialize(FString SysName)
 {
-	name = Name;
-	SystemName = Data.Name;
+	name = TCHAR_TO_ANSI(*SysName);
 	//ewGalaxyData.Class = Data.Class;
 	//NewGalaxyData.Iff = Data.Iff;
 	//NewGalaxyData.Location = Data.Location;
 	//NewGalaxyData.Empire = Data.Empire;
 
-	UE_LOG(LogTemp, Log, TEXT("StarSystem Initialized: '%s'"), *SystemName);
-	this->SetActorLabel(FString(Name));
-	Load();
+	this->SetActorLabel(SysName);
+	LoadSystemFromDT(SysName);
+}
+
+void AStarSystem::LoadSystemFromDT(FString Name)
+{
+	UE_LOG(LogTemp, Log, TEXT("AStarSystem::LoadSystemFromDT()"));
+	
+	FS_StarSystem* System = StarSystemDataTable->FindRow<FS_StarSystem>(FName(Name), "");
+
+	FString SysName = System->SystemName;
+
+	UE_LOG(LogTemp, Log, TEXT("System Name: %s"), *Name);
+	
+	for (int index = 0; index < System->Star.Num(); index++) {
+		
+		FS_Star StarData = System->Star[index];
+		SpawnStar(System->Star[index].Name, StarData); 
+	}
 }
 
 void AStarSystem::Create()
@@ -707,6 +722,10 @@ bool AStarSystem::HasLinkTo(AStarSystem* s) const
 	}
 
 	return false;
+}
+
+void AStarSystem::SetStarData() {
+
 }
 
 void AStarSystem::ParseStar(TermStruct* val)
@@ -1415,6 +1434,33 @@ void AStarSystem::ParseTerrain(TermStruct* val)
 	all_regions.append(region);*/
 }
 
+void AStarSystem::SpawnStar(FString Name, FS_Star StarData)
+{
+	UWorld* World = GetWorld();
+
+	FRotator rotate = FRotator::ZeroRotator;
+	FVector SystemLoc = FVector::ZeroVector;
+
+	FActorSpawnParameters StarInfo;
+	StarInfo.Name = FName(Name);
+
+	AOrbitalBody* Star = GetWorld()->SpawnActor<AOrbitalBody>(CentralStar, SystemLoc, rotate, StarInfo);
+
+
+	if (Star)
+	{
+		PlanetParent = Star;
+		RegionParent = Star;
+		Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+		Star->SetActorLabel(FString(Name));
+		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
+
+		Star->InitializeStar(this, StarData);
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Star"));
+	}
+}
 void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double r)
 {
 	UWorld* World = GetWorld();
@@ -1432,7 +1478,7 @@ void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double
 	{
 		PlanetParent = Star;
 		RegionParent = Star;
-		Star->AttachToActor(SystemParent, FAttachmentTransformRules::KeepWorldTransform);
+		Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		Star->SetActorLabel(FString(Name));
 		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
 		

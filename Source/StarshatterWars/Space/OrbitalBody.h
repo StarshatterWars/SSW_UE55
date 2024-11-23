@@ -11,6 +11,7 @@
 
 #include "CoreMinimal.h"
 #include "Orbital.h"
+#include "Engine/DataTable.h"
 #include "OrbitalBody.generated.h"
 
 UCLASS()
@@ -26,6 +27,8 @@ public:
 	AOrbitalBody();
 
 	void InitializeStar(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime = nullptr);
+
+	void InitializeStar(AStarSystem* sys, FS_Star StarData);
 
 	void InitializePlanet(AStarSystem* sys, FString n, double m, double rad, double o, double rot, AOrbital* prime = nullptr);
 
@@ -56,6 +59,7 @@ public:
 
 	Text              map_name;
 	Text              tex_name;
+	Text			  img_name;
 	Text              tex_high_res;
 	Text              tex_ring;
 	Text              tex_glow;
@@ -75,4 +79,6 @@ public:
 	bool              luminous;
 
 	List<AOrbitalBody> satellites;
+
+	class UDataTable* StarSystemDataTable;
 };

@@ -20,14 +20,25 @@
 void AGalaxy::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	ProjectPath = FPaths::ProjectDir();
-	ProjectPath.Append(TEXT("GameData/Galaxy/"));
-	FilePath = "Galaxy.def";
-	
-	UE_LOG(LogTemp, Log, TEXT("Setting Galaxy Game Data Directory %s"), *ProjectPath);
+	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy Game Data"));
 
-	Load();
+	LoadGalaxyFromDT();
+}
+
+void AGalaxy::LoadGalaxyFromDT()
+{
+	UE_LOG(LogTemp, Log, TEXT("AGalaxy::LoadGalaxyFromDT()"));
+	
+	TArray<FName> RowNames = GalaxyDataTable->GetRowNames();
+
+	for (FName Item : RowNames) {
+		FS_Galaxy* SystemName = GalaxyDataTable->FindRow<FS_Galaxy>(Item, "");
+
+		FString Name = SystemName->Name;
+
+		UE_LOG(LogTemp, Log, TEXT("System Name: %s"), *Name);
+		SpawnSystem(FString(Name));
+	}
 }
 
 // Called every frame
@@ -354,7 +365,7 @@ void AGalaxy::SpawnSystem(FString sysName)
 	if (System)
 	{
 		UE_LOG(LogTemp, Log, TEXT("System Spawned"));
-		System->Initialize(TCHAR_TO_ANSI(*sysName), GalaxyData);
+		System->Initialize(sysName);
 		System->FinishSpawning(ReturnTransform, true);
 	}
 	else {
@@ -381,7 +392,7 @@ void AGalaxy::SpawnSystem(FString sysName, FVector sysLoc, int sysIFF, int starC
 		System->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform); System->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		UE_LOG(LogTemp, Log, TEXT("System Spawned: '%s'"), *sysName);
 		System->SystemName = sysName;
-		System->Initialize(TCHAR_TO_ANSI(*sysName), GalaxyData);
+		System->Initialize(TCHAR_TO_ANSI(*sysName));
 		System->FinishSpawning(ReturnTransform, true);
 	}
 	else {
