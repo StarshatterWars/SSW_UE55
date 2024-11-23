@@ -566,6 +566,18 @@ void AStarSystem::LoadSystemFromDT(FString Name)
 		
 		FS_Star StarData = System->Star[index];
 		SpawnStar(System->Star[index].Name, StarData); 
+
+		for (int pindex = 0; pindex < StarData.Planet.Num(); pindex++) {
+
+			FS_Planet PlanetData = StarData.Planet[pindex];
+			SpawnPlanet(StarData.Planet[pindex].Name, PlanetData);
+
+			for (int mindex = 0; mindex < PlanetData.Moon.Num(); mindex++) {
+
+				FS_Moon MoonData = PlanetData.Moon[mindex];
+				SpawnMoon(PlanetData.Moon[mindex].Name, MoonData);
+			}
+		}
 	}
 }
 
@@ -724,10 +736,6 @@ bool AStarSystem::HasLinkTo(AStarSystem* s) const
 	return false;
 }
 
-void AStarSystem::SetStarData() {
-
-}
-
 void AStarSystem::ParseStar(TermStruct* val)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -819,7 +827,7 @@ void AStarSystem::ParseStar(TermStruct* val)
 		StarsDataTable->AddRow(RowName, NewStarData);
 	}
 
-	SpawnStar(FString(star_name), mass, Radius, orbit, rot);
+	//SpawnStar(FString(star_name), mass, Radius, orbit, rot);
 	
 	if(PlanetParent) {
 		PlanetParent->map_name = map_name;
@@ -977,7 +985,7 @@ void AStarSystem::ParsePlanet(TermStruct* val)
 		PlanetsDataTable->AddRow(RowName, NewPlanetData);
 	}
 
-	SpawnPlanet(FString(pln_name), mass, Radius, orbit, rot);
+	//SpawnPlanet(FString(pln_name), mass, Radius, orbit, rot);
 	
 	//if (primary_star)
 	//	primary_star->satellites.append(planet);
@@ -1090,7 +1098,7 @@ void AStarSystem::ParseMoon(TermStruct* val)
 		MoonsDataTable->AddRow(RowName, NewMoonData);
 	}
 
-	SpawnMoon(FString(pln_name), mass, Radius, orbit, rot);
+	//SpawnMoon(FString(pln_name), mass, Radius, orbit, rot);
 	
 	//if (primary_planet)
 	//	primary_planet->satellites.append(moon);
@@ -1454,45 +1462,15 @@ void AStarSystem::SpawnStar(FString Name, FS_Star StarData)
 		Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		Star->SetActorLabel(FString(Name));
 		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
-
+		Star->type = EOrbitalType::STAR;
 		Star->InitializeStar(this, StarData);
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Star"));
 	}
 }
-void AStarSystem::SpawnStar(FString Name, double m, double rad, double o, double r)
-{
-	UWorld* World = GetWorld();
 
-	FRotator rotate = FRotator::ZeroRotator;
-	FVector SystemLoc = FVector::ZeroVector;
-
-	FActorSpawnParameters StarInfo;
-	StarInfo.Name = FName(Name);
-
-	AOrbitalBody* Star = GetWorld()->SpawnActor<AOrbitalBody>(CentralStar, SystemLoc, rotate, StarInfo);
-
-
-	if (Star)
-	{
-		PlanetParent = Star;
-		RegionParent = Star;
-		Star->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
-		Star->SetActorLabel(FString(Name));
-		UE_LOG(LogTemp, Log, TEXT("Spawned Star '%s'"), *Name);
-		
-		Star->type = EOrbitalType::STAR;
-
-		Star->InitializeStar(this, Name, m, rad, o, (r*3600), nullptr);
-		
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Star"));
-	}
-}
-
-void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, double r)
+void AStarSystem::SpawnPlanet(FString Name, FS_Planet PlanetData)
 {
 	UWorld* World = GetWorld();
 
@@ -1514,7 +1492,7 @@ void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, doub
 		UE_LOG(LogTemp, Log, TEXT("Spawned Planet '%s'"), *Name);
 		Planet->type = EOrbitalType::PLANET;
 
-		Planet->InitializePlanet(this, Name, m, rad, o, (r * 3600), PlanetParent);
+		//Planet->InitializePlanet(this, Name, m, rad, o, (r * 3600), PlanetParent);
 		MoonParent = Planet;
 		RegionParent = Planet;
 	}
@@ -1523,7 +1501,7 @@ void AStarSystem::SpawnPlanet(FString Name, double m, double rad, double o, doub
 	}
 }
 
-void AStarSystem::SpawnMoon(FString Name, double m, double rad, double o, double r)
+void AStarSystem::SpawnMoon(FString Name, FS_Moon MoonData)
 {
 	UWorld* World = GetWorld();
 
@@ -1546,7 +1524,7 @@ void AStarSystem::SpawnMoon(FString Name, double m, double rad, double o, double
 		UE_LOG(LogTemp, Log, TEXT("Spawned Moon '%s'"), *Name);
 		Moon->type = EOrbitalType::MOON;
 
-		Moon->InitializeMoon(this, Name, m, rad, o, (r * 3600), MoonParent);
+		//Moon->InitializeMoon(this, Name, m, rad, o, (r * 3600), MoonParent);
 	}
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Moon"));

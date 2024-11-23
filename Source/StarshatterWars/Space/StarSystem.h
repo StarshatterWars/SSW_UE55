@@ -99,7 +99,7 @@ public:
 	void SetBacklight(Color color, double brightness = 1);
 	void RestoreTrueSunColor();
 	bool HasLinkTo(AStarSystem* s) const;
-	void SetStarData();
+
 	FString GetDataPath() const { return DataPath; }
 
 	static double StarDate;
@@ -129,9 +129,8 @@ protected:
 	void              ParseTerrain(TermStruct* val);
 
 	void			  SpawnStar(FString Name, FS_Star StarData);
-	void			  SpawnStar(FString Name, double m, double rad, double o, double r);
-	void			  SpawnPlanet(FString Name, double m, double rad, double o, double r);
-	void			  SpawnMoon(FString Name, double m, double rad, double o, double r);
+	void			  SpawnPlanet(FString Name, FS_Planet PlanetData);
+	void			  SpawnMoon(FString Name, FS_Moon MoonData);
 
 	void			  SpawnRegion(FString Name);
 	//void              ParseLayer(TerrainRegion* rgn, TermStruct* val);
