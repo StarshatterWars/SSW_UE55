@@ -3145,6 +3145,261 @@ void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 	MoonDataArray.Add(NewMoonData);
 }
 
+
+void AGameDataLoader::ParseRegion(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseRegion()"));
+	
+	Text  RegionName = "";
+	Text  RegionParent = "";
+	Text  LinkName = "";
+	Text  ParentType = "";
+
+	double Size = 1.0e6;
+	double Orbit = 0.0;
+	double Grid = 25000;
+	double Inclination = 0.0;
+	int    Asteroids = 0;
+
+	EOrbitalType parent_class = EOrbitalType::NOTHING;
+	TArray<FString> LinksName;
+	List<Text> links;
+
+	FS_Region NewRegionData;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(RegionName, pdef, fn);
+				NewRegionData.Name = FString(RegionName);
+			}
+
+			else if (pdef->name()->value() == "parent") {
+				GetDefText(RegionParent, pdef, fn);
+				NewRegionData.Parent = FString(RegionParent);
+			}
+
+			else if (pdef->name()->value() == "link") {
+				GetDefText(LinkName, pdef, fn);
+				if (LinkName.length() > 0) {
+					links.append(new Text(LinkName));
+					LinksName.Add(FString(LinkName));
+				}
+				NewRegionData.Link = LinksName;
+			}
+
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+			}
+			else if (pdef->name()->value() == "size" || pdef->name()->value() == "radius") {
+				GetDefNumber(Size, pdef, fn);
+				NewRegionData.Size = Size;
+			}
+			else if (pdef->name()->value() == "grid") {
+				GetDefNumber(Grid, pdef, fn);
+				NewRegionData.Grid = Grid;
+			}
+			else if (pdef->name()->value() == "inclination") {
+				GetDefNumber(Inclination, pdef, fn);
+				NewRegionData.Inclination = Inclination;
+			}
+			else if (pdef->name()->value() == "asteroids") {
+				GetDefNumber(Asteroids, pdef, fn);
+				NewRegionData.Asteroids = Asteroids;
+			}
+			else if (pdef->name()->value() == "type") {
+				GetDefText(ParentType, pdef, fn);
+
+				switch (ParentType[0]) {
+				case 'S':
+					parent_class = EOrbitalType::STAR;
+					break;
+				case 'P':
+					parent_class = EOrbitalType::PLANET;
+					break;
+				case 'M':
+					parent_class = EOrbitalType::MOON;
+					break;
+				default:
+					parent_class = EOrbitalType::NOTHING;
+					break;
+				}
+				NewRegionData.Type = parent_class;
+			}
+		}
+
+	}
+	RegionDataArray.Add(NewRegionData);
+}
+
+void AGameDataLoader::ParseTerrain(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseTerrain()"));
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		
+		Text   RegionName = "";
+		Text   PatchTexture = "";
+		Text   NoiseTex0 = "";
+		Text   NoiseTex1 = "";
+		Text   ApronName = "";
+		Text   ApronTexture = "";
+		Text   WaterTexture = "";
+		Text   EnvTexturePositive_x = "";
+		Text   EnvTextureNegative_x = "";
+		Text   EnvTexturePositive_y = "";
+		Text   EnvTextureNegative_y = "";
+		Text   EnvTexturePositive_z = "";
+		Text   EnvTextureNegative_z = "";
+		Text   HazeName = "";
+		Text   SkyName = "";
+		Text   CloudsHigh = "";
+		Text   CloudsLow = "";
+		Text   ShadesHigh = "";
+		Text   ShadesLow = "";
+
+		double size = 1.0e6;
+		double grid = 25000;
+		double inclination = 0.0;
+		double scale = 10e3;
+		double mtnscale = 1e3;
+		double fog_density = 0;
+		double fog_scale = 0;
+		double haze_fade = 0;
+		double clouds_alt_high = 0;
+		double clouds_alt_low = 0;
+		double w_period = 0;
+		double w_chances[EWEATHER_STATE::NUM_STATES];
+
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(RegionName, pdef, fn);
+			}
+			else if (pdef->name()->value() == "patch" || pdef->name()->value() == "patch_texture") {
+				GetDefText(PatchTexture, pdef, fn);
+			}
+			else if (pdef->name()->value() == "detail_texture_0") {
+				GetDefText(NoiseTex0, pdef, fn);
+			}
+			else if (pdef->name()->value() == "detail_texture_1") {
+				GetDefText(NoiseTex1, pdef, fn);
+			}
+			else if (pdef->name()->value() == "apron") {
+				GetDefText(ApronName, pdef, fn);
+			}
+			else if (pdef->name()->value() == "apron_texture") {
+				GetDefText(ApronTexture, pdef, fn);
+			}
+			else if (pdef->name()->value() == "water_texture") {
+				GetDefText(WaterTexture, pdef, fn);
+			}
+			else if (pdef->name()->value() == "env_texture_positive_x") {
+				GetDefText(EnvTexturePositive_x, pdef, fn);
+			}
+			else if (pdef->name()->value() == "env_texture_negative_x") {
+				GetDefText(EnvTextureNegative_x, pdef, fn);
+			}
+			else if (pdef->name()->value() == "env_texture_positive_y") {
+				GetDefText(EnvTexturePositive_y, pdef, fn);
+			}
+			else if (pdef->name()->value() == "env_texture_negative_y") {
+				GetDefText(EnvTextureNegative_y, pdef, fn);
+			}
+			else if (pdef->name()->value() == "env_texture_positive_z") {
+				GetDefText(EnvTexturePositive_z, pdef, fn);
+			}
+			else if (pdef->name()->value() == "env_texture_negative_z") {
+				GetDefText(EnvTextureNegative_z, pdef, fn);
+			}
+			else if (pdef->name()->value() == "clouds_high") {
+				GetDefText(CloudsHigh, pdef, fn);
+			}
+			else if (pdef->name()->value() == "shades_high") {
+				GetDefText(ShadesHigh, pdef, fn);
+			}
+			else if (pdef->name()->value() == "clouds_low") {
+				GetDefText(CloudsLow, pdef, fn);
+			}
+			else if (pdef->name()->value() == "shades_low") {
+				GetDefText(ShadesLow, pdef, fn);
+			}
+			else if (pdef->name()->value() == "haze") {
+				GetDefText(HazeName, pdef, fn);
+			}
+			else if (pdef->name()->value() == "sky_color") {
+				GetDefText(SkyName, pdef, fn);
+			}
+			else if (pdef->name()->value() == "size" || pdef->name()->value() == "radius") {
+				GetDefNumber(size, pdef, fn);
+			}
+			else if (pdef->name()->value() == "grid") {
+				GetDefNumber(grid, pdef, fn);
+			}
+			else if (pdef->name()->value() == "inclination") {
+				GetDefNumber(inclination, pdef, fn);
+			}
+			else if (pdef->name()->value() == "scale") {
+				GetDefNumber(scale, pdef, fn);
+			}
+			else if (pdef->name()->value() == "mtnscale" || pdef->name()->value() == "mtn_scale") {
+				GetDefNumber(mtnscale, pdef, fn);
+			}
+			else if (pdef->name()->value() == "fog_density") {
+				GetDefNumber(fog_density, pdef, fn);
+			}
+			else if (pdef->name()->value() == "fog_scale") {
+				GetDefNumber(fog_scale, pdef, fn);
+			}
+			else if (pdef->name()->value() == "haze_fade") {
+				GetDefNumber(haze_fade, pdef, fn);
+			}
+			else if (pdef->name()->value() == "clouds_alt_high") {
+				GetDefNumber(clouds_alt_high, pdef, fn);
+			}
+			else if (pdef->name()->value() == "clouds_alt_low") {
+				GetDefNumber(clouds_alt_low, pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_period") {
+				GetDefNumber(w_period, pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_clear") {
+				GetDefNumber(w_chances[0], pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_high_clouds") {
+				GetDefNumber(w_chances[1], pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_moderate_clouds") {
+				GetDefNumber(w_chances[2], pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_overcast") {
+				GetDefNumber(w_chances[3], pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_fog") {
+				GetDefNumber(w_chances[4], pdef, fn);
+			}
+			else if (pdef->name()->value() == "weather_storm") {
+				GetDefNumber(w_chances[5], pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "layer") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					Print("WARNING: terrain layer struct missing in '%s'\n", fn);
+				}
+				else {
+
+					//if (!region)
+					//	region = new(__FILE__, __LINE__) TerrainRegion(this, rgn_name, size, primary);
+
+					//TermStruct* val = pdef->term()->isStruct();
+					//ParseLayer(region, val);
+				}
+			}
+		}
+	}
+}
 // +-------------------------------------------------------------------+
 
 void AGameDataLoader::LoadStarsystems()
@@ -3221,6 +3476,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 	FS_StarSystem NewStarSystem;
 	StarDataArray.Empty();
 	MoonDataArray.Empty();
+	RegionDataArray.Empty();
 
 	// parse the system:
 	do {
@@ -3293,8 +3549,8 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 						Print("WARNING: region struct missing in '%s'\n", fn);
 					}
 					else {
-						TermStruct* val = def->term()->isStruct();
-						//ParseRegion(val);
+						ParseRegion(def->term()->isStruct(), fn);
+						NewStarSystem.Region = RegionDataArray;
 					}
 				}
 
