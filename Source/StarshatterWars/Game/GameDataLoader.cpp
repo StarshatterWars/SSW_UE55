@@ -88,6 +88,14 @@ AGameDataLoader::AGameDataLoader()
 		//GalaxyDataTable->EmptyTable();
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> ShipDesignDataTableObject(TEXT("DataTable'/Game/Game/DT_ShipDesign.DT_ShipDesign'"));
+
+	if (ShipDesignDataTableObject.Succeeded())
+	{
+		ShipDesignDataTable = ShipDesignDataTableObject.Object;
+		//GalaxyDataTable->EmptyTable();
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
 	if (StarsDataTableObject.Succeeded())
@@ -150,6 +158,7 @@ void AGameDataLoader::BeginPlay()
 	Super::BeginPlay();
 	GetSSWInstance();
 	LoadGalaxyMap();
+	LoadShipDesigns();
 	LoadCombatRoster();
 	LoadStarsystems();
 	InitializeCampaignData();
@@ -3907,6 +3916,87 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 		}
 	}
 
+	Text ShipName = "";
+	Text DisplayName = "";
+	Text Abrv = "";
+
+	Text	DetailName0 = "";
+	Text	DetailName1 = "";
+	Text	DetailName2 = "";
+	Text	DetailName3 = "";
+
+	Text	ShipClass = "";
+	Text	CockpitName = "";
+	Text	BeautyName = "";
+	Text    HudIconName = "";
+
+	int pcs = 3.0f;
+	int acs = 1.0f;
+	int detet = 250.0e3f;
+	float scale = 1.0f;
+	float explosion_scale = 0.0f;
+	float mass = 0;
+
+	int ShipType = 0;
+
+	float vlimit = 8e3f;
+	float agility = 2e2f;
+	float air_factor = 0.1f;
+	float roll_rate = 0.0f;
+	float pitch_rate = 0.0f;
+	float yaw_rate = 0.0f;
+	float trans_x = 0.0f;
+	float trans_y = 0.0f;
+	float trans_z = 0.0f;
+	float turn_bank = (float)(PI / 8);
+
+	float cockpit_scale = 1.0f;
+	float auto_roll = 0;
+
+	float CL = 0.0f;
+	float CD = 0.0f;
+	float stall = 0.0f;
+	float drag = 2.5e-5f;
+
+	float arcade_drag = 1.0f;
+	float roll_drag = 5.0f;
+	float pitch_drag = 5.0f;
+	float yaw_drag = 5.0f;
+
+	float prep_time = 30.0f;
+	float avoid_time = 0.0f;
+	float avoid_fighter = 0.0f;
+	float avoid_strike = 0.0f;
+	float avoid_target = 0.0f;
+	float commit_range = 0.0f;
+
+	float splash_radius = -1.0f;
+	float scuttle = 5e3f;
+	float repair_speed = 1.0f;
+
+	int  repair_teams = 2;
+
+	float feature_size[4];
+	float e_factor[3];
+
+	bool secret = false;
+	bool repair_auto = true;
+	bool repair_screen = true;
+	bool wep_screen = true;
+	bool degrees = false;
+
+	e_factor[0] = 0.1f;
+	e_factor[1] = 0.3f;
+	e_factor[2] = 1.0f;
+
+	Vec3    off_loc = Vec3(0.0, 0.0, 0.0);
+	Vec3    spin = Vec3(0.0, 0.0, 0.0);
+	Vec3    BeautyCam = Vec3(0.0, 0.0, 0.0);
+	Vec3	chase_vec = Vec3(0, -100, 20);
+	Vec3	bridge_vec = Vec3(0.0, 0.0, 0.0);
+
+	FS_ShipDesign NewShipDesign;
+
 	// parse the system:
 	do {
 		delete term;
@@ -3915,266 +4005,201 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 		if (term) {
 			TermDef* def = term->isDef();
 			if (def) {
-				
-				Text ShipName = "";
-				Text DisplayName = "";
-				Text Abrv = "";
-
-				Text	DetailName = "";
-				Text	ShipClass = "";
-				Text	CockpitName = "";
-				Text	BeautyName = "";
-				Text    HudIconName = "";
-	
-				int pcs = 3.0f;
-				int acs = 1.0f;
-				int detet = 250.0e3f;
-				float scale = 1.0f;
-				float explosion_scale = 0.0f;
-				float mass = 0;
-
-				int ShipType = 0;
-
-				float vlimit = 8e3f;
-				float agility = 2e2f;
-				float air_factor = 0.1f;
-				float roll_rate = 0.0f;
-				float pitch_rate = 0.0f;
-				float yaw_rate = 0.0f;
-				float trans_x = 0.0f;
-				float trans_y = 0.0f;
-				float trans_z = 0.0f;
-				float turn_bank = (float)(PI / 8);
-
-				float cockpit_scale = 1.0f;
-				float auto_roll = 0;
-
-				float CL = 0.0f;
-				float CD = 0.0f;
-				float stall = 0.0f;
-				float drag = 2.5e-5f;
-	
-				float arcade_drag = 1.0f;
-				float roll_drag = 5.0f;
-				float pitch_drag = 5.0f;
-				float yaw_drag = 5.0f;
-
-				float prep_time = 30.0f;
-				float avoid_time = 0.0f;
-				float avoid_fighter = 0.0f;
-				float avoid_strike = 0.0f;
-				float avoid_target = 0.0f;
-				float commit_range = 0.0f;
-
-				float splash_radius = -1.0f;
-				float scuttle = 5e3f;
-				float repair_speed = 1.0f;
-	
-				int  repair_teams = 2;
-
-				float feature_size[4];
-				float e_factor[3];
-	
-				bool secret = false;
-				bool repair_auto = true;
-				bool repair_screen = true;
-				bool wep_screen = true;
-				bool degrees = false; 
-
-				e_factor[0] = 0.1f;
-				e_factor[1] = 0.3f;
-				e_factor[2] = 1.0f;
-
-				Vec3    off_loc = Vec3(0.0, 0.0, 0.0);
-				Vec3    spin = Vec3(0.0, 0.0, 0.0);
-				Vec3    BeautyCam = Vec3(0.0, 0.0, 0.0);
-				Vec3	chase_vec = Vec3(0, -100, 20);
-				Vec3	bridge_vec = Vec3(0.0, 0.0, 0.0);
-
 				if (def->name()->value() == "name") {
 					GetDefText(ShipName, def, fn);	
-		
+					NewShipDesign.ShipName = FString(ShipName);	
 				}
 				else if (def->name()->value() == "display_name") {
 					GetDefText(DisplayName, def, fn);
-
+					NewShipDesign.DisplayName = FString(DisplayName);
 				}
 				else if (def->name()->value() == "abrv") {
 					GetDefText(Abrv, def, fn);
-
+					NewShipDesign.Abrv = FString(Abrv);
 				}
 				else if (def->name()->value() == "pcs") {
 					GetDefNumber(pcs, def, fn);
-	
+					NewShipDesign.PCS = pcs;
 				}
 				else if (def->name()->value() == "acs") {
 					GetDefNumber(acs, def, fn);
+					NewShipDesign.ACS = acs;
 
 				}
 				else if (def->name()->value() == "detec") {
 					GetDefNumber(detet, def, fn);
-
+					NewShipDesign.Detet = detet;
 				}
 				else if (def->name()->value() == "scale") {
 					GetDefNumber(scale, def, fn);
-
+					NewShipDesign.Scale = scale;
 				}
 				else if (def->name()->value() == "explosion_scale") {
 					GetDefNumber(explosion_scale, def, fn);
-
+					NewShipDesign.ExplosionScale = explosion_scale;
 				}
 				else if (def->name()->value() == "mass") {
 					GetDefNumber(mass, def, fn);
-
+					NewShipDesign.Mass = mass;
 				}
 
 				else if (def->name()->value() == "vlimit") {
 					GetDefNumber(vlimit, def, fn);
-	
+					NewShipDesign.Vlimit = vlimit;
 				}
 				else if (def->name()->value() == "agility") {
 					GetDefNumber(agility, def, fn);
-
+					NewShipDesign.Agility = agility;
 				}
 				else if (def->name()->value() == "air_factor") {
 					GetDefNumber(air_factor, def, fn);
-
+					NewShipDesign.AirFactor = air_factor;
 				}
 				else if (def->name()->value() == "roll_rate") {
 					GetDefNumber(roll_rate, def, fn);
-
+					NewShipDesign.RollRate = roll_rate;
 				}
 				else if (def->name()->value() == "pitch_rate") {
 					GetDefNumber(pitch_rate, def, fn);
+					NewShipDesign.PitchRate = pitch_rate;
 
 				}
 				else if (def->name()->value() == "yaw_rate") {
 					GetDefNumber(yaw_rate, def, fn);
-
+					NewShipDesign.YawRate = yaw_rate;
 				}
 				else if (def->name()->value() == "trans_x") {
 					GetDefNumber(trans_x, def, fn);
-
+					NewShipDesign.Trans.X = trans_x;
 				}
 				else if (def->name()->value() == "trans_y") {
 					GetDefNumber(trans_y, def, fn);
-
+					NewShipDesign.Trans.Y = trans_y;
 				}
 				else if (def->name()->value() == "trans_z") {
 					GetDefNumber(trans_z, def, fn);
-
+					NewShipDesign.Trans.Z = trans_z;
 				}
 				else if (def->name()->value() == "turn_bank") {
 					GetDefNumber(turn_bank, def, fn);
-
+					NewShipDesign.TurnBank = turn_bank;
 				}
 				else if (def->name()->value() == "cockpit_scale") {
 					GetDefNumber(cockpit_scale, def, fn);
-
+					NewShipDesign.CockpitScale = cockpit_scale;
 				}
 				else if (def->name()->value() == "auto_roll") {
 					GetDefNumber(auto_roll, def, fn);
-
+					NewShipDesign.AutoRoll = auto_roll;
 				}
 				else if (def->name()->value() == "CL") {
 					GetDefNumber(CL, def, fn);
-
+					NewShipDesign.CL = CL;
 				}
 				else if (def->name()->value() == "CD") {
 					GetDefNumber(CD, def, fn);
-
+					NewShipDesign.CD = CD;
 				}
 				else if (def->name()->value() == "stall") {
 					GetDefNumber(stall, def, fn);
-
+					NewShipDesign.Stall = stall;
 				}
 				else if (def->name()->value() == "prep_time") {
 					GetDefNumber(prep_time, def, fn);
-
+					NewShipDesign.PrepTime = prep_time;
 				}
 				else if (def->name()->value() == "avoid_time") {
 					GetDefNumber(avoid_time, def, fn);
-
+					NewShipDesign.AvoidTime = avoid_time;
 				}
 				else if (def->name()->value() == "avoid_fighter") {
 					GetDefNumber(avoid_fighter, def, fn);
-
+					NewShipDesign.AvoidFighter = avoid_fighter;
 				}
 				else if (def->name()->value() == "avoid_strike") {
 					GetDefNumber(avoid_strike, def, fn);
-
+					NewShipDesign.AvoidStrike = avoid_strike;
 				}
 				else if (def->name()->value() == "avoid_target") {
 					GetDefNumber(avoid_target, def, fn);
-
+					NewShipDesign.AvoidTarget = avoid_target;
 				}
 				else if (def->name()->value() == "commit_range") {
 					GetDefNumber(commit_range, def, fn);
-
+					NewShipDesign.CommitRange = commit_range;
 				}
 				else if (def->name()->value() == "splash_radius") {
 					GetDefNumber(splash_radius, def, fn);
-
+					NewShipDesign.SplashRadius = splash_radius;
 				}
 				else if (def->name()->value() == "scuttle") {
 					GetDefNumber(scuttle, def, fn);
-
+					NewShipDesign.Scuttle = scuttle;
 				}
 				else if (def->name()->value() == "repair_speed") {
 					GetDefNumber(repair_speed, def, fn);
-
+					NewShipDesign.RepairSpeed = repair_speed;
 				}
 				else if (def->name()->value() == "repair_teams") {
 					GetDefNumber(repair_teams, def, fn);
-
+					NewShipDesign.RepairTeams = repair_teams;
 				}
 				else if (def->name()->value() == "cockpit_model") {
 					GetDefText(CockpitName, def, fn);
-
+					NewShipDesign.CockpitName = FString(CockpitName);
 				}
 
 				else if (def->name()->value() == "model" || def->name()->value() == "detail_0") {
-						GetDefText(DetailName, def, fn);
+					GetDefText(DetailName0, def, fn);
+					NewShipDesign.DetailName0 = FString(DetailName0);
 					//detail[0].append(new Text(detail_name));
 				}
 
 				else if (def->name()->value() == "detail_1") {
-					GetDefText(DetailName, def, fn);
+					GetDefText(DetailName1, def, fn);
+					NewShipDesign.DetailName1 = FString(DetailName1);
 					//detail[1].append(new Text(detail_name));
 				}
 
 				else if (def->name()->value() == "detail_2") {
-					GetDefText(DetailName, def, fn);
+					GetDefText(DetailName2, def, fn);
+					NewShipDesign.DetailName2 = FString(DetailName2);
 					//detail[2].append(new Text(detail_name));
 				}
 
 				else if (def->name()->value() == "detail_3") {
-					GetDefText(DetailName, def, fn);
+					GetDefText(DetailName3, def, fn);
+					NewShipDesign.DetailName3 = FString(DetailName3);
 					//detail[3].append(new Text(detail_name));
 				}
 
 				else if (def->name()->value() == "spin") {
 					GetDefVec(spin, def, fn);
+					NewShipDesign.Spin= FVector(spin.x, spin.y, spin.z);
 					//spin_rates.append(new Point(spin));
 				}
 
 				else if (def->name()->value() == "offset_0") {
-					GetDefVec(off_loc, def, fn);		
+					GetDefVec(off_loc, def, fn);	
+					NewShipDesign.Offset[0] = FVector(off_loc.x, off_loc.y, off_loc.z);
 					//offset[0].append(new Point(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_1") {
 					GetDefVec(off_loc, def, fn);
+					NewShipDesign.Offset[1] = FVector(off_loc.x, off_loc.y, off_loc.z);
 					//offset[1].append(new Point(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_2") {
 					GetDefVec(off_loc, def, fn);
+					NewShipDesign.Offset[2] = FVector(off_loc.x, off_loc.y, off_loc.z);
 					//offset[2].append(new Point(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_3") {
 					GetDefVec(off_loc, def, fn);
+					NewShipDesign.Offset[3] = FVector(off_loc.x, off_loc.y, off_loc.z);
 					//offset[3].append(new Point(off_loc));
 				}
 
@@ -4186,6 +4211,8 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 							BeautyCam.x *= (float)DEGREES;
 							BeautyCam.y *= (float)DEGREES;
 						}
+
+						NewShipDesign.BeautyCam = FVector(BeautyCam.x, BeautyCam.y, BeautyCam.z);
 					}
 
 					else {
@@ -4199,32 +4226,36 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 				else if (def->name()->value() == "hud_icon") {
 					GetDefText(HudIconName, def, fn);
-	
+					NewShipDesign.HudIconName = FString(HudIconName);
 					//DataLoader* loader = DataLoader::GetLoader();
 					//loader->LoadBitmap(hud_icon_name, hud_icon);
 				}
 
 				else if (def->name()->value() == "feature_0") {
 					GetDefNumber(feature_size[0], def, fn);
-
+					NewShipDesign.FeatureSize[0] = feature_size[0];
 				}
 
 				else if (def->name()->value() == "feature_1") {
 					GetDefNumber(feature_size[1], def, fn);
+					NewShipDesign.FeatureSize[1] = feature_size[1];
 	
 				}
 
 				else if (def->name()->value() == "feature_2") {
 					GetDefNumber(feature_size[2], def, fn);
+					NewShipDesign.FeatureSize[2] = feature_size[2];
 
 				}
 
 				else if (def->name()->value() == "feature_3") {
 					GetDefNumber(feature_size[3], def, fn);
+					NewShipDesign.FeatureSize[3] = feature_size[3];
 
 				}
 				else if (def->name()->value() == "class") {
 					GetDefText(ShipClass, def, fn);
+					NewShipDesign.ShipClass = FString(ShipClass);
 
 					ShipType = ClassForName(ShipClass);
 
@@ -4233,33 +4264,39 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 						repair_screen = false;
 						wep_screen = false;
 					}
+
+					NewShipDesign.ShipType = ShipType;
+					NewShipDesign.RepairAuto = repair_auto;
+					NewShipDesign.RepairScreen = repair_screen;
+					NewShipDesign.WepScreen = wep_screen;
 				}
 
 				else if (def->name()->value() == "emcon_1") {
 					GetDefNumber(e_factor[0], def, fn);
-	
+					NewShipDesign.EFactor[0] = e_factor[0];
 				}
 
 				else if (def->name()->value() == "emcon_2") {
 					GetDefNumber(e_factor[1], def, fn);
-	
+					NewShipDesign.EFactor[1] = e_factor[1];
 				}
 
 				else if (def->name()->value() == "emcon_3") {
 					GetDefNumber(e_factor[2], def, fn);
-	
+					NewShipDesign.EFactor[2] = e_factor[2];
 				}
 
 				else if (def->name()->value() == "chase") {
 					GetDefVec(chase_vec, def, fn);
-						
 					chase_vec *= (float)scale;
+					NewShipDesign.ChaseVec = FVector(chase_vec.x, chase_vec.y, chase_vec.z);
 				}
 
 				else if (def->name()->value() == "bridge") {
 					GetDefVec(bridge_vec, def, fn);
 
 					bridge_vec *= (float)scale;
+					NewShipDesign.BridgeVec = FVector(bridge_vec.x, bridge_vec.y, bridge_vec.z);
 				}
 
 				else if (def->name()->value() == "power") {
@@ -4476,8 +4513,13 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 				else {
 					UE_LOG(LogTemp, Log, TEXT("WARNING: unknown parameter '%s'"), *FString(fn));
 				}
+				FName RowName = FName(FString(ShipName));
+
+				// call AddRow to insert the record
+				ShipDesignDataTable->AddRow(RowName, NewShipDesign);
 			}
 		}
+
 	} while (term);
 	// define our data table struct
 

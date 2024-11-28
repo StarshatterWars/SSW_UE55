@@ -438,8 +438,8 @@ struct FS_Region : public FTableRowBase {
 		Grid = 25000;
 		Inclination = 0;
 		Asteroids = 0;
-		Parent = "",
-			Type = EOrbitalType::NOTHING;
+		Parent = "";
+		Type = EOrbitalType::NOTHING;
 	}
 };
 
@@ -1697,6 +1697,217 @@ struct FS_CombatGroup : public FTableRowBase {
 		ParentType = "";
 		ParentId = 0;
 		UnitIndex = 0;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_ShipDesign : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ShipName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DisplayName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Abrv;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	DetailName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	ShipClass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	CockpitName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString	BeautyName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString HudIconName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DetailName0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DetailName1;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DetailName2;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DetailName3;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int PCS;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ACS;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Detet;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int RepairTeams;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ShipType;
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Scale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float ExplosionScale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Mass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Vlimit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Agility;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AirFactor;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float RollRate;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float PitchRate;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float YawRate;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float TurnBank;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float CockpitScale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AutoRoll;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float CL;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float CD;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Stall;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Drag;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float ArcadeDrag;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float RollDrag;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float PitchDrag;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float YawDrag;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float PrepTime;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AvoidTime;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AvoidFighter;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AvoidStrike;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float AvoidTarget;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float CommitRange;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float SplashRadius;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Scuttle;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float RepairSpeed;
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Secret;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool RepairAuto;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool RepairScreen;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool WepScreen;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Degrees;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<float> FeatureSize;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<float> EFactor;
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Trans;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FVector> Offset;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Spin;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector BeautyCam;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector	ChaseVec;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector	BridgeVec;
+
+	FS_ShipDesign() {
+		ShipName = "";
+		DisplayName = "";
+		Abrv = "";
+
+		DetailName0 = "";
+		DetailName1 = "";
+		DetailName2 = "";
+		DetailName3 = "";
+
+		ShipClass = "";
+		CockpitName = "";
+		BeautyName = "";
+		HudIconName = "";
+
+		PCS = 3.0f;
+		ACS = 1.0f;
+		Detet = 250.0e3f;
+		RepairTeams = 2;
+		ShipType = 0;
+
+
+		Scale = 1.0f;
+		ExplosionScale = 0.0f;
+		Mass = 0;
+		
+		Vlimit = 8e3f;
+		Agility = 2e2f;
+		AirFactor = 0.1f;
+		RollRate = 0.0f;
+		PitchRate = 0.0f;
+		YawRate = 0.0f;
+	
+
+		TurnBank = (float)(PI / 8);
+
+		CockpitScale = 1.0f;
+		AutoRoll = 0;
+
+		CL = 0.0f;
+		CD = 0.0f;
+		Stall = 0.0f;
+		Drag = 2.5e-5f;
+
+		ArcadeDrag = 1.0f;
+		RollDrag = 5.0f;
+		PitchDrag = 5.0f;
+		YawDrag = 5.0f;
+
+		PrepTime = 30.0f;
+		AvoidTime = 0.0f;
+		AvoidFighter = 0.0f;
+		AvoidStrike = 0.0f;
+		AvoidTarget = 0.0f;
+		CommitRange = 0.0f;
+
+		SplashRadius = -1.0f;
+		Scuttle = 5e3f;
+		RepairSpeed = 1.0f;
+
+		FeatureSize.SetNum(4);
+		EFactor.SetNum(3);
+		Offset.SetNum(4); 
+
+		EFactor[0] = 0.1f;
+		EFactor[1] = 0.3f;
+		EFactor[2] = 1.0f;
+
+		Secret = false;
+		RepairAuto = true;
+		RepairScreen = true;
+		WepScreen = true;
+		Degrees = false;
+
+		Trans = FVector::ZeroVector;
+
+		Spin = FVector::ZeroVector;
+		BeautyCam = FVector::ZeroVector;
+		ChaseVec = FVector(0, -100, 20);
+		BridgeVec = FVector::ZeroVector;
 	}
 };
 

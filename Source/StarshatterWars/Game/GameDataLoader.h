@@ -193,6 +193,7 @@ protected:
 	FS_Campaign CampaignData;
 	FS_Galaxy GalaxyData;
 	FS_StarSystem StarSystemData;
+	FS_ShipDesign ShipDesignData;
 	
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
@@ -233,6 +234,7 @@ protected:
 	class UDataTable* RegionsDataTable;
 	class UDataTable* CampaignDataTable;
 	class UDataTable* CombatGroupDataTable;
+	class UDataTable* ShipDesignDataTable;
 
 	int   ActionId;
 	Text  ActionType;
