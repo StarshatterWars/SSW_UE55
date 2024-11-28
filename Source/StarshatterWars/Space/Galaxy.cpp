@@ -25,7 +25,7 @@ void AGalaxy::BeginPlay()
 	LoadGalaxyFromDT();
 }
 
-void AGalaxy::LoadGalaxyFromDT()
+void AGalaxy::LoadGalaxyFromDT() // Test
 {
 	UE_LOG(LogTemp, Log, TEXT("AGalaxy::LoadGalaxyFromDT()"));
 	
@@ -120,6 +120,7 @@ AGalaxy::Load()
 	const char* result = TCHAR_TO_ANSI(*FileName);
 	Load(result);
 }
+
 
 void
 AGalaxy::Load(const char* FileName)

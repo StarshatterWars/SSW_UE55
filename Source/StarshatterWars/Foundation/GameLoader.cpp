@@ -16,7 +16,7 @@
 void AGameLoader::BeginPlay()
 {
 	InitializeGame();
-	GetCombatRosterData();
+	//GetCombatRosterData();
 	GetCampaignData();
 	GetAwardInfoData();
 	LoadGalaxy();

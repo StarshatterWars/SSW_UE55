@@ -84,7 +84,7 @@ public:
 	void ParseAlias(TermStruct* val, const char* fn);
 	void ParseRLoc(TermStruct* val, const char* fn);
 	void ParseCallsign(TermStruct* val, const char* fn);
-	void ParseAction(TermStruct* val, const char* filename);
+
 	void ParseOptional(TermStruct* val, const char* fn);
 	void LoadGalaxyMap();
 	void ParseStar(TermStruct* val, const char* fn);
@@ -99,6 +99,11 @@ public:
 
 	void ParseStarSystem(const char* FileName);
 
+	void LoadCombatRoster();
+	void LoadShipDesigns();
+
+	void LoadOrderOfBattle(const char* filename, int team);
+
 	EEMPIRE_NAME GetEmpireName(int32 emp);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
@@ -106,7 +111,21 @@ public:
 	double Stardate();
 	void Clear();
 	Combatant* GetCombatant(const char* cname);
-	void LoadGalaxyData();
+
+	void ParseCombatUnit();
+
+	void LoadShipDesign(const char* fn);
+
+	int ClassForName(const char* name);
+
+	const char* ClassName(int type);
+
+	FString GetOrdinal(int id);
+	FString GetNameFromType(FString name);
+
+	FS_CombatGroupUnit CombatGroupUnit;
+	FS_CombatGroup CombatGroupData;
+	
 
 	void GetSSWInstance();
 
@@ -167,6 +186,7 @@ protected:
 	Text CombatantName;
 	Text CombatantType;
 	int CombatantId;
+	
 	FS_Combatant NewCombatUnit;
 	FS_CombatantGroup NewGroupUnit;
 
@@ -192,6 +212,8 @@ protected:
 	TArray<FS_MissionInstruction> MissionInstructionArray;
 	TArray<FS_MissionInstruction> MissionObjectiveArray;
 	TArray<FS_MissionInstruction> MissionNavpointArray;
+
+	TArray<FS_CombatGroupUnit> NewCombatUnitArray;
 	
 	TArray<FS_Star> StarDataArray;
 	TArray<FS_Planet> PlanetDataArray;
@@ -210,6 +232,7 @@ protected:
 	class UDataTable* MoonsDataTable;
 	class UDataTable* RegionsDataTable;
 	class UDataTable* CampaignDataTable;
+	class UDataTable* CombatGroupDataTable;
 
 	int   ActionId;
 	Text  ActionType;
@@ -259,4 +282,16 @@ protected:
 	int     gid = 0;
 
 	FString CampaignPath;
+
+	Text UnitName;
+	Text UnitRegnum;
+	Text UnitRegion;
+	Text UnitClass;
+	Text UnitDesign;
+	Text UnitSkin;
+	Vec3 UnitLoc;
+	int  UnitCount;
+	int  UnitDamage;
+	int  UnitDead;
+	int  UnitHeading;
 };

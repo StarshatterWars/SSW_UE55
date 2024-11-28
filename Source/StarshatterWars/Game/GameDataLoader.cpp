@@ -27,8 +27,34 @@
 #include "Combatant.h"
 #include "Mission.h"
 #include "Intel.h"
+#include "Ship.h"
+#include "ShipDesign.h"
 #include "PlayerData.h"
 
+
+const char* ShipDesignClassName[32] = {
+	"Drone",          "Fighter",
+	"Attack",         "LCA",
+	"Courier",        "Cargo",
+	"Corvette",       "Freighter",
+
+	"Frigate",        "Destroyer",
+	"Cruiser",        "Battleship",
+	"Carrier",        "Dreadnaught",
+
+	"Station",        "Farcaster",
+
+	"Mine",           "DEFSAT",
+	"COMSAT",         "SWACS",
+
+	"Building",       "Factory",
+	"SAM",            "EWR",
+	"C3I",            "Starbase",
+
+	"0x04000000",     "0x08000000",
+	"0x10000000",     "0x20000000",
+	"0x40000000",     "0x80000000"
+};
 
 // Sets default values
 AGameDataLoader::AGameDataLoader()
@@ -105,7 +131,18 @@ AGameDataLoader::AGameDataLoader()
 	else {
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
 	}
+
+	PrimaryActorTick.bCanEverTick = true;
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
+
+	if (CombatGroupDataTableObject.Succeeded())
+	{
+		CombatGroupDataTable = CombatGroupDataTableObject.Object;
+	}
 }
+
+
 
 // Called when the game starts or when spawned
 void AGameDataLoader::BeginPlay()
@@ -113,6 +150,7 @@ void AGameDataLoader::BeginPlay()
 	Super::BeginPlay();
 	GetSSWInstance();
 	LoadGalaxyMap();
+	LoadCombatRoster();
 	LoadStarsystems();
 	InitializeCampaignData();
 }
@@ -121,11 +159,6 @@ void AGameDataLoader::BeginPlay()
 void AGameDataLoader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-}
-
-void AGameDataLoader::LoadGalaxyData()
-{
 
 }
 
@@ -788,8 +821,8 @@ AGameDataLoader::LoadMissionList(FString Path)
 
 					FS_CampaignMissionList NewMissionList;
 
-					int   Id = 0;
-					Text  Name;
+					int   MissionId = 0;
+					Text  MLName;
 					Text  Desc;
 					Text  Script;
 					Text  System = "Unknown";
@@ -800,12 +833,12 @@ AGameDataLoader::LoadMissionList(FString Path)
 					for (int i = 0; i < val->elements()->size(); i++) {
 						TermDef* pdef = val->elements()->at(i)->isDef();
 						if (pdef->name()->value() == "id") {
-							GetDefNumber(Id, pdef, fn);
-							NewMissionList.Id = Id;
+							GetDefNumber(MissionId, pdef, fn);
+							NewMissionList.Id = MissionId;
 						}
 						else if (pdef->name()->value() == "name") {
-							GetDefText(Name, pdef, fn);
-							NewMissionList.Name = FString(Name);
+							GetDefText(MLName, pdef, fn);
+							NewMissionList.Name = FString(MLName);
 						}
 						else if (pdef->name()->value() == "desc") {
 							GetDefText(Desc, pdef, fn);
@@ -900,7 +933,7 @@ AGameDataLoader::LoadTemplateList(FString Path)
 					
 					FS_CampaignTemplateList NewTemplateList;
 
-					Text  Name = "";
+					Text  TLName = "";
 					Text  Script = "";
 					Text  Region = "";
 					int   id = 0;
@@ -922,8 +955,8 @@ AGameDataLoader::LoadTemplateList(FString Path)
 							NewTemplateList.Id = id;
 						}
 						else if (pdef->name()->value() == "name") {
-							GetDefText(Name, pdef, fn);
-							NewTemplateList.Name = FString(Name);
+							GetDefText(TLName, pdef, fn);
+							NewTemplateList.Name = FString(TLName);
 						}
 						else if (pdef->name()->value() == "script") {
 							GetDefText(Script, pdef, fn);
@@ -1860,9 +1893,9 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 	Text  RoleName = "";
 	Text  RegionName = "";
 	Text  Instr = "";
-	Text  Intel = "";
+	Text  ElementIntel = "";
 
-	Vec3  Loc(0.0f, 0.0f, 0.0f);
+	Vec3  ElementLoc(0.0f, 0.0f, 0.0f);
 
 	int   Deck = 1;
 	int   IFFCode = 0;
@@ -1926,14 +1959,14 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 			}
 			else if (pdef->name()->value() == "intel") {
 				GetDefText(RoleName, pdef, fn);
-				NewMissionElement.Intel = FString(Intel);
+				NewMissionElement.Intel = FString(ElementIntel);
 			}
 
 			else if (pdef->name()->value() == "loc") {
-				GetDefVec(Loc, pdef, fn);
-				NewMissionElement.Location.X = Loc.x;
-				NewMissionElement.Location.Y = Loc.y;
-				NewMissionElement.Location.Z = Loc.z;
+				GetDefVec(ElementLoc, pdef, fn);
+				NewMissionElement.Location.X = ElementLoc.x;
+				NewMissionElement.Location.Y = ElementLoc.y;
+				NewMissionElement.Location.Z = ElementLoc.z;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
@@ -2575,7 +2608,7 @@ void
 AGameDataLoader::ParseCallsign(TermStruct* val, const char* fn)
 {
 	Text  CallsignName;
-	int   Iff = -1;
+	int   CallsignIff = -1;
 
 	FS_MissionCallsign NewMissionCallsign;
 
@@ -2588,8 +2621,8 @@ AGameDataLoader::ParseCallsign(TermStruct* val, const char* fn)
 			}
 
 			else if (pdef->name()->value() == "iff") {
-				GetDefNumber(Iff, pdef, fn);
-				NewMissionCallsign.Iff = Iff;
+				GetDefNumber(CallsignIff, pdef, fn);
+				NewMissionCallsign.Iff = CallsignIff;
 			}
 		}
 	}
@@ -3574,6 +3607,984 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 	
 	SSWInstance->loader->ReleaseBuffer(block);
 }
+
+// +-------------------------------------------------------------------+
+
+void AGameDataLoader::LoadCombatRoster()
+{
+	UE_LOG(LogTemp, Log, TEXT("ACombatGroupLoader::LoadCombatRoster()"));
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Campaigns/"));
+	FString PathName = ProjectPath;
+
+	TArray<FString> output;
+	output.Empty();
+
+	FString Path = PathName + "*.def";
+	FFileManagerGeneric::Get().FindFiles(output, *Path, true, false);
+
+	for (int i = 0; i < output.Num(); i++) {
+
+		FString FileName = ProjectPath;
+		FileName.Append(output[i]);
+
+		char* fn = TCHAR_TO_ANSI(*FileName);
+
+		LoadOrderOfBattle(fn, -1);
+	}
+}
+
+void AGameDataLoader::LoadShipDesigns()
+{
+	UE_LOG(LogTemp, Log, TEXT("LoadShipDesigns()"));
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Ships/"));
+	FString PathName = ProjectPath;
+
+	TArray<FString> output;
+	output.Empty();
+
+	FString Path = PathName + "*.def";
+	FFileManagerGeneric::Get().FindFiles(output, *Path, true, false);
+
+	for (int i = 0; i < output.Num(); i++) {
+
+		FString FileName = ProjectPath;
+		FileName.Append(output[i]);
+
+		char* fn = TCHAR_TO_ANSI(*FileName);
+
+		LoadShipDesign(fn);
+	}
+}
+
+void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
+{
+	UE_LOG(LogTemp, Log, TEXT("Loading Order of Battle Data: %s"), *FString(fn));
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "ORDER_OF_BATTLE")
+		{
+			UE_LOG(LogTemp, Log, TEXT("Invalid Order of Battle File: %s"), *FString(fn));
+			return;
+		}
+	}
+
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "group") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: group struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+
+						FS_CombatGroup NewCombatGroup;
+						NewCombatUnitArray.Empty();
+
+						Text Name = "";
+						Text Type = "";
+						Text Intel = "KNOWN";
+						Text Region = "";
+						Text System = "";
+						Text ParentType = "";
+						int UnitIndex = 0;
+						int ParentId = 0;
+						int Id = 0;
+						int Iff = -1;
+						Vec3 Loc = Vec3(1.0e9f, 0.0f, 0.0f);
+
+						for (int i = 0; i < val->elements()->size(); i++)
+						{
+							NewCombatGroup.UnitIndex = 0;
+							TermDef* pdef = val->elements()->at(i)->isDef();
+
+							if (pdef->name()->value() == ("name"))
+							{
+								GetDefText(Name, pdef, fn);
+								NewCombatGroup.Name = FString(Name);
+							}
+							else if (pdef->name()->value() == ("type"))
+							{
+								GetDefText(Type, pdef, fn);
+								NewCombatGroup.Type = FString(Type);
+							}
+							else if (pdef->name()->value() == ("intel"))
+							{
+								GetDefText(Intel, pdef, fn);
+								NewCombatGroup.Intel = FString(Intel);
+							}
+							else if (pdef->name()->value() == ("region"))
+							{
+								GetDefText(Region, pdef, fn);
+								NewCombatGroup.Region = FString(Region);
+							}
+							else if (pdef->name()->value() == ("system"))
+							{
+								GetDefText(System, pdef, fn);
+								NewCombatGroup.System = FString(System);
+							}
+							else if (pdef->name()->value() == ("loc"))
+							{
+								GetDefVec(Loc, pdef, fn);
+
+								NewCombatGroup.Location.X = Loc.x;
+								NewCombatGroup.Location.Y = Loc.y;
+								NewCombatGroup.Location.Z = Loc.z;
+							}
+							else if (pdef->name()->value() == ("parent_type"))
+							{
+								GetDefText(ParentType, pdef, fn);
+								NewCombatGroup.ParentType = FString(ParentType);
+							}
+							else if (pdef->name()->value() == ("parent_id"))
+							{
+								GetDefNumber(ParentId, pdef, fn);
+								NewCombatGroup.ParentId = ParentId;
+							}
+							else if (pdef->name()->value() == ("iff"))
+							{
+								GetDefNumber(Iff, pdef, fn);
+								NewCombatGroup.Iff = Iff;
+							}
+							else if (pdef->name()->value() == ("id"))
+							{
+								GetDefNumber(Id, pdef, fn);
+								NewCombatGroup.Id = Id;
+							}
+							else if (pdef->name()->value() == ("unit_index"))
+							{
+								GetDefNumber(UnitIndex, pdef, fn);
+								NewCombatGroup.UnitIndex = UnitIndex;
+							}
+
+							else if (pdef->name()->value() == ("unit"))
+							{
+								TermStruct* UnitTerm = pdef->term()->isStruct();
+
+								NewCombatGroup.UnitIndex = UnitTerm->elements()->size();
+
+								if (NewCombatGroup.UnitIndex > 0)
+								{
+									// Add Unit Stuff Here
+
+									FS_CombatGroupUnit NewCombatGroupUnit;
+
+									UnitName = "";
+									UnitRegnum = "";
+									UnitRegion = "";
+									UnitClass = "";
+									UnitDesign = "";
+									UnitSkin = "";
+
+									UnitCount = 1;
+									UnitDamage = 0;
+									UnitDead = 0;
+									UnitHeading = 0;
+									UnitLoc = Vec3(1.0e9f, 0.0f, 0.0f);
+
+									for (int UnitIdx = 0; UnitIdx < NewCombatGroup.UnitIndex; UnitIdx++)
+									{
+										pdef = UnitTerm->elements()->at(UnitIdx)->isDef();
+
+
+										if (pdef->name()->value() == "name") {
+											GetDefText(UnitName, pdef, fn);
+											UE_LOG(LogTemp, Log, TEXT("unit name '%s'"), *FString(UnitName));
+											NewCombatGroupUnit.UnitName = FString(UnitName);
+										}
+										else if (pdef->name()->value() == "regnum") {
+											GetDefText(UnitRegnum, pdef, fn);
+										}
+										else if (pdef->name()->value() == "region") {
+											GetDefText(UnitRegion, pdef, fn);
+										}
+										else if (pdef->name()->value() == "loc") {
+											GetDefVec(UnitLoc, pdef, fn);
+										}
+										else if (pdef->name()->value() == "type") {
+											//char typestr[32];
+											GetDefText(UnitClass, pdef, fn);
+											//UnitClass = ShipDesign::ClassForName(typestr);
+										}
+										else if (pdef->name()->value() == "design") {
+											GetDefText(UnitDesign, pdef, fn);
+										}
+										else if (pdef->name()->value() == "skin") {
+											GetDefText(UnitSkin, pdef, fn);
+										}
+										else if (pdef->name()->value() == "count") {
+											GetDefNumber(UnitCount, pdef, fn);
+										}
+										else if (pdef->name()->value() == "dead_count") {
+											GetDefNumber(UnitDead, pdef, fn);
+										}
+										else if (pdef->name()->value() == "damage") {
+											GetDefNumber(UnitDamage, pdef, fn);
+										}
+										else if (pdef->name()->value() == "heading") {
+											GetDefNumber(UnitHeading, pdef, fn);
+										}
+
+
+										NewCombatGroupUnit.UnitRegnum = FString(UnitRegnum);
+										NewCombatGroupUnit.UnitRegion = FString(UnitRegion);
+										NewCombatGroupUnit.UnitLoc.X = UnitLoc.x;
+										NewCombatGroupUnit.UnitLoc.Y = UnitLoc.y;
+										NewCombatGroupUnit.UnitLoc.Z = UnitLoc.z;
+										NewCombatGroupUnit.UnitClass = FString(UnitClass);
+										NewCombatGroupUnit.UnitDesign = FString(UnitDesign);
+										NewCombatGroupUnit.UnitSkin = FString(UnitSkin);
+										NewCombatGroupUnit.UnitCount = UnitCount;
+										NewCombatGroupUnit.UnitDead = UnitDead;
+										NewCombatGroupUnit.UnitDamage = UnitDamage;
+										NewCombatGroupUnit.UnitHeading = UnitHeading;
+									}
+
+									NewCombatUnitArray.Add(NewCombatGroupUnit);
+								}
+								NewCombatGroup.Unit = NewCombatUnitArray;
+							}
+
+							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + +" " + FString(GetNameFromType(FString(Type))));
+							// call AddRow to insert the record
+
+							if (Iff > 0) {
+								CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
+							}
+							CombatGroupData = NewCombatGroup;
+
+						}  /// iff == team?
+					}    // group-struct
+				}          // group
+			}           // def
+		}             // term
+	} while (term);
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
+void
+AGameDataLoader::LoadShipDesign(const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("Loading Ship Design Data: %s"), *FString(filename));
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "SHIP")
+		{
+			UE_LOG(LogTemp, Log, TEXT("Invalid Ship File: %s"), *FString(fn));
+			return;
+		}
+	}
+
+	// parse the system:
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				
+				Text ShipName = "";
+				Text DisplayName = "";
+				Text Abrv = "";
+
+				Text	DetailName = "";
+				Text	ShipClass = "";
+				Text	CockpitName = "";
+				Text	BeautyName = "";
+				Text    HudIconName = "";
+	
+				int pcs = 3.0f;
+				int acs = 1.0f;
+				int detet = 250.0e3f;
+				float scale = 1.0f;
+				float explosion_scale = 0.0f;
+				float mass = 0;
+
+				int ShipType = 0;
+
+				float vlimit = 8e3f;
+				float agility = 2e2f;
+				float air_factor = 0.1f;
+				float roll_rate = 0.0f;
+				float pitch_rate = 0.0f;
+				float yaw_rate = 0.0f;
+				float trans_x = 0.0f;
+				float trans_y = 0.0f;
+				float trans_z = 0.0f;
+				float turn_bank = (float)(PI / 8);
+
+				float cockpit_scale = 1.0f;
+				float auto_roll = 0;
+
+				float CL = 0.0f;
+				float CD = 0.0f;
+				float stall = 0.0f;
+				float drag = 2.5e-5f;
+	
+				float arcade_drag = 1.0f;
+				float roll_drag = 5.0f;
+				float pitch_drag = 5.0f;
+				float yaw_drag = 5.0f;
+
+				float prep_time = 30.0f;
+				float avoid_time = 0.0f;
+				float avoid_fighter = 0.0f;
+				float avoid_strike = 0.0f;
+				float avoid_target = 0.0f;
+				float commit_range = 0.0f;
+
+				float splash_radius = -1.0f;
+				float scuttle = 5e3f;
+				float repair_speed = 1.0f;
+	
+				int  repair_teams = 2;
+
+				float feature_size[4];
+				float e_factor[3];
+	
+				bool secret = false;
+				bool repair_auto = true;
+				bool repair_screen = true;
+				bool wep_screen = true;
+				bool degrees = false; 
+
+				e_factor[0] = 0.1f;
+				e_factor[1] = 0.3f;
+				e_factor[2] = 1.0f;
+
+				Vec3    off_loc = Vec3(0.0, 0.0, 0.0);
+				Vec3    spin = Vec3(0.0, 0.0, 0.0);
+				Vec3    BeautyCam = Vec3(0.0, 0.0, 0.0);
+				Vec3	chase_vec = Vec3(0, -100, 20);
+				Vec3	bridge_vec = Vec3(0.0, 0.0, 0.0);
+
+				if (def->name()->value() == "name") {
+					GetDefText(ShipName, def, fn);	
+		
+				}
+				else if (def->name()->value() == "display_name") {
+					GetDefText(DisplayName, def, fn);
+
+				}
+				else if (def->name()->value() == "abrv") {
+					GetDefText(Abrv, def, fn);
+
+				}
+				else if (def->name()->value() == "pcs") {
+					GetDefNumber(pcs, def, fn);
+	
+				}
+				else if (def->name()->value() == "acs") {
+					GetDefNumber(acs, def, fn);
+
+				}
+				else if (def->name()->value() == "detec") {
+					GetDefNumber(detet, def, fn);
+
+				}
+				else if (def->name()->value() == "scale") {
+					GetDefNumber(scale, def, fn);
+
+				}
+				else if (def->name()->value() == "explosion_scale") {
+					GetDefNumber(explosion_scale, def, fn);
+
+				}
+				else if (def->name()->value() == "mass") {
+					GetDefNumber(mass, def, fn);
+
+				}
+
+				else if (def->name()->value() == "vlimit") {
+					GetDefNumber(vlimit, def, fn);
+	
+				}
+				else if (def->name()->value() == "agility") {
+					GetDefNumber(agility, def, fn);
+
+				}
+				else if (def->name()->value() == "air_factor") {
+					GetDefNumber(air_factor, def, fn);
+
+				}
+				else if (def->name()->value() == "roll_rate") {
+					GetDefNumber(roll_rate, def, fn);
+
+				}
+				else if (def->name()->value() == "pitch_rate") {
+					GetDefNumber(pitch_rate, def, fn);
+
+				}
+				else if (def->name()->value() == "yaw_rate") {
+					GetDefNumber(yaw_rate, def, fn);
+
+				}
+				else if (def->name()->value() == "trans_x") {
+					GetDefNumber(trans_x, def, fn);
+
+				}
+				else if (def->name()->value() == "trans_y") {
+					GetDefNumber(trans_y, def, fn);
+
+				}
+				else if (def->name()->value() == "trans_z") {
+					GetDefNumber(trans_z, def, fn);
+
+				}
+				else if (def->name()->value() == "turn_bank") {
+					GetDefNumber(turn_bank, def, fn);
+
+				}
+				else if (def->name()->value() == "cockpit_scale") {
+					GetDefNumber(cockpit_scale, def, fn);
+
+				}
+				else if (def->name()->value() == "auto_roll") {
+					GetDefNumber(auto_roll, def, fn);
+
+				}
+				else if (def->name()->value() == "CL") {
+					GetDefNumber(CL, def, fn);
+
+				}
+				else if (def->name()->value() == "CD") {
+					GetDefNumber(CD, def, fn);
+
+				}
+				else if (def->name()->value() == "stall") {
+					GetDefNumber(stall, def, fn);
+
+				}
+				else if (def->name()->value() == "prep_time") {
+					GetDefNumber(prep_time, def, fn);
+
+				}
+				else if (def->name()->value() == "avoid_time") {
+					GetDefNumber(avoid_time, def, fn);
+
+				}
+				else if (def->name()->value() == "avoid_fighter") {
+					GetDefNumber(avoid_fighter, def, fn);
+
+				}
+				else if (def->name()->value() == "avoid_strike") {
+					GetDefNumber(avoid_strike, def, fn);
+
+				}
+				else if (def->name()->value() == "avoid_target") {
+					GetDefNumber(avoid_target, def, fn);
+
+				}
+				else if (def->name()->value() == "commit_range") {
+					GetDefNumber(commit_range, def, fn);
+
+				}
+				else if (def->name()->value() == "splash_radius") {
+					GetDefNumber(splash_radius, def, fn);
+
+				}
+				else if (def->name()->value() == "scuttle") {
+					GetDefNumber(scuttle, def, fn);
+
+				}
+				else if (def->name()->value() == "repair_speed") {
+					GetDefNumber(repair_speed, def, fn);
+
+				}
+				else if (def->name()->value() == "repair_teams") {
+					GetDefNumber(repair_teams, def, fn);
+
+				}
+				else if (def->name()->value() == "cockpit_model") {
+					GetDefText(CockpitName, def, fn);
+
+				}
+
+				else if (def->name()->value() == "model" || def->name()->value() == "detail_0") {
+						GetDefText(DetailName, def, fn);
+					//detail[0].append(new Text(detail_name));
+				}
+
+				else if (def->name()->value() == "detail_1") {
+					GetDefText(DetailName, def, fn);
+					//detail[1].append(new Text(detail_name));
+				}
+
+				else if (def->name()->value() == "detail_2") {
+					GetDefText(DetailName, def, fn);
+					//detail[2].append(new Text(detail_name));
+				}
+
+				else if (def->name()->value() == "detail_3") {
+					GetDefText(DetailName, def, fn);
+					//detail[3].append(new Text(detail_name));
+				}
+
+				else if (def->name()->value() == "spin") {
+					GetDefVec(spin, def, fn);
+					//spin_rates.append(new Point(spin));
+				}
+
+				else if (def->name()->value() == "offset_0") {
+					GetDefVec(off_loc, def, fn);		
+					//offset[0].append(new Point(off_loc));
+				}
+
+				else if (def->name()->value() == "offset_1") {
+					GetDefVec(off_loc, def, fn);
+					//offset[1].append(new Point(off_loc));
+				}
+
+				else if (def->name()->value() == "offset_2") {
+					GetDefVec(off_loc, def, fn);
+					//offset[2].append(new Point(off_loc));
+				}
+
+				else if (def->name()->value() == "offset_3") {
+					GetDefVec(off_loc, def, fn);
+					//offset[3].append(new Point(off_loc));
+				}
+
+				else if (def->name()->value() == "beauty") {
+					if (def->term() && def->term()->isArray()) {
+						GetDefVec(BeautyCam, def, fn);
+
+						if (degrees) {
+							BeautyCam.x *= (float)DEGREES;
+							BeautyCam.y *= (float)DEGREES;
+						}
+					}
+
+					else {
+						if (!GetDefText(BeautyName, def, fn))
+							Print("WARNING: invalid or missing beauty in '%s'\n", filename);
+
+						//DataLoader* loader = DataLoader::GetLoader();
+						//loader->LoadBitmap(beauty_name, beauty);
+					}
+				}
+
+				else if (def->name()->value() == "hud_icon") {
+					GetDefText(HudIconName, def, fn);
+	
+					//DataLoader* loader = DataLoader::GetLoader();
+					//loader->LoadBitmap(hud_icon_name, hud_icon);
+				}
+
+				else if (def->name()->value() == "feature_0") {
+					GetDefNumber(feature_size[0], def, fn);
+
+				}
+
+				else if (def->name()->value() == "feature_1") {
+					GetDefNumber(feature_size[1], def, fn);
+	
+				}
+
+				else if (def->name()->value() == "feature_2") {
+					GetDefNumber(feature_size[2], def, fn);
+
+				}
+
+				else if (def->name()->value() == "feature_3") {
+					GetDefNumber(feature_size[3], def, fn);
+
+				}
+				else if (def->name()->value() == "class") {
+					GetDefText(ShipClass, def, fn);
+
+					ShipType = ClassForName(ShipClass);
+
+					if (ShipType <= (int) UShip::LCA) {
+						repair_auto = false;
+						repair_screen = false;
+						wep_screen = false;
+					}
+				}
+
+				else if (def->name()->value() == "emcon_1") {
+					GetDefNumber(e_factor[0], def, fn);
+	
+				}
+
+				else if (def->name()->value() == "emcon_2") {
+					GetDefNumber(e_factor[1], def, fn);
+	
+				}
+
+				else if (def->name()->value() == "emcon_3") {
+					GetDefNumber(e_factor[2], def, fn);
+	
+				}
+
+				else if (def->name()->value() == "chase") {
+					GetDefVec(chase_vec, def, fn);
+						
+					chase_vec *= (float)scale;
+				}
+
+				else if (def->name()->value() == "bridge") {
+					GetDefVec(bridge_vec, def, fn);
+
+					bridge_vec *= (float)scale;
+				}
+
+				else if (def->name()->value() == "power") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: power source struct missing in '%s'"), *FString(fn));
+
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParsePower(val);
+					}
+				}
+
+				else if (def->name()->value() == "main_drive" || def->name()->value() == "drive") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: main drive struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseDrive(val);
+					}
+				}
+
+				else if (def->name()->value() == "quantum" || def->name()->value() == "quantum_drive") {
+					if (!def->term() || !def->term()->isStruct()) {	
+						UE_LOG(LogTemp, Log, TEXT("WARNING: quantum_drive struct missing in '%s'"), *FString(fn)); 
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseQuantumDrive(val);
+					}
+				}
+
+				else if (def->name()->value() == "sender" || def->name()->value() == "farcaster") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: farcaster struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseFarcaster(val);
+					}
+				}
+
+				else if (def->name()->value() == "thruster") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: thruster struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseThruster(val);
+					}
+				}
+
+				else if (def->name()->value() == "navlight") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: navlight struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseNavlight(val);
+					}
+				}
+
+				else if (def->name()->value() == "flightdeck") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: flightdeck struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseFlightDeck(val);
+					}
+				}
+
+				else if (def->name()->value() == "gear") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: landing gear struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseLandingGear(val);
+					}
+				}
+
+				else if (def->name()->value() == "weapon") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: weapon struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseWeapon(val);
+					}
+				}
+
+				else if (def->name()->value() == "hardpoint") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: hardpoint struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseHardPoint(val);
+					}
+				}
+
+				else if (def->name()->value() == "loadout") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: loadout struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseLoadout(val);
+					}
+				}
+
+				else if (def->name()->value() == "decoy") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: decoy struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseWeapon(val);
+					}
+				}
+
+				else if (def->name()->value() == "probe") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: probe struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseWeapon(val);
+					}
+				}
+
+				else if (def->name()->value() == "sensor") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: sensor struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseSensor(val);
+					}
+				}
+
+				else if (def->name()->value() == "nav") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: nav struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseNavsys(val);
+					}
+				}
+
+				else if (def->name()->value() == "computer") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: computer struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseComputer(val);
+					}
+				}
+
+				else if (def->name()->value() == "shield") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: shield struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseShield(val);
+					}
+				}
+
+				else if (def->name()->value() == "death_spiral") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: death spiral struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseDeathSpiral(val);
+					}
+				}
+
+				else if (def->name()->value() == "map") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: map struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseMap(val);
+					}
+				}
+
+				else if (def->name()->value() == "squadron") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: squadron struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseSquadron(val);
+					}
+				}
+
+				else if (def->name()->value() == "skin") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: skin struct missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+						//ParseSkin(val);
+					}
+				}
+
+				else {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: unknown parameter '%s'"), *FString(fn));
+				}
+			}
+		}
+	} while (term);
+	// define our data table struct
+
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
+int
+AGameDataLoader::ClassForName(const char* cls)
+{
+	if (!cls || !cls[0])
+		return 0;
+
+	for (int i = 0; i < 32; i++) {
+		if (!_stricmp(name, ShipDesignClassName[i])) {
+			return 1 << i;
+		}
+	}
+
+	return 0;
+}
+
+const char*
+AGameDataLoader::ClassName(int type)
+{
+	if (type != 0) {
+		int index = 0;
+
+		while (!(type & 1)) {
+			type >>= 1;
+			index++;
+		}
+
+		if (index >= 0 && index < 32) {
+			return ShipDesignClassName[index];
+		}
+	}
+
+	return "Unknown";
+}
+
+FString
+AGameDataLoader::GetOrdinal(int id)
+{
+	FString ordinal;
+
+	int last_two_digits = id % 100;
+
+	if (last_two_digits > 10 && last_two_digits < 20) {
+		ordinal = FString::FormatAsNumber(id) + "th";
+	}
+	else {
+		int last_digit = last_two_digits % 10;
+
+		if (last_digit == 1)
+			ordinal = FString::FormatAsNumber(id) + "st";
+		else if (last_digit == 2)
+			ordinal = FString::FormatAsNumber(id) + "nd";
+		else if (last_digit == 3)
+			ordinal = FString::FormatAsNumber(id) + "rd";
+		else
+			ordinal = FString::FormatAsNumber(id) + "th";
+	}
+
+	return ordinal;
+}
+
+FString AGameDataLoader::GetNameFromType(FString nt)
+{
+	FString TypeName;
+
+	if (nt == "force") {
+		TypeName = "Force";
+	}
+	else if (nt == "wing") {
+		TypeName = "Wing";
+	}
+	else if (nt == "intercept_squadron") {
+		TypeName = "Intercept Squadron";
+	}
+	else if (nt == "fighter_squadron") {
+		TypeName = "Fighter Squadron";
+	}
+	else if (nt == "attack_squadron") {
+		TypeName = "Attack Squadron";
+	}
+	else if (nt == "lca_squadron") {
+		TypeName = "LCA Squadron";
+	}
+	else if (nt == "fleet") {
+		TypeName = "Fleet";
+	}
+	else if (nt == "destroyer_squadron") {
+		TypeName = "DESRON";
+	}
+	else if (nt == "battle_group") {
+		TypeName = "Battle Group";
+	}
+	else if (nt == "carrier_group") {
+		TypeName = "CVBG";
+	}
+	else
+	{
+		TypeName = nt;
+	}
+	return TypeName;
+}
+
 // +--------------------------------------------------------------------+
 
 EEMPIRE_NAME
