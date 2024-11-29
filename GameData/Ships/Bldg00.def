@@ -2,6 +2,7 @@ SHIP
 
 name:         Bldg00
 class:        Building
+abrv:		  BLDG
 display_name: "Office Complex"
 hud_icon:     "hud_bldg00.pcx"
 

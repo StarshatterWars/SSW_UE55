@@ -2,6 +2,7 @@ SHIP
 
 name:         Fact03
 class:        Building
+abrv:         BLDG
 display_name: "Factory"
 hud_icon:     "hud_fact03.pcx"
 

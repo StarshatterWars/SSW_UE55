@@ -3,6 +3,7 @@ SHIP
 name:         Dsrt02
 class:        Building
 display_name: Building
+abrv:		  BLDG
 hud_icon:     "hud_dsrt02.pcx"
 
 detail_0:   "Dsrt02-0.mag"

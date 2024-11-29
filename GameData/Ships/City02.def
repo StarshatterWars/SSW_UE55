@@ -2,6 +2,7 @@ SHIP
 
 name:       City02
 class:      Building
+abrv:		BLDG
 display_name: "City Block"
 hud_icon:     "hud_bldg01.pcx"
 

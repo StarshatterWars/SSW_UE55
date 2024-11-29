@@ -3,7 +3,7 @@ SHIP
 name:         "Blockade Mine"
 display_name:  Mine
 class:         Mine
-
+abrv:          MINE
 hud_icon:   "MineHud.pcx"
 
 detail_0:   "Mine1.mag"

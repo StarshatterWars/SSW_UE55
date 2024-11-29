@@ -3,7 +3,7 @@ SHIP
 name:       IM1906
 display_name: "IM1906 Tanker"
 class:      Freighter
-
+abrv:       FREIGHT
 hud_icon:   "TAHud.pcx"
 
 detail_0:   "TankerA_0opt.mag"

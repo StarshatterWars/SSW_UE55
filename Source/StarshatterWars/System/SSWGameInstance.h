@@ -1711,6 +1711,8 @@ struct FS_ShipDesign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Abrv;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Description;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString	DetailName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString	ShipClass;
@@ -1831,6 +1833,7 @@ struct FS_ShipDesign : public FTableRowBase {
 	FS_ShipDesign() {
 		ShipName = "";
 		DisplayName = "";
+		Description = "";
 		Abrv = "";
 
 		DetailName0 = "";

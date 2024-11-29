@@ -3,6 +3,7 @@ SHIP
 name:          Airbase2
 display_name:  Starbase
 class:         STARBASE
+abrv:		   SB
 hud_icon:      "base2_hud.pcx"
 
 detail_0:   "Base2-0.mag"

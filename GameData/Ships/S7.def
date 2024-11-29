@@ -3,6 +3,7 @@ SHIP
 name:          Station7
 display_name:  "Military Lab"
 class:         STATION
+abrv:          STN
 hud_icon:      "S7hud.pcx"
 
 model:      "S7opt.mag"

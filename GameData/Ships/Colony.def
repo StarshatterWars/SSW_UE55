@@ -3,6 +3,7 @@ SHIP
 name:       Colony
 display_name: "Colony Ship"
 class:      Station
+abrv:       CLN
 secret:     true
 hud_icon:   "Colony_hud.pcx"
 

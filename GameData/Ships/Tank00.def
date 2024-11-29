@@ -2,6 +2,7 @@ SHIP
 
 name:         Tank00
 class:        Building
+abrv:         BLDG
 display_name: "Cryo Tank"
 hud_icon:     "hud_tank00.pcx"
 

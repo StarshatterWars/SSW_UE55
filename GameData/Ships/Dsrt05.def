@@ -3,6 +3,7 @@ SHIP
 name:         Dsrt05
 class:        Building
 display_name: Minehead
+abrv:		  BLDG
 hud_icon:     "hud_dsrt05.pcx"
 
 detail_0:   "Dsrt05-0.mag"

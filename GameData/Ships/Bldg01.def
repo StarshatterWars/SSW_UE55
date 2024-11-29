@@ -3,6 +3,7 @@ SHIP
 name:         Bldg01
 class:        Building
 display_name: "Office Tower"
+abrv:		  BLDG
 hud_icon:     "hud_bldg01.pcx"
 
 detail_0:   "Bldg01-0.mag"

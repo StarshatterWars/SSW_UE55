@@ -3,6 +3,7 @@ SHIP
 name:          BioDome2
 class:         Building
 display_name: "Utility Dome"
+abrv:		  BLDG
 hud_icon:     "hud_util.pcx"
 secret:        true
 

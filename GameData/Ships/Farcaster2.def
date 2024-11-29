@@ -2,6 +2,8 @@ SHIP
 
 name:       Farcaster2
 class:      Farcaster
+display_name:  Farcaster
+abrv:       GATE
 description: "The standard Hegemony quantum portal for long range travel.  The Type II FARCASTER can translate any starship or fighter-class vessel instantly to a remote destination.  Type II Farcaster portals may found throughout the systems controlled by the Marakan Hegemony."
 
 model:      "FC2a.mag"

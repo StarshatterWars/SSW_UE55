@@ -3,7 +3,7 @@ SHIP
 name:          CameraPod
 display_name:  CameraPod
 class:         Drone
-
+abrv:		   DRN
 model:         "Invisible.mag"
 cockpit_model: "Invisible.mag"
 cockpit_scale: 1e-6

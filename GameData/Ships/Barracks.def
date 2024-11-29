@@ -3,6 +3,7 @@ SHIP
 name:         Barracks
 class:        Building
 display_name: Barracks
+abrv:		  BLDG
 hud_icon:     "hud_bldg05.pcx"
 
 detail_0:   "Barracks-0.mag"

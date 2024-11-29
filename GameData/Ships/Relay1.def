@@ -2,6 +2,7 @@ SHIP
 
 name:          Relay1
 display_name:  Relay
+abrv:          COMSSAT
 class:         COMSAT
 hud_icon:      "hud_relay.pcx"
 

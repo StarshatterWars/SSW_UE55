@@ -3918,6 +3918,7 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 	Text ShipName = "";
 	Text DisplayName = "";
+	Text Description = "";
 	Text Abrv = "";
 
 	Text	DetailName0 = "";
@@ -4013,10 +4014,33 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 					GetDefText(DisplayName, def, fn);
 					NewShipDesign.DisplayName = FString(DisplayName);
 				}
+				else if (def->name()->value() == "class") {
+					GetDefText(ShipClass, def, fn);
+					NewShipDesign.ShipClass = FString(ShipClass);
+
+					ShipType = ClassForName(ShipClass);
+
+					if (ShipType <= (int)UShip::LCA) {
+						repair_auto = false;
+						repair_screen = false;
+						wep_screen = false;
+					}
+
+					NewShipDesign.ShipType = ShipType;
+					NewShipDesign.RepairAuto = repair_auto;
+					NewShipDesign.RepairScreen = repair_screen;
+					NewShipDesign.WepScreen = wep_screen;
+				}
+
+				else if (def->name()->value() == "description") {
+					GetDefText(Description, def, fn);
+					NewShipDesign.Description = FString(Description);
+				}
 				else if (def->name()->value() == "abrv") {
 					GetDefText(Abrv, def, fn);
 					NewShipDesign.Abrv = FString(Abrv);
 				}
+
 				else if (def->name()->value() == "pcs") {
 					GetDefNumber(pcs, def, fn);
 					NewShipDesign.PCS = pcs;

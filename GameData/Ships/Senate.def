@@ -2,6 +2,7 @@ SHIP
 
 name:       Senate
 class:      Building
+abrv:       BLDG
 display_name: "Senate"
 
 model: "senate2-6.mag"

@@ -3,6 +3,7 @@ SHIP
 name:          Station5
 display_name:  Station
 class:         STATION
+abrv:          STN
 hud_icon:      "S5map.pcx"
 
 model:      "S5opt.mag"

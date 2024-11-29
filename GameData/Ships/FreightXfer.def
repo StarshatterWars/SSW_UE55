@@ -2,6 +2,7 @@ SHIP
 
 name:          Station1
 display_name:  "Freight Xfer"
+abrv:          TRX
 class:         STATION
 hud_icon:      "s1hud.pcx"
 

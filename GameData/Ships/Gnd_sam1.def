@@ -3,6 +3,7 @@ SHIP
 name:         "SAM 1"
 display_name: SAM
 class:        SAM
+abrv:         SAM
 hud_icon:     "hud_sam.pcx"
 
 model:        "SAMBase.mag"

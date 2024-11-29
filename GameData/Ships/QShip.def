@@ -3,7 +3,7 @@ SHIP
 name:          QShip
 display_name:  Freighter
 class:         Freighter
-
+abrv:          FREIGHT
 hud_icon:      "CBHud.pcx"
 
 detail_0:   "QShip_1opt.mag"

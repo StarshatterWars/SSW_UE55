@@ -3,6 +3,7 @@ SHIP
 name:         Platform
 class:        Building
 display_name: Platform
+abrv:         BLDG
 hud_icon:     "hud_platform.pcx"
 
 detail_0:   "Platform-0.mag"

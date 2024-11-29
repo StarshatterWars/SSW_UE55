@@ -2,6 +2,7 @@ SHIP
 
 name:       BioTrail
 class:      Building
+abrv:		  BLDG
 display_name: "Elevated Bridge"
 hud_icon:     "hud_trail.pcx"
 secret:        false

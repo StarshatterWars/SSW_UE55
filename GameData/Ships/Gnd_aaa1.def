@@ -2,6 +2,7 @@ SHIP
 
 name:         "AAA 1"
 display_name: "AAA Gun"
+abrv:         SAM
 class:        SAM
 hud_icon:     "hud_aaa2.pcx"
 

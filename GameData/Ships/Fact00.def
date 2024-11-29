@@ -3,6 +3,7 @@ SHIP
 name:         Fact00
 class:        Building
 display_name: "Factory"
+abrv:		  BLDG
 hud_icon:     "hud_fact00.pcx"
 
 detail_0:   "Fact00-0.mag"

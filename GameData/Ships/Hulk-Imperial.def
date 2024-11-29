@@ -3,6 +3,7 @@ SHIP
 name:          "Hulk-Imperial"
 display_name:  Imperial
 class:         Cruiser
+abrv:          CA
 
 hud_icon:   "ImperialHud.pcx"
 

@@ -3,6 +3,7 @@ SHIP
 name:         Dsrt04
 class:        Building
 display_name: Outpost
+abrv:		  BLDG
 hud_icon:     "hud_dsrt04.pcx"
 
 detail_0:   "Dsrt04-0.mag"

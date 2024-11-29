@@ -3,6 +3,7 @@ SHIP
 name:         Bldg02
 class:        Building
 display_name: Building
+abrv:		  BLDG
 hud_icon:     "hud_bldg02.pcx"
 
 detail_0:   "Bldg02-0.mag"

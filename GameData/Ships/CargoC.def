@@ -3,7 +3,7 @@ SHIP
 name:       IM2800
 display_name: "IM2800 Cargo"
 class:      Cargo
-
+abrv:		CARGO
 hud_icon:   "CCHud.pcx"
 
 detail_0:   "CargoC_0opt.mag"

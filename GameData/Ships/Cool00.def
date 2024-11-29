@@ -2,6 +2,7 @@ SHIP
 
 name:         Cool00
 class:        Building
+abrv:         BLDG
 display_name: "Cooling Tower"
 hud_icon:     "hud_cool00.pcx"
 

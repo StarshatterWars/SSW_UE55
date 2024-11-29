@@ -2,6 +2,7 @@ SHIP
 
 name:       Reac01
 class:      Building
+abrv:       BLDG
 display_name: Generator
 hud_icon:     "hud_reac01.pcx"
 

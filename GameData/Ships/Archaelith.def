@@ -3,7 +3,7 @@ SHIP
 name:          Archaelith
 display_name:  Archaelith
 class:         Drone
-
+abrv:		   DRN
 model:         "Archaelith.mag"
 
 mass:       14.5

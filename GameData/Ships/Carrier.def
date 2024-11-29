@@ -3,7 +3,7 @@ SHIP
 name:          Adventure
 display_name:  Adventure
 class:         Carrier
-
+abrv:		CV
 hud_icon:   "CarrierHud.pcx"
 
 detail_0:   "Carrier_1opt.mag"

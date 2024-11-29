@@ -3,6 +3,7 @@ SHIP
 name:          "Hulk-Vendetta"
 display_name:  Vendetta
 class:         Cruiser
+abrv:          CA
 
 hud_icon:   "VendettaHud.pcx"
 

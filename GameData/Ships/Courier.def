@@ -3,7 +3,7 @@ SHIP
 name:       Courier
 display_name: "Blockade Runner"
 class:      Courier
-
+abrv:       TRANS
 hud_icon:   "BRHud.pcx"
 
 model:      "Corvette_2opt.mag"

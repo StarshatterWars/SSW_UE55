@@ -3,7 +3,7 @@ SHIP
 name:       IM4300
 display_name: "IM4300 Hauler"
 class:      Freighter
-
+abrv:		FREIGHT
 hud_icon:   "CBHud.pcx"
 
 detail_0:   "CargoB_0opt.mag"

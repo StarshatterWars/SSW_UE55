@@ -2,6 +2,8 @@ SHIP
 
 name:       Farcaster
 class:      Farcaster
+display_name:  Farcaster
+abrv:       GATE
 description: "The standard Terellian Alliance quantum portal for long range travel.  The 185 exawatt Type I FARCASTER can translate any starship or fighter-class vessel, even without an onboard FTL quantum drive, instantly to a remote destination.  Farcaster portals are always connected in pairs."
 
 model:      "Farcaster.mag"

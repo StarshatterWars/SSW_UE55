@@ -3,7 +3,7 @@ SHIP
 name:       Transport
 display_name: Transport
 class:      Courier
-
+abrv:       TRANS
 hud_icon:   "TRHud.pcx"
 
 model:      "Transport_2opt.mag"
