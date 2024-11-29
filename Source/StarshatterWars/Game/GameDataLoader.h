@@ -101,6 +101,7 @@ public:
 
 	void LoadCombatRoster();
 	void LoadShipDesigns();
+	void LoadSystemDesigns();
 
 	void LoadOrderOfBattle(const char* filename, int team);
 
@@ -115,6 +116,7 @@ public:
 	void ParseCombatUnit();
 
 	void LoadShipDesign(const char* fn);
+	void LoadSystemDesign(const char* fn);
 
 	int ClassForName(const char* name);
 
@@ -122,6 +124,8 @@ public:
 
 	FString GetOrdinal(int id);
 	FString GetNameFromType(FString name);
+
+
 
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
@@ -194,6 +198,7 @@ protected:
 	FS_Galaxy GalaxyData;
 	FS_StarSystem StarSystemData;
 	FS_ShipDesign ShipDesignData;
+	FS_SystemDesign SystemDesignData;
 	
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
@@ -215,6 +220,8 @@ protected:
 	TArray<FS_MissionInstruction> MissionNavpointArray;
 
 	TArray<FS_CombatGroupUnit> NewCombatUnitArray;
+	TArray<FS_SystemDesign> NewSystemArray;
+	TArray<FS_ComponentDesign> NewComponentArray;
 	
 	TArray<FS_Star> StarDataArray;
 	TArray<FS_Planet> PlanetDataArray;
@@ -235,6 +242,7 @@ protected:
 	class UDataTable* CampaignDataTable;
 	class UDataTable* CombatGroupDataTable;
 	class UDataTable* ShipDesignDataTable;
+	class UDataTable* SystemDesignDataTable;
 
 	int   ActionId;
 	Text  ActionType;

@@ -96,6 +96,14 @@ AGameDataLoader::AGameDataLoader()
 		//GalaxyDataTable->EmptyTable();
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> SystemDesignDataTableObject(TEXT("DataTable'/Game/Game/DT_SystemDesign.DT_SystemDesign'"));
+
+	if (SystemDesignDataTableObject.Succeeded())
+	{
+		SystemDesignDataTable = SystemDesignDataTableObject.Object;
+		//GalaxyDataTable->EmptyTable();
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
 	if (StarsDataTableObject.Succeeded())
@@ -158,6 +166,7 @@ void AGameDataLoader::BeginPlay()
 	Super::BeginPlay();
 	GetSSWInstance();
 	LoadGalaxyMap();
+	LoadSystemDesigns();
 	LoadShipDesigns();
 	LoadCombatRoster();
 	LoadStarsystems();
@@ -3645,7 +3654,7 @@ void AGameDataLoader::LoadCombatRoster()
 
 void AGameDataLoader::LoadShipDesigns()
 {
-	UE_LOG(LogTemp, Log, TEXT("LoadShipDesigns()"));
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadShipDesigns()"));
 	FString ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Ships/"));
 	FString PathName = ProjectPath;
@@ -3665,6 +3674,16 @@ void AGameDataLoader::LoadShipDesigns()
 
 		LoadShipDesign(fn);
 	}
+}
+
+void AGameDataLoader::LoadSystemDesigns()
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadSystemDesigns()"));
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Systems/sys.def"));
+
+	char* fn = TCHAR_TO_ANSI(*ProjectPath);
+	LoadSystemDesign(fn);
 }
 
 void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
@@ -4550,6 +4569,113 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+void
+AGameDataLoader::LoadSystemDesign(const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("Loading System Design Data: %s"), *FString(fn));
+
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "SYSTEM")
+		{
+			UE_LOG(LogTemp, Log, TEXT("Invalid  SYSTEM File: %s"), *FString(fn));
+			return;
+		}
+	}
+
+	int type = 1;
+	Text SystemName = "";
+	Text ComponentName = "";
+	Text ComponentAbrv = "";
+
+	float ComponentRepairTime = 0;
+	float ComponentReplaceTime = 0;
+
+	int ComponentSpares = 1;
+	int ComponentAffects = 0;
+
+	FS_SystemDesign NewSystemDesign;
+
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "system") {
+					TermStruct* val = def->term()->isStruct();
+					NewComponentArray.Empty();
+					for (int i = 0; i < val->elements()->size(); i++) {	
+						TermDef* pdef = val->elements()->at(i)->isDef();
+						if (pdef) {
+							if (pdef->name()->value() == "name") {
+								GetDefText(SystemName, pdef, fn);
+								NewSystemDesign.Name = FString(SystemName);
+							}
+
+							else if (pdef->name()->value() == ("component")) {
+								
+								FS_ComponentDesign NewComponentDesign;
+								TermStruct* val2 = pdef->term()->isStruct();
+								for (int idx = 0; idx < val2->elements()->size(); idx++) {
+									TermDef* pdef2 = val2->elements()->at(idx)->isDef();
+									if (pdef2) {
+										if (pdef2->name()->value() == "name") {
+											GetDefText(ComponentName, pdef2, fn);
+											NewComponentDesign.Name = FString(ComponentName);
+										}
+										else if (pdef2->name()->value() == "abrv") {
+											GetDefText(ComponentAbrv, pdef2, fn);
+											NewComponentDesign.Abrv = FString(ComponentAbrv);
+										}
+										else if (pdef2->name()->value() == "repair_time") {
+											GetDefNumber(ComponentRepairTime, pdef2, fn);
+											NewComponentDesign.RepairTime = ComponentRepairTime;
+										}
+										else if (pdef2->name()->value() == "replace_time") {
+											GetDefNumber(ComponentReplaceTime, pdef2, fn);
+											NewComponentDesign.ReplaceTime = ComponentReplaceTime;
+										}
+										else if (pdef2->name()->value() == "spares") {
+											GetDefNumber(ComponentSpares, pdef2, fn);
+											NewComponentDesign.Spares = ComponentSpares;
+										}
+										else if (pdef2->name()->value() == "affects") {
+											GetDefNumber(ComponentAffects, pdef2, fn);
+											NewComponentDesign.Affects = ComponentAffects;
+										}
+									}	
+								}
+								NewComponentArray.Add(NewComponentDesign);
+							}
+							NewSystemDesign.Component = NewComponentArray;
+						}
+					}
+				}
+				FName RowName = FName(FString(SystemName));
+
+				// call AddRow to insert the record
+				SystemDesignDataTable->AddRow(RowName, NewSystemDesign);
+			}
+		}
+	} while (term);
+
+	SSWInstance->loader->ReleaseBuffer(block);
+}
+
 int
 AGameDataLoader::ClassForName(const char* cls)
 {
@@ -4650,6 +4776,7 @@ FString AGameDataLoader::GetNameFromType(FString nt)
 	}
 	return TypeName;
 }
+
 
 // +--------------------------------------------------------------------+
 
