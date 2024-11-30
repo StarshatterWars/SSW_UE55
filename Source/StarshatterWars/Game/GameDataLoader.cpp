@@ -4348,8 +4348,7 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 					}
 					else {
-						TermStruct* val = def->term()->isStruct();
-						//ParsePower(val);
+						ParsePower(def->term()->isStruct(), fn);
 					}
 				}
 
@@ -4569,6 +4568,2127 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 	SSWInstance->loader->ReleaseBuffer(block);
 }
 
+// +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::ParsePower(TermStruct* val, const char* fn)
+{
+	int   stype = 0;
+	float output = 1000.0f;
+	float fuel = 0.0f;
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+	Text  design_name;
+	Text  pname;
+	Text  pabrv;
+	int   etype = 0;
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+
+	FS_ShipPower NewShipPower;
+
+	/*for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "type") {
+				TermText* tname = pdef->term()->isText();
+				if (tname) {
+					if (tname->value()[0] == 'B') stype = PowerSource::BATTERY;
+					else if (tname->value()[0] == 'A') stype = PowerSource::AUX;
+					else if (tname->value()[0] == 'F') stype = PowerSource::FUSION;
+					else Print("WARNING: unknown power source type '%s' in '%s'\n", tname->value().data(), filename);
+				}
+				NewShipPower.SType = 
+			}
+
+			else if (defname == "name") {
+				GetDefText(pname, pdef, filename);
+			}
+
+			else if (defname == "abrv") {
+				GetDefText(pabrv, pdef, filename);
+			}
+
+			else if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+
+			else if (defname == "max_output") {
+				GetDefNumber(output, pdef, filename);
+			}
+			else if (defname == "fuel_range") {
+				GetDefNumber(fuel, pdef, filename);
+			}
+
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+
+			else if (defname == "explosion") {
+				GetDefNumber(etype, pdef, filename);
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+		}
+	}*/
+}
+
+// +--------------------------------------------------------------------+
+
+/*void
+AGameDataLoader::ParseDrive(TermStruct* val, const char* fn)
+{
+	Text  dname;
+	Text  dabrv;
+	int   dtype = 0;
+	int   etype = 0;
+	float dthrust = 1.0f;
+	float daug = 0.0f;
+	float dscale = 1.0f;
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+	Text  design_name;
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+	bool  trail = true;
+	Drive* drive = 0;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "type") {
+				TermText* tname = pdef->term()->isText();
+
+				if (tname) {
+					Text tval = tname->value();
+					tval.setSensitive(false);
+
+					if (tval == "Plasma")       dtype = Drive::PLASMA;
+					else if (tval == "Fusion")  dtype = Drive::FUSION;
+					else if (tval == "Alien")   dtype = Drive::GREEN;
+					else if (tval == "Green")   dtype = Drive::GREEN;
+					else if (tval == "Red")     dtype = Drive::RED;
+					else if (tval == "Blue")    dtype = Drive::BLUE;
+					else if (tval == "Yellow")  dtype = Drive::YELLOW;
+					else if (tval == "Stealth") dtype = Drive::STEALTH;
+
+					else Print("WARNING: unknown drive type '%s' in '%s'\n", tname->value().data(), filename);
+				}
+			}
+			else if (defname == "name") {
+				if (!GetDefText(dname, pdef, filename))
+					Print("WARNING: invalid or missing name for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "abrv") {
+				if (!GetDefText(dabrv, pdef, filename))
+					Print("WARNING: invalid or missing abrv for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "design") {
+				if (!GetDefText(design_name, pdef, filename))
+					Print("WARNING: invalid or missing design for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "thrust") {
+				if (!GetDefNumber(dthrust, pdef, filename))
+					Print("WARNING: invalid or missing thrust for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "augmenter") {
+				if (!GetDefNumber(daug, pdef, filename))
+					Print("WARNING: invalid or missing augmenter for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "scale") {
+				if (!GetDefNumber(dscale, pdef, filename))
+					Print("WARNING: invalid or missing scale for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "port") {
+				Vec3  port;
+				float flare_scale = 0;
+
+				if (pdef->term()->isArray()) {
+					GetDefVec(port, pdef, filename);
+					port *= scale;
+					flare_scale = dscale;
+				}
+
+				else if (pdef->term()->isStruct()) {
+					TermStruct* val = pdef->term()->isStruct();
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+						TermDef* pdef2 = val->elements()->at(i)->isDef();
+						if (pdef2) {
+							if (pdef2->name()->value() == "loc") {
+								GetDefVec(port, pdef2, filename);
+								port *= scale;
+							}
+
+							else if (pdef2->name()->value() == "scale") {
+								GetDefNumber(flare_scale, pdef2, filename);
+							}
+						}
+					}
+
+					if (flare_scale <= 0)
+						flare_scale = dscale;
+				}
+
+				if (!drive)
+					drive = new(__FILE__, __LINE__) Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
+
+				drive->AddPort(port, flare_scale);
+			}
+
+			else if (defname == "loc") {
+				if (!GetDefVec(loc, pdef, filename))
+					Print("WARNING: invalid or missing loc for drive in '%s'\n", filename);
+				loc *= (float)scale;
+			}
+
+			else if (defname == "size") {
+				if (!GetDefNumber(size, pdef, filename))
+					Print("WARNING: invalid or missing size for drive in '%s'\n", filename);
+				size *= (float)scale;
+			}
+
+			else if (defname == "hull_factor") {
+				if (!GetDefNumber(hull, pdef, filename))
+					Print("WARNING: invalid or missing hull_factor for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "explosion") {
+				if (!GetDefNumber(etype, pdef, filename))
+					Print("WARNING: invalid or missing explosion for drive in '%s'\n", filename);
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+
+			else if (defname == "trail" || defname == "show_trail") {
+				GetDefBool(trail, pdef, filename);
+			}
+		}
+	}
+}*/
+
+// +--------------------------------------------------------------------+
+
+/*void
+ShipDesign::ParseQuantumDrive(TermStruct* val)
+{
+	double   capacity = 250e3;
+	double   consumption = 1e3;
+	Vec3     loc(0.0f, 0.0f, 0.0f);
+	float    size = 0.0f;
+	float    hull = 0.5f;
+	float    countdown = 5.0f;
+	Text     design_name;
+	Text     type_name;
+	Text     abrv;
+	int      subtype = QuantumDrive::QUANTUM;
+	int      emcon_1 = -1;
+	int      emcon_2 = -1;
+	int      emcon_3 = -1;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+			else if (defname == "abrv") {
+				GetDefText(abrv, pdef, filename);
+			}
+			else if (defname == "type") {
+				GetDefText(type_name, pdef, filename);
+				type_name.setSensitive(false);
+
+				if (type_name.contains("hyper")) {
+					subtype = QuantumDrive::HYPER;
+				}
+			}
+			else if (defname == "capacity") {
+				GetDefNumber(capacity, pdef, filename);
+			}
+			else if (defname == "consumption") {
+				GetDefNumber(consumption, pdef, filename);
+			}
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "jump_time") {
+				GetDefNumber(countdown, pdef, filename);
+			}
+			else if (defname == "countdown") {
+				GetDefNumber(countdown, pdef, filename);
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+		}
+	}
+
+	QuantumDrive* drive = new(__FILE__, __LINE__) QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
+	drive->SetSourceIndex(reactors.size() - 1);
+	drive->Mount(loc, size, hull);
+	drive->SetCountdown(countdown);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			drive->SetDesign(sd);
+	}
+
+	if (abrv.length())
+		drive->SetAbbreviation(abrv);
+
+	if (emcon_1 >= 0 && emcon_1 <= 100)
+		drive->SetEMCONPower(1, emcon_1);
+
+	if (emcon_2 >= 0 && emcon_2 <= 100)
+		drive->SetEMCONPower(1, emcon_2);
+
+	if (emcon_3 >= 0 && emcon_3 <= 100)
+		drive->SetEMCONPower(1, emcon_3);
+
+	quantum_drive = drive;
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseFarcaster(TermStruct* val)
+{
+	Text     design_name;
+	double   capacity = 300e3;
+	double   consumption = 15e3;  // twenty second recharge
+	int      napproach = 0;
+	Vec3     approach[Farcaster::NUM_APPROACH_PTS];
+	Vec3     loc(0.0f, 0.0f, 0.0f);
+	Vec3     start(0.0f, 0.0f, 0.0f);
+	Vec3     end(0.0f, 0.0f, 0.0f);
+	float    size = 0.0f;
+	float    hull = 0.5f;
+	int      emcon_1 = -1;
+	int      emcon_2 = -1;
+	int      emcon_3 = -1;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+			else if (defname == "capacity") {
+				GetDefNumber(capacity, pdef, filename);
+			}
+			else if (defname == "consumption") {
+				GetDefNumber(consumption, pdef, filename);
+			}
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+
+			else if (defname == "start") {
+				GetDefVec(start, pdef, filename);
+				start *= (float)scale;
+			}
+			else if (defname == "end") {
+				GetDefVec(end, pdef, filename);
+				end *= (float)scale;
+			}
+			else if (defname == "approach") {
+				if (napproach < Farcaster::NUM_APPROACH_PTS) {
+					GetDefVec(approach[napproach], pdef, filename);
+					approach[napproach++] *= (float)scale;
+				}
+				else {
+					Print("WARNING: farcaster approach point ignored in '%s' (max=%d)\n",
+						filename, Farcaster::NUM_APPROACH_PTS);
+				}
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+		}
+	}
+
+	Farcaster* caster = new(__FILE__, __LINE__) Farcaster(capacity, consumption);
+	caster->SetSourceIndex(reactors.size() - 1);
+	caster->Mount(loc, size, hull);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			caster->SetDesign(sd);
+	}
+
+	caster->SetStartPoint(start);
+	caster->SetEndPoint(end);
+
+	for (int i = 0; i < napproach; i++)
+		caster->SetApproachPoint(i, approach[i]);
+
+	if (emcon_1 >= 0 && emcon_1 <= 100)
+		caster->SetEMCONPower(1, emcon_1);
+
+	if (emcon_2 >= 0 && emcon_2 <= 100)
+		caster->SetEMCONPower(1, emcon_2);
+
+	if (emcon_3 >= 0 && emcon_3 <= 100)
+		caster->SetEMCONPower(1, emcon_3);
+
+	farcaster = caster;
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseThruster(TermStruct* val)
+{
+	if (thruster) {
+		Print("WARNING: additional thruster ignored in '%s'\n", filename);
+		return;
+	}
+
+	double thrust = 100;
+
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+	Text  design_name;
+	float tscale = 1.0f;
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+	int   dtype = 0;
+
+	Thruster* drive = 0;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+
+			if (defname == "type") {
+				TermText* tname = pdef->term()->isText();
+
+				if (tname) {
+					Text tval = tname->value();
+					tval.setSensitive(false);
+
+					if (tval == "Plasma")       dtype = Drive::PLASMA;
+					else if (tval == "Fusion")  dtype = Drive::FUSION;
+					else if (tval == "Alien")   dtype = Drive::GREEN;
+					else if (tval == "Green")   dtype = Drive::GREEN;
+					else if (tval == "Red")     dtype = Drive::RED;
+					else if (tval == "Blue")    dtype = Drive::BLUE;
+					else if (tval == "Yellow")  dtype = Drive::YELLOW;
+					else if (tval == "Stealth") dtype = Drive::STEALTH;
+
+					else Print("WARNING: unknown thruster type '%s' in '%s'\n", tname->value().data(), filename);
+				}
+			}
+
+			else if (defname == "thrust") {
+				GetDefNumber(thrust, pdef, filename);
+			}
+
+			else if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "scale") {
+				GetDefNumber(tscale, pdef, filename);
+			}
+			else if (defname.contains("port") && pdef->term()) {
+				Vec3  port;
+				float port_scale = 0;
+				DWORD fire = 0;
+
+				if (pdef->term()->isArray()) {
+					GetDefVec(port, pdef, filename);
+					port *= scale;
+					port_scale = tscale;
+				}
+
+				else if (pdef->term()->isStruct()) {
+					TermStruct* val = pdef->term()->isStruct();
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+						TermDef* pdef2 = val->elements()->at(i)->isDef();
+						if (pdef2) {
+							if (pdef2->name()->value() == "loc") {
+								GetDefVec(port, pdef2, filename);
+								port *= scale;
+							}
+
+							else if (pdef2->name()->value() == "fire") {
+								GetDefNumber(fire, pdef2, filename);
+							}
+
+							else if (pdef2->name()->value() == "scale") {
+								GetDefNumber(port_scale, pdef2, filename);
+							}
+						}
+					}
+
+					if (port_scale <= 0)
+						port_scale = tscale;
+				}
+
+				if (!drive)
+					drive = new(__FILE__, __LINE__) Thruster(dtype, thrust, tscale);
+
+				if (defname == "port" || defname == "port_bottom")
+					drive->AddPort(Thruster::BOTTOM, port, fire, port_scale);
+
+				else if (defname == "port_top")
+					drive->AddPort(Thruster::TOP, port, fire, port_scale);
+
+				else if (defname == "port_left")
+					drive->AddPort(Thruster::LEFT, port, fire, port_scale);
+
+				else if (defname == "port_right")
+					drive->AddPort(Thruster::RIGHT, port, fire, port_scale);
+
+				else if (defname == "port_fore")
+					drive->AddPort(Thruster::FORE, port, fire, port_scale);
+
+				else if (defname == "port_aft")
+					drive->AddPort(Thruster::AFT, port, fire, port_scale);
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+		}
+	}
+
+	if (!drive)
+		drive = new(__FILE__, __LINE__) Thruster(dtype, thrust, tscale);
+	drive->SetSourceIndex(reactors.size() - 1);
+	drive->Mount(loc, size, hull);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			drive->SetDesign(sd);
+	}
+
+	if (emcon_1 >= 0 && emcon_1 <= 100)
+		drive->SetEMCONPower(1, emcon_1);
+
+	if (emcon_2 >= 0 && emcon_2 <= 100)
+		drive->SetEMCONPower(1, emcon_2);
+
+	if (emcon_3 >= 0 && emcon_3 <= 100)
+		drive->SetEMCONPower(1, emcon_3);
+
+	thruster = drive;
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseNavlight(TermStruct* val)
+{
+	Text  dname;
+	Text  dabrv;
+	Text  design_name;
+	int   nlights = 0;
+	float dscale = 1.0f;
+	float period = 10.0f;
+	Vec3  bloc[NavLight::MAX_LIGHTS];
+	int   btype[NavLight::MAX_LIGHTS];
+	DWORD pattern[NavLight::MAX_LIGHTS];
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name")
+				GetDefText(dname, pdef, filename);
+			else if (defname == "abrv")
+				GetDefText(dabrv, pdef, filename);
+
+			else if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+
+			else if (defname == "scale") {
+				GetDefNumber(dscale, pdef, filename);
+			}
+			else if (defname == "period") {
+				GetDefNumber(period, pdef, filename);
+			}
+			else if (defname == "light") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					Print("WARNING: light struct missing for ship '%s' in '%s'\n", name, filename);
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+
+					Vec3  loc;
+					int   t = 0;
+					DWORD ptn = 0;
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+						TermDef* pdef = val->elements()->at(i)->isDef();
+						if (pdef) {
+							Text defname = pdef->name()->value();
+							defname.setSensitive(false);
+
+							if (defname == "type") {
+								GetDefNumber(t, pdef, filename);
+							}
+							else if (defname == "loc") {
+								GetDefVec(loc, pdef, filename);
+							}
+							else if (defname == "pattern") {
+								GetDefNumber(ptn, pdef, filename);
+							}
+						}
+					}
+
+					if (t < 1 || t > 4)
+						t = 1;
+
+					if (nlights < NavLight::MAX_LIGHTS) {
+						bloc[nlights] = loc * scale;
+						btype[nlights] = t - 1;
+						pattern[nlights] = ptn;
+						nlights++;
+					}
+					else {
+						Print("WARNING: Too many lights ship '%s' in '%s'\n", name, filename);
+					}
+				}
+			}
+		}
+	}
+
+	NavLight* nav = new(__FILE__, __LINE__) NavLight(period, dscale);
+	if (dname.length()) nav->SetName(dname);
+	if (dabrv.length()) nav->SetAbbreviation(dabrv);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			nav->SetDesign(sd);
+	}
+
+	for (int i = 0; i < nlights; i++)
+		nav->AddBeacon(bloc[i], pattern[i], btype[i]);
+
+	navlights.append(nav);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseFlightDeck(TermStruct* val)
+{
+	Text  dname;
+	Text  dabrv;
+	Text  design_name;
+	float dscale = 1.0f;
+	float az = 0.0f;
+	int   etype = 0;
+
+	bool  launch = false;
+	bool  recovery = false;
+	int   nslots = 0;
+	int   napproach = 0;
+	int   nrunway = 0;
+	DWORD filters[10];
+	Vec3  spots[10];
+	Vec3  approach[FlightDeck::NUM_APPROACH_PTS];
+	Vec3  runway[2];
+	Vec3  loc(0, 0, 0);
+	Vec3  start(0, 0, 0);
+	Vec3  end(0, 0, 0);
+	Vec3  cam(0, 0, 0);
+	Vec3  box(0, 0, 0);
+	float cycle_time = 0.0f;
+	float size = 0.0f;
+	float hull = 0.5f;
+
+	float light = 0.0f;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name")
+				GetDefText(dname, pdef, filename);
+			else if (defname == "abrv")
+				GetDefText(dabrv, pdef, filename);
+			else if (defname == "design")
+				GetDefText(design_name, pdef, filename);
+
+			else if (defname == "start") {
+				GetDefVec(start, pdef, filename);
+				start *= (float)scale;
+			}
+			else if (defname == "end") {
+				GetDefVec(end, pdef, filename);
+				end *= (float)scale;
+			}
+			else if (defname == "cam") {
+				GetDefVec(cam, pdef, filename);
+				cam *= (float)scale;
+			}
+			else if (defname == "box" || defname == "bounding_box") {
+				GetDefVec(box, pdef, filename);
+				box *= (float)scale;
+			}
+			else if (defname == "approach") {
+				if (napproach < FlightDeck::NUM_APPROACH_PTS) {
+					GetDefVec(approach[napproach], pdef, filename);
+					approach[napproach++] *= (float)scale;
+				}
+				else {
+					Print("WARNING: flight deck approach point ignored in '%s' (max=%d)\n",
+						filename, FlightDeck::NUM_APPROACH_PTS);
+				}
+			}
+			else if (defname == "runway") {
+				GetDefVec(runway[nrunway], pdef, filename);
+				runway[nrunway++] *= (float)scale;
+			}
+			else if (defname == "spot") {
+				if (pdef->term()->isStruct()) {
+					TermStruct* s = pdef->term()->isStruct();
+					for (int i = 0; i < s->elements()->size(); i++) {
+						TermDef* d = s->elements()->at(i)->isDef();
+						if (d) {
+							if (d->name()->value() == "loc") {
+								GetDefVec(spots[nslots], d, filename);
+								spots[nslots] *= (float)scale;
+							}
+							else if (d->name()->value() == "filter") {
+								GetDefNumber(filters[nslots], d, filename);
+							}
+						}
+					}
+
+					nslots++;
+				}
+
+				else if (pdef->term()->isArray()) {
+					GetDefVec(spots[nslots], pdef, filename);
+					spots[nslots] *= (float)scale;
+					filters[nslots++] = 0xf;
+				}
+			}
+
+			else if (defname == "light") {
+				GetDefNumber(light, pdef, filename);
+			}
+
+			else if (defname == "cycle_time") {
+				GetDefNumber(cycle_time, pdef, filename);
+			}
+
+			else if (defname == "launch") {
+				GetDefBool(launch, pdef, filename);
+			}
+
+			else if (defname == "recovery") {
+				GetDefBool(recovery, pdef, filename);
+			}
+
+			else if (defname == "azimuth") {
+				GetDefNumber(az, pdef, filename);
+				if (degrees) az *= (float)DEGREES;
+			}
+
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "explosion") {
+				GetDefNumber(etype, pdef, filename);
+			}
+		}
+	}
+
+	FlightDeck* deck = new(__FILE__, __LINE__) FlightDeck();
+	deck->Mount(loc, size, hull);
+	if (dname.length()) deck->SetName(dname);
+	if (dabrv.length()) deck->SetAbbreviation(dabrv);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			deck->SetDesign(sd);
+	}
+
+	if (launch)
+		deck->SetLaunchDeck();
+	else if (recovery)
+		deck->SetRecoveryDeck();
+
+	deck->SetAzimuth(az);
+	deck->SetBoundingBox(box);
+	deck->SetStartPoint(start);
+	deck->SetEndPoint(end);
+	deck->SetCamLoc(cam);
+	deck->SetExplosionType(etype);
+
+	if (light > 0)
+		deck->SetLight(light);
+
+	for (int i = 0; i < napproach; i++)
+		deck->SetApproachPoint(i, approach[i]);
+
+	for (int i = 0; i < nrunway; i++)
+		deck->SetRunwayPoint(i, runway[i]);
+
+	for (int i = 0; i < nslots; i++)
+		deck->AddSlot(spots[i], filters[i]);
+
+	if (cycle_time > 0)
+		deck->SetCycleTime(cycle_time);
+
+	flight_decks.append(deck);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseLandingGear(TermStruct* val)
+{
+	Text  dname;
+	Text  dabrv;
+	Text  design_name;
+	int   ngear = 0;
+	Vec3  start[LandingGear::MAX_GEAR];
+	Vec3  end[LandingGear::MAX_GEAR];
+	Model* model[LandingGear::MAX_GEAR];
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name")
+				GetDefText(dname, pdef, filename);
+			else if (defname == "abrv")
+				GetDefText(dabrv, pdef, filename);
+
+			else if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+
+			else if (defname == "gear") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					Print("WARNING: gear struct missing for ship '%s' in '%s'\n", name, filename);
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+
+					Vec3  v1, v2;
+					char  mod_name[256];
+
+					ZeroMemory(mod_name, sizeof(mod_name));
+
+					for (int i = 0; i < val->elements()->size(); i++) {
+						TermDef* pdef = val->elements()->at(i)->isDef();
+						if (pdef) {
+							defname = pdef->name()->value();
+							defname.setSensitive(false);
+
+							if (defname == "model") {
+								GetDefText(mod_name, pdef, filename);
+							}
+							else if (defname == "start") {
+								GetDefVec(v1, pdef, filename);
+							}
+							else if (defname == "end") {
+								GetDefVec(v2, pdef, filename);
+							}
+						}
+					}
+
+					if (ngear < LandingGear::MAX_GEAR) {
+						Model* m = new(__FILE__, __LINE__) Model;
+						if (!m->Load(mod_name, scale)) {
+							Print("WARNING: Could not load landing gear model '%s'\n", mod_name);
+							delete m;
+							m = 0;
+						}
+						else {
+							model[ngear] = m;
+							start[ngear] = v1 * scale;
+							end[ngear] = v2 * scale;
+							ngear++;
+						}
+					}
+					else {
+						Print("WARNING: Too many landing gear ship '%s' in '%s'\n", name, filename);
+					}
+				}
+			}
+		}
+	}
+
+	gear = new(__FILE__, __LINE__) LandingGear();
+	if (dname.length()) gear->SetName(dname);
+	if (dabrv.length()) gear->SetAbbreviation(dabrv);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			gear->SetDesign(sd);
+	}
+
+	for (int i = 0; i < ngear; i++)
+		gear->AddGear(model[i], start[i], end[i]);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseWeapon(TermStruct* val)
+{
+	Text  wtype;
+	Text  wname;
+	Text  wabrv;
+	Text  design_name;
+	Text  group_name;
+	int   nmuz = 0;
+	Vec3  muzzles[Weapon::MAX_BARRELS];
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+	float az = 0.0f;
+	float el = 0.0f;
+	float az_max = 1e6f;
+	float az_min = 1e6f;
+	float el_max = 1e6f;
+	float el_min = 1e6f;
+	float az_rest = 1e6f;
+	float el_rest = 1e6f;
+	int   etype = 0;
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "type")
+				GetDefText(wtype, pdef, filename);
+			else if (defname == "name")
+				GetDefText(wname, pdef, filename);
+			else if (defname == "abrv")
+				GetDefText(wabrv, pdef, filename);
+			else if (defname == "design")
+				GetDefText(design_name, pdef, filename);
+			else if (defname == "group")
+				GetDefText(group_name, pdef, filename);
+
+			else if (defname == "muzzle") {
+				if (nmuz < Weapon::MAX_BARRELS) {
+					GetDefVec(muzzles[nmuz], pdef, filename);
+					nmuz++;
+				}
+				else {
+					Print("WARNING: too many muzzles (max=%d) for weapon in '%s'\n", filename, Weapon::MAX_BARRELS);
+				}
+			}
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "azimuth") {
+				GetDefNumber(az, pdef, filename);
+				if (degrees) az *= (float)DEGREES;
+			}
+			else if (defname == "elevation") {
+				GetDefNumber(el, pdef, filename);
+				if (degrees) el *= (float)DEGREES;
+			}
+
+			else if (defname == ("aim_az_max")) {
+				GetDefNumber(az_max, pdef, filename);
+				if (degrees) az_max *= (float)DEGREES;
+				az_min = 0.0f - az_max;
+			}
+
+			else if (defname == ("aim_el_max")) {
+				GetDefNumber(el_max, pdef, filename);
+				if (degrees) el_max *= (float)DEGREES;
+				el_min = 0.0f - el_max;
+			}
+
+			else if (defname == ("aim_az_min")) {
+				GetDefNumber(az_min, pdef, filename);
+				if (degrees) az_min *= (float)DEGREES;
+			}
+
+			else if (defname == ("aim_el_min")) {
+				GetDefNumber(el_min, pdef, filename);
+				if (degrees) el_min *= (float)DEGREES;
+			}
+
+			else if (defname == ("aim_az_rest")) {
+				GetDefNumber(az_rest, pdef, filename);
+				if (degrees) az_rest *= (float)DEGREES;
+			}
+
+			else if (defname == ("aim_el_rest")) {
+				GetDefNumber(el_rest, pdef, filename);
+				if (degrees) el_rest *= (float)DEGREES;
+			}
+
+			else if (defname == "rest_azimuth") {
+				GetDefNumber(az_rest, pdef, filename);
+				if (degrees) az_rest *= (float)DEGREES;
+			}
+			else if (defname == "rest_elevation") {
+				GetDefNumber(el_rest, pdef, filename);
+				if (degrees) el_rest *= (float)DEGREES;
+			}
+			else if (defname == "explosion") {
+				GetDefNumber(etype, pdef, filename);
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+			else {
+				Print("WARNING: unknown weapon parameter '%s' in '%s'\n",
+					defname.data(), filename);
+			}
+		}
+	}
+
+	WeaponDesign* meta = WeaponDesign::Find(wtype);
+	if (!meta) {
+		Print("WARNING: unusual weapon name '%s' in '%s'\n", (const char*)wtype, filename);
+	}
+	else {
+		// non-turret weapon muzzles are relative to ship scale:
+		if (meta->turret_model == 0) {
+			for (int i = 0; i < nmuz; i++)
+				muzzles[i] *= (float)scale;
+		}
+
+		// turret weapon muzzles are relative to weapon scale:
+		else {
+			for (int i = 0; i < nmuz; i++)
+				muzzles[i] *= (float)meta->scale;
+		}
+
+		Weapon* gun = new(__FILE__, __LINE__) Weapon(meta, nmuz, muzzles, az, el);
+		gun->SetSourceIndex(reactors.size() - 1);
+		gun->Mount(loc, size, hull);
+
+		if (az_max < 1e6)    gun->SetAzimuthMax(az_max);
+		if (az_min < 1e6)    gun->SetAzimuthMin(az_min);
+		if (az_rest < 1e6)   gun->SetRestAzimuth(az_rest);
+
+		if (el_max < 1e6)    gun->SetElevationMax(el_max);
+		if (el_min < 1e6)    gun->SetElevationMin(el_min);
+		if (el_rest < 1e6)   gun->SetRestElevation(el_rest);
+
+		if (emcon_1 >= 0 && emcon_1 <= 100)
+			gun->SetEMCONPower(1, emcon_1);
+
+		if (emcon_2 >= 0 && emcon_2 <= 100)
+			gun->SetEMCONPower(1, emcon_2);
+
+		if (emcon_3 >= 0 && emcon_3 <= 100)
+			gun->SetEMCONPower(1, emcon_3);
+
+		if (wname.length()) gun->SetName(wname);
+		if (wabrv.length()) gun->SetAbbreviation(wabrv);
+
+		if (design_name.length()) {
+			SystemDesign* sd = SystemDesign::Find(design_name);
+			if (sd)
+				gun->SetDesign(sd);
+		}
+
+		if (group_name.length()) {
+			gun->SetGroup(group_name);
+		}
+
+		gun->SetExplosionType(etype);
+
+		if (meta->decoy_type && !decoy)
+			decoy = gun;
+		else if (meta->probe && !probe)
+			probe = gun;
+		else
+			weapons.append(gun);
+	}
+
+	DataLoader* loader = DataLoader::GetLoader();
+	loader->SetDataPath(path_name);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseHardPoint(TermStruct* val)
+{
+	Text  wtypes[8];
+	Text  wname;
+	Text  wabrv;
+	Text  design;
+	Vec3  muzzle;
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+	float az = 0.0f;
+	float el = 0.0f;
+	int   ntypes = 0;
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "type")
+				GetDefText(wtypes[ntypes++], pdef, filename);
+			else if (defname == "name")
+				GetDefText(wname, pdef, filename);
+			else if (defname == "abrv")
+				GetDefText(wabrv, pdef, filename);
+			else if (defname == "design")
+				GetDefText(design, pdef, filename);
+
+			else if (defname == "muzzle") {
+				GetDefVec(muzzle, pdef, filename);
+				muzzle *= (float)scale;
+			}
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "azimuth") {
+				GetDefNumber(az, pdef, filename);
+				if (degrees) az *= (float)DEGREES;
+			}
+			else if (defname == "elevation") {
+				GetDefNumber(el, pdef, filename);
+				if (degrees) el *= (float)DEGREES;
+			}
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+			else {
+				Print("WARNING: unknown weapon parameter '%s' in '%s'\n",
+					defname.data(), filename);
+			}
+		}
+	}
+
+	HardPoint* hp = new(__FILE__, __LINE__) HardPoint(muzzle, az, el);
+	if (hp) {
+		for (int i = 0; i < ntypes; i++) {
+			WeaponDesign* meta = WeaponDesign::Find(wtypes[i]);
+			if (!meta) {
+				Print("WARNING: unusual weapon name '%s' in '%s'\n", (const char*)wtypes[i], filename);
+			}
+			else {
+				hp->AddDesign(meta);
+			}
+		}
+
+		hp->Mount(loc, size, hull);
+		if (wname.length())  hp->SetName(wname);
+		if (wabrv.length())  hp->SetAbbreviation(wabrv);
+		if (design.length()) hp->SetDesign(design);
+
+		hard_points.append(hp);
+	}
+
+	DataLoader* loader = DataLoader::GetLoader();
+	loader->SetDataPath(path_name);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseLoadout(TermStruct* val)
+{
+	ShipLoad* load = new(__FILE__, __LINE__) ShipLoad;
+
+	if (!load) return;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name")
+				GetDefText(load->name, pdef, filename);
+
+			else if (defname == "stations")
+				GetDefArray(load->load, 16, pdef, filename);
+
+			else
+				Print("WARNING: unknown loadout parameter '%s' in '%s'\n",
+					defname.data(), filename);
+		}
+	}
+
+	loadouts.append(load);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseSensor(TermStruct* val)
+{
+	Text  design_name;
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+	int   nranges = 0;
+	float ranges[8];
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+
+	ZeroMemory(ranges, sizeof(ranges));
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "range") {
+				GetDefNumber(ranges[nranges++], pdef, filename);
+			}
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				size *= (float)scale;
+				GetDefNumber(size, pdef, filename);
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+		}
+	}
+
+	if (!sensor) {
+		sensor = new(__FILE__, __LINE__) Sensor();
+
+		if (design_name.length()) {
+			SystemDesign* sd = SystemDesign::Find(design_name);
+			if (sd)
+				sensor->SetDesign(sd);
+		}
+
+		for (int i = 0; i < nranges; i++)
+			sensor->AddRange(ranges[i]);
+
+		if (emcon_1 >= 0 && emcon_1 <= 100)
+			sensor->SetEMCONPower(1, emcon_1);
+
+		if (emcon_2 >= 0 && emcon_2 <= 100)
+			sensor->SetEMCONPower(1, emcon_2);
+
+		if (emcon_3 >= 0 && emcon_3 <= 100)
+			sensor->SetEMCONPower(1, emcon_3);
+
+		sensor->Mount(loc, size, hull);
+		sensor->SetSourceIndex(reactors.size() - 1);
+	}
+	else {
+		Print("WARNING: additional sensor ignored in '%s'\n", filename);
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseNavsys(TermStruct* val)
+{
+	Text  design_name;
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				size *= (float)scale;
+				GetDefNumber(size, pdef, filename);
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+			else if (defname == "design")
+				GetDefText(design_name, pdef, filename);
+		}
+	}
+
+	if (!navsys) {
+		navsys = new(__FILE__, __LINE__) NavSystem;
+
+		if (design_name.length()) {
+			SystemDesign* sd = SystemDesign::Find(design_name);
+			if (sd)
+				navsys->SetDesign(sd);
+		}
+
+		navsys->Mount(loc, size, hull);
+		navsys->SetSourceIndex(reactors.size() - 1);
+	}
+	else {
+		Print("WARNING: additional nav system ignored in '%s'\n", filename);
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseComputer(TermStruct* val)
+{
+	Text  comp_name("Computer");
+	Text  comp_abrv("Comp");
+	Text  design_name;
+	int   comp_type = 1;
+	Vec3  loc(0.0f, 0.0f, 0.0f);
+	float size = 0.0f;
+	float hull = 0.5f;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name") {
+				GetDefText(comp_name, pdef, filename);
+			}
+			else if (defname == "abrv") {
+				GetDefText(comp_abrv, pdef, filename);
+			}
+			else if (defname == "design") {
+				GetDefText(design_name, pdef, filename);
+			}
+			else if (defname == "type") {
+				GetDefNumber(comp_type, pdef, filename);
+			}
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				size *= (float)scale;
+				GetDefNumber(size, pdef, filename);
+			}
+			else if (defname == "hull_factor") {
+				GetDefNumber(hull, pdef, filename);
+			}
+		}
+	}
+
+	Computer* comp = new(__FILE__, __LINE__) Computer(comp_type, comp_name);
+	comp->Mount(loc, size, hull);
+	comp->SetAbbreviation(comp_abrv);
+	comp->SetSourceIndex(reactors.size() - 1);
+
+	if (design_name.length()) {
+		SystemDesign* sd = SystemDesign::Find(design_name);
+		if (sd)
+			comp->SetDesign(sd);
+	}
+
+	computers.append(comp);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseShield(TermStruct* val)
+{
+	Text     dname;
+	Text     dabrv;
+	Text     design_name;
+	Text     model_name;
+	double   factor = 0;
+	double   capacity = 0;
+	double   consumption = 0;
+	double   cutoff = 0;
+	double   curve = 0;
+	double   def_cost = 1;
+	int      shield_type = 0;
+	Vec3     loc(0.0f, 0.0f, 0.0f);
+	float    size = 0.0f;
+	float    hull = 0.5f;
+	int      etype = 0;
+	bool     shield_capacitor = false;
+	bool     shield_bubble = false;
+	int   emcon_1 = -1;
+	int   emcon_2 = -1;
+	int   emcon_3 = -1;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "type") {
+				GetDefNumber(shield_type, pdef, filename);
+			}
+			else if (defname == "name")
+				GetDefText(dname, pdef, filename);
+			else if (defname == "abrv")
+				GetDefText(dabrv, pdef, filename);
+			else if (defname == "design")
+				GetDefText(design_name, pdef, filename);
+			else if (defname == "model")
+				GetDefText(model_name, pdef, filename);
+
+			else if (defname == "loc") {
+				GetDefVec(loc, pdef, filename);
+				loc *= (float)scale;
+			}
+			else if (defname == "size") {
+				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
+			}
+			else if (defname == "hull_factor")
+				GetDefNumber(hull, pdef, filename);
+
+			else if (defname.contains("factor"))
+				GetDefNumber(factor, pdef, filename);
+			else if (defname.contains("cutoff"))
+				GetDefNumber(cutoff, pdef, filename);
+			else if (defname.contains("curve"))
+				GetDefNumber(curve, pdef, filename);
+			else if (defname.contains("capacitor"))
+				GetDefBool(shield_capacitor, pdef, filename);
+			else if (defname.contains("bubble"))
+				GetDefBool(shield_bubble, pdef, filename);
+			else if (defname == "capacity")
+				GetDefNumber(capacity, pdef, filename);
+			else if (defname == "consumption")
+				GetDefNumber(consumption, pdef, filename);
+			else if (defname == "deflection_cost")
+				GetDefNumber(def_cost, pdef, filename);
+			else if (defname == "explosion")
+				GetDefNumber(etype, pdef, filename);
+
+			else if (defname == "emcon_1") {
+				GetDefNumber(emcon_1, pdef, filename);
+			}
+
+			else if (defname == "emcon_2") {
+				GetDefNumber(emcon_2, pdef, filename);
+			}
+
+			else if (defname == "emcon_3") {
+				GetDefNumber(emcon_3, pdef, filename);
+			}
+
+			else if (defname == "bolt_hit_sound") {
+				GetDefText(bolt_hit_sound, pdef, filename);
+			}
+
+			else if (defname == "beam_hit_sound") {
+				GetDefText(beam_hit_sound, pdef, filename);
+			}
+		}
+	}
+
+	if (!shield) {
+		if (shield_type) {
+			shield = new(__FILE__, __LINE__) Shield((Shield::SUBTYPE)shield_type);
+			shield->SetSourceIndex(reactors.size() - 1);
+			shield->Mount(loc, size, hull);
+			if (dname.length()) shield->SetName(dname);
+			if (dabrv.length()) shield->SetAbbreviation(dabrv);
+
+			if (design_name.length()) {
+				SystemDesign* sd = SystemDesign::Find(design_name);
+				if (sd)
+					shield->SetDesign(sd);
+			}
+
+			shield->SetExplosionType(etype);
+			shield->SetShieldCapacitor(shield_capacitor);
+			shield->SetShieldBubble(shield_bubble);
+
+			if (factor > 0) shield->SetShieldFactor(factor);
+			if (capacity > 0) shield->SetCapacity(capacity);
+			if (cutoff > 0) shield->SetShieldCutoff(cutoff);
+			if (consumption > 0) shield->SetConsumption(consumption);
+			if (def_cost > 0) shield->SetDeflectionCost(def_cost);
+			if (curve > 0) shield->SetShieldCurve(curve);
+
+			if (emcon_1 >= 0 && emcon_1 <= 100)
+				shield->SetEMCONPower(1, emcon_1);
+
+			if (emcon_2 >= 0 && emcon_2 <= 100)
+				shield->SetEMCONPower(1, emcon_2);
+
+			if (emcon_3 >= 0 && emcon_3 <= 100)
+				shield->SetEMCONPower(1, emcon_3);
+
+			if (model_name.length()) {
+				shield_model = new(__FILE__, __LINE__) Model;
+				if (!shield_model->Load(model_name, scale)) {
+					Print("ERROR: Could not load shield model '%s'\n", model_name.data());
+					delete shield_model;
+					shield_model = 0;
+					valid = false;
+				}
+				else {
+					shield_model->SetDynamic(true);
+					shield_model->SetLuminous(true);
+				}
+			}
+
+			DataLoader* loader = DataLoader::GetLoader();
+			DWORD       SOUND_FLAGS = Sound::LOCALIZED | Sound::LOC_3D;
+
+			if (bolt_hit_sound.length()) {
+				if (!loader->LoadSound(bolt_hit_sound, bolt_hit_sound_resource, SOUND_FLAGS, true)) {
+					loader->SetDataPath("Sounds/");
+					loader->LoadSound(bolt_hit_sound, bolt_hit_sound_resource, SOUND_FLAGS);
+					loader->SetDataPath(path_name);
+				}
+			}
+
+			if (beam_hit_sound.length()) {
+				if (!loader->LoadSound(beam_hit_sound, beam_hit_sound_resource, SOUND_FLAGS, true)) {
+					loader->SetDataPath("Sounds/");
+					loader->LoadSound(beam_hit_sound, beam_hit_sound_resource, SOUND_FLAGS);
+					loader->SetDataPath(path_name);
+				}
+			}
+		}
+		else {
+			Print("WARNING: invalid shield type in '%s'\n", filename);
+		}
+	}
+	else {
+		Print("WARNING: additional shield ignored in '%s'\n", filename);
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseDeathSpiral(TermStruct* val)
+{
+	int   exp_index = -1;
+	int   debris_index = -1;
+	int   fire_index = -1;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* def = val->elements()->at(i)->isDef();
+		if (def) {
+			Text defname = def->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "time") {
+				GetDefNumber(death_spiral_time, def, filename);
+			}
+
+			else if (defname == "explosion") {
+				if (!def->term() || !def->term()->isStruct()) {
+					Print("WARNING: explosion struct missing in '%s'\n", filename);
+				}
+				else {
+					TermStruct* val = def->term()->isStruct();
+					ParseExplosion(val, ++exp_index);
+				}
+			}
+
+			// BACKWARD COMPATIBILITY:
+			else if (defname == "explosion_type") {
+				GetDefNumber(explosion[++exp_index].type, def, filename);
+			}
+
+			else if (defname == "explosion_time") {
+				GetDefNumber(explosion[exp_index].time, def, filename);
+			}
+
+			else if (defname == "explosion_loc") {
+				GetDefVec(explosion[exp_index].loc, def, filename);
+				explosion[exp_index].loc *= (float)scale;
+			}
+
+			else if (defname == "final_type") {
+				GetDefNumber(explosion[++exp_index].type, def, filename);
+				explosion[exp_index].final = true;
+			}
+
+			else if (defname == "final_loc") {
+				GetDefVec(explosion[exp_index].loc, def, filename);
+				explosion[exp_index].loc *= (float)scale;
+			}
+
+
+			else if (defname == "debris") {
+				if (def->term() && def->term()->isText()) {
+					Text model_name;
+					GetDefText(model_name, def, filename);
+					Model* model = new(__FILE__, __LINE__) Model;
+					if (!model->Load(model_name, scale)) {
+						Print("Could not load debris model '%s'\n", model_name.data());
+						delete model;
+						return;
+					}
+
+					PrepareModel(*model);
+					debris[++debris_index].model = model;
+					fire_index = -1;
+				}
+				else if (!def->term() || !def->term()->isStruct()) {
+					Print("WARNING: debris struct missing in '%s'\n", filename);
+				}
+				else {
+					TermStruct* val = def->term()->isStruct();
+					ParseDebris(val, ++debris_index);
+				}
+			}
+
+			else if (defname == "debris_mass") {
+				GetDefNumber(debris[debris_index].mass, def, filename);
+			}
+
+			else if (defname == "debris_speed") {
+				GetDefNumber(debris[debris_index].speed, def, filename);
+			}
+
+			else if (defname == "debris_drag") {
+				GetDefNumber(debris[debris_index].drag, def, filename);
+			}
+
+			else if (defname == "debris_loc") {
+				GetDefVec(debris[debris_index].loc, def, filename);
+				debris[debris_index].loc *= (float)scale;
+			}
+
+			else if (defname == "debris_count") {
+				GetDefNumber(debris[debris_index].count, def, filename);
+			}
+
+			else if (defname == "debris_life") {
+				GetDefNumber(debris[debris_index].life, def, filename);
+			}
+
+			else if (defname == "debris_fire") {
+				if (++fire_index < 5) {
+					GetDefVec(debris[debris_index].fire_loc[fire_index], def, filename);
+					debris[debris_index].fire_loc[fire_index] *= (float)scale;
+				}
+			}
+
+			else if (defname == "debris_fire_type") {
+				GetDefNumber(debris[debris_index].fire_type, def, filename);
+			}
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseExplosion(TermStruct* val, int index)
+{
+	ShipExplosion* exp = &explosion[index];
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* def = val->elements()->at(i)->isDef();
+		if (def) {
+			Text defname = def->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "time") {
+				GetDefNumber(exp->time, def, filename);
+			}
+
+			else if (defname == "type") {
+				GetDefNumber(exp->type, def, filename);
+			}
+
+			else if (defname == "loc") {
+				GetDefVec(exp->loc, def, filename);
+				exp->loc *= (float)scale;
+			}
+
+			else if (defname == "final") {
+				GetDefBool(exp->final, def, filename);
+			}
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseDebris(TermStruct* val, int index)
+{
+	char        model_name[NAMELEN];
+	int         fire_index = 0;
+	ShipDebris* deb = &debris[index];
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* def = val->elements()->at(i)->isDef();
+		if (def) {
+			Text defname = def->name()->value();
+
+			if (defname == "model") {
+				GetDefText(model_name, def, filename);
+				Model* model = new(__FILE__, __LINE__) Model;
+				if (!model->Load(model_name, scale)) {
+					Print("Could not load debris model '%s'\n", model_name);
+					delete model;
+					return;
+				}
+
+				PrepareModel(*model);
+				deb->model = model;
+			}
+
+			else if (defname == "mass") {
+				GetDefNumber(deb->mass, def, filename);
+			}
+
+			else if (defname == "speed") {
+				GetDefNumber(deb->speed, def, filename);
+			}
+
+			else if (defname == "drag") {
+				GetDefNumber(deb->drag, def, filename);
+			}
+
+			else if (defname == "loc") {
+				GetDefVec(deb->loc, def, filename);
+				deb->loc *= (float)scale;
+			}
+
+			else if (defname == "count") {
+				GetDefNumber(deb->count, def, filename);
+			}
+
+			else if (defname == "life") {
+				GetDefNumber(deb->life, def, filename);
+			}
+
+			else if (defname == "fire") {
+				if (fire_index < 5) {
+					GetDefVec(deb->fire_loc[fire_index], def, filename);
+					deb->fire_loc[fire_index] *= (float)scale;
+					fire_index++;
+				}
+			}
+
+			else if (defname == "fire_type") {
+				GetDefNumber(deb->fire_type, def, filename);
+			}
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseMap(TermStruct* val)
+{
+	char  sprite_name[NAMELEN];
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "sprite") {
+				GetDefText(sprite_name, pdef, filename);
+
+				Bitmap* sprite = new(__FILE__, __LINE__) Bitmap();
+				DataLoader* loader = DataLoader::GetLoader();
+				loader->LoadBitmap(sprite_name, *sprite, Bitmap::BMP_TRANSLUCENT);
+
+				map_sprites.append(sprite);
+			}
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+ShipDesign::ParseSquadron(TermStruct* val)
+{
+	char  name[NAMELEN];
+	char  design[NAMELEN];
+	int   count = 4;
+	int   avail = 4;
+
+	name[0] = 0;
+	design[0] = 0;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			Text defname = pdef->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name") {
+				GetDefText(name, pdef, filename);
+			}
+			else if (defname == "design") {
+				GetDefText(design, pdef, filename);
+			}
+			else if (defname == "count") {
+				GetDefNumber(count, pdef, filename);
+			}
+			else if (defname == "avail") {
+				GetDefNumber(avail, pdef, filename);
+			}
+		}
+	}
+
+	ShipSquadron* s = new(__FILE__, __LINE__) ShipSquadron;
+	strcpy_s(s->name, name);
+
+	s->design = Get(design);
+	s->count = count;
+	s->avail = avail;
+
+	squadrons.append(s);
+}
+
+// +--------------------------------------------------------------------+
+
+Skin*
+ShipDesign::ParseSkin(TermStruct* val)
+{
+	Skin* skin = 0;
+	char  name[NAMELEN];
+
+	name[0] = 0;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* def = val->elements()->at(i)->isDef();
+		if (def) {
+			Text defname = def->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name") {
+				GetDefText(name, def, filename);
+
+				skin = new(__FILE__, __LINE__) Skin(name);
+			}
+			else if (defname == "material" || defname == "mtl") {
+				if (!def->term() || !def->term()->isStruct()) {
+					Print("WARNING: skin struct missing in '%s'\n", filename);
+				}
+				else {
+					TermStruct* val = def->term()->isStruct();
+					ParseSkinMtl(val, skin);
+				}
+			}
+		}
+	}
+
+	if (skin && skin->NumCells()) {
+		skins.append(skin);
+	}
+
+	else if (skin) {
+		delete skin;
+		skin = 0;
+	}
+
+	return skin;
+}
+
+void
+ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
+{
+	Material* mtl = new(__FILE__, __LINE__) Material;
+	if (mtl == nullptr)
+		return;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* def = val->elements()->at(i)->isDef();
+		if (def) {
+			Text defname = def->name()->value();
+			defname.setSensitive(false);
+
+			if (defname == "name") {
+				GetDefText(mtl->name, def, filename);
+			}
+			else if (defname == "Ka") {
+				GetDefColor(mtl->Ka, def, filename);
+			}
+			else if (defname == "Kd") {
+				GetDefColor(mtl->Kd, def, filename);
+			}
+			else if (defname == "Ks") {
+				GetDefColor(mtl->Ks, def, filename);
+			}
+			else if (defname == "Ke") {
+				GetDefColor(mtl->Ke, def, filename);
+			}
+			else if (defname == "Ns" || defname == "power") {
+				GetDefNumber(mtl->power, def, filename);
+			}
+			else if (defname == "bump") {
+				GetDefNumber(mtl->bump, def, filename);
+			}
+			else if (defname == "luminous") {
+				GetDefBool(mtl->luminous, def, filename);
+			}
+
+			else if (defname == "blend") {
+				if (def->term() && def->term()->isNumber())
+					GetDefNumber(mtl->blend, def, filename);
+
+				else if (def->term() && def->term()->isText()) {
+					Text val;
+					GetDefText(val, def, filename);
+					val.setSensitive(false);
+
+					if (val == "alpha" || val == "translucent")
+						mtl->blend = Material::MTL_TRANSLUCENT;
+
+					else if (val == "additive")
+						mtl->blend = Material::MTL_ADDITIVE;
+
+					else
+						mtl->blend = Material::MTL_SOLID;
+				}
+			}
+
+			else if (defname.indexOf("tex_d") == 0) {
+				char tex_name[64];
+				if (!GetDefText(tex_name, def, filename))
+					Print("WARNING: invalid or missing tex_diffuse in '%s'\n", filename);
+
+				DataLoader* loader = DataLoader::GetLoader();
+				loader->LoadTexture(tex_name, mtl->tex_diffuse);
+			}
+
+			else if (defname.indexOf("tex_s") == 0) {
+				char tex_name[64];
+				if (!GetDefText(tex_name, def, filename))
+					Print("WARNING: invalid or missing tex_specular in '%s'\n", filename);
+
+				DataLoader* loader = DataLoader::GetLoader();
+				loader->LoadTexture(tex_name, mtl->tex_specular);
+			}
+
+			else if (defname.indexOf("tex_b") == 0) {
+				char tex_name[64];
+				if (!GetDefText(tex_name, def, filename))
+					Print("WARNING: invalid or missing tex_bumpmap in '%s'\n", filename);
+
+				DataLoader* loader = DataLoader::GetLoader();
+				loader->LoadTexture(tex_name, mtl->tex_bumpmap);
+			}
+
+			else if (defname.indexOf("tex_e") == 0) {
+				char tex_name[64];
+				if (!GetDefText(tex_name, def, filename))
+					Print("WARNING: invalid or missing tex_emissive in '%s'\n", filename);
+
+				DataLoader* loader = DataLoader::GetLoader();
+
+				loader->LoadTexture(tex_name, mtl->tex_emissive);
+			}
+		}
+	}
+
+	if (skin && mtl)
+		skin->AddMaterial(mtl);
+}
+*/
 void
 AGameDataLoader::LoadSystemDesign(const char* fn)
 {

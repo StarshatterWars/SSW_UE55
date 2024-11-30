@@ -1700,7 +1700,7 @@ struct FS_CombatGroup : public FTableRowBase {
 	}
 };
 
-USTRUCT(BlueprintType)
+/*USTRUCT(BlueprintType)
 struct FS_ComponentDesign : public FTableRowBase {
 	GENERATED_BODY()
 
@@ -1739,8 +1739,58 @@ struct FS_SystemDesign : public FTableRowBase {
 	FS_SystemDesign() {
 		Name = "";
 	}
-};
+};*/
 
+USTRUCT(BlueprintType)
+struct FS_ShipPower : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString  DesignName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString PName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString PAbrv;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int   SType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int   EType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int   Emcon1;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int   Emcon2;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int   Emcon3;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Output;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Fuel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Size;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Hull;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Loc;
+
+	FS_ShipPower() {
+		DesignName = "";
+		PName = "";
+		PAbrv = "";
+
+		SType = 0;
+		EType = 0;
+		Emcon1 = -1;
+		Emcon2 = -1;
+		Emcon3 = -1;
+
+		Output = 1000.0f;
+		Fuel = 0.0f;
+		Size = 0.0f;
+		Hull = 0.5f;
+		Loc = FVector::ZeroVector;
+
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FS_ShipDesign : public FTableRowBase {
@@ -1871,6 +1921,8 @@ struct FS_ShipDesign : public FTableRowBase {
 	FVector	ChaseVec;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FVector	BridgeVec;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_ShipPower> Power;
 
 	FS_ShipDesign() {
 		ShipName = "";

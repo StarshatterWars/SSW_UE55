@@ -28,6 +28,7 @@
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 #include "HAL/FileManagerGeneric.h"
+#include "GameStructs.h"
 
 #include "../System/SSWGameInstance.h"
 #include "GameDataLoader.generated.h"
@@ -116,6 +117,11 @@ public:
 	void ParseCombatUnit();
 
 	void LoadShipDesign(const char* fn);
+	
+	// Ship Components
+	void ParsePower(TermStruct* val, const char* fn);
+	void ParseDrive(TermStruct* val, const char* fn);
+
 	void LoadSystemDesign(const char* fn);
 
 	int ClassForName(const char* name);
@@ -222,6 +228,8 @@ protected:
 	TArray<FS_CombatGroupUnit> NewCombatUnitArray;
 	TArray<FS_SystemDesign> NewSystemArray;
 	TArray<FS_ComponentDesign> NewComponentArray;
+
+	TArray<FS_ShipPower> NewShipPowerArray;
 	
 	TArray<FS_Star> StarDataArray;
 	TArray<FS_Planet> PlanetDataArray;
