@@ -17,7 +17,7 @@
 class Component;
 class ComponentDesign;
 class UShip;
-class SystemDesign;
+class USystemDesign;
 
 // +--------------------------------------------------------------------+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -52,7 +52,7 @@ public:
 
 	void              SetName(const char* n) { name = n; }
 	void              SetAbbreviation(const char* a) { abrv = a; }
-	void              SetDesign(SystemDesign* d);
+	void              SetDesign(USystemDesign* d);
 
 	virtual int       Value()        const { return (int)(max_value * availability * 100); }
 	int               MaxValue()     const { return (int)(max_value * 100); }
@@ -169,7 +169,7 @@ protected:
 	int               explosion_type;
 
 	// Subcomponents:
-	SystemDesign* design;
+	USystemDesign*    design;
 	List<Component>   components;
 
 public:	

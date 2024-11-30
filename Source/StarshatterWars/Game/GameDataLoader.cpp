@@ -30,6 +30,7 @@
 #include "Ship.h"
 #include "ShipDesign.h"
 #include "PlayerData.h"
+#include "SystemDesign.h"
 
 
 const char* ShipDesignClassName[32] = {
@@ -171,6 +172,7 @@ void AGameDataLoader::BeginPlay()
 	LoadCombatRoster();
 	LoadStarsystems();
 	InitializeCampaignData();
+	USystemDesign::Initialize(SystemDesignDataTable);
 }
 
 // Called every frame

@@ -17,44 +17,48 @@
 #include "SystemDesign.h"
 
 
-List<SystemDesign> SystemDesign::catalog;
+List<USystemDesign> USystemDesign::catalog;
 
-SystemDesign::SystemDesign()
+USystemDesign::USystemDesign()
 {
-	static ConstructorHelpers::FObjectFinder<UDataTable> SystemDesignDataTableObject(TEXT("DataTable'/Game/Game/DT_SystemDesign.DT_SystemDesign'"));
-
-	if (SystemDesignDataTableObject.Succeeded())
-	{
-		SystemDesignDataTable = SystemDesignDataTableObject.Object;
-	}
 }
 
-SystemDesign::~SystemDesign()
+USystemDesign::~USystemDesign()
 {
 	//components.destroy();
 }
 
 // +--------------------------------------------------------------------+
 
-void SystemDesign::Initialize()
+void USystemDesign::Initialize(UDataTable* SystemDT)
 {
 	UE_LOG(LogTemp, Log, TEXT("Loading System Designs from Data Table"));
+
+	TArray<FS_SystemDesign> Systems;
+	TArray<FName> RowNames = SystemDT->GetRowNames();
+
+	for (int index = 0; index < RowNames.Num(); index++) {
+		FName RowName = RowNames[index];
+		FS_SystemDesign* Item = SystemDT->FindRow<FS_SystemDesign>(RowName, "");
+		FString Name = Item->Name;
+		UE_LOG(LogTemp, Log, TEXT("System Design from DT: %s"), *Name);
+	}
 }
 
 // +--------------------------------------------------------------------+
 
 void
-SystemDesign::Close()
+USystemDesign::Close()
 {
 	catalog.destroy();
 }
 
 // +--------------------------------------------------------------------+
 
-SystemDesign*
-SystemDesign::Find(const char* name)
+USystemDesign*
+USystemDesign::Find(const char* name)
 {
-	SystemDesign  test;
+	USystemDesign  test;
 	test.name = name;
 	return catalog.find(&test);
 }

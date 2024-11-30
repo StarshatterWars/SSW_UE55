@@ -48,7 +48,7 @@ USystemComponent::~USystemComponent()
 // +--------------------------------------------------------------------+
 
 void
-USystemComponent::SetDesign(SystemDesign* d)
+USystemComponent::SetDesign(USystemDesign* d)
 {
 	if (design) {
 		design = 0;
