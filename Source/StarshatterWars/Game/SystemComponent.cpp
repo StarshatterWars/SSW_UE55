@@ -48,7 +48,7 @@ USystemComponent::~USystemComponent()
 // +--------------------------------------------------------------------+
 
 void
-USystemComponent::SetDesign(USystemDesign* d)
+USystemComponent::SetDesign(SystemDesign* d)
 {
 	if (design) {
 		design = 0;
@@ -60,7 +60,8 @@ USystemComponent::SetDesign(USystemDesign* d)
 
 		ListIter<ComponentDesign> cd = design->components;
 		while (++cd) {
-			Component* comp = new Component(cd.value(), this);
+			UComponent* comp = NewObject<UComponent>();
+			comp->SetComponent(cd.value(), this);
 			components.append(comp);
 		}
 	}
@@ -168,9 +169,9 @@ USystemComponent::ExecFrame(double seconds)
 	bool repair = false;
 
 	if (components.size() > 0) {
-		ListIter<Component> comp = components;
+		ListIter<UComponent> comp = components;
 		while (++comp) {
-			if (comp->Status() > Component::NOMINAL) {
+			if (comp->Status() > UComponent::NOMINAL) {
 				repair = true;
 				break;
 			}
@@ -223,9 +224,9 @@ void
 USystemComponent::ExecMaintFrame(double seconds)
 {
 	if (components.size() > 0) {
-		ListIter<Component> comp = components;
+		ListIter<UComponent> comp = components;
 		while (++comp) {
-			if (comp->Status() > Component::NOMINAL) {
+			if (comp->Status() > UComponent::NOMINAL) {
 				comp->ExecMaintFrame(seconds);
 			}
 		}
@@ -272,7 +273,7 @@ USystemComponent::CalcStatus()
 		safety = 1.0f;
 		stability = 1.0f;
 
-		ListIter<Component> comp = components;
+		ListIter<UComponent> comp = components;
 		while (++comp) {
 			if (comp->DamageEfficiency())
 				availability *= comp->Availability() / 100.0f;

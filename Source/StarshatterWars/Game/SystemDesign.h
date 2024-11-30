@@ -18,8 +18,7 @@
 #include "../Foundation/List.h"
 #include "../Foundation/Text.h"
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "Engine/DataTable.h"
+//#include "UObject/NoExportTypes.h"
 #include "GameStructs.h"
 
 
@@ -32,19 +31,20 @@ class ComponentDesign;
 /**
  * 
  */
-class STARSHATTERWARS_API USystemDesign  : public UObject
+class STARSHATTERWARS_API SystemDesign//  : public UObject
 {
 public:
-	USystemDesign();
-	virtual ~USystemDesign();
+	SystemDesign();
+	virtual ~SystemDesign();
 
 	static const char* TYPENAME() { return "SystemDesign"; }
 
-	int operator == (const USystemDesign& rhs) const { return name == rhs.name; }
+	int operator == (const SystemDesign& rhs) const { return name == rhs.name; }
 
-	static void		     Initialize(UDataTable* SystemDT);
+	static void		     Initialize(TArray<FS_SystemDesign*> Systems);
+	void				 Load(TArray<FS_SystemDesign*> Systems);
 	static void          Close();
-	static USystemDesign* Find(const char* name);
+	static SystemDesign* Find(Text name);
 
 	// Unique ID:
 	Text              name;
@@ -52,7 +52,7 @@ public:
 	// Sub-components:
 	List<ComponentDesign> components;
 
-	static List<USystemDesign>  catalog;
+	static List<SystemDesign>  catalog;
 
 	TArray<FS_SystemDesign> SystemDesignArray;
 };

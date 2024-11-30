@@ -14,16 +14,16 @@
 
 // +--------------------------------------------------------------------+
 
-class Component;
-class ComponentDesign;
+class UComponent;
+class UComponentDesign;
 class UShip;
-class USystemDesign;
+class SystemDesign;
 
 // +--------------------------------------------------------------------+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class STARSHATTERWARS_API USystemComponent : public UActorComponent
 {
-	friend Component;
+	friend UComponent;
 
 	GENERATED_BODY()
 
@@ -52,7 +52,7 @@ public:
 
 	void              SetName(const char* n) { name = n; }
 	void              SetAbbreviation(const char* a) { abrv = a; }
-	void              SetDesign(USystemDesign* d);
+	void              SetDesign(SystemDesign* d);
 
 	virtual int       Value()        const { return (int)(max_value * availability * 100); }
 	int               MaxValue()     const { return (int)(max_value * 100); }
@@ -66,7 +66,7 @@ public:
 	double            NetAvail()     const { return net_avail; }
 	void              SetNetAvail(double d) { net_avail = (float)d; }
 
-	List<Component>& GetComponents() { return components; }
+	List<UComponent>& GetComponents() { return components; }
 
 	virtual void      ApplyDamage(double damage);
 	virtual void      ExecFrame(double seconds);
@@ -169,8 +169,8 @@ protected:
 	int               explosion_type;
 
 	// Subcomponents:
-	USystemDesign*    design;
-	List<Component>   components;
+	SystemDesign*      design;
+	List<UComponent>   components;
 
 public:	
 	// Called every frame

@@ -15,50 +15,58 @@
 
 
 #include "SystemDesign.h"
+#include "ComponentDesign.h"
 
+List<SystemDesign> SystemDesign::catalog;
 
-List<USystemDesign> USystemDesign::catalog;
-
-USystemDesign::USystemDesign()
+SystemDesign::SystemDesign()
 {
+	//USystemDesign* design = NewObject<USystemDesign>();
 }
 
-USystemDesign::~USystemDesign()
+SystemDesign::~SystemDesign()
 {
 	//components.destroy();
 }
 
 // +--------------------------------------------------------------------+
 
-void USystemDesign::Initialize(UDataTable* SystemDT)
+void SystemDesign::Initialize(TArray<FS_SystemDesign*> Systems)
 {
-	UE_LOG(LogTemp, Log, TEXT("Loading System Designs from Data Table"));
+	//UE_LOG(LogTemp, Log, TEXT("Loading System Designs from Data Table"));
 
-	TArray<FS_SystemDesign> Systems;
-	TArray<FName> RowNames = SystemDT->GetRowNames();
+	//for (int index = 0; index < Systems.Num(); index++) {
+	//	FS_SystemDesign* NewSystemDesign = Systems[index];
+	//	UE_LOG(LogTemp, Log, TEXT("System Design from Struct: %s"), *NewSystemDesign->Name);
 
-	for (int index = 0; index < RowNames.Num(); index++) {
-		FName RowName = RowNames[index];
-		FS_SystemDesign* Item = SystemDT->FindRow<FS_SystemDesign>(RowName, "");
-		FString Name = Item->Name;
-		UE_LOG(LogTemp, Log, TEXT("System Design from DT: %s"), *Name);
-	}
+		//Systems[index] = Item[index];
+
+		//Systems.Add(Item[index]);
+
+	//	for (int comp_index = 0; comp_index < NewSystemDesign->Component.Num(); comp_index++) {
+	//		UE_LOG(LogTemp, Log, TEXT("Component Design from DT: %s"), *NewSystemDesign->Component[comp_index].Name);
+		
+	//	}		
+	//}
 }
 
+void SystemDesign::Load(TArray<FS_SystemDesign*> Systems) {
+
+}
 // +--------------------------------------------------------------------+
 
 void
-USystemDesign::Close()
+SystemDesign::Close()
 {
 	catalog.destroy();
 }
 
 // +--------------------------------------------------------------------+
 
-USystemDesign*
-USystemDesign::Find(const char* name)
+SystemDesign*
+SystemDesign::Find(Text name)
 {
-	USystemDesign  test;
+	SystemDesign  test;
 	test.name = name;
 	return catalog.find(&test);
 }

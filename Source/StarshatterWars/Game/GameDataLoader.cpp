@@ -31,6 +31,8 @@
 #include "ShipDesign.h"
 #include "PlayerData.h"
 #include "SystemDesign.h"
+#include "ComponentDesign.h"
+
 
 
 const char* ShipDesignClassName[32] = {
@@ -56,6 +58,8 @@ const char* ShipDesignClassName[32] = {
 	"0x10000000",     "0x20000000",
 	"0x40000000",     "0x80000000"
 };
+
+//List<SystemDesign> SystemDesign::catalog;
 
 // Sets default values
 AGameDataLoader::AGameDataLoader()
@@ -172,7 +176,9 @@ void AGameDataLoader::BeginPlay()
 	LoadCombatRoster();
 	LoadStarsystems();
 	InitializeCampaignData();
-	USystemDesign::Initialize(SystemDesignDataTable);
+	LoadSystemDesignsFromDT();
+
+	//USystemDesign::Initialize(SystemDesignTable);
 }
 
 // Called every frame
@@ -3678,8 +3684,39 @@ void AGameDataLoader::LoadShipDesigns()
 	}
 }
 
+void AGameDataLoader::LoadSystemDesignsFromDT() {
+	
+	TArray<FName> RowNames = SystemDesignDataTable->GetRowNames();
+
+	FS_SystemDesign* NewSystemDesign;
+
+	for (int index = 0; index < RowNames.Num(); index++) {
+		
+		SystemDesign* Design = new SystemDesign();
+
+		NewSystemDesign = SystemDesignDataTable->FindRow<FS_SystemDesign>(FName(RowNames[index]), "");
+		Design->name = TCHAR_TO_ANSI(*NewSystemDesign->Name);
+		UE_LOG(LogTemp, Log, TEXT("System Design: %s"), *FString(Design->name));
+		SystemDesignTable.Add(NewSystemDesign);
+
+		ComponentDesign* comp_design = new ComponentDesign();
+		for (int comp_index = 0; comp_index < NewSystemDesign->Component.Num(); comp_index++) {
+			comp_design->name = TCHAR_TO_ANSI(*NewSystemDesign->Component[comp_index].Name);
+			comp_design->abrv = TCHAR_TO_ANSI(*NewSystemDesign->Component[comp_index].Abrv);
+			comp_design->repair_time = NewSystemDesign->Component[comp_index].RepairTime;
+			comp_design->replace_time = NewSystemDesign->Component[comp_index].ReplaceTime;
+			comp_design->spares = NewSystemDesign->Component[comp_index].Spares;
+			comp_design->affects = NewSystemDesign->Component[comp_index].Affects;
+			UE_LOG(LogTemp, Log, TEXT("Component Design: %s"), *FString(comp_design->name));
+			Design->components.append(comp_design);
+		}		
+		SystemDesign::catalog.append(Design);
+	}
+}
+
 void AGameDataLoader::LoadSystemDesigns()
 {
+	SystemDesignTable.Empty();
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadSystemDesigns()"));
 	FString ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Systems/sys.def"));
@@ -6791,6 +6828,7 @@ AGameDataLoader::LoadSystemDesign(const char* fn)
 
 				// call AddRow to insert the record
 				SystemDesignDataTable->AddRow(RowName, NewSystemDesign);
+				//SystemDesignTable.Add(NewSystemDesign);
 			}
 		}
 	} while (term);

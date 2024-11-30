@@ -47,6 +47,8 @@ class MissionTemplate;
 class TemplateList;
 class MissionInfo;
 class AStarSystem;
+class SystemDesign;
+class ComponentDesign;
 
 UCLASS()
 class STARSHATTERWARS_API AGameDataLoader : public AActor
@@ -102,6 +104,7 @@ public:
 
 	void LoadCombatRoster();
 	void LoadShipDesigns();
+	void LoadSystemDesignsFromDT();
 	void LoadSystemDesigns();
 
 	void LoadOrderOfBattle(const char* filename, int team);
@@ -228,6 +231,7 @@ protected:
 	TArray<FS_CombatGroupUnit> NewCombatUnitArray;
 	TArray<FS_SystemDesign> NewSystemArray;
 	TArray<FS_ComponentDesign> NewComponentArray;
+	TArray<FS_SystemDesign*> SystemDesignTable;
 
 	TArray<FS_ShipPower> NewShipPowerArray;
 	
@@ -251,6 +255,8 @@ protected:
 	class UDataTable* CombatGroupDataTable;
 	class UDataTable* ShipDesignDataTable;
 	class UDataTable* SystemDesignDataTable;
+
+	//static List<SystemDesign>  catalog;
 
 	int   ActionId;
 	Text  ActionType;

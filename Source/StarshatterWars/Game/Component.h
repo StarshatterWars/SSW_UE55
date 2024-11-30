@@ -17,36 +17,21 @@
 #include "../Foundation/Types.h"
 #include "../Foundation/Geometry.h"
 #include "../Foundation/Text.h"
+#include "UObject/NoExportTypes.h"
+
 /**
  * 
  */
 
 class USystemComponent;
+class ComponentDesign;
 
-class STARSHATTERWARS_API ComponentDesign
+class STARSHATTERWARS_API UComponent : public UObject
 {
 public:
-	static const char* TYPENAME() { return "ComponentDesign"; }
 
-	ComponentDesign();
-	virtual ~ComponentDesign();
-	int operator == (const ComponentDesign& rhs) const { return (name == rhs.name); }
-
-	// identification:
-	Text              name;
-	Text              abrv;
-
-	float             repair_time;
-	float             replace_time;
-	int               spares;
-	DWORD             affects;
-};
- 
-class STARSHATTERWARS_API Component
-{
-public:
-	Component();
-	virtual ~Component();
+	UComponent();
+	virtual ~UComponent();
 
 	static const char* TYPENAME() { return "Component"; }
 
@@ -57,17 +42,20 @@ public:
 		DAMAGE_STABILITY = 0x04
 	};
 
-	Component(ComponentDesign* d, USystemComponent* s);
-	Component(const Component& c);
+	void SetComponent(ComponentDesign* d, USystemComponent* s);
+	void SetComponent(const UComponent& c);
 
-	const char* Name()         const { return design->name; }
-	const char* Abbreviation() const { return design->abrv; }
-	float             RepairTime()   const { return design->repair_time; }
-	float             ReplaceTime()  const { return design->replace_time; }
+	UComponent(ComponentDesign* d, USystemComponent* s);
+	UComponent(const UComponent& c);
 
-	bool              DamageEfficiency() const { return (design->affects & DAMAGE_EFFICIENCY) ? true : false; }
-	bool              DamageSafety()     const { return (design->affects & DAMAGE_SAFETY) ? true : false; }
-	bool              DamageStability()  const { return (design->affects & DAMAGE_STABILITY) ? true : false; }
+	const char*	 	  Name() const;
+	const char*		  Abbreviation() const;
+	float             RepairTime() const;
+	float             ReplaceTime() const;
+
+	bool              DamageEfficiency() const;
+	bool              DamageSafety() const;
+	bool              DamageStability() const;
 
 	STATUS            Status()       const { return status; }
 	float             Availability() const;
@@ -85,8 +73,8 @@ public:
 	virtual void      Replace();
 
 protected:
-	ComponentDesign* design;
 
+	ComponentDesign* design;
 	// Component health status:
 	STATUS            status;
 	float             availability;

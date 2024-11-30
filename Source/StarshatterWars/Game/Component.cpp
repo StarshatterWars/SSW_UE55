@@ -15,28 +15,13 @@
 
 #include "Component.h"
 #include "SystemComponent.h"
+#include "ComponentDesign.h"
 #include "../System/Game.h"
 
-// +----------------------------------------------------------------------+
-
-ComponentDesign::ComponentDesign()
-{ 
-	repair_time = 0.0f;
-	replace_time = 0.0f;
-	spares = 0;
-	affects = 0;
-}
 
 // +----------------------------------------------------------------------+
 
-ComponentDesign::~ComponentDesign()
-{ 
-
-}
-
-// +----------------------------------------------------------------------+
-
-Component::Component(ComponentDesign* d, USystemComponent* s)
+void UComponent::SetComponent(ComponentDesign* d, USystemComponent* s)
 {
 	design = d;
 	system = s;
@@ -52,7 +37,7 @@ Component::Component(ComponentDesign* d, USystemComponent* s)
 
 // +----------------------------------------------------------------------+
 
-Component::Component(const Component& c)
+void UComponent::SetComponent(const UComponent& c)
 {
 	design = c.design;
 	system = c.system;
@@ -65,13 +50,13 @@ Component::Component(const Component& c)
 
 // +--------------------------------------------------------------------+
 
-Component::~Component()
+UComponent::~UComponent()
 { }
 
 // +--------------------------------------------------------------------+
 
 void
-Component::ExecMaintFrame(double seconds)
+UComponent::ExecMaintFrame(double seconds)
 {
 	if (status > NOMINAL) {
 		time_remaining -= (float)seconds;
@@ -109,7 +94,7 @@ Component::ExecMaintFrame(double seconds)
 // +--------------------------------------------------------------------+
 
 void
-Component::ApplyDamage(double damage)
+UComponent::ApplyDamage(double damage)
 {
 	availability -= (float)damage;
 	if (availability < 1) availability = 0.0f;
@@ -130,7 +115,7 @@ Component::ApplyDamage(double damage)
 // +--------------------------------------------------------------------+
 
 void
-Component::Repair()
+UComponent::Repair()
 {
 	if (status < NOMINAL) {
 		status = REPAIR;
@@ -144,7 +129,7 @@ Component::Repair()
 // +--------------------------------------------------------------------+
 
 void
-Component::Replace()
+UComponent::Replace()
 {
 	if (status <= NOMINAL) {
 		status = REPLACE;
@@ -159,7 +144,7 @@ Component::Replace()
 // +--------------------------------------------------------------------+
 
 float
-Component::Availability() const
+UComponent::Availability() const
 {
 	if (status > NOMINAL && availability > 50)
 		return 50.0f;
@@ -168,25 +153,60 @@ Component::Availability() const
 }
 
 float
-Component::TimeRemaining() const
+UComponent::TimeRemaining() const
 {
 	return (float)time_remaining;
 }
 
 int
-Component::SpareCount() const
+UComponent::SpareCount() const
 {
 	return spares;
 }
 
 bool
-Component::IsJerried() const
+UComponent::IsJerried() const
 {
 	return jerried ? true : false;
 }
 
 int
-Component::NumJerried() const
+UComponent::NumJerried() const
 {
 	return jerried;
+}
+
+const char* UComponent::Name() const
+{
+	return design->name;
+}
+
+const char* UComponent::Abbreviation() const 
+{
+	return design->abrv;
+}
+
+float UComponent::RepairTime() const 
+{
+	return design->repair_time;
+}
+
+float UComponent::ReplaceTime() const 
+{
+	return design->replace_time;
+}
+
+bool UComponent::DamageEfficiency() const 
+{
+	return (design->affects & DAMAGE_EFFICIENCY) ? true : false; 
+}
+
+bool UComponent::DamageSafety() const 
+{
+	return (design->affects & DAMAGE_SAFETY) ? true : false; 
+}
+
+bool UComponent::DamageStability() const 
+{
+	return (design->affects & DAMAGE_STABILITY) ? true : false;
 }
