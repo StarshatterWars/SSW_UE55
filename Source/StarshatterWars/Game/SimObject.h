@@ -95,7 +95,7 @@ public:
 	int operator == (const SimObserver& o) const { return this == &o; }
 
 	virtual bool         Update(USimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual const char*  GetObserverName() const;
 
 	virtual void         Observe(USimObject* obj);
 	virtual void         Ignore(USimObject* obj);

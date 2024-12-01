@@ -15,24 +15,63 @@ RadioMessage::~RadioMessage()
 }
 
 RadioMessage::RadioMessage(UShip* dst, const UShip* s, int a)
-	: dst_ship(dst), dst_elem(0), sender(s), action(a), channel(0)
 {
+	dst_ship = dst;
+	dst_elem = 0;
+	sender = s;
+	action = a;
+	channel = 0;
+
+	if (s)
+		channel = s->GetIFF();
+}
+
+void RadioMessage::SetRadioMessage(UShip* dst, const UShip* s, int a)
+{
+	dst_ship = dst;
+	dst_elem = 0;
+	sender = s;
+	action = a;
+	channel = 0;
+
 	if (s)
 		channel = s->GetIFF();
 }
 
 RadioMessage::RadioMessage(Element* dst, const UShip* s, int a)
-	: dst_ship(0), dst_elem(dst), sender(s), action(a), channel(0)
 {
+	dst_ship = 0;
+	dst_elem = dst;
+	sender = s;
+	action = a;
+	channel = 0;
+
+	if (s)
+		channel = s->GetIFF();
+}
+
+void RadioMessage::SetRadioMessage(Element* dst, const UShip* s, int a)
+{
+	dst_ship = 0;
+	dst_elem = dst;
+	sender = s;
+	action = a;
+	channel = 0;
+
 	if (s)
 		channel = s->GetIFF();
 }
 
 RadioMessage::RadioMessage(const RadioMessage& rm)
-	: dst_ship(rm.dst_ship), dst_elem(rm.dst_elem),
-	sender(rm.sender), action(rm.action), channel(rm.channel),
-	info(rm.info), location(rm.location)
 {
+	dst_ship = rm.dst_ship;
+	dst_elem = rm.dst_elem;
+	sender = rm.sender;
+	action = rm.action;
+	channel = rm.channel;
+	info = rm.info;
+	location = rm.location;
+
 	if (rm.target_list.size() > 0) {
 		for (int i = 0; i < rm.target_list.size(); i++) {
 			USimObject* obj = rm.target_list.at(i);
@@ -41,6 +80,23 @@ RadioMessage::RadioMessage(const RadioMessage& rm)
 	}
 }
 
+void RadioMessage::SetRadioMessage(const RadioMessage& rm)
+{
+	dst_ship = rm.dst_ship;
+	dst_elem = rm.dst_elem;
+	sender = rm.sender;
+	action = rm.action;
+	channel = rm.channel;
+	info = rm.info;
+	location = rm.location;
+
+	if (rm.target_list.size() > 0) {
+		for (int i = 0; i < rm.target_list.size(); i++) {
+			USimObject* obj = rm.target_list.at(i);
+			target_list.append(obj);
+		}
+	}
+}
 // +----------------------------------------------------------------------+
 
 const char*

@@ -124,14 +124,7 @@ MissionEvent::Activate()
 	}
 }
 
-bool MissionEvent::CheckTrigger()
-{
-	return false;
-}
-
-void MissionEvent::Execute(bool silent)
-{
-}
+// +--------------------------------------------------------------------+
 
 void
 MissionEvent::Skip()
@@ -156,7 +149,7 @@ MissionEvent::CheckTrigger()
 		if (time <= sim->MissionClock())
 			Activate();
 	}
-					 break;
+	break;
 
 	case TRIGGER_DAMAGE: {
 		UShip* ship = sim->FindShip(trigger_ship);
@@ -168,7 +161,7 @@ MissionEvent::CheckTrigger()
 				Activate();
 		}
 	}
-					   break;
+	break;
 
 	case TRIGGER_DETECT: {
 		UShip* ship = sim->FindShip(trigger_ship);
@@ -182,7 +175,7 @@ MissionEvent::CheckTrigger()
 			Skip();
 		}
 	}
-					   break;
+	break;
 
 	case TRIGGER_RANGE: {
 		UShip* ship = sim->FindShip(trigger_ship);
@@ -205,7 +198,7 @@ MissionEvent::CheckTrigger()
 			Skip();
 		}
 	}
-					  break;
+	break;
 
 	case TRIGGER_SHIPS_LEFT: {
 		int alive = 0;
@@ -237,8 +230,8 @@ MissionEvent::CheckTrigger()
 
 		if (alive <= count)
 			Activate();
-	}
-						   break;
+		}
+	break;
 
 	case TRIGGER_EVENT_ALL: {
 		bool  all = true;
@@ -266,7 +259,7 @@ MissionEvent::CheckTrigger()
 		if (all)
 			Activate();
 	}
-						  break;
+	break;
 
 	case TRIGGER_EVENT_ANY: {
 		bool  any = false;
@@ -287,8 +280,8 @@ MissionEvent::CheckTrigger()
 
 		if (any)
 			Activate();
-	}
-						  break;
+		}
+		break;
 	}
 
 	return status == ACTIVE;

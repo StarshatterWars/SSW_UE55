@@ -58,7 +58,7 @@
 //#include "System.h"
 //#include "Component.h"
 //#include "KeyMap.h"
-//#include "RadioView.h"
+#include "../Screen/W_RadioView.h"
 //#include "AudioConfig.h"
 //#include "CameraDirector.h"
 //#include "HUDView.h"
@@ -989,6 +989,11 @@ UShip::GetShipClass() const
 }
 
 bool UShip::IsStarship() const
+{
+	return false;
+}
+
+bool UShip::IsDropship() const
 {
 	return false;
 }

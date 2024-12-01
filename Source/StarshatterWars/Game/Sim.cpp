@@ -152,6 +152,10 @@ USim::USim(MotionController* c)
 	//cam_dir = CameraDirector::GetInstance();
 }
 
+void USim::ProcessEventTrigger(int type, int event_id, const char* ship, int param)
+{
+}
+
 double
 USim::MissionClock() const
 {
@@ -159,6 +163,11 @@ USim::MissionClock() const
 }
 
 UShip* USim::GetPlayerShip()
+{
+	return nullptr;
+}
+
+UShip* USim::FindShip(const char* name, const char* rgn_name)
 {
 	return nullptr;
 }

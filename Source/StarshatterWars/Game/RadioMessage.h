@@ -111,6 +111,10 @@ public:
 	RadioMessage(Element* dst, const UShip* sender, int action);
 	RadioMessage(const RadioMessage& rm);
 
+	void SetRadioMessage(UShip* dst, const UShip* s, int a);
+	void SetRadioMessage(Element* dst, const UShip* s, int a);
+	void SetRadioMessage(const RadioMessage& rm);
+
 	// accessors:
 	static const char* ActionName(int a);
 

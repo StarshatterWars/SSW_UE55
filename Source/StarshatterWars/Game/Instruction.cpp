@@ -303,10 +303,10 @@ Instruction::Evaluate(UShip* ship)
 	case PATROL:
 	case SWEEP:
 	{
-		USim* sim = USim::GetSim();
+		USim* simx = USim::GetSim();
 		bool alive = false;
 
-		ListIter<Element> iter = sim->GetElements();
+		ListIter<Element> iter = simx->GetElements();
 		while (++iter) {
 			Element* e = iter.value();
 
@@ -315,7 +315,7 @@ Instruction::Evaluate(UShip* ship)
 
 			if (e->GetIFF() && e->GetIFF() != ship->GetIFF()) {
 				for (int i = 0; i < e->NumShips(); i++) {
-					Ship* s = e->GetShip(i + 1);
+					UShip* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() >= 1)
 						alive = true;
@@ -333,10 +333,10 @@ Instruction::Evaluate(UShip* ship)
 	case STRIKE:
 	case ASSAULT:
 	{
-		USim* sim = USim::GetSim();
+		USim* simx = USim::GetSim();
 		bool alive = false;
 
-		ListIter<Element> iter = sim->GetElements();
+		ListIter<Element> iter = simx->GetElements();
 		while (++iter) {
 			Element* e = iter.value();
 
@@ -364,7 +364,7 @@ Instruction::Evaluate(UShip* ship)
 
 	default:
 		break;
-	}*/
+	}
 }
 
 void

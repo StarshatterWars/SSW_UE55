@@ -3,8 +3,8 @@
 
 #include "RadioTraffic.h"
 #include "RadioMessage.h"
-//#include "RadioView.h"
-//#include "RadioVox.h"
+#include "../Screen/W_RadioView.h"
+#include "RadioVox.h"
 #include "Instruction.h"
 #include "Ship.h"
 //#include "Contact.h"

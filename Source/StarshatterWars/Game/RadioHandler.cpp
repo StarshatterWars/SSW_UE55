@@ -61,7 +61,7 @@ RadioHandler::ProcessMessage(RadioMessage* msg, UShip* s)
 		ProcessMessageAction(msg, s);
 
 	if (!ProcessMessageOrders(msg, s))
-		respond = respond && ProcessMessageAction(msg, s);*/
+		respond = respond && ProcessMessageAction(msg, s);
 
 	return respond;
 }
