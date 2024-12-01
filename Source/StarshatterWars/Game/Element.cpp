@@ -13,8 +13,8 @@
 
 #include "Element.h"
 #include "Instruction.h"
-//#include "RadioMessage.h"
-//#include "RadioHandler.h"
+#include "RadioMessage.h"
+#include "RadioHandler.h"
 #include "Sim.h"
 #include "Ship.h"
 //#include "NetUtil.h"
@@ -558,7 +558,7 @@ Element::GetInstruction(int index)
 void
 Element::ResumeAssignment()
 {
-	/*SetAssignment(0);
+	SetAssignment(0);
 
 	if (objectives.isEmpty())
 		return;
@@ -579,7 +579,7 @@ Element::ResumeAssignment()
 		}
 	}
 
-	if (objective) {
+	/*if (objective) {
 		USim* sim = SSWInstance->Sim;
 		
 		//USim::GetSim();
@@ -599,7 +599,7 @@ Element::ResumeAssignment()
 
 // +----------------------------------------------------------------------+
 
-/*void
+void
 Element::HandleRadioMessage(RadioMessage* msg)
 {
 	if (!msg) return;
@@ -612,7 +612,7 @@ Element::HandleRadioMessage(RadioMessage* msg)
 	int full_report = ships.contains(msg->Sender());
 	int reported = false;
 
-	ListIter<Ship> s = ships;
+	ListIter<UShip> s = ships;
 	while (++s) {
 		if (rh.ProcessMessage(msg, s.value())) {
 			if (full_report) {
@@ -626,7 +626,7 @@ Element::HandleRadioMessage(RadioMessage* msg)
 			}
 		}
 	}
-}*/
+}
 
 // +----------------------------------------------------------------------+
 

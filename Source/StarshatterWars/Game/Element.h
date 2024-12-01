@@ -109,7 +109,7 @@ public:
 	int                GetNavIndex(const Instruction* n);
 	List<Instruction>& GetFlightPlan();
 	int                FlightPlanLength();
-	//virtual void      HandleRadioMessage(RadioMessage* msg);
+	virtual void       HandleRadioMessage(RadioMessage* msg);
 
 	// CHAIN OF COMMAND:
 	Element*			GetCommander()             const { return commander; }
@@ -148,19 +148,19 @@ protected:
 	// squadron elements only:
 	int               count;
 
-	List<UShip>        ships;
+	List<UShip>       ships;
 	List<Text>        ship_names;
 	List<Text>        instructions;
 	List<Instruction> objectives;
 	List<Instruction> flight_plan;
 
-	Element* commander;
-	Element* assignment;
-	UShip* carrier;
+	Element*		  commander;
+	Element*		  assignment;
+	UShip*			  carrier;
 	Text              squadron;
 
-	CombatGroup* combat_group;
-	CombatUnit* combat_unit;
+	CombatGroup*	  combat_group;
+	CombatUnit*		  combat_unit;
 	DWORD             launch_time;
 	double            hold_time;
 

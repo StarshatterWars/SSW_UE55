@@ -14,8 +14,8 @@
 
 #include "Instruction.h"
 #include "Element.h"
-//#include "RadioMessage.h"
-//#include "Ship.h"
+#include "RadioMessage.h"
+#include "Ship.h"
 #include "Sim.h"
 
 #include "../System/Game.h"
@@ -152,14 +152,14 @@ Instruction::SetLocation(const Point& l)
 
 // +----------------------------------------------------------------------+
 
-/*USimObject*
+USimObject*
 Instruction::GetTarget()
 {
 	if (!target && tgt_name.length() > 0) {
-		Sim* sim = Sim::GetSim();
+		USim* sim = USim::GetSim();
 
 		if (sim) {
-			Ship* s = sim->FindShip(tgt_name, rgn_name);
+			UShip* s = sim->FindShip(tgt_name, rgn_name);
 
 			if (s) {
 				target = s;
@@ -169,7 +169,7 @@ Instruction::GetTarget()
 	}
 
 	return target;
-}*/
+}
 
 void
 Instruction::SetTarget(const char* n)
@@ -232,22 +232,22 @@ Instruction::GetObserverName() const
 void
 Instruction::Evaluate(UShip* ship)
 {
-	/*Sim* sim = Sim::GetSim();
+	USim* sim = USim::GetSim();
 
 	switch (action) {
 	case VECTOR:
 		break;
 
 	case LAUNCH:
-		if (ship->GetFlightPhase() == Ship::ACTIVE)
+		if (ship->GetFlightPhase() == UShip::ACTIVE)
 			SetStatus(COMPLETE);
 		break;
 
 	case DOCK:
 	case RTB:
 		if (sim->GetPlayerShip() == ship &&
-			(ship->GetFlightPhase() == Ship::DOCKING ||
-				ship->GetFlightPhase() == Ship::DOCKED))
+			(ship->GetFlightPhase() == UShip::DOCKING ||
+				ship->GetFlightPhase() == UShip::DOCKED))
 			SetStatus(COMPLETE);
 		else if (ship->Integrity() < 1)
 			SetStatus(FAILED);
@@ -272,7 +272,7 @@ Instruction::Evaluate(UShip* ship)
 				found = true;
 
 				for (int i = 0; i < e->NumShips(); i++) {
-					Ship* s = e->GetShip(i + 1);
+					UShip* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() < 1)
 						SetStatus(FAILED);
@@ -293,8 +293,8 @@ Instruction::Evaluate(UShip* ship)
 
 		if (status == PENDING && safe &&
 			sim->GetPlayerShip() == ship &&
-			(ship->GetFlightPhase() == Ship::DOCKING ||
-				ship->GetFlightPhase() == Ship::DOCKED)) {
+			(ship->GetFlightPhase() == UShip::DOCKING ||
+				ship->GetFlightPhase() == UShip::DOCKED)) {
 			SetStatus(COMPLETE);
 		}
 	}
@@ -303,7 +303,7 @@ Instruction::Evaluate(UShip* ship)
 	case PATROL:
 	case SWEEP:
 	{
-		Sim* sim = Sim::GetSim();
+		USim* sim = USim::GetSim();
 		bool alive = false;
 
 		ListIter<Element> iter = sim->GetElements();
@@ -333,7 +333,7 @@ Instruction::Evaluate(UShip* ship)
 	case STRIKE:
 	case ASSAULT:
 	{
-		Sim* sim = Sim::GetSim();
+		USim* sim = USim::GetSim();
 		bool alive = false;
 
 		ListIter<Element> iter = sim->GetElements();
@@ -345,7 +345,7 @@ Instruction::Evaluate(UShip* ship)
 
 			if (e->Name() == tgt_name) {
 				for (int i = 0; i < e->NumShips(); i++) {
-					Ship* s = e->GetShip(i + 1);
+					UShip* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() >= 1)
 						alive = true;

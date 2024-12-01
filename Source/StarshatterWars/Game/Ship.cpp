@@ -40,9 +40,9 @@
 #include "CombatUnit.h"
 #include "Element.h"
 #include "Instruction.h"
-//#include "RadioMessage.h"
-//#include "RadioHandler.h"
-//#include "RadioTraffic.h"
+#include "RadioMessage.h"
+#include "RadioHandler.h"
+#include "RadioTraffic.h"
 //#include "NavLight.h"
 //#include "NavSystem.h"
 //#include "NavAI.h"
@@ -964,6 +964,11 @@ bool UShip::IsRogue() const
 	return false;
 }
 
+int UShip::GetElementIndex() const
+{
+	return 0;
+}
+
 void UShip::SetElement(Element* e)
 {
 }
@@ -973,14 +978,37 @@ Instruction* UShip::GetRadioOrders() const
 	return nullptr;
 }
 
+void UShip::HandleRadioMessage(RadioMessage* msg)
+{
+}
+
 UShip::CLASSIFICATION
 UShip::GetShipClass() const
 {
 	return (CLASSIFICATION)design->type;
 }
 
+bool UShip::IsStarship() const
+{
+	return false;
+}
+
 int
 UShip::ClassForName(const char* name)
 {
 	return ShipDesign::ClassForName(name);
+}
+
+Instruction* UShip::GetNextNavPoint()
+{
+	return nullptr;
+}
+
+void UShip::SetNavptStatus(Instruction* n, int status)
+{
+}
+
+UShip* UShip::GetController() const
+{
+	return nullptr;
 }

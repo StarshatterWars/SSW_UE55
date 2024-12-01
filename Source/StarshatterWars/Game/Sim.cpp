@@ -13,7 +13,7 @@
 #include "ShipDesign.h"
 #include "Element.h"
 #include "Instruction.h"
-//#include "RadioTraffic.h"
+#include "RadioTraffic.h"
 //#include "Shot.h"
 //#include "Drone.h"
 //#include "Explosion.h"
@@ -156,4 +156,9 @@ double
 USim::MissionClock() const
 {
 	return (Game::GameTime() - start_time) / 1000.0;
+}
+
+UShip* USim::GetPlayerShip()
+{
+	return nullptr;
 }

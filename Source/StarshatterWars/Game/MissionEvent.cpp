@@ -28,8 +28,8 @@
 #include "Sim.h"
 //#include "AudioConfig.h"
 //#include "CameraDirector.h"
-//#include "RadioMessage.h"
-//#include "RadioTraffic.h"
+#include "RadioMessage.h"
+#include "RadioTraffic.h"
 //#include "Weapon.h"
 //#include "WeaponGroup.h"
 #include "PlayerData.h"
@@ -103,7 +103,7 @@ MissionEvent::ExecFrame(double seconds)
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 MissionEvent::Activate()
 {
 	if (status == PENDING) {
@@ -119,10 +119,10 @@ MissionEvent::Activate()
 		}
 
 		if (status == SKIPPED) {
-			Sim::GetSim()->ProcessEventTrigger(TRIGGER_SKIPPED, id);
+			USim::GetSim()->ProcessEventTrigger(TRIGGER_SKIPPED, id);
 		}
 	}
-}*/
+}
 
 bool MissionEvent::CheckTrigger()
 {
@@ -143,10 +143,10 @@ MissionEvent::Skip()
 
 // +--------------------------------------------------------------------+
 
-/*bool
+bool
 MissionEvent::CheckTrigger()
 {
-	Sim* sim = Sim::GetSim();
+	USim* sim = USim::GetSim();
 
 	if (time > 0 && time > sim->MissionClock())
 		return false;
@@ -159,7 +159,7 @@ MissionEvent::CheckTrigger()
 					 break;
 
 	case TRIGGER_DAMAGE: {
-		Ship* ship = sim->FindShip(trigger_ship);
+		UShip* ship = sim->FindShip(trigger_ship);
 		if (ship) {
 			double damage = 100.0 * (ship->Design()->integrity - ship->Integrity()) /
 				(ship->Design()->integrity);
@@ -171,8 +171,8 @@ MissionEvent::CheckTrigger()
 					   break;
 
 	case TRIGGER_DETECT: {
-		Ship* ship = sim->FindShip(trigger_ship);
-		Ship* tgt = sim->FindShip(trigger_target);
+		UShip* ship = sim->FindShip(trigger_ship);
+		UShip* tgt = sim->FindShip(trigger_target);
 
 		if (ship && tgt) {
 			if (ship->FindContact(tgt))
@@ -185,8 +185,8 @@ MissionEvent::CheckTrigger()
 					   break;
 
 	case TRIGGER_RANGE: {
-		Ship* ship = sim->FindShip(trigger_ship);
-		Ship* tgt = sim->FindShip(trigger_target);
+		UShip* ship = sim->FindShip(trigger_ship);
+		UShip* tgt = sim->FindShip(trigger_target);
 
 		if (ship && tgt) {
 			double range = (ship->Location() - tgt->Location()).length();
@@ -220,14 +220,14 @@ MissionEvent::CheckTrigger()
 		while (++iter) {
 			SimRegion* rgn = iter.value();
 
-			ListIter<Ship> s_iter = rgn->Ships();
+			ListIter<UShip> s_iter = rgn->Ships();
 			while (++s_iter) {
-				Ship* ship = s_iter.value();
+				UShip* ship = s_iter.value();
 
-				if (ship->Type() >= Ship::STATION)
+				if (ship->Type() >= UShip::STATION)
 					continue;
 
-				if (ship->Life() == 0 && ship->RespawnCount() < 1)
+				if (ship->Life() == 0 && ship->GetRespawnCount() < 1)
 					continue;
 
 				if (iff < 0 || ship->GetIFF() == iff)
@@ -292,16 +292,16 @@ MissionEvent::CheckTrigger()
 	}
 
 	return status == ACTIVE;
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 MissionEvent::Execute(bool silent)
 {
-	Starshatter* stars = Starshatter::GetInstance();
-	HUDView* hud = HUDView::GetInstance();
-	Sim* sim = Sim::GetSim();
+	/*Starshatter* stars = Starshatter::GetInstance();
+	//HUDView* hud = HUDView::GetInstance();
+	USim* sim = USim::GetSim();
 	UShip* player = sim->GetPlayerShip();
 	UShip* ship = 0;
 	UShip* src = 0;
@@ -339,7 +339,7 @@ MissionEvent::Execute(bool silent)
 	case MESSAGE:
 		if (event_message.length() > 0) {
 			if (ship) {
-				RadioMessage* msg = new(__FILE__, __LINE__) RadioMessage(ship, src, event_param[0]);
+				RadioMessage* msg = new RadioMessage(ship, src, event_param[0]);
 				msg->SetInfo(event_message);
 				msg->SetChannel(ship->GetIFF());
 				if (tgt)
@@ -348,7 +348,7 @@ MissionEvent::Execute(bool silent)
 			}
 
 			else if (elem) {
-				RadioMessage* msg = new(__FILE__, __LINE__) RadioMessage(elem, src, event_param[0]);
+				RadioMessage* msg = new RadioMessage(elem, src, event_param[0]);
 				msg->SetInfo(event_message);
 				msg->SetChannel(elem->GetIFF());
 				if (tgt)
@@ -369,15 +369,15 @@ MissionEvent::Execute(bool silent)
 				elem->ClearObjectives();
 			}
 
-			Instruction* obj = new(__FILE__, __LINE__) Instruction(event_param[0], 0);
+			Instruction* obj = new Instruction(event_param[0], 0);
 			obj->SetTarget(event_target);
 			elem->AddObjective(obj);
 
 			if (elem->Contains(player)) {
-				HUDView* hud = HUDView::GetInstance();
+				//HUDView* hud = HUDView::GetInstance();
 
-				if (hud)
-					hud->ShowHUDInst();
+				//if (hud)
+				//	hud->ShowHUDInst();
 			}
 		}
 		break;
@@ -390,10 +390,10 @@ MissionEvent::Execute(bool silent)
 			elem->AddInstruction(event_message);
 
 			if (elem->Contains(player) && event_message.length() > 0) {
-				HUDView* hud = HUDView::GetInstance();
+				//HUDView* hud = HUDView::GetInstance();
 
-				if (hud)
-					hud->ShowHUDInst();
+				//if (hud)
+				//	hud->ShowHUDInst();
 			}
 		}
 		break;
@@ -413,7 +413,7 @@ MissionEvent::Execute(bool silent)
 			ship->InflictDamage(event_param[0]);
 
 			if (ship->Integrity() < 1) {
-				NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
+				//NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
 				ship->DeathSpiral();
 				Print("    %s Killed By Scripted Event %d (%s)\n", (const char*)ship->Name(), id, FormatGameTime());
 			}
@@ -429,15 +429,15 @@ MissionEvent::Execute(bool silent)
 
 			if (rgn && ship->GetRegion() != rgn) {
 				if (rgn->IsOrbital()) {
-					QuantumDrive* quantum_drive = ship->GetQuantumDrive();
-					if (quantum_drive) {
-						quantum_drive->SetDestination(rgn, Point(0, 0, 0));
-						quantum_drive->Engage(true); // request immediate jump
-					}
+					//QuantumDrive* quantum_drive = ship->GetQuantumDrive();
+					//if (quantum_drive) {
+					//	quantum_drive->SetDestination(rgn, Point(0, 0, 0));
+					//	quantum_drive->Engage(true); // request immediate jump
+					//}
 
-					else if (ship->IsAirborne()) {
-						ship->MakeOrbit();
-					}
+					//else if (ship->IsAirborne()) {
+					//	ship->MakeOrbit();
+					//}
 				}
 
 				else {
@@ -480,13 +480,13 @@ MissionEvent::Execute(bool silent)
 	case BEGIN_SCENE:
 		Print("    ------------------------------------\n");
 		Print("    Begin Cutscene '%s'\n", event_message.data());
-		stars->BeginCutscene();
+		//stars->BeginCutscene();
 		break;
 
 	case END_SCENE:
 		Print("    End Cutscene '%s'\n", event_message.data());
 		Print("    ------------------------------------\n");
-		stars->EndCutscene();
+		//stars->EndCutscene();
 		break;
 
 	case CAMERA:
@@ -731,8 +731,8 @@ MissionEvent::Execute(bool silent)
 
 			server->SetGameMode(StarServer::MENU_MODE);
 		}
-	}
-}*/
+	}*/
+}
 
 // +--------------------------------------------------------------------+
 
