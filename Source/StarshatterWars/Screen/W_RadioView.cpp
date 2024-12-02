@@ -13,7 +13,7 @@
 
 //#include "CameraView.h"
 //#include "Color.h"
-//#include "Window.h"
+#include "../Game/Window.h"
 //#include "Video.h"
 //#include "Screen.h"
 //#include "DataLoader.h"
@@ -155,7 +155,7 @@ ThreadSync UW_RadioView::sync;
 
 /*UW_RadioView::UW_RadioView(Window* c)
 {
-	View = c;
+	radio_view = c;
 	sim = 0;
 	ship = 0;
 	font = 0;

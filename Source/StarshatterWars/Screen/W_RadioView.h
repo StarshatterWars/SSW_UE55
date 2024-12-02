@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Foundation/Types.h"
-//#include "View.h"
+#include "../Game/View.h"
 #include "../Foundation/Color.h"
 #include "../Game/SimObject.h"
 #include "../Foundation/Text.h"
