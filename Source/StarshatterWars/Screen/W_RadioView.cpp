@@ -399,10 +399,10 @@ UW_RadioView::SendRadioMessage(UShip* shp, MenuItem* item)
 
 	else if (history.Find(Game::GetText("RadioView.menu.CONTROL"))) { // control menu
 		RadioMessage* msg = 0;
-		UShip* controller = ship->GetController();
+		UShip* cntrl = ship->GetController();
 
-		if (controller) {
-			msg = new RadioMessage(controller, ship, item->GetData());
+		if (cntrl) {
+			msg = new RadioMessage(cntrl, ship, item->GetData());
 			RadioTraffic::Transmit(msg);
 		}
 	}
