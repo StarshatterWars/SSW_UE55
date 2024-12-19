@@ -24,9 +24,9 @@
 
  // +--------------------------------------------------------------------+
 
-void              Print(const char* fmt, ...);
+void Print(const char* fmt, ...);
 
-class ContentBundle;
+class AGameDataLoader;
 class Locale;
 class Universe;
 class Sound;
@@ -123,7 +123,7 @@ public:
 protected:
 	friend  bool      ProfileGameLoop(void);
 	
-	ContentBundle* content;
+	AGameDataLoader* content;
 	Universe* world;
 	VideoFactory* video_factory;
 	Video* video;

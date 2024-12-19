@@ -139,12 +139,17 @@ public:
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
 	
-
+	Text GetContentBundleText(const char* key)   const;
 	void GetSSWInstance();
 
 	void InitializeCampaignData();
 	USSWGameInstance* SSWInstance;
 
+	void LoadContentBundle();
+	bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
+
+	Text              ContentName;
+	Dictionary<Text>  ContentValues;
 	// attributes:
 	int                  campaign_id;
 	int                  status;
@@ -183,9 +188,6 @@ public:
 	double               startTime;
 	double               updateTime;
 	int                  lockout;
-
-
-	
 
 protected:
 	

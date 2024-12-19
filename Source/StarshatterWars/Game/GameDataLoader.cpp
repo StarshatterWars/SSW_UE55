@@ -32,6 +32,7 @@
 #include "PlayerData.h"
 #include "SystemDesign.h"
 #include "ComponentDesign.h"
+#include "../Foundation/GameContent.h"
 
 
 
@@ -170,6 +171,7 @@ void AGameDataLoader::BeginPlay()
 {
 	Super::BeginPlay();
 	GetSSWInstance();
+	LoadContentBundle();
 	LoadGalaxyMap();
 	LoadSystemDesigns();
 	LoadShipDesigns();
@@ -7072,3 +7074,84 @@ AGameDataLoader::GetCombatant(const char* cname)
 
 	return 0;
 }
+
+// +--------------------------------------------------------------------+
+
+Text
+AGameDataLoader::GetContentBundleText(const char* key) const
+{
+	return ContentValues.Find(key, Text(key));
+}
+
+// +--------------------------------------------------------------------+
+
+void
+AGameDataLoader::LoadContentBundle() {
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Content/content.txt"));
+
+	char* fn = TCHAR_TO_ANSI(*ProjectPath);
+	
+	SSWInstance->loader->GetLoader(); 
+	if (SSWInstance->loader->GetLoader()) {
+		BYTE* buffer = 0;
+		BYTE* block = 0;
+		SSWInstance->loader->LoadBuffer(fn, buffer, true, true);
+		if (buffer && *buffer) {
+			//char  key[1024];
+			//char  val[2048];
+
+			Text key;
+			Text val;
+
+			char* p = (char*)buffer;
+			int   s = 0;
+
+			key = "";
+			val = "";
+
+			while (*p) {
+				if (*p == '=') {
+					s = 1;
+				}
+				else if (*p == '\n' || *p == '\r') {
+					if (key != ""  && val != "") {
+						ContentValues.Insert(Text(key).trim(), Text(val).trim());
+						UE_LOG(LogTemp, Log, TEXT("Inserted- %s: %s"), *FString(Text(key).trim()), *FString(Text(val).trim()));
+					}
+					s = 0;
+					
+					key = "";
+					val = "";
+				}
+				else if (s == 0) {
+					if (!key[0]) {
+						if (*p == '#') {
+							s = -1; // comment
+						}
+						else if (!isspace(*p)) {
+							key.append(*p);
+						}
+					}
+					else {
+						key.append(*p);
+					}
+				}
+				else if (s == 1) {
+					if (!isspace(*p)) {
+						s = 2;
+						val.append(*p);
+					}
+				}
+				else if (s == 2) {
+					val.append(*p);
+				}
+
+				p++;
+				
+			}
+			SSWInstance->loader->ReleaseBuffer(buffer);
+		}
+	}
+}
+

@@ -8,7 +8,9 @@
 */
 
 
+
 #include "Game.h"
+#include "../Game/GameDataLoader.h"	
 
 Game* game = 0;
 
@@ -155,11 +157,6 @@ bool Game::IsWindowed()
 	return false;
 }
 
-Text Game::GetText(const char* key)
-{
-	return Text();
-}
-
 bool Game::GameLoop()
 {
 	return false;
@@ -207,4 +204,13 @@ void Game::ShowStats()
 
 void Game::Panic(const char* msg)
 {
+}
+
+Text
+Game::GetText(const char* key)
+{
+	if (game && game->content && game->content->IsContentBundleLoaded())
+		return game->content->GetContentBundleText(key);
+
+	return key;
 }
