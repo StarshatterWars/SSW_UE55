@@ -18,6 +18,7 @@
 
 
 
+
 // Sets default values
 AAwardInfoLoader::AAwardInfoLoader()
 {

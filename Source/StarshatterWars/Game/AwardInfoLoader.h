@@ -24,6 +24,8 @@
 #include "../Foundation/Text.h"
 #include "../Foundation/Term.h"
 #include "../Foundation/GameLoader.h"
+#include "../Game/GameStructs.h"
+
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"

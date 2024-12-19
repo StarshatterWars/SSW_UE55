@@ -134,8 +134,6 @@ public:
 	FString GetOrdinal(int id);
 	FString GetNameFromType(FString name);
 
-
-
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
 	
@@ -146,6 +144,8 @@ public:
 	USSWGameInstance* SSWInstance;
 
 	void LoadContentBundle();
+	void LoadForms();
+	void LoadForm(const char* fname);
 	bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
 
 	Text              ContentName;
@@ -257,6 +257,7 @@ protected:
 	class UDataTable* CombatGroupDataTable;
 	class UDataTable* ShipDesignDataTable;
 	class UDataTable* SystemDesignDataTable;
+	class UDataTable* FormDefDataTable;
 
 	//static List<SystemDesign>  catalog;
 

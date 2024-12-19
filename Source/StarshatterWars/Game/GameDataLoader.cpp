@@ -110,6 +110,13 @@ AGameDataLoader::AGameDataLoader()
 		//GalaxyDataTable->EmptyTable();
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> FormDefDataTableObject(TEXT("DataTable'/Game/Game/DT_FormDef.DT_FormDef'"));
+
+	if (FormDefDataTableObject.Succeeded())
+	{
+		FormDefDataTable = FormDefDataTableObject.Object;
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarsDataTableObject(TEXT("DataTable'/Game/Game/DT_Stars.DT_Stars'"));
 
 	if (StarsDataTableObject.Succeeded())
@@ -154,14 +161,19 @@ AGameDataLoader::AGameDataLoader()
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
 	}
 
-	PrimaryActorTick.bCanEverTick = true;
-
 	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
 
 	if (CombatGroupDataTableObject.Succeeded())
 	{
 		CombatGroupDataTable = CombatGroupDataTableObject.Object;
 	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("Failed to get Combat Group Data Table"));
+	}
+
+	PrimaryActorTick.bCanEverTick = true;
+
+	
 }
 
 
@@ -172,6 +184,7 @@ void AGameDataLoader::BeginPlay()
 	Super::BeginPlay();
 	GetSSWInstance();
 	LoadContentBundle();
+	LoadForms();
 	LoadGalaxyMap();
 	LoadSystemDesigns();
 	LoadShipDesigns();
@@ -7098,8 +7111,6 @@ AGameDataLoader::LoadContentBundle() {
 		BYTE* block = 0;
 		SSWInstance->loader->LoadBuffer(fn, buffer, true, true);
 		if (buffer && *buffer) {
-			//char  key[1024];
-			//char  val[2048];
 
 			Text key;
 			Text val;
@@ -7155,3 +7166,238 @@ AGameDataLoader::LoadContentBundle() {
 	}
 }
 
+// +--------------------------------------------------------------------+
+
+void AGameDataLoader::LoadForms()
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadForms()"));
+	FString ProjectPath = FPaths::ProjectDir();
+	ProjectPath.Append(TEXT("GameData/Screens/"));
+	FString PathName = ProjectPath;
+
+	TArray<FString> output;
+	output.Empty();
+
+	FString Path = PathName + "*.frm";
+	FFileManagerGeneric::Get().FindFiles(output, *Path, true, false);
+
+	for (int i = 0; i < output.Num(); i++) {
+
+		FString FileName = ProjectPath;
+		FileName.Append(output[i]);
+
+		char* fn = TCHAR_TO_ANSI(*FileName);
+
+		LoadForm(fn);
+	}
+}
+
+
+void
+AGameDataLoader::LoadForm(const char* fn)
+{
+	SSWInstance->loader->GetLoader();
+	SSWInstance->loader->SetDataPath(fn);
+
+	BYTE* block = 0;
+	SSWInstance->loader->LoadBuffer(fn, block, true);
+
+	Parser parser(new BlockReader((const char*)block));
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "FORM") {
+			UE_LOG(LogTemp, Log, TEXT("Invalid Form File: %s"), *FString(fn));
+			return;
+		}
+	}
+
+	FS_FormDesign NewForm;
+	FString FormName = FString(fn);
+	FormName.RemoveFromStart(FPaths::ProjectDir() + "GameData/Screens/");
+	FormName.RemoveFromEnd(".frm");
+	NewForm.Name = FormName;
+
+	do {
+		delete term;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "form") {
+
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(LogTemp, Log, TEXT("WARNING: form structure missing in '%s'"), *FString(fn));
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+
+						for (int i = 0; i < val->elements()->size(); i++) {
+							Text buf;
+
+							TermDef* pdef = val->elements()->at(i)->isDef();
+							if (pdef) {
+								if (pdef->name()->value() == "text" ||
+									pdef->name()->value() == "caption") {
+
+									GetDefText(buf, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "id") {
+									DWORD id;
+									GetDefNumber(id, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "pid") {
+									DWORD id;
+									GetDefNumber(id, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "rect") {
+									Rect r;
+									GetDefRect(r, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "font") {
+									GetDefText(buf, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "back_color") {
+									Color c;
+									GetDefColor(c, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "base_color") {
+									Color c;
+									GetDefColor(c, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "fore_color") {
+									Color c;
+									GetDefColor(c, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "margins") {
+									//GetDefInsets(form->margins, pdef, fn);
+								}
+
+								else if (pdef->name()->value() == "text_insets") {
+									//GetDefInsets(form->text_insets, pdef, fn);
+								}
+
+								else if (pdef->name()->value() == "cell_insets") {
+									//GetDefInsets(form->cell_insets, pdef, fn);
+								}
+
+								else if (pdef->name()->value() == "cells") {
+									//GetDefRect(form->cells, pdef, fn);
+								}
+
+								else if (pdef->name()->value() == "texture") {
+									GetDefText(buf, pdef, fn);
+
+									//if (*buf && !strchr(buf, '.'))
+									//	strcat_s(buf, ".pcx");
+								}
+
+								else if (pdef->name()->value() == "transparent") {
+									bool b;
+									GetDefBool(b, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "style") {
+									DWORD s;
+									GetDefNumber(s, pdef, fn);
+									
+								}
+
+								else if (pdef->name()->value() == "align" ||
+									pdef->name()->value() == "text_align") {
+									DWORD a = DT_LEFT;
+
+									if (GetDefText(buf, pdef, fn)) {
+										if (!_stricmp(buf, "left"))
+											a = DT_LEFT;
+										else if (!_stricmp(buf, "right"))
+											a = DT_RIGHT;
+										else if (!_stricmp(buf, "center"))
+											a = DT_CENTER;
+									}
+
+									else {
+										GetDefNumber(a, pdef, fn);
+									}
+
+								}
+
+								// layout constraints:
+
+								else if (pdef->name()->value() == "layout") {
+
+									if (!pdef->term() || !pdef->term()->isStruct()) {
+										UE_LOG(LogTemp, Log, TEXT("WARNING: layout structure missing in '%s'"), *FString(fn));
+									}
+									else {
+										TermStruct* lval = pdef->term()->isStruct();
+										//ParseLayoutDef(&form->layout, val);
+									}
+								}
+
+								// controls:
+
+								else if (pdef->name()->value() == "defctrl") {
+
+									if (!pdef->term() || !pdef->term()->isStruct()) {
+										UE_LOG(LogTemp, Log, TEXT("WARNING: defctrl structure missing in '%s'"), *FString(fn));
+									}
+									else {
+										TermStruct* dval = pdef->term()->isStruct();
+										//ParseCtrlDef(&form->defctrl, val);
+									}
+								}
+
+								else if (pdef->name()->value() == "ctrl") {
+
+									if (!pdef->term() || !pdef->term()->isStruct()) {
+										UE_LOG(LogTemp, Log, TEXT("WARNING: ctrl structure missing in '%s'"), *FString(fn));
+									}
+									else {
+										//CtrlDef* ctrl = new CtrlDef;
+										TermStruct* cval = pdef->term()->isStruct();
+
+										//form->AddCtrl(ctrl);
+										//*ctrl = form->defctrl;  // copy default params
+
+										//ParseCtrlDef(ctrl, val);
+									}
+								}
+
+								// end of controls.
+							}
+						}     // end form params
+					}        // end form struct
+				}           // end form
+
+				// call AddRow to insert the record
+				FormDefDataTable->AddRow(FName(FormName), NewForm);
+			}
+		}
+	} while (term);
+
+	SSWInstance->loader->ReleaseBuffer(block);
+	//SSWInstance->loader->SetDataPath(0);
+}
