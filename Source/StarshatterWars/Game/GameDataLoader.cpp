@@ -7246,83 +7246,105 @@ AGameDataLoader::LoadForm(const char* fn)
 									pdef->name()->value() == "caption") {
 
 									GetDefText(buf, pdef, fn);
-									
+									NewForm.Caption = FString(buf);
 								}
 
 								else if (pdef->name()->value() == "id") {
 									DWORD id;
 									GetDefNumber(id, pdef, fn);
-									
+									NewForm.Id = id;
 								}
 
 								else if (pdef->name()->value() == "pid") {
 									DWORD id;
 									GetDefNumber(id, pdef, fn);
-									
+									NewForm.PId = id;
 								}
 
 								else if (pdef->name()->value() == "rect") {
 									Rect r;
 									GetDefRect(r, pdef, fn);
-									
+									NewForm.Rect.X = r.x;
+									NewForm.Rect.Y = r.y; 
+									NewForm.Rect.Z = r.h; 
+									NewForm.Rect.W = r.w;
 								}
 
 								else if (pdef->name()->value() == "font") {
 									GetDefText(buf, pdef, fn);
+									NewForm.Font = FString(buf);
 									
 								}
 
 								else if (pdef->name()->value() == "back_color") {
-									Color c;
-									GetDefColor(c, pdef, fn);
-									
+									Vec3 c;
+									GetDefVec(c, pdef, fn);
+									NewForm.BackColor = FColor(c.x, c.y, c.z, 1);
 								}
 
 								else if (pdef->name()->value() == "base_color") {
-									Color c;
-									GetDefColor(c, pdef, fn);
-									
+									Vec3 c;
+									GetDefVec(c, pdef, fn);
+									NewForm.BaseColor = FColor(c.x, c.y, c.z, 1);
 								}
 
 								else if (pdef->name()->value() == "fore_color") {
-									Color c;
-									GetDefColor(c, pdef, fn);
-									
+									Vec3 c;
+									GetDefVec(c, pdef, fn);
+									NewForm.ForeColor = FColor(c.x, c.y, c.z, 1);
 								}
 
 								else if (pdef->name()->value() == "margins") {
-									//GetDefInsets(form->margins, pdef, fn);
+									Insets m;
+									GetDefInsets(m, pdef, fn);
+									NewForm.Insets.X = m.left;
+									NewForm.Insets.Y = m.right;
+									NewForm.Insets.Z = m.top;
+									NewForm.Insets.W = m.bottom;
 								}
 
 								else if (pdef->name()->value() == "text_insets") {
-									//GetDefInsets(form->text_insets, pdef, fn);
+									Insets t;
+									GetDefInsets(t, pdef, fn);
+									NewForm.TextInsets.X = t.left;
+									NewForm.TextInsets.Y = t.right;
+									NewForm.TextInsets.Z = t.top;
+									NewForm.TextInsets.W = t.bottom;
 								}
 
 								else if (pdef->name()->value() == "cell_insets") {
-									//GetDefInsets(form->cell_insets, pdef, fn);
+									Insets c;
+									GetDefInsets(c, pdef, fn);
+									NewForm.CellInsets.X = c.left;
+									NewForm.CellInsets.Y = c.right;
+									NewForm.CellInsets.Z = c.top;
+									NewForm.CellInsets.W = c.bottom;
 								}
 
 								else if (pdef->name()->value() == "cells") {
-									//GetDefRect(form->cells, pdef, fn);
+									Rect c;
+									GetDefRect(c, pdef, fn);
+									NewForm.Cells.X = c.x;
+									NewForm.Cells.Y = c.y;
+									NewForm.Cells.Z = c.h;
+									NewForm.Cells.W = c.w;
 								}
 
 								else if (pdef->name()->value() == "texture") {
 									GetDefText(buf, pdef, fn);
-
-									//if (*buf && !strchr(buf, '.'))
-									//	strcat_s(buf, ".pcx");
+									NewForm.Texture = FString(buf);
 								}
 
 								else if (pdef->name()->value() == "transparent") {
 									bool b;
 									GetDefBool(b, pdef, fn);
-									
+									NewForm.Transparent = b;	
 								}
 
 								else if (pdef->name()->value() == "style") {
 									DWORD s;
 									GetDefNumber(s, pdef, fn);
-									
+									NewForm.Style = s;
 								}
 
 								else if (pdef->name()->value() == "align" ||
@@ -7336,10 +7358,12 @@ AGameDataLoader::LoadForm(const char* fn)
 											a = DT_RIGHT;
 										else if (!_stricmp(buf, "center"))
 											a = DT_CENTER;
+										NewForm.Align = a;
 									}
 
 									else {
 										GetDefNumber(a, pdef, fn);
+										NewForm.Align = a;
 									}
 
 								}

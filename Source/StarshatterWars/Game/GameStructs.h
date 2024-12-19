@@ -431,6 +431,14 @@ struct FS_FormDesign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FVector4 Rect;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 Cells;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 Insets;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 TextInsets;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 CellInsets;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Font;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor BackColor;
@@ -440,6 +448,12 @@ struct FS_FormDesign : public FTableRowBase {
 	FColor ForeColor;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Texture;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Transparent;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Style;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Align;
 
 	FS_FormDesign() {
 		Name = "";
@@ -447,10 +461,17 @@ struct FS_FormDesign : public FTableRowBase {
 		Id = 0;
 		PId = 0;
 		Rect = FVector4::Zero();
+		Cells = FVector4::Zero();
+		Insets = FVector4::Zero();
+		TextInsets = FVector4::Zero();
+		CellInsets = FVector4::Zero();
 		Font = "";
 		BackColor = FColor::Black;
 		BaseColor = FColor::Black;
 		ForeColor = FColor::Black;
 		Texture = "";
+		Transparent = false;
+		Style = 0;
+		Align = 0;
 	}
 };
