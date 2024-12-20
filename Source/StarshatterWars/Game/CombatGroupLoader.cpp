@@ -14,6 +14,7 @@
 
 
 #include "CombatGroupLoader.h"
+#include "GameStructs.h"
 #include "ShipDesign.h"
 
 

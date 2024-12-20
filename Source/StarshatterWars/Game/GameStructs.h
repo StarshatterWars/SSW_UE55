@@ -11,6 +11,96 @@
  */
 
 USTRUCT(BlueprintType)
+struct FS_CombatGroupUnit : public FTableRowBase {
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitRegnum;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitRegion;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitClass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitDesign;	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString UnitSkin;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector UnitLoc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitCount;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitDamage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitDead;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitHeading;
+
+	FS_CombatGroupUnit() {
+		UnitName = "";
+		UnitRegnum = "";
+		UnitRegion = "";
+		UnitClass = "";
+		UnitDesign = "";
+		UnitSkin = "";
+
+		UnitLoc = FVector::ZeroVector;
+		UnitCount = 0;
+		UnitDamage = 0;
+		UnitDead = 0;
+		UnitHeading = 0;
+	}
+};
+
+
+USTRUCT(BlueprintType)
+struct FS_CombatGroup : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Id;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString System;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ParentId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int UnitIndex;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CombatGroupUnit> Unit;
+
+	FS_CombatGroup() {
+		Type = "";
+		Id =  0;
+
+		Name = "";
+		Intel = "";
+		Iff = 0;
+		System = "";
+		Region = "";
+
+		Location = FVector::ZeroVector;
+		ParentType = "";
+		ParentId = 0;
+		UnitIndex = 0;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_AwardInfo : public FTableRowBase {
 	GENERATED_BODY()
 	

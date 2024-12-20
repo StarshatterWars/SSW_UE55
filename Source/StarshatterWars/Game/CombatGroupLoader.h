@@ -28,6 +28,7 @@
 #include "HAL/FileManagerGeneric.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
+#include "GameStructs.h"
 
 #include "../System/SSWGameInstance.h"
 #include "CombatGroupLoader.generated.h"
