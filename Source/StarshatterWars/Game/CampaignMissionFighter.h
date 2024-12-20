@@ -20,7 +20,7 @@
 #include "../Foundation/Geometry.h"
 #include "../Foundation/List.h"
 #include "../Foundation/Text.h"
-
+#include "../Game/GameStructs.h"
 
 // +--------------------------------------------------------------------+
 

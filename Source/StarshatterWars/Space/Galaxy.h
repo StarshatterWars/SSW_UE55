@@ -21,6 +21,7 @@
 #include "Engine/DataTable.h"
 
 #include "../System/SSWGameInstance.h"
+#include "../Game/GameStructs.h"
 #include "Galaxy.generated.h"
 
 /**

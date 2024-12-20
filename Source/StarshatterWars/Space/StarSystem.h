@@ -17,6 +17,7 @@
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
+#include "../Game/GameStructs.h"
 
 #include "StarSystem.generated.h"
 

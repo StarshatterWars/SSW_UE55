@@ -23,6 +23,7 @@
 #include "../Foundation/Geometry.h"
 #include "../Foundation/List.h"
 #include "../Foundation/Text.h"
+#include "GameStructs.h"
 #include "../System/SSWGameInstance.h"
 
 

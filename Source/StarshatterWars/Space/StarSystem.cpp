@@ -21,6 +21,7 @@
 #include "../System/SSWGameInstance.h"
 //#include "Scene.h"
 #include "GameTime.h"
+#include "../Game/GameStructs.h"
 #include "../Foundation/ParseUtil.h"
 
 const double epoch = 0.5e9;
