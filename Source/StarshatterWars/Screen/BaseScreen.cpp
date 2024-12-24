@@ -15,3 +15,17 @@
 
 
 
+void UBaseScreen::NativeConstruct()
+{
+
+}
+
+void UBaseScreen::NativePreConstruct()
+{
+
+}
+
+void UBaseScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+
+}

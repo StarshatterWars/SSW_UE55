@@ -38,5 +38,7 @@ public:
 	void GetAwardInfoData();
 	void InitializeGame();
 
+	void ShowMainMenu();
+
 	static DataLoader* loader;
 };

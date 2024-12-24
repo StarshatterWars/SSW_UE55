@@ -10,6 +10,8 @@
 #include "../Game/GameDataLoader.h"
 #include "../Game/AwardInfoLoader.h"
 #include "../Game/CombatGroupLoader.h"
+
+#include "../Screen/MenuDlg.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -22,6 +24,8 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIgnoreSizeChange = false;
 	bIsDeviceInitialized = false;
 	bIsDeviceRestored = false;
+
+	InitializeMainMenuScreen(ObjectInitializer);
 
 	SetProjectPath();
 	Init();
@@ -259,4 +263,36 @@ USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
 		break;
 	}
 	return empire_name;
+}
+
+void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FClassFinder<UMenuDlg> MainMenuScreenWidget(TEXT("/Game/Screens/WB_MainMenu"));
+	if (!ensure(MainMenuScreenWidget.Class != nullptr))
+	{
+		return;
+	}
+	MainMenuScreenWidgetClass = MainMenuScreenWidget.Class;
+}
+
+void USSWGameInstance::ShowMainMenuScreen()
+{
+	// Create widget
+	UMenuDlg* MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
+	// Add it to viewport
+	MainMenuDlg->AddToViewport(100);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(MainMenuDlg->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
 }

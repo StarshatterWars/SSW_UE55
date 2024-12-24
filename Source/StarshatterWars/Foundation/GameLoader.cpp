@@ -70,4 +70,10 @@ void AGameLoader::InitializeGame()
 	//UCampaign::Initialize();
 }
 
+void AGameLoader::ShowMainMenu()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ShowMainMenuScreen();
+}
+
 

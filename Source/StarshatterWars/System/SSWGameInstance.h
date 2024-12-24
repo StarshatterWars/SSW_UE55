@@ -72,6 +72,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowMainMenuScreen();
+
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
@@ -84,6 +87,8 @@ public:
 	DataLoader* loader;
 
 	FString GetEmpireNameFromType(EEMPIRE_NAME emp);
+
+	void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	virtual void Init() override;
@@ -120,5 +125,7 @@ protected:
 
 	private:
 		bool bUniverseLoaded;
+
+		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
 
 };

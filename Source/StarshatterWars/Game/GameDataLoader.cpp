@@ -7192,6 +7192,337 @@ void AGameDataLoader::LoadForms()
 	}
 }
 
+void AGameDataLoader::ParseCtrlDef(TermStruct* val, const char* fn)
+{
+	Text buf;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "text" ||
+				pdef->name()->value() == "caption") {
+				GetDefText(buf, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "id") {
+				DWORD id;
+				GetDefNumber(id, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "pid") {
+				DWORD id;
+				GetDefNumber(id, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "alt") {
+				GetDefText(buf, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "type") {
+				DWORD type = (int8)EControlType::WINDEF_LABEL;
+
+				GetDefText(buf, pdef, fn);
+				Text type_name(buf);
+
+				if (type_name == "button")
+					type = (int8)EControlType::WINDEF_BUTTON;
+
+				else if (type_name == "combo")
+					type = (int8)EControlType::WINDEF_COMBO;
+
+				else if (type_name == "edit")
+					type = (int8)EControlType::WINDEF_EDIT;
+
+				else if (type_name == "image")
+					type = (int8)EControlType::WINDEF_IMAGE;
+
+				else if (type_name == "slider")
+					type = (int8)EControlType::WINDEF_SLIDER; 
+
+				else if (type_name == "list")
+					type = (int8)EControlType::WINDEF_LIST;
+
+				else if (type_name == "rich" || type_name == "text" || type_name == "rich_text")
+					type = (int8)EControlType::WINDEF_RICH;
+			}
+
+			else if (pdef->name()->value() == "rect") {
+				Rect r;
+				GetDefRect(r, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "font") {
+				GetDefText(buf, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "active_color") {
+				Color c;
+				GetDefColor(c, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "back_color") {
+				Color c;
+				GetDefColor(c, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "base_color") {
+				Color c;
+				GetDefColor(c, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "border_color") {
+				Color c;
+				GetDefColor(c, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "fore_color") {
+				Color c;
+				GetDefColor(c, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "texture") {
+				GetDefText(buf, pdef, fn);
+
+				if (buf.length() > 0 && !buf.contains('.'))
+					buf.append(".pcx");
+			}
+
+			else if (pdef->name()->value() == "margins") {
+				Insets margins;
+				GetDefInsets(margins, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "text_insets") {
+				Insets text_insets;
+				GetDefInsets(text_insets, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "cell_insets") {
+				Insets cell_insets;
+				GetDefInsets(cell_insets, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "cells") {
+				Rect cells;
+				GetDefRect(cells, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "fixed_width") {
+				int fixed_width;
+				GetDefNumber(fixed_width, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "fixed_height") {
+				int fixed_height;
+				GetDefNumber(fixed_height, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "standard_image") {
+				GetDefText(buf, pdef, fn);
+
+				if (buf.length() > 0 && !buf.contains('.'))
+					buf.append(".pcx");
+			}
+
+			else if (pdef->name()->value() == "activated_image") {
+				GetDefText(buf, pdef, fn);
+
+				if (buf.length() > 0 && !buf.contains('.'))
+					buf.append(".pcx");
+			}
+
+			else if (pdef->name()->value() == "transition_image") {
+				GetDefText(buf, pdef, fn);
+
+				if (buf.length() > 0 && !buf.contains('.'))
+					buf.append(".pcx");
+			}
+
+			else if (pdef->name()->value() == "picture") {
+				GetDefText(buf, pdef, fn);
+
+				if (buf.length() > 0 && !buf.contains('.'))
+					buf.append(".pcx");
+
+			}
+
+			else if (pdef->name()->value() == "enabled") {
+				bool e;
+				GetDefBool(e, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "item") {
+				GetDefText(buf, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "tab") {
+				int tab = 0;
+				GetDefNumber(tab, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "column") {
+
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: column structure missing in '%s'"), *FString(fn));
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+				}
+			}
+
+			else if (pdef->name()->value() == "orientation") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "leading") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "line_height") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "multiselect") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "dragdrop") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "scroll_bar") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "smooth_scroll") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "picture_loc") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "picture_type") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "style") {
+				DWORD s;
+				GetDefNumber(s, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "align" ||
+				pdef->name()->value() == "text_align") {
+				DWORD a = DT_LEFT;
+
+				if (GetDefText(buf, pdef, fn)) {
+					if (!_stricmp(buf, "left"))
+						a = DT_LEFT;
+					else if (!_stricmp(buf, "right"))
+						a = DT_RIGHT;
+					else if (!_stricmp(buf, "center"))
+						a = DT_CENTER;
+				}
+
+				else {
+					GetDefNumber(a, pdef, fn);
+				}
+			}
+
+			else if (pdef->name()->value() == "single_line") {
+				bool single = false;
+				GetDefBool(single, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "bevel_width") {
+				DWORD s;
+				GetDefNumber(s, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "active") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "animated") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "border") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "drop_shadow") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "show_headings") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "sticky") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "transparent") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "hide_partial") {
+				bool b;
+				GetDefBool(b, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "num_leds") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "item_style") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "selected_style") {
+				int n;
+				GetDefNumber(n, pdef, fn);
+			}
+
+			else if (pdef->name()->value() == "password") {
+				Text password;
+				GetDefText(password, pdef, fn);
+			}
+
+			// layout constraints:
+
+			else if (pdef->name()->value() == "layout") {
+
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: layout structure missing in '%s'"), *FString(fn));
+				}
+				else {
+					TermStruct* val = pdef->term()->isStruct();
+					//rseLayoutDef(&ctrl->layout, val);
+				}
+			}
+		}
+	}
+}
 
 void
 AGameDataLoader::LoadForm(const char* fn)
