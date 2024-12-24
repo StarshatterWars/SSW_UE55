@@ -50,19 +50,6 @@ class AStarSystem;
 class SystemDesign;
 class ComponentDesign;
 
-UENUM(BlueprintType)
-enum EControlType : uint8
-{ 
-	WINDEF_LABEL,
-	WINDEF_BUTTON,
-	WINDEF_COMBO,
-	WINDEF_EDIT,
-	WINDEF_IMAGE,
-	WINDEF_SLIDER,
-	WINDEF_LIST,
-	WINDEF_RICH,
-};
-
 UCLASS()
 class STARSHATTERWARS_API AGameDataLoader : public AActor
 {

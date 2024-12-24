@@ -2015,8 +2015,6 @@ struct FS_CtrlDef : public FTableRowBase {
 	TEnumAsByte<EControlType> Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FVector4 Rect;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Font;
 
 	FS_CtrlDef() {
 		Text = "";
@@ -2025,7 +2023,6 @@ struct FS_CtrlDef : public FTableRowBase {
 		PId = 0;
 		Type = EControlType::WINDEF_LABEL;
 		Rect = FVector4::Zero();
-		Font = "";
 	}
 };
 

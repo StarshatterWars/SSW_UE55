@@ -7721,7 +7721,7 @@ AGameDataLoader::LoadForm(const char* fn)
 									}
 									else {
 										TermStruct* dval = pdef->term()->isStruct();
-										//ParseCtrlDef(&form->defctrl, val);
+										ParseCtrlDef(pdef->term()->isStruct(), fn);
 									}
 								}
 
