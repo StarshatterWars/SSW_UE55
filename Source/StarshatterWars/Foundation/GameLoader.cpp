@@ -19,6 +19,7 @@ void AGameLoader::BeginPlay()
 	//GetCombatRosterData();
 	GetCampaignData();
 	GetAwardInfoData();
+	ShowMainMenu();
 	LoadGalaxy();
 
 }

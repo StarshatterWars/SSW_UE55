@@ -7516,12 +7516,62 @@ void AGameDataLoader::ParseCtrlDef(TermStruct* val, const char* fn)
 					UE_LOG(LogTemp, Log, TEXT("WARNING: layout structure missing in '%s'"), *FString(fn));
 				}
 				else {
-					TermStruct* val = pdef->term()->isStruct();
-					//rseLayoutDef(&ctrl->layout, val);
+					ParseLayoutDef(pdef->term()->isStruct(), fn);
 				}
 			}
 		}
 	}
+}
+
+void AGameDataLoader::ParseLayoutDef(TermStruct* val, const char* fn)
+{
+	std::vector<DWORD>   x_mins;
+	std::vector<DWORD>   y_mins;
+	std::vector<float>   x_weights;
+	std::vector<float>   y_weights;
+	FS_LayoutDef NewLayoutDef;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "x_mins" ||
+				pdef->name()->value() == "cols") {
+				GetDefArray(x_mins, pdef, fn);
+				NewLayoutDef.XMin.SetNum(x_mins.size());
+				for (int index = 0; index < x_mins.size(); index++) {
+					NewLayoutDef.XMin[index] = x_mins[index];
+				}
+			}
+
+			else if (pdef->name()->value() == "y_mins" ||
+				pdef->name()->value() == "rows") {
+				GetDefArray(y_mins, pdef, fn);
+				NewLayoutDef.YMin.SetNum(y_mins.size());
+				for (int index = 0; index < y_mins.size(); index++) {
+					NewLayoutDef.YMin[index] = y_mins[index];
+				}
+			}
+
+			else if (pdef->name()->value() == "x_weights" ||
+				pdef->name()->value() == "col_wts") {
+				GetDefArray(x_weights, pdef, fn);
+				NewLayoutDef.XWeight.SetNum(x_weights.size());
+				for (int index = 0; index < x_weights.size(); index++) {
+					NewLayoutDef.XWeight[index] = x_weights[index];
+				}
+			}
+
+			else if (pdef->name()->value() == "y_weights" ||
+				pdef->name()->value() == "row_wts") {
+				GetDefArray(y_weights, pdef, fn);
+				NewLayoutDef.YWeight.SetNum(y_weights.size());
+				for (int index = 0; index < y_weights.size(); index++) {
+					NewLayoutDef.YWeight[index] = y_weights[index];
+				}
+			}
+		}
+	}
+	LayoutDef = NewLayoutDef;
 }
 
 void
@@ -7707,8 +7757,8 @@ AGameDataLoader::LoadForm(const char* fn)
 										UE_LOG(LogTemp, Log, TEXT("WARNING: layout structure missing in '%s'"), *FString(fn));
 									}
 									else {
-										TermStruct* lval = pdef->term()->isStruct();
-										//ParseLayoutDef(&form->layout, val);
+										ParseLayoutDef(pdef->term()->isStruct(), fn);
+										NewForm.LayoutDef = LayoutDef;
 									}
 								}
 
@@ -7731,7 +7781,6 @@ AGameDataLoader::LoadForm(const char* fn)
 										UE_LOG(LogTemp, Log, TEXT("WARNING: ctrl structure missing in '%s'"), *FString(fn));
 									}
 									else {
-										//CtrlDef* ctrl = new CtrlDef;
 										TermStruct* cval = pdef->term()->isStruct();
 
 										//form->AddCtrl(ctrl);

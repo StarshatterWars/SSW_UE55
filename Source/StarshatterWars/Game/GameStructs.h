@@ -2000,6 +2000,24 @@ struct FS_SystemDesign : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_LayoutDef : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> XMin;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<int> YMin;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<float> XWeight;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<float> YWeight;
+	
+	FS_LayoutDef() {
+
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_CtrlDef : public FTableRowBase {
 	GENERATED_BODY()
 
@@ -2017,7 +2035,95 @@ struct FS_CtrlDef : public FTableRowBase {
 	FVector4 Rect;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Font;
-
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor ActiveColor;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor BackColor;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor BaseColor;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor BorderColor;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor ForeColor;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Texture;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 Margins;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 TextInsets;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 CellInsets;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector4 Cells;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int FixedWidth;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int FixedHeight;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString StandardImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ActiavtedImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TransitionImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Picture;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Enabled;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Item;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Tab;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Orientation;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Leading;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int LineHeight;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Multiselect;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int DragDrop;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ScrollBar;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool SmoothScroll;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int PictureLoc;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int PictureType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Style;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Align;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool SingleLine;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int BevelWidth;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Active;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Animated;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Border;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool DropShadow;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool ShowHeadings;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Sticky;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Transparent;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool HidePartial;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int NumLeds;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ItemStyle;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int SelectedStyle;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Password;
+	
 	FS_CtrlDef() {
 		Text = "";
 		Alt = "";
@@ -2026,6 +2132,50 @@ struct FS_CtrlDef : public FTableRowBase {
 		Type = EControlType::WINDEF_LABEL;
 		Rect = FVector4::Zero();
 		Font = "";
+		ActiveColor = FColor::Black;
+		BackColor = FColor::Black;
+		BaseColor = FColor::Black;
+		BorderColor = FColor::Black;
+		ForeColor = FColor::Black;
+		Texture = "";
+		Margins = FVector4::Zero();
+		TextInsets = FVector4::Zero();
+		CellInsets = FVector4::Zero();
+		Cells = FVector4::Zero();
+		FixedWidth = 0;
+		FixedHeight = 0;
+		StandardImage = "";
+		ActiavtedImage = "";
+		TransitionImage = "";
+		Picture = "";
+		Enabled = false;
+		Item = 0;
+		Tab = 0;
+		Orientation = 0;
+		Leading = 0;
+		LineHeight = 0;
+		Multiselect = 0;
+		DragDrop = 0;
+		ScrollBar = 0;
+		SmoothScroll = false;
+		PictureLoc = 0;
+		PictureType = 0;
+		Style = 0;
+		Align = 0;
+		SingleLine = false;
+		BevelWidth = 0;
+		Active = false;
+		Animated = false;
+		Border = false;
+		DropShadow = false;
+		ShowHeadings = false;
+		Sticky = false;
+		Transparent = false;
+		HidePartial = false;
+		NumLeds = 0;
+		ItemStyle = 0;
+		SelectedStyle = 0;
+		Password = "";
 	}
 };
 
@@ -2070,6 +2220,8 @@ struct FS_FormDesign : public FTableRowBase {
 	int Align;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CtrlDef> CtrlDef;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FS_LayoutDef LayoutDef;
 
 	FS_FormDesign() {
 		Name = "";

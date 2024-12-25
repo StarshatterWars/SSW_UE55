@@ -136,6 +136,8 @@ public:
 
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
+
+	FS_LayoutDef LayoutDef;
 	
 	Text GetContentBundleText(const char* key)   const;
 	void GetSSWInstance();
@@ -146,6 +148,7 @@ public:
 	void LoadContentBundle();
 	void LoadForms();
 	void ParseCtrlDef(TermStruct* val, const char* fn);
+	void ParseLayoutDef(TermStruct* val, const char* fn);
 	void LoadForm(const char* fname);
 	bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
 

@@ -48,6 +48,8 @@ public:
 	class UButton* btn_controls;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* btn_quit;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MenuTooltip;
 
 protected:	
 	void NativeConstruct() override;
@@ -55,21 +57,40 @@ protected:
 	UFUNCTION()
 	void OnStartButtonClicked();
 	UFUNCTION()
+	void OnStartButtonHovered();
+	UFUNCTION()
 	void OnCampaignButtonClicked();
 	UFUNCTION()
+	void OnCampaignButtonHovered();
+
+	UFUNCTION()
 	void OnMissionButtonClicked();
+	UFUNCTION()
+	void OnPlayerButtonHovered();
+	UFUNCTION()
+	void OnMissionButtonHovered();
 	UFUNCTION()
 	void OnPlayerButtonClicked();
 	UFUNCTION()
 	void OnMultiplayerButtonClicked();
 	UFUNCTION()
+	void OnMultiplayerButtonHovered();
+	UFUNCTION()
 	void OnTacticalButtonClicked();
+	UFUNCTION()
+	void OnTacticalButtonHovered();
 	UFUNCTION()
 	void OnVideoButtonClicked();
 	UFUNCTION()
 	void OnOptionsButtonClicked();
 	UFUNCTION()
+	void OnOptionsButtonHovered();
+	UFUNCTION()
 	void OnControlsButtonClicked();
 	UFUNCTION()
 	void OnQuitButtonClicked();
+	UFUNCTION()
+	void OnQuitButtonHovered();
+	UFUNCTION()
+	void OnButtonUnHovered();
 };
