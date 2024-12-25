@@ -50,6 +50,8 @@ public:
 	class UButton* btn_quit;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* MenuTooltip;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GameVersion;
 
 protected:	
 	void NativeConstruct() override;

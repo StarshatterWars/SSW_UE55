@@ -13,6 +13,7 @@
 
 
 #include "MenuDlg.h"
+#include "../System/Game.h"
 
 void UMenuDlg::NativeConstruct()
 {
@@ -67,6 +68,9 @@ void UMenuDlg::NativeConstruct()
 
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString(""));
+
+	if(GameVersion)
+		GameVersion->SetText(FText::FromString(Game::GetGameVersion()));
 }
 
 void UMenuDlg::OnStartButtonClicked()

@@ -98,6 +98,8 @@ public:
 
 	static Text       GetText(const char* key);
 
+	static FString	  GetGameVersion();
+
 	static const char* GetPanicMessage() { return panicbuf; }
 
 	virtual bool      GameLoop();
@@ -145,6 +147,9 @@ protected:
 	char* title_text;
 	char* palette_name;
 
+
+	
+
 	// Internal variables for the state of the app
 	bool              is_windowed;
 	bool              is_active;
@@ -184,6 +189,8 @@ protected:
 	static DWORD      frame_number;
 
 	static char       panicbuf[256];
+
+	static FString    VersionInfo;
 };
 
 // +--------------------------------------------------------------------+

@@ -214,3 +214,9 @@ Game::GetText(const char* key)
 
 	return key;
 }
+
+FString
+Game::GetGameVersion()
+{
+	return "5.1.87 EX";
+}
