@@ -39,6 +39,7 @@ public:
 	void InitializeGame();
 
 	void ShowMainMenu();
+	void ShowQuitDlg();
 
 	static DataLoader* loader;
 };

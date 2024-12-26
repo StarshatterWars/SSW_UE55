@@ -27,7 +27,8 @@
  class AGameDataLoader;
  class AAwardInfoLoader;
  class ACombatGroupLoader;
-
+ class UQuitDlg;
+ class UMenuDlg;
  class DataLoader;
 
 
@@ -75,11 +76,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowMainMenuScreen();
 
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowQuitDlg();
+
+	void ToggleQuitDlg(bool bVisible);
+
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
 	ACombatGroupLoader* CombatGroupData;
-
 
 	UPROPERTY()
 	double StarDate;
@@ -88,8 +93,9 @@ public:
 
 	FString GetEmpireNameFromType(EEMPIRE_NAME emp);
 
-	void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
-
+	UMenuDlg* MainMenuDlg;
+	UQuitDlg* QuitDlg;
+	
 protected:
 	virtual void Init() override;
 	virtual void Shutdown() override;
@@ -126,6 +132,9 @@ protected:
 	private:
 		bool bUniverseLoaded;
 
-		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
+		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
+		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 
+		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
+		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 };

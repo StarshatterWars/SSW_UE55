@@ -77,4 +77,10 @@ void AGameLoader::ShowMainMenu()
 	SSWInstance->ShowMainMenuScreen();
 }
 
+void AGameLoader::ShowQuitDlg()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ToggleQuitDlg(true);
+}
+
 

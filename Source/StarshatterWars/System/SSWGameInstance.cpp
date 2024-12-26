@@ -12,6 +12,7 @@
 #include "../Game/CombatGroupLoader.h"
 
 #include "../Screen/MenuDlg.h"
+#include "../Screen/QuitDlg.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -26,6 +27,7 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIsDeviceRestored = false;
 
 	InitializeMainMenuScreen(ObjectInitializer);
+	InitializeQuitDlg(ObjectInitializer);
 
 	SetProjectPath();
 	Init();
@@ -275,10 +277,20 @@ void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& Object
 	MainMenuScreenWidgetClass = MainMenuScreenWidget.Class;
 }
 
+void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FClassFinder<UQuitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
+	if (!ensure(QuitDlgWidget.Class != nullptr))
+	{
+		return;
+	}
+	QuitDlgWidgetClass = QuitDlgWidget.Class;
+}
+
 void USSWGameInstance::ShowMainMenuScreen()
 {
 	// Create widget
-	UMenuDlg* MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
+	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
 	// Add it to viewport
 	MainMenuDlg->AddToViewport(100);
 
@@ -294,5 +306,40 @@ void USSWGameInstance::ShowMainMenuScreen()
 			PlayerController->SetInputMode(InputModeData);
 			PlayerController->SetShowMouseCursor(true);
 		}
+	}
+	ShowQuitDlg();
+}
+
+void USSWGameInstance::ShowQuitDlg()
+{
+	// Create widget
+	QuitDlg = CreateWidget<UQuitDlg>(this, QuitDlgWidgetClass);
+	// Add it to viewport
+	QuitDlg->AddToViewport(101);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(QuitDlg->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
+	ToggleQuitDlg(false);
+}
+
+void USSWGameInstance::ToggleQuitDlg(bool bVisible)
+{
+	if(QuitDlg) {
+		if(bVisible) {
+			QuitDlg->SetVisibility(ESlateVisibility::Visible);
+		} else {
+			QuitDlg->SetVisibility(ESlateVisibility::Collapsed);
+		}	
 	}
 }

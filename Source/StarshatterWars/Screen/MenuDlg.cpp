@@ -13,11 +13,14 @@
 
 
 #include "MenuDlg.h"
+#include "../System/SSWGameInstance.h"
 #include "../System/Game.h"
 
 void UMenuDlg::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	if (btn_start) {
 		btn_start->OnClicked.AddDynamic(this, &UMenuDlg::OnStartButtonClicked);
@@ -71,6 +74,9 @@ void UMenuDlg::NativeConstruct()
 
 	if(GameVersion)
 		GameVersion->SetText(FText::FromString(Game::GetGameVersion()));
+
+
+	SSWInstance->ToggleQuitDlg(false);
 }
 
 void UMenuDlg::OnStartButtonClicked()
@@ -162,7 +168,8 @@ void UMenuDlg::OnControlsButtonClicked()
 
 void UMenuDlg::OnQuitButtonClicked()
 {
-
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ToggleQuitDlg(true);
 }
 
 void UMenuDlg::OnQuitButtonHovered()
