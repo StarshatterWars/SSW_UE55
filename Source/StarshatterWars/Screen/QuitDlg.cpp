@@ -29,10 +29,10 @@ void UQuitDlg::NativeConstruct()
 		btn_cancel->OnClicked.AddDynamic(this, &UQuitDlg::OnCancelClicked);
 	}
 	if(ExitTitle) {
-		ExitTitle->SetText(FText::FromString("EXIT STARSHATTER"));
+		ExitTitle->SetText(FText::FromString("EXIT STARSHATTER?"));
 	}
 
 	if (ExitPrompt) {
-		ExitTitle->SetText(FText::FromString("Are you sure you want to exit Starshatter and return to Windows?"));
+		ExitPrompt->SetText(FText::FromString("Are you sure you want to exit Starshatter and return to Windows?"));
 	}
 }
