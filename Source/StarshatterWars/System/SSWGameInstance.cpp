@@ -13,6 +13,7 @@
 
 #include "../Screen/MenuDlg.h"
 #include "../Screen/QuitDlg.h"
+#include "../Screen/CampaignScreen.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -27,6 +28,7 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIsDeviceRestored = false;
 
 	InitializeMainMenuScreen(ObjectInitializer);
+	InitializeCampaignScreen(ObjectInitializer);
 	InitializeQuitDlg(ObjectInitializer);
 
 	SetProjectPath();
@@ -238,6 +240,7 @@ bool USSWGameInstance::InitGame()
 	return false;
 }
 
+
 FString
 USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
 {
@@ -277,6 +280,16 @@ void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& Object
 	MainMenuScreenWidgetClass = MainMenuScreenWidget.Class;
 }
 
+void USSWGameInstance::InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FClassFinder<UCampaignScreen> CampaignScreenWidget(TEXT("/Game/Screens/WB_CampaignSelect"));
+	if (!ensure(CampaignScreenWidget.Class != nullptr))
+	{
+		return;
+	}
+	CampaignScreenWidgetClass = CampaignScreenWidget.Class;
+}
+
 void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitializer)
 {
 	static ConstructorHelpers::FClassFinder<UQuitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
@@ -308,6 +321,33 @@ void USSWGameInstance::ShowMainMenuScreen()
 		}
 	}
 	ShowQuitDlg();
+}
+
+void USSWGameInstance::ShowCampaignScreen()
+{
+	// Create widget
+	if(!CampaignScreen) {
+		// Create widget
+		CampaignScreen = CreateWidget<UCampaignScreen>(this, CampaignScreenWidgetClass);
+	}
+	
+	// Add it to viewport
+	CampaignScreen->AddToViewport(101);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(CampaignScreen->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
+	ToggleCampaignScreen(true);
 }
 
 void USSWGameInstance::ShowQuitDlg()
@@ -342,4 +382,20 @@ void USSWGameInstance::ToggleQuitDlg(bool bVisible)
 			QuitDlg->SetVisibility(ESlateVisibility::Collapsed);
 		}	
 	}
+}
+
+void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {
+	if (CampaignScreen) {
+		if (bVisible) {
+			CampaignScreen->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			CampaignScreen->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+}
+
+void USSWGameInstance::SetGameMode(EMODE gm)
+{
+	
 }

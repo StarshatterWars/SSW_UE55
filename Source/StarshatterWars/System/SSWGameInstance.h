@@ -29,6 +29,7 @@
  class ACombatGroupLoader;
  class UQuitDlg;
  class UMenuDlg;
+ class UCampaignScreen;
  class DataLoader;
 
 
@@ -77,9 +78,19 @@ public:
 	void ShowMainMenuScreen();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowCampaignScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowQuitDlg();
 
+	UFUNCTION()
 	void ToggleQuitDlg(bool bVisible);
+	UFUNCTION()
+	void ToggleCampaignScreen(bool bVisible);
+
+	UFUNCTION()
+	void SetGameMode(EMODE gm);
+
 
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
@@ -94,7 +105,10 @@ public:
 	FString GetEmpireNameFromType(EEMPIRE_NAME emp);
 
 	UMenuDlg* MainMenuDlg;
+	UCampaignScreen* CampaignScreen;
 	UQuitDlg* QuitDlg;
+
+	EMODE GameMode;
 	
 protected:
 	virtual void Init() override;
@@ -133,8 +147,11 @@ protected:
 		bool bUniverseLoaded;
 
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
+		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);
+
 		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 
 		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
+		TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 };

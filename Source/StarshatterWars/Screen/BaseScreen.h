@@ -18,7 +18,7 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/ComboBoxString.h"
-
+#include "../System/SSWGameInstance.h"
 #include "BaseScreen.generated.h"
 
 /**

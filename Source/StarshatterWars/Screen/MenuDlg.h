@@ -95,4 +95,7 @@ protected:
 	void OnQuitButtonHovered();
 	UFUNCTION()
 	void OnButtonUnHovered();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowCampaignScreen();
 };

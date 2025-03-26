@@ -92,7 +92,8 @@ void UMenuDlg::OnStartButtonHovered()
 
 void UMenuDlg::OnCampaignButtonClicked()
 {
-
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ShowCampaignScreen();
 }
 
 void UMenuDlg::OnCampaignButtonHovered()
@@ -182,6 +183,13 @@ void UMenuDlg::OnButtonUnHovered()
 {
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString(""));
+}
+
+void UMenuDlg::ShowCampaignScreen()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ShowCampaignScreen();
+	SSWInstance->SetGameMode(EMODE::MENU_MODE);
 }
 
 
