@@ -28,6 +28,20 @@ UCLASS()
 class STARSHATTERWARS_API UBaseScreen : public UUserWidget
 {
 	GENERATED_BODY()
+
+public:
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Title;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* CancelButtonText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* ApplyButtonText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* ApplyButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* CancelButton;
 	
 protected:
 	virtual void NativeConstruct() override;
