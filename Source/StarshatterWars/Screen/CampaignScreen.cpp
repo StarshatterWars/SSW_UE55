@@ -10,7 +10,7 @@ void UCampaignScreen::NativeConstruct()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	if (Title)
-		Title->SetText(FText::FromString("Campaign"));
+		Title->SetText(FText::FromString("Dynamic Campaigns"));
 	if (CancelButton) {
 		CancelButton->OnClicked.AddDynamic(this, &UCampaignScreen::OnCancelButtonClicked);
 		CancelButton->OnHovered.AddDynamic(this, &UCampaignScreen::OnCancelButtonHovered);
