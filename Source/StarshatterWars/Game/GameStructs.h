@@ -1474,6 +1474,14 @@ struct FS_Campaign : public FTableRowBase {
 	int ActionSize;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int CombatantSize;
+	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	//UTexture2D* Banner;
+	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	//UTexture2D* Image;
+	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	//UTexture2D* Selected;
+	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	//UTexture2D* Unavail;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_Combatant> Combatant;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
