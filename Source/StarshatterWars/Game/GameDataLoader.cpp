@@ -69,15 +69,6 @@ AGameDataLoader::AGameDataLoader()
 	PrimaryActorTick.bCanEverTick = true;
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::AGameDataLoader()"));
 
-	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignDataTableObject(TEXT("DataTable'/Game/Game/DT_Campaign.DT_Campaign'"));
-
-	if (CampaignDataTableObject.Succeeded())
-	{
-		CampaignDataTable = CampaignDataTableObject.Object;
-		
-		CampaignDataTable->EmptyTable();
-	}
-
 	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_GalaxyMap.DT_GalaxyMap'"));
 
 	if (GalaxyDataTableObject.Succeeded())
@@ -190,7 +181,9 @@ void AGameDataLoader::BeginPlay()
 	LoadShipDesigns();
 	LoadCombatRoster();
 	LoadStarsystems();
-	InitializeCampaignData();
+	if(SSWInstance->bClearTables) {
+		InitializeCampaignData();
+	}
 	LoadSystemDesignsFromDT();
 
 	//USystemDesign::Initialize(SystemDesignTable);
@@ -722,10 +715,12 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	NewCampaignData.Missions = MissionArray;
 	NewCampaignData.TemplateMissions = TemplateMissionArray;
 	NewCampaignData.ScriptedMissions = ScriptedMissionArray;
+	NewCampaignData.Available  = true;
+	NewCampaignData.Completed = false;
 
 	// define our data table struct
 	FName RowName = FName(FString(name));
-	CampaignDataTable->AddRow(RowName, NewCampaignData);
+	SSWInstance->CampaignDataTable->AddRow(RowName, NewCampaignData);
 	CampaignData = NewCampaignData;
 
 	SSWInstance->loader->ReleaseBuffer(block);

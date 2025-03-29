@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "../Game/GameStructs.h"
 #include "CampaignScreen.generated.h"
 
 /**
@@ -13,6 +14,27 @@ UCLASS()
 class STARSHATTERWARS_API UCampaignScreen : public UBaseScreen
 {
 	GENERATED_BODY()
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* PlayerNameText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* NameText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* DescriptionText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* SituationText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Orders1Text;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Orders2Text;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Orders3Text;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Orders4Text;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* LocationSystemText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* LocationRegionText;
 	
 protected:
 	void NativeConstruct() override;
@@ -29,4 +51,12 @@ protected:
 	void OnCancelButtonHovered();
 	UFUNCTION()
 	void OnCancelButtonUnHovered();
+	
+	UFUNCTION()
+	void ReadCampaignData();
+
+	UFUNCTION()
+	void SetSelectedData(int selected);
+
+	TArray<FS_Campaign> CampaignData;
 };

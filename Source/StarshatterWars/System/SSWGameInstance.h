@@ -106,6 +106,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SaveGame")
 	void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
 
+	UFUNCTION(BlueprintCallable, Category = "SaveGame")
+	void LoadGame(FString SlotName, int32 UserIndex);
+
 
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
@@ -125,6 +128,15 @@ public:
 	UFirstRun* FirstRunDlg;
 
 	EMODE GameMode;
+
+	class UDataTable* CampaignDataTable;
+
+	UPROPERTY(EditAnywhere)
+	bool bClearTables;
+	
+	UPROPERTY()
+	FS_PlayerGameInfo PlayerInfo;
+
 	
 protected:
 	virtual void Init() override;
@@ -158,6 +170,8 @@ protected:
 	bool              bIsDeviceRestored;
 
 	EGAMESTATUS Status;
+
+	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 
 	private:
 		bool bUniverseLoaded;

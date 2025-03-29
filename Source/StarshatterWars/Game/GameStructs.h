@@ -409,13 +409,15 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 	FString PlayerShip;
 	UPROPERTY(BlueprintReadWrite)
 	FString PlayerSquadron;
+	UPROPERTY(BlueprintReadWrite)
+	TArray<bool> CampaignComplete;
 
 	FS_PlayerGameInfo()
 	{
 		Id = 0;
 		Name = "";
 		Nickname = "";
-		Campaign = -1;
+		Campaign = 0;
 		Avatar = -1;
 		Mission = -1;
 		Rank = 0;
@@ -441,6 +443,11 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		PlayerStatus = "";
 		PlayerShip = "";
 		PlayerSquadron = "";
+
+		CampaignComplete.SetNum(5);
+		for (int i = 0; i < CampaignComplete.Num(); i++) {
+			CampaignComplete[i] = false;
+		}
 	}
 };
 
@@ -1570,6 +1577,14 @@ struct FS_Campaign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool Sequential;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Available;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Completed;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString System;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ActionSize;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int CombatantSize;
@@ -1602,8 +1617,15 @@ struct FS_Campaign : public FTableRowBase {
 		Name = "";
 		Description = "";
 		Situation = "";
+
+		System = "";
+		Region = "";
+
 		Scripted = false;
 		Sequential = false;
+
+		Available = false;
+		Completed = false;
 
 		ActionSize = 0;
 		CombatantSize = 0;

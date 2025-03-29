@@ -29,6 +29,9 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIgnoreSizeChange = false;
 	bIsDeviceInitialized = false;
 	bIsDeviceRestored = false;
+	bClearTables = false;
+	
+	InitializeDT(ObjectInitializer);
 
 	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
@@ -209,6 +212,11 @@ void USSWGameInstance::Init()
 		UE_LOG(LogTemp, Log, TEXT("  Initializing content...\n"));
 		InitContent();
 	}
+
+	if(bClearTables) {
+		CampaignDataTable->EmptyTable();
+	}
+	LoadGame("PlayerSaveSlot", 0);
 }
 
 void USSWGameInstance::Shutdown()
@@ -272,6 +280,16 @@ USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
 		break;
 	}
 	return empire_name;
+}
+
+void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignDataTableObject(TEXT("DataTable'/Game/Game/DT_Campaign.DT_Campaign'"));
+
+	if (CampaignDataTableObject.Succeeded())
+	{
+		CampaignDataTable = CampaignDataTableObject.Object;
+	}
 }
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
@@ -468,14 +486,23 @@ void USSWGameInstance::SetGameMode(EMODE gm)
 
 }
 
-void USSWGameInstance::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo)
+void USSWGameInstance::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerData)
 {
 	UPlayerSaveGame* SaveInstance = Cast<UPlayerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlayerSaveGame::StaticClass()));
 
 	if (SaveInstance)
 	{
-		SaveInstance->PlayerInfo = PlayerInfo;
+		SaveInstance->PlayerInfo = PlayerData;
 
 		UGameplayStatics::SaveGameToSlot(SaveInstance, SlotName, UserIndex);
+	}
+}
+
+void USSWGameInstance::LoadGame(FString SlotName, int32 UserIndex)
+{
+	if (UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+	{
+		UPlayerSaveGame* LoadedGame = Cast<UPlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
+		PlayerInfo = LoadedGame->PlayerInfo;
 	}
 }

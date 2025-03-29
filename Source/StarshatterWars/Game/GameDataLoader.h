@@ -257,7 +257,7 @@ protected:
 	class UDataTable* PlanetsDataTable;
 	class UDataTable* MoonsDataTable;
 	class UDataTable* RegionsDataTable;
-	class UDataTable* CampaignDataTable;
+	//class UDataTable* CampaignDataTable;
 	class UDataTable* CombatGroupDataTable;
 	class UDataTable* ShipDesignDataTable;
 	class UDataTable* SystemDesignDataTable;
