@@ -18,7 +18,7 @@ class STARSHATTERWARS_API UCampaignScreen : public UBaseScreen
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayerNameText;
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* NameText;
+	class UTextBlock* CampaignNameText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* DescriptionText;
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -35,6 +35,8 @@ class STARSHATTERWARS_API UCampaignScreen : public UBaseScreen
 	class UTextBlock* LocationSystemText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationRegionText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UComboBoxString* CampaignSelectDD;
 	
 protected:
 	void NativeConstruct() override;
@@ -56,7 +58,14 @@ protected:
 	void ReadCampaignData();
 
 	UFUNCTION()
+	void SetCampaignDDList();
+
+	UFUNCTION()
 	void SetSelectedData(int selected);
 
+	UFUNCTION()
+	void OnSetSelected(FString dropDownInt, ESelectInfo::Type type);
+	
 	TArray<FS_Campaign> CampaignData;
+
 };

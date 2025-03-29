@@ -8,6 +8,7 @@ void UCampaignScreen::NativeConstruct()
 	Super::NativeConstruct();
 	
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->LoadGame("PlayerSaveSlot", 0);
 
 	if (Title)
 		Title->SetText(FText::FromString("Dynamic Campaigns"));
@@ -29,10 +30,14 @@ void UCampaignScreen::NativeConstruct()
 		}
 	}
 
-	CampaignData.SetNum(5);
-	ReadCampaignData();
-	
+	if (CampaignSelectDD) {
+		CampaignSelectDD->OnSelectionChanged.AddDynamic(this, &UCampaignScreen::OnSetSelected);
+	}
 
+	CampaignData.SetNum(5);
+
+	ReadCampaignData();
+	SetCampaignDDList();
 }
 
 void UCampaignScreen::OnApplyButtonClicked()
@@ -89,14 +94,37 @@ void UCampaignScreen::ReadCampaignData()
 		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
 		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *SSWInstance->PlayerInfo.Name);
 	}
+
+
+}
+
+void UCampaignScreen::SetCampaignDDList()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
+	if(CampaignSelectDD) {
+		CampaignSelectDD->ClearOptions();
+		CampaignSelectDD->ClearSelection();
+		
+		for (int index = 0; index < CampaignData.Num(); index++) {
+			CampaignSelectDD->AddOption(CampaignData[index].Name);
+		}
+		
+		CampaignSelectDD->SetSelectedIndex(SSWInstance->PlayerInfo.Campaign);
+	}
+
+	if (CampaignNameText) {
+		CampaignNameText->SetText(FText::FromString(CampaignData[SSWInstance->PlayerInfo.Campaign].Name));
+	}
 }
 
 void UCampaignScreen::SetSelectedData(int selected)
 {
 	CampaignData[selected].Orders.SetNum(4);
 
-	if (NameText) {
-		NameText->SetText(FText::FromString(CampaignData[selected].Name));
+
+	if (CampaignNameText) {
+		CampaignNameText->SetText(FText::FromString(CampaignData[selected].Name));
 	}
 
 	if (DescriptionText) {
@@ -130,5 +158,31 @@ void UCampaignScreen::SetSelectedData(int selected)
 	if (LocationRegionText) {
 
 		LocationRegionText->SetText(FText::FromString(CampaignData[selected].Region));
+	}
+}
+
+void UCampaignScreen::OnSetSelected(FString dropDownInt, ESelectInfo::Type type)
+{
+	if (type == ESelectInfo::OnMouseClick) {
+		int value;
+
+		if (dropDownInt == CampaignData[0].Name) {
+			value = 0;
+		} 
+		else if (dropDownInt == CampaignData[1].Name) {
+			value = 1;
+		}
+		else if (dropDownInt == CampaignData[2].Name) {
+			value = 2;
+		}
+		else if (dropDownInt == CampaignData[3].Name) {
+			value = 3;
+		}
+		else if (dropDownInt == CampaignData[4].Name) {
+			value = 4;
+		}
+
+		SetSelectedData(value);
+		ApplyButton->SetIsEnabled(true);
 	}
 }

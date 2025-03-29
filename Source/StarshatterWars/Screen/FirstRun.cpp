@@ -30,10 +30,9 @@ void UFirstRun::OnApplyClicked()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	FString PlayerName = PlayerNameBox ? PlayerNameBox->GetText().ToString() : TEXT("DefaultPlayer");
 	PlayerData.Name = PlayerName;
-
+	PlayerData.Campaign = 0;
 	SSWInstance->SaveGame("PlayerSaveSlot", 0, PlayerData);
 	SSWInstance->ToggleFirstRunDlg(false);
-	//SSWInstance->ToggleMenuButtons(true);
 }
 
 void UFirstRun::OnCancelClicked()
