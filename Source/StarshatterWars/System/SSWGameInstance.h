@@ -29,8 +29,10 @@
  class ACombatGroupLoader;
  class UQuitDlg;
  class UMenuDlg;
+ class UFirstRun;
  class UCampaignScreen;
  class DataLoader;
+ class UPlayerSaveGame;
 
 
 UCLASS()
@@ -83,13 +85,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowQuitDlg();
 
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowFirstRunDlg();
+
 	UFUNCTION()
 	void ToggleQuitDlg(bool bVisible);
+
+	UFUNCTION()
+	void ToggleFirstRunDlg(bool bVisible);
+
+	UFUNCTION()
+	void ToggleMenuButtons(bool bVisible);
+
 	UFUNCTION()
 	void ToggleCampaignScreen(bool bVisible);
 
 	UFUNCTION()
 	void SetGameMode(EMODE gm);
+
+	UFUNCTION(BlueprintCallable, Category = "SaveGame")
+	void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
 
 
 	AGalaxy* GameGalaxy;
@@ -107,6 +122,7 @@ public:
 	UMenuDlg* MainMenuDlg;
 	UCampaignScreen* CampaignScreen;
 	UQuitDlg* QuitDlg;
+	UFirstRun* FirstRunDlg;
 
 	EMODE GameMode;
 	
@@ -150,8 +166,10 @@ protected:
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);
 
 		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
+		void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
 
 		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
 		TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
+		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
 };

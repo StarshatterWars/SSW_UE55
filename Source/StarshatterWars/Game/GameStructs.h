@@ -345,8 +345,107 @@ enum EControlType : uint8
 /**
  * STRUCTS
  */
+
+USTRUCT(BlueprintType)
+struct FS_PlayerGameInfo : public FTableRowBase {
+
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Id;
+	UPROPERTY(BlueprintReadWrite)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite)
+	FString Nickname;
+	UPROPERTY(BlueprintReadWrite)
+	int32 Campaign;
+	UPROPERTY(BlueprintReadWrite)
+	int32 Avatar;
+	UPROPERTY(BlueprintReadWrite)
+	int32 Mission;
+	UPROPERTY(BlueprintReadWrite)
+	int32 Rank;
+	UPROPERTY(BlueprintReadWrite)
+	int32 Empire;
+	UPROPERTY(BlueprintReadWrite)
+	int32 ShipColor;
+	UPROPERTY(BlueprintReadWrite)
+	int32 HudMode;
+	UPROPERTY(BlueprintReadWrite)
+	int32 GunMode;
+	UPROPERTY(BlueprintReadWrite)
+	int32 HudColor;
+	UPROPERTY(BlueprintReadWrite)
+	int32 FlightModel;
+	UPROPERTY(BlueprintReadWrite)
+	int32 LandingMode;
+	UPROPERTY(BlueprintReadWrite)
+	bool FlyingStart;
+	UPROPERTY(BlueprintReadWrite)
+	bool GridMode;
+	UPROPERTY(BlueprintReadWrite)
+	bool TrainingMode;
+	UPROPERTY(BlueprintReadWrite)
+	bool GunSightMode;
+	UPROPERTY(BlueprintReadWrite)
+	int64 CreateTime;
+	UPROPERTY(BlueprintReadWrite)
+	int64 FlightTime;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerKills;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerWins;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerLosses;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerPoints;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerLevel;
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerExperience;
+	UPROPERTY(BlueprintReadWrite)
+	FString PlayerStatus;
+	UPROPERTY(BlueprintReadWrite)
+	FString PlayerShip;
+	UPROPERTY(BlueprintReadWrite)
+	FString PlayerSquadron;
+
+	FS_PlayerGameInfo()
+	{
+		Id = 0;
+		Name = "";
+		Nickname = "";
+		Campaign = -1;
+		Avatar = -1;
+		Mission = -1;
+		Rank = 0;
+		Empire = 0;
+		ShipColor = 0;
+		HudMode = 0;
+		GunMode = 0;
+		HudColor = 0;
+		FlightModel = 0;
+		LandingMode = 0;
+		FlyingStart = false;
+		GridMode = false;
+		TrainingMode = false;
+		GunSightMode = false;
+		CreateTime = 0;
+		FlightTime = 0;
+		PlayerKills = 0;
+		PlayerWins = 0;
+		PlayerLosses = 0;
+		PlayerPoints = 0;
+		PlayerLevel = 0;
+		PlayerExperience = 0;
+		PlayerStatus = "";
+		PlayerShip = "";
+		PlayerSquadron = "";
+	}
+};
+
  
- USTRUCT(BlueprintType)
+USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
 	GENERATED_BODY()
 

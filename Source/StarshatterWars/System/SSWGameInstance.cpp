@@ -13,7 +13,10 @@
 
 #include "../Screen/MenuDlg.h"
 #include "../Screen/QuitDlg.h"
+#include "../Screen/FirstRun.h"
 #include "../Screen/CampaignScreen.h"
+
+#include "../Game/PlayerSaveGame.h"
 #include "Engine/World.h"
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -30,6 +33,7 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
 	InitializeQuitDlg(ObjectInitializer);
+	InitializeFirstRunDlg(ObjectInitializer);
 
 	SetProjectPath();
 	Init();
@@ -282,7 +286,7 @@ void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& Object
 
 void USSWGameInstance::InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<UCampaignScreen> CampaignScreenWidget(TEXT("/Game/Screens/WB_CampaignSelect"));
+	static ConstructorHelpers::FClassFinder<UCampaignScreen> CampaignScreenWidget(TEXT("/Game/Screens/Campaign/WB_CampaignSelect"));
 	if (!ensure(CampaignScreenWidget.Class != nullptr))
 	{
 		return;
@@ -298,6 +302,16 @@ void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitial
 		return;
 	}
 	QuitDlgWidgetClass = QuitDlgWidget.Class;
+}
+
+void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FClassFinder<UFirstRun>FirstRunDlgWidget(TEXT("/Game/Screens/Main/WB_FirstRunDlg"));
+	if (!ensure(FirstRunDlgWidget.Class != nullptr))
+	{
+		return;
+	}
+	FirstRunDlgWidgetClass = FirstRunDlgWidget.Class;
 }
 
 void USSWGameInstance::ShowMainMenuScreen()
@@ -321,6 +335,15 @@ void USSWGameInstance::ShowMainMenuScreen()
 		}
 	}
 	ShowQuitDlg();
+	ShowFirstRunDlg();
+
+	if (UGameplayStatics::DoesSaveGameExist("PlayerSaveSlot", 0)) {
+		ToggleFirstRunDlg(false);
+	}
+	else
+	{
+		ToggleFirstRunDlg(true);
+	}
 }
 
 void USSWGameInstance::ShowCampaignScreen()
@@ -373,6 +396,29 @@ void USSWGameInstance::ShowQuitDlg()
 	ToggleQuitDlg(false);
 }
 
+void USSWGameInstance::ShowFirstRunDlg()
+{
+	// Create widget
+	FirstRunDlg = CreateWidget<UFirstRun>(this, FirstRunDlgWidgetClass);
+	// Add it to viewport
+	FirstRunDlg->AddToViewport(102);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(FirstRunDlg->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
+	ToggleFirstRunDlg(false);
+}
+
 void USSWGameInstance::ToggleQuitDlg(bool bVisible)
 {
 	if(QuitDlg) {
@@ -381,6 +427,28 @@ void USSWGameInstance::ToggleQuitDlg(bool bVisible)
 		} else {
 			QuitDlg->SetVisibility(ESlateVisibility::Collapsed);
 		}	
+	}
+}
+
+void USSWGameInstance::ToggleFirstRunDlg(bool bVisible)
+{
+	if (FirstRunDlg) {
+		if (bVisible) {
+			FirstRunDlg->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			FirstRunDlg->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+	if (MainMenuDlg) {
+		MainMenuDlg->EnableMenuButtons(!bVisible);
+	}
+}
+
+void USSWGameInstance::ToggleMenuButtons(bool bVisible)
+{
+	if (MainMenuDlg) {
+		MainMenuDlg->EnableMenuButtons(bVisible);
 	}
 }
 
@@ -397,5 +465,17 @@ void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {
 
 void USSWGameInstance::SetGameMode(EMODE gm)
 {
-	
+
+}
+
+void USSWGameInstance::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo)
+{
+	UPlayerSaveGame* SaveInstance = Cast<UPlayerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlayerSaveGame::StaticClass()));
+
+	if (SaveInstance)
+	{
+		SaveInstance->PlayerInfo = PlayerInfo;
+
+		UGameplayStatics::SaveGameToSlot(SaveInstance, SlotName, UserIndex);
+	}
 }

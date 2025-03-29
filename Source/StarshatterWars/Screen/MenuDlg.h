@@ -53,8 +53,12 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GameVersion;
 
+	UFUNCTION()
+	void EnableMenuButtons(bool bEnabled);
+
 protected:	
 	void NativeConstruct() override;
+	void NativePreConstruct() override;
 
 	UFUNCTION()
 	void OnStartButtonClicked();

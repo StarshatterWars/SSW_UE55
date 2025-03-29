@@ -24,11 +24,11 @@ class STARSHATTERWARS_API UQuitDlg : public UBaseScreen
 		; UPROPERTY(meta = (BindWidgetOptional))
 		class UTextBlock* ExitPrompt;
 		
-protected:
+	protected:
 		void NativeConstruct() override;
 
 		UFUNCTION()
 		void OnApplyClicked();
 		UFUNCTION()
 		void OnCancelClicked();
-	};
+};
