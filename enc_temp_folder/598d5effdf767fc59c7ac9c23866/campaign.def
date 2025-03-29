@@ -27,9 +27,6 @@ orders: "* First Fleet: Engage military targets in the Isham system."
 orders: "* Second Fleet: Secure the Radix system."
 orders: "* Both fleets to converge on the Garrison system as soon as possible."
 
-system: Jarnell
-region: Adonis
-
 /*******
 
 ISHAM

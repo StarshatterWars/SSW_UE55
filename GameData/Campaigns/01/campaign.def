@@ -27,6 +27,8 @@ situation:
 orders:
    "* Execute all of the training missions in this campaign."
 
+system: Janus
+region: Janek
 scripted: true
 
 combatant_groups: 0

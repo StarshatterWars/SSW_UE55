@@ -28,9 +28,6 @@ orders: "* Protect Alliance civilians and assets in Janus and Borova."
 orders: "* Evacuate civilians and government personnel as necessary."
 orders: "* Stop the Hegemony advance until a counterattack can be mounted."
 
-system: Borova
-region: Borova
-
 combatant_groups: 3
 
 combatant: {

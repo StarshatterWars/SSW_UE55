@@ -285,6 +285,14 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						GetDefText(situation, def, filename);
 						NewCampaignData.Situation = FString(situation);
 				}
+				else if (def->name()->value() == "system") {
+						GetDefText(system, def, filename);
+						NewCampaignData.System = FString(system);
+				}
+				else if (def->name()->value() == "region") {
+						GetDefText(region, def, filename);
+						NewCampaignData.Region = FString(region);
+				}
 				else if (def->name()->value() == "orders") {
 						GetDefText(orders, def, filename);
 						OrdersArray.Add(FString(orders));

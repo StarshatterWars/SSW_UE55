@@ -19,9 +19,6 @@ orders: "* Reduce or eliminate the Hegemony presence in Ostara."
 orders: "* Prepare the region for a general invasion of Tarsus."
 orders: "* Protect Alliance assets in the area.\n"
 
-system: Jarnell
-region: Adonis
-
 combatant_groups: 5
 
 combatant: {

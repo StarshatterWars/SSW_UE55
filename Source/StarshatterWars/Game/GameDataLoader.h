@@ -162,6 +162,8 @@ public:
 	Text                 name;
 	Text                 description;
 	Text                 situation;
+	Text                 system;
+	Text                 region;
 	Text                 orders;
 
 	

@@ -95,7 +95,7 @@ void UCampaignScreen::ReadCampaignData()
 		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *SSWInstance->PlayerInfo.Name);
 	}
 
-
+	SetSelectedData(SSWInstance->PlayerInfo.Campaign);
 }
 
 void UCampaignScreen::SetCampaignDDList()
@@ -121,6 +121,7 @@ void UCampaignScreen::SetCampaignDDList()
 void UCampaignScreen::SetSelectedData(int selected)
 {
 	CampaignData[selected].Orders.SetNum(4);
+
 
 
 	if (CampaignNameText) {
@@ -152,12 +153,8 @@ void UCampaignScreen::SetSelectedData(int selected)
 		Orders4Text->SetText(FText::FromString(CampaignData[selected].Orders[3]));
 	}
 	if (LocationSystemText) {
-
-		LocationSystemText->SetText(FText::FromString(CampaignData[selected].System));
-	}
-	if (LocationRegionText) {
-
-		LocationRegionText->SetText(FText::FromString(CampaignData[selected].Region));
+		FString LocationText = CampaignData[selected].System + "/" + CampaignData[selected].Region;
+		LocationSystemText->SetText(FText::FromString(LocationText));
 	}
 }
 
