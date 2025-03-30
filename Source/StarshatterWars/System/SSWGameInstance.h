@@ -31,6 +31,7 @@
  class UMenuDlg;
  class UFirstRun;
  class UCampaignScreen;
+ class UOperationsScreen;
  class UCampaignLoading;
  class DataLoader;
  class UPlayerSaveGame;
@@ -87,6 +88,9 @@ public:
 	void ShowCampaignLoading();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowOperationsScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowQuitDlg();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
@@ -105,11 +109,16 @@ public:
 	void ToggleCampaignScreen(bool bVisible);
 
 	UFUNCTION()
+	void ToggleOperationsScreen(bool bVisible);
+
+	UFUNCTION()
 	void RemoveCampaignScreen();
 	UFUNCTION()
 	void RemoveMainMenuScreen();
 	UFUNCTION()
 	void RemoveCampaignLoadScreen();
+	UFUNCTION()
+	void RemoveOperationsScreen();
 
 	UFUNCTION()
 	void ToggleCampaignLoading(bool bVisible);
@@ -162,6 +171,7 @@ public:
 
 	UMenuDlg* MainMenuDlg;
 	UCampaignScreen* CampaignScreen;
+	UOperationsScreen* OperationsScreen;
 	UCampaignLoading* CampaignLoading;
 	UQuitDlg* QuitDlg;
 	UFirstRun* FirstRunDlg;
@@ -179,6 +189,7 @@ public:
 	
 protected:
 	virtual void Init() override;
+	void ReadCampaignData();
 	virtual void Shutdown() override;
 	virtual bool InitContent();
 	virtual bool InitGame();
@@ -219,6 +230,8 @@ protected:
 
 	EGAMESTATUS Status;
 
+	TArray<FS_Campaign> CampaignData;
+
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 
 	private:
@@ -228,12 +241,14 @@ protected:
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);
 
 		void InitializeCampaignLoadingScreen(const FObjectInitializer& ObjectInitializer);
+		void InitializeOperationsScreen(const FObjectInitializer& ObjectInitializer);
 
 		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 		void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
 
 		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
 		TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
+		TSubclassOf<class UOperationsScreen> OperationsScreenWidgetClass;
 		TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;

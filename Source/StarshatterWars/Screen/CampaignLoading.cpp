@@ -21,5 +21,5 @@ void UCampaignLoading::NativeConstruct()
 void UCampaignLoading::OnLoadButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ShowMainMenuScreen();
+	SSWInstance->ShowOperationsScreen();
 }

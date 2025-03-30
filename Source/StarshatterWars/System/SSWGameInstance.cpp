@@ -15,6 +15,7 @@
 #include "../Screen/QuitDlg.h"
 #include "../Screen/FirstRun.h"
 #include "../Screen/CampaignScreen.h"
+#include "../Screen/OperationsScreen.h"
 #include "../Screen/CampaignLoading.h"
 
 #include "../Game/PlayerSaveGame.h"
@@ -34,12 +35,14 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 
 	PlayerSaveName = "PlayerSaveSlot";
 	PlayerSaveSlot = 0;
+	CampaignData.SetNum(5); // number of campaigns
 	
 	InitializeDT(ObjectInitializer);
 
 	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
 	InitializeCampaignLoadingScreen(ObjectInitializer);
+	InitializeOperationsScreen(ObjectInitializer);
 	InitializeQuitDlg(ObjectInitializer);
 	InitializeFirstRunDlg(ObjectInitializer);
 
@@ -205,7 +208,7 @@ void USSWGameInstance::Init()
 		DataLoader::Initialize();
 
 	loader = DataLoader::GetLoader();
-	
+
 	Status = EGAMESTATUS::OK;
 	UE_LOG(LogTemp, Log, TEXT("Initializing Game\n."));
 
@@ -218,12 +221,44 @@ void USSWGameInstance::Init()
 		InitContent();
 	}
 
-	if(bClearTables) {
+	if (bClearTables) {
 		CampaignDataTable->EmptyTable();
 	}
 	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
 		LoadGame(PlayerSaveName, PlayerSaveSlot);
+		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
+
+		if (PlayerInfo.Campaign >= 0) {
+			ReadCampaignData();
+		}
 	}
+}
+
+void USSWGameInstance::ReadCampaignData()
+{
+	UE_LOG(LogTemp, Log, TEXT("USSWGameInstance::ReadCampaignData()"));
+	static const FString ContextString(TEXT("ReadDataTable"));
+	TArray<FS_Campaign*> AllRows;
+	CampaignDataTable->GetAllRows<FS_Campaign>(ContextString, AllRows);
+
+	int index = 0;
+	for (FS_Campaign* Row : AllRows)
+	{
+		if (Row)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
+			CampaignData[index] = *Row;
+			CampaignData[index].Orders.SetNum(4);
+			index++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to load Campaign!"));
+		}
+	}
+	SetActiveCampaign(CampaignData[PlayerInfo.Campaign]);
+	FString NewCampaign = GetActiveCampaign().Name;
+	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
 }
 
 void USSWGameInstance::Shutdown()
@@ -309,6 +344,16 @@ void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& Object
 	MainMenuScreenWidgetClass = MainMenuScreenWidget.Class;
 }
 
+void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FClassFinder<UOperationsScreen> OperationsScreenWidget(TEXT("/Game/Screens/Operations/WB_Operations"));
+	if (!ensure(OperationsScreenWidget.Class != nullptr))
+	{
+		return;
+	}
+	OperationsScreenWidgetClass = OperationsScreenWidget.Class;
+}
+
 void USSWGameInstance::InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer)
 {
 	static ConstructorHelpers::FClassFinder<UCampaignScreen> CampaignScreenWidget(TEXT("/Game/Screens/Campaign/WB_CampaignSelect"));
@@ -356,6 +401,9 @@ void USSWGameInstance::ShowMainMenuScreen()
 	}
 	if (CampaignLoading) {
 		RemoveCampaignLoadScreen();
+	}
+	if (OperationsScreen) {
+		RemoveOperationsScreen();
 	}
 	// Create widget
 	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
@@ -439,6 +487,43 @@ void USSWGameInstance::ShowCampaignLoading()
 		}
 	}
 	ToggleCampaignLoading(true);
+}
+
+void USSWGameInstance::ShowOperationsScreen()
+{
+	if (MainMenuDlg) {
+		RemoveMainMenuScreen();
+	}
+	if (CampaignLoading) {
+		RemoveCampaignLoadScreen();
+	}
+	if (CampaignScreen) {
+		RemoveCampaignScreen();
+	}
+
+	// Create widget
+	if (!OperationsScreen) {
+		// Create widget
+		OperationsScreen = CreateWidget<UOperationsScreen>(this, OperationsScreenWidgetClass);
+	}
+
+	// Add it to viewport
+	OperationsScreen->AddToViewport(101);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(OperationsScreen->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
+	ToggleOperationsScreen(true);
 }
 
 void USSWGameInstance::ShowQuitDlg()
@@ -531,6 +616,18 @@ void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {
 	}
 }
 
+void USSWGameInstance::ToggleOperationsScreen(bool bVisible)
+{
+	if (OperationsScreen) {
+		if (bVisible) {
+			OperationsScreen->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			OperationsScreen->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+}
+
 void USSWGameInstance::RemoveCampaignScreen()
 {
 	if (CampaignScreen) {
@@ -561,6 +658,18 @@ void USSWGameInstance::RemoveCampaignLoadScreen()
 		CampaignLoading->RemoveFromParent();
 
 		CampaignLoading = nullptr;
+		if (GEngine) {
+			GEngine->ForceGarbageCollection();
+		}
+	}
+}
+
+void USSWGameInstance::RemoveOperationsScreen()
+{
+	if (OperationsScreen) {
+		OperationsScreen->RemoveFromParent();
+
+		OperationsScreen = nullptr;
 		if (GEngine) {
 			GEngine->ForceGarbageCollection();
 		}
