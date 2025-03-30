@@ -20,7 +20,7 @@
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 
-#include "../System/SSWGameInstance.h"
+
 #include "BaseScreen.generated.h"
 
 /**

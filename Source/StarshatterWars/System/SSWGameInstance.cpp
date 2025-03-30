@@ -15,6 +15,7 @@
 #include "../Screen/QuitDlg.h"
 #include "../Screen/FirstRun.h"
 #include "../Screen/CampaignScreen.h"
+#include "../Screen/CampaignLoading.h"
 
 #include "../Game/PlayerSaveGame.h"
 #include "Engine/World.h"
@@ -22,7 +23,7 @@
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 {
 	bIsWindowed = false;
-	bIsActive = false;
+	bIsGameActive = false;
 	bIsDeviceLost = false;
 	bIsMinimized = false;
 	bIsMaximized = false;
@@ -30,11 +31,15 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	bIsDeviceInitialized = false;
 	bIsDeviceRestored = false;
 	bClearTables = false;
+
+	PlayerSaveName = "PlayerSaveSlot";
+	PlayerSaveSlot = 0;
 	
 	InitializeDT(ObjectInitializer);
 
 	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
+	InitializeCampaignLoadingScreen(ObjectInitializer);
 	InitializeQuitDlg(ObjectInitializer);
 	InitializeFirstRunDlg(ObjectInitializer);
 
@@ -216,7 +221,9 @@ void USSWGameInstance::Init()
 	if(bClearTables) {
 		CampaignDataTable->EmptyTable();
 	}
-	LoadGame("PlayerSaveSlot", 0);
+	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
+		LoadGame(PlayerSaveName, PlayerSaveSlot);
+	}
 }
 
 void USSWGameInstance::Shutdown()
@@ -312,6 +319,16 @@ void USSWGameInstance::InitializeCampaignScreen(const FObjectInitializer& Object
 	CampaignScreenWidgetClass = CampaignScreenWidget.Class;
 }
 
+void USSWGameInstance::InitializeCampaignLoadingScreen(const FObjectInitializer& ObjectInitializer)
+{
+	static ConstructorHelpers::FClassFinder<UCampaignLoading> CampaignLoadingWidget(TEXT("/Game/Screens/Campaign/WB_CampaignLoading"));
+	if (!ensure(CampaignLoadingWidget.Class != nullptr))
+	{
+		return;
+	}
+	CampaignLoadingWidgetClass = CampaignLoadingWidget.Class;
+}
+
 void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitializer)
 {
 	static ConstructorHelpers::FClassFinder<UQuitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
@@ -334,6 +351,12 @@ void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectIni
 
 void USSWGameInstance::ShowMainMenuScreen()
 {
+	if (CampaignScreen) {
+		RemoveCampaignScreen();
+	}
+	if (CampaignLoading) {
+		RemoveCampaignLoadScreen();
+	}
 	// Create widget
 	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
 	// Add it to viewport
@@ -355,7 +378,7 @@ void USSWGameInstance::ShowMainMenuScreen()
 	ShowQuitDlg();
 	ShowFirstRunDlg();
 
-	if (UGameplayStatics::DoesSaveGameExist("PlayerSaveSlot", 0)) {
+	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
 		ToggleFirstRunDlg(false);
 	}
 	else
@@ -366,6 +389,8 @@ void USSWGameInstance::ShowMainMenuScreen()
 
 void USSWGameInstance::ShowCampaignScreen()
 {
+	RemoveMainMenuScreen();
+
 	// Create widget
 	if(!CampaignScreen) {
 		// Create widget
@@ -389,6 +414,31 @@ void USSWGameInstance::ShowCampaignScreen()
 		}
 	}
 	ToggleCampaignScreen(true);
+}
+
+void USSWGameInstance::ShowCampaignLoading()
+{
+	RemoveCampaignScreen();
+
+	// Create widget
+	CampaignLoading = CreateWidget<UCampaignLoading>(this, CampaignLoadingWidgetClass);
+	// Add it to viewport
+	CampaignLoading->AddToViewport(102);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(CampaignLoading->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
+	ToggleCampaignLoading(true);
 }
 
 void USSWGameInstance::ShowQuitDlg()
@@ -481,9 +531,87 @@ void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {
 	}
 }
 
+void USSWGameInstance::RemoveCampaignScreen()
+{
+	if (CampaignScreen) {
+		CampaignScreen->RemoveFromParent();
+
+		CampaignScreen = nullptr;
+		if(GEngine) {
+			GEngine->ForceGarbageCollection();
+		}
+	}
+}
+
+void USSWGameInstance::RemoveMainMenuScreen()
+{
+	if (MainMenuDlg) {
+		MainMenuDlg->RemoveFromParent();
+
+		MainMenuDlg = nullptr;
+		if (GEngine) {
+			GEngine->ForceGarbageCollection();
+		}
+	}
+}
+
+void USSWGameInstance::RemoveCampaignLoadScreen()
+{
+	if (CampaignLoading) {
+		CampaignLoading->RemoveFromParent();
+
+		CampaignLoading = nullptr;
+		if (GEngine) {
+			GEngine->ForceGarbageCollection();
+		}
+	}
+}
+
+void USSWGameInstance::ToggleCampaignLoading(bool bVisible)
+{
+	if (CampaignLoading) {
+		if (bVisible) {
+			CampaignLoading->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			CampaignLoading->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+}
+
 void USSWGameInstance::SetGameMode(EMODE gm)
 {
 
+}
+
+void USSWGameInstance::SetActiveCampaign(FS_Campaign campaign)
+{
+	ActiveCampaign = campaign;
+}
+
+void USSWGameInstance::SetActiveCampaignNr(int active)
+{
+	ActiveCampaignNr = active;
+}
+
+void USSWGameInstance::SetCampaignActive(bool bIsActive)
+{
+	bIsActiveCampaign = bIsActive;
+}
+
+FS_Campaign USSWGameInstance::GetActiveCampaign()
+{
+	return ActiveCampaign;
+}
+
+int USSWGameInstance::GetActiveCampaignNr()
+{
+	return ActiveCampaignNr;
+}
+
+bool USSWGameInstance::GetCampaignActive()
+{
+	return bIsActiveCampaign;
 }
 
 void USSWGameInstance::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerData)

@@ -30,8 +30,8 @@ void UFirstRun::OnApplyClicked()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	FString PlayerName = PlayerNameBox ? PlayerNameBox->GetText().ToString() : TEXT("DefaultPlayer");
 	PlayerData.Name = PlayerName;
-	PlayerData.Campaign = 0;
-	SSWInstance->SaveGame("PlayerSaveSlot", 0, PlayerData);
+	PlayerData.Campaign = -1;
+	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, PlayerData);
 	SSWInstance->ToggleFirstRunDlg(false);
 }
 
@@ -42,6 +42,7 @@ void UFirstRun::OnCancelClicked()
 	APlayerController* player = GetOwningPlayer();
 	UKismetSystemLibrary::QuitGame(this, player, EQuitPreference::Quit, true);
 }
+
 
 
 

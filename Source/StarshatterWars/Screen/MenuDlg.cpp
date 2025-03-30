@@ -23,12 +23,16 @@ void UMenuDlg::NativePreConstruct()
 
 void UMenuDlg::EnableMenuButtons(bool bEnabled)
 {
-	btn_start->SetIsEnabled(bEnabled);
 	btn_campaign->SetIsEnabled(bEnabled);
 	btn_mission->SetIsEnabled(bEnabled);
 	btn_multi->SetIsEnabled(bEnabled);
 	btn_tac->SetIsEnabled(bEnabled);
 	btn_player->SetIsEnabled(bEnabled);
+}
+
+void UMenuDlg::EnableStartMenuButton(bool bEnabled)
+{
+	btn_start->SetIsEnabled(bEnabled);
 }
 
 void UMenuDlg::NativeConstruct()
@@ -100,12 +104,20 @@ void UMenuDlg::NativeConstruct()
 	if(GameVersion)
 		GameVersion->SetText(FText::FromString(Game::GetGameVersion()));
 
-
 	SSWInstance->ToggleQuitDlg(false);
+	EnableMenuButtons(false);
+	EnableStartMenuButton(false);
 
-	if (UGameplayStatics::DoesSaveGameExist("PlayerSave", 0)) {
-		EnableMenuButtons(false);
+	if (UGameplayStatics::DoesSaveGameExist(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot)) {		
 		SSWInstance->ToggleFirstRunDlg(false);
+
+		if (SSWInstance->PlayerInfo.Campaign >= 0) {
+			EnableMenuButtons(true);
+			EnableStartMenuButton(true);
+		}
+	}
+	else {
+		SSWInstance->ToggleFirstRunDlg(true);
 	}
 }
 
@@ -219,7 +231,6 @@ void UMenuDlg::ShowCampaignScreen()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ShowCampaignScreen();
-	SSWInstance->SetGameMode(EMODE::MENU_MODE);
 }
 
 

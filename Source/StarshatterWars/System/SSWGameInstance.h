@@ -31,6 +31,7 @@
  class UMenuDlg;
  class UFirstRun;
  class UCampaignScreen;
+ class UCampaignLoading;
  class DataLoader;
  class UPlayerSaveGame;
 
@@ -83,6 +84,9 @@ public:
 	void ShowCampaignScreen();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowCampaignLoading();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowQuitDlg();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
@@ -101,7 +105,35 @@ public:
 	void ToggleCampaignScreen(bool bVisible);
 
 	UFUNCTION()
+	void RemoveCampaignScreen();
+	UFUNCTION()
+	void RemoveMainMenuScreen();
+	UFUNCTION()
+	void RemoveCampaignLoadScreen();
+
+	UFUNCTION()
+	void ToggleCampaignLoading(bool bVisible);
+
+	UFUNCTION()
 	void SetGameMode(EMODE gm);
+
+	UFUNCTION()
+	void SetActiveCampaign(FS_Campaign campaign);
+
+	UFUNCTION()
+	void SetActiveCampaignNr(int active);
+
+	UFUNCTION()
+	void SetCampaignActive(bool bIsActive);
+
+	UFUNCTION()
+	FS_Campaign GetActiveCampaign();
+
+	UFUNCTION()
+	int GetActiveCampaignNr();
+	
+	UFUNCTION()
+	bool GetCampaignActive();
 
 	UFUNCTION(BlueprintCallable, Category = "SaveGame")
 	void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
@@ -118,12 +150,19 @@ public:
 	UPROPERTY()
 	double StarDate;
 
+	UPROPERTY()
+	FString PlayerSaveName;
+
+	UPROPERTY()
+	int PlayerSaveSlot;
+
 	DataLoader* loader;
 
 	FString GetEmpireNameFromType(EEMPIRE_NAME emp);
 
 	UMenuDlg* MainMenuDlg;
 	UCampaignScreen* CampaignScreen;
+	UCampaignLoading* CampaignLoading;
 	UQuitDlg* QuitDlg;
 	UFirstRun* FirstRunDlg;
 
@@ -155,7 +194,7 @@ protected:
 	UPROPERTY()
 	bool              bIsWindowed;
 	UPROPERTY()
-	bool              bIsActive;
+	bool              bIsGameActive;
 	UPROPERTY()
 	bool              bIsDeviceLost;
 	UPROPERTY()
@@ -169,6 +208,15 @@ protected:
 	UPROPERTY()
 	bool              bIsDeviceRestored;
 
+	UPROPERTY()
+	FS_Campaign       ActiveCampaign;
+
+	UPROPERTY()
+	int				  ActiveCampaignNr;
+
+	UPROPERTY()
+	bool			  bIsActiveCampaign;
+
 	EGAMESTATUS Status;
 
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
@@ -179,11 +227,14 @@ protected:
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);
 
+		void InitializeCampaignLoadingScreen(const FObjectInitializer& ObjectInitializer);
+
 		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 		void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
 
 		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
 		TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
+		TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
 };

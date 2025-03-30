@@ -55,6 +55,9 @@ public:
 
 	UFUNCTION()
 	void EnableMenuButtons(bool bEnabled);
+	UFUNCTION()
+
+	void EnableStartMenuButton(bool bEnabled);
 
 protected:	
 	void NativeConstruct() override;

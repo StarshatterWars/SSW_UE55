@@ -3,17 +3,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseScreen.h"
 #include "../Game/GameStructs.h"
+#include "Blueprint/UserWidget.h"
+#include "Engine/Texture2D.h"
+#include "Components/Image.h"
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+#include "Components/ComboBoxString.h"
+#include "Components/EditableTextBox.h"
+
+#include "../System/SSWGameInstance.h"
+
 #include "CampaignScreen.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API UCampaignScreen : public UBaseScreen
+class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 {
 	GENERATED_BODY()
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Title;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayerNameText;
@@ -37,23 +48,32 @@ class STARSHATTERWARS_API UCampaignScreen : public UBaseScreen
 	class UTextBlock* LocationRegionText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UComboBoxString* CampaignSelectDD;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* PlayButtonText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* CancelButtonText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* PlayButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* CancelButton;
 	
 protected:
 	void NativeConstruct() override;
-
+	
 	UFUNCTION()
-	void OnApplyButtonClicked();
+	void OnPlayButtonClicked();
 	UFUNCTION()
-	void OnApplyButtonHovered();
+	void OnPlayButtonHovered();
 	UFUNCTION()
-	void OnApplyButtonUnHovered();
+	void OnPlayButtonUnHovered();
 	UFUNCTION()
 	void OnCancelButtonClicked();
 	UFUNCTION()
 	void OnCancelButtonHovered();
 	UFUNCTION()
 	void OnCancelButtonUnHovered();
-	
+
 	UFUNCTION()
 	void ReadCampaignData();
 
@@ -68,4 +88,8 @@ protected:
 	
 	TArray<FS_Campaign> CampaignData;
 
+	int Selected; 
+
+private:
+	
 };
