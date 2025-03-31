@@ -55,6 +55,17 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* OrdersButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* TheaterButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* ForcesButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* IntelButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* MissionsButton;
+
 protected:
 	void NativeConstruct() override;
 
@@ -70,6 +81,41 @@ protected:
 	void OnCancelButtonHovered();
 	UFUNCTION()
 	void OnCancelButtonUnHovered();
+	
+	UFUNCTION()
+	void OnOrdersButtonClicked();
+	UFUNCTION()
+	void OnOrdersButtonHovered();
+	UFUNCTION()
+	void OnOrdersButtonUnHovered();
+
+	UFUNCTION()
+	void OnTheaterButtonClicked();
+	UFUNCTION()
+	void OnTheaterButtonHovered();
+	UFUNCTION()
+	void OnTheaterButtonUnHovered();
+
+	UFUNCTION()
+	void OnForcesButtonClicked();
+	UFUNCTION()
+	void OnForcesButtonHovered();
+	UFUNCTION()
+	void OnForcesButtonUnHovered();
+
+	UFUNCTION()
+	void OnIntelButtonClicked();
+	UFUNCTION()
+	void OnIntelButtonHovered();
+	UFUNCTION()
+	void OnIntelButtonUnHovered();
+
+	UFUNCTION()
+	void OnMissionsButtonClicked();
+	UFUNCTION()
+	void OnMissionsButtonHovered();
+	UFUNCTION()
+	void OnMissionsButtonUnHovered();
 
 	void SetSelectedData();
 

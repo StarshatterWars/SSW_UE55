@@ -25,6 +25,36 @@ void UOperationsScreen::NativeConstruct()
 		SelectButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonHovered);
 		SelectButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonUnHovered);
 	}
+
+	if (OrdersButton) {
+		OrdersButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnOrdersButtonClicked);
+		OrdersButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnOrdersButtonHovered);
+		OrdersButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnOrdersButtonUnHovered);
+	}
+
+	if (TheaterButton) {
+		TheaterButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterButtonClicked);
+		TheaterButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterButtonHovered);
+		TheaterButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnTheaterButtonUnHovered);
+	}
+
+	if (ForcesButton) {
+		ForcesButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnForcesButtonClicked);
+		ForcesButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnForcesButtonHovered);
+		ForcesButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnForcesButtonUnHovered);
+	}
+
+	if (IntelButton) {
+		IntelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnIntelButtonClicked);
+		IntelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnIntelButtonHovered);
+		IntelButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnIntelButtonUnHovered);
+	}
+
+	if (MissionsButton) {
+		MissionsButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnMissionsButtonClicked);
+		MissionsButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMissionsButtonHovered);
+		MissionsButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnMissionsButtonUnHovered);
+	}
 	if (PlayerNameText) {
 		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
 	}
@@ -45,7 +75,65 @@ void UOperationsScreen::OnSelectButtonUnHovered()
 {
 }
 
+void UOperationsScreen::OnOrdersButtonClicked()
+{
+}
 
+void UOperationsScreen::OnOrdersButtonHovered()
+{
+}
+
+void UOperationsScreen::OnOrdersButtonUnHovered()
+{
+}
+
+void UOperationsScreen::OnTheaterButtonClicked()
+{
+}
+
+void UOperationsScreen::OnTheaterButtonHovered()
+{
+}
+
+void UOperationsScreen::OnTheaterButtonUnHovered()
+{
+}
+
+void UOperationsScreen::OnForcesButtonClicked()
+{
+}
+
+void UOperationsScreen::OnForcesButtonHovered()
+{
+}
+
+void UOperationsScreen::OnForcesButtonUnHovered()
+{
+}
+
+void UOperationsScreen::OnIntelButtonClicked()
+{
+}
+
+void UOperationsScreen::OnIntelButtonHovered()
+{
+}
+
+void UOperationsScreen::OnIntelButtonUnHovered()
+{
+}
+
+void UOperationsScreen::OnMissionsButtonClicked()
+{
+}
+
+void UOperationsScreen::OnMissionsButtonHovered()
+{
+}
+
+void UOperationsScreen::OnMissionsButtonUnHovered()
+{
+}
 void UOperationsScreen::OnCancelButtonClicked()
 {
 
