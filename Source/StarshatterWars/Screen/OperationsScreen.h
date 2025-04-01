@@ -12,6 +12,7 @@
 #include "Components/TextBlock.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
+#include "Components/WidgetSwitcher.h"
 
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
@@ -25,7 +26,7 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	GENERATED_BODY()
 	
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* Title;
+	class UTextBlock* TitleText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayerNameText;
@@ -45,6 +46,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UTextBlock* Orders4Text;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationSystemText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* OperationsModeText;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayButtonText;
@@ -65,6 +69,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* IntelButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* MissionsButton;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UWidgetSwitcher* OperationalSwitcher;
 
 protected:
 	void NativeConstruct() override;
@@ -116,8 +123,10 @@ protected:
 	void OnMissionsButtonHovered();
 	UFUNCTION()
 	void OnMissionsButtonUnHovered();
-
-	void SetSelectedData();
+	UFUNCTION()
+	void SetCampaignOrders();
+	UFUNCTION()
+	void SetCampaignMissions();
 
 private:
 	FS_Campaign ActiveCampaign;

@@ -11,21 +11,8 @@ void UCampaignScreen::NativeConstruct()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
 
-	if (Title) {
-		Title->SetText(FText::FromString("Dynamic Campaigns"));
-
-		//FSlateFontInfo FontInfo;
-		//FontInfo.Size = 24;  // Set font size
-		//FontInfo.TypefaceFontName = FName("Default");
-
-		// Load a font asset
-		//static ConstructorHelpers::FObjectFinder<UFont> FontObj(TEXT("/Game/Font/SERPNTB.SERPNTB"));
-		//if (FontObj.Succeeded())
-		//{
-		//	FontInfo.FontObject = FontObj.Object;
-		//}
-
-		//Title->SetFont(FontInfo);
+	if (TitleText) {
+		TitleText->SetText(FText::FromString("Dynamic Campaigns").ToUpper());
 	}
 
 	if (CancelButton) {

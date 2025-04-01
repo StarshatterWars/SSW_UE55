@@ -10,8 +10,8 @@ void UOperationsScreen::NativeConstruct()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
 
-	if (Title)
-		Title->SetText(FText::FromString("Operational Command"));
+	if (TitleText)
+		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
 	if (CancelButton) {
 		CancelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnCancelButtonClicked);
 		CancelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnCancelButtonHovered);
@@ -58,9 +58,17 @@ void UOperationsScreen::NativeConstruct()
 	if (PlayerNameText) {
 		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
 	}
+
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(0);
+	}
+
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("ORDERS"));
+	}
 	ActiveCampaign = SSWInstance->GetActiveCampaign();
 	
-	SetSelectedData();
+	SetCampaignOrders();
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -77,6 +85,13 @@ void UOperationsScreen::OnSelectButtonUnHovered()
 
 void UOperationsScreen::OnOrdersButtonClicked()
 {
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(0);
+	}
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("ORDERS"));
+	}
+	SetCampaignOrders();
 }
 
 void UOperationsScreen::OnOrdersButtonHovered()
@@ -89,6 +104,13 @@ void UOperationsScreen::OnOrdersButtonUnHovered()
 
 void UOperationsScreen::OnTheaterButtonClicked()
 {
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(1);
+	}
+
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("THEATER"));
+	}
 }
 
 void UOperationsScreen::OnTheaterButtonHovered()
@@ -101,6 +123,12 @@ void UOperationsScreen::OnTheaterButtonUnHovered()
 
 void UOperationsScreen::OnForcesButtonClicked()
 {
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(2);
+	}
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("FORCES"));
+	}
 }
 
 void UOperationsScreen::OnForcesButtonHovered()
@@ -113,6 +141,13 @@ void UOperationsScreen::OnForcesButtonUnHovered()
 
 void UOperationsScreen::OnIntelButtonClicked()
 {
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(3);
+	}
+
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("INTEL"));
+	}
 }
 
 void UOperationsScreen::OnIntelButtonHovered()
@@ -125,6 +160,14 @@ void UOperationsScreen::OnIntelButtonUnHovered()
 
 void UOperationsScreen::OnMissionsButtonClicked()
 {
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(4);
+	}
+
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("MISSIONS"));
+	}
+	SetCampaignMissions();
 }
 
 void UOperationsScreen::OnMissionsButtonHovered()
@@ -151,7 +194,7 @@ void UOperationsScreen::OnCancelButtonUnHovered()
 {
 }
 
-void UOperationsScreen::SetSelectedData()
+void UOperationsScreen::SetCampaignOrders()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
@@ -187,4 +230,8 @@ void UOperationsScreen::SetSelectedData()
 		FString LocationSystem = SSWInstance->GetActiveCampaign().System + "/" + SSWInstance->GetActiveCampaign().Region;
 		LocationSystemText->SetText(FText::FromString(LocationSystem));
 	}
+}
+
+void UOperationsScreen::SetCampaignMissions()
+{
 }

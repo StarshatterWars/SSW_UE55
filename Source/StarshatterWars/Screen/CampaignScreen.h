@@ -24,7 +24,7 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 {
 	GENERATED_BODY()
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* Title;
+	class UTextBlock* TitleText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayerNameText;
