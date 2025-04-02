@@ -82,17 +82,18 @@ void UOperationsScreen::NativeConstruct()
 	} else {
 		if (TheaterButton) {
 				TheaterButton->SetIsEnabled(true);
-			}
-			if (ForcesButton) {
-				ForcesButton->SetIsEnabled(true);
-			}
-			if (IntelButton) {
-				IntelButton->SetIsEnabled(true);
-			}
+		}
+		if (ForcesButton) {
+			ForcesButton->SetIsEnabled(true);
+		}
+		if (IntelButton) {
+			IntelButton->SetIsEnabled(true);
+		}
 	}
 
 
 	SetCampaignOrders();
+	SetCampaignMissions();
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -253,11 +254,18 @@ void UOperationsScreen::SetCampaignOrders()
 	if (LocationSystemText) {
 		FString LocationSystem = SSWInstance->GetActiveCampaign().System + "/" + SSWInstance->GetActiveCampaign().Region;
 		LocationSystemText->SetText(FText::FromString(LocationSystem));
-	}
-
-	
+	}	
 }
 
 void UOperationsScreen::SetCampaignMissions()
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
+	TArray<FS_CampaignMissionList> Missions = SSWInstance->GetActiveCampaign().MissionList;
+
+	for (FS_CampaignMissionList info : Missions)
+	{
+		FString NewMission = info.Name;
+		UE_LOG(LogTemp, Log, TEXT("Mission Name Selected: %s"), *NewMission);
+	}
 }

@@ -187,6 +187,8 @@ public:
 
 	UPROPERTY()
 	TArray<FS_Campaign> CampaignData;
+	UPROPERTY()
+	TArray<FS_CampaignMissionList> MissionList;
 
 
 	
