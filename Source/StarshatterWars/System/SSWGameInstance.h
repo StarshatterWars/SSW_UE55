@@ -190,7 +190,10 @@ public:
 	UPROPERTY()
 	TArray<FS_CampaignMissionList> MissionList;
 
-
+	UPROPERTY()
+	int32 SelectionMissionNr;
+	UPROPERTY()
+	bool MissionSelectionChanged;
 	
 protected:
 	virtual void Init() override;

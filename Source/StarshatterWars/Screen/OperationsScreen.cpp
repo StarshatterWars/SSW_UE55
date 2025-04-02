@@ -2,6 +2,7 @@
 
 
 #include "OperationsScreen.h"
+#include "MissionListObject.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -93,6 +94,7 @@ void UOperationsScreen::NativeConstruct()
 
 
 	SetCampaignOrders();
+	PopulateMissionList();
 	SetCampaignMissions();
 }
 
@@ -269,3 +271,38 @@ void UOperationsScreen::SetCampaignMissions()
 		UE_LOG(LogTemp, Log, TEXT("Mission Name Selected: %s"), *NewMission);
 	}
 }
+
+void UOperationsScreen::PopulateMissionList()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
+	
+	if (!MissionList) return;
+
+	for (int32 i = 0; i < SSWInstance->GetActiveCampaign().MissionList.Num(); ++i)
+	{
+		UMissionListObject* ListItem = NewObject<UMissionListObject>();
+		ListItem->MissionName = SSWInstance->GetActiveCampaign().MissionList[i].Name;
+		ListItem->MissionType = SSWInstance->GetActiveCampaign().MissionList[i].TypeName;
+		ListItem->MissionTime = SSWInstance->GetActiveCampaign().MissionList[i].Start;
+		
+		if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Active) {
+			ListItem->MissionStatus = "Active";
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Complete) {
+			ListItem->MissionStatus = "Complete";
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Ready) {
+			ListItem->MissionStatus = "Ready";
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Available) {
+			ListItem->MissionStatus = "Available";
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Pending) {
+			ListItem->MissionStatus = "Pending";
+		}
+		MissionList->AddItem(ListItem);
+
+		UE_LOG(LogTemp, Log, TEXT("Ops Mission Name: %s"), *ListItem->MissionName);
+	}
+}
+

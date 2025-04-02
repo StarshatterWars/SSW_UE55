@@ -883,7 +883,8 @@ AGameDataLoader::LoadMissionList(FString Path)
 					Text  Script;
 					Text  System = "Unknown";
 					Text  Region = "Unknown";
-					int   Start = 0;
+					Text  TypeName = "";
+					Text  Start = "";
 					int   Type = 0;
 
 					for (int i = 0; i < val->elements()->size(); i++) {
@@ -901,8 +902,8 @@ AGameDataLoader::LoadMissionList(FString Path)
 							NewMissionList.Description = FString(Desc);
 						}
 						else if (pdef->name()->value() == "start") {
-							GetDefTime(Start, pdef, fn);
-							NewMissionList.Description = FString(Desc);
+							GetDefText(Start, pdef, fn);
+							NewMissionList.Start = FString(Start);
 						}
 						else if (pdef->name()->value() == "system") {
 							GetDefText(System, pdef, fn);
@@ -917,11 +918,15 @@ AGameDataLoader::LoadMissionList(FString Path)
 							NewMissionList.Script = FString(Script);
 						}
 						else if (pdef->name()->value() == "type") {
-							char typestr[64];
-							GetDefText(typestr, pdef, fn);
-							Type = Mission::TypeFromName(typestr);
-							NewMissionList.Type = Type;
+							GetDefText(TypeName, pdef, fn);
+							//Type = Mission::TypeFromName(typestr);
+							NewMissionList.TypeName = FString(TypeName);
 						}
+						
+						NewMissionList.Available = true;
+						NewMissionList.Complete = false;
+						NewMissionList.Status = EMISSIONSTATUS::Available;
+
 					}
 					MissionListArray.Add(NewMissionList);
 				}

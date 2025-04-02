@@ -17,6 +17,15 @@ enum class EGraphicsRHI : uint8 {
 };
 
 UENUM(BlueprintType)
+enum class EMISSIONSTATUS : uint8 {
+	Available UMETA(DisplayName = "Available"),
+	Complete UMETA(DisplayName = "Complete"),
+	Ready UMETA(DisplayName = "Ready"),
+	Active UMETA(DisplayName = "Active"),
+	Pending UMETA(DisplayName = "Pending"),
+};
+
+UENUM(BlueprintType)
 enum class EMODE : uint8 {
 	MENU_MODE UMETA(DisplayName = "Main Menu"),// main menu
 	CLOD_MODE UMETA(DisplayName = "Loading Campaign"), // loading campaign
@@ -940,13 +949,22 @@ struct FS_CampaignMissionList : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Script;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString TypeName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EMISSIONSTATUS Status;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Available;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Complete;
 
 	FS_CampaignMissionList() {
 		
 		Id = 0;
 		Name = "";
 		Description = "";
+		TypeName = "";
 	
 		System = "Unknown";
 		Region = "Unknown";
@@ -954,6 +972,11 @@ struct FS_CampaignMissionList : public FTableRowBase {
 		Start = "";
 		Script = "";
 		Type = 0;
+
+		Available = true;
+		Complete = false;
+
+		Status = EMISSIONSTATUS::Available;
 	}
 };
 

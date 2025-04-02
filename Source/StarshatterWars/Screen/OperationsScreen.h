@@ -13,6 +13,7 @@
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
+#include "Components/ListView.h"
 
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
@@ -73,6 +74,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* MissionList;
+
 protected:
 	void NativeConstruct() override;
 
@@ -127,6 +131,9 @@ protected:
 	void SetCampaignOrders();
 	UFUNCTION()
 	void SetCampaignMissions();
+
+	void PopulateMissionList();
+		
 
 private:
 	FS_Campaign ActiveCampaign;
