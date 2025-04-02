@@ -66,8 +66,32 @@ void UOperationsScreen::NativeConstruct()
 	if (OperationsModeText) {
 		OperationsModeText->SetText(FText::FromString("ORDERS"));
 	}
+
 	ActiveCampaign = SSWInstance->GetActiveCampaign();
 	
+	if (SSWInstance->GetActiveCampaign().Index == 0) {
+		if (TheaterButton) {
+			TheaterButton->SetIsEnabled(false);
+		}
+		if (ForcesButton) {
+			ForcesButton->SetIsEnabled(false); 
+		}
+		if (IntelButton) {
+			IntelButton->SetIsEnabled(false);
+		}
+	} else {
+		if (TheaterButton) {
+				TheaterButton->SetIsEnabled(true);
+			}
+			if (ForcesButton) {
+				ForcesButton->SetIsEnabled(true);
+			}
+			if (IntelButton) {
+				IntelButton->SetIsEnabled(true);
+			}
+	}
+
+
 	SetCampaignOrders();
 }
 
@@ -230,6 +254,8 @@ void UOperationsScreen::SetCampaignOrders()
 		FString LocationSystem = SSWInstance->GetActiveCampaign().System + "/" + SSWInstance->GetActiveCampaign().Region;
 		LocationSystemText->SetText(FText::FromString(LocationSystem));
 	}
+
+	
 }
 
 void UOperationsScreen::SetCampaignMissions()

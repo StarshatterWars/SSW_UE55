@@ -29,6 +29,8 @@ orders: "* Both fleets to converge on the Garrison system as soon as possible."
 
 system: Jarnell
 region: Adonis
+index: 4
+available: false
 
 /*******
 

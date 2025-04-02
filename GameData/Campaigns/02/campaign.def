@@ -34,6 +34,8 @@ region: Meridian
 
 combatant_groups: 4
 action_groups: 83
+index: 1
+available: true
 
 combatant: {
 	name:    "Terellian Alliance",

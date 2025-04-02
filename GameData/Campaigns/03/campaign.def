@@ -30,6 +30,8 @@ orders: "* Stop the Hegemony advance until a counterattack can be mounted."
 
 system: Borova
 region: Borova
+index: 2
+available: false
 
 combatant_groups: 3
 

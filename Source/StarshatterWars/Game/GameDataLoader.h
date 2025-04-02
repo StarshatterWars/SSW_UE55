@@ -157,6 +157,7 @@ public:
 	// attributes:
 	int                  campaign_id;
 	int                  status;
+	int					 Index;
 	char                 filename[64];
 	Text                 path[64];
 	Text                 name;
@@ -171,6 +172,7 @@ public:
 	//Bitmap               image[NUM_IMAGES];
 
 	bool                 scripted;
+	bool                 available;
 	bool                 sequential;
 	bool                 loaded_from_savegame;
 

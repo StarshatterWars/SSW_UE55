@@ -75,9 +75,6 @@ protected:
 	void OnCancelButtonUnHovered();
 
 	UFUNCTION()
-	void ReadCampaignData();
-
-	UFUNCTION()
 	void SetCampaignDDList();
 
 	UFUNCTION()
@@ -85,8 +82,6 @@ protected:
 
 	UFUNCTION()
 	void OnSetSelected(FString dropDownInt, ESelectInfo::Type type);
-	
-	TArray<FS_Campaign> CampaignData;
 
 	int Selected; 
 

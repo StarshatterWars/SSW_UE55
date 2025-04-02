@@ -44,17 +44,20 @@ void UCampaignScreen::NativeConstruct()
 		CampaignSelectDD->OnSelectionChanged.AddDynamic(this, &UCampaignScreen::OnSetSelected);
 	}
 
-	CampaignData.SetNum(5);
+	if (PlayerNameText) {
+		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
+		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *SSWInstance->PlayerInfo.Name);
+	}
 
-	ReadCampaignData();
 	SetCampaignDDList();
+	SetSelectedData(SSWInstance->PlayerInfo.Campaign);
 }
 
 void UCampaignScreen::OnPlayButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayerInfo.Campaign = Selected;
-	SSWInstance->SetActiveCampaign(CampaignData[Selected]);
+	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
 	FString NewCampaign = SSWInstance->GetActiveCampaign().Name;
 	UE_LOG(LogTemp, Log, TEXT("Campaign Name Selected: %s"), *NewCampaign);
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
@@ -84,43 +87,6 @@ void UCampaignScreen::OnCancelButtonUnHovered()
 {
 }
 
-void UCampaignScreen::ReadCampaignData()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	// Loop through all rows
-
-	static const FString ContextString(TEXT("ReadDataTable"));
-	TArray<FS_Campaign*> AllRows;
-	SSWInstance->CampaignDataTable->GetAllRows<FS_Campaign>(ContextString, AllRows);
-
-	int index = 0;
-	for (FS_Campaign* Row : AllRows)
-	{
-		if (Row)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
-			CampaignData[index] = *Row;
-			index++;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to load Campaign!"));
-		}
-	}
-
-	if (PlayerNameText) {
-		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
-		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *SSWInstance->PlayerInfo.Name);
-	}
-
-	if (SSWInstance->PlayerInfo.Campaign == -1) {
-		SetSelectedData(0);
-	}
-	else {
-		SetSelectedData(SSWInstance->PlayerInfo.Campaign);
-	}
-}
-
 void UCampaignScreen::SetCampaignDDList()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -129,8 +95,11 @@ void UCampaignScreen::SetCampaignDDList()
 		CampaignSelectDD->ClearOptions();
 		CampaignSelectDD->ClearSelection();
 
-		for (int index = 0; index < CampaignData.Num(); index++) {
-			CampaignSelectDD->AddOption(CampaignData[index].Name);
+		for (int index = 0; index < SSWInstance->CampaignData.Num(); index++) {
+		
+			if(SSWInstance->CampaignData[index].Available) {
+				CampaignSelectDD->AddOption(SSWInstance->CampaignData[index].Name);
+			}
 		}
 
 		CampaignSelectDD->SetSelectedIndex(SSWInstance->PlayerInfo.Campaign);
@@ -142,7 +111,7 @@ void UCampaignScreen::SetCampaignDDList()
 			CampaignNameText->SetText(FText::FromString("Campaign Not Set"));
 			Selected = 0;
 		} else {
-			CampaignNameText->SetText(FText::FromString(CampaignData[SSWInstance->PlayerInfo.Campaign].Name));
+			CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[SSWInstance->PlayerInfo.Campaign].Name));
 			Selected = SSWInstance->PlayerInfo.Campaign;
 		}
 	}
@@ -152,38 +121,36 @@ void UCampaignScreen::SetSelectedData(int selected)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
-	CampaignData[selected].Orders.SetNum(4);
-
 	if (CampaignNameText) {
-		CampaignNameText->SetText(FText::FromString(CampaignData[selected].Name));
+		CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Name));
 	}
 
 	if (DescriptionText) {
-		DescriptionText->SetText(FText::FromString(CampaignData[selected].Description));
+		DescriptionText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Description));
 	}
 
 	if (SituationText) {
-		SituationText->SetText(FText::FromString(CampaignData[selected].Situation));
+		SituationText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Situation));
 	}
 
 	if(Orders1Text) {
 		
-		Orders1Text->SetText(FText::FromString(CampaignData[selected].Orders[0]));
+		Orders1Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[0]));
 	}
 	if (Orders2Text) {
 
-		Orders2Text->SetText(FText::FromString(CampaignData[selected].Orders[1]));
+		Orders2Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[1]));
 	}
 	if (Orders3Text) {
 
-		Orders3Text->SetText(FText::FromString(CampaignData[selected].Orders[2]));
+		Orders3Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[2]));
 	}
 	if (Orders4Text) {
 
-		Orders4Text->SetText(FText::FromString(CampaignData[selected].Orders[3]));
+		Orders4Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[3]));
 	}
 	if (LocationSystemText) {
-		FString LocationText = CampaignData[selected].System + "/" + CampaignData[selected].Region;
+		FString LocationText = SSWInstance->CampaignData[selected].System + "/" + SSWInstance->CampaignData[selected].Region;
 		LocationSystemText->SetText(FText::FromString(LocationText));
 	}
 
@@ -194,22 +161,24 @@ void UCampaignScreen::SetSelectedData(int selected)
 
 void UCampaignScreen::OnSetSelected(FString dropDownInt, ESelectInfo::Type type)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
 	if (type == ESelectInfo::OnMouseClick) {
 		int value;
 
-		if (dropDownInt == CampaignData[0].Name) {
+		if (dropDownInt == SSWInstance->CampaignData[0].Name) {
 			value = 0;
 		} 
-		else if (dropDownInt == CampaignData[1].Name) {
+		else if (dropDownInt == SSWInstance->CampaignData[1].Name) {
 			value = 1;
 		}
-		else if (dropDownInt == CampaignData[2].Name) {
+		else if (dropDownInt == SSWInstance->CampaignData[2].Name) {
 			value = 2;
 		}
-		else if (dropDownInt == CampaignData[3].Name) {
+		else if (dropDownInt == SSWInstance->CampaignData[3].Name) {
 			value = 3;
 		}
-		else if (dropDownInt == CampaignData[4].Name) {
+		else if (dropDownInt == SSWInstance->CampaignData[4].Name) {
 			value = 4;
 		}
 

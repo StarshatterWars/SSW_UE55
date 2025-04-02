@@ -247,6 +247,7 @@ void USSWGameInstance::ReadCampaignData()
 		if (Row)
 		{
 			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
+			UE_LOG(LogTemp, Log, TEXT("Campaign Available: %s"), (Row->Available ? TEXT("true") : TEXT("false")));
 			CampaignData[index] = *Row;
 			CampaignData[index].Orders.SetNum(4);
 			index++;
@@ -332,6 +333,9 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 	{
 		CampaignDataTable = CampaignDataTableObject.Object;
 	}
+
+	if(bClearTables)
+		CampaignDataTable->EmptyTable();
 }
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
@@ -743,3 +747,4 @@ void USSWGameInstance::LoadGame(FString SlotName, int32 UserIndex)
 		PlayerInfo = LoadedGame->PlayerInfo;
 	}
 }
+

@@ -150,12 +150,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SaveGame")
 	void LoadGame(FString SlotName, int32 UserIndex);
 
-
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
 	ACombatGroupLoader* CombatGroupData;
-
+	
 	UPROPERTY()
 	double StarDate;
 
@@ -185,6 +184,10 @@ public:
 	
 	UPROPERTY()
 	FS_PlayerGameInfo PlayerInfo;
+
+	UPROPERTY()
+	TArray<FS_Campaign> CampaignData;
+
 
 	
 protected:
@@ -229,8 +232,6 @@ protected:
 	bool			  bIsActiveCampaign;
 
 	EGAMESTATUS Status;
-
-	TArray<FS_Campaign> CampaignData;
 
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 

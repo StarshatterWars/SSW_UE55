@@ -1588,6 +1588,8 @@ struct FS_Campaign : public FTableRowBase {
 	int ActionSize;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int CombatantSize;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Index;
 	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	//UTexture2D* Banner;
 	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1629,6 +1631,7 @@ struct FS_Campaign : public FTableRowBase {
 
 		ActionSize = 0;
 		CombatantSize = 0;
+		Index = 0;
 	}
 };
 

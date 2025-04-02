@@ -181,6 +181,7 @@ void AGameDataLoader::BeginPlay()
 	LoadShipDesigns();
 	LoadCombatRoster();
 	LoadStarsystems();
+	
 	if(SSWInstance->bClearTables) {
 		InitializeCampaignData();
 	}
@@ -281,6 +282,10 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						GetDefText(description, def, filename);
 						NewCampaignData.Description = FString(description);
 				}
+				else if (def->name()->value() == "index") {
+						GetDefNumber(Index, def, filename);
+						NewCampaignData.Index = Index;
+				}
 				else if (def->name()->value() == "situation") {
 						GetDefText(situation, def, filename);
 						NewCampaignData.Situation = FString(situation);
@@ -308,6 +313,13 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 					if (def->term() && def->term()->isBool()) {
 						sequential = def->term()->isBool()->value();
 						NewCampaignData.Sequential = sequential;
+					}
+				}
+
+				else if (def->name()->value() == "available") {
+					if (def->term() && def->term()->isBool()) {
+						available = def->term()->isBool()->value();
+						NewCampaignData.Available = available;
 					}
 				}
 

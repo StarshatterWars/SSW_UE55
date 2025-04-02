@@ -30,6 +30,8 @@ orders:
 system: Janus
 region: Janek
 scripted: true
+index: 0
+available: true
 
 combatant_groups: 0
 action_groups: 1
