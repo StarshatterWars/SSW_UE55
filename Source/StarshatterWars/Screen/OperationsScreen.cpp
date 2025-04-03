@@ -289,6 +289,7 @@ void UOperationsScreen::PopulateMissionList()
 		ListItem->MissionTime = SSWInstance->GetActiveCampaign().MissionList[i].Start;
 		ListItem->MissionRegion = SSWInstance->GetActiveCampaign().MissionList[i].Region;
 		ListItem->MissionSystem = SSWInstance->GetActiveCampaign().MissionList[i].System;
+		ListItem->MissionSitrep = SSWInstance->GetActiveCampaign().MissionList[i].System;
 		
 		if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Active) {
 			ListItem->MissionStatus = "Active";

@@ -8,7 +8,8 @@ mission: {
 	script:  "T1",
 	type:    "Training"
 	system:  "Janus"
-	region:  "Janek"
+	region:  "Janek"	
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. The fleet carrier Archon has been detached to Janek orbit to practice spaceborne fighter operations.  As part of the exercise, you have been tasked with flying patrol patterns with your training instructor."
 }
 
 mission: {
@@ -20,6 +21,7 @@ mission: {
 	type:    "Training"
 	system:  "Janus"
 	region:  "Janek"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. The fleet carrier Archon has been detached to Janek orbit to practice spaceborne fighter operations.  As part of the exercise, you have been tasked with flying patrol patterns and destroying target drones in your sector."
 }
 
 mission: {
@@ -31,6 +33,7 @@ mission: {
 	type:    "Training"
 	system:  "Janus"
 	region:  "Janek Station"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. Your squadron, the Avengers, are on temporary detached duty to Janek Station. As part of the exercise, you have been tasked with practicing take offs and landings, flying patrol patterns and destroying target drones in your sector."
 }
 
 mission: {
@@ -42,6 +45,7 @@ mission: {
 	type:    "Training"
 	system:  "Janus"
 	region:  "Janek Station"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. Your squadron, the Stallions, are on temporary detached duty to Janek Station. As part of the exercise, you have been tasked with destroying support facilities for a simulated mining operation."
 }
 
 mission: {
@@ -53,6 +57,7 @@ mission: {
 	type:    "Training"
 	system:  "Janus"
 	region:  "Alystra"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. You will be in command of the Frigate Carlisle in Alystra sector.  After you destroy the target drones in that sector, rendevous with the Archon in Janek orbit to complete the exercise."
 }
 
 mission: {
@@ -64,6 +69,7 @@ mission: {
 	type:    "Training"
 	system: "Janus"
 	region: "Dante"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. You will be in command of the Destroyer Mahan in Dante sector. You have been tasked with finding and destroying the enemy Wolf-class starship Shannon. You have one hour to complete this exercise.  Good luck!"
 }
 
 mission: {
@@ -75,4 +81,6 @@ mission: {
 	type:    "Training"
 	system: "Janus"
 	region: "Alystra"
+	sitrep: "The Third Fleet is participating in wargame exercises in the Janus system. The fleet carrier Archon has been detached to Alystra orbit to practice spaceborne fighter operations."
+
 }
