@@ -7,6 +7,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "MissionListObject.h"
+#include "Blueprint/IUserObjectListEntry.h"
 #include "../System/SSWGameInstance.h"
 
 #include "MissionLVElement.generated.h"
@@ -15,7 +16,7 @@
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API UMissionLVElement : public UUserWidget
+class STARSHATTERWARS_API UMissionLVElement : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
@@ -32,7 +33,7 @@ class STARSHATTERWARS_API UMissionLVElement : public UUserWidget
 	
 protected:
 	void NativeConstruct() override;
-	//void NativeOnListItemObjectSet(UObject* ListItemObject);
+	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mission LV Variables")

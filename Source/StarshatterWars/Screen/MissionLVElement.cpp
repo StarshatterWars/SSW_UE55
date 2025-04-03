@@ -2,6 +2,7 @@
 
 
 #include "MissionLVElement.h"
+
 #include "../System/SSWGameInstance.h"
 
 void UMissionLVElement::NativeConstruct()
@@ -11,33 +12,33 @@ void UMissionLVElement::NativeConstruct()
 	}
 }
 
-/*void UMissionLVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
+void UMissionLVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
 	if (UMissionListObject* Data = Cast<UMissionListObject>(ListItemObject))
 	{
-		//if (MissionId)
-		//{
-		//	MissionId = Data->MissionId;
-		//}
+		if (MissionId)
+		{
+			MissionId = Data->MissionId;
+		}
 		if (MissionName)
 		{
 			MissionName->SetText(FText::FromString(Data->MissionName));
 		}
-		//if (MissionStatus)
-		//{
-		//	MissionStatus->SetText(FText::FromString(Data->MissionStatus));
-		//}
-		//if (MissionTime)
-		//{
-		//	MissionTime->SetText(FText::FromString(Data->MissionTime));
-		//}
-		//if (MissionType)
-		//{
-		//	MissionType->SetText(FText::FromString(Data->MissionType));
-		//}
+		if (MissionStatus)
+		{
+			MissionStatus->SetText(FText::FromString(Data->MissionStatus));
+		}
+		if (MissionTime)
+		{
+			MissionTime->SetText(FText::FromString(Data->MissionTime));
+		}
+		if (MissionType)
+		{
+			MissionType->SetText(FText::FromString(Data->MissionType));
+		}
 		UE_LOG(LogTemp, Log, TEXT("LVE Mission Name: %s"), *Data->MissionName);
 	}
-}*/
+}
 
 void UMissionLVElement::SetMissionStatus()
 {

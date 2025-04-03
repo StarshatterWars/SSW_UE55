@@ -8,6 +8,16 @@ public class StarshatterWars : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "SlateCore", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] 
+		{
+			"UMG",
+			"Core", 
+			"CoreUObject",
+            "Slate",
+            "SlateCore",
+			"Engine", 
+			"InputCore",
+			"EnhancedInput" }
+		);
 	}
 }
