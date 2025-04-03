@@ -195,6 +195,7 @@ void UOperationsScreen::OnMissionsButtonClicked()
 		OperationsModeText->SetText(FText::FromString("MISSIONS"));
 	}
 	SetCampaignMissions();
+	PopulateMissionList(); 	
 }
 
 void UOperationsScreen::OnMissionsButtonHovered()
@@ -278,12 +279,16 @@ void UOperationsScreen::PopulateMissionList()
 	
 	if (!MissionList) return;
 
+	MissionList->ClearListItems();
+
 	for (int32 i = 0; i < SSWInstance->GetActiveCampaign().MissionList.Num(); ++i)
 	{
 		UMissionListObject* ListItem = NewObject<UMissionListObject>();
 		ListItem->MissionName = SSWInstance->GetActiveCampaign().MissionList[i].Name;
 		ListItem->MissionType = SSWInstance->GetActiveCampaign().MissionList[i].TypeName;
 		ListItem->MissionTime = SSWInstance->GetActiveCampaign().MissionList[i].Start;
+		ListItem->MissionRegion = SSWInstance->GetActiveCampaign().MissionList[i].Region;
+		ListItem->MissionSystem = SSWInstance->GetActiveCampaign().MissionList[i].System;
 		
 		if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Active) {
 			ListItem->MissionStatus = "Active";
