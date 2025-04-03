@@ -46,6 +46,26 @@ void UMissionLVElement::SetMissionStatus()
 	SSWInstance->MissionSelectionChanged = true;
 }
 
+void UMissionLVElement::SetMissionData()
+{
+	if (MissionName)
+	{
+		MissionName->SetText(FText::FromString(Name));
+	}
+	if (MissionStatus)
+	{
+		MissionStatus->SetText(FText::FromString(Status));
+	}
+	if (MissionTime)
+	{
+		MissionTime->SetText(FText::FromString(Time));
+	}
+	if (MissionType)
+	{
+		MissionType->SetText(FText::FromString(Type));
+	}
+}
+
 void UMissionLVElement::OnMissionButtonClicked()
 {
 	SetMissionStatus();

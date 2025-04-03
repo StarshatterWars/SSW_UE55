@@ -51,6 +51,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void SetMissionStatus();
+	UFUNCTION(BlueprintCallable)
+	void SetMissionData();
 	UFUNCTION()
 	void OnMissionButtonClicked();
 };
