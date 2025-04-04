@@ -49,6 +49,26 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UTextBlock* LocationSystemText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionNameText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionDescriptionText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionSitrepText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionStartText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionStatusText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionTypeText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionSystemText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionRegionText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionObjectiveText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* OperationsModeText;
 	
 	UPROPERTY(meta = (BindWidgetOptional))

@@ -882,6 +882,7 @@ AGameDataLoader::LoadMissionList(FString Path)
 					Text  Desc;
 					Text  Script;
 					Text  Sitrep;
+					Text  Objective;
 					Text  System = "Unknown";
 					Text  Region = "Unknown";
 					Text  TypeName = "";
@@ -913,6 +914,10 @@ AGameDataLoader::LoadMissionList(FString Path)
 						else if (pdef->name()->value() == "region") {
 							GetDefText(Region, pdef, fn);
 							NewMissionList.Region = FString(Region);
+						}
+						else if (pdef->name()->value() == "objective") {
+							GetDefText(Objective, pdef, fn);
+							NewMissionList.Objective = FString(Objective);
 						}
 						else if (pdef->name()->value() == "sitrep") {
 							GetDefText(Sitrep, pdef, fn);

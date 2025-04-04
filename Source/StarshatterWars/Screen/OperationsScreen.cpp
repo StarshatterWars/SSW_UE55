@@ -331,6 +331,48 @@ void UOperationsScreen::SetSelectedMissionData(int Selected)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	FString SelectedMissionName = SSWInstance->GetActiveCampaign().MissionList[Selected].Name;
+	
+	if (MissionNameText) {
+		MissionNameText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Name));
+	}	
+	if (MissionDescriptionText) {
+		MissionDescriptionText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Description));
+	}
+	if (MissionSitrepText) {
+		MissionSitrepText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Sitrep));
+	}
+	if (MissionStartText) {
+		MissionStartText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Start));
+	}
+	if (MissionStatusText) {
+		if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Active) {
+			MissionStatusText->SetText(FText::FromString("Active"));
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Complete) {
+			MissionStatusText->SetText(FText::FromString("Complete"));
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Ready) {
+			MissionStatusText->SetText(FText::FromString("Ready"));
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Available) {
+			MissionStatusText->SetText(FText::FromString("Available"));
+		}
+		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Pending) {
+			MissionStatusText->SetText(FText::FromString("Pending"));
+		}
+	}
+	if (MissionTypeText) {
+		MissionTypeText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].TypeName));
+	}
+	if (MissionSystemText) {
+		MissionSystemText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].System));
+	}
+	if (MissionRegionText) {
+		MissionRegionText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Region));
+	}
+	if (MissionObjectiveText) {
+		MissionObjectiveText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Objective));
+	}
 	UE_LOG(LogTemp, Log, TEXT("Ops Mission Selected: %s"), *SelectedMissionName);
 	SSWInstance->MissionSelectionChanged = false;
 }
