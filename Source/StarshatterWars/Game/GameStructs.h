@@ -941,6 +941,8 @@ struct FS_CampaignMissionList : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Description;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Sitrep;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString System;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Region;
@@ -965,6 +967,7 @@ struct FS_CampaignMissionList : public FTableRowBase {
 		Name = "";
 		Description = "";
 		TypeName = "";
+		Sitrep = "";
 	
 		System = "Unknown";
 		Region = "Unknown";
