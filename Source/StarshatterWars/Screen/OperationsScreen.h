@@ -77,8 +77,16 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* MissionList;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	int SelectedMission;
+
+public:
+	UFUNCTION()
+	void SetSelectedMissionData(int Selected);
+
 protected:
 	void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UFUNCTION()
 	void OnSelectButtonClicked();
@@ -131,8 +139,9 @@ protected:
 	void SetCampaignOrders();
 	UFUNCTION()
 	void SetCampaignMissions();
-
+	UFUNCTION()
 	void PopulateMissionList();
+	
 		
 
 private:

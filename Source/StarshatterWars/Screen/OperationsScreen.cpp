@@ -92,10 +92,20 @@ void UOperationsScreen::NativeConstruct()
 		}
 	}
 
+	SelectedMission = 0;
 
 	SetCampaignOrders();
 	PopulateMissionList();
 	SetCampaignMissions();
+}
+
+void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (SSWInstance->MissionSelectionChanged) {
+		SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
+	}	
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -187,6 +197,8 @@ void UOperationsScreen::OnIntelButtonUnHovered()
 
 void UOperationsScreen::OnMissionsButtonClicked()
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(4);
 	}
@@ -195,7 +207,8 @@ void UOperationsScreen::OnMissionsButtonClicked()
 		OperationsModeText->SetText(FText::FromString("MISSIONS"));
 	}
 	SetCampaignMissions();
-	PopulateMissionList(); 	
+	PopulateMissionList(); 
+	SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
 }
 
 void UOperationsScreen::OnMissionsButtonHovered()
@@ -269,7 +282,7 @@ void UOperationsScreen::SetCampaignMissions()
 	for (FS_CampaignMissionList info : Missions)
 	{
 		FString NewMission = info.Name;
-		UE_LOG(LogTemp, Log, TEXT("Mission Name Selected: %s"), *NewMission);
+		//UE_LOG(LogTemp, Log, TEXT("Mission Name Selected: %s"), *NewMission);
 	}
 }
 
@@ -306,9 +319,19 @@ void UOperationsScreen::PopulateMissionList()
 		else if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Pending) {
 			ListItem->MissionStatus = "Pending";
 		}
+
+		MissionList->GetIndexForItem(ListItem);
 		MissionList->AddItem(ListItem);
 
-		UE_LOG(LogTemp, Log, TEXT("Ops Mission Name: %s"), *ListItem->MissionName);
+		//UE_LOG(LogTemp, Log, TEXT("Ops Mission Name: %s"), *ListItem->MissionName);
 	}
+}
+
+void UOperationsScreen::SetSelectedMissionData(int Selected) 
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	FString SelectedMissionName = SSWInstance->GetActiveCampaign().MissionList[Selected].Name;
+	UE_LOG(LogTemp, Log, TEXT("Ops Mission Selected: %s"), *SelectedMissionName);
+	SSWInstance->MissionSelectionChanged = false;
 }
 

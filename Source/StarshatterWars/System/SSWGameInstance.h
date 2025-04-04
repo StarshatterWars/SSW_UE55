@@ -133,6 +133,9 @@ public:
 	void SetActiveCampaignNr(int active);
 
 	UFUNCTION()
+	void SetSelectedMissionNr(int active);
+
+	UFUNCTION()
 	void SetCampaignActive(bool bIsActive);
 
 	UFUNCTION()
@@ -140,6 +143,8 @@ public:
 
 	UFUNCTION()
 	int GetActiveCampaignNr();
+	UFUNCTION()
+	int GetSelectedMissionNr();
 	
 	UFUNCTION()
 	bool GetCampaignActive();
@@ -190,8 +195,7 @@ public:
 	UPROPERTY()
 	TArray<FS_CampaignMissionList> MissionList;
 
-	UPROPERTY()
-	int32 SelectionMissionNr;
+	
 	UPROPERTY()
 	bool MissionSelectionChanged;
 	
@@ -241,7 +245,11 @@ protected:
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 
 	private:
+		UPROPERTY()
 		bool bUniverseLoaded;
+		
+		UPROPERTY()
+		int32 SelectionMissionNr;
 
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);

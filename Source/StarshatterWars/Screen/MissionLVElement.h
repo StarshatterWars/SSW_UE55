@@ -8,10 +8,12 @@
 #include "Components/Button.h"
 #include "MissionListObject.h"
 #include "Blueprint/IUserObjectListEntry.h"
+
 #include "../System/SSWGameInstance.h"
 
 #include "MissionLVElement.generated.h"
 
+class UOperationsScreen;
 /**
  * 
  */
@@ -49,11 +51,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mission LV Variables")
 	int32 selectedMission;
 	
-	
+	UOperationsScreen* OpsScreen;
+
 	UFUNCTION(BlueprintCallable)
 	void SetMissionStatus();
-	UFUNCTION(BlueprintCallable)
-	void SetMissionData();
 	UFUNCTION()
 	void OnMissionButtonClicked();
+
+	UPROPERTY()
+	UMissionListObject* MissionList;
 };

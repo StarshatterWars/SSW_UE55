@@ -707,6 +707,11 @@ void USSWGameInstance::SetActiveCampaignNr(int active)
 	ActiveCampaignNr = active;
 }
 
+void USSWGameInstance::SetSelectedMissionNr(int active)
+{
+	SelectionMissionNr = active;
+}
+
 void USSWGameInstance::SetCampaignActive(bool bIsActive)
 {
 	bIsActiveCampaign = bIsActive;
@@ -720,6 +725,11 @@ FS_Campaign USSWGameInstance::GetActiveCampaign()
 int USSWGameInstance::GetActiveCampaignNr()
 {
 	return ActiveCampaignNr;
+}
+
+int USSWGameInstance::GetSelectedMissionNr()
+{
+	return SelectionMissionNr;
 }
 
 bool USSWGameInstance::GetCampaignActive()

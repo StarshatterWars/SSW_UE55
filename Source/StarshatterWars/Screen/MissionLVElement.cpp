@@ -2,7 +2,7 @@
 
 
 #include "MissionLVElement.h"
-
+#include "OperationsScreen.h"
 #include "../System/SSWGameInstance.h"
 
 void UMissionLVElement::NativeConstruct()
@@ -14,61 +14,44 @@ void UMissionLVElement::NativeConstruct()
 
 void UMissionLVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-	if (UMissionListObject* Data = Cast<UMissionListObject>(ListItemObject))
+	MissionList = Cast<UMissionListObject>(ListItemObject);
+	
+	if(!MissionList) {
+		return;
+	}
+	
+	if (UListView* OwningListView = Cast<UListView>(GetOwningListView())) {
+		MissionId = OwningListView->GetIndexForItem(MissionList);
+	}
+
+	if (MissionName)
 	{
-		if (MissionId)
-		{
-			MissionId = Data->MissionId;
-		}
-		if (MissionName)
-		{
-			MissionName->SetText(FText::FromString(Data->MissionName));
-		}
-		if (MissionStatus)
-		{
-			MissionStatus->SetText(FText::FromString(Data->MissionStatus));
-		}
-		if (MissionTime)
-		{
-			MissionTime->SetText(FText::FromString(Data->MissionTime));
-		}
-		if (MissionType)
-		{
-			MissionType->SetText(FText::FromString(Data->MissionType));
-		}
-		UE_LOG(LogTemp, Log, TEXT("LVE Mission Name: %s"), *Data->MissionName);
+		MissionName->SetText(FText::FromString(MissionList->MissionName));
+	}
+	if (MissionStatus)
+	{
+		MissionStatus->SetText(FText::FromString(MissionList->MissionStatus));
+	}
+	if (MissionTime)
+	{
+		MissionTime->SetText(FText::FromString(MissionList->MissionTime));
+	}
+	if (MissionType)
+	{
+		MissionType->SetText(FText::FromString(MissionList->MissionType));
 	}
 }
 
 void UMissionLVElement::SetMissionStatus()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->SelectionMissionNr = MissionId;
+	SSWInstance->SetSelectedMissionNr(MissionId);
 	SSWInstance->MissionSelectionChanged = true;
-}
-
-void UMissionLVElement::SetMissionData()
-{
-	if (MissionName)
-	{
-		MissionName->SetText(FText::FromString(Name));
-	}
-	if (MissionStatus)
-	{
-		MissionStatus->SetText(FText::FromString(Status));
-	}
-	if (MissionTime)
-	{
-		MissionTime->SetText(FText::FromString(Time));
-	}
-	if (MissionType)
-	{
-		MissionType->SetText(FText::FromString(Type));
-	}
 }
 
 void UMissionLVElement::OnMissionButtonClicked()
 {
+	UE_LOG(LogTemp, Log, TEXT("Selected Mission Nr: %i"), MissionId);
 	SetMissionStatus();
 }
 
