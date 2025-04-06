@@ -100,7 +100,7 @@ void USSWGameInstance::SpawnGalaxy()
 	//}		
 }
 
-void USSWGameInstance::GetCampaignData()
+void USSWGameInstance::GetGameData()
 {
 	UWorld* World = GetWorld();
 
@@ -108,7 +108,7 @@ void USSWGameInstance::GetCampaignData()
 	FRotator rotate = FRotator::ZeroRotator;
 
 	FActorSpawnParameters SpawnInfo;
-	FName Name("Campaign Data");
+	FName Name("Game Data");
 	SpawnInfo.Name = Name;
 
 	if (GameData == nullptr) {
@@ -200,6 +200,70 @@ void USSWGameInstance::StartGame()
 {
 	//SpawnUniverse();
 	//SpawnGalaxy();
+}
+
+void USSWGameInstance::LoadMainMenuScreen()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(false);
+			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "MainMenu");
+		}
+	}
+}
+
+void USSWGameInstance::LoadTransitionScreen()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(false);
+			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "Transition");
+		}
+	}
+}
+
+void USSWGameInstance::LoadOperationsScreen()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(false);
+			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "Operations");
+		}
+	}
+}
+
+void USSWGameInstance::LoadGame(FString LevelName)
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeGameAndUI InputModeData;
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(false);
+			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, FName(LevelName));
+		}
+	}
 }
 
 void USSWGameInstance::Init()

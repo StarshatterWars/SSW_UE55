@@ -1,0 +1,27 @@
+// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+
+
+#include "L_MainMenu.h"
+
+void AL_MainMenu::BeginPlay()
+{
+	ShowMainMenu();
+}
+
+void AL_MainMenu::Tick(float DeltaTime)
+{
+
+}
+
+void AL_MainMenu::ShowMainMenu()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ShowMainMenuScreen();
+}
+
+void AL_MainMenu::ShowQuitDlg()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ToggleQuitDlg(true);
+}
+

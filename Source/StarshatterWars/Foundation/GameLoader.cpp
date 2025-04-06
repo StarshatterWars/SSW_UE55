@@ -16,12 +16,10 @@
 void AGameLoader::BeginPlay()
 {
 	InitializeGame();
-	//GetCombatRosterData();
-	GetCampaignData();
+	GetGameData();
 	GetAwardInfoData();
-	ShowMainMenu();
-	LoadGalaxy();
-
+	LoadMainMenu();
+	//LoadGalaxy();
 }
 
 void AGameLoader::Tick(float DeltaTime)
@@ -40,16 +38,10 @@ void AGameLoader::LoadGalaxy()
 	SSWInstance->SpawnGalaxy();
 }
 
-void AGameLoader::GetCombatRosterData()
+void AGameLoader::GetGameData()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->GetCombatRosterData();
-}
-
-void AGameLoader::GetCampaignData()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->GetCampaignData();
+	SSWInstance->GetGameData();
 }
 
 void AGameLoader::GetAwardInfoData()
@@ -68,19 +60,16 @@ void AGameLoader::InitializeGame()
 	USim* Sim;
 	Sim = NewObject<USim>();
 
+	UCampaign* Campaign;
+	Campaign = NewObject<UCampaign>();
 	//UCampaign::Initialize();
 }
 
-void AGameLoader::ShowMainMenu()
+void AGameLoader::LoadMainMenu()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ShowMainMenuScreen();
+	SSWInstance->LoadMainMenuScreen();
 }
 
-void AGameLoader::ShowQuitDlg()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ToggleQuitDlg(true);
-}
 
 

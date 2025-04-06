@@ -271,7 +271,7 @@ protected:
 
 	int   ActionId;
 	Text  ActionType;
-	int  ActionSubtype;
+	int   ActionSubtype;
 	int   OppType;
 	int   ActionTeam;
 	Text  ActionSource;
@@ -329,4 +329,38 @@ protected:
 	int  UnitDamage;
 	int  UnitDead;
 	int  UnitHeading;
+
+	int      AwardId;
+	int		 AwardGrant;
+
+	Text     AwardType;
+	Text     AwardName;
+	Text     AwardAbrv;
+	Text     AwardDesc;
+	Text     AwardText;
+
+	Text     DescSound;
+	Text     GrantSound;
+
+	Text	LargeImage;
+	Text	SmallImage;
+
+	int		RequiredAwards;
+	int		Lottery;
+	int     MinShipClass;
+	int     MaxShipClass;
+	int		GrantedShipClasses;
+
+	int		TotalPoints;
+	int		MissionPoints;
+	int		TotalMissions;
+
+	int		Kills;
+	int		Lost;
+	int		Collision;
+	int		CampaignId;
+
+	bool	CampaignComplete;
+	bool	DynamicCampaign;
+	bool	Ceremony;
 };

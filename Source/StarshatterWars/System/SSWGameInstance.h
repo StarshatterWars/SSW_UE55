@@ -65,18 +65,28 @@ public:
 	void SpawnGalaxy();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void GetCampaignData();
+	void GetGameData();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void GetCombatRosterData();
 
-
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void GetAwardInfoData();
 
-
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void LoadMainMenuScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void LoadTransitionScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void LoadOperationsScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void LoadGame(FString LevelName);
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowMainMenuScreen();
