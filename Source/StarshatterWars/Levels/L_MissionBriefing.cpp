@@ -1,21 +1,21 @@
 // /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
 
 
-#include "L_Operations.h"
+#include "L_MissionBriefing.h"
 
-void AL_Operations::BeginPlay()
+void AL_MissionBriefing::BeginPlay()
 {
 	Super::BeginPlay();
-	ShowOperationsScreen();
+	ShowMissionBrieingScreen();
 }
 
-void AL_Operations::Tick(float DeltaTime)
+void AL_MissionBriefing::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-void AL_Operations::ShowOperationsScreen()
+void AL_MissionBriefing::ShowMissionBrieingScreen()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ShowOperationsScreen();
+	SSWInstance->ShowMissionBriefingScreen();
 }

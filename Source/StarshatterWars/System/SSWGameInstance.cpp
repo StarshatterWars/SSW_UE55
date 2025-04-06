@@ -188,6 +188,38 @@ void USSWGameInstance::LoadOperationsScreen()
 	}
 }
 
+void USSWGameInstance::LoadMissionBriefingScreen()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(false);
+			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "MissionBriefing");
+		}
+	}
+}
+
+void USSWGameInstance::LoadCampaignScreen()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(false);
+			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "Campaign");
+		}
+	}
+}
+
 void USSWGameInstance::LoadGameLevel(FString LevelName)
 {
 	UWorld* World = GetWorld();
@@ -460,7 +492,7 @@ void USSWGameInstance::ShowMainMenuScreen()
 
 void USSWGameInstance::ShowCampaignScreen()
 {
-	RemoveMainMenuScreen();
+	RemoveScreens();
 
 	// Create widget
 	if(!CampaignScreen) {
@@ -489,7 +521,7 @@ void USSWGameInstance::ShowCampaignScreen()
 
 void USSWGameInstance::ShowCampaignLoading()
 {
-	RemoveCampaignScreen();
+	RemoveScreens();
 
 	// Create widget
 	CampaignLoading = CreateWidget<UCampaignLoading>(this, CampaignLoadingWidgetClass);
@@ -514,7 +546,7 @@ void USSWGameInstance::ShowCampaignLoading()
 
 void USSWGameInstance::ShowOperationsScreen()
 {
-	
+	RemoveScreens();
 
 	// Create widget
 	if (!OperationsScreen) {
@@ -543,18 +575,8 @@ void USSWGameInstance::ShowOperationsScreen()
 
 void USSWGameInstance::ShowMissionBriefingScreen()
 {
-	if (MainMenuDlg) {
-		RemoveMainMenuScreen();
-	}
-	if (CampaignLoading) {
-		RemoveCampaignLoadScreen();
-	}
-	if (CampaignScreen) {
-		RemoveCampaignScreen();
-	}
-	if (OperationsScreen) {
-		RemoveOperationsScreen();
-	}
+	RemoveScreens();
+
 	// Create widget
 	if (!MissionBriefingScreen) {
 		// Create widget

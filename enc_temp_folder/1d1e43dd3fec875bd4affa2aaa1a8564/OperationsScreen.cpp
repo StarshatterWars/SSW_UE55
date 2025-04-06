@@ -118,6 +118,7 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 void UOperationsScreen::OnSelectButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	//SSWInstance->ToggleOperationsScreen(false);
 	SSWInstance->LoadMissionBriefingScreen();
 }
 
@@ -230,6 +231,7 @@ void UOperationsScreen::OnMissionsButtonUnHovered()
 void UOperationsScreen::OnCancelButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->ToggleOperationsScreen(false);
 	SSWInstance->LoadMainMenuScreen();
 }
 

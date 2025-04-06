@@ -4,6 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "../Game/GameStructs.h"
+
+#include "Engine/Texture2D.h"
+#include "Components/Image.h"
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+#include "Components/ComboBoxString.h"
+#include "Components/EditableTextBox.h"
+#include "Components/WidgetSwitcher.h"
+#include "Components/ListView.h"
+
+#include "../System/SSWGameInstance.h"
 #include "MissionBriefing.generated.h"
 
 /**
@@ -13,8 +25,5 @@ UCLASS()
 class STARSHATTERWARS_API UMissionBriefing : public UUserWidget
 {
 	GENERATED_BODY()
-	
-	
-	
-	
+
 };

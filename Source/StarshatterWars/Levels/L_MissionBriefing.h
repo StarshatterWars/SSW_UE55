@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Engine/LevelScriptActor.h"
 #include "../System/SSWGameInstance.h"
-#include "L_Transition.generated.h"
+#include "L_MissionBriefing.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API AL_Transition : public ALevelScriptActor
+class STARSHATTERWARS_API AL_MissionBriefing : public ALevelScriptActor
 {
 	GENERATED_BODY()
 protected:
@@ -19,6 +19,8 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	void ShowTransitionScreen();
-
+	void ShowMissionBrieingScreen();
+	
+	
+	
 };

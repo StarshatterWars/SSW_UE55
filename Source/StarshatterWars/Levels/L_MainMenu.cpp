@@ -5,12 +5,13 @@
 
 void AL_MainMenu::BeginPlay()
 {
+	Super::BeginPlay();
 	ShowMainMenu();
 }
 
 void AL_MainMenu::Tick(float DeltaTime)
 {
-
+	Super::Tick(DeltaTime);
 }
 
 void AL_MainMenu::ShowMainMenu()

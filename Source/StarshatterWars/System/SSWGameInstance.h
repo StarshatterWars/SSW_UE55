@@ -79,6 +79,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void LoadOperationsScreen();
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void LoadMissionBriefingScreen();
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void LoadCampaignScreen();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void LoadGameLevel(FString LevelName);

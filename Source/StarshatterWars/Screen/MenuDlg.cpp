@@ -124,7 +124,7 @@ void UMenuDlg::NativeConstruct()
 void UMenuDlg::OnStartButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ShowOperationsScreen();
+	SSWInstance->LoadOperationsScreen();
 }
 
 void UMenuDlg::OnStartButtonHovered()

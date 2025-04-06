@@ -1,21 +1,21 @@
 // /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
 
 
-#include "L_Operations.h"
+#include "L_Campaign.h"
 
-void AL_Operations::BeginPlay()
+void AL_Campaign::BeginPlay()
 {
 	Super::BeginPlay();
-	ShowOperationsScreen();
+	ShowCampaignScreen();
 }
 
-void AL_Operations::Tick(float DeltaTime)
+void AL_Campaign::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-void AL_Operations::ShowOperationsScreen()
+void AL_Campaign::ShowCampaignScreen()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ShowOperationsScreen();
+	SSWInstance->ShowCampaignScreen();
 }

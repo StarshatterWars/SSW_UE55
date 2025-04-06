@@ -162,6 +162,13 @@ AGameDataLoader::AGameDataLoader()
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Combat Group Data Table"));
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> AwardDataTableObject(TEXT("DataTable'/Game/Game/DT_AwardInfo.DT_AwardInfo'"));
+
+	if (AwardDataTableObject.Succeeded())
+	{
+		AwardsDataTable = AwardDataTableObject.Object;
+	}
+
 	PrimaryActorTick.bCanEverTick = true;
 
 	
