@@ -150,6 +150,7 @@ public:
 	void ParseCtrlDef(TermStruct* val, const char* fn);
 	void ParseLayoutDef(TermStruct* val, const char* fn);
 	void LoadForm(const char* fname);
+	void LoadAwardTables();
 	bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
 
 	Text              ContentName;
@@ -218,6 +219,7 @@ protected:
 	FS_StarSystem StarSystemData;
 	FS_ShipDesign ShipDesignData;
 	FS_SystemDesign SystemDesignData;
+	FS_AwardInfo AwardData;
 	
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
@@ -266,6 +268,7 @@ protected:
 	class UDataTable* ShipDesignDataTable;
 	class UDataTable* SystemDesignDataTable;
 	class UDataTable* FormDefDataTable;
+	class UDataTable* AwardsDataTable;
 
 	//static List<SystemDesign>  catalog;
 

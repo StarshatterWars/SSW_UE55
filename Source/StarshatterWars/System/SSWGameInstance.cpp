@@ -16,6 +16,7 @@
 #include "../Screen/FirstRun.h"
 #include "../Screen/CampaignScreen.h"
 #include "../Screen/OperationsScreen.h"
+#include "../Screen/MissionBriefing.h"
 #include "../Screen/CampaignLoading.h"
 
 #include "../Game/PlayerSaveGame.h"
@@ -43,6 +44,7 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	InitializeCampaignScreen(ObjectInitializer);
 	InitializeCampaignLoadingScreen(ObjectInitializer);
 	InitializeOperationsScreen(ObjectInitializer);
+	InitializeMissionBriefingScreen(ObjectInitializer);
 	InitializeQuitDlg(ObjectInitializer);
 	InitializeFirstRunDlg(ObjectInitializer);
 
@@ -132,70 +134,6 @@ void USSWGameInstance::GetGameData()
 	//}		
 }
 
-void USSWGameInstance::GetCombatRosterData()
-{
-	UWorld* World = GetWorld();
-
-	FVector location = FVector::ZeroVector;
-	FRotator rotate = FRotator::ZeroRotator;
-
-	FActorSpawnParameters SpawnInfo;
-	FName Name("Combat Roster Data");
-	SpawnInfo.Name = Name;
-
-	if (CombatGroupData == nullptr) {
-		CombatGroupData = GetWorld()->SpawnActor<ACombatGroupLoader>(ACombatGroupLoader::StaticClass(), location, rotate, SpawnInfo);
-
-
-		if (CombatGroupData)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Combat Group Info Loader Spawned"));
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Combat Group Data Loader"));
-		}
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Combat Group Data Loader already exists"));
-	}
-
-	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
-	//}		
-}
-
-void USSWGameInstance::GetAwardInfoData()
-{
-	UWorld* World = GetWorld();
-
-	FVector location = FVector::ZeroVector;
-	FRotator rotate = FRotator::ZeroRotator;
-
-	FActorSpawnParameters SpawnInfo;
-	FName Name("Award Data");
-	SpawnInfo.Name = Name;
-
-	if (AwardData == nullptr) {
-		AwardData = GetWorld()->SpawnActor<AAwardInfoLoader>(AAwardInfoLoader::StaticClass(), location, rotate, SpawnInfo);
-
-
-		if (AwardData)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Award Info Loader Spawned"));
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Award Info Data Loader"));
-		}
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Award Info Data Loader already exists"));
-	}
-
-	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
-	//}		
-}
-
 void USSWGameInstance::StartGame()
 {
 	//SpawnUniverse();
@@ -250,7 +188,7 @@ void USSWGameInstance::LoadOperationsScreen()
 	}
 }
 
-void USSWGameInstance::LoadGame(FString LevelName)
+void USSWGameInstance::LoadGameLevel(FString LevelName)
 {
 	UWorld* World = GetWorld();
 	if (World)
@@ -422,6 +360,11 @@ void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& Obje
 	OperationsScreenWidgetClass = OperationsScreenWidget.Class;
 }
 
+void USSWGameInstance::InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer)
+{
+
+}
+
 void USSWGameInstance::InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer)
 {
 	static ConstructorHelpers::FClassFinder<UCampaignScreen> CampaignScreenWidget(TEXT("/Game/Screens/Campaign/WB_CampaignSelect"));
@@ -462,7 +405,7 @@ void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectIni
 	FirstRunDlgWidgetClass = FirstRunDlgWidget.Class;
 }
 
-void USSWGameInstance::ShowMainMenuScreen()
+void USSWGameInstance::RemoveScreens()
 {
 	if (CampaignScreen) {
 		RemoveCampaignScreen();
@@ -473,6 +416,18 @@ void USSWGameInstance::ShowMainMenuScreen()
 	if (OperationsScreen) {
 		RemoveOperationsScreen();
 	}
+	if (MainMenuDlg) {
+		RemoveMainMenuScreen();
+	}
+	if (MissionBriefingScreen) {
+		RemoveMissionBriefingScreen();
+	}
+}
+
+void USSWGameInstance::ShowMainMenuScreen()
+{
+	RemoveScreens();
+
 	// Create widget
 	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
 	// Add it to viewport
@@ -559,15 +514,7 @@ void USSWGameInstance::ShowCampaignLoading()
 
 void USSWGameInstance::ShowOperationsScreen()
 {
-	if (MainMenuDlg) {
-		RemoveMainMenuScreen();
-	}
-	if (CampaignLoading) {
-		RemoveCampaignLoadScreen();
-	}
-	if (CampaignScreen) {
-		RemoveCampaignScreen();
-	}
+	
 
 	// Create widget
 	if (!OperationsScreen) {
@@ -592,6 +539,45 @@ void USSWGameInstance::ShowOperationsScreen()
 		}
 	}
 	ToggleOperationsScreen(true);
+}
+
+void USSWGameInstance::ShowMissionBriefingScreen()
+{
+	if (MainMenuDlg) {
+		RemoveMainMenuScreen();
+	}
+	if (CampaignLoading) {
+		RemoveCampaignLoadScreen();
+	}
+	if (CampaignScreen) {
+		RemoveCampaignScreen();
+	}
+	if (OperationsScreen) {
+		RemoveOperationsScreen();
+	}
+	// Create widget
+	if (!MissionBriefingScreen) {
+		// Create widget
+		MissionBriefingScreen = CreateWidget<UMissionBriefing>(this, MissionBriefingWidgetClass);
+	}
+
+	// Add it to viewport
+	MissionBriefingScreen->AddToViewport(101);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(MissionBriefingScreen->TakeWidget());
+			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PlayerController->SetInputMode(InputModeData);
+			PlayerController->SetShowMouseCursor(true);
+		}
+	}
+	ToggleMissionBriefingScreen(true);
 }
 
 void USSWGameInstance::ShowQuitDlg()
@@ -696,6 +682,18 @@ void USSWGameInstance::ToggleOperationsScreen(bool bVisible)
 	}
 }
 
+void USSWGameInstance::ToggleMissionBriefingScreen(bool bVisible)
+{
+	if (MissionBriefingScreen) {
+		if (bVisible) {
+			MissionBriefingScreen->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			MissionBriefingScreen->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+}
+
 void USSWGameInstance::RemoveCampaignScreen()
 {
 	if (CampaignScreen) {
@@ -738,6 +736,18 @@ void USSWGameInstance::RemoveOperationsScreen()
 		OperationsScreen->RemoveFromParent();
 
 		OperationsScreen = nullptr;
+		if (GEngine) {
+			GEngine->ForceGarbageCollection();
+		}
+	}
+}
+
+void USSWGameInstance::RemoveMissionBriefingScreen()
+{
+	if (MissionBriefingScreen) {
+		MissionBriefingScreen->RemoveFromParent();
+
+		MissionBriefingScreen = nullptr;
 		if (GEngine) {
 			GEngine->ForceGarbageCollection();
 		}

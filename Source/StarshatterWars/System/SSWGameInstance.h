@@ -33,6 +33,7 @@
  class UCampaignScreen;
  class UOperationsScreen;
  class UCampaignLoading;
+ class UMissionBriefing;
  class DataLoader;
  class UPlayerSaveGame;
 
@@ -68,12 +69,6 @@ public:
 	void GetGameData();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void GetCombatRosterData();
-
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void GetAwardInfoData();
-
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void StartGame();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
@@ -86,7 +81,7 @@ public:
 	void LoadOperationsScreen();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void LoadGame(FString LevelName);
+	void LoadGameLevel(FString LevelName);
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowMainMenuScreen();
@@ -99,6 +94,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowOperationsScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void ShowMissionBriefingScreen();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowQuitDlg();
@@ -120,6 +118,8 @@ public:
 
 	UFUNCTION()
 	void ToggleOperationsScreen(bool bVisible);
+	UFUNCTION()
+	void ToggleMissionBriefingScreen(bool bVisible);
 
 	UFUNCTION()
 	void RemoveCampaignScreen();
@@ -129,6 +129,8 @@ public:
 	void RemoveCampaignLoadScreen();
 	UFUNCTION()
 	void RemoveOperationsScreen();
+	UFUNCTION()
+	void RemoveMissionBriefingScreen();
 
 	UFUNCTION()
 	void ToggleCampaignLoading(bool bVisible);
@@ -187,6 +189,7 @@ public:
 	UCampaignScreen* CampaignScreen;
 	UOperationsScreen* OperationsScreen;
 	UCampaignLoading* CampaignLoading;
+	UMissionBriefing* MissionBriefingScreen;
 	UQuitDlg* QuitDlg;
 	UFirstRun* FirstRunDlg;
 
@@ -266,14 +269,19 @@ protected:
 
 		void InitializeCampaignLoadingScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeOperationsScreen(const FObjectInitializer& ObjectInitializer);
+		void InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer);
 
 		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 		void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
+		
+		UFUNCTION()
+		void RemoveScreens();
 
 		TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
 		TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
 		TSubclassOf<class UOperationsScreen> OperationsScreenWidgetClass;
 		TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;
+		TSubclassOf<class UMissionBriefing> MissionBriefingWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
 };
