@@ -381,5 +381,8 @@ void UOperationsScreen::SetSelectedMissionData(int Selected)
 	}
 	UE_LOG(LogTemp, Log, TEXT("Ops Mission Selected: %s"), *SelectedMissionName);
 	SSWInstance->MissionSelectionChanged = false;
+
+	SSWInstance->PlayerInfo.Mission = Selected;
+	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
 }
 
