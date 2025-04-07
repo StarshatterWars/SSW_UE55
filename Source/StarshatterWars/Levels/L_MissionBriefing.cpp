@@ -6,7 +6,8 @@
 void AL_MissionBriefing::BeginPlay()
 {
 	Super::BeginPlay();
-	ShowMissionBrieingScreen();
+	
+	ShowMissionBriefingScreen();
 }
 
 void AL_MissionBriefing::Tick(float DeltaTime)
@@ -14,7 +15,7 @@ void AL_MissionBriefing::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AL_MissionBriefing::ShowMissionBrieingScreen()
+void AL_MissionBriefing::ShowMissionBriefingScreen()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ShowMissionBriefingScreen();

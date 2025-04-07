@@ -33,7 +33,7 @@
  class UCampaignScreen;
  class UOperationsScreen;
  class UCampaignLoading;
- class UMissionBriefing;
+ class UMissionLoading;
  class DataLoader;
  class UPlayerSaveGame;
 
@@ -193,7 +193,7 @@ public:
 	UCampaignScreen* CampaignScreen;
 	UOperationsScreen* OperationsScreen;
 	UCampaignLoading* CampaignLoading;
-	UMissionBriefing* MissionBriefingScreen;
+	UMissionLoading* MissionLoadingScreen;
 	UQuitDlg* QuitDlg;
 	UFirstRun* FirstRunDlg;
 
@@ -285,7 +285,7 @@ protected:
 		TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
 		TSubclassOf<class UOperationsScreen> OperationsScreenWidgetClass;
 		TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;
-		TSubclassOf<class UMissionBriefing> MissionBriefingWidgetClass;
+		TSubclassOf<class UMissionLoading> MissionLoadingWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
 };

@@ -16,7 +16,7 @@
 #include "../Screen/FirstRun.h"
 #include "../Screen/CampaignScreen.h"
 #include "../Screen/OperationsScreen.h"
-#include "../Screen/MissionBriefing.h"
+#include "../Screen/MissionLoading.h"
 #include "../Screen/CampaignLoading.h"
 
 #include "../Game/PlayerSaveGame.h"
@@ -394,7 +394,12 @@ void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& Obje
 
 void USSWGameInstance::InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer)
 {
-
+	static ConstructorHelpers::FClassFinder<UMissionLoading> MissionLoadingScreenWidget(TEXT("/Game/Screens/Mission/WB_MissionLoading"));
+	if (!ensure(MissionLoadingScreenWidget.Class != nullptr))
+	{
+		return;
+	}
+	MissionLoadingWidgetClass = MissionLoadingScreenWidget.Class;
 }
 
 void USSWGameInstance::InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer)
@@ -440,25 +445,25 @@ void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectIni
 void USSWGameInstance::RemoveScreens()
 {
 	if (CampaignScreen) {
-		RemoveCampaignScreen();
+		//RemoveCampaignScreen();
 	}
 	if (CampaignLoading) {
-		RemoveCampaignLoadScreen();
+		//RemoveCampaignLoadScreen();
 	}
 	if (OperationsScreen) {
-		RemoveOperationsScreen();
+		//RemoveOperationsScreen();
 	}
 	if (MainMenuDlg) {
-		RemoveMainMenuScreen();
+		//RemoveMainMenuScreen();
 	}
-	if (MissionBriefingScreen) {
-		RemoveMissionBriefingScreen();
+	if (MissionLoadingScreen) {
+		//RemoveMissionBriefingScreen();
 	}
 }
 
 void USSWGameInstance::ShowMainMenuScreen()
 {
-	RemoveScreens();
+	//RemoveScreens();
 
 	// Create widget
 	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
@@ -492,13 +497,13 @@ void USSWGameInstance::ShowMainMenuScreen()
 
 void USSWGameInstance::ShowCampaignScreen()
 {
-	RemoveScreens();
+	//RemoveScreens();
 
 	// Create widget
-	if(!CampaignScreen) {
+	//if(!CampaignScreen) {
 		// Create widget
-		CampaignScreen = CreateWidget<UCampaignScreen>(this, CampaignScreenWidgetClass);
-	}
+	CampaignScreen = CreateWidget<UCampaignScreen>(this, CampaignScreenWidgetClass);
+	//}
 	
 	// Add it to viewport
 	CampaignScreen->AddToViewport(101);
@@ -521,10 +526,12 @@ void USSWGameInstance::ShowCampaignScreen()
 
 void USSWGameInstance::ShowCampaignLoading()
 {
-	RemoveScreens();
+	//RemoveScreens();
 
 	// Create widget
+	//if (!CampaignLoading) {
 	CampaignLoading = CreateWidget<UCampaignLoading>(this, CampaignLoadingWidgetClass);
+	//}
 	// Add it to viewport
 	CampaignLoading->AddToViewport(102);
 
@@ -546,16 +553,16 @@ void USSWGameInstance::ShowCampaignLoading()
 
 void USSWGameInstance::ShowOperationsScreen()
 {
-	RemoveScreens();
+	//RemoveScreens();
 
 	// Create widget
-	if (!OperationsScreen) {
+	//if (!OperationsScreen) {
 		// Create widget
-		OperationsScreen = CreateWidget<UOperationsScreen>(this, OperationsScreenWidgetClass);
-	}
+	OperationsScreen = CreateWidget<UOperationsScreen>(this, OperationsScreenWidgetClass);
+	//}
 
 	// Add it to viewport
-	OperationsScreen->AddToViewport(101);
+	OperationsScreen->AddToViewport(102);
 
 	UWorld* World = GetWorld();
 	if (World)
@@ -575,16 +582,16 @@ void USSWGameInstance::ShowOperationsScreen()
 
 void USSWGameInstance::ShowMissionBriefingScreen()
 {
-	RemoveScreens();
+	//RemoveScreens();
 
 	// Create widget
-	if (!MissionBriefingScreen) {
+	//if (!MissionLoadingScreen) {
 		// Create widget
-		MissionBriefingScreen = CreateWidget<UMissionBriefing>(this, MissionBriefingWidgetClass);
-	}
+	MissionLoadingScreen = CreateWidget<UMissionLoading>(this, MissionLoadingWidgetClass);
+	//}
 
 	// Add it to viewport
-	MissionBriefingScreen->AddToViewport(101);
+	MissionLoadingScreen->AddToViewport(101);
 
 	UWorld* World = GetWorld();
 	if (World)
@@ -593,7 +600,7 @@ void USSWGameInstance::ShowMissionBriefingScreen()
 		if (PlayerController)
 		{
 			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(MissionBriefingScreen->TakeWidget());
+			InputModeData.SetWidgetToFocus(MissionLoadingScreen->TakeWidget());
 			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 			PlayerController->SetInputMode(InputModeData);
 			PlayerController->SetShowMouseCursor(true);
@@ -706,12 +713,12 @@ void USSWGameInstance::ToggleOperationsScreen(bool bVisible)
 
 void USSWGameInstance::ToggleMissionBriefingScreen(bool bVisible)
 {
-	if (MissionBriefingScreen) {
+	if (MissionLoadingScreen) {
 		if (bVisible) {
-			MissionBriefingScreen->SetVisibility(ESlateVisibility::Visible);
+			MissionLoadingScreen->SetVisibility(ESlateVisibility::Visible);
 		}
 		else {
-			MissionBriefingScreen->SetVisibility(ESlateVisibility::Collapsed);
+			MissionLoadingScreen->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }
@@ -766,10 +773,10 @@ void USSWGameInstance::RemoveOperationsScreen()
 
 void USSWGameInstance::RemoveMissionBriefingScreen()
 {
-	if (MissionBriefingScreen) {
-		MissionBriefingScreen->RemoveFromParent();
+	if (MissionLoadingScreen) {
+		MissionLoadingScreen->RemoveFromParent();
 
-		MissionBriefingScreen = nullptr;
+		MissionLoadingScreen = nullptr;
 		if (GEngine) {
 			GEngine->ForceGarbageCollection();
 		}
