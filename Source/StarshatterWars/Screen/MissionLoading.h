@@ -33,6 +33,15 @@ class STARSHATTERWARS_API UMissionLoading : public UUserWidget
 	class UTextBlock* PlayerNameText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CampaignNameText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* SystemLocationText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* RegionLocationText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* MissionStartTimeText;
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* MissionNameText;
 

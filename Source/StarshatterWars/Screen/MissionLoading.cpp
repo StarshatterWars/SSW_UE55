@@ -50,6 +50,17 @@ void UMissionLoading::NativeConstruct()
 		MissionNameText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Name));
 	}
 
+	if (SystemLocationText) {
+		SystemLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].System));
+	}
+
+	if (RegionLocationText) {
+		RegionLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Region));
+	}
+	if (MissionStartTimeText) {
+		MissionStartTimeText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Start));
+	}
+
 	if (PlayerNameText) {
 		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
 	}
