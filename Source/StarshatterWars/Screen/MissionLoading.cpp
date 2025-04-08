@@ -2,6 +2,7 @@
 
 
 #include "MissionLoading.h"
+#include "../Foundation/FormatUtil.h"
 
 void UMissionLoading::GetSelectedMissionData()
 {
@@ -58,7 +59,7 @@ void UMissionLoading::NativeConstruct()
 		RegionLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Region));
 	}
 	if (MissionStartTimeText) {
-		MissionStartTimeText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Start));
+		MissionStartTimeText->SetText(FText::FromString(FormatDayFromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Start)));
 	}
 
 	if (PlayerNameText) {

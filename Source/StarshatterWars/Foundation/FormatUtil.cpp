@@ -136,6 +136,10 @@ void FormatDay(char* txt, double time)
 	sprintf(txt, "Day %02d", d);
 }
 
+FString FormatDayFromString(FString txt)
+{
+	return "Day " + FString(txt).Left(2) + " " + FString(txt).Right(8);
+}
 // +--------------------------------------------------------------------+
 
 void FormatPoint(char* txt, const Point& p)

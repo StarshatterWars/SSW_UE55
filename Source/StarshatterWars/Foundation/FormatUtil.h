@@ -31,6 +31,7 @@ void FormatTime(char* txt, double seconds);
 void FormatTimeOfDay(char* txt, double seconds);
 void FormatDayTime(char* txt, double seconds, bool short_format = false);
 void FormatDay(char* txt, double seconds);
+FString FormatDayFromString(FString txt);
 void FormatPoint(char* txt, const Point& p);
 Text FormatTimeString(int utc = 0);
 
