@@ -55,6 +55,18 @@ class STARSHATTERWARS_API UMissionLoading : public UUserWidget
 	class UButton* CancelButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* SituationButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* PackageButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* MapButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* WeaponsButton;
+
+
+
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* MissionScreenSwitcher;
 
 public:
@@ -71,6 +83,34 @@ protected:
 	void OnSelectButtonHovered();
 	UFUNCTION()
 	void OnSelectButtonUnHovered();
+	
+	UFUNCTION()
+	void OnSituationButtonClicked();
+	UFUNCTION()
+	void OnSituationButtonHovered();
+	UFUNCTION()
+	void OnSituationButtonUnHovered();
+	UFUNCTION()
+	void OnPackageButtonClicked();
+	UFUNCTION()
+	void OnPackageButtonHovered();
+	UFUNCTION()
+	void OnPackageButtonUnHovered();
+
+	UFUNCTION()
+	void OnMapButtonClicked();
+	UFUNCTION()
+	void OnMapButtonHovered();
+	UFUNCTION()
+	void OnMapButtonUnHovered();
+
+	UFUNCTION()
+	void OnWeaponsButtonClicked();
+	UFUNCTION()
+	void OnWeaponsButtonHovered();
+	UFUNCTION()
+	void OnWeaponsButtonUnHovered();
+
 	UFUNCTION()
 	void OnCancelButtonClicked();
 	UFUNCTION()

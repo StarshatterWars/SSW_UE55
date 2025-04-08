@@ -36,6 +36,29 @@ void UMissionLoading::NativeConstruct()
 		SelectButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnSelectButtonUnHovered);
 	}
 
+	if (SituationButton) {
+		SituationButton->OnClicked.AddDynamic(this, &UMissionLoading::OnSituationButtonClicked);
+		SituationButton->OnHovered.AddDynamic(this, &UMissionLoading::OnSituationButtonHovered);
+		SituationButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnSituationButtonUnHovered);
+	}
+
+	if (PackageButton) {
+		PackageButton->OnClicked.AddDynamic(this, &UMissionLoading::OnPackageButtonClicked);
+		PackageButton->OnHovered.AddDynamic(this, &UMissionLoading::OnPackageButtonHovered);
+		PackageButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnPackageButtonUnHovered);
+	}
+
+	if (MapButton) {
+		MapButton->OnClicked.AddDynamic(this, &UMissionLoading::OnMapButtonClicked);
+		MapButton->OnHovered.AddDynamic(this, &UMissionLoading::OnMapButtonHovered);
+		MapButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnMapButtonUnHovered);
+	}
+
+	if (WeaponsButton) {
+		WeaponsButton->OnClicked.AddDynamic(this, &UMissionLoading::OnWeaponsButtonClicked);
+		WeaponsButton->OnHovered.AddDynamic(this, &UMissionLoading::OnWeaponsButtonHovered);
+		WeaponsButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnWeaponsButtonUnHovered);
+	}
 	if (PlayButtonText) {
 		PlayButtonText->SetText(FText::FromString("PLAY"));
 	}
@@ -80,6 +103,66 @@ void UMissionLoading::OnSelectButtonHovered()
 }
 
 void UMissionLoading::OnSelectButtonUnHovered()
+{
+}
+
+void UMissionLoading::OnSituationButtonClicked()
+{
+	if (MissionScreenSwitcher) {
+		MissionScreenSwitcher->SetActiveWidgetIndex(0);
+	}
+}
+
+void UMissionLoading::OnSituationButtonHovered()
+{
+}
+
+void UMissionLoading::OnSituationButtonUnHovered()
+{
+}
+
+void UMissionLoading::OnPackageButtonClicked()
+{
+	if (MissionScreenSwitcher) {
+		MissionScreenSwitcher->SetActiveWidgetIndex(1);
+	}
+}
+
+void UMissionLoading::OnPackageButtonHovered()
+{
+}
+
+void UMissionLoading::OnPackageButtonUnHovered()
+{
+}
+
+void UMissionLoading::OnMapButtonClicked()
+{
+	if (MissionScreenSwitcher) {
+		MissionScreenSwitcher->SetActiveWidgetIndex(2);
+	}
+}
+
+void UMissionLoading::OnMapButtonHovered()
+{
+}
+
+void UMissionLoading::OnMapButtonUnHovered()
+{
+}
+
+void UMissionLoading::OnWeaponsButtonClicked()
+{
+	if (MissionScreenSwitcher) {
+		MissionScreenSwitcher->SetActiveWidgetIndex(3);
+	}
+}
+
+void UMissionLoading::OnWeaponsButtonHovered()
+{
+}
+
+void UMissionLoading::OnWeaponsButtonUnHovered()
 {
 }
 
