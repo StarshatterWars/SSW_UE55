@@ -74,7 +74,6 @@ void UCampaignScreen::OnPlayButtonUnHovered()
 
 void UCampaignScreen::OnCancelButtonClicked()
 {
-
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ToggleCampaignScreen(false);
 }
@@ -121,6 +120,8 @@ void UCampaignScreen::SetSelectedData(int selected)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
+	SSWInstance->CampaignData[selected].Orders.SetNum(4);
+	
 	if (CampaignNameText) {
 		CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Name));
 	}

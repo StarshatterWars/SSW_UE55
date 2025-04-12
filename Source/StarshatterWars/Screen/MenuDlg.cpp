@@ -23,7 +23,6 @@ void UMenuDlg::NativePreConstruct()
 
 void UMenuDlg::EnableMenuButtons(bool bEnabled)
 {
-	btn_campaign->SetIsEnabled(bEnabled);
 	btn_mission->SetIsEnabled(bEnabled);
 	btn_multi->SetIsEnabled(bEnabled);
 	btn_tac->SetIsEnabled(bEnabled);
@@ -51,7 +50,14 @@ void UMenuDlg::NativeConstruct()
 		btn_campaign->OnClicked.AddDynamic(this, &UMenuDlg::OnCampaignButtonClicked);
 		btn_campaign->OnHovered.AddDynamic(this, &UMenuDlg::OnCampaignButtonHovered);
 		btn_campaign->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_campaign->SetIsEnabled(false);
+		
+		if (UGameplayStatics::DoesSaveGameExist(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot)) {
+			btn_campaign->SetIsEnabled(true);
+		}
+		else
+		{
+			btn_campaign->SetIsEnabled(false);
+		}
 	}
 	if (btn_mission) {
 		btn_mission->OnClicked.AddDynamic(this, &UMenuDlg::OnMissionButtonClicked);
@@ -104,21 +110,14 @@ void UMenuDlg::NativeConstruct()
 	if(GameVersion)
 		GameVersion->SetText(FText::FromString(Game::GetGameVersion()));
 
-	SSWInstance->ToggleQuitDlg(false);
-	EnableMenuButtons(false);
-	EnableStartMenuButton(false);
-
-	if (UGameplayStatics::DoesSaveGameExist(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot)) {		
-		SSWInstance->ToggleFirstRunDlg(false);
-
-		if (SSWInstance->PlayerInfo.Campaign >= 0) {
-			EnableMenuButtons(true);
-			EnableStartMenuButton(true);
-		}
+	if (SSWInstance->PlayerInfo.Campaign >= 0) {
+		EnableMenuButtons(true);
+		EnableStartMenuButton(true);
+	} else {
+		EnableMenuButtons(false);
+		EnableStartMenuButton(false);
 	}
-	else {
-		SSWInstance->ToggleFirstRunDlg(true);
-	}
+	
 }
 
 void UMenuDlg::OnStartButtonClicked()

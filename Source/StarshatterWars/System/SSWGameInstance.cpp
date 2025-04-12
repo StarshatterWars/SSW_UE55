@@ -37,6 +37,7 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	PlayerSaveName = "PlayerSaveSlot";
 	PlayerSaveSlot = 0;
 	CampaignData.SetNum(5); // number of campaigns
+	CampaignData.SetNum(5); // number of campaigns
 	
 	InitializeDT(ObjectInitializer);
 
@@ -676,9 +677,9 @@ void USSWGameInstance::ToggleFirstRunDlg(bool bVisible)
 			FirstRunDlg->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
-	if (MainMenuDlg) {
-		MainMenuDlg->EnableMenuButtons(!bVisible);
-	}
+	//if (MainMenuDlg) {
+	//	MainMenuDlg->EnableMenuButtons(!bVisible);
+	//}
 }
 
 void USSWGameInstance::ToggleMenuButtons(bool bVisible)
