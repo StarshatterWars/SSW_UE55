@@ -13,8 +13,22 @@ UCLASS()
 class STARSHATTERWARS_API UIntelListObject : public UObject
 {
 	GENERATED_BODY()
-	
-	
-	
+
+public:	
+	FString NewsTitle;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString NewsLocation;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString NewsDate;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString NewsSource;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString NewsAudio;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString NewsInfoText;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	bool NewsVisited;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	int32 NewsId;
 	
 };

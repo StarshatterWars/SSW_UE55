@@ -110,6 +110,7 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
 	if (SSWInstance->MissionSelectionChanged) {
 		SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
 	}	
