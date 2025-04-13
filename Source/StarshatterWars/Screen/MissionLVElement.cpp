@@ -7,6 +7,7 @@
 
 void UMissionLVElement::NativeConstruct()
 {
+	Super::NativeConstruct();
 	if (MissionButton) {
 		MissionButton->OnClicked.AddDynamic(this, &UMissionLVElement::OnMissionButtonClicked);
 	}

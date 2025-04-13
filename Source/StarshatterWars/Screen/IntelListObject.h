@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WidgetBlueprint.h"
-#include "W_MainMenu.generated.h"
+#include "UObject/NoExportTypes.h"
+#include "IntelListObject.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API UW_MainMenu : public UWidgetBlueprint
+class STARSHATTERWARS_API UIntelListObject : public UObject
 {
 	GENERATED_BODY()
 	
