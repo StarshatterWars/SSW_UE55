@@ -299,12 +299,16 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						NewCampaignData.Situation = FString(situation);
 				}
 				else if (def->name()->value() == "system") {
-						GetDefText(system, def, filename);
-						NewCampaignData.System = FString(system);
+					GetDefText(system, def, filename);
+					NewCampaignData.System = FString(system);
 				}
 				else if (def->name()->value() == "region") {
-						GetDefText(region, def, filename);
-						NewCampaignData.Region = FString(region);
+					GetDefText(region, def, filename);
+					NewCampaignData.Region = FString(region);
+				}
+				else if (def->name()->value() == "image") {
+					GetDefText(MainImage, def, filename);
+					NewCampaignData.MainImage = FString(MainImage);
 				}
 				else if (def->name()->value() == "orders") {
 						GetDefText(orders, def, filename);

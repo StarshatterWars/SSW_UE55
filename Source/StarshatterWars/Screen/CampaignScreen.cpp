@@ -3,6 +3,14 @@
 
 #include "CampaignScreen.h"
 #include "Engine/Font.h"
+#include "Misc/FileHelper.h"
+#include "HAL/PlatformFileManager.h"
+#include "IImageWrapper.h"
+#include "IImageWrapperModule.h"
+#include "Modules/ModuleManager.h"
+#include "Engine/Texture2D.h"
+#include "Brushes/SlateImageBrush.h"
+#include "Styling/SlateBrush.h"
 
 void UCampaignScreen::NativeConstruct()
 {
@@ -10,7 +18,7 @@ void UCampaignScreen::NativeConstruct()
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
-
+	
 	if (TitleText) {
 		TitleText->SetText(FText::FromString("Dynamic Campaigns").ToUpper());
 	}
@@ -51,6 +59,22 @@ void UCampaignScreen::NativeConstruct()
 
 	SetCampaignDDList();
 	SetSelectedData(SSWInstance->PlayerInfo.Campaign);
+}
+
+UTexture2D* UCampaignScreen::LoadTextureFromFile()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();	
+	UTexture2D* LoadedTexture = SSWInstance->LoadPNGTextureFromFile(ImagePath);
+	return LoadedTexture;
+}
+
+FSlateBrush UCampaignScreen::CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize)
+{
+	FSlateBrush Brush;
+	Brush.SetResourceObject(Texture);
+	Brush.ImageSize = ImageSize;
+	Brush.DrawAs = ESlateBrushDrawType::Image;
+	return Brush;
 }
 
 void UCampaignScreen::OnPlayButtonClicked()
@@ -122,8 +146,13 @@ void UCampaignScreen::SetSelectedData(int selected)
 
 	SSWInstance->CampaignData[selected].Orders.SetNum(4);
 	
-	if (CampaignNameText) {
-		CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Name));
+	GetCampaignImageFile(selected);
+
+	UTexture2D* LoadedTexture = LoadTextureFromFile();
+	if (LoadedTexture && CampaignImage)
+	{
+		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+		CampaignImage->SetBrush(Brush);
 	}
 
 	if (DescriptionText) {
@@ -186,4 +215,16 @@ void UCampaignScreen::OnSetSelected(FString dropDownInt, ESelectInfo::Type type)
 		SetSelectedData(value);
 		PlayButton->SetIsEnabled(true);
 	}
+}
+
+void UCampaignScreen::GetCampaignImageFile(int selected)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	ImagePath = FPaths::ProjectContentDir() + TEXT("UI/Campaigns/0");
+	ImagePath.Append(FString::FromInt(selected + 1));
+	ImagePath.Append("/");
+	UE_LOG(LogTemp, Log, TEXT("Campaign File: %s"), *SSWInstance->CampaignData[selected].MainImage);
+	ImagePath.Append(SSWInstance->CampaignData[selected].MainImage);
+	ImagePath.Append(".png");
+	UE_LOG(LogTemp, Log, TEXT("Campaign Image: %s"), *ImagePath);
 }

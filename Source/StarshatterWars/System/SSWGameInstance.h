@@ -14,8 +14,16 @@
 #include "Engine/DataTable.h"
 #include "../Game/GameStructs.h"
 
+#include "IImageWrapperModule.h"
+#include "IImageWrapper.h"
+#include "Modules/ModuleManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Engine/Texture2D.h"
+#include "RenderUtils.h"
+
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "SSWGameInstance.generated.h"
+
 
 /**
  * 
@@ -170,6 +178,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SaveGame")
 	void LoadGame(FString SlotName, int32 UserIndex);
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
+	UTexture2D* LoadPNGTextureFromFile(const FString& Path);
 
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;

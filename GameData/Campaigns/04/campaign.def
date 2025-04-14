@@ -22,6 +22,8 @@ orders: "* Protect Alliance assets in the area.\n"
 system: Jarnell
 region: Adonis
 index: 3
+available: true
+image: main
 
 combatant_groups: 5
 

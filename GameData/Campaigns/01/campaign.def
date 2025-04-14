@@ -8,7 +8,7 @@ desc: "The Third Fleet of the Terellian Alliance "
 
 situation:
    "The Third Fleet of the Terellian Alliance "
-   "Force:Space is participating in live fire training exercises "
+   "Space Force is participating in live fire training exercises "
    "in the Janus star system.  Operation Live Fire "
    "will give the fleet some much needed practice under conditions that are "
    "as close to combat reality as possible.\n\n"
@@ -32,6 +32,7 @@ region: Janek
 scripted: true
 index: 0
 available: true
+image: main
 
 combatant_groups: 0
 action_groups: 1

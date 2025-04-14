@@ -32,6 +32,7 @@ system: Borova
 region: Borova
 index: 2
 available: false
+image: main
 
 combatant_groups: 3
 

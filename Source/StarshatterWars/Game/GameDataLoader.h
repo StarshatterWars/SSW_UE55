@@ -166,6 +166,7 @@ public:
 	Text                 situation;
 	Text                 system;
 	Text                 region;
+	Text                 MainImage;
 	Text                 orders;
 
 	

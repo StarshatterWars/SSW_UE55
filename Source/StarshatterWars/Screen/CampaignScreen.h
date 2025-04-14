@@ -10,6 +10,7 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/ComboBoxString.h"
+#include "Components/Image.h"
 #include "Components/EditableTextBox.h"
 
 #include "../System/SSWGameInstance.h"
@@ -46,6 +47,10 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	class UTextBlock* LocationSystemText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationRegionText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UImage* CampaignImage;
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UComboBoxString* CampaignSelectDD;
 
@@ -60,7 +65,11 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	
 protected:
 	void NativeConstruct() override;
+
+	UTexture2D* LoadTextureFromFile();
+	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	
+
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()
@@ -83,7 +92,13 @@ protected:
 	UFUNCTION()
 	void OnSetSelected(FString dropDownInt, ESelectInfo::Type type);
 
+	UFUNCTION()
+	void GetCampaignImageFile(int selected);
+	
 	int Selected; 
+
+	UPROPERTY()
+	FString ImagePath;
 
 private:
 	

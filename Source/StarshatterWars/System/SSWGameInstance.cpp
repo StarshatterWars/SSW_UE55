@@ -21,6 +21,9 @@
 
 #include "../Game/PlayerSaveGame.h"
 #include "Engine/World.h"
+#include <winbase.h>
+#undef UpdateResource
+
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 {
@@ -860,5 +863,44 @@ void USSWGameInstance::LoadGame(FString SlotName, int32 UserIndex)
 		UPlayerSaveGame* LoadedGame = Cast<UPlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
 		PlayerInfo = LoadedGame->PlayerInfo;
 	}
+}
+
+UTexture2D* USSWGameInstance::LoadPNGTextureFromFile(const FString& Path)
+{
+	TArray<uint8> FileData;
+	if (!FFileHelper::LoadFileToArray(FileData, *Path)) {
+		UE_LOG(LogTemp, Error, TEXT("Failed to load file: %s"), *Path);
+		return nullptr;
+	}
+
+	// Get image wrapper for PNG
+	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
+
+	// Decode PNG
+	if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(FileData.GetData(), FileData.Num())) {
+		TArray<uint8> RawData;
+		
+		if (ImageWrapper->GetRaw(ERGBFormat::RGBA, 8, RawData)) {
+			int32 Width = ImageWrapper->GetWidth();
+			int32 Height = ImageWrapper->GetHeight();
+
+			// Create the texture
+			UTexture2D* Texture = UTexture2D::CreateTransient(Width, Height, PF_R8G8B8A8);
+			if (!Texture) return nullptr;
+
+			// Lock and fill mip data
+			void* TextureData = Texture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+			FMemory::Memcpy(TextureData, RawData.GetData(), RawData.Num());
+			Texture->GetPlatformData()->Mips[0].BulkData.Unlock();
+
+			// Update texture
+			Texture->UpdateResource();
+			return Texture;
+		}
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("Failed to decode PNG: %s"), *FilePath);
+	return nullptr;
 }
 

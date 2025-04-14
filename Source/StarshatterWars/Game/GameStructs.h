@@ -1614,6 +1614,9 @@ struct FS_Campaign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Region;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString MainImage;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ActionSize;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int CombatantSize;
@@ -1651,6 +1654,7 @@ struct FS_Campaign : public FTableRowBase {
 
 		System = "";
 		Region = "";
+		MainImage = "";
 
 		Scripted = false;
 		Sequential = false;
