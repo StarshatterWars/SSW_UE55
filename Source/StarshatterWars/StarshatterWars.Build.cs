@@ -4,20 +4,21 @@ using UnrealBuildTool;
 
 public class StarshatterWars : ModuleRules
 {
-	public StarshatterWars(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+    public StarshatterWars(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] 
-		{
-			"UMG",
-			"Core", 
-			"CoreUObject",
+        PublicDependencyModuleNames.AddRange(new string[]
+        {
+            "UMG",
+            "Core",
+            "CoreUObject",
             "Slate",
             "SlateCore",
-			"Engine", 
-			"InputCore",
-			"EnhancedInput" }
-		);
-	}
+            "Engine",
+            "InputCore",
+            "EnhancedInput",
+            "MediaAssets" }
+        );
+    }
 }

@@ -21,9 +21,10 @@
 
 #include "../Game/PlayerSaveGame.h"
 #include "Engine/World.h"
-#include <winbase.h>
+//#include "Windows/MinWindows.h"
+//#include <winbase.h>
 #undef UpdateResource
-
+#undef PlaySound
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 {
