@@ -387,7 +387,10 @@ void UOperationsScreen::SetSelectedMissionData(int Selected)
 		MissionDescriptionText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Description));
 	}
 	if (MissionSitrepText) {
-		MissionSitrepText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Sitrep));
+		FString SitrepText = SSWInstance->GetActiveCampaign().MissionList[Selected].Sitrep;
+		SitrepText = SitrepText.Replace(TEXT("\\n"), TEXT("\n"));
+
+		MissionSitrepText->SetText(FText::FromString(SitrepText));
 	}
 	if (MissionStartText) {
 		MissionStartText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Start));

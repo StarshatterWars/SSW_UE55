@@ -217,7 +217,7 @@ void AGameDataLoader::GetSSWInstance()
 void AGameDataLoader::InitializeCampaignData() {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::InitializeCampaignData()"));
 
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Campaigns/"));
 	FString FileName = ProjectPath;
 
@@ -933,7 +933,9 @@ AGameDataLoader::LoadMissionList(FString Path)
 						}
 						else if (pdef->name()->value() == "sitrep") {
 							GetDefText(Sitrep, pdef, fn);
-							NewMissionList.Sitrep = FString(Sitrep);
+							FString SitrepText = FString(Sitrep);
+							SitrepText = SitrepText.Replace(TEXT("\n"), TEXT("\\n"));
+							NewMissionList.Sitrep = FString(SitrepText);
 						}
 						else if (pdef->name()->value() == "script") {
 							GetDefText(Script, pdef, fn);
@@ -2747,7 +2749,8 @@ AGameDataLoader::LoadGalaxyMap()
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadGalaxyMap()"));
 
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
+
 	ProjectPath.Append(TEXT("GameData/Galaxy/"));
 	FString FileName = ProjectPath;
 	FileName.Append("Galaxy.def");
@@ -3521,7 +3524,7 @@ void AGameDataLoader::ParseTerrain(TermStruct* val, const char* fn)
 void AGameDataLoader::LoadStarsystems()
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadStarsystems()"));
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Galaxy/Systems/"));
 	FString PathName = ProjectPath;
 
@@ -3696,7 +3699,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 void AGameDataLoader::LoadCombatRoster()
 {
 	UE_LOG(LogTemp, Log, TEXT("ACombatGroupLoader::LoadCombatRoster()"));
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Campaigns/"));
 	FString PathName = ProjectPath;
 
@@ -3720,7 +3723,7 @@ void AGameDataLoader::LoadCombatRoster()
 void AGameDataLoader::LoadShipDesigns()
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadShipDesigns()"));
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Ships/"));
 	FString PathName = ProjectPath;
 
@@ -3775,7 +3778,7 @@ void AGameDataLoader::LoadSystemDesigns()
 {
 	SystemDesignTable.Empty();
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadSystemDesigns()"));
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Systems/sys.def"));
 
 	char* fn = TCHAR_TO_ANSI(*ProjectPath);
@@ -7142,7 +7145,7 @@ AGameDataLoader::GetContentBundleText(const char* key) const
 
 void
 AGameDataLoader::LoadContentBundle() {
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Content/content.txt"));
 
 	char* fn = TCHAR_TO_ANSI(*ProjectPath);
@@ -7213,7 +7216,7 @@ AGameDataLoader::LoadContentBundle() {
 void AGameDataLoader::LoadForms()
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadForms()"));
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Screens/"));
 	FString PathName = ProjectPath;
 
@@ -7641,7 +7644,7 @@ AGameDataLoader::LoadForm(const char* fn)
 
 	FS_FormDesign NewForm;
 	FString FormName = FString(fn);
-	FormName.RemoveFromStart(FPaths::ProjectDir() + "GameData/Screens/");
+	FormName.RemoveFromStart(FPaths::ProjectContentDir(); + "GameData/Screens/");
 	FormName.RemoveFromEnd(".frm");
 	NewForm.Name = FormName;
 
@@ -7852,7 +7855,7 @@ void
 AGameDataLoader::LoadAwardTables()
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::LoadAwardTables()"));
-	FString ProjectPath = FPaths::ProjectDir();
+	FString ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Awards/"));
 	FString FileName = ProjectPath;
 

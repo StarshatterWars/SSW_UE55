@@ -1,0 +1,110 @@
+MISSIONLIST
+
+mission: {
+	id:      1,
+	name:    "Coup Failure",
+	objective: "Unspecified",
+	start:   "02/09:00:00",
+	script:  "02-Coup-Failure",
+	type:    "Patrol"
+	system:  "Solus"
+	region:  "Solus"	
+	sitrep:  "TELMERA CITY, SOLUS - An attempted palace coup by Dantari agents was thwarted by alert members of the Provisional Security Directorate early this morning. " 
+			 "Separatist agents, working from a secret base near the capitol offices, succeeded in destroying the executive suite of the presidential palace.  \n\n"
+
+			 "Security service members discovered the bomb only moments before it was detonated and were able to escort President Marish and his party to an undisclosed safe " 
+			 "location.  Senators Hamil and Covanon who were to attend a working breakfast with the President were killed in the blast, as were two security service agents who "
+			 "died trying to protect them.  Memorial services for all four men are planned for later in the week.\n\n"
+
+			 "Speaking on behalf of President Marish, executive spokesperson Cyn Talban affirmed that the central government had not been struck down by the terrorist-style attack. "  
+			 "We are still very much open for business.  President Marish is meeting with security advisors at this hour, and he will be holding a press conference from the safehouse "
+			 "later this morning to address your questions and concerns."
+}
+
+mission: {
+	id:      2,
+	name:    "Blockade Broken",
+	objective: "Unspecified",
+	start:   "02/11:15:00",
+	script:  "03-Blockade-Broken",
+	type:    "Patrol"
+	system:  "Solus"
+	region:  "Trellis"
+	sitrep:  "TRELLIS - The Alliance Third Fleet has broken the blockade of the Trellis-Solus Farcaster network, a Force:Command spokesperson has"
+			 "announced.  The minefields surrounding the Farcaster terminus have been cleared, and several Separatist squadrons have been eliminated or greatly reduced in strength. \n\n"
+
+			 "Theater commander Admiral Evars has given official authorization for the commencement of humanitarian aid traffic to the inner planets. " 
+			 "Certified non-governmental agencies delivering food, clothing, medicines, and emergency equipment will receive protective escorts "
+			 "by warships from the Third Fleet.\n\n"
+
+			 "Although the blockade has been broken, there are still several squadrons in operation near the outer worlds. We strongly recommend that only emergency traffic be routed through the Trellis sector.  Civilian ships are advised to avoid the area until the threat can be assessed and appropriate actions taken, Evars was quoted as saying."
+}
+
+mission: {
+	id:      3,
+	name:    "Harmony Risk",
+	objective: "Unspecified",
+	start:   "01/16:23:00",
+	script:  "04-Harmony-Risk",
+	type:    "Patrol"
+	system:  "Solus"
+	region:  "Solus"
+	sitrep:  "****************************************\n"
+			 "*** FLASH CODED \n"
+			 "*** HARMONY STATION \n"
+			 "*** KALON SECTOR \n"
+			 "*** CLASSIFIED: SECRET R3 NTK\n"
+			 "****************************************\n"
+}
+
+mission: {
+	id:      4,
+	name:    "Ground Strike",
+	objective: "Training Strike - Destroy simulated mining operation.",
+	start:   "02/05:35:00",
+	script:  "T4",
+	type:    "Training"
+	system:  "Janus"
+	region:  "Janek Station"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. Your squadron, the Stallions, are on temporary detached duty to Janek Station. As part of the exercise, you have been tasked with destroying support facilities for a simulated mining operation."
+}
+
+mission: {
+	id:      5,
+	name:    "Training Cruise",
+	desc:    "Learn to command starships. Practice engaging target drones with a Frigate class ship.",
+	objective: "Training - Practice starship fleet operations.",
+	start:   "03/15:20:00",
+	script:  "T5",
+	type:    "Training"
+	system:  "Janus"
+	region:  "Alystra"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. You will be in command of the Frigate Carlisle in Alystra sector.  After you destroy the target drones in that sector, rendevous with the Archon in Janek orbit to complete the exercise."
+}
+
+mission: {
+	id:      6,
+	name:    "Advanced Starship Combat",
+	desc:    "Learn to command starships. Practice engaging starship targets with a Destroyer class ship.",
+	objective: "Training - Practice advanced starship combat maneuvers.",
+	start:   "04/11:00:00",
+	script:  "T6",
+	type:    "Training"
+	system: "Janus"
+	region: "Dante"
+	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. You will be in command of the Destroyer Mahan in Dante sector. You have been tasked with finding and destroying the enemy Wolf-class starship Shannon. You have one hour to complete this exercise.  Good luck!"
+}
+
+mission: {
+	id:      7,
+	name:    "Carrier Operations",
+	desc:    "Learn to direct fleet operations. Practice orbital carrier operations.",
+	objective: "Training - Practice orbital carrier operations.",
+	start:   "05/09:30:00",
+	script:  "T7",
+	type:    "Training"
+	system: "Janus"
+	region: "Alystra"
+	sitrep: "The Third Fleet is participating in wargame exercises in the Janus system. The fleet carrier Archon has been detached to Alystra orbit to practice spaceborne fighter operations."
+
+}
