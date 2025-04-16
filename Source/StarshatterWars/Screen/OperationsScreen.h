@@ -15,6 +15,7 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/ListView.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
 
@@ -98,6 +99,16 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UListView* MissionList;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* IntelList;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* HoverSound;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* AcceptSound;
+
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	int SelectedMission;
 
 public:
@@ -107,6 +118,9 @@ public:
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
+	UFUNCTION()
+	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
 
 	UFUNCTION()
 	void OnSelectButtonClicked();
@@ -161,6 +175,8 @@ protected:
 	void SetCampaignMissions();
 	UFUNCTION()
 	void PopulateMissionList();
+	UFUNCTION()
+	void PopulateIntelList();
 	
 		
 

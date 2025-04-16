@@ -6,6 +6,8 @@
 
 void UQuitDlg::OnApplyClicked()
 {
+	PlayUISound(this, AcceptSound);
+
 	GEngine->ForceGarbageCollection();
 
 	APlayerController* player = GetOwningPlayer();
@@ -14,6 +16,7 @@ void UQuitDlg::OnApplyClicked()
 
 void UQuitDlg::OnCancelClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ToggleQuitDlg(false);
 }
@@ -34,5 +37,13 @@ void UQuitDlg::NativeConstruct()
 
 	if (ExitPrompt) {
 		ExitPrompt->SetText(FText::FromString("Are you sure you want to exit Starshatter and return to Windows?"));
+	}
+}
+
+void UQuitDlg::PlayUISound(UObject* WorldContext, USoundBase* UISound)
+{
+	if (UISound)
+	{
+		UGameplayStatics::PlaySound2D(WorldContext, UISound);
 	}
 }

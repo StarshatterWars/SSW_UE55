@@ -15,6 +15,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "Kismet/GameplayStatics.h"
 #include "MenuDlg.generated.h"
 
 /**
@@ -53,10 +54,15 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GameVersion;
 
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* HoverSound;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* AcceptSound;
+
 	UFUNCTION()
 	void EnableMenuButtons(bool bEnabled);
 	UFUNCTION()
-
 	void EnableStartMenuButton(bool bEnabled);
 
 protected:	
@@ -105,4 +111,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowCampaignScreen();
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
 };
+
+

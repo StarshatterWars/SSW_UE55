@@ -3,6 +3,7 @@
 
 #include "OperationsScreen.h"
 #include "MissionListObject.h"
+#include "IntelListObject.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -103,6 +104,7 @@ void UOperationsScreen::NativeConstruct()
 
 	SetCampaignOrders();
 	PopulateMissionList();
+	PopulateIntelList();
 	SetCampaignMissions();
 }
 
@@ -118,12 +120,14 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 void UOperationsScreen::OnSelectButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadMissionBriefingScreen();
 }
 
 void UOperationsScreen::OnSelectButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnSelectButtonUnHovered()
@@ -132,6 +136,7 @@ void UOperationsScreen::OnSelectButtonUnHovered()
 
 void UOperationsScreen::OnOrdersButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(0);
 	}
@@ -143,6 +148,7 @@ void UOperationsScreen::OnOrdersButtonClicked()
 
 void UOperationsScreen::OnOrdersButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnOrdersButtonUnHovered()
@@ -151,6 +157,7 @@ void UOperationsScreen::OnOrdersButtonUnHovered()
 
 void UOperationsScreen::OnTheaterButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(1);
 	}
@@ -162,6 +169,7 @@ void UOperationsScreen::OnTheaterButtonClicked()
 
 void UOperationsScreen::OnTheaterButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnTheaterButtonUnHovered()
@@ -170,6 +178,7 @@ void UOperationsScreen::OnTheaterButtonUnHovered()
 
 void UOperationsScreen::OnForcesButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(2);
 	}
@@ -180,14 +189,17 @@ void UOperationsScreen::OnForcesButtonClicked()
 
 void UOperationsScreen::OnForcesButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnForcesButtonUnHovered()
 {
+	
 }
 
 void UOperationsScreen::OnIntelButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(3);
 	}
@@ -199,6 +211,7 @@ void UOperationsScreen::OnIntelButtonClicked()
 
 void UOperationsScreen::OnIntelButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnIntelButtonUnHovered()
@@ -207,6 +220,7 @@ void UOperationsScreen::OnIntelButtonUnHovered()
 
 void UOperationsScreen::OnMissionsButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	if (OperationalSwitcher) {
@@ -223,6 +237,7 @@ void UOperationsScreen::OnMissionsButtonClicked()
 
 void UOperationsScreen::OnMissionsButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnMissionsButtonUnHovered()
@@ -230,16 +245,19 @@ void UOperationsScreen::OnMissionsButtonUnHovered()
 }
 void UOperationsScreen::OnCancelButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadMainMenuScreen();
 }
 
 void UOperationsScreen::OnCancelButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::OnCancelButtonUnHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UOperationsScreen::SetCampaignOrders()
@@ -334,6 +352,29 @@ void UOperationsScreen::PopulateMissionList()
 	}
 }
 
+void UOperationsScreen::PopulateIntelList()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	if (!IntelList) return;
+
+	IntelList->ClearListItems();
+
+	for (int32 i = 0; i < SSWInstance->GetActiveCampaign().Action.Num(); ++i)
+	{
+		if (SSWInstance->GetActiveCampaign().Action[i].Type == "event") {
+			UIntelListObject* ListItem = NewObject<UIntelListObject>();
+			ListItem->NewsTitle = SSWInstance->GetActiveCampaign().Action[i].Text;
+			ListItem->NewsLocation = SSWInstance->GetActiveCampaign().Action[i].Region;
+			//ListItem->NewsDate = SSWInstance->GetActiveCampaign().Action[i].Region;
+			ListItem->NewsSource = SSWInstance->GetActiveCampaign().Action[i].Source;
+			ListItem->NewsVisited = false;
+			IntelList->GetIndexForItem(ListItem);
+			IntelList->AddItem(ListItem);
+		}
+	}
+}
+
 void UOperationsScreen::SetSelectedMissionData(int Selected) 
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -385,5 +426,13 @@ void UOperationsScreen::SetSelectedMissionData(int Selected)
 
 	SSWInstance->PlayerInfo.Mission = Selected;
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
+}
+
+void UOperationsScreen::PlayUISound(UObject* WorldContext, USoundBase* UISound)
+{
+	if (UISound)
+	{
+		UGameplayStatics::PlaySound2D(WorldContext, UISound);
+	}
 }
 

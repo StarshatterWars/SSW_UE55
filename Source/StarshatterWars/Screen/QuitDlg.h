@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "Kismet/GameplayStatics.h"
 #include "QuitDlg.generated.h"
 
 /**
@@ -23,10 +24,17 @@ class STARSHATTERWARS_API UQuitDlg : public UBaseScreen
 		class UTextBlock* ExitTitle;
 		; UPROPERTY(meta = (BindWidgetOptional))
 		class UTextBlock* ExitPrompt;
+		UPROPERTY(EditAnywhere, Category = "UI Sound")
+		USoundBase* HoverSound;
+
+		UPROPERTY(EditAnywhere, Category = "UI Sound")
+		USoundBase* AcceptSound;
 		
 	protected:
 		void NativeConstruct() override;
-
+		
+		UFUNCTION()
+		void PlayUISound(UObject* WorldContext, USoundBase* UISound);
 		UFUNCTION()
 		void OnApplyClicked();
 		UFUNCTION()

@@ -79,6 +79,7 @@ FSlateBrush UCampaignScreen::CreateBrushFromTexture(UTexture2D* Texture, FVector
 
 void UCampaignScreen::OnPlayButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayerInfo.Campaign = Selected;
 	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
@@ -90,6 +91,7 @@ void UCampaignScreen::OnPlayButtonClicked()
 
 void UCampaignScreen::OnPlayButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UCampaignScreen::OnPlayButtonUnHovered()
@@ -98,12 +100,14 @@ void UCampaignScreen::OnPlayButtonUnHovered()
 
 void UCampaignScreen::OnCancelButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ToggleCampaignScreen(false);
 }
 
 void UCampaignScreen::OnCancelButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 }
 
 void UCampaignScreen::OnCancelButtonUnHovered()
@@ -227,4 +231,12 @@ void UCampaignScreen::GetCampaignImageFile(int selected)
 	ImagePath.Append(SSWInstance->CampaignData[selected].MainImage);
 	ImagePath.Append(".png");
 	UE_LOG(LogTemp, Log, TEXT("Campaign Image: %s"), *ImagePath);
+}
+
+void UCampaignScreen::PlayUISound(UObject* WorldContext, USoundBase* UISound)
+{
+	if (UISound)
+	{
+		UGameplayStatics::PlaySound2D(WorldContext, UISound);
+	}
 }

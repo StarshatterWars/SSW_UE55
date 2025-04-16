@@ -12,7 +12,7 @@
 #include "Components/ComboBoxString.h"
 #include "Components/Image.h"
 #include "Components/EditableTextBox.h"
-
+#include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
 
 #include "CampaignScreen.generated.h"
@@ -62,6 +62,12 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	class UButton* PlayButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* HoverSound;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* AcceptSound;
+
 	
 protected:
 	void NativeConstruct() override;
@@ -94,8 +100,9 @@ protected:
 
 	UFUNCTION()
 	void GetCampaignImageFile(int selected);
-	
-	int Selected; 
+	UFUNCTION()
+	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
+	int Selected;
 
 	UPROPERTY()
 	FString ImagePath;

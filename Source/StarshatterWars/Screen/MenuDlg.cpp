@@ -122,101 +122,112 @@ void UMenuDlg::NativeConstruct()
 
 void UMenuDlg::OnStartButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadOperationsScreen();
 }
 
 void UMenuDlg::OnStartButtonHovered()
 {
+	PlayUISound(this, HoverSound); 
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Start a new game, or resume your current game"));
 }
 
 void UMenuDlg::OnCampaignButtonClicked()
 {
+	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ShowCampaignScreen();
 }
 
 void UMenuDlg::OnCampaignButtonHovered()
 {
+	PlayUISound(this, HoverSound); 
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Start a new dynamic campaign, or load a saved game"));
 }
 
 void UMenuDlg::OnMissionButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnMissionButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Play or create a scripted mission exercise"));
 }
 
 void UMenuDlg::OnPlayerButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnPlayerButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Manage your logbook and player preferences"));
 }
 
 void UMenuDlg::OnMultiplayerButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnMultiplayerButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Start or join a multiplayer scenario"));
 }
 
 void UMenuDlg::OnTacticalButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnTacticalButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("View ship and weapon stats and mission roles"));
 }
 
 void UMenuDlg::OnVideoButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnOptionsButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnOptionsButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Audio, Video, Gameplay, Control, and Mod configuration options"));
 }
 
 void UMenuDlg::OnControlsButtonClicked()
 {
-
+	PlayUISound(this, AcceptSound);
 }
 
 void UMenuDlg::OnQuitButtonClicked()
 {
+	PlayUISound(this, AcceptSound); 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ToggleQuitDlg(true);
 }
 
 void UMenuDlg::OnQuitButtonHovered()
 {
+	PlayUISound(this, HoverSound);
 	if (MenuTooltip)
 		MenuTooltip->SetText(FText::FromString("Exit Starshatter and return to Windows"));
 }
@@ -231,6 +242,14 @@ void UMenuDlg::ShowCampaignScreen()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->ShowCampaignScreen();
+}
+
+void UMenuDlg::PlayUISound(UObject* WorldContext, USoundBase* UISound)
+{
+	if (UISound)
+	{
+		UGameplayStatics::PlaySound2D(WorldContext, UISound);
+	}
 }
 
 
