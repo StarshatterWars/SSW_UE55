@@ -7644,7 +7644,7 @@ AGameDataLoader::LoadForm(const char* fn)
 
 	FS_FormDesign NewForm;
 	FString FormName = FString(fn);
-	FormName.RemoveFromStart(FPaths::ProjectContentDir(); + "GameData/Screens/");
+	FormName.RemoveFromStart(FPaths::ProjectContentDir() + "GameData/Screens/");
 	FormName.RemoveFromEnd(".frm");
 	NewForm.Name = FormName;
 
