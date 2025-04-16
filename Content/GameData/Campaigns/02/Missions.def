@@ -1,6 +1,20 @@
 MISSIONLIST
 
 mission: {
+	id:      0,
+	name:    "Operation Highland",
+	objective: "Unspecified",
+	start:   "02/09:00:00",
+	script:  "01-News-Start",
+	type:    "Patrol"
+	system:  "Solus"
+	region:  "Solus"	
+	sitrep:  "SOLUS - The Provisional Security Directorate of the Independent System of Solus formally requested military assistance from Terellian Alliance Force:Command this morning.  Special couriers ran the Trellis blockade to deliver the message to the Force outpost in the nearby Janek system.\n\n"
+			 "The official government of this system has been cut off by the illegal blockade of the Trellis Farcaster, said Adminstrator Lars of the Directorate.  We have suffered a great deal of damage in the fighting, and we need help to reestablish basic services here.\n\n"
+			 "Solus has been ripped nearly in two by the bloody civil war that erupted between the Loyalist and Separatist factions of the system government.  Dantari Separatists under the leadership of Senator Masil Gannet, after months of pressing for an official alliance with the Hegemony Prefecture of Renser, have seized much of the Solus star fleet and taken control of the outer worlds of Trellis and Jalah.  The Loyalist faction, although still technically in control of the official goverment, has been trapped on the inner planets Solus and Meridian.\n\n"
+			 "The Separatist blockade of the Trellis Farcaster has also taken a toll on the many Alliance citizens in the Solus system.  Several Terellian companies maintain major offices on the capitol world itself, and Tal Vesta University runs a stellar observatory near the planet Meridian.  An estimated 375,000 Terellians are trapped by the blockade.  So far they have been unable to convince the Dantari Separatists to grant them safe passage back to the main Alliance systems."
+}
+mission: {
 	id:      1,
 	name:    "Coup Failure",
 	objective: "Unspecified",
@@ -43,7 +57,7 @@ mission: {
 mission: {
 	id:      3,
 	name:    "Harmony Risk",
-	objective: "Unspecified",
+	objective: "Protect Harmony Station",
 	start:   "01/16:23:00",
 	script:  "04-Harmony-Risk",
 	type:    "Patrol"
@@ -59,52 +73,98 @@ mission: {
 
 mission: {
 	id:      4,
-	name:    "Ground Strike",
-	objective: "Training Strike - Destroy simulated mining operation.",
+	name:    "Foothill Ridge",
+	objective: "Destroy Foothill Ridge Base",
 	start:   "02/05:35:00",
-	script:  "T4",
-	type:    "Training"
-	system:  "Janus"
-	region:  "Janek Station"
-	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. Your squadron, the Stallions, are on temporary detached duty to Janek Station. As part of the exercise, you have been tasked with destroying support facilities for a simulated mining operation."
+	script:  "05-Foothill-Ridge",
+	type:    "Patrol"
+	system:  "Solus"
+	region:  "Solus"
+	sitrep:  "*************************************\n"
+			 "*** FLASH CODED \n"
+			 "*** FOOTHILL RIDGE \n"
+			 "*** TELMERA SECTOR \n"
+			 "*** CLASSIFIED: SECRET R5 NTK\n"
+			 "*************************************\n"
 }
 
 mission: {
 	id:      5,
-	name:    "Training Cruise",
-	desc:    "Learn to command starships. Practice engaging target drones with a Frigate class ship.",
-	objective: "Training - Practice starship fleet operations.",
+	name:    "Renser Buildup",
+	objective: "Investigate Renser Buildup",
 	start:   "03/15:20:00",
-	script:  "T5",
-	type:    "Training"
-	system:  "Janus"
-	region:  "Alystra"
-	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. You will be in command of the Frigate Carlisle in Alystra sector.  After you destroy the target drones in that sector, rendevous with the Archon in Janek orbit to complete the exercise."
+	script:  "06-Renser-Buildup",
+	type:    "Patrol"
+	system:  "Renser"
+	region:  "Renser"
+	sitrep:  "Timestamp: $TIME\n"
+			 "Subject: Renser Fleet Mobilization\n"
+			 "Classified: CONFIDENTIAL DND/CRYPTO\n"
 }
 
 mission: {
 	id:      6,
-	name:    "Advanced Starship Combat",
-	desc:    "Learn to command starships. Practice engaging starship targets with a Destroyer class ship.",
-	objective: "Training - Practice advanced starship combat maneuvers.",
+	name:    "Research Lab",
+	objective: "Protect the Tal Vesta Research Lab",
 	start:   "04/11:00:00",
-	script:  "T6",
-	type:    "Training"
-	system: "Janus"
-	region: "Dante"
-	sitrep:  "The Third Fleet is participating in wargame exercises in the Janus system. You will be in command of the Destroyer Mahan in Dante sector. You have been tasked with finding and destroying the enemy Wolf-class starship Shannon. You have one hour to complete this exercise.  Good luck!"
+	script:  "07-Research-Lab",
+	type:    "Patrol"
+	system: "Solus"
+	region: "Solus"
+	sitrep:  "MERIDIAN - The Tal Vesta University Stellar Observatory in Meridian orbit has been cut off by Separatist patrols and is facing severe "
+			 "shortages of food and consumable supplies.  University staff indicate that the fusion plant on the observatory is still operational, and "
+			 "that basic life support functions - water, air, and power - are not an immediate concern.  Mainly, the students are just hungry and "
+			 "frustrated according to Research Coordinator Alen Tolap. \n\n"
+
+			 "Student researchers living at the observatory are protesting the ongoing civil war.  Native Solusans, ethnic Dantari, and even many Terellian "
+			 "Alliance students have issued a joint statement condemning the conflict and demanding the resumption of peaceful negotiations.  Thus far, neither "
+			 "party in the conflict has commented on the student protests.\n\n"
+
+			 "Alliance Theater Command has promised to make humanitarian aid to the Meridian sector a top priority.  We'll find a way to feed these kids,"
+			 "Fleet Admiral Evars was quoted as saying that there's nothing more ornery than a bunch of hungry college students."
 }
 
 mission: {
 	id:      7,
-	name:    "Carrier Operations",
-	desc:    "Learn to direct fleet operations. Practice orbital carrier operations.",
-	objective: "Training - Practice orbital carrier operations.",
+	name:    "Renser Accusation",
+	objective: "Proceed to Solus.",
 	start:   "05/09:30:00",
-	script:  "T7",
-	type:    "Training"
-	system: "Janus"
-	region: "Alystra"
-	sitrep: "The Third Fleet is participating in wargame exercises in the Janus system. The fleet carrier Archon has been detached to Alystra orbit to practice spaceborne fighter operations."
+	script:  "08-Renser-Accusation",
+	type:    "Patrol"
+	system: "Solus"
+	region: "Solus"
+	sitrep: "CITY OF ULNAR, RENSER - The Renser Secretary of Intersystem Affairs issued a statement this evening accusing the Terellian Alliance of committing illegal acts of agression in the Solus Conflict.\n\n"
+			"External involvement in this civil conflict is a clear violation of the Korian Treaty.  Alliance actions are a threat to Solusan sovereignty, and constitute a clear and present danger to the security of the Prefecture of Renser.  Strong measures may be taken to restore normal discourse in Solus.\n\n"
+			"Policy analysts believe that this statement amounts to diplomatic code words for the commencement of Renser military action in the Solusan conflict.  The statement does not set a timeline for events, but the general feeling is that something is going to happen sooner rather than later."
 
+}
+mission: {
+	id:      8,
+	name:    "Senate Resolution",
+	objective: "Investigate the Khaital Sector Staging Area",
+	start:   "05/09:30:00",
+	script:  "09-Senate-Resolution",
+	type:    "Patrol"
+	system: "Solus"
+	region: "Solus"
+	sitrep: "ALLIANCE CAPITOL, JARNELL - Alliance government officials wasted no time in responding to the accusations of illegality made yesterday by the Renser Secretary of Intersystem Affairs.  The Combined Senate passed resolution SR498/37 censuring the Prefecture of Renser and warning of possible reprisals should Hegemony forces become involved in the Solusan Conflict.\n\n"
+			"The Alliance has undertaken Operation Highland for the specific purposes of safeguarding our citizens in the Solus system and providing humanitarian aid to those civilians who have been hardest hit by the blockade of the inner worlds.  These actions have been carried out in strict accord with Korian Treaty provisions, and we resent the implication that the Alliance has Imperial designs on our neighbors.\n\n"
+			"Several anonymous sources have hinted that there may be more to this conflict than is immediately apparent.  Rumors of an Hegemony fleet buildup in Renser have leaked from Force:Command Headquarters.  Others have expressed suspicions regarding the breakdown of peaceful negotiations between the Loyalist and Separatist factions that directly led to the current hostilities.\n\n"
+			"Military analysts are predicting that although widening of the Solusan Conflict to include Renser was unexpected and is undesirable, it may soon become unavoidable.  Alliance forces appear to have gained the upper hand in some of the fiercest fighting of the war to date.  A Force:Space garrison, once established in the Solus system, would be within easy striking distance of Renser.  That is a situation that no Hegemony border world would be willing to tolerate."
+
+}
+
+mission: {
+	id:      9,
+	name:    "Renser Arrival",
+	objective: "Intercept the Hegemony TF4.3",
+	start:   "05/09:30:00",
+	script:  "10-Renser-Arrival",
+	type:    "Patrol"
+	system: "Solus"
+	region: "Solus"
+	sitrep: "STRATPLAN BRIEFING\n"
+			"Timestamp: $TIME\n"
+			"Subject: Hegemony Task Force TF4.3\n"
+			"Classified: CONFIDENTIAL DND/CRYPTO\n\n"			
 }
