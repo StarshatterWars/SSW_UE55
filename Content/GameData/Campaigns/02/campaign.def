@@ -127,7 +127,7 @@ action: {
    text:    "Solus Directorate Requests Aid",
    source:  News,
    file:    "SOLUS - The Provisional Security Directorate of the Independent System of Solus formally requested military assistance from Terellian Alliance Force Command this morning.  Special couriers ran the Trellis blockade to deliver the message to the Force outpost in the nearby Janek system.  \"The official government of this system has been cut off by the illegal blockade of the Trellis Farcaster,\" said Adminstrator Lars of the Directorate.  \"We have suffered a great deal of damage in the fighting, and we need help to reestablish basic services here.\"\n\nSolus has been ripped nearly in two by the bloody civil war that erupted between the Loyalist and Separatist factions of the system government.  Dantari Separatists under the leadership of Senator Masil Gannet, after months of pressing for an official alliance with the Hegemony Prefecture of Renser, have seized much of the Solus star fleet and taken control of the outer worlds of Trellis and Jalah.  The Loyalist faction, although still technically in control of the official goverment, has been trapped on the inner planets Solus and Meridian.\n\nThe Separatist blockade of the Trellis Farcaster has also taken a toll on the many Alliance citizens in the Solus system.  Several Terellian companies maintain major offices on the capitol world itself, and Tal Vesta University runs a stellar observatory near the planet Meridian.  An estimated 375,000 Terellians are trapped by the blockade.  So far they have been unable to convince the Dantari Separatists to grant them safe passage back to the main Alliance systems.",
-   image:   "01-campaign-start.pcx"
+   image:   "01-campaign-start"
    scene:   "01-News-Start"
 }
 
@@ -138,7 +138,7 @@ action: {
    asset_type: carrier_group,
    asset_id:   6,
    region:     Trellis,
-   image:      "Actions/AA-archon-trellis.pcx"
+   image:      "AA-archon-trellis"
 }
 
 action: {
@@ -148,7 +148,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   60,
    region:     Trellis,
-   image:      "Actions/AA-gerrond-trellis.pcx"
+   image:      "AA-gerrond-trellis"
 }
 
 action: {
@@ -196,8 +196,8 @@ action: {
    after:      "01/15:00:00"
    text:       "Catching Up With You..."
    source:     Mail
-   file:       "Actions/m1-catching-up.txt"
-   image:      "Actions/m0-mail-icon.pcx"
+   file:       "m1-catching-up.txt"
+   image:      "m0-mail-icon"
    scene:      "M1-Catching-Up"
 }
 
@@ -248,7 +248,7 @@ action: {
    team:       1,
    rgn:        Trellis,
    text:       "Minefield A Cleared",
-   file:       "Actions/03a-minefield-a.txt",
+   file:       "03a-minefield-a.txt",
    source:     TACNET,
    after:      "02/09:00:00",
    before:     "03/09:00:00",
@@ -273,7 +273,7 @@ action: {
    team:       1,
    rgn:        Trellis,
    text:       "Minefield B Cleared",
-   file:       "Actions/03a-minefield-b.txt",
+   file:       "03a-minefield-b.txt",
    source:     TACNET,
    after:      "02/13:30:00",
    before:     "03/13:30:00",
@@ -298,7 +298,7 @@ action: {
    team:       1,
    rgn:        Trellis,
    text:       "Minefield C Cleared",
-   file:       "Actions/03a-minefield-c.txt",
+   file:       "03a-minefield-c.txt",
    source:     TACNET,
    after:      "02/19:20:00",
    before:     "03/19:20:00",
@@ -323,7 +323,7 @@ action: {
    team:       1,
    rgn:        Trellis,
    text:       "Minefield D Cleared",
-   file:       "Actions/03a-minefield-d.txt",
+   file:       "03a-minefield-d.txt",
    source:     TACNET,
    after:      "03/00:45:00",
    before:     "04/00:45:00",
@@ -348,7 +348,7 @@ action: {
    team:       1,
    rgn:        Trellis,
    text:       "Minefield E Cleared",
-   file:       "Actions/03a-minefield-e.txt",
+   file:       "03a-minefield-e.txt",
    source:     TACNET,
    after:      "03/08:30:00",
    before:     "04/08:30:00",
@@ -375,8 +375,8 @@ action: {
    after:      "03/18:00:00"
    text:       "New Digs"
    source:     Mail
-   file:       "Actions/m2-new-digs.txt"
-   image:      "Actions/m0-mail-icon.pcx"
+   file:       "m2-new-digs.txt"
+   image:      "m0-mail-icon"
    scene:      "M2-New-Digs"
 }
 
@@ -388,8 +388,8 @@ action: {
    rgn:        Solus,
    text:       "Blockade Broken",
    source:     News,
-   file:       "Actions/03-blockade-broken.txt",
-   image:      "Actions/03-blockade-broken.pcx",
+   file:       "03-blockade-broken.txt",
+   image:      "03-blockade-broken",
    scene:      "03-Blockade-Broken",
 
    req: { c1: "Dantari Separatists", group_type: minefield, group_id: 1, comp: LT, score: 10 },
@@ -478,8 +478,8 @@ action: {
    after:      "03/09:15:00",
    text:       "Harmony Station at Risk",
    source:     SECURE,
-   file:       "Actions/04-harmony-risk.txt",
-   image:      "Actions/04-harmony-risk.pcx",
+   file:       "04-harmony-risk.txt",
+   image:      "04-harmony-risk",
    scene:      "04-Harmony-Risk",
 }
 
@@ -491,7 +491,7 @@ action: {
    asset_type: carrier_group,
    asset_id:   6,
    region:     Solus,
-   image:      "Actions/AA-archon-solus.pcx"
+   image:      "AA-archon-solus"
 }
 
 action: {
@@ -502,7 +502,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   60,
    region:     Solus,
-   image:      "Actions/AA-gerrond-solus.pcx"
+   image:      "AA-gerrond-solus"
 }
 
 action: {
@@ -514,8 +514,8 @@ action: {
    after:      "04/04:00:00",
    text:       "Renser Fleet Buildup",
    source:     FORCOM,
-   file:       "Actions/06-renser-buildup.txt",
-   image:      "Actions/06-renser-buildup.pcx",
+   file:       "06-renser-buildup.txt",
+   image:      "06-renser-buildup",
    scene:      "06-Renser-Buildup"
 }
 
@@ -548,8 +548,8 @@ action: {
    before:     "04/08:20:00",
    text:       "Separatist Base Discovered",
    source:     SECURE,
-   file:       "Actions/05-foothill-ridge.txt",
-   image:      "Actions/05-foothill-ridge.pcx",
+   file:       "05-foothill-ridge.txt",
+   image:      "05-foothill-ridge",
    scene:      "05-Foothill-Ridge",
 
    req: { c1: "Dantari Separatists", group_type: battalion, group_id: 2, comp: GT, intel: SECRET },
@@ -597,8 +597,8 @@ action: {
    after:      "04/08:30:00",
    text:       "Separatist Base Discovered",
    source:     SECURE,
-   file:       "Actions/05-foothill-ridge.txt",
-   image:      "Actions/05-foothill-ridge.pcx",
+   file:       "05-foothill-ridge.txt",
+   image:      "05-foothill-ridge",
    scene:      "05-Foothill-Ridge",
 
    req: { action: 310, status: COMPLETE, not: true }
@@ -613,8 +613,8 @@ action: {
    after:      "04/15:00:00",
    text:       "Research Lab Isolated",
    source:     News,
-   file:       "Actions/07-research-lab.txt",
-   image:      "Actions/07-research-lab.pcx",
+   file:       "07-research-lab.txt",
+   image:      "07-research-lab",
    scene:      "07-Research-Lab"
 }
 
@@ -626,7 +626,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   60,
    region:     Meridian,
-   image:      "Actions/AA-gerrond-meridian.pcx"
+   image:      "AA-gerrond-meridian"
 }
 
 action: {
@@ -638,8 +638,8 @@ action: {
    after:      "04/20:00:00",
    text:       "Renser Accuses Alliance",
    source:     News,
-   file:       "Actions/08-renser-accusation.txt",
-   image:      "Actions/08-renser-accusation.pcx",
+   file:       "08-renser-accusation.txt",
+   image:      "08-renser-accusation",
    scene:      "08-Renser-Accusation"
 }
 
@@ -652,8 +652,8 @@ action: {
    after:      "05/12:00:00",
    text:       "Senate Resolution Passes",
    source:     News,
-   file:       "Actions/09-senate-resolution.txt",
-   image:      "Actions/09-senate-resolution.pcx",
+   file:       "09-senate-resolution.txt",
+   image:      "09-senate-resolution",
    scene:      "09-Senate-Resolution"
 }
 
@@ -733,8 +733,8 @@ action: {
    after:      "06/23:45:00",
    text:       "Hegemony Task Force TF4.3",
    source:     FORCOM,
-   file:       "Actions/10-renser-arrival.txt",
-   image:      "Actions/10-renser-arrival.pcx",
+   file:       "10-renser-arrival.txt",
+   image:      "10-renser-arrival",
 }
 
 action: {
@@ -815,8 +815,8 @@ action: {
    after:      "07/22:15:00",
    text:       "Separatist Withdrawal to Jalah",
    source:     FORCOM,
-   file:       "Actions/11-dantari-pullback.txt",
-   image:      "Actions/11-dantari-pullback.pcx",
+   file:       "11-dantari-pullback.txt",
+   image:      "11-dantari-pullback",
    scene:      "11-Dantari-Pullback"
 }
 
@@ -847,7 +847,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   60,
    region:     Jalah,
-   image:      "Actions/AA-gerrond-jalah.pcx"
+   image:      "AA-gerrond-jalah"
 }
 
 action: {
@@ -858,7 +858,7 @@ action: {
    asset_type: carrier_group,
    asset_id:   6,
    region:     Jalah,
-   image:      "Actions/AA-archon-jalah.pcx"
+   image:      "AA-archon-jalah"
 }
 
 action: {
@@ -880,7 +880,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   43,
    region:     Jalah,
-   image:      "Actions/AA-shadow-jalah.pcx",
+   image:      "AA-shadow-jalah",
 
    req: { action: 735, status: COMPLETE, not: true }
 }
@@ -894,7 +894,7 @@ action: {
    team:       1,
    rgn:        Jalah,
    text:       "Wolf DESRON Eliminated",
-   file:       "Actions/11a-wolf.txt",
+   file:       "11a-wolf.txt",
    source:     TACNET,
    after:      "10/13:30:00",
    before:     "11/13:30:00",
@@ -918,7 +918,7 @@ action: {
    team:       1,
    rgn:        Jalah,
    text:       "Kitts DESRON Eliminated",
-   file:       "Actions/11a-kitts.txt",
+   file:       "11a-kitts.txt",
    source:     TACNET,
    after:      "10/20:30:00",
    before:     "11/20:30:00",
@@ -942,7 +942,7 @@ action: {
    team:       1,
    rgn:        Jalah,
    text:       "Kendra DESRON Eliminated",
-   file:       "Actions/11a-kendra.txt",
+   file:       "11a-kendra.txt",
    source:     TACNET,
    after:      "11/10:30:00",
    before:     "12/10:30:00",
@@ -966,7 +966,7 @@ action: {
    team:       1,
    rgn:        Jalah,
    text:       "Goliath CVBG Eliminated",
-   file:       "Actions/11a-goliath.txt",
+   file:       "11a-goliath.txt",
    source:     TACNET,
    after:      "12/10:20:00",
    before:     "13/10:20:00",
@@ -993,8 +993,8 @@ action: {
    rgn:        Solus,
    text:       "Solus Victory",
    source:     News,
-   file:       "Actions/12-cease-fire.txt",
-   image:      "Actions/12-cease-fire.pcx",
+   file:       "12-cease-fire.txt",
+   image:      "12-cease-fire",
 
    req: { c1: "Dantari Separatists", group_type: carrier_group,      group_id: 5, comp: LT, score: 500 },
    req: { c1: "Dantari Separatists", group_type: destroyer_squadron, group_id: 5, comp: LT, score: 100 },
@@ -1083,8 +1083,8 @@ action: {
    rgn:        Solus,
    text:       "Renser Invasion",
    source:     News,
-   file:       "Actions/13-renser-invasion.txt",
-   image:      "Actions/13-renser-invasion.pcx",
+   file:       "13-renser-invasion.txt",
+   image:      "13-renser-invasion",
    scene:      "13-Renser-Invasion",
    delay:      19800, // five and a half hours after 600
 
@@ -1099,8 +1099,8 @@ action: {
    rgn:        Jarnell
    text:       "Why Renser?"
    source:     Mail
-   file:       "Actions/m3-why-renser.txt"
-   image:      "Actions/m0-mail-icon.pcx"
+   file:       "m3-why-renser.txt"
+   image:      "m0-mail-icon.pcx"
    scene:      "M3-Why-Renser"
    delay:      21600 // six hours after 700
 
@@ -1145,7 +1145,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   60,
    region:     Khaital,
-   image:      "Actions/AA-gerrond-khaital.pcx",
+   image:      "AA-gerrond-khaital",
 
    req: { action: 700, status: COMPLETE }
 }
@@ -1157,7 +1157,7 @@ action: {
    asset_type: carrier_group,
    asset_id:   6,
    region:     Khaital,
-   image:      "Actions/AA-archon-khaital.pcx",
+   image:      "AA-archon-khaital",
 
    req: { action: 700, status: COMPLETE }
 }
@@ -1169,7 +1169,7 @@ action: {
    asset_type: destroyer_squadron,
    asset_id:   43,
    region:     Khaital,
-   image:      "Actions/AA-shadow-khaital.pcx",
+   image:      "AA-shadow-khaital",
 
    req: { action: 530, status: COMPLETE },
    req: { action: 700, status: COMPLETE }
@@ -1255,8 +1255,8 @@ action: {
    team:    1
    rgn:     Solus
    text:    "Operation Highland Defeat"
-   file:    "Actions/def1.txt"
-   image:   "Actions/def1"
+   file:    "def1.txt"
+   image:   "def1"
    scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 6, comp: LT, score: 3000 },
@@ -1270,8 +1270,8 @@ action: {
    team:    1
    rgn:     Solus
    text:    "Operation Highland Defeat"
-   file:    "Actions/def2.txt"
-   image:   "Actions/def2"
+   file:    "def2.txt"
+   image:   "def2"
    scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 6, comp: LT, score: 3000 }
@@ -1285,8 +1285,8 @@ action: {
    team:    1
    rgn:     Solus
    text:    "Operation Highland Victory"
-   file:    "Actions/campaign_end.txt"
-   image:   "Actions/victory"
+   file:    "campaign_end.txt"
+   image:   "victory"
    scene:   "Victory"
 
    req: { c1: "Marakan Hegemony", group_type: fleet, group_id: 4, comp: LT, score: 4000 }

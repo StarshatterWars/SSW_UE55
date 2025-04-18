@@ -3,7 +3,7 @@ MISSIONLIST
 mission: {
 	id:      0,
 	name:    "Operation Highland",
-	objective: "Unspecified",
+	objective: "Operation Highland Briefing",
 	start:   "02/09:00:00",
 	script:  "01-News-Start",
 	type:    "Patrol",
@@ -19,7 +19,7 @@ mission: {
 mission: {
 	id:      1,
 	name:    "Coup Failure",
-	objective: "Unspecified",
+	objective: "Patrol Solus Space",
 	start:   "02/09:00:00",
 	script:  "02-Coup-Failure",
 	type:    "Patrol",
@@ -42,7 +42,7 @@ mission: {
 mission: {
 	id:      2,
 	name:    "Blockade Broken",
-	objective: "Unspecified",
+	objective: "Perform mop-up operations",
 	start:   "02/11:15:00",
 	script:  "03-Blockade-Broken",
 	type:    "Patrol",
