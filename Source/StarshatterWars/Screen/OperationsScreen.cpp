@@ -435,6 +435,16 @@ void UOperationsScreen::SetSelectedMissionData(int Selected)
 	if (MissionObjectiveText) {
 		MissionObjectiveText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Objective));
 	}
+
+	GetMissionImageFile(Selected);
+
+	UTexture2D* LoadedTexture = LoadTextureFromFile();
+	if (LoadedTexture && MissionImage)
+	{
+		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+		MissionImage->SetBrush(Brush);
+	}
+
 	UE_LOG(LogTemp, Log, TEXT("Ops Mission Selected: %s"), *SelectedMissionName);
 	SSWInstance->MissionSelectionChanged = false;
 
@@ -459,5 +469,33 @@ void UOperationsScreen::GetIntelFile(int selected)
 	ImagePath.Append(SSWInstance->GetActiveCampaign().Action[selected].Image);
 	ImagePath.Append(".png");
 	UE_LOG(LogTemp, Log, TEXT("Action Image: %s"), *ImagePath);
+}
+
+void UOperationsScreen::GetMissionImageFile(int selected)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	ImagePath = FPaths::ProjectContentDir() + TEXT("UI/Campaigns/0");
+	ImagePath.Append(FString::FromInt(SSWInstance->GetActiveCampaign().Index + 1));
+	ImagePath.Append("/");
+	ImagePath.Append(SSWInstance->GetActiveCampaign().MissionList[selected].MissionImage);
+	ImagePath.Append(".png");
+	UE_LOG(LogTemp, Log, TEXT("Mission Image: %s"), *ImagePath);
+}
+
+
+UTexture2D* UOperationsScreen::LoadTextureFromFile()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	UTexture2D* LoadedTexture = SSWInstance->LoadPNGTextureFromFile(ImagePath);
+	return LoadedTexture;
+}
+
+FSlateBrush UOperationsScreen::CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize)
+{
+	FSlateBrush Brush;
+	Brush.SetResourceObject(Texture);
+	Brush.ImageSize = ImageSize;
+	Brush.DrawAs = ESlateBrushDrawType::Image;
+	return Brush;
 }
 

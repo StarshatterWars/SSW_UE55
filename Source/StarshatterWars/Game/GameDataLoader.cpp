@@ -938,7 +938,7 @@ AGameDataLoader::LoadMissionList(FString Path)
 							NewMissionList.MissionImage = FString(MissionImage);
 						}
 						else if (pdef->name()->value() == "audio") {
-							GetDefText(MissionImage, pdef, fn);
+							GetDefText(MissionAudio, pdef, fn);
 							NewMissionList.MissionAudio = FString(MissionAudio);
 						}
 						else if (pdef->name()->value() == "sitrep") {

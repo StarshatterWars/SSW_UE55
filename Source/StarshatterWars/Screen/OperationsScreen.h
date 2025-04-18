@@ -10,6 +10,7 @@
 #include "Components/Image.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
@@ -86,6 +87,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* CancelButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UImage* MissionImage;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* OrdersButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* TheaterButton;
@@ -123,10 +127,15 @@ protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	UTexture2D* LoadTextureFromFile();
+	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
+
 	UFUNCTION()
 	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
 	UFUNCTION()
 	void GetIntelFile(int selected);
+	UFUNCTION()
+	void GetMissionImageFile(int selected);
 	UFUNCTION()
 	void OnSelectButtonClicked();
 	UFUNCTION()
