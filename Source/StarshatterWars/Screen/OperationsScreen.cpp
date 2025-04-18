@@ -118,7 +118,7 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	}	
 
 	if (GameTimeText) {
-		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d, %H:%M:%S"));
+		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 		GameTimeText->SetText(FText::FromString(*CustomDate));
 	}
 }
@@ -448,5 +448,16 @@ void UOperationsScreen::PlayUISound(UObject* WorldContext, USoundBase* UISound)
 	{
 		UGameplayStatics::PlaySound2D(WorldContext, UISound);
 	}
+}
+
+void UOperationsScreen::GetIntelFile(int selected)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	ImagePath = FPaths::ProjectContentDir() + TEXT("GameData/Campaigns/0");
+	ImagePath.Append(FString::FromInt(selected + 1));
+	ImagePath.Append("/Actions/");
+	ImagePath.Append(SSWInstance->GetActiveCampaign().Action[selected].Image);
+	ImagePath.Append(".png");
+	UE_LOG(LogTemp, Log, TEXT("Action Image: %s"), *ImagePath);
 }
 

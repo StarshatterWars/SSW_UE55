@@ -898,6 +898,8 @@ AGameDataLoader::LoadMissionList(FString Path)
 					Text  System = "Unknown";
 					Text  Region = "Unknown";
 					Text  TypeName = "";
+					Text  MissionImage = "";
+					Text  MissionAudio = "";
 					Text  Start = "";
 					int   Type = 0;
 
@@ -930,6 +932,14 @@ AGameDataLoader::LoadMissionList(FString Path)
 						else if (pdef->name()->value() == "objective") {
 							GetDefText(Objective, pdef, fn);
 							NewMissionList.Objective = FString(Objective);
+						}
+						else if (pdef->name()->value() == "image") {
+							GetDefText(MissionImage, pdef, fn);
+							NewMissionList.MissionImage = FString(MissionImage);
+						}
+						else if (pdef->name()->value() == "audio") {
+							GetDefText(MissionImage, pdef, fn);
+							NewMissionList.MissionAudio = FString(MissionAudio);
 						}
 						else if (pdef->name()->value() == "sitrep") {
 							GetDefText(Sitrep, pdef, fn);

@@ -125,7 +125,8 @@ protected:
 
 	UFUNCTION()
 	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
-
+	UFUNCTION()
+	void GetIntelFile(int selected);
 	UFUNCTION()
 	void OnSelectButtonClicked();
 	UFUNCTION()
@@ -188,4 +189,7 @@ protected:
 
 private:
 	FS_Campaign ActiveCampaign;
+
+	UPROPERTY()
+	FString ImagePath;
 };

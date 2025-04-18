@@ -962,6 +962,10 @@ struct FS_CampaignMissionList : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString TypeName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString MissionImage;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString MissionAudio;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	EMISSIONSTATUS Status;
@@ -978,6 +982,8 @@ struct FS_CampaignMissionList : public FTableRowBase {
 		TypeName = "";
 		Sitrep = "";
 		Objective = "";
+		MissionImage = "";
+		MissionAudio = "";
 	
 		System = "Unknown";
 		Region = "Unknown";

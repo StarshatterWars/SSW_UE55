@@ -242,7 +242,6 @@ void UCampaignScreen::GetCampaignImageFile(int selected)
 	ImagePath = FPaths::ProjectContentDir() + TEXT("UI/Campaigns/0");
 	ImagePath.Append(FString::FromInt(selected + 1));
 	ImagePath.Append("/");
-	UE_LOG(LogTemp, Log, TEXT("Campaign File: %s"), *SSWInstance->CampaignData[selected].MainImage);
 	ImagePath.Append(SSWInstance->CampaignData[selected].MainImage);
 	ImagePath.Append(".png");
 	UE_LOG(LogTemp, Log, TEXT("Campaign Image: %s"), *ImagePath);
