@@ -1,6 +1,18 @@
 MISSIONLIST
 
 mission: {
+	id:      0,
+	name:    "Training Introduction",
+	desc:    "Rendevous for flight training",
+	objective: "Training",
+	start:   "01/09:23:00",
+	script:  "T1",
+	type:    "Patrol"
+	system:  "Borova"
+	region:  "Borova"	
+	sitrep:  "Rendevous with the fleet carrier Archon participating in wargame exercises in the Janus system. "
+}
+mission: {
 	id:      1,
 	name:    "Basic Space Flight",
 	desc:    "Space-based fighters.  Practice launching, flying, docking, and basic spaceborne maneuvering.",

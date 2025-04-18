@@ -32,6 +32,10 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayerNameText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GameTimeText;
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CampaignNameText;
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -178,6 +182,8 @@ protected:
 	UFUNCTION()
 	void PopulateIntelList();
 	
+	UFUNCTION()
+	FDateTime GetCampaignTime();
 		
 
 private:

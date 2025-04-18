@@ -29,6 +29,9 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayerNameText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GameTimeText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CampaignNameText;
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -71,11 +74,11 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	
 protected:
 	void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float DeltaTime) override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	
-
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()

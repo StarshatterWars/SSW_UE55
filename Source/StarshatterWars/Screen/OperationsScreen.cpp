@@ -116,6 +116,11 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	if (SSWInstance->MissionSelectionChanged) {
 		SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
 	}	
+
+	if (GameTimeText) {
+		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d, %H:%M:%S"));
+		GameTimeText->SetText(FText::FromString(*CustomDate));
+	}
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -373,6 +378,12 @@ void UOperationsScreen::PopulateIntelList()
 			IntelList->AddItem(ListItem);
 		}
 	}
+}
+
+FDateTime UOperationsScreen::GetCampaignTime()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	return FDateTime::FromUnixTimestamp(SSWInstance->GetGameTime());
 }
 
 void UOperationsScreen::SetSelectedMissionData(int Selected) 

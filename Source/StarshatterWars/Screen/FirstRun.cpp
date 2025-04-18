@@ -2,6 +2,8 @@
 
 
 #include "FirstRun.h"
+#include "Misc/DateTime.h"
+#include "Misc/TimeSpan.h"
 #include "../System/SSWGameInstance.h"
 
 void UFirstRun::NativeConstruct()
@@ -31,6 +33,11 @@ void UFirstRun::OnApplyClicked()
 	FString PlayerName = PlayerNameBox ? PlayerNameBox->GetText().ToString() : TEXT("DefaultPlayer");
 	PlayerData.Name = PlayerName;
 	PlayerData.Campaign = -1;
+	FDateTime Now = FDateTime::Now();
+	FDateTime Future = Now + FTimespan::FromDays(200 * 365.2425);
+	PlayerData.CreateTime = Now.ToUnixTimestamp();
+	PlayerData.GameTime = 0;
+	PlayerData.CampaignTime = 0;
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, PlayerData);
 	SSWInstance->ToggleFirstRunDlg(false);
 }

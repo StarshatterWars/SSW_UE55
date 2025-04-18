@@ -398,6 +398,13 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 	bool GunSightMode;
 	UPROPERTY(BlueprintReadWrite)
 	int64 CreateTime;
+
+	UPROPERTY(BlueprintReadWrite)
+	int64 GameTime;
+
+	UPROPERTY(BlueprintReadWrite)
+	int64 CampaignTime;
+
 	UPROPERTY(BlueprintReadWrite)
 	int64 FlightTime;
 	UPROPERTY(BlueprintReadWrite)

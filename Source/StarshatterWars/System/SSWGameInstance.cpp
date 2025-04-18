@@ -21,6 +21,8 @@
 
 #include "../Game/PlayerSaveGame.h"
 #include "Engine/World.h"
+
+
 //#include "Windows/MinWindows.h"
 //#include <winbase.h>
 #undef UpdateResource
@@ -40,9 +42,12 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 
 	PlayerSaveName = "PlayerSaveSlot";
 	PlayerSaveSlot = 0;
-	CampaignData.SetNum(5); // number of campaigns
-	CampaignData.SetNum(5); // number of campaigns
+
+	FDateTime GameDate(2228, 1, 1);
+	SetGameTime(GameDate.ToUnixTimestamp());
 	
+	CampaignData.SetNum(5); // number of campaigns
+
 	InitializeDT(ObjectInitializer);
 
 	InitializeMainMenuScreen(ObjectInitializer);
@@ -54,6 +59,7 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	InitializeFirstRunDlg(ObjectInitializer);
 
 	SetProjectPath();
+	
 	Init();
 }
 
@@ -63,6 +69,15 @@ void USSWGameInstance::SetProjectPath()
 	ProjectPath.Append(TEXT("GameData/")); 
 
 	UE_LOG(LogTemp, Log, TEXT("Setting Game Data Directory %s"), *ProjectPath);
+}
+
+void USSWGameInstance::StartGameTimers()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().SetTimer(TimerHandle, this, &USSWGameInstance::OnGameTimerTick, 1.0f, true);
+	}
 }
 
 FString USSWGameInstance::GetProjectPath()
@@ -466,6 +481,13 @@ void USSWGameInstance::RemoveScreens()
 	}
 }
 
+void USSWGameInstance::OnGameTimerTick()
+{
+	SetGameTime(GetGameTime() + 1);
+	SetCampaignTime(GetCampaignTime() + 1);
+	UE_LOG(LogTemp, Log, TEXT("Campaign Timer: %d"), GetCampaignTime());
+}
+
 void USSWGameInstance::ShowMainMenuScreen()
 {
 	//RemoveScreens();
@@ -843,6 +865,26 @@ int USSWGameInstance::GetSelectedMissionNr()
 bool USSWGameInstance::GetCampaignActive()
 {
 	return bIsActiveCampaign;
+}
+
+void USSWGameInstance::SetGameTime(int64 time)
+{
+	GameTime = time;
+}
+
+int64 USSWGameInstance::GetGameTime()
+{
+	return GameTime;
+}
+
+void USSWGameInstance::SetCampaignTime(int64 time)
+{
+	CampaignTime = time;
+}
+
+int64 USSWGameInstance::GetCampaignTime()
+{
+	return CampaignTime;
 }
 
 void USSWGameInstance::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerData)

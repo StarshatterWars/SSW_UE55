@@ -58,7 +58,20 @@ void UCampaignScreen::NativeConstruct()
 	}
 
 	SetCampaignDDList();
-	SetSelectedData(SSWInstance->PlayerInfo.Campaign);
+	if (SSWInstance->PlayerInfo.Campaign == -1) {
+		SetSelectedData(0);
+	}
+	else {
+		SetSelectedData(SSWInstance->PlayerInfo.Campaign);
+	}
+	
+}
+
+void UCampaignScreen::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
+{
+	Super::NativeTick(MyGeometry, DeltaTime);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
 }
 
 UTexture2D* UCampaignScreen::LoadTextureFromFile()
@@ -85,6 +98,8 @@ void UCampaignScreen::OnPlayButtonClicked()
 	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
 	FString NewCampaign = SSWInstance->GetActiveCampaign().Name;
 	UE_LOG(LogTemp, Log, TEXT("Campaign Name Selected: %s"), *NewCampaign);
+	FDateTime GameDate(2228 + Selected, 1, 1);
+	SSWInstance->SetCampaignTime(GameDate.ToUnixTimestamp());
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
 	SSWInstance->ShowCampaignLoading();
 }

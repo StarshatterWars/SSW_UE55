@@ -12,8 +12,6 @@
 	Will not be used after Dable Table is Generated.
 */
 
-
-
 #include "GameDataLoader.h"
 #include "../System/SSWGameInstance.h"
 #include "../System/Game.h"
@@ -33,8 +31,8 @@
 #include "SystemDesign.h"
 #include "ComponentDesign.h"
 #include "../Foundation/GameContent.h"
-
-
+#include "Engine/TimerHandle.h"
+#include "TimerManager.h"
 
 const char* ShipDesignClassName[32] = {
 	"Drone",          "Fighter",
@@ -194,6 +192,8 @@ void AGameDataLoader::BeginPlay()
 		InitializeCampaignData();
 	}
 	LoadSystemDesignsFromDT();
+	SSWInstance->StartGameTimers();
+	
 
 	//USystemDesign::Initialize(SystemDesignTable);
 }
@@ -8141,3 +8141,6 @@ AGameDataLoader::LoadAwardTables()
 
 	SSWInstance->loader->ReleaseBuffer(block);
 }
+
+
+

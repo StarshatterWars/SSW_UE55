@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Engine/TimerHandle.h"
+#include "TimerManager.h"
 #include "UObject/UObjectGlobals.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -20,6 +22,8 @@
 #include "HAL/PlatformFilemanager.h"
 #include "Engine/Texture2D.h"
 #include "RenderUtils.h"
+#include "Misc/DateTime.h"
+#include "Misc/TimeSpan.h"
 
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "SSWGameInstance.generated.h"
@@ -63,6 +67,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void SetProjectPath();
+
+	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	void StartGameTimers();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	FString GetProjectPath();
@@ -173,6 +180,17 @@ public:
 	UFUNCTION()
 	bool GetCampaignActive();
 
+	UFUNCTION()
+	void SetGameTime(int64 time);
+
+	UFUNCTION()
+	int64 GetGameTime();
+
+	UFUNCTION()
+	void SetCampaignTime(int64 time);
+
+	UFUNCTION()
+	int64 GetCampaignTime();
 	UFUNCTION(BlueprintCallable, Category = "SaveGame")
 	void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
 
@@ -274,6 +292,15 @@ protected:
 	private:
 		UPROPERTY()
 		bool bUniverseLoaded;
+
+		UPROPERTY()
+		int64 GameTime;
+
+		UPROPERTY()
+		int64 CampaignTime;
+
+		UPROPERTY()
+		int64 GameStart;
 		
 		UPROPERTY()
 		int32 SelectionMissionNr;
@@ -298,4 +325,9 @@ protected:
 		TSubclassOf<class UMissionLoading> MissionLoadingWidgetClass;
 		TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
+
+		FTimerHandle TimerHandle;
+
+		UFUNCTION()
+		void OnGameTimerTick();
 };

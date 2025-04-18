@@ -21,6 +21,11 @@ void UMenuDlg::NativePreConstruct()
 	Super::NativePreConstruct();
 }
 
+void UMenuDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+}
+
 void UMenuDlg::EnableMenuButtons(bool bEnabled)
 {
 	btn_mission->SetIsEnabled(bEnabled);

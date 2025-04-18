@@ -71,6 +71,7 @@ public:
 	static DWORD      TimeCompression();
 	static void       SetTimeCompression(DWORD comp);
 	static DWORD      Frame();
+	static FString    GetMonth(int month);
 	static void       ResetGameTime();
 	static void       SkipGameTime(double seconds);
 

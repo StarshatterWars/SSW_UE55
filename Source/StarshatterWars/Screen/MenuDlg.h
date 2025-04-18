@@ -68,6 +68,8 @@ public:
 protected:	
 	void NativeConstruct() override;
 	void NativePreConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
 
 	UFUNCTION()
 	void OnStartButtonClicked();
