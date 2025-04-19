@@ -2,7 +2,8 @@
 
 
 #include "MusicController.h"
-
+#include "Sound/SoundBase.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 AMusicController::AMusicController()
@@ -17,6 +18,8 @@ AMusicController::AMusicController()
 
     //SetActorHiddenInGame(true);
     SetCanBeDamaged(false);
+
+    UE_LOG(LogTemp, Log, TEXT("Audio Component Initialized"));
 }
 
 // Called when the game starts or when spawned
@@ -35,11 +38,14 @@ void AMusicController::Tick(float DeltaTime)
 
 void AMusicController::PlayMusic(USoundBase* Music)
 {
-    if (AudioComponent && Music)
-    {
-        AudioComponent->SetSound(Music);
-        AudioComponent->Play();
-    }
+    if (!AudioComponent)
+        return;
+    if (!Music)
+        return;
+    
+    AudioComponent->SetSound(Music);
+    AudioComponent->Play();
+ 
 }
 
 void AMusicController::StopMusic()

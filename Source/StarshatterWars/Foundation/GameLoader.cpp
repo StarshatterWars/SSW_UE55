@@ -12,6 +12,7 @@
 #include "../Game/Sim.h"
 #include "../Game/Campaign.h"
 #include "../Foundation/DataLoader.h"
+#include "../Foundation/MusicController.h"
 
 void AGameLoader::BeginPlay()
 {

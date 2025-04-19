@@ -284,7 +284,6 @@ void USSWGameInstance::Init()
 			ReadCampaignData();
 		}
 	}
-	//InitializeAudioSystem();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -494,7 +493,8 @@ void USSWGameInstance::OnGameTimerTick()
 
 void USSWGameInstance::ShowMainMenuScreen()
 {
-	//RemoveScreens();
+	//MusicController->PlayMusic(MenuMusic); 
+	RemoveScreens();
 
 	// Create widget
 	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);

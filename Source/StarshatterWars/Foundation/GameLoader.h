@@ -42,4 +42,7 @@ public:
 	void LoadMainMenu();
 
 	static DataLoader* loader;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* MenuMusic;
 };
