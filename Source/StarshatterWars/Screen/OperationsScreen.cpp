@@ -117,6 +117,9 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
 	}	
 
+	if (SSWInstance->IntelSelectionChanged) {
+		SetSelectedIntelData(SSWInstance->GetSelectedActionNr());
+	}
 	if (GameTimeText) {
 		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 		GameTimeText->SetText(FText::FromString(*CustomDate));
@@ -125,14 +128,15 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 void UOperationsScreen::OnSelectButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
 	SSWInstance->LoadMissionBriefingScreen();
 }
 
 void UOperationsScreen::OnSelectButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnSelectButtonUnHovered()
@@ -141,7 +145,9 @@ void UOperationsScreen::OnSelectButtonUnHovered()
 
 void UOperationsScreen::OnOrdersButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(0);
 	}
@@ -153,7 +159,8 @@ void UOperationsScreen::OnOrdersButtonClicked()
 
 void UOperationsScreen::OnOrdersButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnOrdersButtonUnHovered()
@@ -162,7 +169,9 @@ void UOperationsScreen::OnOrdersButtonUnHovered()
 
 void UOperationsScreen::OnTheaterButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(1);
 	}
@@ -174,7 +183,8 @@ void UOperationsScreen::OnTheaterButtonClicked()
 
 void UOperationsScreen::OnTheaterButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnTheaterButtonUnHovered()
@@ -183,7 +193,9 @@ void UOperationsScreen::OnTheaterButtonUnHovered()
 
 void UOperationsScreen::OnForcesButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(2);
 	}
@@ -194,7 +206,8 @@ void UOperationsScreen::OnForcesButtonClicked()
 
 void UOperationsScreen::OnForcesButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnForcesButtonUnHovered()
@@ -204,7 +217,9 @@ void UOperationsScreen::OnForcesButtonUnHovered()
 
 void UOperationsScreen::OnIntelButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
+	SSWInstance->PlayAcceptSound(this);
+
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(3);
 	}
@@ -212,11 +227,15 @@ void UOperationsScreen::OnIntelButtonClicked()
 	if (OperationsModeText) {
 		OperationsModeText->SetText(FText::FromString("INTEL"));
 	}
+
+	PopulateIntelList();
+	SetSelectedIntelData(SSWInstance->GetSelectedActionNr());
 }
 
 void UOperationsScreen::OnIntelButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnIntelButtonUnHovered()
@@ -225,8 +244,8 @@ void UOperationsScreen::OnIntelButtonUnHovered()
 
 void UOperationsScreen::OnMissionsButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
 
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(4);
@@ -242,7 +261,8 @@ void UOperationsScreen::OnMissionsButtonClicked()
 
 void UOperationsScreen::OnMissionsButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnMissionsButtonUnHovered()
@@ -250,19 +270,22 @@ void UOperationsScreen::OnMissionsButtonUnHovered()
 }
 void UOperationsScreen::OnCancelButtonClicked()
 {
-	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
 	SSWInstance->LoadMainMenuScreen();
 }
 
 void UOperationsScreen::OnCancelButtonHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::OnCancelButtonUnHovered()
 {
-	PlayUISound(this, HoverSound);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
 }
 
 void UOperationsScreen::SetCampaignOrders()
@@ -364,17 +387,33 @@ void UOperationsScreen::PopulateIntelList()
 	if (!IntelList) return;
 
 	IntelList->ClearListItems();
+	ActionList.Empty();
 
 	for (int32 i = 0; i < SSWInstance->GetActiveCampaign().Action.Num(); ++i)
 	{
 		if (SSWInstance->GetActiveCampaign().Action[i].Type == "event") {
 			UIntelListObject* ListItem = NewObject<UIntelListObject>();
-			ListItem->NewsTitle = SSWInstance->GetActiveCampaign().Action[i].Text;
+			FS_CampaignAction ActiveAction;
+
+			ListItem->NewsTitle = SSWInstance->GetActiveCampaign().Action[i].Title;
+			ActiveAction.Title = SSWInstance->GetActiveCampaign().Action[i].Title;
+
 			ListItem->NewsLocation = SSWInstance->GetActiveCampaign().Action[i].Region;
-			//ListItem->NewsDate = SSWInstance->GetActiveCampaign().Action[i].Region;
+			ActiveAction.Region = SSWInstance->GetActiveCampaign().Action[i].Region;
+
 			ListItem->NewsSource = SSWInstance->GetActiveCampaign().Action[i].Source;
+			ActiveAction.Source = SSWInstance->GetActiveCampaign().Action[i].Source;
+
+			ListItem->NewsInfoText = SSWInstance->GetActiveCampaign().Action[i].Message;
+			ActiveAction.Message = SSWInstance->GetActiveCampaign().Action[i].Message;
+
 			ListItem->NewsVisited = false;
+			ActiveAction.Visited = false;
+
+			ActiveAction.Image = SSWInstance->GetActiveCampaign().Action[i].Image;
+
 			IntelList->GetIndexForItem(ListItem);
+			ActionList.Add(ActiveAction);
 			IntelList->AddItem(ListItem);
 		}
 	}
@@ -452,21 +491,43 @@ void UOperationsScreen::SetSelectedMissionData(int Selected)
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
 }
 
-void UOperationsScreen::PlayUISound(UObject* WorldContext, USoundBase* UISound)
+void UOperationsScreen::SetSelectedIntelData(int Selected)
 {
-	if (UISound)
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	if (IntelNameText) {
+		IntelNameText->SetText(FText::FromString(ActionList[Selected].Title));
+	}
+
+	if (IntelLocationText) {
+		IntelLocationText->SetText(FText::FromString(ActionList[Selected].Region));
+	}
+
+	if (IntelSourceText) {
+		IntelSourceText->SetText(FText::FromString(ActionList[Selected].Source));
+	}
+
+	if (IntelMessageText) {
+		IntelMessageText->SetText(FText::FromString(ActionList[Selected].Message));
+	}
+
+	GetIntelImageFile(ActionList[Selected].Image);
+
+	UTexture2D* LoadedTexture = LoadTextureFromFile();
+	if (LoadedTexture && IntelImage)
 	{
-		UGameplayStatics::PlaySound2D(WorldContext, UISound);
+		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+		IntelImage->SetBrush(Brush);
 	}
 }
 
-void UOperationsScreen::GetIntelFile(int selected)
+void UOperationsScreen::GetIntelImageFile(FString IntelImageName)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	ImagePath = FPaths::ProjectContentDir() + TEXT("GameData/Campaigns/0");
-	ImagePath.Append(FString::FromInt(selected + 1));
-	ImagePath.Append("/Actions/");
-	ImagePath.Append(SSWInstance->GetActiveCampaign().Action[selected].Image);
+	ImagePath = FPaths::ProjectContentDir() + TEXT("UI/Campaigns/0");
+	ImagePath.Append(FString::FromInt(SSWInstance->GetActiveCampaign().Index + 1));
+	ImagePath.Append("/");
+	ImagePath.Append(IntelImageName);
 	ImagePath.Append(".png");
 	UE_LOG(LogTemp, Log, TEXT("Action Image: %s"), *ImagePath);
 }

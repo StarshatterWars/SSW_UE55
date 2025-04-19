@@ -75,6 +75,17 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UTextBlock* MissionObjectiveText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* IntelNameText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* IntelSourceText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* IntelLocationText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* IntelMessageText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* IntelDateText;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* OperationsModeText;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -88,6 +99,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* MissionImage;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UImage* IntelImage;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* OrdersButton;
@@ -109,20 +122,14 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* IntelList;
 
-	UPROPERTY(EditAnywhere, Category = "UI Sound")
-	USoundBase* HoverSound;
-
-	UPROPERTY(EditAnywhere, Category = "UI Sound")
-	USoundBase* AcceptSound;
-
-
 	UPROPERTY(meta = (BindWidgetOptional))
 	int SelectedMission;
 
 public:
 	UFUNCTION()
 	void SetSelectedMissionData(int Selected);
-
+	UFUNCTION()
+	void SetSelectedIntelData(int Selected);
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -131,9 +138,7 @@ protected:
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 
 	UFUNCTION()
-	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
-	UFUNCTION()
-	void GetIntelFile(int selected);
+	void GetIntelImageFile(FString IntelImageName);
 	UFUNCTION()
 	void GetMissionImageFile(int selected);
 	UFUNCTION()
@@ -201,4 +206,7 @@ private:
 
 	UPROPERTY()
 	FString ImagePath;
+	
+	UPROPERTY()
+	TArray<FS_CampaignAction> ActionList;
 };

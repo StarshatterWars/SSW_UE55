@@ -53,5 +53,7 @@ void UIntelLVElement::OnNewsFeedButtonClicked()
 
 void UIntelLVElement::SetNewsfeedInfo()
 {
-	//throw std::logic_error("The method or operation is not implemented.");
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->SetSelectedIntelNr(NewsfeedId);
+	SSWInstance->IntelSelectionChanged = true;
 }
