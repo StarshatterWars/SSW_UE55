@@ -388,6 +388,8 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						for (int ActionIdx = 0; ActionIdx < NewCampaignData.ActionSize; ActionIdx++)
 						{
 							ActionImage = "Empty";
+							ActionAudio = "";
+
 							TermDef* pdef = ActionTerm->elements()->at(ActionIdx)->isDef();
 
 							if (pdef->name()->value() == "id") {
@@ -544,6 +546,14 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 							else if (pdef->name()->value() == "image") {
 								GetDefText(ActionImage, pdef, filename);
 								NewCampaignAction.Image = FString(ActionImage);
+							}
+							else if (pdef->name()->value() == "audio") {
+								GetDefText(ActionAudio, pdef, filename);
+								NewCampaignAction.Audio = FString(ActionAudio);
+							}
+							else if (pdef->name()->value() == "date") {
+								GetDefText(ActionDate, pdef, filename);
+								NewCampaignAction.Date = FString(ActionDate);
 							}
 							else if (pdef->name()->value() == "scene") {
 								GetDefText(ActionScene, pdef, filename);

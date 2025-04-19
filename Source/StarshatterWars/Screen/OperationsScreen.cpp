@@ -25,6 +25,9 @@ void UOperationsScreen::NativeConstruct()
 		CancelButtonText->SetText(FText::FromString("BACK"));
 	}
 
+	if (AudioButton) {
+		AudioButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnAudioButtonClicked);
+	}
 	if (SelectButton) {
 		SelectButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnSelectButtonClicked);
 		SelectButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonHovered);
@@ -268,6 +271,18 @@ void UOperationsScreen::OnMissionsButtonHovered()
 void UOperationsScreen::OnMissionsButtonUnHovered()
 {
 }
+
+void UOperationsScreen::OnAudioButtonClicked()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
+	if(AudioAsset)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), AudioAsset);
+	}
+}
+
 void UOperationsScreen::OnCancelButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -404,13 +419,19 @@ void UOperationsScreen::PopulateIntelList()
 			ListItem->NewsSource = SSWInstance->GetActiveCampaign().Action[i].Source;
 			ActiveAction.Source = SSWInstance->GetActiveCampaign().Action[i].Source;
 
+			ListItem->NewsDate = SSWInstance->GetActiveCampaign().Action[i].Date;
+			ActiveAction.Date = SSWInstance->GetActiveCampaign().Action[i].Date;
+
 			ListItem->NewsInfoText = SSWInstance->GetActiveCampaign().Action[i].Message;
 			ActiveAction.Message = SSWInstance->GetActiveCampaign().Action[i].Message;
 
-			ListItem->NewsVisited = false;
-			//ActiveAction.Visited = false;
-
+			ListItem->NewsImage = SSWInstance->GetActiveCampaign().Action[i].Image;
 			ActiveAction.Image = SSWInstance->GetActiveCampaign().Action[i].Image;
+
+			ListItem->NewsAudio = SSWInstance->GetActiveCampaign().Action[i].Audio;
+			ActiveAction.Audio = SSWInstance->GetActiveCampaign().Action[i].Audio;
+
+			ListItem->NewsVisited = false;
 
 			IntelList->GetIndexForItem(ListItem);
 			ActionList.Add(ActiveAction);
@@ -506,6 +527,9 @@ void UOperationsScreen::SetSelectedIntelData(int Selected)
 	if (IntelSourceText) {
 		IntelSourceText->SetText(FText::FromString(ActionList[Selected].Source));
 	}
+	if (IntelDateText) {
+		IntelDateText->SetText(FText::FromString(ActionList[Selected].Date));
+	}
 
 	if (IntelMessageText) {
 		FString MessageText = ActionList[Selected].Message;
@@ -515,6 +539,7 @@ void UOperationsScreen::SetSelectedIntelData(int Selected)
 	}
 
 	GetIntelImageFile(ActionList[Selected].Image);
+	GetIntelAudioFile(ActionList[Selected].Audio);
 
 	UTexture2D* LoadedTexture = LoadTextureFromFile();
 	if (LoadedTexture && IntelImage)
@@ -534,6 +559,21 @@ void UOperationsScreen::GetIntelImageFile(FString IntelImageName)
 	ImagePath.Append(IntelImageName);
 	ImagePath.Append(".png");
 	UE_LOG(LogTemp, Log, TEXT("Action Image: %s"), *ImagePath);
+}
+
+void UOperationsScreen::GetIntelAudioFile(FString IntelAudioName)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	AudioPath = "/Game/Audio/Vox/Scenes/0";
+	AudioPath.Append(FString::FromInt(SSWInstance->GetActiveCampaign().Index + 1));
+	AudioPath.Append("/");
+	AudioPath.Append(IntelAudioName);
+	AudioPath.Append(".");
+	AudioPath.Append(IntelAudioName);
+
+	AudioAsset = Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *AudioPath));
+
+	UE_LOG(LogTemp, Log, TEXT("Action Audio: %s"), *AudioPath);
 }
 
 void UOperationsScreen::GetMissionImageFile(int selected)
@@ -563,4 +603,6 @@ FSlateBrush UOperationsScreen::CreateBrushFromTexture(UTexture2D* Texture, FVect
 	Brush.DrawAs = ESlateBrushDrawType::Image;
 	return Brush;
 }
+
+
 

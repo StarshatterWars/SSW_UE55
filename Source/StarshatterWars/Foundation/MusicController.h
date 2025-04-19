@@ -20,8 +20,14 @@ public:
 	UFUNCTION()
     void PlayMusic(USoundBase* Music);
 
+	UFUNCTION()
+    void PlaySound(USoundBase* Sound);
+
     UFUNCTION()
     void StopMusic();
+
+	UFUNCTION()
+    void StopSound();
 
 protected:
 	// Called when the game starts or when spawned

@@ -112,6 +112,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* IntelButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* MissionsButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* AudioButton;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;
@@ -124,6 +126,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	int SelectedMission;
+
+	UPROPERTY()
+	USoundBase* AudioAsset;
 
 public:
 	UFUNCTION()
@@ -139,6 +144,8 @@ protected:
 
 	UFUNCTION()
 	void GetIntelImageFile(FString IntelImageName);
+	UFUNCTION()
+	void GetIntelAudioFile(FString IntelAudioName);
 	UFUNCTION()
 	void GetMissionImageFile(int selected);
 	UFUNCTION()
@@ -188,6 +195,9 @@ protected:
 	void OnMissionsButtonHovered();
 	UFUNCTION()
 	void OnMissionsButtonUnHovered();
+
+	UFUNCTION()
+	void OnAudioButtonClicked();
 	UFUNCTION()
 	void SetCampaignOrders();
 	UFUNCTION()
@@ -206,7 +216,11 @@ private:
 
 	UPROPERTY()
 	FString ImagePath;
-	
+
+	UPROPERTY()
+	FString AudioPath;
+
 	UPROPERTY()
 	TArray<FS_CampaignAction> ActionList;
 };
+

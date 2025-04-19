@@ -284,6 +284,8 @@ protected:
 	Text  ActionRegion;
 	Text  ActionFile;
 	Text  ActionImage;
+	Text  ActionAudio;
+	Text  ActionDate;
 	Text  ActionScene;
 	Text  ActionText;
 

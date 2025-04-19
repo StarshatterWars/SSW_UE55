@@ -25,6 +25,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
 	FString NewsAudio;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString NewsImage;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
 	FString NewsInfoText;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
 	bool NewsVisited;

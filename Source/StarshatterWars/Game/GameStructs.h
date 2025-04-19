@@ -848,6 +848,10 @@ struct FS_CampaignAction : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Image;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Audio;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Date;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Scene;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString AssetType;
@@ -891,6 +895,8 @@ struct FS_CampaignAction : public FTableRowBase {
 		Message = "";
 		Image = "";
 		Scene = "";
+		Audio = "";
+		Date = "";
 
 		AssetType = "";
 		TargetType = "";

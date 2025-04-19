@@ -45,7 +45,18 @@ void AMusicController::PlayMusic(USoundBase* Music)
     
     AudioComponent->SetSound(Music);
     AudioComponent->Play();
- 
+}
+
+
+void AMusicController::PlaySound(USoundBase* Sound)
+{
+    if (!AudioComponent)
+        return;
+    if (!Sound)
+        return;
+
+    AudioComponent->SetSound(Sound);
+    AudioComponent->Play();
 }
 
 void AMusicController::StopMusic()
@@ -54,4 +65,9 @@ void AMusicController::StopMusic()
     {
         AudioComponent->Stop();
     }
+}
+
+void AMusicController::StopSound()
+{
+
 }
