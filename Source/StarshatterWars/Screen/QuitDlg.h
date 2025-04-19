@@ -24,9 +24,9 @@ class STARSHATTERWARS_API UQuitDlg : public UBaseScreen
 		class UTextBlock* ExitTitle;
 		; UPROPERTY(meta = (BindWidgetOptional))
 		class UTextBlock* ExitPrompt;
+		
 		UPROPERTY(EditAnywhere, Category = "UI Sound")
 		USoundBase* HoverSound;
-
 		UPROPERTY(EditAnywhere, Category = "UI Sound")
 		USoundBase* AcceptSound;
 		
@@ -34,9 +34,11 @@ class STARSHATTERWARS_API UQuitDlg : public UBaseScreen
 		void NativeConstruct() override;
 		
 		UFUNCTION()
-		void PlayUISound(UObject* WorldContext, USoundBase* UISound);
-		UFUNCTION()
 		void OnApplyClicked();
 		UFUNCTION()
 		void OnCancelClicked();
+		UFUNCTION()
+		void OnApplyHovered();
+		UFUNCTION()
+		void OnCancelHovered();
 };

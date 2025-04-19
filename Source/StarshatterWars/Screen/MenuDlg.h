@@ -54,12 +54,6 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GameVersion;
 
-	UPROPERTY(EditAnywhere, Category = "UI Sound")
-	USoundBase* HoverSound;
-
-	UPROPERTY(EditAnywhere, Category = "UI Sound")
-	USoundBase* AcceptSound;
-
 	UFUNCTION()
 	void EnableMenuButtons(bool bEnabled);
 	UFUNCTION()
@@ -111,10 +105,8 @@ protected:
 	UFUNCTION()
 	void OnButtonUnHovered();
 
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
+	UFUNCTION()
 	void ShowCampaignScreen();
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
 };
 
 

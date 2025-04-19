@@ -28,6 +28,9 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	
 public:
+	// Sets default values for this actor's properties
+	AGameLoader();
+
 	UFUNCTION(BlueprintCallable, Category = "Game Loader")
 	USSWGameInstance* GetSSWGameInstance();
 

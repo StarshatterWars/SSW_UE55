@@ -25,6 +25,15 @@ void AGameLoader::Tick(float DeltaTime)
 {
 }
 
+AGameLoader::AGameLoader()
+{
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = false;
+
+	SetActorHiddenInGame(true);
+	SetCanBeDamaged(false);
+}
+
 USSWGameInstance* AGameLoader::GetSSWGameInstance()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();

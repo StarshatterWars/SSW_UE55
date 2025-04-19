@@ -20,36 +20,19 @@
 #include "../Screen/CampaignLoading.h"
 
 #include "../Game/PlayerSaveGame.h"
+#include "Kismet/GameplayStatics.h"
+#include "UObject/UObjectGlobals.h"
+#include "../Foundation/MusicController.h"
+#include "AudioDevice.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 
-
-//#include "Windows/MinWindows.h"
-//#include <winbase.h>
 #undef UpdateResource
 #undef PlaySound
 
-USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
+USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
-	bIsWindowed = false;
-	bIsGameActive = false;
-	bIsDeviceLost = false;
-	bIsMinimized = false;
-	bIsMaximized = false;
-	bIgnoreSizeChange = false;
-	bIsDeviceInitialized = false;
-	bIsDeviceRestored = false;
-	bClearTables = false;
-
-	PlayerSaveName = "PlayerSaveSlot";
-	PlayerSaveSlot = 0;
-
-	FDateTime GameDate(2228, 1, 1);
-	SetGameTime(GameDate.ToUnixTimestamp());
-	
-	CampaignData.SetNum(5); // number of campaigns
-
 	InitializeDT(ObjectInitializer);
-
 	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
 	InitializeCampaignLoadingScreen(ObjectInitializer);
@@ -57,10 +40,6 @@ USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer)
 	InitializeMissionBriefingScreen(ObjectInitializer);
 	InitializeQuitDlg(ObjectInitializer);
 	InitializeFirstRunDlg(ObjectInitializer);
-
-	SetProjectPath();
-	
-	Init();
 }
 
 void USSWGameInstance::SetProjectPath()
@@ -258,6 +237,25 @@ void USSWGameInstance::LoadGameLevel(FString LevelName)
 
 void USSWGameInstance::Init()
 {
+	Super::Init();
+	bIsWindowed = false;
+	bIsGameActive = false;
+	bIsDeviceLost = false;
+	bIsMinimized = false;
+	bIsMaximized = false;
+	bIgnoreSizeChange = false;
+	bIsDeviceInitialized = false;
+	bIsDeviceRestored = false;
+	bClearTables = false;
+
+	PlayerSaveName = "PlayerSaveSlot";
+	PlayerSaveSlot = 0;
+
+	FDateTime GameDate(2228, 1, 1);
+	SetGameTime(GameDate.ToUnixTimestamp());
+	SetProjectPath();
+
+	CampaignData.SetNum(5); // number of campaigns
 	if (!DataLoader::GetLoader())
 		DataLoader::Initialize();
 
@@ -286,6 +284,7 @@ void USSWGameInstance::Init()
 			ReadCampaignData();
 		}
 	}
+	//InitializeAudioSystem();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -318,7 +317,12 @@ void USSWGameInstance::ReadCampaignData()
 
 void USSWGameInstance::Shutdown()
 {
-	
+	Super::Shutdown();
+
+	if (FAudioDevice* AudioDevice = GEngine->GetMainAudioDeviceRaw())
+	{
+		AudioDevice->Flush(nullptr); // Stops all active sounds immediately
+	}
 }
 
 bool USSWGameInstance::InitContent()
@@ -945,5 +949,63 @@ UTexture2D* USSWGameInstance::LoadPNGTextureFromFile(const FString& Path)
 
 	UE_LOG(LogTemp, Error, TEXT("Failed to decode PNG: %s"), *FilePath);
 	return nullptr;
+}
+
+void USSWGameInstance::PlayMusic(USoundBase* Music)
+{
+	if (!Music)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayMusic: Invalid SoundBase"));
+		return;
+	}
+	
+	if (MusicController)
+	{
+		MusicController->PlayMusic(Music);
+	}
+}
+
+void USSWGameInstance::StopMusic()
+{
+	if (MusicController) {
+		MusicController->StopMusic();
+	}
+}
+
+void USSWGameInstance::PlayMenuMusic()
+{
+	PlayMusic(MenuMusic);
+}
+
+void USSWGameInstance::InitializeAudioSystem()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		MusicController = World->SpawnActor<AMusicController>();
+		UE_LOG(LogTemp, Log, TEXT("Music Controller Spawned"));
+	}
+}
+
+void USSWGameInstance::ExitGame(UObject* Context) {
+	UKismetSystemLibrary::QuitGame(Context, 0, EQuitPreference::Quit, true);
+}
+
+void USSWGameInstance::PlayUISound(UObject* Context, USoundBase* UISound)
+{
+	if (UISound)
+	{
+		UGameplayStatics::PlaySound2D(Context, UISound);
+	}
+}
+
+void USSWGameInstance::PlayHoverSound(UObject* Context)
+{
+	PlayUISound(Context, HoverSound);
+}
+
+void USSWGameInstance::PlayAcceptSound(UObject* Context)
+{
+	PlayUISound(Context, AcceptSound);
 }
 

@@ -25,6 +25,8 @@
 #include "Misc/DateTime.h"
 #include "Misc/TimeSpan.h"
 
+#include "Sound/SoundBase.h"
+
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "SSWGameInstance.generated.h"
 
@@ -38,6 +40,7 @@
  class AGalaxy;
  class AGameDataLoader;
  class AAwardInfoLoader;
+ class AMusicController;
  class ACombatGroupLoader;
  class UQuitDlg;
  class UMenuDlg;
@@ -199,6 +202,29 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	UTexture2D* LoadPNGTextureFromFile(const FString& Path);
 
+	// Function to play music
+    UFUNCTION()
+    void PlayMusic(USoundBase* Music);
+
+    // Function to stop music
+    UFUNCTION()
+    void StopMusic();
+
+	// Function to play music
+    UFUNCTION()
+    void PlayMenuMusic();
+	
+	UFUNCTION()
+	void InitializeAudioSystem();
+
+	UFUNCTION()
+	void ExitGame(UObject* Context);
+	UFUNCTION()
+	void PlayUISound(UObject* Context, USoundBase* UISound);
+	UFUNCTION()
+	void PlayHoverSound(UObject* Context);
+	UFUNCTION()
+	void PlayAcceptSound(UObject* Context);
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
@@ -212,6 +238,15 @@ public:
 
 	UPROPERTY()
 	int PlayerSaveSlot;
+	
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* AcceptSound;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* HoverSound;
+
+	UPROPERTY(EditAnywhere, Category = "UI Sound")
+	USoundBase* MenuMusic;
 
 	DataLoader* loader;
 
@@ -243,11 +278,14 @@ public:
 	
 	UPROPERTY()
 	bool MissionSelectionChanged;
+
+	UPROPERTY()
+	AMusicController* MusicController;
 	
 protected:
 	virtual void Init() override;
-	void ReadCampaignData();
 	virtual void Shutdown() override;
+	void ReadCampaignData();
 	virtual bool InitContent();
 	virtual bool InitGame();
 
