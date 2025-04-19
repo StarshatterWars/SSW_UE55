@@ -840,11 +840,11 @@ struct FS_CampaignAction : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Region;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Text;
+	FString Title;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Source;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString File;
+	FString Message;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Image;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -886,9 +886,9 @@ struct FS_CampaignAction : public FTableRowBase {
 		Region = "";
 		System = "";
 
-		Text = "";
+		Title = "";
 		Source = "";
-		File = "";
+		Message = "";
 		Image = "";
 		Scene = "";
 
@@ -1615,13 +1615,13 @@ struct FS_Campaign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FString> Orders;	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool Scripted;
+	bool bScripted;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool Sequential;
+	bool bSequential;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool Available;
+	bool bAvailable;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	bool Completed;
+	bool bCompleted;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString System;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1669,11 +1669,11 @@ struct FS_Campaign : public FTableRowBase {
 		Region = "";
 		MainImage = "";
 
-		Scripted = false;
-		Sequential = false;
+		bScripted = false;
+		bSequential = false;
 
-		Available = false;
-		Completed = false;
+		bAvailable = false;
+		bCompleted = false;
 
 		ActionSize = 0;
 		CombatantSize = 0;

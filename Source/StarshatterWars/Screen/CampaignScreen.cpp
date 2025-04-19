@@ -139,7 +139,7 @@ void UCampaignScreen::SetCampaignDDList()
 
 		for (int index = 0; index < SSWInstance->CampaignData.Num(); index++) {
 		
-			if(SSWInstance->CampaignData[index].Available) {
+			if(SSWInstance->CampaignData[index].bAvailable) {
 				CampaignSelectDD->AddOption(SSWInstance->CampaignData[index].Name);
 			}
 		}

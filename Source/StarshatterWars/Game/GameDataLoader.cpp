@@ -318,20 +318,20 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 				else if (def->name()->value() == "scripted") {
 					if (def->term() && def->term()->isBool()) {
 						scripted = def->term()->isBool()->value();
-						NewCampaignData.Scripted = scripted;
+						NewCampaignData.bScripted = scripted;
 					}
 				}
 				else if (def->name()->value() == "sequential") {
 					if (def->term() && def->term()->isBool()) {
 						sequential = def->term()->isBool()->value();
-						NewCampaignData.Sequential = sequential;
+						NewCampaignData.bSequential = sequential;
 					}
 				}
 
 				else if (def->name()->value() == "available") {
 					if (def->term() && def->term()->isBool()) {
 						available = def->term()->isBool()->value();
-						NewCampaignData.Available = available;
+						NewCampaignData.bAvailable = available;
 					}
 				}
 
@@ -364,7 +364,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						ActionSystem = "";
 						ActionRegion = "";
 						ActionFile = "";
-						ActionImage = "";
+						
 						ActionScene = "";
 						ActionText = "";
 
@@ -387,6 +387,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 
 						for (int ActionIdx = 0; ActionIdx < NewCampaignData.ActionSize; ActionIdx++)
 						{
+							ActionImage = "Empty";
 							TermDef* pdef = ActionTerm->elements()->at(ActionIdx)->isDef();
 
 							if (pdef->name()->value() == "id") {
@@ -538,7 +539,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 							}
 							else if (pdef->name()->value() == "file") {
 								GetDefText(ActionFile, pdef, filename);
-								NewCampaignAction.File = FString(ActionFile);
+								NewCampaignAction.Message = FString(ActionFile);
 							}
 							else if (pdef->name()->value() == "image") {
 								GetDefText(ActionImage, pdef, filename);
@@ -550,7 +551,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 							}
 							else if (pdef->name()->value() == "text") {
 								GetDefText(ActionText, pdef, filename);
-								NewCampaignAction.Text = FString(ActionText);
+								NewCampaignAction.Title = FString(ActionText);
 							}
 							else if (pdef->name()->value() == "asset_id") {
 								GetDefNumber(AssetId, pdef, filename);
@@ -747,8 +748,8 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	NewCampaignData.Missions = MissionArray;
 	NewCampaignData.TemplateMissions = TemplateMissionArray;
 	NewCampaignData.ScriptedMissions = ScriptedMissionArray;
-	NewCampaignData.Available  = true;
-	NewCampaignData.Completed = false;
+	NewCampaignData.bAvailable  = true;
+	NewCampaignData.bCompleted = false;
 
 	// define our data table struct
 	FName RowName = FName(FString(name));

@@ -117,7 +117,7 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
 	}	
 
-	if (SSWInstance->IntelSelectionChanged) {
+	if (SSWInstance->ActionSelectionChanged) {
 		SetSelectedIntelData(SSWInstance->GetSelectedActionNr());
 	}
 	if (GameTimeText) {
@@ -408,7 +408,7 @@ void UOperationsScreen::PopulateIntelList()
 			ActiveAction.Message = SSWInstance->GetActiveCampaign().Action[i].Message;
 
 			ListItem->NewsVisited = false;
-			ActiveAction.Visited = false;
+			//ActiveAction.Visited = false;
 
 			ActiveAction.Image = SSWInstance->GetActiveCampaign().Action[i].Image;
 
@@ -508,7 +508,10 @@ void UOperationsScreen::SetSelectedIntelData(int Selected)
 	}
 
 	if (IntelMessageText) {
-		IntelMessageText->SetText(FText::FromString(ActionList[Selected].Message));
+		FString MessageText = ActionList[Selected].Message;
+		MessageText = MessageText.Replace(TEXT("\\n"), TEXT("\n"));
+
+		IntelMessageText->SetText(FText::FromString(MessageText));
 	}
 
 	GetIntelImageFile(ActionList[Selected].Image);
@@ -519,6 +522,7 @@ void UOperationsScreen::SetSelectedIntelData(int Selected)
 		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
 		IntelImage->SetBrush(Brush);
 	}
+	SSWInstance->ActionSelectionChanged = false;
 }
 
 void UOperationsScreen::GetIntelImageFile(FString IntelImageName)

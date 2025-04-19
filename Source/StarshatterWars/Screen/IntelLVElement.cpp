@@ -54,6 +54,6 @@ void UIntelLVElement::OnNewsFeedButtonClicked()
 void UIntelLVElement::SetNewsfeedInfo()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->SetSelectedIntelNr(NewsfeedId);
-	SSWInstance->IntelSelectionChanged = true;
+	SSWInstance->SetSelectedActionNr(NewsfeedId);
+	SSWInstance->ActionSelectionChanged = true;
 }

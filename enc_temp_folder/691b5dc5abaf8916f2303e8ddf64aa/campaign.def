@@ -1227,7 +1227,7 @@ action: {
 			   "I hope you're all right out there. . . I’m worried that we are throwing away lives on a foolish errand, and risking far more in the long run… Just tell me you'll stay safe, OK?\n\n"
 			   "Love from\n"
 			   "Sara\n"
-   image:      "m0-mail-icon"
+   image:      "m0-mail-icon.pcx"
    scene:      "M3-Why-Renser"
    delay:      21600 // six hours after 700
 
@@ -1379,7 +1379,7 @@ action: {
    text:    "Operation Highland Defeat"
    file:    "Operation Highland has failed to secure the peace.  Alliance losses have been severe.  The Presdient, with the approval of the Combined Senate, has ordered an immediate withdrawal of all Force units from the Solus-Renser Theater. Civilian casualties are estimated at more than 10,000 dead and 52,000 injured or missing.\n\n"
 		    "At least one additional fleet is being mobilized from the Hegemony system of Korius.  Force:Command expects that they will translate in system within forty hours.  At that time, the Independent System of Solus will be brought under the direct control of the Marakan Hegemony."
-   image:   "def1-640"
+   image:   "def1-1024"
    scene:   "Defeat1"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 6, comp: LT, score: 3000 },
@@ -1395,7 +1395,7 @@ action: {
    text:    "Operation Highland Defeat"
    file:    "Operation Highland has failed in its mission to secure the peace. Alliance losses in the Renser system have been severe, including the loss of the Fleet Carrier Battle Group Archon. The President, with the approval of the Combined Senate, has ordered the immediate withdrawal of all remaining Force:Space units from the Prefecture of Renser.\n\n"
    "At least one additional Hegemony fleet is being mobilized from the Korius System. We can only hope that this failure does not result in the unilateral escalation on the part of Hegemony forces...\n"
-   image:   "def2-640"
+   image:   "def2-1024"
    scene:   "Defeat2"
 
    req: { c1: "Terellian Alliance", group_type: carrier_group, group_id: 6, comp: LT, score: 3000 }
@@ -1412,7 +1412,7 @@ action: {
    file:    "Alliance forces have completed operations in the Solus-Renser Theater.  Hegemony resistance has been broken and the Prefect of Renser is meeting with the Alliance Provisional Consulate at this hour to establish terms for a cease-fire and eventual non-agression pact.\n\n"
 			"Force:Space units in Third Fleet will be withdrawing from Renser space to predetermined guard points in the surrounding systems.  Force:Command expects to be able to rotate your unit back to home space within a few weeks for replenishment and shore leave.\n\n"
 			"Well done, Commander!\n"
-   image:   "victory-640"
+   image:   "victory-1024"
    scene:   "Victory"
 
    req: { c1: "Marakan Hegemony", group_type: fleet, group_id: 4, comp: LT, score: 4000 }

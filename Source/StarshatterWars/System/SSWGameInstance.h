@@ -170,6 +170,9 @@ public:
 	void SetSelectedMissionNr(int active);
 
 	UFUNCTION()
+	void SetSelectedActionNr(int active);
+
+	UFUNCTION()
 	void SetCampaignActive(bool bIsActive);
 
 	UFUNCTION()
@@ -179,7 +182,8 @@ public:
 	int GetActiveCampaignNr();
 	UFUNCTION()
 	int GetSelectedMissionNr();
-	
+	UFUNCTION()
+	int GetSelectedActionNr();
 	UFUNCTION()
 	bool GetCampaignActive();
 
@@ -275,9 +279,11 @@ public:
 	UPROPERTY()
 	TArray<FS_CampaignMissionList> MissionList;
 
-	
 	UPROPERTY()
 	bool MissionSelectionChanged;
+
+	UPROPERTY()
+	bool ActionSelectionChanged;
 
 	UPROPERTY()
 	AMusicController* MusicController;
@@ -342,6 +348,8 @@ protected:
 		
 		UPROPERTY()
 		int32 SelectionMissionNr;
+		UPROPERTY()
+		int32 SelectionActionNr;
 
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);

@@ -246,7 +246,6 @@ void USSWGameInstance::Init()
 	bIgnoreSizeChange = false;
 	bIsDeviceInitialized = false;
 	bIsDeviceRestored = false;
-	bClearTables = false;
 
 	PlayerSaveName = "PlayerSaveSlot";
 	PlayerSaveSlot = 0;
@@ -273,9 +272,9 @@ void USSWGameInstance::Init()
 		InitContent();
 	}
 
-	if (bClearTables) {
-		CampaignDataTable->EmptyTable();
-	}
+	//if (bClearTables) {
+		//CampaignDataTable->EmptyTable();
+	//}
 	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
 		LoadGame(PlayerSaveName, PlayerSaveSlot);
 		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
@@ -299,7 +298,7 @@ void USSWGameInstance::ReadCampaignData()
 		if (Row)
 		{
 			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
-			UE_LOG(LogTemp, Log, TEXT("Campaign Available: %s"), (Row->Available ? TEXT("true") : TEXT("false")));
+			UE_LOG(LogTemp, Log, TEXT("Campaign Available: %s"), (Row->bAvailable ? TEXT("true") : TEXT("false")));
 			CampaignData[index] = *Row;
 			CampaignData[index].Orders.SetNum(4);
 			index++;
@@ -846,6 +845,11 @@ void USSWGameInstance::SetSelectedMissionNr(int active)
 	SelectionMissionNr = active;
 }
 
+void USSWGameInstance::SetSelectedActionNr(int active)
+{
+	SelectionActionNr = active;
+}
+
 void USSWGameInstance::SetCampaignActive(bool bIsActive)
 {
 	bIsActiveCampaign = bIsActive;
@@ -864,6 +868,11 @@ int USSWGameInstance::GetActiveCampaignNr()
 int USSWGameInstance::GetSelectedMissionNr()
 {
 	return SelectionMissionNr;
+}
+
+int USSWGameInstance::GetSelectedActionNr()
+{
+	return SelectionActionNr;
 }
 
 bool USSWGameInstance::GetCampaignActive()
