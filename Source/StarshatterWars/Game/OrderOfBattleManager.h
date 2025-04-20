@@ -18,22 +18,15 @@ class STARSHATTERWARS_API UOrderOfBattleManager : public UObject
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "Order of Battle")
-	void Initialize(UDataTable* InCombatGroupTable);
+	void Initialize(UDataTable* CombatGroupTable);
 
-	const TArray<TSharedPtr<FS_CombatGroup>>& GetRootGroups() const;
-	TArray<TSharedPtr<FS_CombatGroup>> GetChildrenOfGroup(int32 ParentId) const;
+	const FS_CombatGroup* GetGroupById(int32 GroupId) const;
 
-	UFUNCTION(BlueprintCallable, Category = "Order of Battle")
-	bool GetGroupById(int32 Id, FS_CombatGroup& OutGroup) const;
+	TArray<int32> GetRootGroupIds() const;
+	TArray<int32> GetChildrenOfGroup(int32 ParentId) const;
 
 protected:
 	UPROPERTY()
-	UDataTable* CombatGroupTable;
-
-	TMap<int32, TSharedPtr<FS_CombatGroup>> GroupMap;
-	TMap<int32, TArray<TSharedPtr<FS_CombatGroup>>> GroupChildren;
-	TArray<TSharedPtr<FS_CombatGroup>> RootGroups;
-
-	void BuildHierarchy();
+	TMap<int32, FS_CombatGroup> AllGroups;
+	TMap<int32, TArray<int32>> GroupChildrenMap;
 };

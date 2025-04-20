@@ -3,70 +3,49 @@
 
 #include "OrderOfBattleManager.h"
 
-void UOrderOfBattleManager::Initialize(UDataTable* InCombatGroupTable)
+void UOrderOfBattleManager::Initialize(UDataTable* CombatGroupTable)
 {
-	CombatGroupTable = InCombatGroupTable;
-	GroupMap.Empty();
-	GroupChildren.Empty();
-	RootGroups.Empty();
+	AllGroups.Empty();
+	GroupChildrenMap.Empty();
 
 	if (!CombatGroupTable) return;
 
-	TArray<FS_CombatGroup*> AllRows;
-	CombatGroupTable->GetAllRows<FS_CombatGroup>(TEXT("OrderOfBattleLoad"), AllRows);
-
-	for (FS_CombatGroup* Row : AllRows)
+	TArray<FName> RowNames = CombatGroupTable->GetRowNames();
+	for (const FName& RowName : RowNames)
 	{
-		if (!Row) continue;
-
-		TSharedPtr<FS_CombatGroup> SharedGroup = MakeShared<FS_CombatGroup>(*Row);
-		GroupMap.Add(SharedGroup->Id, SharedGroup);
-	}
-
-	BuildHierarchy();
-}
-
-void UOrderOfBattleManager::BuildHierarchy()
-{
-	for (const TPair<int32, TSharedPtr<FS_CombatGroup>>& Pair : GroupMap)
-	{
-		TSharedPtr<FS_CombatGroup> Group = Pair.Value;
-		if (!Group.IsValid()) continue;
-
-		if (Group->ParentId == 0)
+		FS_CombatGroup* Row = CombatGroupTable->FindRow<FS_CombatGroup>(RowName, TEXT("Init OrderOfBattle"));
+		if (Row)
 		{
-			RootGroups.Add(Group);
-		}
-		else
-		{
-			GroupChildren.FindOrAdd(Group->ParentId).Add(Group);
+			AllGroups.Add(Row->Id, *Row);
+
+			// Build child map
+			GroupChildrenMap.FindOrAdd(Row->ParentId).Add(Row->Id);
 		}
 	}
 }
 
-const TArray<TSharedPtr<FS_CombatGroup>>& UOrderOfBattleManager::GetRootGroups() const
+const FS_CombatGroup* UOrderOfBattleManager::GetGroupById(int32 GroupId) const
 {
+	return AllGroups.Find(GroupId);
+}
+
+TArray<int32> UOrderOfBattleManager::GetRootGroupIds() const
+{
+	TArray<int32> RootGroups;
+
+	for (const auto& Pair : AllGroups)
+	{
+		if (!AllGroups.Contains(Pair.Value.ParentId))
+		{
+			RootGroups.Add(Pair.Key);
+		}
+	}
+
 	return RootGroups;
 }
 
-TArray<TSharedPtr<FS_CombatGroup>> UOrderOfBattleManager::GetChildrenOfGroup(int32 ParentId) const
+TArray<int32> UOrderOfBattleManager::GetChildrenOfGroup(int32 ParentId) const
 {
-	if (const TArray<TSharedPtr<FS_CombatGroup>>* Found = GroupChildren.Find(ParentId))
-	{
-		return *Found;
-	}
-	return {};
-}
-
-bool UOrderOfBattleManager::GetGroupById(int32 Id, FS_CombatGroup& OutGroup) const
-{
-	if (const TSharedPtr<FS_CombatGroup>* Found = GroupMap.Find(Id))
-	{
-		if (Found && Found->IsValid())
-		{
-			OutGroup = *(*Found);
-			return true;
-		}
-	}
-	return false;
+	const TArray<int32>* Found = GroupChildrenMap.Find(ParentId);
+	return Found ? *Found : TArray<int32>();
 }
