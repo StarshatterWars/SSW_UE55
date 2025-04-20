@@ -78,6 +78,17 @@ bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive 
 	return false;
 }
 
+template <typename TEnum>
+FString EnumToDisplayNameString(TEnum EnumValue)
+{
+	static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayNameString only works with UENUMS.");
+
+	UEnum* EnumPtr = StaticEnum<TEnum>();
+	if (!EnumPtr) return TEXT("Invalid");
+
+	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
+}
+
 //List<SystemDesign> SystemDesign::catalog;
 
 // Sets default values
@@ -3874,7 +3885,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 						Text Region = "";
 						Text System = "";
 						Text ParentType = "";
-						ECOMBATGROUP_TYPE EType = ECOMBATGROUP_TYPE::NONE;
+						ECOMBATGROUP_TYPE UnitType = ECOMBATGROUP_TYPE::NONE;
 						int UnitIndex = 0;
 						int ParentId = 0;
 						int Id = 0;
@@ -3894,7 +3905,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							else if (pdef->name()->value() == ("type"))
 							{
 								GetDefText(Type, pdef, fn);								
-								ECOMBATGROUP_TYPE UnitType;
+								
 								if (FStringToEnum<ECOMBATGROUP_TYPE>(FString(Type).ToUpper(), UnitType, false))
 								{
 									UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(UnitType));
@@ -4043,7 +4054,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								NewCombatGroup.Unit = NewCombatUnitArray;
 							}
 
-							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + +" " + FString(GetNameFromType(FString(Type))));
+							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + +" " + FString(GetNameFromType(UnitType)));
 							// call AddRow to insert the record
 
 							if (Iff > 0) {
@@ -7008,47 +7019,10 @@ AGameDataLoader::GetOrdinal(int id)
 	return ordinal;
 }
 
-FString AGameDataLoader::GetNameFromType(FString nt)
+FString AGameDataLoader::GetNameFromType(ECOMBATGROUP_TYPE nt)
 {
-	FString TypeName;
-
-	if (nt == "FORCE") {
-		TypeName = "Force";
-	}
-	else if (nt == "WING") {
-		TypeName = "Wing";
-	}
-	else if (nt == "INTERCEPT_SQUADRON") {
-		TypeName = "Intercept Squadron";
-	}
-	else if (nt == "FIGHTER_SQUADRON") {
-		TypeName = "Fighter Squadron";
-	}
-	else if (nt == "ATTACK_SQUADRON") {
-		TypeName = "Attack Squadron";
-	}
-	else if (nt == "LCA_SQUADRON") {
-		TypeName = "LCA Squadron";
-	}
-	else if (nt == "FLEET") {
-		TypeName = "Fleet";
-	}
-	else if (nt == "DESTROYER_SQUADRON") {
-		TypeName = "DESRON";
-	}
-	else if (nt == "BATTLE_GROUP") {
-		TypeName = "Battle Group";
-	}
-	else if (nt == "CARRIER_GROUP") {
-		TypeName = "CVBG";
-	}
-	else
-	{
-		TypeName = nt;
-	}
-	return TypeName;
+	return EnumToDisplayNameString(nt);
 }
-
 
 // +--------------------------------------------------------------------+
 

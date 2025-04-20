@@ -188,9 +188,9 @@ enum ECOMBATGROUP_TYPE : uint8
 	ATTACK_SQUADRON		UMETA(DisplayName = "Attack Squadron"),    // strike / attack
 	LCA_SQUADRON		UMETA(DisplayName = "LCA Squadron"),       // landing craft
 	FLEET				UMETA(DisplayName = "Fleet"),		       // Navy
-	DESTROYER_SQUADRON	UMETA(DisplayName = "Destroyer Squadron"), // destroyer
-	BATTLE_GROUP		UMETA(DisplayName = "Battle Group"),       // heavy cruiser(s)
-	CARRIER_GROUP		UMETA(DisplayName = "Carrier Group"),	   // fleet carrier
+	DESTROYER_SQUADRON	UMETA(DisplayName = "DESRON"),			   // destroyer
+	BATTLE_GROUP		UMETA(DisplayName = "BG"),                 // heavy cruiser(s)
+	CARRIER_GROUP		UMETA(DisplayName = "CVBG"),       	       // fleet carrier
 	BATTALION			UMETA(DisplayName = "Battalion"),		   // Army
 	MINEFIELD			UMETA(DisplayName = "Minefield"),
 	BATTERY				UMETA(DisplayName = "Battery"), 

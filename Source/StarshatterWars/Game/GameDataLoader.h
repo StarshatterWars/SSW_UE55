@@ -132,7 +132,7 @@ public:
 	const char* ClassName(int type);
 
 	FString GetOrdinal(int id);
-	FString GetNameFromType(FString name);
+	FString GetNameFromType(ECOMBATGROUP_TYPE name);
 
 	FS_CombatGroupUnit CombatGroupUnit;
 	FS_CombatGroup CombatGroupData;
