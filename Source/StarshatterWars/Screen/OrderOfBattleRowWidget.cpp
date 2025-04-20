@@ -11,7 +11,7 @@ void UOrderOfBattleRowWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 	{
 		if (NameText)
 		{
-			NameText->SetText(FText::FromString(Data->Name));
+			NameText->SetText(FText::FromString(Data->DisplayName));
 		}
 	}
 }

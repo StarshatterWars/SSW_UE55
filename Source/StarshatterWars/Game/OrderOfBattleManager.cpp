@@ -2,50 +2,55 @@
 
 
 #include "OrderOfBattleManager.h"
+#include "../Screen/OrderOfBattleRowObject.h"
+#include "Engine/Engine.h"
 
-void UOrderOfBattleManager::Initialize(UDataTable* CombatGroupTable)
+// Initializes the order of battle data
+void UOrderOfBattleManager::InitializeOrderOfBattleData()
 {
-	AllGroups.Empty();
-	GroupChildrenMap.Empty();
+	// Optionally load data here, or initialize with mock data
+	LoadOrderOfBattleData();
+}
 
-	if (!CombatGroupTable) return;
+// Load Order of Battle data
+void UOrderOfBattleManager::LoadOrderOfBattleData()
+{
+	// Example of hardcoding data for testing purposes
+	UOrderOfBattleListEntry SampleEntry;
+	SampleEntry.DisplayName = "Battalion Alpha";
+	SampleEntry.bIsUnit = false;
+	SampleEntry.EntryId = 1;
 
-	TArray<FName> RowNames = CombatGroupTable->GetRowNames();
-	for (const FName& RowName : RowNames)
+	AddEntry(SampleEntry);
+
+	// Add more sample entries as needed
+}
+
+// Adds an entry to the list
+void UOrderOfBattleManager::AddEntry(const UOrderOfBattleListEntry& Entry)
+{
+	UOrderOfBattleRowObject* NewEntry = NewObject<UOrderOfBattleRowObject>(this);
+	NewEntry->DisplayName = Entry.DisplayName;
+	NewEntry->bIsUnit = Entry.bIsUnit;
+
+	OrderOfBattleItems.Add(NewEntry);
+}
+
+// Returns all order of battle items
+const TArray<UOrderOfBattleRowObject*>& UOrderOfBattleManager::GetOrderOfBattleItems() const
+{
+	return OrderOfBattleItems;
+}
+
+// Find a specific entry by ID
+UOrderOfBattleRowObject* UOrderOfBattleManager::GetOrderOfBattleEntryById(int32 Id)
+{
+	for (UOrderOfBattleRowObject* Item : OrderOfBattleItems)
 	{
-		FS_CombatGroup* Row = CombatGroupTable->FindRow<FS_CombatGroup>(RowName, TEXT("Init OrderOfBattle"));
-		if (Row)
+		if (Item->EntryId == Id)
 		{
-			AllGroups.Add(Row->Id, *Row);
-
-			// Build child map
-			GroupChildrenMap.FindOrAdd(Row->ParentId).Add(Row->Id);
+			return Item;
 		}
 	}
-}
-
-const FS_CombatGroup* UOrderOfBattleManager::GetGroupById(int32 GroupId) const
-{
-	return AllGroups.Find(GroupId);
-}
-
-TArray<int32> UOrderOfBattleManager::GetRootGroupIds() const
-{
-	TArray<int32> RootGroups;
-
-	for (const auto& Pair : AllGroups)
-	{
-		if (!AllGroups.Contains(Pair.Value.ParentId))
-		{
-			RootGroups.Add(Pair.Key);
-		}
-	}
-
-	return RootGroups;
-}
-
-TArray<int32> UOrderOfBattleManager::GetChildrenOfGroup(int32 ParentId) const
-{
-	const TArray<int32>* Found = GroupChildrenMap.Find(ParentId);
-	return Found ? *Found : TArray<int32>();
+	return nullptr; // Return nullptr if not found
 }

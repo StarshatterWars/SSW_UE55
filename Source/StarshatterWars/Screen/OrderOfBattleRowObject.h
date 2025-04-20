@@ -16,26 +16,41 @@ class STARSHATTERWARS_API UOrderOfBattleRowObject : public UObject
 	GENERATED_BODY()
 	
 public:
-	// Name to display for the row
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "OrderOfBattle")
-	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	FString DisplayName;
 
-	// Additional fields as necessary
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "OrderOfBattle")
-	FString Type;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	TArray<UOrderOfBattleRowObject*> Children;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "OrderOfBattle")
-	int32 Id;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	bool bIsUnit;
 
-	// A reference to the combat group or other data to represent this row's context
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "OrderOfBattle")
-	FS_CombatGroup CombatGroupData;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	int32 EntryId;
 
-	// Constructor
-	UOrderOfBattleRowObject();
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	FS_CombatGroup SourceGroup;
 
-	// Optionally add functions to manipulate data if needed
-	void InitializeRow(const FString& InDisplayName, const FString& InType, int32 InId, FS_CombatGroup InCombatGroupData);
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	FS_CombatGroupUnit SourceUnit;
+
+	static UOrderOfBattleRowObject* CreateFromGroup(UObject* Outer, const FS_CombatGroup& Group)
+	{
+		UOrderOfBattleRowObject* NewObj = NewObject<UOrderOfBattleRowObject>(Outer);
+		NewObj->SourceGroup = Group;
+		NewObj->DisplayName = Group.Name;
+		NewObj->bIsUnit = false;
+		return NewObj;
+	}
+
+	static UOrderOfBattleRowObject* CreateFromUnit(UObject* Outer, const FS_CombatGroupUnit& Unit)
+	{
+		UOrderOfBattleRowObject* NewObj = NewObject<UOrderOfBattleRowObject>(Outer);
+		NewObj->SourceUnit = Unit;
+		NewObj->DisplayName = Unit.UnitName;
+		NewObj->bIsUnit = true;
+		return NewObj;
+	}
 };
 	
 	

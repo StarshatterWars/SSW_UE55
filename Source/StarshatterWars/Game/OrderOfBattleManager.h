@@ -6,7 +6,8 @@
 #include "UObject/NoExportTypes.h"
 #include "GameStructs.h"
 #include "../System/SSWGameInstance.h"
-#include "Templates/SharedPointer.h"
+#include "../Screen/OrderOfBattleRowObject.h"
+#include "../Screen/OrderOfBattleListEntry.h"
 #include "OrderOfBattleManager.generated.h"
 
 /**
@@ -18,15 +19,22 @@ class STARSHATTERWARS_API UOrderOfBattleManager : public UObject
 	GENERATED_BODY()
 
 public:
-	void Initialize(UDataTable* CombatGroupTable);
+	// Store a collection of row objects (these would represent each order of battle item)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Order Of Battle")
+	TArray<UOrderOfBattleRowObject*> OrderOfBattleItems;
 
-	const FS_CombatGroup* GetGroupById(int32 GroupId) const;
+	// Load data into the manager (could be from file or hardcoded)
+	void LoadOrderOfBattleData();
 
-	TArray<int32> GetRootGroupIds() const;
-	TArray<int32> GetChildrenOfGroup(int32 ParentId) const;
+	// Add a new entry to the order of battle
+	void AddEntry(const UOrderOfBattleListEntry& Entry);
+
+	// Get all order of battle items
+	const TArray<UOrderOfBattleRowObject*>& GetOrderOfBattleItems() const;
+
+	// Search for a specific entry by ID or name (example)
+	UOrderOfBattleRowObject* GetOrderOfBattleEntryById(int32 Id);
 
 protected:
-	UPROPERTY()
-	TMap<int32, FS_CombatGroup> AllGroups;
-	TMap<int32, TArray<int32>> GroupChildrenMap;
+	virtual void InitializeOrderOfBattleData();
 };

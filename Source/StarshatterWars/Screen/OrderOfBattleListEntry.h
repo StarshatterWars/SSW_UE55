@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/IUserObjectListEntry.h"
 #include "../System/SSWGameInstance.h"
+#include "OrderOfBattleRowObject.h"
 #include "OrderOfBattleListEntry.generated.h"
 
 class UCombatGroupListItem;
@@ -23,24 +24,24 @@ class STARSHATTERWARS_API UOrderOfBattleListEntry : public UUserWidget, public I
 	GENERATED_BODY()
 	
 public:
-	// Setup function to initialize this entry with data
-	UFUNCTION(BlueprintCallable)
-	void Setup(UCombatGroupListItem* InItem, UOrderOfBattleWidget* InParentWidget);
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "UI")
+	UTextBlock* DisplayNameText;
 
-	UOrderOfBattleWidget* ParentWidget;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	FString DisplayName;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	bool bIsUnit;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Order of Battle")
+	int32 EntryId;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "UI")
+	UOrderOfBattleRowObject* RowData;
+
+	// Set the data for the entry widget
+	void Setup(UOrderOfBattleRowObject* Data);
 
 protected:
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* GroupNameText;
-
-	UPROPERTY(meta = (BindWidget))
-	UButton* EntryButton;
-
-	UPROPERTY()
-	UCombatGroupListItem* BoundItem;
-
-	UFUNCTION()
-	void OnEntryClicked();
+	virtual void NativeOnInitialized() override;
 };
-	
-

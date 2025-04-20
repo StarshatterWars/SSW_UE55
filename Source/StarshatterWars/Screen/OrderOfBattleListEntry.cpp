@@ -5,42 +5,19 @@
 #include "OrderOfBattleWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
-#include "CombatGroupListItem.h"
+#include "Components/Image.h"
+#include "OrderOfBattleRowObject.h"
 
-void UOrderOfBattleListEntry::Setup(UCombatGroupListItem* InItem, UOrderOfBattleWidget* InParent)
+void UOrderOfBattleListEntry::NativeOnInitialized()
 {
-	BoundItem = InItem;
-	ParentWidget = InParent;
-
-	if (GroupNameText)
-	{
-		FString Prefix = "";
-		if (InItem->bHasChildren)
-			Prefix = InItem->bIsExpanded ? "- " : "+ ";
-
-		const FString Indent = FString::ChrN(InItem->IndentLevel * 4, ' ');
-		GroupNameText->SetText(FText::FromString(Indent + Prefix + InItem->Group.Name));
-	}
-
-	if (EntryButton)
-	{
-		EntryButton->OnClicked.Clear();
-		EntryButton->OnClicked.AddDynamic(this, &UOrderOfBattleListEntry::OnEntryClicked);
-	}
+	Super::NativeOnInitialized();
 }
 
-void UOrderOfBattleListEntry::OnEntryClicked()
+void UOrderOfBattleListEntry::Setup(UOrderOfBattleRowObject* Data)
 {
-	if (BoundItem && ParentWidget)
+	if (Data)
 	{
-		if (BoundItem->bHasChildren)
-		{
-			BoundItem->bIsExpanded = !BoundItem->bIsExpanded;
-			ParentWidget->BuildFlatTree(); // Refresh display
-		}
-		else
-		{
-			UE_LOG(LogTemp, Log, TEXT("Selected unit: %s"), *BoundItem->Group.Name);
-		}
+		RowData = Data;
+		DisplayNameText->SetText(FText::FromString(Data->DisplayName));
 	}
 }

@@ -3,106 +3,56 @@
 
 #include "OrderOfBattleWidget.h"
 #include "Components/ListView.h"
-#include "OrderOfBattleListEntry.h"
-#include "CombatGroupListItem.h"
+#include "Blueprint/UserWidget.h"
+#include "OrderOfBattleRowWidget.h"
+#include "OrderOfBattleRowObject.h"
 #include "../Game/OrderOfBattleManager.h"
 
-UOrderOfBattleWidget::UOrderOfBattleWidget(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-{
-    // Ensure ListEntryWidgetClass is assigned from the UMG Blueprint
-    static ConstructorHelpers::FClassFinder<UOrderOfBattleListEntry> ListEntryClass(TEXT("/Game/UI/Widgets/OrderOfBattleListEntry"));
-    if (ListEntryClass.Succeeded())
-    {
-        ListEntryWidgetClass = ListEntryClass.Class;
-    }
-}
-
+// Called when the widget is constructed
 void UOrderOfBattleWidget::NativeConstruct()
 {
-    Super::NativeConstruct();
+	Super::NativeConstruct();
 
-    // Bind OnGenerateRow delegate
-    if (CombatGroupListView)
-    {
-        //CombatGroupListView->GenerateRow().BindUFunction(this, TEXT("OnGenerateRow"));
-    }
-
-    // Initialize from the data table
-    if (CombatGroupTable)
-    {
-        InitializeFromTable(CombatGroupTable);
-    }
+	// Ensure the OrderOfBattleManager is available
+	if (OrderOfBattleManager)
+	{
+		// Populate the ListView with order of battle entries
+		PopulateListView();
+	}
 }
 
-void UOrderOfBattleWidget::InitializeFromTable(UDataTable* CGroupTable)
+// Populate the ListView with data from the OrderOfBattleManager
+void UOrderOfBattleWidget::PopulateListView()
 {
-    if (!CGroupTable || !CombatGroupListView || !ListEntryWidgetClass) return;
+	if (!OrderListView) return;
 
-    // Initialize the manager
-    OrderOfBattleManager = NewObject<UOrderOfBattleManager>(this);
-    OrderOfBattleManager->Initialize(CGroupTable);
+	// Get the list of order of battle items from the manager
+	TArray<UOrderOfBattleRowObject*> Entries = OrderOfBattleManager->GetOrderOfBattleItems();
 
-    // Build the flat tree for ListView
-    BuildFlatTree();
+	// Clear any previous entries in the ListView
+	OrderListView->ClearListItems();
+
+	// Add each entry to the ListView
+	for (UOrderOfBattleRowObject* Entry : Entries)
+	{
+		OrderListView->AddItem(Entry);
+	}
 }
 
-UWidget* UOrderOfBattleWidget::OnGenerateRow(UObject* Item, UListView* OwningList)
+// Generate row widget for each item in the ListView
+UUserWidget* UOrderOfBattleWidget::OnGenerateRow(UObject* Item)
 {
-    if (!Item || !ListEntryWidgetClass) return nullptr;
+	// Cast the passed item to a UOrderOfBattleRowObject
+	UOrderOfBattleRowObject* RowData = Cast<UOrderOfBattleRowObject>(Item);
+	if (!RowData) return nullptr;
 
-    // Create the Entry widget for the row using CreateWidget
-    UOrderOfBattleListEntry* EntryWidget = CreateWidget<UOrderOfBattleListEntry>(this, ListEntryWidgetClass);
-    if (EntryWidget)
-    {
-        UCombatGroupListItem* ListItem = Cast<UCombatGroupListItem>(Item);
-        EntryWidget->Setup(ListItem, this);
-    }
-    return EntryWidget;
-}
+	// Create a widget for this row using the RowWidgetClass
+	UUserWidget* RowWidget = CreateWidget<UUserWidget>(this, RowWidgetClass);
+	if (RowWidget)
+	{
+		// Optionally, you can set up the widget with data from RowData
+		// For example, you could set the text of a TextBlock inside the RowWidget
+	}
 
-void UOrderOfBattleWidget::BuildFlatTree()
-{
-    FlatTree.Empty();
-    CombatGroupListView->ClearListItems();
-
-    // Get the root group IDs and add them recursively
-    TArray<int32> RootIds = OrderOfBattleManager->GetRootGroupIds();
-    for (int32 RootId : RootIds)
-    {
-        AddVisibleItemsRecursive(RootId, 0);
-    }
-
-    // Add all the groups (items) to the ListView
-    for (UCombatGroupListItem* Item : FlatTree)
-    {
-        CombatGroupListView->AddItem(Item);
-    }
-}
-
-void UOrderOfBattleWidget::AddVisibleItemsRecursive(int32 GroupId, int32 Indent)
-{
-    const FS_CombatGroup* Group = OrderOfBattleManager->GetGroupById(GroupId);
-    if (!Group) return;
-
-    // Create a new ListItem to wrap the group
-    UCombatGroupListItem* ListItem = NewObject<UCombatGroupListItem>(this);
-    ListItem->Group = *Group;
-    ListItem->IndentLevel = Indent;
-
-    // Check if this group has children
-    TArray<int32> Children = OrderOfBattleManager->GetChildrenOfGroup(GroupId);
-    ListItem->bHasChildren = Children.Num() > 0;
-
-    // Add the current group to the FlatTree array
-    FlatTree.Add(ListItem);
-
-    // Recursively add child groups if expanded
-    if (ListItem->bIsExpanded)
-    {
-        for (int32 ChildId : Children)
-        {
-            AddVisibleItemsRecursive(ChildId, Indent + 1);
-        }
-    }
+	return RowWidget;
 }
