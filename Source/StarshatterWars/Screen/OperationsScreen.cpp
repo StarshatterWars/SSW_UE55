@@ -127,6 +127,7 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 		GameTimeText->SetText(FText::FromString(*CustomDate));
 	}
+	AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -277,10 +278,11 @@ void UOperationsScreen::OnAudioButtonClicked()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
 
-	if(AudioAsset)
-	{
-		UGameplayStatics::PlaySound2D(GetWorld(), AudioAsset);
-	}
+	SSWInstance->PlaySoundFromFile(AudioPath);
+	//if(AudioAsset)
+	//{
+	//	UGameplayStatics::PlaySound2D(GetWorld(), AudioAsset);
+	//}
 }
 
 void UOperationsScreen::OnCancelButtonClicked()
@@ -571,7 +573,8 @@ void UOperationsScreen::GetIntelAudioFile(FString IntelAudioName)
 	AudioPath.Append(".");
 	AudioPath.Append(IntelAudioName);
 
-	AudioAsset = Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *AudioPath));
+	//SSWInstance->PlaySoundFromFile(AudioPath);
+	//AudioAsset = Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *AudioPath));
 
 	UE_LOG(LogTemp, Log, TEXT("Action Audio: %s"), *AudioPath);
 }

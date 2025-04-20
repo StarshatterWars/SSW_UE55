@@ -986,6 +986,26 @@ void USSWGameInstance::PlayMenuMusic()
 	PlayMusic(MenuMusic);
 }
 
+void USSWGameInstance::PlaySoundFromFile(FString& AudioPath)
+{
+	USoundBase* Sound = Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *AudioPath));
+
+	if (!Sound)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayUISound: Invalid SoundBase"));
+		return;
+	}
+
+	if (MusicController)
+	{
+		MusicController->PlaySound(Sound);
+	}
+}
+
+bool USSWGameInstance::IsSoundPlaying() {
+	return MusicController->IsSoundPlaying();
+}
+
 void USSWGameInstance::InitializeAudioSystem()
 {
 	UWorld* World = GetWorld();

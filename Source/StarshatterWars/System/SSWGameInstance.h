@@ -217,7 +217,10 @@ public:
 	// Function to play music
     UFUNCTION()
     void PlayMenuMusic();
-	
+	UFUNCTION()
+	void PlaySoundFromFile(FString& AudioPath);
+	UFUNCTION()
+	bool IsSoundPlaying();
 	UFUNCTION()
 	void InitializeAudioSystem();
 

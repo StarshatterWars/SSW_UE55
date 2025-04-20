@@ -11,12 +11,14 @@ AMusicController::AMusicController()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-    AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
-    AudioComponent->bAutoActivate = false;
-    AudioComponent->bIsUISound = true;
-    RootComponent = AudioComponent;
-
-    //SetActorHiddenInGame(true);
+    MusicComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("MusicComponent"));
+    MusicComponent->bAutoActivate = false;
+    MusicComponent->bIsUISound = true;
+   
+    UIComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("UIComponent"));
+    UIComponent->bAutoActivate = false;
+    UIComponent->bIsUISound = true;
+    SetActorHiddenInGame(true);
     SetCanBeDamaged(false);
 
     UE_LOG(LogTemp, Log, TEXT("Audio Component Initialized"));
@@ -38,36 +40,43 @@ void AMusicController::Tick(float DeltaTime)
 
 void AMusicController::PlayMusic(USoundBase* Music)
 {
-    if (!AudioComponent)
+    if (!MusicComponent)
         return;
     if (!Music)
         return;
     
-    AudioComponent->SetSound(Music);
-    AudioComponent->Play();
+    MusicComponent->SetSound(Music);
+    MusicComponent->Play();
 }
 
 
 void AMusicController::PlaySound(USoundBase* Sound)
 {
-    if (!AudioComponent)
+    if (!UIComponent)
         return;
     if (!Sound)
         return;
 
-    AudioComponent->SetSound(Sound);
-    AudioComponent->Play();
+    UIComponent->SetSound(Sound);
+    UIComponent->Play();
 }
 
 void AMusicController::StopMusic()
 {
-    if (AudioComponent && AudioComponent->IsPlaying())
+    if (MusicComponent && MusicComponent->IsPlaying())
     {
-        AudioComponent->Stop();
+        MusicComponent->Stop();
     }
 }
 
 void AMusicController::StopSound()
 {
+    if (UIComponent && UIComponent->IsPlaying())
+    {
+        UIComponent->Stop();
+    }
+}
 
+bool AMusicController::IsSoundPlaying() {
+    return UIComponent->IsPlaying();
 }

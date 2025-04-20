@@ -28,6 +28,8 @@ public:
 
 	UFUNCTION()
     void StopSound();
+	UFUNCTION()
+	bool IsSoundPlaying();
 
 protected:
 	// Called when the game starts or when spawned
@@ -35,7 +37,10 @@ protected:
 	
 private:
     UPROPERTY()
-    UAudioComponent* AudioComponent;
+    UAudioComponent* MusicComponent;
+
+	UPROPERTY()
+    UAudioComponent* UIComponent;
 
 public:	
 	// Called every frame
