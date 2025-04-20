@@ -181,46 +181,62 @@ UENUM(BlueprintType)
 enum ECOMBATGROUP_TYPE : uint8 
 {
 	NONE, 
-	FORCE,           // Commander In Chief
-	WING,                // Air Force
-	INTERCEPT_SQUADRON,  // a2a fighter
-	FIGHTER_SQUADRON,    // multi-role fighter
-	ATTACK_SQUADRON,     // strike / attack
-	LCA_SQUADRON,        // landing craft
-	FLEET,               // Navy
-	DESTROYER_SQUADRON,  // destroyer
-	BATTLE_GROUP,        // heavy cruiser(s)
-	CARRIER_GROUP,       // fleet carrier
-	BATTALION,           // Army
-	MINEFIELD,
-	BATTERY,
-	MISSILE,
-	STATION,             // orbital station
-	STARBASE,            // planet-side base
-	C3I,                 // Command, Control, Communications, Intelligence
-	COMM_RELAY,
-	EARLY_WARNING,
-	FWD_CONTROL_CTR,
-	ECM,
-	SUPPORT,
-	COURIER,
-	MEDICAL,
-	SUPPLY,
-	REPAIR,
-	CIVILIAN,            // root for civilian groups
-	WAR_PRODUCTION,
-	FACTORY,
-	REFINERY,
-	RESOURCE,
-	INFRASTRUCTURE,
-	TRANSPORT,
-	NETWORK,
-	HABITAT,
-	STORAGE,
-	NON_COM,             // other civilian traffic
-	FREIGHT,
-	PASSENGER,
-	PRIVATE
+	FORCE				UMETA(DisplayName = "Force"), // Commander In Chief
+	WING				UMETA(DisplayName = "Wing"), // Air Force
+	INTERCEPT_SQUADRON  UMETA(DisplayName = "Intercept Squadron"), // a2a fighter
+	FIGHTER_SQUADRON	UMETA(DisplayName = "Fighter Squadron"),   // multi-role fighter
+	ATTACK_SQUADRON		UMETA(DisplayName = "Attack Squadron"),    // strike / attack
+	LCA_SQUADRON		UMETA(DisplayName = "LCA Squadron"),       // landing craft
+	FLEET				UMETA(DisplayName = "Fleet"),		       // Navy
+	DESTROYER_SQUADRON	UMETA(DisplayName = "Destroyer Squadron"), // destroyer
+	BATTLE_GROUP		UMETA(DisplayName = "Battle Group"),       // heavy cruiser(s)
+	CARRIER_GROUP		UMETA(DisplayName = "Carrier Group"),	   // fleet carrier
+	BATTALION			UMETA(DisplayName = "Battalion"),		   // Army
+	MINEFIELD			UMETA(DisplayName = "Minefield"),
+	BATTERY				UMETA(DisplayName = "Battery"), 
+	MISSILE				UMETA(DisplayName = "Missile"),
+	STATION				UMETA(DisplayName = "Station"),            // orbital station
+	STARBASE			UMETA(DisplayName = "Starbase"),           // planet-side base
+	C3I					UMETA(DisplayName = "C3I"),                // Command, Control, Communications, Intelligence
+	COMM_RELAY			UMETA(DisplayName = "Comm Relay"),
+	EARLY_WARNING		UMETA(DisplayName = "Early Warning"), 
+	FWD_CONTROL_CTR		UMETA(DisplayName = "Forward Control Center"), 
+	ECM					UMETA(DisplayName = "ECM"),
+	SUPPORT				UMETA(DisplayName = "Support"), 
+	COURIER				UMETA(DisplayName = "Courier"), 
+	MEDICAL				UMETA(DisplayName = "Medical"), 
+	SUPPLY				UMETA(DisplayName = "Supply"), 
+	REPAIR				UMETA(DisplayName = "Repair"), 
+	CIVILIAN			UMETA(DisplayName = "Civilian"),     // root for civilian groups
+	WAR_PRODUCTION		UMETA(DisplayName = "War Production"), 
+	FACTORY				UMETA(DisplayName = "Factory"), 
+	REFINERY			UMETA(DisplayName = "Refinery"),
+	RESOURCE			UMETA(DisplayName = "Resource"), 
+	INFRASTRUCTURE		UMETA(DisplayName = "Infrastructure"), 
+	TRANSPORT			UMETA(DisplayName = "Transport"), 
+	NETWORK				UMETA(DisplayName = "Network"), 
+	HABITAT				UMETA(DisplayName = "Habitat"), 
+	STORAGE				UMETA(DisplayName = "Storage"), 
+	NON_COM				UMETA(DisplayName = "Non-Com"),       // other civilian traffic
+	FREIGHT				UMETA(DisplayName = "Freight"), 
+	PASSENGER			UMETA(DisplayName = "Passenger"), 
+	PRIVATE				UMETA(DisplayName = "Private"),
+	UNKNOWN				UMETA(DisplayName = "Unknown"),
+};
+
+UENUM(BlueprintType)
+enum class EGroupType : uint8 {
+    Force,
+    Fleet,
+    CarrierGroup,
+    BattleGroup,
+    DestroyerSquadron,
+    Wing,
+    InterceptSquadron,
+    FighterSquadron,
+    AttackSquadron,
+    LcaSquadron,
+    Unknown
 };
 
 UENUM(BlueprintType)
@@ -354,6 +370,44 @@ enum EControlType : uint8
 /**
  * STRUCTS
  */
+
+USTRUCT(BlueprintType)
+struct FUnitData {
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Name;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Type;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Design;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString RegNum;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Count = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FGroupData : public FTableRowBase {
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Id;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Name;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EGroupType Type;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 ParentId;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EGroupType ParentType;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Region;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FVector Location;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FUnitData> Units;
+};
 
 USTRUCT(BlueprintType)
 struct FS_PlayerGameInfo : public FTableRowBase {
@@ -1738,6 +1792,8 @@ struct FS_CombatGroup : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TEnumAsByte<ECOMBATGROUP_TYPE> EType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Id;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
@@ -1769,6 +1825,8 @@ struct FS_CombatGroup : public FTableRowBase {
 		Iff = 0;
 		System = "";
 		Region = "";
+
+		EType = ECOMBATGROUP_TYPE::NONE;
 
 		Location = FVector::ZeroVector;
 		ParentType = "";

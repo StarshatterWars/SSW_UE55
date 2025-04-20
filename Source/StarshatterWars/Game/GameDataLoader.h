@@ -370,3 +370,4 @@ protected:
 	bool	DynamicCampaign;
 	bool	Ceremony;
 };
+
