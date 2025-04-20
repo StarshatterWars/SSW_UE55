@@ -1833,6 +1833,16 @@ struct FS_CombatGroup : public FTableRowBase {
 		ParentId = 0;
 		UnitIndex = 0;
 	}
+
+	// Determines if this group is a unit (no subgroups)
+	bool IsUnit() const {
+		return Unit.Num() > 0;
+	}
+
+	// Equality check for tree matching
+	bool MatchesParent(int InParentId) const {
+		return ParentId == InParentId;
+	}
 };
 
 USTRUCT(BlueprintType)
