@@ -6,18 +6,20 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
+#include "CombatGroupObject.h"
 #include "OrderOfBattleRowObject.h"
 
-void UOrderOfBattleListEntry::NativeOnInitialized()
+void UOrderOfBattleListEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-	Super::NativeOnInitialized();
-}
-
-void UOrderOfBattleListEntry::Setup(UOrderOfBattleRowObject* Data)
-{
-	if (Data)
+	if (UCombatGroupObject* GroupObject = Cast<UCombatGroupObject>(ListItemObject))
 	{
-		RowData = Data;
-		DisplayNameText->SetText(FText::FromString(Data->DisplayName));
+		if (NameText)
+		{
+			NameText->SetText(FText::FromString(GroupObject->Data.Name));
+		}
+		if (TypeText)
+		{
+			TypeText->SetText(FText::FromString(GroupObject->Data.Type));
+		}
 	}
 }

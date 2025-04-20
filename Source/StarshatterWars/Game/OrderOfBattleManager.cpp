@@ -5,52 +5,33 @@
 #include "../Screen/OrderOfBattleRowObject.h"
 #include "Engine/Engine.h"
 
-// Initializes the order of battle data
-void UOrderOfBattleManager::InitializeOrderOfBattleData()
+void UOrderOfBattleManager::InitializeFromDataTable(UDataTable* DataTable)
 {
-	// Optionally load data here, or initialize with mock data
-	LoadOrderOfBattleData();
-}
+	CombatGroupObjects.Empty();
 
-// Load Order of Battle data
-void UOrderOfBattleManager::LoadOrderOfBattleData()
-{
-	// Example of hardcoding data for testing purposes
-	UOrderOfBattleListEntry SampleEntry;
-	SampleEntry.DisplayName = "Battalion Alpha";
-	SampleEntry.bIsUnit = false;
-	SampleEntry.EntryId = 1;
-
-	AddEntry(SampleEntry);
-
-	// Add more sample entries as needed
-}
-
-// Adds an entry to the list
-void UOrderOfBattleManager::AddEntry(const UOrderOfBattleListEntry& Entry)
-{
-	UOrderOfBattleRowObject* NewEntry = NewObject<UOrderOfBattleRowObject>(this);
-	NewEntry->DisplayName = Entry.DisplayName;
-	NewEntry->bIsUnit = Entry.bIsUnit;
-
-	OrderOfBattleItems.Add(NewEntry);
-}
-
-// Returns all order of battle items
-const TArray<UOrderOfBattleRowObject*>& UOrderOfBattleManager::GetOrderOfBattleItems() const
-{
-	return OrderOfBattleItems;
-}
-
-// Find a specific entry by ID
-UOrderOfBattleRowObject* UOrderOfBattleManager::GetOrderOfBattleEntryById(int32 Id)
-{
-	for (UOrderOfBattleRowObject* Item : OrderOfBattleItems)
+	if (!DataTable)
 	{
-		if (Item->EntryId == Id)
-		{
-			return Item;
-		}
+		UE_LOG(LogTemp, Warning, TEXT("OrderOfBattleManager: DataTable is null"));
+		return;
 	}
-	return nullptr; // Return nullptr if not found
+
+	TArray<FS_CombatGroup*> AllRows;
+	DataTable->GetAllRows<FS_CombatGroup>(TEXT("OrderOfBattle Init"), AllRows);
+
+	for (FS_CombatGroup* Row : AllRows)
+	{
+		if (!Row) continue;
+
+		UCombatGroupObject* GroupObj = NewObject<UCombatGroupObject>(this);
+		GroupObj->Data = *Row;
+
+		CombatGroupObjects.Add(GroupObj);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("OrderOfBattleManager: Loaded %d combat groups."), CombatGroupObjects.Num());
+}
+
+const TArray<UCombatGroupObject*>& UOrderOfBattleManager::GetCombatGroups() const
+{
+	return CombatGroupObjects;
 }
