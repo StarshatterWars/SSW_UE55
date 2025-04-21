@@ -47,8 +47,6 @@ private:
 	void OnRosterButtonClicked();
 	UFUNCTION()
 	void SetRosterInfo();
-	UFUNCTION()
-	FString GetOrdinal(int id);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")
@@ -65,8 +63,5 @@ public:
 
 	UPROPERTY()
 	URosterViewObject* RosterView;
-
-	UFUNCTION(BlueprintCallable)
-	void Setup(UCombatGroupObject* InGroup);
 	
 };

@@ -16,8 +16,6 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/ListView.h"
 
-#include "CombatGroupObject.h"
-
 #include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
@@ -155,14 +153,10 @@ public:
 	void SetSelectedRosterData(int Selected);
 
 	UFUNCTION(BlueprintCallable)
-	void BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups);
-
-	void FlattenHierarchy(UCombatGroupObject* Node, int32 Indent);
-	UFUNCTION(BlueprintCallable)
-	void GenerateFlatList();
+	void BuildHierarchy(const TArray<FS_CombatGroup>& CombatGroups);
 
 	UFUNCTION(BlueprintCallable)
-	const TArray<UCombatGroupObject*>& GetFlattenedList() const;
+	const TArray<FS_CombatGroup>& GetFlattenedList() const;
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -239,15 +233,13 @@ protected:
 	UFUNCTION()
 	void PopulateCombatRoster();
 	UFUNCTION()
-	void SetInitialRosterData();
-	UFUNCTION()
 	FDateTime GetCampaignTime();
 
 	UPROPERTY()
-	TArray<UCombatGroupObject*> AllGroups;
+	TArray<FS_CombatGroup> AllGroups;
 
 	UPROPERTY()
-	TArray<UCombatGroupObject*> RootGroups;
+	TArray<FS_CombatGroup> RootGroups;
 
 private:
 	FS_Campaign ActiveCampaign;
@@ -266,7 +258,7 @@ private:
 
 	// Holds a flat version of the hierarchy (useful for displaying in a ListView)
 	UPROPERTY()
-	TArray<UCombatGroupObject*> FlattenedList;
+	TArray<FS_CombatGroup> FlattenedList;
 
 	int IndentLevel = 0;
 };

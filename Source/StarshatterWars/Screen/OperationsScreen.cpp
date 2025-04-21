@@ -109,9 +109,7 @@ void UOperationsScreen::NativeConstruct()
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateIntelList();
-	SetInitialRosterData();
-	BuildHierarchy(RosterList);
-	//PopulateCombatRosterList(RosterList);
+	//BuildHierarchy(RosterList);
 	PopulateCombatRoster();
 	SetCampaignMissions();
 }
@@ -457,34 +455,15 @@ void UOperationsScreen::PopulateCombatRoster()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
-	if (!RosterView) return;
-
+	if (!RosterView) return;;
 	RosterView->ClearListItems();
 
-	for (UCombatGroupObject* Item : AllGroups)
+	for (FS_CombatGroup Item : SSWInstance->CombatRosterData)
 	{
 		URosterViewObject* ListItem = NewObject<URosterViewObject>();
-		ListItem->Group = Item->GroupData;
+		ListItem->Group = Item;
 		RosterView->GetIndexForItem(ListItem);
 		RosterView->AddItem(ListItem);
-	}
-}
-
-void UOperationsScreen::SetInitialRosterData() {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	
-	RosterList.Empty();
-	for (int32 i = 0; i < SSWInstance->CombatRosterData.Num(); ++i)
-	{
-		FS_CombatGroup ActiveGroup;
-		ActiveGroup.Name = SSWInstance->CombatRosterData[i].Name;
-		ActiveGroup.DisplayName = SSWInstance->CombatRosterData[i].DisplayName;
-		ActiveGroup.Region = SSWInstance->CombatRosterData[i].Region;
-		ActiveGroup.Type = SSWInstance->CombatRosterData[i].Type;
-		ActiveGroup.Id = SSWInstance->CombatRosterData[i].Id;
-		ActiveGroup.EType = SSWInstance->CombatRosterData[i].EType;
-
-		RosterList.Add(ActiveGroup);
 	}
 }
 
@@ -619,64 +598,54 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 }
 
 
-void UOperationsScreen::BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups)
+void UOperationsScreen::BuildHierarchy(const TArray<FS_CombatGroup>& CombatGroups)
 {
-	AllGroups.Empty();
+	FlattenedList.Empty();
 	RootGroups.Empty();
-	FlattenedList.Empty();
+	AllGroups.Empty();
 
-	TMap<int32, UCombatGroupObject*> GroupMap;
+	TMap<int32, FS_CombatGroup> GroupMap;
+	TMap<int32, TArray<int32>> ParentToChildren;
 
-	// Create group objects
-	for (const FS_CombatGroup& Row : CombatGroups)
+	// Copy input data and create map of groups by ID
+	for (const FS_CombatGroup& Group : CombatGroups)
 	{
-		UCombatGroupObject* GroupObject = NewObject<UCombatGroupObject>(this);
-		GroupObject->Init(Row, 0);
-		GroupMap.Add(Row.Id, GroupObject);
-		AllGroups.Add(GroupObject);
+		GroupMap.Add(Group.Id, Group);
+		ParentToChildren.FindOrAdd(Group.ParentId).Add(Group.Id);
 	}
 
-	// Build hierarchy by parent-child relationships
-	for (auto& Entry : GroupMap)
-	{
-		UCombatGroupObject* GroupObject = Entry.Value;
-
-		if (GroupMap.Contains(GroupObject->GroupData.ParentId))
+	// Recursive lambda to build hierarchy
+	std::function<void(int32, int32)> AddToFlat;
+	AddToFlat = [&](int32 GroupId, int32 IndentLevel)
 		{
-			UCombatGroupObject* ParentObject = GroupMap[GroupObject->GroupData.ParentId];
-			GroupObject->IndentLevel = ParentObject->IndentLevel + 1;
-			ParentObject->Children.Add(GroupObject);
-		}
-		else
+			if (FS_CombatGroup* GroupPtr = GroupMap.Find(GroupId))
+			{
+				FS_CombatGroup GroupCopy = *GroupPtr;
+				GroupCopy.IndentLevel = IndentLevel;
+				FlattenedList.Add(GroupCopy);
+				AllGroups.Add(GroupCopy);
+
+				if (ParentToChildren.Contains(GroupId))
+				{
+					for (int32 ChildId : ParentToChildren[GroupId])
+					{
+						AddToFlat(ChildId, IndentLevel + 1);
+					}
+				}
+			}
+		};
+
+	// Find root nodes and start recursion
+	for (const FS_CombatGroup& Group : CombatGroups)
+	{
+		if (!GroupMap.Contains(Group.ParentId)) // No valid parent means root
 		{
-			RootGroups.Add(GroupObject);
+			RootGroups.Add(Group);
+			AddToFlat(Group.Id, 0);
 		}
 	}
 }
-
-void UOperationsScreen::FlattenHierarchy(UCombatGroupObject* Node, int32 Indent)
-{
-	Node->IndentLevel = IndentLevel;
-	FlattenedList.Add(Node); // Add the current node first
-
-	for (UCombatGroupObject* Child : Node->Children)
-	{
-		IndentLevel++;
-		FlattenHierarchy(Child, IndentLevel); // Recursively flatten children
-	}
-}
-
-void UOperationsScreen::GenerateFlatList()
-{
-	FlattenedList.Empty();
-
-	for (UCombatGroupObject* Root : RootGroups)
-	{
-		FlattenHierarchy(Root, IndentLevel);
-	}
-}
-
-const TArray<UCombatGroupObject*>& UOperationsScreen::GetFlattenedList() const
+const TArray<FS_CombatGroup>& UOperationsScreen::GetFlattenedList() const
 {
 	return FlattenedList;
 }
