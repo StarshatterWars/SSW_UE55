@@ -157,9 +157,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups);
 
+	void FlattenHierarchy(UCombatGroupObject* Node);
 	UFUNCTION(BlueprintCallable)
-	const TArray<UCombatGroupObject*>& GetFlatHierarchy();
+	void GenerateFlatList();
 
+	UFUNCTION(BlueprintCallable)
+	const TArray<UCombatGroupObject*>& GetFlattenedList() const;
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -235,7 +238,8 @@ protected:
 
 	UFUNCTION()
 	void PopulateCombatRosterList(TArray<FS_CombatGroup> GroupList);
-
+	UFUNCTION()
+	void PopulateCombatRoster();
 	UFUNCTION()
 	void SetInitialRosterData();
 	UFUNCTION()
@@ -249,9 +253,6 @@ protected:
 	UPROPERTY()
 	TArray<UCombatGroupObject*> RootGroups;
 
-	UPROPERTY()
-	TArray<UCombatGroupObject*> FlattenedList;
-	
 private:
 	FS_Campaign ActiveCampaign;
 
@@ -266,5 +267,9 @@ private:
 
 	UPROPERTY()
 	TArray<FS_CombatGroup> RosterList;
+
+	// Holds a flat version of the hierarchy (useful for displaying in a ListView)
+	UPROPERTY()
+	TArray<UCombatGroupObject*> FlattenedList;
 };
 

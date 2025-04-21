@@ -25,5 +25,7 @@ public:
 	FString GroupLocation;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
 	int32 GroupId;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	int32 GroupParentId;
 
 };

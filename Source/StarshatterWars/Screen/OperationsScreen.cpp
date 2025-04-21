@@ -110,6 +110,7 @@ void UOperationsScreen::NativeConstruct()
 	PopulateMissionList();
 	PopulateIntelList();
 	SetInitialRosterData();
+	BuildHierarchy(RosterList);
 	PopulateCombatRosterList(RosterList);
 	SetCampaignMissions();
 }
@@ -473,6 +474,30 @@ void UOperationsScreen::PopulateCombatRosterList(TArray<FS_CombatGroup> GroupLis
 	}
 }
 
+void UOperationsScreen::PopulateCombatRoster()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	if (!RosterView) return;
+
+	RosterView->ClearListItems();
+	GenerateFlatList();
+
+	for (UCombatGroupObject* Item : FlattenedList)
+	{
+		URosterViewObject* ListItem = NewObject<URosterViewObject>();
+		ListItem->GroupName = Item->GroupData.Name;
+		ListItem->GroupLocation = Item->GroupData.Region;
+		ListItem->GroupType = Item->GroupData.Type;
+		ListItem->GroupId = Item->GroupData.Id;
+		ListItem->GroupParentId = Item->GroupData.ParentId;
+		ListItem->GroupEType = Item->GroupData.EType;
+
+		RosterView->GetIndexForItem(ListItem);
+		RosterView->AddItem(ListItem);
+	}
+}
+
 void UOperationsScreen::SetInitialRosterData() {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	
@@ -658,25 +683,29 @@ void UOperationsScreen::BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups)
 	}
 }
 
-const TArray<UCombatGroupObject*>& UOperationsScreen::GetFlatHierarchy()
+void UOperationsScreen::FlattenHierarchy(UCombatGroupObject* Node)
+{
+	FlattenedList.Add(Node); // Add the current node first
+
+	for (UCombatGroupObject* Child : Node->Children)
+	{
+		FlattenHierarchy(Child); // Recursively flatten children
+	}
+}
+
+void UOperationsScreen::GenerateFlatList()
 {
 	FlattenedList.Empty();
 
 	for (UCombatGroupObject* Root : RootGroups)
 	{
-		AddToFlatList(Root);
+		FlattenHierarchy(Root);
 	}
-	return FlattenedList;
 }
 
-void UOperationsScreen::AddToFlatList(UCombatGroupObject* Node)
+const TArray<UCombatGroupObject*>& UOperationsScreen::GetFlattenedList() const
 {
-	FlattenedList.Add(Node);
-
-	for (UCombatGroupObject* Child : Node->Children)
-	{
-		AddToFlatList(Child);
-	}
+	return FlattenedList;
 }
 
 void UOperationsScreen::GetIntelImageFile(FString IntelImageName)
@@ -758,8 +787,3 @@ UOperationsScreen::GetOrdinal(int id)
 
 	return ordinal;
 }
-
-
-
-
-
