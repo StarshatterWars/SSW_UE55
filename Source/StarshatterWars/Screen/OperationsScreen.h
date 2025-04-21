@@ -153,10 +153,20 @@ public:
 	void SetSelectedRosterData(int Selected);
 
 	UFUNCTION(BlueprintCallable)
-	void BuildHierarchy(const TArray<FS_CombatGroup>& CombatGroups);
+	void BuildHierarchy();
 
-	UFUNCTION(BlueprintCallable)
+	// Getter
 	const TArray<FS_CombatGroup>& GetFlattenedList() const;
+
+	// Setter
+	void SetFlattenedList(const TArray<FS_CombatGroup>& NewList);
+
+	// Getter
+	const TArray<FS_CombatGroup>& GetAllGroupsList() const;
+
+	// Setter
+	void SetAllGroupsList(const TArray<FS_CombatGroup>& NewList);
+
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -235,12 +245,6 @@ protected:
 	UFUNCTION()
 	FDateTime GetCampaignTime();
 
-	UPROPERTY()
-	TArray<FS_CombatGroup> AllGroups;
-
-	UPROPERTY()
-	TArray<FS_CombatGroup> RootGroups;
-
 private:
 	FS_Campaign ActiveCampaign;
 
@@ -259,7 +263,11 @@ private:
 	// Holds a flat version of the hierarchy (useful for displaying in a ListView)
 	UPROPERTY()
 	TArray<FS_CombatGroup> FlattenedList;
-
+	UPROPERTY()
+	TArray<FS_CombatGroup> AllGroups;
+	UPROPERTY()
+	TArray<FS_CombatGroup> RootGroups;
+	
 	int IndentLevel = 0;
 };
 

@@ -109,7 +109,6 @@ void UOperationsScreen::NativeConstruct()
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateIntelList();
-	//BuildHierarchy(RosterList);
 	PopulateCombatRoster();
 	SetCampaignMissions();
 }
@@ -457,6 +456,7 @@ void UOperationsScreen::PopulateCombatRoster()
 
 	if (!RosterView) return;;
 	RosterView->ClearListItems();
+	BuildHierarchy();
 
 	for (FS_CombatGroup Item : SSWInstance->CombatRosterData)
 	{
@@ -597,9 +597,10 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 	SSWInstance->RosterSelectionChanged = false;
 }
 
-
-void UOperationsScreen::BuildHierarchy(const TArray<FS_CombatGroup>& CombatGroups)
+void UOperationsScreen::BuildHierarchy()
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
 	FlattenedList.Empty();
 	RootGroups.Empty();
 	AllGroups.Empty();
@@ -607,21 +608,28 @@ void UOperationsScreen::BuildHierarchy(const TArray<FS_CombatGroup>& CombatGroup
 	TMap<int32, FS_CombatGroup> GroupMap;
 	TMap<int32, TArray<int32>> ParentToChildren;
 
-	// Copy input data and create map of groups by ID
-	for (const FS_CombatGroup& Group : CombatGroups)
+	// Map all groups by ID
+	for (const FS_CombatGroup& Group : SSWInstance->CombatRosterData)
 	{
 		GroupMap.Add(Group.Id, Group);
 		ParentToChildren.FindOrAdd(Group.ParentId).Add(Group.Id);
 	}
 
-	// Recursive lambda to build hierarchy
+	TSet<int32> Visited;
+
+	// Recursive safe lambda to flatten hierarchy
 	std::function<void(int32, int32)> AddToFlat;
 	AddToFlat = [&](int32 GroupId, int32 IndentLevel)
 		{
+			// Prevent infinite loop
+			if (Visited.Contains(GroupId)) return;
+			Visited.Add(GroupId);
+
 			if (FS_CombatGroup* GroupPtr = GroupMap.Find(GroupId))
 			{
 				FS_CombatGroup GroupCopy = *GroupPtr;
 				GroupCopy.IndentLevel = IndentLevel;
+
 				FlattenedList.Add(GroupCopy);
 				AllGroups.Add(GroupCopy);
 
@@ -629,25 +637,25 @@ void UOperationsScreen::BuildHierarchy(const TArray<FS_CombatGroup>& CombatGroup
 				{
 					for (int32 ChildId : ParentToChildren[GroupId])
 					{
-						AddToFlat(ChildId, IndentLevel + 1);
+						// Skip self reference
+						if (ChildId != GroupId)
+						{
+							AddToFlat(ChildId, IndentLevel + 1);
+						}
 					}
 				}
 			}
 		};
 
-	// Find root nodes and start recursion
-	for (const FS_CombatGroup& Group : CombatGroups)
+	// Find roots and start recursion
+	for (const FS_CombatGroup& Group : SSWInstance->CombatRosterData)
 	{
-		if (!GroupMap.Contains(Group.ParentId)) // No valid parent means root
+		if (!GroupMap.Contains(Group.ParentId) || Group.ParentId == Group.Id)
 		{
 			RootGroups.Add(Group);
 			AddToFlat(Group.Id, 0);
 		}
 	}
-}
-const TArray<FS_CombatGroup>& UOperationsScreen::GetFlattenedList() const
-{
-	return FlattenedList;
 }
 
 void UOperationsScreen::GetIntelImageFile(FString IntelImageName)
@@ -728,4 +736,23 @@ UOperationsScreen::GetOrdinal(int id)
 	}
 
 	return ordinal;
+}
+const TArray<FS_CombatGroup>& UOperationsScreen::GetFlattenedList() const
+{
+	return FlattenedList;
+}
+
+void UOperationsScreen::SetFlattenedList(const TArray<FS_CombatGroup>& NewList)
+{
+	FlattenedList = NewList;
+}
+
+const TArray<FS_CombatGroup>& UOperationsScreen::GetAllGroupsList() const
+{
+	return AllGroups;
+}
+
+void UOperationsScreen::SetAllGroupsList(const TArray<FS_CombatGroup>& NewList)
+{
+	AllGroups = NewList;
 }
