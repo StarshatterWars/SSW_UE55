@@ -453,28 +453,6 @@ void UOperationsScreen::PopulateIntelList()
 	}
 }
 
-void UOperationsScreen::PopulateCombatRosterList(TArray<FS_CombatGroup> GroupList)
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
-	if (!RosterView) return;
-
-	RosterView->ClearListItems();
-
-	for (int32 r = 0; r < GroupList.Num(); ++r)
-	{
-		URosterViewObject* ListItem = NewObject<URosterViewObject>();
-		ListItem->GroupName = GroupList[r].Name;
-		ListItem->GroupLocation = GroupList[r].Region;
-		ListItem->GroupType = GroupList[r].Type;
-		ListItem->GroupId = GroupList[r].Id;
-		ListItem->GroupEType = GroupList[r].EType;
-
-		RosterView->GetIndexForItem(ListItem);
-		RosterView->AddItem(ListItem);
-	}
-}
-
 void UOperationsScreen::PopulateCombatRoster()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -482,20 +460,11 @@ void UOperationsScreen::PopulateCombatRoster()
 	if (!RosterView) return;
 
 	RosterView->ClearListItems();
-	GenerateFlatList();
 
 	for (UCombatGroupObject* Item : AllGroups)
 	{
 		URosterViewObject* ListItem = NewObject<URosterViewObject>();
-		ListItem->GroupName = Item->GroupData.Name;
-		ListItem->GroupLocation = Item->GroupData.Region;
-		ListItem->GroupType = Item->GroupData.Type;
-		ListItem->GroupId = Item->GroupData.Id;
-		ListItem->GroupParentId = Item->GroupData.ParentId;
-		ListItem->GroupEType = Item->GroupData.EType;
-		ListItem->IndentLevel = Item->IndentLevel;
-		UE_LOG(LogTemp, Log, TEXT("Indent Level: %i"), Item->IndentLevel);
-
+		ListItem->Group = Item->GroupData;
 		RosterView->GetIndexForItem(ListItem);
 		RosterView->AddItem(ListItem);
 	}
@@ -509,6 +478,7 @@ void UOperationsScreen::SetInitialRosterData() {
 	{
 		FS_CombatGroup ActiveGroup;
 		ActiveGroup.Name = SSWInstance->CombatRosterData[i].Name;
+		ActiveGroup.DisplayName = SSWInstance->CombatRosterData[i].DisplayName;
 		ActiveGroup.Region = SSWInstance->CombatRosterData[i].Region;
 		ActiveGroup.Type = SSWInstance->CombatRosterData[i].Type;
 		ActiveGroup.Id = SSWInstance->CombatRosterData[i].Id;
@@ -632,9 +602,7 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
 	if (GroupInfoText) {
-		FString DisplayName = GetOrdinal(SSWInstance->CombatRosterData[Selected].Id) + " " + FString(SSWInstance->CombatRosterData[Selected].Name) + " " + +" " + FString(SSWInstance->GetNameFromType(SSWInstance->CombatRosterData[Selected].EType));
-
-		GroupInfoText->SetText(FText::FromString(DisplayName));
+		GroupInfoText->SetText(FText::FromString(SSWInstance->CombatRosterData[Selected].DisplayName));
 	}
 
 	if (GroupLocationText) {

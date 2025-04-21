@@ -16,20 +16,5 @@ class STARSHATTERWARS_API URosterViewObject : public UObject
 	GENERATED_BODY()
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString GroupName;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString GroupType;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	TEnumAsByte<ECOMBATGROUP_TYPE> GroupEType;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString GroupLocation;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	int32 GroupId;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	int32 GroupIff;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	int32 IndentLevel;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	int32 GroupParentId;
-
+	FS_CombatGroup Group;
 };

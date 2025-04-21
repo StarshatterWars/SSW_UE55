@@ -28,18 +28,12 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 	}
 	if (RosterNameText)
 	{
-		FString DisplayName = GetOrdinal(RosterView->GroupId) + " " + FString(RosterView->GroupName) + " " + +" " + FString(SSWInstance->GetNameFromType(RosterView->GroupEType));
-		
-		// Example: Add left margin spacing based on indent level
-		const float IndentPerLevel = 20.0f;
-		IndentSlot->SetPadding(FMargin(IndentPerLevel * RosterView->IndentLevel, 0, 0, 0));
-
-		RosterNameText->SetText(FText::FromString(DisplayName));
+		RosterNameText->SetText(FText::FromString(RosterView->Group.DisplayName));
 	}
 	
 	if (RosterLocationText)
 	{
-		RosterLocationText->SetText(FText::FromString(RosterView->GroupLocation));
+		RosterLocationText->SetText(FText::FromString(RosterView->Group.Region));
 	}
 }
 

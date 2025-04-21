@@ -4053,7 +4053,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								NewCombatGroup.Unit = NewCombatUnitArray;
 							}
 
-							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + +" " + FString(GetNameFromType(UnitType)));
+							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + FString(GetNameFromType(UnitType)));
 							// call AddRow to insert the record
 							NewCombatGroup.DisplayName = RowName.ToString();
 							

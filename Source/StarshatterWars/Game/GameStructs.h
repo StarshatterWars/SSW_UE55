@@ -1815,13 +1815,15 @@ struct FS_CombatGroup : public FTableRowBase {
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int UnitIndex;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int IndentLevel;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CombatGroupUnit> Unit;
 
 	FS_CombatGroup() {
 		Type = "";
 		Id =  0;
-
+		IndentLevel = 0;
 		Name = "";
 		DisplayName = "";
 		Intel = "";
@@ -1835,16 +1837,6 @@ struct FS_CombatGroup : public FTableRowBase {
 		ParentType = "";
 		ParentId = 0;
 		UnitIndex = 0;
-	}
-
-	// Determines if this group is a unit (no subgroups)
-	bool IsUnit() const {
-		return Unit.Num() > 0;
-	}
-
-	// Equality check for tree matching
-	bool MatchesParent(int InParentId) const {
-		return ParentId == InParentId;
 	}
 };
 

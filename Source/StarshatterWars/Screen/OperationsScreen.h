@@ -237,8 +237,6 @@ protected:
 	void PopulateIntelList();
 
 	UFUNCTION()
-	void PopulateCombatRosterList(TArray<FS_CombatGroup> GroupList);
-	UFUNCTION()
 	void PopulateCombatRoster();
 	UFUNCTION()
 	void SetInitialRosterData();
