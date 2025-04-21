@@ -120,7 +120,8 @@ void UOperationsScreen::NativeConstruct()
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateIntelList();
-	PopulateCombatRosterList();
+	SetInitialRosterData();
+	PopulateCombatRosterList(RosterList);
 	SetCampaignMissions();
 }
 
@@ -461,7 +462,7 @@ void UOperationsScreen::PopulateIntelList()
 	}
 }
 
-void UOperationsScreen::PopulateCombatRosterList()
+void UOperationsScreen::PopulateCombatRosterList(TArray<FS_CombatGroup> GroupList)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
@@ -469,16 +470,34 @@ void UOperationsScreen::PopulateCombatRosterList()
 
 	RosterView->ClearListItems();
 
-	for (int32 i = 0; i < SSWInstance->CombatRosterData.Num(); ++i)
+	for (int32 r = 0; r < GroupList.Num(); ++r)
 	{
 		URosterViewObject* ListItem = NewObject<URosterViewObject>();
-		ListItem->GroupName = SSWInstance->CombatRosterData[i].Name;
-		ListItem->GroupLocation = SSWInstance->CombatRosterData[i].Region;
-		ListItem->GroupType = SSWInstance->CombatRosterData[i].Type;
-		ListItem->GroupId = SSWInstance->CombatRosterData[i].Id;
-		ListItem->GroupEType = SSWInstance->CombatRosterData[i].EType;
+		ListItem->GroupName = GroupList[r].Name;
+		ListItem->GroupLocation = GroupList[r].Region;
+		ListItem->GroupType = GroupList[r].Type;
+		ListItem->GroupId = GroupList[r].Id;
+		ListItem->GroupEType = GroupList[r].EType;
+
 		RosterView->GetIndexForItem(ListItem);
 		RosterView->AddItem(ListItem);
+	}
+}
+
+void UOperationsScreen::SetInitialRosterData() {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
+	RosterList.Empty();
+	for (int32 i = 0; i < SSWInstance->CombatRosterData.Num(); ++i)
+	{
+		FS_CombatGroup ActiveGroup;
+		ActiveGroup.Name = SSWInstance->CombatRosterData[i].Name;
+		ActiveGroup.Region = SSWInstance->CombatRosterData[i].Region;
+		ActiveGroup.Type = SSWInstance->CombatRosterData[i].Type;
+		ActiveGroup.Id = SSWInstance->CombatRosterData[i].Id;
+		ActiveGroup.EType = SSWInstance->CombatRosterData[i].EType;
+
+		RosterList.Add(ActiveGroup);
 	}
 }
 
@@ -612,6 +631,63 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 		GroupTypeText->SetText(FText::FromString(GetNameFromType(SSWInstance->CombatRosterData[Selected].EType)));
 	}
 	SSWInstance->RosterSelectionChanged = false;
+}
+
+
+void UOperationsScreen::BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups)
+{
+	AllGroups.Empty();
+	RootGroups.Empty();
+	FlattenedList.Empty();
+
+	TMap<int32, UCombatGroupObject*> GroupMap;
+
+	// Create group objects
+	for (const FS_CombatGroup& Row : CombatGroups)
+	{
+		UCombatGroupObject* GroupObject = NewObject<UCombatGroupObject>(this);
+		GroupObject->Init(Row, 0);
+		GroupMap.Add(Row.Id, GroupObject);
+		AllGroups.Add(GroupObject);
+	}
+
+	// Build hierarchy by parent-child relationships
+	for (auto& Entry : GroupMap)
+	{
+		UCombatGroupObject* GroupObject = Entry.Value;
+
+		if (GroupMap.Contains(GroupObject->GroupData.ParentId))
+		{
+			UCombatGroupObject* ParentObject = GroupMap[GroupObject->GroupData.ParentId];
+			GroupObject->IndentLevel = ParentObject->IndentLevel + 1;
+			ParentObject->Children.Add(GroupObject);
+		}
+		else
+		{
+			RootGroups.Add(GroupObject);
+		}
+	}
+}
+
+const TArray<UCombatGroupObject*>& UOperationsScreen::GetFlatHierarchy()
+{
+	FlattenedList.Empty();
+
+	for (UCombatGroupObject* Root : RootGroups)
+	{
+		AddToFlatList(Root);
+	}
+	return FlattenedList;
+}
+
+void UOperationsScreen::AddToFlatList(UCombatGroupObject* Node)
+{
+	FlattenedList.Add(Node);
+
+	for (UCombatGroupObject* Child : Node->Children)
+	{
+		AddToFlatList(Child);
+	}
 }
 
 void UOperationsScreen::GetIntelImageFile(FString IntelImageName)

@@ -3,6 +3,8 @@
 
 #include "CombatGroupObject.h"
 
-
-
-
+void UCombatGroupObject::Init(const FS_CombatGroup& InData, int32 InIndentLevel)
+{
+	GroupData = InData;
+	IndentLevel = InIndentLevel;
+}

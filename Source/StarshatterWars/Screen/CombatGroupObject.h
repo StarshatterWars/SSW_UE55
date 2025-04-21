@@ -16,8 +16,17 @@ class STARSHATTERWARS_API UCombatGroupObject : public UObject
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat Group")
-	FS_CombatGroup Data;
+
+	UPROPERTY(BlueprintReadOnly)
+	FS_CombatGroup GroupData;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<UCombatGroupObject*> Children;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 IndentLevel;
+
+	void Init(const FS_CombatGroup& InData, int32 InIndentLevel);
 };
 	
 	

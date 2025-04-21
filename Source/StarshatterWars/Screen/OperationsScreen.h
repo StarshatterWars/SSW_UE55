@@ -16,6 +16,8 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/ListView.h"
 
+#include "CombatGroupObject.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
@@ -151,6 +153,13 @@ public:
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
 	void SetSelectedRosterData(int Selected);
+
+	UFUNCTION(BlueprintCallable)
+	void BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups);
+
+	UFUNCTION(BlueprintCallable)
+	const TArray<UCombatGroupObject*>& GetFlatHierarchy();
+
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -225,13 +234,26 @@ protected:
 	void PopulateMissionList();
 	UFUNCTION()
 	void PopulateIntelList();
+
 	UFUNCTION()
-	void PopulateCombatRosterList();
-	
+	void PopulateCombatRosterList(TArray<FS_CombatGroup> GroupList);
+
+	UFUNCTION()
+	void SetInitialRosterData();
 	UFUNCTION()
 	FDateTime GetCampaignTime();
-		
 
+	void AddToFlatList(UCombatGroupObject* Node);
+
+	UPROPERTY()
+	TArray<UCombatGroupObject*> AllGroups;
+
+	UPROPERTY()
+	TArray<UCombatGroupObject*> RootGroups;
+
+	UPROPERTY()
+	TArray<UCombatGroupObject*> FlattenedList;
+	
 private:
 	FS_Campaign ActiveCampaign;
 
@@ -243,5 +265,8 @@ private:
 
 	UPROPERTY()
 	TArray<FS_CampaignAction> ActionList;
+
+	UPROPERTY()
+	TArray<FS_CombatGroup> RosterList;
 };
 
