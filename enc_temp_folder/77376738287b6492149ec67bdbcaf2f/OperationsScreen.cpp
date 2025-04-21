@@ -613,7 +613,6 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 	}
 	SSWInstance->RosterSelectionChanged = false;
 }
-
 void UOperationsScreen::GetIntelImageFile(FString IntelImageName)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();

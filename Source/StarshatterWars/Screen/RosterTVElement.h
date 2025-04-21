@@ -40,6 +40,8 @@ private:
 	UFUNCTION()
 	void OnRosterButtonClicked();
 	UFUNCTION()
+	void SetRosterInfo();
+	UFUNCTION()
 	FString GetOrdinal(int id);
 	UFUNCTION()
 	FString GetNameFromType(ECOMBATGROUP_TYPE nt);

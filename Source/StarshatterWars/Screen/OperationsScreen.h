@@ -84,6 +84,15 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UTextBlock* IntelMessageText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* IntelDateText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GroupInfoText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GroupLocationText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GroupTypeText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GroupInformationText;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* OperationsModeText;
@@ -101,6 +110,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UImage* MissionImage;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* IntelImage;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UImage* GroupImage;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* OrdersButton;
@@ -138,13 +149,18 @@ public:
 	void SetSelectedMissionData(int Selected);
 	UFUNCTION()
 	void SetSelectedIntelData(int Selected);
+	UFUNCTION()
+	void SetSelectedRosterData(int Selected);
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
-
+	UFUNCTION()
+	FString GetOrdinal(int id);
+	UFUNCTION()
+	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
 	UFUNCTION()
 	void GetIntelImageFile(FString IntelImageName);
 	UFUNCTION()

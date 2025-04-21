@@ -171,7 +171,8 @@ public:
 
 	UFUNCTION()
 	void SetSelectedActionNr(int active);
-
+	UFUNCTION()
+	void SetSelectedRosterNr(int active);
 	UFUNCTION()
 	void SetCampaignActive(bool bIsActive);
 
@@ -184,6 +185,8 @@ public:
 	int GetSelectedMissionNr();
 	UFUNCTION()
 	int GetSelectedActionNr();
+	UFUNCTION()
+	int GetSelectedRosterNr();
 	UFUNCTION()
 	bool GetCampaignActive();
 
@@ -292,6 +295,9 @@ public:
 	bool ActionSelectionChanged;
 
 	UPROPERTY()
+	bool RosterSelectionChanged;
+
+	UPROPERTY()
 	AMusicController* MusicController;
 	
 protected:
@@ -357,6 +363,8 @@ protected:
 		int32 SelectionMissionNr;
 		UPROPERTY()
 		int32 SelectionActionNr;
+		UPROPERTY()
+		int32 SelectionRosterNr;
 
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);

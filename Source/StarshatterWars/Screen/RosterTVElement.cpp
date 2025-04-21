@@ -15,6 +15,7 @@ FString EnumToDisplayNameString(TEnum EnumValue)
 
 	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
 }
+
 void URosterTVElement::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -51,6 +52,14 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 void URosterTVElement::OnRosterButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Selected Roster Is: %i"), RosterId);
+	SetRosterInfo();
+}
+
+void URosterTVElement::SetRosterInfo()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->SetSelectedRosterNr(RosterId);
+	SSWInstance->RosterSelectionChanged = true;
 }
 FString
 URosterTVElement::GetOrdinal(int id)

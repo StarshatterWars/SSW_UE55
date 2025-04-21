@@ -882,6 +882,11 @@ void USSWGameInstance::SetSelectedActionNr(int active)
 	SelectionActionNr = active;
 }
 
+void USSWGameInstance::SetSelectedRosterNr(int active)
+{
+	SelectionRosterNr = active;
+}
+
 void USSWGameInstance::SetCampaignActive(bool bIsActive)
 {
 	bIsActiveCampaign = bIsActive;
@@ -905,6 +910,11 @@ int USSWGameInstance::GetSelectedMissionNr()
 int USSWGameInstance::GetSelectedActionNr()
 {
 	return SelectionActionNr;
+}
+
+int USSWGameInstance::GetSelectedRosterNr()
+{
+	return SelectionRosterNr;
 }
 
 bool USSWGameInstance::GetCampaignActive()
