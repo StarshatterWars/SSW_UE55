@@ -6,17 +6,6 @@
 #include "IntelListObject.h"
 #include "RosterViewObject.h"
 
-template <typename TEnum>
-FString EnumToDisplayNameString(TEnum EnumValue)
-{
-	static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayNameString only works with UENUMS.");
-
-	UEnum* EnumPtr = StaticEnum<TEnum>();
-	if (!EnumPtr) return TEXT("Invalid");
-
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
-}
-
 void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -615,7 +604,7 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
 	if (GroupInfoText) {
-		FString DisplayName = GetOrdinal(SSWInstance->CombatRosterData[Selected].Id) + " " + FString(SSWInstance->CombatRosterData[Selected].Name) + " " + +" " + FString(GetNameFromType(SSWInstance->CombatRosterData[Selected].EType));
+		FString DisplayName = GetOrdinal(SSWInstance->CombatRosterData[Selected].Id) + " " + FString(SSWInstance->CombatRosterData[Selected].Name) + " " + +" " + FString(SSWInstance->GetNameFromType(SSWInstance->CombatRosterData[Selected].EType));
 
 		GroupInfoText->SetText(FText::FromString(DisplayName));
 	}
@@ -628,7 +617,7 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 		GroupLocationText->SetText(FText::FromString(SSWInstance->CombatRosterData[Selected].Region));
 	}
 	if (GroupTypeText) {
-		GroupTypeText->SetText(FText::FromString(GetNameFromType(SSWInstance->CombatRosterData[Selected].EType)));
+		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SSWInstance->CombatRosterData[Selected].EType)));
 	}
 	SSWInstance->RosterSelectionChanged = false;
 }
@@ -770,10 +759,6 @@ UOperationsScreen::GetOrdinal(int id)
 	return ordinal;
 }
 
-FString UOperationsScreen::GetNameFromType(ECOMBATGROUP_TYPE nt)
-{
-	return EnumToDisplayNameString(nt);
-}
 
 
 

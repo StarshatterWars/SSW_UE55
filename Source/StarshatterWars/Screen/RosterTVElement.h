@@ -43,8 +43,6 @@ private:
 	void SetRosterInfo();
 	UFUNCTION()
 	FString GetOrdinal(int id);
-	UFUNCTION()
-	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")

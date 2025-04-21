@@ -5,17 +5,6 @@
 #include "OperationsScreen.h"
 #include "../System/SSWGameInstance.h"
 
-template <typename TEnum>
-FString EnumToDisplayNameString(TEnum EnumValue)
-{
-	static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayNameString only works with UENUMS.");
-
-	UEnum* EnumPtr = StaticEnum<TEnum>();
-	if (!EnumPtr) return TEXT("Invalid");
-
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
-}
-
 void URosterTVElement::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -27,6 +16,7 @@ void URosterTVElement::NativeConstruct()
 
 void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
 	RosterView = Cast<URosterViewObject>(ListItemObject);
 
 	if (!RosterView) {
@@ -38,7 +28,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 	}
 	if (RosterNameText)
 	{
-		FString DisplayName = GetOrdinal(RosterView->GroupId) + " " + FString(RosterView->GroupName) + " " + +" " + FString(GetNameFromType(RosterView->GroupEType));
+		FString DisplayName = GetOrdinal(RosterView->GroupId) + " " + FString(RosterView->GroupName) + " " + +" " + FString(SSWInstance->GetNameFromType(RosterView->GroupEType));
 		
 		RosterNameText->SetText(FText::FromString(DisplayName));
 	}
@@ -87,7 +77,3 @@ URosterTVElement::GetOrdinal(int id)
 	return ordinal;
 }
 
-FString URosterTVElement::GetNameFromType(ECOMBATGROUP_TYPE nt)
-{
-	return EnumToDisplayNameString(nt);
-}

@@ -169,8 +169,6 @@ protected:
 	UFUNCTION()
 	FString GetOrdinal(int id);
 	UFUNCTION()
-	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
-	UFUNCTION()
 	void GetIntelImageFile(FString IntelImageName);
 	UFUNCTION()
 	void GetIntelAudioFile(FString IntelAudioName);

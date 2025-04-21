@@ -235,6 +235,8 @@ public:
 	void PlayHoverSound(UObject* Context);
 	UFUNCTION()
 	void PlayAcceptSound(UObject* Context);
+	UFUNCTION()
+	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;

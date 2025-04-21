@@ -30,6 +30,17 @@
 #undef UpdateResource
 #undef PlaySound
 
+template <typename TEnum>
+FString EnumToDisplayString(TEnum EnumValue)
+{
+	static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayNameString only works with UENUMS.");
+
+	UEnum* EnumPtr = StaticEnum<TEnum>();
+	if (!EnumPtr) return TEXT("Invalid");
+
+	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
+}
+
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
 	InitializeDT(ObjectInitializer);
@@ -1080,3 +1091,7 @@ void USSWGameInstance::PlayAcceptSound(UObject* Context)
 	PlayUISound(Context, AcceptSound);
 }
 
+FString USSWGameInstance::GetNameFromType(ECOMBATGROUP_TYPE nt)
+{
+	return EnumToDisplayString(nt);
+}
