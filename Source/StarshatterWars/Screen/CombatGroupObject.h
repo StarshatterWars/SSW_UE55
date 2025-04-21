@@ -24,7 +24,7 @@ public:
 	TArray<UCombatGroupObject*> Children;
 
 	UPROPERTY(BlueprintReadOnly)
-	int32 IndentLevel;
+	int32 IndentLevel = 0;
 
 	void Init(const FS_CombatGroup& InData, int32 InIndentLevel);
 };

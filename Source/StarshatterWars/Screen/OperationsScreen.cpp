@@ -111,7 +111,8 @@ void UOperationsScreen::NativeConstruct()
 	PopulateIntelList();
 	SetInitialRosterData();
 	BuildHierarchy(RosterList);
-	PopulateCombatRosterList(RosterList);
+	//PopulateCombatRosterList(RosterList);
+	PopulateCombatRoster();
 	SetCampaignMissions();
 }
 
@@ -483,7 +484,7 @@ void UOperationsScreen::PopulateCombatRoster()
 	RosterView->ClearListItems();
 	GenerateFlatList();
 
-	for (UCombatGroupObject* Item : FlattenedList)
+	for (UCombatGroupObject* Item : AllGroups)
 	{
 		URosterViewObject* ListItem = NewObject<URosterViewObject>();
 		ListItem->GroupName = Item->GroupData.Name;
@@ -492,6 +493,8 @@ void UOperationsScreen::PopulateCombatRoster()
 		ListItem->GroupId = Item->GroupData.Id;
 		ListItem->GroupParentId = Item->GroupData.ParentId;
 		ListItem->GroupEType = Item->GroupData.EType;
+		ListItem->IndentLevel = Item->IndentLevel;
+		UE_LOG(LogTemp, Log, TEXT("Indent Level: %i"), Item->IndentLevel);
 
 		RosterView->GetIndexForItem(ListItem);
 		RosterView->AddItem(ListItem);
@@ -683,13 +686,15 @@ void UOperationsScreen::BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups)
 	}
 }
 
-void UOperationsScreen::FlattenHierarchy(UCombatGroupObject* Node)
+void UOperationsScreen::FlattenHierarchy(UCombatGroupObject* Node, int32 Indent)
 {
+	Node->IndentLevel = IndentLevel;
 	FlattenedList.Add(Node); // Add the current node first
 
 	for (UCombatGroupObject* Child : Node->Children)
 	{
-		FlattenHierarchy(Child); // Recursively flatten children
+		IndentLevel++;
+		FlattenHierarchy(Child, IndentLevel); // Recursively flatten children
 	}
 }
 
@@ -699,7 +704,7 @@ void UOperationsScreen::GenerateFlatList()
 
 	for (UCombatGroupObject* Root : RootGroups)
 	{
-		FlattenHierarchy(Root);
+		FlattenHierarchy(Root, IndentLevel);
 	}
 }
 

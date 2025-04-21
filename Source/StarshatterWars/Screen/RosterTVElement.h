@@ -7,8 +7,11 @@
 #include "RosterViewObject.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Blueprint/IUserObjectListEntry.h"
 #include "../System/SSWGameInstance.h"
+
+#include "CombatGroupObject.h"
 
 #include "RosterTVElement.generated.h"
 
@@ -30,6 +33,9 @@ class STARSHATTERWARS_API URosterTVElement : public UUserWidget, public IUserObj
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* RosterButton;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UHorizontalBoxSlot* IndentSlot;
+	
 	UOperationsScreen* OpsScreen;
 	
 protected:
@@ -59,5 +65,8 @@ public:
 
 	UPROPERTY()
 	URosterViewObject* RosterView;
+
+	UFUNCTION(BlueprintCallable)
+	void Setup(UCombatGroupObject* InGroup);
 	
 };

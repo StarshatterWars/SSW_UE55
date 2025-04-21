@@ -30,6 +30,10 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 	{
 		FString DisplayName = GetOrdinal(RosterView->GroupId) + " " + FString(RosterView->GroupName) + " " + +" " + FString(SSWInstance->GetNameFromType(RosterView->GroupEType));
 		
+		// Example: Add left margin spacing based on indent level
+		const float IndentPerLevel = 20.0f;
+		IndentSlot->SetPadding(FMargin(IndentPerLevel * RosterView->IndentLevel, 0, 0, 0));
+
 		RosterNameText->SetText(FText::FromString(DisplayName));
 	}
 	
@@ -76,4 +80,16 @@ URosterTVElement::GetOrdinal(int id)
 
 	return ordinal;
 }
+
+void URosterTVElement::Setup(UCombatGroupObject* InGroup)
+{
+	if (!InGroup) return;
+
+	// Example: Add left margin spacing based on indent level
+	const float IndentPerLevel = 20.0f;
+	IndentSlot->SetPadding(FMargin(IndentPerLevel * InGroup->IndentLevel, 0, 0, 0));
+
+	RosterNameText->SetText(FText::FromString(InGroup->GroupData.Name));
+}
+
 

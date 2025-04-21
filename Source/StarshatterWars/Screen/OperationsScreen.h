@@ -157,7 +157,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BuildHierarchy(TArray<FS_CombatGroup>& CombatGroups);
 
-	void FlattenHierarchy(UCombatGroupObject* Node);
+	void FlattenHierarchy(UCombatGroupObject* Node, int32 Indent);
 	UFUNCTION(BlueprintCallable)
 	void GenerateFlatList();
 
@@ -245,8 +245,6 @@ protected:
 	UFUNCTION()
 	FDateTime GetCampaignTime();
 
-	void AddToFlatList(UCombatGroupObject* Node);
-
 	UPROPERTY()
 	TArray<UCombatGroupObject*> AllGroups;
 
@@ -271,5 +269,7 @@ private:
 	// Holds a flat version of the hierarchy (useful for displaying in a ListView)
 	UPROPERTY()
 	TArray<UCombatGroupObject*> FlattenedList;
+
+	int IndentLevel = 0;
 };
 

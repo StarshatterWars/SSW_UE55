@@ -26,6 +26,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
 	int32 GroupId;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	int32 GroupIff;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	int32 IndentLevel;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
 	int32 GroupParentId;
 
 };
