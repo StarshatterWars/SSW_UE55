@@ -270,6 +270,7 @@ public:
 	EMODE GameMode;
 
 	class UDataTable* CampaignDataTable;
+	class UDataTable* CombatGroupDataTable;
 
 	UPROPERTY(EditAnywhere)
 	bool bClearTables;
@@ -279,6 +280,8 @@ public:
 
 	UPROPERTY()
 	TArray<FS_Campaign> CampaignData;
+	UPROPERTY()
+	TArray<FS_CombatGroup> CombatRosterData;
 	UPROPERTY()
 	TArray<FS_CampaignMissionList> MissionList;
 
@@ -295,6 +298,7 @@ protected:
 	virtual void Init() override;
 	virtual void Shutdown() override;
 	void ReadCampaignData();
+	void ReadCombatRosterData();
 	virtual bool InitContent();
 	virtual bool InitGame();
 

@@ -215,17 +215,16 @@ void AGameDataLoader::BeginPlay()
 	LoadGalaxyMap();
 	LoadSystemDesigns();
 	LoadShipDesigns();
-	LoadCombatRoster();
 	LoadStarsystems();
 	LoadAwardTables();
 	
 	if(SSWInstance->bClearTables) {
 		InitializeCampaignData();
+		InitializeCombatRoster();
 	}
 	LoadSystemDesignsFromDT();
 	SSWInstance->StartGameTimers();
 	
-
 	//USystemDesign::Initialize(SystemDesignTable);
 }
 
@@ -3748,7 +3747,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 
 // +-------------------------------------------------------------------+
 
-void AGameDataLoader::LoadCombatRoster()
+void AGameDataLoader::InitializeCombatRoster()
 {
 	UE_LOG(LogTemp, Log, TEXT("ACombatGroupLoader::LoadCombatRoster()"));
 	FString ProjectPath = FPaths::ProjectContentDir();
@@ -4056,9 +4055,10 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 
 							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + +" " + FString(GetNameFromType(UnitType)));
 							// call AddRow to insert the record
-
+							NewCombatGroup.DisplayName = RowName.ToString();
+							
 							if (Iff > 0) {
-								CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
+								SSWInstance->CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
 							}
 							CombatGroupData = NewCombatGroup;
 

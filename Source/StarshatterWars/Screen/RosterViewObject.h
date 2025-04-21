@@ -4,34 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "IntelListObject.generated.h"
+#include "../Game/GameStructs.h"
+#include "RosterViewObject.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API UIntelListObject : public UObject
+class STARSHATTERWARS_API URosterViewObject : public UObject
 {
 	GENERATED_BODY()
+public:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString GroupName;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString GroupType;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	TEnumAsByte<ECOMBATGROUP_TYPE> GroupEType;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	FString GroupLocation;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
+	int32 GroupId;
 
-public:	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsTitle;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsLocation;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsDate;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsSource;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsAudio;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsImage;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	FString NewsInfoText;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	bool NewsVisited;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "List Item")
-	int32 NewsId;
-	
 };

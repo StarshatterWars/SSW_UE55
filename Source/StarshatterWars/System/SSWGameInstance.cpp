@@ -255,6 +255,8 @@ void USSWGameInstance::Init()
 	SetProjectPath();
 
 	CampaignData.SetNum(5); // number of campaigns
+	CombatRosterData.SetNum(372);
+
 	if (!DataLoader::GetLoader())
 		DataLoader::Initialize();
 
@@ -272,9 +274,6 @@ void USSWGameInstance::Init()
 		InitContent();
 	}
 
-	//if (bClearTables) {
-		//CampaignDataTable->EmptyTable();
-	//}
 	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
 		LoadGame(PlayerSaveName, PlayerSaveSlot);
 		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
@@ -283,6 +282,7 @@ void USSWGameInstance::Init()
 			ReadCampaignData();
 		}
 	}
+	ReadCombatRosterData();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -311,6 +311,29 @@ void USSWGameInstance::ReadCampaignData()
 	SetActiveCampaign(CampaignData[PlayerInfo.Campaign]);
 	FString NewCampaign = GetActiveCampaign().Name;
 	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
+}
+
+void USSWGameInstance::ReadCombatRosterData() {
+	UE_LOG(LogTemp, Log, TEXT("USSWGameInstance::ReadCombatRosterData()"));
+	static const FString ContextString(TEXT("ReadDataTable"));
+	TArray<FS_CombatGroup*> AllRows;
+	CombatGroupDataTable->GetAllRows<FS_CombatGroup>(ContextString, AllRows);
+
+	int index = 0;
+	for (FS_CombatGroup* Row : AllRows)
+	{
+		if (Row)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Group Name: %s"), *Row->Name);
+			
+			CombatRosterData[index] = *Row;
+			index++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to load Combat Roster!"));
+		}
+	}
 }
 
 void USSWGameInstance::Shutdown()
@@ -390,8 +413,17 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CampaignDataTable = CampaignDataTableObject.Object;
 	}
 
-	if(bClearTables)
+	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
+
+	if (CombatGroupDataTableObject.Succeeded())
+	{
+		CombatGroupDataTable = CombatGroupDataTableObject.Object;
+	}
+	
+	if (bClearTables) {
 		CampaignDataTable->EmptyTable();
+		CombatGroupDataTable->EmptyTable();
+	}
 }
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)

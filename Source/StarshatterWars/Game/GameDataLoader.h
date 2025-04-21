@@ -102,7 +102,7 @@ public:
 
 	void ParseStarSystem(const char* FileName);
 
-	void LoadCombatRoster();
+	void InitializeCombatRoster();
 	void LoadShipDesigns();
 	void LoadSystemDesignsFromDT();
 	void LoadSystemDesigns();

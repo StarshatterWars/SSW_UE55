@@ -125,6 +125,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UListView* IntelList;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* RosterView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	int SelectedMission;
 
 	UPROPERTY()
@@ -206,6 +209,8 @@ protected:
 	void PopulateMissionList();
 	UFUNCTION()
 	void PopulateIntelList();
+	UFUNCTION()
+	void PopulateCombatRosterList();
 	
 	UFUNCTION()
 	FDateTime GetCampaignTime();

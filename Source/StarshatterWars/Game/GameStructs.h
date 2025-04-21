@@ -1798,6 +1798,8 @@ struct FS_CombatGroup : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DisplayName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Intel;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Iff;
@@ -1821,6 +1823,7 @@ struct FS_CombatGroup : public FTableRowBase {
 		Id =  0;
 
 		Name = "";
+		DisplayName = "";
 		Intel = "";
 		Iff = 0;
 		System = "";

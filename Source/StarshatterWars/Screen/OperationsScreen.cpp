@@ -4,6 +4,7 @@
 #include "OperationsScreen.h"
 #include "MissionListObject.h"
 #include "IntelListObject.h"
+#include "RosterViewObject.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -108,6 +109,7 @@ void UOperationsScreen::NativeConstruct()
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateIntelList();
+	PopulateCombatRosterList();
 	SetCampaignMissions();
 }
 
@@ -442,6 +444,27 @@ void UOperationsScreen::PopulateIntelList()
 	}
 }
 
+void UOperationsScreen::PopulateCombatRosterList()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	if (!RosterView) return;
+
+	RosterView->ClearListItems();
+
+	for (int32 i = 0; i < SSWInstance->CombatRosterData.Num(); ++i)
+	{
+		URosterViewObject* ListItem = NewObject<URosterViewObject>();
+		ListItem->GroupName = SSWInstance->CombatRosterData[i].Name;
+		ListItem->GroupLocation = SSWInstance->CombatRosterData[i].Region;
+		ListItem->GroupType = SSWInstance->CombatRosterData[i].Type;
+		ListItem->GroupId = SSWInstance->CombatRosterData[i].Id;
+		ListItem->GroupEType = SSWInstance->CombatRosterData[i].EType;
+		RosterView->GetIndexForItem(ListItem);
+		RosterView->AddItem(ListItem);
+	}
+}
+
 FDateTime UOperationsScreen::GetCampaignTime()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -606,6 +629,7 @@ FSlateBrush UOperationsScreen::CreateBrushFromTexture(UTexture2D* Texture, FVect
 	Brush.DrawAs = ESlateBrushDrawType::Image;
 	return Brush;
 }
+
 
 
 
