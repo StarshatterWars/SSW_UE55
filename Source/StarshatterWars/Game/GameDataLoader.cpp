@@ -3889,6 +3889,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 						ECOMBATGROUP_TYPE EParentType = ECOMBATGROUP_TYPE::NONE;
 						int UnitIndex = 0;
 						int ParentId = 0;
+						int EmpireId = 0;
 						int Id = 0;
 						int Iff = -1;
 						Vec3 Loc = Vec3(1.0e9f, 0.0f, 0.0f);
@@ -3915,8 +3916,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								{
 									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
 								}
-								NewCombatGroup.Type = FString(Type).ToUpper();
-								NewCombatGroup.EType = UnitType;	
+								NewCombatGroup.Type = UnitType;	
 							}
 							else if (pdef->name()->value() == ("intel"))
 							{
@@ -3970,6 +3970,11 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							{
 								GetDefNumber(ParentId, pdef, fn);
 								NewCombatGroup.ParentId = ParentId;
+							}
+							else if (pdef->name()->value() == ("empire_id"))
+							{
+								GetDefNumber(EmpireId, pdef, fn);
+								NewCombatGroup.EmpireId = EmpireId;
 							}
 							else if (pdef->name()->value() == ("iff"))
 							{
@@ -4079,7 +4084,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							// call AddRow to insert the record
 							NewCombatGroup.DisplayName = RowName.ToString();
 							
-							if (Iff > 0) {
+							if (Iff > -1) {
 								SSWInstance->CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
 							}
 							CombatGroupData = NewCombatGroup;
@@ -7056,22 +7061,43 @@ AGameDataLoader::GetEmpireName(int32 emp)
 	switch (emp)
 	{
 	case 0:
-		empire_name = EEMPIRE_NAME::Terellian_Alliance;
+		empire_name = EEMPIRE_NAME::Terellian;
 		break;
 	case 1:
-		empire_name = EEMPIRE_NAME::Marakan_Hegemony;
+		empire_name = EEMPIRE_NAME::Marakan;
 		break;
 	case 2:
-		empire_name = EEMPIRE_NAME::Dantari_Separatists;
+		empire_name = EEMPIRE_NAME::Independent;
 		break;
 	case 3:
-		empire_name = EEMPIRE_NAME::Other;
+		empire_name = EEMPIRE_NAME::Dantari;
 		break;
 	case 4:
-		empire_name = EEMPIRE_NAME::INDEPENDENT_SYSTEMS;
+		empire_name = EEMPIRE_NAME::Zolon;
+		break;
+	case 5:
+		empire_name = EEMPIRE_NAME::Other;
+		break;
+	case 6:
+		empire_name = EEMPIRE_NAME::Pirate;
+		break;
+	case 7:
+		empire_name = EEMPIRE_NAME::Neutral;
+		break;
+	case 8:
+		empire_name = EEMPIRE_NAME::Unknown;
+		break;
+	case 9:
+		empire_name = EEMPIRE_NAME::Silessian;
+		break;
+	case 10:
+		empire_name = EEMPIRE_NAME::Solus;
+		break;
+	case 11:
+		empire_name = EEMPIRE_NAME::Haiche;
 		break;
 	default:
-		empire_name = EEMPIRE_NAME::Other;
+		empire_name = EEMPIRE_NAME::Unknown;
 		break;
 	}
 	return empire_name;

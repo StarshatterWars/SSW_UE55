@@ -464,7 +464,9 @@ void UOperationsScreen::PopulateCombatRoster()
 		URosterViewObject* ListItem = NewObject<URosterViewObject>();
 		ListItem->Group = Item;
 		RosterView->GetIndexForItem(ListItem);
-		RosterView->AddItem(ListItem);
+		if (Item.Intel == EINTEL_TYPE::KNOWN) {
+			RosterView->AddItem(ListItem);
+		}
 	}
 }
 
@@ -593,7 +595,11 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 		GroupLocationText->SetText(FText::FromString(SSWInstance->CombatRosterData[Selected].Region));
 	}
 	if (GroupTypeText) {
-		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SSWInstance->CombatRosterData[Selected].EType)));
+		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SSWInstance->CombatRosterData[Selected].Type)));
+	}
+
+	if (GroupEmpireText) {
+		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SSWInstance->CombatRosterData[Selected].EmpireId)));
 	}
 	SSWInstance->RosterSelectionChanged = false;
 }

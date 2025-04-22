@@ -265,7 +265,7 @@ void USSWGameInstance::Init()
 	SetProjectPath();
 
 	CampaignData.SetNum(5); // number of campaigns
-	CombatRosterData.SetNum(372);
+	CombatRosterData.SetNum(515);
 
 	if (!DataLoader::GetLoader())
 		DataLoader::Initialize();
@@ -392,23 +392,44 @@ USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
 
 	switch (emp)
 	{
-	case EEMPIRE_NAME::Terellian_Alliance:
+	case EEMPIRE_NAME::Terellian:
 		empire_name = "Terellian Alliance";
 		break;
-	case EEMPIRE_NAME::Marakan_Hegemony:
+	case EEMPIRE_NAME::Marakan:
 		empire_name = "Marakan Hegemony";
 		break;
-	case EEMPIRE_NAME::Dantari_Separatists:
+	case EEMPIRE_NAME::Independent:
+		empire_name = "Independent System";
+		break;
+	case EEMPIRE_NAME::Dantari:
 		empire_name = "Dantari Separatists";
+		break;
+	case EEMPIRE_NAME::Zolon:
+		empire_name = "Zolon Empire";
 		break;
 	case EEMPIRE_NAME::Other:
 		empire_name = "Other";
 		break;
-	case EEMPIRE_NAME::INDEPENDENT_SYSTEMS:
-		empire_name = "Independent Systems";
+	case EEMPIRE_NAME::Pirate:
+		empire_name = "Brotherhood of Iron";
+		break;
+	case EEMPIRE_NAME::Neutral:
+		empire_name = "Neutral";
+		break;
+	case EEMPIRE_NAME::Unknown:
+		empire_name = "Unknown";
+		break;
+	case EEMPIRE_NAME::Silessian:
+		empire_name = "Silessian Confederacy";
+		break;
+	case EEMPIRE_NAME::Solus:
+		empire_name = "Independent System of Solus";
+		break;
+	case EEMPIRE_NAME::Haiche:
+		empire_name = "Haiche Protectorate";
 		break;
 	default:
-		empire_name = "Other";
+		empire_name = "Unknown";
 		break;
 	}
 	return empire_name;
@@ -430,10 +451,11 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CombatGroupDataTable = CombatGroupDataTableObject.Object;
 	}
 	
-	//if (bClearTables) {
+	if (bClearTables) {
 		CampaignDataTable->EmptyTable();
 		CombatGroupDataTable->EmptyTable();
-	//}
+	}
+
 }
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
@@ -1094,3 +1116,31 @@ FString USSWGameInstance::GetNameFromType(ECOMBATGROUP_TYPE nt)
 {
 	return EnumToDisplayString(nt);
 }
+
+FString USSWGameInstance::GetEmpireTypeNameByIndex(int32 Index)
+{
+	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
+	if (!EnumPtr) return FString("Invalid");
+
+	// Get value by index
+	int64 EnumValue = EnumPtr->GetValueByIndex(Index);
+
+	// Get display name from value
+	return EnumPtr->GetDisplayNameTextByValue(EnumValue).ToString();
+}
+
+FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
+{
+	const UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
+	if (!EnumPtr) return FString("Invalid");
+
+	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
+}
+
+
+
+
+
+
+
+

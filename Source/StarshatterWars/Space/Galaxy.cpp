@@ -447,22 +447,43 @@ AGalaxy::GetEmpireName(int32 emp)
 	switch (emp)
 	{
 	case 0:
-		empire_name = EEMPIRE_NAME::Terellian_Alliance;
+		empire_name = EEMPIRE_NAME::Terellian;
 		break;
 	case 1:
-		empire_name = EEMPIRE_NAME::Marakan_Hegemony;
+		empire_name = EEMPIRE_NAME::Marakan;
 		break;
 	case 2:
-		empire_name = EEMPIRE_NAME::Dantari_Separatists;
+		empire_name = EEMPIRE_NAME::Independent;
 		break;
 	case 3:
-		empire_name = EEMPIRE_NAME::Other;
+		empire_name = EEMPIRE_NAME::Dantari;
 		break;
 	case 4:
-		empire_name = EEMPIRE_NAME::INDEPENDENT_SYSTEMS;
+		empire_name = EEMPIRE_NAME::Zolon;
+		break;
+	case 5:
+		empire_name = EEMPIRE_NAME::Other;
+		break;
+	case 6:
+		empire_name = EEMPIRE_NAME::Pirate;
+		break;
+	case 7:
+		empire_name = EEMPIRE_NAME::Neutral;
+		break;
+	case 8:
+		empire_name = EEMPIRE_NAME::Unknown;
+		break;
+	case 9:
+		empire_name = EEMPIRE_NAME::Silessian;
+		break;
+	case 10:
+		empire_name = EEMPIRE_NAME::Solus;
+		break;
+	case 11:
+		empire_name = EEMPIRE_NAME::Haiche;
 		break;
 	default:
-		empire_name = EEMPIRE_NAME::Other;
+		empire_name = EEMPIRE_NAME::Unknown;
 		break;
 	}
 	return empire_name;

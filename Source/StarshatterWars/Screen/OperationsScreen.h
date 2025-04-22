@@ -92,6 +92,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GroupTypeText;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GroupEmpireText;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GroupInformationText;
 	
 	UPROPERTY(meta = (BindWidgetOptional))

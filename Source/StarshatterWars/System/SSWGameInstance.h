@@ -237,6 +237,8 @@ public:
 	void PlayAcceptSound(UObject* Context);
 	UFUNCTION()
 	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
+	FString GetEmpireTypeNameByIndex(int32 Index);
+	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;

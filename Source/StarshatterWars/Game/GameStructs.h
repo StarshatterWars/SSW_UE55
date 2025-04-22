@@ -293,12 +293,18 @@ enum class ESTAR_SIZE : uint8
 UENUM(BlueprintType)
 enum class EEMPIRE_NAME : uint8
 {
-	Terellian_Alliance UMETA(DisplayName = "Terellian Alliance"),
-	Marakan_Hegemony UMETA(DisplayName = "Marakan Hegemony"),
-	INDEPENDENT_SYSTEMS UMETA(DisplayName = "Independent Systems"),
-	Dantari_Separatists UMETA(DisplayName = "Dantari_Separatists"),
-	Other UMETA(DisplayName = "Other"),
-	Pirate UMETA(DisplayName = "Pirate"),
+	Terellian	UMETA(DisplayName = "Terellian Alliance"),
+	Marakan		UMETA(DisplayName = "Marakan Hegemony"),
+	Independent UMETA(DisplayName = "Independent Systems"),
+	Dantari		UMETA(DisplayName = "Dantari Separatists"),
+	Zolon		UMETA(DisplayName = "Zolon Empire"),
+	Other		UMETA(DisplayName = "Other"),
+	Pirate		UMETA(DisplayName = "Brotherhood of Iron"),
+	Neutral     UMETA(DisplayName = "Neutral"),
+	Unknown     UMETA(DisplayName = "Unknown"),
+	Silessian   UMETA(DisplayName = "Silessian Confederacy"),
+	Solus		UMETA(DisplayName = "Independent System of Solus"),
+	Haiche		UMETA(DisplayName = "Haiche Protectorate"),
 };
 
 UENUM(BlueprintType)
@@ -552,7 +558,7 @@ struct FS_Galaxy : public FTableRowBase {
 		Class = (int) ESPECTRAL_CLASS::G;
 		Location = FVector::ZeroVector;
 		Iff = 0;
-		Empire = EEMPIRE_NAME::Terellian_Alliance;
+		Empire = EEMPIRE_NAME::Terellian;
 	}
 };
 USTRUCT(BlueprintType)
@@ -1825,9 +1831,7 @@ struct FS_CombatGroup : public FTableRowBase {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Type;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TEnumAsByte<ECOMBATGROUP_TYPE> EType;
+	TEnumAsByte<ECOMBATGROUP_TYPE> Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Id;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1838,6 +1842,8 @@ struct FS_CombatGroup : public FTableRowBase {
 	EINTEL_TYPE Intel;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int EmpireId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString System;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1855,20 +1861,20 @@ struct FS_CombatGroup : public FTableRowBase {
 	TArray<FS_CombatGroupUnit> Unit;
 
 	FS_CombatGroup() {
-		Type = "";
 		Id =  0;
 
 		Name = "";
 		DisplayName = "";
-		Iff = 0;
+		Iff = -1;
 		System = "";
 		Region = "";
 
-		EType = ECOMBATGROUP_TYPE::NONE;
+		Type = ECOMBATGROUP_TYPE::NONE;
 		ParentType = ECOMBATGROUP_TYPE::NONE;
 		Intel = EINTEL_TYPE::KNOWN;
 		Location = FVector::ZeroVector;
 		ParentId = 0;
+		EmpireId = 0;
 		UnitIndex = 0;
 	}
 
@@ -1890,7 +1896,8 @@ struct FS_AwardInfo : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int      AwardId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString     AwardType;	
+	FString   
+	AwardType;	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString     AwardName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)

@@ -6,6 +6,7 @@ group: {
   name:   "Zolon Empire",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   loc:    (0, 0, 0),
 }
 
@@ -15,6 +16,7 @@ group: {
   name:   "Nephrys",
   intel:  reserve,
   iff:    4,
+  empire_id: 4,
   region: "Nergal",
   loc:    (0, 0, 0),
   parent_type: force,
@@ -27,6 +29,7 @@ group: {
   name:   "Zolon",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (-1e5, -1e5, 0),
   parent_type: fleet,
@@ -75,6 +78,7 @@ group: {
   name:   "Krill",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (-1.1e5, -1.1e5, 6e3),
   parent_type: fleet,
@@ -94,6 +98,7 @@ group: {
   name:   "Sculpin",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (1e5, -1e5, 7e3),
   parent_type: fleet,
@@ -107,14 +112,13 @@ group: {
     },
 }
 
-
-
 group: {
   type:   fleet,
   id:     2,
   name:   "Nephrys",
   intel:  reserve,
   iff:    4,
+  empire_id: 4,
   region: "Nergal",
   loc:    (0, 180e3, 6e3),
   parent_type: force,
@@ -127,6 +131,7 @@ group: {
   name:   "Zolon",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (1e5, 1e5, 0),
   parent_type: fleet,
@@ -175,6 +180,7 @@ group: {
   name:   "Moray",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (-1.1e5, -1.1e5, 6e3),
   parent_type: fleet,
@@ -194,6 +200,7 @@ group: {
   name:   "Lamprey",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (1e5, -1e5, 7e3),
   parent_type: fleet,
@@ -215,6 +222,7 @@ group: {
   name:   "Nephrys",
   intel:  reserve,
   iff:    4,
+  empire_id: 4,
   region: "Nergal",
   loc:    (0, 180e3, 6e3),
   parent_type: force,
@@ -227,6 +235,7 @@ group: {
   name:   "Zolon",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (1e5, 1e5, 0),
   parent_type: fleet,
@@ -275,6 +284,7 @@ group: {
   name:   "Crab",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (-1.1e5, -1.1e5, 6e3),
   parent_type: fleet,
@@ -294,6 +304,7 @@ group: {
   name:   "Steelhead",
   intel:  secret,
   iff:    4,
+  empire_id: 4,
   region: "Sintar",
   loc:    (1e5, -1e5, 7e3),
   parent_type: fleet,
@@ -307,15 +318,13 @@ group: {
     },
 }
 
-
-
-
 group: {
   type:   non_com,
   id:     1,
   name:   "Zolon Ambassador",
   intel:  known,
   iff:    0,
+  empire_id: 4,
   region: "Tarsus",
   loc:    (0, 0, 0),
   parent_type: force,
