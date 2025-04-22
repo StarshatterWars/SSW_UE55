@@ -95,32 +95,37 @@ double
 Combatant::GetTargetStratFactor(int type)
 {
 	switch (type) {
-	case ECOMBATGROUP_TYPE::FLEET:
-	case ECOMBATGROUP_TYPE::CARRIER_GROUP:
-	case ECOMBATGROUP_TYPE::BATTLE_GROUP:
-	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:   return target_factor[0];
+	case (int8) ECOMBATGROUP_TYPE::FLEET:
+	case (int8) ECOMBATGROUP_TYPE::CARRIER_GROUP:
+	case (int8) ECOMBATGROUP_TYPE::BATTLE_GROUP:
+	case (int8) ECOMBATGROUP_TYPE::DESTROYER_SQUADRON: 
+		return target_factor[0];
 
-	case ECOMBATGROUP_TYPE::WING:
-	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
-	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
-	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:     return target_factor[1];
+	case (int8) ECOMBATGROUP_TYPE::WING:
+	case (int8) ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
+	case (int8) ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+	case (int8) ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:   
+		return target_factor[1];
 
-	case ECOMBATGROUP_TYPE::BATTERY:
-	case ECOMBATGROUP_TYPE::MISSILE:              return target_factor[2];
+	case (int8) ECOMBATGROUP_TYPE::BATTERY:
+	case (int8) ECOMBATGROUP_TYPE::MISSILE:  
+		return target_factor[2];
 
-	case ECOMBATGROUP_TYPE::BATTALION:
-	case ECOMBATGROUP_TYPE::STARBASE:
-	case ECOMBATGROUP_TYPE::C3I:
-	case ECOMBATGROUP_TYPE::COMM_RELAY:
-	case ECOMBATGROUP_TYPE::EARLY_WARNING:
-	case ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:
-	case ECOMBATGROUP_TYPE::ECM:                  return target_factor[3];
+	case (int8) ECOMBATGROUP_TYPE::BATTALION:
+	case (int8) ECOMBATGROUP_TYPE::STARBASE:
+	case (int8) ECOMBATGROUP_TYPE::C3I:
+	case (int8) ECOMBATGROUP_TYPE::COMM_RELAY:
+	case (int8) ECOMBATGROUP_TYPE::EARLY_WARNING:
+	case (int8) ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:
+	case (int8) ECOMBATGROUP_TYPE::ECM:       
+		return target_factor[3];
 
-	case ECOMBATGROUP_TYPE::SUPPORT:
-	case ECOMBATGROUP_TYPE::COURIER:
-	case ECOMBATGROUP_TYPE::MEDICAL:
-	case ECOMBATGROUP_TYPE::SUPPLY:
-	case ECOMBATGROUP_TYPE::REPAIR:               return target_factor[4];
+	case (int8) ECOMBATGROUP_TYPE::SUPPORT:
+	case (int8) ECOMBATGROUP_TYPE::COURIER:
+	case (int8) ECOMBATGROUP_TYPE::MEDICAL:
+	case (int8) ECOMBATGROUP_TYPE::SUPPLY:
+	case (int8) ECOMBATGROUP_TYPE::REPAIR:  
+		return target_factor[4];
 	}
 
 	return target_factor[5];
@@ -132,39 +137,45 @@ void
 Combatant::SetTargetStratFactor(int type, double factor)
 {
 	switch (type) {
-	case ECOMBATGROUP_TYPE::FLEET:
-	case ECOMBATGROUP_TYPE::CARRIER_GROUP:
-	case ECOMBATGROUP_TYPE::BATTLE_GROUP:
-	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  target_factor[0] = factor;
+	case (int8) ECOMBATGROUP_TYPE::FLEET:
+	case (int8) ECOMBATGROUP_TYPE::CARRIER_GROUP:
+	case (int8) ECOMBATGROUP_TYPE::BATTLE_GROUP:
+	case (int8) ECOMBATGROUP_TYPE::DESTROYER_SQUADRON: 
+		target_factor[0] = factor;
 		break;
 
-	case ECOMBATGROUP_TYPE::WING:
-	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
-	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
-	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    target_factor[1] = factor;
+	case (int8) ECOMBATGROUP_TYPE::WING:
+	case (int8) ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
+	case (int8) ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+	case (int8) ECOMBATGROUP_TYPE::FIGHTER_SQUADRON: 
+		target_factor[1] = factor;
 		break;
 
-	case ECOMBATGROUP_TYPE::BATTALION:
-	case ECOMBATGROUP_TYPE::STARBASE:
-	case ECOMBATGROUP_TYPE::BATTERY:
-	case ECOMBATGROUP_TYPE::MISSILE:             target_factor[2] = factor;
+	case (int8) ECOMBATGROUP_TYPE::BATTALION:
+	case (int8) ECOMBATGROUP_TYPE::STARBASE:
+	case (int8) ECOMBATGROUP_TYPE::BATTERY:
+	case (int8) ECOMBATGROUP_TYPE::MISSILE: 
+		target_factor[2] = factor;
 		break;
 
-	case ECOMBATGROUP_TYPE::C3I:
-	case ECOMBATGROUP_TYPE::COMM_RELAY:
-	case ECOMBATGROUP_TYPE::EARLY_WARNING:
-	case ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:
-	case ECOMBATGROUP_TYPE::ECM:                 target_factor[3] = factor;
+	case (int8) ECOMBATGROUP_TYPE::C3I:
+	case (int8) ECOMBATGROUP_TYPE::COMM_RELAY:
+	case (int8) ECOMBATGROUP_TYPE::EARLY_WARNING:
+	case (int8) ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:
+	case (int8) ECOMBATGROUP_TYPE::ECM:  
+		target_factor[3] = factor;
 		break;
 
-	case ECOMBATGROUP_TYPE::SUPPORT:
-	case ECOMBATGROUP_TYPE::COURIER:
-	case ECOMBATGROUP_TYPE::MEDICAL:
-	case ECOMBATGROUP_TYPE::SUPPLY:
-	case ECOMBATGROUP_TYPE::REPAIR:              target_factor[4] = factor;
+	case (int8) ECOMBATGROUP_TYPE::SUPPORT:
+	case (int8) ECOMBATGROUP_TYPE::COURIER:
+	case (int8) ECOMBATGROUP_TYPE::MEDICAL:
+	case (int8) ECOMBATGROUP_TYPE::SUPPLY:
+	case (int8) ECOMBATGROUP_TYPE::REPAIR:     
+		target_factor[4] = factor;
 		break;
 
-	default:                               target_factor[5] = factor;
+	default:    
+		target_factor[5] = factor;
 		break;
 	}
 }
