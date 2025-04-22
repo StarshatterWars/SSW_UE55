@@ -144,6 +144,16 @@ enum ECOMBATACTION_TYPE : uint8
 };
 
 UENUM(BlueprintType)
+enum class EINTEL_TYPE : uint8 {
+	UNKNOWN		UMETA(DisplayName = "Unknown"), // This status should not exist in game
+	RESERVE		UMETA(DisplayName = "Reserve"), // out-system reserve: this group is not even here
+	SECRET		UMETA(DisplayName = "Secret"),   // enemy is completely unaware of this group
+	KNOWN		UMETA(DisplayName = "Known"),    // enemy knows this group is in the system
+	LOCATED		UMETA(DisplayName = "Located"),  // enemy has located at least the lead ship
+	TRACKED		UMETA(DisplayName = "Tracked"),  // enemy is tracking all elements
+};
+
+UENUM(BlueprintType)
 enum  ECOMBATACTION_STATUS : uint8
 {
 	PENDING UMETA(DisplayName = "Pending"),
@@ -1742,6 +1752,31 @@ struct FS_Campaign : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_CombatGroupFleet : public FTableRowBase {
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString FleetName;
+	
+	FS_CombatGroupFleet() {
+		FleetName = "";
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FS_CombatGroupForce : public FTableRowBase {
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString ForceName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_CombatGroupFleet> Fleet;
+
+	FS_CombatGroupForce() {
+		ForceName = "";
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_CombatGroupUnit : public FTableRowBase {
 	GENERATED_BODY()
 	
@@ -1800,7 +1835,7 @@ struct FS_CombatGroup : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString DisplayName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Intel;
+	EINTEL_TYPE Intel;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Iff;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1810,33 +1845,41 @@ struct FS_CombatGroup : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FVector Location;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString ParentType;
+	TEnumAsByte<ECOMBATGROUP_TYPE> ParentType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int UnitIndex;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int IndentLevel;
+
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CombatGroupUnit> Unit;
 
 	FS_CombatGroup() {
 		Type = "";
 		Id =  0;
-		IndentLevel = 0;
+
 		Name = "";
 		DisplayName = "";
-		Intel = "";
 		Iff = 0;
 		System = "";
 		Region = "";
 
 		EType = ECOMBATGROUP_TYPE::NONE;
-
+		ParentType = ECOMBATGROUP_TYPE::NONE;
+		Intel = EINTEL_TYPE::KNOWN;
 		Location = FVector::ZeroVector;
-		ParentType = "";
 		ParentId = 0;
 		UnitIndex = 0;
+	}
+
+	// Determines if this group is a unit (no subgroups)
+	bool IsUnit() const {
+		return Unit.Num() > 0;
+	}
+
+	// Equality check for tree matching
+	bool MatchesParent(int InParentId) const {
+		return ParentId == InParentId;
 	}
 };
 

@@ -110,6 +110,7 @@ void UOperationsScreen::NativeConstruct()
 	PopulateMissionList();
 	PopulateIntelList();
 	PopulateCombatRoster();
+	PrintGroupData(GetAllGroupsList());
 	SetCampaignMissions();
 }
 
@@ -458,7 +459,7 @@ void UOperationsScreen::PopulateCombatRoster()
 	RosterView->ClearListItems();
 	BuildHierarchy();
 
-	for (FS_CombatGroup Item : SSWInstance->CombatRosterData)
+	for (FS_CombatGroup Item : GetBaseGroupsList())
 	{
 		URosterViewObject* ListItem = NewObject<URosterViewObject>();
 		ListItem->Group = Item;
@@ -601,61 +602,7 @@ void UOperationsScreen::BuildHierarchy()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
-	FlattenedList.Empty();
-	RootGroups.Empty();
-	AllGroups.Empty();
-
-	TMap<int32, FS_CombatGroup> GroupMap;
-	TMap<int32, TArray<int32>> ParentToChildren;
-
-	// Map all groups by ID
-	for (const FS_CombatGroup& Group : SSWInstance->CombatRosterData)
-	{
-		GroupMap.Add(Group.Id, Group);
-		ParentToChildren.FindOrAdd(Group.ParentId).Add(Group.Id);
-	}
-
-	TSet<int32> Visited;
-
-	// Recursive safe lambda to flatten hierarchy
-	std::function<void(int32, int32)> AddToFlat;
-	AddToFlat = [&](int32 GroupId, int32 IndentLevel)
-		{
-			// Prevent infinite loop
-			if (Visited.Contains(GroupId)) return;
-			Visited.Add(GroupId);
-
-			if (FS_CombatGroup* GroupPtr = GroupMap.Find(GroupId))
-			{
-				FS_CombatGroup GroupCopy = *GroupPtr;
-				GroupCopy.IndentLevel = IndentLevel;
-
-				FlattenedList.Add(GroupCopy);
-				AllGroups.Add(GroupCopy);
-
-				if (ParentToChildren.Contains(GroupId))
-				{
-					for (int32 ChildId : ParentToChildren[GroupId])
-					{
-						// Skip self reference
-						if (ChildId != GroupId)
-						{
-							AddToFlat(ChildId, IndentLevel + 1);
-						}
-					}
-				}
-			}
-		};
-
-	// Find roots and start recursion
-	for (const FS_CombatGroup& Group : SSWInstance->CombatRosterData)
-	{
-		if (!GroupMap.Contains(Group.ParentId) || Group.ParentId == Group.Id)
-		{
-			RootGroups.Add(Group);
-			AddToFlat(Group.Id, 0);
-		}
-	}
+	
 }
 
 void UOperationsScreen::GetIntelImageFile(FString IntelImageName)
@@ -755,4 +702,24 @@ const TArray<FS_CombatGroup>& UOperationsScreen::GetAllGroupsList() const
 void UOperationsScreen::SetAllGroupsList(const TArray<FS_CombatGroup>& NewList)
 {
 	AllGroups = NewList;
+}
+
+const TArray<FS_CombatGroup>& UOperationsScreen::GetBaseGroupsList() const
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	return SSWInstance->CombatRosterData;
+}
+
+void UOperationsScreen::PrintGroupData(TArray<FS_CombatGroup> Group) const
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	for (FS_CombatGroup Item : Group)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Item: %s"), *Item.DisplayName);
+	}
+}
+
+void UOperationsScreen::SetBaseGroupsList(const TArray<FS_CombatGroup>& NewList)
+{
+
 }

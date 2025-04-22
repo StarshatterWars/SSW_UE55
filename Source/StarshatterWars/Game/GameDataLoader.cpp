@@ -3884,7 +3884,9 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 						Text Region = "";
 						Text System = "";
 						Text ParentType = "";
+						EINTEL_TYPE IntelType = EINTEL_TYPE::KNOWN;
 						ECOMBATGROUP_TYPE UnitType = ECOMBATGROUP_TYPE::NONE;
+						ECOMBATGROUP_TYPE EParentType = ECOMBATGROUP_TYPE::NONE;
 						int UnitIndex = 0;
 						int ParentId = 0;
 						int Id = 0;
@@ -3903,7 +3905,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							}
 							else if (pdef->name()->value() == ("type"))
 							{
-								GetDefText(Type, pdef, fn);								
+								GetDefText(Type, pdef, fn);						
 								
 								if (FStringToEnum<ECOMBATGROUP_TYPE>(FString(Type).ToUpper(), UnitType, false))
 								{
@@ -3919,7 +3921,17 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							else if (pdef->name()->value() == ("intel"))
 							{
 								GetDefText(Intel, pdef, fn);
-								NewCombatGroup.Intel = FString(Intel);
+
+								if (FStringToEnum<EINTEL_TYPE>(FString(Intel).ToUpper(), IntelType, false))
+								{
+									UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(IntelType));
+								}
+								else
+								{
+									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
+								}
+
+								NewCombatGroup.Intel = IntelType;
 							}
 							else if (pdef->name()->value() == ("region"))
 							{
@@ -3942,7 +3954,17 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							else if (pdef->name()->value() == ("parent_type"))
 							{
 								GetDefText(ParentType, pdef, fn);
-								NewCombatGroup.ParentType = FString(ParentType);
+
+								if (FStringToEnum<ECOMBATGROUP_TYPE>(FString(ParentType).ToUpper(), EParentType, false))
+								{
+									UE_LOG(LogTemp, Log, TEXT("Converted to parent_type enum: %d"), static_cast<int32>(EParentType));
+								}
+								else
+								{
+									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
+								}
+								
+								NewCombatGroup.ParentType = EParentType;
 							}
 							else if (pdef->name()->value() == ("parent_id"))
 							{

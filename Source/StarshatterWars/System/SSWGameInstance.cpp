@@ -9,7 +9,6 @@
 #include "../Game/Sim.h"
 #include "../Game/GameDataLoader.h"
 #include "../Game/AwardInfoLoader.h"
-#include "../Game/CombatGroupLoader.h"
 
 #include "../Screen/MenuDlg.h"
 #include "../Screen/QuitDlg.h"
@@ -431,10 +430,10 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CombatGroupDataTable = CombatGroupDataTableObject.Object;
 	}
 	
-	if (bClearTables) {
+	//if (bClearTables) {
 		CampaignDataTable->EmptyTable();
 		CombatGroupDataTable->EmptyTable();
-	}
+	//}
 }
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)

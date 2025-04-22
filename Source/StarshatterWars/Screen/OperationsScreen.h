@@ -167,6 +167,14 @@ public:
 	// Setter
 	void SetAllGroupsList(const TArray<FS_CombatGroup>& NewList);
 
+	// Getter
+	const TArray<FS_CombatGroup>& GetBaseGroupsList() const;
+
+	void PrintGroupData(TArray<FS_CombatGroup> Group) const;
+	
+	// Setter
+	void SetBaseGroupsList(const TArray<FS_CombatGroup>& NewList);
+
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -270,4 +278,3 @@ private:
 	
 	int IndentLevel = 0;
 };
-
