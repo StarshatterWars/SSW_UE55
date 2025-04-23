@@ -134,9 +134,6 @@ public:
 	FString GetOrdinal(int id);
 	FString GetNameFromType(ECOMBATGROUP_TYPE name);
 
-	FS_CombatGroupUnit CombatGroupUnit;
-	FS_CombatGroup CombatGroupData;
-
 	FS_LayoutDef LayoutDef;
 	
 	Text GetContentBundleText(const char* key)   const;
@@ -221,7 +218,11 @@ protected:
 	FS_ShipDesign ShipDesignData;
 	FS_SystemDesign SystemDesignData;
 	FS_AwardInfo AwardData;
+	FS_CombatGroupUnit CombatGroupUnit;
+	FS_CombatGroup CombatGroupData;
+	FS_OOBForce ForceData;
 	
+	TArray<FS_OOBFleet> FleetArray;
 	TArray<FS_CampaignAction> CampaignActionArray;
 	TArray<FS_Combatant> CombatantArray;
 	TArray<FS_CampaignZone> ZoneArray;
@@ -264,8 +265,6 @@ protected:
 	class UDataTable* PlanetsDataTable;
 	class UDataTable* MoonsDataTable;
 	class UDataTable* RegionsDataTable;
-	//class UDataTable* CampaignDataTable;
-	class UDataTable* CombatGroupDataTable;
 	class UDataTable* ShipDesignDataTable;
 	class UDataTable* SystemDesignDataTable;
 	class UDataTable* FormDefDataTable;

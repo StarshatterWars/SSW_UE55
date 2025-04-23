@@ -181,16 +181,6 @@ AGameDataLoader::AGameDataLoader()
 		UE_LOG(LogTemp, Log, TEXT("Failed to get Regions Data Table"));
 	}
 
-	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
-
-	if (CombatGroupDataTableObject.Succeeded())
-	{
-		CombatGroupDataTable = CombatGroupDataTableObject.Object;
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Failed to get Combat Group Data Table"));
-	}
-
 	static ConstructorHelpers::FObjectFinder<UDataTable> AwardDataTableObject(TEXT("DataTable'/Game/Game/DT_AwardInfo.DT_AwardInfo'"));
 
 	if (AwardDataTableObject.Succeeded())
@@ -199,8 +189,6 @@ AGameDataLoader::AGameDataLoader()
 	}
 
 	PrimaryActorTick.bCanEverTick = true;
-
-	
 }
 
 
@@ -3876,16 +3864,17 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 						TermStruct* val = def->term()->isStruct();
 
 						FS_CombatGroup NewCombatGroup;
+						FS_OOBForce NewForce;
 						NewCombatUnitArray.Empty();
 
 						Text Name = "";
 						Text Type = "";
-						Text Intel = "KNOWN";
 						Text Region = "";
 						Text System = "";
 						Text ParentType = "";
 						EINTEL_TYPE IntelType = EINTEL_TYPE::KNOWN;
-						ECOMBATGROUP_TYPE UnitType = ECOMBATGROUP_TYPE::NONE;
+						ECOMBATGROUP_TYPE EType = ECOMBATGROUP_TYPE::NONE;
+						ECOMBATUNIT_TYPE EUnitType = ECOMBATUNIT_TYPE::NONE;
 						ECOMBATGROUP_TYPE EParentType = ECOMBATGROUP_TYPE::NONE;
 						int UnitIndex = 0;
 						int ParentId = 0;
@@ -3904,22 +3893,9 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								GetDefText(Name, pdef, fn);
 								NewCombatGroup.Name = FString(Name);
 							}
-							else if (pdef->name()->value() == ("type"))
-							{
-								GetDefText(Type, pdef, fn);						
-								
-								if (FStringToEnum<ECOMBATGROUP_TYPE>(FString(Type).ToUpper(), UnitType, false))
-								{
-									UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(UnitType));
-								}
-								else
-								{
-									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
-								}
-								NewCombatGroup.Type = UnitType;	
-							}
 							else if (pdef->name()->value() == ("intel"))
 							{
+								Text Intel = "";
 								GetDefText(Intel, pdef, fn);
 
 								if (FStringToEnum<EINTEL_TYPE>(FString(Intel).ToUpper(), IntelType, false))
@@ -3991,7 +3967,19 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								GetDefNumber(UnitIndex, pdef, fn);
 								NewCombatGroup.UnitIndex = UnitIndex;
 							}
-
+							else if (pdef->name()->value() == ("type"))
+							{
+								GetDefText(Type, pdef, fn);
+								if (FStringToEnum<ECOMBATGROUP_TYPE>(FString(Type).ToUpper(), EType, false))
+								{
+									UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(EType));
+								}
+								else
+								{
+									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
+								}
+								NewCombatGroup.Type = EType;		
+							}
 							else if (pdef->name()->value() == ("unit"))
 							{
 								TermStruct* UnitTerm = pdef->term()->isStruct();
@@ -4079,15 +4067,27 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								}
 								NewCombatGroup.Unit = NewCombatUnitArray;
 							}
-
-							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + FString(GetNameFromType(UnitType)));
+						
+							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + FString(GetNameFromType(EType)));
 							// call AddRow to insert the record
 							NewCombatGroup.DisplayName = RowName.ToString();
+							NewForce.Name = RowName.ToString();
 							
 							if (Iff > -1) {
 								SSWInstance->CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
 							}
+
 							CombatGroupData = NewCombatGroup;
+
+							if (Iff > -1) {
+								if (EType == ECOMBATGROUP_TYPE::FORCE) {
+									NewForce.Id = CombatGroupData.Id;
+									NewForce.Iff = CombatGroupData.Iff;
+									NewForce.Name = CombatGroupData.DisplayName;
+									NewForce.Empire = CombatGroupData.EmpireId;
+									SSWInstance->OrderOfBattleDataTable->AddRow(RowName, NewForce);
+								}
+							}
 
 						}  /// iff == team?
 					}    // group-struct

@@ -2071,28 +2071,19 @@ struct FS_OOBForce : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Empire;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_OOBFleet> Fleet;
 
 	FS_OOBForce() {
 		
 		Id = 0; 
+		Iff = 0;
 		Name = "";
 		Empire = 0;
 	}
 };
 
-USTRUCT(BlueprintType)
-struct FS_OrderOfBattle : public FTableRowBase {
-	GENERATED_BODY()
-	
-
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray<FS_OOBForce> Force;
-
-	FS_OrderOfBattle() {
-	
-	}
-};
 
 USTRUCT(BlueprintType)
 struct FS_CombatGroupUnit : public FTableRowBase {

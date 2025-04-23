@@ -278,6 +278,7 @@ public:
 
 	class UDataTable* CampaignDataTable;
 	class UDataTable* CombatGroupDataTable;
+	class UDataTable* OrderOfBattleDataTable;
 
 	UPROPERTY(EditAnywhere)
 	bool bClearTables;
@@ -291,6 +292,8 @@ public:
 	TArray<FS_CombatGroup> CombatRosterData;
 	UPROPERTY()
 	TArray<FS_CampaignMissionList> MissionList;
+	UPROPERTY()
+	TArray<FS_OOBForce> ForceList;
 
 	UPROPERTY()
 	bool MissionSelectionChanged;

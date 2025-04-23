@@ -450,10 +450,18 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 	{
 		CombatGroupDataTable = CombatGroupDataTableObject.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> OrderOfBattleDataTableObject(TEXT("DataTable'/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle'"));
+
+	if (OrderOfBattleDataTableObject.Succeeded())
+	{
+		OrderOfBattleDataTable = OrderOfBattleDataTableObject.Object;
+	}
 	
 	if (bClearTables) {
 		CampaignDataTable->EmptyTable();
 		CombatGroupDataTable->EmptyTable();
+		OrderOfBattleDataTable->EmptyTable();
 	}
 
 }
