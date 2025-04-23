@@ -1804,6 +1804,37 @@ struct FS_OOBUnit : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_OOBFighterUnit : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Regnum;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Design;	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ParentId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	ECOMBATUNIT_TYPE Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Count;
+
+	FS_OOBFighterUnit() {
+		Name = "";
+		Location = "";
+		ParentId = 0;
+		Count = -1;
+		Type = ECOMBATUNIT_TYPE::NONE;
+		ParentType = ECOMBATGROUP_TYPE::NONE;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_OOBLanding : public FTableRowBase {
 	GENERATED_BODY()
 
@@ -1824,7 +1855,7 @@ struct FS_OOBLanding : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray <FS_OOBUnit> Unit;
+	TArray <FS_OOBFighterUnit> Unit;
 	
 	FS_OOBLanding() {	
 		Id = 0;
@@ -1860,7 +1891,7 @@ struct FS_OOBFighter : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray <FS_OOBUnit> Unit;
+	TArray <FS_OOBFighterUnit> Unit;
 	
 	FS_OOBFighter() {	
 		Id = 0;
@@ -1895,7 +1926,7 @@ struct FS_OOBAttack : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray <FS_OOBUnit> Unit;
+	TArray <FS_OOBFighterUnit> Unit;
 	
 	FS_OOBAttack() {		
 		Id = 0;
@@ -1930,7 +1961,7 @@ struct FS_OOBIntercept : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray <FS_OOBUnit> Unit;
+	TArray <FS_OOBFighterUnit> Unit;
 	
 	FS_OOBIntercept() {		
 		Id = 0;

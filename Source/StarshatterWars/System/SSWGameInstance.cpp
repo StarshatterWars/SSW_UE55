@@ -1213,6 +1213,38 @@ void USSWGameInstance::CreateOOBTable() {
 			NewCarrier.Iff = Item.Iff;
 			NewCarrier.Location = Item.Region;
 			NewCarrier.Empire = Item.EmpireId;
+			NewCarrier.Unit.SetNum(4);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (!NewCarrier.Unit.IsValidIndex(Index))
+					break;
+
+				NewCarrier.Unit[Index].Name = UnitItem.UnitName;
+				NewCarrier.Unit[Index].Count = 1;
+				NewCarrier.Unit[Index].ParentId = Item.ParentId;
+				NewCarrier.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewCarrier.Unit[Index].Location = Item.Region;
+				NewCarrier.Unit[Index].ParentType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
+
+				if (UnitItem.UnitClass == "Cruiser") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
+				}
+				else if (UnitItem.UnitClass == "Destroyer") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
+				}
+				else if (UnitItem.UnitClass == "Frigate") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
+				}
+				else if (UnitItem.UnitClass == "Carrier") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
+				}
+
+				NewCarrier.Unit[Index].Design = UnitItem.UnitDesign;
+				++Index;
+			}
+
 			CarrierArray.Add(NewCarrier);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::DESTROYER_SQUADRON) {
@@ -1224,6 +1256,38 @@ void USSWGameInstance::CreateOOBTable() {
 			NewDestroyer.Iff = Item.Iff;
 			NewDestroyer.Location = Item.Region;
 			NewDestroyer.Empire = Item.EmpireId;
+			NewDestroyer.Unit.SetNum(4);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (!NewDestroyer.Unit.IsValidIndex(Index))
+					break;
+
+				NewDestroyer.Unit[Index].Name = UnitItem.UnitName;
+				NewDestroyer.Unit[Index].Count = 1;
+				NewDestroyer.Unit[Index].ParentId = Item.ParentId;
+				NewDestroyer.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewDestroyer.Unit[Index].Location = Item.Region;
+				NewDestroyer.Unit[Index].ParentType = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+
+				if (UnitItem.UnitClass == "Cruiser") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
+				}
+				else if (UnitItem.UnitClass == "Destroyer") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
+				}
+				else if (UnitItem.UnitClass == "Frigate") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
+				}
+				else if (UnitItem.UnitClass == "Carrier") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
+				}
+
+				NewDestroyer.Unit[Index].Design = UnitItem.UnitDesign;
+				++Index;
+			}
+
 			DestroyerArray.Add(NewDestroyer);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::BATTLE_GROUP) {
@@ -1235,6 +1299,37 @@ void USSWGameInstance::CreateOOBTable() {
 			NewBattle.Iff = Item.Iff;
 			NewBattle.Location = Item.Region;
 			NewBattle.Empire = Item.EmpireId;
+			NewBattle.Unit.SetNum(4);
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (!NewBattle.Unit.IsValidIndex(Index))
+					break;
+
+				NewBattle.Unit[Index].Name = UnitItem.UnitName;
+				NewBattle.Unit[Index].Count = 1;
+				NewBattle.Unit[Index].ParentId = Item.ParentId;
+				NewBattle.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewBattle.Unit[Index].Location = Item.Region;
+				NewBattle.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTLE_GROUP;
+
+				if (UnitItem.UnitClass == "Cruiser") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
+				}
+				else if (UnitItem.UnitClass == "Destroyer") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
+				}
+				else if (UnitItem.UnitClass == "Frigate") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
+				}
+				else if (UnitItem.UnitClass == "Carrier") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
+				}
+
+				NewBattle.Unit[Index].Design = UnitItem.UnitDesign;
+				++Index;
+			}
+
 			BattleArray.Add(NewBattle);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::WING) {
@@ -1258,6 +1353,23 @@ void USSWGameInstance::CreateOOBTable() {
 			NewFighter.Iff = Item.Iff;
 			NewFighter.Location = Item.Region;
 			NewFighter.Empire = Item.EmpireId;
+			NewFighter.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewFighter.Unit.IsValidIndex(Index))
+				{
+					NewFighter.Unit[Index].Name = UnitItem.UnitName;
+					NewFighter.Unit[Index].Count = UnitItem.UnitCount;
+					NewFighter.Unit[Index].Location = Item.Region;
+					NewFighter.Unit[Index].ParentId = Item.ParentId;
+					NewFighter.Unit[Index].Type = ECOMBATUNIT_TYPE::FIGHTER;
+					NewFighter.Unit[Index].ParentType = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+					NewFighter.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			FighterArray.Add(NewFighter);
 		}
 
@@ -1270,6 +1382,23 @@ void USSWGameInstance::CreateOOBTable() {
 			NewIntercept.Iff = Item.Iff;
 			NewIntercept.Location = Item.Region;
 			NewIntercept.Empire = Item.EmpireId;
+			NewIntercept.Unit.SetNum(1);
+			
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewIntercept.Unit.IsValidIndex(Index))
+				{
+					NewIntercept.Unit[Index].Name = UnitItem.UnitName;
+					NewIntercept.Unit[Index].Count = UnitItem.UnitCount;
+					NewIntercept.Unit[Index].Location = Item.Region;
+					NewIntercept.Unit[Index].ParentId = Item.ParentId;
+					NewIntercept.Unit[Index].Type = ECOMBATUNIT_TYPE::INTERCEPT;
+					NewIntercept.Unit[Index].ParentType = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
+					NewIntercept.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			InterceptorArray.Add(NewIntercept);
 		}
 
@@ -1282,6 +1411,23 @@ void USSWGameInstance::CreateOOBTable() {
 			NewAttack.Iff = Item.Iff;
 			NewAttack.Location = Item.Region;
 			NewAttack.Empire = Item.EmpireId;
+			NewAttack.Unit.SetNum(1);
+			
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewAttack.Unit.IsValidIndex(Index))
+				{
+					NewAttack.Unit[Index].Name = UnitItem.UnitName;
+					NewAttack.Unit[Index].Count = UnitItem.UnitCount;
+					NewAttack.Unit[Index].Location = Item.Region;
+					NewAttack.Unit[Index].ParentId = Item.ParentId;
+					NewAttack.Unit[Index].Type = ECOMBATUNIT_TYPE::ATTACK;
+					NewAttack.Unit[Index].ParentType = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+					NewAttack.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			AttackArray.Add(NewAttack);
 		}
 
@@ -1294,6 +1440,23 @@ void USSWGameInstance::CreateOOBTable() {
 			NewLanding.Iff = Item.Iff;
 			NewLanding.Location = Item.Region;
 			NewLanding.Empire = Item.EmpireId;
+			NewLanding.Unit.SetNum(1);
+			
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewLanding.Unit.IsValidIndex(Index))
+				{
+					NewLanding.Unit[Index].Name = UnitItem.UnitName;
+					NewLanding.Unit[Index].Count = UnitItem.UnitCount;
+					NewLanding.Unit[Index].Location = Item.Region;
+					NewLanding.Unit[Index].ParentId = Item.ParentId;
+					NewLanding.Unit[Index].Type = ECOMBATUNIT_TYPE::LCA;
+					NewLanding.Unit[Index].ParentType = ECOMBATGROUP_TYPE::LCA_SQUADRON;
+					NewLanding.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			LandingArray.Add(NewLanding);
 		}
 
