@@ -293,7 +293,7 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
-	CreateOOBTable();
+	//CreateOOBTable();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -1148,6 +1148,8 @@ FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
 
 void USSWGameInstance::CreateOOBTable() {
 	
+	OrderOfBattleDataTable->EmptyTable();
+
 	TArray<FS_OOBFleet> FleetArray;
 	TArray<FS_OOBCarrier> CarrierArray;
 	TArray<FS_OOBDestroyer> DestroyerArray;
