@@ -5,6 +5,7 @@ group: {
   id:     1,
   name:   "Independent System of Solus",
   intel:  known,
+  region: "Solus",
   iff:    0,
   empire_id: 10,
 }

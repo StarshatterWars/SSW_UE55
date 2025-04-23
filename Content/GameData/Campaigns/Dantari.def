@@ -5,6 +5,7 @@ group: {
   id:     1,
   name:   "Dantari Separatists",
   intel:  tracked,
+  region: "Jalah",
   iff:    2,
   empire_id: 3,
   loc:    (0, 0, 0),

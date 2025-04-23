@@ -5,6 +5,7 @@ group: {
   id:     1,
   name:   "Terellian Alliance",
   intel:  known,
+  region: "Jarnell",
   empire_id: 0,
   iff:    1,
   loc:    (0, 0, 0),

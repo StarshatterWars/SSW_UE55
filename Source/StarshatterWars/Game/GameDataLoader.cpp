@@ -3849,6 +3849,8 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 		}
 	}
 
+	int ForceId = 0;
+
 	do {
 		delete term;
 		term = parser.ParseTerm();
@@ -3865,8 +3867,9 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 
 						FS_CombatGroup NewCombatGroup;
 						FS_OOBForce NewForce;
-						NewCombatUnitArray.Empty();
 
+						NewCombatUnitArray.Empty();
+						
 						Text Name = "";
 						Text Type = "";
 						Text Region = "";
@@ -3978,7 +3981,8 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 								{
 									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
 								}
-								NewCombatGroup.Type = EType;		
+								
+								NewCombatGroup.Type = EType;
 							}
 							else if (pdef->name()->value() == ("unit"))
 							{
@@ -3991,6 +3995,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 									// Add Unit Stuff Here
 
 									FS_CombatGroupUnit NewCombatGroupUnit;
+								
 
 									UnitName = "";
 									UnitRegnum = "";
@@ -4047,8 +4052,6 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 										else if (pdef->name()->value() == "heading") {
 											GetDefNumber(UnitHeading, pdef, fn);
 										}
-
-
 										NewCombatGroupUnit.UnitRegnum = FString(UnitRegnum);
 										NewCombatGroupUnit.UnitRegion = FString(UnitRegion);
 										NewCombatGroupUnit.UnitLoc.X = UnitLoc.x;
@@ -4071,23 +4074,12 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + FString(GetNameFromType(EType)));
 							// call AddRow to insert the record
 							NewCombatGroup.DisplayName = RowName.ToString();
-							NewForce.Name = RowName.ToString();
-							
+
 							if (Iff > -1) {
 								SSWInstance->CombatGroupDataTable->AddRow(RowName, NewCombatGroup);
 							}
 
 							CombatGroupData = NewCombatGroup;
-
-							if (Iff > -1) {
-								if (EType == ECOMBATGROUP_TYPE::FORCE) {
-									NewForce.Id = CombatGroupData.Id;
-									NewForce.Iff = CombatGroupData.Iff;
-									NewForce.Name = CombatGroupData.DisplayName;
-									NewForce.Empire = CombatGroupData.EmpireId;
-									SSWInstance->OrderOfBattleDataTable->AddRow(RowName, NewForce);
-								}
-							}
 
 						}  /// iff == team?
 					}    // group-struct

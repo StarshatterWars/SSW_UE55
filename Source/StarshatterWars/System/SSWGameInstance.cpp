@@ -293,6 +293,7 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
+	CreateOOBTable();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -1143,6 +1144,32 @@ FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
 	if (!EnumPtr) return FString("Invalid");
 
 	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
+}
+
+void USSWGameInstance::CreateOOBTable() {
+	TArray<FS_OOBFleet> FleetArray;
+	for (FS_CombatGroup Item : CombatRosterData) {
+		FS_OOBForce NewForce;
+		int i = 0;
+		if (Item.Type == ECOMBATGROUP_TYPE::FORCE) {
+			NewForce.Id = Item.Id;
+			NewForce.Name = Item.DisplayName;
+			NewForce.Iff = Item.Iff;
+			NewForce.Location = Item.Region;
+			NewForce.Empire = Item.EmpireId;
+			if (Item.ParentId == NewForce.Id && Item.Type == ECOMBATGROUP_TYPE::FLEET) {
+				NewForce.Fleet.SetNum(i);
+				NewForce.Fleet[i].Name = Item.DisplayName;
+				i++;
+			}
+			else {
+				i = 0;
+			}
+			if (Item.Iff > -1) {
+				OrderOfBattleDataTable->AddRow(FName(Item.DisplayName), NewForce);
+			}
+		}
+	}
 }
 
 

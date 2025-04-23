@@ -5,6 +5,7 @@ group: {
   id:     1,
   name:   "Marakan Hegemony",
   intel:  known,
+  region: "Marak",
   iff:    2,
   empire_id: 1,
   loc:    (0, 0, 0),

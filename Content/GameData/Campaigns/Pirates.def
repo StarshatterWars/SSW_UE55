@@ -5,6 +5,7 @@ group: {
   id:     1,
   name:   "Brotherhood of Iron",
   intel:  secret,
+  region: "Prosenar",
   iff:    3,
   empire_id: 6,
   loc:    (0, 0, 0),

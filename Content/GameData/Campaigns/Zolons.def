@@ -5,6 +5,7 @@ group: {
   id:     1,
   name:   "Zolon Empire",
   intel:  secret,
+  region: "Nergal",
   iff:    4,
   empire_id: 4,
   loc:    (0, 0, 0),

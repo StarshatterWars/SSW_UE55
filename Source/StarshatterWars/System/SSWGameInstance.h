@@ -239,6 +239,7 @@ public:
 	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
 	FString GetEmpireTypeNameByIndex(int32 Index);
 	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
+	void CreateOOBTable();
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
