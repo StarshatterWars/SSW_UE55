@@ -1152,12 +1152,22 @@ void USSWGameInstance::CreateOOBTable() {
 	TArray<FS_OOBCarrier> CarrierArray;
 	TArray<FS_OOBDestroyer> DestroyerArray;
 	TArray<FS_OOBBattle> BattleArray;
+	TArray<FS_OOBWing> WingArray;
+	TArray<FS_OOBFighter> FighterArray;
+	TArray<FS_OOBIntercept> InterceptorArray;
+	TArray<FS_OOBAttack> AttackArray;
+	TArray<FS_OOBLanding> LandingArray;
 
 	FS_OOBForce NewForce;
+	FS_OOBForce* ForceRow;
+
+	FS_OOBFleet CurrentFleet;
 	
-	int OldId;
+	int ForceId;
 	int OldEmpire;
 	int OldIff;
+
+	int FleetId;
 	FName RowName;
 
 	for (FS_CombatGroup Item : CombatRosterData) // Make Initial Table
@@ -1169,7 +1179,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewForce.Iff = Item.Iff;
 			NewForce.Location = Item.Region;
 			NewForce.Empire = Item.EmpireId;
-			OldId = Item.Id;
+			ForceId = Item.Id;
 			OldIff = Item.Iff;
 			OldEmpire = Item.EmpireId;
 			RowName = FName(NewForce.Name);
@@ -1180,7 +1190,7 @@ void USSWGameInstance::CreateOOBTable() {
 			}
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::FLEET) {
-			if(Item.ParentId == OldId && Item.EmpireId == OldEmpire)
+			if(Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
 			{
 				FS_OOBFleet NewFleet;
 				
@@ -1190,35 +1200,100 @@ void USSWGameInstance::CreateOOBTable() {
 				NewFleet.Iff = Item.Iff;
 				NewFleet.Location = Item.Region;
 				NewFleet.Empire = Item.EmpireId;
+				FleetId = Item.Id;
 				FleetArray.Add(NewFleet);
 			}
-			
-			FS_OOBForce* Row = OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT(""));
-
-			if(Row) {
-				Row->Fleet = FleetArray;
-			}
-			
 		}
-		/*else if (Item.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-			if (Item.ParentId == OldId && Item.EmpireId == OldEmpire)
+		else if (Item.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+			FS_OOBCarrier NewCarrier;
+
+			NewCarrier.Id = Item.Id;
+			NewCarrier.ParentId = Item.ParentId;
+			NewCarrier.Name = Item.DisplayName;
+			NewCarrier.Iff = Item.Iff;
+			NewCarrier.Location = Item.Region;
+			NewCarrier.Empire = Item.EmpireId;
+			CarrierArray.Add(NewCarrier);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::DESTROYER_SQUADRON) {
+			FS_OOBDestroyer NewDestroyer;
+
+			NewDestroyer.Id = Item.Id;
+			NewDestroyer.ParentId = Item.ParentId;
+			NewDestroyer.Name = Item.DisplayName;
+			NewDestroyer.Iff = Item.Iff;
+			NewDestroyer.Location = Item.Region;
+			NewDestroyer.Empire = Item.EmpireId;
+			DestroyerArray.Add(NewDestroyer);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::BATTLE_GROUP) {
+			FS_OOBBattle NewBattle;
+
+			NewBattle.Id = Item.Id;
+			NewBattle.ParentId = Item.ParentId;
+			NewBattle.Name = Item.DisplayName;
+			NewBattle.Iff = Item.Iff;
+			NewBattle.Location = Item.Region;
+			NewBattle.Empire = Item.EmpireId;
+			BattleArray.Add(NewBattle);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::WING) {
+			FS_OOBWing NewWing;
+
+			NewWing.Id = Item.Id;
+			NewWing.ParentId = Item.ParentId;
+			NewWing.Name = Item.DisplayName;
+			NewWing.Iff = Item.Iff;
+			NewWing.Location = Item.Region;
+			NewWing.Empire = Item.EmpireId;
+			WingArray.Add(NewWing);
+		}
+
+		// Loop through each fleet and assign its carriers
+		for (FS_OOBFleet& Fleet : FleetArray)
+		{
+			Fleet.Carrier.Empty(); // optional: clear old data
+			Fleet.Destroyer.Empty(); // optional: clear old data
+			Fleet.Battle.Empty(); // optional: clear old data
+
+			for (FS_OOBCarrier& Carrier : CarrierArray)
 			{
-				FS_OOBCarrier NewCarrier;
-
-				NewCarrier.Id = Item.Id;
-				NewCarrier.Name = Item.DisplayName;
-				NewCarrier.Iff = Item.Iff;
-				NewCarrier.Location = Item.Region;
-				NewCarrier.Empire = Item.EmpireId;
-				CarrierArray.Add(NewCarrier);
+				Carrier.Wing.Empty(); // optional: clear old data
+				
+				if (Carrier.ParentId == Fleet.Id && Carrier.Empire == Fleet.Empire)
+				{
+					for (FS_OOBWing& Wing : WingArray)
+					{
+						if (Wing.ParentId == Carrier.Id && Wing.Empire == Carrier.Empire) {
+							Carrier.Wing.Add(Wing);
+						}
+					}
+					Fleet.Carrier.Add(Carrier);
+				}
 			}
-			FS_OOBForce* Row = OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT(""));
-
-			if (Row) {
-				Row->Fleet. = CarrierArray;
-				CarrierArray.Empty();
+			
+			for (const FS_OOBBattle& Battle : BattleArray)
+			{
+				if (Battle.ParentId == Fleet.Id && Battle.Empire == Fleet.Empire)
+				{
+					Fleet.Battle.Add(Battle);
+				}
 			}
-		}*/
+
+			for (const FS_OOBDestroyer& Destroyer : DestroyerArray)
+			{
+				if (Destroyer.ParentId == Fleet.Id && Destroyer.Empire == Fleet.Empire)
+				{
+					Fleet.Destroyer.Add(Destroyer);
+				}
+			}
+		}
+
+		ForceRow = OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT(""));
+
+		if (ForceRow) {
+			ForceRow->Fleet = FleetArray;
+		}
 	}	
 }
 
