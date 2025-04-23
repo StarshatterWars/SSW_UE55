@@ -1823,6 +1823,8 @@ struct FS_OOBLanding : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
 	
 	FS_OOBLanding() {	
 		Id = 0;
@@ -1857,6 +1859,8 @@ struct FS_OOBFighter : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
 	
 	FS_OOBFighter() {	
 		Id = 0;
@@ -1890,6 +1894,8 @@ struct FS_OOBAttack : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
 	
 	FS_OOBAttack() {		
 		Id = 0;
@@ -1923,6 +1929,8 @@ struct FS_OOBIntercept : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
 	
 	FS_OOBIntercept() {		
 		Id = 0;
@@ -1997,6 +2005,8 @@ struct FS_OOBBattle : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
 	
 	FS_OOBBattle() {	
 		Id = 0;
@@ -2030,6 +2040,8 @@ struct FS_OOBDestroyer : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
 	
 	FS_OOBDestroyer() {
 		Id = 0;
@@ -2065,7 +2077,9 @@ struct FS_OOBCarrier : public FTableRowBase {
 	ECOMBATGROUP_TYPE ParentType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_OOBWing> Wing;
-	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBUnit> Unit;
+
 	FS_OOBCarrier() {
 		Id = 0;
 		Iff = -1;

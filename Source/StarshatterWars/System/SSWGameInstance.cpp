@@ -1249,6 +1249,54 @@ void USSWGameInstance::CreateOOBTable() {
 			WingArray.Add(NewWing);
 		}
 
+		else if (Item.Type == ECOMBATGROUP_TYPE::FIGHTER_SQUADRON) {
+			FS_OOBFighter NewFighter;
+
+			NewFighter.Id = Item.Id;
+			NewFighter.ParentId = Item.ParentId;
+			NewFighter.Name = Item.DisplayName;
+			NewFighter.Iff = Item.Iff;
+			NewFighter.Location = Item.Region;
+			NewFighter.Empire = Item.EmpireId;
+			FighterArray.Add(NewFighter);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON) {
+			FS_OOBIntercept NewIntercept;
+
+			NewIntercept.Id = Item.Id;
+			NewIntercept.ParentId = Item.ParentId;
+			NewIntercept.Name = Item.DisplayName;
+			NewIntercept.Iff = Item.Iff;
+			NewIntercept.Location = Item.Region;
+			NewIntercept.Empire = Item.EmpireId;
+			InterceptorArray.Add(NewIntercept);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::ATTACK_SQUADRON) {
+			FS_OOBAttack NewAttack;
+
+			NewAttack.Id = Item.Id;
+			NewAttack.ParentId = Item.ParentId;
+			NewAttack.Name = Item.DisplayName;
+			NewAttack.Iff = Item.Iff;
+			NewAttack.Location = Item.Region;
+			NewAttack.Empire = Item.EmpireId;
+			AttackArray.Add(NewAttack);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::LCA_SQUADRON) {
+			FS_OOBLanding NewLanding;
+
+			NewLanding.Id = Item.Id;
+			NewLanding.ParentId = Item.ParentId;
+			NewLanding.Name = Item.DisplayName;
+			NewLanding.Iff = Item.Iff;
+			NewLanding.Location = Item.Region;
+			NewLanding.Empire = Item.EmpireId;
+			LandingArray.Add(NewLanding);
+		}
+
 		// Loop through each fleet and assign its carriers
 		for (FS_OOBFleet& Fleet : FleetArray)
 		{
@@ -1264,7 +1312,40 @@ void USSWGameInstance::CreateOOBTable() {
 				{
 					for (FS_OOBWing& Wing : WingArray)
 					{
+						Wing.Fighter.Empty();
+						Wing.Attack.Empty();
+						Wing.Intercept.Empty();
+						Wing.Landing.Empty();
+						
 						if (Wing.ParentId == Carrier.Id && Wing.Empire == Carrier.Empire) {
+							
+							for (FS_OOBFighter& Fighter : FighterArray)
+							{
+								if (Fighter.ParentId == Wing.Id && Fighter.Empire == Wing.Empire) {
+									Wing.Fighter.Add(Fighter);
+								}
+							}
+
+							for (FS_OOBAttack& Attack : AttackArray)
+							{
+								if (Attack.ParentId == Wing.Id && Attack.Empire == Wing.Empire) {
+									Wing.Attack.Add(Attack);
+								}
+							}
+
+							for (FS_OOBIntercept& Intercept : InterceptorArray)
+							{
+								if (Intercept.ParentId == Wing.Id && Intercept.Empire == Wing.Empire) {
+									Wing.Intercept.Add(Intercept);
+								}
+							}
+
+							for (FS_OOBLanding& Landing : LandingArray)
+							{
+								if (Landing.ParentId == Wing.Id && Landing.Empire == Wing.Empire) {
+									Wing.Landing.Add(Landing);
+								}
+							}
 							Carrier.Wing.Add(Wing);
 						}
 					}

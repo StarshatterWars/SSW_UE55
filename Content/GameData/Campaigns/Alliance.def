@@ -182,7 +182,7 @@ group: {
 }
 
 group: {
-  type:   battle_group,
+  typegroup,
   id:     5,
   name:   "Devastator",
   intel:  reserve,
