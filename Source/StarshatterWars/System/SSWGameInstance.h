@@ -242,6 +242,8 @@ public:
 	void CreateOOBTable();
 	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
 	
+	void FlattenForce(const FS_OOBForce& ForceData, TArray<FS_OOBFlatEntry>& OutFlatList);
+
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;
@@ -401,4 +403,16 @@ protected:
 
 		UFUNCTION()
 		void OnGameTimerTick();
+
+		void RecursivelyFlattenForce(const FS_OOBForce& Force, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenFleet(const FS_OOBFleet& Fleet, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenBattle(const FS_OOBBattle& Battle, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenCarrier(const FS_OOBCarrier& Carrier, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenDestroyer(const FS_OOBDestroyer& Destroyer, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenWing(const FS_OOBWing& Wing, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenFighter(const FS_OOBFighter& Unit, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenAttack(const FS_OOBAttack& Attack, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenIntercept(const FS_OOBIntercept& Intercept, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void RecursivelyFlattenLanding(const FS_OOBLanding& Landing, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
 };
+

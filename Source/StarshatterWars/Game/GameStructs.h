@@ -1,4 +1,5 @@
 // /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
 
 #pragma once
 
@@ -1768,6 +1769,34 @@ struct FS_Campaign : public FTableRowBase {
 		ActionSize = 0;
 		CombatantSize = 0;
 		Index = 0;
+	}
+};
+
+// Structure to represent a flat entry in the ListView
+USTRUCT(BlueprintType)
+struct FS_OOBFlatEntry
+{
+    GENERATED_BODY()
+
+       UPROPERTY(BlueprintReadWrite)
+    int32 Id;
+
+    UPROPERTY(BlueprintReadWrite)
+    int32 ParentId;
+
+    UPROPERTY(BlueprintReadWrite)
+    FString DisplayName;
+
+    UPROPERTY(BlueprintReadWrite)
+    int32 IndentLevel;
+
+    UPROPERTY(BlueprintReadWrite)
+    ECOMBATGROUP_TYPE GroupType;
+
+	FS_OOBFlatEntry() {
+		IndentLevel  = 0;
+		ParentId = -1;
+		Id = -1;
 	}
 };
 

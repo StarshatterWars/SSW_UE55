@@ -297,7 +297,7 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
-	CreateOOBTable();
+	//CreateOOBTable();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 }
 
@@ -1581,47 +1581,227 @@ void USSWGameInstance::ExportDataTableToCSV(UDataTable* DataTable, const FString
 	}
 }
 
-void USSWGameInstance::FlattenForce(const FS_OOBForce& Force, TArray<FS_OOBFlatEntry>& OutFlatList) const
+void USSWGameInstance::FlattenForce(const FS_OOBForce& Force, TArray<FS_OOBFlatEntry>& OutFlatList)
 {
-	// Iterate through the fleets in the force
+	int32 CurrentId = 0;
+	RecursivelyFlattenForce(Force, INDEX_NONE, 0, CurrentId, OutFlatList);
+}
+
+void USSWGameInstance::RecursivelyFlattenForce(
+	const FS_OOBForce& Force,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry ForceEntry;
+	ForceEntry.Id = ThisId;
+	ForceEntry.ParentId = ParentId;
+	ForceEntry.DisplayName = Force.Name;
+	ForceEntry.IndentLevel = IndentLevel;
+	ForceEntry.GroupType = ECOMBATGROUP_TYPE::FORCE;
+
+	OutFlatList.Add(ForceEntry);
+
 	for (const FS_OOBFleet& Fleet : Force.Fleet)
 	{
-		// Compute the total unit count for the fleet by iterating over carriers
-		int FleetUnitCount = 0;
-		for (const FS_OOBCarrier& Carrier : Fleet.Carrier)
-		{
-			// Add carrier unit count (you can modify this to match the actual structure)
-			FleetUnitCount += Carrier.Unit.Num(); // Assuming 'Unit' is an array of fighters, etc.
-
-			// For each wing in the carrier, you can also add the wing's fighter unit count
-			for (const FS_OOBWing& Wing : Carrier.Wing)
-			{
-				FleetUnitCount += Wing.Fighter.Num(); // Assuming 'Fighter' is an array of units
-			}
-		}
-
-		// Add the fleet as a flattened entry
-		OutFlatList.Add(FS_OOBFlatEntry(Fleet.Name, Fleet.Id, Force.Id, ECOMBATGROUP_TYPE::FLEET, FleetUnitCount));
-
-		// Now iterate through the carriers for detailed unit data
-		for (const FS_OOBCarrier& Carrier : Fleet.Carrier)
-		{
-			int CarrierUnitCount = Carrier.Unit.Num(); // Total units in the carrier
-			OutFlatList.Add(FS_OOBFlatEntry(Carrier.Name, Carrier.Id, Fleet.Id, ECOMBATGROUP_TYPE::CARRIER_GROUP, CarrierUnitCount));
-
-			// Iterate through wings in the carrier
-			for (const FS_OOBWing& Wing : Carrier.Wing)
-			{
-				int WingUnitCount = Wing.Fighter.Num(); // Total units in the wing
-				OutFlatList.Add(FS_OOBFlatEntry(Wing.Name, Wing.Id, Carrier.Id, ECOMBATGROUP_TYPE::WING, WingUnitCount));
-
-				// Iterate through fighters in the wing
-				for (const FS_OOBFighter& Fighter : Wing.Fighter)
-				{
-					int FighterUnitCount = Fighter.Unit.Num(); // Fighter unit count (if applicable)
-					OutFlatList.Add(FS_OOBFlatEntry(Fighter.Name, Fighter.Id, Wing.Id, ECOMBATGROUP_TYPE::FIGHTER_SQUADRON, FighterUnitCount));
-				}
-			}
-		}
+		RecursivelyFlattenFleet(Fleet, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
 	}
+}
+
+void USSWGameInstance::RecursivelyFlattenFleet(
+	const FS_OOBFleet& Fleet,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry FleetEntry;
+	FleetEntry.Id = ThisId;
+	FleetEntry.ParentId = ParentId;
+	FleetEntry.DisplayName = Fleet.Name;
+	FleetEntry.IndentLevel = IndentLevel;
+	FleetEntry.GroupType = ECOMBATGROUP_TYPE::FLEET;
+
+	OutFlatList.Add(FleetEntry);
+
+	for (const FS_OOBCarrier& Carrier : Fleet.Carrier)
+	{
+		RecursivelyFlattenCarrier(Carrier, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+
+	for (const FS_OOBDestroyer& Destroyer : Fleet.Destroyer)
+	{
+		RecursivelyFlattenDestroyer(Destroyer, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+}
+
+void USSWGameInstance::RecursivelyFlattenCarrier(
+	const FS_OOBCarrier& Carrier,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Carrier.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
+
+	OutFlatList.Add(Entry);
+
+	for (const FS_OOBWing& Wing : Carrier.Wing)
+	{
+		RecursivelyFlattenWing(Wing, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+}
+
+void USSWGameInstance::RecursivelyFlattenDestroyer(
+	const FS_OOBDestroyer& Destroyer,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Destroyer.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+
+	OutFlatList.Add(Entry);
+}
+
+void USSWGameInstance::RecursivelyFlattenWing(
+	const FS_OOBWing& Wing,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Wing.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::WING;
+
+	OutFlatList.Add(Entry);
+
+	for (const FS_OOBFighter& Unit : Wing.Fighter)
+	{
+		RecursivelyFlattenFighter(Unit, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+
+	for (const FS_OOBAttack& Attack : Wing.Attack)
+	{
+		RecursivelyFlattenAttack(Attack, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+
+	for (const FS_OOBIntercept& Intercept : Wing.Intercept)
+	{
+		RecursivelyFlattenIntercept(Intercept, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+
+	for (const FS_OOBLanding& Landing : Wing.Landing)
+	{
+		RecursivelyFlattenLanding(Landing, ThisId, IndentLevel + 1, CurrentId, OutFlatList);
+	}
+}
+
+void USSWGameInstance::RecursivelyFlattenFighter(
+	const FS_OOBFighter& Unit,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Unit.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+
+	OutFlatList.Add(Entry);
+}
+void USSWGameInstance::RecursivelyFlattenAttack(
+	const FS_OOBAttack& Attack,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Attack.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+
+	OutFlatList.Add(Entry);
+}
+
+void USSWGameInstance::RecursivelyFlattenIntercept(
+	const FS_OOBIntercept& Intercept,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Intercept.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
+
+	OutFlatList.Add(Entry);
+}
+
+void USSWGameInstance::RecursivelyFlattenLanding(
+	const FS_OOBLanding& Landing,
+	int32 ParentId,
+	int32 IndentLevel,
+	int32& CurrentId,
+	TArray<FS_OOBFlatEntry>& OutFlatList
+)
+{
+	int32 ThisId = CurrentId++;
+
+	FS_OOBFlatEntry Entry;
+	Entry.Id = ThisId;
+	Entry.ParentId = ParentId;
+	Entry.DisplayName = Landing.Name;
+	Entry.IndentLevel = IndentLevel;
+	Entry.GroupType = ECOMBATGROUP_TYPE::LCA_SQUADRON;
+
+	OutFlatList.Add(Entry);
 }
