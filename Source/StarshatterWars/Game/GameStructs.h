@@ -1851,6 +1851,8 @@ struct FS_OOBLanding : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -1864,6 +1866,7 @@ struct FS_OOBLanding : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::LCA_SQUADRON;
 		ParentType = ECOMBATGROUP_TYPE::WING;
 	}
@@ -1887,6 +1890,8 @@ struct FS_OOBFighter : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -1900,6 +1905,7 @@ struct FS_OOBFighter : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
 		ParentType = ECOMBATGROUP_TYPE::WING;
 	}
@@ -1922,6 +1928,8 @@ struct FS_OOBAttack : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -1935,6 +1943,7 @@ struct FS_OOBAttack : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
 		ParentType = ECOMBATGROUP_TYPE::WING;
 	}
@@ -1957,6 +1966,8 @@ struct FS_OOBIntercept : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -1970,6 +1981,7 @@ struct FS_OOBIntercept : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
 		ParentType = ECOMBATGROUP_TYPE::WING;
 	}
@@ -1992,6 +2004,8 @@ struct FS_OOBWing : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -2011,6 +2025,7 @@ struct FS_OOBWing : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::WING;
 		ParentType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
 	}
@@ -2033,6 +2048,8 @@ struct FS_OOBBattle : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -2046,6 +2063,7 @@ struct FS_OOBBattle : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::BATTLE_GROUP;
 		ParentType = ECOMBATGROUP_TYPE::FLEET;
 	}
@@ -2068,6 +2086,8 @@ struct FS_OOBDestroyer : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -2081,6 +2101,7 @@ struct FS_OOBDestroyer : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
 		ParentType = ECOMBATGROUP_TYPE::FLEET;
 	}
@@ -2103,6 +2124,8 @@ struct FS_OOBCarrier : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -2118,6 +2141,7 @@ struct FS_OOBCarrier : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::CARRIER_GROUP;
 		ParentType = ECOMBATGROUP_TYPE::FLEET;
 	}
@@ -2140,6 +2164,8 @@ struct FS_OOBFleet : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ParentId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
@@ -2157,6 +2183,7 @@ struct FS_OOBFleet : public FTableRowBase {
 		ParentId = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::FLEET;
 		ParentType = ECOMBATGROUP_TYPE::FORCE;
 	}
@@ -2177,6 +2204,8 @@ struct FS_OOBForce : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Location;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EINTEL_TYPE Intel;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_OOBFleet> Fleet;
@@ -2188,10 +2217,10 @@ struct FS_OOBForce : public FTableRowBase {
 		Empire = 0;
 		Name = "";
 		Location = "";
+		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::FORCE;
 	}
 };
-
 
 USTRUCT(BlueprintType)
 struct FS_CombatGroupUnit : public FTableRowBase {

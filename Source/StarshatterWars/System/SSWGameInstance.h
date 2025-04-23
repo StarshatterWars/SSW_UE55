@@ -240,6 +240,8 @@ public:
 	FString GetEmpireTypeNameByIndex(int32 Index);
 	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
 	void CreateOOBTable();
+	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
+	
 	AGalaxy* GameGalaxy;
 	AGameDataLoader* GameData;
 	AAwardInfoLoader* AwardData;

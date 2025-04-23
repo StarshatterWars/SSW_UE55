@@ -21,6 +21,10 @@
 #include "../Game/PlayerSaveGame.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "UObject/Package.h" // For data asset support
+
 #include "../Foundation/MusicController.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
@@ -293,7 +297,8 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
-	//CreateOOBTable();
+	CreateOOBTable();
+	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -1181,6 +1186,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewForce.Iff = Item.Iff;
 			NewForce.Location = Item.Region;
 			NewForce.Empire = Item.EmpireId;
+			NewForce.Intel = Item.Intel;
 			ForceId = Item.Id;
 			OldIff = Item.Iff;
 			OldEmpire = Item.EmpireId;
@@ -1202,6 +1208,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewFleet.Iff = Item.Iff;
 				NewFleet.Location = Item.Region;
 				NewFleet.Empire = Item.EmpireId;
+				NewFleet.Intel = Item.Intel;
 				FleetId = Item.Id;
 				FleetArray.Add(NewFleet);
 			}
@@ -1215,6 +1222,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewCarrier.Iff = Item.Iff;
 			NewCarrier.Location = Item.Region;
 			NewCarrier.Empire = Item.EmpireId;
+			NewCarrier.Intel = Item.Intel;
 			NewCarrier.Unit.SetNum(4);
 
 			int32 Index = 0;
@@ -1258,6 +1266,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewDestroyer.Iff = Item.Iff;
 			NewDestroyer.Location = Item.Region;
 			NewDestroyer.Empire = Item.EmpireId;
+			NewDestroyer.Intel = Item.Intel;
 			NewDestroyer.Unit.SetNum(4);
 
 			int32 Index = 0;
@@ -1301,6 +1310,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewBattle.Iff = Item.Iff;
 			NewBattle.Location = Item.Region;
 			NewBattle.Empire = Item.EmpireId;
+			NewBattle.Intel = Item.Intel;
 			NewBattle.Unit.SetNum(4);
 			int32 Index = 0;
 			for (const auto& UnitItem : Item.Unit)
@@ -1343,6 +1353,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewWing.Iff = Item.Iff;
 			NewWing.Location = Item.Region;
 			NewWing.Empire = Item.EmpireId;
+			NewWing.Intel = Item.Intel;
 			WingArray.Add(NewWing);
 		}
 
@@ -1355,6 +1366,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewFighter.Iff = Item.Iff;
 			NewFighter.Location = Item.Region;
 			NewFighter.Empire = Item.EmpireId;
+			NewFighter.Intel = Item.Intel;
 			NewFighter.Unit.SetNum(1);
 
 			int32 Index = 0;
@@ -1384,6 +1396,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewIntercept.Iff = Item.Iff;
 			NewIntercept.Location = Item.Region;
 			NewIntercept.Empire = Item.EmpireId;
+			NewIntercept.Intel = Item.Intel;
 			NewIntercept.Unit.SetNum(1);
 			
 			int32 Index = 0;
@@ -1413,6 +1426,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewAttack.Iff = Item.Iff;
 			NewAttack.Location = Item.Region;
 			NewAttack.Empire = Item.EmpireId;
+			NewAttack.Intel = Item.Intel;
 			NewAttack.Unit.SetNum(1);
 			
 			int32 Index = 0;
@@ -1442,6 +1456,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewLanding.Iff = Item.Iff;
 			NewLanding.Location = Item.Region;
 			NewLanding.Empire = Item.EmpireId;
+			NewLanding.Intel = Item.Intel;
 			NewLanding.Unit.SetNum(1);
 			
 			int32 Index = 0;
@@ -1543,10 +1558,70 @@ void USSWGameInstance::CreateOOBTable() {
 	}	
 }
 
+void USSWGameInstance::ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName)
+{
+	if (!DataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Export failed: DataTable is null."));
+		return;
+	}
 
+	// You can use none or pretty names — make sure the flag is in scope
+	const FString CSVData = DataTable->GetTableAsCSV(EDataTableExportFlags::None);
 
+	const FString SavePath = FPaths::ProjectDir() + FileName;
 
+	if (FFileHelper::SaveStringToFile(CSVData, *SavePath))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Successfully exported DataTable to: %s"), *SavePath);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to write DataTable CSV to file."));
+	}
+}
 
+void USSWGameInstance::FlattenForce(const FS_OOBForce& Force, TArray<FS_OOBFlatEntry>& OutFlatList) const
+{
+	// Iterate through the fleets in the force
+	for (const FS_OOBFleet& Fleet : Force.Fleet)
+	{
+		// Compute the total unit count for the fleet by iterating over carriers
+		int FleetUnitCount = 0;
+		for (const FS_OOBCarrier& Carrier : Fleet.Carrier)
+		{
+			// Add carrier unit count (you can modify this to match the actual structure)
+			FleetUnitCount += Carrier.Unit.Num(); // Assuming 'Unit' is an array of fighters, etc.
 
+			// For each wing in the carrier, you can also add the wing's fighter unit count
+			for (const FS_OOBWing& Wing : Carrier.Wing)
+			{
+				FleetUnitCount += Wing.Fighter.Num(); // Assuming 'Fighter' is an array of units
+			}
+		}
 
+		// Add the fleet as a flattened entry
+		OutFlatList.Add(FS_OOBFlatEntry(Fleet.Name, Fleet.Id, Force.Id, ECOMBATGROUP_TYPE::FLEET, FleetUnitCount));
 
+		// Now iterate through the carriers for detailed unit data
+		for (const FS_OOBCarrier& Carrier : Fleet.Carrier)
+		{
+			int CarrierUnitCount = Carrier.Unit.Num(); // Total units in the carrier
+			OutFlatList.Add(FS_OOBFlatEntry(Carrier.Name, Carrier.Id, Fleet.Id, ECOMBATGROUP_TYPE::CARRIER_GROUP, CarrierUnitCount));
+
+			// Iterate through wings in the carrier
+			for (const FS_OOBWing& Wing : Carrier.Wing)
+			{
+				int WingUnitCount = Wing.Fighter.Num(); // Total units in the wing
+				OutFlatList.Add(FS_OOBFlatEntry(Wing.Name, Wing.Id, Carrier.Id, ECOMBATGROUP_TYPE::WING, WingUnitCount));
+
+				// Iterate through fighters in the wing
+				for (const FS_OOBFighter& Fighter : Wing.Fighter)
+				{
+					int FighterUnitCount = Fighter.Unit.Num(); // Fighter unit count (if applicable)
+					OutFlatList.Add(FS_OOBFlatEntry(Fighter.Name, Fighter.Id, Wing.Id, ECOMBATGROUP_TYPE::FIGHTER_SQUADRON, FighterUnitCount));
+				}
+			}
+		}
+	}
+}
