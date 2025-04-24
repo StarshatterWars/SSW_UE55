@@ -33,9 +33,6 @@ class STARSHATTERWARS_API URosterTVElement : public UUserWidget, public IUserObj
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* RosterButton;
 
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UHorizontalBoxSlot* IndentSlot;
-	
 	UOperationsScreen* OpsScreen;
 	
 protected:

@@ -14,12 +14,16 @@
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
-#include "Components/ListView.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
 
+// Forward declarations
+class UListView;
+class UOOBForceItem;
+class UOOBFleetItem;
+class UOOBCarrierGroupItem;
 /**
  * 
  */
@@ -137,9 +141,7 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* IntelList;
 
-	UPROPERTY(meta = (BindWidgetOptional))
-	UListView* RosterView;
-
+	
 	UPROPERTY(meta = (BindWidgetOptional))
 	int SelectedMission;
 
@@ -176,6 +178,30 @@ public:
 	
 	// Setter
 	void SetBaseGroupsList(const TArray<FS_CombatGroup>& NewList);
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* RosterView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* ForceListView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* FleetListView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* CarrierListView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* DesronListView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* BattleGroupListView;
+
+	UPROPERTY(EditAnywhere)
+    TSubclassOf<UUserWidget> EntryWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FS_OOBForce> AllOOBForces;
 
 protected:
 	void NativeConstruct() override;
@@ -254,6 +280,12 @@ protected:
 	void PopulateCombatRoster();
 	UFUNCTION()
 	FDateTime GetCampaignTime();
+
+	void OnForceSelected(UObject* SelectedItem);
+	void OnFleetSelected(UObject* SelectedItem);
+	void OnCarrierSelected(UObject* SelectedItem);
+	void OnDESRONSelected(UObject* SelectedItem);
+	void OnBattleGroupSelected(UObject* SelectedItem);
 
 private:
 	FS_Campaign ActiveCampaign;
