@@ -520,6 +520,22 @@ FDateTime UOperationsScreen::GetCampaignTime()
 
 void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 {
+	if (CarrierListView) CarrierListView->ClearListItems();
+	if (FleetListView) FleetListView->ClearListItems();
+	if (BattleListView) BattleListView->ClearListItems();
+	if (DesronListView) DesronListView->ClearListItems();
+	if (WingListView) WingListView->ClearListItems();
+	if (SquadronListView) SquadronListView->ClearListItems();
+	if (UnitListView) UnitListView->ClearListItems();
+
+	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
 
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -533,12 +549,6 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	UE_LOG(LogTemp, Log, TEXT("Force Clicked"));
 	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
 	if (!ForceItem) return;
-
-	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if(FleetListView) {
 		FleetListView->ClearListItems();
@@ -622,6 +632,20 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 {
+	if (CarrierListView) CarrierListView->ClearListItems();
+	if (BattleListView) BattleListView->ClearListItems();
+	if (DesronListView) DesronListView->ClearListItems();
+	if (WingListView) WingListView->ClearListItems();
+	if (SquadronListView) SquadronListView->ClearListItems();
+	if (UnitListView) UnitListView->ClearListItems();
+
+	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InformationLabel)
@@ -635,23 +659,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		const FS_OOBFleet& FleetData = FleetItem->Data;
 
 		UE_LOG(LogTemp, Log, TEXT("Selected Fleet: %s"), *FleetData.Name);
-
-		// Clear all subgroup list views first
-		
-		if (CarrierListView) CarrierListView->ClearListItems();
-		if (BattleListView) BattleListView->ClearListItems();
-		if (DesronListView) DesronListView->ClearListItems();
-		if (WingListView) WingListView->ClearListItems();
-		if (SquadronListView) SquadronListView->ClearListItems();
-
-		if (WingListView) WingListView->ClearListItems();
-		if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-
+	
 		// Update UI fields
 		if (GroupInfoText)
 		{
@@ -724,8 +732,11 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 {
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
+	if (UnitListView) UnitListView->ClearListItems();
+
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	
@@ -811,8 +822,11 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 {
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
+	if (UnitListView) UnitListView->ClearListItems();
+
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
 
@@ -876,8 +890,11 @@ void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 {
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
+	if (UnitListView) UnitListView->ClearListItems();
+
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
 
@@ -938,6 +955,12 @@ void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 {
+	if (SquadronListView) SquadronListView->ClearListItems();
+	if (UnitListView) UnitListView->ClearListItems();
+
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
 
 	if (InformationLabel)
@@ -1024,7 +1047,7 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 }
 
 void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
-{
+{	
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InformationLabel)
