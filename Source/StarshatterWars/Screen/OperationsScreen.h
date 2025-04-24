@@ -200,7 +200,7 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* BattleListView;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* WingListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
