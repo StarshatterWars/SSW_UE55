@@ -5,6 +5,13 @@
 #include "MissionListObject.h"
 #include "IntelListObject.h"
 #include "RosterViewObject.h"
+#include "Components/ListView.h"
+
+#include "OOBForceItem.h"
+#include "OOBFleetItem.h"
+#include "OOBCarrierGroupItem.h" 
+#include "OOBBattleItem.h"
+#include "OOBDestroyerItem.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -102,6 +109,38 @@ void UOperationsScreen::NativeConstruct()
 		if (IntelButton) {
 			IntelButton->SetIsEnabled(true);
 		}
+	}
+
+	if(ForceListView) {
+		ForceListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnForceSelected);
+		ForceListView->ClearListItems();
+
+		for (const FS_OOBForce& Force : AllOOBForces)
+		{
+			UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
+			ForceItem->Data = Force;
+			ForceListView->AddItem(ForceItem);
+		}
+	}
+
+	if (FleetListView) {
+		FleetListView->ClearListItems();
+		FleetListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnFleetSelected);
+	}
+
+	if (CarrierListView) {
+		CarrierListView->ClearListItems();
+		CarrierListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnCarrierSelected);
+	}
+
+	if (BattleListView) {
+		BattleListView->ClearListItems();
+		BattleListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnBattleGroupSelected);
+	}
+
+	if (DesronListView) {
+		DesronListView->ClearListItems();
+		DesronListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnDesronSelected);
 	}
 
 	SelectedMission = 0;
@@ -476,6 +515,96 @@ FDateTime UOperationsScreen::GetCampaignTime()
 	return FDateTime::FromUnixTimestamp(SSWInstance->GetGameTime());
 }
 
+void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
+{
+	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
+	if (!ForceItem) return;
+
+	FleetListView->ClearListItems();
+
+	for (const FS_OOBFleet& Fleet : ForceItem->Data.Fleet)
+	{
+		UOOBFleetItem* FleetItem = NewObject<UOOBFleetItem>(this);
+		FleetItem->Data = Fleet;
+		FleetListView->AddItem(FleetItem);
+	}
+
+	CarrierListView->ClearListItems();
+}
+
+void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
+{
+	if (UOOBFleetItem* FleetItem = Cast<UOOBFleetItem>(SelectedItem))
+	{
+		const FS_OOBFleet& FleetData = FleetItem->Data;
+
+		UE_LOG(LogTemp, Log, TEXT("Selected Fleet: %s"), *FleetData.Name);
+
+		// Clear all subgroup list views first
+		if (CarrierListView) CarrierListView->ClearListItems();
+		if (BattleListView) BattleListView->ClearListItems();
+		if (DesronListView) DesronListView->ClearListItems();
+
+		// -- Carrier Groups --
+		for (const FS_OOBCarrier& Carrier : FleetData.Carrier)
+		{
+			UOOBCarrierGroupItem* CarrierItem = NewObject<UOOBCarrierGroupItem>(this);
+			CarrierItem->Data = Carrier;
+			CarrierListView->AddItem(CarrierItem);
+		}
+
+		// -- Battle Groups --
+		for (const FS_OOBBattle& Battle : FleetData.Battle)
+		{
+			UOOBBattleItem* BattleItem = NewObject<UOOBBattleItem>(this);
+			BattleItem->Data = Battle;
+			BattleListView->AddItem(BattleItem);
+		}
+
+		// -- DesRons (Destroyer Groups) --
+		for (const FS_OOBDestroyer& Destroyer : FleetData.Destroyer)
+		{
+			UOOBDestroyerItem* DestroyerItem = NewObject<UOOBDestroyerItem>(this);
+			DestroyerItem->Data = Destroyer;
+			DesronListView->AddItem(DestroyerItem);
+		}
+	}
+}
+
+void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
+{
+	if (UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(SelectedItem))
+	{
+		const FS_OOBCarrier& CarrierData = CarrierItem->Data;
+
+		UE_LOG(LogTemp, Log, TEXT("Selected Carrier Group: %s"), *CarrierData.Name);
+
+		// Clear the wing list view before adding new items
+		if (WingListView)
+		{
+			WingListView->ClearListItems();
+
+			// Populate WingListView with this carrier's wings
+			/*for (const FS_OOBWing& Wing : CarrierData.Wings)
+			{
+				UOOBWingItem* WingItem = NewObject<UOOBWingItem>(this);
+				WingItem->Data = Wing;
+				WingListView->AddItem(WingItem);
+			}*/
+		}
+	}
+}
+
+void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
+{
+
+}
+
+void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
+{
+
+}
+
 void UOperationsScreen::SetSelectedMissionData(int Selected) 
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -607,7 +736,6 @@ void UOperationsScreen::SetSelectedRosterData(int Selected)
 void UOperationsScreen::BuildHierarchy()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
 	
 }
 

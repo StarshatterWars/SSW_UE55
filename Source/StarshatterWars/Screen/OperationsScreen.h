@@ -15,6 +15,8 @@
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
 
+#include "Components/ListView.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
 #include "OperationsScreen.generated.h"
@@ -24,6 +26,8 @@ class UListView;
 class UOOBForceItem;
 class UOOBFleetItem;
 class UOOBCarrierGroupItem;
+class UOOBBattleItem;
+class UOOBDestroyerItem;
 /**
  * 
  */
@@ -140,7 +144,6 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* IntelList;
-
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	int SelectedMission;
@@ -195,7 +198,13 @@ public:
 	UListView* DesronListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UListView* BattleGroupListView;
+	UListView* BattleListView;
+
+	UPROPERTY(meta = (BindWidget))
+	UListView* WingListView;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* SubGroupListView;
 
 	UPROPERTY(EditAnywhere)
     TSubclassOf<UUserWidget> EntryWidgetClass;
@@ -284,7 +293,7 @@ protected:
 	void OnForceSelected(UObject* SelectedItem);
 	void OnFleetSelected(UObject* SelectedItem);
 	void OnCarrierSelected(UObject* SelectedItem);
-	void OnDESRONSelected(UObject* SelectedItem);
+	void OnDesronSelected(UObject* SelectedItem);
 	void OnBattleGroupSelected(UObject* SelectedItem);
 
 private:

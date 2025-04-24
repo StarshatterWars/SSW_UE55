@@ -2,6 +2,15 @@
 
 
 #include "RosterTVElement.h"
+
+#include "OOBForceItem.h"
+#include "OOBFleetItem.h"
+#include "OOBCarrierGroupItem.h"
+#include "OOBBattleItem.h"
+#include "OOBDestroyerItem.h"
+#include "Components/TextBlock.h"
+#include "Components/Button.h"
+
 #include "OperationsScreen.h"
 #include "../System/SSWGameInstance.h"
 
@@ -35,6 +44,38 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 	{
 		RosterLocationText->SetText(FText::FromString(RosterView->Group.Region));
 	}
+
+    /*if (!IsValid(NameText))
+    {
+        return;
+    }
+
+    // Check type and set display text accordingly
+    if (const UOOBForceItem* ForceItem = Cast<UOOBForceItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("[FORCE] %s"), *ForceItem->Data.Name)));
+    }
+    else if (const UOOBFleetItem* FleetItem = Cast<UOOBFleetItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("[FLEET] %s"), *FleetItem->Data.Name)));
+    }
+    else if (const UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("[CARRIER] %s"), *CarrierItem->Data.Name)));
+    }
+    else if (const UOOBBattleItem* BattleItem = Cast<UOOBBattleItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("[BATTLE] %s"), *BattleItem->Data.Name)));
+    }
+    else if (const UOOBDestroyerItem* DesRonItem = Cast<UOOBDestroyerItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("[DESRON] %s"), *DesRonItem->Data.Name)));
+    }
+    else
+    {
+        // Fallback if the type is not recognized
+        NameText->SetText(FText::FromString(TEXT("Unknown Item")));
+    }*/
 }
 
 void URosterTVElement::OnRosterButtonClicked()

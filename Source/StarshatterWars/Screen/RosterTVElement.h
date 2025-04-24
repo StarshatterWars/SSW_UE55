@@ -5,9 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "RosterViewObject.h"
-#include "Components/TextBlock.h"
-#include "Components/Button.h"
-#include "Components/HorizontalBoxSlot.h"
+
 #include "Blueprint/IUserObjectListEntry.h"
 #include "../System/SSWGameInstance.h"
 
@@ -16,6 +14,16 @@
 #include "RosterTVElement.generated.h"
 
 class UOperationsScreen;
+class UTextBlock;
+class UButton;
+class UObject;
+
+class UOOBForceItem;
+class UOOBFleetItem;
+class UOOBCarrierGroupItem;
+class UOOBBattleItem;
+class UOOBDestroyerItem;
+
 /**
  * 
  */
@@ -32,6 +40,10 @@ class STARSHATTERWARS_API URosterTVElement : public UUserWidget, public IUserObj
 	class UTextBlock* RosterLocationText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* RosterButton;
+
+	protected:
+    UPROPERTY(meta = (BindWidgetOptional))
+    class UTextBlock* NameText;  // TextBlock for displaying the name of the item
 
 	UOperationsScreen* OpsScreen;
 	
