@@ -28,7 +28,7 @@ class UOOBWingItem;
 class UOOBUnitItem;
 class UOOBSquadronItem;
 class UOOBFighterSquadronItem;
-
+class UOOBFighterUnit;
 /**
  * 
  */

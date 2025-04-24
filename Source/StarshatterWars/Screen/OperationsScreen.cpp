@@ -15,6 +15,7 @@
 #include "OOBWingItem.h"
 #include "OOBUnitItem.h"
 #include "OOBSquadronItem.h"
+#include "OOBFighterUnit.h"
 #include "OOBFighterSquadronItem.h"
 
 void UOperationsScreen::NativeConstruct()
@@ -163,6 +164,11 @@ void UOperationsScreen::NativeConstruct()
 	if (SquadronListView) {
 		SquadronListView->ClearListItems();
 		SquadronListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnSquadronSelected);
+	}
+
+	if (FighterUnitListView) {
+		FighterUnitListView->ClearListItems();
+		FighterUnitListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnFighterUnitSelected);
 	}
 
 	SelectedMission = 0;
@@ -527,6 +533,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
 	if (UnitListView) UnitListView->ClearListItems();
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -538,11 +545,8 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
 
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
-
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString(""));
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -638,6 +642,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
 	if (UnitListView) UnitListView->ClearListItems();
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -646,11 +651,8 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
-
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString(""));
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -733,6 +735,7 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
 	if (UnitListView) UnitListView->ClearListItems();
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -740,11 +743,8 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
-
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString("CVBG Elements"));
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	if (UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(SelectedItem))
@@ -823,16 +823,14 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
 	if (UnitListView) UnitListView->ClearListItems();
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
-
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString("DESRON Elements"));
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -891,16 +889,14 @@ void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 	if (WingListView) WingListView->ClearListItems();
 	if (SquadronListView) SquadronListView->ClearListItems();
 	if (UnitListView) UnitListView->ClearListItems();
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
-
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString("BG Elements"));
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -957,11 +953,14 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 {
 	if (SquadronListView) SquadronListView->ClearListItems();
 	if (UnitListView) UnitListView->ClearListItems();
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Visible);
+	}
 
 	if (InformationLabel)
 	{
@@ -1048,11 +1047,10 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
 {	
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString(""));
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -1087,6 +1085,12 @@ void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 {
+	if (FighterUnitListView) FighterUnitListView->ClearListItems();
+	
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Visible);
+	}
+
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
 
 	if (InformationLabel)
@@ -1148,6 +1152,7 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 			{
 				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
 			}
+		
 		}
 		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON) {
 			const FS_OOBIntercept& SquadronData = SquadronItem->InterceptData;
@@ -1202,6 +1207,11 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 			}
 		}
 	}
+}
+
+void UOperationsScreen::OnFighterUnitSelected(UObject* SelectedItem)
+{
+
 }
 
 void UOperationsScreen::SetSelectedMissionData(int Selected) 
@@ -1414,13 +1424,12 @@ void UOperationsScreen::ClearForces()
 	if (SquadronListView) {
 		SquadronListView->ClearListItems();
 	}
-	
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
-
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString(""));
+	if (FighterUnitListView) {
+		FighterUnitListView->ClearListItems();
 	}
+	
+	if (InfoBoxPanel) InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
