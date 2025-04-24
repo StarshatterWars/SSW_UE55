@@ -52,6 +52,10 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     {
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *DesronItem->Data.Name)));
     }
+    else if (const UOOBWingItem* WingItem = Cast<UOOBWingItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *WingItem->Data.Name)));
+    }
     else
     {
         // Fallback if the type is not recognized

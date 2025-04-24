@@ -152,6 +152,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* DesronInfoBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* WingInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* InformationBorder;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -175,34 +177,7 @@ public:
 	UFUNCTION()
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
-	void SetSelectedRosterData(int Selected);
-
-	UFUNCTION(BlueprintCallable)
-	void BuildHierarchy();
-
-	// Getter
-	const TArray<FS_CombatGroup>& GetFlattenedList() const;
-
-	// Setter
-	void SetFlattenedList(const TArray<FS_CombatGroup>& NewList);
-
-	// Getter
-	const TArray<FS_CombatGroup>& GetAllGroupsList() const;
-
-	// Setter
-	void SetAllGroupsList(const TArray<FS_CombatGroup>& NewList);
-
-	// Getter
-	const TArray<FS_CombatGroup>& GetBaseGroupsList() const;
-
-	void PrintGroupData(TArray<FS_CombatGroup> Group) const;
-	
-	// Setter
-	void SetBaseGroupsList(const TArray<FS_CombatGroup>& NewList);
-
 	void LoadForces();
-	UPROPERTY(meta = (BindWidgetOptional))
-	UListView* RosterView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
@@ -223,7 +198,16 @@ public:
 	UListView* WingListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UListView* SubGroupListView;
+	UListView* ShipListView;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* InterceptSquadronListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* AttackSquadronListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* FighterSquadronListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* LandingSquadronListView;
 
 	UPROPERTY(EditAnywhere)
     TSubclassOf<UUserWidget> EntryWidgetClass;
@@ -305,8 +289,6 @@ protected:
 	void PopulateIntelList();
 
 	UFUNCTION()
-	void PopulateCombatRoster();
-	UFUNCTION()
 	FDateTime GetCampaignTime();
 
 	void OnForceSelected(UObject* SelectedItem);
@@ -314,6 +296,7 @@ protected:
 	void OnCarrierSelected(UObject* SelectedItem);
 	void OnDesronSelected(UObject* SelectedItem);
 	void OnBattleGroupSelected(UObject* SelectedItem);
+	void OnWingSelected(UObject* SelectedItem);
 
 private:
 	FS_Campaign ActiveCampaign;
@@ -327,16 +310,5 @@ private:
 	UPROPERTY()
 	TArray<FS_CampaignAction> ActionList;
 
-	UPROPERTY()
-	TArray<FS_CombatGroup> RosterList;
-
-	// Holds a flat version of the hierarchy (useful for displaying in a ListView)
-	UPROPERTY()
-	TArray<FS_CombatGroup> FlattenedList;
-	UPROPERTY()
-	TArray<FS_CombatGroup> AllGroups;
-	UPROPERTY()
-	TArray<FS_CombatGroup> RootGroups;
-	
 	int IndentLevel = 0;
 };
