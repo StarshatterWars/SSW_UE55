@@ -527,14 +527,16 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
 	if (!ForceItem) return;
 
-	/*FleetListView->ClearListItems();
+	if(FleetListView) {
+		FleetListView->ClearListItems();
 
-	for (const FS_OOBFleet& Fleet : ForceItem->Data.Fleet)
-	{
-		UOOBFleetItem* FleetItem = NewObject<UOOBFleetItem>(this);
-		FleetItem->Data = Fleet;
-		FleetListView->AddItem(FleetItem);
-	}*/
+		for (const FS_OOBFleet& Fleet : ForceItem->Data.Fleet)
+		{
+			UOOBFleetItem* FleetItem = NewObject<UOOBFleetItem>(this);
+			FleetItem->Data = Fleet;
+			FleetListView->AddItem(FleetItem);
+		}
+	}
 
 	//CarrierListView->ClearListItems();
 
@@ -550,6 +552,11 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 			GroupInfoText->SetText(FText::FromString(ForceData.Name));
 		}
 
+		if (GroupTypeText)
+		{
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(ForceData.Type)));
+		}
+
 		if (GroupLocationText)
 		{
 			GroupLocationText->SetText(FText::FromString(ForceData.Location));
@@ -561,7 +568,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 		}
 		
 		// Clear and populate fleets
-		/*if (FleetListView)
+		if (FleetListView)
 		{
 			FleetListView->ClearListItems();
 
@@ -571,12 +578,13 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 				FleetItem->Data = Fleet;
 				FleetListView->AddItem(FleetItem);
 			}
-		}*/
+		}
 	}
 }
 
 void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (UOOBFleetItem* FleetItem = Cast<UOOBFleetItem>(SelectedItem))
 	{
 		const FS_OOBFleet& FleetData = FleetItem->Data;
@@ -588,8 +596,29 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		if (BattleListView) BattleListView->ClearListItems();
 		if (DesronListView) DesronListView->ClearListItems();
 
+		// Update UI fields
+		if (GroupInfoText)
+		{
+			GroupInfoText->SetText(FText::FromString(FleetData.Name));
+		}
+
+		if (GroupLocationText)
+		{
+			GroupLocationText->SetText(FText::FromString(FleetData.Location));
+		}
+
+		if (GroupEmpireText)
+		{
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(FleetData.Empire)));
+		}
+		
+		if (GroupTypeText)
+		{
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(FleetData.Type)));
+		}
+
 		// -- Carrier Groups --
-		for (const FS_OOBCarrier& Carrier : FleetData.Carrier)
+		/*for (const FS_OOBCarrier& Carrier : FleetData.Carrier)
 		{
 			UOOBCarrierGroupItem* CarrierItem = NewObject<UOOBCarrierGroupItem>(this);
 			CarrierItem->Data = Carrier;
@@ -610,12 +639,13 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 			UOOBDestroyerItem* DestroyerItem = NewObject<UOOBDestroyerItem>(this);
 			DestroyerItem->Data = Destroyer;
 			DesronListView->AddItem(DestroyerItem);
-		}
+		}*/
 	}
 }
 
 void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(SelectedItem))
 	{
 		const FS_OOBCarrier& CarrierData = CarrierItem->Data;
@@ -640,12 +670,12 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 {
-
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 }
 
 void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 {
-
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 }
 
 void UOperationsScreen::SetSelectedMissionData(int Selected) 

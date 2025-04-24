@@ -39,8 +39,6 @@ class STARSHATTERWARS_API URosterTVElement : public UUserWidget, public IUserObj
 	class UTextBlock* RosterTypeText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* RosterLocationText;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UButton* RosterButton;
 
 	protected:
     UPROPERTY(meta = (BindWidgetOptional))
@@ -49,14 +47,7 @@ class STARSHATTERWARS_API URosterTVElement : public UUserWidget, public IUserObj
 	UOperationsScreen* OpsScreen;
 	
 protected:
-	void NativeConstruct() override;
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
-
-private:
-	UFUNCTION()
-	void OnRosterButtonClicked();
-	UFUNCTION()
-	void SetRosterInfo();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")

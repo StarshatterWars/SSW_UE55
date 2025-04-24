@@ -16,36 +16,11 @@
 #include "OperationsScreen.h"
 #include "../System/SSWGameInstance.h"
 
-void URosterTVElement::NativeConstruct()
-{
-	Super::NativeConstruct();
-
-	if (RosterButton) {
-		RosterButton->OnClicked.AddDynamic(this, &URosterTVElement::OnRosterButtonClicked);
-	}
-}
-
 void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
-	RosterView = Cast<URosterViewObject>(ListItemObject);
 
 	if (!NameText || !ListItemObject) return;
-    
-    /*if (!RosterView) {
-		return;
-	}
-
-	
-	if (RosterNameText)
-	{
-		RosterNameText->SetText(FText::FromString(RosterView->Group.DisplayName));
-	}
-	
-	if (RosterLocationText)
-	{
-		RosterLocationText->SetText(FText::FromString(RosterView->Group.Region));
-	}*/
 
     if (!IsValid(NameText))
     {
@@ -67,7 +42,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
             RosterId = OwningListView->GetIndexForItem(FleetItem);
         }
 
-        NameText->SetText(FText::FromString(FString::Printf(TEXT("[FLEET] %s"), *FleetItem->Data.Name)));
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *FleetItem->Data.Name)));
     }
     else if (const UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(ListItemObject))
     {
@@ -100,18 +75,6 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     }
 }
 
-void URosterTVElement::OnRosterButtonClicked()
-{
-	UE_LOG(LogTemp, Log, TEXT("Selected Roster Is: %i"), RosterId);
-	SetRosterInfo();
-}
-
-void URosterTVElement::SetRosterInfo()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->SetSelectedRosterNr(RosterId);
-	SSWInstance->RosterSelectionChanged = true;
-}
 
 
 
