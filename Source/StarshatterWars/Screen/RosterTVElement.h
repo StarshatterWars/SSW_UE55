@@ -23,6 +23,7 @@ class UOOBFleetItem;
 class UOOBCarrierGroupItem;
 class UOOBBattleItem;
 class UOOBDestroyerItem;
+class UOOBWingItem;
 
 /**
  * 

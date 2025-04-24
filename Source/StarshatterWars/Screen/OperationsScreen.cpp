@@ -5,6 +5,7 @@
 #include "MissionListObject.h"
 #include "IntelListObject.h"
 #include "RosterViewObject.h"
+#include "RosterTVElement.h"
 #include "Components/ListView.h"
 
 #include "OOBForceItem.h"
@@ -12,6 +13,7 @@
 #include "OOBCarrierGroupItem.h" 
 #include "OOBBattleItem.h"
 #include "OOBDestroyerItem.h"
+#include "OOBWingItem.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -111,15 +113,18 @@ void UOperationsScreen::NativeConstruct()
 		}
 	}
 
+	LoadForces();
+
 	if(ForceListView) {
 		ForceListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnForceSelected);
 		ForceListView->ClearListItems();
 
-		for (const FS_OOBForce& Force : AllOOBForces)
+		for (const FS_OOBForce& Force : LoadedForces)
 		{
 			UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
 			ForceItem->Data = Force;
 			ForceListView->AddItem(ForceItem);
+			//UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), ForceItem->Data);
 		}
 	}
 
@@ -517,19 +522,57 @@ FDateTime UOperationsScreen::GetCampaignTime()
 
 void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	UE_LOG(LogTemp, Log, TEXT("Force Clicked"));
 	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
 	if (!ForceItem) return;
 
-	FleetListView->ClearListItems();
+	/*FleetListView->ClearListItems();
 
 	for (const FS_OOBFleet& Fleet : ForceItem->Data.Fleet)
 	{
 		UOOBFleetItem* FleetItem = NewObject<UOOBFleetItem>(this);
 		FleetItem->Data = Fleet;
 		FleetListView->AddItem(FleetItem);
-	}
+	}*/
 
-	CarrierListView->ClearListItems();
+	//CarrierListView->ClearListItems();
+
+	if (UOOBForceItem* Force_Item = Cast<UOOBForceItem>(SelectedItem))
+	{
+		const FS_OOBForce& ForceData = Force_Item->Data;
+
+		UE_LOG(LogTemp, Log, TEXT("Selected Force: %s"), *ForceData.Name);
+
+		// Update UI fields
+		if (GroupInfoText)
+		{
+			GroupInfoText->SetText(FText::FromString(ForceData.Name));
+		}
+
+		if (GroupLocationText)
+		{
+			GroupLocationText->SetText(FText::FromString(ForceData.Location));
+		}
+
+		if (GroupEmpireText)
+		{
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(ForceData.Empire)));
+		}
+		
+		// Clear and populate fleets
+		/*if (FleetListView)
+		{
+			FleetListView->ClearListItems();
+
+			for (const FS_OOBFleet& Fleet : ForceData.Fleet)
+			{
+				UOOBFleetItem* FleetItem = NewObject<UOOBFleetItem>(this);
+				FleetItem->Data = Fleet;
+				FleetListView->AddItem(FleetItem);
+			}
+		}*/
+	}
 }
 
 void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
@@ -585,12 +628,12 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 			WingListView->ClearListItems();
 
 			// Populate WingListView with this carrier's wings
-			/*for (const FS_OOBWing& Wing : CarrierData.Wings)
+			for (const FS_OOBWing& Wing : CarrierData.Wing)
 			{
 				UOOBWingItem* WingItem = NewObject<UOOBWingItem>(this);
 				WingItem->Data = Wing;
 				WingListView->AddItem(WingItem);
-			}*/
+			}
 		}
 	}
 }
@@ -856,4 +899,30 @@ void UOperationsScreen::PrintGroupData(TArray<FS_CombatGroup> Group) const
 void UOperationsScreen::SetBaseGroupsList(const TArray<FS_CombatGroup>& NewList)
 {
 
+}
+
+void UOperationsScreen::LoadForces()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	if (!SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
+
+	ForceListView->ClearListItems();
+	LoadedForces.Empty();
+
+	// Retrieve all rows
+	TArray<FName> RowNames = SSWInstance->OrderOfBattleDataTable->GetRowNames();
+
+	for (const FName& RowName : RowNames)
+	{
+		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
+		{
+			LoadedForces.Add(*Force);
+
+			// Wrap in UObject and add to list
+			UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
+			ForceItem->Data = *Force;
+			ForceListView->AddItem(ForceItem);
+		}
+	}
 }

@@ -28,6 +28,7 @@ class UOOBFleetItem;
 class UOOBCarrierGroupItem;
 class UOOBBattleItem;
 class UOOBDestroyerItem;
+class UOOBWingItem;
 /**
  * 
  */
@@ -182,6 +183,7 @@ public:
 	// Setter
 	void SetBaseGroupsList(const TArray<FS_CombatGroup>& NewList);
 
+	void LoadForces();
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* RosterView;
 
@@ -210,7 +212,7 @@ public:
     TSubclassOf<UUserWidget> EntryWidgetClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TArray<FS_OOBForce> AllOOBForces;
+    TArray<FS_OOBForce> LoadedForces;
 
 protected:
 	void NativeConstruct() override;
