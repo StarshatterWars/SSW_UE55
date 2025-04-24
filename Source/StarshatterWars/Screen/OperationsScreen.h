@@ -32,6 +32,8 @@ class UOOBBattleItem;
 class UOOBDestroyerItem;
 class UOOBWingItem;
 class UOOBUnitItem;
+class UOOBSquadronItem;
+class UOOBFighterSquadronItem;
 /**
  * 
  */
@@ -158,6 +160,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* UnitInfoBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* SquadronInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* InformationBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UCanvasPanel* InfoPanel;
@@ -202,10 +206,11 @@ public:
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* WingListView;
-
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* UnitListView;
-	
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* SquadronListView;
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* InterceptSquadronListView;
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -306,6 +311,7 @@ protected:
 	void OnBattleGroupSelected(UObject* SelectedItem);
 	void OnWingSelected(UObject* SelectedItem);
 	void OnUnitSelected(UObject* SelectedItem);
+	void OnSquadronSelected(UObject* SelectedItem);
 
 private:
 	FS_Campaign ActiveCampaign;

@@ -14,6 +14,8 @@
 #include "OOBDestroyerItem.h"
 #include "OOBWingItem.h"
 #include "OOBUnitItem.h"
+#include "OOBSquadronItem.h"
+#include "OOBFighterSquadronItem.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -156,6 +158,11 @@ void UOperationsScreen::NativeConstruct()
 	if (UnitListView) {
 		UnitListView->ClearListItems();
 		UnitListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnUnitSelected);
+	}
+
+	if (SquadronListView) {
+		SquadronListView->ClearListItems();
+		SquadronListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnSquadronSelected);
 	}
 
 	SelectedMission = 0;
@@ -635,13 +642,15 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		if (BattleListView) BattleListView->ClearListItems();
 		if (DesronListView) DesronListView->ClearListItems();
 		if (WingListView) WingListView->ClearListItems();
-		if (UnitListView) UnitListView->ClearListItems();
+		if (SquadronListView) SquadronListView->ClearListItems();
 
+		if (WingListView) WingListView->ClearListItems();
 		if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 		// Update UI fields
 		if (GroupInfoText)
@@ -713,6 +722,11 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 {
+	if (WingListView) WingListView->ClearListItems();
+	if (SquadronListView) SquadronListView->ClearListItems();
+	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
@@ -796,8 +810,10 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 {
 	if (WingListView) WingListView->ClearListItems();
+	if (SquadronListView) SquadronListView->ClearListItems();
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
 
 	if (InformationLabel)
@@ -859,7 +875,9 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 {
 	if (WingListView) WingListView->ClearListItems();
+	if (SquadronListView) SquadronListView->ClearListItems();
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
 
@@ -954,6 +972,54 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(WingData.Type)));
 		}
+
+		// Clear the unit list view before adding new items
+		if (SquadronListView)
+		{
+			SquadronListView->ClearListItems();
+
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBFighter& Item : WingData.Fighter)
+			{
+				UOOBSquadronItem* FighterItem = NewObject<UOOBSquadronItem>(this);
+				FighterItem->Type = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+				FighterItem->FighterData = Item;
+				SquadronListView->AddItem(FighterItem);
+			}
+
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBAttack& Item : WingData.Attack)
+			{
+				UOOBSquadronItem* AttackItem = NewObject<UOOBSquadronItem>(this);
+				AttackItem->Type = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+				AttackItem->AttackData = Item;
+				SquadronListView->AddItem(AttackItem);
+			}
+
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBIntercept& Item : WingData.Intercept)
+			{
+				UOOBSquadronItem* InterceptItem = NewObject<UOOBSquadronItem>(this);
+				InterceptItem->Type = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
+				InterceptItem->InterceptData = Item;
+				SquadronListView->AddItem(InterceptItem);
+			}
+
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBLanding& Item : WingData.Landing)
+			{
+				UOOBSquadronItem* LandingItem = NewObject<UOOBSquadronItem>(this);
+				LandingItem->Type = ECOMBATGROUP_TYPE::LCA_SQUADRON;
+				LandingItem->LandingData = Item;
+				SquadronListView->AddItem(LandingItem);
+			}
+		}
+		if (SquadronListView->GetNumItems() > 0) {
+			if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 }
 
@@ -992,6 +1058,125 @@ void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
 		if (GroupTypeText)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetUnitFromType(UnitData.Type)));
+		}
+	}
+}
+
+void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
+{
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString("Squadron Elements"));
+	}
+
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (UOOBSquadronItem* SquadronItem = Cast<UOOBSquadronItem>(SelectedItem))
+	{
+		if (SquadronItem->Type == ECOMBATGROUP_TYPE::FIGHTER_SQUADRON) {
+			const FS_OOBFighter& SquadronData = SquadronItem->FighterData;
+
+			UE_LOG(LogTemp, Log, TEXT("Selected Squadron: %s"), *SquadronData.Name);
+
+			// Update UI fields
+			if (GroupInfoText)
+			{
+				GroupInfoText->SetText(FText::FromString(SquadronData.Name));
+			}
+
+			if (GroupLocationText)
+			{
+				GroupLocationText->SetText(FText::FromString(SquadronData.Location));
+			}
+
+			if (GroupEmpireText)
+			{
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+			}
+
+			if (GroupTypeText)
+			{
+				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
+			}
+		}
+		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::ATTACK_SQUADRON) {
+			const FS_OOBAttack& SquadronData = SquadronItem->AttackData;
+
+			UE_LOG(LogTemp, Log, TEXT("Selected Squadron: %s"), *SquadronData.Name);
+
+			// Update UI fields
+			if (GroupInfoText)
+			{
+				GroupInfoText->SetText(FText::FromString(SquadronData.Name));
+			}
+
+			if (GroupLocationText)
+			{
+				GroupLocationText->SetText(FText::FromString(SquadronData.Location));
+			}
+
+			if (GroupEmpireText)
+			{
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+			}
+
+			if (GroupTypeText)
+			{
+				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
+			}
+		}
+		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON) {
+			const FS_OOBIntercept& SquadronData = SquadronItem->InterceptData;
+
+			UE_LOG(LogTemp, Log, TEXT("Selected Squadron: %s"), *SquadronData.Name);
+
+			// Update UI fields
+			if (GroupInfoText)
+			{
+				GroupInfoText->SetText(FText::FromString(SquadronData.Name));
+			}
+
+			if (GroupLocationText)
+			{
+				GroupLocationText->SetText(FText::FromString(SquadronData.Location));
+			}
+
+			if (GroupEmpireText)
+			{
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+			}
+
+			if (GroupTypeText)
+			{
+				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
+			}
+		}
+		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::LCA_SQUADRON) {
+			const FS_OOBLanding& SquadronData = SquadronItem->LandingData;
+
+			UE_LOG(LogTemp, Log, TEXT("Selected Squadron: %s"), *SquadronData.Name);
+
+			// Update UI fields
+			if (GroupInfoText)
+			{
+				GroupInfoText->SetText(FText::FromString(SquadronData.Name));
+			}
+
+			if (GroupLocationText)
+			{
+				GroupLocationText->SetText(FText::FromString(SquadronData.Location));
+			}
+
+			if (GroupEmpireText)
+			{
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+			}
+
+			if (GroupTypeText)
+			{
+				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
+			}
 		}
 	}
 }
@@ -1203,6 +1388,9 @@ void UOperationsScreen::ClearForces()
 	if (UnitListView) {
 		UnitListView->ClearListItems();
 	}
+	if (SquadronListView) {
+		SquadronListView->ClearListItems();
+	}
 	
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
@@ -1217,6 +1405,7 @@ void UOperationsScreen::ClearForces()
 	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
 }
 
