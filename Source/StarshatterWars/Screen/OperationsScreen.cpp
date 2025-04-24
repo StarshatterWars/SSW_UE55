@@ -259,6 +259,10 @@ void UOperationsScreen::OnForcesButtonClicked()
 		OperationsModeText->SetText(FText::FromString("FORCES"));
 	}
 	SetSelectedRosterData(SSWInstance->GetSelectedRosterNr());
+	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UOperationsScreen::OnForcesButtonHovered()
@@ -527,6 +531,11 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
 	if (!ForceItem) return;
 
+	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+
 	if(FleetListView) {
 		FleetListView->ClearListItems();
 
@@ -536,9 +545,24 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 			FleetItem->Data = Fleet;
 			FleetListView->AddItem(FleetItem);
 		}
+		
+		if (FleetListView->GetNumItems() > 0) {
+			if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 
-	//CarrierListView->ClearListItems();
+	if (CarrierListView) {
+		CarrierListView->ClearListItems();
+	}
+	if (DesronListView) {
+		DesronListView->ClearListItems();
+	}
+	if (BattleListView) {
+		BattleListView->ClearListItems();
+	}
 
 	if (UOOBForceItem* Force_Item = Cast<UOOBForceItem>(SelectedItem))
 	{
@@ -578,6 +602,13 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 				FleetItem->Data = Fleet;
 				FleetListView->AddItem(FleetItem);
 			}
+
+			if (FleetListView->GetNumItems() > 0) {
+				if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Visible);
+			}
+			else {
+				if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+			}
 		}
 	}
 }
@@ -592,9 +623,14 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		UE_LOG(LogTemp, Log, TEXT("Selected Fleet: %s"), *FleetData.Name);
 
 		// Clear all subgroup list views first
+		
 		if (CarrierListView) CarrierListView->ClearListItems();
 		if (BattleListView) BattleListView->ClearListItems();
 		if (DesronListView) DesronListView->ClearListItems();
+
+		if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 		// Update UI fields
 		if (GroupInfoText)
@@ -618,11 +654,18 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		}
 
 		// -- Carrier Groups --
-		/*for (const FS_OOBCarrier& Carrier : FleetData.Carrier)
+		for (const FS_OOBCarrier& Carrier : FleetData.Carrier)
 		{
 			UOOBCarrierGroupItem* CarrierItem = NewObject<UOOBCarrierGroupItem>(this);
 			CarrierItem->Data = Carrier;
 			CarrierListView->AddItem(CarrierItem);
+		}
+		
+		if (CarrierListView->GetNumItems() > 0) {
+			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
 		// -- Battle Groups --
@@ -633,13 +676,27 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 			BattleListView->AddItem(BattleItem);
 		}
 
-		// -- DesRons (Destroyer Groups) --
+		if (BattleListView->GetNumItems() > 0) {
+			if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
+
+		// -- Desrons (Destroyer Groups) --
 		for (const FS_OOBDestroyer& Destroyer : FleetData.Destroyer)
 		{
 			UOOBDestroyerItem* DestroyerItem = NewObject<UOOBDestroyerItem>(this);
 			DestroyerItem->Data = Destroyer;
 			DesronListView->AddItem(DestroyerItem);
-		}*/
+		}
+		
+		if (DesronListView->GetNumItems() > 0) {
+			if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 }
 
@@ -652,6 +709,28 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 
 		UE_LOG(LogTemp, Log, TEXT("Selected Carrier Group: %s"), *CarrierData.Name);
 
+		// Update UI fields
+		if (GroupInfoText)
+		{
+			GroupInfoText->SetText(FText::FromString(CarrierData.Name));
+		}
+
+		if (GroupLocationText)
+		{
+			GroupLocationText->SetText(FText::FromString(CarrierData.Location));
+		}
+
+		if (GroupEmpireText)
+		{
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(CarrierData.Empire)));
+		}
+
+		if (GroupTypeText)
+		{
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(CarrierData.Type)));
+
+		}
+		
 		// Clear the wing list view before adding new items
 		if (WingListView)
 		{
@@ -671,11 +750,65 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (UOOBDestroyerItem* DesronItem = Cast<UOOBDestroyerItem>(SelectedItem))
+	{
+		const FS_OOBDestroyer& DesronData = DesronItem->Data;
+
+		UE_LOG(LogTemp, Log, TEXT("Selected DESRON Group: %s"), *DesronData.Name);
+
+		// Update UI fields
+		if (GroupInfoText)
+		{
+			GroupInfoText->SetText(FText::FromString(DesronData.Name));
+		}
+
+		if (GroupLocationText)
+		{
+			GroupLocationText->SetText(FText::FromString(DesronData.Location));
+		}
+
+		if (GroupEmpireText)
+		{
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(DesronData.Empire)));
+		}
+
+		if (GroupTypeText)
+		{
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(DesronData.Type)));
+		}
+	}
 }
 
 void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (UOOBBattleItem* BattleItem = Cast<UOOBBattleItem>(SelectedItem))
+	{
+		const FS_OOBBattle& BattleData = BattleItem->Data;
+
+		UE_LOG(LogTemp, Log, TEXT("Selected Battle Group: %s"), *BattleData.Name);
+
+		// Update UI fields
+		if (GroupInfoText)
+		{
+			GroupInfoText->SetText(FText::FromString(BattleData.Name));
+		}
+
+		if (GroupLocationText)
+		{
+			GroupLocationText->SetText(FText::FromString(BattleData.Location));
+		}
+
+		if (GroupEmpireText)
+		{
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(BattleData.Empire)));
+		}
+
+		if (GroupTypeText)
+		{
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(BattleData.Type)));
+		}
+	}
 }
 
 void UOperationsScreen::SetSelectedMissionData(int Selected) 

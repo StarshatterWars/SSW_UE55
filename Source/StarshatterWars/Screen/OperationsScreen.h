@@ -11,6 +11,7 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "Components/Border.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
@@ -136,6 +137,16 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* MissionsButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* AudioButton;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* FleetInfoBorder;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* CarrierInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* BattleInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* DesronInfoBorder;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;

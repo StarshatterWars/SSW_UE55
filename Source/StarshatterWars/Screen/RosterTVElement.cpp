@@ -30,27 +30,15 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     // Check type and set display text accordingly
     if (const UOOBForceItem* ForceItem = Cast<UOOBForceItem>(ListItemObject))
     {
-        if (UListView* OwningListView = Cast<UListView>(GetOwningListView())) {
-            RosterId = OwningListView->GetIndexForItem(ForceItem);
-        }
-
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *ForceItem->Data.Name)));
     }
     else if (const UOOBFleetItem* FleetItem = Cast<UOOBFleetItem>(ListItemObject))
     {
-        if (UListView* OwningListView = Cast<UListView>(GetOwningListView())) {
-            RosterId = OwningListView->GetIndexForItem(FleetItem);
-        }
-
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *FleetItem->Data.Name)));
     }
     else if (const UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(ListItemObject))
     {
-        if (UListView* OwningListView = Cast<UListView>(GetOwningListView())) {
-            RosterId = OwningListView->GetIndexForItem(CarrierItem);
-        }
-
-        NameText->SetText(FText::FromString(FString::Printf(TEXT("[CARRIER] %s"), *CarrierItem->Data.Name)));
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *CarrierItem->Data.Name)));
     }
     else if (const UOOBBattleItem* BattleItem = Cast<UOOBBattleItem>(ListItemObject))
     {
@@ -58,15 +46,11 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
             RosterId = OwningListView->GetIndexForItem(BattleItem);
         }
         
-        NameText->SetText(FText::FromString(FString::Printf(TEXT("[BATTLE] %s"), *BattleItem->Data.Name)));
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *BattleItem->Data.Name)));
     }
     else if (const UOOBDestroyerItem* DesronItem = Cast<UOOBDestroyerItem>(ListItemObject))
     {
-        if (UListView* OwningListView = Cast<UListView>(GetOwningListView())) {
-            RosterId = OwningListView->GetIndexForItem(DesronItem);
-        }
-        
-        NameText->SetText(FText::FromString(FString::Printf(TEXT("[DESRON] %s"), *DesronItem->Data.Name)));
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *DesronItem->Data.Name)));
     }
     else
     {
