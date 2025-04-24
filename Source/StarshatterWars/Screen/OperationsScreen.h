@@ -114,6 +114,10 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CancelButtonText;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GroupInfomationText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* InformationLabel;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* SelectButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
@@ -147,6 +151,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UBorder* BattleInfoBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* DesronInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* InformationBorder;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;

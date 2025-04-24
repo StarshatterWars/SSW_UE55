@@ -259,6 +259,13 @@ void UOperationsScreen::OnForcesButtonClicked()
 		OperationsModeText->SetText(FText::FromString("FORCES"));
 	}
 	SetSelectedRosterData(SSWInstance->GetSelectedRosterNr());
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString(""));
+	}
+
 	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -526,6 +533,13 @@ FDateTime UOperationsScreen::GetCampaignTime()
 
 void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 {
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString(""));
+	}
+
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	UE_LOG(LogTemp, Log, TEXT("Force Clicked"));
 	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
@@ -615,6 +629,13 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 {
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString(""));
+	}
+
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (UOOBFleetItem* FleetItem = Cast<UOOBFleetItem>(SelectedItem))
 	{
@@ -662,7 +683,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		}
 		
 		if (CarrierListView->GetNumItems() > 0) {
-			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Visible);
+			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Visible);		
 		}
 		else {
 			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -703,6 +724,14 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString("CVBG Elements"));
+	}
+
 	if (UOOBCarrierGroupItem* CarrierItem = Cast<UOOBCarrierGroupItem>(SelectedItem))
 	{
 		const FS_OOBCarrier& CarrierData = CarrierItem->Data;
@@ -749,6 +778,13 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 {
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString("DESRON Elements"));
+	}
+
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (UOOBDestroyerItem* DesronItem = Cast<UOOBDestroyerItem>(SelectedItem))
 	{
@@ -781,6 +817,13 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 
 void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 {
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString("BG Elements"));
+	}
+
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (UOOBBattleItem* BattleItem = Cast<UOOBBattleItem>(SelectedItem))
 	{
