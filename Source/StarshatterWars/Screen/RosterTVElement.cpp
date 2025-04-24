@@ -9,6 +9,7 @@
 #include "OOBBattleItem.h"
 #include "OOBDestroyerItem.h"
 #include "OOBWingItem.h"
+#include "OOBUnitItem.h"
 
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -41,11 +42,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *CarrierItem->Data.Name)));
     }
     else if (const UOOBBattleItem* BattleItem = Cast<UOOBBattleItem>(ListItemObject))
-    {
-        if (UListView* OwningListView = Cast<UListView>(GetOwningListView())) {
-            RosterId = OwningListView->GetIndexForItem(BattleItem);
-        }
-        
+    {  
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *BattleItem->Data.Name)));
     }
     else if (const UOOBDestroyerItem* DesronItem = Cast<UOOBDestroyerItem>(ListItemObject))
@@ -55,6 +52,10 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     else if (const UOOBWingItem* WingItem = Cast<UOOBWingItem>(ListItemObject))
     {
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *WingItem->Data.Name)));
+    }
+    else if (const UOOBUnitItem* UnitItem = Cast<UOOBUnitItem>(ListItemObject))
+    { 
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *UnitItem->Data.DisplayName)));
     }
     else
     {

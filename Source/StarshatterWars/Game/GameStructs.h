@@ -1807,7 +1807,11 @@ struct FS_OOBUnit : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString DisplayName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Regnum;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Empire;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Location;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1823,8 +1827,10 @@ struct FS_OOBUnit : public FTableRowBase {
 
 	FS_OOBUnit() {
 		Name = "";
+		DisplayName = "";
 		Regnum = "";
 		Location = "";
+		Empire = 0;
 		ParentId = 0;
 		Count = -1;
 		Type = ECOMBATUNIT_TYPE::NONE;
@@ -1839,7 +1845,7 @@ struct FS_OOBFighterUnit : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Regnum;
+	int Empire;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Location;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1856,6 +1862,7 @@ struct FS_OOBFighterUnit : public FTableRowBase {
 	FS_OOBFighterUnit() {
 		Name = "";
 		Location = "";
+		Empire = 0;
 		ParentId = 0;
 		Count = -1;
 		Type = ECOMBATUNIT_TYPE::NONE;

@@ -13,6 +13,7 @@
 #include "OOBBattleItem.h"
 #include "OOBDestroyerItem.h"
 #include "OOBWingItem.h"
+#include "OOBUnitItem.h"
 
 void UOperationsScreen::NativeConstruct()
 {
@@ -152,6 +153,11 @@ void UOperationsScreen::NativeConstruct()
 		WingListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnWingSelected);
 	}
 
+	if (UnitListView) {
+		UnitListView->ClearListItems();
+		UnitListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnUnitSelected);
+	}
+
 	SelectedMission = 0;
 
 	SetCampaignOrders();
@@ -263,12 +269,6 @@ void UOperationsScreen::OnForcesButtonClicked()
 	{
 		InformationLabel->SetText(FText::FromString(""));
 	}
-
-	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UOperationsScreen::OnForcesButtonHovered()
@@ -513,6 +513,8 @@ FDateTime UOperationsScreen::GetCampaignTime()
 
 void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 {
+	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
+
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InformationLabel)
@@ -529,6 +531,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if(FleetListView) {
 		FleetListView->ClearListItems();
@@ -556,6 +559,9 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	}
 	if (BattleListView) {
 		BattleListView->ClearListItems();
+	}
+	if (UnitListView) {
+		UnitListView->ClearListItems();
 	}
 
 	if (UOOBForceItem* Force_Item = Cast<UOOBForceItem>(SelectedItem))
@@ -629,11 +635,13 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		if (BattleListView) BattleListView->ClearListItems();
 		if (DesronListView) DesronListView->ClearListItems();
 		if (WingListView) WingListView->ClearListItems();
+		if (UnitListView) UnitListView->ClearListItems();
 
 		if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 		// Update UI fields
 		if (GroupInfoText)
@@ -742,6 +750,26 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 
 		}
 		
+		// Clear the unit list view before adding new items
+		if (UnitListView)
+		{
+			UnitListView->ClearListItems();
+
+			// Populate UnitListView with this CVBG ships
+			for (const FS_OOBUnit& Unit : CarrierData.Unit)
+			{
+				UOOBUnitItem* UnitItem = NewObject<UOOBUnitItem>(this);
+				UnitItem->Data = Unit;
+				UnitListView->AddItem(UnitItem);
+			}
+		}
+
+		if (UnitListView->GetNumItems() > 0) {
+			if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
 		// Clear the wing list view before adding new items
 		if (WingListView)
 		{
@@ -804,6 +832,27 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(DesronData.Type)));
 		}
+		
+		// Clear the unit list view before adding new items
+		if (UnitListView)
+		{
+			UnitListView->ClearListItems();
+
+			// Populate UnitListView with this Desron's ships
+			for (const FS_OOBUnit& Unit : DesronData.Unit)
+			{
+				UOOBUnitItem* UnitItem = NewObject<UOOBUnitItem>(this);
+				UnitItem->Data = Unit;
+				UnitListView->AddItem(UnitItem);
+			}
+		}
+
+		if (UnitListView->GetNumItems() > 0) {
+			if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 }
 
@@ -846,6 +895,26 @@ void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(BattleData.Type)));
 		}
+		// Clear the unit list view before adding new items
+		if (UnitListView)
+		{
+			UnitListView->ClearListItems();
+
+			// Populate UnitListView with this Battle Groups ships
+			for (const FS_OOBUnit& Unit : BattleData.Unit)
+			{
+				UOOBUnitItem* UnitItem = NewObject<UOOBUnitItem>(this);
+				UnitItem->Data = Unit;
+				UnitListView->AddItem(UnitItem);
+			}
+		}
+
+		if (UnitListView->GetNumItems() > 0) {
+			if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 }
 
@@ -855,7 +924,7 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 
 	if (InformationLabel)
 	{
-		InformationLabel->SetText(FText::FromString("BG Elements"));
+		InformationLabel->SetText(FText::FromString("Wing Elements"));
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -884,6 +953,45 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 		if (GroupTypeText)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(WingData.Type)));
+		}
+	}
+}
+
+void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
+{
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString(""));
+	}
+
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (UOOBUnitItem* UnitItem = Cast<UOOBUnitItem>(SelectedItem))
+	{
+		const FS_OOBUnit& UnitData = UnitItem->Data;
+
+		UE_LOG(LogTemp, Log, TEXT("Selected Ship: %s"), *UnitData.Name);
+
+		// Update UI fields
+		if (GroupInfoText)
+		{
+			GroupInfoText->SetText(FText::FromString(UnitData.DisplayName));
+		}
+
+		if (GroupLocationText)
+		{
+			GroupLocationText->SetText(FText::FromString(UnitData.Location));
+		}
+
+		if (GroupEmpireText)
+		{
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(UnitData.Empire)));
+		}
+
+		if (GroupTypeText)
+		{
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetUnitFromType(UnitData.Type)));
 		}
 	}
 }
@@ -1072,13 +1180,54 @@ UOperationsScreen::GetOrdinal(int id)
 	return ordinal;
 }
 
+void UOperationsScreen::ClearForces()
+{
+	if (ForceListView) {
+		ForceListView->ClearListItems();
+	}
+	if (FleetListView) {
+		FleetListView->ClearListItems();
+	}
+	if (CarrierListView) {
+		CarrierListView->ClearListItems();
+	}
+	if (DesronListView) {
+		DesronListView->ClearListItems();
+	}
+	if (BattleListView) {
+		BattleListView->ClearListItems();
+	}
+	if (WingListView) {
+		WingListView->ClearListItems();
+	}
+	if (UnitListView) {
+		UnitListView->ClearListItems();
+	}
+	
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString(""));
+	}
+
+	if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattleInfoBorder) BattleInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
+}
+
 void UOperationsScreen::LoadForces()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	if (!SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
 
-	ForceListView->ClearListItems();
+	ClearForces();
+
 	LoadedForces.Empty();
 
 	// Retrieve all rows
@@ -1088,12 +1237,15 @@ void UOperationsScreen::LoadForces()
 	{
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
-			LoadedForces.Add(*Force);
+			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) {
+			
+				LoadedForces.Add(*Force);
 
-			// Wrap in UObject and add to list
-			UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
-			ForceItem->Data = *Force;
-			ForceListView->AddItem(ForceItem);
+				// Wrap in UObject and add to list
+				UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
+				ForceItem->Data = *Force;
+				ForceListView->AddItem(ForceItem);
+			}
 		}
 	}
 }

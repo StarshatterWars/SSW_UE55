@@ -237,6 +237,8 @@ public:
 	void PlayAcceptSound(UObject* Context);
 	UFUNCTION()
 	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
+	FString GetUnitFromType(ECOMBATUNIT_TYPE nt);
+	FString GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt);
 	FString GetEmpireTypeNameByIndex(int32 Index);
 	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
 	void CreateOOBTable();

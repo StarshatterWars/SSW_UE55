@@ -11,6 +11,7 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "Components/CanvasPanel.h"
 #include "Components/Border.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
@@ -30,6 +31,7 @@ class UOOBCarrierGroupItem;
 class UOOBBattleItem;
 class UOOBDestroyerItem;
 class UOOBWingItem;
+class UOOBUnitItem;
 /**
  * 
  */
@@ -154,7 +156,11 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* WingInfoBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* UnitInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* InformationBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UCanvasPanel* InfoPanel;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;
@@ -198,7 +204,7 @@ public:
 	UListView* WingListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UListView* ShipListView;
+	UListView* UnitListView;
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* InterceptSquadronListView;
@@ -223,6 +229,8 @@ protected:
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	UFUNCTION()
 	FString GetOrdinal(int id);
+	UFUNCTION()
+	void ClearForces();
 	UFUNCTION()
 	void GetIntelImageFile(FString IntelImageName);
 	UFUNCTION()
@@ -297,6 +305,7 @@ protected:
 	void OnDesronSelected(UObject* SelectedItem);
 	void OnBattleGroupSelected(UObject* SelectedItem);
 	void OnWingSelected(UObject* SelectedItem);
+	void OnUnitSelected(UObject* SelectedItem);
 
 private:
 	FS_Campaign ActiveCampaign;

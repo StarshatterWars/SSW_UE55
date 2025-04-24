@@ -25,6 +25,7 @@ class UOOBCarrierGroupItem;
 class UOOBBattleItem;
 class UOOBDestroyerItem;
 class UOOBWingItem;
+class UOOBUnitItem;
 
 /**
  * 
@@ -34,14 +35,7 @@ class STARSHATTERWARS_API URosterTVElement : public UUserWidget, public IUserObj
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* RosterNameText;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* RosterTypeText;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* RosterLocationText;
-
-	protected:
+protected:
     UPROPERTY(meta = (BindWidgetOptional))
     class UTextBlock* NameText;  // TextBlock for displaying the name of the item
 
@@ -54,16 +48,4 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")
 	FString Name;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")
-	FString Type;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")
-	FString Location;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Roster View Variables")
-	int32 RosterId;
-
-	UPROPERTY()
-	URosterViewObject* RosterView;
-	
 };

@@ -1131,6 +1131,34 @@ FString USSWGameInstance::GetNameFromType(ECOMBATGROUP_TYPE nt)
 	return EnumToDisplayString(nt);
 }
 
+FString USSWGameInstance::GetUnitFromType(ECOMBATUNIT_TYPE nt)
+{
+	return EnumToDisplayString(nt);
+}
+
+FString USSWGameInstance::GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt)
+{
+	FString Prefix;
+	switch (nt) {
+		case ECOMBATUNIT_TYPE::CRUISER: 
+			Prefix = "CA-";
+			break;
+		case ECOMBATUNIT_TYPE::CARRIER:
+			Prefix = "CV-";
+			break;
+		case ECOMBATUNIT_TYPE::FRIGATE:
+			Prefix = "FF-";
+			break;
+		case ECOMBATUNIT_TYPE::DESTROYER:
+			Prefix = "DD-";
+			break;
+		default:
+			Prefix = "UNK-";
+			break;
+	} 
+	return Prefix;
+}
+
 FString USSWGameInstance::GetEmpireTypeNameByIndex(int32 Index)
 {
 	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
@@ -1235,6 +1263,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewCarrier.Unit[Index].Count = 1;
 				NewCarrier.Unit[Index].ParentId = Item.ParentId;
 				NewCarrier.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewCarrier.Unit[Index].Empire = Item.EmpireId;
 				NewCarrier.Unit[Index].Location = Item.Region;
 				NewCarrier.Unit[Index].ParentType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
 
@@ -1250,6 +1279,7 @@ void USSWGameInstance::CreateOOBTable() {
 				else if (UnitItem.UnitClass == "Carrier") {
 					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
 				}
+				NewCarrier.Unit[Index].DisplayName = GetUnitPrefixFromType(NewCarrier.Unit[Index].Type) + UnitItem.UnitRegnum + " "+ UnitItem.UnitName;
 
 				NewCarrier.Unit[Index].Design = UnitItem.UnitDesign;
 				++Index;
@@ -1278,6 +1308,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewDestroyer.Unit[Index].Name = UnitItem.UnitName;
 				NewDestroyer.Unit[Index].Count = 1;
 				NewDestroyer.Unit[Index].ParentId = Item.ParentId;
+				NewDestroyer.Unit[Index].Empire = Item.EmpireId;
 				NewDestroyer.Unit[Index].Regnum = UnitItem.UnitRegnum;
 				NewDestroyer.Unit[Index].Location = Item.Region;
 				NewDestroyer.Unit[Index].ParentType = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
@@ -1294,6 +1325,8 @@ void USSWGameInstance::CreateOOBTable() {
 				else if (UnitItem.UnitClass == "Carrier") {
 					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
 				}
+
+				NewDestroyer.Unit[Index].DisplayName = GetUnitPrefixFromType(NewDestroyer.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				NewDestroyer.Unit[Index].Design = UnitItem.UnitDesign;
 				++Index;
@@ -1322,6 +1355,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewBattle.Unit[Index].Count = 1;
 				NewBattle.Unit[Index].ParentId = Item.ParentId;
 				NewBattle.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewBattle.Unit[Index].Empire = Item.EmpireId;
 				NewBattle.Unit[Index].Location = Item.Region;
 				NewBattle.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTLE_GROUP;
 
@@ -1337,6 +1371,8 @@ void USSWGameInstance::CreateOOBTable() {
 				else if (UnitItem.UnitClass == "Carrier") {
 					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
 				}
+
+				NewBattle.Unit[Index].DisplayName = GetUnitPrefixFromType(NewBattle.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				NewBattle.Unit[Index].Design = UnitItem.UnitDesign;
 				++Index;
