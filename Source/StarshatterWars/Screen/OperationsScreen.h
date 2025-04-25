@@ -16,7 +16,7 @@
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
-
+  
 #include "Components/ListView.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -35,7 +35,10 @@ class UOOBUnitItem;
 class UOOBSquadronItem;
 class UOOBFighterSquadronItem;
 class UOOBFighterUnit;
+class UPanelWidget;
+class USelectableButtonGroup;
 class UMenuButton;
+
 /**
  * 
  */
@@ -150,17 +153,6 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* MissionsButton;
 
-	/*UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButton* OrdersButton;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButton* TheaterButton;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButton* ForcesButton;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButton* IntelButton;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButton* MissionsButton;
-	*/
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* AudioButton;
 
@@ -185,8 +177,7 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UCanvasPanel* InfoPanel;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UCanvasPanel* InfoBoxPanel;
-	
-	
+		
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;
 
@@ -202,6 +193,12 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY()
 	USoundBase* AudioAsset;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	USelectableButtonGroup* MenuToggleGroup;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UPanelWidget* MenuButtonContainer;
+
 public:
 	UFUNCTION()
 	void SetSelectedMissionData(int Selected);
@@ -209,7 +206,11 @@ public:
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
 	void LoadForces();
-
+	void OnMenuToggleHovered();
+	UFUNCTION()
+	void OnMenuToggleSelected(UMenuButton* SelectedButton);
+	UFUNCTION()
+	void OnMenuButtonSelected(UMenuButton* SelectedButton);
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
 
@@ -246,6 +247,9 @@ public:
 	UPROPERTY(EditAnywhere)
     TSubclassOf<UUserWidget> EntryWidgetClass;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UMenuButton> MenuButtonClass;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FS_OOBForce> LoadedForces;
 
@@ -253,7 +257,6 @@ protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	void SetButtonState();
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	UFUNCTION()
@@ -270,49 +273,26 @@ protected:
 	void OnSelectButtonClicked();
 	UFUNCTION()
 	void OnSelectButtonHovered();
-	UFUNCTION()
-	void OnSelectButtonUnHovered();
+
 	UFUNCTION()
 	void OnCancelButtonClicked();
 	UFUNCTION()
 	void OnCancelButtonHovered();
-	UFUNCTION()
-	void OnCancelButtonUnHovered();
 	
 	UFUNCTION()
-	void OnOrdersButtonClicked();
+	void LoadForcesInfo();
 	UFUNCTION()
-	void OnOrdersButtonHovered();
+	void LoadOrdersInfo();
 	UFUNCTION()
-	void OnOrdersButtonUnHovered();
-
+	void LoadMissionsInfo();
 	UFUNCTION()
-	void OnTheaterButtonClicked();
+	void LoadIntelInfo();
 	UFUNCTION()
-	void OnTheaterButtonHovered();
-	UFUNCTION()
-	void OnTheaterButtonUnHovered();
-
-	UFUNCTION()
-	void OnForcesButtonClicked();
-	UFUNCTION()
-	void OnForcesButtonHovered();
-	UFUNCTION()
-	void OnForcesButtonUnHovered();
-
-	UFUNCTION()
-	void OnIntelButtonClicked();
-	UFUNCTION()
-	void OnIntelButtonHovered();
-	UFUNCTION()
-	void OnIntelButtonUnHovered();
-
-	UFUNCTION()
-	void OnMissionsButtonClicked();
-	UFUNCTION()
-	void OnMissionsButtonHovered();
-	UFUNCTION()
-	void OnMissionsButtonUnHovered();
+	void LoadTheaterInfo();
+	
+	// Store all buttons created
+	UPROPERTY()
+	TArray<UMenuButton*> AllMenuButtons;
 
 	UFUNCTION()
 	void OnAudioButtonClicked();
@@ -337,6 +317,8 @@ protected:
 	void OnUnitSelected(UObject* SelectedItem);
 	void OnSquadronSelected(UObject* SelectedItem);
 	void OnFighterUnitSelected(UObject* SelectedItem);
+	UFUNCTION()
+	void OnMenuToggleHovered(UMenuButton* HoveredButton);
 
 private:
 	FS_Campaign ActiveCampaign;
@@ -349,6 +331,15 @@ private:
 
 	UPROPERTY()
 	TArray<FS_CampaignAction> ActionList;
+	
+	UPROPERTY()
+	TArray<FString> MenuItems = {
+		TEXT("ORDERS"),
+		TEXT("THEATER"),
+		TEXT("FORCES"),
+		TEXT("INTEL"),
+		TEXT("MISSIONS")
+	};
 
 	int IndentLevel = 0;
 };

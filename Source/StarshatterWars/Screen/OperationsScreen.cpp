@@ -19,6 +19,10 @@
 #include "OOBFighterUnit.h"
 #include "OOBFighterSquadronItem.h"
 
+#include "../Foundation/SelectableButtonGroup.h"
+#include "../Foundation/MenuButton.h"
+#include "Components/PanelWidget.h"
+
 void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -28,11 +32,10 @@ void UOperationsScreen::NativeConstruct()
 
 	if (TitleText)
 		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
-	
+
 	if (CancelButton) {
 		CancelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnCancelButtonClicked);
 		CancelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnCancelButtonHovered);
-		CancelButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnCancelButtonUnHovered);		
 	}
 
 	if (CancelButtonText) {
@@ -45,46 +48,38 @@ void UOperationsScreen::NativeConstruct()
 	if (SelectButton) {
 		SelectButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnSelectButtonClicked);
 		SelectButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonHovered);
-		SelectButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonUnHovered);		
 	}
 
 	if (PlayButtonText) {
 		PlayButtonText->SetText(FText::FromString("SELECT"));
 	}
 
-	if (OrdersButton) {
-		OrdersButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
-		OrdersButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnOrdersButtonClicked);
-		OrdersButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnOrdersButtonHovered);
-		OrdersButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnOrdersButtonUnHovered);
-	}
+	if (!MenuButtonClass || !MenuToggleGroup || !MenuButtonContainer) return;
 
-	if (TheaterButton) {
-		TheaterButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
-		TheaterButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterButtonClicked);
-		TheaterButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterButtonHovered);
-		TheaterButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnTheaterButtonUnHovered);
-	}
+	for (int32 i = 0; i < 5; ++i)
+	{
+		UMenuButton* NewButton = CreateWidget<UMenuButton>(this, MenuButtonClass);
+		if (!NewButton) continue;
 
-	if (ForcesButton) {
-		ForcesButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnForcesButtonClicked);
-		ForcesButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnForcesButtonHovered);
-		ForcesButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnForcesButtonUnHovered);
-	}
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(NewButton->GetWidgetFromName("Label")))
+		{
+			Label->SetText(FText::FromString(MenuItems[i]).ToUpper());
+		}
+		NewButton->MenuOption = MenuItems[i];
 
-	if (IntelButton) {
-		IntelButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
-		IntelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnIntelButtonClicked);
-		IntelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnIntelButtonHovered);
-		IntelButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnIntelButtonUnHovered);
-	}
+		// Add to container and to toggle group
+		MenuButtonContainer->AddChild(NewButton);
+		MenuToggleGroup->RegisterButton(NewButton);
 
-	if (MissionsButton) {
-		MissionsButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
+		MenuButtonContainer->AddChild(NewButton);
+		MenuToggleGroup->RegisterButton(NewButton);
 
-		MissionsButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnMissionsButtonClicked);
-		MissionsButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMissionsButtonHovered);
-		MissionsButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnMissionsButtonUnHovered);
+		// Optional: listen for selection in this screen
+		NewButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnMenuToggleSelected);
+		NewButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMenuToggleHovered);
+		NewButton->OnSelected.AddUniqueDynamic(this, &UOperationsScreen::OnMenuButtonSelected);
+		AllMenuButtons.Add(NewButton);
 	}
 
 	if (PlayerNameText) {
@@ -100,20 +95,21 @@ void UOperationsScreen::NativeConstruct()
 	}
 
 	ActiveCampaign = SSWInstance->GetActiveCampaign();
-	
+
 	if (SSWInstance->GetActiveCampaign().Index == 0) {
 		if (TheaterButton) {
 			TheaterButton->SetIsEnabled(false);
 		}
 		if (ForcesButton) {
-			ForcesButton->SetIsEnabled(false); 
+			ForcesButton->SetIsEnabled(false);
 		}
 		if (IntelButton) {
 			IntelButton->SetIsEnabled(false);
 		}
-	} else {
+	}
+	else {
 		if (TheaterButton) {
-				TheaterButton->SetIsEnabled(true);
+			TheaterButton->SetIsEnabled(true);
 		}
 		if (ForcesButton) {
 			ForcesButton->SetIsEnabled(true);
@@ -125,7 +121,7 @@ void UOperationsScreen::NativeConstruct()
 
 	LoadForces();
 
-	if(ForceListView) {
+	if (ForceListView) {
 		ForceListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnForceSelected);
 		ForceListView->ClearListItems();
 
@@ -179,7 +175,12 @@ void UOperationsScreen::NativeConstruct()
 	}
 
 	SelectedMission = 0;
-
+	
+	if (AllMenuButtons.Num() > 0)
+	{
+		AllMenuButtons[0]->SetSelected(true);
+	}
+	
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateIntelList();
@@ -190,10 +191,10 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	
+
 	if (SSWInstance->MissionSelectionChanged) {
 		SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
-	}	
+	}
 
 	if (SSWInstance->ActionSelectionChanged) {
 		SetSelectedIntelData(SSWInstance->GetSelectedActionNr());
@@ -204,11 +205,6 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		GameTimeText->SetText(FText::FromString(*CustomDate));
 	}
 	AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
-
-	
-}
-
-void UOperationsScreen::SetButtonState() {
 
 
 }
@@ -226,11 +222,27 @@ void UOperationsScreen::OnSelectButtonHovered()
 	SSWInstance->PlayHoverSound(this);
 }
 
-void UOperationsScreen::OnSelectButtonUnHovered()
+void UOperationsScreen::LoadForcesInfo()
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(2);
+	}
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("FORCES"));
+	}
+
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (InformationLabel)
+	{
+		InformationLabel->SetText(FText::FromString(""));
+	}
 }
 
-void UOperationsScreen::OnOrdersButtonClicked()
+void UOperationsScreen::LoadOrdersInfo()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
@@ -244,74 +256,26 @@ void UOperationsScreen::OnOrdersButtonClicked()
 	SetCampaignOrders();
 }
 
-void UOperationsScreen::OnOrdersButtonHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnOrdersButtonUnHovered()
-{
-}
-
-void UOperationsScreen::OnTheaterButtonClicked()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
-	
-	if (OperationalSwitcher) {
-		OperationalSwitcher->SetActiveWidgetIndex(1);
-	}
-
-	if (OperationsModeText) {
-		OperationsModeText->SetText(FText::FromString("THEATER"));
-	}
-}
-
-void UOperationsScreen::OnTheaterButtonHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnTheaterButtonUnHovered()
-{
-}
-
-void UOperationsScreen::OnForcesButtonClicked()
+void UOperationsScreen::LoadMissionsInfo()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
 
 	if (OperationalSwitcher) {
-		OperationalSwitcher->SetActiveWidgetIndex(2);
+		OperationalSwitcher->SetActiveWidgetIndex(4);
 	}
-	if (OperationsModeText) {
-		OperationsModeText->SetText(FText::FromString("FORCES"));
-	}
-	
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
-	if (InformationLabel)
-	{
-		InformationLabel->SetText(FText::FromString(""));
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("MISSIONS"));
 	}
+	SetCampaignMissions();
+	PopulateMissionList();
+	SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
 }
 
-void UOperationsScreen::OnForcesButtonHovered()
+void UOperationsScreen::LoadIntelInfo()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnForcesButtonUnHovered()
-{
-	
-}
-
-void UOperationsScreen::OnIntelButtonClicked()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
 	SSWInstance->PlayAcceptSound(this);
 
 	if (OperationalSwitcher) {
@@ -326,41 +290,18 @@ void UOperationsScreen::OnIntelButtonClicked()
 	SetSelectedIntelData(SSWInstance->GetSelectedActionNr());
 }
 
-void UOperationsScreen::OnIntelButtonHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnIntelButtonUnHovered()
-{
-}
-
-void UOperationsScreen::OnMissionsButtonClicked()
+void UOperationsScreen::LoadTheaterInfo()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
 
 	if (OperationalSwitcher) {
-		OperationalSwitcher->SetActiveWidgetIndex(4);
+		OperationalSwitcher->SetActiveWidgetIndex(1);
 	}
 
 	if (OperationsModeText) {
-		OperationsModeText->SetText(FText::FromString("MISSIONS"));
+		OperationsModeText->SetText(FText::FromString("THEATER"));
 	}
-	SetCampaignMissions();
-	PopulateMissionList(); 
-	SetSelectedMissionData(SSWInstance->GetSelectedMissionNr());
-}
-
-void UOperationsScreen::OnMissionsButtonHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnMissionsButtonUnHovered()
-{
 }
 
 void UOperationsScreen::OnAudioButtonClicked()
@@ -384,12 +325,6 @@ void UOperationsScreen::OnCancelButtonClicked()
 }
 
 void UOperationsScreen::OnCancelButtonHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnCancelButtonUnHovered()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayHoverSound(this);
@@ -430,13 +365,13 @@ void UOperationsScreen::SetCampaignOrders()
 	if (LocationSystemText) {
 		FString LocationSystem = SSWInstance->GetActiveCampaign().System + "/" + SSWInstance->GetActiveCampaign().Region;
 		LocationSystemText->SetText(FText::FromString(LocationSystem));
-	}	
+	}
 }
 
 void UOperationsScreen::SetCampaignMissions()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	
+
 	TArray<FS_CampaignMissionList> Missions = SSWInstance->GetActiveCampaign().MissionList;
 
 	for (FS_CampaignMissionList info : Missions)
@@ -448,8 +383,8 @@ void UOperationsScreen::SetCampaignMissions()
 
 void UOperationsScreen::PopulateMissionList()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
-	
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
 	if (!MissionList) return;
 
 	MissionList->ClearListItems();
@@ -463,7 +398,7 @@ void UOperationsScreen::PopulateMissionList()
 		ListItem->MissionRegion = SSWInstance->GetActiveCampaign().MissionList[i].Region;
 		ListItem->MissionSystem = SSWInstance->GetActiveCampaign().MissionList[i].System;
 		ListItem->MissionSitrep = SSWInstance->GetActiveCampaign().MissionList[i].System;
-		
+
 		if (SSWInstance->GetActiveCampaign().MissionList[i].Status == EMISSIONSTATUS::Active) {
 			ListItem->MissionStatus = "Active";
 		}
@@ -568,7 +503,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	UOOBForceItem* ForceItem = Cast<UOOBForceItem>(SelectedItem);
 	if (!ForceItem) return;
 
-	if(FleetListView) {
+	if (FleetListView) {
 		FleetListView->ClearListItems();
 
 		for (const FS_OOBFleet& Fleet : ForceItem->Data.Fleet)
@@ -577,7 +512,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 			FleetItem->Data = Fleet;
 			FleetListView->AddItem(FleetItem);
 		}
-		
+
 		if (FleetListView->GetNumItems() > 0) {
 			if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Visible);
 		}
@@ -625,7 +560,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 		{
 			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(ForceData.Empire)));
 		}
-		
+
 		// Clear and populate fleets
 		if (FleetListView)
 		{
@@ -675,7 +610,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		const FS_OOBFleet& FleetData = FleetItem->Data;
 
 		UE_LOG(LogTemp, Log, TEXT("Selected Fleet: %s"), *FleetData.Name);
-	
+
 		// Update UI fields
 		if (GroupInfoText)
 		{
@@ -691,7 +626,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 		{
 			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(FleetData.Empire)));
 		}
-		
+
 		if (GroupTypeText)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(FleetData.Type)));
@@ -704,9 +639,9 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 			CarrierItem->Data = Carrier;
 			CarrierListView->AddItem(CarrierItem);
 		}
-		
+
 		if (CarrierListView->GetNumItems() > 0) {
-			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Visible);		
+			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Visible);
 		}
 		else {
 			if (CarrierInfoBorder) CarrierInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -734,7 +669,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 			DestroyerItem->Data = Destroyer;
 			DesronListView->AddItem(DestroyerItem);
 		}
-		
+
 		if (DesronListView->GetNumItems() > 0) {
 			if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Visible);
 		}
@@ -756,7 +691,7 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	
+
 	if (InfoBoxPanel) {
 		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -788,7 +723,7 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(CarrierData.Type)));
 
 		}
-		
+
 		// Clear the unit list view before adding new items
 		if (UnitListView)
 		{
@@ -842,7 +777,7 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
-	
+
 	if (InfoBoxPanel) {
 		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -874,7 +809,7 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 		{
 			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(DesronData.Type)));
 		}
-		
+
 		// Clear the unit list view before adding new items
 		if (UnitListView)
 		{
@@ -1060,7 +995,7 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 }
 
 void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
-{	
+{
 	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 
 	if (InfoBoxPanel) {
@@ -1100,7 +1035,7 @@ void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
 void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 {
 	if (FighterUnitListView) FighterUnitListView->ClearListItems();
-	
+
 	if (InfoBoxPanel) {
 		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -1180,7 +1115,7 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 				FighterItem->Data = FighterUnit;
 				FighterUnitListView->AddItem(FighterItem);
 			}
-		
+
 		}
 		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON) {
 			const FS_OOBIntercept& SquadronData = SquadronItem->InterceptData;
@@ -1256,14 +1191,14 @@ void UOperationsScreen::OnFighterUnitSelected(UObject* SelectedItem)
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 }
 
-void UOperationsScreen::SetSelectedMissionData(int Selected) 
+void UOperationsScreen::SetSelectedMissionData(int Selected)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	FString SelectedMissionName = SSWInstance->GetActiveCampaign().MissionList[Selected].Name;
-	
+
 	if (MissionNameText) {
 		MissionNameText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Name));
-	}	
+	}
 	if (MissionDescriptionText) {
 		MissionDescriptionText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Description));
 	}
@@ -1469,7 +1404,7 @@ void UOperationsScreen::ClearForces()
 	if (FighterUnitListView) {
 		FighterUnitListView->ClearListItems();
 	}
-	
+
 	if (InfoBoxPanel) InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
@@ -1501,7 +1436,7 @@ void UOperationsScreen::LoadForces()
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
 			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) {
-			
+
 				LoadedForces.Add(*Force);
 
 				// Wrap in UObject and add to list
@@ -1509,6 +1444,63 @@ void UOperationsScreen::LoadForces()
 				ForceItem->Data = *Force;
 				ForceListView->AddItem(ForceItem);
 			}
+		}
+	}
+}
+
+void UOperationsScreen::OnMenuToggleHovered()
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
+}
+
+void UOperationsScreen::OnMenuToggleHovered(UMenuButton* HoveredButton)
+{
+	if (!HoveredButton) return;
+
+	UE_LOG(LogTemp, Log, TEXT("Hovered over: %s"), *HoveredButton->MenuOption);
+}
+
+void UOperationsScreen::OnMenuToggleSelected(UMenuButton* SelectedButton)
+{
+	if (!SelectedButton) return;
+
+	// Example action when one of the buttons is selected
+	UE_LOG(LogTemp, Log, TEXT("Selected button: %s"), *GetNameSafe(SelectedButton));
+
+	// Example: compare button text, tags, or use a mapping
+	// Then trigger OOB filtering or changes in UI accordingly
+	const FString& MenuOption = SelectedButton->MenuOption;
+
+	if (MenuOption == MenuItems[0])
+	{
+		LoadOrdersInfo();
+	}
+	else if (MenuOption == MenuItems[1])
+	{
+		LoadTheaterInfo();
+	}
+	else if (MenuOption == MenuItems[2])
+	{
+		LoadForcesInfo();
+	}
+	else if (MenuOption == MenuItems[3])
+	{
+		LoadIntelInfo();
+	}
+	else if (MenuOption == MenuItems[4])
+	{
+		LoadMissionsInfo();
+	}
+}
+
+void UOperationsScreen::OnMenuButtonSelected(UMenuButton* SelectedButton)
+{
+	for (UMenuButton* Button : AllMenuButtons)
+	{
+		if (Button)
+		{
+			Button->SetSelected(Button == SelectedButton);
 		}
 	}
 }
