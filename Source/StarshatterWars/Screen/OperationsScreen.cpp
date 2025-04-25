@@ -6,6 +6,7 @@
 #include "IntelListObject.h"
 #include "RosterTVElement.h"
 #include "Components/ListView.h"
+#include "../Foundation/MenuButton.h"
 
 #include "OOBForceItem.h"
 #include "OOBFleetItem.h"
@@ -52,12 +53,14 @@ void UOperationsScreen::NativeConstruct()
 	}
 
 	if (OrdersButton) {
+		OrdersButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
 		OrdersButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnOrdersButtonClicked);
 		OrdersButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnOrdersButtonHovered);
 		OrdersButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnOrdersButtonUnHovered);
 	}
 
 	if (TheaterButton) {
+		TheaterButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
 		TheaterButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterButtonClicked);
 		TheaterButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterButtonHovered);
 		TheaterButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnTheaterButtonUnHovered);
@@ -70,16 +73,20 @@ void UOperationsScreen::NativeConstruct()
 	}
 
 	if (IntelButton) {
+		IntelButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
 		IntelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnIntelButtonClicked);
 		IntelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnIntelButtonHovered);
 		IntelButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnIntelButtonUnHovered);
 	}
 
 	if (MissionsButton) {
+		MissionsButton->SetColorAndOpacity(FLinearColor::White); // Change text/tint
+
 		MissionsButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnMissionsButtonClicked);
 		MissionsButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMissionsButtonHovered);
 		MissionsButton->OnUnhovered.AddDynamic(this, &UOperationsScreen::OnMissionsButtonUnHovered);
 	}
+
 	if (PlayerNameText) {
 		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
 	}
@@ -197,6 +204,13 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		GameTimeText->SetText(FText::FromString(*CustomDate));
 	}
 	AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
+
+	
+}
+
+void UOperationsScreen::SetButtonState() {
+
+
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -244,7 +258,7 @@ void UOperationsScreen::OnTheaterButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
-
+	
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(1);
 	}
@@ -1088,14 +1102,14 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 	if (FighterUnitListView) FighterUnitListView->ClearListItems();
 	
 	if (InfoBoxPanel) {
-		InfoBoxPanel->SetVisibility(ESlateVisibility::Visible);
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
-	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Visible);
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InformationLabel)
 	{
-		InformationLabel->SetText(FText::FromString("Squadron Elements"));
+		InformationLabel->SetText(FText::FromString(""));
 	}
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
@@ -1126,6 +1140,13 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 			{
 				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
 			}
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBFighterUnit& FighterUnit : SquadronData.Unit)
+			{
+				UOOBFighterUnit* FighterItem = NewObject<UOOBFighterUnit>(this);
+				FighterItem->Data = FighterUnit;
+				FighterUnitListView->AddItem(FighterItem);
+			}
 		}
 		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::ATTACK_SQUADRON) {
 			const FS_OOBAttack& SquadronData = SquadronItem->AttackData;
@@ -1151,6 +1172,13 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 			if (GroupTypeText)
 			{
 				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
+			}
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBFighterUnit& FighterUnit : SquadronData.Unit)
+			{
+				UOOBFighterUnit* FighterItem = NewObject<UOOBFighterUnit>(this);
+				FighterItem->Data = FighterUnit;
+				FighterUnitListView->AddItem(FighterItem);
 			}
 		
 		}
@@ -1179,6 +1207,13 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 			{
 				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
 			}
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBFighterUnit& FighterUnit : SquadronData.Unit)
+			{
+				UOOBFighterUnit* FighterItem = NewObject<UOOBFighterUnit>(this);
+				FighterItem->Data = FighterUnit;
+				FighterUnitListView->AddItem(FighterItem);
+			}
 		}
 		else if (SquadronItem->Type == ECOMBATGROUP_TYPE::LCA_SQUADRON) {
 			const FS_OOBLanding& SquadronData = SquadronItem->LandingData;
@@ -1205,13 +1240,20 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 			{
 				GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(SquadronData.Type)));
 			}
+			// Populate SquadronListView with this Squadron Data
+			for (const FS_OOBFighterUnit& FighterUnit : SquadronData.Unit)
+			{
+				UOOBFighterUnit* FighterItem = NewObject<UOOBFighterUnit>(this);
+				FighterItem->Data = FighterUnit;
+				FighterUnitListView->AddItem(FighterItem);
+			}
 		}
 	}
 }
 
 void UOperationsScreen::OnFighterUnitSelected(UObject* SelectedItem)
 {
-
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 }
 
 void UOperationsScreen::SetSelectedMissionData(int Selected) 

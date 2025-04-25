@@ -70,7 +70,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     }
     else if (const UOOBFighterUnit* SquadronUnit = Cast<UOOBFighterUnit>(ListItemObject))
     {
-        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *SquadronUnit->Data.Design)));
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%i x %s"), SquadronUnit->Data.Count, *SquadronUnit->Data.Design)));
     }
     else
     {

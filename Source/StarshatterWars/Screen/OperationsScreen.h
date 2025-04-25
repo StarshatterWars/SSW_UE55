@@ -35,6 +35,7 @@ class UOOBUnitItem;
 class UOOBSquadronItem;
 class UOOBFighterSquadronItem;
 class UOOBFighterUnit;
+class UMenuButton;
 /**
  * 
  */
@@ -123,6 +124,10 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* InformationLabel;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* CurrentUnitLabel;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* LocationLabel;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* SelectButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
@@ -144,6 +149,18 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* IntelButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* MissionsButton;
+
+	/*UPROPERTY(meta = (BindWidgetOptional))
+	class UMenuButton* OrdersButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UMenuButton* TheaterButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UMenuButton* ForcesButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UMenuButton* IntelButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UMenuButton* MissionsButton;
+	*/
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* AudioButton;
 
@@ -236,6 +253,7 @@ protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	void SetButtonState();
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	UFUNCTION()
