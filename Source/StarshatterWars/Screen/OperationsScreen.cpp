@@ -1436,10 +1436,16 @@ void UOperationsScreen::LoadForceNames() {
 	{
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
-			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) {
-				EmpireDDItems.Add(SSWInstance->GetEmpireDisplayName(Force->Empire));
+			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED)
+			{
+				TArray<FS_Combatant> Combatant = SSWInstance->GetActiveCampaign().Combatant;
 
-				EmpireSelectionDD->AddOption(SSWInstance->GetEmpireDisplayName(Force->Empire));
+				for (FS_Combatant Item : Combatant) {
+					if (Item.Name == Force->Empire) {
+						EmpireDDItems.Add(SSWInstance->GetEmpireDisplayName(Force->Empire));
+						EmpireSelectionDD->AddOption(SSWInstance->GetEmpireDisplayName(Force->Empire));
+					}
+				}	
 			}
 		}
 	}
@@ -1465,8 +1471,10 @@ void UOperationsScreen::LoadForces(FString Name)
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
 			if ((Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) && Name == SSWInstance->GetEmpireDisplayName(Force->Empire)) {
-
-				LoadedForces.Add(*Force);
+				
+				TArray<FS_Combatant> CombatantList = SSWInstance->GetActiveCampaign().Combatant;
+	
+				//LoadedForces.Add(*Force);
 
 				// Wrap in UObject and add to list
 				UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
@@ -1505,6 +1513,35 @@ void UOperationsScreen::OnMenuToggleHovered(UMenuButton* HoveredButton)
 void UOperationsScreen::SetEmpireDDList()
 {
 	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void UOperationsScreen::SetCampaignFilter(FS_OOBForce Force) {
+	
+	/*USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	TArray<FS_Combatant> CombatantList = SSWInstance->GetActiveCampaign().Combatant;
+	
+	for (FS_Combatant Combatant : CombatantList) {
+		
+		if (Combatant.Name == Force.Empire) {
+			TArray<FS_CombatantGroup> Group = Combatant.Group;
+
+			if (Group.Type == ECOMBATGROUP_TYPE::FLEET) {
+				TArray<FS_OOBFleet> ForceFleet = Force.Fleet;
+				
+				for (FS_OOBFleet Fleet : ForceFleet) {
+					if (Fleet.Id == Group.Id) {
+
+					}
+				}
+			}
+			else if (Group.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+
+			}
+			else if (Group.Type == ECOMBATGROUP_TYPE::DESTROYER_SQUADRON) {
+
+			}
+		}
+	}*/
 }
 
 void UOperationsScreen::OnMenuToggleSelected(UMenuButton* SelectedButton)

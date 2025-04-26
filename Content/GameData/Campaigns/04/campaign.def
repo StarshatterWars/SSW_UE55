@@ -28,7 +28,7 @@ image: main
 combatant_groups: 5
 
 combatant: {
-   name:    "Terellian Alliance",
+   name:    "Terellian",
    size:	2,
    group:   { type: fleet,              id: 6    }, // Ostara, Tarsus, Kolchev
    group:   { type: fleet,              id: 7    }, // Loris, Korius
@@ -48,7 +48,7 @@ combatant: {
 }
 
 combatant: {
-   name:    "Dantari Separatists",
+   name:    "Dantari",
    size:	3,
    group:   { type: fleet,              id: 2    }, // Adantar
    group:   { type: battalion,          id: 3    }, // Tanis Starbase
@@ -56,14 +56,14 @@ combatant: {
 }
 
 combatant: {
-   name:    "Brotherhood of Iron",
+   name:    "Pirate"
    size:	2,
    group:   { type: fleet,              id: 2    }, // Loris
    group:   { type: fleet,              id: 3    }, // Loris
 }
 
 combatant: {
-   name:    "Zolon Empire",
+   name:    "Zolon",
    size:	2,
    group:   { type: fleet,              id: 1    },
    group:   { type: non_com,            id: 1    },

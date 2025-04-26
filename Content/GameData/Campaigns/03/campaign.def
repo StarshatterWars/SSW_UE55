@@ -37,7 +37,7 @@ image: main
 combatant_groups: 3
 
 combatant: {
-   name:    "Terellian Alliance",
+   name:    "Terellian",
    size:	6,
    group:   { type: fleet,              id: 4    },
    group:   { type: fleet,              id: 5    },
@@ -48,7 +48,7 @@ combatant: {
 }
 
 combatant: {
-   name:    "Marakan Hegemony",
+   name:    "Marakan",
    size:	4,
    group:   { type: fleet,              id: 6    },
    group:   { type: fleet,              id: 7    },
@@ -57,7 +57,7 @@ combatant: {
 }
 
 combatant: {
-   name:    "Brotherhood of Iron",
+   name:    "Pirate"
    size:	1,
    group:   { type: fleet,              id: 2    },
 }

@@ -1039,14 +1039,14 @@ struct FS_Combatant : public FTableRowBase {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Name;
+	EEMPIRE_NAME Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Size;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_CombatantGroup> Group;
 	
 	FS_Combatant() {
-		Name = "";
+		Name = EEMPIRE_NAME::Unknown;
 		Size = 0;
 	}
 };
@@ -1750,14 +1750,7 @@ struct FS_Campaign : public FTableRowBase {
 	int CombatantSize;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Index;
-	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	//UTexture2D* Banner;
-	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	//UTexture2D* Image;
-	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	//UTexture2D* Selected;
-	//UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	//UTexture2D* Unavail;
+
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_Combatant> Combatant;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)

@@ -350,4 +350,5 @@ private:
 	FString SelectedEmpire; 
 	int IndentLevel = 0;
 	void SetEmpireDDList();
+	void SetCampaignFilter(FS_OOBForce Force);
 };

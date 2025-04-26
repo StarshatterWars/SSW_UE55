@@ -450,6 +450,13 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CampaignDataTable = CampaignDataTableObject.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignOOBDataTableObject(TEXT("DataTable'/Game/Game/DT_CampaignOOB.DT_CampaignOOB'"));
+
+	if (CampaignOOBDataTableObject.Succeeded())
+	{
+		CampaignOOBDataTable = CampaignOOBDataTableObject.Object;
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
 
 	if (CombatGroupDataTableObject.Succeeded())
@@ -1209,6 +1216,441 @@ FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
 	if (!EnumPtr) return FString("Invalid");
 
 	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
+}
+
+void USSWGameInstance::GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type) {
+// Filters Table by Active in campaign
+}
+
+void USSWGameInstance::CreateCampaignOOBTable() {
+	
+	CampaignOOBDataTable->EmptyTable();
+
+	TArray<FS_OOBFleet> FleetArray;
+	TArray<FS_OOBCarrier> CarrierArray;
+	TArray<FS_OOBDestroyer> DestroyerArray;
+	TArray<FS_OOBBattle> BattleArray;
+	TArray<FS_OOBWing> WingArray;
+	TArray<FS_OOBFighter> FighterArray;
+	TArray<FS_OOBIntercept> InterceptorArray;
+	TArray<FS_OOBAttack> AttackArray;
+	TArray<FS_OOBLanding> LandingArray;
+
+	FS_OOBForce NewForce;
+	FS_OOBForce* ForceRow;
+
+	FS_OOBFleet CurrentFleet;
+
+	int ForceId;
+	int OldEmpire;
+	int OldIff;
+
+	int FleetId;
+	FName RowName;
+
+	for (FS_CombatGroup Item : CombatRosterData) // Make Initial Table
+	{
+		TArray<FS_Combatant> CombatantList = GetActiveCampaign().Combatant;
+
+		if (Item.Type == ECOMBATGROUP_TYPE::FORCE) {
+			FleetArray.Empty();
+			NewForce.Id = Item.Id;
+			NewForce.Name = Item.DisplayName;
+			NewForce.Iff = Item.Iff;
+			NewForce.Location = Item.Region;
+			NewForce.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewForce.Intel = Item.Intel;
+			ForceId = Item.Id;
+			OldIff = Item.Iff;
+			OldEmpire = Item.EmpireId;
+			RowName = FName(NewForce.Name);
+
+			if (NewForce.Iff > -1)
+			{
+				for (FS_Combatant Combatant : CombatantList) {
+					if (NewForce.Empire == Combatant.Name) {
+						CampaignOOBDataTable->AddRow(FName(NewForce.Name), NewForce);
+					}
+				}
+			}
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::FLEET) {
+			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
+			{
+				FS_OOBFleet NewFleet;
+
+				NewFleet.Id = Item.Id;
+				NewFleet.ParentId = Item.ParentId;
+				NewFleet.Name = Item.DisplayName;
+				NewFleet.Iff = Item.Iff;
+				NewFleet.Location = Item.Region;
+				NewFleet.Empire = Item.EmpireId;
+				NewFleet.Intel = Item.Intel;
+				FleetId = Item.Id;
+
+				for (FS_Combatant Combatant : CombatantList) {
+					for (FS_CombatantGroup Group : Combatant.Group) {
+						if (Group.Type == ECOMBATGROUP_TYPE::FLEET) {
+							if (NewFleet.Id == Group.Id) {
+								FleetArray.Add(NewFleet);
+							}
+						}
+					}
+				}
+				FleetArray.Add(NewFleet);
+			}
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+			FS_OOBCarrier NewCarrier;
+
+			NewCarrier.Id = Item.Id;
+			NewCarrier.ParentId = Item.ParentId;
+			NewCarrier.Name = Item.DisplayName;
+			NewCarrier.Iff = Item.Iff;
+			NewCarrier.Location = Item.Region;
+			NewCarrier.Empire = Item.EmpireId;
+			NewCarrier.Intel = Item.Intel;
+			NewCarrier.Unit.SetNum(4);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (!NewCarrier.Unit.IsValidIndex(Index))
+					break;
+
+				NewCarrier.Unit[Index].Name = UnitItem.UnitName;
+				NewCarrier.Unit[Index].Count = 1;
+				NewCarrier.Unit[Index].ParentId = Item.ParentId;
+				NewCarrier.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewCarrier.Unit[Index].Empire = Item.EmpireId;
+				NewCarrier.Unit[Index].Location = Item.Region;
+				NewCarrier.Unit[Index].ParentType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
+
+				if (UnitItem.UnitClass == "Cruiser") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
+				}
+				else if (UnitItem.UnitClass == "Destroyer") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
+				}
+				else if (UnitItem.UnitClass == "Frigate") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
+				}
+				else if (UnitItem.UnitClass == "Carrier") {
+					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
+				}
+				NewCarrier.Unit[Index].DisplayName = GetUnitPrefixFromType(NewCarrier.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
+
+				NewCarrier.Unit[Index].Design = UnitItem.UnitDesign;
+				++Index;
+			}
+
+			CarrierArray.Add(NewCarrier);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::DESTROYER_SQUADRON) {
+			FS_OOBDestroyer NewDestroyer;
+
+			NewDestroyer.Id = Item.Id;
+			NewDestroyer.ParentId = Item.ParentId;
+			NewDestroyer.Name = Item.DisplayName;
+			NewDestroyer.Iff = Item.Iff;
+			NewDestroyer.Location = Item.Region;
+			NewDestroyer.Empire = Item.EmpireId;
+			NewDestroyer.Intel = Item.Intel;
+			NewDestroyer.Unit.SetNum(4);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (!NewDestroyer.Unit.IsValidIndex(Index))
+					break;
+
+				NewDestroyer.Unit[Index].Name = UnitItem.UnitName;
+				NewDestroyer.Unit[Index].Count = 1;
+				NewDestroyer.Unit[Index].ParentId = Item.ParentId;
+				NewDestroyer.Unit[Index].Empire = Item.EmpireId;
+				NewDestroyer.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewDestroyer.Unit[Index].Location = Item.Region;
+				NewDestroyer.Unit[Index].ParentType = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+
+				if (UnitItem.UnitClass == "Cruiser") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
+				}
+				else if (UnitItem.UnitClass == "Destroyer") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
+				}
+				else if (UnitItem.UnitClass == "Frigate") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
+				}
+				else if (UnitItem.UnitClass == "Carrier") {
+					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
+				}
+
+				NewDestroyer.Unit[Index].DisplayName = GetUnitPrefixFromType(NewDestroyer.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
+
+				NewDestroyer.Unit[Index].Design = UnitItem.UnitDesign;
+				++Index;
+			}
+
+			DestroyerArray.Add(NewDestroyer);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::BATTLE_GROUP) {
+			FS_OOBBattle NewBattle;
+
+			NewBattle.Id = Item.Id;
+			NewBattle.ParentId = Item.ParentId;
+			NewBattle.Name = Item.DisplayName;
+			NewBattle.Iff = Item.Iff;
+			NewBattle.Location = Item.Region;
+			NewBattle.Empire = Item.EmpireId;
+			NewBattle.Intel = Item.Intel;
+			NewBattle.Unit.SetNum(4);
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (!NewBattle.Unit.IsValidIndex(Index))
+					break;
+
+				NewBattle.Unit[Index].Name = UnitItem.UnitName;
+				NewBattle.Unit[Index].Count = 1;
+				NewBattle.Unit[Index].ParentId = Item.ParentId;
+				NewBattle.Unit[Index].Regnum = UnitItem.UnitRegnum;
+				NewBattle.Unit[Index].Empire = Item.EmpireId;
+				NewBattle.Unit[Index].Location = Item.Region;
+				NewBattle.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTLE_GROUP;
+
+				if (UnitItem.UnitClass == "Cruiser") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
+				}
+				else if (UnitItem.UnitClass == "Destroyer") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
+				}
+				else if (UnitItem.UnitClass == "Frigate") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
+				}
+				else if (UnitItem.UnitClass == "Carrier") {
+					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
+				}
+
+				NewBattle.Unit[Index].DisplayName = GetUnitPrefixFromType(NewBattle.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
+
+				NewBattle.Unit[Index].Design = UnitItem.UnitDesign;
+				++Index;
+			}
+
+			BattleArray.Add(NewBattle);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::WING) {
+			FS_OOBWing NewWing;
+
+			NewWing.Id = Item.Id;
+			NewWing.ParentId = Item.ParentId;
+			NewWing.Name = Item.DisplayName;
+			NewWing.Iff = Item.Iff;
+			NewWing.Location = Item.Region;
+			NewWing.Empire = Item.EmpireId;
+			NewWing.Intel = Item.Intel;
+			WingArray.Add(NewWing);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::FIGHTER_SQUADRON) {
+			FS_OOBFighter NewFighter;
+
+			NewFighter.Id = Item.Id;
+			NewFighter.ParentId = Item.ParentId;
+			NewFighter.Name = Item.DisplayName;
+			NewFighter.Iff = Item.Iff;
+			NewFighter.Location = Item.Region;
+			NewFighter.Empire = Item.EmpireId;
+			NewFighter.Intel = Item.Intel;
+			NewFighter.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewFighter.Unit.IsValidIndex(Index))
+				{
+					NewFighter.Unit[Index].Name = UnitItem.UnitName;
+					NewFighter.Unit[Index].Count = UnitItem.UnitCount;
+					NewFighter.Unit[Index].Location = Item.Region;
+					NewFighter.Unit[Index].ParentId = Item.ParentId;
+					NewFighter.Unit[Index].Type = ECOMBATUNIT_TYPE::FIGHTER;
+					NewFighter.Unit[Index].ParentType = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+					NewFighter.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
+			FighterArray.Add(NewFighter);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON) {
+			FS_OOBIntercept NewIntercept;
+
+			NewIntercept.Id = Item.Id;
+			NewIntercept.ParentId = Item.ParentId;
+			NewIntercept.Name = Item.DisplayName;
+			NewIntercept.Iff = Item.Iff;
+			NewIntercept.Location = Item.Region;
+			NewIntercept.Empire = Item.EmpireId;
+			NewIntercept.Intel = Item.Intel;
+			NewIntercept.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewIntercept.Unit.IsValidIndex(Index))
+				{
+					NewIntercept.Unit[Index].Name = UnitItem.UnitName;
+					NewIntercept.Unit[Index].Count = UnitItem.UnitCount;
+					NewIntercept.Unit[Index].Location = Item.Region;
+					NewIntercept.Unit[Index].ParentId = Item.ParentId;
+					NewIntercept.Unit[Index].Type = ECOMBATUNIT_TYPE::INTERCEPT;
+					NewIntercept.Unit[Index].ParentType = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
+					NewIntercept.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
+			InterceptorArray.Add(NewIntercept);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::ATTACK_SQUADRON) {
+			FS_OOBAttack NewAttack;
+
+			NewAttack.Id = Item.Id;
+			NewAttack.ParentId = Item.ParentId;
+			NewAttack.Name = Item.DisplayName;
+			NewAttack.Iff = Item.Iff;
+			NewAttack.Location = Item.Region;
+			NewAttack.Empire = Item.EmpireId;
+			NewAttack.Intel = Item.Intel;
+			NewAttack.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewAttack.Unit.IsValidIndex(Index))
+				{
+					NewAttack.Unit[Index].Name = UnitItem.UnitName;
+					NewAttack.Unit[Index].Count = UnitItem.UnitCount;
+					NewAttack.Unit[Index].Location = Item.Region;
+					NewAttack.Unit[Index].ParentId = Item.ParentId;
+					NewAttack.Unit[Index].Type = ECOMBATUNIT_TYPE::ATTACK;
+					NewAttack.Unit[Index].ParentType = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+					NewAttack.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
+			AttackArray.Add(NewAttack);
+		}
+
+		else if (Item.Type == ECOMBATGROUP_TYPE::LCA_SQUADRON) {
+			FS_OOBLanding NewLanding;
+
+			NewLanding.Id = Item.Id;
+			NewLanding.ParentId = Item.ParentId;
+			NewLanding.Name = Item.DisplayName;
+			NewLanding.Iff = Item.Iff;
+			NewLanding.Location = Item.Region;
+			NewLanding.Empire = Item.EmpireId;
+			NewLanding.Intel = Item.Intel;
+			NewLanding.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewLanding.Unit.IsValidIndex(Index))
+				{
+					NewLanding.Unit[Index].Name = UnitItem.UnitName;
+					NewLanding.Unit[Index].Count = UnitItem.UnitCount;
+					NewLanding.Unit[Index].Location = Item.Region;
+					NewLanding.Unit[Index].ParentId = Item.ParentId;
+					NewLanding.Unit[Index].Type = ECOMBATUNIT_TYPE::LCA;
+					NewLanding.Unit[Index].ParentType = ECOMBATGROUP_TYPE::LCA_SQUADRON;
+					NewLanding.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
+			LandingArray.Add(NewLanding);
+		}
+
+		// Loop through each fleet and assign its carriers
+		for (FS_OOBFleet& Fleet : FleetArray)
+		{
+			Fleet.Carrier.Empty(); // optional: clear old data
+			Fleet.Destroyer.Empty(); // optional: clear old data
+			Fleet.Battle.Empty(); // optional: clear old data
+
+			for (FS_OOBCarrier& Carrier : CarrierArray)
+			{
+				Carrier.Wing.Empty(); // optional: clear old data
+
+				if (Carrier.ParentId == Fleet.Id && Carrier.Empire == Fleet.Empire)
+				{
+					for (FS_OOBWing& Wing : WingArray)
+					{
+						Wing.Fighter.Empty();
+						Wing.Attack.Empty();
+						Wing.Intercept.Empty();
+						Wing.Landing.Empty();
+
+						if (Wing.ParentId == Carrier.Id && Wing.Empire == Carrier.Empire) {
+
+							for (FS_OOBFighter& Fighter : FighterArray)
+							{
+								if (Fighter.ParentId == Wing.Id && Fighter.Empire == Wing.Empire) {
+									Wing.Fighter.Add(Fighter);
+								}
+							}
+
+							for (FS_OOBAttack& Attack : AttackArray)
+							{
+								if (Attack.ParentId == Wing.Id && Attack.Empire == Wing.Empire) {
+									Wing.Attack.Add(Attack);
+								}
+							}
+
+							for (FS_OOBIntercept& Intercept : InterceptorArray)
+							{
+								if (Intercept.ParentId == Wing.Id && Intercept.Empire == Wing.Empire) {
+									Wing.Intercept.Add(Intercept);
+								}
+							}
+
+							for (FS_OOBLanding& Landing : LandingArray)
+							{
+								if (Landing.ParentId == Wing.Id && Landing.Empire == Wing.Empire) {
+									Wing.Landing.Add(Landing);
+								}
+							}
+							Carrier.Wing.Add(Wing);
+						}
+					}
+					Fleet.Carrier.Add(Carrier);
+				}
+			}
+
+			for (const FS_OOBBattle& Battle : BattleArray)
+			{
+				if (Battle.ParentId == Fleet.Id && Battle.Empire == Fleet.Empire)
+				{
+					Fleet.Battle.Add(Battle);
+				}
+			}
+
+			for (const FS_OOBDestroyer& Destroyer : DestroyerArray)
+			{
+				if (Destroyer.ParentId == Fleet.Id && Destroyer.Empire == Fleet.Empire)
+				{
+					Fleet.Destroyer.Add(Destroyer);
+				}
+			}
+		}
+
+		ForceRow = CampaignOOBDataTable->FindRow<FS_OOBForce>(RowName, TEXT(""));
+
+		if (ForceRow) {
+			ForceRow->Fleet = FleetArray;
+		}
+	}
 }
 
 void USSWGameInstance::CreateOOBTable() {

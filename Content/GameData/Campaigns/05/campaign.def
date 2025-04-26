@@ -66,14 +66,14 @@ MARAK
 combatant_groups: 3
 
 combatant: {
-   name:    "Terellian Alliance",
+   name:    "Terellian",
    size:	2,
    group:   { type: fleet,              id: 1    }, // Isham
    group:   { type: fleet,              id: 2    }, // Radix
 }
 
 combatant: {
-   name:    "Marakan Hegemony",
+   name:    "Marakan",
    size:	12,
    group:   { type: fleet,              id: 1    }, // Isham
    group:   { type: fleet,              id: 2    }, // Radix
@@ -90,7 +90,7 @@ combatant: {
 }
 
 combatant: {
-   name:    "Zolon Empire",
+   name:    "Zolon",
    size:	3,
    group:   { type: fleet,              id: 1    },
    group:   { type: fleet,              id: 2    },

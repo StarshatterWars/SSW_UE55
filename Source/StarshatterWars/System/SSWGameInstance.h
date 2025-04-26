@@ -243,6 +243,8 @@ public:
 	FString GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt);
 	FString GetEmpireTypeNameByIndex(int32 Index);
 	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
+	void GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type);
+	void CreateCampaignOOBTable();
 	void CreateOOBTable();
 	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
 	
@@ -288,6 +290,7 @@ public:
 	class UDataTable* CampaignDataTable;
 	class UDataTable* CombatGroupDataTable;
 	class UDataTable* OrderOfBattleDataTable;
+	class UDataTable* CampaignOOBDataTable;
 
 	UPROPERTY(EditAnywhere)
 	bool bClearTables;

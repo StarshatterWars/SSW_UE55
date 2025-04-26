@@ -711,6 +711,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 						// Add Unit Stuff Here
 
 						CombatantName = "";
+						EEMPIRE_NAME EName = EEMPIRE_NAME::Unknown;
 						CombatantSize = 0;
 						NewCombatUnit.Group.Empty();
 
@@ -720,7 +721,17 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 
 							if (def->name()->value() == "name") {
 								GetDefText(CombatantName, def, filename);
-								NewCombatUnit.Name = FString(CombatantName);
+						
+								if (FStringToEnum<EEMPIRE_NAME>(FString(CombatantName).ToUpper(), EName, false))
+								{
+									UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(EName));
+								}
+								else
+								{
+									UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
+								}
+
+								NewCombatUnit.Name = EName;
 							} else if (def->name()->value() == "size") {
 								GetDefNumber(CombatantSize, def, filename);
 								NewCombatUnit.Size = CombatantSize;
