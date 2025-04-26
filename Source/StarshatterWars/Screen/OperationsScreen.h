@@ -39,6 +39,53 @@ class UPanelWidget;
 class USelectableButtonGroup;
 class UMenuButton;
 
+
+struct FSubGroupArray
+{
+	ECOMBATGROUP_TYPE Type;
+	TArray<int32> Ids;
+
+	FSubGroupArray(ECOMBATGROUP_TYPE InType)
+		: Type(InType)
+	{
+	}
+};
+USTRUCT()
+struct FMatchedGroupKey
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    ECOMBATGROUP_TYPE Type;
+
+    UPROPERTY()
+    int32 Id;
+
+    FMatchedGroupKey()
+        : Type(ECOMBATGROUP_TYPE::NONE)
+        , Id(INDEX_NONE)
+    {}
+
+    FMatchedGroupKey(ECOMBATGROUP_TYPE InType, int32 InId)
+        : Type(InType)
+        , Id(InId)
+    {}
+
+    bool operator==(const FMatchedGroupKey& Other) const
+    {
+        return Type == Other.Type && Id == Other.Id;
+    }
+};
+
+FORCEINLINE uint32 GetTypeHash(const FMatchedGroupKey& Key)
+{
+    return HashCombine(::GetTypeHash((uint8)Key.Type), ::GetTypeHash(Key.Id));
+}
+
+
+
+
+
 /**
  * 
  */
@@ -209,6 +256,10 @@ public:
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
 	void LoadForces(FString Name);
+	TArray<FSubGroupArray> GetSubGroupArrays(const FS_OOBFleet& Fleet);
+	void FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire);
+
+	void MatchCombatantGroups(EEMPIRE_NAME Empire, int32 SubId, ECOMBATGROUP_TYPE SubType, const TArray<FS_Combatant>& Combatants, TSet<FMatchedGroupKey>& MatchedIds); // now using FMatchedGroupKey
 	UFUNCTION()
 	void OnSetEmpireSelected(FString dropDownInt, ESelectInfo::Type type);
 	UFUNCTION()
@@ -336,6 +387,9 @@ private:
 
 	UPROPERTY()
 	TArray<FS_CampaignAction> ActionList;
+
+	UPROPERTY()
+	TArray<FS_Combatant> CombatantList;
 	
 	UPROPERTY()
 	TArray<FString> MenuItems = {
@@ -348,6 +402,7 @@ private:
 
 	TArray<FString> EmpireDDItems;
 	FString SelectedEmpire; 
+
 	int IndentLevel = 0;
 	void SetEmpireDDList();
 	void SetCampaignFilter(FS_OOBForce Force);

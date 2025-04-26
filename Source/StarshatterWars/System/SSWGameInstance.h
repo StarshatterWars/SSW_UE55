@@ -244,10 +244,11 @@ public:
 	FString GetEmpireTypeNameByIndex(int32 Index);
 	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
 	void GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type);
-	void CreateCampaignOOBTable();
 	void CreateOOBTable();
 	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
 	
+	TArray<FS_Combatant> GetCombatantList();
+
 	void FlattenForce(const FS_OOBForce& ForceData, TArray<FS_OOBFlatEntry>& OutFlatList);
 
 	AGalaxy* GameGalaxy;
@@ -384,7 +385,7 @@ protected:
 		int32 SelectionActionNr;
 		UPROPERTY()
 		int32 SelectionRosterNr;
-
+		
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);
 
