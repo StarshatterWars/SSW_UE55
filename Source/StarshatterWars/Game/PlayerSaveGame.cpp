@@ -34,5 +34,13 @@ UPlayerSaveGame::UPlayerSaveGame()
 	PlayerInfo.PlayerExperience = 0;
 	PlayerInfo.PlayerStatus = "";
 	PlayerInfo.PlayerShip = "";
-	PlayerInfo.PlayerSquadron = "";
+	PlayerInfo.PlayerSystem = "";
+	PlayerInfo.PlayerRegion = "";
+	PlayerInfo.PlayerForce = 1;
+	PlayerInfo.PlayerFleet = -1;
+	PlayerInfo.PlayerWing = -1;
+	PlayerInfo.PlayerCarrier = - 1;
+	PlayerInfo.PlayerBattleGroup = -1;
+	PlayerInfo.PlayerDesronGroup = -1;
+	PlayerInfo.PlayerSquadron = -1;
 }

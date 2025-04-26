@@ -53,6 +53,11 @@ int PlayerData::RankFromName(const char* name)
 	return 0;
 }
 
+void PlayerData::SetSquadron(const char* s)
+{
+
+}
+
 void PlayerData::SetCampaignComplete(int id)
 {
 }

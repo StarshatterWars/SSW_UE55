@@ -157,6 +157,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* AudioButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UComboBoxString* EmpireSelectionDD;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* FleetInfoBorder;
 
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -205,8 +208,11 @@ public:
 	UFUNCTION()
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
-	void LoadForces();
-	void OnMenuToggleHovered();
+	void LoadForces(FString Name);
+	UFUNCTION()
+	void OnSetEmpireSelected(FString dropDownInt, ESelectInfo::Type type);
+	UFUNCTION()
+	void OnMenuToggleHovered(UMenuButton* SelectedButton);
 	UFUNCTION()
 	void OnMenuToggleSelected(UMenuButton* SelectedButton);
 	UFUNCTION()
@@ -263,6 +269,7 @@ protected:
 	FString GetOrdinal(int id);
 	UFUNCTION()
 	void ClearForces();
+	void LoadForceNames();
 	UFUNCTION()
 	void GetIntelImageFile(FString IntelImageName);
 	UFUNCTION()
@@ -317,8 +324,6 @@ protected:
 	void OnUnitSelected(UObject* SelectedItem);
 	void OnSquadronSelected(UObject* SelectedItem);
 	void OnFighterUnitSelected(UObject* SelectedItem);
-	UFUNCTION()
-	void OnMenuToggleHovered(UMenuButton* HoveredButton);
 
 private:
 	FS_Campaign ActiveCampaign;
@@ -341,5 +346,8 @@ private:
 		TEXT("MISSIONS")
 	};
 
+	TArray<FString> EmpireDDItems;
+	FString SelectedEmpire; 
 	int IndentLevel = 0;
+	void SetEmpireDDList();
 };

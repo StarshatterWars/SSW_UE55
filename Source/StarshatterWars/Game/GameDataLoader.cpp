@@ -729,16 +729,27 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								TermStruct* GroupTerm = def->term()->isStruct();
 
 								CombatantType = "";
+								ECOMBATGROUP_TYPE EType = ECOMBATGROUP_TYPE::NONE;
+
 								CombatantId = 0;
 								
 								for (int i = 0; i < GroupTerm->elements()->size(); i++) {
 
 									TermDef* pdef = GroupTerm->elements()->at(i)->isDef();
-									if (pdef->name()->value() == "type") {
+					
+									if (pdef->name()->value() == ("type"))
+									{
 										GetDefText(CombatantType, pdef, filename);
-										NewGroupUnit.Type = FString(CombatantType);
-										UE_LOG(LogTemp, Log, TEXT("%s:  %s"), *FString(pdef->name()->value()), *FString(CombatantType));
-										//type = CombatGroup::TypeFromName(type_name);
+										if (FStringToEnum<ECOMBATGROUP_TYPE>(FString(CombatantType).ToUpper(), EType, false))
+										{
+											UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(EType));
+										}
+										else
+										{
+											UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
+										}
+
+										NewGroupUnit.Type = EType;
 									}
 
 									else if (pdef->name()->value() == "id") {

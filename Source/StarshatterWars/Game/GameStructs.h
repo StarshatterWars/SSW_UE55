@@ -509,7 +509,23 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite)
 	FString PlayerShip;
 	UPROPERTY(BlueprintReadWrite)
-	FString PlayerSquadron;
+	FString PlayerRegion;
+	UPROPERTY(BlueprintReadWrite)
+	FString PlayerSystem;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerSquadron;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerWing;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerDesronGroup;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerBattleGroup;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerCarrier;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerFleet;
+	UPROPERTY(BlueprintReadWrite)
+	int PlayerForce;
 	UPROPERTY(BlueprintReadWrite)
 	TArray<bool> CampaignComplete;
 
@@ -543,7 +559,15 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		PlayerExperience = 0;
 		PlayerStatus = "";
 		PlayerShip = "";
-		PlayerSquadron = "";
+		PlayerSystem = "";
+		PlayerRegion = "";
+		PlayerForce = 1;
+		PlayerFleet = -1;
+		PlayerWing = -1;
+		PlayerCarrier = - 1;
+		PlayerBattleGroup = -1;
+		PlayerDesronGroup = -1;
+		PlayerSquadron = -1;
 
 		CampaignComplete.SetNum(5);
 		for (int i = 0; i < CampaignComplete.Num(); i++) {
@@ -998,12 +1022,12 @@ struct FS_CombatantGroup {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Type;
+	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Id;
 
 	FS_CombatantGroup() {
-		Type = "";
+		Type = ECOMBATGROUP_TYPE::NONE;
 		Id = 0;
 	}
 };
@@ -2234,7 +2258,7 @@ struct FS_OOBForce : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int Empire;
+	EEMPIRE_NAME Empire;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Iff;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -2250,11 +2274,11 @@ struct FS_OOBForce : public FTableRowBase {
 		
 		Id = 0; 
 		Iff = -1;
-		Empire = 0;
 		Name = "";
 		Location = "";
 		Intel = EINTEL_TYPE::KNOWN;
 		Type = ECOMBATGROUP_TYPE::FORCE;
+		Empire = EEMPIRE_NAME::Unknown;
 	}
 };
 

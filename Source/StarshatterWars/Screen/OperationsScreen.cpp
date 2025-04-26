@@ -29,6 +29,7 @@ void UOperationsScreen::NativeConstruct()
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
+	LoadForceNames();
 
 	if (TitleText)
 		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
@@ -40,6 +41,10 @@ void UOperationsScreen::NativeConstruct()
 
 	if (CancelButtonText) {
 		CancelButtonText->SetText(FText::FromString("BACK"));
+	}
+
+	if (EmpireSelectionDD) {
+		EmpireSelectionDD->OnSelectionChanged.AddDynamic(this, &UOperationsScreen::OnSetEmpireSelected);
 	}
 
 	if (AudioButton) {
@@ -72,13 +77,9 @@ void UOperationsScreen::NativeConstruct()
 		MenuButtonContainer->AddChild(NewButton);
 		MenuToggleGroup->RegisterButton(NewButton);
 
-		MenuButtonContainer->AddChild(NewButton);
-		MenuToggleGroup->RegisterButton(NewButton);
-
 		// Optional: listen for selection in this screen
 		NewButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnMenuToggleSelected);
 		NewButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMenuToggleHovered);
-		NewButton->OnSelected.AddUniqueDynamic(this, &UOperationsScreen::OnMenuButtonSelected);
 		AllMenuButtons.Add(NewButton);
 	}
 
@@ -119,7 +120,7 @@ void UOperationsScreen::NativeConstruct()
 		}
 	}
 
-	LoadForces();
+	LoadForces(SelectedEmpire);
 
 	if (ForceListView) {
 		ForceListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnForceSelected);
@@ -226,6 +227,10 @@ void UOperationsScreen::LoadForcesInfo()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
+
+	/*if (EmpireSelectionDD) {
+		EmpireSelectionDD->OnSelectionChanged.AddUniqueDynamic(this, &UOperationsScreen::OnSetEmpireSelected);
+	}*/
 
 	if (OperationalSwitcher) {
 		OperationalSwitcher->SetActiveWidgetIndex(2);
@@ -558,7 +563,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(ForceData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(ForceData.Empire)));
 		}
 
 		// Clear and populate fleets
@@ -1418,7 +1423,31 @@ void UOperationsScreen::ClearForces()
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UOperationsScreen::LoadForces()
+void UOperationsScreen::LoadForceNames() {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	if (!SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
+	EmpireDDItems.Empty();
+
+	// Retrieve all rows
+	TArray<FName> RowNames = SSWInstance->OrderOfBattleDataTable->GetRowNames();
+
+	for (const FName& RowName : RowNames)
+	{
+		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
+		{
+			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) {
+				EmpireDDItems.Add(SSWInstance->GetEmpireDisplayName(Force->Empire));
+
+				EmpireSelectionDD->AddOption(SSWInstance->GetEmpireDisplayName(Force->Empire));
+			}
+		}
+	}
+	EmpireSelectionDD->SetSelectedOption(EmpireDDItems[0]);
+	SelectedEmpire = EmpireDDItems[0];
+}
+
+void UOperationsScreen::LoadForces(FString Name)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
@@ -1435,7 +1464,7 @@ void UOperationsScreen::LoadForces()
 	{
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
-			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) {
+			if ((Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) && Name == SSWInstance->GetEmpireDisplayName(Force->Empire)) {
 
 				LoadedForces.Add(*Force);
 
@@ -1443,15 +1472,25 @@ void UOperationsScreen::LoadForces()
 				UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
 				ForceItem->Data = *Force;
 				ForceListView->AddItem(ForceItem);
+
 			}
 		}
 	}
 }
 
-void UOperationsScreen::OnMenuToggleHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
+void UOperationsScreen::OnSetEmpireSelected(FString dropDownInt, ESelectInfo::Type type) {
+	
+	if (type == ESelectInfo::OnMouseClick) {
+		int value;
+
+		for (int i = 0; i < EmpireDDItems.Num(); i++) {
+			if (dropDownInt == EmpireDDItems[i]) {
+				value = i;
+				SelectedEmpire = EmpireDDItems[i];
+			}
+		}
+	}
+	LoadForces(SelectedEmpire);
 }
 
 void UOperationsScreen::OnMenuToggleHovered(UMenuButton* HoveredButton)
@@ -1459,6 +1498,13 @@ void UOperationsScreen::OnMenuToggleHovered(UMenuButton* HoveredButton)
 	if (!HoveredButton) return;
 
 	UE_LOG(LogTemp, Log, TEXT("Hovered over: %s"), *HoveredButton->MenuOption);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
+}
+
+void UOperationsScreen::SetEmpireDDList()
+{
+	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void UOperationsScreen::OnMenuToggleSelected(UMenuButton* SelectedButton)

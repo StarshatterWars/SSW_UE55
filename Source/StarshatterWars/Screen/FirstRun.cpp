@@ -38,6 +38,16 @@ void UFirstRun::OnApplyClicked()
 	PlayerData.CreateTime = Now.ToUnixTimestamp();
 	PlayerData.GameTime = 0;
 	PlayerData.CampaignTime = 0;
+	PlayerData.PlayerForce = -1;
+	PlayerData.PlayerFleet = -1;
+	PlayerData.PlayerWing = -1;
+	PlayerData.PlayerCarrier = -1;
+	PlayerData.PlayerBattleGroup = -1;
+	PlayerData.PlayerDesronGroup = -1;
+	PlayerData.PlayerSquadron = -1;
+	PlayerData.PlayerShip = "Unassigned";
+	PlayerData.PlayerSystem = "Borova";
+	PlayerData.PlayerRegion = "Borova";
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, PlayerData);
 	SSWInstance->ToggleFirstRunDlg(false);
 }

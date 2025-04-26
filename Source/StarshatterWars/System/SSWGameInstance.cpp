@@ -1136,6 +1136,38 @@ FString USSWGameInstance::GetUnitFromType(ECOMBATUNIT_TYPE nt)
 	return EnumToDisplayString(nt);
 }
 
+EEMPIRE_NAME USSWGameInstance::GetEmpireTypeFromIndex(int32 Index)
+{
+	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
+	if (EnumPtr && Index >= 0 && Index < EnumPtr->NumEnums())
+	{
+		int64 RawValue = EnumPtr->GetValueByIndex(Index);
+		return static_cast<EEMPIRE_NAME>(RawValue);
+	}
+
+	// Optional: Print a warning if index is invalid
+	UE_LOG(LogTemp, Warning, TEXT("Invalid index passed to GetEmpireTypeFromIndex: %d"), Index);
+
+	// Return NONE if out of range
+	return EEMPIRE_NAME::Unknown;
+}
+
+int32 USSWGameInstance::GetIndexFromEmpireType(EEMPIRE_NAME Type)
+{
+	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
+	int EmpireIndex = 8; 
+	if (EnumPtr)
+	{
+		int64 Value = static_cast<int64>(Type);
+		int32 Index = EnumPtr->GetIndexByValue(Value);
+		if (Index != INDEX_NONE)
+		{
+			EmpireIndex = Index;
+		}
+	}
+	return EmpireIndex;
+}
+
 FString USSWGameInstance::GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt)
 {
 	FString Prefix;
@@ -1213,7 +1245,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewForce.Name = Item.DisplayName;
 			NewForce.Iff = Item.Iff;
 			NewForce.Location = Item.Region;
-			NewForce.Empire = Item.EmpireId;
+			NewForce.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewForce.Intel = Item.Intel;
 			ForceId = Item.Id;
 			OldIff = Item.Iff;
