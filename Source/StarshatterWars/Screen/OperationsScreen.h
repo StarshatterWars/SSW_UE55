@@ -50,10 +50,14 @@ struct FSubGroupArray
 	{
 	}
 };
+
 USTRUCT()
 struct FMatchedGroupKey
 {
     GENERATED_BODY()
+
+    UPROPERTY()
+    EEMPIRE_NAME Empire;
 
     UPROPERTY()
     ECOMBATGROUP_TYPE Type;
@@ -62,29 +66,29 @@ struct FMatchedGroupKey
     int32 Id;
 
     FMatchedGroupKey()
-        : Type(ECOMBATGROUP_TYPE::NONE)
+        : Empire(EEMPIRE_NAME::NONE)
+        , Type(ECOMBATGROUP_TYPE::NONE)
         , Id(INDEX_NONE)
     {}
 
-    FMatchedGroupKey(ECOMBATGROUP_TYPE InType, int32 InId)
-        : Type(InType)
+    FMatchedGroupKey(EEMPIRE_NAME InEmpire, ECOMBATGROUP_TYPE InType, int32 InId)
+        : Empire(InEmpire)
+        , Type(InType)
         , Id(InId)
     {}
 
     bool operator==(const FMatchedGroupKey& Other) const
     {
-        return Type == Other.Type && Id == Other.Id;
+        return Empire == Other.Empire && Type == Other.Type && Id == Other.Id;
     }
 };
 
+// Required to use in TSet/TMap
 FORCEINLINE uint32 GetTypeHash(const FMatchedGroupKey& Key)
 {
-    return HashCombine(::GetTypeHash((uint8)Key.Type), ::GetTypeHash(Key.Id));
+    uint32 Hash = HashCombine(::GetTypeHash((uint8)Key.Empire), ::GetTypeHash((uint8)Key.Type));
+    return HashCombine(Hash, ::GetTypeHash(Key.Id));
 }
-
-
-
-
 
 /**
  * 
@@ -255,7 +259,7 @@ public:
 	UFUNCTION()
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
-	void LoadForces(FString Name);
+	void LoadForces(EEMPIRE_NAME Empire);
 	TArray<FSubGroupArray> GetSubGroupArrays(const FS_OOBFleet& Fleet);
 	void FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire);
 
@@ -268,6 +272,7 @@ public:
 	void OnMenuToggleSelected(UMenuButton* SelectedButton);
 	UFUNCTION()
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
+	void PopulateEmpireDDList();
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
 
@@ -401,9 +406,6 @@ private:
 	};
 
 	TArray<FString> EmpireDDItems;
-	FString SelectedEmpire; 
-
+	EEMPIRE_NAME SelectedEmpire; 
 	int IndentLevel = 0;
-	void SetEmpireDDList();
-	void SetCampaignFilter(FS_OOBForce Force);
 };

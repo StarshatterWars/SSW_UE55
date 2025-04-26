@@ -1218,6 +1218,7 @@ FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
 	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
 }
 
+
 void USSWGameInstance::GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type) {
 // Filters Table by Active in campaign
 }

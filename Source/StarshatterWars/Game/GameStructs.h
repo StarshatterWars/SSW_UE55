@@ -320,6 +320,7 @@ enum class EEMPIRE_NAME : uint8
 	Silessian   UMETA(DisplayName = "Silessian Confederacy"),
 	Solus		UMETA(DisplayName = "Independent System of Solus"),
 	Haiche		UMETA(DisplayName = "Haiche Protectorate"),
+	NONE		UMETA(DisplayName = "Show All"),
 };
 
 UENUM(BlueprintType)

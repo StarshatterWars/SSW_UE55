@@ -48,7 +48,7 @@ void UOperationsScreen::NativeConstruct()
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
-	LoadForceNames();
+	//LoadForceNames();
 
 	if (TitleText)
 		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
@@ -62,7 +62,10 @@ void UOperationsScreen::NativeConstruct()
 		CancelButtonText->SetText(FText::FromString("BACK"));
 	}
 
+
 	if (EmpireSelectionDD) {
+		
+		EmpireSelectionDD->ClearOptions();
 		EmpireSelectionDD->OnSelectionChanged.AddDynamic(this, &UOperationsScreen::OnSetEmpireSelected);
 	}
 
@@ -141,8 +144,6 @@ void UOperationsScreen::NativeConstruct()
 
 	CombatantList = SSWInstance->GetCombatantList();
 
-	LoadForces(SelectedEmpire);
-
 	if (ForceListView) {
 		ForceListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnForceSelected);
 		ForceListView->ClearListItems();
@@ -205,8 +206,10 @@ void UOperationsScreen::NativeConstruct()
 	
 	SetCampaignOrders();
 	PopulateMissionList();
+	PopulateEmpireDDList();
 	PopulateIntelList();
 	SetCampaignMissions();
+	LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
 }
 
 void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -1455,28 +1458,19 @@ void UOperationsScreen::LoadForceNames() {
 		{
 			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED)
 			{
-				TArray<FS_Combatant> Combatant = SSWInstance->GetActiveCampaign().Combatant;
-
-				for (FS_Combatant Item : Combatant) {
-					if (Item.Name == Force->Empire) {
-						EmpireDDItems.Add(SSWInstance->GetEmpireDisplayName(Force->Empire));
-						EmpireSelectionDD->AddOption(SSWInstance->GetEmpireDisplayName(Force->Empire));
-					}
-				}	
+				
 			}
 		}
 	}
-	EmpireSelectionDD->SetSelectedOption(EmpireDDItems[0]);
-	SelectedEmpire = EmpireDDItems[0];
 }
 
 
-void UOperationsScreen::LoadForces(FString Name)
+void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	if (!SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
-	EEMPIRE_NAME EName = EEMPIRE_NAME::Unknown;
+	//EEMPIRE_NAME EName = EEMPIRE_NAME::NONE;
 
 	ClearForces();
 
@@ -1489,14 +1483,10 @@ void UOperationsScreen::LoadForces(FString Name)
 	{
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
-			if ((Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) && Name == SSWInstance->GetEmpireDisplayName(Force->Empire)) {
-				
-				EEMPIRE_NAME EmpireType = static_cast<EEMPIRE_NAME>(
-					StaticEnum<EEMPIRE_NAME>()->GetValueByNameString(Name)
-					);
+			if ((Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) && Empire == Force->Empire) {
 				
 				LoadedForces.Add(*Force);
-				FilterOutput(LoadedForces, Force->Empire);
+				FilterOutput(LoadedForces, Empire);
 	
 				// Wrap in UObject and add to list
 				UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
@@ -1551,7 +1541,7 @@ TArray<FSubGroupArray> UOperationsScreen::GetSubGroupArrays(const FS_OOBFleet& F
 	return SubGroups;
 }
 
-void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire)
+void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME EmpireFilter)
 {
 	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
 	if (!SSWInstance)
@@ -1566,23 +1556,21 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 	// --- Matching ---
 	for (const FS_OOBForce& Force : Forces)
 	{
-		if (Force.Empire != Empire)
+		if (EmpireFilter != EEMPIRE_NAME::NONE && Force.Empire != EmpireFilter)
 		{
-			continue;
+			continue; // Skip Forces that don't match filter
 		}
 
 		for (const FS_OOBFleet& Fleet : Force.Fleet)
 		{
-			// Match Fleet itself
 			MatchCombatantGroups(Force.Empire, Fleet.Id, Fleet.Type, Combatants, MatchedIds);
 
-			// Match all subgroups dynamically
 			TArray<FSubGroupArray> SubGroups = GetSubGroupArrays(Fleet);
 			for (const FSubGroupArray& GroupArray : SubGroups)
 			{
-				for (int32 Id : GroupArray.Ids)
+				for (int32 SubId : GroupArray.Ids)
 				{
-					MatchCombatantGroups(Force.Empire, Id, GroupArray.Type, Combatants, MatchedIds);
+					MatchCombatantGroups(Force.Empire, SubId, GroupArray.Type, Combatants, MatchedIds);
 				}
 			}
 		}
@@ -1591,33 +1579,37 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 	// --- Deletion ---
 	for (FS_OOBForce& Force : Forces)
 	{
+		if (EmpireFilter != EEMPIRE_NAME::NONE && Force.Empire != EmpireFilter)
+		{
+			continue; // Skip if not the filtered empire
+		}
+
 		for (FS_OOBFleet& Fleet : Force.Fleet)
 		{
 			TArray<FSubGroupArray> SubGroups = GetSubGroupArrays(Fleet);
 
 			for (FSubGroupArray& GroupArray : SubGroups)
 			{
-				// Use the correct array for the Type
 				switch (GroupArray.Type)
 				{
 				case ECOMBATGROUP_TYPE::BATTLE_GROUP:
 					Fleet.Battle.RemoveAll([&](const FS_OOBBattle& Battle)
 						{
-							return !MatchedIds.Contains(FMatchedGroupKey(GroupArray.Type, Battle.Id));
+							return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, GroupArray.Type, Battle.Id));
 						});
 					break;
 
 				case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
-					Fleet.Destroyer.RemoveAll([&](const FS_OOBDestroyer& DesRon)
+					Fleet.Destroyer.RemoveAll([&](const FS_OOBDestroyer& Desron)
 						{
-							return !MatchedIds.Contains(FMatchedGroupKey(GroupArray.Type, DesRon.Id));
+							return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, GroupArray.Type, Desron.Id));
 						});
 					break;
 
 				case ECOMBATGROUP_TYPE::CARRIER_GROUP:
 					Fleet.Carrier.RemoveAll([&](const FS_OOBCarrier& Carrier)
 						{
-							return !MatchedIds.Contains(FMatchedGroupKey(GroupArray.Type, Carrier.Id));
+							return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, GroupArray.Type, Carrier.Id));
 						});
 					break;
 
@@ -1627,10 +1619,10 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 			}
 		}
 
-		// Now clean fleets
+		// Finally clean fleets
 		Force.Fleet.RemoveAll([&](const FS_OOBFleet& Fleet)
 			{
-				const bool bFleetMatched = MatchedIds.Contains(FMatchedGroupKey(Fleet.Type, Fleet.Id));
+				const bool bFleetMatched = MatchedIds.Contains(FMatchedGroupKey(Force.Empire, Fleet.Type, Fleet.Id));
 				const bool bFleetHasSubordinates = (Fleet.Battle.Num() > 0 || Fleet.Destroyer.Num() > 0 || Fleet.Carrier.Num() > 0);
 
 				return !bFleetMatched && !bFleetHasSubordinates;
@@ -1643,7 +1635,7 @@ void UOperationsScreen::MatchCombatantGroups(
 	int32 SubId,
 	ECOMBATGROUP_TYPE SubType,
 	const TArray<FS_Combatant>& Combatants,
-	TSet<FMatchedGroupKey>& MatchedIds) // now using FMatchedGroupKey
+	TSet<FMatchedGroupKey>& MatchedIds)
 {
 	for (const FS_Combatant& Combatant : Combatants)
 	{
@@ -1653,23 +1645,35 @@ void UOperationsScreen::MatchCombatantGroups(
 			{
 				if (Group.Type == SubType && Group.Id == SubId)
 				{
-					MatchedIds.Add(FMatchedGroupKey(SubType, SubId));
+					MatchedIds.Add(FMatchedGroupKey(Empire, SubType, SubId));
 				}
 			}
 		}
 	}
 }
 
+void UOperationsScreen::OnSetEmpireSelected(FString SelectedItem, ESelectInfo::Type type) {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SelectedEmpire = EEMPIRE_NAME::NONE;
 
-void UOperationsScreen::OnSetEmpireSelected(FString dropDownInt, ESelectInfo::Type type) {
-	
 	if (type == ESelectInfo::OnMouseClick) {
-		int value;
 
-		for (int i = 0; i < EmpireDDItems.Num(); i++) {
-			if (dropDownInt == EmpireDDItems[i]) {
-				value = i;
-				SelectedEmpire = EmpireDDItems[i];
+		if (UEnum* EmpireEnum = StaticEnum<EEMPIRE_NAME>())
+		{
+			int32 NumEnums = EmpireEnum->NumEnums();
+			for (int32 i = 0; i < NumEnums - 1; ++i) // Skip _MAX usually
+			{
+				int64 EnumValue = EmpireEnum->GetValueByIndex(i);
+				EEMPIRE_NAME Empire = static_cast<EEMPIRE_NAME>(EnumValue);
+
+				FText DisplayName = EmpireEnum->GetDisplayNameTextByIndex(i);
+				if (DisplayName.ToString() == SelectedItem)
+				{
+					SelectedEmpire = Empire;
+
+					UE_LOG(LogTemp, Log, TEXT("Selected Empire: %s (%d)"), *DisplayName.ToString(), (int32)SelectedEmpire);
+					break;
+				}
 			}
 		}
 	}
@@ -1683,40 +1687,6 @@ void UOperationsScreen::OnMenuToggleHovered(UMenuButton* HoveredButton)
 	UE_LOG(LogTemp, Log, TEXT("Hovered over: %s"), *HoveredButton->MenuOption);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::SetEmpireDDList()
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void UOperationsScreen::SetCampaignFilter(FS_OOBForce Force) {
-	
-	/*USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	TArray<FS_Combatant> CombatantList = SSWInstance->GetActiveCampaign().Combatant;
-	
-	for (FS_Combatant Combatant : CombatantList) {
-		
-		if (Combatant.Name == Force.Empire) {
-			TArray<FS_CombatantGroup> Group = Combatant.Group;
-
-			if (Group.Type == ECOMBATGROUP_TYPE::FLEET) {
-				TArray<FS_OOBFleet> ForceFleet = Force.Fleet;
-				
-				for (FS_OOBFleet Fleet : ForceFleet) {
-					if (Fleet.Id == Group.Id) {
-
-					}
-				}
-			}
-			else if (Group.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-
-			}
-			else if (Group.Type == ECOMBATGROUP_TYPE::DESTROYER_SQUADRON) {
-
-			}
-		}
-	}*/
 }
 
 void UOperationsScreen::OnMenuToggleSelected(UMenuButton* SelectedButton)
@@ -1760,5 +1730,41 @@ void UOperationsScreen::OnMenuButtonSelected(UMenuButton* SelectedButton)
 		{
 			Button->SetSelected(Button == SelectedButton);
 		}
+	}
+}
+
+void UOperationsScreen::PopulateEmpireDDList()
+{
+	if (!EmpireSelectionDD) return;
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	TArray<FS_Combatant> Combatant = SSWInstance->GetActiveCampaign().Combatant;
+
+	EmpireSelectionDD->ClearOptions();
+
+	TSet<EEMPIRE_NAME> AvailableEmpires;
+	for (FS_Combatant Item : Combatant) {
+		if (Item.Name != EEMPIRE_NAME::NONE) {
+			AvailableEmpires.Add(Item.Name);
+		}
+	}
+
+	if (UEnum* EmpireEnum = StaticEnum<EEMPIRE_NAME>())
+	{
+		for (int32 i = 0; i < EmpireEnum->NumEnums() - 1; ++i)
+		{
+			int64 EnumValue = EmpireEnum->GetValueByIndex(i);
+			EEMPIRE_NAME Empire = static_cast<EEMPIRE_NAME>(EnumValue);
+
+			if (AvailableEmpires.Contains(Empire))
+			{
+				FText DisplayName = EmpireEnum->GetDisplayNameTextByIndex(i);
+				EmpireSelectionDD->AddOption(DisplayName.ToString());
+			}
+		}
+	}
+
+	if (EmpireSelectionDD->GetOptionCount() > 0)
+	{
+		EmpireSelectionDD->SetSelectedOption(EmpireSelectionDD->GetOptionAtIndex(0));
 	}
 }

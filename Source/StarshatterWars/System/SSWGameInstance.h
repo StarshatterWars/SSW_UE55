@@ -243,6 +243,7 @@ public:
 	FString GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt);
 	FString GetEmpireTypeNameByIndex(int32 Index);
 	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
+
 	void GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type);
 	void CreateOOBTable();
 	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
