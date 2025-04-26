@@ -1443,58 +1443,38 @@ void UOperationsScreen::ClearForces()
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UOperationsScreen::LoadForceNames() {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
-	if (!SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
-	EmpireDDItems.Empty();
-
-	// Retrieve all rows
-	TArray<FName> RowNames = SSWInstance->OrderOfBattleDataTable->GetRowNames();
-
-	for (const FName& RowName : RowNames)
-	{
-		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
-		{
-			if (Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED)
-			{
-				
-			}
-		}
-	}
-}
-
-
 void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
-	if (!SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
-	//EEMPIRE_NAME EName = EEMPIRE_NAME::NONE;
+	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+	if (!SSWInstance || !SSWInstance->OrderOfBattleDataTable || !ForceListView) return;
 
 	ClearForces();
 
 	LoadedForces.Empty();
 
-	// Retrieve all rows
+	// Step 1: Load matching forces
 	TArray<FName> RowNames = SSWInstance->OrderOfBattleDataTable->GetRowNames();
 
 	for (const FName& RowName : RowNames)
 	{
 		if (FS_OOBForce* Force = SSWInstance->OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT("LoadForces")))
 		{
-			if ((Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) && Empire == Force->Empire) {
-				
+			if ((Force->Intel == EINTEL_TYPE::KNOWN || Force->Intel == EINTEL_TYPE::TRACKED) && Empire == Force->Empire)
+			{
 				LoadedForces.Add(*Force);
-				FilterOutput(LoadedForces, Empire);
-	
-				// Wrap in UObject and add to list
-				UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
-				ForceItem->Data = *Force;
-				ForceListView->AddItem(ForceItem);
-
 			}
 		}
+	}
+
+	// Step 2: Filter loaded forces
+	FilterOutput(LoadedForces, Empire);
+
+	// Step 3: Add to ListView
+	for (const FS_OOBForce& Force : LoadedForces)
+	{
+		UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
+		ForceItem->Data = Force;
+		ForceListView->AddItem(ForceItem);
 	}
 }
 

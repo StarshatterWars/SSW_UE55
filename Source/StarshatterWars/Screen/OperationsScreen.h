@@ -325,7 +325,6 @@ protected:
 	FString GetOrdinal(int id);
 	UFUNCTION()
 	void ClearForces();
-	void LoadForceNames();
 	UFUNCTION()
 	void GetIntelImageFile(FString IntelImageName);
 	UFUNCTION()
