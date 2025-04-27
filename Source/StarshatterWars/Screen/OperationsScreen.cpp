@@ -1556,54 +1556,38 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 		}
 	}
 
-	// --- Deletion ---
 	for (FS_OOBForce& Force : Forces)
 	{
-		if (EmpireFilter != EEMPIRE_NAME::NONE && Force.Empire != EmpireFilter)
-		{
-			continue; // Skip if not the filtered empire
-		}
-
 		for (FS_OOBFleet& Fleet : Force.Fleet)
 		{
-			TArray<FSubGroupArray> SubGroups = GetSubGroupArrays(Fleet);
+			bool bFleetMatched = MatchedIds.Contains(FMatchedGroupKey(Force.Empire, Fleet.Type, Fleet.Id));
 
-			for (FSubGroupArray& GroupArray : SubGroups)
+			if (!bFleetMatched)
 			{
-				switch (GroupArray.Type)
-				{
-				case ECOMBATGROUP_TYPE::BATTLE_GROUP:
-					Fleet.Battle.RemoveAll([&](const FS_OOBBattle& Battle)
-						{
-							return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, GroupArray.Type, Battle.Id));
-						});
-					break;
+				// Only remove subunits if Fleet itself was not matched
+				Fleet.Battle.RemoveAll([&](const FS_OOBBattle& Battle)
+					{
+						return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, ECOMBATGROUP_TYPE::BATTLE_GROUP, Battle.Id));
+					});
 
-				case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
-					Fleet.Destroyer.RemoveAll([&](const FS_OOBDestroyer& Desron)
-						{
-							return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, GroupArray.Type, Desron.Id));
-						});
-					break;
+				Fleet.Destroyer.RemoveAll([&](const FS_OOBDestroyer& Desron)
+					{
+						return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, ECOMBATGROUP_TYPE::DESTROYER_SQUADRON, Desron.Id));
+					});
 
-				case ECOMBATGROUP_TYPE::CARRIER_GROUP:
-					Fleet.Carrier.RemoveAll([&](const FS_OOBCarrier& Carrier)
-						{
-							return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, GroupArray.Type, Carrier.Id));
-						});
-					break;
-
-				default:
-					break;
-				}
+				Fleet.Carrier.RemoveAll([&](const FS_OOBCarrier& Carrier)
+					{
+						return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, ECOMBATGROUP_TYPE::CARRIER_GROUP, Carrier.Id));
+					});
 			}
+			// ? else: Fleet matched, so **keep all subunits** no matter what
 		}
 
-		// Finally clean fleets
+		// Then remove empty fleets if needed
 		Force.Fleet.RemoveAll([&](const FS_OOBFleet& Fleet)
 			{
-				const bool bFleetMatched = MatchedIds.Contains(FMatchedGroupKey(Force.Empire, Fleet.Type, Fleet.Id));
-				const bool bFleetHasSubordinates = (Fleet.Battle.Num() > 0 || Fleet.Destroyer.Num() > 0 || Fleet.Carrier.Num() > 0);
+				bool bFleetMatched = MatchedIds.Contains(FMatchedGroupKey(Force.Empire, Fleet.Type, Fleet.Id));
+				bool bFleetHasSubordinates = (Fleet.Battle.Num() > 0 || Fleet.Destroyer.Num() > 0 || Fleet.Carrier.Num() > 0);
 
 				return !bFleetMatched && !bFleetHasSubordinates;
 			});
