@@ -31,6 +31,8 @@ class UOOBFighterSquadronItem;
 class UOOBFighterUnit;
 class UOOBBattalion;
 class UOOBCivilianItem;
+class UOOBBatteryItem;
+
 /**
  * 
  */

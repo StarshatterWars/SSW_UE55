@@ -37,6 +37,7 @@ class UOOBSquadronItem;
 class UOOBFighterSquadronItem;
 class UOOBFighterUnit;
 class UOOBBattalion;
+class UOOBBatteryItem;
 class UOOBCivilianItem;
 
 class UPanelWidget;
@@ -271,6 +272,7 @@ public:
 	UFUNCTION()
 	void LoadForces(EEMPIRE_NAME Empire);
 	TArray<FSubGroupArray> GetSubGroupArrays(const FS_OOBFleet& Fleet);
+	TArray<FSubGroupArray> GetBattalionSubGroups(const FS_OOBBattalion& Battalion);
 	void FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire);
 
 	void MatchCombatantGroups(EEMPIRE_NAME Empire, int32 SubId, ECOMBATGROUP_TYPE SubType, const TArray<FS_Combatant>& Combatants, TSet<FMatchedGroupKey>& MatchedIds); // now using FMatchedGroupKey
@@ -310,8 +312,12 @@ public:
 	UListView* BattalionListView;
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* CivilianListView;
-		UPROPERTY(meta = (BindWidgetOptional))
+	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* BatteryListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* StationListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* StarbaseListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* InterceptSquadronListView;
@@ -396,6 +402,9 @@ protected:
 	void OnSquadronSelected(UObject* SelectedItem);
 	void OnFighterUnitSelected(UObject* SelectedItem);
 	void OnBattalionSelected(UObject* SelectedItem);
+	void OnBatterySelected(UObject* SelectedItem);
+	void OnStarbaseSelected(UObject* SelectedItem);
+	void OnStationSelected(UObject* SelectedItem);
 	void OnCivilianSelected(UObject* SelectedItem);
 
 private:
