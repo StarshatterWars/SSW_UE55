@@ -25,6 +25,7 @@
 
 // Forward declarations
 class UListView;
+
 class UOOBForceItem;
 class UOOBFleetItem;
 class UOOBCarrierGroupItem;
@@ -35,6 +36,9 @@ class UOOBUnitItem;
 class UOOBSquadronItem;
 class UOOBFighterSquadronItem;
 class UOOBFighterUnit;
+class UOOBBattalion;
+class UOOBCivilianItem;
+
 class UPanelWidget;
 class USelectableButtonGroup;
 class UMenuButton;
@@ -226,6 +230,10 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* SquadronInfoBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* BattalionInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* CivilianInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* InformationBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UCanvasPanel* InfoPanel;
@@ -296,6 +304,10 @@ public:
 	UListView* FighterUnitListView;
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* SquadronListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* BattalionListView;
+	UPROPERTY(meta = (BindWidgetOptional))
+	UListView* CivilianListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* InterceptSquadronListView;
@@ -379,6 +391,8 @@ protected:
 	void OnUnitSelected(UObject* SelectedItem);
 	void OnSquadronSelected(UObject* SelectedItem);
 	void OnFighterUnitSelected(UObject* SelectedItem);
+	void OnBattalionSelected(UObject* SelectedItem);
+	void OnCivilianSelected(UObject* SelectedItem);
 
 private:
 	FS_Campaign ActiveCampaign;

@@ -13,6 +13,8 @@
 #include "OOBSquadronItem.h"
 #include "OOBFighterSquadronItem.h"
 #include "OOBFighterUnit.h"
+#include "OOBBattalion.h"
+#include "OOBCivilianItem.h"
 
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -71,6 +73,14 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     else if (const UOOBFighterUnit* SquadronUnit = Cast<UOOBFighterUnit>(ListItemObject))
     {
         NameText->SetText(FText::FromString(FString::Printf(TEXT("%i x %s"), SquadronUnit->Data.Count, *SquadronUnit->Data.Design)));
+    }
+    else if (const UOOBBattalion* BattalionUnit = Cast<UOOBBattalion>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *BattalionUnit->Data.Name)));
+    }
+    else if (const UOOBCivilianItem* CivilianUnit = Cast<UOOBCivilianItem>(ListItemObject))
+    {
+        NameText->SetText(FText::FromString(FString::Printf(TEXT("%s"), *CivilianUnit->Data.Name)));
     }
     else
     {

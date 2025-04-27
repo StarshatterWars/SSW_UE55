@@ -18,6 +18,8 @@
 #include "OOBSquadronItem.h"
 #include "OOBFighterUnit.h"
 #include "OOBFighterSquadronItem.h"
+#include "OOBBattalion.h"
+#include "OOBCivilianItem.h"
 
 #include "../Foundation/SelectableButtonGroup.h"
 #include "../Foundation/MenuButton.h"
@@ -195,6 +197,16 @@ void UOperationsScreen::NativeConstruct()
 	if (FighterUnitListView) {
 		FighterUnitListView->ClearListItems();
 		FighterUnitListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnFighterUnitSelected);
+	}
+	
+	if (BattalionListView) {
+		BattalionListView->ClearListItems();
+		BattalionListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnBattalionSelected);
+	}
+
+	if (CivilianListView) {
+		CivilianListView->ClearListItems();
+		CivilianListView->OnItemClicked().AddUObject(this, &UOperationsScreen::OnCivilianSelected);
 	}
 
 	SelectedMission = 0;
@@ -516,6 +528,8 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 	if (DesronInfoBorder) DesronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattalionInfoBorder) BattalionInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (CivilianInfoBorder) CivilianInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
 
@@ -544,6 +558,34 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 		else {
 			if (FleetInfoBorder) FleetInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 		}
+		for (const FS_OOBBattalion& Battalion : ForceItem->Data.Battalion)
+		{
+			UOOBBattalion* BattalionItem = NewObject<UOOBBattalion>(this);
+			BattalionItem->Data = Battalion;
+			BattalionListView->AddItem(BattalionItem);
+		}
+		
+		if (BattalionListView->GetNumItems() > 0) {
+			if (BattalionInfoBorder) BattalionInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (BattalionInfoBorder) BattalionInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
+
+		for (const FS_OOBCivilian& Civilian : ForceItem->Data.Civilian)
+		{
+			UOOBCivilianItem* CivilianItem = NewObject<UOOBCivilianItem>(this);
+			CivilianItem->Data = Civilian;
+			CivilianListView->AddItem(CivilianItem);
+		}
+
+		if (CivilianListView->GetNumItems() > 0) {
+			if (CivilianInfoBorder) CivilianInfoBorder->SetVisibility(ESlateVisibility::Visible);
+		}
+		else {
+			if (CivilianInfoBorder) CivilianInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		
 	}
 
 	if (CarrierListView) {
@@ -649,7 +691,7 @@ void UOperationsScreen::OnFleetSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(FleetData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(FleetData.Empire)));
 		}
 
 		if (GroupTypeText)
@@ -740,7 +782,7 @@ void UOperationsScreen::OnCarrierSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(CarrierData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(CarrierData.Empire)));
 		}
 
 		if (GroupTypeText)
@@ -827,7 +869,7 @@ void UOperationsScreen::OnDesronSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(DesronData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(DesronData.Empire)));
 		}
 
 		if (GroupTypeText)
@@ -893,7 +935,7 @@ void UOperationsScreen::OnBattleGroupSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(BattleData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(BattleData.Empire)));
 		}
 
 		if (GroupTypeText)
@@ -961,7 +1003,7 @@ void UOperationsScreen::OnWingSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(WingData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(WingData.Empire)));
 		}
 
 		if (GroupTypeText)
@@ -1047,7 +1089,7 @@ void UOperationsScreen::OnUnitSelected(UObject* SelectedItem)
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(UnitData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(UnitData.Empire)));
 		}
 
 		if (GroupTypeText)
@@ -1093,7 +1135,7 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 
 			if (GroupEmpireText)
 			{
-				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(SquadronData.Empire)));
 			}
 
 			if (GroupTypeText)
@@ -1126,7 +1168,7 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 
 			if (GroupEmpireText)
 			{
-				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(SquadronData.Empire)));
 			}
 
 			if (GroupTypeText)
@@ -1160,7 +1202,7 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 
 			if (GroupEmpireText)
 			{
-				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(SquadronData.Empire)));
 			}
 
 			if (GroupTypeText)
@@ -1193,7 +1235,7 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 
 			if (GroupEmpireText)
 			{
-				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireTypeNameByIndex(SquadronData.Empire)));
+				GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(SquadronData.Empire)));
 			}
 
 			if (GroupTypeText)
@@ -1214,6 +1256,16 @@ void UOperationsScreen::OnSquadronSelected(UObject* SelectedItem)
 void UOperationsScreen::OnFighterUnitSelected(UObject* SelectedItem)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+}
+
+void UOperationsScreen::OnBattalionSelected(UObject* SelectedItem)
+{
+
+}
+
+void UOperationsScreen::OnCivilianSelected(UObject* SelectedItem)
+{
+
 }
 
 void UOperationsScreen::SetSelectedMissionData(int Selected)
@@ -1429,6 +1481,12 @@ void UOperationsScreen::ClearForces()
 	if (FighterUnitListView) {
 		FighterUnitListView->ClearListItems();
 	}
+	if (BattalionListView) {
+		BattalionListView->ClearListItems();
+	}
+	if (CivilianListView) {
+		CivilianListView->ClearListItems();
+	}
 
 	if (InfoBoxPanel) InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -1440,6 +1498,8 @@ void UOperationsScreen::ClearForces()
 	if (WingInfoBorder) WingInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (UnitInfoBorder) UnitInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BattalionInfoBorder) BattalionInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (CivilianInfoBorder) CivilianInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
 }
 
@@ -1554,6 +1614,19 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 				}
 			}
 		}
+		for (const FS_OOBBattalion& Battalion : Force.Battalion)
+		{
+			MatchCombatantGroups(Force.Empire, Battalion.Id, Battalion.Type, Combatants, MatchedIds);
+
+			/*TArray<FSubGroupArray> SubGroups = GetSubGroupArrays(Battalion);
+			for (const FSubGroupArray& GroupArray : SubGroups)
+			{
+				for (int32 SubId : GroupArray.Ids)
+				{
+					MatchCombatantGroups(Force.Empire, SubId, GroupArray.Type, Combatants, MatchedIds);
+				}
+			}*/
+		}
 	}
 
 	for (FS_OOBForce& Force : Forces)
@@ -1590,6 +1663,18 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 				bool bFleetHasSubordinates = (Fleet.Battle.Num() > 0 || Fleet.Destroyer.Num() > 0 || Fleet.Carrier.Num() > 0);
 
 				return !bFleetMatched && !bFleetHasSubordinates;
+			});
+
+		// ?? Remove unmatched Battalions
+		Force.Battalion.RemoveAll([&](const FS_OOBBattalion& Battalion)
+			{
+				return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, ECOMBATGROUP_TYPE::BATTALION, Battalion.Id));
+			});
+
+		// ?? Remove unmatched Civilians
+		Force.Civilian.RemoveAll([&](const FS_OOBCivilian& Civilian)
+			{
+				return !MatchedIds.Contains(FMatchedGroupKey(Force.Empire, ECOMBATGROUP_TYPE::CIVILIAN, Civilian.Id));
 			});
 	}
 }
