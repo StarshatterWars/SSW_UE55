@@ -4,12 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/TextBlock.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "Components/ListView.h"
 #include "OOBFleetWidget.generated.h"
 
 class UTextBlock;
 class UImage;
+class UOOBBattleWidget;
+class UOOBCarrierWidget;
+class UOOBDesronWidget;
 struct FS_OOBFleet;
 
 /**
@@ -22,11 +25,12 @@ class STARSHATTERWARS_API UOOBFleetWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+
     // The Fleet data this widget represents
     UPROPERTY()
     FS_OOBFleet Data;
 
-    // Whether the Fleet is currently expanded to show children
+    // Whether this Fleet is expanded (showing Battles, Carriers, DesRons)
     UPROPERTY()
     bool bIsExpanded = false;
 
@@ -34,17 +38,21 @@ public:
     UPROPERTY()
     int32 IndentLevel = 0;
 
-    // Children widgets (BattleGroups, Carriers, DesRons)
+    // Children widgets (Battles, Carriers, DesRons)
     UPROPERTY()
     TArray<UUserWidget*> Children;
 
-    // UI: Text block showing the Fleet's name
+    // UI: Text block showing the Fleet name
     UPROPERTY(meta = (BindWidget))
     UTextBlock* NameText;
 
-    // UI: Expand/collapse icon
+    // UI: Expand/collapse icon (plus/minus)
     UPROPERTY(meta = (BindWidget))
     UImage* ExpandIcon;
+
+    // UI: ListView to hold child Battles, Carriers, DesRons
+    UPROPERTY(meta = (BindWidget))
+    UListView* ChildListView;
 
     // Optional textures for expanded/collapsed
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -52,14 +60,17 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
-   
-   // Sets up the Fleet widget with fleet data
-    void SetData(const FS_OOBFleet& InFleet, int32 InIndentLevel);
 
-    // Builds child BattleGroups, Carriers, DesRons if expanded
+    // Set the Fleet data and tree indentation level
+    void SetFleetData(const FS_OOBFleet& InFleet, int32 InIndentLevel);
+
+    // Build children dynamically: Battles, Carriers, DesRons
     void BuildChildren();
 
-protected:
-    virtual void NativeConstruct() override;
-};
+    // Toggle expand/collapse state
+    void ToggleExpansion();
 
+public:
+    virtual void NativeConstruct() override;
+
+};

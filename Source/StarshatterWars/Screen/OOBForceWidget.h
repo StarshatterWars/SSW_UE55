@@ -4,58 +4,73 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "../Game/GameStructs.h" // FS_OOBForce definition
 #include "OOBForceWidget.generated.h"
 
 class UTextBlock;
 class UImage;
 class UOOBForceItem; // The Data Object class holding FS_OOBForce
+class UListView;
+struct FS_OOBForce;
 
 /**
- * 
+ * Force UI Widget - represents a Force at the top of the Order of Battle
+ * Expands into a list of Fleets
  */
+
 UCLASS()
 class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
  public:
-    // Pointer to Data Object
-    UPROPERTY()
-    UOOBForceItem* Object;
 
-    // Is this Force expanded in the ListView?
+    // The Force data this widget represents
+    UPROPERTY()
+    FS_OOBForce ForceData;
+
+    // Whether this Force is expanded (showing Fleets)
     UPROPERTY()
     bool bIsExpanded = false;
 
-    // Children widgets (Fleets + Battalions)
+    // Tree indent level (usually 0 for Forces)
+    UPROPERTY()
+    int32 IndentLevel = 0;
+
+    // List of child fleet widgets (optional caching)
     UPROPERTY()
     TArray<UUserWidget*> Children;
 
-    // UI Elements
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* NameText;// Shows Force name
+    // UI: Text block showing the Force name
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* NameText;
 
-    // UI: Expand/collapse icon (optional)
+    // UI: Expand/collapse icon (plus/minus)
     UPROPERTY(meta = (BindWidget))
     UImage* ExpandIcon;
 
-    // Optional icons to switch (plus/minus)
+    // UI: ListView holding child Fleets
+    UPROPERTY(meta = (BindWidget))
+    UListView* FleetListView;
+
+    // Icons for expand/collapse states
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    // How deep this widget is in the tree (0 = Force, 1 = Fleet, 2 = Battle, etc.)
-    UPROPERTY()
-    int32 IndentLevel = 0;  
+    // Set the Force data and indent level
+    void SetForceData(const FS_OOBForce& InForce, int32 InIndentLevel);
 
-    void SetData(UOOBForceItem* InForceObject);
-
+    // Dynamically create child fleet widgets
     void BuildChildren();
 
+    // Toggle expand/collapse state
+    void ToggleExpansion();
+
 protected:
-    // Functions
     virtual void NativeConstruct() override;
+
 };
 	

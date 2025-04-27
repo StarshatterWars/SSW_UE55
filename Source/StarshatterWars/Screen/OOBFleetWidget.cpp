@@ -7,7 +7,9 @@
 #include "OOBDesronWidget.h"
 #include "OOBCarrierWidget.h"
 #include "Components/Image.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "OperationsScreen.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/ListView.h"
 
 void UOOBFleetWidget::NativeConstruct()
 {
@@ -32,9 +34,14 @@ void UOOBFleetWidget::NativeConstruct()
             ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
         }
     }
+
+    if (ChildListView)
+    {
+        ChildListView->ClearListItems(); // Clear existing items
+    }
 }
 
-void UOOBFleetWidget::SetData(const FS_OOBFleet& InFleet, int32 InIndentLevel)
+void UOOBFleetWidget::SetFleetData(const FS_OOBFleet& InFleet, int32 InIndentLevel)
 {
     Data = InFleet;
     IndentLevel = InIndentLevel;
@@ -44,7 +51,12 @@ void UOOBFleetWidget::SetData(const FS_OOBFleet& InFleet, int32 InIndentLevel)
         NameText->SetText(FText::FromString(Data.Name));
     }
 
-    Children.Empty(); // Always clear first
+    if (ChildListView)
+    {
+        ChildListView->ClearListItems(); // Clear before repopulating
+    }
+
+    BuildChildren();
 }
 
 void UOOBFleetWidget::BuildChildren()
@@ -58,6 +70,7 @@ void UOOBFleetWidget::BuildChildren()
         if (BattleItem)
         {
             BattleItem->SetData(Battle, IndentLevel + 1);
+            ChildListView->AddItem(BattleItem);
             Children.Add(BattleItem);
         }
     }
@@ -69,6 +82,7 @@ void UOOBFleetWidget::BuildChildren()
         if (CarrierItem)
         {
             CarrierItem->SetData(Carrier, IndentLevel + 1);
+            ChildListView->AddItem(CarrierItem);
             Children.Add(CarrierItem);
         }
     }
@@ -80,8 +94,30 @@ void UOOBFleetWidget::BuildChildren()
         if (DesronItem)
         {
             DesronItem->SetData(Desron, IndentLevel + 1);
+            ChildListView->AddItem(DesronItem);
             Children.Add(DesronItem);
         }
     }
 }
 
+void UOOBFleetWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
+
+    if (ExpandIcon)
+    {
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
+        }
+    }
+
+    if (ChildListView)
+    {
+        ChildListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    }
+}

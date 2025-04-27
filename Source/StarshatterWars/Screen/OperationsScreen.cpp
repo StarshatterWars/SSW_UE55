@@ -21,10 +21,12 @@
 #include "OOBBattalion.h"
 #include "OOBCivilianItem.h"
 #include "OOBBatteryItem.h"
+#include "OOBForceWidget.h"
 
 #include "../Foundation/SelectableButtonGroup.h"
 #include "../Foundation/MenuButton.h"
 #include "Components/PanelWidget.h"
+#include "Components/VerticalBox.h"
 
 template<typename TEnum>
 bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
@@ -621,29 +623,29 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 
 	if (UOOBForceItem* Force_Item = Cast<UOOBForceItem>(SelectedItem))
 	{
-		const FS_OOBForce& ForceData = Force_Item->Data;
+		const FS_OOBForce& ForcesData = Force_Item->Data;
 
-		UE_LOG(LogTemp, Log, TEXT("Selected Force: %s"), *ForceData.Name);
+		UE_LOG(LogTemp, Log, TEXT("Selected Force: %s"), *ForcesData.Name);
 
 		// Update UI fields
 		if (GroupInfoText)
 		{
-			GroupInfoText->SetText(FText::FromString(ForceData.Name));
+			GroupInfoText->SetText(FText::FromString(ForcesData.Name));
 		}
 
 		if (GroupTypeText)
 		{
-			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(ForceData.Type)));
+			GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(ForcesData.Type)));
 		}
 
 		if (GroupLocationText)
 		{
-			GroupLocationText->SetText(FText::FromString(ForceData.Location));
+			GroupLocationText->SetText(FText::FromString(ForcesData.Location));
 		}
 
 		if (GroupEmpireText)
 		{
-			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(ForceData.Empire)));
+			GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(ForcesData.Empire)));
 		}
 
 		// Clear and populate fleets
@@ -651,7 +653,7 @@ void UOperationsScreen::OnForceSelected(UObject* SelectedItem)
 		{
 			FleetListView->ClearListItems();
 
-			for (const FS_OOBFleet& Fleet : ForceData.Fleet)
+			for (const FS_OOBFleet& Fleet : ForcesData.Fleet)
 			{
 				UOOBFleetItem* FleetItem = NewObject<UOOBFleetItem>(this);
 				FleetItem->Data = Fleet;
@@ -1712,7 +1714,7 @@ TArray<FSubGroupArray> UOperationsScreen::GetBattalionSubGroups(const FS_OOBBatt
 	return SubGroups;
 }
 
-void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME EmpireFilter)
+void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& ForcesTable, EEMPIRE_NAME EmpireFilter)
 {
 	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
 	if (!SSWInstance)
@@ -1725,7 +1727,7 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 	TSet<FMatchedGroupKey> MatchedIds;
 
 	// --- Matching ---
-	for (const FS_OOBForce& Force : Forces)
+	for (const FS_OOBForce& Force : ForcesTable)
 	{
 		if (EmpireFilter != EEMPIRE_NAME::NONE && Force.Empire != EmpireFilter)
 		{
@@ -1770,7 +1772,7 @@ void UOperationsScreen::FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME E
 	}
 
 	// --- Deletion ---
-	for (FS_OOBForce& Force : Forces)
+	for (FS_OOBForce& Force : ForcesTable)
 	{
 		// Clean up Fleets
 		for (FS_OOBFleet& Fleet : Force.Fleet)
@@ -1984,3 +1986,26 @@ void UOperationsScreen::PopulateEmpireDDList()
 		EmpireSelectionDD->SetSelectedOption(EmpireSelectionDD->GetOptionAtIndex(0));
 	}
 }
+
+void UOperationsScreen::PopulateForces()
+{
+	// Clear out any previous widgets before adding new ones
+	ForceListBox->ClearChildren();
+
+	// Example of adding Forces to the ForceListBox container
+	for (const FS_OOBForce& Force : LoadedForces)
+	{
+		// Create a new Force widget for each Force in the Forces array
+		UOOBForceWidget* ForceItemWidget = CreateWidget<UOOBForceWidget>(GetWorld(), UOOBForceWidget::StaticClass());
+
+		if (ForceItemWidget)
+		{
+			// Set Force data and indent level
+			ForceItemWidget->SetForceData(Force, 0);  // Root level (Force = 0)
+
+			// Add the ForceItemWidget to the parent container (ForceListBox)
+			ForceListBox->AddChildToVerticalBox(ForceItemWidget);
+		}
+	}
+}
+

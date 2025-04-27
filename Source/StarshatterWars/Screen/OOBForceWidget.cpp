@@ -8,73 +8,92 @@
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
 #include "OOBFleetWidget.h"
 #include "OOBBattalionWidget.h"
+#include "Components/ListView.h"
 #include "Components/HorizontalBoxSlot.h" 
 
 void UOOBForceWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Indent the whole row based on IndentLevel
     if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(Slot))
     {
         const float IndentSize = 20.0f;
         HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
     }
 
-    // Update Expand/Collapse Icon (only for Force/Fleet/Battalion types)
     if (ExpandIcon)
     {
         ExpandIcon->SetVisibility(ESlateVisibility::Visible);
 
         if (bIsExpanded)
         {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Minus icon (expanded)
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
         }
         else
         {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Plus icon (collapsed)
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
         }
+    }
+
+    if (FleetListView)
+    {
+        FleetListView->ClearListItems(); // Empty list on construct
     }
 }
 
-void UOOBForceWidget::SetData(UOOBForceItem* InForceObject)
+void UOOBForceWidget::SetForceData(const FS_OOBForce& InForce, int32 InIndentLevel)
 {
-    Object = InForceObject;
+    ForceData = InForce;
+    IndentLevel = InIndentLevel;
 
-    if (Object && NameText)
+    if (NameText)
     {
-        NameText->SetText(FText::FromString(Object->Data.Name));
+        NameText->SetText(FText::FromString(ForceData.Name));
     }
 
-    Children.Empty(); // Reset children
+    if (FleetListView)
+    {
+        FleetListView->ClearListItems();
+    }
+
+    BuildChildren();
 }
 
 void UOOBForceWidget::BuildChildren()
 {
     Children.Empty();
 
-    if (!Object) return;
-
-    // Build Fleets
-    for (const FS_OOBFleet& Fleet : Object->Data.Fleet)
+    // Add each Fleet inside the Force to the ListView
+    for (const FS_OOBFleet& Fleet : ForceData.Fleet)
     {
         UOOBFleetWidget* FleetItem = CreateWidget<UOOBFleetWidget>(GetWorld(), UOOBFleetWidget::StaticClass());
         if (FleetItem)
         {
-            FleetItem->SetData(Fleet, 1);
+            FleetItem->SetFleetData(Fleet, IndentLevel + 1); // 1 level deeper for Fleets
+            FleetListView->AddItem(FleetItem);
             Children.Add(FleetItem);
-        }
-    }
-
-    // Build Battalions
-    for (const FS_OOBBattalion& Battalion : Object->Data.Battalion)
-    {
-        UOOBBattalionWidget* BattalionItem = CreateWidget<UOOBBattalionWidget>(GetWorld(), UOOBBattalionWidget::StaticClass());
-        if (BattalionItem)
-        {
-            BattalionItem->SetData(Battalion);
-            Children.Add(BattalionItem);
         }
     }
 }
 
+void UOOBForceWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
+
+    if (ExpandIcon)
+    {
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture);
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
+        }
+    }
+
+    if (FleetListView)
+    {
+        FleetListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    }
+}
