@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
 #include "Components/ListView.h"
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBFleetWidget.generated.h"
 
 class UTextBlock;
@@ -20,7 +21,7 @@ struct FS_OOBFleet;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBFleetWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBFleetWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
@@ -72,5 +73,6 @@ public:
 
 public:
     virtual void NativeConstruct() override;
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 };

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBWing definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBWingWidget.generated.h"
 
 class UTextBlock;
@@ -16,11 +17,12 @@ struct FS_OOBWing;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBWingWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBWingWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 
 public:
+
     UPROPERTY()
     FS_OOBWing Data;
 
@@ -51,6 +53,7 @@ public:
 
 protected:
     virtual void NativeConstruct() override;
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 };	
 	
 	

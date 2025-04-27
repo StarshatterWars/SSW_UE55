@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBForce definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBForceWidget.generated.h"
 
 class UTextBlock;
@@ -12,6 +13,7 @@ class UImage;
 class UOOBForceItem; // The Data Object class holding FS_OOBForce
 class UListView;
 struct FS_OOBForce;
+class UOOBForceItem;
 
 /**
  * Force UI Widget - represents a Force at the top of the Order of Battle
@@ -19,7 +21,7 @@ struct FS_OOBForce;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
@@ -71,6 +73,7 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget
 
 protected:
     virtual void NativeConstruct() override;
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 };
 	

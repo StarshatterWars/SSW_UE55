@@ -7,6 +7,7 @@
 #include "OOBDesronWidget.h"
 #include "OOBCarrierWidget.h"
 #include "Components/Image.h"
+#include "OOBFleetItem.h"
 #include "OperationsScreen.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/ListView.h"
@@ -41,6 +42,12 @@ void UOOBFleetWidget::NativeConstruct()
     }
 }
 
+
+void UOOBFleetWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    NameText->SetText(FText::FromString(Data.Name));
+}
+
 void UOOBFleetWidget::SetFleetData(const FS_OOBFleet& InFleet, int32 InIndentLevel)
 {
     Data = InFleet;
@@ -56,7 +63,7 @@ void UOOBFleetWidget::SetFleetData(const FS_OOBFleet& InFleet, int32 InIndentLev
         ChildListView->ClearListItems(); // Clear before repopulating
     }
 
-    BuildChildren();
+    //BuildChildren();
 }
 
 void UOOBFleetWidget::BuildChildren()

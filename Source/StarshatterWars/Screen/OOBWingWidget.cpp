@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/HorizontalBoxSlot.h"
+#include "OOBFleetItem.h" // (Object you use for fleet data)
 
 void UOOBWingWidget::NativeConstruct()
 {
@@ -29,6 +30,14 @@ void UOOBWingWidget::NativeConstruct()
             ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
         }
     }
+}
+
+
+void UOOBWingWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    // Set your Fleet widget UI fields here based on FleetDataObject
+    // Example:
+    NameText->SetText(FText::FromString(Data.Name));
 }
 
 void UOOBWingWidget::SetData(const FS_OOBWing& InWing, int32 InIndentLevel)

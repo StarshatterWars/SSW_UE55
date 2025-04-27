@@ -26,7 +26,7 @@
 #include "../Foundation/SelectableButtonGroup.h"
 #include "../Foundation/MenuButton.h"
 #include "Components/PanelWidget.h"
-#include "Components/VerticalBox.h"
+#include "Components/ScrollBox.h"
 
 template<typename TEnum>
 bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
@@ -1617,15 +1617,17 @@ void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 	}
 
 	// Step 2: Filter loaded forces
-	FilterOutput(LoadedForces, Empire);
+	//FilterOutput(LoadedForces, Empire);
 
 	// Step 3: Add to ListView
-	for (const FS_OOBForce& Force : LoadedForces)
+	/*for (const FS_OOBForce& Force : LoadedForces)
 	{
 		UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
 		ForceItem->Data = Force;
 		ForceListView->AddItem(ForceItem);
-	}
+	}*/
+	// Step 3: Add to Add to Panel
+	PopulateForces(LoadedForces);
 }
 
 TArray<FSubGroupArray> UOperationsScreen::GetSubGroupArrays(const FS_OOBFleet& Fleet)
@@ -1987,14 +1989,21 @@ void UOperationsScreen::PopulateEmpireDDList()
 	}
 }
 
-void UOperationsScreen::PopulateForces()
+void UOperationsScreen::PopulateForces(TArray<FS_OOBForce> DisplayForces)
 {
+	if (!ForcesListBox)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ForcesListBox not found!"));
+		return;
+	}
+
 	// Clear out any previous widgets before adding new ones
-	ForceListBox->ClearChildren();
+	ForcesListBox->ClearChildren();
 
 	// Example of adding Forces to the ForceListBox container
-	for (const FS_OOBForce& Force : LoadedForces)
+	for (const FS_OOBForce& Force : DisplayForces)
 	{
+		UE_LOG(LogTemp, Log, TEXT("Force Data Found %s"), *Force.Name);
 		// Create a new Force widget for each Force in the Forces array
 		UOOBForceWidget* ForceItemWidget = CreateWidget<UOOBForceWidget>(GetWorld(), UOOBForceWidget::StaticClass());
 
@@ -2003,8 +2012,9 @@ void UOperationsScreen::PopulateForces()
 			// Set Force data and indent level
 			ForceItemWidget->SetForceData(Force, 0);  // Root level (Force = 0)
 
+			UE_LOG(LogTemp, Log, TEXT("Force Widget Added"));
 			// Add the ForceItemWidget to the parent container (ForceListBox)
-			ForceListBox->AddChildToVerticalBox(ForceItemWidget);
+			ForcesListBox->AddChild(ForceItemWidget);
 		}
 	}
 }

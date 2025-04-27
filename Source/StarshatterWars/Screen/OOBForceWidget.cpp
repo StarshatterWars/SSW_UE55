@@ -2,7 +2,7 @@
 
 
 #include "OOBForceWidget.h"
-#include "OOBForceItem.h"
+#include "OOBFleetItem.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
@@ -15,10 +15,13 @@ void UOOBForceWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(Slot))
+    if (NameText)
     {
-        const float IndentSize = 20.0f;
-        HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+        /*if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
+        {
+            const float IndentSize = 20.0f;
+            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+        }*/
     }
 
     if (ExpandIcon)
@@ -41,10 +44,18 @@ void UOOBForceWidget::NativeConstruct()
     }
 }
 
+
+void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    NameText->SetText(FText::FromString(Data.Name));
+}
+
 void UOOBForceWidget::SetForceData(const FS_OOBForce& InForce, int32 InIndentLevel)
 {
     ForceData = InForce;
     IndentLevel = InIndentLevel;
+
+    UE_LOG(LogTemp, Log, TEXT("Setting Force Name: %s"), *InForce.Name);
 
     if (NameText)
     {
@@ -61,17 +72,21 @@ void UOOBForceWidget::SetForceData(const FS_OOBForce& InForce, int32 InIndentLev
 
 void UOOBForceWidget::BuildChildren()
 {
-    Children.Empty();
+    if (!FleetListView) return;
 
-    // Add each Fleet inside the Force to the ListView
+    FleetListView->ClearListItems();
+
     for (const FS_OOBFleet& Fleet : ForceData.Fleet)
     {
-        UOOBFleetWidget* FleetItem = CreateWidget<UOOBFleetWidget>(GetWorld(), UOOBFleetWidget::StaticClass());
-        if (FleetItem)
+        // 1. Create a Data Object (not a widget)
+        UOOBFleetItem* FleetData = NewObject<UOOBFleetItem>(this);
+        if (FleetData)
         {
-            FleetItem->SetFleetData(Fleet, IndentLevel + 1); // 1 level deeper for Fleets
-            FleetListView->AddItem(FleetItem);
-            Children.Add(FleetItem);
+            // 2. Fill the Data Object from the FS_OOBFleet info
+            FleetData->Data = Fleet;
+
+            // 3. Add the DataObject to the ListView
+            FleetListView->AddItem(FleetData); // <- Unreal will auto-create a widget!
         }
     }
 }

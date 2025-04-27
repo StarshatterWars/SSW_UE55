@@ -44,6 +44,7 @@ class UPanelWidget;
 class USelectableButtonGroup;
 class UMenuButton;
 class UVerticalBox;
+class UScrollBox;
 
 struct FSubGroupArray
 {
@@ -245,7 +246,7 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	// Parent container to hold Forces
     UPROPERTY(meta = (BindWidgetOptional))
-    UVerticalBox* ForceListBox;
+    UScrollBox* ForcesListBox;
 		
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;
@@ -289,7 +290,8 @@ public:
 	UFUNCTION()
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
 	void PopulateEmpireDDList();
-	void PopulateForces();
+	void PopulateForces(TArray<FS_OOBForce> DisplayForces);
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
 
