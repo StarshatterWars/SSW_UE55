@@ -4,30 +4,25 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_OOBDesron definition
-#include "OOBDesronWidget.generated.h"
+#include "../Game/GameStructs.h" // FS_OOBWing definition
+#include "OOBWingWidget.generated.h"
 
 class UTextBlock;
 class UImage;
-struct FS_OOBDestroyer;
+struct FS_OOBWing;
 
 /**
- * DESRON (Destroyer Squadron) UI Widget - represents one DesRon inside a Fleet
+ * Wing UI Widget - represents a Wing under a Carrier, expandable into Squadrons
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBDesronWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBWingWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
-public:
-    // The DesRon data this widget represents
-    UPROPERTY()
-    FS_OOBDestroyer Data;
 
-    // UI
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* NameText; // Displays the DesRon name
+public:
+    UPROPERTY()
+    FS_OOBWing Data;
 
     UPROPERTY()
     bool bIsExpanded = false;
@@ -38,7 +33,10 @@ public:
     UPROPERTY()
     TArray<UUserWidget*> Children;
 
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* NameText;
+
+    UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -47,13 +45,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    // Sets up this widget with DesRon data
-    void SetData(const FS_OOBDestroyer& InDesron, int32 InIndentLevel);
+    void SetData(const FS_OOBWing& InWing, int32 InIndentLevel);
 
-    void BuildChildren(); // Build units under Desron
+    void BuildChildren(); // Expand into Fighter, Attack, Landing Squadrons
 
 protected:
     virtual void NativeConstruct() override;
-};
+};	
+	
+	
 	
 

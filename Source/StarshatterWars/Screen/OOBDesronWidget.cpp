@@ -3,23 +3,52 @@
 
 #include "OOBDesronWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
+#include "Components/HorizontalBoxSlot.h" 
 
 void UOOBDesronWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    // No special setup needed yet
-}
-
-void UOOBDesronWidget::SetData(const FS_OOBDestroyer& InDesron)
-{
-    Data = InDesron;
-
-    if (Label)
+   
+    if (NameText)
     {
-        Label->SetText(FText::FromString(Data.Name));
+        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
+        {
+            const float IndentSize = 20.0f;
+            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+        }
+    }
+
+    if (ExpandIcon)
+    {
+        ExpandIcon->SetVisibility(ESlateVisibility::Visible);
+
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed
+        }
     }
 }
 
+void UOOBDesronWidget::SetData(const FS_OOBDestroyer& InDesron, int32 InIndentLevel)
+{
+    IndentLevel = InIndentLevel;
+    Data = InDesron;
+
+    if (NameText)
+    {
+        NameText->SetText(FText::FromString(Data.Name));
+    }
+}
+
+void UOOBDesronWidget::BuildChildren()
+{
+    Children.Empty();
+}
 
 
 

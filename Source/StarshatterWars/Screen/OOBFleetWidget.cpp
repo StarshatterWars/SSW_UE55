@@ -6,61 +6,82 @@
 #include "OOBBattleWidget.h"
 #include "OOBDesronWidget.h"
 #include "OOBCarrierWidget.h"
+#include "Components/Image.h"
+#include "Components/HorizontalBoxSlot.h" 
 
 void UOOBFleetWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    // Nothing needed here yet
-}
 
-void UOOBFleetWidget::SetData(const FS_OOBFleet& InFleet)
-{
-    Data = InFleet;
-
-    if (Label)
+    if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(Slot))
     {
-        Label->SetText(FText::FromString(Data.Name));
+        const float IndentSize = 20.0f;
+        HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
     }
 
-    Children.Empty();
+    if (ExpandIcon)
+    {
+        ExpandIcon->SetVisibility(ESlateVisibility::Visible);
+
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
+        }
+    }
+}
+
+void UOOBFleetWidget::SetData(const FS_OOBFleet& InFleet, int32 InIndentLevel)
+{
+    Data = InFleet;
+    IndentLevel = InIndentLevel;
+
+    if (NameText)
+    {
+        NameText->SetText(FText::FromString(Data.Name));
+    }
+
+    Children.Empty(); // Always clear first
 }
 
 void UOOBFleetWidget::BuildChildren()
 {
     Children.Empty();
 
-    // Build Battle Groups
+    // Add BattleGroups
     for (const FS_OOBBattle& Battle : Data.Battle)
     {
         UOOBBattleWidget* BattleItem = CreateWidget<UOOBBattleWidget>(GetWorld(), UOOBBattleWidget::StaticClass());
         if (BattleItem)
         {
-            BattleItem->SetData(Battle);
+            BattleItem->SetData(Battle, IndentLevel + 1);
             Children.Add(BattleItem);
         }
     }
 
-    // Build Carriers
+    // Add Carriers
     for (const FS_OOBCarrier& Carrier : Data.Carrier)
     {
         UOOBCarrierWidget* CarrierItem = CreateWidget<UOOBCarrierWidget>(GetWorld(), UOOBCarrierWidget::StaticClass());
         if (CarrierItem)
         {
-            CarrierItem->SetData(Carrier);
+            CarrierItem->SetData(Carrier, IndentLevel + 1);
             Children.Add(CarrierItem);
         }
     }
 
-    // Build Destroyer Squadrons
+    // Add DesRons (Destroyer Squadrons)
     for (const FS_OOBDestroyer& Desron : Data.Destroyer)
     {
         UOOBDesronWidget* DesronItem = CreateWidget<UOOBDesronWidget>(GetWorld(), UOOBDesronWidget::StaticClass());
         if (DesronItem)
         {
-            DesronItem->SetData(Desron);
+            DesronItem->SetData(Desron, IndentLevel + 1);
             Children.Add(DesronItem);
         }
     }
 }
-
 

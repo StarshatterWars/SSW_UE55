@@ -26,10 +26,14 @@ public:
 
     // UI
     UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* Label; // Displays the Battery name
+    UTextBlock* NameText; // Displays the Battery name
+
+    // How deep this widget is in the tree (0 = Force, 1 = Fleet, 2 = Battle, etc.)
+    UPROPERTY()
+    int32 IndentLevel = 2; 
 
     // Sets up this widget with battery data
-    void SetData(const FS_OOBBattery& InBattery);
+    void SetData(const FS_OOBBattery& InBattery, int32 InIndentLevel);
 
 protected:
     virtual void NativeConstruct() override;  

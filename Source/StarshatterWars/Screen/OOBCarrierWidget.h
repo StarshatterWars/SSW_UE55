@@ -8,6 +8,7 @@
 #include "OOBCarrierWidget.generated.h"
 
 class UTextBlock;
+class UImage;
 struct FS_OOBCarrier;
 
 /**
@@ -24,12 +25,31 @@ public:
     UPROPERTY()
     FS_OOBCarrier Data;
 
-    // UI
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* Label; // Displays the Carrier Group name
+    UPROPERTY()
+    bool bIsExpanded = false;
+
+    UPROPERTY()
+    int32 IndentLevel = 0;
+
+    UPROPERTY()
+    TArray<UUserWidget*> Children;
+
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* NameText;
+
+    UPROPERTY(meta = (BindWidget))
+    UImage* ExpandIcon;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* ExpandedIconTexture;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* CollapsedIconTexture;
 
     // Sets this widget's data
-    void SetData(const FS_OOBCarrier& InCarrier);
+    void SetData(const FS_OOBCarrier& InCarrier, int32 InIndentLevel);
+
+    void BuildChildren(); // Build units under Carrier
 
 protected:
     virtual void NativeConstruct() override;

@@ -4,23 +4,47 @@
 #include "OOBBattalionWidget.h"
 
 #include "Components/TextBlock.h"
-//#include "OOBBatteryWidget.h"
-//#include "OOBStarbaseWidget.h"
-//#include "OOBStationWidget.h"
+#include "OOBBatteryWidget.h"
+#include "OOBStarbaseWidget.h"
+#include "OOBStationWidget.h"
+#include "Components/Image.h"
+#include "Components/HorizontalBoxSlot.h" 
 
 void UOOBBattalionWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    // Nothing needed here unless you want future custom animations
+    
+    if (NameText)
+    {
+        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
+        {
+            const float IndentSize = 20.0f;
+            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+        }
+    }
+
+    if (ExpandIcon)
+    {
+        ExpandIcon->SetVisibility(ESlateVisibility::Visible);
+
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed
+        }
+    }
 }
 
 void UOOBBattalionWidget::SetData(const FS_OOBBattalion& InBattalion)
 {
     Data = InBattalion;
 
-    if (Label)
+    if (NameText)
     {
-        Label->SetText(FText::FromString(Data.Name));
+        NameText->SetText(FText::FromString(Data.Name));
     }
 
     Children.Empty(); // Reset children
@@ -31,37 +55,37 @@ void UOOBBattalionWidget::BuildChildren()
     Children.Empty();
 
     // Build Batteries
-    /*for (const FS_OOBBattery& Battery : BattalionData.Battery)
+    for (const FS_OOBBattery& Battery : Data.Battery)
     {
-        UOOBBatteryItemWidget* BatteryItem = CreateWidget<UOOBBatteryItemWidget>(GetWorld(), UOOBBatteryItemWidget::StaticClass());
+        UOOBBatteryWidget* BatteryItem = CreateWidget<UOOBBatteryWidget>(GetWorld(), UOOBBatteryWidget::StaticClass());
         if (BatteryItem)
         {
-            BatteryItem->SetBatteryData(Battery);
+            BatteryItem->SetData(Battery, 2);
             Children.Add(BatteryItem);
         }
     }
 
     // Build Starbases
-    for (const FS_OOBStarbase& Starbase : BattalionData.Starbase)
+    for (const FS_OOBStarbase& Starbase : Data.Starbase)
     {
-        UOOBStarbaseItemWidget* StarbaseItem = CreateWidget<UOOBStarbaseItemWidget>(GetWorld(), UOOBStarbaseItemWidget::StaticClass());
+        UOOBStarbaseWidget* StarbaseItem = CreateWidget<UOOBStarbaseWidget>(GetWorld(), UOOBStarbaseWidget::StaticClass());
         if (StarbaseItem)
         {
-            StarbaseItem->SetStarbaseData(Starbase);
+            StarbaseItem->SetData(Starbase, 2);
             Children.Add(StarbaseItem);
         }
     }
 
     // Build Stations
-    for (const FS_OOBStation& Station : BattalionData.Station)
+    for (const FS_OOBStation& Station : Data.Station)
     {
-        UOOBStationItemWidget* StationItem = CreateWidget<UOOBStationItemWidget>(GetWorld(), UOOBStationItemWidget::StaticClass());
+        UOOBStationWidget* StationItem = CreateWidget<UOOBStationWidget>(GetWorld(), UOOBStationWidget::StaticClass());
         if (StationItem)
         {
-            StationItem->SetStationData(Station);
+            StationItem->SetData(Station, 2);
             Children.Add(StationItem);
         }
-    }*/
+    }
 }
 
 

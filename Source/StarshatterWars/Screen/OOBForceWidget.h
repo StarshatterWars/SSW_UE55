@@ -7,6 +7,7 @@
 #include "OOBForceWidget.generated.h"
 
 class UTextBlock;
+class UImage;
 class UOOBForceItem; // The Data Object class holding FS_OOBForce
 
 /**
@@ -32,8 +33,22 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget
 
     // UI Elements
     UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* Label;// Shows Force name
+    UTextBlock* NameText;// Shows Force name
 
+    // UI: Expand/collapse icon (optional)
+    UPROPERTY(meta = (BindWidget))
+    UImage* ExpandIcon;
+
+    // Optional icons to switch (plus/minus)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* ExpandedIconTexture;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* CollapsedIconTexture;
+
+    // How deep this widget is in the tree (0 = Force, 1 = Fleet, 2 = Battle, etc.)
+    UPROPERTY()
+    int32 IndentLevel = 0;  
 
     void SetData(UOOBForceItem* InForceObject);
 

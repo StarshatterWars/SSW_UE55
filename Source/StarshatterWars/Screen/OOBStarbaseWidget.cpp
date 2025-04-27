@@ -3,20 +3,30 @@
 
 #include "OOBStarbaseWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/HorizontalBoxSlot.h" 
 
 void UOOBStarbaseWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    // No special setup needed yet
+    
+    if (NameText)
+    {
+        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
+        {
+            const float IndentSize = 20.0f;
+            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+        }
+    }
 }
 
-void UOOBStarbaseWidget::SetData(const FS_OOBStarbase& InStarbase)
+void UOOBStarbaseWidget::SetData(const FS_OOBStarbase& InStarbase, int32 InIndentLevel)
 {
+    IndentLevel = InIndentLevel;
     Data = InStarbase;
 
-    if (Label)
+    if (NameText)
     {
-        Label->SetText(FText::FromString(Data.Name));
+        NameText->SetText(FText::FromString(Data.Name));
     }
 }
 

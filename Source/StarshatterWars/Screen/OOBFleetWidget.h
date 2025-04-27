@@ -9,6 +9,7 @@
 #include "OOBFleetWidget.generated.h"
 
 class UTextBlock;
+class UImage;
 struct FS_OOBFleet;
 
 /**
@@ -29,16 +30,31 @@ public:
     UPROPERTY()
     bool bIsExpanded = false;
 
-    // Child widgets: BattleGroups, Carriers, DesRons
+    // Tree depth level (0 = Force, 1 = Fleet, etc.)
+    UPROPERTY()
+    int32 IndentLevel = 0;
+
+    // Children widgets (BattleGroups, Carriers, DesRons)
     UPROPERTY()
     TArray<UUserWidget*> Children;
 
-    // UI Elements
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* Label; // Displays the Fleet name
+    // UI: Text block showing the Fleet's name
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* NameText;
 
-    // Sets up the Fleet widget with fleet data
-    void SetData(const FS_OOBFleet& InFleet);
+    // UI: Expand/collapse icon
+    UPROPERTY(meta = (BindWidget))
+    UImage* ExpandIcon;
+
+    // Optional textures for expanded/collapsed
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* ExpandedIconTexture;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* CollapsedIconTexture;
+   
+   // Sets up the Fleet widget with fleet data
+    void SetData(const FS_OOBFleet& InFleet, int32 InIndentLevel);
 
     // Builds child BattleGroups, Carriers, DesRons if expanded
     void BuildChildren();

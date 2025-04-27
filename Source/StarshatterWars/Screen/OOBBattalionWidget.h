@@ -8,6 +8,7 @@
 #include "OOBBattalionWidget.generated.h"
 
 class UTextBlock;
+class UImage;
 struct FS_OOBBattalion;
 
 /**
@@ -24,17 +25,32 @@ public:
     UPROPERTY()
     FS_OOBBattalion Data;
 
-    // Whether the Battalion is currently expanded to show children
+    // Whether the Fleet is currently expanded to show children
     UPROPERTY()
     bool bIsExpanded = false;
 
-    // Child widgets: Batteries, Starbases, Stations
+    // Child widgets: BattleGroups, Carriers, DesRons
     UPROPERTY()
     TArray<UUserWidget*> Children;
 
     // UI Elements
     UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* Label; // Displays the Battalion name
+    UTextBlock* NameText; // Displays the Fleet name
+
+    // UI: Expand/Collapse Icon
+    UPROPERTY(meta = (BindWidget))
+    UImage* ExpandIcon;
+
+    // Optional icons for expanded/collapsed
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* ExpandedIconTexture;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* CollapsedIconTexture;
+
+    // How deep this widget is in the tree (0 = Force, 1 = Fleet, 2 = Battle, etc.)
+    UPROPERTY()
+    int32 IndentLevel = 1; 
 
     // Sets up the Battalion widget with battalion data
     void SetData(const FS_OOBBattalion& InBattalion);
