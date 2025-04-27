@@ -1938,7 +1938,7 @@ group: {
 group: {
   type:   starbase,
   id:     3,
-  name:   "Janek Station",
+  name:   "Janek",
   intel:  known,
   iff:    1,
   empire_id: 0,
@@ -2000,7 +2000,7 @@ group: {
 group: {
   type:   battery,
   id:     1,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    1,
   empire_id: 0,
@@ -2027,7 +2027,7 @@ group: {
 group: {
   type:   battery,
   id:     2,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    1,
   empire_id: 0,
@@ -2047,7 +2047,7 @@ group: {
 group: {
   type:   battery,
   id:     3,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    1,
   empire_id: 0,

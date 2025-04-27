@@ -1487,6 +1487,9 @@ void UOperationsScreen::ClearForces()
 	if (CivilianListView) {
 		CivilianListView->ClearListItems();
 	}
+	if (BatteryListView) {
+		BatteryListView->ClearListItems();
+	}
 
 	if (InfoBoxPanel) InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -1500,6 +1503,7 @@ void UOperationsScreen::ClearForces()
 	if (SquadronInfoBorder) SquadronInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (BattalionInfoBorder) BattalionInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (CivilianInfoBorder) CivilianInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (BatteryInfoBorder) BatteryInfoBorder->SetVisibility(ESlateVisibility::Collapsed);
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
 }
 

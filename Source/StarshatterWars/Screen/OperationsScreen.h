@@ -234,6 +234,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* CivilianInfoBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UBorder* BatteryInfoBorder;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* InformationBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UCanvasPanel* InfoPanel;
@@ -308,6 +310,8 @@ public:
 	UListView* BattalionListView;
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* CivilianListView;
+		UPROPERTY(meta = (BindWidgetOptional))
+	UListView* BatteryListView;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* InterceptSquadronListView;

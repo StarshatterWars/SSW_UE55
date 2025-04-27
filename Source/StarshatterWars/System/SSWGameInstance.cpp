@@ -269,7 +269,6 @@ void USSWGameInstance::Init()
 	SetProjectPath();
 
 	CampaignData.SetNum(5); // number of campaigns
-	CombatRosterData.SetNum(515);
 
 	if (!DataLoader::GetLoader())
 		DataLoader::Initialize();
@@ -297,7 +296,7 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
-	CreateOOBTable();
+	//CreateOOBTable();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 }
 
@@ -334,16 +333,14 @@ void USSWGameInstance::ReadCombatRosterData() {
 	static const FString ContextString(TEXT("ReadDataTable"));
 	TArray<FS_CombatGroup*> AllRows;
 	CombatGroupDataTable->GetAllRows<FS_CombatGroup>(ContextString, AllRows);
-
-	int index = 0;
+	CombatRosterData.Empty();
 	for (FS_CombatGroup* Row : AllRows)
 	{
 		if (Row)
 		{
 			UE_LOG(LogTemp, Log, TEXT("Group Name: %s"), *Row->Name);
 			
-			CombatRosterData[index] = *Row;
-			index++;
+			CombatRosterData.Add(*Row);
 		}
 		else
 		{
@@ -1232,12 +1229,19 @@ void USSWGameInstance::CreateOOBTable() {
 	TArray<FS_OOBDestroyer> DestroyerArray;
 	TArray<FS_OOBBattle> BattleArray;
 	TArray<FS_OOBWing> WingArray;
+
 	TArray<FS_OOBFighter> FighterArray;
 	TArray<FS_OOBIntercept> InterceptorArray;
 	TArray<FS_OOBAttack> AttackArray;
 	TArray<FS_OOBLanding> LandingArray;
+
 	TArray<FS_OOBBattalion> BattalionArray;
+	TArray<FS_OOBBattery> BatteryArray;
+	TArray<FS_OOBStation> StationArray;
+	TArray<FS_OOBStarbase> StarbaseArray;
+
 	TArray<FS_OOBCivilian> CivilianArray;
+	TArray<FS_OOBMinefield> MinefieldArray;
 
 	FS_OOBForce NewForce;
 	FS_OOBForce* ForceRow;
@@ -1254,9 +1258,12 @@ void USSWGameInstance::CreateOOBTable() {
 	for (FS_CombatGroup Item : CombatRosterData) // Make Initial Table
 	{
 		if (Item.Type == ECOMBATGROUP_TYPE::FORCE) {
+			
 			FleetArray.Empty();
 			BattalionArray.Empty();
 			CivilianArray.Empty();
+			MinefieldArray.Empty();
+
 			NewForce.Id = Item.Id;
 			NewForce.Name = Item.DisplayName;
 			NewForce.Iff = Item.Iff;
@@ -1289,6 +1296,45 @@ void USSWGameInstance::CreateOOBTable() {
 				FleetArray.Add(NewFleet);
 			}
 		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::STATION) {
+			FS_OOBStation NewStation;
+
+			NewStation.Id = Item.Id;
+			NewStation.ParentId = Item.ParentId;
+			NewStation.Name = Item.DisplayName;
+			NewStation.Iff = Item.Iff;
+			NewStation.Location = Item.Region;
+			NewStation.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewStation.Intel = Item.Intel;
+			NewStation.Id = Item.Id;
+			StationArray.Add(NewStation);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::STARBASE) {
+			FS_OOBStarbase NewStarbase;
+
+			NewStarbase.Id = Item.Id;
+			NewStarbase.ParentId = Item.ParentId;
+			NewStarbase.Name = Item.DisplayName;
+			NewStarbase.Iff = Item.Iff;
+			NewStarbase.Location = Item.Region;
+			NewStarbase.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewStarbase.Intel = Item.Intel;
+			NewStarbase.Id = Item.Id;
+			StarbaseArray.Add(NewStarbase);
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::BATTERY) {
+			FS_OOBBattery NewBattery;
+
+			NewBattery.Id = Item.Id;
+			NewBattery.ParentId = Item.ParentId;
+			NewBattery.Name = Item.DisplayName;
+			NewBattery.Iff = Item.Iff;
+			NewBattery.Location = Item.Region;
+			NewBattery.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewBattery.Intel = Item.Intel;
+			NewBattery.Id = Item.Id;
+			BatteryArray.Add(NewBattery);
+		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::BATTALION) {
 			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
 			{
@@ -1303,6 +1349,22 @@ void USSWGameInstance::CreateOOBTable() {
 				NewBattalion.Intel = Item.Intel;
 				NewBattalion.Id = Item.Id;
 				BattalionArray.Add(NewBattalion);
+			}
+		}
+		else if (Item.Type == ECOMBATGROUP_TYPE::MINEFIELD) {
+			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
+			{
+				FS_OOBMinefield NewMinefield;
+
+				NewMinefield.Id = Item.Id;
+				NewMinefield.ParentId = Item.ParentId;
+				NewMinefield.Name = Item.DisplayName;
+				NewMinefield.Iff = Item.Iff;
+				NewMinefield.Location = Item.Region;
+				NewMinefield.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewMinefield.Intel = Item.Intel;
+				NewMinefield.Id = Item.Id;
+				MinefieldArray.Add(NewMinefield);
 			}
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::CIVILIAN) {
@@ -1596,6 +1658,35 @@ void USSWGameInstance::CreateOOBTable() {
 			}
 			LandingArray.Add(NewLanding);
 		}
+		// Loop through each fleet and assign its carriers
+		for (FS_OOBBattalion& Battalion : BattalionArray)
+		{
+			Battalion.Battery.Empty(); // optional: clear old data
+			Battalion.Station.Empty(); // optional: clear old data
+			Battalion.Starbase.Empty(); // optional: clear old data
+
+			for (const FS_OOBBattery& Battery : BatteryArray)
+			{
+				if (Battery.ParentId == Battalion.Id && Battery.Empire == Battalion.Empire)
+				{
+					Battalion.Battery.Add(Battery);
+				}
+			}
+			for (const FS_OOBStation& Station : StationArray)
+			{
+				if (Station.ParentId == Battalion.Id && Station.Empire == Battalion.Empire)
+				{
+					Battalion.Station.Add(Station);
+				}
+			}
+			for (const FS_OOBStarbase& Starbase : StarbaseArray)
+			{
+				if (Starbase.ParentId == Battalion.Id && Starbase.Empire == Battalion.Empire)
+				{
+					Battalion.Starbase.Add(Starbase);
+				}
+			}
+		}
 
 		// Loop through each fleet and assign its carriers
 		for (FS_OOBFleet& Fleet : FleetArray)
@@ -1676,6 +1767,7 @@ void USSWGameInstance::CreateOOBTable() {
 			ForceRow->Fleet = FleetArray;
 			ForceRow->Battalion = BattalionArray;
 			ForceRow->Civilian = CivilianArray;
+			ForceRow->Minefield = MinefieldArray;
 		}
 	}	
 }

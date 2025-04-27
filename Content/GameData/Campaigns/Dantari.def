@@ -653,7 +653,7 @@ group: {
 group: {
   type:   battery,
   id:     1,
-  name:   "SAM Battery 1",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -673,7 +673,7 @@ group: {
 group: {
   type:   battery,
   id:     2,
-  name:   "SAM Battery 2",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -693,7 +693,7 @@ group: {
 group: {
   type:   battery,
   id:     3,
-  name:   "SAM Battery 3",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -712,8 +712,8 @@ group: {
 
 group: {
   type:   battery,
-  id:     3,
-  name:   "SAM Battery 4",
+  id:     4,
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -733,7 +733,7 @@ group: {
 group: {
   type:   starbase,
   id:     1,
-  name:   "Foothill Base",
+  name:   "Foothill",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -891,7 +891,7 @@ group: {
 group: {
   type:   battery,
   id:     31,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -920,7 +920,7 @@ group: {
 group: {
   type:   battery,
   id:     32,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
@@ -940,7 +940,7 @@ group: {
 group: {
   type:   battery,
   id:     33,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 3,
