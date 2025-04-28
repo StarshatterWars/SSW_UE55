@@ -6,26 +6,24 @@
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBBattery definition
 #include "Blueprint/IUserObjectListEntry.h"
-#include "OOBFighterSquadronWidget.generated.h"
+#include "OOBInterceptSquadronWidget.generated.h"
 
 class UTextBlock;
 class UImage;
 class UListView;
-struct FS_OOBFighter;
+struct FS_OOBIntercept;
 
 /**
- *
+ * 
  */
-
 UCLASS()
-class STARSHATTERWARS_API UOOBFighterSquadronWidget : public UUserWidget, public IUserObjectListEntry
+class STARSHATTERWARS_API UOOBInterceptSquadronWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
-	
 public:
     // The Fighter data this widget represents
     UPROPERTY()
-    FS_OOBFighter Data;
+    FS_OOBIntercept Data;
 
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
@@ -51,6 +49,6 @@ public:
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
     void ToggleExpansion();
-    void BuildChildren(const FS_OOBFighter& FighterDataStruct);
-
+    void BuildChildren(const FS_OOBIntercept& FighterDataStruct);
 };
+

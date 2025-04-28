@@ -6,21 +6,21 @@
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBForce definition
 #include "Blueprint/IUserObjectListEntry.h"
-#include "OOBElementWidget.generated.h"
+#include "OOBFighterElementWidget.generated.h"
 
 class UTextBlock;
 class UImage;
 class UOOBUnitItem; // The Data Object class holding FS_OOBForce
 class UListView;
-struct FS_OOBUnit;
+struct FS_OOBFighterUnit;
+
 /**
  * 
  */
 UCLASS()
-class STARSHATTERWARS_API UOOBElementWidget : public UUserWidget, public IUserObjectListEntry
+class STARSHATTERWARS_API UOOBFighterElementWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
-	
 public:
     // Bound UI elements
     UPROPERTY(meta = (BindWidgetOptional))
@@ -34,4 +34,8 @@ public:
 
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
     void ShowElementData();
+};
+	
+	
+	
 };

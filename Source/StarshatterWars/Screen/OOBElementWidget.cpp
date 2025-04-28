@@ -18,7 +18,7 @@ void UOOBElementWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
     {
         if (NameText)
         {
-            NameText->SetText(FText::FromString(UnitData->Data.Name));
+            NameText->SetText(FText::FromString(UnitData->Data.DisplayName));
         }
     }
 }
