@@ -4,13 +4,11 @@
 #include "OOBBattalionWidget.h"
 
 #include "Components/TextBlock.h"
-#include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "OOBBattalion.h"
-//#include "OOBStationItem.h"
-//#include "OOBStarbaseItem.h"
+#include "OOBStationItem.h"
+#include "OOBStarbaseItem.h"
 #include "OOBBatteryItem.h"
-#include "OOBCarrierGroupItem.h"
 #include "Components/ListView.h"
 
 void UOOBBattalionWidget::NativeConstruct()

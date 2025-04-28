@@ -26,7 +26,6 @@ public:
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 	
-public:
     virtual void NativeConstruct() override;
 
     // ListView binding override

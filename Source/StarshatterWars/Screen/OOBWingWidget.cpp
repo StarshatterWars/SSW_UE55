@@ -5,6 +5,10 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "OOBWingItem.h"
+#include "OOBAttackItem.h"
+#include "OOBFighterSquadronItem.h"
+#include "OOBInterceptorItem.h"
+#include "OOBLandingItem.h"
 #include "Components/ListView.h"
 
 void UOOBWingWidget::NativeConstruct()
@@ -117,12 +121,12 @@ void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
     {
         UE_LOG(LogTemp, Error, TEXT("Attack Squadron Group Found: %s"), *Attack.Name);
         
-        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
-        if (BattleData)
+        UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
+        if (AttackData)
         {
             AttackData->Data = Attack;
             AttackListView->AddItem(AttackData);
-        }*/
+        }
     }
     
     // Fill Fighters
@@ -130,12 +134,12 @@ void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
     {
         UE_LOG(LogTemp, Error, TEXT("Fighter Squadron Group Found: %s"), *Fighter.Name);
 
-        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
-        if (BattleData)
+        UOOBFighterSquadronItem* FighterData = NewObject<UOOBFighterSquadronItem>(this);
+        if (FighterData)
         {
-            AttackData->Data = Attack;
-            AttackListView->AddItem(AttackData);
-        }*/
+            FighterData->Data = Fighter;
+            FighterListView->AddItem(FighterData);
+        }
     }
     
     // Fill Interceptors
@@ -143,12 +147,12 @@ void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
     {
         UE_LOG(LogTemp, Error, TEXT("Inteceptor Squadron Group Found: %s"), *Interceptor.Name);
 
-        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
-        if (BattleData)
+        UOOBInterceptorItem* InterceptorData = NewObject<UOOBInterceptorItem>(this);
+        if (InterceptorData)
         {
-            AttackData->Data = Attack;
-            AttackListView->AddItem(AttackData);
-        }*/
+            InterceptorData->Data = Interceptor;
+            InterceptorListView->AddItem(InterceptorData);
+        }
     }
     
     // Fill Interceptors
@@ -156,12 +160,12 @@ void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
     {
         UE_LOG(LogTemp, Error, TEXT("Landing Squadron Group Found: %s"), *Landing.Name);
 
-        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
-        if (BattleData)
+        UOOBLandingItem* LandingData = NewObject<UOOBLandingItem>(this);
+        if (LandingData)
         {
-            AttackData->Data = Attack;
-            AttackListView->AddItem(AttackData);
-        }*/
+            LandingData->Data = Landing;
+            LandingListView->AddItem(LandingData);
+        }
     }
 }
 
