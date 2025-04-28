@@ -69,7 +69,7 @@ void UOOBFleetWidget::BuildChildren(const FS_OOBFleet& FleetDataStruct)
     if (!BattleListView || !CarrierListView || !DestroyerListView) {
         UE_LOG(LogTemp, Error, TEXT("Fleet ListViews are not valid!"));
             return;
-     }
+    }
 
     // Fill Battles
     for (const FS_OOBBattle& Battle : FleetDataStruct.Battle)

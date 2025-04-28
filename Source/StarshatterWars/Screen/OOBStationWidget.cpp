@@ -2,32 +2,35 @@
 
 
 #include "OOBStationWidget.h"
+#include "OOBStationItem.h"
 #include "Components/TextBlock.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "Components/Image.h"
+#include "OOBUnitItem.h"
+#include "../Game/GameStructs.h" // FS_OOBFleet definition 
 
 void UOOBStationWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    if (NameText)
+}
+
+void UOOBStationWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    if (UOOBStationItem* StationData = Cast<UOOBStationItem>(ListItemObject))
     {
-        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
+        if (NameText)
         {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+            NameText->SetText(FText::FromString(StationData->Data.Name));
         }
     }
 }
 
-void UOOBStationWidget::SetData(const FS_OOBStation& InStation, int32 InIndentLevel)
+FReply UOOBStationWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-    IndentLevel = InIndentLevel; 
-    Data = InStation;
-
-    if (NameText)
-    {
-        NameText->SetText(FText::FromString(Data.Name));
-    }
+    ShowElementData(); // << Expand or collapse when clicked
+    return FReply::Handled();
 }
 
-
+void UOOBStationWidget::ShowElementData()
+{
+    // Show Data in Operations Screen
+}

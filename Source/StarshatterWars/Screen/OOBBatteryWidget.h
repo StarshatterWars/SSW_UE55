@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBBattery definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBBatteryWidget.generated.h"
 
 class UTextBlock;
+class UImage;
 struct FS_OOBBattery;
 
 /**
@@ -15,29 +17,21 @@ struct FS_OOBBattery;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBBatteryWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBBatteryWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
 public:
-    // The Battery data this widget represents
-    UPROPERTY()
-    FS_OOBBattery Data;
-
-    // UI
+    // Bound UI elements
     UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* NameText; // Displays the Battery name
+    UTextBlock* NameText;
+	
+public:
+    virtual void NativeConstruct() override;
 
-    // How deep this widget is in the tree (0 = Force, 1 = Fleet, 2 = Battle, etc.)
-    UPROPERTY()
-    int32 IndentLevel = 2; 
+    // ListView binding override
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
-    // Sets up this widget with battery data
-    void SetData(const FS_OOBBattery& InBattery, int32 InIndentLevel);
-
-protected:
-    virtual void NativeConstruct() override;  
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    void ShowElementData();
 };
-	
-	
-

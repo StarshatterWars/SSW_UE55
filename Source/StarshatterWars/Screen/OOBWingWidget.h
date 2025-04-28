@@ -10,6 +10,7 @@
 
 class UTextBlock;
 class UImage;
+class UListView;
 struct FS_OOBWing;
 
 /**
@@ -22,18 +23,8 @@ class STARSHATTERWARS_API UOOBWingWidget : public UUserWidget, public IUserObjec
 	GENERATED_BODY()
 
 public:
-
     UPROPERTY()
     FS_OOBWing Data;
-
-    UPROPERTY()
-    bool bIsExpanded = false;
-
-    UPROPERTY()
-    int32 IndentLevel = 0;
-
-    UPROPERTY()
-    TArray<UUserWidget*> Children;
 
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
@@ -41,21 +32,33 @@ public:
     UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* AttackListView; // Squadrons
+    
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* InterceptorListView; // Interceptor Squadron
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* FighterListView; // Fighter Squadron
+
+     UPROPERTY(meta = (BindWidgetOptional))
+    UListView* LandingListView; // Landing Craft Squadron
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    void SetData(const FS_OOBWing& InWing, int32 InIndentLevel);
+    UPROPERTY()
+    bool bIsExpanded = false;
 
-    void BuildChildren(); // Expand into Fighter, Attack, Landing Squadrons
-
-protected:
+ protected:
     virtual void NativeConstruct() override;
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
-};	
-	
-	
-	
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
+    void ToggleExpansion();
+    void BuildChildren(const FS_OOBWing& WingDataStruct);
+ 
+ };

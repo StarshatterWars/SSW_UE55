@@ -3,8 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h" // FS_OOBBattery definition
+#include "Blueprint/UserWidget.h"
+#include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBBatteryItem.generated.h"
 
 /**

@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "OOBDestroyerItem.h"
+#include "OOBUnitItem.h"
 #include "Components/ListView.h" 
 
 void UOOBDesronWidget::NativeConstruct()
@@ -25,11 +26,7 @@ void UOOBDesronWidget::NativeConstruct()
         }
     }
 
-    if (UnitListView)
-    {
-        UnitListView->ClearListItems(); // Empty on construct
-        UnitListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
+    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UOOBDesronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -44,12 +41,9 @@ void UOOBDesronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         // Expand/collapse setup
         bIsExpanded = false;
 
-        // Build children Fleets based on full struct
-        if (UnitListView)
-        {
-            UnitListView->ClearListItems();
-            BuildChildren(DestroyerData->Data);
-        }
+        if (ElementListView) ElementListView->ClearListItems();
+        
+        BuildChildren(DestroyerData->Data);
     }
 }
 
@@ -76,15 +70,23 @@ void UOOBDesronWidget::ToggleExpansion()
         }
     }
 
-    if (UnitListView)
-    {
-        UnitListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    }
+    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UOOBDesronWidget::BuildChildren(const FS_OOBDestroyer& DestroyerDataStruct)
 {
-    if (!UnitListView) return;
+    if (!ElementListView) return;
 
-    UnitListView->ClearListItems();
+    // Fill Ship Elements
+    for (const FS_OOBUnit& Ship : DestroyerDataStruct.Unit)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Ship Found: %s"), *Ship.Name);
+        UOOBUnitItem* UnitData = NewObject<UOOBUnitItem>(this);
+
+        if (UnitData)
+        {
+            UnitData->Data = Ship;
+            ElementListView->AddItem(UnitData);
+        }
+    }
 }

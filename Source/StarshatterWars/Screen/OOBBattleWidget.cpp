@@ -4,49 +4,88 @@
 #include "OOBBattleWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "OOBBattleItem.h"
+#include "OOBUnitItem.h"
+#include "Components/ListView.h"  
 
 void UOOBBattleWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    if (NameText)
-    {
-        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
-        {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-        }
-    }
-    
+
     if (ExpandIcon)
     {
         ExpandIcon->SetVisibility(ESlateVisibility::Visible);
 
         if (bIsExpanded)
         {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
         }
         else
         {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
+        }
+    }
+
+    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UOOBBattleWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    if (UOOBBattleItem* BattleData = Cast<UOOBBattleItem>(ListItemObject))
+    {
+        if (NameText)
+        {
+            NameText->SetText(FText::FromString(BattleData->Data.Name));
+        }
+
+        // Expand/collapse setup
+        bIsExpanded = false;
+
+        if (ElementListView) ElementListView->ClearListItems();
+
+        BuildChildren(BattleData->Data);
+    }
+}
+
+FReply UOOBBattleWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    ToggleExpansion(); // << Expand or collapse when clicked
+    return FReply::Handled();
+}
+
+void UOOBBattleWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
+
+    if (ExpandIcon)
+    {
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture);
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
+        }
+    }
+
+    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UOOBBattleWidget::BuildChildren(const FS_OOBBattle& BattleDataStruct)
+{
+    if (!ElementListView) return;
+
+    // Fill Ship Elements
+    for (const FS_OOBUnit& Ship : BattleDataStruct.Unit)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Ship Found: %s"), *Ship.Name);
+        UOOBUnitItem* UnitData = NewObject<UOOBUnitItem>(this);
+
+        if (UnitData)
+        {
+            UnitData->Data = Ship;
+            ElementListView->AddItem(UnitData);
         }
     }
 }
-
-void UOOBBattleWidget::SetData(const FS_OOBBattle& InBattle, int32 InIndentLevel)
-{
-    IndentLevel = InIndentLevel;
-    Data = InBattle;
-
-    if (NameText)
-    {
-        NameText->SetText(FText::FromString(Data.Name));
-    }
-}
-
-void UOOBBattleWidget::BuildChildren()
-{
-    Children.Empty();
-}
-

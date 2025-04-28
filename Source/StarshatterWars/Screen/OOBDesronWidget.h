@@ -27,14 +27,14 @@ public:
     UPROPERTY()
     FS_OOBDestroyer Data;
 
-     UPROPERTY(meta = (BindWidgetOptional))
+    UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
     UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    UListView* UnitListView; // Units
+    UListView* ElementListView; // Units
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;

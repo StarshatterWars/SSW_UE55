@@ -2,31 +2,36 @@
 
 
 #include "OOBStarbaseWidget.h"
+#include "OOBStarbaseItem.h"
 #include "Components/TextBlock.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "Components/Image.h"
+#include "OOBUnitItem.h"
+#include "../Game/GameStructs.h" // FS_OOBFleet definition
 
 void UOOBStarbaseWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    if (NameText)
+}
+
+void UOOBStarbaseWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    if (UOOBStarbaseItem* StarbaseData = Cast<UOOBStarbaseItem>(ListItemObject))
     {
-        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
+        if (NameText)
         {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
+            NameText->SetText(FText::FromString(StarbaseData->Data.Name));
         }
     }
 }
 
-void UOOBStarbaseWidget::SetData(const FS_OOBStarbase& InStarbase, int32 InIndentLevel)
+FReply UOOBStarbaseWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-    IndentLevel = InIndentLevel;
-    Data = InStarbase;
+    ShowElementData(); // << Expand or collapse when clicked
+    return FReply::Handled();
+}
 
-    if (NameText)
-    {
-        NameText->SetText(FText::FromString(Data.Name));
-    }
+void UOOBStarbaseWidget::ShowElementData()
+{
+    // Show Data in Operations Screen
 }
 

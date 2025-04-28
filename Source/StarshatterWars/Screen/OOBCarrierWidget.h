@@ -21,8 +21,8 @@ UCLASS()
 class STARSHATTERWARS_API UOOBCarrierWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
-public:
 
+public:
     // The Carrier data this widget represents
     UPROPERTY()
     FS_OOBCarrier Data;
@@ -32,6 +32,9 @@ public:
 
     UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* ElementListView; // Ships
 
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* WingListView; // Wings

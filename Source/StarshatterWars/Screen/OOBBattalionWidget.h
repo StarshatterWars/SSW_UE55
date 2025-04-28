@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBBattalionWidget.generated.h"
 
 class UTextBlock;
 class UImage;
+class UListView;
 struct FS_OOBBattalion;
 
 /**
@@ -16,49 +18,41 @@ struct FS_OOBBattalion;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBBattalionWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBBattalionWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
 public:
-    // The Battalion data this widget represents
-    UPROPERTY()
-    FS_OOBBattalion Data;
-
-    // Whether the Fleet is currently expanded to show children
-    UPROPERTY()
-    bool bIsExpanded = false;
-
-    // Child widgets: BattleGroups, Carriers, DesRons
-    UPROPERTY()
-    TArray<UUserWidget*> Children;
-
-    // UI Elements
     UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* NameText; // Displays the Fleet name
+    UTextBlock* NameText;
 
-    // UI: Expand/Collapse Icon
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
-    // Optional icons for expanded/collapsed
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* StarbaseListView; // Carriers
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* StationListView; // Battle Groups
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* BatteryListView; // DESRONs
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    // How deep this widget is in the tree (0 = Force, 1 = Fleet, 2 = Battle, etc.)
     UPROPERTY()
-    int32 IndentLevel = 1; 
+    bool bIsExpanded = false;
 
-    // Sets up the Battalion widget with battalion data
-    void SetData(const FS_OOBBattalion& InBattalion);
+public:
 
-    // Builds child Batteries, Starbases, Stations if expanded
-    void BuildChildren();
-
-protected:
     virtual void NativeConstruct() override;
-};
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
+    void ToggleExpansion();
+    void BuildChildren(const FS_OOBBattalion& BattalionDataStruct);
+};

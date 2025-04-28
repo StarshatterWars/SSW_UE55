@@ -4,22 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_OOBBattery definition
+#include "../Game/GameStructs.h" // FS_OOBForce definition
 #include "Blueprint/IUserObjectListEntry.h"
-#include "OOBStarbaseWidget.generated.h"
+#include "OOBElementWidget.generated.h"
+
 
 class UTextBlock;
-struct FS_OOBStarbase;
-
+class UImage;
+class UOOBUnitItem; // The Data Object class holding FS_OOBForce
+class UListView;
+struct FS_OOBUnit;
 /**
- * Starbase UI Widget - represents one Starbase under a Battalion
+ * 
  */
-
 UCLASS()
-class STARSHATTERWARS_API UOOBStarbaseWidget : public UUserWidget, public IUserObjectListEntry
+class STARSHATTERWARS_API UOOBElementWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
-
+	
 public:
     // Bound UI elements
     UPROPERTY(meta = (BindWidgetOptional))
@@ -34,4 +36,3 @@ public:
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
     void ShowElementData();
 };
-

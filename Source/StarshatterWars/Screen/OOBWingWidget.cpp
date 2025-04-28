@@ -4,18 +4,12 @@
 #include "OOBWingWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "Components/HorizontalBoxSlot.h"
-#include "OOBFleetItem.h" // (Object you use for fleet data)
+#include "OOBWingItem.h"
+#include "Components/ListView.h"
 
 void UOOBWingWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-
-    if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(Slot))
-    {
-        const float IndentSize = 20.0f;
-        HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-    }
 
     if (ExpandIcon)
     {
@@ -30,32 +24,145 @@ void UOOBWingWidget::NativeConstruct()
             ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
         }
     }
-}
 
+    if (AttackListView) AttackListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (FighterListView) FighterListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (InterceptorListView) InterceptorListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (LandingListView) LandingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+
+    if (AttackListView)
+    {
+        AttackListView->ClearListItems(); // Empty on construct
+        AttackListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
+    }
+
+    if (FighterListView)
+    {
+        FighterListView->ClearListItems(); // Empty on construct
+        FighterListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
+    }
+
+    if (InterceptorListView)
+    {
+        InterceptorListView->ClearListItems(); // Empty on construct
+        InterceptorListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
+    }
+
+    if (LandingListView)
+    {
+        LandingListView->ClearListItems(); // Empty on construct
+        LandingListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
+    }
+}
 
 void UOOBWingWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-    // Set your Fleet widget UI fields here based on FleetDataObject
-    // Example:
-    NameText->SetText(FText::FromString(Data.Name));
+    if (UOOBWingItem* WingData = Cast<UOOBWingItem>(ListItemObject))
+    {
+        if (NameText)
+        {
+            NameText->SetText(FText::FromString(WingData->Data.Name));
+        }
+
+        // Expand/collapse setup
+        bIsExpanded = false;
+
+        if (AttackListView) { AttackListView->ClearListItems(); }
+        if (FighterListView) { FighterListView->ClearListItems(); }
+        if (InterceptorListView) { InterceptorListView->ClearListItems(); }
+        if (LandingListView) { LandingListView->ClearListItems(); }
+
+        BuildChildren(WingData->Data);
+    }
 }
 
-void UOOBWingWidget::SetData(const FS_OOBWing& InWing, int32 InIndentLevel)
-{
-    Data = InWing;
-    IndentLevel = InIndentLevel;
 
-    if (NameText)
+FReply UOOBWingWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    ToggleExpansion(); // << Expand or collapse when clicked
+    return FReply::Handled();
+}
+
+void UOOBWingWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
+
+    if (ExpandIcon)
     {
-        NameText->SetText(FText::FromString(Data.Name));
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture);
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
+        }
     }
 
-    Children.Empty();
+    if (AttackListView) AttackListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (FighterListView) FighterListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (InterceptorListView) InterceptorListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (LandingListView) LandingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
-void UOOBWingWidget::BuildChildren()
+void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
 {
-    Children.Empty();
+    if (!AttackListView || !FighterListView || !InterceptorListView || !LandingListView) {
+        UE_LOG(LogTemp, Error, TEXT("Wing ListViews are not valid!"));
+        return;
+    }
+
+    // Fill Attack Squadrons
+    for (const FS_OOBAttack& Attack : WingDataStruct.Attack)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Attack Squadron Group Found: %s"), *Attack.Name);
+        
+        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
+        if (BattleData)
+        {
+            AttackData->Data = Attack;
+            AttackListView->AddItem(AttackData);
+        }*/
+    }
+    
+    // Fill Fighters
+    for (const FS_OOBFighter& Fighter : WingDataStruct.Fighter)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Fighter Squadron Group Found: %s"), *Fighter.Name);
+
+        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
+        if (BattleData)
+        {
+            AttackData->Data = Attack;
+            AttackListView->AddItem(AttackData);
+        }*/
+    }
+    
+    // Fill Interceptors
+    for (const FS_OOBIntercept& Interceptor : WingDataStruct.Intercept)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Inteceptor Squadron Group Found: %s"), *Interceptor.Name);
+
+        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
+        if (BattleData)
+        {
+            AttackData->Data = Attack;
+            AttackListView->AddItem(AttackData);
+        }*/
+    }
+    
+    // Fill Interceptors
+    for (const FS_OOBLanding& Landing : WingDataStruct.Landing)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Landing Squadron Group Found: %s"), *Landing.Name);
+
+        /*UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
+        if (BattleData)
+        {
+            AttackData->Data = Attack;
+            AttackListView->AddItem(AttackData);
+        }*/
+    }
 }
 
 

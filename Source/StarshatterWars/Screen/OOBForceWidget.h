@@ -13,7 +13,6 @@ class UImage;
 class UOOBForceItem; // The Data Object class holding FS_OOBForce
 class UListView;
 struct FS_OOBForce;
-class UOOBForceItem;
 
 /**
  * Force UI Widget - represents a Force at the top of the Order of Battle
@@ -52,7 +51,6 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObje
     int32 IndentLevel = 0;
 
 public:
-
     virtual void NativeConstruct() override;
 
     // ListView binding override
@@ -65,4 +63,5 @@ public:
 
     // Build Fleets under this Force
     void BuildChildren(const FS_OOBForce& ForceDataStruct);
+    void ShowElementData();
 };

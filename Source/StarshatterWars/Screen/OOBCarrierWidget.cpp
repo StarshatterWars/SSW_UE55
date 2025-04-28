@@ -5,6 +5,8 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "OOBCarrierGroupItem.h"
+#include "OOBWingItem.h"
+#include "OOBUnitItem.h"
 #include "Components/ListView.h" 
 
 void UOOBCarrierWidget::NativeConstruct()
@@ -25,11 +27,8 @@ void UOOBCarrierWidget::NativeConstruct()
         }
     }
 
-    if (WingListView)
-    {
-        WingListView->ClearListItems(); // Empty on construct
-        WingListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
+    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (WingListView) WingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -44,12 +43,10 @@ void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         // Expand/collapse setup
         bIsExpanded = false;
 
-        // Build children Fleets based on full struct
-        if (WingListView)
-        {
-            WingListView->ClearListItems();
-            BuildChildren(CarrierData->Data);
-        }
+        if (ElementListView) ElementListView->ClearListItems();
+        if (WingListView) WingListView->ClearListItems();
+
+        BuildChildren(CarrierData->Data);
     }
 }
 
@@ -76,16 +73,42 @@ void UOOBCarrierWidget::ToggleExpansion()
         }
     }
 
-    if (WingListView)
-    {
-        WingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    }
+    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (WingListView) WingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
 {
-    if (!WingListView) return;
+    if (!ElementListView || !WingListView) {
+        UE_LOG(LogTemp, Error, TEXT("Carrier ListViews are not valid!"));
+        return;
+    }
 
     WingListView->ClearListItems();
+
+    // Fill Wings
+    for (const FS_OOBWing& Wing : CarrierDataStruct.Wing)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Wing Found: %s"), *Wing.Name);
+        UOOBWingItem* WingData = NewObject<UOOBWingItem>(this);
+        if (WingData)
+        {
+            WingData->Data = Wing;
+            WingListView->AddItem(WingData);
+        }
+    }
+
+    // Fill Ship Elements
+    for (const FS_OOBUnit& Ship : CarrierDataStruct.Unit)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Ship Found: %s"), *Ship.Name);
+        UOOBUnitItem* UnitData = NewObject<UOOBUnitItem>(this);
+        
+        if (UnitData)
+        {
+            UnitData->Data = Ship;
+            ElementListView->AddItem(UnitData);
+        }
+    }
 }
 

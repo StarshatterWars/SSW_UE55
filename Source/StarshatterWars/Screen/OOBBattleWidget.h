@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBBattleWidget.generated.h"
 
 class UTextBlock;
 class UImage;
+class UListView;
 struct FS_OOBBattle;
 
 /**
@@ -16,7 +18,7 @@ struct FS_OOBBattle;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBBattleWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBBattleWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
@@ -25,32 +27,29 @@ public:
     UPROPERTY()
     FS_OOBBattle Data;
 
-    UPROPERTY()
-    bool bIsExpanded = false;
-
-    UPROPERTY()
-    int32 IndentLevel = 0;
-
-    UPROPERTY()
-    TArray<UUserWidget*> Children;
-
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* ElementListView; // Units
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
-    // Sets up this widget with battle data
-    void SetData(const FS_OOBBattle& InBattle, int32 InIndentLevel);
 
-    void BuildChildren(); // Build units under Battle
+    UPROPERTY()
+    bool bIsExpanded = false;
 
 protected:
     virtual void NativeConstruct() override;
-};	
-	
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+    void ToggleExpansion();
+    void BuildChildren(const FS_OOBBattle& BattleDataStruct);
+};

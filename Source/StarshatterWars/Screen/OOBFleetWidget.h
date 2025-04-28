@@ -10,9 +10,6 @@
 
 class UTextBlock;
 class UImage;
-class UOOBBattleWidget;
-class UOOBCarrierWidget;
-class UOOBDesronWidget;
 class UListView;
 struct FS_OOBFleet;
 
@@ -26,7 +23,6 @@ class STARSHATTERWARS_API UOOBFleetWidget : public UUserWidget, public IUserObje
 	GENERATED_BODY()
 	
 public:
-
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 

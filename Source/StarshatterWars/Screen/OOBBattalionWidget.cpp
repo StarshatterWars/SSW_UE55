@@ -4,88 +4,109 @@
 #include "OOBBattalionWidget.h"
 
 #include "Components/TextBlock.h"
-#include "OOBBatteryWidget.h"
-#include "OOBStarbaseWidget.h"
-#include "OOBStationWidget.h"
+#include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "OOBBattalion.h"
+//#include "OOBStationItem.h"
+//#include "OOBStarbaseItem.h"
+#include "OOBBatteryItem.h"
+#include "OOBCarrierGroupItem.h"
+#include "Components/ListView.h"
 
 void UOOBBattalionWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    if (NameText)
-    {
-        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
-        {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-        }
-    }
 
     if (ExpandIcon)
     {
         ExpandIcon->SetVisibility(ESlateVisibility::Visible);
-
-        if (bIsExpanded)
-        {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded
-        }
-        else
-        {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed
-        }
+        ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
     }
+
+    if (BatteryListView) BatteryListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (StarbaseListView) StarbaseListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (StationListView) StationListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
-void UOOBBattalionWidget::SetData(const FS_OOBBattalion& InBattalion)
+void UOOBBattalionWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-    Data = InBattalion;
-
-    if (NameText)
+    if (UOOBBattalion* BattalionData = Cast<UOOBBattalion>(ListItemObject))
     {
-        NameText->SetText(FText::FromString(Data.Name));
-    }
+        if (NameText)
+        {
+            NameText->SetText(FText::FromString(BattalionData->Data.Name));
+        }
 
-    Children.Empty(); // Reset children
+        bIsExpanded = false;
+
+        if (BatteryListView) BatteryListView->ClearListItems();
+        if (StarbaseListView) StarbaseListView->ClearListItems();
+        if (StationListView) StationListView->ClearListItems();
+
+        BuildChildren(BattalionData->Data);
+    }
 }
 
-void UOOBBattalionWidget::BuildChildren()
+FReply UOOBBattalionWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-    Children.Empty();
-
-    // Build Batteries
-    for (const FS_OOBBattery& Battery : Data.Battery)
-    {
-        UOOBBatteryWidget* BatteryItem = CreateWidget<UOOBBatteryWidget>(GetWorld(), UOOBBatteryWidget::StaticClass());
-        if (BatteryItem)
-        {
-            BatteryItem->SetData(Battery, 2);
-            Children.Add(BatteryItem);
-        }
-    }
-
-    // Build Starbases
-    for (const FS_OOBStarbase& Starbase : Data.Starbase)
-    {
-        UOOBStarbaseWidget* StarbaseItem = CreateWidget<UOOBStarbaseWidget>(GetWorld(), UOOBStarbaseWidget::StaticClass());
-        if (StarbaseItem)
-        {
-            StarbaseItem->SetData(Starbase, 2);
-            Children.Add(StarbaseItem);
-        }
-    }
-
-    // Build Stations
-    for (const FS_OOBStation& Station : Data.Station)
-    {
-        UOOBStationWidget* StationItem = CreateWidget<UOOBStationWidget>(GetWorld(), UOOBStationWidget::StaticClass());
-        if (StationItem)
-        {
-            StationItem->SetData(Station, 2);
-            Children.Add(StationItem);
-        }
-    }
+    ToggleExpansion();
+    return FReply::Handled();
 }
 
+void UOOBBattalionWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
 
+    if (ExpandIcon)
+    {
+        ExpandIcon->SetBrushFromTexture(bIsExpanded ? ExpandedIconTexture : CollapsedIconTexture);
+    }
+
+    if (BatteryListView) BatteryListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (StarbaseListView) StarbaseListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (StationListView) StationListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UOOBBattalionWidget::BuildChildren(const FS_OOBBattalion& BattalionDataStruct)
+{
+    if (!BatteryListView || !StarbaseListView || !StationListView) {
+        UE_LOG(LogTemp, Error, TEXT("Battalion ListViews are not valid!"));
+        return;
+    }
+
+    // Fill Batteries
+    for (const FS_OOBBattery& Battery : BattalionDataStruct.Battery)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Battery Found: %s"), *Battery.Name);
+        UOOBBatteryItem* BatteryData = NewObject<UOOBBatteryItem>(this);
+        if (BatteryData)
+        {
+            BatteryData->Data = Battery;
+            BatteryListView->AddItem(BatteryData);
+        }
+    }
+
+    // Fill Starbase
+    for (const FS_OOBStarbase& Starbase : BattalionDataStruct.Starbase)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Starbase Found: %s"), *Starbase.Name);
+        /*UOOBStarbaseItem* StarbaseData = NewObject<UOOBStarbaseItem>(this);
+        if (StarbaseData)
+        {
+            StarbaseData->Data = Starbase;
+            StarbaseListView->AddItem(StarbaseData);
+        }*/
+    }
+
+    // Fill DESRONs
+    for (const FS_OOBStation& Station : BattalionDataStruct.Station)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Desron Found: %s"), *Station.Name);
+        /*UOOBStationItem* StationData = NewObject<UOOBStationItem>(this);
+        if (StationData)
+        {
+            StationData->Data = Station;
+            StationListView->AddItem(StationData);
+        }*/
+    }
+}
