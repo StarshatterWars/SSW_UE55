@@ -4,21 +4,12 @@
 #include "OOBCarrierWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "OOBWingWidget.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "OOBCarrierGroupItem.h"
+#include "Components/ListView.h" 
 
 void UOOBCarrierWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    if (NameText)
-    {
-        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
-        {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-        }
-    }
 
     if (ExpandIcon)
     {
@@ -26,40 +17,75 @@ void UOOBCarrierWidget::NativeConstruct()
 
         if (bIsExpanded)
         {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
         }
         else
         {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
         }
     }
-}
 
-void UOOBCarrierWidget::SetData(const FS_OOBCarrier& InCarrier, int32 InIndentLevel)
-{
-    IndentLevel = InIndentLevel;
-    Data = InCarrier;
-
-    if (NameText)
+    if (WingListView)
     {
-        NameText->SetText(FText::FromString(Data.Name));
+        WingListView->ClearListItems(); // Empty on construct
+        WingListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
     }
 }
 
-void UOOBCarrierWidget::BuildChildren()
+void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-    Children.Empty();
-
-    // Carrier now expands ONLY into Wings
-    for (const FS_OOBWing& Wing : Data.Wing)
+    if (UOOBCarrierGroupItem* CarrierData = Cast<UOOBCarrierGroupItem>(ListItemObject))
     {
-        UOOBWingWidget* WingItem = CreateWidget<UOOBWingWidget>(GetWorld(), UOOBWingWidget::StaticClass());
-        if (WingItem)
+        if (NameText)
         {
-            WingItem->SetData(Wing, IndentLevel + 1); // Wings are indented 1 deeper
-            Children.Add(WingItem);
+            NameText->SetText(FText::FromString(CarrierData->Data.Name));
+        }
+
+        // Expand/collapse setup
+        bIsExpanded = false;
+
+        // Build children Fleets based on full struct
+        if (WingListView)
+        {
+            WingListView->ClearListItems();
+            BuildChildren(CarrierData->Data);
         }
     }
 }
 
+
+FReply UOOBCarrierWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    ToggleExpansion(); // << Expand or collapse when clicked
+    return FReply::Handled();
+}
+
+void UOOBCarrierWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
+
+    if (ExpandIcon)
+    {
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture);
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
+        }
+    }
+
+    if (WingListView)
+    {
+        WingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    }
+}
+
+void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
+{
+    if (!WingListView) return;
+
+    WingListView->ClearListItems();
+}
 

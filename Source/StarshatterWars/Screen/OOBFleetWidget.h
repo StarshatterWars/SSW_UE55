@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
-#include "Components/ListView.h"
 #include "Blueprint/IUserObjectListEntry.h"
 #include "OOBFleetWidget.generated.h"
 
@@ -33,9 +32,6 @@ public:
 
     UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UListView* SubUnitListView; // Battles, Carriers, Desrons
 
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* CarrierListView; // Carriers

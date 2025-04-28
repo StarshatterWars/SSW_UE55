@@ -1626,23 +1626,6 @@ void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 		ForceItem->Data = Force;
 		ForceListView->AddItem(ForceItem);
 	}
-
-	// Step 4: Add new Forces
-	for (const FS_OOBForce& Force : LoadedForces)
-	{
-		// Create a new Force Data Object
-		UOOBForceItem* ForceData = NewObject<UOOBForceItem>(this);
-		if (!ForceData)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create ForceDataObject!"));
-			continue;
-		}
-
-		ForceData->Data = Force; // Optional full struct
-
-		// Add ForceDataObject to ListView
-		ForceListView->AddItem(ForceData);
-	}
 }
 
 

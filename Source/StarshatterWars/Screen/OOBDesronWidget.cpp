@@ -4,20 +4,12 @@
 #include "OOBDesronWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "OOBDestroyerItem.h"
+#include "Components/ListView.h" 
 
 void UOOBDesronWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-   
-    if (NameText)
-    {
-        if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
-        {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-        }
-    }
 
     if (ExpandIcon)
     {
@@ -25,43 +17,74 @@ void UOOBDesronWidget::NativeConstruct()
 
         if (bIsExpanded)
         {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
         }
         else
         {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
+        }
+    }
+
+    if (UnitListView)
+    {
+        UnitListView->ClearListItems(); // Empty on construct
+        UnitListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
+    }
+}
+
+void UOOBDesronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+    if (UOOBDestroyerItem* DestroyerData = Cast<UOOBDestroyerItem>(ListItemObject))
+    {
+        if (NameText)
+        {
+            NameText->SetText(FText::FromString(DestroyerData->Data.Name));
+        }
+
+        // Expand/collapse setup
+        bIsExpanded = false;
+
+        // Build children Fleets based on full struct
+        if (UnitListView)
+        {
+            UnitListView->ClearListItems();
+            BuildChildren(DestroyerData->Data);
         }
     }
 }
 
-void UOOBDesronWidget::SetData(const FS_OOBDestroyer& InDesron, int32 InIndentLevel)
-{
-    IndentLevel = InIndentLevel;
-    Data = InDesron;
 
-    if (NameText)
+FReply UOOBDesronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    ToggleExpansion(); // << Expand or collapse when clicked
+    return FReply::Handled();
+}
+
+void UOOBDesronWidget::ToggleExpansion()
+{
+    bIsExpanded = !bIsExpanded;
+
+    if (ExpandIcon)
     {
-        NameText->SetText(FText::FromString(Data.Name));
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture);
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
+        }
+    }
+
+    if (UnitListView)
+    {
+        UnitListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
     }
 }
 
-void UOOBDesronWidget::BuildChildren()
+void UOOBDesronWidget::BuildChildren(const FS_OOBDestroyer& DestroyerDataStruct)
 {
-    Children.Empty();
+    if (!UnitListView) return;
+
+    UnitListView->ClearListItems();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

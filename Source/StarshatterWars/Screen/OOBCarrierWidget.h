@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_OOBCarrier definition
+#include "Blueprint/IUserObjectListEntry.h"
 #include "OOBCarrierWidget.generated.h"
 
 class UTextBlock;
 class UImage;
+class UListView;
 struct FS_OOBCarrier;
 
 /**
@@ -16,7 +18,7 @@ struct FS_OOBCarrier;
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBCarrierWidget : public UUserWidget
+class STARSHATTERWARS_API UOOBCarrierWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 public:
@@ -25,20 +27,14 @@ public:
     UPROPERTY()
     FS_OOBCarrier Data;
 
-    UPROPERTY()
-    bool bIsExpanded = false;
-
-    UPROPERTY()
-    int32 IndentLevel = 0;
-
-    UPROPERTY()
-    TArray<UUserWidget*> Children;
-
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* WingListView; // Wings
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
@@ -46,13 +42,16 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    // Sets this widget's data
-    void SetData(const FS_OOBCarrier& InCarrier, int32 InIndentLevel);
+    UPROPERTY()
+    bool bIsExpanded = false;
 
-    void BuildChildren(); // Build units under Carrier
-
-protected:
+ protected:
     virtual void NativeConstruct() override;
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+    void ToggleExpansion();
+    void BuildChildren(const FS_OOBCarrier& CarrierDataStruct);
 };
 	
 

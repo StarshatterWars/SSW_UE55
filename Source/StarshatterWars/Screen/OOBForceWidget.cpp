@@ -96,7 +96,6 @@ void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
         if (FleetData)
         {
             FleetData->Data = Fleet;
-
             FleetListView->AddItem(FleetData);
         }
     }

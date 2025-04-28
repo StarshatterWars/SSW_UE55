@@ -66,26 +66,44 @@ void UOOBFleetWidget::ToggleExpansion()
 
 void UOOBFleetWidget::BuildChildren(const FS_OOBFleet& FleetDataStruct)
 {
-    if (!BattleListView || !CarrierListView || !DestroyerListView) return;
+    if (!BattleListView || !CarrierListView || !DestroyerListView) {
+        UE_LOG(LogTemp, Error, TEXT("Fleet ListViews are not valid!"));
+            return;
+     }
 
     // Fill Battles
     for (const FS_OOBBattle& Battle : FleetDataStruct.Battle)
     {
-        // Create BattleDataObject
-        // BattlesListView->AddItem(BattleDataObject);
+        UE_LOG(LogTemp, Error, TEXT("Battle Group Found: %s"), *Battle.Name);
+        UOOBBattleItem* BattleData = NewObject<UOOBBattleItem>(this);
+        if (BattleData)
+        {
+            BattleData->Data = Battle;
+            BattleListView->AddItem(BattleData);
+        }
     }
 
     // Fill Carriers
     for (const FS_OOBCarrier& Carrier : FleetDataStruct.Carrier)
     {
-        // Create CarrierDataObject
-        // CarriersListView->AddItem(CarrierDataObject);
+        UE_LOG(LogTemp, Error, TEXT("Carrier Found: %s"), *Carrier.Name);
+        UOOBCarrierGroupItem* CarrierData = NewObject<UOOBCarrierGroupItem>(this);
+        if (CarrierData)
+        {
+            CarrierData->Data = Carrier;
+            CarrierListView->AddItem(CarrierData);
+        }
     }
 
     // Fill DESRONs
     for (const FS_OOBDestroyer& Desron : FleetDataStruct.Destroyer)
     {
-        // Create DesronDataObject
-        // DesronsListView->AddItem(DesronDataObject);
+        UE_LOG(LogTemp, Error, TEXT("Desron Found: %s"), *Desron.Name);
+        UOOBDestroyerItem* DestroyerData = NewObject<UOOBDestroyerItem>(this);
+        if (DestroyerData)
+        {
+            DestroyerData->Data = Desron;
+            DestroyerListView->AddItem(DestroyerData);
+        }
     }
 }
