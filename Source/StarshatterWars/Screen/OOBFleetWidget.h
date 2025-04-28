@@ -14,6 +14,7 @@ class UImage;
 class UOOBBattleWidget;
 class UOOBCarrierWidget;
 class UOOBDesronWidget;
+class UListView;
 struct FS_OOBFleet;
 
 /**
@@ -27,52 +28,39 @@ class STARSHATTERWARS_API UOOBFleetWidget : public UUserWidget, public IUserObje
 	
 public:
 
-    // The Fleet data this widget represents
-    UPROPERTY()
-    FS_OOBFleet Data;
-
-    // Whether this Fleet is expanded (showing Battles, Carriers, DesRons)
-    UPROPERTY()
-    bool bIsExpanded = false;
-
-    // Tree depth level (0 = Force, 1 = Fleet, etc.)
-    UPROPERTY()
-    int32 IndentLevel = 0;
-
-    // Children widgets (Battles, Carriers, DesRons)
-    UPROPERTY()
-    TArray<UUserWidget*> Children;
-
-    // UI: Text block showing the Fleet name
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
-    // UI: Expand/collapse icon (plus/minus)
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
-    // UI: ListView to hold child Battles, Carriers, DesRons
-    UPROPERTY(meta = (BindWidget))
-    UListView* ChildListView;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* SubUnitListView; // Battles, Carriers, Desrons
 
-    // Optional textures for expanded/collapsed
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* CarrierListView; // Carriers
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* BattleListView; // Battle Groups
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* DestroyerListView; // DESRONs
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    // Set the Fleet data and tree indentation level
-    void SetFleetData(const FS_OOBFleet& InFleet, int32 InIndentLevel);
-
-    // Build children dynamically: Battles, Carriers, DesRons
-    void BuildChildren();
-
-    // Toggle expand/collapse state
-    void ToggleExpansion();
+    UPROPERTY()
+    bool bIsExpanded = false;
 
 public:
+
     virtual void NativeConstruct() override;
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
+    void ToggleExpansion();
+    void BuildChildren(const FS_OOBFleet& FleetDataStruct);
 };

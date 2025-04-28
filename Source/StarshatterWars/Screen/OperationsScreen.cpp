@@ -1617,18 +1617,34 @@ void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 	}
 
 	// Step 2: Filter loaded forces
-	//FilterOutput(LoadedForces, Empire);
+	FilterOutput(LoadedForces, Empire);
 
 	// Step 3: Add to ListView
-	/*for (const FS_OOBForce& Force : LoadedForces)
+	for (const FS_OOBForce& Force : LoadedForces)
 	{
 		UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
 		ForceItem->Data = Force;
 		ForceListView->AddItem(ForceItem);
-	}*/
-	// Step 3: Add to Add to Panel
-	PopulateForces(LoadedForces);
+	}
+
+	// Step 4: Add new Forces
+	for (const FS_OOBForce& Force : LoadedForces)
+	{
+		// Create a new Force Data Object
+		UOOBForceItem* ForceData = NewObject<UOOBForceItem>(this);
+		if (!ForceData)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create ForceDataObject!"));
+			continue;
+		}
+
+		ForceData->Data = Force; // Optional full struct
+
+		// Add ForceDataObject to ListView
+		ForceListView->AddItem(ForceData);
+	}
 }
+
 
 TArray<FSubGroupArray> UOperationsScreen::GetSubGroupArrays(const FS_OOBFleet& Fleet)
 {
@@ -1991,31 +2007,42 @@ void UOperationsScreen::PopulateEmpireDDList()
 
 void UOperationsScreen::PopulateForces(TArray<FS_OOBForce> DisplayForces)
 {
-	if (!ForcesListBox)
+	if (!ForcesScrollBox) // Or ForceListView if you are using ListView
 	{
-		UE_LOG(LogTemp, Error, TEXT("ForcesListBox not found!"));
+		UE_LOG(LogTemp, Error, TEXT("ForceScrollBox not found!"));
 		return;
 	}
 
-	// Clear out any previous widgets before adding new ones
-	ForcesListBox->ClearChildren();
+	ForcesScrollBox->ClearChildren();
 
-	// Example of adding Forces to the ForceListBox container
+	if (DisplayForces.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Forces to display!"));
+		return;
+	}
+
 	for (const FS_OOBForce& Force : DisplayForces)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Force Data Found %s"), *Force.Name);
-		// Create a new Force widget for each Force in the Forces array
-		UOOBForceWidget* ForceItemWidget = CreateWidget<UOOBForceWidget>(GetWorld(), UOOBForceWidget::StaticClass());
+		// Create a ForceDataObject
+		UOOBForceItem* ForceDataObject = NewObject<UOOBForceItem>(this);
+		if (!ForceDataObject)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create ForceDataObject!"));
+			continue;
+		}
 
+		ForceDataObject->Data = Force; // Optionally store the full FS_OOBForce struct
+		UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), *Force.Name);
+		// Create the Force Widget
+		UOOBForceWidget* ForceItemWidget = CreateWidget<UOOBForceWidget>(GetWorld(), UOOBForceWidget::StaticClass());
 		if (ForceItemWidget)
 		{
-			// Set Force data and indent level
-			ForceItemWidget->SetForceData(Force, 0);  // Root level (Force = 0)
+			// Here's the key: Instead of SetForceData, Unreal will automatically call NativeOnListItemObjectSet!
+			// So you manually simulate binding:
+			ForceItemWidget->NativeOnListItemObjectSet(ForceDataObject);
 
-			UE_LOG(LogTemp, Log, TEXT("Force Widget Added"));
-			// Add the ForceItemWidget to the parent container (ForceListBox)
-			ForcesListBox->AddChild(ForceItemWidget);
+			// Add the widget to the ForceScrollBox
+			//ForcesScrollBox->AddChild(ForceItemWidget);
 		}
 	}
 }
-

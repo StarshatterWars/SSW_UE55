@@ -18,7 +18,8 @@ public class StarshatterWars : ModuleRules
             "Engine",
             "InputCore",
             "EnhancedInput",
-            "MediaAssets" }
+            "MediaAssets",
+            "CommonUI" }
         );
     }
 }

@@ -3,26 +3,15 @@
 
 #include "OOBForceWidget.h"
 #include "OOBFleetItem.h"
+#include "OOBForceItem.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
-#include "OOBFleetWidget.h"
-#include "OOBBattalionWidget.h"
-#include "Components/ListView.h"
-#include "Components/HorizontalBoxSlot.h" 
+#include "Components/ListView.h" 
 
 void UOOBForceWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-
-    if (NameText)
-    {
-        /*if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(NameText->Slot))
-        {
-            const float IndentSize = 20.0f;
-            HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-        }*/
-    }
 
     if (ExpandIcon)
     {
@@ -40,55 +29,37 @@ void UOOBForceWidget::NativeConstruct()
 
     if (FleetListView)
     {
-        FleetListView->ClearListItems(); // Empty list on construct
+        FleetListView->ClearListItems(); // Empty on construct
+        FleetListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
     }
-}
-
+ }
 
 void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-    NameText->SetText(FText::FromString(Data.Name));
-}
-
-void UOOBForceWidget::SetForceData(const FS_OOBForce& InForce, int32 InIndentLevel)
-{
-    ForceData = InForce;
-    IndentLevel = InIndentLevel;
-
-    UE_LOG(LogTemp, Log, TEXT("Setting Force Name: %s"), *InForce.Name);
-
-    if (NameText)
+    if (UOOBForceItem* ForceData = Cast<UOOBForceItem>(ListItemObject))
     {
-        NameText->SetText(FText::FromString(ForceData.Name));
-    }
-
-    if (FleetListView)
-    {
-        FleetListView->ClearListItems();
-    }
-
-    BuildChildren();
-}
-
-void UOOBForceWidget::BuildChildren()
-{
-    if (!FleetListView) return;
-
-    FleetListView->ClearListItems();
-
-    for (const FS_OOBFleet& Fleet : ForceData.Fleet)
-    {
-        // 1. Create a Data Object (not a widget)
-        UOOBFleetItem* FleetData = NewObject<UOOBFleetItem>(this);
-        if (FleetData)
+        if (NameText)
         {
-            // 2. Fill the Data Object from the FS_OOBFleet info
-            FleetData->Data = Fleet;
+            NameText->SetText(FText::FromString(ForceData->Data.Name));
+        }
 
-            // 3. Add the DataObject to the ListView
-            FleetListView->AddItem(FleetData); // <- Unreal will auto-create a widget!
+        // Expand/collapse setup
+        bIsExpanded = false;
+
+        // Build children Fleets based on full struct
+        if (FleetListView)
+        {
+            FleetListView->ClearListItems();
+            BuildChildren(ForceData->Data);
         }
     }
+}
+
+
+FReply UOOBForceWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    ToggleExpansion(); // << Expand or collapse when clicked
+    return FReply::Handled();
 }
 
 void UOOBForceWidget::ToggleExpansion()
@@ -110,5 +81,23 @@ void UOOBForceWidget::ToggleExpansion()
     if (FleetListView)
     {
         FleetListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    }
+}
+
+void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
+{
+    if (!FleetListView) return;
+
+    FleetListView->ClearListItems();
+
+    for (const FS_OOBFleet& Fleet : ForceDataStruct.Fleet)
+    {
+        UOOBFleetItem* FleetData = NewObject<UOOBFleetItem>(this);
+        if (FleetData)
+        {
+            FleetData->Data = Fleet;
+
+            FleetListView->AddItem(FleetData);
+        }
     }
 }

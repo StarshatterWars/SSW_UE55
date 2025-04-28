@@ -26,54 +26,43 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObje
 	GENERATED_BODY()
 	
  public:
-
-    // The Force data this widget represents
-    UPROPERTY()
-    FS_OOBForce ForceData;
-
-    // Whether this Force is expanded (showing Fleets)
-    UPROPERTY()
-    bool bIsExpanded = false;
-
-    // Tree indent level (usually 0 for Forces)
-    UPROPERTY()
-    int32 IndentLevel = 0;
-
-    // List of child fleet widgets (optional caching)
-    UPROPERTY()
-    TArray<UUserWidget*> Children;
-
-    // UI: Text block showing the Force name
-    UPROPERTY(meta = (BindWidget))
+    // Bound UI elements
+    UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
-    // UI: Expand/collapse icon (plus/minus)
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
-    // UI: ListView holding child Fleets
-    UPROPERTY(meta = (BindWidget))
-    UListView* FleetListView;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* FleetListView; // List of Fleets inside Force
 
-    // Icons for expand/collapse states
+    // Expand/Collapse textures
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* CollapsedIconTexture;
 
-    // Set the Force data and indent level
-    void SetForceData(const FS_OOBForce& InForce, int32 InIndentLevel);
+    // Expand/collapse state
+    UPROPERTY()
+    bool bIsExpanded = false;
 
-    // Dynamically create child fleet widgets
-    void BuildChildren();
+    // Tree depth level
+    UPROPERTY()
+    int32 IndentLevel = 0;
 
-    // Toggle expand/collapse state
+public:
+
+    virtual void NativeConstruct() override;
+
+    // ListView binding override
+    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+    
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+    // Toggle expansion of child ListView
     void ToggleExpansion();
 
-protected:
-    virtual void NativeConstruct() override;
-    virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
-
+    // Build Fleets under this Force
+    void BuildChildren(const FS_OOBForce& ForceDataStruct);
 };
-	

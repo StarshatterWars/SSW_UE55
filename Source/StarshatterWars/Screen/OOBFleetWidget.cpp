@@ -3,108 +3,51 @@
 
 #include "OOBFleetWidget.h"
 #include "Components/TextBlock.h"
-#include "OOBBattleWidget.h"
-#include "OOBDesronWidget.h"
-#include "OOBCarrierWidget.h"
 #include "Components/Image.h"
 #include "OOBFleetItem.h"
-#include "OperationsScreen.h"
-#include "Components/HorizontalBoxSlot.h"
+#include "OOBBattleItem.h"
+#include "OOBDestroyerItem.h"
+#include "OOBCarrierGroupItem.h"
 #include "Components/ListView.h"
 
 void UOOBFleetWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (UHorizontalBoxSlot* HBoxSlot = Cast<UHorizontalBoxSlot>(Slot))
-    {
-        const float IndentSize = 20.0f;
-        HBoxSlot->SetPadding(FMargin(IndentLevel * IndentSize, 0.0f, 0.0f, 0.0f));
-    }
-
     if (ExpandIcon)
     {
         ExpandIcon->SetVisibility(ESlateVisibility::Visible);
-
-        if (bIsExpanded)
-        {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
-        }
-        else
-        {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
-        }
+        ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
     }
 
-    if (ChildListView)
-    {
-        ChildListView->ClearListItems(); // Clear existing items
-    }
+    if (BattleListView) BattleListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (CarrierListView) CarrierListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (DestroyerListView) DestroyerListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
-
 
 void UOOBFleetWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-    NameText->SetText(FText::FromString(Data.Name));
+    if (UOOBFleetItem* FleetData = Cast<UOOBFleetItem>(ListItemObject))
+    {
+        if (NameText)
+        {
+           NameText->SetText(FText::FromString(FleetData->Data.Name));
+        }
+
+        bIsExpanded = false;
+
+        if (BattleListView) BattleListView->ClearListItems();
+        if (CarrierListView) CarrierListView->ClearListItems();
+        if (DestroyerListView) DestroyerListView->ClearListItems();
+
+        BuildChildren(FleetData->Data);
+    }
 }
 
-void UOOBFleetWidget::SetFleetData(const FS_OOBFleet& InFleet, int32 InIndentLevel)
+FReply UOOBFleetWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-    Data = InFleet;
-    IndentLevel = InIndentLevel;
-
-    if (NameText)
-    {
-        NameText->SetText(FText::FromString(Data.Name));
-    }
-
-    if (ChildListView)
-    {
-        ChildListView->ClearListItems(); // Clear before repopulating
-    }
-
-    //BuildChildren();
-}
-
-void UOOBFleetWidget::BuildChildren()
-{
-    Children.Empty();
-
-    // Add BattleGroups
-    for (const FS_OOBBattle& Battle : Data.Battle)
-    {
-        UOOBBattleWidget* BattleItem = CreateWidget<UOOBBattleWidget>(GetWorld(), UOOBBattleWidget::StaticClass());
-        if (BattleItem)
-        {
-            BattleItem->SetData(Battle, IndentLevel + 1);
-            ChildListView->AddItem(BattleItem);
-            Children.Add(BattleItem);
-        }
-    }
-
-    // Add Carriers
-    for (const FS_OOBCarrier& Carrier : Data.Carrier)
-    {
-        UOOBCarrierWidget* CarrierItem = CreateWidget<UOOBCarrierWidget>(GetWorld(), UOOBCarrierWidget::StaticClass());
-        if (CarrierItem)
-        {
-            CarrierItem->SetData(Carrier, IndentLevel + 1);
-            ChildListView->AddItem(CarrierItem);
-            Children.Add(CarrierItem);
-        }
-    }
-
-    // Add DesRons (Destroyer Squadrons)
-    for (const FS_OOBDestroyer& Desron : Data.Destroyer)
-    {
-        UOOBDesronWidget* DesronItem = CreateWidget<UOOBDesronWidget>(GetWorld(), UOOBDesronWidget::StaticClass());
-        if (DesronItem)
-        {
-            DesronItem->SetData(Desron, IndentLevel + 1);
-            ChildListView->AddItem(DesronItem);
-            Children.Add(DesronItem);
-        }
-    }
+    ToggleExpansion();
+    return FReply::Handled();
 }
 
 void UOOBFleetWidget::ToggleExpansion()
@@ -113,18 +56,36 @@ void UOOBFleetWidget::ToggleExpansion()
 
     if (ExpandIcon)
     {
-        if (bIsExpanded)
-        {
-            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
-        }
-        else
-        {
-            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
-        }
+        ExpandIcon->SetBrushFromTexture(bIsExpanded ? ExpandedIconTexture : CollapsedIconTexture);
     }
 
-    if (ChildListView)
+    if (BattleListView) BattleListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (CarrierListView) CarrierListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (DestroyerListView) DestroyerListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UOOBFleetWidget::BuildChildren(const FS_OOBFleet& FleetDataStruct)
+{
+    if (!BattleListView || !CarrierListView || !DestroyerListView) return;
+
+    // Fill Battles
+    for (const FS_OOBBattle& Battle : FleetDataStruct.Battle)
     {
-        ChildListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+        // Create BattleDataObject
+        // BattlesListView->AddItem(BattleDataObject);
+    }
+
+    // Fill Carriers
+    for (const FS_OOBCarrier& Carrier : FleetDataStruct.Carrier)
+    {
+        // Create CarrierDataObject
+        // CarriersListView->AddItem(CarrierDataObject);
+    }
+
+    // Fill DESRONs
+    for (const FS_OOBDestroyer& Desron : FleetDataStruct.Destroyer)
+    {
+        // Create DesronDataObject
+        // DesronsListView->AddItem(DesronDataObject);
     }
 }

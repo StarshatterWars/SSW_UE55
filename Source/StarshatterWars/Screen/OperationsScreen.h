@@ -246,7 +246,7 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	// Parent container to hold Forces
     UPROPERTY(meta = (BindWidgetOptional))
-    UScrollBox* ForcesListBox;
+    UScrollBox* ForcesScrollBox;
 		
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* OperationalSwitcher;

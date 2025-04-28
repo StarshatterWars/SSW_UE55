@@ -23,6 +23,31 @@
 #include "OperationsScreen.h"
 #include "../System/SSWGameInstance.h"
 
+
+void URosterTVElement::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+    if (ExpandIcon)
+    {
+        ExpandIcon->SetVisibility(ESlateVisibility::Visible);
+
+        if (bIsExpanded)
+        {
+            ExpandIcon->SetBrushFromTexture(ExpandedIconTexture); // Expanded (-)
+        }
+        else
+        {
+            ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
+        }
+    }
+
+    if (FleetListView)
+    {
+        FleetListView->ClearListItems(); // Empty list on construct
+    }
+}
+
 void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
@@ -93,6 +118,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
         NameText->SetText(FText::FromString(TEXT("Unknown Item")));
     }
 }
+
 
 
 
