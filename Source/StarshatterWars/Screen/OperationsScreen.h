@@ -39,6 +39,7 @@ class UOOBFighterUnit;
 class UOOBBattalion;
 class UOOBBatteryItem;
 class UOOBCivilianItem;
+class UOOBForceWidget;
 
 class UPanelWidget;
 class USelectableButtonGroup;
@@ -217,27 +218,6 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UComboBoxString* EmpireSelectionDD;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* FleetInfoBorder;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* CarrierInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* BattleInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* DesronInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* WingInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* UnitInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* SquadronInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* BattalionInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* CivilianInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* BatteryInfoBorder;
-	UPROPERTY(meta = (BindWidgetOptional))
 	class UBorder* InformationBorder;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UCanvasPanel* InfoPanel;
@@ -276,6 +256,8 @@ public:
 	void SetSelectedIntelData(int Selected);
 	UFUNCTION()
 	void LoadForces(EEMPIRE_NAME Empire);
+	UFUNCTION()
+	void HandleForceClicked(UOOBForceWidget* ClickedForceWidget);
 	TArray<FSubGroupArray> GetSubGroupArrays(const FS_OOBFleet& Fleet);
 	TArray<FSubGroupArray> GetBattalionSubGroups(const FS_OOBBattalion& Battalion);
 	void FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire);
@@ -399,7 +381,6 @@ protected:
 	UFUNCTION()
 	FDateTime GetCampaignTime();
 
-	void OnForceSelected(UObject* SelectedItem);
 	void OnFleetSelected(UObject* SelectedItem);
 	void OnCarrierSelected(UObject* SelectedItem);
 	void OnDesronSelected(UObject* SelectedItem);

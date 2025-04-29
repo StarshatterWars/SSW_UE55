@@ -52,13 +52,23 @@ void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             FleetListView->ClearListItems();
             BuildChildren(ForceData->Data);
         }
+        // If you haven't already: hook Force -> OperationsScreen click callback here
+        if (!bClickBound) // Optional safe guard
+        {
+            // NativeOnMouseButtonDown will call ForceClickedDelegate.Broadcast(this)
+            bClickBound = true;
+        }
     }
 }
-
 
 FReply UOOBForceWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
+   
+    //if (OnForceClicked.IsBound())
+    //{
+        OnForceClicked.Broadcast(this); // Send this ForceWidget to the screen
+    //}
     return FReply::Handled();
 }
 
@@ -99,4 +109,9 @@ void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
             FleetListView->AddItem(FleetData);
         }
     }
+}
+
+void UOOBForceWidget::ShowElementData()
+{
+
 }

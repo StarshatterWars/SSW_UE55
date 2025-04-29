@@ -19,6 +19,9 @@ struct FS_OOBForce;
  * Expands into a list of Fleets
  */
 
+ // Force Clicked Event
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FForceClickedDelegate, class UOOBForceWidget*, ClickedForceWidget);
+
 UCLASS()
 class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObjectListEntry
 {
@@ -26,6 +29,10 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObje
 	
  public:
     // Bound UI elements
+    
+    UPROPERTY()
+    FS_OOBForce Data;
+    
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
@@ -45,6 +52,14 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObje
     // Expand/collapse state
     UPROPERTY()
     bool bIsExpanded = false;
+
+    // Expand/collapse state
+    UPROPERTY()
+    bool bClickBound = false;
+
+    // Delegate to broadcast when clicked
+    UPROPERTY(BlueprintAssignable)
+    FForceClickedDelegate OnForceClicked;
 
     // Tree depth level
     UPROPERTY()
