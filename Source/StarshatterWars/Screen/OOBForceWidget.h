@@ -20,7 +20,7 @@ struct FS_OOBForce;
  */
 
  // Force Clicked Event
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FForceClickedDelegate, class UOOBForceWidget*, ClickedForceWidget);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FForceClickedDelegate, UOOBForceWidget*, ClickedForce);
 
 UCLASS()
 class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObjectListEntry

@@ -247,7 +247,7 @@ public:
 	void GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type);
 	void CreateOOBTable();
 	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
-	
+	void SetActiveOOBForce(FS_OOBForce& Force);
 	TArray<FS_Combatant> GetCombatantList();
 
 	void FlattenForce(const FS_OOBForce& ForceData, TArray<FS_OOBFlatEntry>& OutFlatList);
@@ -323,9 +323,11 @@ public:
 	
 protected:
 	virtual void Init() override;
+	FS_OOBForce GetActiveOOBForce();
 	virtual void Shutdown() override;
 	void ReadCampaignData();
 	void ReadCombatRosterData();
+	
 	virtual bool InitContent();
 	virtual bool InitGame();
 
@@ -409,6 +411,7 @@ protected:
 		TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
 
 		FTimerHandle TimerHandle;
+		FS_OOBForce CurrentForce;
 
 		UFUNCTION()
 		void OnGameTimerTick();

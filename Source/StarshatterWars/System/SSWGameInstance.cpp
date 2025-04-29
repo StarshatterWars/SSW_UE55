@@ -349,6 +349,15 @@ void USSWGameInstance::ReadCombatRosterData() {
 	}
 }
 
+void USSWGameInstance::SetActiveOOBForce(FS_OOBForce& Force) 
+{
+	CurrentForce = Force;
+}
+
+FS_OOBForce USSWGameInstance::GetActiveOOBForce() {
+	return CurrentForce;
+}
+
 void USSWGameInstance::Shutdown()
 {
 	Super::Shutdown();

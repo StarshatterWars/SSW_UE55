@@ -4,6 +4,7 @@
 #include "OOBForceWidget.h"
 #include "OOBFleetItem.h"
 #include "OOBForceItem.h"
+#include "OperationsScreen.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
