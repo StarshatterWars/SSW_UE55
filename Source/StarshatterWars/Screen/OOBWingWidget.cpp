@@ -34,29 +34,6 @@ void UOOBWingWidget::NativeConstruct()
     if (InterceptorListView) InterceptorListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
     if (LandingListView) LandingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
-    if (AttackListView)
-    {
-        AttackListView->ClearListItems(); // Empty on construct
-        AttackListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
-
-    if (FighterListView)
-    {
-        FighterListView->ClearListItems(); // Empty on construct
-        FighterListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
-
-    if (InterceptorListView)
-    {
-        InterceptorListView->ClearListItems(); // Empty on construct
-        InterceptorListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
-
-    if (LandingListView)
-    {
-        LandingListView->ClearListItems(); // Empty on construct
-        LandingListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
 }
 
 void UOOBWingWidget::NativeOnListItemObjectSet(UObject* ListItemObject)

@@ -39,6 +39,18 @@ public:
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* WingListView; // Wings
 
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* AttackListView; // Attack
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* FighterListView; // Fighter
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* InterceptorListView; // Fighter
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UListView* LandingListView; // Fighter
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
 
@@ -50,9 +62,11 @@ public:
 
  protected:
     virtual void NativeConstruct() override;
+    
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
+    void SetVisible(bool bIsVisible);
     void ToggleExpansion();
     void BuildChildren(const FS_OOBCarrier& CarrierDataStruct);
 };

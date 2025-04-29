@@ -7,6 +7,10 @@
 #include "OOBCarrierGroupItem.h"
 #include "OOBWingItem.h"
 #include "OOBUnitItem.h"
+#include "OOBAttackItem.h"
+#include "OOBFighterSquadronItem.h"
+#include "OOBInterceptorItem.h"
+#include "OOBLandingItem.h"
 #include "Components/ListView.h" 
 
 void UOOBCarrierWidget::NativeConstruct()
@@ -27,8 +31,16 @@ void UOOBCarrierWidget::NativeConstruct()
         }
     }
 
-    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (WingListView) WingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    SetVisible(bIsExpanded);
+}
+
+void UOOBCarrierWidget::SetVisible(bool bIsVisible) {
+    if (ElementListView) ElementListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (WingListView) WingListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (AttackListView) AttackListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (FighterListView) FighterListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (InterceptorListView) InterceptorListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (LandingListView) LandingListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -73,8 +85,7 @@ void UOOBCarrierWidget::ToggleExpansion()
         }
     }
 
-    if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (WingListView) WingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    SetVisible(bIsExpanded);
 }
 
 void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
@@ -84,7 +95,12 @@ void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
         return;
     }
 
-    WingListView->ClearListItems();
+    if (ElementListView) { ElementListView->ClearListItems(); }
+    if (WingListView) { WingListView->ClearListItems(); }
+    if (AttackListView) { AttackListView->ClearListItems(); }
+    if (FighterListView) { FighterListView->ClearListItems(); }
+    if (InterceptorListView) { InterceptorListView->ClearListItems(); }
+    if (LandingListView) { LandingListView->ClearListItems(); }
 
     // Fill Wings
     for (const FS_OOBWing& Wing : CarrierDataStruct.Wing)
@@ -108,6 +124,58 @@ void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
         {
             UnitData->Data = Ship;
             ElementListView->AddItem(UnitData);
+        }
+    }
+
+    // Fill Attack Squadrons
+    for (const FS_OOBAttack& Attack : CarrierDataStruct.Attack)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Attack Squadron Group Found: %s"), *Attack.Name);
+
+        UOOBAttackItem* AttackData = NewObject<UOOBAttackItem>(this);
+        if (AttackData)
+        {
+            AttackData->Data = Attack;
+            AttackListView->AddItem(AttackData);
+        }
+    }
+
+    // Fill Fighters
+    for (const FS_OOBFighter& Fighter : CarrierDataStruct.Fighter)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Fighter Squadron Group Found: %s"), *Fighter.Name);
+
+        UOOBFighterSquadronItem* FighterData = NewObject<UOOBFighterSquadronItem>(this);
+        if (FighterData)
+        {
+            FighterData->Data = Fighter;
+            FighterListView->AddItem(FighterData);
+        }
+    }
+
+    // Fill Interceptors
+    for (const FS_OOBIntercept& Interceptor : CarrierDataStruct.Intercept)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Inteceptor Squadron Group Found: %s"), *Interceptor.Name);
+
+        UOOBInterceptorItem* InterceptorData = NewObject<UOOBInterceptorItem>(this);
+        if (InterceptorData)
+        {
+            InterceptorData->Data = Interceptor;
+            InterceptorListView->AddItem(InterceptorData);
+        }
+    }
+
+    // Fill Interceptors
+    for (const FS_OOBLanding& Landing : CarrierDataStruct.Landing)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Landing Squadron Group Found: %s"), *Landing.Name);
+
+        UOOBLandingItem* LandingData = NewObject<UOOBLandingItem>(this);
+        if (LandingData)
+        {
+            LandingData->Data = Landing;
+            LandingListView->AddItem(LandingData);
         }
     }
 }

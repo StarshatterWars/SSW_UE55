@@ -1543,6 +1543,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewFighter.Name = Item.DisplayName;
 			NewFighter.Iff = Item.Iff;
 			NewFighter.Location = Item.Region;
+			NewFighter.ParentType = Item.ParentType;
 			NewFighter.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewFighter.Intel = Item.Intel;
 			NewFighter.Unit.SetNum(1);
@@ -1574,6 +1575,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewIntercept.Name = Item.DisplayName;
 			NewIntercept.Iff = Item.Iff;
 			NewIntercept.Location = Item.Region;
+			NewIntercept.ParentType = Item.ParentType;
 			NewIntercept.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewIntercept.Intel = Item.Intel;
 			NewIntercept.Unit.SetNum(1);
@@ -1605,6 +1607,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewAttack.Name = Item.DisplayName;
 			NewAttack.Iff = Item.Iff;
 			NewAttack.Location = Item.Region;
+			NewAttack.ParentType = Item.ParentType;
 			NewAttack.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewAttack.Intel = Item.Intel;
 			NewAttack.Unit.SetNum(1);
@@ -1636,6 +1639,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewLanding.Name = Item.DisplayName;
 			NewLanding.Iff = Item.Iff;
 			NewLanding.Location = Item.Region;
+			NewLanding.ParentType = Item.ParentType;
 			NewLanding.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewLanding.Intel = Item.Intel;
 			NewLanding.Unit.SetNum(1);
@@ -1697,10 +1701,40 @@ void USSWGameInstance::CreateOOBTable() {
 
 			for (FS_OOBCarrier& Carrier : CarrierArray)
 			{
-				Carrier.Wing.Empty(); // optional: clear old data
-				
+				Carrier.Wing.Empty(); 
+				Carrier.Fighter.Empty();
+				Carrier.Attack.Empty();
+				Carrier.Intercept.Empty();
+				Carrier.Landing.Empty();
+
 				if (Carrier.ParentId == Fleet.Id && Carrier.Empire == Fleet.Empire)
 				{
+					for (FS_OOBFighter& Fighter : FighterArray)
+					{
+						if (Fighter.ParentId == Carrier.Id && Fighter.Empire == Carrier.Empire && Fighter.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+							Carrier.Fighter.Add(Fighter);
+						}
+					}
+
+					for (FS_OOBAttack& Attack : AttackArray)
+					{
+						if (Attack.ParentId == Carrier.Id && Attack.Empire == Carrier.Empire && Attack.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+							Carrier.Attack.Add(Attack);
+						}
+					}
+
+					for (FS_OOBIntercept& Intercept : InterceptorArray)
+					{
+						if (Intercept.ParentId == Carrier.Id && Intercept.Empire == Carrier.Empire && Intercept.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+							Carrier.Intercept.Add(Intercept);
+						}
+					}
+					for (FS_OOBLanding& Landing : LandingArray)
+					{
+						if (Landing.ParentId == Carrier.Id && Landing.Empire == Carrier.Empire && Landing.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+							Carrier.Landing.Add(Landing);
+						}
+					}
 					for (FS_OOBWing& Wing : WingArray)
 					{
 						Wing.Fighter.Empty();
@@ -1712,7 +1746,7 @@ void USSWGameInstance::CreateOOBTable() {
 							
 							for (FS_OOBFighter& Fighter : FighterArray)
 							{
-								if (Fighter.ParentId == Wing.Id && Fighter.Empire == Wing.Empire) {
+								if (Fighter.ParentId == Wing.Id && Fighter.Empire == Wing.Empire && Fighter.ParentType == ECOMBATGROUP_TYPE::WING) {
 									Wing.Fighter.Add(Fighter);
 								}
 							}
