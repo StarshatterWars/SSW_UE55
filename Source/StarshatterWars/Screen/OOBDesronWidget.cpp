@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "OOBDestroyerItem.h"
 #include "OOBUnitItem.h"
+#include "OperationsScreen.h"
 #include "Components/ListView.h" 
 
 void UOOBDesronWidget::NativeConstruct()
@@ -38,6 +39,8 @@ void UOOBDesronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             NameText->SetText(FText::FromString(DestroyerData->Data.Name));
         }
 
+        Data = DestroyerData->Data;
+
         // Expand/collapse setup
         bIsExpanded = false;
 
@@ -51,6 +54,9 @@ void UOOBDesronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBDesronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
     return FReply::Handled();
 }
 

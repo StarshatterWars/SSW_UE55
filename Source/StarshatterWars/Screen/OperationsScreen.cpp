@@ -190,6 +190,10 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		SetSelectedIntelData(SSWInstance->GetSelectedActionNr());
 	}
 
+	if (SSWInstance->bIsDisplayUnitChanged)  {
+		HandleUnitClicked();
+	}
+
 	if (GameTimeText) {
 		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 		GameTimeText->SetText(FText::FromString(*CustomDate));
@@ -1242,10 +1246,10 @@ void UOperationsScreen::ClearForces()
 		ForceListView->ClearListItems();
 	}
 
-	//if (InfoBoxPanel) InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
-	//if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
+	if (InfoBoxPanel) InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
+	if (InformationBorder) InformationBorder->SetVisibility(ESlateVisibility::Collapsed);
 
-	//if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
+	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
@@ -1279,61 +1283,45 @@ void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 	{
 		UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
 		ForceItem->Data = Force;
-		//rceListView->AddItem(ForceItem);
-
-		if (!ForceItem)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create ForceDataObject!"));
-			continue;
-		}
-		ForceItem->Data = Force; // Optionally store the full FS_OOBForce struct
-		UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), *Force.Name);
-
-		UOOBForceWidget* ForceItemWidget = CreateWidget<UOOBForceWidget>(GetWorld(), UOOBForceWidget::StaticClass());
-		if (ForceItemWidget)
-		{
-			ForceItemWidget->NativeOnListItemObjectSet(ForceItem);
-			ForceItemWidget->OnForceClicked.AddDynamic(this, &UOperationsScreen::HandleForceClicked);
-		}
+		ForceListView->AddItem(ForceItem);
 	}
 }
 
-void UOperationsScreen::HandleForceClicked(UOOBForceWidget* ClickedForceWidget)
+void UOperationsScreen::HandleUnitClicked()
 {
 	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-	UE_LOG(LogTemp, Log, TEXT("Force clicked: %s"), *ClickedForceWidget->NameText->GetText().ToString());
+	
+	FS_DisplayUnit Display = SSWInstance->GetActiveUnit();
+
+	UE_LOG(LogTemp, Log, TEXT("Force clicked: %s"), *Display.Name);
 
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
 
 	if (InfoBoxPanel) {
 		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	if (!ClickedForceWidget || !ClickedForceWidget->NameText) return;
-
-	FString ForceName = ClickedForceWidget->NameText->GetText().ToString();
-	UE_LOG(LogTemp, Log, TEXT("Force clicked: %s"), *ForceName);
 
 	// Update UI fields
 	if (GroupInfoText)
 	{
-		GroupInfoText->SetText(FText::FromString(ForceName));
+		GroupInfoText->SetText(FText::FromString(Display.Name));
 	}
 
 	if (GroupTypeText)
 	{
-		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(ClickedForceWidget->Data.Type)));
+		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(Display.Type)));
 	}
 
 	if (GroupLocationText)
 	{
-		GroupLocationText->SetText(FText::FromString(ClickedForceWidget->Data.Location));
+		GroupLocationText->SetText(FText::FromString(Display.Location));
 	}
 
 	if (GroupEmpireText)
 	{
-		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(ClickedForceWidget->Data.Empire)));
+		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
 	}
-
+	SSWInstance->bIsDisplayUnitChanged = false;
 }
 
 TArray<FSubGroupArray> UOperationsScreen::GetSubGroupArrays(const FS_OOBFleet& Fleet)
@@ -1692,44 +1680,6 @@ void UOperationsScreen::PopulateEmpireDDList()
 	if (EmpireSelectionDD->GetOptionCount() > 0)
 	{
 		EmpireSelectionDD->SetSelectedOption(EmpireSelectionDD->GetOptionAtIndex(0));
-	}
-}
-
-void UOperationsScreen::PopulateForces(TArray<FS_OOBForce> DisplayForces)
-{
-	if (!ForcesScrollBox) // Or ForceListView if you are using ListView
-	{
-		UE_LOG(LogTemp, Error, TEXT("ForceScrollBox not found!"));
-		return;
-	}
-
-	ForcesScrollBox->ClearChildren();
-
-	if (DisplayForces.Num() == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No Forces to display!"));
-		return;
-	}
-
-	for (const FS_OOBForce& Force : DisplayForces)
-	{
-		// Create a ForceDataObject
-		UOOBForceItem* ForceDataObject = NewObject<UOOBForceItem>(this);
-		if (!ForceDataObject)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create ForceDataObject!"));
-			continue;
-		}
-
-		ForceDataObject->Data = Force; // Optionally store the full FS_OOBForce struct
-		UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), *Force.Name);
-		// Create the Force Widget
-		UOOBForceWidget* ForceItemWidget = CreateWidget<UOOBForceWidget>(GetWorld(), UOOBForceWidget::StaticClass());
-		if (ForceItemWidget)
-		{
-			ForceItemWidget->NativeOnListItemObjectSet(ForceDataObject);
-			ForceItemWidget->OnForceClicked.AddDynamic(this, &UOperationsScreen::HandleForceClicked);
-		}
 	}
 }
 

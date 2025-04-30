@@ -8,6 +8,7 @@
 #include "OOBBattleItem.h"
 #include "OOBDestroyerItem.h"
 #include "OOBCarrierGroupItem.h"
+#include "OperationsScreen.h"
 #include "Components/ListView.h"
 
 void UOOBFleetWidget::NativeConstruct()
@@ -35,6 +36,8 @@ void UOOBFleetWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         }
 
         bIsExpanded = false;
+        
+        Data = FleetData->Data;
 
         if (BattleListView) BattleListView->ClearListItems();
         if (CarrierListView) CarrierListView->ClearListItems();
@@ -46,6 +49,10 @@ void UOOBFleetWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 FReply UOOBFleetWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+
     ToggleExpansion();
     return FReply::Handled();
 }

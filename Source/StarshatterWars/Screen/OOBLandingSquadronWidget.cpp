@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "OOBLandingItem.h"
 #include "OOBFighterUnit.h"
+#include "OperationsScreen.h"
 #include "Components/ListView.h"
 
 void UOOBLandingSquadronWidget::NativeConstruct()
@@ -38,6 +39,7 @@ void UOOBLandingSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObjec
             NameText->SetText(FText::FromString(FighterData->Data.Name));
         }
 
+        Data = FighterData->Data;
         // Expand/collapse setup
         bIsExpanded = false;
 
@@ -50,6 +52,9 @@ void UOOBLandingSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObjec
 FReply UOOBLandingSquadronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
     return FReply::Handled();
 }
 

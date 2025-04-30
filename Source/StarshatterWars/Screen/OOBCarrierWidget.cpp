@@ -11,6 +11,7 @@
 #include "OOBFighterSquadronItem.h"
 #include "OOBInterceptorItem.h"
 #include "OOBLandingItem.h"
+#include "OperationsScreen.h"
 #include "Components/ListView.h" 
 
 void UOOBCarrierWidget::NativeConstruct()
@@ -52,6 +53,8 @@ void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             NameText->SetText(FText::FromString(CarrierData->Data.Name));
         }
 
+        Data = CarrierData->Data;
+
         // Expand/collapse setup
         bIsExpanded = false;
 
@@ -66,6 +69,9 @@ void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBCarrierWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
     return FReply::Handled();
 }
 

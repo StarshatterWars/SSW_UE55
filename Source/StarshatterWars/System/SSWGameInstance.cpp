@@ -349,9 +349,19 @@ void USSWGameInstance::ReadCombatRosterData() {
 	}
 }
 
-void USSWGameInstance::SetActiveOOBForce(FS_OOBForce& Force) 
+void USSWGameInstance::SetActiveUnit(bool bShow, FString Name, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc)
 {
-	CurrentForce = Force;
+	FS_DisplayUnit Unit;
+	DisplayUnit.bShowUnit = bShow;
+	DisplayUnit.Name = Name;
+	DisplayUnit.Empire = Empire;
+	DisplayUnit.Type = Type;
+	DisplayUnit.Location = Loc;
+}
+
+FS_DisplayUnit USSWGameInstance::GetActiveUnit()
+{
+	return DisplayUnit;
 }
 
 FS_OOBForce USSWGameInstance::GetActiveOOBForce() {

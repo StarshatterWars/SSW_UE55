@@ -320,6 +320,11 @@ public:
 
 	UPROPERTY()
 	AMusicController* MusicController;
+
+	void SetActiveUnit(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc);
+	FS_DisplayUnit GetActiveUnit();
+
+	bool bIsDisplayUnitChanged;
 	
 protected:
 	virtual void Init() override;
@@ -412,6 +417,7 @@ protected:
 
 		FTimerHandle TimerHandle;
 		FS_OOBForce CurrentForce;
+		FS_DisplayUnit DisplayUnit;
 
 		UFUNCTION()
 		void OnGameTimerTick();

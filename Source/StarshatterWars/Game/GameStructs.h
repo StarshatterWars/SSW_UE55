@@ -2569,6 +2569,29 @@ struct FS_CombatGroupUnit : public FTableRowBase {
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FS_DisplayUnit : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool bShowUnit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EEMPIRE_NAME Empire;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	ECOMBATGROUP_TYPE Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Location;
+	
+	FS_DisplayUnit() {
+		bShowUnit = false;
+		Name = "";
+		Empire = EEMPIRE_NAME::Unknown;
+		Type = ECOMBATGROUP_TYPE::NONE;
+		Location = ""; 
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FS_CombatGroup : public FTableRowBase {

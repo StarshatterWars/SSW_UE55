@@ -44,6 +44,8 @@ void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             NameText->SetText(FText::FromString(ForceData->Data.Name));
         }
 
+
+        Data = ForceData->Data;
         // Expand/collapse setup
         bIsExpanded = false;
 
@@ -53,6 +55,7 @@ void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             FleetListView->ClearListItems();
             BuildChildren(ForceData->Data);
         }
+
         // If you haven't already: hook Force -> OperationsScreen click callback here
         if (!bClickBound) // Optional safe guard
         {
@@ -75,6 +78,9 @@ FReply UOOBForceWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, con
 
 void UOOBForceWidget::ToggleExpansion()
 {
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
     bIsExpanded = !bIsExpanded;
 
     if (ExpandIcon)
@@ -82,11 +88,13 @@ void UOOBForceWidget::ToggleExpansion()
         if (bIsExpanded)
         {
             ExpandIcon->SetBrushFromTexture(ExpandedIconTexture);
+            
         }
         else
         {
             ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
         }
+       
     }
 
     if (FleetListView)

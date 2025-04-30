@@ -257,7 +257,7 @@ public:
 	UFUNCTION()
 	void LoadForces(EEMPIRE_NAME Empire);
 	UFUNCTION()
-	void HandleForceClicked(UOOBForceWidget* ClickedForceWidget);
+	void HandleUnitClicked();
 	TArray<FSubGroupArray> GetSubGroupArrays(const FS_OOBFleet& Fleet);
 	TArray<FSubGroupArray> GetBattalionSubGroups(const FS_OOBBattalion& Battalion);
 	void FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire);
@@ -272,7 +272,6 @@ public:
 	UFUNCTION()
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
 	void PopulateEmpireDDList();
-	void PopulateForces(TArray<FS_OOBForce> DisplayForces);
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;

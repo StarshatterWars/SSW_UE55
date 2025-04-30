@@ -23,6 +23,9 @@ class STARSHATTERWARS_API UOOBFleetWidget : public UUserWidget, public IUserObje
 	GENERATED_BODY()
 	
 public:
+    UPROPERTY()
+    FS_OOBFleet Data;
+    
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 

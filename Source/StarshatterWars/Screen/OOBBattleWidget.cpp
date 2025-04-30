@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "OOBBattleItem.h"
 #include "OOBUnitItem.h"
+#include "OperationsScreen.h"
 #include "Components/ListView.h"  
 
 void UOOBBattleWidget::NativeConstruct()
@@ -38,6 +39,8 @@ void UOOBBattleWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             NameText->SetText(FText::FromString(BattleData->Data.Name));
         }
 
+        Data = BattleData->Data;
+
         // Expand/collapse setup
         bIsExpanded = false;
 
@@ -50,6 +53,9 @@ void UOOBBattleWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBBattleWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
     return FReply::Handled();
 }
 

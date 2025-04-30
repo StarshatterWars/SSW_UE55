@@ -7,6 +7,7 @@
 #include "OOBCarrierGroupItem.h"
 #include "OOBAttackItem.h"
 #include "OOBFighterUnit.h"
+#include "OperationsScreen.h"
 #include "Components/ListView.h" 
 
 void UOOBAttackSquadronWidget::NativeConstruct()
@@ -39,6 +40,8 @@ void UOOBAttackSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObject
             NameText->SetText(FText::FromString(AttackData->Data.Name));
         }
 
+        Data = AttackData->Data;
+
         // Expand/collapse setup
         bIsExpanded = false;
 
@@ -52,6 +55,9 @@ void UOOBAttackSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObject
 FReply UOOBAttackSquadronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
     return FReply::Handled();
 }
 
