@@ -296,7 +296,7 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
-	CreateOOBTable();
+	//CreateOOBTable();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 }
 
