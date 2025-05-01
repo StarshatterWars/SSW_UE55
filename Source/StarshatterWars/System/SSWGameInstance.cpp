@@ -1338,6 +1338,24 @@ void USSWGameInstance::CreateOOBTable() {
 			NewStation.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewStation.Intel = Item.Intel;
 			NewStation.Id = Item.Id;
+			NewStation.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewStation.Unit.IsValidIndex(Index))
+				{
+					NewStation.Unit[Index].Name = UnitItem.UnitName;
+					NewStation.Unit[Index].Count = UnitItem.UnitCount;
+					NewStation.Unit[Index].Location = Item.Region;
+					NewStation.Unit[Index].ParentId = Item.ParentId;
+					NewStation.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewStation.Unit[Index].Type = ECOMBATUNIT_TYPE::STATION;
+					NewStation.Unit[Index].ParentType = ECOMBATGROUP_TYPE::STATION;
+					NewStation.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			StationArray.Add(NewStation);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::STARBASE) {
@@ -1351,6 +1369,24 @@ void USSWGameInstance::CreateOOBTable() {
 			NewStarbase.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewStarbase.Intel = Item.Intel;
 			NewStarbase.Id = Item.Id;
+			NewStarbase.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewStarbase.Unit.IsValidIndex(Index))
+				{
+					NewStarbase.Unit[Index].Name = UnitItem.UnitName;
+					NewStarbase.Unit[Index].Count = UnitItem.UnitCount;
+					NewStarbase.Unit[Index].Location = Item.Region;
+					NewStarbase.Unit[Index].ParentId = Item.ParentId;
+					NewStarbase.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewStarbase.Unit[Index].Type = ECOMBATUNIT_TYPE::STARBASE;
+					NewStarbase.Unit[Index].ParentType = ECOMBATGROUP_TYPE::STARBASE;
+					NewStarbase.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			StarbaseArray.Add(NewStarbase);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::BATTERY) {
@@ -1364,6 +1400,24 @@ void USSWGameInstance::CreateOOBTable() {
 			NewBattery.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
 			NewBattery.Intel = Item.Intel;
 			NewBattery.Id = Item.Id;
+			NewBattery.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewBattery.Unit.IsValidIndex(Index))
+				{
+					NewBattery.Unit[Index].Name = UnitItem.UnitName;
+					NewBattery.Unit[Index].Count = UnitItem.UnitCount;
+					NewBattery.Unit[Index].Location = Item.Region;
+					NewBattery.Unit[Index].ParentId = Item.ParentId;
+					NewBattery.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewBattery.Unit[Index].Type = ECOMBATUNIT_TYPE::BATTERY;
+					NewBattery.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTERY;
+					NewBattery.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+			}
 			BatteryArray.Add(NewBattery);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::BATTALION) {
@@ -1410,7 +1464,6 @@ void USSWGameInstance::CreateOOBTable() {
 					NewMinefield.Unit[Index].Design = UnitItem.UnitDesign;
 				}
 				++Index;
-
 			}
 			MinefieldArray.Add(NewMinefield);
 		}
