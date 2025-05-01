@@ -5,7 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "OOBMinefieldItem.h"
-//#include "OOBMinefieldUnit.h"
+#include "OOBMinefieldElement.h"
 #include "OperationsScreen.h"
 #include "Components/ListView.h"
 
@@ -80,8 +80,8 @@ void UOOBMinefieldWidget::ToggleExpansion()
 
 void UOOBMinefieldWidget::BuildChildren(const FS_OOBMinefield& MinefieldDataStruct)
 {
-    /*if (!ElementListView) {
-        UE_LOG(LogTemp, Error, TEXT("Fighter Squadron ListView is not valid!"));
+    if (!ElementListView) {
+        UE_LOG(LogTemp, Error, TEXT("Minefield Unit ListView is not valid!"));
         return;
     }
 
@@ -91,13 +91,13 @@ void UOOBMinefieldWidget::BuildChildren(const FS_OOBMinefield& MinefieldDataStru
     for (const FS_OOBMinefieldUnit& Element : MinefieldDataStruct.Unit)
     {
         UE_LOG(LogTemp, Error, TEXT("Mines Found: %s"), *Element.Name);
-        UOOBMinefieldUnit* MinefieldData = NewObject<UOOBMinefieldUnit>(this);
+        UOOBMinefieldElement* MinefieldData = NewObject<UOOBMinefieldElement>(this);
         if (MinefieldData)
         {
             MinefieldData->Data = Element;
             ElementListView->AddItem(MinefieldData);
         }
-    }*/
+    }
 }
 
 

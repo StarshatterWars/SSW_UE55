@@ -42,6 +42,9 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObje
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* FleetListView; // List of Fleets inside Force
 
+     UPROPERTY(meta = (BindWidgetOptional))
+    UListView* BattalionListView; // List of Battalions inside Force
+
     // Expand/Collapse textures
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
@@ -75,7 +78,7 @@ public:
 
     // Toggle expansion of child ListView
     void ToggleExpansion();
-
+    void SetVisible(bool bIsVisible);
     // Build Fleets under this Force
     void BuildChildren(const FS_OOBForce& ForceDataStruct);
     void ShowElementData();

@@ -59,4 +59,5 @@ public:
 
     void ToggleExpansion();
     void BuildChildren(const FS_OOBBattalion& BattalionDataStruct);
+    void SetVisible(bool bIsVisible);
 };

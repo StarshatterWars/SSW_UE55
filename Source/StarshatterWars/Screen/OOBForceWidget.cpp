@@ -4,6 +4,7 @@
 #include "OOBForceWidget.h"
 #include "OOBFleetItem.h"
 #include "OOBForceItem.h"
+#include "OOBBattalion.h"
 #include "OperationsScreen.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
@@ -28,11 +29,7 @@ void UOOBForceWidget::NativeConstruct()
         }
     }
 
-    if (FleetListView)
-    {
-        FleetListView->ClearListItems(); // Empty on construct
-        FleetListView->SetVisibility(ESlateVisibility::Collapsed); // Hide initially
-    }
+    SetVisible(bIsExpanded);
  }
 
 void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -44,24 +41,15 @@ void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
             NameText->SetText(FText::FromString(ForceData->Data.Name));
         }
 
-
         Data = ForceData->Data;
         // Expand/collapse setup
         bIsExpanded = false;
 
         // Build children Fleets based on full struct
-        if (FleetListView)
-        {
-            FleetListView->ClearListItems();
-            BuildChildren(ForceData->Data);
-        }
+        if (FleetListView) { FleetListView->ClearListItems(); }
+        if (BattalionListView) { BattalionListView->ClearListItems(); }
 
-        // If you haven't already: hook Force -> OperationsScreen click callback here
-        if (!bClickBound) // Optional safe guard
-        {
-            // NativeOnMouseButtonDown will call ForceClickedDelegate.Broadcast(this)
-            bClickBound = true;
-        }
+        BuildChildren(ForceData->Data);
     }
 }
 
@@ -96,18 +84,22 @@ void UOOBForceWidget::ToggleExpansion()
         }
        
     }
+    
+    SetVisible(bIsExpanded);
+}
 
-    if (FleetListView)
-    {
-        FleetListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    }
+void UOOBForceWidget::SetVisible(bool bIsVisible)
+{
+    if (FleetListView) FleetListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (BattalionListView) BattalionListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
 {
-    if (!FleetListView) return;
-
-    FleetListView->ClearListItems();
+    if (!FleetListView || !BattalionListView) {
+        UE_LOG(LogTemp, Error, TEXT("Force ListViews are not valid!"));
+        return;
+    }
 
     for (const FS_OOBFleet& Fleet : ForceDataStruct.Fleet)
     {
@@ -118,9 +110,15 @@ void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
             FleetListView->AddItem(FleetData);
         }
     }
+
+    for (const FS_OOBBattalion& Battalion : ForceDataStruct.Battalion)
+    {
+        UOOBBattalion* BattalionData = NewObject<UOOBBattalion>(this);
+        if (BattalionData)
+        {
+            BattalionData->Data = Battalion;
+            BattalionListView->AddItem(BattalionData);
+        }
+    }
 }
 
-void UOOBForceWidget::ShowElementData()
-{
-
-}

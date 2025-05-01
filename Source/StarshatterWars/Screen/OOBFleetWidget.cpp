@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "OOBFleetItem.h"
 #include "OOBBattleItem.h"
+#include "OOBMinefieldItem.h"
 #include "OOBDestroyerItem.h"
 #include "OOBCarrierGroupItem.h"
 #include "OperationsScreen.h"
@@ -21,9 +22,7 @@ void UOOBFleetWidget::NativeConstruct()
         ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
     }
 
-    if (BattleListView) BattleListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (CarrierListView) CarrierListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (DestroyerListView) DestroyerListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    SetVisible(bIsExpanded);
 }
 
 void UOOBFleetWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -42,6 +41,7 @@ void UOOBFleetWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         if (BattleListView) BattleListView->ClearListItems();
         if (CarrierListView) CarrierListView->ClearListItems();
         if (DestroyerListView) DestroyerListView->ClearListItems();
+        if (MinefieldListView) MinefieldListView->ClearListItems();
 
         BuildChildren(FleetData->Data);
     }
@@ -66,14 +66,12 @@ void UOOBFleetWidget::ToggleExpansion()
         ExpandIcon->SetBrushFromTexture(bIsExpanded ? ExpandedIconTexture : CollapsedIconTexture);
     }
 
-    if (BattleListView) BattleListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (CarrierListView) CarrierListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (DestroyerListView) DestroyerListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    SetVisible(bIsExpanded);
 }
 
 void UOOBFleetWidget::BuildChildren(const FS_OOBFleet& FleetDataStruct)
 {
-    if (!BattleListView || !CarrierListView || !DestroyerListView) {
+    if (!BattleListView || !CarrierListView || !DestroyerListView || !MinefieldListView) {
         UE_LOG(LogTemp, Error, TEXT("Fleet ListViews are not valid!"));
             return;
     }
@@ -111,6 +109,26 @@ void UOOBFleetWidget::BuildChildren(const FS_OOBFleet& FleetDataStruct)
         {
             DestroyerData->Data = Desron;
             DestroyerListView->AddItem(DestroyerData);
+        }    
+    }
+
+    // Fill Minefields
+    for (const FS_OOBMinefield& Minefield : FleetDataStruct.Minefield)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Minefield Found: %s"), *Minefield.Name);
+        UOOBMinefieldItem* MinefieldData = NewObject<UOOBMinefieldItem>(this);
+        if (MinefieldData)
+        {
+            MinefieldData->Data = Minefield;
+            MinefieldListView->AddItem(MinefieldData);
         }
     }
+}
+
+void UOOBFleetWidget::SetVisible(bool bIsVisible)
+{
+    if (BattleListView) BattleListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (CarrierListView) CarrierListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (DestroyerListView) DestroyerListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (MinefieldListView) MinefieldListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }

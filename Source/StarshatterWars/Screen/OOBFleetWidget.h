@@ -38,6 +38,9 @@ public:
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* BattleListView; // Battle Groups
 
+     UPROPERTY(meta = (BindWidgetOptional))
+    UListView* MinefieldListView; // Battle Groups
+
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* DestroyerListView; // DESRONs
 
@@ -58,4 +61,5 @@ public:
 
     void ToggleExpansion();
     void BuildChildren(const FS_OOBFleet& FleetDataStruct);
+    void SetVisible(bool bIsVisible);
 };

@@ -1279,7 +1279,7 @@ void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 	}
 
 	// Step 2: Filter loaded forces
-	FilterOutput(LoadedForces, Empire);
+	//FilterOutput(LoadedForces, Empire);
 
 	// Step 3: Add to ListView
 	for (const FS_OOBForce& Force : LoadedForces)
@@ -1401,6 +1401,17 @@ TArray<FSubGroupArray> UOperationsScreen::GetSubGroupArrays(const FS_OOBFleet& F
 	if (CarrierArray.Ids.Num() > 0)
 	{
 		SubGroups.Add(CarrierArray);
+	}
+
+	// Carriers
+	FSubGroupArray MinefieldlArray(ECOMBATGROUP_TYPE::MINEFIELD);
+	for (const FS_OOBMinefield& Minefield : Fleet.Minefield)
+	{
+		MinefieldlArray.Ids.Add(Minefield.Id);
+	}
+	if (MinefieldlArray.Ids.Num() > 0)
+	{
+		SubGroups.Add(MinefieldlArray);
 	}
 
 	// Future extensions:
