@@ -82,6 +82,27 @@ combatant: {
 		type: freight,
 		id: 3000 
 	},
+	group: {
+		type: minefield,
+		id: 1,
+	},
+	group: {
+		type: minefield,
+		id: 2,
+	},
+	group: {
+		type: minefield,
+		id: 3,
+	},
+	group: {
+		type: minefield,
+		id: 4,
+	},
+	group: {
+		type: minefield,
+		id: 5,
+	},
+
 }
 
 combatant: {

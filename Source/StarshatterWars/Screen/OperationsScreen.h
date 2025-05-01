@@ -258,6 +258,8 @@ public:
 	void LoadForces(EEMPIRE_NAME Empire);
 	UFUNCTION()
 	void HandleUnitClicked();
+	UFUNCTION()
+	void HandleElementClicked();
 	TArray<FSubGroupArray> GetSubGroupArrays(const FS_OOBFleet& Fleet);
 	TArray<FSubGroupArray> GetBattalionSubGroups(const FS_OOBBattalion& Battalion);
 	void FilterOutput(TArray<FS_OOBForce>& Forces, EEMPIRE_NAME Empire);

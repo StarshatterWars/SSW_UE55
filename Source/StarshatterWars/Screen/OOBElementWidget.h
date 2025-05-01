@@ -22,7 +22,9 @@ class STARSHATTERWARS_API UOOBElementWidget : public UUserWidget, public IUserOb
 	GENERATED_BODY()
 	
 public:
-    // Bound UI elements
+    UPROPERTY()
+    FS_OOBUnit Data;// Bound UI elements
+
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 	

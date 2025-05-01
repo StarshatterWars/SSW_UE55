@@ -5,6 +5,7 @@
 #include "OOBUnitItem.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "OperationsScreen.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
 
 void UOOBElementWidget::NativeConstruct()
@@ -20,6 +21,7 @@ void UOOBElementWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         {
             NameText->SetText(FText::FromString(UnitData->Data.DisplayName));
         }
+        Data = UnitData->Data;
     }
 }
 
@@ -32,6 +34,8 @@ FReply UOOBElementWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 
 void UOOBElementWidget::ShowElementData()
 {
-    // Show Data in Operations Screen
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveElement(true, Data.DisplayName, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayElementChanged = true;
 }
 

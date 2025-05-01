@@ -193,6 +193,9 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	if (SSWInstance->bIsDisplayUnitChanged)  {
 		HandleUnitClicked();
 	}
+	if (SSWInstance->bIsDisplayElementChanged) {
+		HandleElementClicked();
+	}
 
 	if (GameTimeText) {
 		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
@@ -1293,7 +1296,7 @@ void UOperationsScreen::HandleUnitClicked()
 	
 	FS_DisplayUnit Display = SSWInstance->GetActiveUnit();
 
-	UE_LOG(LogTemp, Log, TEXT("Force clicked: %s"), *Display.Name);
+	UE_LOG(LogTemp, Log, TEXT("Unit clicked: %s"), *Display.Name);
 
 	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
 
@@ -1322,6 +1325,45 @@ void UOperationsScreen::HandleUnitClicked()
 		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
 	}
 	SSWInstance->bIsDisplayUnitChanged = false;
+	SSWInstance->bIsDisplayElementChanged = false;
+}
+
+void UOperationsScreen::HandleElementClicked()
+{
+	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+
+	FS_DisplayElement Display = SSWInstance->GetActiveElement();
+
+	UE_LOG(LogTemp, Log, TEXT("Element clicked: %s"), *Display.Name);
+
+	if (InfoPanel) InfoPanel->SetVisibility(ESlateVisibility::Visible);
+
+	if (InfoBoxPanel) {
+		InfoBoxPanel->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	// Update UI fields
+	if (GroupInfoText)
+	{
+		GroupInfoText->SetText(FText::FromString(Display.Name));
+	}
+
+	if (GroupTypeText)
+	{
+		GroupTypeText->SetText(FText::FromString(SSWInstance->GetUnitFromType(Display.Type)));
+	}
+
+	if (GroupLocationText)
+	{
+		GroupLocationText->SetText(FText::FromString(Display.Location));
+	}
+
+	if (GroupEmpireText)
+	{
+		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
+	}
+	SSWInstance->bIsDisplayUnitChanged = false;
+	SSWInstance->bIsDisplayElementChanged = false;
 }
 
 TArray<FSubGroupArray> UOperationsScreen::GetSubGroupArrays(const FS_OOBFleet& Fleet)

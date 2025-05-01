@@ -4,37 +4,36 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_OOBBattery definition
+#include "../Game/GameStructs.h" // FS_OOBWing definition
 #include "Blueprint/IUserObjectListEntry.h"
-#include "OOBFighterSquadronWidget.generated.h"
+#include "OOBMinefieldWidget.generated.h"
 
 class UTextBlock;
 class UImage;
 class UListView;
-struct FS_OOBFighter;
+struct FS_OOBMinefield;
 
 /**
- *
+ * Minefields
  */
 
 UCLASS()
-class STARSHATTERWARS_API UOOBFighterSquadronWidget : public UUserWidget, public IUserObjectListEntry
+class STARSHATTERWARS_API UOOBMinefieldWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	
-public:
-    // The Fighter data this widget represents
+	public:
     UPROPERTY()
-    FS_OOBFighter Data;
+    FS_OOBMinefield Data;
 
-    UPROPERTY(meta = (BindWidgetOptional))
+     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
     UPROPERTY(meta = (BindWidgetOptional))
     UImage* ExpandIcon;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    UListView* ElementListView; // Fighters
+    UListView* ElementListView; // Ships
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* ExpandedIconTexture;
@@ -51,6 +50,7 @@ public:
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
     void ToggleExpansion();
-    void BuildChildren(const FS_OOBFighter& FighterDataStruct);
-
+    void BuildChildren(const FS_OOBMinefield& MinefieldDataStruct);
 };
+
+	

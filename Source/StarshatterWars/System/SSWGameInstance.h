@@ -322,9 +322,14 @@ public:
 	AMusicController* MusicController;
 
 	void SetActiveUnit(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc);
+
+	void SetActiveElement(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATUNIT_TYPE Type, FString Loc);
+
 	FS_DisplayUnit GetActiveUnit();
+	FS_DisplayElement GetActiveElement();
 
 	bool bIsDisplayUnitChanged;
+	bool bIsDisplayElementChanged;
 	
 protected:
 	virtual void Init() override;
@@ -418,6 +423,7 @@ protected:
 		FTimerHandle TimerHandle;
 		FS_OOBForce CurrentForce;
 		FS_DisplayUnit DisplayUnit;
+		FS_DisplayElement DisplayElement;
 
 		UFUNCTION()
 		void OnGameTimerTick();

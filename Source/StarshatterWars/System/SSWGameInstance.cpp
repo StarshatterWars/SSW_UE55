@@ -351,7 +351,6 @@ void USSWGameInstance::ReadCombatRosterData() {
 
 void USSWGameInstance::SetActiveUnit(bool bShow, FString Name, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc)
 {
-	FS_DisplayUnit Unit;
 	DisplayUnit.bShowUnit = bShow;
 	DisplayUnit.Name = Name;
 	DisplayUnit.Empire = Empire;
@@ -359,9 +358,23 @@ void USSWGameInstance::SetActiveUnit(bool bShow, FString Name, EEMPIRE_NAME Empi
 	DisplayUnit.Location = Loc;
 }
 
+void USSWGameInstance::SetActiveElement(bool bShow, FString Name, EEMPIRE_NAME Empire, ECOMBATUNIT_TYPE Type, FString Loc)
+{
+	DisplayElement.bShowUnit = bShow;
+	DisplayElement.Name = Name;
+	DisplayElement.Empire = Empire;
+	DisplayElement.Type = Type;
+	DisplayElement.Location = Loc;
+}
+
 FS_DisplayUnit USSWGameInstance::GetActiveUnit()
 {
 	return DisplayUnit;
+}
+
+FS_DisplayElement USSWGameInstance::GetActiveElement()
+{
+	return DisplayElement;
 }
 
 FS_OOBForce USSWGameInstance::GetActiveOOBForce() {
@@ -1281,7 +1294,6 @@ void USSWGameInstance::CreateOOBTable() {
 			FleetArray.Empty();
 			BattalionArray.Empty();
 			CivilianArray.Empty();
-			MinefieldArray.Empty();
 
 			NewForce.Id = Item.Id;
 			NewForce.Name = Item.DisplayName;
@@ -1371,20 +1383,36 @@ void USSWGameInstance::CreateOOBTable() {
 			}
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::MINEFIELD) {
-			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
-			{
-				FS_OOBMinefield NewMinefield;
+			FS_OOBMinefield NewMinefield;
 
-				NewMinefield.Id = Item.Id;
-				NewMinefield.ParentId = Item.ParentId;
-				NewMinefield.Name = Item.DisplayName;
-				NewMinefield.Iff = Item.Iff;
-				NewMinefield.Location = Item.Region;
-				NewMinefield.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
-				NewMinefield.Intel = Item.Intel;
-				NewMinefield.Id = Item.Id;
-				MinefieldArray.Add(NewMinefield);
+			NewMinefield.Id = Item.Id;
+			NewMinefield.ParentId = Item.ParentId;
+			NewMinefield.Name = Item.DisplayName;
+			NewMinefield.Iff = Item.Iff;
+			NewMinefield.Location = Item.Region;
+			NewMinefield.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewMinefield.Intel = Item.Intel;
+			NewMinefield.Id = Item.Id;
+			NewMinefield.Unit.SetNum(1);
+
+			int32 Index = 0;
+			for (const auto& UnitItem : Item.Unit)
+			{
+				if (NewMinefield.Unit.IsValidIndex(Index))
+				{
+					NewMinefield.Unit[Index].Name = UnitItem.UnitName;
+					NewMinefield.Unit[Index].Count = UnitItem.UnitCount;
+					NewMinefield.Unit[Index].Location = Item.Region;
+					NewMinefield.Unit[Index].ParentId = Item.ParentId;
+					NewMinefield.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewMinefield.Unit[Index].Type = ECOMBATUNIT_TYPE::MINE;
+					NewMinefield.Unit[Index].ParentType = ECOMBATGROUP_TYPE::MINEFIELD;
+					NewMinefield.Unit[Index].Design = UnitItem.UnitDesign;
+				}
+				++Index;
+
 			}
+			MinefieldArray.Add(NewMinefield);
 		}
 		else if (Item.Type == ECOMBATGROUP_TYPE::CIVILIAN) {
 			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
@@ -1717,6 +1745,7 @@ void USSWGameInstance::CreateOOBTable() {
 			Fleet.Carrier.Empty(); // optional: clear old data
 			Fleet.Destroyer.Empty(); // optional: clear old data
 			Fleet.Battle.Empty(); // optional: clear old data
+			Fleet.Minefield.Empty(); // optional: clear old data
 
 			for (FS_OOBCarrier& Carrier : CarrierArray)
 			{
@@ -1812,6 +1841,14 @@ void USSWGameInstance::CreateOOBTable() {
 					Fleet.Destroyer.Add(Destroyer);
 				}
 			}
+
+			for (const FS_OOBMinefield& Minefield : MinefieldArray)
+			{
+				if (Minefield.ParentId == Fleet.Id && Minefield.Empire == Fleet.Empire)
+				{
+					Fleet.Minefield.Add(Minefield);
+				}
+			}
 		}
 
 		ForceRow = OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT(""));
@@ -1820,7 +1857,6 @@ void USSWGameInstance::CreateOOBTable() {
 			ForceRow->Fleet = FleetArray;
 			ForceRow->Battalion = BattalionArray;
 			ForceRow->Civilian = CivilianArray;
-			ForceRow->Minefield = MinefieldArray;
 		}
 	}	
 }

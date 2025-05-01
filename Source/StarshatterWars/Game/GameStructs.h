@@ -247,6 +247,7 @@ enum class ECOMBATUNIT_TYPE : uint8
 	DESTROYER			UMETA(DisplayName = "Destroyer"),
 	FRIGATE				UMETA(DisplayName = "Frigate"),
 	CARRIER				UMETA(DisplayName = "Carrier"),
+	MINE				UMETA(DisplayName = "Mine"),
 };
 
 UENUM(BlueprintType)
@@ -1857,6 +1858,38 @@ struct FS_OOBUnit : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_OOBMinefieldUnit : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EEMPIRE_NAME Empire;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Design;	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int ParentId;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	ECOMBATUNIT_TYPE Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Count;
+
+	FS_OOBMinefieldUnit() {
+		Name = "";
+		Location = "";
+		ParentId = 0;
+		Count = -1;
+		Type = ECOMBATUNIT_TYPE::MINE;
+		ParentType = ECOMBATGROUP_TYPE::MINEFIELD;
+		Empire = EEMPIRE_NAME::Unknown;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_OOBFighterUnit : public FTableRowBase {
 	GENERATED_BODY()
 
@@ -2263,6 +2296,8 @@ struct FS_OOBMinefield : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	ECOMBATGROUP_TYPE ParentType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray <FS_OOBMinefieldUnit> Unit;
 	
 	FS_OOBMinefield() {
 		Id = 0;
@@ -2473,6 +2508,8 @@ struct FS_OOBFleet : public FTableRowBase {
 	TArray<FS_OOBDestroyer> Destroyer;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_OOBBattle> Battle;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_OOBMinefield> Minefield;
 	
 	FS_OOBFleet() {
 		Id = 0;
@@ -2511,9 +2548,7 @@ struct FS_OOBForce : public FTableRowBase {
 	TArray<FS_OOBBattalion> Battalion;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_OOBCivilian> Civilian;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray<FS_OOBMinefield> Minefield;
-
+	
 	FS_OOBForce() {
 		
 		Id = 0; 
@@ -2569,6 +2604,29 @@ struct FS_CombatGroupUnit : public FTableRowBase {
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FS_DisplayElement : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool bShowUnit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EEMPIRE_NAME Empire;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	ECOMBATUNIT_TYPE Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Location;
+	
+	FS_DisplayElement() {
+		bShowUnit = false;
+		Name = "";
+		Empire = EEMPIRE_NAME::Unknown;
+		Type = ECOMBATUNIT_TYPE::NONE;
+		Location = ""; 
+	}
+};
 USTRUCT(BlueprintType)
 struct FS_DisplayUnit : public FTableRowBase {
 	GENERATED_BODY()

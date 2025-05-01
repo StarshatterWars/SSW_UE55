@@ -23,6 +23,10 @@ class STARSHATTERWARS_API UOOBBattalionWidget : public UUserWidget, public IUser
 	GENERATED_BODY()
 	
 public:
+    // The Carrier data this widget represents
+    UPROPERTY()
+    FS_OOBBattalion Data;
+
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 
