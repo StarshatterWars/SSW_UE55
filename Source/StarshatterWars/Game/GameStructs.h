@@ -2772,7 +2772,7 @@ struct FS_CombatGroup : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Iff;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int EmpireId;
+	EEMPIRE_NAME EmpireId;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString System;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -2799,11 +2799,12 @@ struct FS_CombatGroup : public FTableRowBase {
 		Region = "";
 
 		Type = ECOMBATGROUP_TYPE::NONE;
+		EmpireId = EEMPIRE_NAME::Unknown;
 		ParentType = ECOMBATGROUP_TYPE::NONE;
 		Intel = EINTEL_TYPE::KNOWN;
 		Location = FVector::ZeroVector;
 		ParentId = 0;
-		EmpireId = 0;
+		//EmpireId = 0;
 		UnitIndex = 0;
 	}
 

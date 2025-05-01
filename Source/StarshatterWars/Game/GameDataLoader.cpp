@@ -3901,6 +3901,8 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 						ECOMBATGROUP_TYPE EType = ECOMBATGROUP_TYPE::NONE;
 						ECOMBATUNIT_TYPE EUnitType = ECOMBATUNIT_TYPE::NONE;
 						ECOMBATGROUP_TYPE EParentType = ECOMBATGROUP_TYPE::NONE;
+						EEMPIRE_NAME EEmpireType = EEMPIRE_NAME::Terellian;
+
 						int UnitIndex = 0;
 						int ParentId = 0;
 						int EmpireId = 0;
@@ -3975,7 +3977,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							else if (pdef->name()->value() == ("empire_id"))
 							{
 								GetDefNumber(EmpireId, pdef, fn);
-								NewCombatGroup.EmpireId = EmpireId;
+								NewCombatGroup.EmpireId = SSWInstance->GetEmpireTypeFromIndex(EmpireId);	
 							}
 							else if (pdef->name()->value() == ("iff"))
 							{

@@ -296,7 +296,7 @@ void USSWGameInstance::Init()
 		}
 	}
 	ReadCombatRosterData();
-	//CreateOOBTable();
+	CreateOOBTable();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 }
 
@@ -1185,7 +1185,7 @@ EEMPIRE_NAME USSWGameInstance::GetEmpireTypeFromIndex(int32 Index)
 	UE_LOG(LogTemp, Warning, TEXT("Invalid index passed to GetEmpireTypeFromIndex: %d"), Index);
 
 	// Return NONE if out of range
-	return EEMPIRE_NAME::Unknown;
+	return EEMPIRE_NAME::Terellian;
 }
 
 int32 USSWGameInstance::GetIndexFromEmpireType(EEMPIRE_NAME Type)
@@ -1281,7 +1281,7 @@ void USSWGameInstance::CreateOOBTable() {
 	FS_OOBFleet CurrentFleet;
 	
 	int ForceId;
-	int OldEmpire;
+	EEMPIRE_NAME OldEmpire;
 	int OldIff;
 
 	int FleetId;
@@ -1299,7 +1299,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewForce.Name = Item.DisplayName;
 			NewForce.Iff = Item.Iff;
 			NewForce.Location = Item.Region;
-			NewForce.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewForce.Empire = Item.EmpireId;
 			NewForce.Intel = Item.Intel;
 			ForceId = Item.Id;
 			OldIff = Item.Iff;
@@ -1321,7 +1321,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewFleet.Name = Item.DisplayName;
 				NewFleet.Iff = Item.Iff;
 				NewFleet.Location = Item.Region;
-				NewFleet.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewFleet.Empire = Item.EmpireId;
 				NewFleet.Intel = Item.Intel;
 				FleetId = Item.Id;
 				FleetArray.Add(NewFleet);
@@ -1335,7 +1335,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewStation.Name = Item.DisplayName;
 			NewStation.Iff = Item.Iff;
 			NewStation.Location = Item.Region;
-			NewStation.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewStation.Empire = Item.EmpireId;
 			NewStation.Intel = Item.Intel;
 			NewStation.Id = Item.Id;
 			NewStation.Unit.SetNum(1);
@@ -1349,7 +1349,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewStation.Unit[Index].Count = UnitItem.UnitCount;
 					NewStation.Unit[Index].Location = Item.Region;
 					NewStation.Unit[Index].ParentId = Item.ParentId;
-					NewStation.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewStation.Unit[Index].Empire = Item.EmpireId;
 					NewStation.Unit[Index].Type = ECOMBATUNIT_TYPE::STATION;
 					NewStation.Unit[Index].ParentType = ECOMBATGROUP_TYPE::STATION;
 					NewStation.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1366,7 +1366,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewStarbase.Name = Item.DisplayName;
 			NewStarbase.Iff = Item.Iff;
 			NewStarbase.Location = Item.Region;
-			NewStarbase.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewStarbase.Empire = Item.EmpireId;
 			NewStarbase.Intel = Item.Intel;
 			NewStarbase.Id = Item.Id;
 			NewStarbase.Unit.SetNum(1);
@@ -1380,7 +1380,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewStarbase.Unit[Index].Count = UnitItem.UnitCount;
 					NewStarbase.Unit[Index].Location = Item.Region;
 					NewStarbase.Unit[Index].ParentId = Item.ParentId;
-					NewStarbase.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewStarbase.Unit[Index].Empire = Item.EmpireId;
 					NewStarbase.Unit[Index].Type = ECOMBATUNIT_TYPE::STARBASE;
 					NewStarbase.Unit[Index].ParentType = ECOMBATGROUP_TYPE::STARBASE;
 					NewStarbase.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1397,7 +1397,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewBattery.Name = Item.DisplayName;
 			NewBattery.Iff = Item.Iff;
 			NewBattery.Location = Item.Region;
-			NewBattery.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewBattery.Empire = Item.EmpireId;
 			NewBattery.Intel = Item.Intel;
 			NewBattery.Id = Item.Id;
 			NewBattery.Unit.SetNum(1);
@@ -1411,7 +1411,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewBattery.Unit[Index].Count = UnitItem.UnitCount;
 					NewBattery.Unit[Index].Location = Item.Region;
 					NewBattery.Unit[Index].ParentId = Item.ParentId;
-					NewBattery.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewBattery.Unit[Index].Empire = Item.EmpireId;
 					NewBattery.Unit[Index].Type = ECOMBATUNIT_TYPE::BATTERY;
 					NewBattery.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTERY;
 					NewBattery.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1430,7 +1430,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewBattalion.Name = Item.DisplayName;
 				NewBattalion.Iff = Item.Iff;
 				NewBattalion.Location = Item.Region;
-				NewBattalion.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewBattalion.Empire = Item.EmpireId;
 				NewBattalion.Intel = Item.Intel;
 				NewBattalion.Id = Item.Id;
 				BattalionArray.Add(NewBattalion);
@@ -1444,7 +1444,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewMinefield.Name = Item.DisplayName;
 			NewMinefield.Iff = Item.Iff;
 			NewMinefield.Location = Item.Region;
-			NewMinefield.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewMinefield.Empire = Item.EmpireId;
 			NewMinefield.Intel = Item.Intel;
 			NewMinefield.Id = Item.Id;
 			NewMinefield.Unit.SetNum(1);
@@ -1458,7 +1458,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewMinefield.Unit[Index].Count = UnitItem.UnitCount;
 					NewMinefield.Unit[Index].Location = Item.Region;
 					NewMinefield.Unit[Index].ParentId = Item.ParentId;
-					NewMinefield.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewMinefield.Unit[Index].Empire = Item.EmpireId;
 					NewMinefield.Unit[Index].Type = ECOMBATUNIT_TYPE::MINE;
 					NewMinefield.Unit[Index].ParentType = ECOMBATGROUP_TYPE::MINEFIELD;
 					NewMinefield.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1477,7 +1477,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewCivilian.Name = Item.DisplayName;
 				NewCivilian.Iff = Item.Iff;
 				NewCivilian.Location = Item.Region;
-				NewCivilian.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewCivilian.Empire = Item.EmpireId;
 				NewCivilian.Intel = Item.Intel;
 				NewCivilian.Id = Item.Id;
 				CivilianArray.Add(NewCivilian);
@@ -1491,7 +1491,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewCarrier.Name = Item.DisplayName;
 			NewCarrier.Iff = Item.Iff;
 			NewCarrier.Location = Item.Region;
-			NewCarrier.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewCarrier.Empire = Item.EmpireId;
 			NewCarrier.Intel = Item.Intel;
 			NewCarrier.Unit.SetNum(4);
 
@@ -1505,7 +1505,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewCarrier.Unit[Index].Count = 1;
 				NewCarrier.Unit[Index].ParentId = Item.ParentId;
 				NewCarrier.Unit[Index].Regnum = UnitItem.UnitRegnum;
-				NewCarrier.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewCarrier.Unit[Index].Empire = Item.EmpireId;
 				NewCarrier.Unit[Index].Location = Item.Region;
 				NewCarrier.Unit[Index].ParentType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
 
@@ -1537,7 +1537,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewDestroyer.Name = Item.DisplayName;
 			NewDestroyer.Iff = Item.Iff;
 			NewDestroyer.Location = Item.Region;
-			NewDestroyer.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewDestroyer.Empire = Item.EmpireId;
 			NewDestroyer.Intel = Item.Intel;
 			NewDestroyer.Unit.SetNum(4);
 
@@ -1550,7 +1550,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewDestroyer.Unit[Index].Name = UnitItem.UnitName;
 				NewDestroyer.Unit[Index].Count = 1;
 				NewDestroyer.Unit[Index].ParentId = Item.ParentId;
-				NewDestroyer.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewDestroyer.Unit[Index].Empire = Item.EmpireId;
 				NewDestroyer.Unit[Index].Regnum = UnitItem.UnitRegnum;
 				NewDestroyer.Unit[Index].Location = Item.Region;
 				NewDestroyer.Unit[Index].ParentType = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
@@ -1584,7 +1584,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewBattle.Name = Item.DisplayName;
 			NewBattle.Iff = Item.Iff;
 			NewBattle.Location = Item.Region;
-			NewBattle.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewBattle.Empire = Item.EmpireId;
 			NewBattle.Intel = Item.Intel;
 			NewBattle.Unit.SetNum(4);
 			int32 Index = 0;
@@ -1597,7 +1597,7 @@ void USSWGameInstance::CreateOOBTable() {
 				NewBattle.Unit[Index].Count = 1;
 				NewBattle.Unit[Index].ParentId = Item.ParentId;
 				NewBattle.Unit[Index].Regnum = UnitItem.UnitRegnum;
-				NewBattle.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+				NewBattle.Unit[Index].Empire = Item.EmpireId;
 				NewBattle.Unit[Index].Location = Item.Region;
 				NewBattle.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTLE_GROUP;
 
@@ -1630,7 +1630,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewWing.Name = Item.DisplayName;
 			NewWing.Iff = Item.Iff;
 			NewWing.Location = Item.Region;
-			NewWing.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewWing.Empire = Item.EmpireId;
 			NewWing.Intel = Item.Intel;
 			WingArray.Add(NewWing);
 		}
@@ -1644,7 +1644,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewFighter.Iff = Item.Iff;
 			NewFighter.Location = Item.Region;
 			NewFighter.ParentType = Item.ParentType;
-			NewFighter.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewFighter.Empire = Item.EmpireId;
 			NewFighter.Intel = Item.Intel;
 			NewFighter.Unit.SetNum(1);
 
@@ -1657,7 +1657,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewFighter.Unit[Index].Count = UnitItem.UnitCount;
 					NewFighter.Unit[Index].Location = Item.Region;
 					NewFighter.Unit[Index].ParentId = Item.ParentId;
-					NewFighter.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewFighter.Unit[Index].Empire = Item.EmpireId;
 					NewFighter.Unit[Index].Type = ECOMBATUNIT_TYPE::FIGHTER;
 					NewFighter.Unit[Index].ParentType = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
 					NewFighter.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1676,7 +1676,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewIntercept.Iff = Item.Iff;
 			NewIntercept.Location = Item.Region;
 			NewIntercept.ParentType = Item.ParentType;
-			NewIntercept.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewIntercept.Empire = Item.EmpireId;
 			NewIntercept.Intel = Item.Intel;
 			NewIntercept.Unit.SetNum(1);
 			
@@ -1689,7 +1689,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewIntercept.Unit[Index].Count = UnitItem.UnitCount;
 					NewIntercept.Unit[Index].Location = Item.Region;
 					NewIntercept.Unit[Index].ParentId = Item.ParentId;
-					NewIntercept.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewIntercept.Unit[Index].Empire = Item.EmpireId;
 					NewIntercept.Unit[Index].Type = ECOMBATUNIT_TYPE::INTERCEPT;
 					NewIntercept.Unit[Index].ParentType = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
 					NewIntercept.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1708,7 +1708,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewAttack.Iff = Item.Iff;
 			NewAttack.Location = Item.Region;
 			NewAttack.ParentType = Item.ParentType;
-			NewAttack.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewAttack.Empire = Item.EmpireId;
 			NewAttack.Intel = Item.Intel;
 			NewAttack.Unit.SetNum(1);
 			
@@ -1721,7 +1721,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewAttack.Unit[Index].Count = UnitItem.UnitCount;
 					NewAttack.Unit[Index].Location = Item.Region;
 					NewAttack.Unit[Index].ParentId = Item.ParentId;
-					NewAttack.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewAttack.Unit[Index].Empire = Item.EmpireId;
 					NewAttack.Unit[Index].Type = ECOMBATUNIT_TYPE::ATTACK;
 					NewAttack.Unit[Index].ParentType = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
 					NewAttack.Unit[Index].Design = UnitItem.UnitDesign;
@@ -1740,7 +1740,7 @@ void USSWGameInstance::CreateOOBTable() {
 			NewLanding.Iff = Item.Iff;
 			NewLanding.Location = Item.Region;
 			NewLanding.ParentType = Item.ParentType;
-			NewLanding.Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+			NewLanding.Empire = Item.EmpireId;
 			NewLanding.Intel = Item.Intel;
 			NewLanding.Unit.SetNum(1);
 			
@@ -1753,7 +1753,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewLanding.Unit[Index].Count = UnitItem.UnitCount;
 					NewLanding.Unit[Index].Location = Item.Region;
 					NewLanding.Unit[Index].ParentId = Item.ParentId;
-					NewLanding.Unit[Index].Empire = GetEmpireTypeFromIndex(Item.EmpireId);
+					NewLanding.Unit[Index].Empire = Item.EmpireId;
 					NewLanding.Unit[Index].Type = ECOMBATUNIT_TYPE::LCA;
 					NewLanding.Unit[Index].ParentType = ECOMBATGROUP_TYPE::LCA_SQUADRON;
 					NewLanding.Unit[Index].Design = UnitItem.UnitDesign;

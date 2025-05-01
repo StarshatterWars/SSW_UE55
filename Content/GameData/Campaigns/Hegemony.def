@@ -2822,7 +2822,7 @@ group: {
 group: {
   type:   battery,
   id:     41,
-  name:   "",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -2849,7 +2849,7 @@ group: {
 group: {
   type:   battery,
   id:     42,
-  name:   "",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -2869,7 +2869,7 @@ group: {
 group: {
   type:   battery,
   id:     43,
-  name:   "",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3199,7 +3199,7 @@ group: {
 group: {
   type:   battery,
   id:     1,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3226,7 +3226,7 @@ group: {
 group: {
   type:   battery,
   id:     2,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3246,7 +3246,7 @@ group: {
 group: {
   type:   battery,
   id:     3,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3266,7 +3266,7 @@ group: {
 group: {
   type:   battery,
   id:     4,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3282,11 +3282,6 @@ group: {
     count:  2,
     },
 }
-
-
-
-
-
 
 group: {
   type:   battalion,
@@ -3388,7 +3383,7 @@ group: {
 group: {
   type:   battery,
   id:     11,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3419,7 +3414,7 @@ group: {
 group: {
   type:   battery,
   id:     12,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3439,7 +3434,7 @@ group: {
 group: {
   type:   battery,
   id:     13,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3459,7 +3454,7 @@ group: {
 group: {
   type:   battery,
   id:     14,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3671,7 +3666,7 @@ group: {
 group: {
   type:   battery,
   id:     11,
-  name:   "AAA Battery",
+  name:   "AAA",
   intel:  secret,
   iff:    2,
   empire_id: 1,
@@ -3702,7 +3697,7 @@ group: {
 group: {
   type:   battery,
   id:     13,
-  name:   "SAM Battery",
+  name:   "SAM",
   intel:  secret,
   iff:    2,
   empire_id: 1,

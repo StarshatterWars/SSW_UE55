@@ -775,6 +775,7 @@ group: {
   iff:    1,
   empire_id: 0,
   loc:    (0, 0, 0),
+  region: "Trellis",
   parent_type: force,
   parent_id:   1,
 }
