@@ -47,12 +47,14 @@ public:
 
 protected:
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
     void ToggleExpansion();
     void BuildChildren(const FS_OOBDestroyer& DestroyerDataStruct);
     void ShowUnitData();
+    void SetHighlight(bool bHighlighted);
 };
 	
 

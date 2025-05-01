@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Blueprint/UserWidget.h"
 #include "GameStructs.generated.h"
 
 /************************************************************************/
@@ -2745,6 +2746,8 @@ struct FS_DisplayUnit : public FTableRowBase {
 	ECOMBATGROUP_TYPE Type;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Location;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UUserWidget* Widget;
 	
 	FS_DisplayUnit() {
 		bShowUnit = false;
@@ -2752,6 +2755,7 @@ struct FS_DisplayUnit : public FTableRowBase {
 		Empire = EEMPIRE_NAME::Unknown;
 		Type = ECOMBATGROUP_TYPE::NONE;
 		Location = ""; 
+		Widget = nullptr;
 	}
 };
 

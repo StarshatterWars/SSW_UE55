@@ -70,6 +70,7 @@ class STARSHATTERWARS_API UOOBForceWidget : public UUserWidget, public IUserObje
 
 public:
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
     // ListView binding override
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
@@ -82,4 +83,5 @@ public:
     // Build Fleets under this Force
     void BuildChildren(const FS_OOBForce& ForceDataStruct);
     void ShowUnitData();
+    void SetHighlight(bool bHighlighted);
 };

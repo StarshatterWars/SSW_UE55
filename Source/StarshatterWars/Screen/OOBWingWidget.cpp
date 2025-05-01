@@ -32,6 +32,17 @@ void UOOBWingWidget::NativeConstruct()
     SetVisible(bIsExpanded);
 }
 
+void UOOBWingWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBWingWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBWingItem* WingData = Cast<UOOBWingItem>(ListItemObject))
@@ -150,8 +161,21 @@ void UOOBWingWidget::SetVisible(bool bIsVisible)
 void UOOBWingWidget::ShowUnitData()
 {
     USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
     SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
     SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBWingWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
 }
 
 

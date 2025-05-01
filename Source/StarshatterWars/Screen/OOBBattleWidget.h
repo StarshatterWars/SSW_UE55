@@ -53,4 +53,5 @@ protected:
     void ToggleExpansion();
     void BuildChildren(const FS_OOBBattle& BattleDataStruct);
     void ShowUnitData();
+    void SetHighlight(bool bHighlighted);
 };

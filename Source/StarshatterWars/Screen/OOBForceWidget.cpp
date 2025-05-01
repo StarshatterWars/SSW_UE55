@@ -32,6 +32,17 @@ void UOOBForceWidget::NativeConstruct()
     SetVisible(bIsExpanded);
  }
 
+void UOOBForceWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBForceItem* ForceData = Cast<UOOBForceItem>(ListItemObject))
@@ -119,7 +130,19 @@ void UOOBForceWidget::ShowUnitData()
 {
     USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
     SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->SetActiveWidget(this);
     SSWInstance->bIsDisplayUnitChanged = true;
 }
 
+void UOOBForceWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
+}
 

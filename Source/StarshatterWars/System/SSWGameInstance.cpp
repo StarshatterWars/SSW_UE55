@@ -367,6 +367,15 @@ void USSWGameInstance::SetActiveElement(bool bShow, FString Name, EEMPIRE_NAME E
 	DisplayElement.Location = Loc;
 }
 
+void USSWGameInstance::SetActiveWidget(UUserWidget* Widget)
+{
+	ActiveWidget = Widget;
+}
+
+UUserWidget* USSWGameInstance::GetActiveWidget() {
+	return ActiveWidget;
+}
+
 FS_DisplayUnit USSWGameInstance::GetActiveUnit()
 {
 	return DisplayUnit;

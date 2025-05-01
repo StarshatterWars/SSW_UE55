@@ -97,6 +97,19 @@ void UOOBBattleWidget::BuildChildren(const FS_OOBBattle& BattleDataStruct)
 void UOOBBattleWidget::ShowUnitData()
 {
     USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
     SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
     SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBBattleWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
 }

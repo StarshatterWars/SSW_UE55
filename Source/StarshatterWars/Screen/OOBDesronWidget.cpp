@@ -30,6 +30,17 @@ void UOOBDesronWidget::NativeConstruct()
     if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void UOOBDesronWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBDesronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBDestroyerItem* DestroyerData = Cast<UOOBDestroyerItem>(ListItemObject))
@@ -94,9 +105,23 @@ void UOOBDesronWidget::BuildChildren(const FS_OOBDestroyer& DestroyerDataStruct)
         }
     }
 }
+
 void UOOBDesronWidget::ShowUnitData()
 {
     USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
     SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
     SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBDesronWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
 }
