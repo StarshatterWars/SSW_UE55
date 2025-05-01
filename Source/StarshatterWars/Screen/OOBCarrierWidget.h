@@ -69,6 +69,7 @@ public:
     void SetVisible(bool bIsVisible);
     void ToggleExpansion();
     void BuildChildren(const FS_OOBCarrier& CarrierDataStruct);
+    void ShowUnitData();
 };
 	
 

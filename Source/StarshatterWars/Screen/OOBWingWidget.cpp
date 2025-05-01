@@ -29,12 +29,7 @@ void UOOBWingWidget::NativeConstruct()
             ExpandIcon->SetBrushFromTexture(CollapsedIconTexture); // Collapsed (+)
         }
     }
-
-    if (AttackListView) AttackListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (FighterListView) FighterListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (InterceptorListView) InterceptorListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (LandingListView) LandingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-
+    SetVisible(bIsExpanded);
 }
 
 void UOOBWingWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -63,9 +58,7 @@ void UOOBWingWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBWingWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -84,11 +77,7 @@ void UOOBWingWidget::ToggleExpansion()
             ExpandIcon->SetBrushFromTexture(CollapsedIconTexture);
         }
     }
-
-    if (AttackListView) AttackListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (FighterListView) FighterListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (InterceptorListView) InterceptorListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    if (LandingListView) LandingListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    SetVisible(bIsExpanded);
 }
 
 void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
@@ -149,6 +138,20 @@ void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
             LandingListView->AddItem(LandingData);
         }
     }
+}
+void UOOBWingWidget::SetVisible(bool bIsVisible) 
+{
+    if (AttackListView) AttackListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (FighterListView) FighterListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (InterceptorListView) InterceptorListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (LandingListView) LandingListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UOOBWingWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
 }
 
 

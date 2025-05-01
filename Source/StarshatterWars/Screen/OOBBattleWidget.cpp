@@ -53,9 +53,7 @@ void UOOBBattleWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBBattleWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -94,4 +92,11 @@ void UOOBBattleWidget::BuildChildren(const FS_OOBBattle& BattleDataStruct)
             ElementListView->AddItem(UnitData);
         }
     }
+}
+
+void UOOBBattleWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
 }

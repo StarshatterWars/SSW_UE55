@@ -61,4 +61,6 @@ public:
     void ToggleExpansion();
     void BuildChildren(const FS_OOBWing& WingDataStruct);
  
- };
+    void SetVisible(bool bIsVisible);
+    void ShowUnitData();
+};

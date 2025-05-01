@@ -5,6 +5,7 @@
 #include "OOBBatteryItem.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "OperationsScreen.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
 
 void UOOBBatteryWidget::NativeConstruct()
@@ -20,16 +21,21 @@ void UOOBBatteryWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         {
             NameText->SetText(FText::FromString(BatteryData->Data.Name));
         }
+
+        Data = BatteryData->Data;
     }
 }
 
 FReply UOOBBatteryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-    ShowElementData(); // << Expand or collapse when clicked
+    ShowUnitData();
     return FReply::Handled();
 }
 
-void UOOBBatteryWidget::ShowElementData()
+void UOOBBatteryWidget::ShowUnitData()
 {
-    // Show Data in Operations Screen
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
 }
+

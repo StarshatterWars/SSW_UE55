@@ -56,19 +56,12 @@ void UOOBForceWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBForceWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-   
-    //if (OnForceClicked.IsBound())
-    //{
-        OnForceClicked.Broadcast(this); // Send this ForceWidget to the screen
-    //}
+    ShowUnitData();
     return FReply::Handled();
 }
 
 void UOOBForceWidget::ToggleExpansion()
 {
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
     bIsExpanded = !bIsExpanded;
 
     if (ExpandIcon)
@@ -121,4 +114,12 @@ void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
         }
     }
 }
+
+void UOOBForceWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+}
+
 

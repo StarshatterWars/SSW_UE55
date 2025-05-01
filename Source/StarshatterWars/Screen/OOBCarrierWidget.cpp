@@ -69,9 +69,7 @@ void UOOBCarrierWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBCarrierWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -184,5 +182,12 @@ void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
             LandingListView->AddItem(LandingData);
         }
     }
+}
+
+void UOOBCarrierWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
 }
 

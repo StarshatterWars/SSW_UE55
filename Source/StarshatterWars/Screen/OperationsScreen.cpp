@@ -1279,7 +1279,7 @@ void UOperationsScreen::LoadForces(EEMPIRE_NAME Empire)
 	}
 
 	// Step 2: Filter loaded forces
-	//FilterOutput(LoadedForces, Empire);
+	FilterOutput(LoadedForces, Empire);
 
 	// Step 3: Add to ListView
 	for (const FS_OOBForce& Force : LoadedForces)

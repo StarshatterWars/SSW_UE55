@@ -81,5 +81,5 @@ public:
     void SetVisible(bool bIsVisible);
     // Build Fleets under this Force
     void BuildChildren(const FS_OOBForce& ForceDataStruct);
-    void ShowElementData();
+    void ShowUnitData();
 };

@@ -22,6 +22,10 @@ class STARSHATTERWARS_API UOOBBatteryWidget : public UUserWidget, public IUserOb
 	GENERATED_BODY()
 	
 public:
+    // The BattleGroup data this widget represents
+    UPROPERTY()
+    FS_OOBBattery Data;
+    
     // Bound UI elements
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
@@ -32,5 +36,5 @@ public:
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-    void ShowElementData();
+    void ShowUnitData();
 };

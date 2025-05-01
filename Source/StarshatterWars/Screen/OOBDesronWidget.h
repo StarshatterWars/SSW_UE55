@@ -52,6 +52,7 @@ protected:
 
     void ToggleExpansion();
     void BuildChildren(const FS_OOBDestroyer& DestroyerDataStruct);
+    void ShowUnitData();
 };
 	
 
