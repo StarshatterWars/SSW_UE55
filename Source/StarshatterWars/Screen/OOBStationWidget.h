@@ -10,6 +10,7 @@
 
 class UTextBlock;
 class UImage;
+class UListView;
 struct FS_OOBStation;
 
 /**
@@ -22,16 +23,22 @@ class STARSHATTERWARS_API UOOBStationWidget : public UUserWidget, public IUserOb
 	GENERATED_BODY()
 	
 public:
+    UPROPERTY()
+    FS_OOBStation Data;
+
     // Bound UI elements
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 	
 public:
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
     // ListView binding override
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
     void ShowElementData();
+    void SetHighlight(bool bHighlighted);
 };

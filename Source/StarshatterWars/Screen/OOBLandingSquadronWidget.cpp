@@ -30,6 +30,17 @@ void UOOBLandingSquadronWidget::NativeConstruct()
     if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void UOOBLandingSquadronWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBLandingSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBLandingItem* FighterData = Cast<UOOBLandingItem>(ListItemObject))
@@ -52,9 +63,7 @@ void UOOBLandingSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObjec
 FReply UOOBLandingSquadronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -96,6 +105,26 @@ void UOOBLandingSquadronWidget::BuildChildren(const FS_OOBLanding& FighterDataSt
             FighterData->Data = Element;
             ElementListView->AddItem(FighterData);
         }
+    }
+}
+
+void UOOBLandingSquadronWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBLandingSquadronWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
     }
 }
 

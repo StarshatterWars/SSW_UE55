@@ -25,6 +25,17 @@ void UOOBBattalionWidget::NativeConstruct()
     SetVisible(bIsExpanded);
 }
 
+void UOOBBattalionWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBBattalionWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBBattalion* BattalionData = Cast<UOOBBattalion>(ListItemObject))
@@ -48,9 +59,7 @@ void UOOBBattalionWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 FReply UOOBBattalionWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion();
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -116,3 +125,25 @@ void UOOBBattalionWidget::SetVisible(bool bIsVisible)
     if (StarbaseListView) StarbaseListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
     if (StationListView) StationListView->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
+
+void UOOBBattalionWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBBattalionWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
+}
+
+

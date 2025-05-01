@@ -339,20 +339,6 @@ protected:
 	UFUNCTION()
 	FDateTime GetCampaignTime();
 
-	void OnFleetSelected(UObject* SelectedItem);
-	void OnCarrierSelected(UObject* SelectedItem);
-	void OnDesronSelected(UObject* SelectedItem);
-	void OnBattleGroupSelected(UObject* SelectedItem);
-	void OnWingSelected(UObject* SelectedItem);
-	void OnUnitSelected(UObject* SelectedItem);
-	void OnSquadronSelected(UObject* SelectedItem);
-	void OnFighterUnitSelected(UObject* SelectedItem);
-	void OnBattalionSelected(UObject* SelectedItem);
-	void OnBatterySelected(UObject* SelectedItem);
-	void OnStarbaseSelected(UObject* SelectedItem);
-	void OnStationSelected(UObject* SelectedItem);
-	void OnCivilianSelected(UObject* SelectedItem);
-
 private:
 	FS_Campaign ActiveCampaign;
 

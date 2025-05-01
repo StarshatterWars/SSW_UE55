@@ -30,6 +30,17 @@ void UOOBBattleWidget::NativeConstruct()
     if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void UOOBBattleWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBBattleWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBBattleItem* BattleData = Cast<UOOBBattleItem>(ListItemObject))

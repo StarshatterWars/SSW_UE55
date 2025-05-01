@@ -30,6 +30,17 @@ void UOOBInterceptSquadronWidget::NativeConstruct()
     if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void UOOBInterceptSquadronWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBInterceptSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBInterceptorItem* FighterData = Cast<UOOBInterceptorItem>(ListItemObject))
@@ -52,9 +63,7 @@ void UOOBInterceptSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObj
 FReply UOOBInterceptSquadronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -99,4 +108,22 @@ void UOOBInterceptSquadronWidget::BuildChildren(const FS_OOBIntercept& FighterDa
     }
 }
 
+void UOOBInterceptSquadronWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+}
 
+void UOOBInterceptSquadronWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
+}

@@ -31,11 +31,13 @@ public:
 	
 public:
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
     // ListView binding override
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
     void ShowElementData();
+    void SetHighlight(bool bHighlighted);
 };
 	

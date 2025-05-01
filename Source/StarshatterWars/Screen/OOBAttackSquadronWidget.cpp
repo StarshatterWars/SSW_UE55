@@ -31,6 +31,17 @@ void UOOBAttackSquadronWidget::NativeConstruct()
     if (ElementListView) ElementListView->SetVisibility(bIsExpanded ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void UOOBAttackSquadronWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
+}
+
 void UOOBAttackSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
     if (UOOBAttackItem* AttackData = Cast<UOOBAttackItem>(ListItemObject))
@@ -55,9 +66,7 @@ void UOOBAttackSquadronWidget::NativeOnListItemObjectSet(UObject* ListItemObject
 FReply UOOBAttackSquadronWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     ToggleExpansion(); // << Expand or collapse when clicked
-    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
-    SSWInstance->bIsDisplayUnitChanged = true;
+    ShowUnitData();
     return FReply::Handled();
 }
 
@@ -99,6 +108,26 @@ void UOOBAttackSquadronWidget::BuildChildren(const FS_OOBAttack& AttackDataStruc
             FighterData->Data = Element;
             ElementListView->AddItem(FighterData);
         }
+    }
+}
+
+void UOOBAttackSquadronWidget::ShowUnitData()
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBAttackSquadronWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
     }
 }
 

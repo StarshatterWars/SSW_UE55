@@ -9,6 +9,8 @@
 #include "OOBStarbaseWidget.generated.h"
 
 class UTextBlock;
+class UImage;
+class UListView;
 struct FS_OOBStarbase;
 
 /**
@@ -21,17 +23,22 @@ class STARSHATTERWARS_API UOOBStarbaseWidget : public UUserWidget, public IUserO
 	GENERATED_BODY()
 
 public:
+    UPROPERTY()
+    FS_OOBStarbase Data;
+
     // Bound UI elements
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* NameText;
 	
 public:
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
     // ListView binding override
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    void SetHighlight(bool bHighlighted);
     void ShowElementData();
 };
 

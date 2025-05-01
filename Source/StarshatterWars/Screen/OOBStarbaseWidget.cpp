@@ -6,11 +6,23 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "OOBUnitItem.h"
+#include "OperationsScreen.h"
 #include "../Game/GameStructs.h" // FS_OOBFleet definition
 
 void UOOBStarbaseWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+}
+
+void UOOBStarbaseWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    if (SSWInstance->GetActiveWidget() == this) {
+        SetHighlight(true);
+    }
+    else {
+        SetHighlight(false);
+    }
 }
 
 void UOOBStarbaseWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -21,6 +33,7 @@ void UOOBStarbaseWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
         {
             NameText->SetText(FText::FromString(StarbaseData->Data.Name));
         }
+        Data = StarbaseData->Data;
     }
 }
 
@@ -32,6 +45,21 @@ FReply UOOBStarbaseWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 
 void UOOBStarbaseWidget::ShowElementData()
 {
-    // Show Data in Operations Screen
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+    SSWInstance->SetActiveWidget(this);
+    SSWInstance->SetActiveUnit(true, Data.Name, Data.Empire, Data.Type, Data.Location);
+    SSWInstance->bIsDisplayUnitChanged = true;
+}
+
+void UOOBStarbaseWidget::SetHighlight(bool bHighlighted)
+{
+    if (NameText)
+    {
+        NameText->SetColorAndOpacity(
+            bHighlighted
+            ? FSlateColor(FLinearColor(0.2f, 0.8f, 1.0f))  // Cyan or highlight color
+            : FSlateColor(FLinearColor::White)            // Default color
+        );
+    }
 }
 
