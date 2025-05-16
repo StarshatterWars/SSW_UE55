@@ -7,6 +7,8 @@
 #include "../Game/GameStructs.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Engine/Texture2D.h"
+#include "../System/SSWGameInstance.h"
 #include "SystemMarker.generated.h"
 
 /**
@@ -17,15 +19,19 @@ class STARSHATTERWARS_API USystemMarker : public UUserWidget
 {
 	GENERATED_BODY()
 	
-	public:
+public:
     UPROPERTY(meta = (BindWidgetOptional))
-    class UImage* StarImage;
+    UImage* StarImage;
     UPROPERTY(meta = (BindWidgetOptional))
-    class UImage* IffImage;
+    UImage* IffImage;
      UPROPERTY(meta = (BindWidgetOptional))
     class UTextBlock* SystemNameText;
 
     // Initialize with system data and available textures
     UFUNCTION()
-    void Init(const FS_Galaxy& System, const TMap<FString, UTexture2D*>& StarTextures);
+    void Init(const FS_Galaxy& System);
+    UTexture2D* LoadTextureFromFile(FString Path);
+    FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
+protected:
+    void NativeConstruct() override;
 };

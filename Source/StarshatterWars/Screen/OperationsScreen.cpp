@@ -171,8 +171,10 @@ void UOperationsScreen::NativeConstruct()
 	{
 		AllMenuButtons[0]->SetSelected(true);
 	}
+
+	ScreenOffset.X = 8.0;
+	ScreenOffset.Y = 4.4;
 	
-	SetupMapIcons();
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateEmpireDDList();
@@ -301,6 +303,8 @@ void UOperationsScreen::LoadTheaterInfo()
 	if (OperationsModeText) {
 		OperationsModeText->SetText(FText::FromString("THEATER"));
 	}
+	
+	BuildGalaxyMap(SSWInstance->GalaxyData);
 }
 
 void UOperationsScreen::OnAudioButtonClicked()
@@ -630,6 +634,7 @@ FSlateBrush UOperationsScreen::CreateBrushFromTexture(UTexture2D* Texture, FVect
 	Brush.DrawAs = ESlateBrushDrawType::Image;
 	return Brush;
 }
+
 FString
 UOperationsScreen::GetOrdinal(int id)
 {
@@ -1151,9 +1156,15 @@ void UOperationsScreen::PopulateEmpireDDList()
 
 void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 {
-	if (!MapCanvas || !MarkerClass)
+	if (!MapCanvas)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GalaxyMapWidget: Missing MapCanvas or MarkerClass."));
+		UE_LOG(LogTemp, Warning, TEXT("UOperationsScreen::BuildGalaxyMap(): Missing MapCanvas"));
+		return;
+	}
+
+	if (!MarkerClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UOperationsScreen::BuildGalaxyMap(): Missing MarkerClass"));
 		return;
 	}
 
@@ -1163,11 +1174,11 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 	{
 		USystemMarker* Marker = CreateWidget<USystemMarker>(this, MarkerClass);
 		if (!Marker) continue;
-
-		Marker->Init(System, StarTextures);
+		
+		Marker->Init(System);
 
 		// Convert 3D to 2D map position (ignore Z)
-		FVector2D MapPosition(System.Location.X, -System.Location.Y); // Flip Y for top-down map
+		FVector2D MapPosition(System.Location.X + ScreenOffset.X, -System.Location.Y + ScreenOffset.Y); // Flip Y for top-down map
 		
 		MapPosition *= MapScale;
 
@@ -1178,19 +1189,4 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 			PanelSlot->SetAutoSize(true);
 		}
 	}
-}
-
-void UOperationsScreen::SetupMapIcons() {
-	
-	TMap<FString, UTexture2D*> Textures;
-
-	Textures.Add("G", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarG_map")));
-	Textures.Add("K", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarK_map")));
-	Textures.Add("M", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarM_map")));
-	Textures.Add("A", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarA_map")));
-	Textures.Add("B", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarB_map")));
-	Textures.Add("F", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarF_map")));
-	Textures.Add("O", LoadObject<UTexture2D>(nullptr, TEXT("/Game/GameData/Galaxy/StarIcons/StarO_map")));
-
-	StarTextures = Textures;
 }

@@ -293,6 +293,7 @@ public:
 	class UDataTable* CombatGroupDataTable;
 	class UDataTable* OrderOfBattleDataTable;
 	class UDataTable* CampaignOOBDataTable;
+	class UDataTable* GalaxyDataTable;
 
 	UPROPERTY(EditAnywhere)
 	bool bClearTables;
@@ -308,6 +309,8 @@ public:
 	TArray<FS_CampaignMissionList> MissionList;
 	UPROPERTY()
 	TArray<FS_OOBForce> ForceList;
+	UPROPERTY()
+	TArray<FS_Galaxy> GalaxyData;
 
 	UPROPERTY()
 	bool MissionSelectionChanged;

@@ -103,7 +103,7 @@ AGameDataLoader::AGameDataLoader()
 	if (GalaxyDataTableObject.Succeeded())
 	{
 		GalaxyDataTable = GalaxyDataTableObject.Object;
-		GalaxyDataTable->EmptyTable();
+		//GalaxyDataTable->EmptyTable();
 	}
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
@@ -2823,7 +2823,7 @@ AGameDataLoader::LoadGalaxyMap()
 	BYTE* block = 0;
 
 	SSWInstance->loader->LoadBuffer(fn, block, true);
-
+	SSWInstance->GalaxyData.Empty();
 	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy: %s"), *FileName);
 
 	if (FFileHelper::LoadFileToString(FileString, *FileName, FFileHelper::EHashOptions::None))
@@ -2948,7 +2948,7 @@ AGameDataLoader::LoadGalaxyMap()
 						// call AddRow to insert the record
 						GalaxyDataTable->AddRow(RowName, NewGalaxyData);
 
-						GalaxyData = NewGalaxyData;
+						SSWInstance->GalaxyData.Add(NewGalaxyData);
 					}
 				}
 

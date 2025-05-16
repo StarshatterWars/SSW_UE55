@@ -281,9 +281,7 @@ public:
 	void OnMenuToggleSelected(UMenuButton* SelectedButton);
 	UFUNCTION()
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
-	void PopulateEmpireDDList();
-
-	void SetupMapIcons();
+	void PopulateEmpireDDList();;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
@@ -293,14 +291,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FS_OOBForce> LoadedForces;
-
-	// Star class icons (G, K, M, etc.)
-    UPROPERTY()
-    TMap<FString, UTexture2D*> StarTextures;
 	
 	// Scaling factor (optional)
     UPROPERTY()
-    float MapScale = 60.0f;
+    float MapScale = 70.0f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    FVector2D ScreenOffset;
 
 protected:
 	void NativeConstruct() override;
@@ -362,7 +359,7 @@ protected:
     void BuildGalaxyMap(const TArray<FS_Galaxy>& Systems);
 
     // TSubclassOf must be set in UMG (or via C++)
-    UPROPERTY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TSubclassOf<USystemMarker> MarkerClass;
 
     

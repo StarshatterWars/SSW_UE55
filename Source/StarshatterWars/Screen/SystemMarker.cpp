@@ -3,16 +3,9 @@
 
 #include "SystemMarker.h"
 
-FString EnumToString(ESPECTRAL_CLASS Class) {
-    const UEnum* EnumPtr = StaticEnum<ESPECTRAL_CLASS>();
-    if (!EnumPtr) return "Invalid";
-
-    return EnumPtr->GetNameStringByValue((int64)Class);
-}
-
-void USystemMarker::Init(const FS_Galaxy& System, const TMap<FString, UTexture2D*>& StarTextures)
-{
-    if (!StarImage) return;
+void USystemMarker::Init(const FS_Galaxy& System)
+{    
+    UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() Creating Widget: %s"), *System.Name); 
 
     SetToolTipText(FText::FromString(System.Name));
 
@@ -20,14 +13,46 @@ void USystemMarker::Init(const FS_Galaxy& System, const TMap<FString, UTexture2D
         SystemNameText->SetText(FText::FromString(System.Name));
     }
 
-    // Get the star class as string key
-    FString ClassKey = EnumToString(System.Class);
-   
-   // Star texture by class
-    if (StarTextures.Contains(ClassKey)) {
-        UTexture2D* Texture = StarTextures[ClassKey];
-        if (Texture) {
-            StarImage->SetBrushFromTexture(Texture);
+    FString ProjectPath = FPaths::ProjectContentDir();
+    ProjectPath.Append(TEXT("GameData/Galaxy/StarIcons/"));
+    
+    switch (System.Class) {
+        case ESPECTRAL_CLASS::A:
+            ProjectPath.Append(TEXT("StarA_map.png"));
+            break;
+        case ESPECTRAL_CLASS::B:
+            ProjectPath.Append(TEXT("StarB_map.png"));
+            break;
+        case ESPECTRAL_CLASS::F:
+            ProjectPath.Append(TEXT("StarF_map.png"));
+            break;
+        case ESPECTRAL_CLASS::G:
+            ProjectPath.Append(TEXT("StarG_map.png"));
+            break;
+        case ESPECTRAL_CLASS::K:
+            ProjectPath.Append(TEXT("StarK_map.png"));
+            break;
+        case ESPECTRAL_CLASS::M:
+            ProjectPath.Append(TEXT("StarM_map.png"));
+            break;
+        case ESPECTRAL_CLASS::O:
+            ProjectPath.Append(TEXT("StarO_map.png"));
+            break;
+        default:
+            ProjectPath.Append(TEXT("StarG_map.png"));
+            break;
+    }
+
+    UTexture2D* LoadedTexture = LoadTextureFromFile(ProjectPath);
+    if (LoadedTexture)
+    {
+        UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() Creating Image: %s"), *ProjectPath);
+        FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+        
+        if(!StarImage) {
+            UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() StarImage Not Found")); 
+        } else {
+            StarImage->SetBrush(Brush);
         }
     }
 
@@ -44,3 +69,27 @@ void USystemMarker::Init(const FS_Galaxy& System, const TMap<FString, UTexture2D
         IffImage->SetColorAndOpacity(Tint);
     }
 }
+
+UTexture2D* USystemMarker::LoadTextureFromFile(FString Path)
+{
+    USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+    UTexture2D* LoadedTexture = SSWInstance->LoadPNGTextureFromFile(Path);
+    return LoadedTexture;
+}
+
+FSlateBrush USystemMarker::CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize)
+{
+    FSlateBrush Brush;
+    Brush.SetResourceObject(Texture);
+    Brush.ImageSize = ImageSize;
+    Brush.DrawAs = ESlateBrushDrawType::Image;
+    return Brush;
+}
+
+void USystemMarker::NativeConstruct()
+{
+    Super::NativeConstruct();
+    UE_LOG(LogTemp, Log, TEXT("StarImage is %s"), StarImage ? TEXT("Valid") : TEXT("NULL"));
+
+}
+
