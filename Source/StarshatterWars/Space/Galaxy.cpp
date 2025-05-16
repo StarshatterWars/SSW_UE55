@@ -112,7 +112,7 @@ AGalaxy::Load()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->loader->GetLoader();
 	
-	ProjectPath = FPaths::ProjectDir();
+	ProjectPath = FPaths::ProjectContentDir();
 	ProjectPath.Append(TEXT("GameData/Galaxy/"));
 	FString FileName = ProjectPath;
 	FileName.Append(FilePath);
@@ -183,27 +183,38 @@ AGalaxy::Load(const char* FileName)
 							TermStruct* val = def->term()->isStruct();
 
 							UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
-							char  sys_name[32];
-							char  classname[32];
+							Text  sys_name;
+							Text  classname;
 							Vec3  sys_loc;
 							int   sys_iff = 0;
 							int   star_class = (int8) ESPECTRAL_CLASS::G;
-
+							Text   link;
 							sys_name[0] = 0;
+							FS_Galaxy NewGalaxyData;
+							NewGalaxyData.Link.Empty();
+	
 
 							for (int i = 0; i < val->elements()->size(); i++) {
 								TermDef* pdef = val->elements()->at(i)->isDef();
 								if (pdef) {
 									if (pdef->name()->value() == "name") {
 										GetDefText(sys_name, pdef, filename);
+										NewGalaxyData.Name = FString(sys_name);
 									}
 									else if (pdef->name()->value() == "loc") {
 										
 										GetDefVec(sys_loc, pdef, filename);
 										fv = FVector(sys_loc.x, sys_loc.y, sys_loc.z);
+										NewGalaxyData.Location = fv;
 									}
 									else if (pdef->name()->value() == "iff") {
 										GetDefNumber(sys_iff, pdef, filename);
+										NewGalaxyData.Iff = sys_iff;
+										NewGalaxyData.Empire = GetEmpireName(sys_iff);
+									}
+									else if (pdef->name()->value() == "link") {
+										GetDefText(link, pdef, filename);
+										NewGalaxyData.Link.Add(FString(link));
 									}
 									else if (pdef->name()->value() == "class") {
 										GetDefText(classname, pdef, filename);
@@ -228,7 +239,7 @@ AGalaxy::Load(const char* FileName)
 											star_class = (int8)ESPECTRAL_CLASS::M;
 											break;
 										case 'R':   
-											star_class = (int8)				  ESPECTRAL_CLASS::RED_GIANT;
+											star_class = (int8) ESPECTRAL_CLASS::RED_GIANT;
 											break;
 										case 'W':   
 											star_class = (int8)ESPECTRAL_CLASS::WHITE_DWARF;
@@ -237,17 +248,13 @@ AGalaxy::Load(const char* FileName)
 											star_class = (int8)ESPECTRAL_CLASS::BLACK_HOLE; 
 											break;
 										}
+										NewGalaxyData.Class = star_class;
 									}
 								}
 							}
 
 							// define our data table struct
-							FS_Galaxy NewGalaxyData;
-							NewGalaxyData.Name = FString(sys_name);
-							NewGalaxyData.Class = star_class;
-							NewGalaxyData.Iff = sys_iff;
-							NewGalaxyData.Location = fv;
-							NewGalaxyData.Empire = GetEmpireName(sys_iff);
+							
 							FName RowName = FName(FString(sys_name));
 							
 							// call AddRow to insert the record
@@ -275,8 +282,8 @@ AGalaxy::Load(const char* FileName)
 						else {
 							TermStruct* val = def->term()->isStruct();
 							UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
-							char  star_name[32];
-							char  classname[32];
+							Text  star_name;
+							Text  classname;
 							Vec3  star_loc;
 							int   star_class = (int8)ESPECTRAL_CLASS::G;
 

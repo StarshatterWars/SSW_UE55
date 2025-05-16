@@ -103,7 +103,7 @@ AGameDataLoader::AGameDataLoader()
 	if (GalaxyDataTableObject.Succeeded())
 	{
 		GalaxyDataTable = GalaxyDataTableObject.Object;
-		//GalaxyDataTable->EmptyTable();
+		GalaxyDataTable->EmptyTable();
 	}
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
@@ -127,7 +127,7 @@ AGameDataLoader::AGameDataLoader()
 	if (SystemDesignDataTableObject.Succeeded())
 	{
 		SystemDesignDataTable = SystemDesignDataTableObject.Object;
-		//GalaxyDataTable->EmptyTable();
+		//SystemDesignDataTable->EmptyTable();
 	}
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> FormDefDataTableObject(TEXT("DataTable'/Game/Game/DT_FormDef.DT_FormDef'"));
@@ -2876,9 +2876,11 @@ AGameDataLoader::LoadGalaxyMap()
 						UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
 						Text  SystemName;
 						Text  ClassName;
+						Text  Link;
 						Vec3  SystemLocation;
 						int   SystemIff = 0;
 						int   StarClass = (int8)ESPECTRAL_CLASS::G;
+						NewGalaxyData.Link.Empty();
 
 						for (int i = 0; i < val->elements()->size(); i++) {
 							TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2896,6 +2898,10 @@ AGameDataLoader::LoadGalaxyMap()
 								else if (pdef->name()->value() == "iff") {
 									GetDefNumber(SystemIff, pdef, fn);
 									NewGalaxyData.Iff = SystemIff;
+								}
+								else if (pdef->name()->value() == "link") {
+									GetDefText(Link, pdef, filename);
+									NewGalaxyData.Link.Add(FString(Link));
 								}
 								else if (pdef->name()->value() == "class") {
 									GetDefText(ClassName, pdef, fn);

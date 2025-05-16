@@ -597,6 +597,8 @@ struct FS_Galaxy : public FTableRowBase {
 	int Iff;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	EEMPIRE_NAME Empire;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	TArray<FString> Link;
 
 	FS_Galaxy() {
 		Name = "";
