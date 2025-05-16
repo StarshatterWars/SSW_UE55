@@ -14,6 +14,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/Border.h"
 #include "Components/ComboBoxString.h"
+#include "Components/ScrollBox.h"
 #include "Components/EditableTextBox.h"
 #include "Components/WidgetSwitcher.h"
   
@@ -46,6 +47,9 @@ class USelectableButtonGroup;
 class UMenuButton;
 class UVerticalBox;
 class UScrollBox;
+
+class USystemMarker;
+class UTexture2D;
 
 struct FSubGroupArray
 {
@@ -224,6 +228,10 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UCanvasPanel* InfoBoxPanel;
 
+	 // Canvas panel for placing icons
+    UPROPERTY(meta = (BindWidgetOptional))
+    class UCanvasPanel* MapCanvas;
+
 	// Parent container to hold Forces
     UPROPERTY(meta = (BindWidgetOptional))
     UScrollBox* ForcesScrollBox;
@@ -275,6 +283,8 @@ public:
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
 	void PopulateEmpireDDList();
 
+	void SetupMapIcons();
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
 
@@ -283,6 +293,14 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FS_OOBForce> LoadedForces;
+
+	// Star class icons (G, K, M, etc.)
+    UPROPERTY()
+    TMap<FString, UTexture2D*> StarTextures;
+	
+	// Scaling factor (optional)
+    UPROPERTY()
+    float MapScale = 60.0f;
 
 protected:
 	void NativeConstruct() override;
@@ -338,6 +356,16 @@ protected:
 
 	UFUNCTION()
 	FDateTime GetCampaignTime();
+
+	   // Called to render the map
+    UFUNCTION()
+    void BuildGalaxyMap(const TArray<FS_Galaxy>& Systems);
+
+    // TSubclassOf must be set in UMG (or via C++)
+    UPROPERTY()
+    TSubclassOf<USystemMarker> MarkerClass;
+
+    
 
 private:
 	FS_Campaign ActiveCampaign;

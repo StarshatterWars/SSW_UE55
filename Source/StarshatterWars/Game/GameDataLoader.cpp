@@ -2879,7 +2879,7 @@ AGameDataLoader::LoadGalaxyMap()
 						Text  Link;
 						Vec3  SystemLocation;
 						int   SystemIff = 0;
-						int   StarClass = (int8)ESPECTRAL_CLASS::G;
+						ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
 						NewGalaxyData.Link.Empty();
 
 						for (int i = 0; i < val->elements()->size(); i++) {
@@ -2908,31 +2908,31 @@ AGameDataLoader::LoadGalaxyMap()
 
 									switch (ClassName[0]) {
 									case 'B':
-										StarClass = (int8)ESPECTRAL_CLASS::B;
+										StarClass = ESPECTRAL_CLASS::B;
 										break;
 									case 'A':
-										StarClass = (int8)ESPECTRAL_CLASS::A;
+										StarClass = ESPECTRAL_CLASS::A;
 										break;
 									case 'F':
-										StarClass = (int8)ESPECTRAL_CLASS::F;
+										StarClass = ESPECTRAL_CLASS::F;
 										break;
 									case 'G':
-										StarClass = (int8)ESPECTRAL_CLASS::G;
+										StarClass = ESPECTRAL_CLASS::G;
 										break;
 									case 'K':
-										StarClass = (int8)ESPECTRAL_CLASS::K;
+										StarClass = ESPECTRAL_CLASS::K;
 										break;
 									case 'M':
-										StarClass = (int8)ESPECTRAL_CLASS::M;
+										StarClass = ESPECTRAL_CLASS::M;
 										break;
 									case 'R':
-										StarClass = (int8)ESPECTRAL_CLASS::RED_GIANT;
+										StarClass = ESPECTRAL_CLASS::RED_GIANT;
 										break;
 									case 'W':
-										StarClass = (int8)ESPECTRAL_CLASS::WHITE_DWARF;
+										StarClass = ESPECTRAL_CLASS::WHITE_DWARF;
 										break;
 									case 'Z':
-										StarClass = (int8)ESPECTRAL_CLASS::BLACK_HOLE;
+										StarClass = ESPECTRAL_CLASS::BLACK_HOLE;
 										break;
 									}
 									NewGalaxyData.Class = StarClass;
@@ -2962,7 +2962,7 @@ AGameDataLoader::LoadGalaxyMap()
 						char  star_name[32];
 						char  classname[32];
 						Vec3  star_loc;
-						int   star_class = (int8)ESPECTRAL_CLASS::G;
+						ESPECTRAL_CLASS  star_class = ESPECTRAL_CLASS::G;
 
 						star_name[0] = 0;
 
@@ -2980,34 +2980,34 @@ AGameDataLoader::LoadGalaxyMap()
 
 									switch (classname[0]) {
 									case 'O':
-										star_class = (int8)ESPECTRAL_CLASS::O;
+										star_class = ESPECTRAL_CLASS::O;
 										break;
 									case 'B':
-										star_class = (int8)ESPECTRAL_CLASS::B;
+										star_class = ESPECTRAL_CLASS::B;
 										break;
 									case 'A':
-										star_class = (int8)ESPECTRAL_CLASS::A;
+										star_class = ESPECTRAL_CLASS::A;
 										break;
 									case 'F':
-										star_class = (int8)ESPECTRAL_CLASS::F;
+										star_class = ESPECTRAL_CLASS::F;
 										break;
 									case 'G':
-										star_class = (int8)ESPECTRAL_CLASS::G;
+										star_class = ESPECTRAL_CLASS::G;
 										break;
 									case 'K':
-										star_class = (int8)ESPECTRAL_CLASS::K;
+										star_class = ESPECTRAL_CLASS::K;
 										break;
 									case 'M':
-										star_class = (int8)ESPECTRAL_CLASS::M;
+										star_class = ESPECTRAL_CLASS::M;
 										break;
 									case 'R':
-										star_class = (int8)ESPECTRAL_CLASS::RED_GIANT;
+										star_class = ESPECTRAL_CLASS::RED_GIANT;
 										break;
 									case 'W':
-										star_class = (int8)ESPECTRAL_CLASS::WHITE_DWARF;
+										star_class = ESPECTRAL_CLASS::WHITE_DWARF;
 										break;
 									case 'Z':
-										star_class = (int8)ESPECTRAL_CLASS::BLACK_HOLE;
+										star_class = ESPECTRAL_CLASS::BLACK_HOLE;
 										break;
 									}
 								}

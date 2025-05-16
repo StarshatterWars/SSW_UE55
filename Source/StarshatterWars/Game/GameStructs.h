@@ -590,7 +590,7 @@ struct FS_Galaxy : public FTableRowBase {
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FString  Name;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	int  Class;
+	ESPECTRAL_CLASS  Class;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FVector  Location;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -602,7 +602,7 @@ struct FS_Galaxy : public FTableRowBase {
 
 	FS_Galaxy() {
 		Name = "";
-		Class = (int) ESPECTRAL_CLASS::G;
+		Class = ESPECTRAL_CLASS::G;
 		Location = FVector::ZeroVector;
 		Iff = 0;
 		Empire = EEMPIRE_NAME::Terellian;

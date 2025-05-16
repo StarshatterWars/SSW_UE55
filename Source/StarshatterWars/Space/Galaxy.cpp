@@ -187,7 +187,7 @@ AGalaxy::Load(const char* FileName)
 							Text  classname;
 							Vec3  sys_loc;
 							int   sys_iff = 0;
-							int   star_class = (int8) ESPECTRAL_CLASS::G;
+							ESPECTRAL_CLASS   star_class = ESPECTRAL_CLASS::G;
 							Text   link;
 							sys_name[0] = 0;
 							FS_Galaxy NewGalaxyData;
@@ -221,31 +221,31 @@ AGalaxy::Load(const char* FileName)
 
 										switch (classname[0]) {
 										case 'B':   
-											star_class = (int8)ESPECTRAL_CLASS::B;	
+											star_class = ESPECTRAL_CLASS::B;	
 											break;
 										case 'A':   
-											star_class = (int8)ESPECTRAL_CLASS::A;
+											star_class = ESPECTRAL_CLASS::A;
 											break;
 										case 'F':   
-											star_class = (int8)ESPECTRAL_CLASS::F;
+											star_class = ESPECTRAL_CLASS::F;
 											break;
 										case 'G': 
-											star_class = (int8)ESPECTRAL_CLASS::G;
+											star_class = ESPECTRAL_CLASS::G;
 											break;
 										case 'K':   
-											star_class = (int8)ESPECTRAL_CLASS::K; 
+											star_class = ESPECTRAL_CLASS::K; 
 											break;
 										case 'M':   
-											star_class = (int8)ESPECTRAL_CLASS::M;
+											star_class = ESPECTRAL_CLASS::M;
 											break;
 										case 'R':   
-											star_class = (int8) ESPECTRAL_CLASS::RED_GIANT;
+											star_class =  ESPECTRAL_CLASS::RED_GIANT;
 											break;
 										case 'W':   
-											star_class = (int8)ESPECTRAL_CLASS::WHITE_DWARF;
+											star_class = ESPECTRAL_CLASS::WHITE_DWARF;
 											break;
 										case 'Z':   
-											star_class = (int8)ESPECTRAL_CLASS::BLACK_HOLE; 
+											star_class = ESPECTRAL_CLASS::BLACK_HOLE; 
 											break;
 										}
 										NewGalaxyData.Class = star_class;

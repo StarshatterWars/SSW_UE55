@@ -172,7 +172,6 @@ void UOperationsScreen::NativeConstruct()
 		AllMenuButtons[0]->SetSelected(true);
 	}
 	
-	SetupMapIcons();
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateEmpireDDList();
@@ -1168,7 +1167,6 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 
 		// Convert 3D to 2D map position (ignore Z)
 		FVector2D MapPosition(System.Location.X, -System.Location.Y); // Flip Y for top-down map
-		
 		MapPosition *= MapScale;
 
 		UCanvasPanelSlot* PanelSlot = MapCanvas->AddChildToCanvas(Marker);
