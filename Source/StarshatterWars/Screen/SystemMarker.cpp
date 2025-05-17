@@ -114,6 +114,15 @@ void USystemMarker::SetSelected(bool bIsSelected)
     {
         HighlightBorder->SetVisibility(bIsSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     }
+
+    if (bIsSelected)
+    {
+        PlayGlow();   // Blueprint event
+    }
+    else
+    {
+        StopGlow();   // Blueprint event
+    }
 }
 
 FReply USystemMarker::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

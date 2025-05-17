@@ -49,6 +49,12 @@ public:
 
     FString GetSystemName() const { return SystemData.Name; }
 
+    UFUNCTION(BlueprintImplementableEvent, Category = "Galaxy")
+    void PlayGlow();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Galaxy")
+    void StopGlow();
+
 protected:
     void NativeConstruct() override;
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
