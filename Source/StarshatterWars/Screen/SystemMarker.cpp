@@ -2,10 +2,13 @@
 
 
 #include "SystemMarker.h"
+#include "Components/Border.h"
 
 void USystemMarker::Init(const FS_Galaxy& System)
 {    
     UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() Creating Widget: %s"), *System.Name); 
+
+    SystemData = System;
 
     SetToolTipText(FText::FromString(System.Name));
 
@@ -64,6 +67,8 @@ void USystemMarker::Init(const FS_Galaxy& System)
         } else {
             StarImage->SetBrush(Brush);
         }
+
+        SetSelected(false);
     }
 
     // Optional: Add border color by faction
@@ -101,5 +106,24 @@ void USystemMarker::NativeConstruct()
 {
     Super::NativeConstruct();
     //UE_LOG(LogTemp, Log, TEXT("StarImage is %s"), StarImage ? TEXT("Valid") : TEXT("NULL"));
+}
+
+void USystemMarker::SetSelected(bool bIsSelected)
+{
+    if (HighlightBorder)
+    {
+        HighlightBorder->SetVisibility(bIsSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    }
+}
+
+FReply USystemMarker::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+    {
+        OnClicked.ExecuteIfBound(SystemData.Name);
+        return FReply::Handled();
+    }
+
+    return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 

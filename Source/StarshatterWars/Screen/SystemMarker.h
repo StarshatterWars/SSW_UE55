@@ -7,6 +7,7 @@
 #include "../Game/GameStructs.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Components/Border.h"
 #include "Engine/Texture2D.h"
 #include "../System/SSWGameInstance.h"
 #include "SystemMarker.generated.h"
@@ -14,6 +15,9 @@
 /**
  * 
  */
+
+DECLARE_DELEGATE_OneParam(FOnMarkerClicked, const FString&);
+
 UCLASS()
 class STARSHATTERWARS_API USystemMarker : public UUserWidget
 {
@@ -24,14 +28,28 @@ public:
     UImage* StarImage;
     UPROPERTY(meta = (BindWidgetOptional))
     UImage* IffImage;
-     UPROPERTY(meta = (BindWidgetOptional))
+    UPROPERTY(meta = (BindWidgetOptional))
     class UTextBlock* SystemNameText;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UBorder* HighlightBorder;
+
+    FS_Galaxy SystemData;
+
+    FOnMarkerClicked OnClicked;
 
     // Initialize with system data and available textures
     UFUNCTION()
     void Init(const FS_Galaxy& System);
     UTexture2D* LoadTextureFromFile(FString Path);
     FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
+    
+    UFUNCTION()
+    void SetSelected(bool bIsSelected);
+
+    FString GetSystemName() const { return SystemData.Name; }
+
 protected:
     void NativeConstruct() override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 };

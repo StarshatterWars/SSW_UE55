@@ -301,6 +301,8 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
     FVector2D ScreenOffset;
+	
+	USystemMarker* SelectedMarker = nullptr;
 
 protected:
 	void NativeConstruct() override;

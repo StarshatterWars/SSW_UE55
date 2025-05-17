@@ -1196,7 +1196,22 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 		if (!Marker) continue;
 		MapCanvas->AddChildToCanvas(Marker);
 		Marker->Init(System);
-		 //
+		
+		Marker->OnClicked.BindLambda([this](const FString& SystemName)
+			{
+				if (SelectedMarker)
+				{
+					SelectedMarker->SetSelected(false);
+				}
+
+				USystemMarker* NewSelection = MarkerMap.FindRef(SystemName);
+				if (NewSelection)
+				{
+					NewSelection->SetSelected(true);
+					SelectedMarker = NewSelection;
+				}
+			});
+
 		MarkerMap.Add(System.Name, Marker);
 
 		FVector2D MapPosition = ProjectTo2D(System.Location) + CenterOffset + ScreenOffset;
