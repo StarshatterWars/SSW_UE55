@@ -242,6 +242,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UWidgetSwitcher* OperationalSwitcher;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UWidgetSwitcher* MapSwitcher;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* MissionList;
 
 	UPROPERTY(meta = (BindWidgetOptional))

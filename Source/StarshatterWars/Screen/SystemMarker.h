@@ -55,6 +55,12 @@ public:
     UFUNCTION(BlueprintImplementableEvent, Category = "Galaxy")
     void StopGlow();
 
+    UFUNCTION(BlueprintImplementableEvent, Category = "Galaxy")
+    void PlayIFFPulse();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Galaxy")
+    void StopIFFPulse();
+
 protected:
     void NativeConstruct() override;
     virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
