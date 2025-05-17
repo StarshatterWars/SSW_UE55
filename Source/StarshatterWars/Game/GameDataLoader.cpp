@@ -103,7 +103,7 @@ AGameDataLoader::AGameDataLoader()
 	if (GalaxyDataTableObject.Succeeded())
 	{
 		GalaxyDataTable = GalaxyDataTableObject.Object;
-		//GalaxyDataTable->EmptyTable();
+		GalaxyDataTable->EmptyTable();
 	}
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
@@ -2879,7 +2879,9 @@ AGameDataLoader::LoadGalaxyMap()
 						Text  Link;
 						Vec3  SystemLocation;
 						int   SystemIff = 0;
+						int   EmpireId = 0;
 						ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
+						EEMPIRE_NAME EEmpireType = EEMPIRE_NAME::Terellian;
 						NewGalaxyData.Link.Empty();
 
 						for (int i = 0; i < val->elements()->size(); i++) {
@@ -2898,6 +2900,11 @@ AGameDataLoader::LoadGalaxyMap()
 								else if (pdef->name()->value() == "iff") {
 									GetDefNumber(SystemIff, pdef, fn);
 									NewGalaxyData.Iff = SystemIff;
+								}
+								else if (pdef->name()->value() == ("empire"))
+								{
+									GetDefNumber(EmpireId, pdef, fn);
+									NewGalaxyData.Empire = SSWInstance->GetEmpireTypeFromIndex(EmpireId);
 								}
 								else if (pdef->name()->value() == "link") {
 									GetDefText(Link, pdef, filename);
@@ -2941,8 +2948,6 @@ AGameDataLoader::LoadGalaxyMap()
 						}
 
 						// define our data table struct
-			
-						NewGalaxyData.Empire = GetEmpireName(SystemIff);
 						FName RowName = FName(FString(SystemName));
 
 						// call AddRow to insert the record

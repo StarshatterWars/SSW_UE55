@@ -1,44 +1,44 @@
 GALAXY
 
 // TERRELIAN ALLIANCE
-system: { loc: ( 6.2,  0.3,  1.0), class: G, iff: 1, name: Jarnell, link: Athenar, link: Borova, link: Thralis, link: Paragon }
-system: { loc: ( 4.7, -1.9,  1.0), class: F, iff: 1, name: Borova,  link: Janus, link: Silessia }
-system: { loc: ( 4.1,  1.7,  1.0), class: G, iff: 1, name: Athenar, link: Janus, link: Jarnell  }
-system: { loc: ( 6.8, -2.5,  1.0), class: G, iff: 1, name: Paragon, link: Borova, link: Jarnell }
-system: { loc: ( 7.8,  2.3,  1.0), class: K, iff: 1, name: Thralis, link: Jarnell }
-system: { loc: ( 2.8, -0.3,  0.0), class: G, iff: 1, name: Janus,   link: Solus, link: Athenar, link: Borova, link: Haiche, link: Silessia }
+system: { loc: ( 6.2,  0.3,  1.0), class: G, iff: 1, empire: 0, name: Jarnell, link: Athenar, link: Borova, link: Thralis, link: Paragon }
+system: { loc: ( 4.7, -1.9,  1.0), class: F, iff: 1, empire: 0, name: Borova,  link: Janus, link: Silessia }
+system: { loc: ( 4.1,  1.7,  1.0), class: G, iff: 1, empire: 0, name: Athenar, link: Janus, link: Jarnell  }
+system: { loc: ( 6.8, -2.5,  1.0), class: G, iff: 1, empire: 0, name: Paragon, link: Borova, link: Jarnell }
+system: { loc: ( 7.8,  2.3,  1.0), class: K, iff: 1, empire: 0, name: Thralis, link: Jarnell }
+system: { loc: ( 2.8, -0.3,  0.0), class: G, iff: 1, empire: 0, name: Janus,   link: Solus, link: Athenar, link: Borova, link: Haiche, link: Silessia }
 
 // INDEPENDENT SYSTEMS
-system: { loc: ( 1.0, -1.8,  0.0), class: G, iff: 0, name: Solus,    link: Janus, link: Renser, link: Silessia }
-system: { loc: ( 1.8, -3.1,  1.0), class: K, iff: 0, name: Silessia, link: Borova, link: Janus, link: Solus, link: Loris  }
-system: { loc: ( 0.0,  1.0,  1.0), class: K, iff: 0, name: Haiche,   link: Janus, link: Renser, link: Ostara, link: Kolchev }
+system: { loc: ( 1.0, -1.8,  0.0), class: G, iff: 0, empire: 10, name: Solus,   link: Janus, link: Renser, link: Silessia }
+system: { loc: ( 1.8, -3.1,  1.0), class: K, iff: 0, empire: 9, name: Silessia, link: Borova, link: Janus, link: Solus, link: Loris  }
+system: { loc: ( 0.0,  1.0,  1.0), class: K, iff: 0, empire: 11, name: Haiche,   link: Janus, link: Renser, link: Ostara, link: Kolchev }
 
 // MARAKAN HEGEMONY
-system: { loc: (-0.8, -1.5,  1.0), class: G, iff: 2, name: Renser,   link: Haiche, link: Loris, link: Silessia, link: Solus, link: Korius }
-system: { loc: (-1.2, -3.4,  1.0), class: G, iff: 2, name: Loris,    link: Silessia, link: Renser, link: Nephrys, link: Korius }
-system: { loc: (-1.4,  2.8,  1.0), class: M, iff: 2, name: Ostara,   link: Kolchev, link: Haiche, link: Tarsus  }
-system: { loc: (-2.7,  1.1,  1.0), class: G, iff: 2, name: Kolchev,  link: Haiche, link: Ostara, link: Kolchev, link: Isham, link: Tarsus, link: Radix }
-system: { loc: (-2.5, -1.0,  1.0), class: G, iff: 2, name: Korius,   link: Nephrys, link: Renser, link: Loris, link: Kolchev, link: Isham }
-system: { loc: (-2.9,  2.6,  1.0), class: K, iff: 2, name: Tarsus,   link: Kolchev, link: Ostara, link: Radix }
-system: { loc: (-4.0, -3.1,  1.0), class: A, iff: 2, name: Nephrys,  link: Loris, link: Korius }
+system: { loc: (-0.8, -1.5,  1.0), class: G, iff: 2, empire: 1, name: Renser,   link: Haiche, link: Loris, link: Silessia, link: Solus, link: Korius }
+system: { loc: (-1.2, -3.4,  1.0), class: G, iff: 2, empire: 1, name: Loris,    link: Silessia, link: Renser, link: Nephrys, link: Korius }
+system: { loc: (-1.4,  2.8,  1.0), class: M, iff: 2, empire: 1, name: Ostara,   link: Kolchev, link: Haiche, link: Tarsus  }
+system: { loc: (-2.7,  1.1,  1.0), class: G, iff: 2, empire: 1, name: Kolchev,  link: Haiche, link: Ostara, link: Kolchev, link: Isham, link: Tarsus, link: Radix }
+system: { loc: (-2.5, -1.0,  1.0), class: G, iff: 2, empire: 1, name: Korius,   link: Nephrys, link: Renser, link: Loris, link: Kolchev, link: Isham }
+system: { loc: (-2.9,  2.6,  1.0), class: K, iff: 2, empire: 1, name: Tarsus,   link: Kolchev, link: Ostara, link: Radix }
+system: { loc: (-4.0, -3.1,  1.0), class: A, iff: 2, empire: 1, name: Nephrys,  link: Loris, link: Korius }
 
-system: { loc: (-4.6,  2.1,  1.0), class: G, iff: 2, name: Radix,     link: Kolchev, link: Isham, link: Tarsus, link: Garrison }
-system: { loc: (-5.1,  0.5,  1.0), class: K, iff: 2, name: Isham,     link: Korius, link: Kolchev, link: Radix, link: Korius, link: Garrison, link: Trocanther }
+system: { loc: (-4.6,  2.1,  1.0), class: G, iff: 2, empire: 1, name: Radix,     link: Kolchev, link: Isham, link: Tarsus, link: Garrison }
+system: { loc: (-5.1,  0.5,  1.0), class: K, iff: 2, empire: 1, name: Isham,     link: Korius, link: Kolchev, link: Radix, link: Korius, link: Garrison, link: Trocanther }
 
-system: { loc: (-6.5,  2.5,  1.0), class: G, iff: 2, name: Garrison,  link: Isham, link: Radix }
-system: { loc: (-7.2, -1.2,  1.0), class: K, iff: 2, name: Trocanther, link: Marak. link: Isham  }
-system: { loc: (-8.0, -2.6,  1.0), class: F, iff: 2, name: Marak,      link: Trocanther }
+system: { loc: (-6.5,  2.5,  1.0), class: G, iff: 2, empire: 1, name: Garrison,  link: Isham, link: Radix }
+system: { loc: (-7.2, -1.2,  1.0), class: K, iff: 2, empire: 1, name: Trocanther, link: Marak. link: Isham  }
+system: { loc: (-8.0, -2.6,  1.0), class: F, iff: 2, empire: 1, name: Marak,      link: Trocanther }
 
 // for screenshots only!
-system: { loc: ( 102,  101,  0.0), class: O, iff: 100, name: Black      }
-system: { loc: ( 106,  107,  0.0), class: O, iff: 100, name: Museum     }
+system: { loc: ( 102,  101,  0.0), class: O, iff: 100, empire: 7, name: Black      }
+system: { loc: ( 106,  107,  0.0), class: O, iff: 100, empire: 7, name: Museum     }
 
-star:   { loc: ( 6.0,  6.0,  1.0), class: M, name: "GSC-3082" }
-star:   { loc: (-3.5,  5.0,  1.0), class: M, name: "GSC-0541" }
-star:   { loc: (-7.1, -7.5,  1.5), class: O, name: "GSC-2054" }
-star:   { loc: ( 4.2,  5.6,  2.1), class: M, name: "GSC-1027" }
-star:   { loc: (-5.1,  4.6, -1.8), class: M, name: "GSC-1311" }
-star:   { loc: ( 5.4, -4.6, -0.8), class: K, name: "GSC-1245" }
+star:   { loc: ( 6.0,  6.0,  1.0), class: M, empire: 7, name: "GSC-3082" }
+star:   { loc: (-3.5,  5.0,  1.0), class: M, empire: 7, name: "GSC-0541" }
+star:   { loc: (-7.1, -7.5,  1.5), class: O, empire: 7, name: "GSC-2054" }
+star:   { loc: ( 4.2,  5.6,  2.1), class: M, empire: 7, name: "GSC-1027" }
+star:   { loc: (-5.1,  4.6, -1.8), class: M, empire: 7, name: "GSC-1311" }
+star:   { loc: ( 5.4, -4.6, -0.8), class: K, empire: 7, name: "GSC-1245" }
 
 star:   { loc: ( 4.3,  6.2,  3.0), class: M, name: "GSC-1952" }
 star:   { loc: (-7.7,  4.3,  3.0), class: M, name: "GSC-0163" }

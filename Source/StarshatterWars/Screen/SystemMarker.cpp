@@ -9,8 +9,18 @@ void USystemMarker::Init(const FS_Galaxy& System)
 
     SetToolTipText(FText::FromString(System.Name));
 
+    // Optional: Add border color by faction
+    FLinearColor EmpireColor;
+
+    switch (System.Empire) {
+    case EEMPIRE_NAME::Terellian: EmpireColor = FLinearColor::Green; break;
+    case EEMPIRE_NAME::Marakan: EmpireColor = FLinearColor::Red; break;
+    default: EmpireColor = FLinearColor::Gray; break;
+    }
+
     if (SystemNameText) {
         SystemNameText->SetText(FText::FromString(System.Name));
+        SystemNameText->SetColorAndOpacity(EmpireColor);
     }
 
     FString ProjectPath = FPaths::ProjectContentDir();
@@ -60,7 +70,8 @@ void USystemMarker::Init(const FS_Galaxy& System)
     FLinearColor Tint;
 
     switch (System.Iff) {
-    case 1: Tint = FLinearColor::Blue; break;
+    case 0: Tint = FLinearColor::Yellow; break;
+    case 1: Tint = FLinearColor::Green; break;
     case 2: Tint = FLinearColor::Red; break;
     default: Tint = FLinearColor::Gray; break;
     }
@@ -89,7 +100,6 @@ FSlateBrush USystemMarker::CreateBrushFromTexture(UTexture2D* Texture, FVector2D
 void USystemMarker::NativeConstruct()
 {
     Super::NativeConstruct();
-    UE_LOG(LogTemp, Log, TEXT("StarImage is %s"), StarImage ? TEXT("Valid") : TEXT("NULL"));
-
+    //UE_LOG(LogTemp, Log, TEXT("StarImage is %s"), StarImage ? TEXT("Valid") : TEXT("NULL"));
 }
 

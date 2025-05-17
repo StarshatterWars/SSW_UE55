@@ -49,6 +49,8 @@ class UVerticalBox;
 class UScrollBox;
 
 class USystemMarker;
+class UGalaxyLink;
+class UGalaxyMap;
 class UTexture2D;
 
 struct FSubGroupArray
@@ -282,7 +284,8 @@ public:
 	UFUNCTION()
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
 	void PopulateEmpireDDList();;
-
+	UFUNCTION()
+	void CreateGalaxyMap();
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
 
@@ -358,10 +361,16 @@ protected:
     UFUNCTION()
     void BuildGalaxyMap(const TArray<FS_Galaxy>& Systems);
 
-    // TSubclassOf must be set in UMG (or via C++)
+	// TSubclassOf must be set in UMG (or via C++)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TSubclassOf<USystemMarker> MarkerClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    TSubclassOf<UGalaxyLink> GalaxyLink; // Optional visual line widget
+
+	 // TSubclassOf must be set in UMG (or via C++)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    TSubclassOf<UGalaxyMap> MapClass;
     
 
 private:
@@ -391,4 +400,9 @@ private:
 	TArray<FString> EmpireDDItems;
 	EEMPIRE_NAME SelectedEmpire; 
 	int IndentLevel = 0;
+
+	void DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B);
+	FVector2D ProjectTo2D(const FVector& Location) const;
+	FVector2D LineProjectTo2D(const FVector& Location) const;
+	TMap<FString, FS_Galaxy> SystemLookup;
 };

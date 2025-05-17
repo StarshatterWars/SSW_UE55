@@ -23,6 +23,8 @@
 #include "OOBBatteryItem.h"
 #include "OOBForceWidget.h"
 #include "SystemMarker.h"
+#include "GalaxyLink.h"
+#include "GalaxyMap.h"
 
 #include "../Foundation/SelectableButtonGroup.h"
 #include "../Foundation/MenuButton.h"
@@ -172,9 +174,11 @@ void UOperationsScreen::NativeConstruct()
 		AllMenuButtons[0]->SetSelected(true);
 	}
 
-	ScreenOffset.X = 8.0;
-	ScreenOffset.Y = 4.4;
+	ScreenOffset.X = 600;
+	ScreenOffset.Y = 300;
 	
+	//CreateGalaxyMap();
+	BuildGalaxyMap(SSWInstance->GalaxyData);
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateEmpireDDList();
@@ -304,7 +308,7 @@ void UOperationsScreen::LoadTheaterInfo()
 		OperationsModeText->SetText(FText::FromString("THEATER"));
 	}
 	
-	BuildGalaxyMap(SSWInstance->GalaxyData);
+	
 }
 
 void UOperationsScreen::OnAudioButtonClicked()
@@ -1154,6 +1158,14 @@ void UOperationsScreen::PopulateEmpireDDList()
 	}
 }
 
+void UOperationsScreen::CreateGalaxyMap() {
+	UGalaxyMap* GalaxyMap = CreateWidget<UGalaxyMap>(this, MapClass);
+	if (!MapClass) return;
+
+	MapCanvas->AddChildToCanvas(GalaxyMap);
+	//GalaxyMap->SetVisibility(ESlateVisibility::Collapsed);
+}
+
 void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 {
 	if (!MapCanvas)
@@ -1168,25 +1180,86 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 		return;
 	}
 
+	// Get canvas center offset
+	FVector2D CanvasSize = MapCanvas->GetCachedGeometry().GetLocalSize();
+	FVector2D CenterOffset = CanvasSize * 0.5f;
+
 	MapCanvas->ClearChildren();
+	SystemLookup.Empty();
 
 	for (const FS_Galaxy& System : Systems)
 	{
+		SystemLookup.Add(System.Name, System);
+		// Step 1: Register all systems
 		USystemMarker* Marker = CreateWidget<USystemMarker>(this, MarkerClass);
 		if (!Marker) continue;
-		
+		MapCanvas->AddChildToCanvas(Marker);
 		Marker->Init(System);
 
-		// Convert 3D to 2D map position (ignore Z)
-		FVector2D MapPosition(System.Location.X + ScreenOffset.X, -System.Location.Y + ScreenOffset.Y); // Flip Y for top-down map
-		
-		MapPosition *= MapScale;
+		FVector2D MapPosition = ProjectTo2D(System.Location) + CenterOffset + ScreenOffset;
 
 		UCanvasPanelSlot* PanelSlot = MapCanvas->AddChildToCanvas(Marker);
 		if (PanelSlot)
 		{
 			PanelSlot->SetPosition(MapPosition);
+			PanelSlot->SetAlignment(FVector2D(0.5f, 0.5f)); // Align start of line
 			PanelSlot->SetAutoSize(true);
+		}	
+	}
+	// Step 2: Draw links between systems
+	for (const FS_Galaxy& System : Systems)
+	{
+		for (const FString& LinkedName : System.Link)
+		{
+			if (const FS_Galaxy* LinkedSystem = SystemLookup.Find(LinkedName))
+			{
+				DrawLinkBetween(System, *LinkedSystem);
+			}
 		}
 	}
 }
+
+FVector2D UOperationsScreen::ProjectTo2D(const FVector& Location) const
+{
+	return FVector2D(Location.X, -Location.Y) * MapScale; // Flip Y for 2D top-down
+}
+
+FVector2D UOperationsScreen::LineProjectTo2D(const FVector& Location) const
+{
+	return FVector2D(Location.X, -Location.Y) * MapScale;
+}
+
+void UOperationsScreen::DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B)
+{
+	// Get canvas center offset
+	FVector2D CanvasSize = MapCanvas->GetCachedGeometry().GetLocalSize();
+	FVector2D CenterOffset = CanvasSize * 0.5f;
+
+	UE_LOG(LogTemp, Warning, TEXT("Linking: %s to %s"), *A.Name, *B.Name);
+
+	FVector2D PosA = LineProjectTo2D(A.Location) + CenterOffset + ScreenOffset;
+	FVector2D PosB = LineProjectTo2D(B.Location) + CenterOffset + ScreenOffset;
+
+	// Apply center offset to each marker (assuming 48x48 size)
+	constexpr float MarkerRadius = 32.f; // half of 48x48 marker
+	PosA += FVector2D(MarkerRadius, MarkerRadius);
+	PosB += FVector2D(MarkerRadius, MarkerRadius);
+
+	FVector2D Direction = PosB - PosA;
+
+	float Length = Direction.Size();
+	float Angle = FMath::Atan2(Direction.Y, Direction.X) * 180.f / PI;
+
+	UGalaxyLink* Link = CreateWidget<UGalaxyLink>(this, GalaxyLink);
+	if (!Link) return;
+
+	Link->ConfigureLine(Length, Angle, FLinearColor::White);
+
+	UCanvasPanelSlot* LinkSlot = MapCanvas->AddChildToCanvas(Link);
+	if (LinkSlot)
+	{
+		LinkSlot->SetPosition(PosA);
+		LinkSlot->SetAlignment(FVector2D(0.0f, 0.5f)); // Align start of line
+	}
+}
+
