@@ -405,4 +405,5 @@ private:
 	FVector2D ProjectTo2D(const FVector& Location) const;
 	FVector2D LineProjectTo2D(const FVector& Location) const;
 	TMap<FString, FS_Galaxy> SystemLookup;
+	TMap<FString, USystemMarker*> MarkerMap;
 };

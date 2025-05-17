@@ -1186,6 +1186,7 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 
 	MapCanvas->ClearChildren();
 	SystemLookup.Empty();
+	MarkerMap.Empty();
 
 	for (const FS_Galaxy& System : Systems)
 	{
@@ -1195,6 +1196,8 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 		if (!Marker) continue;
 		MapCanvas->AddChildToCanvas(Marker);
 		Marker->Init(System);
+		 //
+		MarkerMap.Add(System.Name, Marker);
 
 		FVector2D MapPosition = ProjectTo2D(System.Location) + CenterOffset + ScreenOffset;
 
@@ -1204,6 +1207,7 @@ void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 			PanelSlot->SetPosition(MapPosition);
 			PanelSlot->SetAlignment(FVector2D(0.5f, 0.5f)); // Align start of line
 			PanelSlot->SetAutoSize(true);
+			PanelSlot->SetZOrder(10);
 		}	
 	}
 	// Step 2: Draw links between systems
@@ -1231,21 +1235,26 @@ FVector2D UOperationsScreen::LineProjectTo2D(const FVector& Location) const
 
 void UOperationsScreen::DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B)
 {
-	// Get canvas center offset
-	FVector2D CanvasSize = MapCanvas->GetCachedGeometry().GetLocalSize();
-	FVector2D CenterOffset = CanvasSize * 0.5f;
+	if (!GalaxyLink) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("Linking: %s to %s"), *A.Name, *B.Name);
+	USystemMarker* MarkerA = MarkerMap.FindRef(A.Name);
+	USystemMarker* MarkerB = MarkerMap.FindRef(B.Name);
 
-	FVector2D PosA = LineProjectTo2D(A.Location) + CenterOffset + ScreenOffset;
-	FVector2D PosB = LineProjectTo2D(B.Location) + CenterOffset + ScreenOffset;
+	if (!MarkerA || !MarkerB) return;
 
-	// Apply center offset to each marker (assuming 48x48 size)
-	constexpr float MarkerRadius = 32.f; // half of 48x48 marker
-	PosA += FVector2D(MarkerRadius, MarkerRadius);
-	PosB += FVector2D(MarkerRadius, MarkerRadius);
+	auto GetCenter = [](UWidget* Widget) -> FVector2D
+		{
+			if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
+			{
+				return Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
+			}
+			return FVector2D::ZeroVector;
+		};
 
-	FVector2D Direction = PosB - PosA;
+	FVector2D MarkerOffset = {-48, 0 };
+	FVector2D StartPos = GetCenter(MarkerA) + MarkerOffset;
+	FVector2D EndPos = GetCenter(MarkerB) + MarkerOffset;
+	FVector2D Direction = EndPos - StartPos;
 
 	float Length = Direction.Size();
 	float Angle = FMath::Atan2(Direction.Y, Direction.X) * 180.f / PI;
@@ -1253,13 +1262,13 @@ void UOperationsScreen::DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B)
 	UGalaxyLink* Link = CreateWidget<UGalaxyLink>(this, GalaxyLink);
 	if (!Link) return;
 
-	Link->ConfigureLine(Length, Angle, FLinearColor::White);
+	Link->ConfigureLine(Length, Angle);
 
-	UCanvasPanelSlot* LinkSlot = MapCanvas->AddChildToCanvas(Link);
-	if (LinkSlot)
+	if (UCanvasPanelSlot* LinkSlot = MapCanvas->AddChildToCanvas(Link))
 	{
-		LinkSlot->SetPosition(PosA);
-		LinkSlot->SetAlignment(FVector2D(0.0f, 0.5f)); // Align start of line
+		LinkSlot->SetPosition(StartPos); // aligns the left edge of the line to marker center
+		LinkSlot->SetAlignment(FVector2D(0.f, 0.5f)); // rotates from left-center of the line
+		LinkSlot->SetZOrder(9);
 	}
 }
 
