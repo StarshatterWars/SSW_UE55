@@ -24,7 +24,6 @@ void UGalaxyMap::NativeConstruct()
 	ScreenOffset.Y = 300;
 
 	BuildGalaxyMap(SSWInstance->GalaxyData);
-	//DrawGrid(SSWInstance->GalaxyData);
 }
 
 
@@ -57,6 +56,22 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 	SystemLookup.Empty();
 	MarkerMap.Empty();
 
+	// Add Selection Lines Layer (on top of markers)
+	if (SelectionLinesWidgetClass)
+	{
+		SelectionLinesWidget = CreateWidget<USelectionLinesWidget>(this, SelectionLinesWidgetClass);
+		MapCanvas->AddChildToCanvas(SelectionLinesWidget);
+		SelectionLinesWidget->SetVisibility(ESlateVisibility::Hidden);
+
+		if (UCanvasPanelSlot* SelectionSlot = MapCanvas->AddChildToCanvas(SelectionLinesWidget))
+		{
+			SelectionSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			SelectionSlot->SetOffsets(FMargin(0));
+			SelectionSlot->SetAlignment(FVector2D(0.f, 0.f));
+			SelectionSlot->SetZOrder(7); // above markers
+		}
+	}
+
 	// Add grid layer first
 	UMapGridLine* GridLayer = CreateWidget<UMapGridLine>(this, MapGridLines);
 	GridLayer->SetGalaxyData(Systems, MapScale);
@@ -82,6 +97,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 			LinksSlot->SetZOrder(8); // beneath markers, above grid
 		}
 	}
+
 	for (const FS_Galaxy& System : Systems)
 	{
 		SystemLookup.Add(System.Name, System);
@@ -92,7 +108,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 		
 		Marker->Init(System);
 
-		Marker->OnClicked.BindLambda([this](const FString& SystemName)
+		/*Marker->OnClicked.BindLambda([this](const FString& SystemName)
 			{
 				if (SelectedMarker)
 				{
@@ -106,7 +122,47 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 					SelectedMarker = NewSelection;
 				}
 			});
+		*/
+		USystemMarker* LocalMarker = Marker; // capture marker per loop
 
+		LocalMarker->OnClicked.BindLambda([this, LocalMarker](const FString& SystemName)
+			{
+				// Deselect previous marker
+				if (SelectedMarker)
+				{
+					SelectedMarker->SetSelected(false);
+				}
+
+				// Select this one
+				LocalMarker->SetSelected(true);
+				SelectedMarker = LocalMarker;
+
+				if (!SelectionLinesWidget) return;
+
+				// Delay layout-dependent update to next frame
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateWeakLambda(this,
+					[this, LocalMarker]()
+					{
+						if (!IsValid(LocalMarker) || !IsValid(SelectionLinesWidget)) return;
+
+						auto GetCenter = [](UWidget* Widget) -> FVector2D
+							{
+								if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
+								{
+									return Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
+								}
+								return FVector2D::ZeroVector;
+							};
+
+						FVector2D MarkerCenter = GetCenter(LocalMarker);
+						SelectionLinesWidget->SetMarkerCenter(MarkerCenter);
+						SelectionLinesWidget->SetVisibility(ESlateVisibility::Visible);
+
+						UE_LOG(LogTemp, Log, TEXT("Selection lines set to %s"), *MarkerCenter.ToString());
+
+					}), 0.01f, false);
+			});
 		MarkerMap.Add(System.Name, Marker);
 
 		FVector2D MapPosition = ProjectTo2D(System.Location) + CenterOffset + ScreenOffset;
