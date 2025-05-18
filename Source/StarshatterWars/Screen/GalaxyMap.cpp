@@ -17,6 +17,7 @@
 void UGalaxyMap::NativeConstruct()
 {
 	Super::NativeConstruct();
+	SetIsFocusable(true);
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
 	
@@ -305,6 +306,64 @@ void UGalaxyMap::NativeOnInitialized()
 	}
 }
 
+FReply UGalaxyMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+	{
+		bIsPanning = true;
+		PanStartMouse = InMouseEvent.GetScreenSpacePosition();
+		PanStartOffset = CurrentPan;
+
+		return FReply::Handled();
+	}
+	return FReply::Unhandled();
+}
+
+FReply UGalaxyMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (bIsPanning && MapCameraRoot)
+	{
+		FVector2D CurrentMouse = InMouseEvent.GetScreenSpacePosition();
+		FVector2D MouseDelta = CurrentMouse - PanStartMouse;
+
+		CurrentPan = PanStartOffset + MouseDelta;
+
+		FWidgetTransform Transform;
+		Transform.Translation = CurrentPan;
+		Transform.Scale = FVector2D(MapZoomLevel, MapZoomLevel);
+		MapCameraRoot->SetRenderTransform(Transform);
+
+		return FReply::Handled();
+	}
+	return FReply::Unhandled();
+}
+
+FReply UGalaxyMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+	{
+		bIsPanning = false;
+		return FReply::Handled();
+	}
+	return FReply::Unhandled();
+}
+
+FReply UGalaxyMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	const float ScrollDelta = InMouseEvent.GetWheelDelta();
+	MapZoomLevel = FMath::Clamp(MapZoomLevel + ScrollDelta * 0.1f, MinZoom, MaxZoom);
+
+	if (MapCameraRoot)
+	{
+		FWidgetTransform Transform;
+		Transform.Translation = CurrentPan;
+		Transform.Scale = FVector2D(MapZoomLevel, MapZoomLevel);
+		MapCameraRoot->SetRenderTransform(Transform);
+	}
+
+	return FReply::Handled();
+}
+
 void UGalaxyMap::PanToMarker(const FVector2D& MarkerCenter)
 {
 	if (!MapCameraRoot || !MapCanvas) return;
@@ -338,3 +397,5 @@ void UGalaxyMap::UpdateCameraPan()
 		GetWorld()->GetTimerManager().ClearTimer(CameraPanHandle);
 	}
 }
+
+

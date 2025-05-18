@@ -63,7 +63,11 @@ protected:
     void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
     virtual void NativeOnInitialized() override; 
- 
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
     void PanToMarker(const FVector2D& MarkerCenter);
     void UpdateCameraPan();
 public:
@@ -119,6 +123,12 @@ public:
     UPROPERTY()
     float PanElapsed = 0.f;
 
+    // Zoom and pan state
+    UPROPERTY()
+    float MapZoomLevel = 1.0f;
+    const float MinZoom = 0.5f;
+    const float MaxZoom = 1.5f;
+
     void BuildGalaxyMap(const TArray<FS_Galaxy>& Systems);
     
     TMap<FName, UTexture2D*> LoadStarTextures();
@@ -144,7 +154,11 @@ private:
 	FTimerHandle CameraPanHandle;
 	FVector2D PanStartOffset;
 	FVector2D PanTargetOffset;
+    FVector2D CurrentPan = FVector2D::ZeroVector;
 
+    // For dragging
+    bool bIsPanning = false;
+    FVector2D PanStartMouse;
 };
 	
 	
