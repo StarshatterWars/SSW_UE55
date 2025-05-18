@@ -605,7 +605,19 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 	}
 };
 
- 
+ USTRUCT(BlueprintType)
+struct FS_PlanetData : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Name;
+
+	FS_PlanetData() {
+		Name = "";
+	}
+};
+
+
 USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
 	GENERATED_BODY()
@@ -625,7 +637,7 @@ struct FS_Galaxy : public FTableRowBase {
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FString> Link;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FString> Planet;
+	TArray<FS_PlanetData> Planet;
 
 	FS_Galaxy() {
 		Name = "";
