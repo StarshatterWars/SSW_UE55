@@ -177,8 +177,7 @@ void UOperationsScreen::NativeConstruct()
 	ScreenOffset.X = 600;
 	ScreenOffset.Y = 300;
 	
-	//CreateGalaxyMap();
-	BuildGalaxyMap(SSWInstance->GalaxyData);
+	CreateGalaxyMap();
 	SetCampaignOrders();
 	PopulateMissionList();
 	PopulateEmpireDDList();
@@ -1163,127 +1162,15 @@ void UOperationsScreen::CreateGalaxyMap() {
 	if (!MapClass) return;
 
 	MapCanvas->AddChildToCanvas(GalaxyMap);
+	
+	if (UCanvasPanelSlot* MapSlot = MapCanvas->AddChildToCanvas(GalaxyMap))
+	{
+		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
+		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
+		MapSlot->SetAlignment(FVector2D(0.f, 0.f));        // Top-left corner alignment
+		MapSlot->SetZOrder(11);
+	}
 	//GalaxyMap->SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UOperationsScreen::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
-{
-	if (!MapCanvas)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UOperationsScreen::BuildGalaxyMap(): Missing MapCanvas"));
-		return;
-	}
-
-	if (!MarkerClass)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UOperationsScreen::BuildGalaxyMap(): Missing MarkerClass"));
-		return;
-	}
-
-	// Get canvas center offset
-	FVector2D CanvasSize = MapCanvas->GetCachedGeometry().GetLocalSize();
-	FVector2D CenterOffset = CanvasSize * 0.5f;
-
-	MapCanvas->ClearChildren();
-	SystemLookup.Empty();
-	MarkerMap.Empty();
-
-	for (const FS_Galaxy& System : Systems)
-	{
-		SystemLookup.Add(System.Name, System);
-		// Step 1: Register all systems
-		USystemMarker* Marker = CreateWidget<USystemMarker>(this, MarkerClass);
-		if (!Marker) continue;
-		MapCanvas->AddChildToCanvas(Marker);
-		Marker->Init(System);
-		
-		Marker->OnClicked.BindLambda([this](const FString& SystemName)
-			{
-				if (SelectedMarker)
-				{
-					SelectedMarker->SetSelected(false);
-				}
-
-				USystemMarker* NewSelection = MarkerMap.FindRef(SystemName);
-				if (NewSelection)
-				{
-					NewSelection->SetSelected(true);
-					SelectedMarker = NewSelection;
-				}
-			});
-
-		MarkerMap.Add(System.Name, Marker);
-
-		FVector2D MapPosition = ProjectTo2D(System.Location) + CenterOffset + ScreenOffset;
-
-		UCanvasPanelSlot* PanelSlot = MapCanvas->AddChildToCanvas(Marker);
-		if (PanelSlot)
-		{
-			PanelSlot->SetPosition(MapPosition);
-			PanelSlot->SetAlignment(FVector2D(0.5f, 0.5f)); // Align start of line
-			PanelSlot->SetAutoSize(true);
-			PanelSlot->SetZOrder(10);
-		}	
-	}
-	// Step 2: Draw links between systems
-	for (const FS_Galaxy& System : Systems)
-	{
-		for (const FString& LinkedName : System.Link)
-		{
-			if (const FS_Galaxy* LinkedSystem = SystemLookup.Find(LinkedName))
-			{
-				DrawLinkBetween(System, *LinkedSystem);
-			}
-		}
-	}
-}
-
-FVector2D UOperationsScreen::ProjectTo2D(const FVector& Location) const
-{
-	return FVector2D(Location.X, -Location.Y) * MapScale; // Flip Y for 2D top-down
-}
-
-FVector2D UOperationsScreen::LineProjectTo2D(const FVector& Location) const
-{
-	return FVector2D(Location.X, -Location.Y) * MapScale;
-}
-
-void UOperationsScreen::DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B)
-{
-	if (!GalaxyLink) return;
-
-	USystemMarker* MarkerA = MarkerMap.FindRef(A.Name);
-	USystemMarker* MarkerB = MarkerMap.FindRef(B.Name);
-
-	if (!MarkerA || !MarkerB) return;
-
-	auto GetCenter = [](UWidget* Widget) -> FVector2D
-		{
-			if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
-			{
-				return Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
-			}
-			return FVector2D::ZeroVector;
-		};
-
-	FVector2D MarkerOffset = {-48, 0 };
-	FVector2D StartPos = GetCenter(MarkerA) + MarkerOffset;
-	FVector2D EndPos = GetCenter(MarkerB) + MarkerOffset;
-	FVector2D Direction = EndPos - StartPos;
-
-	float Length = Direction.Size();
-	float Angle = FMath::Atan2(Direction.Y, Direction.X) * 180.f / PI;
-
-	UGalaxyLink* Link = CreateWidget<UGalaxyLink>(this, GalaxyLink);
-	if (!Link) return;
-
-	Link->ConfigureLine(Length, Angle);
-
-	if (UCanvasPanelSlot* LinkSlot = MapCanvas->AddChildToCanvas(Link))
-	{
-		LinkSlot->SetPosition(StartPos); // aligns the left edge of the line to marker center
-		LinkSlot->SetAlignment(FVector2D(0.f, 0.5f)); // rotates from left-center of the line
-		LinkSlot->SetZOrder(9);
-	}
-}
 
