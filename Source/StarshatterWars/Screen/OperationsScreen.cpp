@@ -52,6 +52,11 @@ bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive 
 	return true;
 }
 
+//UOperationsScreen::UOperationsScreen(const FObjectInitializer& ObjectInitializer)
+//{
+
+//}
+
 void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();

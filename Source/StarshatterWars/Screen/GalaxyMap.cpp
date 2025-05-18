@@ -9,6 +9,8 @@
 #include "SystemMarker.h"
 #include "MapGridLine.h"
 #include "GalaxyLink.h"
+#include "JumpLinksWidget.h"
+#include "SelectionLinesWidget.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 
@@ -67,6 +69,19 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 		GridSlot->SetZOrder(5); // ensure it's behind markers
 	}
 
+	if (JumpLinksWidgetClass)
+	{
+		JumpLinksWidget = CreateWidget<UJumpLinksWidget>(this, JumpLinksWidgetClass);
+		JumpLinksWidget->SetJumpLinks(JumpLinks);
+
+		if (UCanvasPanelSlot* LinksSlot = MapCanvas->AddChildToCanvas(JumpLinksWidget))
+		{
+			LinksSlot->SetAnchors(FAnchors(0, 0, 1, 1));
+			LinksSlot->SetOffsets(FMargin(0));
+			LinksSlot->SetAlignment(FVector2D(0, 0));
+			LinksSlot->SetZOrder(8); // beneath markers, above grid
+		}
+	}
 	for (const FS_Galaxy& System : Systems)
 	{
 		SystemLookup.Add(System.Name, System);
@@ -169,9 +184,12 @@ void UGalaxyMap::DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B)
 {
 	if (!GalaxyLink) return;
 
+	FGalaxyLinkKey LinkKey(A.Name, B.Name);
+	if (DrawnLinks.Contains(LinkKey)) return;
+	DrawnLinks.Add(LinkKey); // Mark as drawn
+
 	USystemMarker* MarkerA = MarkerMap.FindRef(A.Name);
 	USystemMarker* MarkerB = MarkerMap.FindRef(B.Name);
-
 	if (!MarkerA || !MarkerB) return;
 
 	auto GetCenter = [](UWidget* Widget) -> FVector2D
@@ -183,24 +201,58 @@ void UGalaxyMap::DrawLinkBetween(const FS_Galaxy& A, const FS_Galaxy& B)
 			return FVector2D::ZeroVector;
 		};
 
-	FVector2D MarkerOffset = { -48, 0 };
-	FVector2D StartPos = GetCenter(MarkerA) + MarkerOffset;
-	FVector2D EndPos = GetCenter(MarkerB) + MarkerOffset;
-	FVector2D Direction = EndPos - StartPos;
+	FVector2D MarkerOffset(-48.f, -12.f);
+	FVector2D StartPos = GetCenter(MarkerMap.FindRef(A.Name)) + MarkerOffset;
+	FVector2D EndPos = GetCenter(MarkerMap.FindRef(B.Name)) + MarkerOffset;
 
-	float Length = Direction.Size();
-	float Angle = FMath::Atan2(Direction.Y, Direction.X) * 180.f / PI;
+	FJumpLink Link;
+	Link.Start = StartPos;
+	Link.End = EndPos;
 
-	UGalaxyLink* Link = CreateWidget<UGalaxyLink>(this, GalaxyLink);
-	if (!Link) return;
+	JumpLinks.Add(Link);
 
-	Link->ConfigureLine(Length, Angle);
-
-	if (UCanvasPanelSlot* LinkSlot = MapCanvas->AddChildToCanvas(Link))
+	// Update the paint-based widget
+	if (JumpLinksWidget)
 	{
-		LinkSlot->SetPosition(StartPos); // aligns the left edge of the line to marker center
-		LinkSlot->SetAlignment(FVector2D(0.f, 0.5f)); // rotates from left-center of the line
-		LinkSlot->SetZOrder(9);
+		JumpLinksWidget->SetJumpLinks(JumpLinks);
+	}
+}
+
+void UGalaxyMap::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	if (!MapCanvas) return;
+
+	if (MapGridLines)
+	{
+		GalaxyGridWidget = CreateWidget<UMapGridLine>(this, MapGridLines);
+		GalaxyGridWidget->SetVisibility(ESlateVisibility::Visible);
+		MapCanvas->AddChildToCanvas(GalaxyGridWidget);
+
+		if (UCanvasPanelSlot* GridSlot = MapCanvas->AddChildToCanvas(GalaxyGridWidget))
+		{
+			GridSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			GridSlot->SetOffsets(FMargin(0.f));
+			GridSlot->SetAlignment(FVector2D(0.f, 0.f));
+			GridSlot->SetZOrder(5); // ensure it's behind markers
+		}
+	}
+
+	// Add Selection Lines Layer (on top of markers)
+	if (SelectionLinesWidgetClass)
+	{
+		SelectionLinesWidget = CreateWidget<USelectionLinesWidget>(this, SelectionLinesWidgetClass);
+		MapCanvas->AddChildToCanvas(SelectionLinesWidget);
+		SelectionLinesWidget->SetVisibility(ESlateVisibility::Hidden);
+
+		if (UCanvasPanelSlot* SelectionSlot = MapCanvas->AddChildToCanvas(SelectionLinesWidget))
+		{
+			SelectionSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			SelectionSlot->SetOffsets(FMargin(0));
+			SelectionSlot->SetAlignment(FVector2D(0.f, 0.f));
+			SelectionSlot->SetZOrder(20); // above markers
+		}
 	}
 }
 

@@ -408,6 +408,15 @@ enum EControlType : uint8
  * STRUCTS
  */
 
+USTRUCT()
+struct FJumpLink
+{
+    GENERATED_BODY()
+
+    FVector2D Start;
+    FVector2D End;
+};
+
 USTRUCT(BlueprintType)
 struct FUnitData {
     GENERATED_BODY()

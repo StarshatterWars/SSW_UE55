@@ -11,12 +11,49 @@
 class UCanvasPanel;
 class USystemMarker;
 class UGalaxyLink;
+class UJumpLinksWidget;
 class UMapGridLine;
+class USelectionLinesWidget;
 class UTexture2D;
 
 /**
  * 
  */
+
+ USTRUCT()
+struct FGalaxyLinkKey
+{
+    GENERATED_BODY()
+
+    FString A;
+    FString B;
+
+    FGalaxyLinkKey() {}
+    FGalaxyLinkKey(const FString& InA, const FString& InB)
+    {
+        if (InA < InB)
+        {
+            A = InA;
+            B = InB;
+        }
+        else
+        {
+            A = InB;
+            B = InA;
+        }
+	}
+
+	bool operator==(const FGalaxyLinkKey& Other) const
+	{
+		return A == Other.A && B == Other.B;
+	}
+
+	friend uint32 GetTypeHash(const FGalaxyLinkKey& Key)
+	{
+		return HashCombine(GetTypeHash(Key.A), GetTypeHash(Key.B));
+	}
+};
+
 UCLASS()
 class STARSHATTERWARS_API UGalaxyMap : public UUserWidget
 {
@@ -25,6 +62,7 @@ class STARSHATTERWARS_API UGalaxyMap : public UUserWidget
 protected:
     void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    virtual void NativeOnInitialized() override; 
  
 public:
     // TSubclassOf must be set in UMG (or via C++)
@@ -34,8 +72,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TSubclassOf<UGalaxyLink> GalaxyLink; // Optional visual line widget
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    TSubclassOf<class UJumpLinksWidget> JumpLinksWidgetClass;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    TSubclassOf<class USelectionLinesWidget> SelectionLinesWidgetClass;
+
     UPROPERTY(EditAnywhere, Category = "Galaxy")
-    TSubclassOf<UMapGridLine> MapGridLines;
+    TSubclassOf<class UMapGridLine> MapGridLines;
+
+    UPROPERTY()
+    class USelectionLinesWidget* SelectionLinesWidget = nullptr;
+
+    UPROPERTY()
+    class UJumpLinksWidget* JumpLinksWidget = nullptr;
+
+    UPROPERTY()
+    class UMapGridLine* GalaxyGridWidget;
+
+    UPROPERTY()
+    TArray<FJumpLink> JumpLinks;
 
     UPROPERTY(meta = (BindWidget))
     UCanvasPanel* MapCanvas;
@@ -67,8 +123,10 @@ private:
     FVector2D ProjectTo2D(const FVector& Location) const;
     UFUNCTION()
     FVector2D LineProjectTo2D(const FVector& Location) const;
+    
     TMap<FString, FS_Galaxy> SystemLookup;
     TMap<FString, USystemMarker*> MarkerMap;
+    TSet<FGalaxyLinkKey> DrawnLinks;
 };
 	
 	

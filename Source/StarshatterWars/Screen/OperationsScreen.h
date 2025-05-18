@@ -308,6 +308,8 @@ public:
 	USystemMarker* SelectedMarker = nullptr;
 
 protected:
+	//UOperationsScreen(const FObjectInitializer& ObjectInitializer);
+
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
@@ -394,4 +396,6 @@ private:
 	TArray<FString> EmpireDDItems;
 	EEMPIRE_NAME SelectedEmpire; 
 	int IndentLevel = 0;
+	
+	TSubclassOf<UGalaxyMap> GalaxyMapClass;
 };
