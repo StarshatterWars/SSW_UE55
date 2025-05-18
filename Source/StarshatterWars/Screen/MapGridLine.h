@@ -33,5 +33,5 @@ private:
 	UPROPERTY()
     float GridStep = 2.0f;
 	UPROPERTY()
-    float MapScale = 60.0f;
+    float MapScale = 70.0f;
 };

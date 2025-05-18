@@ -20,13 +20,21 @@ int32 USelectionLinesWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 {
     const FVector2D Size = AllottedGeometry.GetLocalSize();
     const FLinearColor LineColor = FLinearColor::Yellow;
+    
+    FVector2D Margin = { 120.0f, 0.f };
+    FVector2D LocalMarkerCenter = AllottedGeometry.AbsoluteToLocal(MarkerCenter);
+   
+	const float Left = Margin.X;
+	const float Right = Size.X - Margin.X;
+	const float Top = Margin.Y;
+	const float Bottom = Size.Y - Margin.Y;
 
     // Horizontal (left to right)
     FSlateDrawElement::MakeLines(
         OutDrawElements,
         LayerId,
         AllottedGeometry.ToPaintGeometry(),
-        { FVector2D(0.f, MarkerCenter.Y), FVector2D(Size.X, MarkerCenter.Y) },
+        { FVector2D(Left, MarkerCenter.Y), FVector2D(Right, MarkerCenter.Y) },
         ESlateDrawEffect::None,
         LineColor,
         true,
@@ -38,7 +46,7 @@ int32 USelectionLinesWidget::NativePaint(const FPaintArgs& Args, const FGeometry
         OutDrawElements,
         LayerId,
         AllottedGeometry.ToPaintGeometry(),
-        { FVector2D(MarkerCenter.X, 0.f), FVector2D(MarkerCenter.X, Size.Y) },
+        { FVector2D(MarkerCenter.X, Top), FVector2D(MarkerCenter.X, Bottom) },
         ESlateDrawEffect::None,
         LineColor,
         true,

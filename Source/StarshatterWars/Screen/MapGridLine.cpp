@@ -51,6 +51,12 @@ int32 UMapGridLine::NativePaint(const FPaintArgs& Args, const FGeometry& Allotte
     FVector2D CenterOffset = Size * 0.5f;
 
     FLinearColor GridColor(0.2f, 0.2f, 0.2f, 0.5f);
+    FVector2D Margin = { 120.0f, 0.f };
+
+    const float Left = Margin.X;
+    const float Right = Size.X - Margin.X;
+    const float Top = Margin.Y;
+    const float Bottom = Size.Y - Margin.Y;
 
     // Vertical lines
     for (float X = MinX; X <= MaxX; X += GridStep)
@@ -59,7 +65,7 @@ int32 UMapGridLine::NativePaint(const FPaintArgs& Args, const FGeometry& Allotte
 
         FVector2D Start(PixelX, 0);
         FVector2D End(PixelX, Size.Y);
-
+        
         FSlateDrawElement::MakeLines(
             OutDrawElements,
             LayerId,
@@ -77,8 +83,8 @@ int32 UMapGridLine::NativePaint(const FPaintArgs& Args, const FGeometry& Allotte
     {
         float PixelY = -Y * MapScale + CenterOffset.Y;
 
-        FVector2D Start(0, PixelY);
-        FVector2D End(Size.X, PixelY);
+        FVector2D Start(0 + Margin.X, PixelY);
+        FVector2D End(Size.X - Margin.X, PixelY);
 
         FSlateDrawElement::MakeLines(
             OutDrawElements,

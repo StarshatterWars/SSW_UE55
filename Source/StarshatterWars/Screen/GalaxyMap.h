@@ -111,7 +111,7 @@ public:
     TArray<FS_Galaxy> GalaxySystems; // Store this to access system bounds
 
     UPROPERTY()
-    float MapScale = 60.0f;
+    float MapScale = 70.0f;
     
     UPROPERTY()
     float PanDuration = 0.3f;
