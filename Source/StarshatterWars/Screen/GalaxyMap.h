@@ -64,6 +64,8 @@ protected:
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
     virtual void NativeOnInitialized() override; 
  
+    void PanToMarker(const FVector2D& MarkerCenter);
+    void UpdateCameraPan();
 public:
     // TSubclassOf must be set in UMG (or via C++)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
@@ -93,8 +95,14 @@ public:
     UPROPERTY()
     TArray<FJumpLink> JumpLinks;
 
-    UPROPERTY(meta = (BindWidget))
-    UCanvasPanel* MapCanvas;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UCanvasPanel* MapRoot; // top-level canvas in WBP_GalaxyMap 
+    
+    UPROPERTY(meta = (BindWidgetOptional))
+    UCanvasPanel* MapCanvas;  // contains markers, grid, links
+
+     UPROPERTY(meta = (BindWidgetOptional))
+    UCanvasPanel* MapCameraRoot; // wraps MapCanvas, handles pan/zoom
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TMap<FName, UTexture2D*> StarTextures;
@@ -102,9 +110,14 @@ public:
     UPROPERTY()
     TArray<FS_Galaxy> GalaxySystems; // Store this to access system bounds
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    UPROPERTY()
     float MapScale = 60.0f;
-
+    
+    UPROPERTY()
+    float PanDuration = 0.3f;
+    
+    UPROPERTY()
+    float PanElapsed = 0.f;
 
     void BuildGalaxyMap(const TArray<FS_Galaxy>& Systems);
     
@@ -126,7 +139,12 @@ private:
     
     TMap<FString, FS_Galaxy> SystemLookup;
     TMap<FString, USystemMarker*> MarkerMap;
-    TSet<FGalaxyLinkKey> DrawnLinks;
+    TSet<FGalaxyLinkKey> DrawnLinks;   
+
+	FTimerHandle CameraPanHandle;
+	FVector2D PanStartOffset;
+	FVector2D PanTargetOffset;
+
 };
 	
 	

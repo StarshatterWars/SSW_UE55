@@ -20,7 +20,7 @@ void UGalaxyMap::NativeConstruct()
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
 	
-	ScreenOffset.X = 600;
+	ScreenOffset.X = 700;
 	ScreenOffset.Y = 300;
 
 	BuildGalaxyMap(SSWInstance->GalaxyData);
@@ -34,6 +34,12 @@ void UGalaxyMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 {
+	if (!MapRoot)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UGalaxyMap::BuildGalaxyMap(): Missing MapRoot"));
+		return;
+	}
+
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UGalaxyMap::BuildGalaxyMap(): Missing MapCanvas"));
@@ -60,7 +66,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 	if (SelectionLinesWidgetClass)
 	{
 		SelectionLinesWidget = CreateWidget<USelectionLinesWidget>(this, SelectionLinesWidgetClass);
-		MapCanvas->AddChildToCanvas(SelectionLinesWidget);
+		MapRoot->AddChildToCanvas(SelectionLinesWidget);
 		SelectionLinesWidget->SetVisibility(ESlateVisibility::Hidden);
 
 		if (UCanvasPanelSlot* SelectionSlot = MapCanvas->AddChildToCanvas(SelectionLinesWidget))
@@ -75,7 +81,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 	// Add grid layer first
 	UMapGridLine* GridLayer = CreateWidget<UMapGridLine>(this, MapGridLines);
 	GridLayer->SetGalaxyData(Systems, MapScale);
-	MapCanvas->AddChildToCanvas(GridLayer); // No need for high Z-order
+	MapRoot->AddChildToCanvas(GridLayer); // No need for high Z-order
 	if (UCanvasPanelSlot* GridSlot = MapCanvas->AddChildToCanvas(GridLayer))
 	{
 		GridSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
@@ -108,21 +114,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 		
 		Marker->Init(System);
 
-		/*Marker->OnClicked.BindLambda([this](const FString& SystemName)
-			{
-				if (SelectedMarker)
-				{
-					SelectedMarker->SetSelected(false);
-				}
-
-				USystemMarker* NewSelection = MarkerMap.FindRef(SystemName);
-				if (NewSelection)
-				{
-					NewSelection->SetSelected(true);
-					SelectedMarker = NewSelection;
-				}
-			});
-		*/
+	
 		USystemMarker* LocalMarker = Marker; // capture marker per loop
 
 		LocalMarker->OnClicked.BindLambda([this, LocalMarker](const FString& SystemName)
@@ -158,6 +150,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 						FVector2D MarkerCenter = GetCenter(LocalMarker);
 						SelectionLinesWidget->SetMarkerCenter(MarkerCenter);
 						SelectionLinesWidget->SetVisibility(ESlateVisibility::Visible);
+						//PanToMarker(MarkerCenter);
 
 						UE_LOG(LogTemp, Log, TEXT("Selection lines set to %s"), *MarkerCenter.ToString());
 
@@ -312,4 +305,36 @@ void UGalaxyMap::NativeOnInitialized()
 	}
 }
 
+void UGalaxyMap::PanToMarker(const FVector2D& MarkerCenter)
+{
+	if (!MapCameraRoot || !MapCanvas) return;
 
+	// Determine where center of screen is (map view)
+	FVector2D CanvasSize = MapCanvas->GetCachedGeometry().GetLocalSize();
+	FVector2D ViewportCenter = ScreenOffset;
+	//FVector2D ViewportCenter = CanvasSize * 0.5f;
+
+	PanTargetOffset = ViewportCenter - MarkerCenter;
+	PanStartOffset = MapCameraRoot->RenderTransform.Translation;
+	PanElapsed = 0.f;
+
+	GetWorld()->GetTimerManager().SetTimer(CameraPanHandle, this, &UGalaxyMap::UpdateCameraPan, 0.01f, true);
+}
+
+void UGalaxyMap::UpdateCameraPan()
+{
+	if (!MapCameraRoot) return;
+
+	PanElapsed += GetWorld()->GetDeltaSeconds();
+	float Alpha = FMath::Clamp(PanElapsed / PanDuration, 0.f, 1.f);
+
+	FVector2D Offset = FMath::Lerp(PanStartOffset, PanTargetOffset, Alpha);
+	FWidgetTransform Transform;
+	Transform.Translation = Offset;
+	MapCameraRoot->SetRenderTransform(Transform);
+
+	if (Alpha >= 1.f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CameraPanHandle);
+	}
+}
