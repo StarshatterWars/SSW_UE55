@@ -2877,12 +2877,16 @@ AGameDataLoader::LoadGalaxyMap()
 						Text  SystemName;
 						Text  ClassName;
 						Text  Link;
+						Text  Star;
+						Text  Planet;
 						Vec3  SystemLocation;
 						int   SystemIff = 0;
 						int   EmpireId = 0;
 						ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
 						EEMPIRE_NAME EEmpireType = EEMPIRE_NAME::Terellian;
+						
 						NewGalaxyData.Link.Empty();
+						NewGalaxyData.Planet.Empty();
 
 						for (int i = 0; i < val->elements()->size(); i++) {
 							TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2909,6 +2913,14 @@ AGameDataLoader::LoadGalaxyMap()
 								else if (pdef->name()->value() == "link") {
 									GetDefText(Link, pdef, filename);
 									NewGalaxyData.Link.Add(FString(Link));
+								}
+								else if (pdef->name()->value() == "planet") {
+									GetDefText(Planet, pdef, filename);
+									NewGalaxyData.Planet.Add(FString(Planet));
+								}
+								else if (pdef->name()->value() == "star") {
+									GetDefText(Star, pdef, filename);
+									NewGalaxyData.Star = FString(Star);
 								}
 								else if (pdef->name()->value() == "class") {
 									GetDefText(ClassName, pdef, fn);

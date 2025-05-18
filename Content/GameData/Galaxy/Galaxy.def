@@ -1,33 +1,396 @@
 GALAXY
 
 // TERRELIAN ALLIANCE
-system: { loc: ( 6.2,  0.3,  1.0), class: G, iff: 1, empire: 0, name: Jarnell, link: Athenar, link: Borova, link: Thralis, link: Paragon }
-system: { loc: ( 4.7, -1.9,  1.0), class: F, iff: 1, empire: 0, name: Borova,  link: Janus, link: Silessia }
-system: { loc: ( 4.1,  1.7,  1.0), class: G, iff: 1, empire: 0, name: Athenar, link: Janus, link: Jarnell  }
-system: { loc: ( 6.8, -2.5,  1.0), class: G, iff: 1, empire: 0, name: Paragon, link: Borova, link: Jarnell }
-system: { loc: ( 7.8,  2.3,  1.0), class: K, iff: 1, empire: 0, name: Thralis, link: Jarnell }
-system: { loc: ( 2.8, -0.3,  0.0), class: G, iff: 1, empire: 0, name: Janus,   link: Solus, link: Athenar, link: Borova, link: Haiche, link: Silessia }
+system: 
+{
+	loc: ( 6.2,  0.3,  1.0),
+	class: G,
+	iff: 1,
+	empire: 0,
+	name: Jarnell,
+	
+	link: Athenar,
+	link: Borova,
+	link: Thralis,
+	link: Paragon ,
+
+	star: Valtala,
+	planet: Adonis,
+	planet: Jarnell,
+	planet: Caladan,
+	planet: Dawn,
+}
+
+system: 
+{
+	loc: ( 4.7, -1.9,  1.0),
+	class: F,
+	iff: 1,
+	empire: 0,
+	name: Borova,
+	
+	link: Janus,
+	link: Silessia,
+	
+	star: Talantar,
+
+	planet: Talistar,
+	planet: Maraner,
+	planet: Borova, 
+	planet: Danova,
+	planet: Zhalisal,
+}
+
+system: {
+	loc: ( 4.1,  1.7,  1.0),
+	class: G,
+	iff: 1,
+	empire: 0,
+	name: Athenar,
+	
+	link: Janus,
+	link: Jarnell,
+
+	star: Talvesta,
+	planet: Athenar,
+	planet: Pallas,
+	
+}
+
+system: 
+{
+	loc: ( 6.8, -2.5,  1.0),
+	class: G,
+	iff: 1,
+	empire: 0,
+	name: Paragon,
+	
+	link: Borova,
+	link: Jarnell,
+	
+	star: Talpara,
+	planet: Dorrath,
+	planet: Paragon,
+	planet: "Bryn Mawr",
+}
+
+system: 
+{
+	loc: ( 7.8,  2.3,  1.0),
+	class: K,
+	iff: 1,
+	empire: 0,
+	name: Thralis,
+	
+	link: Jarnell,
+
+	star: Apollus,
+	planet: Pollux,
+	planet: Thralis,
+	planet: Hera,
+	planet: Zeus,
+}
+
+system: 
+{
+	loc: ( 2.8, -0.3,  0.0),
+	class: G,
+	iff: 1,
+	empire: 0,
+	name: Janus,
+	
+	link: Solus,
+	link: Athenar,
+	link: Borova,
+	link: Haiche,
+	link: Silessia,
+
+	star: Janset,
+	planet: Ilon,
+	planet: Dante,
+	planet: Janek,
+	planet: Alystra,
+}
 
 // INDEPENDENT SYSTEMS
-system: { loc: ( 1.0, -1.8,  0.0), class: G, iff: 0, empire: 10, name: Solus,   link: Janus, link: Renser, link: Silessia }
-system: { loc: ( 1.8, -3.1,  1.0), class: K, iff: 0, empire: 9, name: Silessia, link: Borova, link: Janus, link: Solus, link: Loris  }
-system: { loc: ( 0.0,  1.0,  1.0), class: K, iff: 0, empire: 11, name: Haiche,   link: Janus, link: Renser, link: Ostara, link: Kolchev }
+system: 
+{
+	loc: ( 1.0, -1.8,  0.0),
+	class: G,
+	iff: 0,
+	empire: 10,
+	name: Solus,
+	
+	link: Janus,
+	link: Renser,
+	link: Silessia,
+
+	star: Luxor,
+	planet: Meridian,
+	planet: Solus,
+	planet: Jalah,
+	planet: Trellis,
+}
+
+system: 
+{
+	loc: ( 1.8, -3.1,  1.0),
+	class: K,
+	iff: 0,
+	empire: 9,
+	name: Silessia,
+	
+	link: Borova,
+	link: Janus,
+	link: Solus,
+	link: Loris,
+
+	star: Siltana,
+	planet: Silessia,
+	planet: Prosenar,
+	planet: Vesta,
+	planet: Nero,
+}
+
+system: 
+{
+	loc: ( 0.0,  1.0,  1.0),
+	class: K,
+	iff: 0,
+	empire: 11,
+	name: Haiche,
+	
+	link: Janus,
+	link: Renser,
+	link: Ostara,
+	link: Kolchev,
+
+	star: Heron,
+	planet: Haiche,
+	planet: Cygnus,
+	planet: "Tal Amin",
+}
 
 // MARAKAN HEGEMONY
-system: { loc: (-0.8, -1.5,  1.0), class: G, iff: 2, empire: 1, name: Renser,   link: Haiche, link: Loris, link: Silessia, link: Solus, link: Korius }
-system: { loc: (-1.2, -3.4,  1.0), class: G, iff: 2, empire: 1, name: Loris,    link: Silessia, link: Renser, link: Nephrys, link: Korius }
-system: { loc: (-1.4,  2.8,  1.0), class: M, iff: 2, empire: 1, name: Ostara,   link: Kolchev, link: Haiche, link: Tarsus  }
-system: { loc: (-2.7,  1.1,  1.0), class: G, iff: 2, empire: 1, name: Kolchev,  link: Haiche, link: Ostara, link: Kolchev, link: Isham, link: Tarsus, link: Radix }
-system: { loc: (-2.5, -1.0,  1.0), class: G, iff: 2, empire: 1, name: Korius,   link: Nephrys, link: Renser, link: Loris, link: Kolchev, link: Isham }
-system: { loc: (-2.9,  2.6,  1.0), class: K, iff: 2, empire: 1, name: Tarsus,   link: Kolchev, link: Ostara, link: Radix }
-system: { loc: (-4.0, -3.1,  1.0), class: A, iff: 2, empire: 1, name: Nephrys,  link: Loris, link: Korius }
+system: 
+{
+	loc: (-0.8, -1.5,  1.0),
+	class: G,
+	iff: 2,
+	empire: 1,
+	name: Renser,
+	
+	link: Haiche,
+	link: Loris,
+	link: Silessia,
+	link: Solus,
+	link: Korius,
+	
+	star: Renset,
+	planet: Garana,
+	planet: Rhomindal,
+	planet: Renser,
+	planet: Marisol,
+	planet: Khaital,
+}
 
-system: { loc: (-4.6,  2.1,  1.0), class: G, iff: 2, empire: 1, name: Radix,     link: Kolchev, link: Isham, link: Tarsus, link: Garrison }
-system: { loc: (-5.1,  0.5,  1.0), class: K, iff: 2, empire: 1, name: Isham,     link: Korius, link: Kolchev, link: Radix, link: Korius, link: Garrison, link: Trocanther }
+system:
+{
+	loc: (-1.2, -3.4,  1.0),
+	class: G,
+	iff: 2,
+	empire: 1,
+	name: Loris,
+	
+	link: Silessia,
+	link: Renser,
+	link: Nephrys,
+	link: Korius,
+	
+	star: Lorset,
+	planet: Duna,
+	planet: Loris,
+	planet: Casalle,
+}
 
-system: { loc: (-6.5,  2.5,  1.0), class: G, iff: 2, empire: 1, name: Garrison,  link: Isham, link: Radix }
-system: { loc: (-7.2, -1.2,  1.0), class: K, iff: 2, empire: 1, name: Trocanther, link: Marak. link: Isham  }
-system: { loc: (-8.0, -2.6,  1.0), class: F, iff: 2, empire: 1, name: Marak,      link: Trocanther }
+system: 
+{
+	loc: (-1.4,  2.8,  1.0),
+	class: M,
+	iff: 2,
+	empire: 1,
+	name: Ostara,
+	
+	link: Kolchev,
+	link: Haiche,
+	link: Tarsus,
+
+	star: Ostram,
+	planet: Aram,
+}
+
+system: 
+{
+	loc: (-2.7,  1.1,  1.0),
+	class: G,
+	iff: 2,
+	empire: 1,
+	name: Kolchev,
+	
+	link: Haiche,
+	link: Ostara,
+	link: Kolchev,
+	link: Isham,
+	link: Tarsus,
+	link: Radix,
+
+	star: Kurset,
+	planet: Ilya,
+	planet: Kolchev,
+	planet: Anatoly,
+	planet: Volova,
+}
+
+system: 
+{
+	loc: (-2.5, -1.0,  1.0),
+	class: G,
+	iff: 2,
+	empire: 1,
+	name: Korius,
+	
+	link: Nephrys,
+	link: Renser,
+	link: Loris,
+	link: Kolchev,
+	link: Isham,
+
+	star: Koriset,
+	planet: Solnas,
+	planet: Moneta,
+	planet: Rhomin,
+}
+
+system: 
+{
+	loc: (-2.9,  2.6,  1.0),
+	class: K,
+	iff: 2,
+	empire: 1,
+	name: Tarsus,
+	
+	link: Kolchev,
+	link: Ostara, 
+	link: Radix,
+
+	star: Tarset,
+	planet: "Tarsus I",
+	planet: "Tarsus II",
+}
+
+system: 
+{
+	loc: (-4.0, -3.1,  1.0),
+	class: A,
+	iff: 2,
+	empire: 1,
+	name: Nephrys,
+	
+	link: Loris, 
+	link: Korius,
+
+	star: Nephaas,
+	planet: Nergal,
+}
+
+system: 
+{
+	loc: (-4.6,  2.1,  1.0),
+	class: G,
+	iff: 2, 
+	empire: 1,
+	name: Radix,
+	
+	link: Kolchev,
+	link: Isham,
+	link: Tarsus,
+	link: Garrison,
+
+	star: Radset,
+	planet: Senna,
+	planet: Radix,
+	planet: Cavenda,
+}
+
+system: 
+{
+	loc: (-5.1,  0.5,  1.0), 
+	class: K,
+	iff: 2, 
+	empire: 1, 
+	name: Isham, 
+	
+	link: Korius,
+	link: Kolchev,
+	link: Radix,
+	link: Korius, 
+	link: Garrison, 
+	link: Trocanther,
+
+	star: Ishtar,
+	planet: Garden,
+	planet: Senesca,
+	planet: Ramek,
+	planet: Relay,
+}
+
+system: 
+{
+	loc: (-6.5,  2.5,  1.0), 
+	class: G, 
+	iff: 2,
+	empire: 1,
+	name: Garrison,
+	
+	link: Isham,
+	link: Radix,
+
+	star: Khaniset,
+	planet: Rhofar,
+	planet: Garrison,
+	planet: Korul,
+	planet: Nerasil,
+}
+
+system: 
+{
+	loc: (-7.2, -1.2,  1.0),
+	class: K,
+	iff: 2,
+	empire: 1,
+	name: Trocanther,
+	
+	link: Marak,
+	link: Isham,
+
+	star: Trocantex,
+	planet: Volante,
+	planet: Narcissus,
+	planet: Path,
+}
+
+system: 
+{
+	loc: (-8.0, -2.6,  1.0),
+	class: F,
+	iff: 2,
+	empire: 1,
+	name: Marak,
+	
+	link: Trocanther,
+	star: Marakanis,
+	planet: Marak,
+}
 
 // for screenshots only!
 system: { loc: ( 102,  101,  0.0), class: O, iff: 100, empire: 7, name: Black      }

@@ -453,6 +453,16 @@ struct FGroupData : public FTableRowBase {
     FVector Location;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FUnitData> Units;
+	FGroupData()
+	{
+		Id = 0;
+		Name = "";
+		Type = EGroupType::Unknown;
+		ParentId = 0;
+		ParentType = EGroupType::Unknown;
+		Region = "";
+		Location = FVector::ZeroVector; 
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -583,6 +593,10 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		PlayerBattleGroup = -1;
 		PlayerDesronGroup = -1;
 		PlayerSquadron = -1;
+		
+		GameTime = 0;
+		CampaignTime = 0;
+		FlightTime = 0;
 
 		CampaignComplete.SetNum(5);
 		for (int i = 0; i < CampaignComplete.Num(); i++) {
@@ -604,10 +618,14 @@ struct FS_Galaxy : public FTableRowBase {
 	FVector  Location;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int Iff;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString Star;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	EEMPIRE_NAME Empire;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FString> Link;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	TArray<FString> Planet;
 
 	FS_Galaxy() {
 		Name = "";
@@ -615,6 +633,7 @@ struct FS_Galaxy : public FTableRowBase {
 		Location = FVector::ZeroVector;
 		Iff = 0;
 		Empire = EEMPIRE_NAME::Terellian;
+		Star = "";
 	}
 };
 USTRUCT(BlueprintType)
@@ -1831,6 +1850,8 @@ struct FS_OOBFlatEntry
 		IndentLevel  = 0;
 		ParentId = -1;
 		Id = -1;
+		DisplayName = "";
+		GroupType = ECOMBATGROUP_TYPE::NONE;
 	}
 };
 
@@ -3197,6 +3218,9 @@ struct FS_ShipDesign : public FTableRowBase {
 		BeautyCam = FVector::ZeroVector;
 		ChaseVec = FVector(0, -100, 20);
 		BridgeVec = FVector::ZeroVector;
+		for(int i = 0; i < 4; i++) {
+			Offset[i] = FVector::ZeroVector;
+		}
 	}
 };
 

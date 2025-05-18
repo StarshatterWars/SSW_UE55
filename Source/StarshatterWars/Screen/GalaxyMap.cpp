@@ -17,6 +17,7 @@
 void UGalaxyMap::NativeConstruct()
 {
 	Super::NativeConstruct();
+	SetVisibility(ESlateVisibility::Visible);
 	SetIsFocusable(true);
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance(); 
