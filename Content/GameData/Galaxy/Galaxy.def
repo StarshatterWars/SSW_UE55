@@ -15,10 +15,47 @@ system:
 	link: Paragon ,
 
 	star: Valtala,
-	planet: Adonis,
-	planet: Jarnell,
-	planet: Caladan,
-	planet: Dawn,
+	planet: {
+	   name:    Adonis,
+	   icon:    "GasGiant7_map",
+	   radius:  18e6,
+	   mass:    2.1e26,
+	   orbit:   0.8e11,
+	   tscale:  2,
+	   tilt:    0.2,
+	   ring:    "Ring3",
+	   minrad:  1.5,
+	   maxrad:  1.9,
+	   rotation: 19.5,
+	},
+	planet: {
+	   name:    Jarnell,
+	   icon:    "jarnell_map",
+	   radius:  5.8e6,
+	   mass:    4.98e24,
+	   atmosphere: (100,180,220),
+	   orbit:   1.4e11,
+	   rotation: 27,
+	},
+	planet: {
+	   name:    Caladan,
+	   icon:    "caladan_map",
+	   radius:  3.8e6,
+	   mass:    2.98e24,
+	   atmosphere: (50,80,70),
+	   orbit:   2.01e11,
+	   rotation: 32,
+	}
+	planet:     {
+	   name:    Dawn,
+	   icon:    "GasGiant6_map",
+	   radius:  28e6,
+	   mass:    5.1e26,
+	   orbit:   4.3e11,
+	   tscale:  2,
+	   tilt:    0.12,
+	   rotation: 27.3,
+	},
 }
 
 system: 
@@ -34,11 +71,50 @@ system:
 	
 	star: Talantar,
 
-	planet: Talistar,
-	planet: Maraner,
-	planet: Borova, 
-	planet: Danova,
-	planet: Zhalisal,
+	planet: {
+	   name:    Talistar
+	   icon:   "lanos_map",
+	   radius:  2.3e6,
+	   mass:    1.39e24,
+	   orbit:   4.67e10,
+	   rotation: 95,
+	},
+	planet:       {
+	   name:     Maraner,
+	   icon:     "maraner_map",
+	   radius:   3.5e6,
+	   mass:     2.18e24,
+	   orbit:    8.90e10,
+	   rotation: 35,
+	},
+	planet:     {
+	   name:    Borova
+	   icon:    "borova_map"
+	   radius:  5.9e6,
+	   mass:    4.38e24,
+	   atmosphere: (120,160,210),
+	   orbit:   2.1e11,
+	   rotation: 29,
+	},
+	planet: {
+	   name:    Danova
+	   icon:    "GasGiant2_map"
+	   radius:  17.1e6,
+	   mass:    3.6e26,
+	   tilt:    0.13,
+	   orbit:   3.95e11,
+	   rotation: 31.3,
+	},
+	planet: {
+	   name:    Zhalisal
+	   icon:    "GasGiant3_map",
+	   radius:  20e6,
+	   mass:    4.81e26,
+	   orbit:   4.75e11,
+	   tscale:  2,
+	   tilt:    0.21,
+	   rotation: 46.2,
+	}
 }
 
 system: {
@@ -52,9 +128,23 @@ system: {
 	link: Jarnell,
 
 	star: Talvesta,
-	planet: Athenar,
-	planet: Pallas,
 	
+	planet:     {
+	   name:    Athenar,
+	   icon:    "athenar_map",
+	   radius:  5.72e6,
+	   mass:    3.53e24,
+	   atmosphere: (150,160,210),
+	   orbit:   1.95e11,
+	},
+	planet:     {
+	   name:    Pallas
+	   icon:    "nero_map"
+	   radius:  3.35e6,
+	   mass:    2.52e24,
+	   atmosphere: (80,120,150),
+	   orbit:   4.25e11,
+	},
 }
 
 system: 
@@ -69,9 +159,32 @@ system:
 	link: Jarnell,
 	
 	star: Talpara,
-	planet: Dorrath,
-	planet: Paragon,
-	planet: "Bryn Mawr",
+	planet: {
+	   name:    Dorrath
+	   icon:    "dorrath_map",
+	   radius:  3.9e6,
+	   mass:    2.58e24,
+	   orbit:   7.23e10,
+	   atmosphere: (121,120,121),
+	   rotation: 29.72,
+	},
+	planet:     {
+	   name:    Paragon
+	   icon:    "paragon_map",
+	   radius:  5.8e6,
+	   mass:    4.98e24,
+	   atmosphere: (140,170,200),
+	   orbit:   1.4e11,
+	   rotation: 27,
+	},
+   planet: {
+	   name:     "Bryn Mawr",
+	   icon:     "bryn_map",
+	   radius:  3.3e6,
+	   mass:    2.45e24,
+	   orbit:   2.57e11,
+	   rotation: 35,
+	},
 }
 
 system: 
@@ -85,10 +198,46 @@ system:
 	link: Jarnell,
 
 	star: Apollus,
-	planet: Pollux,
-	planet: Thralis,
-	planet: Hera,
-	planet: Zeus,
+	planet: {
+	   name:    Pollux
+	   icon:    "benares_map",
+	   radius:  3.75e6,
+	   mass:    2.50e24,
+	   orbit:   6.32e10,
+	   atmosphere: (60,55,45),
+	   rotation: 32.12,
+	},
+	planet:     {
+	   name:    Thrale
+	   icon:    "thralis_map",
+	   radius:  5.98e6,
+	   mass:    4.62e24,
+	   atmosphere: (80,100,150),
+	   orbit:   1.76e11,
+	   rotation: 13.12,
+	}
+	planet: {
+	   name:    Hera
+	   icon:    "GasGiant5_map",
+	   radius:  23.1e6,
+	   mass:    4.2e26,
+	   tscale:  2,
+	   tilt:    0.1,
+	   orbit:   2.95e11,
+	   rotation: 29.3,
+	},
+	planet: {
+	   name:    Zeus,
+	   icon:    "GasGiant10_map",
+	   radius:  27.5e6,
+	   mass:    5.42e26,
+	   orbit:   4.13e11,
+	   tilt:    0.2,
+	   ring:    "Giants/Ring2.pcx",
+	   minrad:  1.3,
+	   maxrad:  1.7,
+	   rotation: 22.5,
+	},
 }
 
 system: 
@@ -106,10 +255,45 @@ system:
 	link: Silessia,
 
 	star: Janset,
-	planet: Ilon,
-	planet: Dante,
-	planet: Janek,
-	planet: Alystra,
+	planet: {
+	   name:    Ilon,
+	   icon:     "ilon_map",
+	   radius:  3.5e6,
+	   mass:    2.18e24,
+	   orbit:   5.80e10,
+	   rotation: 11,
+	},
+	planet: {
+	   name:    Dante,
+	   icon:    "dante_map",
+	   radius:  5.2e6,
+	   atmosphere: (192,160,128),
+	   mass:    4.18e24,
+	   orbit:   7.20e10,
+	   rotation: 8,
+	},
+	planet: {
+	   name:    Janek,
+	   icon:    "janek_map",
+	   radius:  5.4e6,
+	   mass:    4.18e24,
+	   atmosphere: (100,150,220),
+	   orbit:   1.4e11,
+	   rotation: 20,
+	},
+	planet:     {
+	   name:    Alystra
+	   icon:    "GasGiant12_map",
+	   radius:  36e6,
+	   mass:    5.6e26,
+	   orbit:   2.84e11,
+	   tscale:  2,
+	   tilt:    0.2,
+	   ring:    "Ring",
+	   minrad:  1.3,
+	   maxrad:  2.1,
+	   rotation: 16.3,
+	},
 }
 
 // INDEPENDENT SYSTEMS
@@ -126,10 +310,47 @@ system:
 	link: Silessia,
 
 	star: Luxor,
-	planet: Meridian,
-	planet: Solus,
-	planet: Jalah,
-	planet: Trellis,
+	planet: {
+	   name:    Meridian
+	   icon:    "meridian_map",
+	   radius:  3.5e6,
+	   mass:    2.18e24,
+	   atmosphere: (200,185,165),
+	   orbit:   6.80e10,
+	   rotation: 15.35,
+	},
+	planet: {
+	   name:    Solus
+	   icon:    "solus_map",
+	   radius:  5.4e6,
+	   mass:    4.18e24,
+	   atmosphere: (155,175,220),
+	   orbit:   1.4e11,
+	   rotation: 21.3,
+	},
+	planet: {
+	   name:    Jalah,
+	   icon:    "jalah_map",
+	   radius:  19.1e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   2.95e11,
+	   rotation: 29.3,
+	},
+	planet: {
+	   name:    Trellis
+	   icon:    "GasGiant9_map",
+	   radius:  30e6,
+	   mass:    5.42e26,
+	   orbit:   3.75e11,
+	   tscale:  2,
+	   tilt:    0.125,
+	   ring:    "Ring2",
+	   minrad:  1.2,
+	   maxrad:  1.9,
+	   rotation: 19.5,
+	},
 }
 
 system: 
@@ -146,10 +367,44 @@ system:
 	link: Loris,
 
 	star: Siltana,
-	planet: Silessia,
-	planet: Prosenar,
-	planet: Vesta,
-	planet: Nero,
+	planet:       {
+	   name:    Silessia
+	   icon:    "silessia_map",
+	   radius:  5.4e6,
+	   mass:    3.38e24,
+	   atmosphere: (80,120,150),
+	   orbit:   0.97e11,
+	   rotation: 19,
+	},
+	planet: {
+	   name:    Prosenar
+	   icon:    "GasGiant8_map",
+	   radius:  14.1e6,
+	   mass:    3.6e26,
+	   tilt:    0.2,
+	   ring:    "Giants/Ring3.pcx",
+	   minrad:  1.5,
+	   maxrad:  1.9,
+	   orbit:   1.85e11,
+	   rotation: 61.3,
+	},
+	planet: {
+	   name:    Vesta
+	   icon:    "GasGiant2_map",
+	   radius:  18.1e6,
+	   mass:    3.6e26,
+	   tilt:    0.13,
+	   orbit:   3.15e11,
+	   rotation: 31.3,
+	},
+	planet: {
+	   name:    Nero
+	   icon:    "nero_map",
+	   radius:  2.64e6,
+	   mass:    1.48e24,
+	   orbit:   5.18e11,
+	   rotation: 219,
+	},
 }
 
 system: 
@@ -166,9 +421,35 @@ system:
 	link: Kolchev,
 
 	star: Heron,
-	planet: Haiche,
-	planet: Cygnus,
-	planet: "Tal Amin",
+	planet:       {
+	   name:    Haiche
+	   icon:    "haiche_map"
+	   radius:  4.8e6,
+	   mass:    5.75e24,
+	   atmosphere: (200,180,160),
+	   orbit:   0.94e11,
+	   rotation: 17.3,
+	},
+	planet: {
+	   name:    Cygnus
+	   map:     "GasGiant5_map",
+	   radius:  27.1e6,
+	   mass:    2.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   2.35e11,
+	   rotation: 31.3,
+	},
+	planet: {
+	   name:    "Tal Amin"
+	   icon:    "GasGiant11_map",
+	   radius:  38.2e6,
+	   mass:    4.0e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   3.41e11,
+	   rotation: 31.3,
+	},
 }
 
 // MARAKAN HEGEMONY
@@ -187,11 +468,49 @@ system:
 	link: Korius,
 	
 	star: Renset,
-	planet: Garana,
-	planet: Rhomindal,
-	planet: Renser,
-	planet: Marisol,
-	planet: Khaital,
+	planet: {
+	   name:    Garana
+	   icon:    "garana_map",
+	   radius:  4.318e6,
+	   mass:    3.15e24,
+	   orbit:   6.19e10,
+	   rotation: 13.19,
+	},
+	planet: {
+	   name:    Rhomindal
+	   icon:    "rhomindal_map",
+	   radius:  5.735e6,
+	   mass:    4.95e24,
+	   orbit:   11.53e10,
+	   rotation: 29.3,
+	},
+	planet: {
+	   name:    Renser
+	   icon:    "renser_map",
+	   radius:  6.437e6,
+	   mass:    5.98e24,
+	   atmosphere: (180,170,200),
+	   orbit:   19.64e10,
+	   rotation: 17,
+	},
+	planet: {
+	   name:    Marisol
+	   icon:    "marisol_map",
+	   radius:  27.489e6,
+	   mass:    4.21e26,
+	   orbit:   3.75e11,
+	   tilt:    0.20,
+	   rotation: 39.2,
+	},
+	planet: {
+	   name:    Khaital
+	   icon:    "khaital_map",
+	   radius:  3.821e6,
+	   mass:    2.87e24,
+	   atmosphere: (150,160,190),
+	   orbit:   5.78e11,
+	   rotation: 28,
+	},
 }
 
 system:
@@ -208,9 +527,39 @@ system:
 	link: Korius,
 	
 	star: Lorset,
-	planet: Duna,
-	planet: Loris,
-	planet: Casalle,
+	planet:     {
+	   name:    Duna,
+	   icon:    "duna_map",
+	   radius:  25.1e6,
+	   mass:    1.38e25,
+	   tilt:    0.125,
+	   tscale:  2,
+	   orbit:   0.81e11,
+	   rotation: 36.3,
+	}
+	planet:     {
+	   name:    Loris,
+	   icon:    "loris_map",
+	   radius:  5.1e6,
+	   mass:    3.88e24,
+	   tilt:    0.125,
+	   atmosphere: (200,180,160),
+	   orbit:   1.54e11,
+	   rotation: 26.3,
+	},
+	planet:     {
+	   name:    Casalle
+	   icon:    "GasGiant5_map",
+	   radius:  38.2e6,
+	   mass:    4.0e26,
+	   orbit:   2.95e11,
+	   tilt:    0.1,
+	   tscale:  2,
+	   ring:    "Ring3",
+	   minrad:  1.4,
+	   maxrad:  1.7,
+	   rotation: 36.3,
+	},
 }
 
 system: 
@@ -226,7 +575,15 @@ system:
 	link: Tarsus,
 
 	star: Ostram,
-	planet: Aram,
+	planet: {
+	   name:    Aram,
+	   icon:   "ostara_map",
+	   radius:  6.4e6,
+	   mass:    5.98e24,
+	   atmosphere: (180,90,60),
+	   orbit:   10.34e10,
+	   rotation: 15,
+	},
 }
 
 system: 
@@ -245,10 +602,46 @@ system:
 	link: Radix,
 
 	star: Kurset,
-	planet: Ilya,
-	planet: Kolchev,
-	planet: Anatoly,
-	planet: Volova,
+	planet:     {
+	   name:    Ilya
+	   icon:    "ilya_map",
+	   radius:  3.6e6,
+	   mass:    4.1e26,
+	   orbit:   1.03e11,
+	   rotation: 19.3,
+	},
+	planet:     {
+	   name:    Kolchev
+	   icon:    "kolchev_map",
+	   atmosphere: (130,130,150),
+	   radius:  4.8e6,
+	   mass:    3.9e24,
+	   orbit:   1.95e11,
+	   rotation: 23.3,
+	}
+	planet: {
+	   name:    Anatoly
+	   icon:    "GasGiant6_map",
+	   radius:  29.1e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   2.95e11,
+	   rotation: 29.3,
+	},
+	planet: {
+	   name:    Volova,
+	   icon:    "GasGiant9_map",
+	   image:   "Giants/GasGiant9.jpg",
+	   radius:  20e6,
+	   mass:    5.42e26,
+	   orbit:   3.75e11,
+	   tilt:    0.25,
+	   ring:    "Ring2",
+	   minrad:  1.2,
+	   maxrad:  1.9,
+	   rotation: 19.5,
+	},
 }
 
 system: 
@@ -266,9 +659,24 @@ system:
 	link: Isham,
 
 	star: Koriset,
-	planet: Solnas,
-	planet: Moneta,
-	planet: Rhomin,
+	planet: {
+	   name:    Moneta
+	   icon:    "bryn_map",
+	   radius:  3.6e6,
+	   mass:    3.96e26,
+	   orbit:   0.97e11,
+	   rotation: 15.13,
+	},
+	planet: {
+	   name:    Rhomin
+	   icon:    "GasGiant11_map",
+	   radius:  38.2e6,
+	   mass:    4.0e26,
+	   tilt:    0.1,
+	   tscale:  2,
+	   orbit:   1.61e11,
+	   rotation: 31.3,
+	},
 }
 
 system: 
@@ -284,8 +692,25 @@ system:
 	link: Radix,
 
 	star: Tarset,
-	planet: "Tarsus I",
-	planet: "Tarsus II",
+	planet: {
+	   name:    "Tarsus I"
+	   icon:    "tarsus_map",
+	   image:   "Tarsus/tarsus_lo.pcx",
+	   high_res:"Tarsus/tarsus_hi.jpg",
+	   atmosphere: (90,70,60),
+	   radius:  3.75e6,
+	   mass:    5.6e26,
+	   orbit:   1.95e11,
+	   rotation: 21.3,
+	}
+	planet: {
+	   name:    "Tarsus II",
+	   icon:    "oman_map",
+	   radius:  2.15e6,
+	   mass:    3.96e26,
+	   orbit:   3.61e11,
+	   rotation: 11.1,
+	},
 }
 
 system: 
@@ -300,7 +725,14 @@ system:
 	link: Korius,
 
 	star: Nephaas,
-	planet: Nergal,
+	planet:     {
+	   name:    Nergal
+	   icon:    "nergal_map",
+	   radius:  9e6,
+	   mass:    5.6e28,
+	   orbit:   4.8e11,
+	   rotation: 160.3,
+	},
 }
 
 system: 
@@ -317,9 +749,33 @@ system:
 	link: Garrison,
 
 	star: Radset,
-	planet: Senna,
-	planet: Radix,
-	planet: Cavenda,
+	planet:     {
+	   name:    Senna
+	   icon:    "senna_map",
+	   radius:  4.5e6,
+	   mass:    4.1e24,
+	   atmosphere: (160,140,120),
+	   orbit:   0.75e11,
+	   rotation: 24.3,
+	},
+	planet:     {
+	   name:    Radix
+	   icon:    "radix_map",
+	   radius:  5.1e6,
+	   mass:    4.6e24,
+	   atmosphere: (175,160,150),
+	   orbit:   1.3e11,
+	   rotation: 16.3,
+	},
+	planet: {
+	   name:    Cavenda
+	   icon:    "GasGiant5_map",
+	   radius:  13.7e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   orbit:   2.51e11,
+	   rotation: 43.7,
+	},
 }
 
 system: 
@@ -338,10 +794,46 @@ system:
 	link: Trocanther,
 
 	star: Ishtar,
-	planet: Garden,
-	planet: Senesca,
-	planet: Ramek,
-	planet: Relay,
+	planet:     {
+	   name:    Garden
+	   icon:    "garden_map",
+	   radius:  3.75e6,
+	   mass:    5.6e23,
+	   atmosphere: (145,170,190),
+	   orbit:   1.8e11,
+	   rotation: 26.3,
+	},
+	planet: {
+	   name:    Senesca,
+	   icon:    "GasGiant10_map",
+	   radius:  14.1e6,
+	   mass:    3.6e26,
+	   tilt:    0.2,
+	   ring:    "Ring2",
+	   minrad:  1.5,
+	   maxrad:  1.8,
+	   orbit:   2.65e11,
+	   rotation: 61.3,
+	},
+	planet: {
+	   name:    Ramek,
+	   icon:    "GasGiant9_map",
+	   radius:  18.1e6,
+	   mass:    3.6e26,
+	   tscale:  2,
+	   tilt:    0.13,
+	   orbit:   3.35e11,
+	   rotation: 31.3,
+	}
+	planet:     {
+	   name:    Relay,
+	   icon:    "relay_map",
+	   radius:  3.15e6,
+	   mass:    4.6e23,
+	   atmosphere: (130,120,110),
+	   orbit:   4.18e11,
+	   rotation: 14.3,
+	}
 }
 
 system: 
@@ -356,10 +848,48 @@ system:
 	link: Radix,
 
 	star: Khaniset,
-	planet: Rhofar,
-	planet: Garrison,
-	planet: Korul,
-	planet: Nerasil,
+	planet: {
+	   name:    Rhofar
+	   icon:    "oman_map",
+	   radius:  3.1e6,
+	   tilt:    0.03,
+	   mass:    3.1e24,
+	   orbit:   0.94e11,
+	   rotation: 32.7,
+	}
+	planet: {
+	   name:    Garrison
+	   icon:    "garrison_map",
+	   radius:  6e6,
+	   tilt:    0.15,
+	   ring:    "garrison_ring",
+	   minrad:  1.5,
+	   maxrad:  1.75,
+	   mass:    5.1e24,
+	   orbit:   1.4e11,
+	   rotation: 21.7,
+	},
+	planet: {
+	   name:    Korul
+	   icon:    "GasGiant10_map",
+	   radius:  23e6,
+	   tilt:    0.19,
+	   ring:    "Ring2",
+	   minrad:  1.6,
+	   maxrad:  1.666,
+	   mass:    5.1e24,
+	   orbit:   2.4e11,
+	   rotation: 21.7,
+	},
+	planet: {
+	   name:    Nerasil
+	   icon:    "kala_map"
+	   radius:  4e6,
+	   tilt:    0.15,
+	   mass:    3.7e24,
+	   orbit:   4.2e11,
+	   rotation: 17.2,
+	},
 }
 
 system: 
@@ -374,9 +904,30 @@ system:
 	link: Isham,
 
 	star: Trocantex,
-	planet: Volante,
-	planet: Narcissus,
-	planet: Path,
+	planet: {
+	   name:    Volante
+	   icon:    "volante_map",
+	   radius:  6e6,
+	   mass:    5.1e24,
+	   orbit:   1.4e11,
+	   rotation: 21.7,
+	}
+	planet: {
+	   name:    Narcissus
+	   icon:    "GasGiant1_map",
+	   radius:  13.7e6,
+	   mass:    3.6e26,
+	   orbit:   2.51e11,
+	   rotation: 43.7,
+	}
+	planet: {
+	   name:    Path
+	   icon:    "path_map",
+	   radius:  4.1e6,
+	   mass:    3.5e24,
+	   orbit:   4.4e11,
+	   rotation: 51.7,
+	},
 }
 
 system: 
@@ -389,7 +940,15 @@ system:
 	
 	link: Trocanther,
 	star: Marakanis,
-	planet: Marak,
+	planet:     {
+	   name:    Marak
+	   icon:    "marak_map",
+	   atmosphere: (90,90,130),
+	   radius:  6.1e6,
+	   mass:    5.3e24,
+	   orbit:   1.1e11,
+	   rotation: 23.7,
+	},
 }
 
 // for screenshots only!

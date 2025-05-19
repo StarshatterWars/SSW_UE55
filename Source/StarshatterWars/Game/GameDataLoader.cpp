@@ -2914,9 +2914,18 @@ AGameDataLoader::LoadGalaxyMap()
 									GetDefText(Link, pdef, filename);
 									NewGalaxyData.Link.Add(FString(Link));
 								}
+								//else if (pdef->name()->value() == "planet") {
+								//	GetDefText(Planet, pdef, filename);
+								//	NewGalaxyData.Planet.Add(FString(Planet));
+								//}
 								else if (pdef->name()->value() == "planet") {
-									GetDefText(Planet, pdef, filename);
-									NewGalaxyData.Planet.Add(FString(Planet));
+									if (!pdef->term() || !pdef->term()->isStruct()) {
+										UE_LOG(LogTemp, Log, TEXT("WARNING: planet struct missing in '%s'"), *FString(fn));
+									}
+									else {
+										ParsePlanetMap(pdef->term()->isStruct(), fn);
+										NewGalaxyData.Planet = PlanetMapArray;
+									}
 								}
 								else if (pdef->name()->value() == "star") {
 									GetDefText(Star, pdef, filename);
@@ -3435,6 +3444,100 @@ void AGameDataLoader::ParseRegion(TermStruct* val, const char* fn)
 
 	}
 	RegionDataArray.Add(NewRegionData);
+}
+
+void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParsePlanetMap()"));
+
+	Text   PlanetName = "";
+	Text   PlanetIcon = "";
+	Text   PlanetRing = "";
+	double Mass = 0.0;
+	double Orbit = 0.0;
+	double Radius = 0.0;
+	double Rot = 0.0;
+	double Minrad = 0.0;
+	double Maxrad = 0.0;
+	double Tscale = 1.0;
+	double Tilt = 0.0;
+
+	bool Retro = false;
+	FColor AtmosColor = FColor::Black;
+
+	FS_PlanetMap NewPlanetMap;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(PlanetName, pdef, fn);
+				NewPlanetMap.Name = FString(PlanetName);
+			}
+			else if (pdef->name()->value() == "icon") {
+				GetDefText(PlanetIcon, pdef, fn);
+				NewPlanetMap.Icon = FString(PlanetIcon);
+			}
+			else if (pdef->name()->value() == "ring") {
+				GetDefText(PlanetRing, pdef, fn);
+				NewPlanetMap.Ring = FString(PlanetRing);
+			}
+			else if (pdef->name()->value() == "mass") {
+				GetDefNumber(Mass, pdef, fn);
+				NewPlanetMap.Mass = Mass;
+			}
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+				NewPlanetMap.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "retro") {
+				GetDefBool(Retro, pdef, fn);
+				NewPlanetMap.Retro = Retro;
+			}
+	
+			else if (pdef->name()->value() == "rotation") {
+				GetDefNumber(Rot, pdef, fn);
+				NewPlanetMap.Rot = Rot;
+			}
+			else if (pdef->name()->value() == "radius") {
+				GetDefNumber(Radius, pdef, fn);
+				NewPlanetMap.Radius = Radius;
+			}
+			else if (pdef->name()->value() == "minrad") {
+				GetDefNumber(Minrad, pdef, fn);
+				NewPlanetMap.Minrad = Minrad;
+			}
+			else if (pdef->name()->value() == "maxrad") {
+				GetDefNumber(Maxrad, pdef, fn);
+				NewPlanetMap.Maxrad = Maxrad;
+			}
+			else if (pdef->name()->value() == "tscale") {
+				GetDefNumber(Tscale, pdef, fn);
+				NewPlanetMap.Tscale = Tscale;
+			}
+			else if (pdef->name()->value() == "tilt") {
+				GetDefNumber(Tilt, pdef, fn);
+				NewPlanetMap.Tilt = Tilt;
+			}
+			else if (pdef->name()->value() == "atmosphere") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				NewPlanetMap.Atmos = AtmosColor;
+			}
+	
+			/*else if (pdef->name()->value() == "moon") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: moon struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					ParseMoon(pdef->term()->isStruct(), fn);
+					NewPlanetData.Moon = MoonDataArray;
+				}
+			}*/
+		}
+	}
+	PlanetMapArray.Add(NewPlanetMap);
 }
 
 void AGameDataLoader::ParseTerrain(TermStruct* val, const char* fn)

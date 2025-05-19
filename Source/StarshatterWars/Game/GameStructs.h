@@ -606,14 +606,50 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 };
 
  USTRUCT(BlueprintType)
-struct FS_PlanetData : public FTableRowBase {
+struct FS_PlanetMap : public FTableRowBase {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FString  Name;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Icon;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Ring;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Radius;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Mass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Rot;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Minrad;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Maxrad;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tscale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tilt;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool   Retro;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor  Atmos;
 
-	FS_PlanetData() {
+	FS_PlanetMap() {
 		Name = "";
+		Icon = "";
+		Ring = "";
+		Radius = 0.0;
+		Mass = 0.0;
+		Orbit = 0.0;
+		Rot = 0.0;
+		Minrad = 0.0;
+		Maxrad = 0.0;
+		Tscale = 1.0;
+		Tilt = 0.0;
+		Retro = false;
+		Atmos = FColor::Black;
 	}
 };
 
@@ -637,9 +673,7 @@ struct FS_Galaxy : public FTableRowBase {
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FString> Link;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FString> Planet;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FS_PlanetData> PlanetData;
+	TArray<FS_PlanetMap> Planet;
 
 	FS_Galaxy() {
 		Name = "";
@@ -650,6 +684,7 @@ struct FS_Galaxy : public FTableRowBase {
 		Star = "";
 	}
 };
+
 USTRUCT(BlueprintType)
 struct FS_StarSky : public FTableRowBase {
 	GENERATED_BODY()

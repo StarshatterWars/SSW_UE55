@@ -96,6 +96,7 @@ public:
 
 	void ParseRegion(TermStruct* val, const char* fn);
 
+	void ParsePlanetMap(TermStruct* val, const char* fn);
 	void ParseTerrain(TermStruct* val, const char* fn);
 
 	void LoadStarsystems();
@@ -253,6 +254,8 @@ protected:
 	TArray<FS_Planet> PlanetDataArray;
 	TArray<FS_Moon> MoonDataArray;
 	TArray<FS_Region> RegionDataArray;
+
+	TArray<FS_PlanetMap> PlanetMapArray;
 
 	TArray<FS_TemplateMission> TemplateMissionArray;
 	TArray<FS_TemplateMission> ScriptedMissionArray;
