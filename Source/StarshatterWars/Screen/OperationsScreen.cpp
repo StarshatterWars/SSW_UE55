@@ -78,31 +78,35 @@ void UOperationsScreen::NativeConstruct()
 	}
 
 	if (TheaterGalaxyButton) {
-		TheaterGalaxyButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonClicked);
+		TheaterGalaxyButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonSelected);
 		TheaterGalaxyButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonHovered);
-	}
-
-	if (GalaxyButtonText) {
-		GalaxyButtonText->SetText(FText::FromString("GALAXY"));
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(TheaterGalaxyButton->GetWidgetFromName("Label")))
+		{
+			Label->SetText(FText::FromString("GALAXY"));
+		}
 	}
 
 	if (TheaterSystemButton) {
-		TheaterSystemButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonClicked);
+		TheaterSystemButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonSelected);
 		TheaterSystemButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonHovered);
-	}
-
-	if (SystemButtonText) {
-		SystemButtonText->SetText(FText::FromString("SYSTEM"));
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(TheaterSystemButton->GetWidgetFromName("Label")))
+		{
+			Label->SetText(FText::FromString("SYSTEM"));
+		}
 	}
 
 	if (TheaterSectorButton) {
-		TheaterSectorButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonClicked);
+		TheaterSectorButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonSelected);
 		TheaterSectorButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonHovered);
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(TheaterSectorButton->GetWidgetFromName("Label")))
+		{
+			Label->SetText(FText::FromString("SECTOR"));
+		}
 	}
 
-	if (SectorButtonText) {
-		SectorButtonText->SetText(FText::FromString("SECTOR"));
-	}
 	if (EmpireSelectionDD) {
 		
 		EmpireSelectionDD->ClearOptions();
@@ -257,42 +261,6 @@ void UOperationsScreen::OnSelectButtonHovered()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayHoverSound(this);
-}
-
-void UOperationsScreen::OnTheaterGalaxyButtonClicked()
-{
-	if (MapSwitcher) {
-		MapSwitcher->SetActiveWidgetIndex(0);
-	}
-}
-
-void UOperationsScreen::OnTheaterSystemButtonClicked()
-{
-	if (MapSwitcher) {
-		MapSwitcher->SetActiveWidgetIndex(1);
-	}
-}
-
-void UOperationsScreen::OnTheaterSectorButtonClicked()
-{
-	if (MapSwitcher) {
-		MapSwitcher->SetActiveWidgetIndex(2);
-	}
-}
-
-void UOperationsScreen::OnTheaterGalaxyButtonHovered()
-{
-
-}
-
-void UOperationsScreen::OnTheaterSystemButtonHovered()
-{
-
-}
-
-void UOperationsScreen::OnTheaterSectorButtonHovered()
-{
-
 }
 
 void UOperationsScreen::LoadForcesInfo()
@@ -1146,6 +1114,63 @@ void UOperationsScreen::OnMenuToggleHovered(UMenuButton* HoveredButton)
 	SSWInstance->PlayHoverSound(this);
 }
 
+void UOperationsScreen::OnTheaterGalaxyButtonSelected(UMenuButton* SelectedButton)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(0);
+	}
+}
+
+void UOperationsScreen::OnTheaterGalaxyButtonHovered(UMenuButton* HoveredButton)
+{
+	if (!HoveredButton) return;
+
+	UE_LOG(LogTemp, Log, TEXT("Hovered over: %s"), *HoveredButton->MenuOption);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
+}
+void UOperationsScreen::OnTheaterSystemButtonSelected(UMenuButton* SelectedButton)
+{
+	
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this); 
+	
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(1);
+	}
+}
+
+void UOperationsScreen::OnTheaterSystemButtonHovered(UMenuButton* HoveredButton)
+{
+	if (!HoveredButton) return;
+
+	UE_LOG(LogTemp, Log, TEXT("Hovered over: %s"), *HoveredButton->MenuOption);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
+}
+
+void UOperationsScreen::OnTheaterSectorButtonSelected(UMenuButton* SelectedButton)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(2);
+	}
+}
+
+void UOperationsScreen::OnTheaterSectorButtonHovered(UMenuButton* HoveredButton)
+{
+	if (!HoveredButton) return;
+
+	UE_LOG(LogTemp, Log, TEXT("Hovered over: %s"), *HoveredButton->MenuOption);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayHoverSound(this);
+}
+
 void UOperationsScreen::OnMenuToggleSelected(UMenuButton* SelectedButton)
 {
 	if (!SelectedButton) return;
@@ -1181,6 +1206,9 @@ void UOperationsScreen::OnMenuToggleSelected(UMenuButton* SelectedButton)
 
 void UOperationsScreen::OnMenuButtonSelected(UMenuButton* SelectedButton)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
 	for (UMenuButton* Button : AllMenuButtons)
 	{
 		if (Button)
@@ -1232,7 +1260,7 @@ void UOperationsScreen::CreateGalaxyMap() {
 
 	GalaxyMapCanvas->AddChildToCanvas(GalaxyMap);
 	
-	if (UCanvasPanelSlot* MapSlot = MapCanvas->AddChildToCanvas(GalaxyMap))
+	if (UCanvasPanelSlot* MapSlot = GalaxyMapCanvas->AddChildToCanvas(GalaxyMap))
 	{
 		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
 		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
@@ -1242,4 +1270,8 @@ void UOperationsScreen::CreateGalaxyMap() {
 	//GalaxyMap->SetVisibility(ESlateVisibility::Collapsed);
 }
 
+void UOperationsScreen::CreateSystemMap() {
+}
 
+void UOperationsScreen::CreateSectorMap() {
+}

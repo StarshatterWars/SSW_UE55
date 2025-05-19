@@ -194,14 +194,8 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UTextBlock* CurrentUnitLabel;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationLabel;
+	
 	UPROPERTY(meta = (BindWidgetOptional))
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* GalaxyButtonText;
-		UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* SystemButtonText;
-		UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* SectorButtonText;
 	class UButton* SelectButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
@@ -225,11 +219,11 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* MissionsButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UButton* TheaterGalaxyButton;
+	class UMenuButton* TheaterGalaxyButton;
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UButton* TheaterSystemButton;
+	class UMenuButton* TheaterSystemButton;
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UButton* TheaterSectorButton;
+	class UMenuButton* TheaterSectorButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* AudioButton;
@@ -303,12 +297,29 @@ public:
 	UFUNCTION()
 	void OnMenuToggleHovered(UMenuButton* SelectedButton);
 	UFUNCTION()
+	void OnTheaterGalaxyButtonSelected(UMenuButton* SelectedButton);
+	UFUNCTION()
+	void OnTheaterGalaxyButtonHovered(UMenuButton* HoveredButton);
+	UFUNCTION()
+	void OnTheaterSystemButtonSelected(UMenuButton* SelectedButton);
+	UFUNCTION()
+	void OnTheaterSystemButtonHovered(UMenuButton* HoveredButton);
+	UFUNCTION()
+	void OnTheaterSectorButtonSelected(UMenuButton* SelectedButton);
+	UFUNCTION()
+	void OnTheaterSectorButtonHovered(UMenuButton* HoveredButton);
+	UFUNCTION()
 	void OnMenuToggleSelected(UMenuButton* SelectedButton);
 	UFUNCTION()
 	void OnMenuButtonSelected(UMenuButton* SelectedButton);
 	void PopulateEmpireDDList();;
 	UFUNCTION()
 	void CreateGalaxyMap();
+	UFUNCTION()
+	void CreateSystemMap();
+	UFUNCTION()
+	void CreateSectorMap();
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
 
@@ -351,18 +362,7 @@ protected:
 	void OnSelectButtonHovered();
 
 	UFUNCTION()
-	void OnTheaterGalaxyButtonClicked();
-	UFUNCTION()
-	void OnTheaterSystemButtonClicked();
-	UFUNCTION()
-	void OnTheaterSectorButtonClicked();
-	UFUNCTION()
-	void OnTheaterGalaxyButtonHovered();
-	UFUNCTION()
-	void OnTheaterSystemButtonHovered();
-	UFUNCTION()
-	void OnTheaterSectorButtonHovered();
-
+	void OnCancelButtonClicked();
 	UFUNCTION()
 	void OnCancelButtonHovered();
 	
