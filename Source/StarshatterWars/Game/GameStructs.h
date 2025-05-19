@@ -604,8 +604,47 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		}
 	}
 };
+USTRUCT(BlueprintType)
+struct FS_MoonMap : public FTableRowBase {
+	GENERATED_BODY()
 
- USTRUCT(BlueprintType)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Icon;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Radius;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Mass;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Rot;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tscale;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tilt;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool   Retro;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor  Atmos;
+
+	FS_MoonMap() {
+		Name = "";
+		Icon = "";
+
+		Radius = 0.0;
+		Mass = 0.0;
+		Orbit = 0.0;
+		Rot = 0.0;
+		Tscale = 1.0;
+		Tilt = 0.0;
+		Retro = false;
+		Atmos = FColor::Black;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_PlanetMap : public FTableRowBase {
 	GENERATED_BODY()
 
@@ -635,6 +674,8 @@ struct FS_PlanetMap : public FTableRowBase {
 	bool   Retro;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Atmos;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_MoonMap> Moon;
 
 	FS_PlanetMap() {
 		Name = "";

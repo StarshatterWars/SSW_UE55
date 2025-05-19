@@ -3446,6 +3446,77 @@ void AGameDataLoader::ParseRegion(TermStruct* val, const char* fn)
 	RegionDataArray.Add(NewRegionData);
 }
 
+// +--------------------------------------------------------------------+
+
+void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseMoonMap()"));
+
+	Text   MoonIcon = "";
+	Text   MoonName = "";
+
+	double Radius = 0.0;
+	double Mass = 0.0;
+	double Orbit = 0.0;
+	double Rot = 0.0;
+	double Tscale = 1.0;
+	double Tilt = 0.0;
+	bool   Retro = false;
+
+	FColor AtmosColor = FColor::Black;
+
+	FS_MoonMap NewMoonMap;
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(MoonName, pdef, fn);
+				NewMoonMap.Name = FString(MoonName);
+			}
+			else if (pdef->name()->value() == "icon") {
+				GetDefText(MoonIcon, pdef, fn);
+				NewMoonMap.Icon = FString(MoonIcon);
+			}
+			else if (pdef->name()->value() == "mass") {
+				GetDefNumber(Mass, pdef, fn);
+				NewMoonMap.Mass = Mass;
+			}
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+				NewMoonMap.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "rotation") {
+				GetDefNumber(Rot, pdef, fn);
+				NewMoonMap.Rot = Rot;
+			}
+			else if (pdef->name()->value() == "retro") {
+				GetDefBool(Retro, pdef, fn);
+				NewMoonMap.Retro = Retro;
+			}
+			else if (pdef->name()->value() == "radius") {
+				GetDefNumber(Radius, pdef, fn);
+				NewMoonMap.Radius = Radius;
+			}
+			else if (pdef->name()->value() == "tscale") {
+				GetDefNumber(Tscale, pdef, fn);
+				NewMoonMap.Tscale = Tscale;
+			}
+			else if (pdef->name()->value() == "inclination") {
+				GetDefNumber(Tilt, pdef, fn);
+				NewMoonMap.Tilt = Tilt;
+			}
+			else if (pdef->name()->value() == "atmosphere") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				NewMoonMap.Atmos = AtmosColor;
+			}
+		}
+	}
+	MoonMapArray.Add(NewMoonMap);
+}
+
 void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParsePlanetMap()"));
@@ -3526,15 +3597,15 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 				NewPlanetMap.Atmos = AtmosColor;
 			}
 	
-			/*else if (pdef->name()->value() == "moon") {
+			else if (pdef->name()->value() == "moon") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
 					UE_LOG(LogTemp, Log, TEXT("WARNING: moon struct missing in '%s'"), *FString(fn));
 				}
 				else {
-					ParseMoon(pdef->term()->isStruct(), fn);
-					NewPlanetData.Moon = MoonDataArray;
+					ParseMoonMap(pdef->term()->isStruct(), fn);
+					NewPlanetMap.Moon = MoonMapArray;
 				}
-			}*/
+			}
 		}
 	}
 	PlanetMapArray.Add(NewPlanetMap);

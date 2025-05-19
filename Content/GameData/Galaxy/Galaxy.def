@@ -27,6 +27,32 @@ system:
 	   minrad:  1.5,
 	   maxrad:  1.9,
 	   rotation: 19.5,
+	   moon: {
+		   name:    Synad,
+		   icon:    "rock_map",
+		   radius:  2.2e6,
+		   mass:    1.9e22,
+		   orbit:   1.44e8,
+		   rotation: 30,
+		},
+		moon: {
+		   name:    Olan,
+		   icon:    "lunar_map",
+		   radius:      3.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        1.7e24,
+		   orbit:       2.251e8,
+		},
+		moon: {
+		   name:    Amnia,
+		   icon:    "lunar_map",
+		   radius:      1.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        1.0e24,
+		   orbit:       3.771e8,
+		},
 	},
 	planet: {
 	   name:    Jarnell,
@@ -36,6 +62,21 @@ system:
 	   atmosphere: (100,180,220),
 	   orbit:   1.4e11,
 	   rotation: 27,
+	   moon: {
+		   name:    Synad,
+		   icon:    "rock_map",
+		   radius:  2.2e6,
+		   mass:    1.9e22,
+		   orbit:   1.44e8,
+		   rotation: 30,
+		},
+		moon: {
+		   name:    Lanora,
+		   icon:    "lanos_map",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   42e6,
+		},
 	},
 	planet: {
 	   name:    Caladan,
@@ -45,7 +86,14 @@ system:
 	   atmosphere: (50,80,70),
 	   orbit:   2.01e11,
 	   rotation: 32,
-	}
+	   moon: {
+		   name:    Malta,
+		   icon:    "lanos_map",
+		   radius:  0.72e6,
+		   mass:    6e22,
+		   orbit:   32e6,
+		},
+	},
 	planet:     {
 	   name:    Dawn,
 	   icon:    "GasGiant6_map",
@@ -55,6 +103,41 @@ system:
 	   tscale:  2,
 	   tilt:    0.12,
 	   rotation: 27.3,
+	   moon: {
+		   name:    Kash,
+		   icon:    "rock_map",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   2.14e8,
+		   rotation: 100,
+		},
+		moon: {
+		   name:    Kara
+		   icon:    "lunar_map",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       4.551e8,
+		},
+		moon: {
+		   name:    Soma,
+		   icon:    "ice_map",
+		   radius:  6e6,
+		   rotation: 27.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   7.11e8,
+		},
+		moon: {
+		   name:    Tarina,
+		   icon:    "ice_map",
+		   radius:  4e6,
+		   rotation: 172.1,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   9.34e8,
+		},
 	},
 }
 
@@ -95,6 +178,20 @@ system:
 	   atmosphere: (120,160,210),
 	   orbit:   2.1e11,
 	   rotation: 29,
+	   moon:       {
+		   name:    Bolus
+		   icon:    "garana_map",
+		   radius:  1.77e6,
+		   mass:    12.2e22,
+		   orbit:   51e6,
+		},
+		moon:       {
+		   name:    Kalan
+		   icon:    "lanos_map",
+		   radius:  0.77e6,
+		   mass:    4.2e22,
+		   orbit:   81e6,
+		},
 	},
 	planet: {
 	   name:    Danova
@@ -104,6 +201,22 @@ system:
 	   tilt:    0.13,
 	   orbit:   3.95e11,
 	   rotation: 31.3,
+	   moon: {
+		   name:    "Dana I"
+		   icon:    "ice_map",
+		   radius:  5.3e6,
+		   rotation: 16.4,
+		   mass:    5.98e24,
+		   orbit:   4.11e8,
+		},
+		moon: {
+		   name:    "Dana II"
+		   icon:    "ice_map",
+		   radius:  6.1e6,
+		   rotation: 28.4,
+		   mass:    5.98e24,
+		   orbit:   6.24e8,
+		},
 	},
 	planet: {
 	   name:    Zhalisal
@@ -114,7 +227,40 @@ system:
 	   tscale:  2,
 	   tilt:    0.21,
 	   rotation: 46.2,
-	}
+	   moon: {
+		   name:    Vanna
+		   icon:    "rock_map",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   5.65e8,
+		   rotation: 100,
+		},
+		moon: {
+		   name:    Mara
+		   icon:    "lunar_map",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       6.31e8,
+		},
+		moon: {
+		   name:    Folla,
+		   icon:    "ice_map",
+		   radius:  6e6,
+		   rotation: 18.4,
+		   mass:    5.98e24,
+		   orbit:   9.14e8,
+		},
+		moon: {
+		   name:    Amina,
+		   icon:    "ice_map",
+		   radius:  4e6,
+		   rotation: 32.6,
+		   mass:    3.28e24,
+		   orbit:   11.14e8,
+		},
+	},
 }
 
 system: {
@@ -136,6 +282,13 @@ system: {
 	   mass:    3.53e24,
 	   atmosphere: (150,160,210),
 	   orbit:   1.95e11,
+	   moon:       {
+		   name:    Nike
+		   icon:    "lanos_map",
+		   radius:  0.72e6,
+		   mass:    4.1e22,
+		   orbit:   81e6,
+		}
 	},
 	planet:     {
 	   name:    Pallas
@@ -167,6 +320,14 @@ system:
 	   orbit:   7.23e10,
 	   atmosphere: (121,120,121),
 	   rotation: 29.72,
+	   moon:       {
+		   name:    Altos
+		   icon:    "maraner_map",
+		   radius:  0.85e6,
+		   mass:    8e22,
+		   orbit:   43e6,
+		   retro:   true,
+		},
 	},
 	planet:     {
 	   name:    Paragon
@@ -176,6 +337,20 @@ system:
 	   atmosphere: (140,170,200),
 	   orbit:   1.4e11,
 	   rotation: 27,
+	   moon:       {
+		   name:    Porthos
+		   icon:    "lanos_map",
+		   radius:  1.1e6,
+		   mass:    8e22,
+		   orbit:   39e6,
+		},
+		moon:       {
+		   name:    Aramis,
+		   icon:    "lanos_map",
+		   radius:  0.5e6,
+		   mass:    8e22,
+		   orbit:   51e6,
+		},
 	},
    planet: {
 	   name:     "Bryn Mawr",
@@ -184,6 +359,23 @@ system:
 	   mass:    2.45e24,
 	   orbit:   2.57e11,
 	   rotation: 35,
+	   moon: {
+		   name:    Synad
+		   icon:    "rock_map",
+		   radius:  2.2e6,
+		   mass:    1.9e22,
+		   orbit:   1.44e8,
+		   rotation: 30,
+		},
+		moon: {
+		   name:    Olan,
+		   icon:    "lunar_map",
+		   radius:      3.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        1.7e24,
+		   orbit:       2.251e8,
+		},
 	},
 }
 
@@ -206,6 +398,13 @@ system:
 	   orbit:   6.32e10,
 	   atmosphere: (60,55,45),
 	   rotation: 32.12,
+	   moon:       {
+		   name:    Galad
+		   icon:    "rock_map",
+		   radius:  0.724e6,
+		   mass:    7e22,
+		   orbit:   40e6,
+		},
 	},
 	planet:     {
 	   name:    Thrale
@@ -233,10 +432,36 @@ system:
 	   mass:    5.42e26,
 	   orbit:   4.13e11,
 	   tilt:    0.2,
-	   ring:    "Giants/Ring2.pcx",
+	   ring:    "Ring2",
 	   minrad:  1.3,
 	   maxrad:  1.7,
 	   rotation: 22.5,
+	   moon: {
+		   name:    Penelope
+		   icon:    "rock_map",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   3.15e8,
+		   rotation: 60,
+		},
+		moon: {
+		   name:    Persephone,
+		   icon:    "lunar_map",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       5.131e8,
+		},
+		moon: {
+		   name:    Aenia,
+		   icon:    "ice_map",
+		   radius:  6e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   7.24e8,
+		},
 	},
 }
 
@@ -249,7 +474,7 @@ system:
 	name: Janus,
 	
 	link: Solus,
-	link: Athenar,
+	link: ar,
 	link: Borova,
 	link: Haiche,
 	link: Silessia,
@@ -271,6 +496,14 @@ system:
 	   mass:    4.18e24,
 	   orbit:   7.20e10,
 	   rotation: 8,
+	   moon: {
+		   name:    Hermes,
+		   icon:    "rock_map",
+		   radius:  5e5,
+		   mass:    2e21,
+		   orbit:   24.3e6,
+		   retro:   true,
+		},
 	},
 	planet: {
 	   name:    Janek,
@@ -280,6 +513,13 @@ system:
 	   atmosphere: (100,150,220),
 	   orbit:   1.4e11,
 	   rotation: 20,
+	   moon:       {
+		   name:    Lanos,
+		   icon:    "lunar_map",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   42e6,
+		},
 	},
 	planet:     {
 	   name:    Alystra
@@ -293,6 +533,23 @@ system:
 	   minrad:  1.3,
 	   maxrad:  2.1,
 	   rotation: 16.3,
+	   moon: {
+		   name:    Fenris,
+		   icon:    "rock_map",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   2.45e8,
+		   rotation: 100,
+		},
+		moon: {
+		   name:    Navara,
+		   icon:    "lunar_map",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       4.1e8,
+		},
 	},
 }
 
@@ -327,6 +584,21 @@ system:
 	   atmosphere: (155,175,220),
 	   orbit:   1.4e11,
 	   rotation: 21.3,
+	   moon: {
+		   name:    Kalon
+		   icon:    "omane_map",
+		   radius:  1.83e6,
+		   mass:    8.12e22,
+		   orbit:   45e6,
+		   rotation: 8,
+		},
+		moon: {
+		   name:    Alar
+		   icon:    "lunar_map",
+		   radius:  0.5e6,
+		   mass:    4.3e22,
+		   orbit:   59.5e6,
+		},
 	},
 	planet: {
 	   name:    Jalah,
@@ -350,6 +622,32 @@ system:
 	   minrad:  1.2,
 	   maxrad:  1.9,
 	   rotation: 19.5,
+	   moon: {
+		   name:    Ovid,
+		   icon:    "rock_map",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   2.65e8,
+		   rotation: 100,
+		},
+		moon: {
+		   name:    Archimedes
+		   icon:    "lunar_map",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       4.31e8,
+		},
+		moon: {
+		   name:    Flor,
+		   icon:    "ice_map.pcx",
+		   radius:  6e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   8.14e8,
+		},
 	},
 }
 
@@ -375,6 +673,13 @@ system:
 	   atmosphere: (80,120,150),
 	   orbit:   0.97e11,
 	   rotation: 19,
+	   moon:       {
+		   name:    Tannis
+		   icon:    "lanos_map",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   95e6,
+		},
 	},
 	planet: {
 	   name:    Prosenar
@@ -382,11 +687,29 @@ system:
 	   radius:  14.1e6,
 	   mass:    3.6e26,
 	   tilt:    0.2,
-	   ring:    "Giants/Ring3.pcx",
+	   ring:    "Ring3",
 	   minrad:  1.5,
 	   maxrad:  1.9,
 	   orbit:   1.85e11,
 	   rotation: 61.3,
+	   moon: {
+		   name:    "Proson I",
+		   icon:    "ice_map",
+		   radius:  2.3e6,
+		   rotation: 16.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   4.11e8,
+		},
+		moon: {
+		   name:    "Proson II",
+		   icon:    "lanos_map",
+		   radius:  4.2e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   6.24e8,
+		},
 	},
 	planet: {
 	   name:    Vesta
@@ -396,6 +719,32 @@ system:
 	   tilt:    0.13,
 	   orbit:   3.15e11,
 	   rotation: 31.3,
+	   moon: {
+		   name:    "Vesta I",
+		   icon:    "ice_map",
+		   radius:  5.3e6,
+		   rotation: 16.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   4.11e8,
+		},
+		moon: {
+		   name:    "Vesta II",
+		   icon:    "lanos_map",
+		   radius:  3.1e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   6.24e8,
+		},
+		moon: {
+		   name:    "Vesta III",
+		   icon:    "ice_map",
+		   radius:  6.1e6,
+		   rotation: 38.4,
+		   mass:    5.98e24,
+		   orbit:   13.24e8,
+		},
 	},
 	planet: {
 	   name:    Nero
@@ -429,16 +778,39 @@ system:
 	   atmosphere: (200,180,160),
 	   orbit:   0.94e11,
 	   rotation: 17.3,
+	   moon:       {
+		   name:    Eiller
+		   icon:    "lunar_map",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   85e6,
+		},
 	},
 	planet: {
 	   name:    Cygnus
-	   map:     "GasGiant5_map",
+	   icon:    "GasGiant5_map",
 	   radius:  27.1e6,
 	   mass:    2.6e26,
 	   tscale:  2,
 	   tilt:    0.13,
 	   orbit:   2.35e11,
 	   rotation: 31.3,
+	   moon: {
+		   name:    Corvus
+		   icon:    "rock_map",
+		   radius:  1.3e6,
+		   rotation: 16.4,
+		   mass:    5.98e24,
+		   orbit:   4.81e8,
+		},
+		moon: {
+		   name:    Aquilae,
+		   icon:    "ice_map",
+		   radius:  2.1e6,
+		   rotation: 28.4,
+		   mass:    5.98e24,
+		   orbit:   6.14e8,
+		},
 	},
 	planet: {
 	   name:    "Tal Amin"
@@ -449,6 +821,22 @@ system:
 	   tilt:    0.13,
 	   orbit:   3.41e11,
 	   rotation: 31.3,
+	   moon: {
+		   name:    Benares,
+		   icon:    "rock_map",
+		   radius:  2.3e6,
+		   rotation: 26.4,
+		   mass:    5.98e24,
+		   orbit:   4.21e8,
+		},
+		moon: {
+		   name:    Kala
+		   icon:    "kala_map",
+		   radius:  2.9e6,
+		   rotation: 18.4,
+		   mass:    5.98e24,
+		   orbit:   5.74e8,
+		},
 	},
 }
 
@@ -501,6 +889,32 @@ system:
 	   orbit:   3.75e11,
 	   tilt:    0.20,
 	   rotation: 39.2,
+	   moon: {
+		   name:    Asur
+		   icon:    "rock_map",
+		   radius:  3.541e6,
+		   mass:    3e22,
+		   orbit:   2.65e8,
+		   rotation: 100,
+		},
+		moon: {
+		   name:    Malinus,
+		   icon:    "lunar_map",
+		   radius:      5.211e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       3.71e8,
+		},
+		moon: {
+		   name:    Florina,
+		   icon:    "ice_map",
+		   radius:  3.707e6,
+		   rotation: 12.1,
+		   atmosphere: (180,180,255),
+		   mass:    3.98e24,
+		   orbit:   6.24e8,
+		},
 	},
 	planet: {
 	   name:    Khaital
@@ -536,7 +950,24 @@ system:
 	   tscale:  2,
 	   orbit:   0.81e11,
 	   rotation: 36.3,
-	}
+	   moon: {
+		   name:    Ansel
+		   icon:    "bryn_map",
+		   radius:  2.4e6,
+		   mass:    1.2e22,
+		   orbit:   0.84e8,
+		   rotation: 30,
+		},
+		moon: {
+		   name:    Kaius
+		   icon:    "benares_map",
+		   radius:      3.1e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        1.6e24,
+		   orbit:       1.301e8,
+		},
+	},
 	planet:     {
 	   name:    Loris,
 	   icon:    "loris_map",
@@ -546,6 +977,23 @@ system:
 	   atmosphere: (200,180,160),
 	   orbit:   1.54e11,
 	   rotation: 26.3,
+	   moon: {
+		   name:    "Loris I",
+		   icon:    "rock_map",
+		   radius:  0.4e6,
+		   mass:    4.3e23,
+		   orbit:   35e6,
+		   rotation: 9.2,
+		},
+		moon: {
+		   name:    "Loris II",
+		   icon:    "rock_map",
+		   radius:      0.25e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        0.6e24,
+		   orbit:       61e6,
+		},
 	},
 	planet:     {
 	   name:    Casalle
@@ -559,6 +1007,23 @@ system:
 	   minrad:  1.4,
 	   maxrad:  1.7,
 	   rotation: 36.3,
+	   moon: {
+		   name:    Demeter
+		   icon:    "kala_map",
+		   radius:  2.2e6,
+		   mass:    1.9e22,
+		   orbit:   1.44e8,
+		   rotation: 30,
+		},
+		moon: {
+		   name:    Thoraine,
+		   icon:    "lunar_map",
+		   radius:      3.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        1.7e24,
+		   orbit:       2.251e8,
+		},
 	},
 }
 
@@ -583,6 +1048,13 @@ system:
 	   atmosphere: (180,90,60),
 	   orbit:   10.34e10,
 	   rotation: 15,
+	   moon: {
+		   name:    Ur,
+		   icon:    "lunar_map",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   85e6,
+		},
 	},
 }
 
@@ -618,7 +1090,24 @@ system:
 	   mass:    3.9e24,
 	   orbit:   1.95e11,
 	   rotation: 23.3,
-	}
+	   moon: {
+		   name:    "Odin"
+		   icon:    "maraner_map",
+		   radius:  1.4e6,
+		   mass:    4.3e23,
+		   orbit:   40e6,
+		   rotation: 9.2,
+		},
+		moon: {
+		   name:    "Dva"
+		   icon:    "Moon2_map",
+		   radius:      0.85e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        0.6e24,
+		   orbit:       71e6,
+		},
+	},
 	planet: {
 	   name:    Anatoly
 	   icon:    "GasGiant6_map",
@@ -641,6 +1130,34 @@ system:
 	   minrad:  1.2,
 	   maxrad:  1.9,
 	   rotation: 19.5,
+	   moon: {
+		   name:    Anya
+		   icon:    "nero_map",
+		   image:   "Silessia/nero_lo.pcx",
+		   high_res:"Silessia/nero_hi.jpg",
+		   radius:  3e6,
+		   mass:    3e22,
+		   orbit:   2.65e8,
+		   rotation: 100,
+		},
+		moon: {
+		   name:    Vlad
+		   icon:    "Moon1_map",
+		   radius:      5.2e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        6.0e24,
+		   orbit:       4.31e8,
+		},
+		moon: {
+		   name:    Dmitri,
+		   icon:    "ice_map",
+		   radius:  6e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   8.14e8,
+		},
 	},
 }
 
@@ -666,6 +1183,15 @@ system:
 	   mass:    3.96e26,
 	   orbit:   0.97e11,
 	   rotation: 15.13,
+	   moon: {
+		   name:    Covana
+		   icon:    "benares_map",
+		   radius:      1.1e6,
+		   rotation:    19,
+		   inclination: 0.0,
+		   mass:        1.6e24,
+		   orbit:       34.3e6,
+		},
 	},
 	planet: {
 	   name:    Rhomin
@@ -676,6 +1202,24 @@ system:
 	   tscale:  2,
 	   orbit:   1.61e11,
 	   rotation: 31.3,
+	   moon:     {
+		   name:    Korius
+		   icon:    "korius_map",
+		   radius:  4e6,
+		   mass:    4.2e24,
+		   atmosphere: (130,130,130),
+		   orbit:   232e6,
+		   rotation: 24.3,
+		},
+		moon:     {
+		   name:    Adantar
+		   icon:    "adantar_map",
+		   radius:  3.7e6,
+		   mass:    3.4e24,
+		   atmosphere: (120,100,90),
+		   orbit:   356e6,
+		   rotation: 17.8,
+		},
 	},
 }
 
@@ -695,14 +1239,12 @@ system:
 	planet: {
 	   name:    "Tarsus I"
 	   icon:    "tarsus_map",
-	   image:   "Tarsus/tarsus_lo.pcx",
-	   high_res:"Tarsus/tarsus_hi.jpg",
 	   atmosphere: (90,70,60),
 	   radius:  3.75e6,
 	   mass:    5.6e26,
 	   orbit:   1.95e11,
 	   rotation: 21.3,
-	}
+	},
 	planet: {
 	   name:    "Tarsus II",
 	   icon:    "oman_map",
@@ -757,6 +1299,14 @@ system:
 	   atmosphere: (160,140,120),
 	   orbit:   0.75e11,
 	   rotation: 24.3,
+	   moon: {
+		   name:    Trump
+		   icon:    "rock_map",
+		   radius:  2.3e6,
+		   rotation: 16.4,
+		   mass:    5.98e23,
+		   orbit:   48e6,
+		},
 	},
 	planet:     {
 	   name:    Radix
@@ -766,6 +1316,14 @@ system:
 	   atmosphere: (175,160,150),
 	   orbit:   1.3e11,
 	   rotation: 16.3,
+	   moon: {
+		   name:    Ariadne,
+		   icon:    "lunar_map",
+		   radius:  2.9e6,
+		   rotation: 310.4,
+		   mass:    5.18e23,
+		   orbit:   53.2e6,
+		},
 	},
 	planet: {
 	   name:    Cavenda
@@ -775,6 +1333,24 @@ system:
 	   tscale:  2,
 	   orbit:   2.51e11,
 	   rotation: 43.7,
+	   moon: {
+		   name:    Oberon
+		   icon:    "ice_map",
+		   radius:  2.3e6,
+		   rotation: 26.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   3.11e8,
+		},
+		moon: {
+		   name:    Titania
+		   icon:    "lanos_map",
+		   radius:  4.1e6,
+		   rotation: 38.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   5.24e8,
+		},
 	},
 }
 
@@ -814,6 +1390,24 @@ system:
 	   maxrad:  1.8,
 	   orbit:   2.65e11,
 	   rotation: 61.3,
+	   moon: {
+		   name:    Tarawa
+		   icon:    "ice_map.pcx",
+		   radius:  2.3e6,
+		   rotation: 16.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   4.11e8,
+		},
+		moon: {
+		   name:    Maia,
+		   icon:    "lanos_map",
+		   radius:  4.2e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   6.24e8,
+		},
 	},
 	planet: {
 	   name:    Ramek,
@@ -824,7 +1418,33 @@ system:
 	   tilt:    0.13,
 	   orbit:   3.35e11,
 	   rotation: 31.3,
-	}
+	   moon: {
+		   name:    Alin
+		   icon:    "ice_map",
+		   radius:  5.3e6,
+		   rotation: 16.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   4.11e8,
+		},
+		moon: {
+		   name:    Orpheus
+		   icon:    "lanos_map",
+		   radius:  3.1e6,
+		   rotation: 18.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   6.24e8,
+		},
+		moon: {
+		   name:    Tenebrus,
+		   icon:    "ice_map",
+		   radius:  6.1e6,
+		   rotation: 38.4,
+		   mass:    5.98e24,
+		   orbit:   13.24e8,
+		},
+	},
 	planet:     {
 	   name:    Relay,
 	   icon:    "relay_map",
@@ -919,6 +1539,24 @@ system:
 	   mass:    3.6e26,
 	   orbit:   2.51e11,
 	   rotation: 43.7,
+	   moon: {
+		   name:    Liriope
+		   icon:    "ice_map",
+		   radius:  2.3e6,
+		   rotation: 26.4,
+		   atmosphere: (180,180,255),
+		   mass:    5.98e24,
+		   orbit:   3.11e8,
+		},
+		moon: {
+		   name:    Echo
+		   icon:    "lanos_map",
+		   radius:  4.1e6,
+		   rotation: 38.4,
+		   atmosphere: (180,180,255),
+		   mass:    3.28e24,
+		   orbit:   5.24e8,
+		},
 	}
 	planet: {
 	   name:    Path
@@ -948,6 +1586,14 @@ system:
 	   mass:    5.3e24,
 	   orbit:   1.1e11,
 	   rotation: 23.7,
+	   moon:       {
+		   name:    Manarkan,
+		   icon:    "Moon3_map",
+		   image:   "Moons/Moon3.jpg",
+		   radius:  1e6,
+		   mass:    8e22,
+		   orbit:   42e6,
+		},
 	},
 }
 
