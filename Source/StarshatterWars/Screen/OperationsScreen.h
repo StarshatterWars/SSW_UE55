@@ -195,6 +195,13 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationLabel;
 	UPROPERTY(meta = (BindWidgetOptional))
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GalaxyButtonText;
+		UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* SystemButtonText;
+		UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* SectorButtonText;
 	class UButton* SelectButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
@@ -218,6 +225,13 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UButton* MissionsButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* TheaterGalaxyButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* TheaterSystemButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* TheaterSectorButton;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* AudioButton;
 
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -232,7 +246,13 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	 // Canvas panel for placing icons
     UPROPERTY(meta = (BindWidgetOptional))
-    class UCanvasPanel* MapCanvas;
+    class UCanvasPanel* GalaxyMapCanvas;
+	 // Canvas panel for placing icons
+    UPROPERTY(meta = (BindWidgetOptional))
+    class UCanvasPanel* SystemMapCanvas;
+	 // Canvas panel for placing icons
+    UPROPERTY(meta = (BindWidgetOptional))
+    class UCanvasPanel* SectorMapCanvas;
 
 	// Parent container to hold Forces
     UPROPERTY(meta = (BindWidgetOptional))
@@ -331,7 +351,18 @@ protected:
 	void OnSelectButtonHovered();
 
 	UFUNCTION()
-	void OnCancelButtonClicked();
+	void OnTheaterGalaxyButtonClicked();
+	UFUNCTION()
+	void OnTheaterSystemButtonClicked();
+	UFUNCTION()
+	void OnTheaterSectorButtonClicked();
+	UFUNCTION()
+	void OnTheaterGalaxyButtonHovered();
+	UFUNCTION()
+	void OnTheaterSystemButtonHovered();
+	UFUNCTION()
+	void OnTheaterSectorButtonHovered();
+
 	UFUNCTION()
 	void OnCancelButtonHovered();
 	

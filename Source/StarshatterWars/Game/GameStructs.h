@@ -637,7 +637,9 @@ struct FS_Galaxy : public FTableRowBase {
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FString> Link;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FS_PlanetData> Planet;
+	TArray<FString> Planet;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	TArray<FS_PlanetData> PlanetData;
 
 	FS_Galaxy() {
 		Name = "";

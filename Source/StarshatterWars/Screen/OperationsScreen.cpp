@@ -77,7 +77,32 @@ void UOperationsScreen::NativeConstruct()
 		CancelButtonText->SetText(FText::FromString("BACK"));
 	}
 
+	if (TheaterGalaxyButton) {
+		TheaterGalaxyButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonClicked);
+		TheaterGalaxyButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonHovered);
+	}
 
+	if (GalaxyButtonText) {
+		GalaxyButtonText->SetText(FText::FromString("GALAXY"));
+	}
+
+	if (TheaterSystemButton) {
+		TheaterSystemButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonClicked);
+		TheaterSystemButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonHovered);
+	}
+
+	if (SystemButtonText) {
+		SystemButtonText->SetText(FText::FromString("SYSTEM"));
+	}
+
+	if (TheaterSectorButton) {
+		TheaterSectorButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonClicked);
+		TheaterSectorButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonHovered);
+	}
+
+	if (SectorButtonText) {
+		SectorButtonText->SetText(FText::FromString("SECTOR"));
+	}
 	if (EmpireSelectionDD) {
 		
 		EmpireSelectionDD->ClearOptions();
@@ -128,6 +153,9 @@ void UOperationsScreen::NativeConstruct()
 		OperationalSwitcher->SetActiveWidgetIndex(0);
 	}
 
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(0);
+	}
 	if (OperationsModeText) {
 		OperationsModeText->SetText(FText::FromString("ORDERS"));
 	}
@@ -229,6 +257,42 @@ void UOperationsScreen::OnSelectButtonHovered()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayHoverSound(this);
+}
+
+void UOperationsScreen::OnTheaterGalaxyButtonClicked()
+{
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(0);
+	}
+}
+
+void UOperationsScreen::OnTheaterSystemButtonClicked()
+{
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(1);
+	}
+}
+
+void UOperationsScreen::OnTheaterSectorButtonClicked()
+{
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(2);
+	}
+}
+
+void UOperationsScreen::OnTheaterGalaxyButtonHovered()
+{
+
+}
+
+void UOperationsScreen::OnTheaterSystemButtonHovered()
+{
+
+}
+
+void UOperationsScreen::OnTheaterSectorButtonHovered()
+{
+
 }
 
 void UOperationsScreen::LoadForcesInfo()
@@ -1166,7 +1230,7 @@ void UOperationsScreen::CreateGalaxyMap() {
 	UGalaxyMap* GalaxyMap = CreateWidget<UGalaxyMap>(this, MapClass);
 	if (!MapClass) return;
 
-	MapCanvas->AddChildToCanvas(GalaxyMap);
+	GalaxyMapCanvas->AddChildToCanvas(GalaxyMap);
 	
 	if (UCanvasPanelSlot* MapSlot = MapCanvas->AddChildToCanvas(GalaxyMap))
 	{
