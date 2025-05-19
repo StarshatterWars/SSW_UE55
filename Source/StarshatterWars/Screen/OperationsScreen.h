@@ -51,6 +51,8 @@ class UScrollBox;
 class USystemMarker;
 class UGalaxyLink;
 class UGalaxyMap;
+class USystemMap;
+class USectorMap;
 class UTexture2D;
 
 struct FSubGroupArray
@@ -410,6 +412,14 @@ protected:
 	 // TSubclassOf must be set in UMG (or via C++)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TSubclassOf<UGalaxyMap> MapClass;
+
+	 // TSubclassOf must be set in UMG (or via C++)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    TSubclassOf<USystemMap> SystemMapClass;
+
+	 // TSubclassOf must be set in UMG (or via C++)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
+    TSubclassOf<USectorMap> SectorMapClass;
     
 
 private:
