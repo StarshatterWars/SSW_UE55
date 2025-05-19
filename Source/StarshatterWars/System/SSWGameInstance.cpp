@@ -514,7 +514,7 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CombatGroupDataTable->EmptyTable();
 		OrderOfBattleDataTable->EmptyTable();
 	}
-
+	//OrderOfBattleDataTable->EmptyTable();
 }
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)

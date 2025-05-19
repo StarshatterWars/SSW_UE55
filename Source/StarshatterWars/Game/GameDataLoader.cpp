@@ -4294,6 +4294,9 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 						
 							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + FString(GetNameFromType(EType)));
 							// call AddRow to insert the record
+
+							FString DisplayName = GetOrdinal(Id) + " " + FString(GetNameFromType(EType)) + " [" + FString(Name) + "]";
+
 							NewCombatGroup.DisplayName = RowName.ToString();
 
 							if (Iff > -1) {

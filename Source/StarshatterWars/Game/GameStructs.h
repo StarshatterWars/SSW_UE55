@@ -194,7 +194,7 @@ enum class ECOMBATGROUP_TYPE : uint8
 {
 	NONE, 
 	FORCE				UMETA(DisplayName = "Force"), // Commander In Chief
-	WING				UMETA(DisplayName = "Wing"), // Air Force
+	WING				UMETA(DisplayName = "Tactical Fighter Wing"), // Air Force
 	INTERCEPT_SQUADRON  UMETA(DisplayName = "Intercept Squadron"), // a2a fighter
 	FIGHTER_SQUADRON	UMETA(DisplayName = "Fighter Squadron"),   // multi-role fighter
 	ATTACK_SQUADRON		UMETA(DisplayName = "Attack Squadron"),    // strike / attack

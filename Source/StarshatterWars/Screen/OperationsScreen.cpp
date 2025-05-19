@@ -52,18 +52,16 @@ bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive 
 	return true;
 }
 
-//UOperationsScreen::UOperationsScreen(const FObjectInitializer& ObjectInitializer)
-//{
-
-//}
-
 void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
-	//LoadForceNames();
+
+	CombatantList = SSWInstance->GetCombatantList();
+
+	GetCurrentCarrierGroup();
 
 	if (TitleText)
 		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
@@ -105,6 +103,11 @@ void UOperationsScreen::NativeConstruct()
 		{
 			Label->SetText(FText::FromString("SECTOR"));
 		}
+	}
+	
+	if (CurrentLocationText)
+	{
+		CurrentLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().System + " System").ToUpper());
 	}
 
 	if (EmpireSelectionDD) {
@@ -189,7 +192,7 @@ void UOperationsScreen::NativeConstruct()
 		}
 	}
 
-	CombatantList = SSWInstance->GetCombatantList();
+	
 
 	if (ForceListView) {
 		ForceListView->ClearListItems();
@@ -202,8 +205,7 @@ void UOperationsScreen::NativeConstruct()
 			//UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), ForceItem->Data);
 		}
 	}
-
-
+	
 	SelectedMission = 0;
 	
 	if (AllMenuButtons.Num() > 0)
@@ -214,6 +216,7 @@ void UOperationsScreen::NativeConstruct()
 	ScreenOffset.X = 600;
 	ScreenOffset.Y = 300;
 	
+
 	CreateGalaxyMap();
 	SetCampaignOrders();
 	PopulateMissionList();
@@ -221,6 +224,14 @@ void UOperationsScreen::NativeConstruct()
 	PopulateIntelList();
 	SetCampaignMissions();
 	LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
+
+	const FS_OOBWing* Wing = FindWingForCarrierGroup(CurrentCarrierGroup, LoadedForces);
+
+	if (CurrentUnitText && Wing != nullptr)
+	{
+		CurrentUnitText->SetText(FText::FromString(Wing->Name).ToUpper());
+	}
+
 }
 
 void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -1275,3 +1286,54 @@ void UOperationsScreen::CreateSystemMap() {
 
 void UOperationsScreen::CreateSectorMap() {
 }
+
+const FS_OOBWing* UOperationsScreen::FindWingForCarrierGroup(int CarrierGroupId, const TArray<FS_OOBForce>& AllForces)
+{
+	for (const FS_OOBForce& Force : AllForces)
+	{
+		for (const FS_OOBFleet& Fleet : Force.Fleet)
+		{
+			for (const FS_OOBCarrier& Carrier : Fleet.Carrier)
+			{
+				if (Carrier.Id == CarrierGroupId)
+				{
+					// Return the first wing attached to this carrier
+					if (Carrier.Wing.Num() > 0)
+					{
+						UE_LOG(LogTemp, Log, TEXT("Selected carrier wing: %d"), Carrier.Wing[0].Id);
+						return &Carrier.Wing[0]; // or loop through all if needed
+					}
+					else
+					{
+						UE_LOG(LogTemp, Log, TEXT("Selected carrier wing not found"));
+						return nullptr; // no wings attached
+					}
+				}
+			}
+		}
+	}
+	return nullptr; // carrier group not found
+}
+void UOperationsScreen::GetCurrentCarrierGroup() 
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	TArray<FS_Combatant> Combatants = SSWInstance->GetCombatantList();
+	for (const FS_Combatant& Combatant : Combatants)
+	{
+		if (Combatant.Name == EEMPIRE_NAME::Terellian)
+		{
+			TArray<FS_CombatantGroup> CurrentGroups = Combatant.Group;
+			for (const FS_CombatantGroup& CombatantGroup : CurrentGroups)
+			{
+				if (CombatantGroup.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+					CurrentCarrierGroup = CombatantGroup.Id;
+					UE_LOG(LogTemp, Log, TEXT("Selected carrier group: %d"), CurrentCarrierGroup);
+					break;
+				}
+			}
+		}
+	}
+}
+
+
+

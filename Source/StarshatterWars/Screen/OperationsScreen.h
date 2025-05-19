@@ -191,9 +191,10 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* InformationLabel;
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* CurrentUnitLabel;
+	class UTextBlock* CurrentUnitText;
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* LocationLabel;
+	class UTextBlock* CurrentLocationText;
+
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* SelectButton;
@@ -319,6 +320,10 @@ public:
 	void CreateSystemMap();
 	UFUNCTION()
 	void CreateSectorMap();
+	UFUNCTION()
+	void GetCurrentCarrierGroup();
+
+	const FS_OOBWing* FindWingForCarrierGroup(int CarrierGroupId, const TArray<FS_OOBForce>& AllForces);
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UListView* ForceListView;
@@ -427,6 +432,6 @@ private:
 	TArray<FString> EmpireDDItems;
 	EEMPIRE_NAME SelectedEmpire; 
 	int IndentLevel = 0;
-	
+	int CurrentCarrierGroup; 
 	TSubclassOf<UGalaxyMap> GalaxyMapClass;
 };

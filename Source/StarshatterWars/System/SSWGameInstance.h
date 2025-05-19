@@ -335,10 +335,12 @@ public:
 
 	bool bIsDisplayUnitChanged;
 	bool bIsDisplayElementChanged;
+	UFUNCTION()
+	FS_OOBForce GetActiveOOBForce();
 	
 protected:
 	virtual void Init() override;
-	FS_OOBForce GetActiveOOBForce();
+	
 	virtual void Shutdown() override;
 	void ReadCampaignData();
 	void ReadCombatRosterData();
