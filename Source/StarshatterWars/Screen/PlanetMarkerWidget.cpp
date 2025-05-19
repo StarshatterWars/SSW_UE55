@@ -2,7 +2,19 @@
 
 
 #include "PlanetMarkerWidget.h"
+#include "Components/Image.h"
+#include "Components/TextBlock.h"
 
+void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
+{
+	PlanetName = InName;
+	SetToolTipText(FText::FromString(InName));
+}
 
-
-
+void UPlanetMarkerWidget::SetSelected(bool bSelected)
+{
+	if (PlanetImage)
+	{
+		PlanetImage->SetColorAndOpacity(bSelected ? FLinearColor::Yellow : FLinearColor::White);
+	}
+}

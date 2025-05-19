@@ -25,6 +25,8 @@
 #include "SystemMarker.h"
 #include "GalaxyLink.h"
 #include "GalaxyMap.h"
+#include "SystemMap.h"
+#include "SectorMap.h"
 
 #include "../Foundation/SelectableButtonGroup.h"
 #include "../Foundation/MenuButton.h"
@@ -1286,10 +1288,35 @@ void UOperationsScreen::CreateGalaxyMap() {
 }
 
 void UOperationsScreen::CreateSystemMap() {
+	USystemMap* SystemMap = CreateWidget<USystemMap>(this, SystemMapClass);
+	if (!SystemMapClass) return;
+
+	SystemMapCanvas->AddChildToCanvas(SystemMap);
+
+	if (UCanvasPanelSlot* MapSlot = SystemMapCanvas->AddChildToCanvas(SystemMap))
+	{
+		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
+		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
+		MapSlot->SetAlignment(FVector2D(0.f, 0.f));        // Top-left corner alignment
+		MapSlot->SetZOrder(11);
+	}
 }
 
 void UOperationsScreen::CreateSectorMap() {
+	USectorMap* SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);
+	if (!SectorMapClass) return;
+
+	SectorMapCanvas->AddChildToCanvas(SectorMap);
+
+	if (UCanvasPanelSlot* MapSlot = SectorMapCanvas->AddChildToCanvas(SectorMap))
+	{
+		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
+		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
+		MapSlot->SetAlignment(FVector2D(0.f, 0.f));        // Top-left corner alignment
+		MapSlot->SetZOrder(11);
+	}
 }
+
 
 const FS_OOBWing* UOperationsScreen::FindWingForCarrierGroup(int CarrierGroupId, const TArray<FS_OOBForce>& AllForces)
 {
