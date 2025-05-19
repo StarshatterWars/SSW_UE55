@@ -36,6 +36,7 @@ void UGalaxyMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (!MapRoot)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UGalaxyMap::BuildGalaxyMap(): Missing MapRoot"));
@@ -171,6 +172,40 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 			PanelSlot->SetZOrder(10);
 		}
 	}
+
+	if (USystemMarker* InitialMarker = MarkerMap.FindRef(SSWInstance->GetActiveCampaign().System))
+	{
+		InitialMarker->SetSelected(true);
+		SelectedMarker = InitialMarker;
+
+		// Defer position lookup until layout is valid
+		FTimerHandle DelayHandle;
+		GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this,
+			[this, InitialMarker]()
+			{
+				auto GetCenter = [](UWidget* Widget) -> FVector2D
+					{
+						if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
+						{
+							return Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
+						}
+						return FVector2D::ZeroVector;
+					};
+
+				FVector2D MarkerCenter = GetCenter(InitialMarker);
+
+				if (SelectionLinesWidget)
+				{
+					SelectionLinesWidget->SetMarkerCenter(MarkerCenter);
+					SelectionLinesWidget->SetVisibility(ESlateVisibility::Visible);
+				}
+
+				// Optional: center the map on this marker
+				//PanToMarker(MarkerCenter);
+
+			}), 0.01f, false);
+	}
+
 	// Step 2: Draw links between systems
 	for (const FS_Galaxy& System : Systems)
 	{

@@ -159,6 +159,9 @@ private:
     // For dragging
     bool bIsPanning = false;
     FVector2D PanStartMouse;
+
+    UPROPERTY()
+    FString CurrentSystemName; // or int32 CurrentSystemId;
 };
 	
-	
+

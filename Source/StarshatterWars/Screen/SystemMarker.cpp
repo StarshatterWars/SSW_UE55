@@ -72,10 +72,9 @@ void USystemMarker::Init(const FS_Galaxy& System)
     }
 
     // Optional: Add border color by faction
-    FLinearColor Tint;
 
     switch (System.Iff) {
-    case 0: Tint = FLinearColor::Yellow; break;
+    case 0: Tint = FLinearColor::Gray; break;
     case 1: Tint = FLinearColor::Green; break;
     case 2: Tint = FLinearColor::Red; break;
     default: Tint = FLinearColor::Gray; break;
@@ -114,6 +113,16 @@ void USystemMarker::SetSelected(bool bIsSelected)
     {
         HighlightBorder->SetVisibility(bIsSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     }
+
+    if (IffImage)
+    {
+        if(bIsSelected) {     
+            IffImage->SetColorAndOpacity(FLinearColor::Yellow);
+        }
+        else {
+            IffImage->SetColorAndOpacity(Tint);
+        }
+     }
 
     if (bIsSelected)
     {
