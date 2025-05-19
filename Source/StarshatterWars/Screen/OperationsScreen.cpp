@@ -192,8 +192,6 @@ void UOperationsScreen::NativeConstruct()
 		}
 	}
 
-	
-
 	if (ForceListView) {
 		ForceListView->ClearListItems();
 		
@@ -1152,6 +1150,10 @@ void UOperationsScreen::OnTheaterSystemButtonSelected(UMenuButton* SelectedButto
 	if (MapSwitcher) {
 		MapSwitcher->SetActiveWidgetIndex(1);
 	}
+
+	if (SystemNameText) {
+		SystemNameText->SetText(FText::FromString(SSWInstance->SelectedSystem.ToUpper() + " SYSTEM"));
+	}
 }
 
 void UOperationsScreen::OnTheaterSystemButtonHovered(UMenuButton* HoveredButton)
@@ -1171,6 +1173,8 @@ void UOperationsScreen::OnTheaterSectorButtonSelected(UMenuButton* SelectedButto
 	if (MapSwitcher) {
 		MapSwitcher->SetActiveWidgetIndex(2);
 	}
+	
+
 }
 
 void UOperationsScreen::OnTheaterSectorButtonHovered(UMenuButton* HoveredButton)

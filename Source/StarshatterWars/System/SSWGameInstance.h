@@ -275,6 +275,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* MenuMusic;
 
+	UPROPERTY()
+	FString SelectedSystem;
+
 	DataLoader* loader;
 
 	FString GetEmpireNameFromType(EEMPIRE_NAME emp);

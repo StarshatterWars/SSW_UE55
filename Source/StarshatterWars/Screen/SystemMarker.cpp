@@ -14,6 +14,7 @@ void USystemMarker::Init(const FS_Galaxy& System)
 
     // Optional: Add border color by faction
     FLinearColor EmpireColor;
+    SystemName = System.Name;
 
     switch (System.Empire) {
     case EEMPIRE_NAME::Terellian: EmpireColor = FLinearColor::Green; break;
@@ -109,6 +110,10 @@ void USystemMarker::NativeConstruct()
 
 void USystemMarker::SetSelected(bool bIsSelected)
 {
+    USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+    
+    SSWInstance->SelectedSystem = SystemName;
+
     if (HighlightBorder)
     {
         HighlightBorder->SetVisibility(bIsSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);

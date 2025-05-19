@@ -67,4 +67,5 @@ protected:
 
  private:
     FLinearColor Tint;
+    FString SystemName;
 };
