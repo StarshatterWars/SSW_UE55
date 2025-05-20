@@ -31,6 +31,7 @@
 #include "SystemDesign.h"
 #include "ComponentDesign.h"
 #include "../Foundation/GameContent.h"
+#include "../Game/Galaxymanager.h"
 #include "Engine/TimerHandle.h"
 #include "TimerManager.h"
 
@@ -97,14 +98,6 @@ AGameDataLoader::AGameDataLoader()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::AGameDataLoader()"));
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_GalaxyMap.DT_GalaxyMap'"));
-
-	if (GalaxyDataTableObject.Succeeded())
-	{
-		GalaxyDataTable = GalaxyDataTableObject.Object;
-		GalaxyDataTable->EmptyTable();
-	}
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> StarSystemDataTableObject(TEXT("DataTable'/Game/Game/DT_StarSystem.DT_StarSystem'"));
 
@@ -2857,8 +2850,10 @@ AGameDataLoader::LoadGalaxyMap()
 		delete term;
 		term = parser.ParseTerm();
 		FVector fv;
-
+		
+		PlanetMapArray.Empty();
 		double Radius;
+
 		if (term) {
 			TermDef* def = term->isDef();
 			if (def) {
@@ -2925,6 +2920,7 @@ AGameDataLoader::LoadGalaxyMap()
 									else {
 										ParsePlanetMap(pdef->term()->isStruct(), fn);
 										NewGalaxyData.Planet = PlanetMapArray;
+										
 									}
 								}
 								else if (pdef->name()->value() == "star") {
@@ -2972,8 +2968,7 @@ AGameDataLoader::LoadGalaxyMap()
 						FName RowName = FName(FString(SystemName));
 
 						// call AddRow to insert the record
-						GalaxyDataTable->AddRow(RowName, NewGalaxyData);
-
+						SSWInstance->GalaxyDataTable->AddRow(RowName, NewGalaxyData);
 						SSWInstance->GalaxyData.Add(NewGalaxyData);
 					}
 				}
@@ -3046,6 +3041,8 @@ AGameDataLoader::LoadGalaxyMap()
 		}
 	} while (term);
 	SSWInstance->loader->ReleaseBuffer(block);
+	
+	UGalaxyManager::Get(this)->LoadGalaxy(SSWInstance->GalaxyData);
 }
 
 // +--------------------------------------------------------------------+
@@ -3537,6 +3534,7 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 	FColor AtmosColor = FColor::Black;
 
 	FS_PlanetMap NewPlanetMap;
+	MoonMapArray.Empty();
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();

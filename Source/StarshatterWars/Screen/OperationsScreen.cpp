@@ -27,6 +27,7 @@
 #include "GalaxyMap.h"
 #include "SystemMap.h"
 #include "SectorMap.h"
+#include "../Game/GalaxyManager.h"
 
 #include "../Foundation/SelectableButtonGroup.h"
 #include "../Foundation/MenuButton.h"
@@ -76,6 +77,9 @@ void UOperationsScreen::NativeConstruct()
 	if (CancelButtonText) {
 		CancelButtonText->SetText(FText::FromString("BACK"));
 	}
+	
+	SSWInstance->SelectedSystem = SSWInstance->GetActiveCampaign().System;
+	SSWInstance->SelectedSector = SSWInstance->GetActiveCampaign().Region;
 
 	if (TheaterGalaxyButton) {
 		TheaterGalaxyButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonSelected);
@@ -1156,6 +1160,7 @@ void UOperationsScreen::OnTheaterSystemButtonSelected(UMenuButton* SelectedButto
 	if (SystemNameText) {
 		SystemNameText->SetText(FText::FromString(SSWInstance->SelectedSystem.ToUpper() + " SYSTEM"));
 	}
+	CreateSystemMap();
 }
 
 void UOperationsScreen::OnTheaterSystemButtonHovered(UMenuButton* HoveredButton)
@@ -1174,6 +1179,10 @@ void UOperationsScreen::OnTheaterSectorButtonSelected(UMenuButton* SelectedButto
 
 	if (MapSwitcher) {
 		MapSwitcher->SetActiveWidgetIndex(2);
+	}
+
+	if (SectorNameText) {
+		SectorNameText->SetText(FText::FromString(SSWInstance->SelectedSector.ToUpper() + " SECTOR"));
 	}
 	
 
@@ -1288,9 +1297,22 @@ void UOperationsScreen::CreateGalaxyMap() {
 }
 
 void UOperationsScreen::CreateSystemMap() {
-	USystemMap* SystemMap = CreateWidget<USystemMap>(this, SystemMapClass);
-	if (!SystemMapClass) return;
+	
+	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called"));
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
+	if (!SystemMap)
+	{
+		SystemMap = CreateWidget<USystemMap>(this, SystemMapClass);
+	}
+	
+	if (!SystemMapClass) {
+		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Widget Not Creaed"));
+		return;
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Widget Created"));
+	
 	SystemMapCanvas->AddChildToCanvas(SystemMap);
 
 	if (UCanvasPanelSlot* MapSlot = SystemMapCanvas->AddChildToCanvas(SystemMap))
@@ -1303,6 +1325,7 @@ void UOperationsScreen::CreateSystemMap() {
 }
 
 void UOperationsScreen::CreateSectorMap() {
+	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called"));
 	USectorMap* SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);
 	if (!SectorMapClass) return;
 

@@ -451,4 +451,5 @@ private:
 	int IndentLevel = 0;
 	int CurrentCarrierGroup; 
 	TSubclassOf<UGalaxyMap> GalaxyMapClass;
+	USystemMap* SystemMap =	nullptr;
 };

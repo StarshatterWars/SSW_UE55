@@ -9,10 +9,14 @@
 #include "PlanetMarkerWidget.generated.h"
 
 class UImage;
+class UBorder;
 
 /**
  * 
  */
+
+DECLARE_DELEGATE_OneParam(FOnMarkerClicked, const FString&);
+
 UCLASS()
 class STARSHATTERWARS_API UPlanetMarkerWidget : public UUserWidget
 {
@@ -28,11 +32,27 @@ public:
 	// Optional: Retrieve name
 	const FString& GetPlanetName() const { return PlanetName; }
 
+	// Initialize with system data and available textures
+    UFUNCTION()
+    void Init(const FS_PlanetMap& System);
+
+	FOnMarkerClicked OnClicked;
+
 protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	UImage* PlanetImage;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	UBorder* HighlightBorder;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+    class UTextBlock* PlanetNameText;
+
+	UTexture2D* LoadTextureFromFile(FString Path);
+	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
+	FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
 private:
 	FString PlanetName;
+	FS_PlanetMap PlanetData;
 };	
 

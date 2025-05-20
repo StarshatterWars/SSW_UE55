@@ -502,6 +502,13 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CombatGroupDataTable = CombatGroupDataTableObject.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_GalaxyMap.DT_GalaxyMap'"));
+
+	if (GalaxyDataTableObject.Succeeded())
+	{
+		GalaxyDataTable = GalaxyDataTableObject.Object;
+	}
+
 	static ConstructorHelpers::FObjectFinder<UDataTable> OrderOfBattleDataTableObject(TEXT("DataTable'/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle'"));
 
 	if (OrderOfBattleDataTableObject.Succeeded())
@@ -513,7 +520,9 @@ void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 		CampaignDataTable->EmptyTable();
 		CombatGroupDataTable->EmptyTable();
 		OrderOfBattleDataTable->EmptyTable();
+		GalaxyDataTable->EmptyTable();
 	}
+	GalaxyDataTable->EmptyTable();
 	//OrderOfBattleDataTable->EmptyTable();
 }
 

@@ -264,7 +264,6 @@ protected:
 
 	FS_CampaignAction NewCampaignAction;
 	
-	class UDataTable* GalaxyDataTable;
 	class UDataTable* StarSystemDataTable;
 	class UDataTable* StarsDataTable;
 	class UDataTable* PlanetsDataTable;

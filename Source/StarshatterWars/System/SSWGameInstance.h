@@ -277,6 +277,8 @@ public:
 
 	UPROPERTY()
 	FString SelectedSystem;
+	UPROPERTY()
+	FString SelectedSector;
 
 	DataLoader* loader;
 
