@@ -17,10 +17,12 @@ class STARSHATTERWARS_API USystemOrbitWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void SetOrbitRadius(float InRadius);
-
+	void SetOrbitRadius(float InRadius) { OrbitRadius = InRadius; Invalidate(EInvalidateWidget::Paint); }
+	void SetOrbitTilt(float InTilt) { OrbitTiltY = InTilt;     Invalidate(EInvalidateWidget::Paint); }
+	
 protected:
-	virtual int32 NativePaint(const FPaintArgs& Args,
+	virtual int32 NativePaint(
+		const FPaintArgs& Args,
 		const FGeometry& AllottedGeometry,
 		const FSlateRect& MyCullingRect,
 		FSlateWindowElementList& OutDrawElements,
@@ -29,5 +31,6 @@ protected:
 		bool bParentEnabled) const override;
 
 private:
-	float OrbitRadius = 100.0f; // in screen units (pixels)
+	float OrbitRadius = 100.0f;  // distance from center in screen units
+	float OrbitTiltY = 1.0f;    // scale Y-axis for elliptical tilt (0.6 = flatter)
 };

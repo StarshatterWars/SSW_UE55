@@ -91,6 +91,7 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 	for (const FS_PlanetMap& Planet : Planets)
 	{
 		const float ORBIT_TO_SCREEN = GetDynamicOrbitScale(Planets, 480.f);
+		
 		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
 
 		UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, Radius);
@@ -100,6 +101,8 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 		{
 			auto* Orbit = CreateWidget<USystemOrbitWidget>(this, OrbitWidgetClass);
 			Orbit->SetOrbitRadius(Radius);
+			// In USystemOrbitWidget, pass TiltY to the widget or apply it inside NativePaint()
+			Orbit->SetOrbitTilt(OrbitTiltY);
 
 			if (UCanvasPanelSlot* OrbitSlot = MapCanvas->AddChildToCanvas(Orbit))
 			{
@@ -117,12 +120,14 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 			auto* Marker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
 			if (Marker)
 			{
-				FVector2D Pos = FVector2D(Radius, 0.0f); // right edge of orbit
+				FVector2D TiltedPos = FVector2D(Radius, 0.f);
+				TiltedPos.Y *= OrbitTiltY;
+
 				if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(Marker))
 				{
 					PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 					PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					PlanetSlot->SetPosition(Pos);
+					PlanetSlot->SetPosition(TiltedPos);
 					PlanetSlot->SetAutoSize(true);
 					PlanetSlot->SetZOrder(10);
 				}

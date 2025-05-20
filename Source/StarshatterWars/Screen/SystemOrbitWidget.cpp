@@ -7,12 +7,6 @@
 #include "Styling/SlateColor.h"          // FSlateColor / FLinearColor
 #include "Rendering/DrawElements.h"
 
-void USystemOrbitWidget::SetOrbitRadius(float InRadius)
-{
-	OrbitRadius = InRadius;
-	Invalidate(EInvalidateWidget::Paint);
-}
-
 int32 USystemOrbitWidget::NativePaint(
 	const FPaintArgs& Args,
 	const FGeometry& AllottedGeometry,
@@ -25,20 +19,26 @@ int32 USystemOrbitWidget::NativePaint(
 	const FLinearColor OrbitColor = FLinearColor::Gray;
 	const FVector2D Center = AllottedGeometry.GetLocalSize() * 0.5f;
 
-	TArray<FVector2D> OrbitPoints;
+	TArray<FVector2D> Points;
 	const int32 SegmentCount = 64;
 
 	for (int32 i = 0; i <= SegmentCount; ++i)
 	{
-		float Angle = FMath::DegreesToRadians(i * 360.f / SegmentCount);
-		OrbitPoints.Add(Center + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * OrbitRadius);
+		const float Angle = FMath::DegreesToRadians(i * 360.0f / SegmentCount);
+
+		// Elliptical orbit with vertical tilt applied
+		const float X = FMath::Cos(Angle) * OrbitRadius;
+		const float Y = FMath::Sin(Angle) * OrbitRadius * OrbitTiltY;
+
+		Points.Add(Center + FVector2D(X, Y));
 	}
 
+	// Draw the orbit path
 	FSlateDrawElement::MakeLines(
 		OutDrawElements,
 		LayerId,
 		AllottedGeometry.ToPaintGeometry(),
-		OrbitPoints,
+		Points,
 		ESlateDrawEffect::None,
 		OrbitColor,
 		true,
@@ -47,5 +47,3 @@ int32 USystemOrbitWidget::NativePaint(
 
 	return LayerId + 1;
 }
-
-

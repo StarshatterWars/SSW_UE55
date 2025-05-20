@@ -44,7 +44,7 @@ private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
-
+	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
     FVector2D ScreenOffset;	
 };

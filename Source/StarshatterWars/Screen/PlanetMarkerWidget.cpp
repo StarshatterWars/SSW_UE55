@@ -14,14 +14,12 @@ void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
 
 void UPlanetMarkerWidget::SetSelected(bool bSelected)
 {
-	if (bSelected) {
-
-		if (HighlightBorder)
-		{
+	if (HighlightBorder)
+	{
+		if (bSelected) 
 			HighlightBorder->SetVisibility(ESlateVisibility::Visible);
-		} else {
+		else 
 			HighlightBorder->SetVisibility(ESlateVisibility::Hidden);
-		}
 	}
 }
 
