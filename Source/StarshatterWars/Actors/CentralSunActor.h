@@ -35,11 +35,14 @@ protected:
 	void RefreshSceneCapture();
 public:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
-	UTextureRenderTarget2D* SunRenderTarget;
+	UFUNCTION()
+	void EnsureRenderTarget();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Render")
+	UTextureRenderTarget2D* SunRenderTarget = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
-	USceneCaptureComponent2D* SceneCapture;
+	USceneCaptureComponent2D* SceneCapture = nullptr;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* SunMesh;

@@ -20,7 +20,6 @@ ACentralSunActor::ACentralSunActor()
 
 	// Background Mesh
 	BackgroundMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BackgroundMesh"));
-	
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere"));
 	if (SphereMesh.Succeeded())
@@ -44,6 +43,8 @@ ACentralSunActor::ACentralSunActor()
 	BackgroundMesh->SetRelativeLocation(FVector(300.f, 0.f, 0.f));
 	BackgroundMesh->SetCastShadow(false);
 
+	
+	
 	// Scene Capture
 	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
 	SceneCapture->SetupAttachment(RootComponent);
@@ -66,21 +67,8 @@ ACentralSunActor::ACentralSunActor()
 	SceneCapture->ShowFlags.SetMaterials(true);
 	SceneCapture->bCaptureEveryFrame = false;      // recommended for manual capture
 	SceneCapture->bCaptureOnMovement = true;       // helps with refresh on transform change
+	SceneCapture->TextureTarget = SunRenderTarget;
 
-	// Create and configure render target
-	SunRenderTarget = NewObject<UTextureRenderTarget2D>();
-	SunRenderTarget->RenderTargetFormat = RTF_RGBA16f;
-	SunRenderTarget->InitAutoFormat(64, 64); // or your desired size
-	SunRenderTarget->ClearColor = FLinearColor(0, 0, 0, 0); // Fully transparent
-	SunRenderTarget->UpdateResourceImmediate(true);
-
-	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RTAsset(TEXT("/Game/Screens/Operations/Widgets/RT_SunRenderTarget.RT_SunRenderTarget"));
-
-	if (RTAsset.Succeeded())
-	{
-		SunRenderTarget = RTAsset.Object;
-		SceneCapture->TextureTarget = SunRenderTarget;
-	}
 }
 
 ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
@@ -115,12 +103,18 @@ void ACentralSunActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
 	CurrentRotation = GetActorRotation();
 	SetStarColor(SpectralClass);
 	
 	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay() SpectralClass: %u"), static_cast<uint8>(SpectralClass));
-
+	
+	EnsureRenderTarget();
+	
+	// Assign render target if missing
+	if (SceneCapture && !SceneCapture->TextureTarget)
+	{
+		SceneCapture->TextureTarget = SunRenderTarget;
+	}
 
 	if (!StarMaterialInstance && StarBaseMaterial && SunMesh)
 	{
@@ -131,12 +125,12 @@ void ACentralSunActor::BeginPlay()
 			*UEnum::GetValueAsString(SpectralClass),
 			StarColor.R, StarColor.G, StarColor.B);
 
-		StarMaterialInstance->SetVectorParameterValue("StarColor", FLinearColor::Gray);
-		//StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 10.f);
+		//StarMaterialInstance->SetVectorParameterValue("StarColor", FLinearColor::Gray);
+		StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
+		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 1.0f);
 
 		// Force update
-		SceneCapture->bCaptureEveryFrame = true;
+		SceneCapture->bCaptureEveryFrame = false;
 		SceneCapture->bCaptureOnMovement = true;
 
 		// Nudge to force re-render
@@ -202,7 +196,7 @@ void ACentralSunActor::RefreshSceneCapture()
 			{
 				SceneCapture->CaptureScene();
 			}
-		}, 1.0f, false); // 0.0 = delay to next tick
+		}, 0.0f, false); // 0.0 = delay to next tick
 
 	SunMesh->MarkRenderStateDirty();
 	SceneCapture->SetRelativeRotation(SceneCapture->GetRelativeRotation() + FRotator(1, 0, 0));
@@ -211,3 +205,24 @@ void ACentralSunActor::RefreshSceneCapture()
 	SceneCapture->CaptureScene();
 }
 
+void ACentralSunActor::EnsureRenderTarget()
+{
+	// 1. Create if null
+	if (!SunRenderTarget)
+	{
+		SunRenderTarget = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_SunRenderTarget"));
+		SunRenderTarget->RenderTargetFormat = RTF_RGBA8;
+		SunRenderTarget->ClearColor = FLinearColor::Black;
+		SunRenderTarget->InitAutoFormat(64, 64); // or your preferred size
+		SunRenderTarget->UpdateResource();
+
+		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget created."));
+	}
+
+	// 2. Assign to SceneCapture if not already
+	if (SceneCapture && SceneCapture->TextureTarget != SunRenderTarget)
+	{
+		SceneCapture->TextureTarget = SunRenderTarget;
+		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget assigned to SceneCapture."));
+	}
+}

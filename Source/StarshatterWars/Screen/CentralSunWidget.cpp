@@ -6,11 +6,23 @@
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
-	if (!SunActor || !SunImage || !SunWidgetMaterial)
+	if (!SunActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing data"));
+		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing SunActor"));
 		return;
 	}
+
+	if (!SunImage)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing SunImage"));
+		return;
+	}
+
+	if (!SunWidgetMaterial)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing SunWidgetMaterial"));
+		return;
+	} 
 
 	UTextureRenderTarget2D* RenderTarget = SunActor->GetRenderTarget();
 	
@@ -19,14 +31,13 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 		UE_LOG(LogTemp, Warning, TEXT("No render target found on SunActor."));
 		return;
 	}
+	
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(SunWidgetMaterial, this);
 	DynMat->SetTextureParameterValue("InputTexture", RenderTarget);
 
-	// Apply the dynamic material to the image brush
-	FSlateBrush Brush;
-	Brush.SetResourceObject(DynMat);
-	Brush.ImageSize = FVector2D(512.f, 512.f);
-	SunImage->SetBrush(Brush);
+	// Apply to image brush
+	SunImage->SetBrushFromMaterial(DynMat);
+	SunImage->SetBrushSize(FVector2D(64, 64)); // match RT size
 
 	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s"), *RenderTarget->GetName());
 }
