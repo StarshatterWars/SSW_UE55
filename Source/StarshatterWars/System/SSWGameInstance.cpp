@@ -26,6 +26,7 @@
 #include "UObject/Package.h" // For data asset support
 
 #include "../Foundation/MusicController.h"
+#include "../Foundation/MusicControllerInit.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
@@ -297,6 +298,7 @@ void USSWGameInstance::Init()
 	}
 	ReadCombatRosterData();
 	CreateOOBTable();
+	SetupMusicController();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 }
 
@@ -1138,9 +1140,9 @@ void USSWGameInstance::PlaySoundFromFile(FString& AudioPath)
 		return;
 	}
 
-	if (MusicController)
+	if (AMusicController* Music = GetMusicController(this))
 	{
-		MusicController->PlaySound(Sound);
+		Music->PlayUISound(Sound);
 	}
 }
 
@@ -2183,4 +2185,18 @@ void USSWGameInstance::RecursivelyFlattenLanding(
 	Entry.GroupType = ECOMBATGROUP_TYPE::LCA_SQUADRON;
 
 	OutFlatList.Add(Entry);
+}
+
+void USSWGameInstance::SetupMusicController()
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	for (TActorIterator<AMusicController> It(World); It; ++It)
+	{
+		return; // already exists
+	}
+
+	FVector Location = FVector(-1000, 0, 0);
+	World->SpawnActor<AMusicController>(AMusicController::StaticClass(), Location, FRotator::ZeroRotator);
 }

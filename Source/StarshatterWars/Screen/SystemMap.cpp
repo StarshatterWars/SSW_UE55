@@ -11,7 +11,9 @@
 #include "../System/SSWGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "../Game/GalaxyManager.h"
+#include "../Actors/CentralSunActor.h"
 #include "TimerManager.h"
+#include "EngineUtils.h" 
 
 void USystemMap::NativeConstruct()
 {
@@ -31,6 +33,10 @@ void USystemMap::NativeConstruct()
 		UE_LOG(LogTemp, Log, TEXT("USystemMap::NativeConstruct() System Found: %s"), *SelectedSystem);
 		BuildSystemView(System->Planet, System->Name);
 	}
+}
+void USystemMap::NativeDestruct()
+{
+	Super::NativeDestruct();
 }
 
 float USystemMap::GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const
@@ -70,19 +76,41 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 	PlanetMarkers.Empty();
 
 	const FVector2D Center(960.f, 540.f); // Screen center
+	
+	if (SunActorClass)
+	{
+		if (SunActor)
+		{
+			SunActor->Destroy();
+			SunActor = nullptr;
+		}
+
+		FVector Location = FVector(-500, 0, 200);
+		FRotator Rotation = FRotator::ZeroRotator;
+
+		SunActor = GetWorld()->SpawnActor<ACentralSunActor>(SunActorClass, Location, Rotation);
+	}
+
+	//ACentralSunActor* WidgetSunActor = nullptr;
+	//for (TActorIterator<ACentralSunActor> It(GetWorld()); It; ++It)
+	//{
+	//	WidgetSunActor = *It;
+	//	break;
+	//}
 
 	// Add central star
 	if (StarWidgetClass)
 	{
 		UCentralSunWidget* Star = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
-		if (Star)
+		if (Star && SunActor)
 		{
+			Star->InitializeFromSunActor(SunActor);
 			if (UCanvasPanelSlot* StarSlot = MapCanvas->AddChildToCanvas(Star))
 			{
 				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				StarSlot->SetPosition(FVector2D(0.f, 0.f));
-				StarSlot->SetZOrder(5);
+				StarSlot->SetPosition(FVector2D(16.f, 0.f));
+				StarSlot->SetZOrder(15);
 			}
 		}
 	}

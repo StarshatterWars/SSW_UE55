@@ -4,79 +4,64 @@
 #include "MusicController.h"
 #include "Sound/SoundBase.h"
 #include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
 
-// Sets default values
 AMusicController::AMusicController()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-    MusicComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("MusicComponent"));
-    MusicComponent->bAutoActivate = false;
-    MusicComponent->bIsUISound = true;
-   
-    UIComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("UIComponent"));
-    UIComponent->bAutoActivate = false;
-    UIComponent->bIsUISound = true;
-    SetActorHiddenInGame(true);
-    SetCanBeDamaged(false);
-
-    UE_LOG(LogTemp, Log, TEXT("Audio Component Initialized"));
+	// Create and configure the music audio component
+	MusicComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("MusicComponent"));
+	SetRootComponent(MusicComponent);
+	MusicComponent->bAutoActivate = false;
+	MusicComponent->bIsUISound = true;
 }
 
-// Called when the game starts or when spawned
 void AMusicController::BeginPlay()
 {
 	Super::BeginPlay();
-	
-}
+	TArray<AActor*> Found;
 
-// Called every frame
-void AMusicController::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
+	UGameplayStatics::GetAllActorsOfClass(this, AMusicController::StaticClass(), Found);
+	if (Found.Num() > 1)
+	{
+		Destroy(); // keep only one
+	}
 }
 
 void AMusicController::PlayMusic(USoundBase* Music)
 {
-    if (!MusicComponent)
-        return;
-    if (!Music)
-        return;
-    
-    MusicComponent->SetSound(Music);
-    MusicComponent->Play();
+	if (!Music)
+		return;
+
+	// Optional: prevent replaying same track
+	if (MusicComponent->IsPlaying() && MusicComponent->Sound == Music)
+		return;
+
+	MusicComponent->SetSound(Music);
+	MusicComponent->Play();
 }
 
-
-void AMusicController::PlaySound(USoundBase* Sound)
+void AMusicController::PlayUISound(USoundBase* Sound)
 {
-    if (!UIComponent)
-        return;
-    if (!Sound)
-        return;
+	if (!Sound)
+		return;
 
-    UIComponent->SetSound(Sound);
-    UIComponent->Play();
+	UGameplayStatics::PlaySound2D(this, Sound);
 }
 
 void AMusicController::StopMusic()
 {
-    if (MusicComponent && MusicComponent->IsPlaying())
-    {
-        MusicComponent->Stop();
-    }
+	MusicComponent->Stop();
 }
 
 void AMusicController::StopSound()
 {
-    if (UIComponent && UIComponent->IsPlaying())
-    {
-        UIComponent->Stop();
-    }
+	// No audio component for 2D SFX, so nothing to stop
+	// Add additional logic here if needed
 }
 
-bool AMusicController::IsSoundPlaying() {
-    return UIComponent->IsPlaying();
+bool AMusicController::IsSoundPlaying()
+{
+	return MusicComponent->IsPlaying();
 }

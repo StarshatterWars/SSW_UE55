@@ -54,6 +54,7 @@ class UGalaxyMap;
 class USystemMap;
 class USectorMap;
 class UTexture2D;
+class ACentralSunActor;
 
 struct FSubGroupArray
 {

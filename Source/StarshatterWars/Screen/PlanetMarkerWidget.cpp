@@ -14,19 +14,20 @@ void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
 
 void UPlanetMarkerWidget::SetSelected(bool bSelected)
 {
-	if (HighlightBorder)
-	{
-		if (bSelected) 
-			HighlightBorder->SetVisibility(ESlateVisibility::Visible);
-		else 
-			HighlightBorder->SetVisibility(ESlateVisibility::Hidden);
-	}
+	//if (HighlightBorder)
+	//{
+	//	if (bSelected) 
+			//HighlightBorder->SetVisibility(ESlateVisibility::Visible);
+	//	else 
+	//		HighlightBorder->SetVisibility(ESlateVisibility::Hidden);
+	//}
 }
 
 
 void UPlanetMarkerWidget::Init(const FS_PlanetMap& Planet)
 {
 	UE_LOG(LogTemp, Log, TEXT("UPlanetMarkerWidget::Init() Creating Widget: %s"), *Planet.Name);
+	HighlightBorder->SetVisibility(ESlateVisibility::Hidden);
 
 	PlanetData = Planet;
 

@@ -452,5 +452,6 @@ protected:
 		void RecursivelyFlattenAttack(const FS_OOBAttack& Attack, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
 		void RecursivelyFlattenIntercept(const FS_OOBIntercept& Intercept, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
 		void RecursivelyFlattenLanding(const FS_OOBLanding& Landing, int32 ParentId, int32 IndentLevel, int32& CurrentId, TArray<FS_OOBFlatEntry>& OutFlatList);
+		void SetupMusicController();
 };
 

@@ -4,46 +4,36 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Sound/SoundBase.h"
-#include "Components/AudioComponent.h"
 #include "MusicController.generated.h"
+
+class UAudioComponent;
+class USoundBase;
 
 UCLASS()
 class STARSHATTERWARS_API AMusicController : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
-	// Sets default values for this actor's properties
+protected:
+	virtual void BeginPlay() override;
+
+public:
+	
+public:
 	AMusicController();
+	
+	// Music control
+	void PlayMusic(USoundBase* Music);
+	void StopMusic();
 
-	UFUNCTION()
-    void PlayMusic(USoundBase* Music);
+	// One-shot sound effects
+	void PlayUISound(USoundBase* Sound);
+	void StopSound(); // Placeholder — not used unless you manage 2D sound instances
 
-	UFUNCTION()
-    void PlaySound(USoundBase* Sound);
-
-    UFUNCTION()
-    void StopMusic();
-
-	UFUNCTION()
-    void StopSound();
-	UFUNCTION()
+	// Status check
 	bool IsSoundPlaying();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
 private:
-    UPROPERTY()
-    UAudioComponent* MusicComponent;
-
 	UPROPERTY()
-    UAudioComponent* UIComponent;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-	
+	UAudioComponent* MusicComponent;
 };

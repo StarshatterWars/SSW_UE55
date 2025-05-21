@@ -11,6 +11,8 @@
 class UCanvasPanel;
 class UPlanetMarkerWidget;
 class USystemOrbitWidget;
+class UCentralSunWidget;
+class ACentralSunActor;
 
 /**
  * 
@@ -24,8 +26,10 @@ public:
 	// Called to draw all planets for the current system
 	void BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FString& SystemName);
 
+
 protected:
 	void NativeConstruct() override;
+	void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UPROPERTY(meta = (BindWidget))
@@ -38,7 +42,10 @@ protected:
 	TSubclassOf<USystemOrbitWidget> OrbitWidgetClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<UUserWidget> StarWidgetClass;
+	TSubclassOf<UCentralSunWidget> StarWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sun")
+	TSubclassOf<ACentralSunActor> SunActorClass;
 
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
@@ -46,5 +53,7 @@ private:
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
-    FVector2D ScreenOffset;	
+    FVector2D ScreenOffset;
+	UPROPERTY()
+	ACentralSunActor* SunActor;
 };
