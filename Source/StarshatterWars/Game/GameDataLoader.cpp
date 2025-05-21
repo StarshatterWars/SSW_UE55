@@ -3455,6 +3455,7 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 	double Radius = 0.0;
 	double Mass = 0.0;
 	double Orbit = 0.0;
+	double Inclination = 0.0;
 	double Rot = 0.0;
 	double Tscale = 1.0;
 	double Tilt = 0.0;
@@ -3482,6 +3483,10 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "orbit") {
 				GetDefNumber(Orbit, pdef, fn);
 				NewMoonMap.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "inclination") {
+				GetDefNumber(Inclination, pdef, fn);
+				NewMoonMap.Inclination = Inclination;
 			}
 			else if (pdef->name()->value() == "rotation") {
 				GetDefNumber(Rot, pdef, fn);
@@ -3523,6 +3528,7 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 	Text   PlanetRing = "";
 	double Mass = 0.0;
 	double Orbit = 0.0;
+	double Inclination = 0.0;
 	double Radius = 0.0;
 	double Rot = 0.0;
 	double Minrad = 0.0;
@@ -3558,6 +3564,10 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "orbit") {
 				GetDefNumber(Orbit, pdef, fn);
 				NewPlanetMap.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "inclination") {
+				GetDefNumber(Inclination, pdef, fn);
+				NewPlanetMap.Inclination = Inclination;
 			}
 			else if (pdef->name()->value() == "retro") {
 				GetDefBool(Retro, pdef, fn);

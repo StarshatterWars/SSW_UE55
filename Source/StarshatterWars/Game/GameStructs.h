@@ -861,6 +861,8 @@ struct FS_Planet : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Inclination;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Minrad;
@@ -892,6 +894,7 @@ struct FS_Planet : public FTableRowBase {
 		Radius = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		Inclination = 0.0;
 		Rot = 0.0;
 		Minrad = 0.0;
 		Maxrad = 0.0;
