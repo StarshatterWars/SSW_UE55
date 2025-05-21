@@ -62,6 +62,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Stellar")
 	UMaterialInterface* StarBaseMaterial;
 
+	// Star material texture (sunspot mask)
+	UPROPERTY(EditDefaultsOnly, Category = "Materials")
+	UTexture2D* SunspotTexture;
+
 	UPROPERTY()
 	UMaterialInstanceDynamic* StarMaterialInstance;
 

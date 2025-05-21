@@ -125,9 +125,10 @@ void ACentralSunActor::BeginPlay()
 			*UEnum::GetValueAsString(SpectralClass),
 			StarColor.R, StarColor.G, StarColor.B);
 
-		//StarMaterialInstance->SetVectorParameterValue("StarColor", FLinearColor::Gray);
 		StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 1.0f);
+		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 2.5f);
+		StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
+		StarMaterialInstance->SetScalarParameterValue("SunspotStrength", 0.5f); // 0 = off, 1 = full
 
 		// Force update
 		SceneCapture->bCaptureEveryFrame = false;
@@ -149,8 +150,11 @@ void ACentralSunActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	CurrentRotation = GetActorRotation();
 	CurrentRotation.Yaw += RotationSpeed * DeltaTime;
 	SetActorRotation(CurrentRotation);
+
+	RefreshSceneCapture();
 }
 
 void ACentralSunActor::SetStarColor(ESPECTRAL_CLASS Class) {
@@ -226,3 +230,6 @@ void ACentralSunActor::EnsureRenderTarget()
 		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget assigned to SceneCapture."));
 	}
 }
+
+
+	
