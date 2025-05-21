@@ -120,7 +120,7 @@ void ACentralSunActor::SetMaterial(ESPECTRAL_CLASS SpectalClass)
 		break;
 	}
 
-	if (SelectedMat)
+	if (SelectedMat && SunMesh)
 	{
 		SunMesh->SetMaterial(0, SelectedMat);
 	}

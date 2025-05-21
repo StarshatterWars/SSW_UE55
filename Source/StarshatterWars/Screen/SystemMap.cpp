@@ -89,14 +89,8 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 		FRotator Rotation = FRotator::ZeroRotator;
 
 		SunActor = GetWorld()->SpawnActor<ACentralSunActor>(SunActorClass, Location, Rotation);
+		SunActor->SetMaterial(ESPECTRAL_CLASS::G);
 	}
-
-	//ACentralSunActor* WidgetSunActor = nullptr;
-	//for (TActorIterator<ACentralSunActor> It(GetWorld()); It; ++It)
-	//{
-	//	WidgetSunActor = *It;
-	//	break;
-	//}
 
 	// Add central star
 	if (StarWidgetClass)
