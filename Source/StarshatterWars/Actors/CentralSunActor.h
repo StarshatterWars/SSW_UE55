@@ -30,6 +30,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	void SetStarColor(ESPECTRAL_CLASS Class);
+	FLinearColor GetStarColor();
+	void RefreshSceneCapture();
 public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
@@ -46,9 +49,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return SunRenderTarget; }
-
-	UFUNCTION(BlueprintCallable, Category = "Render")
-	void SetMaterial(ESPECTRAL_CLASS Class);
 	
 	UPROPERTY()
 	USceneComponent* RootScene;
@@ -65,9 +65,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Sun")
 	float RotationSpeed = 20.0f;
 
-	UFUNCTION()
-	void Init(ESPECTRAL_CLASS InClass);
-
 private:
 	FRotator CurrentRotation;
+	FLinearColor StarColor;
 };

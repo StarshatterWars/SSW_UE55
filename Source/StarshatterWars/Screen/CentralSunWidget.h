@@ -25,14 +25,8 @@ public:
 
 	// Material reference for black-transparent UI material
 	UPROPERTY(EditDefaultsOnly, Category = "Render")
-	UMaterialInterface* BlackTransparentMaterial;
+	UMaterialInterface* SunWidgetMaterial;
 	
 	UFUNCTION(BlueprintCallable)
 	void InitializeFromSunActor(ACentralSunActor* SunActor);
-	
-	UFUNCTION(BlueprintCallable)
-	void SetSunRender(UTextureRenderTarget2D* RenderTarget);
-	
-	UFUNCTION(BlueprintCallable)
-	void SetSunRenderWithMaterial(UTextureRenderTarget2D* RenderTarget);
 };

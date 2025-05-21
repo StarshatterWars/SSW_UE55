@@ -56,4 +56,6 @@ private:
     FVector2D ScreenOffset;
 	UPROPERTY()
 	ACentralSunActor* SunActor;
+	UPROPERTY()
+	UCentralSunWidget* StarWidget;
 };

@@ -6,35 +6,28 @@
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
-	if (SunActor)
+	if (!SunActor || !SunImage || !SunWidgetMaterial)
 	{
-		SetSunRenderWithMaterial(SunActor->GetRenderTarget()); // use material version
+		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing data"));
+		return;
 	}
-}
 
-void UCentralSunWidget::SetSunRender(UTextureRenderTarget2D* RenderTarget)
-{
-	if (SunImage && RenderTarget)
-	{
-		FSlateBrush Brush;
-		Brush.SetResourceObject(static_cast<UObject*>(RenderTarget)); // <-- fix here
-		Brush.ImageSize = FVector2D(512, 512);
-		SunImage->SetBrush(Brush);
-	}
-}
-
-void UCentralSunWidget::SetSunRenderWithMaterial(UTextureRenderTarget2D* RenderTarget)
-{
-	if (!SunImage || !BlackTransparentMaterial || !RenderTarget) return;
-
-	// Create a dynamic material instance and set the texture
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(BlackTransparentMaterial, this);
-	DynMat->SetTextureParameterValue(FName("InputTexture"), RenderTarget);
-	DynMat->SetScalarParameterValue("ColorMultiplier", 10.0f);
+	UTextureRenderTarget2D* RenderTarget = SunActor->GetRenderTarget();
 	
-	// Apply the dynamic material to the SunImage
+	if (!RenderTarget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No render target found on SunActor."));
+		return;
+	}
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(SunWidgetMaterial, this);
+	DynMat->SetTextureParameterValue("InputTexture", RenderTarget);
+
+	// Apply the dynamic material to the image brush
 	FSlateBrush Brush;
 	Brush.SetResourceObject(DynMat);
-	Brush.ImageSize = FVector2D(64, 64);
+	Brush.ImageSize = FVector2D(512.f, 512.f);
 	SunImage->SetBrush(Brush);
+
+	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s"), *RenderTarget->GetName());
 }
+

@@ -85,27 +85,32 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			SunActor = nullptr;
 		}
 
+		// 2. Destroy previous widget (if it exists)
+		if (StarWidget)
+		{
+			StarWidget->RemoveFromParent();
+			StarWidget = nullptr;
+		}
 		FVector Location = FVector(-500, 0, 200);
 		FRotator Rotation = FRotator::ZeroRotator;
 
-		//SunActor = GetWorld()->SpawnActor<ACentralSunActor>(SunActorClass, Location, Rotation);
 		SunActor = ACentralSunActor::SpawnWithSpectralClass(
 			GetWorld(),
 			Location,
 			FRotator::ZeroRotator,
 			SunActorClass,
-			ActiveSystem->Class // ? correct value now visible inside BeginPlay
+			ActiveSystem->Class // correct value now visible inside BeginPlay
 		);
 	}
 
 	// Add central star
 	if (StarWidgetClass)
 	{
-		UCentralSunWidget* Star = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
-		if (Star && SunActor)
+		StarWidget = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
+		if (StarWidget && SunActor)
 		{
-			Star->InitializeFromSunActor(SunActor);
-			if (UCanvasPanelSlot* StarSlot = MapCanvas->AddChildToCanvas(Star))
+			StarWidget->InitializeFromSunActor(SunActor);
+			if (UCanvasPanelSlot* StarSlot = MapCanvas->AddChildToCanvas(StarWidget))
 			{
 				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));

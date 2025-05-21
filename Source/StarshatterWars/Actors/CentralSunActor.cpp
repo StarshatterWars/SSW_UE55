@@ -63,6 +63,9 @@ ACentralSunActor::ACentralSunActor()
 	SceneCapture->ShowFlags.SetScreenSpaceReflections(false);
 	SceneCapture->ShowFlags.SetDirectionalLights(true);
 	SceneCapture->ShowFlags.SetPostProcessing(false);	
+	SceneCapture->ShowFlags.SetMaterials(true);
+	SceneCapture->bCaptureEveryFrame = false;      // recommended for manual capture
+	SceneCapture->bCaptureOnMovement = true;       // helps with refresh on transform change
 
 	// Create and configure render target
 	SunRenderTarget = NewObject<UTextureRenderTarget2D>();
@@ -111,21 +114,40 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 void ACentralSunActor::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentRotation = GetActorRotation();
+
 	
+	CurrentRotation = GetActorRotation();
+	SetStarColor(SpectralClass);
+	
+	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay() SpectralClass: %u"), static_cast<uint8>(SpectralClass));
+
+
 	if (!StarMaterialInstance && StarBaseMaterial && SunMesh)
 	{
 		StarMaterialInstance = UMaterialInstanceDynamic::Create(StarBaseMaterial, this);
 		SunMesh->SetMaterial(0, StarMaterialInstance);
-	}
 
-	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay() Spectral Class: %u"), static_cast<uint8>(SpectralClass));
-	
-	SetMaterial(SpectralClass);
+		UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay(): SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
+			*UEnum::GetValueAsString(SpectralClass),
+			StarColor.R, StarColor.G, StarColor.B);
 
-	if (SceneCapture)
-	{
-		SceneCapture->CaptureScene(); // MUST come after material assignment
+		StarMaterialInstance->SetVectorParameterValue("StarColor", FLinearColor::Gray);
+		//StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
+		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 10.f);
+
+		// Force update
+		SceneCapture->bCaptureEveryFrame = true;
+		SceneCapture->bCaptureOnMovement = true;
+
+		// Nudge to force re-render
+		
+		UE_LOG(LogTemp, Warning, TEXT("StarMaterialInstance: %s"), *GetNameSafe(StarMaterialInstance));
+		UE_LOG(LogTemp, Warning, TEXT("Mesh Material: %s"), *GetNameSafe(SunMesh->GetMaterial(0)));
+		
+		// Force redraw
+		SunMesh->SetVisibility(false, true);
+		SunMesh->SetVisibility(true, true);
+		RefreshSceneCapture();
 	}
 }
 
@@ -137,12 +159,8 @@ void ACentralSunActor::Tick(float DeltaTime)
 	SetActorRotation(CurrentRotation);
 }
 
-void ACentralSunActor::SetMaterial(ESPECTRAL_CLASS Class)
-{
-	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::SetMaterial() called"));
-
+void ACentralSunActor::SetStarColor(ESPECTRAL_CLASS Class) {
 	// Set color based on spectral class
-	FLinearColor StarColor;
 
 	switch (Class)
 	{
@@ -162,25 +180,34 @@ void ACentralSunActor::SetMaterial(ESPECTRAL_CLASS Class)
 	default: StarColor = FLinearColor::Gray; break;
 	}
 
-	//DynMat->SetVectorParameterValue("StarColor", FLinearColor::Red);
-	if (StarMaterialInstance)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("StarColor set to: R=%.2f G=%.2f B=%.2f"),
-			StarColor.R, StarColor.G, StarColor.B);
-
-		StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 15.0f); // optional
-	}
-	// Refresh capture
-	if (SceneCapture)
-	{
-		SceneCapture->CaptureScene();
-	}
+	UE_LOG(LogTemp, Warning, TEXT("SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
+		*UEnum::GetValueAsString(SpectralClass),
+		StarColor.R, StarColor.G, StarColor.B);
 }
 
-void ACentralSunActor::Init(ESPECTRAL_CLASS InClass)
+
+FLinearColor ACentralSunActor::GetStarColor()
 {
-	
-	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::Init() Spectral Class: %u"), static_cast<uint8>(InClass)); 
-	SpectralClass = InClass;
+	return StarColor;
 }
+
+
+void ACentralSunActor::RefreshSceneCapture()
+{
+	// Delay CaptureScene by one frame
+	FTimerHandle DelayHandle;
+	GetWorldTimerManager().SetTimer(DelayHandle, [this]()
+		{
+			if (SceneCapture)
+			{
+				SceneCapture->CaptureScene();
+			}
+		}, 1.0f, false); // 0.0 = delay to next tick
+
+	SunMesh->MarkRenderStateDirty();
+	SceneCapture->SetRelativeRotation(SceneCapture->GetRelativeRotation() + FRotator(1, 0, 0));
+	SceneCapture->SetRelativeRotation(SceneCapture->GetRelativeRotation() - FRotator(1, 0, 0));
+	UE_LOG(LogTemp, Warning, TEXT("Refreshing SceneCapture"));
+	SceneCapture->CaptureScene();
+}
+
