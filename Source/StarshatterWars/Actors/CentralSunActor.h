@@ -19,6 +19,13 @@ class STARSHATTERWARS_API ACentralSunActor : public AActor
 public:
 	ACentralSunActor();
 
+	static ACentralSunActor* SpawnWithSpectralClass(
+		UWorld* World,
+		const FVector& Location,
+		const FRotator& Rotation,
+		TSubclassOf<ACentralSunActor> ActorClass,
+		ESPECTRAL_CLASS InSpectralClass);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -42,57 +49,24 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	void SetMaterial(ESPECTRAL_CLASS Class);
-
+	
 	UPROPERTY()
 	USceneComponent* RootScene;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stellar")
 	ESPECTRAL_CLASS SpectralClass = ESPECTRAL_CLASS::G;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_O;
+	UPROPERTY(EditDefaultsOnly, Category = "Stellar")
+	UMaterialInterface* StarBaseMaterial;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_B;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_A;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_F;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_G;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_K;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_M;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_R;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_N;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_S;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_BlackHole;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_WhiteDwarf;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_RedGiant;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar Materials")
-	UMaterialInterface* Mat_Unknown;
+	UPROPERTY()
+	UMaterialInstanceDynamic* StarMaterialInstance;
 
 	UPROPERTY(EditAnywhere, Category = "Sun")
 	float RotationSpeed = 20.0f;
+
+	UFUNCTION()
+	void Init(ESPECTRAL_CLASS InClass);
 
 private:
 	FRotator CurrentRotation;

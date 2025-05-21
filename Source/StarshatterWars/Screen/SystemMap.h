@@ -24,7 +24,7 @@ class STARSHATTERWARS_API USystemMap : public UUserWidget
 
 public:
 	// Called to draw all planets for the current system
-	void BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FString& SystemName);
+	void BuildSystemView(const FS_Galaxy* ActiveSystem);
 
 
 protected:

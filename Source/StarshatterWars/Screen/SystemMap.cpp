@@ -31,7 +31,7 @@ void USystemMap::NativeConstruct()
 	if (System)
 	{
 		UE_LOG(LogTemp, Log, TEXT("USystemMap::NativeConstruct() System Found: %s"), *SelectedSystem);
-		BuildSystemView(System->Planet, System->Name);
+		BuildSystemView(System);
 	}
 }
 void USystemMap::NativeDestruct()
@@ -60,17 +60,17 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 }
 
-void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FString& SystemName)
+void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 {
-	
-
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Missing MapCanvas"));
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): System: %s has %d planets"), *SystemName, Planets.Num());
+	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): System: %s has %d planets"), *ActiveSystem->Name, ActiveSystem->Planet.Num());
+
+	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Stellar Classification: %u"), static_cast<uint8>(ActiveSystem->Class));
 
 	MapCanvas->ClearChildren();
 	PlanetMarkers.Empty();
@@ -88,8 +88,14 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 		FVector Location = FVector(-500, 0, 200);
 		FRotator Rotation = FRotator::ZeroRotator;
 
-		SunActor = GetWorld()->SpawnActor<ACentralSunActor>(SunActorClass, Location, Rotation);
-		SunActor->SetMaterial(ESPECTRAL_CLASS::G);
+		//SunActor = GetWorld()->SpawnActor<ACentralSunActor>(SunActorClass, Location, Rotation);
+		SunActor = ACentralSunActor::SpawnWithSpectralClass(
+			GetWorld(),
+			Location,
+			FRotator::ZeroRotator,
+			SunActorClass,
+			ActiveSystem->Class // ? correct value now visible inside BeginPlay
+		);
 	}
 
 	// Add central star
@@ -110,9 +116,9 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 	}
 
 	// Build planet markers and orbit rings
-	for (const FS_PlanetMap& Planet : Planets)
+	for (const FS_PlanetMap& Planet : ActiveSystem->Planet)
 	{
-		const float ORBIT_TO_SCREEN = GetDynamicOrbitScale(Planets, 480.f);
+		const float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Planet, 480.f);
 		
 		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
 
