@@ -94,3 +94,34 @@ void ACentralSunActor::Tick(float DeltaTime)
 	CurrentRotation.Yaw += RotationSpeed * DeltaTime;
 	SetActorRotation(CurrentRotation);
 }
+
+void ACentralSunActor::SetMaterial(ESPECTRAL_CLASS SpectalClass)
+{
+	UMaterialInterface* SelectedMat = nullptr;
+
+	switch (SpectralClass)
+	{
+	case ESPECTRAL_CLASS::O: SelectedMat = Mat_O; break;
+	case ESPECTRAL_CLASS::B: SelectedMat = Mat_B; break;
+	case ESPECTRAL_CLASS::A: SelectedMat = Mat_A; break;
+	case ESPECTRAL_CLASS::F: SelectedMat = Mat_F; break;
+	case ESPECTRAL_CLASS::G: SelectedMat = Mat_G; break;
+	case ESPECTRAL_CLASS::K: SelectedMat = Mat_K; break;
+	case ESPECTRAL_CLASS::M: SelectedMat = Mat_M; break;
+	case ESPECTRAL_CLASS::R: SelectedMat = Mat_R; break;
+	case ESPECTRAL_CLASS::N: SelectedMat = Mat_N; break;
+	case ESPECTRAL_CLASS::S: SelectedMat = Mat_S; break;
+	case ESPECTRAL_CLASS::BLACK_HOLE: SelectedMat = Mat_BlackHole; break;
+	case ESPECTRAL_CLASS::WHITE_DWARF: SelectedMat = Mat_WhiteDwarf; break;
+	case ESPECTRAL_CLASS::RED_GIANT: SelectedMat = Mat_RedGiant; break;
+	case ESPECTRAL_CLASS::UNKNOWN:
+	default:
+		SelectedMat = Mat_Unknown;
+		break;
+	}
+
+	if (SelectedMat)
+	{
+		SunMesh->SetMaterial(0, SelectedMat);
+	}
+}

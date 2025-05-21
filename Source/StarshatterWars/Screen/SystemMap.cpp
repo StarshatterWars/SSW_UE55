@@ -109,7 +109,7 @@ void USystemMap::BuildSystemView(const TArray<FS_PlanetMap>& Planets, const FStr
 			{
 				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				StarSlot->SetPosition(FVector2D(16.f, 0.f));
+				StarSlot->SetPosition(FVector2D(32.f, 0.f));
 				StarSlot->SetZOrder(15);
 			}
 		}
