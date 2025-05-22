@@ -7,33 +7,37 @@
 #include "Styling/SlateColor.h"          // FSlateColor / FLinearColor
 #include "Rendering/DrawElements.h"
 
-/*int32 USystemOrbitWidget::NativePaint(
+int32 USystemOrbitWidget::NativePaint(
 	const FPaintArgs& Args,
 	const FGeometry& AllottedGeometry,
 	const FSlateRect& MyCullingRect,
 	FSlateWindowElementList& OutDrawElements,
 	int32 LayerId,
 	const FWidgetStyle& InWidgetStyle,
-	bool bParentEnabled) const
+	bool bParentEnabled
+) const
 {
 	const FLinearColor OrbitColor = FLinearColor::Gray;
 	const FVector2D Center = AllottedGeometry.GetLocalSize() * 0.5f;
 
-	TArray<FVector2D> Points;
 	const int32 SegmentCount = 64;
+	TArray<FVector2D> Points;
+	Points.Reserve(SegmentCount + 1);
+
+	// Calculate visual Y-axis squash from inclination
+	const float YTilt = FMath::Cos(FMath::DegreesToRadians(OrbitInclinationDeg));
 
 	for (int32 i = 0; i <= SegmentCount; ++i)
 	{
-		const float Angle = FMath::DegreesToRadians(i * 360.0f / SegmentCount);
+		const float AngleRad = FMath::DegreesToRadians(i * 360.0f / SegmentCount);
 
-		// Elliptical orbit with vertical tilt applied
-		const float X = FMath::Cos(Angle) * OrbitRadius;
-		const float Y = FMath::Sin(Angle) * OrbitRadius * OrbitTiltY;
+		const float X = FMath::Cos(AngleRad) * OrbitRadius;
+		const float Y = FMath::Sin(AngleRad) * OrbitRadius;
 
-		Points.Add(Center + FVector2D(X, Y));
+		Points.Add(Center + FVector2D(X, Y * YTilt));
 	}
 
-	// Draw the orbit path
+	// Draw ring using lines
 	FSlateDrawElement::MakeLines(
 		OutDrawElements,
 		LayerId,
@@ -46,9 +50,9 @@
 	);
 
 	return LayerId + 1;
-}*/
+}
 
-int32 USystemOrbitWidget::NativePaint(
+/*int32 USystemOrbitWidget::NativePaint(
 	const FPaintArgs& Args,
 	const FGeometry& AllottedGeometry,
 	const FSlateRect& MyCullingRect,
@@ -88,4 +92,4 @@ int32 USystemOrbitWidget::NativePaint(
 	);
 
 	return LayerId + 1;
-}
+}*/

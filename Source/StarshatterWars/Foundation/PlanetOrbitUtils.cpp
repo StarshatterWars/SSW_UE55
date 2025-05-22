@@ -44,3 +44,33 @@ FVector2D PlanetOrbitUtils::Get2DOrbitPosition(float Radius, float OrbitAngleDeg
 	);
 }
 
+FVector2D PlanetOrbitUtils::Get2DOrbitPositionWithInclination(float Radius, float OrbitAngleDegrees, float InclinationDegrees)
+{
+	const float AngleRad = FMath::DegreesToRadians(OrbitAngleDegrees);
+	const float InclinationRad = FMath::DegreesToRadians(InclinationDegrees);
+
+	// Compute unrotated orbit point (in X-Y plane)
+	float X = FMath::Cos(AngleRad) * Radius;
+	float Y = FMath::Sin(AngleRad) * Radius;
+
+	// Apply inclination by rotating around X axis (affects Y visually)
+	// In 2D, we simulate this by squashing Y based on inclination angle
+	Y *= FMath::Cos(InclinationRad);
+
+	return FVector2D(X, Y);
+}
+
+float PlanetOrbitUtils::FitOrbitRadiusToPanel(float RawRadius, float InclinationDegrees, float PanelWidth, float PanelHeight, float Padding)
+{
+	const float InclinationRad = FMath::DegreesToRadians(InclinationDegrees);
+	const float YTilt = FMath::Cos(InclinationRad);
+
+	// Compute max radius allowed based on vertical and horizontal bounds
+	const float MaxVerticalRadius = (PanelHeight * 0.5f - Padding) / (YTilt > 0.001f ? YTilt : 1.0f);
+	const float MaxHorizontalRadius = (PanelWidth * 0.5f) - Padding;
+
+	// Final radius must satisfy both constraints
+	const float MaxRadius = FMath::Min(MaxVerticalRadius, MaxHorizontalRadius);
+
+	return FMath::Min(RawRadius, MaxRadius);
+}

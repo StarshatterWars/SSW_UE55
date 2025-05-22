@@ -58,6 +58,8 @@ private:
 	UPROPERTY()
     FVector2D ScreenOffset;
 	UPROPERTY()
+    FVector2D PanelSize;
+	UPROPERTY()
 	ACentralSunActor* SunActor;
 	UPROPERTY()
 	UCentralSunWidget* StarWidget;

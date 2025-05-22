@@ -18,4 +18,10 @@ public:
 
 	// 2D screen-space orbit position using radius (pre-scaled)
 	static FVector2D Get2DOrbitPosition(float Radius, float OrbitAngleDegrees, float YTilt = 1.0f);
+
+	// 2D screen-space orbit position using radius with inclination (pre-scaled)
+	static FVector2D Get2DOrbitPositionWithInclination(float Radius, float OrbitAngleDegrees, float InclinationDegrees);
+
+	// Limit orbit radius to fit within panel height based on inclination
+	static float FitOrbitRadiusToPanel(float RawRadius, float InclinationDegrees, float PanelWidth, float PanelHeight, float Padding = 50.f);
 };

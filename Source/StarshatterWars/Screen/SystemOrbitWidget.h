@@ -19,6 +19,7 @@ class STARSHATTERWARS_API USystemOrbitWidget : public UUserWidget
 public:
 	void SetOrbitRadius(float InRadius) { OrbitRadius = InRadius; Invalidate(EInvalidateWidget::Paint); }
 	void SetOrbitTilt(float InTilt) { OrbitTiltY = InTilt;     Invalidate(EInvalidateWidget::Paint); }
+	void SetOrbitInclination(float InDegrees) { OrbitInclinationDeg = InDegrees; Invalidate(EInvalidateWidget::Paint); }
 	
 protected:
 	virtual int32 NativePaint(
@@ -33,4 +34,5 @@ protected:
 private:
 	float OrbitRadius = 100.0f;  // distance from center in screen units
 	float OrbitTiltY = 1.0f;    // scale Y-axis for elliptical tilt (0.6 = flatter)
+	float OrbitInclinationDeg = 0.0f;
 };
