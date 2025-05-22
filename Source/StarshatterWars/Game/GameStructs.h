@@ -619,6 +619,8 @@ struct FS_MoonMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Inclination;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Tscale;
@@ -636,6 +638,7 @@ struct FS_MoonMap : public FTableRowBase {
 		Radius = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		Inclination = 0.0;
 		Rot = 0.0;
 		Tscale = 1.0;
 		Tilt = 0.0;
@@ -661,6 +664,8 @@ struct FS_PlanetMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Inclination;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Minrad;
@@ -684,6 +689,7 @@ struct FS_PlanetMap : public FTableRowBase {
 		Radius = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		Inclination = 0.0;
 		Rot = 0.0;
 		Minrad = 0.0;
 		Maxrad = 0.0;
@@ -694,6 +700,58 @@ struct FS_PlanetMap : public FTableRowBase {
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FS_StarMap : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString  Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString  SystemName;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString  Map;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString  Image;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	ESPECTRAL_CLASS  Class;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Light = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Radius = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Rot = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Mass = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Tscale = 1.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool   Retro = false;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor  Color;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FColor  Back;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_PlanetMap> Planet;
+
+	FS_StarMap() {
+		Name = "";
+		SystemName = "";
+		Map = "";
+		Image = "";
+		Light = 0.0;
+		Radius = 0.0;
+		Rot = 0.0;
+		Mass = 0.0;
+		Orbit = 0.0;
+		Tscale = 1.0;
+		Retro = false;
+		Color = FColor(0, 0, 0, 0);
+		Back = FColor(0, 0, 0, 0);
+		Class = ESPECTRAL_CLASS::G;
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FS_Galaxy : public FTableRowBase {
@@ -701,6 +759,8 @@ struct FS_Galaxy : public FTableRowBase {
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FString  Name;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Level;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	ESPECTRAL_CLASS  Class;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -714,10 +774,13 @@ struct FS_Galaxy : public FTableRowBase {
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FString> Link;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FS_PlanetMap> Planet;
+	TArray <FS_StarMap> Stellar;
+	//UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	//TArray<FS_PlanetMap> Planet;
 
 	FS_Galaxy() {
 		Name = "";
+		Level = "";
 		Class = ESPECTRAL_CLASS::G;
 		Location = FVector::ZeroVector;
 		Iff = 0;

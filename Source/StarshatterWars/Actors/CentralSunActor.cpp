@@ -218,7 +218,7 @@ void ACentralSunActor::EnsureRenderTarget()
 		SunRenderTarget->RenderTargetFormat = RTF_RGBA8;
 		SunRenderTarget->ClearColor = FLinearColor::Black;
 		SunRenderTarget->InitAutoFormat(64, 64); // or your preferred size
-		SunRenderTarget->UpdateResource();
+		SunRenderTarget->UTextureRenderTarget2D::UpdateResource();
 
 		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget created."));
 	}

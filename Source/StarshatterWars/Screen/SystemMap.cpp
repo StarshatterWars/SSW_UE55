@@ -68,9 +68,9 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): System: %s has %d planets"), *ActiveSystem->Name, ActiveSystem->Planet.Num());
+	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): System: %s has %d planets"), *ActiveSystem->Name, ActiveSystem->Stellar[0].Planet.Num());
 
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Stellar Classification: %u"), static_cast<uint8>(ActiveSystem->Class));
+	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Stellar Classification: %u"), static_cast<uint8>(ActiveSystem->Stellar[0].Class));
 
 	MapCanvas->ClearChildren();
 	PlanetMarkers.Empty();
@@ -121,9 +121,9 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	}
 
 	// Build planet markers and orbit rings
-	for (const FS_PlanetMap& Planet : ActiveSystem->Planet)
+	for (const FS_PlanetMap& Planet : ActiveSystem->Stellar[0].Planet)
 	{
-		const float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Planet, 480.f);
+		const float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
 		
 		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
 

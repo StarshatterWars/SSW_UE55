@@ -2851,6 +2851,7 @@ AGameDataLoader::LoadGalaxyMap()
 		term = parser.ParseTerm();
 		FVector fv;
 		
+		StarMapArray.Empty();
 		PlanetMapArray.Empty();
 		double Radius;
 
@@ -2881,7 +2882,6 @@ AGameDataLoader::LoadGalaxyMap()
 						EEMPIRE_NAME EEmpireType = EEMPIRE_NAME::Terellian;
 						
 						NewGalaxyData.Link.Empty();
-						NewGalaxyData.Planet.Empty();
 
 						for (int i = 0; i < val->elements()->size(); i++) {
 							TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2909,18 +2909,14 @@ AGameDataLoader::LoadGalaxyMap()
 									GetDefText(Link, pdef, filename);
 									NewGalaxyData.Link.Add(FString(Link));
 								}
-								//else if (pdef->name()->value() == "planet") {
-								//	GetDefText(Planet, pdef, filename);
-								//	NewGalaxyData.Planet.Add(FString(Planet));
-								//}
-								else if (pdef->name()->value() == "planet") {
+								else if (pdef->name()->value() == "stellar") {
 									if (!pdef->term() || !pdef->term()->isStruct()) {
-										UE_LOG(LogTemp, Log, TEXT("WARNING: planet struct missing in '%s'"), *FString(fn));
+										UE_LOG(LogTemp, Log, TEXT("WARNING: star struct missing in '%s'"), *FString(fn));
 									}
 									else {
-										ParsePlanetMap(pdef->term()->isStruct(), fn);
-										NewGalaxyData.Planet = PlanetMapArray;
-										
+										ParseStarMap(pdef->term()->isStruct(), fn);
+										NewGalaxyData.Stellar = StarMapArray;
+
 									}
 								}
 								else if (pdef->name()->value() == "star") {
@@ -3517,6 +3513,133 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 		}
 	}
 	MoonMapArray.Add(NewMoonMap);
+}
+void
+AGameDataLoader::ParseStarMap(TermStruct* val, const char* fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("AGameDataLoader::ParseStarMap()"));
+
+	Text  StarName = "";
+	Text  SystemName = "";
+	Text  ImgName = "";
+	Text  MapName = "";
+	Text  ClassName;
+	double Light = 0.0;
+	double Radius = 0.0;
+	double Rot = 0.0;
+	double Mass = 0.0;
+	double Orbit = 0.0;
+	double Tscale = 1.0;
+	bool   Retro = false;
+	ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
+
+	FS_StarMap NewStarMap;
+	PlanetMapArray.Empty();
+
+	for (int i = 0; i < val->elements()->size(); i++) {
+		TermDef* pdef = val->elements()->at(i)->isDef();
+		if (pdef) {
+			if (pdef->name()->value() == "name") {
+				GetDefText(StarName, pdef, fn);
+				NewStarMap.Name = FString(StarName);
+			}
+			else if (pdef->name()->value() == "system") {
+				GetDefText(SystemName, pdef, fn);
+				NewStarMap.SystemName = FString(MapName);
+			}
+			else if (pdef->name()->value() == "map") {
+				GetDefText(MapName, pdef, fn);
+				NewStarMap.Map = FString(MapName);
+			}
+			else if (pdef->name()->value() == "image") {
+				GetDefText(ImgName, pdef, fn);
+				NewStarMap.Image = FString(ImgName);
+			}
+			else if (pdef->name()->value() == "mass") {
+				GetDefNumber(Mass, pdef, fn);
+				NewStarMap.Mass = Mass;
+			}
+			else if (pdef->name()->value() == "orbit") {
+				GetDefNumber(Orbit, pdef, fn);
+				NewStarMap.Orbit = Orbit;
+			}
+			else if (pdef->name()->value() == "radius") {
+				GetDefNumber(Radius, pdef, fn);
+				NewStarMap.Radius = Radius;
+			}
+			else if (pdef->name()->value() == "rotation") {
+				GetDefNumber(Rot, pdef, fn);
+				NewStarMap.Rot = Rot;
+			}
+			else if (pdef->name()->value() == "tscale") {
+				GetDefNumber(Tscale, pdef, fn);
+				NewStarMap.Tscale = Tscale;
+			}
+			else if (pdef->name()->value() == "light") {
+				GetDefNumber(Light, pdef, fn);
+				NewStarMap.Light = Light;
+			}
+			else if (pdef->name()->value() == "retro") {
+				GetDefBool(Retro, pdef, fn);
+				NewStarMap.Retro = Retro;
+			}
+			else if (pdef->name()->value() == "color") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				NewStarMap.Color = FColor(a.x, a.y, a.z, 1);
+			}
+
+			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
+				Vec3 a;
+				GetDefVec(a, pdef, fn);
+				NewStarMap.Back = FColor(a.x, a.y, a.z, 1);
+			}
+			else if (pdef->name()->value() == "class") {
+				GetDefText(ClassName, pdef, fn);
+
+				switch (ClassName[0]) {
+				case 'B':
+					StarClass = ESPECTRAL_CLASS::B;
+					break;
+				case 'A':
+					StarClass = ESPECTRAL_CLASS::A;
+					break;
+				case 'F':
+					StarClass = ESPECTRAL_CLASS::F;
+					break;
+				case 'G':
+					StarClass = ESPECTRAL_CLASS::G;
+					break;
+				case 'K':
+					StarClass = ESPECTRAL_CLASS::K;
+					break;
+				case 'M':
+					StarClass = ESPECTRAL_CLASS::M;
+					break;
+				case 'R':
+					StarClass = ESPECTRAL_CLASS::RED_GIANT;
+					break;
+				case 'W':
+					StarClass = ESPECTRAL_CLASS::WHITE_DWARF;
+					break;
+				case 'Z':
+					StarClass = ESPECTRAL_CLASS::BLACK_HOLE;
+					break;
+				}
+				NewStarMap.Class = StarClass;
+			}
+			else if (pdef->name()->value() == "planet") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: planet struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					ParsePlanetMap(pdef->term()->isStruct(), fn);
+					NewStarMap.Planet = PlanetMapArray;
+				}
+			}
+		}
+	}
+	StarMapArray.Add(NewStarMap);
 }
 
 void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)

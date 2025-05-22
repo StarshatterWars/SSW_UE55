@@ -6,7 +6,7 @@
 
 void USystemMarker::Init(const FS_Galaxy& System)
 {    
-    UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() Creating Widget: %s"), *System.Name); 
+    UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() Creating Widget: %s"), *System.Name);
 
     SystemData = System;
 
@@ -30,7 +30,7 @@ void USystemMarker::Init(const FS_Galaxy& System)
     FString ProjectPath = FPaths::ProjectContentDir();
     ProjectPath.Append(TEXT("GameData/Galaxy/StarIcons/"));
     
-    switch (System.Class) {
+    switch (System.Stellar[0].Class) {
         case ESPECTRAL_CLASS::A:
             ProjectPath.Append(TEXT("StarA_map.png"));
             break;
