@@ -1,0 +1,21 @@
+// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "../Game/GameStructs.h"
+/**
+ * 
+ */
+class STARSHATTERWARS_API PlanetOrbitUtils
+{
+
+public:
+	static FVector GetPlanetOrbitPositionWithAngle(const FS_PlanetMap& PlanetData, const FVector& StarLocation, float OrbitAngleDegrees);
+
+	// Returns a simple 2D orbit position (flat in X-Y) using a fixed orbit angle
+	static FVector GetPlanetOrbitPositionFlat(const FS_PlanetMap& PlanetData, const FVector& StarLocation, float OrbitAngleDegrees);
+
+	// 2D screen-space orbit position using radius (pre-scaled)
+	static FVector2D Get2DOrbitPosition(float Radius, float OrbitAngleDegrees, float YTilt = 1.0f);
+};

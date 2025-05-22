@@ -50,6 +50,9 @@ protected:
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 
+	// Holds per-planet orbit angle (randomized once per planet per session)
+	TMap<FString, float> PlanetOrbitAngles;
+
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
