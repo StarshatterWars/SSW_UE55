@@ -3652,6 +3652,9 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 	double Mass = 0.0;
 	double Orbit = 0.0;
 	double Inclination = 0.0;
+	double Aphelion = 0.0;
+	double Perihelion = 0.0;
+	double Eccentricity = 0.0;
 	double Radius = 0.0;
 	double Rot = 0.0;
 	double Minrad = 0.0;
@@ -3691,6 +3694,18 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "inclination") {
 				GetDefNumber(Inclination, pdef, fn);
 				NewPlanetMap.Inclination = Inclination;
+			}
+			else if (pdef->name()->value() == "aphelion") {
+				GetDefNumber(Aphelion, pdef, fn);
+				NewPlanetMap.Aphelion = Aphelion;
+			}
+			else if (pdef->name()->value() == "perihelion") {
+				GetDefNumber(Perihelion, pdef, fn);
+				NewPlanetMap.Perihelion = Perihelion;
+			}
+			else if (pdef->name()->value() == "eccentricity") {
+				GetDefNumber(Eccentricity, pdef, fn);
+				NewPlanetMap.Eccentricity = Eccentricity;
 			}
 			else if (pdef->name()->value() == "retro") {
 				GetDefBool(Retro, pdef, fn);
