@@ -257,7 +257,7 @@ system:
 		   radius:  20e6,
 		   mass:    4.81e26,
 		   orbit:   4.75e11,
-		   inclination: -2.26,
+		   inclination: -22.26,
 		   tscale:  2,
 		   tilt:    0.21,
 		   rotation: 46.2,

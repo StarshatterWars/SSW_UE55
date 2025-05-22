@@ -24,4 +24,7 @@ public:
 
 	// Limit orbit radius to fit within panel height based on inclination
 	static float FitOrbitRadiusToPanel(float RawRadius, float InclinationDegrees, float PanelWidth, float PanelHeight, float Padding = 50.f);
+
+	// Amplify inclination
+	static float AmplifyInclination(float Deg, float Factor = 2.0f);
 };

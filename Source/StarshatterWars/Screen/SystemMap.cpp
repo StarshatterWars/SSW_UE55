@@ -149,8 +149,8 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			//OrbitCenter += Center;
 			// Apply visual configuration
 			Orbit->SetOrbitRadius(Radius);
-			//Orbit->SetOrbitTilt(OrbitTiltY);
-			Orbit->SetOrbitInclination(Planet.Inclination);
+			const float InclinationVisual = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination);
+			Orbit->SetOrbitInclination(InclinationVisual);
 
 			// Position orbit ring widget
 			if (UCanvasPanelSlot* OrbitSlot = MapCanvas->AddChildToCanvas(Orbit))
@@ -176,11 +176,13 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 					OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
 				}
 				
-				// Compute 2D UI position using helper
-				//FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPosition(Radius, OrbitAngle, OrbitTiltY);
-				
-				// Compute 2D UI position with inclination using helper method
-				FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(Radius, OrbitAngle, Planet.Inclination);
+				float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
+
+				FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+					Radius,
+					OrbitAngle,
+					VisualInclination
+				);
 
 				if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(Marker))
 				{

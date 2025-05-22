@@ -74,3 +74,8 @@ float PlanetOrbitUtils::FitOrbitRadiusToPanel(float RawRadius, float Inclination
 
 	return FMath::Min(RawRadius, MaxRadius);
 }
+
+float PlanetOrbitUtils::AmplifyInclination(float Deg, float Factor)
+{
+	return Deg * Factor;
+}

@@ -676,6 +676,12 @@ struct FS_PlanetMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Tilt;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Perihelion;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Aphelion;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Eccentricity;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool   Retro;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Atmos;
@@ -695,6 +701,9 @@ struct FS_PlanetMap : public FTableRowBase {
 		Maxrad = 0.0;
 		Tscale = 1.0;
 		Tilt = 0.0;
+		Perihelion = 0.0f;
+		Aphelion = 0.0f;
+		Eccentricity = 0.0f;
 		Retro = false;
 		Atmos = FColor::Black;
 	}

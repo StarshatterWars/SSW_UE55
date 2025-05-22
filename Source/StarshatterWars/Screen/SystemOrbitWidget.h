@@ -17,11 +17,25 @@ class STARSHATTERWARS_API USystemOrbitWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void SetOrbitRadius(float InRadius) { OrbitRadius = InRadius; Invalidate(EInvalidateWidget::Paint); }
-	void SetOrbitTilt(float InTilt) { OrbitTiltY = InTilt;     Invalidate(EInvalidateWidget::Paint); }
-	void SetOrbitInclination(float InDegrees) { OrbitInclinationDeg = InDegrees; Invalidate(EInvalidateWidget::Paint); }
-	
+
+	/** Set the orbit radius in screen units (pixels) */
+	void SetOrbitRadius(float InRadius)
+	{
+		OrbitRadius = InRadius;
+		Invalidate(EInvalidateWidget::Paint);
+	}
+
+	/** Set the orbital inclination in degrees */
+	void SetOrbitInclination(float InDegrees)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetOrbitInclination called with: %.2f"), InDegrees);
+		OrbitInclinationDeg = InDegrees;
+		Invalidate(EInvalidateWidget::Paint);
+	}
+
 protected:
+
+	/** Paint the orbit ellipse */
 	virtual int32 NativePaint(
 		const FPaintArgs& Args,
 		const FGeometry& AllottedGeometry,
@@ -29,10 +43,14 @@ protected:
 		FSlateWindowElementList& OutDrawElements,
 		int32 LayerId,
 		const FWidgetStyle& InWidgetStyle,
-		bool bParentEnabled) const override;
+		bool bParentEnabled
+	) const override;
 
-private:
-	float OrbitRadius = 100.0f;  // distance from center in screen units
-	float OrbitTiltY = 1.0f;    // scale Y-axis for elliptical tilt (0.6 = flatter)
+protected:
+
+	UPROPERTY()
+	float OrbitRadius = 100.0f;
+
+	UPROPERTY()
 	float OrbitInclinationDeg = 0.0f;
 };
