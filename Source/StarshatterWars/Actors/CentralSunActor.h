@@ -32,10 +32,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	FLinearColor GetStarColor();
 	void RefreshSceneCapture();
-public:
 
+public:
 	UFUNCTION()
 	void EnsureRenderTarget();
 	UFUNCTION()

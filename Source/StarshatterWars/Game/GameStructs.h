@@ -656,6 +656,12 @@ struct FS_PlanetMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FString  Icon;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Texture;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Gloss;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString  Lights;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FString  Ring;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Radius;

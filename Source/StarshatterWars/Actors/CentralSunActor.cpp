@@ -91,8 +91,6 @@ void ACentralSunActor::BeginPlay()
 	Super::BeginPlay();
 
 	CurrentRotation = GetActorRotation();
-	//SetStarColor(SpectralClass);
-	//ApplyStarVisuals();
 
 	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay() SpectralClass: %u"), static_cast<uint8>(SpectralClass));
 	
@@ -131,19 +129,10 @@ void ACentralSunActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	CurrentRotation = GetActorRotation();
-	CurrentRotation.Yaw += RotationSpeed * DeltaTime;
-	SetActorRotation(CurrentRotation);
+	AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
 
 	RefreshSceneCapture();
 }
-
-
-FLinearColor ACentralSunActor::GetStarColor()
-{
-	return StarColor;
-}
-
 
 void ACentralSunActor::RefreshSceneCapture()
 {
@@ -193,11 +182,6 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::ApplyStarVisuals(): SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
 		*UEnum::GetValueAsString(Class),
 		StarColor.R, StarColor.G, StarColor.B);
-
-	//float MeshScale = StarUtils::GetMeshScaleFromRadius(Radius);
-	//SunMesh->SetWorldScale3D(FVector(MeshScale));
-
-	//UE_LOG(LogTemp, Log, TEXT("Star scaled: Radius = %.2e -> Scale = %.2f"), Radius, MeshScale);
 
 	// Use StarUtils for consistent visuals
 	StarColor = StarUtils::GetColor(Class);

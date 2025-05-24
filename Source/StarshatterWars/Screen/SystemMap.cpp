@@ -13,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "../Game/GalaxyManager.h"
 #include "../Actors/CentralSunActor.h"
+#include "../Actors/PlanetPanelActor.h"
 #include "../Foundation/PlanetOrbitUtils.h"
 #include "TimerManager.h"
 #include "EngineUtils.h" 
@@ -184,6 +185,26 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			}
 
 			Orbit->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		if (PlanetActorClass)
+		{
+			FVector SpawnLocation = FVector(-1000.f, 0.f, 100.f); // Off-screen or off-camera
+			FRotator SpawnRotation = FRotator::ZeroRotator;
+
+			APlanetPanelActor* PlanetActor = GetWorld()->SpawnActor<APlanetPanelActor>(
+				PlanetActorClass,
+				SpawnLocation,
+				SpawnRotation
+			);
+
+			if (PlanetActor)
+			{
+				// You can pass in radius and a placeholder material for now
+				PlanetActor->InitializePlanet(Planet.Radius, DefaultPlanetMaterial); // assumes you have a UMaterialInterface* available
+
+				SpawnedPlanetActors.Add(PlanetActor);
+			}
 		}
 
 		// Planet marker

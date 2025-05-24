@@ -13,6 +13,7 @@ class UPlanetMarkerWidget;
 class USystemOrbitWidget;
 class UCentralSunWidget;
 class ACentralSunActor;
+class APlanetPanelActor;
 class UOperationsScreen;
 
 /**
@@ -35,6 +36,9 @@ public:
 	UFUNCTION()
 	void HandleCentralSunClicked();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	UMaterialInterface* DefaultPlanetMaterial;
+
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
@@ -54,6 +58,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sun")
 	TSubclassOf<ACentralSunActor> SunActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<APlanetPanelActor> PlanetActorClass;
+
+	UPROPERTY()
+	TArray<APlanetPanelActor*> SpawnedPlanetActors;
 
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;

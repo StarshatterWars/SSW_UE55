@@ -30,6 +30,7 @@ system:
 		planet: {
 			name:    Adonis,
 			icon:    "GasGiant7_map",
+			texture:  "GasGiant7",
 			radius:  18e6,
 			mass:    2.1e26,
 			orbit:   0.8e11,
@@ -74,6 +75,7 @@ system:
 		planet: {
 			name:    Jarnell,
 			icon:    "jarnell_map",
+			texture: "jarnell",
 			radius:  5.8e6,
 			mass:    4.98e24,
 			atmosphere: (100,180,220),
@@ -103,6 +105,7 @@ system:
 		planet: {
 			name:    Caladan,
 			icon:    "caladan_map",
+			texture: "caladan",
 			radius:  3.8e6,
 			mass:    2.98e24,
 			atmosphere: (50,80,70),
@@ -124,6 +127,7 @@ system:
 		planet:     {
 			name:    Dawn,
 			icon:    "GasGiant6_map",
+			texture: "GasGiant6",
 			radius:  28e6,
 			mass:    5.1e26,
 			orbit:   4.3e11,
@@ -202,6 +206,7 @@ system:
 	   planet: {
 			name:    Talistar
 			icon:   "lanos_map",
+			texture: "lanos",
 			radius:  2.3e6,
 			mass:    1.39e24,
 			orbit:   0.47e11,
@@ -214,6 +219,7 @@ system:
 		planet:       {
 			name:     Maraner,
 			icon:     "maraner_map",
+			texture:  "maraner",
 			radius:   3.5e6,
 			mass:     2.18e24,
 			orbit:    0.89e11,
@@ -226,6 +232,7 @@ system:
 		planet:     {
 			name:    Borova
 			icon:    "borova_map"
+			texture: "borova",
 			radius:  5.9e6,
 			mass:    4.38e24,
 			atmosphere: (120,160,210),
@@ -254,6 +261,7 @@ system:
 		planet: {
 			name:    Danova
 			icon:    "GasGiant2_map"
+			texture: "GasGiant2",
 			radius:  17.1e6,
 			mass:    3.6e26,
 			tilt:    0.13,
@@ -284,6 +292,7 @@ system:
 		planet: {
 			name:    Zhalisal
 			icon:    "GasGiant3_map",
+			texture: "GasGiant3",
 			radius:  20e6,
 			mass:    4.81e26,
 			orbit:   4.75e11,
@@ -359,6 +368,8 @@ system: {
 	   planet:     {
 			name:    Athenar,
 			icon:    "athenar_map",
+			texture: "athenar",
+			gloss:   "athenar_gloss",
 			radius:  5.72e6,
 			mass:    3.53e24,
 			atmosphere: (150,160,210),
@@ -367,6 +378,7 @@ system: {
 			perihelion: 1.47e11,
 			aphelion: 2.43e11,
 			eccentricity: 0.246,
+
 			
 			moon:       {
 			   name:    Nike
@@ -378,7 +390,8 @@ system: {
 		},
 		planet:     {
 			name:    Pallas
-			icon:    "nero_map"
+			icon:    "nero_map",
+			texture: "pallas",
 			radius:  3.35e6,
 			mass:    2.52e24,
 			atmosphere: (80,120,150),
@@ -419,6 +432,7 @@ system:
 	   planet: {
 			name:    Dorrath
 			icon:    "dorrath_map",
+			texture: "dorrath",
 			radius:  3.9e6,
 			mass:    2.58e24,
 			orbit:   0.72e11,
@@ -441,6 +455,7 @@ system:
 		planet:     {
 			name:    Paragon
 			icon:    "paragon_map",
+			texture: "paragon",
 			radius:  5.8e6,
 			mass:    4.98e24,
 			atmosphere: (140,170,200),
@@ -469,6 +484,7 @@ system:
 	   planet: {
 			name:     "Bryn Mawr",
 			icon:     "bryn_map",
+			texture:  "bryn",
 			radius:  3.3e6,
 			mass:    2.45e24,
 			orbit:   2.57e11,
@@ -525,6 +541,7 @@ system:
 	   planet: {
 			name:    Pollux
 			icon:    "benares_map",
+			texture: "benares",
 			radius:  3.75e6,
 			mass:    2.50e24,
 			orbit:   0.632e11,
@@ -546,6 +563,7 @@ system:
 		planet:     {
 			name:    Thrale
 			icon:    "thralis_map",
+			texture: "thrale",
 			radius:  5.98e6,
 			mass:    4.62e24,
 			atmosphere: (80,100,150),
@@ -559,6 +577,7 @@ system:
 		planet: {
 			name:    Hera
 			icon:    "GasGiant5_map",
+			texture: "GasGiant5",
 			radius:  23.1e6,
 			mass:    4.2e26,
 			tscale:  2,
@@ -573,6 +592,7 @@ system:
 		planet: {
 			name:    Zeus,
 			icon:    "GasGiant10_map",
+			texture: "GasGiant10",
 			radius:  27.5e6,
 			mass:    5.42e26,
 			orbit:   4.13e11,
@@ -646,7 +666,8 @@ system:
 
 	   planet: {
 			name:    Ilon,
-			icon:     "ilon_map",
+			icon:    "ilon_map",
+			texture: "ilon",
 			radius:  3.5e6,
 			mass:    2.18e24,
 			orbit:   0.58e11,
@@ -659,6 +680,7 @@ system:
 		planet: {
 			name:    Dante,
 			icon:    "dante_map",
+			texture: "dante",
 			radius:  5.2e6,
 			atmosphere: (192,160,128),
 			mass:    4.18e24,
@@ -681,6 +703,7 @@ system:
 		planet: {
 			name:    Janek,
 			icon:    "janek_map",
+			texture: "janek",
 			radius:  5.4e6,
 			mass:    4.18e24,
 			atmosphere: (100,150,220),
@@ -702,6 +725,7 @@ system:
 		planet:     {
 			name:    Alystra
 			icon:    "GasGiant12_map",
+			texture: "GasGiant12",
 			radius:  36e6,
 			mass:    5.6e26,
 			orbit:   2.84e11,
@@ -767,6 +791,7 @@ system:
 	   planet: {
 			name:    Meridian
 			icon:    "meridian_map",
+			texture: "meridian",
 			radius:  3.5e6,
 			mass:    2.18e24,
 			atmosphere: (200,185,165),
@@ -780,6 +805,7 @@ system:
 		planet: {
 			name:    Solus
 			icon:    "solus_map",
+			texture: "solus",
 			radius:  5.4e6,
 			mass:    4.18e24,
 			atmosphere: (155,175,220),
@@ -809,6 +835,7 @@ system:
 		planet: {
 			name:    Jalah,
 			icon:    "jalah_map",
+			texture: "jalah",
 			radius:  19.1e6,
 			mass:    3.6e26,
 			tscale:  2,
@@ -823,6 +850,7 @@ system:
 		planet: {
 			name:    Trellis
 			icon:    "GasGiant9_map",
+			texture: "GasGiant9",
 			radius:  30e6,
 			mass:    5.42e26,
 			orbit:   3.75e11,
@@ -897,6 +925,7 @@ system:
 	   planet:       {
 			name:    Silessia
 			icon:    "silessia_map",
+			texture: "silessia",
 			radius:  5.4e6,
 			mass:    3.38e24,
 			atmosphere: (80,120,150),
@@ -918,6 +947,7 @@ system:
 		planet: {
 			name:    Prosenar
 			icon:    "GasGiant8_map",
+			texture: "GasGiant8",
 			radius:  14.1e6,
 			mass:    3.6e26,
 			tilt:    0.2,
@@ -953,6 +983,7 @@ system:
 		planet: {
 			name:    Vesta
 			icon:    "GasGiant2_map",
+			texture: "GasGiant2",
 			radius:  18.1e6,
 			mass:    3.6e26,
 			tilt:    0.13,
@@ -993,6 +1024,7 @@ system:
 		planet: {
 			name:    Nero
 			icon:    "nero_map",
+			texture: "nero",
 			radius:  2.64e6,
 			mass:    1.48e24,
 			orbit:   5.18e11,
@@ -1035,6 +1067,7 @@ system:
 	   planet:       {
 			name:    Haiche
 			icon:    "haiche_map"
+			texture: "haiche",
 			radius:  4.8e6,
 			mass:    5.75e24,
 			atmosphere: (200,180,160),
@@ -1056,6 +1089,7 @@ system:
 		planet: {
 			name:    Cygnus
 			icon:    "GasGiant5_map",
+			texture: "GasGiant5",
 			radius:  27.1e6,
 			mass:    2.6e26,
 			tscale:  2,
@@ -1087,6 +1121,7 @@ system:
 		planet: {
 			name:    "Tal Amin"
 			icon:    "GasGiant11_map",
+			texture: "GasGiant11",
 			radius:  38.2e6,
 			mass:    4.0e26,
 			tscale:  2,
@@ -1119,6 +1154,7 @@ system:
 	planet:       {
 		name:    Haiche
 		icon:    "haiche_map"
+		texture: "haiche",
 		radius:  4.8e6,
 		mass:    5.75e24,
 		atmosphere: (200,180,160),
@@ -1170,6 +1206,7 @@ system:
 	   planet: {
 			name:    Garana
 			icon:    "garana_map",
+			texture: "garana",
 			radius:  4.318e6,
 			mass:    3.15e24,
 			orbit:   0.62e11,
@@ -1182,6 +1219,7 @@ system:
 		planet: {
 			name:    Rhomindal
 			icon:    "rhomindal_map",
+			texture: "rhomindal",
 			radius:  5.735e6,
 			mass:    4.95e24,
 			orbit:   11.53e11,
@@ -1194,6 +1232,7 @@ system:
 		planet: {
 			name:    Renser
 			icon:    "renser_map",
+			texture: "renser",
 			radius:  6.437e6,
 			mass:    5.98e24,
 			atmosphere: (180,170,200),
@@ -1207,6 +1246,7 @@ system:
 		planet: {
 			name:    Marisol
 			icon:    "marisol_map",
+			texture: "marisol",
 			radius:  27.489e6,
 			mass:    4.21e26,
 			orbit:   3.75e11,
@@ -1247,6 +1287,7 @@ system:
 		planet: {
 			name:    Khaital
 			icon:    "khaital_map",
+			texture: "khaital",
 			radius:  3.821e6,
 			mass:    2.87e24,
 			atmosphere: (150,160,190),
@@ -1290,6 +1331,7 @@ system:
 	   planet:     {
 			name:    Duna,
 			icon:    "duna_map",
+			texture: "duna",
 			radius:  25.1e6,
 			mass:    1.38e25,
 			tilt:    0.125,
@@ -1322,6 +1364,7 @@ system:
 		planet:     {
 			name:    Loris,
 			icon:    "loris_map",
+			texture: "loris",
 			radius:  5.1e6,
 			mass:    3.88e24,
 			tilt:    0.125,
@@ -1354,6 +1397,7 @@ system:
 		planet:     {
 			name:    Casalle
 			icon:    "GasGiant5_map",
+			texture: "GasGiant5",
 			radius:  38.2e6,
 			mass:    4.0e26,
 			orbit:   2.95e11,
@@ -1418,6 +1462,7 @@ system:
 	   planet: {
 			name:    Aram,
 			icon:   "ostara_map",
+			texture: "aram",
 			radius:  6.4e6,
 			mass:    5.98e24,
 			atmosphere: (180,90,60),
@@ -1471,6 +1516,7 @@ system:
 	   planet:     {
 			name:    Ilya
 			icon:    "ilya_map",
+			texture: "ilya",
 			radius:  3.6e6,
 			mass:    4.1e26,
 			orbit:   1.03e11,
@@ -1483,6 +1529,7 @@ system:
 		planet:     {
 			name:    Kolchev
 			icon:    "kolchev_map",
+			texture: "kolchev",
 			atmosphere: (130,130,150),
 			radius:  4.8e6,
 			mass:    3.9e24,
@@ -1514,6 +1561,7 @@ system:
 		planet: {
 			name:    Anatoly
 			icon:    "GasGiant6_map",
+			texture: "GasGiant6",
 			radius:  29.1e6,
 			mass:    3.6e26,
 			tscale:  2,
@@ -1528,7 +1576,7 @@ system:
 		planet: {
 			name:    Volova,
 			icon:    "GasGiant9_map",
-			image:   "Giants/GasGiant9.jpg",
+			texture: "GasGiant9",
 			radius:  20e6,
 			mass:    5.42e26,
 			orbit:   3.75e11,
@@ -1545,8 +1593,8 @@ system:
 			moon: {
 			   name:    Anya
 			   icon:    "nero_map",
-			   image:   "Silessia/nero_lo.pcx",
-			   high_res:"Silessia/nero_hi.jpg",
+			   image:   "nero_lo",
+			   high_res:"nero_hi",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.65e8,
@@ -1605,6 +1653,7 @@ system:
 	   planet: {
 			name:    Moneta
 			icon:    "bryn_map",
+			texture: "moneta",
 			radius:  3.6e6,
 			mass:    3.96e26,
 			orbit:   0.97e11,
@@ -1627,6 +1676,7 @@ system:
 		planet: {
 			name:    Rhomin
 			icon:    "GasGiant11_map",
+			texture: "GasGiant11",
 			radius:  38.2e6,
 			mass:    4.0e26,
 			tilt:    0.1,
@@ -1689,6 +1739,7 @@ system:
 	   planet: {
 			name:    "Tarsus I"
 			icon:    "tarsus_map",
+			texture: "tarsus",
 			atmosphere: (90,70,60),
 			radius:  3.75e6,
 			mass:    5.6e26,
@@ -1702,6 +1753,7 @@ system:
 		planet: {
 			name:    "Tarsus II",
 			icon:    "oman_map",
+			texture: "oman",
 			radius:  2.15e6,
 			mass:    3.96e26,
 			orbit:   3.61e11,
@@ -1742,6 +1794,7 @@ system:
 		planet:     {
 			name:    Nergal
 			icon:    "nergal_map",
+			texture: "nergal",
 			radius:  9e6,
 			mass:    5.6e28,
 			orbit:   4.8e11,
@@ -1784,6 +1837,7 @@ system:
 	   planet:     {
 			name:    Senna
 			icon:    "senna_map",
+			texture: "senna",
 			radius:  4.5e6,
 			mass:    4.1e24,
 			atmosphere: (160,140,120),
@@ -1806,6 +1860,7 @@ system:
 		planet:     {
 			name:    Radix
 			icon:    "radix_map",
+			texture: "radix",
 			radius:  5.1e6,
 			mass:    4.6e24,
 			atmosphere: (175,160,150),
@@ -1828,6 +1883,7 @@ system:
 		planet: {
 			name:    Cavenda
 			icon:    "GasGiant5_map",
+			texture: "GasGiant5",
 			radius:  13.7e6,
 			mass:    3.6e26,
 			tscale:  2,
@@ -1892,6 +1948,7 @@ system:
 	   planet:     {
 			name:    Garden
 			icon:    "garden_map",
+			texture: "garden",
 			radius:  3.75e6,
 			mass:    5.6e23,
 			atmosphere: (145,170,190),
@@ -1905,6 +1962,7 @@ system:
 		planet: {
 			name:    Senesca,
 			icon:    "GasGiant10_map",
+			texture: "GasGiant10",
 			radius:  14.1e6,
 			mass:    3.6e26,
 			tilt:    0.2,
@@ -1940,6 +1998,7 @@ system:
 		planet: {
 			name:    Ramek,
 			icon:    "GasGiant9_map",
+			texture: "GasGiant9",
 			radius:  18.1e6,
 			mass:    3.6e26,
 			tscale:  2,
@@ -1981,6 +2040,7 @@ system:
 		planet:     {
 			name:    Relay,
 			icon:    "relay_map",
+			texture: "relay",
 			radius:  3.15e6,
 			mass:    4.6e23,
 			atmosphere: (130,120,110),
@@ -2022,6 +2082,7 @@ system:
 	   planet: {
 			name:    Rhofar
 			icon:    "oman_map",
+			texture: "rhofar",
 			radius:  3.1e6,
 			tilt:    0.03,
 			mass:    3.1e24,
@@ -2035,6 +2096,7 @@ system:
 		planet: {
 			name:    Garrison
 			icon:    "garrison_map",
+			texture: "garrison",
 			radius:  6e6,
 			tilt:    0.15,
 			ring:    "garrison_ring",
@@ -2051,6 +2113,7 @@ system:
 		planet: {
 			name:    Korul
 			icon:    "GasGiant10_map",
+			texture: "GasGiant10",
 			radius:  23e6,
 			tilt:    0.19,
 			ring:    "Ring2",
@@ -2067,6 +2130,7 @@ system:
 		planet: {
 			name:    Nerasil
 			icon:    "kala_map"
+			texture: "nerasil",
 			radius:  4e6,
 			tilt:    0.15,
 			mass:    3.7e24,
@@ -2108,6 +2172,7 @@ system:
 	   planet: {
 			name:    Volante
 			icon:    "volante_map",
+			texture: "volante",
 			radius:  6e6,
 			mass:    5.1e24,
 			orbit:   1.4e11,
@@ -2120,6 +2185,7 @@ system:
 		planet: {
 			name:    Narcissus
 			icon:    "GasGiant1_map",
+			texture: "GasGiant1",
 			radius:  13.7e6,
 			mass:    3.6e26,
 			orbit:   2.51e11,
@@ -2151,6 +2217,7 @@ system:
 		planet: {
 			name:    Path
 			icon:    "path_map",
+			texture: "path",
 			radius:  4.1e6,
 			mass:    3.5e24,
 			orbit:   4.4e11,
@@ -2189,6 +2256,7 @@ system:
 	   planet:     {
 			name:    Marak
 			icon:    "marak_map",
+			texture: "marak",
 			atmosphere: (90,90,130),
 			radius:  6.1e6,
 			mass:    5.3e24,

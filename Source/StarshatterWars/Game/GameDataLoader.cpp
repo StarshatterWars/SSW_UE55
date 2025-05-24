@@ -3649,6 +3649,9 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 	Text   PlanetName = "";
 	Text   PlanetIcon = "";
 	Text   PlanetRing = "";
+	Text   PlanetTexture = "";
+	Text   PlanetGloss = "";
+	Text   PlanetLights = "";
 	double Mass = 0.0;
 	double Orbit = 0.0;
 	double Inclination = 0.0;
@@ -3678,6 +3681,18 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "icon") {
 				GetDefText(PlanetIcon, pdef, fn);
 				NewPlanetMap.Icon = FString(PlanetIcon);
+			}
+			else if (pdef->name()->value() == "texture") {
+				GetDefText(PlanetTexture, pdef, fn);
+				NewPlanetMap.Texture = FString(PlanetTexture);
+			}
+			else if (pdef->name()->value() == "gloss") {
+				GetDefText(PlanetGloss, pdef, fn);
+				NewPlanetMap.Gloss = FString(PlanetGloss);
+			}
+			else if (pdef->name()->value() == "lights") {
+				GetDefText(PlanetLights, pdef, fn);
+				NewPlanetMap.Lights = FString(PlanetLights);
 			}
 			else if (pdef->name()->value() == "ring") {
 				GetDefText(PlanetRing, pdef, fn);
