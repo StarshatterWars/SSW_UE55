@@ -7,6 +7,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/Image.h"
 #include "../Actors/CentralSunActor.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
 #include "CentralSunWidget.generated.h"
 
@@ -25,6 +26,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnSunClickedDelegate OnSunClicked;
 	
+	UPROPERTY(meta = (BindWidgetOptional))
+	UCanvasPanelSlot* SunSlot;
+
 	UPROPERTY(meta = (BindWidgetOptional))
 	UImage* SunImage;
 

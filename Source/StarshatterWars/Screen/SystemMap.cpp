@@ -97,7 +97,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 		}
 
 		// Pull the stellar radius from the active system
-		const float StellarRadius = ActiveSystem->Stellar.Num() > 0 ? ActiveSystem->Stellar[0].Radius : 1.6e9f;
+		const float StellarRadius = ActiveSystem->Stellar[0].Radius;
 
 		FVector Location = FVector(-500, 0, 200);
 		FRotator Rotation = FRotator::ZeroRotator;
@@ -107,8 +107,8 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			Location,
 			Rotation,
 			SunActorClass,
-			ActiveSystem->Class,     // Spectral class
-			StellarRadius            // Pass in radius from Galaxy.def
+			ActiveSystem->Stellar[0].Class,     // Spectral class
+			ActiveSystem->Stellar[0].Radius     // Pass in radius from Galaxy.def
 		);
 	}
 

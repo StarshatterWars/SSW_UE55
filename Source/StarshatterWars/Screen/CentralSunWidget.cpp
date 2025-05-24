@@ -3,6 +3,8 @@
 
 #include "CentralSunWidget.h"
 #include "Components/Image.h"
+#include "Components/Widget.h"
+#include "Components/CanvasPanelSlot.h"
 #include "../System/SSWGameInstance.h"
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
@@ -43,14 +45,25 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 	constexpr float MinRadius = 1.2e9f;
 	constexpr float MaxRadius = 2.2e9f;
 	constexpr float MinSize = 32.f;
-	constexpr float MaxSize = 64.f;
+	constexpr float MaxSize = 128.f;
 
 	float Normalized = FMath::Clamp((Radius - MinRadius) / (MaxRadius - MinRadius), 0.f, 1.f);
 	float SizePx = FMath::Lerp(MinSize, MaxSize, Normalized);
+
 	SunImage->SetBrushSize(FVector2D(SizePx, SizePx));
+
+	if (SunSlot)
+	{
+		SunSlot->SetSize(FVector2D(SizePx, SizePx));
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s, radius: %.2e km -> %.1f px"),
 		*GetNameSafe(RenderTarget), Radius, SizePx);
+	
+	float Scale = SizePx / 64.f; // assuming 64 is base size
+	FWidgetTransform Transform;
+	Transform.Scale = FVector2D(Scale, Scale);
+	SunImage->SetRenderTransform(Transform);
 }
 
 FReply UCentralSunWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
