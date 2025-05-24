@@ -314,6 +314,8 @@ public:
 	UFUNCTION()
 	void OnTheaterSystemButtonSelected(UMenuButton* SelectedButton);
 	UFUNCTION()
+	void ShowGalaxyMap();
+	UFUNCTION()
 	void OnTheaterSystemButtonHovered(UMenuButton* HoveredButton);
 	UFUNCTION()
 	void OnTheaterSectorButtonSelected(UMenuButton* SelectedButton);

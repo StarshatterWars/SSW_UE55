@@ -27,4 +27,7 @@ public:
 
 	// Amplify inclination
 	static float AmplifyInclination(float Deg, float Factor = 2.0f);
+
+	/** Calculates perihelion and aphelion in kilometers */
+	static void CalculateOrbitExtremes(float MeanOrbit, float Eccentricity, float& OutPerihelion, float& OutAphelion);
 };

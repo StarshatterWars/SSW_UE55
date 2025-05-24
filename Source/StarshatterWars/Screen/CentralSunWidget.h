@@ -14,12 +14,17 @@
  * Widget that displays the 3D-rendered central star
  */
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSunClickedDelegate);
+
 UCLASS()
 class STARSHATTERWARS_API UCentralSunWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintAssignable)
+	FOnSunClickedDelegate OnSunClicked;
+	
 	UPROPERTY(meta = (BindWidgetOptional))
 	UImage* SunImage;
 
@@ -29,4 +34,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void InitializeFromSunActor(ACentralSunActor* SunActor);
+
+protected:
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 };

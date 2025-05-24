@@ -7,6 +7,7 @@
 #include "PlanetMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "CentralSunWidget.h"
+#include "OperationsScreen.h"
 #include "../Game/GameStructs.h" // FS_Galaxy struct
 #include "../System/SSWGameInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -62,6 +63,7 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 }
 
+
 void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 {
 	if (!MapCanvas)
@@ -109,6 +111,9 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	if (StarWidgetClass)
 	{
 		StarWidget = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
+		// Bind the click delegate to handle galaxy map return
+		StarWidget->OnSunClicked.AddDynamic(this, &USystemMap::HandleCentralSunClicked);
+
 		if (StarWidget && SunActor)
 		{
 			StarWidget->InitializeFromSunActor(SunActor);
@@ -127,9 +132,21 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	{
 		float PanelWidth = MapCanvas->GetCachedGeometry().GetLocalSize().X;
 		float PanelHeight = MapCanvas->GetCachedGeometry().GetLocalSize().Y;
-
-		const float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
 		
+		float Perihelion = 0.f;
+		float Aphelion = 0.f;
+
+		PlanetOrbitUtils::CalculateOrbitExtremes(Planet.Orbit, Planet.Eccentricity, Perihelion, Aphelion);
+
+		// Get ellipse axes
+		float a = (Perihelion + Aphelion) * 0.5f; // semi-major
+		float b = a * FMath::Sqrt(1.0f - FMath::Square(Planet.Eccentricity)); // semi-minor
+
+		// Convert to screen scale
+		float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
+		a /= ORBIT_TO_SCREEN;
+		b /= ORBIT_TO_SCREEN;
+
 		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
 
 		Radius = PlanetOrbitUtils::FitOrbitRadiusToPanel(
@@ -230,4 +247,108 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 		}
 	}
 }
+
+void USystemMap::HandleCentralSunClicked()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Central sun clicked — requesting galaxy map view"));
+
+	if (OwningOperationsScreen)
+	{
+		OwningOperationsScreen->ShowGalaxyMap(); // or equivalent
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No owner set for USystemMap"));
+	}
+}
+
+/*void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
+{
+	if (!MapCanvas) return;
+
+	MapCanvas->ClearChildren();
+	PlanetMarkers.Empty();
+	const FVector2D Center(960.f, 540.f);
+
+	if (SunActorClass)
+	{
+		if (SunActor) { SunActor->Destroy(); SunActor = nullptr; }
+		if (StarWidget) { StarWidget->RemoveFromParent(); StarWidget = nullptr; }
+
+		SunActor = ACentralSunActor::SpawnWithSpectralClass(
+			GetWorld(), FVector(-500, 0, 200), FRotator::ZeroRotator, SunActorClass, ActiveSystem->Class
+		);
+	}
+
+	if (StarWidgetClass && SunActor)
+	{
+		StarWidget = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
+		StarWidget->InitializeFromSunActor(SunActor);
+		if (auto* StarSlot = MapCanvas->AddChildToCanvas(StarWidget))
+		{
+			StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+			StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+			StarSlot->SetPosition(FVector2D(32.f, 0.f));
+			StarSlot->SetZOrder(15);
+		}
+	}
+
+	for (const FS_PlanetMap& Planet : ActiveSystem->Stellar[0].Planet)
+	{
+		float Perihelion = 0, Aphelion = 0;
+		PlanetOrbitUtils::CalculateOrbitExtremes(Planet.Orbit, Planet.Eccentricity, Perihelion, Aphelion);
+
+		float a = (Perihelion + Aphelion) * 0.5f;
+		float b = a * FMath::Sqrt(1.0f - FMath::Square(Planet.Eccentricity));
+		float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
+		a /= ORBIT_TO_SCREEN;
+		b /= ORBIT_TO_SCREEN;
+
+		// Orbit ring
+		if (OrbitWidgetClass)
+		{
+			auto* Orbit = CreateWidget<USystemOrbitWidget>(this, OrbitWidgetClass);
+			Orbit->SetOrbitAxes(a, b);
+			Orbit->SetOrbitInclination(Planet.Inclination);
+
+			if (auto* OrbitSlot = MapCanvas->AddChildToCanvas(Orbit))
+			{
+				OrbitSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				OrbitSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				OrbitSlot->SetPosition(FVector2D(0.f, 0.f));
+				OrbitSlot->SetZOrder(0);
+			}
+		}
+
+		// Planet marker
+		if (PlanetMarkerClass)
+		{
+			auto* Marker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+			if (Marker)
+			{
+				float& OrbitAngle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
+				if (OrbitAngle == 0.f) OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
+
+				// Orbit position with inclination applied as rotation
+				float AngleRad = FMath::DegreesToRadians(OrbitAngle);
+				FVector2D EllipticalPos = FVector2D(a * FMath::Cos(AngleRad), b * FMath::Sin(AngleRad));
+				FVector2D Rotated = EllipticalPos.GetRotated(Planet.Inclination);
+				FVector2D Final = Center + Rotated;
+
+				if (auto* PlanetSlot = MapCanvas->AddChildToCanvas(Marker))
+				{
+					PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+					PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+					PlanetSlot->SetPosition(Final);
+					PlanetSlot->SetAutoSize(true);
+					PlanetSlot->SetZOrder(10);
+				}
+				Marker->SetVisibility(ESlateVisibility::Visible);
+				Marker->SetPlanetName(Planet.Name);
+				Marker->Init(Planet);
+				PlanetMarkers.Add(Planet.Name, Marker);
+			}
+		}
+	}
+}*/
 

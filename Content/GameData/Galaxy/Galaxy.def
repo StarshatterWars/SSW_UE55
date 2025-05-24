@@ -204,10 +204,10 @@ system:
 			icon:   "lanos_map",
 			radius:  2.3e6,
 			mass:    1.39e24,
-			orbit:   4.67e10,
+			orbit:   0.47e11,
 			inclination: 2.41,
-			perihelion: 3.65e11,
-			aphelion: 5.69e11,
+			perihelion: 0.37e11,
+			aphelion: 0.57e11,
 			eccentricity: 0.219,
 			rotation: 95,
 		},
@@ -216,10 +216,10 @@ system:
 			icon:     "maraner_map",
 			radius:   3.5e6,
 			mass:     2.18e24,
-			orbit:    8.90e10,
+			orbit:    0.89e11,
 			inclination: 3.0,
-			perihelion: 7.81e10,
-			aphelion: 9.98e10,
+			perihelion: 0.78e11,
+			aphelion: 1.00e11,
 			eccentricity: 0.122,
 		   rotation: 35,
 		},
@@ -421,10 +421,10 @@ system:
 			icon:    "dorrath_map",
 			radius:  3.9e6,
 			mass:    2.58e24,
-			orbit:   7.23e10,
+			orbit:   0.72e11,
 			inclination: -8.34,
-			perihelion: 5.62e11,
-			aphelion: 8.84e11,
+			perihelion: 0.56e11,
+			aphelion: 0.88e11,
 			eccentricity: 0.222,
 			atmosphere: (121,120,121),
 			rotation: 29.72,
@@ -527,10 +527,10 @@ system:
 			icon:    "benares_map",
 			radius:  3.75e6,
 			mass:    2.50e24,
-			orbit:   6.32e10,
+			orbit:   0.632e11,
 			inclination: -3.73,
-			perihelion:5.37e11,
-			aphelion: 7.27e11,
+			perihelion:0.54e11,
+			aphelion: 0.72e11,
 			eccentricity: 0.15,
 			atmosphere: (60,55,45),
 			rotation: 32.12,
@@ -649,10 +649,10 @@ system:
 			icon:     "ilon_map",
 			radius:  3.5e6,
 			mass:    2.18e24,
-			orbit:   5.80e10,
+			orbit:   0.58e11,
 			inclination: 4.24,
-			perihelion: 4.98e11,
-			aphelion: 6.62e11,
+			perihelion: 0.50e11,
+			aphelion: 0.66e11,
 			eccentricity: 0.141,
 			rotation: 11,
 		},
@@ -662,10 +662,10 @@ system:
 			radius:  5.2e6,
 			atmosphere: (192,160,128),
 			mass:    4.18e24,
-			orbit:   7.20e10,
+			orbit:   0.72e11,
 			inclination: 3.23,
-			perihelion: 6.24e10,
-			aphelion: 8.16e10,
+			perihelion: 0.62e11,
+			aphelion: 0.82e11,
 			eccentricity: 0.133,
 			rotation: 8,
 			
@@ -770,10 +770,10 @@ system:
 			radius:  3.5e6,
 			mass:    2.18e24,
 			atmosphere: (200,185,165),
-			orbit:   6.80e10,
+			orbit:   0.68e11,
 			inclination: -6.49,
-			perihelion: 5.63e11,
-			aphelion: 7.97e11,
+			perihelion: 0.56e11,
+			aphelion: 0.80e11,
 			eccentricity: 0.172,
 		   rotation: 15.35,
 		},
@@ -1168,43 +1168,56 @@ system:
 	   back:    ( 50,  52,  55),
 
 	   planet: {
-		   name:    Garana
-		   icon:    "garana_map",
-		   radius:  4.318e6,
-		   mass:    3.15e24,
-		   orbit:   6.19e10,
-		   inclination: 6.15,
-		   rotation: 13.19,
+			name:    Garana
+			icon:    "garana_map",
+			radius:  4.318e6,
+			mass:    3.15e24,
+			orbit:   0.62e11,
+			inclination: 6.15,
+			perihelion: 0.50e11,
+			aphelion: 0.74e11,
+			eccentricity: 0.193,
+			rotation: 13.19,
 		},
 		planet: {
-		   name:    Rhomindal
-		   icon:    "rhomindal_map",
-		   radius:  5.735e6,
-		   mass:    4.95e24,
-		   orbit:   11.53e10,
-		   inclination: 9.98,
-		   rotation: 29.3,
+			name:    Rhomindal
+			icon:    "rhomindal_map",
+			radius:  5.735e6,
+			mass:    4.95e24,
+			orbit:   11.53e11,
+			inclination: 9.98,
+			perihelion: 0.87e11,
+			aphelion: 1.43e11,
+			eccentricity: 0.243,
+			rotation: 29.3,
 		},
 		planet: {
-		   name:    Renser
-		   icon:    "renser_map",
-		   radius:  6.437e6,
-		   mass:    5.98e24,
-		   atmosphere: (180,170,200),
-		   orbit:   19.64e10,
-		   inclination: 9.97,
-		   rotation: 17,
+			name:    Renser
+			icon:    "renser_map",
+			radius:  6.437e6,
+			mass:    5.98e24,
+			atmosphere: (180,170,200),
+			orbit:   0.20e11,
+			inclination: 9.97,
+			perihelion: 0.15e11,
+			aphelion: 0.24e11,
+			eccentricity: 0.219,
+			rotation: 17,
 		},
 		planet: {
-		   name:    Marisol
-		   icon:    "marisol_map",
-		   radius:  27.489e6,
-		   mass:    4.21e26,
-		   orbit:   3.75e11,
-		   inclination: 3.55,
-		   tilt:    0.20,
-		   rotation: 39.2,
-		   moon: {
+			name:    Marisol
+			icon:    "marisol_map",
+			radius:  27.489e6,
+			mass:    4.21e26,
+			orbit:   3.75e11,
+			inclination: 3.55,
+			perihelion: 3.27e11,
+			aphelion: 4.23e11,
+			eccentricity: 0.127,
+			tilt:    0.20,
+			rotation: 39.2,
+		   
+			moon: {
 			   name:    Asur
 			   icon:    "rock_map",
 			   radius:  3.541e6,
@@ -1232,14 +1245,17 @@ system:
 			},
 		},
 		planet: {
-		   name:    Khaital
-		   icon:    "khaital_map",
-		   radius:  3.821e6,
-		   mass:    2.87e24,
-		   atmosphere: (150,160,190),
-		   orbit:   5.78e11,
-		   inclination: 7.53,
-		   rotation: 28,
+			name:    Khaital
+			icon:    "khaital_map",
+			radius:  3.821e6,
+			mass:    2.87e24,
+			atmosphere: (150,160,190),
+			orbit:   5.78e11,
+			inclination: 7.53,
+			perihelion: 4.42e11,
+			aphelion: 7.14e11,
+			eccentricity: 0.236,
+			rotation: 28,
 		},
 	},
 }
@@ -1272,16 +1288,20 @@ system:
 	   back:    (100,  60,  30), // - nebula16
 
 	   planet:     {
-		   name:    Duna,
-		   icon:    "duna_map",
-		   radius:  25.1e6,
-		   mass:    1.38e25,
-		   tilt:    0.125,
-		   tscale:  2,
-		   orbit:   0.81e11,
-		   inclination: -3.21,
-		   rotation: 36.3,
-		   moon: {
+			name:    Duna,
+			icon:    "duna_map",
+			radius:  25.1e6,
+			mass:    1.38e25,
+			tilt:    0.125,
+			tscale:  2,
+			orbit:   0.81e11,
+			inclination: -3.21,
+			perihelion: 0.70e11,
+			aphelion: 0.92e11,
+			eccentricity: 0.135,
+			rotation: 36.3,
+			
+			moon: {
 			   name:    Ansel
 			   icon:    "bryn_map",
 			   radius:  2.4e6,
@@ -1300,16 +1320,20 @@ system:
 			},
 		},
 		planet:     {
-		   name:    Loris,
-		   icon:    "loris_map",
-		   radius:  5.1e6,
-		   mass:    3.88e24,
-		   tilt:    0.125,
-		   atmosphere: (200,180,160),
-		   orbit:   1.54e11,
-		   inclination: -16.94,
-		   rotation: 26.3,
-		   moon: {
+			name:    Loris,
+			icon:    "loris_map",
+			radius:  5.1e6,
+			mass:    3.88e24,
+			tilt:    0.125,
+			atmosphere: (200,180,160),
+			orbit:   1.54e11,
+			inclination: -16.94,
+			perihelion: 1.29e11,
+			aphelion: 1.79e11,
+			eccentricity: 0.161,
+			rotation: 26.3,
+			
+			moon: {
 			   name:    "Loris I",
 			   icon:    "rock_map",
 			   radius:  0.4e6,
@@ -1328,19 +1352,23 @@ system:
 			},
 		},
 		planet:     {
-		   name:    Casalle
-		   icon:    "GasGiant5_map",
-		   radius:  38.2e6,
-		   mass:    4.0e26,
-		   orbit:   2.95e11,
-		   inclination: 6.61,
-		   tilt:    0.1,
-		   tscale:  2,
-		   ring:    "Ring3",
-		   minrad:  1.4,
-		   maxrad:  1.7,
-		   rotation: 36.3,
-		   moon: {
+			name:    Casalle
+			icon:    "GasGiant5_map",
+			radius:  38.2e6,
+			mass:    4.0e26,
+			orbit:   2.95e11,
+			inclination: 6.61,
+			perihelion: 2.22e11,
+			aphelion: 3.68e11,
+			eccentricity: 0.246,
+			tilt:    0.1,
+			tscale:  2,
+			ring:    "Ring3",
+			minrad:  1.4,
+			maxrad:  1.7,
+			rotation: 36.3,
+			
+			moon: {
 			   name:    Demeter
 			   icon:    "kala_map",
 			   radius:  2.2e6,
@@ -1388,15 +1416,19 @@ system:
 	   back:    (130,  90,  50), // - nebula2
 
 	   planet: {
-		   name:    Aram,
-		   icon:   "ostara_map",
-		   radius:  6.4e6,
-		   mass:    5.98e24,
-		   atmosphere: (180,90,60),
-		   orbit:   10.34e10,
-		   inclination: -13.22,
-		   rotation: 15,
-		   moon: {
+			name:    Aram,
+			icon:   "ostara_map",
+			radius:  6.4e6,
+			mass:    5.98e24,
+			atmosphere: (180,90,60),
+			orbit:   1.03e11,
+			inclination: -13.22,
+			perihelion: 0.89e11,
+			aphelion: 1.18e11,
+			eccentricity: 0.137,
+			rotation: 15,
+			
+			moon: {
 			   name:    Ur,
 			   icon:    "lunar_map",
 			   radius:  1e6,
@@ -1437,24 +1469,31 @@ system:
 	   back:    ( 50,  45,  35), // - nebula3
 
 	   planet:     {
-		   name:    Ilya
-		   icon:    "ilya_map",
-		   radius:  3.6e6,
-		   mass:    4.1e26,
-		   orbit:   1.03e11,
-		   inclination: -9.4,
-		   rotation: 19.3,
+			name:    Ilya
+			icon:    "ilya_map",
+			radius:  3.6e6,
+			mass:    4.1e26,
+			orbit:   1.03e11,
+			inclination: -9.4,
+			perihelion: 0.89e11,
+			aphelion: 1.17e11,
+			eccentricity: 0.134,
+			rotation: 19.3,
 		},
 		planet:     {
-		   name:    Kolchev
-		   icon:    "kolchev_map",
-		   atmosphere: (130,130,150),
-		   radius:  4.8e6,
-		   mass:    3.9e24,
-		   orbit:   1.95e11,
-		   inclination: -2.33,
-		   rotation: 23.3,
-		   moon: {
+			name:    Kolchev
+			icon:    "kolchev_map",
+			atmosphere: (130,130,150),
+			radius:  4.8e6,
+			mass:    3.9e24,
+			orbit:   1.95e11,
+			inclination: -2.33,
+			perihelion: 1.50e11,
+			aphelion: 2.40e11,
+			eccentricity: 0.23,
+			rotation: 23.3,
+			
+			moon: {
 			   name:    "Odin"
 			   icon:    "maraner_map",
 			   radius:  1.4e6,
@@ -1473,30 +1512,37 @@ system:
 			},
 		},
 		planet: {
-		   name:    Anatoly
-		   icon:    "GasGiant6_map",
-		   radius:  29.1e6,
-		   mass:    3.6e26,
-		   tscale:  2,
-		   tilt:    0.13,
-		   orbit:   2.95e11,
-		   inclination: 15.35,
-		   rotation: 29.3,
+			name:    Anatoly
+			icon:    "GasGiant6_map",
+			radius:  29.1e6,
+			mass:    3.6e26,
+			tscale:  2,
+			tilt:    0.13,
+			orbit:   2.95e11,
+			inclination: 15.35,
+			perihelion: 2.57e11,
+			aphelion: 3.33e11,
+			eccentricity: 0.13,
+			rotation: 29.3,
 		},
 		planet: {
-		   name:    Volova,
-		   icon:    "GasGiant9_map",
-		   image:   "Giants/GasGiant9.jpg",
-		   radius:  20e6,
-		   mass:    5.42e26,
-		   orbit:   3.75e11,
-		   inclination: -5.62,
-		   tilt:    0.25,
-		   ring:    "Ring2",
-		   minrad:  1.2,
-		   maxrad:  1.9,
-		   rotation: 19.5,
-		   moon: {
+			name:    Volova,
+			icon:    "GasGiant9_map",
+			image:   "Giants/GasGiant9.jpg",
+			radius:  20e6,
+			mass:    5.42e26,
+			orbit:   3.75e11,
+			inclination: -5.62,
+			perihelion: 3.05e11,
+			aphelion: 4.45e11,
+			eccentricity: 0.186,
+			tilt:    0.25,
+			ring:    "Ring2",
+			minrad:  1.2,
+			maxrad:  1.9,
+			rotation: 19.5,
+			
+			moon: {
 			   name:    Anya
 			   icon:    "nero_map",
 			   image:   "Silessia/nero_lo.pcx",
@@ -1557,14 +1603,18 @@ system:
 	   back:    (128, 90, 57),  // Nebula 5 orange
 
 	   planet: {
-		   name:    Moneta
-		   icon:    "bryn_map",
-		   radius:  3.6e6,
-		   mass:    3.96e26,
-		   orbit:   0.97e11,
-		   inclination: -10.8,
-		   rotation: 15.13,
-		   moon: {
+			name:    Moneta
+			icon:    "bryn_map",
+			radius:  3.6e6,
+			mass:    3.96e26,
+			orbit:   0.97e11,
+			inclination: -10.8,
+			perihelion: 0.75e11,
+			aphelion: 1.19e11,
+			eccentricity: 0.229,
+			rotation: 15.13,
+			
+			moon: {
 			   name:    Covana
 			   icon:    "benares_map",
 			   radius:      1.1e6,
@@ -1575,16 +1625,20 @@ system:
 			},
 		},
 		planet: {
-		   name:    Rhomin
-		   icon:    "GasGiant11_map",
-		   radius:  38.2e6,
-		   mass:    4.0e26,
-		   tilt:    0.1,
-		   tscale:  2,
-		   orbit:   1.61e11,
-		   inclination: 6.09,
-		   rotation: 31.3,
-		   moon:     {
+			name:    Rhomin
+			icon:    "GasGiant11_map",
+			radius:  38.2e6,
+			mass:    4.0e26,
+			tilt:    0.1,
+			tscale:  2,
+			orbit:   1.61e11,
+			inclination: 6.09,
+			perihelion: 1.37e11,
+			aphelion: 1.85e11,
+			eccentricity: 0.151,
+			rotation: 31.3,
+			
+			moon:     {
 			   name:    Korius
 			   icon:    "korius_map",
 			   radius:  4e6,
@@ -1633,23 +1687,29 @@ system:
 	   back:    (170, 110,  50),// - nebula7
 
 	   planet: {
-		   name:    "Tarsus I"
-		   icon:    "tarsus_map",
-		   atmosphere: (90,70,60),
-		   radius:  3.75e6,
-		   mass:    5.6e26,
-		   orbit:   1.95e11,
-		   inclination: 11.97,
-		   rotation: 21.3,
+			name:    "Tarsus I"
+			icon:    "tarsus_map",
+			atmosphere: (90,70,60),
+			radius:  3.75e6,
+			mass:    5.6e26,
+			orbit:   1.95e11,
+			inclination: 11.97,
+			perihelion: 1.60e11,
+			aphelion: 2.30e11,
+			eccentricity: 0.18,
+			rotation: 21.3,
 		},
 		planet: {
-		   name:    "Tarsus II",
-		   icon:    "oman_map",
-		   radius:  2.15e6,
-		   mass:    3.96e26,
-		   orbit:   3.61e11,
-		   inclination: 11.08,
-		   rotation: 11.1,
+			name:    "Tarsus II",
+			icon:    "oman_map",
+			radius:  2.15e6,
+			mass:    3.96e26,
+			orbit:   3.61e11,
+			inclination: 11.08,
+			perihelion: 2.84e11,
+			aphelion: 4.38e11,
+			eccentricity: 0.213,
+			rotation: 11.1,
 		},
 	},
 }
@@ -1668,25 +1728,28 @@ system:
 	star: Nephaas,
 
 	stellar:        {
-	   name:    Nephaas
-	   map:     "StarA_map",
-	   image:   "A1",
-	   class:	A,
-	   tscale:  6,
-	   radius:  16e8,
-	   mass:    3e30,
-	   light:   2.6e11,
-	   color:   (245, 245, 255),// - A Blue-White
-	   back:    ( 43,  40,  46), // - nebula18 (dark gray)
+		name:    Nephaas
+		map:     "StarA_map",
+		image:   "A1",
+		class:	A,
+		tscale:  6,
+		radius:  16e8,
+		mass:    3e30,
+		light:   2.6e11,
+		color:   (245, 245, 255),// - A Blue-White
+		back:    ( 43,  40,  46), // - nebula18 (dark gray)
 
-		   planet:     {
-		   name:    Nergal
-		   icon:    "nergal_map",
-		   radius:  9e6,
-		   mass:    5.6e28,
-		   orbit:   4.8e11,
-		   inclination: 15.23,
-		   rotation: 160.3,
+		planet:     {
+			name:    Nergal
+			icon:    "nergal_map",
+			radius:  9e6,
+			mass:    5.6e28,
+			orbit:   4.8e11,
+			inclination: 15.23,
+			perihelion: 3.94e11,
+			aphelion: 5.66e11,
+			eccentricity: 0.18,
+			rotation: 160.3,
 		},
 	},
 }
@@ -1719,15 +1782,19 @@ system:
 	   back:    ( 40,  22,  14), // - nebula19
 
 	   planet:     {
-		   name:    Senna
-		   icon:    "senna_map",
-		   radius:  4.5e6,
-		   mass:    4.1e24,
-		   atmosphere: (160,140,120),
-		   orbit:   0.75e11,
-		   inclination: -9.27,
-		   rotation: 24.3,
-		   moon: {
+			name:    Senna
+			icon:    "senna_map",
+			radius:  4.5e6,
+			mass:    4.1e24,
+			atmosphere: (160,140,120),
+			orbit:   0.75e11,
+			inclination: -9.27,
+			perihelion: 0.65e11,
+			aphelion: 0.85e11,
+			eccentricity: 0.137,
+			rotation: 24.3,
+			
+			moon: {
 			   name:    Trump
 			   icon:    "rock_map",
 			   radius:  2.3e6,
@@ -1737,15 +1804,19 @@ system:
 			},
 		},
 		planet:     {
-		   name:    Radix
-		   icon:    "radix_map",
-		   radius:  5.1e6,
-		   mass:    4.6e24,
-		   atmosphere: (175,160,150),
-		   orbit:   1.3e11,
-		   inclination: -1.47,
-		   rotation: 16.3,
-		   moon: {
+			name:    Radix
+			icon:    "radix_map",
+			radius:  5.1e6,
+			mass:    4.6e24,
+			atmosphere: (175,160,150),
+			orbit:   1.3e11,
+			inclination: -1.47,
+			perihelion: 1.11e11,
+			aphelion: 1.49e11,
+			eccentricity: 0.143,
+			rotation: 16.3,
+			
+			moon: {
 			   name:    Ariadne,
 			   icon:    "lunar_map",
 			   radius:  2.9e6,
@@ -1755,15 +1826,19 @@ system:
 			},
 		},
 		planet: {
-		   name:    Cavenda
-		   icon:    "GasGiant5_map",
-		   radius:  13.7e6,
-		   mass:    3.6e26,
-		   tscale:  2,
-		   orbit:   2.51e11,
-		   inclination: 10.67,
-		   rotation: 43.7,
-		   moon: {
+			name:    Cavenda
+			icon:    "GasGiant5_map",
+			radius:  13.7e6,
+			mass:    3.6e26,
+			tscale:  2,
+			orbit:   2.51e11,
+			inclination: 10.67,
+			perihelion: 2.20e11,
+			aphelion: 2.82e11,
+			eccentricity: 0.124,
+			rotation: 43.7,
+			
+			moon: {
 			   name:    Oberon
 			   icon:    "ice_map",
 			   radius:  2.3e6,
@@ -1815,28 +1890,35 @@ system:
 	   back:    ( 30,  18,  12), // - nebula25
 
 	   planet:     {
-		   name:    Garden
-		   icon:    "garden_map",
-		   radius:  3.75e6,
-		   mass:    5.6e23,
-		   atmosphere: (145,170,190),
-		   orbit:   1.8e11,
-		   inclination: 15.64,
-		   rotation: 26.3,
+			name:    Garden
+			icon:    "garden_map",
+			radius:  3.75e6,
+			mass:    5.6e23,
+			atmosphere: (145,170,190),
+			orbit:   1.8e11,
+			inclination: 15.64,
+			perihelion: 1.54e11,
+			aphelion: 2.06e11,
+			eccentricity: 0.146,
+			rotation: 26.3,
 		},
 		planet: {
-		   name:    Senesca,
-		   icon:    "GasGiant10_map",
-		   radius:  14.1e6,
-		   mass:    3.6e26,
-		   tilt:    0.2,
-		   ring:    "Ring2",
-		   minrad:  1.5,
-		   maxrad:  1.8,
-		   orbit:   2.65e11,
-		   inclination: -10.72,
-		   rotation: 61.3,
-		   moon: {
+			name:    Senesca,
+			icon:    "GasGiant10_map",
+			radius:  14.1e6,
+			mass:    3.6e26,
+			tilt:    0.2,
+			ring:    "Ring2",
+			minrad:  1.5,
+			maxrad:  1.8,
+			orbit:   2.65e11,
+			inclination: -10.72,
+			perihelion: 2.11e11,
+			aphelion: 3.19e11,
+			eccentricity: 0.205,
+			rotation: 61.3,
+			
+			moon: {
 			   name:    Tarawa
 			   icon:    "ice_map.pcx",
 			   radius:  2.3e6,
@@ -1856,16 +1938,20 @@ system:
 			},
 		},
 		planet: {
-		   name:    Ramek,
-		   icon:    "GasGiant9_map",
-		   radius:  18.1e6,
-		   mass:    3.6e26,
-		   tscale:  2,
-		   tilt:    0.13,
-		   orbit:   3.35e11,
-		   inclination: 5.52,
-		   rotation: 31.3,
-		   moon: {
+			name:    Ramek,
+			icon:    "GasGiant9_map",
+			radius:  18.1e6,
+			mass:    3.6e26,
+			tscale:  2,
+			tilt:    0.13,
+			orbit:   3.35e11,
+			inclination: 5.52,
+			perihelion: 2.68e11,
+			aphelion: 4.02e11,
+			eccentricity: 0.2,
+			rotation: 31.3,
+			
+			moon: {
 			   name:    Alin
 			   icon:    "ice_map",
 			   radius:  5.3e6,
@@ -1893,14 +1979,17 @@ system:
 			},
 		},
 		planet:     {
-		   name:    Relay,
-		   icon:    "relay_map",
-		   radius:  3.15e6,
-		   mass:    4.6e23,
-		   atmosphere: (130,120,110),
-		   orbit:   4.18e11,
-		   inclination: 13.67,
-		   rotation: 14.3,
+			name:    Relay,
+			icon:    "relay_map",
+			radius:  3.15e6,
+			mass:    4.6e23,
+			atmosphere: (130,120,110),
+			orbit:   4.18e11,
+			inclination: 13.67,
+			perihelion: 3.58e11,
+			aphelion: 4.7e11,
+			eccentricity: 0.143,
+			rotation: 14.3,
 		},
 	},
 }
@@ -1931,50 +2020,62 @@ system:
 	   back:    ( 60,  30,  10),// - nebula8
 
 	   planet: {
-		   name:    Rhofar
-		   icon:    "oman_map",
-		   radius:  3.1e6,
-		   tilt:    0.03,
-		   mass:    3.1e24,
-		   orbit:   0.94e11,
-		   inclination: 15.39,
-		   rotation: 32.7,
+			name:    Rhofar
+			icon:    "oman_map",
+			radius:  3.1e6,
+			tilt:    0.03,
+			mass:    3.1e24,
+			orbit:	 0.94e11,
+			inclination: 15.39,
+			perihelion: 0.75e11,
+			aphelion: 1.13e11,
+			eccentricity: 0.155,
+			rotation: 32.7,
 		}
 		planet: {
-		   name:    Garrison
-		   icon:    "garrison_map",
-		   radius:  6e6,
-		   tilt:    0.15,
-		   ring:    "garrison_ring",
-		   minrad:  1.5,
-		   maxrad:  1.75,
-		   mass:    5.1e24,
-		   orbit:   1.4e11,
-		   inclination: 4.4,
-		   rotation: 21.7,
+			name:    Garrison
+			icon:    "garrison_map",
+			radius:  6e6,
+			tilt:    0.15,
+			ring:    "garrison_ring",
+			minrad:  1.5,
+			maxrad:  1.75,
+			mass:    5.1e24,
+			orbit:   1.4e11,
+			inclination: 4.4,
+			perihelion: 1.18e11,
+			aphelion: 1.61e11,
+			eccentricity: 0.155,
+			rotation: 21.7,
 		},
 		planet: {
-		   name:    Korul
-		   icon:    "GasGiant10_map",
-		   radius:  23e6,
-		   tilt:    0.19,
-		   ring:    "Ring2",
-		   minrad:  1.6,
-		   maxrad:  1.666,
-		   mass:    5.1e24,
-		   orbit:   2.4e11,
-		   inclination: 4.38,
-		   rotation: 21.7,
+			name:    Korul
+			icon:    "GasGiant10_map",
+			radius:  23e6,
+			tilt:    0.19,
+			ring:    "Ring2",
+			minrad:  1.6,
+			maxrad:  1.666,
+			mass:    5.1e24,
+			orbit:   2.4e11,
+			inclination: 4.38,
+			perihelion: 2.11e11,
+			aphelion: 2.69e11,
+			eccentricity: 0.122,
+			rotation: 21.7,
 		},
 		planet: {
-		   name:    Nerasil
-		   icon:    "kala_map"
-		   radius:  4e6,
-		   tilt:    0.15,
-		   mass:    3.7e24,
-		   orbit:   4.2e11,
-		   inclination: -14.43,
-		   rotation: 17.2,
+			name:    Nerasil
+			icon:    "kala_map"
+			radius:  4e6,
+			tilt:    0.15,
+			mass:    3.7e24,
+			orbit:   4.2e11,
+			inclination: -14.43,
+			perihelion: 3.32e11,
+			aphelion: 5.08e11,
+			eccentricity: 0.21,
+			rotation: 17.2,
 		},
 	},
 }
@@ -2005,23 +2106,30 @@ system:
 	   back:    ( 90,  50,  30), // - nebula20
 
 	   planet: {
-		   name:    Volante
-		   icon:    "volante_map",
-		   radius:  6e6,
-		   mass:    5.1e24,
-		   orbit:   1.4e11,
-		   inclination: 5.1,
-		   rotation: 21.7,
+			name:    Volante
+			icon:    "volante_map",
+			radius:  6e6,
+			mass:    5.1e24,
+			orbit:   1.4e11,
+			inclination: 5.1,
+			perihelion: 1.19e11,
+			aphelion: 1.61e11,
+			eccentricity: 0.152,
+			rotation: 21.7,
 		}
 		planet: {
-		   name:    Narcissus
-		   icon:    "GasGiant1_map",
-		   radius:  13.7e6,
-		   mass:    3.6e26,
-		   orbit:   2.51e11,
-		   inclination: 15.83,
-		   rotation: 43.7,
-		   moon: {
+			name:    Narcissus
+			icon:    "GasGiant1_map",
+			radius:  13.7e6,
+			mass:    3.6e26,
+			orbit:   2.51e11,
+			inclination: 15.83,
+			perihelion: 2.17e11,
+			aphelion: 2.85e11,
+			eccentricity: 0.134,
+			rotation: 43.7,
+			
+			moon: {
 			   name:    Liriope
 			   icon:    "ice_map",
 			   radius:  2.3e6,
@@ -2041,13 +2149,16 @@ system:
 			},
 		}
 		planet: {
-		   name:    Path
-		   icon:    "path_map",
-		   radius:  4.1e6,
-		   mass:    3.5e24,
-		   orbit:   4.4e11,
-		   inclination: 16.49,
-		   rotation: 51.7,
+			name:    Path
+			icon:    "path_map",
+			radius:  4.1e6,
+			mass:    3.5e24,
+			orbit:   4.4e11,
+			inclination: 16.49,
+			perihelion: 3.65e11,
+			aphelion: 5.15e11,
+			eccentricity: 0.171,
+			rotation: 51.7,
 		},
 	},
 }
@@ -2076,15 +2187,19 @@ system:
 	   back:    (120,  20,  14), // - nebula21
 
 	   planet:     {
-		   name:    Marak
-		   icon:    "marak_map",
-		   atmosphere: (90,90,130),
-		   radius:  6.1e6,
-		   mass:    5.3e24,
-		   orbit:   1.1e11,
-		   inclination: 9.99,
-		   rotation: 23.7,
-		   moon:       {
+			name:    Marak
+			icon:    "marak_map",
+			atmosphere: (90,90,130),
+			radius:  6.1e6,
+			mass:    5.3e24,
+			orbit:   1.1e11,
+			inclination: 9.99,
+			perihelion: 0.96e11,
+			aphelion: 1.24e11,
+			eccentricity: 0.125,
+			rotation: 23.7,
+			
+			moon:       {
 			   name:    Manarkan,
 			   icon:    "Moon3_map",
 			   image:   "Moon3",

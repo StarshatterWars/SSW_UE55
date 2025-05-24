@@ -79,3 +79,9 @@ float PlanetOrbitUtils::AmplifyInclination(float Deg, float Factor)
 {
 	return Deg * Factor;
 }
+
+void PlanetOrbitUtils::CalculateOrbitExtremes(float MeanOrbit, float Eccentricity, float& OutPerihelion, float& OutAphelion)
+{
+	OutPerihelion = MeanOrbit * (1.0f - Eccentricity);
+	OutAphelion = MeanOrbit * (1.0f + Eccentricity);
+}

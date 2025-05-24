@@ -3,6 +3,7 @@
 
 #include "CentralSunWidget.h"
 #include "Components/Image.h"
+#include "../System/SSWGameInstance.h"
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
@@ -42,3 +43,9 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s"), *RenderTarget->GetName());
 }
 
+FReply UCentralSunWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	UE_LOG(LogTemp, Log, TEXT("Sun clicked in CentralSunWidget"));
+	OnSunClicked.Broadcast();
+	return FReply::Handled();
+}

@@ -1134,9 +1134,7 @@ void UOperationsScreen::OnTheaterGalaxyButtonSelected(UMenuButton* SelectedButto
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
 
-	if (MapSwitcher) {
-		MapSwitcher->SetActiveWidgetIndex(0);
-	}
+	ShowGalaxyMap();
 }
 
 void UOperationsScreen::OnTheaterGalaxyButtonHovered(UMenuButton* HoveredButton)
@@ -1163,6 +1161,13 @@ void UOperationsScreen::OnTheaterSystemButtonSelected(UMenuButton* SelectedButto
 	CreateSystemMap();
 }
 
+void UOperationsScreen::ShowGalaxyMap() {
+	
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(0);
+	}
+}
+
 void UOperationsScreen::OnTheaterSystemButtonHovered(UMenuButton* HoveredButton)
 {
 	if (!HoveredButton) return;
@@ -1184,8 +1189,6 @@ void UOperationsScreen::OnTheaterSectorButtonSelected(UMenuButton* SelectedButto
 	if (SectorNameText) {
 		SectorNameText->SetText(FText::FromString(SSWInstance->SelectedSector.ToUpper() + " SECTOR"));
 	}
-	
-
 }
 
 void UOperationsScreen::OnTheaterSectorButtonHovered(UMenuButton* HoveredButton)
@@ -1304,6 +1307,7 @@ void UOperationsScreen::CreateSystemMap() {
 	if (!SystemMap)
 	{
 		SystemMap = CreateWidget<USystemMap>(this, SystemMapClass);
+		SystemMap->SetOwner(this); // Assign owner
 	}
 	
 	if (!SystemMapClass) {

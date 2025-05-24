@@ -13,6 +13,7 @@ class UPlanetMarkerWidget;
 class USystemOrbitWidget;
 class UCentralSunWidget;
 class ACentralSunActor;
+class UOperationsScreen;
 
 /**
  * 
@@ -26,6 +27,13 @@ public:
 	// Called to draw all planets for the current system
 	void BuildSystemView(const FS_Galaxy* ActiveSystem);
 
+	UPROPERTY()
+	UOperationsScreen* OwningOperationsScreen;
+
+	void SetOwner(UOperationsScreen* Owner) { OwningOperationsScreen = Owner; }
+
+	UFUNCTION()
+	void HandleCentralSunClicked();
 
 protected:
 	void NativeConstruct() override;

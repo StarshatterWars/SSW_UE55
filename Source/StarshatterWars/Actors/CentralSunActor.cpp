@@ -18,9 +18,6 @@ ACentralSunActor::ACentralSunActor()
 	// Sun Mesh
 	SunMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SunMesh"));
 
-	// Background Mesh
-	BackgroundMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BackgroundMesh"));
-
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere"));
 	if (SphereMesh.Succeeded())
 	{
@@ -30,20 +27,7 @@ ACentralSunActor::ACentralSunActor()
 	SunMesh->SetupAttachment(RootScene);
 	SunMesh->SetRelativeScale3D(FVector(3.0f));
 	SunMesh->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	SunMesh->SetCastShadow(false);
-
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube"));
-	if (CubeMesh.Succeeded())
-	{
-		BackgroundMesh->SetStaticMesh(CubeMesh.Object);
-	}
-
-	BackgroundMesh->SetupAttachment(RootScene);
-	BackgroundMesh->SetRelativeScale3D(FVector(0.1f, 15.f, 15.f));
-	BackgroundMesh->SetRelativeLocation(FVector(300.f, 0.f, 0.f));
-	BackgroundMesh->SetCastShadow(false);
-
-	
+	SunMesh->SetCastShadow(false);	
 	
 	// Scene Capture
 	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
