@@ -1147,18 +1147,7 @@ void UOperationsScreen::OnTheaterGalaxyButtonHovered(UMenuButton* HoveredButton)
 }
 void UOperationsScreen::OnTheaterSystemButtonSelected(UMenuButton* SelectedButton)
 {
-	
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this); 
-	
-	if (MapSwitcher) {
-		MapSwitcher->SetActiveWidgetIndex(1);
-	}
-
-	if (SystemNameText) {
-		SystemNameText->SetText(FText::FromString(SSWInstance->SelectedSystem.ToUpper() + " SYSTEM"));
-	}
-	CreateSystemMap();
+	ShowSystemMap();
 }
 
 void UOperationsScreen::ShowGalaxyMap() {
@@ -1166,6 +1155,21 @@ void UOperationsScreen::ShowGalaxyMap() {
 	if (MapSwitcher) {
 		MapSwitcher->SetActiveWidgetIndex(0);
 	}
+}
+
+void UOperationsScreen::ShowSystemMap() {
+
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(1);
+	}
+
+	if (SystemNameText) {
+		SystemNameText->SetText(FText::FromString(SSWInstance->SelectedSystem.ToUpper() + " SYSTEM"));
+	}
+	CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
 }
 
 void UOperationsScreen::OnTheaterSystemButtonHovered(UMenuButton* HoveredButton)
@@ -1285,6 +1289,7 @@ void UOperationsScreen::PopulateEmpireDDList()
 
 void UOperationsScreen::CreateGalaxyMap() {
 	UGalaxyMap* GalaxyMap = CreateWidget<UGalaxyMap>(this, MapClass);
+	GalaxyMap->SetOwner(this); // Assign the owner screen
 	if (!MapClass) return;
 
 	GalaxyMapCanvas->AddChildToCanvas(GalaxyMap);
@@ -1299,9 +1304,9 @@ void UOperationsScreen::CreateGalaxyMap() {
 	//GalaxyMap->SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UOperationsScreen::CreateSystemMap() {
+void UOperationsScreen::CreateSystemMap(FString Name) {
 	
-	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called"));
+	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called %s"), *Name);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	if (!SystemMap)

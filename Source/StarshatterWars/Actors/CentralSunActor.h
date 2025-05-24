@@ -69,6 +69,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Sun")
 	float RotationSpeed = 20.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Sun")
+	FVector SunSize = FVector::ZeroVector;
+
 private:
 	FRotator CurrentRotation;
 	FLinearColor StarColor;

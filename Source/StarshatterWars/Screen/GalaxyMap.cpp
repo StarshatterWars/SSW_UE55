@@ -11,6 +11,7 @@
 #include "GalaxyLink.h"
 #include "JumpLinksWidget.h"
 #include "SelectionLinesWidget.h"
+#include "OperationsScreen.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 
@@ -120,7 +121,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 	
 		USystemMarker* LocalMarker = Marker; // capture marker per loop
 
-		LocalMarker->OnClicked.BindLambda([this, LocalMarker](const FString& SystemName)
+		/*LocalMarker->OnClicked.BindLambda([this, LocalMarker](const FString& SystemName)
 			{
 				// Deselect previous marker
 				if (SelectedMarker)
@@ -157,6 +158,58 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 
 						UE_LOG(LogTemp, Log, TEXT("Selection lines set to %s"), *MarkerCenter.ToString());
 
+					}), 0.01f, false);
+			});
+			*/
+
+		LocalMarker->OnClicked.BindLambda([this, LocalMarker](const FString& SystemName)
+			{
+				if (CurrentSystemName == SystemName)
+				{
+					UE_LOG(LogTemp, Log, TEXT("UGalaxyMap: Star %s re-clicked — entering system"), *SystemName);
+
+					if (Owner)
+					{
+						Owner->ShowSystemMap();
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("UGalaxyMap: Owner not set — cannot enter system"));
+					}
+					return;
+				}
+
+				// Selecting a new star
+				if (SelectedMarker)
+				{
+					SelectedMarker->SetSelected(false);
+				}
+
+				LocalMarker->SetSelected(true);
+				SelectedMarker = LocalMarker;
+				CurrentSystemName = SystemName;
+
+				if (!SelectionLinesWidget) return;
+
+				// Delay position update to ensure layout is valid
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateWeakLambda(this,
+					[this, LocalMarker]()
+					{
+						if (!IsValid(LocalMarker) || !IsValid(SelectionLinesWidget)) return;
+
+						auto GetCenter = [](UWidget* Widget) -> FVector2D
+							{
+								if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
+								{
+									return Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
+								}
+								return FVector2D::ZeroVector;
+							};
+
+						FVector2D MarkerCenter = GetCenter(LocalMarker);
+						SelectionLinesWidget->SetMarkerCenter(MarkerCenter);
+						SelectionLinesWidget->SetVisibility(ESlateVisibility::Visible);
 					}), 0.01f, false);
 			});
 		MarkerMap.Add(System.Name, Marker);

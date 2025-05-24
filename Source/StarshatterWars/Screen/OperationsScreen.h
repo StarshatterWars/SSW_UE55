@@ -316,6 +316,8 @@ public:
 	UFUNCTION()
 	void ShowGalaxyMap();
 	UFUNCTION()
+	void ShowSystemMap();
+	UFUNCTION()
 	void OnTheaterSystemButtonHovered(UMenuButton* HoveredButton);
 	UFUNCTION()
 	void OnTheaterSectorButtonSelected(UMenuButton* SelectedButton);
@@ -329,7 +331,7 @@ public:
 	UFUNCTION()
 	void CreateGalaxyMap();
 	UFUNCTION()
-	void CreateSystemMap();
+	void CreateSystemMap(FString Name);
 	UFUNCTION()
 	void CreateSectorMap();
 	UFUNCTION()

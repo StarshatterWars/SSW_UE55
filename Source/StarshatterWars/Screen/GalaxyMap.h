@@ -14,6 +14,7 @@ class UGalaxyLink;
 class UJumpLinksWidget;
 class UMapGridLine;
 class USelectionLinesWidget;
+class UOperationsScreen;
 class UTexture2D;
 
 /**
@@ -54,6 +55,8 @@ struct FGalaxyLinkKey
 	}
 };
 
+class UOperationsScreen;
+
 UCLASS()
 class STARSHATTERWARS_API UGalaxyMap : public UUserWidget
 {
@@ -70,6 +73,16 @@ protected:
 
     void PanToMarker(const FVector2D& MarkerCenter);
     void UpdateCameraPan();
+
+    UPROPERTY()
+	UOperationsScreen* Owner = nullptr;
+
+	UPROPERTY()
+	FString CurrentSystemName;
+
+	UPROPERTY()
+	class USystemMarker* SelectedMarker = nullptr;
+
 public:
     // TSubclassOf must be set in UMG (or via C++)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
@@ -114,6 +127,8 @@ public:
     UPROPERTY()
     TArray<FS_Galaxy> GalaxySystems; // Store this to access system bounds
 
+    void SetOwner(UOperationsScreen* InOwner) { Owner = InOwner; }
+
     UPROPERTY()
     float MapScale = 70.0f;
     
@@ -135,8 +150,6 @@ public:
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     FVector2D ScreenOffset;
-	
-	USystemMarker* SelectedMarker = nullptr;
 
 private:
     
@@ -159,9 +172,6 @@ private:
     // For dragging
     bool bIsPanning = false;
     FVector2D PanStartMouse;
-
-    UPROPERTY()
-    FString CurrentSystemName; // or int32 CurrentSystemId;
 };
 	
 
