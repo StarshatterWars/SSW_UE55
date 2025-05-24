@@ -6,6 +6,7 @@
 #include "Components/Widget.h"
 #include "Components/CanvasPanelSlot.h"
 #include "../System/SSWGameInstance.h"
+#include "../Foundation/StarUtils.h"
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
@@ -40,25 +41,18 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 
 	// Apply to image brush
 	SunImage->SetBrushFromMaterial(DynMat);
-	const float Radius = SunActor->GetRadius();
+	float SizePx = StarUtils::GetUISizeFromRadius(SunActor->GetRadius());
 
-	constexpr float MinRadius = 1.2e9f;
-	constexpr float MaxRadius = 2.2e9f;
-	constexpr float MinSize = 32.f;
-	constexpr float MaxSize = 128.f;
-
-	float Normalized = FMath::Clamp((Radius - MinRadius) / (MaxRadius - MinRadius), 0.f, 1.f);
-	float SizePx = FMath::Lerp(MinSize, MaxSize, Normalized);
-
+	// Set brush and visual size
 	SunImage->SetBrushSize(FVector2D(SizePx, SizePx));
 
-	if (SunSlot)
+	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(SunImage->Slot))
 	{
-		SunSlot->SetSize(FVector2D(SizePx, SizePx));
+		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s, radius: %.2e km -> %.1f px"),
-		*GetNameSafe(RenderTarget), Radius, SizePx);
+		*GetNameSafe(RenderTarget), SunActor->GetRadius(), SizePx);
 	
 	float Scale = SizePx / 64.f; // assuming 64 is base size
 	FWidgetTransform Transform;

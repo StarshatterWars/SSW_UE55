@@ -26,4 +26,7 @@ public:
 	
 	/** Stellar Rotation */
 	static float GetRotationSpeed(float Rotation);
+
+	/** Gets a UI image scale (in pixels) from radius using log scale */
+	static float GetUISizeFromRadius(float Radius, float MinSize = 48.f, float MaxSize = 128.f);
 };

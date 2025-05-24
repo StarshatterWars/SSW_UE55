@@ -194,6 +194,11 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 		*UEnum::GetValueAsString(Class),
 		StarColor.R, StarColor.G, StarColor.B);
 
+	//float MeshScale = StarUtils::GetMeshScaleFromRadius(Radius);
+	//SunMesh->SetWorldScale3D(FVector(MeshScale));
+
+	//UE_LOG(LogTemp, Log, TEXT("Star scaled: Radius = %.2e -> Scale = %.2f"), Radius, MeshScale);
+
 	// Use StarUtils for consistent visuals
 	StarColor = StarUtils::GetColor(Class);
 	float GlowStrength = StarUtils::GetGlowStrength(Class);
@@ -203,9 +208,4 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
 	StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
 	StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
-
-	UE_LOG(LogTemp, Log, TEXT("ApplyStarVisuals(): Class = %s | Color = R=%.2f G=%.2f B=%.2f | Glow = %.1f | Spots = %.1f"),
-		*UEnum::GetValueAsString(Class),
-		StarColor.R, StarColor.G, StarColor.B,
-		GlowStrength, SunspotStrength);
 }

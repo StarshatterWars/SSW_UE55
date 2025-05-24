@@ -74,3 +74,16 @@ float StarUtils::GetRotationSpeed(float Rotation)
 {
 	return 60.f / FMath::Max(Rotation, 0.1f);
 }
+
+float StarUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
+{
+	constexpr float MinRadiusKm = 1.2e9f;
+	constexpr float MaxRadiusKm = 2.2e9f;
+
+	float LogRadius = FMath::LogX(10.f, FMath::Max(Radius, 1.f));
+	float MinLog = FMath::LogX(10.f, MinRadiusKm);
+	float MaxLog = FMath::LogX(10.f, MaxRadiusKm);
+
+	float Normalized = FMath::Clamp((LogRadius - MinLog) / (MaxLog - MinLog), 0.f, 1.f);
+	return FMath::Lerp(MinSize, MaxSize, Normalized);
+}
