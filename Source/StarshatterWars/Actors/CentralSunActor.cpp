@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
+#include "../Foundation/StarUtils.h"
 
 ACentralSunActor::ACentralSunActor()
 {
@@ -90,8 +91,9 @@ void ACentralSunActor::BeginPlay()
 	Super::BeginPlay();
 
 	CurrentRotation = GetActorRotation();
-	SetStarColor(SpectralClass);
-	
+	//SetStarColor(SpectralClass);
+	//ApplyStarVisuals();
+
 	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay() SpectralClass: %u"), static_cast<uint8>(SpectralClass));
 	
 	EnsureRenderTarget();
@@ -107,14 +109,7 @@ void ACentralSunActor::BeginPlay()
 		StarMaterialInstance = UMaterialInstanceDynamic::Create(StarBaseMaterial, this);
 		SunMesh->SetMaterial(0, StarMaterialInstance);
 
-		UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay(): SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
-			*UEnum::GetValueAsString(SpectralClass),
-			StarColor.R, StarColor.G, StarColor.B);
-
-		StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-		StarMaterialInstance->SetScalarParameterValue("GlowStrength", 2.5f);
-		StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
-		StarMaterialInstance->SetScalarParameterValue("SunspotStrength", 0.5f); // 0 = off, 1 = full
+		ApplyStarVisuals(SpectralClass);
 
 		// Force update
 		SceneCapture->bCaptureEveryFrame = false;
@@ -141,32 +136,6 @@ void ACentralSunActor::Tick(float DeltaTime)
 	SetActorRotation(CurrentRotation);
 
 	RefreshSceneCapture();
-}
-
-void ACentralSunActor::SetStarColor(ESPECTRAL_CLASS Class) {
-	// Set color based on spectral class
-
-	switch (Class)
-	{
-	case ESPECTRAL_CLASS::O: StarColor = FLinearColor(0.5f, 0.6f, 1.0f); break;
-	case ESPECTRAL_CLASS::B: StarColor = FLinearColor(0.7f, 0.7f, 1.0f); break;
-	case ESPECTRAL_CLASS::A: StarColor = FLinearColor(0.9f, 0.9f, 1.0f); break;
-	case ESPECTRAL_CLASS::F: StarColor = FLinearColor(1.0f, 1.0f, 0.9f); break;
-	case ESPECTRAL_CLASS::G: StarColor = FLinearColor(1.0f, 0.95f, 0.6f); break;
-	case ESPECTRAL_CLASS::K: StarColor = FLinearColor(1.0f, 0.6f, 0.3f); break;
-	case ESPECTRAL_CLASS::M: StarColor = FLinearColor(1.0f, 0.2f, 0.1f); break;
-	case ESPECTRAL_CLASS::R: StarColor = FLinearColor(0.9f, 0.1f, 0.1f); break;
-	case ESPECTRAL_CLASS::N: StarColor = FLinearColor(0.75f, 0.05f, 0.05f); break;
-	case ESPECTRAL_CLASS::S: StarColor = FLinearColor(0.95f, 0.4f, 0.2f); break;
-	case ESPECTRAL_CLASS::BLACK_HOLE: StarColor = FLinearColor::Black; break;
-	case ESPECTRAL_CLASS::WHITE_DWARF: StarColor = FLinearColor::White; break;
-	case ESPECTRAL_CLASS::RED_GIANT: StarColor = FLinearColor(1.0f, 0.5f, 0.3f); break;
-	default: StarColor = FLinearColor::Gray; break;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
-		*UEnum::GetValueAsString(SpectralClass),
-		StarColor.R, StarColor.G, StarColor.B);
 }
 
 
@@ -217,5 +186,26 @@ void ACentralSunActor::EnsureRenderTarget()
 	}
 }
 
+void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
+{
+	if (!StarMaterialInstance || !SunMesh) return;
 
-	
+	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::ApplyStarVisuals(): SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
+		*UEnum::GetValueAsString(Class),
+		StarColor.R, StarColor.G, StarColor.B);
+
+	// Use StarUtils for consistent visuals
+	StarColor = StarUtils::GetColor(Class);
+	float GlowStrength = StarUtils::GetGlowStrength(Class);
+	float SunspotStrength = StarUtils::GetSunspotStrength(Class);
+
+	StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
+	StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
+	StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
+	StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
+
+	UE_LOG(LogTemp, Log, TEXT("ApplyStarVisuals(): Class = %s | Color = R=%.2f G=%.2f B=%.2f | Glow = %.1f | Spots = %.1f"),
+		*UEnum::GetValueAsString(Class),
+		StarColor.R, StarColor.G, StarColor.B,
+		GlowStrength, SunspotStrength);
+}

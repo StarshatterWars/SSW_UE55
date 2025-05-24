@@ -1,0 +1,29 @@
+// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "../Game/GameStructs.h" 
+
+/**
+ * 
+ */
+class STARSHATTERWARS_API StarUtils
+{
+
+public:
+	/** Get default color for a given spectral class */
+	static FLinearColor GetColor(ESPECTRAL_CLASS SpectralClass);
+
+	/** Get emissive glow strength based on spectral class */
+	static float GetGlowStrength(ESPECTRAL_CLASS SpectralClass);
+
+	/** Optional: Get sunspot intensity */
+	static float GetSunspotStrength(ESPECTRAL_CLASS SpectralClass);
+
+	/** Format class as text label (e.g., "G-Class Star") */
+	static FString GetClassName(ESPECTRAL_CLASS SpectralClass);
+	
+	/** Stellar Rotation */
+	static float GetRotationSpeed(float Rotation);
+};

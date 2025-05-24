@@ -32,14 +32,14 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	void SetStarColor(ESPECTRAL_CLASS Class);
 	FLinearColor GetStarColor();
 	void RefreshSceneCapture();
 public:
 
 	UFUNCTION()
 	void EnsureRenderTarget();
-
+	UFUNCTION()
+	void ApplyStarVisuals(ESPECTRAL_CLASS Class);
 	UPROPERTY(EditDefaultsOnly, Category = "Render")
 	UTextureRenderTarget2D* SunRenderTarget = nullptr;
 
