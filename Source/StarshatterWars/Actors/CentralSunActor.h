@@ -24,7 +24,9 @@ public:
 		const FVector& Location,
 		const FRotator& Rotation,
 		TSubclassOf<ACentralSunActor> ActorClass,
-		ESPECTRAL_CLASS InSpectralClass);
+		ESPECTRAL_CLASS InSpectralClass,
+		float InRadius 
+	);
 
 protected:
 	virtual void BeginPlay() override;
@@ -68,9 +70,14 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Sun")
 	float RotationSpeed = 20.0f;
+	
+	UFUNCTION(BlueprintCallable, Category = "Stellar")
+	float GetRadius() const { return Radius; }
 
-	UPROPERTY(EditAnywhere, Category = "Sun")
-	FVector SunSize = FVector::ZeroVector;
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stellar")
+	float Radius = 1.6e9f; // Default to sun size
+
 
 private:
 	FRotator CurrentRotation;

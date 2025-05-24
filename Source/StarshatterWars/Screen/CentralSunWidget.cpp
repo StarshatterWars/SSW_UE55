@@ -38,9 +38,19 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 
 	// Apply to image brush
 	SunImage->SetBrushFromMaterial(DynMat);
-	SunImage->SetBrushSize(FVector2D(64, 64)); // match RT size
+	const float Radius = SunActor->GetRadius();
 
-	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s"), *RenderTarget->GetName());
+	constexpr float MinRadius = 1.2e9f;
+	constexpr float MaxRadius = 2.2e9f;
+	constexpr float MinSize = 32.f;
+	constexpr float MaxSize = 64.f;
+
+	float Normalized = FMath::Clamp((Radius - MinRadius) / (MaxRadius - MinRadius), 0.f, 1.f);
+	float SizePx = FMath::Lerp(MinSize, MaxSize, Normalized);
+	SunImage->SetBrushSize(FVector2D(SizePx, SizePx));
+
+	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s, radius: %.2e km -> %.1f px"),
+		*GetNameSafe(RenderTarget), Radius, SizePx);
 }
 
 FReply UCentralSunWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

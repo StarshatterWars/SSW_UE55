@@ -95,15 +95,20 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			StarWidget->RemoveFromParent();
 			StarWidget = nullptr;
 		}
+
+		// Pull the stellar radius from the active system
+		const float StellarRadius = ActiveSystem->Stellar.Num() > 0 ? ActiveSystem->Stellar[0].Radius : 1.6e9f;
+
 		FVector Location = FVector(-500, 0, 200);
 		FRotator Rotation = FRotator::ZeroRotator;
 
 		SunActor = ACentralSunActor::SpawnWithSpectralClass(
 			GetWorld(),
 			Location,
-			FRotator::ZeroRotator,
+			Rotation,
 			SunActorClass,
-			ActiveSystem->Class // correct value now visible inside BeginPlay
+			ActiveSystem->Class,     // Spectral class
+			StellarRadius            // Pass in radius from Galaxy.def
 		);
 	}
 

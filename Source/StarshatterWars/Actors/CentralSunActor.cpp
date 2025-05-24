@@ -60,7 +60,8 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 	const FVector& Location,
 	const FRotator& Rotation,
 	TSubclassOf<ACentralSunActor> ActorClass,
-	ESPECTRAL_CLASS InSpectralClass)
+	ESPECTRAL_CLASS InSpectralClass,
+	float InRadius)
 {
 	if (!World || !*ActorClass) return nullptr;
 
@@ -76,6 +77,7 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 
 	// Set SpectralClass before BeginPlay
 	NewActor->SpectralClass = InSpectralClass;
+	NewActor->Radius = InRadius;
 
 	// Resume construction, now BeginPlay will see the correct value
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
