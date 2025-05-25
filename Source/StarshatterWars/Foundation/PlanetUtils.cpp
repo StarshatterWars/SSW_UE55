@@ -108,3 +108,22 @@ UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Nam
 	}
 	return RT;
 }
+
+
+UTexture2D* PlanetUtils::LoadPlanetAssetTexture(const FString& TextureName)
+{
+	FString AssetPath = FString::Printf(TEXT("/Game/GameData/Galaxy/PlanetMaterials/%s.%s"), *TextureName, *TextureName);
+
+	UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *AssetPath));
+	if (!Texture)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load planet texture asset: %s"), *AssetPath);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Loaded planet texture asset: %s"), *Texture->GetName());
+	}
+
+	return Texture;
+}
+

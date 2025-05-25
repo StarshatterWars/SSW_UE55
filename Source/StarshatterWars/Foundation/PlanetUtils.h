@@ -21,6 +21,9 @@ public:
 	/** Creates a unique 512x512 RGBA8 render target with black clear color */
 	static UTextureRenderTarget2D* CreatePlanetRenderTarget(const FString& Name, UObject* Outer);
 
+	/** Load uasset maetrials */
+	static UTexture2D* LoadPlanetAssetTexture(const FString& TextureName);
+
 private:
 	static TMap<FString, UTexture2D*> LoadedTextureCache;
 

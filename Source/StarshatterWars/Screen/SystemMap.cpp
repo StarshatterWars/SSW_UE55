@@ -203,7 +203,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 			if (PlanetActor)
 			{
-				//PlanetActor->InitializePlanet(Planet);
+				PlanetActor->InitializePlanet(Planet);
 				SpawnedPlanetActors.Add(PlanetActor);
 			}
 		}

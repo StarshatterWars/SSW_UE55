@@ -77,14 +77,11 @@ void APlanetPanelActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(PlanetRenderTarget) 
-		PlanetRenderTarget = nullptr;
+//	if(PlanetRenderTarget) 
+	//	PlanetRenderTarget = nullptr;
 
-	if (PlanetMaterialInstance)
-		PlanetMaterialInstance = nullptr;
-	
-	PlanetTexture = PlanetUtils::LoadPlanetTexture(PlanetData.Texture);
-	UE_LOG(LogTemp, Log, TEXT("Applied BaseTexture: %s"), *GetNameSafe(PlanetTexture));
+	//PlanetTexture = PlanetUtils::LoadPlanetTexture(PlanetData.Texture);
+	//UE_LOG(LogTemp, Log, TEXT("Applied BaseTexture: %s"), *GetNameSafe(PlanetTexture));
 
 	EnsureRenderTarget();
 
@@ -93,15 +90,15 @@ void APlanetPanelActor::BeginPlay()
 	//	SceneCapture->TextureTarget = PlanetRenderTarget;
 	//}
 
-	if (!PlanetMaterialInstance && PlanetBaseMaterial && PlanetMesh)
-	{
-		PlanetMaterialInstance = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, this);
-		PlanetMaterialInstance->SetTextureParameterValue("BaseTexture", PlanetTexture);
-		PlanetMesh->SetMaterial(0, PlanetMaterialInstance);
-		PlanetMesh->MarkRenderStateDirty();
-	}
+	//if (!PlanetMaterialInstance && PlanetBaseMaterial && PlanetMesh)
+	//{
+	//	PlanetMaterialInstance = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, this);
+	//	PlanetMaterialInstance->SetTextureParameterValue("BaseTexture", PlanetTexture);
+	//	PlanetMesh->SetMaterial(0, PlanetMaterialInstance);
+	//	PlanetMesh->MarkRenderStateDirty();
+	//}
 
-	RefreshSceneCapture();
+	//RefreshSceneCapture();
 }
 
 void APlanetPanelActor::Tick(float DeltaTime)
@@ -147,25 +144,15 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	PlanetData = InData;
 	Radius = PlanetData.Radius;
 
-	PlanetTexture = PlanetUtils::LoadPlanetTexture(PlanetData.Texture);
-	/*PlanetMaterialInstance = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, this);
-	if (PlanetMaterialInstance)
-	{
-		PlanetMaterialInstance->SetTextureParameterValue("BaseTexture", PlanetTexture);
-		PlanetMesh->SetMaterial(0, PlanetMaterialInstance);
-
-		UE_LOG(LogTemp, Warning, TEXT("Applied material with texture: %s"), *GetNameSafe(PlanetTexture));
-	}
-
-	float Scale = FMath::Clamp((float)(Radius / 1.0e7f), 0.4f, 1.8f);
-	PlanetMesh->SetRelativeScale3D(FVector(Scale));
-
-	RefreshSceneCapture();*/
-
+	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
+	
 	// 1. Create unique material
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, this);
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, PlanetMesh);
+	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999)));
 
 	// 2. Set unique texture
+	#define UpdateResource UpdateResource
+	PlanetTexture->UpdateResource();
 	DynMat->SetTextureParameterValue("BaseTexture", PlanetTexture);
 
 	// 3. Assign to mesh
@@ -174,4 +161,13 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	// 4. Refresh
 	PlanetMesh->MarkRenderStateDirty();
 	SceneCapture->CaptureScene(); // Optionally delayed
+
+	UE_LOG(LogTemp, Warning, TEXT("InitializePlanet() Planet: %s -> Mat: %s, Tex: %s, Ptr: %p"),
+		*PlanetData.Name,
+		*GetNameSafe(DynMat),
+		*GetNameSafe(PlanetTexture),
+		DynMat
+		);
+
+	PlanetMaterialInstance = DynMat;
 }
