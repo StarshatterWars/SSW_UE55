@@ -59,9 +59,11 @@ UTexture2D* PlanetUtils::LoadPlanetTexture(const FString& TextureName)
 
 	void* Data = Texture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	FMemory::Memcpy(Data, Uncompressed.GetData(), Uncompressed.Num());
-	Texture->GetPlatformData()->Mips[0].BulkData.Unlock();
-	Texture->UpdateResource();
-
+	if (Texture)
+	{
+		Texture->GetPlatformData()->Mips[0].BulkData.Unlock();
+		Texture->UpdateResource();
+	}
 	// Safe unique name
 	int32 Suffix = FMath::RandRange(1000, 9999);
 	FString UniqueName = FString::Printf(TEXT("Tex_%s_%d"), *TextureName, Suffix);

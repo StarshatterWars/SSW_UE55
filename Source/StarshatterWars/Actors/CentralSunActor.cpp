@@ -62,7 +62,8 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 	const FRotator& Rotation,
 	TSubclassOf<ACentralSunActor> ActorClass,
 	ESPECTRAL_CLASS InSpectralClass,
-	float InRadius)
+	float InRadius,
+	FString InName)
 {
 	if (!World || !*ActorClass) return nullptr;
 
@@ -79,6 +80,7 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 	// Set SpectralClass before BeginPlay
 	NewActor->SpectralClass = InSpectralClass;
 	NewActor->Radius = InRadius;
+	NewActor->StarName = InName;
 
 	// Resume construction, now BeginPlay will see the correct value
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
@@ -158,13 +160,16 @@ void ACentralSunActor::EnsureRenderTarget()
 	// 1. Create if null
 	if (!SunRenderTarget)
 	{
-		SunRenderTarget = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_SunRenderTarget"));
+		FString RTName = FString::Printf(TEXT("SunRT_%s_%s"), *StarName, FMath::RandRange(1000, 9999));
+		SunRenderTarget = StarUtils::CreateRenderTarget(RTName, this); 
+		
+		SunRenderTarget = NewObject<UTextureRenderTarget2D>(this);
 		SunRenderTarget->RenderTargetFormat = RTF_RGBA8;
 		SunRenderTarget->ClearColor = FLinearColor::Black;
 		SunRenderTarget->InitAutoFormat(64, 64); // or your preferred size
 		SunRenderTarget->UTextureRenderTarget2D::UpdateResourceImmediate();
 
-		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget created."));
+		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget for %s created."), *StarName);
 	}
 
 	// 2. Assign to SceneCapture if not already

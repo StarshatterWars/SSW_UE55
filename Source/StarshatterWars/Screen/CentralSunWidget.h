@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "../Actors/CentralSunActor.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
@@ -28,6 +29,9 @@ public:
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanelSlot* SunSlot;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* SunNameText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UImage* SunImage;

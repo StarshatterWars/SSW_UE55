@@ -2,6 +2,7 @@
 
 
 #include "StarUtils.h"
+#include "Engine/TextureRenderTarget2D.h"
 
 FLinearColor StarUtils::GetColor(ESPECTRAL_CLASS SpectralClass)
 {
@@ -86,4 +87,21 @@ float StarUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
 
 	float Normalized = FMath::Clamp((LogRadius - MinLog) / (MaxLog - MinLog), 0.f, 1.f);
 	return FMath::Lerp(MinSize, MaxSize, Normalized);
+}
+
+UTextureRenderTarget2D* StarUtils::CreateRenderTarget(const FString& Name, UObject* Outer)
+{
+	if (!Outer) return nullptr;
+
+	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(Outer, *Name);
+	if (RT)
+	{
+		RT->RenderTargetFormat = RTF_RGBA8;
+		RT->ClearColor = FLinearColor::Black;
+		RT->InitAutoFormat(512, 512);
+		RT->UpdateResourceImmediate(true);
+
+		UE_LOG(LogTemp, Log, TEXT("Stellar RenderTarget created: %s"), *Name);
+	}
+	return RT;
 }

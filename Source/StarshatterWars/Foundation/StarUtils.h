@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "../Game/GameStructs.h" 
+#include "Engine/TextureRenderTarget2D.h"
 
 /**
  * 
@@ -29,4 +30,6 @@ public:
 
 	/** Gets a UI image scale (in pixels) from radius using log scale */
 	static float GetUISizeFromRadius(float Radius, float MinSize = 48.f, float MaxSize = 128.f);
+
+	static UTextureRenderTarget2D* CreateRenderTarget(const FString& Name, UObject* Outer);
 };

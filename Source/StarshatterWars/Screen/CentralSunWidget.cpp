@@ -28,6 +28,10 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 		return;
 	} 
 
+	if (SunNameText) {
+		SunNameText->SetText(FText::FromString(SunActor->StarName));
+	}
+
 	UTextureRenderTarget2D* RenderTarget = SunActor->GetRenderTarget();
 	
 	if (!RenderTarget)

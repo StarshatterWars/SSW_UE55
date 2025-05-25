@@ -25,7 +25,8 @@ public:
 		const FRotator& Rotation,
 		TSubclassOf<ACentralSunActor> ActorClass,
 		ESPECTRAL_CLASS InSpectralClass,
-		float InRadius 
+		float InRadius,
+		FString InName
 	);
 
 protected:
@@ -39,7 +40,8 @@ public:
 	void EnsureRenderTarget();
 	UFUNCTION()
 	void ApplyStarVisuals(ESPECTRAL_CLASS Class);
-	UPROPERTY(EditDefaultsOnly, Category = "Render")
+	
+	UPROPERTY()
 	UTextureRenderTarget2D* SunRenderTarget = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
@@ -72,13 +74,18 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Stellar")
 	float GetRadius() const { return Radius; }
+	
+	UPROPERTY()
+	FString StarName;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stellar")
 	float Radius = 1.6e9f; // Default to sun size
 
-
 private:
+	UPROPERTY()
 	FRotator CurrentRotation;
+	UPROPERTY()
 	FLinearColor StarColor;
+
 };

@@ -109,7 +109,8 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			Rotation,
 			SunActorClass,
 			ActiveSystem->Stellar[0].Class,     // Spectral class
-			ActiveSystem->Stellar[0].Radius     // Pass in radius from Galaxy.def
+			ActiveSystem->Stellar[0].Radius,    // Pass in radius from Galaxy.def
+			ActiveSystem->Stellar[0].Name
 		);
 	}
 
