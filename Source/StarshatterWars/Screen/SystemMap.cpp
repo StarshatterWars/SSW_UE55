@@ -193,7 +193,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			FVector ActorLocation = FVector(-1000, 0, 200);  // Adjust position as needed
 			FRotator ActorRotation = FRotator::ZeroRotator;
 
-			APlanetPanelActor* PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
+			PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
 				GetWorld(),
 				ActorLocation,
 				ActorRotation,
@@ -204,8 +204,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			if (PlanetActor && DefaultPlanetMaterial)
 			{
 				PlanetActor->InitializePlanet(
-					Planet.Radius,
-					DefaultPlanetMaterial,
 					Planet.Texture,
 					Planet
 				);
@@ -243,7 +241,8 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				}
 				Marker->SetVisibility(ESlateVisibility::Visible);
 				Marker->SetPlanetName(Planet.Name);
-				Marker->Init(Planet);
+				//Marker->Init(Planet);
+				Marker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
 
 				PlanetMarkers.Add(Planet.Name, Marker);
 				

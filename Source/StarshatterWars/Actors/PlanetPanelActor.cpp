@@ -134,13 +134,13 @@ void APlanetPanelActor::EnsureRenderTarget()
 	}
 }
 
-void APlanetPanelActor::InitializePlanet(double InRadius, UMaterialInterface* BaseMaterial, const FString& TextureName, FS_PlanetMap InData)
+void APlanetPanelActor::InitializePlanet(const FString& TextureName, FS_PlanetMap InData)
 {
 	PlanetData = InData;
-	Radius = InRadius;
+	Radius = PlanetData.Radius;
 
 	PlanetTexture = PlanetUtils::LoadPlanetTexture(TextureName);
-	PlanetMaterialInstance = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+	PlanetMaterialInstance = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, this);
 	if (PlanetMaterialInstance)
 	{
 		PlanetMaterialInstance->SetTextureParameterValue("BaseTexture", PlanetTexture);

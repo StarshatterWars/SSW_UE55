@@ -33,7 +33,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void EnsureRenderTarget();
-	void InitializePlanet(double Radius, UMaterialInterface* BaseMaterial, const FString& TextureName, FS_PlanetMap PlanetInfo);
+	void InitializePlanet(const FString& TextureName, FS_PlanetMap PlanetInfo);
 	void RefreshSceneCapture();
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
@@ -42,10 +42,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UMaterialInstanceDynamic* GetMaterialInstance() const { return PlanetMaterialInstance; }
 
-protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Planet")
 	UMaterialInterface* PlanetBaseMaterial;
 
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
 	UStaticMeshComponent* PlanetMesh;
 

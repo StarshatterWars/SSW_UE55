@@ -81,4 +81,6 @@ private:
 	ACentralSunActor* SunActor;
 	UPROPERTY()
 	UCentralSunWidget* StarWidget;
+	UPROPERTY()
+	APlanetPanelActor* PlanetActor;
 };
