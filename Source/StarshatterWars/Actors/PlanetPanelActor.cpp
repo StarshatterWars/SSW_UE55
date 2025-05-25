@@ -100,7 +100,7 @@ void APlanetPanelActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
+	//AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
 	RefreshSceneCapture();
 }
 
