@@ -33,7 +33,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void EnsureRenderTarget();
-	void InitializePlanet(const FString& TextureName, FS_PlanetMap PlanetInfo);
+	void InitializePlanet(FS_PlanetMap PlanetInfo);
 	void RefreshSceneCapture();
 
 	UFUNCTION(BlueprintCallable, Category = "Render")

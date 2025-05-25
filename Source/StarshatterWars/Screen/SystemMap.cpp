@@ -201,12 +201,9 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				Planet
 			);
 
-			if (PlanetActor && DefaultPlanetMaterial)
+			if (PlanetActor)
 			{
-				PlanetActor->InitializePlanet(
-					Planet.Texture,
-					Planet
-				);
+				//PlanetActor->InitializePlanet(Planet);
 				SpawnedPlanetActors.Add(PlanetActor);
 			}
 		}
