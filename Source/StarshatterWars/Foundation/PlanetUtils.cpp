@@ -61,6 +61,7 @@ UTexture2D* PlanetUtils::LoadPlanetTexture(const FString& TextureName)
 	FMemory::Memcpy(Data, Uncompressed.GetData(), Uncompressed.Num());
 	if (Texture)
 	{
+		#define UpdateResource UpdateResource
 		Texture->GetPlatformData()->Mips[0].BulkData.Unlock();
 		Texture->UpdateResource();
 	}

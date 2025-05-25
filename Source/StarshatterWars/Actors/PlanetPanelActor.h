@@ -11,78 +11,68 @@
 
 class UStaticMeshComponent;
 class USceneCaptureComponent2D;
+class UMaterialInterface;
 
 UCLASS()
 class STARSHATTERWARS_API APlanetPanelActor : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
+
+public:
 	APlanetPanelActor();
 
 	static APlanetPanelActor* SpawnWithPlanetData(
 		UWorld* World,
 		const FVector& Location,
 		const FRotator& Rotation,
-		TSubclassOf<APlanetPanelActor> ActorClass, 
-		FS_PlanetMap& PlanetInfo
+		TSubclassOf<APlanetPanelActor> ActorClass,
+		FS_PlanetMap PlanetInfo
 	);
 
-protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void RefreshSceneCapture();
-
-public:
-	UFUNCTION()
 	void EnsureRenderTarget();
-
-	UFUNCTION()
-	void ApplyPlanetVisuals();
-	UFUNCTION()
-	void InitializePlanet(float InRadius, UMaterialInterface* InMaterial);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Render")
-	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
-	USceneCaptureComponent2D* SceneCapture = nullptr;
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* PlanetMesh;
+	void InitializePlanet(double Radius, UMaterialInterface* BaseMaterial, const FString& TextureName, FS_PlanetMap PlanetInfo);
+	void RefreshSceneCapture();
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return PlanetRenderTarget; }
-	
+
+	UFUNCTION(BlueprintCallable, Category = "Render")
+	UMaterialInstanceDynamic* GetMaterialInstance() const { return PlanetMaterialInstance; }
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Planet")
+	UMaterialInterface* PlanetBaseMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
+	UStaticMeshComponent* PlanetMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
+	USceneCaptureComponent2D* SceneCapture;
+
 	UPROPERTY()
 	USceneComponent* RootScene;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Planet")
-	UMaterialInterface* PlanetBaseMaterial;
+	UPROPERTY()
+	UTextureRenderTarget2D* PlanetRenderTarget;
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* PlanetMaterialInstance;
 
-	UPROPERTY(EditAnywhere, Category = "Planet")
-	float RotationSpeed = 20.0f;
-
-	UFUNCTION()
-	float GetRadius() const { return Radius; }
-
-	FS_PlanetMap PlanetInfo;
-
-protected:
 	UPROPERTY()
-	float Radius = 1.6e9f; // Default to planet size
-	/** Sets the mesh, material, and radius for the panel planet */
+	UTexture2D* PlanetTexture;
 
-private:
+	UPROPERTY()
 	FRotator CurrentRotation;
+
+	UPROPERTY(EditAnywhere, Category = "Planet")
+	float RotationSpeed = 20.f;
+
+	UPROPERTY()
+	float Radius = 1.6e9f;
+
+	UPROPERTY()
 	FS_PlanetMap PlanetData;
 };
-	

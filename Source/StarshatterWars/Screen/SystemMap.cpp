@@ -190,20 +190,25 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 		if (PlanetActorClass)
 		{
-			FVector SpawnLocation = FVector(-1000.f, 0.f, 100.f); // Off-screen or off-camera
-			FRotator SpawnRotation = FRotator::ZeroRotator;
+			FVector ActorLocation = FVector(-1000, 0, 200);  // Adjust position as needed
+			FRotator ActorRotation = FRotator::ZeroRotator;
 
-			APlanetPanelActor* PlanetActor = GetWorld()->SpawnActor<APlanetPanelActor>(
+			APlanetPanelActor* PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
+				GetWorld(),
+				ActorLocation,
+				ActorRotation,
 				PlanetActorClass,
-				SpawnLocation,
-				SpawnRotation
+				Planet
 			);
 
-			if (PlanetActor)
+			if (PlanetActor && DefaultPlanetMaterial)
 			{
-				// You can pass in radius and a placeholder material for now
-				PlanetActor->InitializePlanet(Planet.Radius, DefaultPlanetMaterial); // assumes you have a UMaterialInterface* available
-
+				PlanetActor->InitializePlanet(
+					Planet.Radius,
+					DefaultPlanetMaterial,
+					Planet.Texture,
+					Planet
+				);
 				SpawnedPlanetActors.Add(PlanetActor);
 			}
 		}
