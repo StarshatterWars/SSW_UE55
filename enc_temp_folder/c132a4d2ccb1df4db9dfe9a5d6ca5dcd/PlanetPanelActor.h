@@ -56,7 +56,7 @@ protected:
 	USceneComponent* RootScene;
 
 	UPROPERTY()
-	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
+	UTextureRenderTarget2D* PlanetRenderTarget;
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* PlanetMaterialInstance;

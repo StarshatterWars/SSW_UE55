@@ -77,6 +77,9 @@ void APlanetPanelActor::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if(PlanetRenderTarget) 
+		PlanetRenderTarget = nullptr;
+
 	EnsureRenderTarget();
 
 	if (SceneCapture && !SceneCapture->TextureTarget)
