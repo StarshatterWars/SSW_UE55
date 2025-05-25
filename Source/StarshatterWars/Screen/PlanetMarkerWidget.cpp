@@ -5,6 +5,7 @@
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
+#include "../System/SSWGameInstance.h"
 
 void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
 {
@@ -14,60 +15,79 @@ void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
 
 void UPlanetMarkerWidget::SetSelected(bool bSelected)
 {
-	//if (HighlightBorder)
-	//{
-	//	if (bSelected) 
-			//HighlightBorder->SetVisibility(ESlateVisibility::Visible);
-	//	else 
-	//		HighlightBorder->SetVisibility(ESlateVisibility::Hidden);
-	//}
+	// Optional highlight logic
 }
 
+void UPlanetMarkerWidget::SetMarkerMaterial(UMaterialInterface* PlanetMat)
+{
+	PlanetWidgetMaterial = PlanetMat;
+}
 
 void UPlanetMarkerWidget::Init(const FS_PlanetMap& Planet)
 {
-	UE_LOG(LogTemp, Log, TEXT("UPlanetMarkerWidget::Init() Creating Widget: %s"), *Planet.Name);
-	HighlightBorder->SetVisibility(ESlateVisibility::Hidden);
-
 	PlanetData = Planet;
-
 	SetToolTipText(FText::FromString(Planet.Name));
-
 	PlanetName = Planet.Name;
 
-	if (PlanetNameText) {
+	if (PlanetNameText)
+	{
 		PlanetNameText->SetText(FText::FromString(Planet.Name));
 		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
 	}
 
-	FString ImagePath = FPaths::ProjectContentDir();
-	ImagePath.Append(TEXT("GameData/Galaxy/PlanetIcons/"));
-	ImagePath.Append(PlanetData.Icon);
-	ImagePath.Append(".png");
-
-	UTexture2D* LoadedTexture = LoadTextureFromFile(ImagePath);
-	if (LoadedTexture)
+	FString IconPath = FPaths::ProjectContentDir() + TEXT("GameData/Galaxy/PlanetIcons/") + Planet.Icon + TEXT(".png");
+	UTexture2D* LoadedTexture = LoadTextureFromFile(IconPath);
+	if (LoadedTexture && PlanetImage)
 	{
-		UE_LOG(LogTemp, Log, TEXT("UPlanetMarkerWidget::Init() Creating Image: %s"), *ImagePath);
+		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(64, 64));
+		PlanetImage->SetBrush(Brush);
+	}
+}
 
-		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
+{
+	PlanetData = Planet;
+	SetToolTipText(FText::FromString(Planet.Name));
+	PlanetName = Planet.Name;
 
-		if (!PlanetImage) {
-			UE_LOG(LogTemp, Log, TEXT("UPlanetMarkerWidget::Init() PlanetImage Not Found"));
-		}
-		else {
-			PlanetImage->SetBrush(Brush);
-		}
+	if (PlanetNameText)
+	{
+		PlanetNameText->SetText(FText::FromString(Planet.Name));
+		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
+	}
 
-		SetSelected(false);
+	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
+	{
+		Init(Planet); // fallback
+		return;
+	}
+
+	UTextureRenderTarget2D* RT = PlanetActor->GetRenderTarget();
+	if (!RT)
+	{
+		Init(Planet);
+		return;
+	}
+
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetWidgetMaterial, this);
+	DynMat->SetTextureParameterValue("InputTexture", RT);
+	PlanetImage->SetBrushFromMaterial(DynMat);
+
+	// Optional: resize based on radius
+	float SizePx = 64.f; // You could scale based on radius
+	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(PlanetImage->Slot))
+	{
+		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
 	}
 }
 
 UTexture2D* UPlanetMarkerWidget::LoadTextureFromFile(FString Path)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	UTexture2D* LoadedTexture = SSWInstance->LoadPNGTextureFromFile(Path);
-	return LoadedTexture;
+	if (USSWGameInstance* SSW = GetGameInstance<USSWGameInstance>())
+	{
+		return SSW->LoadPNGTextureFromFile(Path);
+	}
+	return nullptr;
 }
 
 FSlateBrush UPlanetMarkerWidget::CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize)
@@ -86,7 +106,5 @@ FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 		OnClicked.ExecuteIfBound(PlanetData.Name);
 		return FReply::Handled();
 	}
-
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
-
