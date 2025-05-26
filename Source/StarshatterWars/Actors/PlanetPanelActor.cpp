@@ -107,7 +107,9 @@ void APlanetPanelActor::EnsureRenderTarget()
 	FString RTName = FString::Printf(TEXT("RT_Planet_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999));
 
 	// Create the render target
-	PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, PlanetMesh);
+	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
+
+	PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, PlanetMesh, Resolution);
 
 	if (!PlanetRenderTarget)
 	{
@@ -153,6 +155,9 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	// Create dynamic material
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, PlanetMesh);
 	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999)));
+	
+	float ScaleFactor = PlanetUtils::GetPlanetUIScale(Radius);
+	//PlanetMesh->SetRelativeScale3D(FVector(2.0f));
 
 	if (PlanetTexture)
 	{

@@ -92,7 +92,7 @@ float PlanetUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSiz
 	return FMath::Lerp(MinSize, MaxSize, Normalized);
 }
 
-UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer)
+UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer, int32 Resolution)
 {
 	// Ensure Outer is not null (avoid creating in CDO space)
 	if (!Outer)
@@ -114,7 +114,7 @@ UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Bas
 	RenderTarget->RenderTargetFormat = RTF_RGBA8;
 	RenderTarget->ClearColor = FLinearColor::Transparent;
 	RenderTarget->bAutoGenerateMips = false;
-	RenderTarget->InitAutoFormat(512, 512);
+	RenderTarget->InitAutoFormat(Resolution, Resolution);
 	RenderTarget->UpdateResourceImmediate(true);
 
 	UE_LOG(LogTemp, Log, TEXT("Created Planet RenderTarget: %s [%p]"), *UniqueName, RenderTarget);
@@ -140,3 +140,43 @@ UTexture2D* PlanetUtils::LoadPlanetAssetTexture(const FString& TextureName)
 	return Texture;
 }
 
+int32 PlanetUtils::GetRenderTargetResolutionForRadius(double RadiusKm)
+{
+	const double MinRadius = 1000.0;      // Small asteroid
+	const double MaxRadius = 150000.0;    // Gas giant
+
+	// Normalize with optional logarithmic scaling
+	RadiusKm = FMath::Clamp(RadiusKm, MinRadius, MaxRadius);
+
+	const double LogMin = FMath::LogX(10.0, MinRadius);
+	const double LogMax = FMath::LogX(10.0, MaxRadius);
+	const double LogVal = FMath::LogX(10.0, RadiusKm);
+	double T = (LogVal - LogMin) / (LogMax - LogMin); // 0.0 - 1.0
+
+	// Map T to a range of powers of 2: [128, 256, 512, 1024]
+	T = FMath::Clamp(T, 0.0, 1.0);
+	const TArray<int32> ResOptions = { 128, 256, 512, 1024 };
+
+	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
+	return ResOptions[Index];
+}
+
+float PlanetUtils::GetPlanetUIScale(double RadiusKm)
+{
+	// Min and max expected radius (from Galaxy.def or design)
+	constexpr double MinRadius = 2000.0;     // Small moons
+	constexpr double MaxRadius = 150000.0;   // Large gas giants
+
+	// Get normalized [0.0, 1.0] range
+	double Normalized = FMath::Clamp((RadiusKm - MinRadius) / (MaxRadius - MinRadius), 0.0, 1.0);
+
+	// UI scaling range — safe for mesh scale and texture logic
+	constexpr float MinUIScale = 0.5f;
+	constexpr float MaxUIScale = 4.0f;
+
+	// Final safe UI scale
+	float UIScale = FMath::Lerp(MinUIScale, MaxUIScale, static_cast<float>(Normalized));
+
+	// Clamp final value to hard max
+	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
+}
