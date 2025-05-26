@@ -30,6 +30,14 @@ public:
 	// Scale the UI based on planet radius in kilometers
 	static float GetPlanetUIScale(double RadiusKm); // in kilometers
 
+	// tilt the planet
+	static FRotator GetPlanetAxisTilt(float TiltDegrees);
+
+	// planet rotation
+	static FRotator GetPlanetRotation(float TimeSeconds, float RotationSpeedDegreesPerSec, float TiltDegrees);
+
+	static float GetNormalizedPlanetUIScale(double RadiusKm);
+
 private:
 	static TMap<FString, UTexture2D*> LoadedTextureCache;
 

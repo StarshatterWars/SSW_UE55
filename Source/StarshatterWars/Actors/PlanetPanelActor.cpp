@@ -82,23 +82,24 @@ void APlanetPanelActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
+	float Time = GetWorld()->GetTimeSeconds();
+	FRotator Spin = PlanetUtils::GetPlanetRotation(Time, RotationSpeed, PlanetData.Tilt);
+	PlanetMesh->SetRelativeRotation(Spin);
 	RefreshSceneCapture();
 }
 
 void APlanetPanelActor::RefreshSceneCapture()
 {
 	FTimerHandle DelayHandle;
-	GetWorldTimerManager().SetTimer(DelayHandle, [this]()
+	GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		if (SceneCapture)
 		{
-			if (SceneCapture)
-			{
-				SceneCapture->CaptureScene();
-			}
-		}, 0.0f, false);
-
-	PlanetMesh->MarkRenderStateDirty();
-	SceneCapture->CaptureScene();
+			PlanetMesh->MarkRenderStateDirty();
+			SceneCapture->CaptureScene();
+			UE_LOG(LogTemp, Log, TEXT("CaptureScene triggered for planet: %s"), *PlanetData.Name);
+		}
+	}), 0.05f, false); // 50ms delay — adjust as needed
 }
 
 void APlanetPanelActor::EnsureRenderTarget()
@@ -137,7 +138,7 @@ void APlanetPanelActor::EnsureRenderTarget()
 					SceneCapture->CaptureScene();
 					UE_LOG(LogTemp, Log, TEXT("Captured scene for planet: %s"), *PlanetData.Name);
 				}
-			}), 0.05f, false);
+			}), 0.10f, false);
 	}
 }
 
@@ -157,7 +158,10 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999)));
 	
 	float ScaleFactor = PlanetUtils::GetPlanetUIScale(Radius);
-	//PlanetMesh->SetRelativeScale3D(FVector(2.0f));
+	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
+
+	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(PlanetData.Tilt);
+	PlanetMesh->SetRelativeRotation(AxisTilt);
 
 	if (PlanetTexture)
 	{

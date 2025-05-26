@@ -5,6 +5,8 @@
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
+#include "../Foundation/PlanetUtils.h"
+#include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
 void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
@@ -72,9 +74,12 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetWidgetMaterial, this);
 	DynMat->SetTextureParameterValue("InputTexture", RT);
 	PlanetImage->SetBrushFromMaterial(DynMat);
-
+	float SizePx = PlanetUtils::GetUISizeFromRadius(Planet.Radius)/2;
+	
+	// Set brush and visual size
+	PlanetImage->SetBrushSize(FVector2D(SizePx, SizePx));
 	// Optional: resize based on radius
-	float SizePx = 64.f; // You could scale based on radius
+	
 	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(PlanetImage->Slot))
 	{
 		ImageSlot->SetSize(FVector2D(SizePx, SizePx));

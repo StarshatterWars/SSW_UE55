@@ -81,15 +81,25 @@ UTexture2D* PlanetUtils::LoadPlanetTexture(const FString& TextureName)
 
 float PlanetUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
 {
-	constexpr float MinRadiusKm = 1.2e9f;
-	constexpr float MaxRadiusKm = 2.2e9f;
+	constexpr float MinRadiusKm = 3.15e6;
+	constexpr float MaxRadiusKm = 38.2e6;
 
 	float LogRadius = FMath::LogX(10.f, FMath::Max(Radius, 1.f));
 	float MinLog = FMath::LogX(10.f, MinRadiusKm);
 	float MaxLog = FMath::LogX(10.f, MaxRadiusKm);
 
 	float Normalized = FMath::Clamp((LogRadius - MinLog) / (MaxLog - MinLog), 0.f, 1.f);
-	return FMath::Lerp(MinSize, MaxSize, Normalized);
+	//return FMath::Lerp(MinSize, MaxSize, Normalized);
+
+	// UI scaling range — safe for mesh scale and texture logic
+	constexpr float MinUIScale = 32.0f;
+	constexpr float MaxUIScale = 96.0f;
+
+	// Final safe UI scale
+	float UIScale = FMath::Lerp(MinUIScale, MaxUIScale, static_cast<float>(Normalized));
+
+	// Clamp final value to hard max
+	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
 }
 
 UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer, int32 Resolution)
@@ -179,4 +189,44 @@ float PlanetUtils::GetPlanetUIScale(double RadiusKm)
 
 	// Clamp final value to hard max
 	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
+}
+
+FRotator PlanetUtils::GetPlanetAxisTilt(float TiltDegrees)
+{
+	// Clamp tilt to reasonable real-world range (-90 to +90)
+	float ClampedTilt = FMath::Clamp(TiltDegrees, -90.0f, 90.0f);
+
+	// Apply tilt to pitch (or roll if rotating sideways)
+	// This assumes planet spins around Y-axis (roll)
+	return FRotator(0.0f, 0.0f, ClampedTilt);
+}
+
+FRotator PlanetUtils::GetPlanetRotation(float TimeSeconds, float RotationSpeedDegreesPerSec, float TiltDegrees)
+{
+	// Clamp tilt for safety
+	float ClampedTilt = FMath::Clamp(TiltDegrees, -90.0f, 90.0f);
+
+	// Compute current Yaw based on speed and time
+	float CurrentYaw = FMath::Fmod(TimeSeconds * RotationSpeedDegreesPerSec, 360.0f);
+
+	// Rotation = spin (Yaw) combined with axis tilt (Roll or Pitch)
+	return FRotator(0.0f, CurrentYaw, ClampedTilt); // (Pitch, Yaw, Roll)
+}
+
+float PlanetUtils::GetNormalizedPlanetUIScale(double RadiusKm)
+{
+	// Based on actual Galaxy.def data
+	constexpr double MinRadius = 3.15e6;    // Relay
+	constexpr double MaxRadius = 38.2e6;    // Tal Amin
+
+	// Clamp input radius to valid bounds
+	double Clamped = FMath::Clamp(RadiusKm, MinRadius, MaxRadius);
+
+	// Normalize to 0.0 - 1.0 range
+	float Normalized = static_cast<float>((Clamped - MinRadius) / (MaxRadius - MinRadius));
+
+	// Optional: Map to a display-friendly scale range
+	constexpr float MinScale = 1.0f;
+	constexpr float MaxScale = 4.0f;
+	return FMath::Lerp(MinScale, MaxScale, Normalized);
 }
