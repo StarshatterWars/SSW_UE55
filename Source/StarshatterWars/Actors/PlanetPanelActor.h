@@ -56,9 +56,6 @@ protected:
 	USceneComponent* RootScene;
 
 	UPROPERTY()
-	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
-
-	UPROPERTY()
 	UMaterialInstanceDynamic* PlanetMaterialInstance;
 
 	UPROPERTY()
@@ -75,4 +72,8 @@ protected:
 
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
+	
+	private:
+	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
+	UTextureRenderTarget2D* PlanetRenderTarget;
 };

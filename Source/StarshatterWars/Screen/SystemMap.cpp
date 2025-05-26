@@ -187,9 +187,14 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 			Orbit->SetVisibility(ESlateVisibility::Visible);
 		}
-
 		if (PlanetActorClass)
 		{
+			if (PlanetActor)
+			{
+				PlanetActor->Destroy();
+				PlanetActor = nullptr;
+			}
+
 			FVector ActorLocation = FVector(-1000, 0, 200);  // Adjust position as needed
 			FRotator ActorRotation = FRotator::ZeroRotator;
 
@@ -205,9 +210,8 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			{
 				PlanetActor->InitializePlanet(Planet);
 				SpawnedPlanetActors.Add(PlanetActor);
-			}
+			}	
 		}
-
 		// Planet marker
 		if (PlanetMarkerClass)
 		{

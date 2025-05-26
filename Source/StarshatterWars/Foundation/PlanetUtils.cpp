@@ -92,21 +92,34 @@ float PlanetUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSiz
 	return FMath::Lerp(MinSize, MaxSize, Normalized);
 }
 
-UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Name, UObject* Outer)
+UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer)
 {
-	if (!Outer) return nullptr;
-
-	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(Outer, *Name);
-	if (RT)
+	// Ensure Outer is not null (avoid creating in CDO space)
+	if (!Outer)
 	{
-		RT->RenderTargetFormat = RTF_RGBA8;
-		RT->ClearColor = FLinearColor::Black;
-		RT->InitAutoFormat(64, 64);
-		RT->UpdateResourceImmediate(true);
-
-		UE_LOG(LogTemp, Log, TEXT("Planet RenderTarget created: %s"), *Name);
+		Outer = GetTransientPackage();
 	}
-	return RT;
+
+	// Generate unique name
+	FString UniqueName = FString::Printf(TEXT("RT_%s_%d"), *BaseName, FMath::RandRange(1000, 9999));
+
+	// Create transient render target
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(Outer, *UniqueName, RF_Transient);
+	if (!RenderTarget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget: %s"), *UniqueName);
+		return nullptr;
+	}
+
+	RenderTarget->RenderTargetFormat = RTF_RGBA8;
+	RenderTarget->ClearColor = FLinearColor::Transparent;
+	RenderTarget->bAutoGenerateMips = false;
+	RenderTarget->InitAutoFormat(512, 512);
+	RenderTarget->UpdateResourceImmediate(true);
+
+	UE_LOG(LogTemp, Log, TEXT("Created Planet RenderTarget: %s [%p]"), *UniqueName, RenderTarget);
+
+	return RenderTarget;
 }
 
 

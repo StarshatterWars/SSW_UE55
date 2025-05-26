@@ -63,5 +63,8 @@ void AMusicController::StopSound()
 
 bool AMusicController::IsSoundPlaying()
 {
-	return MusicComponent->IsPlaying();
+	if(MusicComponent)
+		return MusicComponent->IsPlaying();
+	else 
+		return false;
 }

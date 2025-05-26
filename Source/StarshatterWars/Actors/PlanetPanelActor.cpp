@@ -76,29 +76,6 @@ APlanetPanelActor::APlanetPanelActor()
 void APlanetPanelActor::BeginPlay()
 {
 	Super::BeginPlay();
-
-//	if(PlanetRenderTarget) 
-	//	PlanetRenderTarget = nullptr;
-
-	//PlanetTexture = PlanetUtils::LoadPlanetTexture(PlanetData.Texture);
-	//UE_LOG(LogTemp, Log, TEXT("Applied BaseTexture: %s"), *GetNameSafe(PlanetTexture));
-
-	EnsureRenderTarget();
-
-	//if (SceneCapture && !SceneCapture->TextureTarget)
-	//{
-	//	SceneCapture->TextureTarget = PlanetRenderTarget;
-	//}
-
-	//if (!PlanetMaterialInstance && PlanetBaseMaterial && PlanetMesh)
-	//{
-	//	PlanetMaterialInstance = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, this);
-	//	PlanetMaterialInstance->SetTextureParameterValue("BaseTexture", PlanetTexture);
-	//	PlanetMesh->SetMaterial(0, PlanetMaterialInstance);
-	//	PlanetMesh->MarkRenderStateDirty();
-	//}
-
-	//RefreshSceneCapture();
 }
 
 void APlanetPanelActor::Tick(float DeltaTime)
@@ -126,16 +103,39 @@ void APlanetPanelActor::RefreshSceneCapture()
 
 void APlanetPanelActor::EnsureRenderTarget()
 {
+	// Generate unique name based on planet name and a random ID
+	FString RTName = FString::Printf(TEXT("RT_Planet_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999));
+
+	// Create the render target
+	PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, PlanetMesh);
+
 	if (!PlanetRenderTarget)
 	{
-		FString BaseName = PlanetData.Name.IsEmpty() ? TEXT("Unnamed") : PlanetData.Name;
-		FString RTName = FString::Printf(TEXT("PlanetRT_%s_%d"), *BaseName, FMath::RandRange(1000, 9999));
-		PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, this);
+		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for planet %s"), *PlanetData.Name);
+		return;
 	}
 
-	if (SceneCapture && SceneCapture->TextureTarget != PlanetRenderTarget)
+	// Assign to the SceneCapture
+	if (SceneCapture)
 	{
 		SceneCapture->TextureTarget = PlanetRenderTarget;
+
+		// Log confirmation
+		UE_LOG(LogTemp, Warning, TEXT("RenderTarget created: %s [%p] for planet %s"),
+			*RTName,
+			PlanetRenderTarget,
+			*PlanetData.Name);
+
+		// Optional: Delayed scene capture to ensure mesh/materials are ready
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+			{
+				if (SceneCapture)
+				{
+					SceneCapture->CaptureScene();
+					UE_LOG(LogTemp, Log, TEXT("Captured scene for planet: %s"), *PlanetData.Name);
+				}
+			}), 0.05f, false);
 	}
 }
 
@@ -144,30 +144,34 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	PlanetData = InData;
 	Radius = PlanetData.Radius;
 
+	// Texture
 	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
-	
-	// 1. Create unique material
+
+	// Ensure a unique render target before using SceneCapture
+	EnsureRenderTarget();
+
+	// Create dynamic material
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, PlanetMesh);
 	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999)));
 
-	// 2. Set unique texture
-	#define UpdateResource UpdateResource
-	PlanetTexture->UpdateResource();
-	DynMat->SetTextureParameterValue("BaseTexture", PlanetTexture);
+	if (PlanetTexture)
+	{
+		#define UpdateResource UpdateResource
+		PlanetTexture->UpdateResource();
+		DynMat->SetTextureParameterValue("BaseTexture", PlanetTexture);
+	}
 
-	// 3. Assign to mesh
+	// Apply to mesh
 	PlanetMesh->SetMaterial(0, DynMat);
+	PlanetMaterialInstance = DynMat;
 
-	// 4. Refresh
+	// Capture scene (now safe!)
 	PlanetMesh->MarkRenderStateDirty();
-	SceneCapture->CaptureScene(); // Optionally delayed
+	SceneCapture->CaptureScene();
 
-	UE_LOG(LogTemp, Warning, TEXT("InitializePlanet() Planet: %s -> Mat: %s, Tex: %s, Ptr: %p"),
+	UE_LOG(LogTemp, Warning, TEXT("InitializePlanet() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
 		*PlanetData.Name,
 		*GetNameSafe(DynMat),
 		*GetNameSafe(PlanetTexture),
-		DynMat
-		);
-
-	PlanetMaterialInstance = DynMat;
+		*GetNameSafe(PlanetRenderTarget));
 }
