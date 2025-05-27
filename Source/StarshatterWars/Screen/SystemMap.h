@@ -10,6 +10,7 @@
 
 class UCanvasPanel;
 class UScrollBox;
+class USizeBox;
 class UPlanetMarkerWidget;
 class USystemOrbitWidget;
 class UCentralSunWidget;
@@ -40,17 +41,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	UMaterialInterface* DefaultPlanetMaterial;
 
-	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-
-	//virtual bool IsInteractable() const override { return true; }
-
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanel* MapCanvas;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UCanvasPanel* OuterCanvas;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	USizeBox* MapCanvasSize;
 
 	/** Exposed scrollable canvas for placing planets and orbits */
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
@@ -82,7 +89,8 @@ private:
 
 	// Holds per-planet orbit angle (randomized once per planet per session)
 	TMap<FString, float> PlanetOrbitAngles;
-
+	UFUNCTION()
+	void AddLayoutExtender();
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
@@ -99,4 +107,14 @@ private:
 	float ZoomLevel = 1.0f; // 1.0 = 100%
 	UPROPERTY()
 	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
+
+	// For tracking drag state
+	UPROPERTY()
+	bool bIsDragging = false;
+	UPROPERTY()
+	FVector2D DragStartPos;
+	UPROPERTY()
+	float InitialScrollOffset = 0.f;
+	UPROPERTY()
+	FVector2D InitialMapCanvasOffset = FVector2D::ZeroVector;
 };

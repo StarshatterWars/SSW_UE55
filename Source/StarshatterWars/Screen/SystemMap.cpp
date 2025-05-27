@@ -4,6 +4,7 @@
 #include "SystemMap.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/SizeBox.h"
 #include "PlanetMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "CentralSunWidget.h"
@@ -15,40 +16,101 @@
 #include "../Actors/CentralSunActor.h"
 #include "../Actors/PlanetPanelActor.h"
 #include "../Foundation/PlanetOrbitUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "TimerManager.h"
 #include "EngineUtils.h" 
+
 
 void USystemMap::NativeConstruct()
 {
 	Super::NativeConstruct();
-	SetVisibility(ESlateVisibility::Visible);
+
 	SetIsFocusable(true);
-	PanelSize = FVector2D(1450.f, 640.f);
-
-	float PanelWidth = SystemScrollBox->GetCachedGeometry().GetLocalSize().X;
-	float PanelHeight = SystemScrollBox->GetCachedGeometry().GetLocalSize().Y;
-
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
-	SystemScrollBox->SetClipping(EWidgetClipping::ClipToBounds);
-	SystemScrollBox->SetScrollBarVisibility(ESlateVisibility::Collapsed);
-	SystemScrollBox->SetConsumeMouseWheel(EConsumeMouseWheel::Never);
-
-	ScreenOffset.X = 700;
-	ScreenOffset.Y = 300;
-
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
-	bIsFocusable = true; // already required for keyboard
 
-	const FString& SelectedSystem = SSWInstance->SelectedSystem;
-	const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem);
-	if (System)
+	ZoomLevel = 1.0f;
+
+	// ScrollBox setup
+	if (SystemScrollBox)
 	{
-		UE_LOG(LogTemp, Log, TEXT("USystemMap::NativeConstruct() System Found: %s"), *SelectedSystem);
-		BuildSystemView(System);
+		SystemScrollBox->SetClipping(EWidgetClipping::ClipToBounds);
+		SystemScrollBox->SetScrollBarVisibility(ESlateVisibility::Collapsed);
+		SystemScrollBox->SetConsumeMouseWheel(EConsumeMouseWheel::Never);
+		SystemScrollBox->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
+
+	// Canvas transform setup
+	if (MapCanvas)
+	{
+		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+			CanvasSlot->SetPosition(FVector2D::ZeroVector);
+		}
+
+		// Apply zoom
+		FWidgetTransform ZoomTransform;
+		ZoomTransform.Scale = FVector2D(ZoomLevel, ZoomLevel);
+		MapCanvas->SetRenderTransform(ZoomTransform);
+
+		// Add dummy to force layout size
+		UImage* DummyImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+
+		FSlateBrush DummyBrush;
+		DummyBrush.ImageSize = FVector2D(3000.f, 2000.f);
+		DummyBrush.TintColor = FLinearColor::Transparent;
+		DummyImage->SetBrush(DummyBrush);
+		DummyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+		if (UCanvasPanelSlot* DummySlot = MapCanvas->AddChildToCanvas(DummyImage))
+		{
+			DummySlot->SetAutoSize(false);
+			DummySlot->SetPosition(FVector2D(0.f, 0.f));
+		}
+	}
+
+	// Delay layout-dependent logic like centering
+	FTimerHandle LayoutTimer;
+	GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (!MapCanvas || !SystemScrollBox) return;
+
+			const FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+			const FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+
+			const float CenterX = (ViewportSize.X - ContentSize.X) * 0.5f;
+			const float CenterY = FMath::Max((ContentSize.Y - ViewportSize.Y) * 0.5f, 0.f);
+
+			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+			{
+				CanvasSlot->SetPosition(FVector2D(CenterX, 0.f)); // Only X position
+				InitialMapCanvasOffset = FVector2D(CenterX, 0.f);
+			}
+
+			SystemScrollBox->SetScrollOffset(CenterY);
+
+			UE_LOG(LogTemp, Warning, TEXT("Centered: Canvas X = %.1f, ScrollOffset Y = %.1f"), CenterX, CenterY);
+			UE_LOG(LogTemp, Warning, TEXT("MapCanvas DesiredSize: %s | Viewport: %s"),
+				*ContentSize.ToString(), *ViewportSize.ToString());
+
+		}), 0.05f, false);
+
+	// Optional: build the system after everything is ready
+	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
+	{
+		const FString& SelectedSystem = GI->SelectedSystem;
+		const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem);
+
+		if (System)
+		{
+			UE_LOG(LogTemp, Log, TEXT("USystemMap::NativeConstruct() Found system: %s"), *SelectedSystem);
+			BuildSystemView(System);
+		}
 	}
 }
+
 void USystemMap::NativeDestruct()
 {
 	Super::NativeDestruct();
@@ -77,7 +139,7 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 
 void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
-{
+{	
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Missing MapCanvas"));
@@ -90,8 +152,10 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 	MapCanvas->ClearChildren();
 	PlanetMarkers.Empty();
+	AddLayoutExtender();
 
-	const FVector2D Center(960.f, 540.f); // Screen center
+	//const FVector2D Center(960.f, 540.f); // Screen center
+	const FVector2D Center = MapCanvas->GetCachedGeometry().GetLocalSize() * 0.5f;
 	
 	if (SunActorClass)
 	{
@@ -137,6 +201,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 			StarWidget->InitializeFromSunActor(SunActor);
 			if (UCanvasPanelSlot* StarSlot = MapCanvas->AddChildToCanvas(StarWidget))
 			{
+				StarSlot->SetAutoSize(true);
 				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 				StarSlot->SetPosition(FVector2D(32.f, 0.f));
@@ -197,6 +262,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				OrbitSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 				OrbitSlot->SetPosition(FVector2D(0.f, 0.f)); // use panel center
 				OrbitSlot->SetZOrder(0);
+				OrbitSlot->SetAutoSize(true);
 			}
 
 			Orbit->SetVisibility(ESlateVisibility::Visible);
@@ -304,6 +370,16 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				}), 0.01f, false);
 		}
 	}
+	
+	FTimerHandle LayoutCheck;
+	GetWorld()->GetTimerManager().SetTimer(LayoutCheck, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (MapCanvas)
+			{
+				FVector2D Size = MapCanvas->GetDesiredSize();
+				UE_LOG(LogTemp, Warning, TEXT("MapCanvas DesiredSize: %s"), *Size.ToString());
+			}
+		}), 0.05f, false);
 }
 
 void USystemMap::HandleCentralSunClicked()
@@ -317,6 +393,22 @@ void USystemMap::HandleCentralSunClicked()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("No owner set for USystemMap"));
+	}
+}
+
+void USystemMap::AddLayoutExtender() {
+	UImage* DummyImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+	// Force the image to take space in layout
+	FSlateBrush DummyBrush;
+	DummyBrush.ImageSize = FVector2D(3000.f, 3000.f);  // Force size
+	DummyBrush.TintColor = FLinearColor::Transparent; // Fully invisible
+	DummyImage->SetBrush(DummyBrush);
+	DummyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	if (UCanvasPanelSlot* DummySlot = MapCanvas->AddChildToCanvas(DummyImage))
+	{
+		DummySlot->SetAutoSize(true);                     // Size comes from brush
+		DummySlot->SetPosition(FVector2D(0.f, 0.f));        // Position doesn't matter
 	}
 }
 
@@ -337,4 +429,94 @@ FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointe
 	float Delta = InMouseEvent.GetWheelDelta();
 	SetZoomLevel(ZoomLevel + Delta * 0.1f);
 	return FReply::Handled();
+}
+
+FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	UE_LOG(LogTemp, Warning, TEXT("USystemMap::MouseButtonDown triggered")); 
+	FVector2D Size = MapCanvas->GetDesiredSize();
+	FVector2D Viewport = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+
+	UE_LOG(LogTemp, Warning, TEXT("ContentSize: %s, Viewport: %s"), *Size.ToString(), *Viewport.ToString());
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		bIsDragging = true;
+		DragStartPos = InMouseEvent.GetScreenSpacePosition();
+		InitialScrollOffset = SystemScrollBox->GetScrollOffset();
+
+		if (MapCanvas)
+		{
+			if (UCanvasPanelSlot* MouseSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+			{
+				InitialMapCanvasOffset = MouseSlot->GetPosition();
+			}
+		}
+
+		return FReply::Handled();
+	}
+
+	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
+FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (!bIsDragging || !MapCanvas || !SystemScrollBox)
+	{
+		return Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+	}
+
+	const FVector2D CurrentMousePos = InMouseEvent.GetScreenSpacePosition();
+	const FVector2D Delta = CurrentMousePos - DragStartPos;
+
+	// --- Horizontal Drag (MapCanvas X) ---
+	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+	{
+		const float ContentWidth = MapCanvas->GetDesiredSize().X * ZoomLevel;
+		const float ViewportWidth = SystemScrollBox->GetCachedGeometry().GetLocalSize().X;
+
+		const float ProposedX = InitialMapCanvasOffset.X + Delta.X;
+
+		const float ClampedX = SystemMapUtils::ClampHorizontalPosition(
+			ProposedX, ContentWidth, ViewportWidth, 50.f
+		);
+
+		CanvasSlot->SetPosition(FVector2D(ClampedX, CanvasSlot->GetPosition().Y));
+
+		UE_LOG(LogTemp, Verbose, TEXT("Horizontal Drag -> ProposedX: %.1f, ClampedX: %.1f"), ProposedX, ClampedX);
+	}
+
+	// --- Vertical Scroll (Y axis) ---
+	{
+		const float ContentHeight = MapCanvas->GetDesiredSize().Y * ZoomLevel;
+		const float ViewportHeight = SystemScrollBox->GetCachedGeometry().GetLocalSize().Y;
+
+		const float ProposedOffset = InitialScrollOffset - Delta.Y;
+
+		const float ClampedOffset = SystemMapUtils::ClampVerticalScroll(
+			ProposedOffset, ContentHeight, ViewportHeight, 50.f
+		);
+
+		SystemScrollBox->SetScrollOffset(ClampedOffset);
+
+		UE_LOG(LogTemp, Verbose, TEXT("Vertical Scroll -> ProposedY: %.1f, ClampedY: %.1f"), ProposedOffset, ClampedOffset);
+	}
+
+	return FReply::Handled();
+}
+
+
+FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	UE_LOG(LogTemp, Warning, TEXT("USystemMap::MouseButtonUp triggered"));
+
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		//const float FinalOffsetY = FMath::Clamp(SystemScrollBox->GetScrollOffset(), MinScrollY, MaxScrollY);
+		//SystemScrollBox->SetScrollOffset(FinalOffsetY);
+
+		bIsDragging = false;
+		return FReply::Handled();
+	}
+
+	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
 }
