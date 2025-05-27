@@ -32,9 +32,14 @@ void USystemMap::NativeConstruct()
 
 	SystemScrollBox->SetClipping(EWidgetClipping::ClipToBounds);
 	SystemScrollBox->SetScrollBarVisibility(ESlateVisibility::Collapsed);
+	SystemScrollBox->SetConsumeMouseWheel(EConsumeMouseWheel::Never);
 
 	ScreenOffset.X = 700;
 	ScreenOffset.Y = 300;
+
+	SetVisibility(ESlateVisibility::Visible);
+	SetIsEnabled(true);
+	bIsFocusable = true; // already required for keyboard
 
 	const FString& SelectedSystem = SSWInstance->SelectedSystem;
 	const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem);
@@ -165,13 +170,13 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
 
-		Radius = PlanetOrbitUtils::FitOrbitRadiusToPanel(
-			Radius,
-			Planet.Inclination,
-			PanelSize.X,  // Fixed panel width
-			PanelSize.Y,  // Fixed panel height
-			50.f     // Optional padding (tweakable)
-		);
+		//Radius = PlanetOrbitUtils::FitOrbitRadiusToPanel(
+		//	Radius,
+		//	Planet.Inclination,
+		//	PanelSize.X,  // Fixed panel width
+		//	PanelSize.Y,  // Fixed panel height
+		//	50.f     // Optional padding (tweakable)
+		//);
 
 		UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, Radius);
 
@@ -327,3 +332,9 @@ void USystemMap::SetZoomLevel(float NewZoom)
 	}
 }
 
+FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	float Delta = InMouseEvent.GetWheelDelta();
+	SetZoomLevel(ZoomLevel + Delta * 0.1f);
+	return FReply::Handled();
+}

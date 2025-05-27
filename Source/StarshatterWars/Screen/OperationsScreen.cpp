@@ -1314,6 +1314,9 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 	{
 		SystemMap = CreateWidget<USystemMap>(this, SystemMapClass);
 		SystemMap->SetOwner(this); // Assign owner
+		SystemMap->SetFocus(); // keyboard
+		SystemMap->SetUserFocus(GetOwningPlayer()); // controller
+		SystemMap->SetKeyboardFocus(); // optional redundancy
 	}
 	
 	if (!SystemMapClass) {
