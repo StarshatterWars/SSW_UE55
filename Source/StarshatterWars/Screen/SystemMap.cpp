@@ -533,7 +533,7 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 	}
 }
 
-void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
+/*void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
 {
 	if (!Marker || !MapCanvas) return;
 
@@ -560,4 +560,45 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
 	UE_LOG(LogTemp, Warning,
 		TEXT("[CENTER DRAG-AWARE] MarkerCenter: %s | CanvasOffset: %s | VisualPos: %s | Delta: %s -> SetPos: %s"),
 		*MarkerCenter.ToString(), *CanvasOffset.ToString(), *MarkerVisual.ToString(), *Delta.ToString(), *NewCanvasPosition.ToString());
+}*/
+
+void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
+{
+	if (!Marker || !MapCanvas || !SystemScrollBox) return;
+
+	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
+	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
+	if (!CanvasSlot || !MarkerSlot) return;
+
+	// Current canvas position (after drag)
+	const FVector2D CanvasOffset = CanvasSlot->GetPosition();
+
+	// Marker center in layout space
+	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
+
+	// Visual position = marker offset by canvas shift
+	const FVector2D MarkerVisual = MarkerCenter + CanvasOffset;
+
+	// Delta to move marker to visual center (0,0 for panel-centered origin)
+	const FVector2D Delta = -MarkerVisual;
+
+	// Proposed new canvas position
+	FVector2D NewCanvasPosition = CanvasOffset + Delta;
+
+	// Clamp X based on canvas content size and viewport
+	const FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+	const FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+
+	const float HalfViewportWidth = ViewportSize.X * 0.5f;
+	const float MinX = -(ContentSize.X - HalfViewportWidth);
+	const float MaxX = HalfViewportWidth;
+
+	NewCanvasPosition.X = FMath::Clamp(NewCanvasPosition.X, MinX, MaxX);
+
+	// Apply clamped position
+	CanvasSlot->SetPosition(NewCanvasPosition);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[CENTER CLAMPED] MarkerCenter: %s | CanvasOffset: %s | VisualPos: %s | Delta: %s -> SetPos: %s | ClampX: [%.1f, %.1f]"),
+		*MarkerCenter.ToString(), *CanvasOffset.ToString(), *MarkerVisual.ToString(), *Delta.ToString(), *NewCanvasPosition.ToString(), MinX, MaxX);
 }
