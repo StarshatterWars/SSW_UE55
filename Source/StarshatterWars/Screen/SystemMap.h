@@ -9,6 +9,7 @@
 #include "SystemMap.generated.h"
 
 class UCanvasPanel;
+class UScrollBox;
 class UPlanetMarkerWidget;
 class USystemOrbitWidget;
 class UCentralSunWidget;
@@ -47,6 +48,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UCanvasPanel* MapCanvas;
 
+	/** Exposed scrollable canvas for placing planets and orbits */
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	UScrollBox* SystemScrollBox;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UPlanetMarkerWidget> PlanetMarkerClass;
 
@@ -64,6 +69,9 @@ protected:
 
 	UPROPERTY()
 	TArray<APlanetPanelActor*> SpawnedPlanetActors;
+	
+	UFUNCTION()
+	void SetZoomLevel(float NewZoom);
 
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
@@ -83,4 +91,8 @@ private:
 	UCentralSunWidget* StarWidget;
 	UPROPERTY()
 	APlanetPanelActor* PlanetActor;
+	UPROPERTY()
+	float ZoomLevel = 1.0f; // 1.0 = 100%
+	UPROPERTY()
+	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
 };

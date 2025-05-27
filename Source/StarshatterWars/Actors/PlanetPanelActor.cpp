@@ -88,7 +88,6 @@ void APlanetPanelActor::Tick(float DeltaTime)
 	float Time = GetWorld()->GetTimeSeconds();
 	FRotator Spin = PlanetUtils::GetPlanetRotation(Time, RotationSpeed, PlanetData.Tilt);
 	PlanetMesh->SetRelativeRotation(Spin);
-	//if(isSceneDelay) AssignScreenCapture();
 }
 
 void APlanetPanelActor::AssignScreenCapture()
@@ -163,7 +162,6 @@ void APlanetPanelActor::InitPlanet()
 		*GetNameSafe(DynMat),
 		*GetNameSafe(PlanetTexture),
 		*GetNameSafe(PlanetRenderTarget));
-
 }
 
 void APlanetPanelActor::InitializePlanet()
@@ -173,7 +171,5 @@ void APlanetPanelActor::InitializePlanet()
 
 	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(PlanetData.Tilt);
 	PlanetMesh->SetRelativeRotation(AxisTilt);
-
-	//AssignScreenCapture();
 }
 
