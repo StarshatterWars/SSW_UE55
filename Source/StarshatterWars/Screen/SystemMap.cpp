@@ -45,8 +45,8 @@ void USystemMap::NativeConstruct()
 	{
 		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 		{
-			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
-			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+			CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+			CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 			CanvasSlot->SetPosition(FVector2D::ZeroVector);
 		}
 
@@ -85,7 +85,7 @@ void USystemMap::NativeConstruct()
 
 			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 			{
-				CanvasSlot->SetPosition(FVector2D(CenterX, 0.f)); // Only X position
+				CanvasSlot->SetPosition(FVector2D(0.5f, 0.5f)); // Only X position
 				InitialMapCanvasOffset = FVector2D(CenterX, 0.f);
 			}
 
@@ -204,7 +204,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				StarSlot->SetAutoSize(true);
 				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				StarSlot->SetPosition(FVector2D(32.f, 0.f));
+				StarSlot->SetPosition(FVector2D(0.f, 0.f));
 				StarSlot->SetZOrder(15);
 			}
 		}
@@ -535,27 +535,29 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 
 void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
 {
-	if (!Marker || !SystemScrollBox || !MapCanvas) return;
+	if (!Marker || !MapCanvas) return;
 
-	if (UCanvasPanelSlot* PlanetSlot = Cast<UCanvasPanelSlot>(Marker->Slot))
-	{
-		const FVector2D MarkerCenter = PlanetSlot->GetPosition() + PlanetSlot->GetSize() * PlanetSlot->GetAlignment();
-		const FVector2D ScrollViewSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
-		const FVector2D MapSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
+	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
+	if (!CanvasSlot || !MarkerSlot) return;
 
-		// --- Vertical Scroll ---
-		const float TargetY = MarkerCenter.Y - (ScrollViewSize.Y * 0.5f);
-		const float ClampedY = SystemMapUtils::ClampVerticalScroll(TargetY, MapSize.Y, ScrollViewSize.Y, 50.f);
-		SystemScrollBox->SetScrollOffset(ClampedY);
+	// Current canvas position (already moved via drag)
+	const FVector2D CanvasOffset = CanvasSlot->GetPosition();
 
-		// --- Horizontal Drag via Canvas Slot ---
-		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-		{
-			const float TargetX = (ScrollViewSize.X * 0.5f) - MarkerCenter.X;
-			const float ClampedX = SystemMapUtils::ClampHorizontalPosition(TargetX, MapSize.X, ScrollViewSize.X, 50.f);
-			CanvasSlot->SetPosition(FVector2D(ClampedX, CanvasSlot->GetPosition().Y));
-		}
+	// Marker center relative to MapCanvas center
+	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
 
-		UE_LOG(LogTemp, Log, TEXT("Focusing on marker: %s, slot pos: %s"), *Marker->GetPlanetName(), *MarkerCenter.ToString());
-	}
+	// Marker position in screen-space (relative to current canvas offset)
+	const FVector2D MarkerVisual = MarkerCenter + CanvasOffset;
+
+	// Desired position is (0,0) — the center of the viewport (panel-centered)
+	const FVector2D Delta = -MarkerVisual;
+
+	const FVector2D NewCanvasPosition = CanvasOffset + Delta;
+
+	CanvasSlot->SetPosition(NewCanvasPosition);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[CENTER DRAG-AWARE] MarkerCenter: %s | CanvasOffset: %s | VisualPos: %s | Delta: %s -> SetPos: %s"),
+		*MarkerCenter.ToString(), *CanvasOffset.ToString(), *MarkerVisual.ToString(), *Delta.ToString(), *NewCanvasPosition.ToString());
 }
