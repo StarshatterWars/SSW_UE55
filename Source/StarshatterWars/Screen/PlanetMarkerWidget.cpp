@@ -108,7 +108,7 @@ FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 {
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		OnClicked.ExecuteIfBound(PlanetData.Name);
+		OnPlanetClicked.Broadcast(PlanetName);
 		return FReply::Handled();
 	}
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);

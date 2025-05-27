@@ -14,7 +14,7 @@
 class UImage;
 class UBorder;
 
-DECLARE_DELEGATE_OneParam(FOnMarkerClicked, const FString&);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetClicked, const FString&, PlanetName);
 
 UCLASS()
 class STARSHATTERWARS_API UPlanetMarkerWidget : public UUserWidget
@@ -33,7 +33,7 @@ public:
 	UFUNCTION()
 	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor);
 
-	FOnMarkerClicked OnClicked;
+	FOnPlanetClicked OnPlanetClicked;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Planet UI")
 	UMaterialInterface* PlanetWidgetMaterial;

@@ -48,6 +48,7 @@ protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -117,4 +118,13 @@ private:
 	float InitialScrollOffset = 0.f;
 	UPROPERTY()
 	FVector2D InitialMapCanvasOffset = FVector2D::ZeroVector;
+	UPROPERTY()
+	FString SelectedPlanetName;
+
+	UFUNCTION()
+	void HandlePlanetClicked(const FString& PlanetName);
+
+	UFUNCTION()
+	void CenterOnPlanetWidget(UPlanetMarkerWidget* Marker);
+	
 };

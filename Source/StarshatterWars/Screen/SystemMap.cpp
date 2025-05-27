@@ -323,6 +323,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				Marker->SetPlanetName(Planet.Name);
 				//Marker->Init(Planet);
 				Marker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
+				Marker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
 
 				PlanetMarkers.Add(Planet.Name, Marker);
 				
@@ -519,4 +520,42 @@ FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPoi
 	}
 
 	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
+}
+
+
+void USystemMap::HandlePlanetClicked(const FString& PlanetName)
+{
+	if (UPlanetMarkerWidget** Found = PlanetMarkers.Find(PlanetName))
+	{
+		// Optional: center or highlight
+		UE_LOG(LogTemp, Log, TEXT("Planet selected: %s"), *PlanetName);
+		CenterOnPlanetWidget(*Found);
+	}
+}
+
+void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
+{
+	if (!Marker || !SystemScrollBox || !MapCanvas) return;
+
+	if (UCanvasPanelSlot* PlanetSlot = Cast<UCanvasPanelSlot>(Marker->Slot))
+	{
+		const FVector2D MarkerCenter = PlanetSlot->GetPosition() + PlanetSlot->GetSize() * PlanetSlot->GetAlignment();
+		const FVector2D ScrollViewSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+		const FVector2D MapSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+
+		// --- Vertical Scroll ---
+		const float TargetY = MarkerCenter.Y - (ScrollViewSize.Y * 0.5f);
+		const float ClampedY = SystemMapUtils::ClampVerticalScroll(TargetY, MapSize.Y, ScrollViewSize.Y, 50.f);
+		SystemScrollBox->SetScrollOffset(ClampedY);
+
+		// --- Horizontal Drag via Canvas Slot ---
+		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+		{
+			const float TargetX = (ScrollViewSize.X * 0.5f) - MarkerCenter.X;
+			const float ClampedX = SystemMapUtils::ClampHorizontalPosition(TargetX, MapSize.X, ScrollViewSize.X, 50.f);
+			CanvasSlot->SetPosition(FVector2D(ClampedX, CanvasSlot->GetPosition().Y));
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Focusing on marker: %s, slot pos: %s"), *Marker->GetPlanetName(), *MarkerCenter.ToString());
+	}
 }
