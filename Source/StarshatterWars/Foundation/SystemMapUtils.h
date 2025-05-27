@@ -7,15 +7,53 @@
 /**
  * 
  */
+
+struct STARSHATTERWARS_API FPlanetFocusResult
+{
+	float ScrollOffsetY = 0.f;
+	float CanvasOffsetX = 0.f;
+	float ZoomLevel = -1.f;
+};
+
 class STARSHATTERWARS_API SystemMapUtils
 {
 
 public:	
-	/** Clamp the vertical scroll offset with top/bottom margin */
+	
+	UFUNCTION()
+	static float ClampZoomLevel(float ProposedZoom, float MinZoom = 0.5f, float MaxZoom = 3.0f);
+
+	UFUNCTION()
+	static float SnapZoomToSteps(float Zoom, float StepSize = 0.1f, float MinZoom = 0.5f, float MaxZoom = 3.0f);
+
+	UFUNCTION()
+	static float GetCenteredCanvasPosition(float ContentWidth, float ViewportWidth);
+
+	UFUNCTION()
+	static float GetCenteredScrollOffset(float ContentHeight, float ViewportHeight);
+
+	UFUNCTION()
+	static float InterpolateScrollOffset(float CurrentOffset, float TargetOffset, float DeltaTime, float Speed = 10.f);
+
+	UFUNCTION()
+	static float ClampVerticalPosition(float ProposedY, float ContentHeight, float ViewportHeight, float Margin = 50.f);
+
+	UFUNCTION()
+	static float ClampHorizontalPosition(float ProposedY, float ContentHeight, float ViewportHeight, float Margin = 50.f);
+
 	UFUNCTION()
 	static float ClampVerticalScroll(float ProposedOffset, float ContentHeight, float ViewportHeight, float Margin = 50.f);
 
-	/** Clamp the horizontal position of the canvas with left/right margin */
 	UFUNCTION()
-	static float ClampHorizontalPosition(float ProposedX, float ContentWidth, float ViewportWidth, float Margin = 50.f);
+	static float ClampHorizontalScroll(float ProposedOffset, float ContentWidth, float ViewportWidth, float Margin = 50.f);
+
+	UFUNCTION()
+	static FPlanetFocusResult CenterOnPlanet(
+		const FVector2D& MarkerPosition,
+		const FVector2D& MarkerSize,
+		const FVector2D& ViewportSize,
+		const FVector2D& ContentSize,
+		float CurrentZoom,
+		float RequestedZoom = -1.f,
+		float Margin = 50.f);
 };
