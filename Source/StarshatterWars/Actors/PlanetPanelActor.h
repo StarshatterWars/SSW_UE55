@@ -32,10 +32,12 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	void EnsureRenderTarget();
-	void InitializePlanet(FS_PlanetMap PlanetInfo);
-	void RefreshSceneCapture();
-
+	UFUNCTION()
+	void AssignScreenCapture();
+	
+	UFUNCTION(BlueprintCallable, Category = "Planet")
+	void InitializePlanet();
+	
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return PlanetRenderTarget; }
 
@@ -45,7 +47,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Planet")
 	UMaterialInterface* PlanetBaseMaterial;
 
+	UPROPERTY()
+	bool isSceneDelay = false;
+
 protected:
+	UFUNCTION()
+	void EnsureRenderTarget();
+	
+	UFUNCTION()
+	void InitPlanet();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
 	UStaticMeshComponent* PlanetMesh;
 
@@ -76,4 +86,7 @@ protected:
 	private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
 	UTextureRenderTarget2D* PlanetRenderTarget;
+	
+	UPROPERTY()
+	FString RTName;
 };

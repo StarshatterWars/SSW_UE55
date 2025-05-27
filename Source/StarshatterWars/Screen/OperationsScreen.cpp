@@ -228,6 +228,7 @@ void UOperationsScreen::NativeConstruct()
 	PopulateIntelList();
 	SetCampaignMissions();
 	LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
+	CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
 
 	const FS_OOBWing* Wing = FindWingForCarrierGroup(CurrentCarrierGroup, LoadedForces);
 

@@ -29,6 +29,7 @@ APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
 
 	// Assign planet data before BeginPlay
 	NewActor->PlanetData = PlanetInfo;
+	NewActor->InitPlanet();
 
 	// Complete spawn
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
@@ -71,11 +72,13 @@ APlanetPanelActor::APlanetPanelActor()
 	SceneCapture->ShowFlags.SetMotionBlur(false);
 	SceneCapture->ShowFlags.SetScreenSpaceReflections(false);
 	SceneCapture->ShowFlags.SetPostProcessing(false);
+	isSceneDelay = false;
 }
 
 void APlanetPanelActor::BeginPlay()
 {
 	Super::BeginPlay();
+	InitializePlanet();
 }
 
 void APlanetPanelActor::Tick(float DeltaTime)
@@ -85,10 +88,10 @@ void APlanetPanelActor::Tick(float DeltaTime)
 	float Time = GetWorld()->GetTimeSeconds();
 	FRotator Spin = PlanetUtils::GetPlanetRotation(Time, RotationSpeed, PlanetData.Tilt);
 	PlanetMesh->SetRelativeRotation(Spin);
-	RefreshSceneCapture();
+	//if(isSceneDelay) AssignScreenCapture();
 }
 
-void APlanetPanelActor::RefreshSceneCapture()
+void APlanetPanelActor::AssignScreenCapture()
 {
 	FTimerHandle DelayHandle;
 	GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
@@ -97,7 +100,12 @@ void APlanetPanelActor::RefreshSceneCapture()
 		{
 			PlanetMesh->MarkRenderStateDirty();
 			SceneCapture->CaptureScene();
-			UE_LOG(LogTemp, Log, TEXT("CaptureScene triggered for planet: %s"), *PlanetData.Name);
+			
+			// Log confirmation
+			UE_LOG(LogTemp, Warning, TEXT("RenderTarget used: %s [%p] for planet %s"),
+				*RTName,
+				PlanetRenderTarget,
+				*PlanetData.Name);
 		}
 	}), 0.05f, false); // 50ms delay — adjust as needed
 }
@@ -105,7 +113,7 @@ void APlanetPanelActor::RefreshSceneCapture()
 void APlanetPanelActor::EnsureRenderTarget()
 {
 	// Generate unique name based on planet name and a random ID
-	FString RTName = FString::Printf(TEXT("RT_Planet_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999));
+	RTName = FString::Printf(TEXT("RT_Planet_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999));
 
 	// Create the render target
 	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
@@ -117,36 +125,15 @@ void APlanetPanelActor::EnsureRenderTarget()
 		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for planet %s"), *PlanetData.Name);
 		return;
 	}
-
-	// Assign to the SceneCapture
-	if (SceneCapture)
-	{
-		SceneCapture->TextureTarget = PlanetRenderTarget;
-
-		// Log confirmation
-		UE_LOG(LogTemp, Warning, TEXT("RenderTarget created: %s [%p] for planet %s"),
-			*RTName,
-			PlanetRenderTarget,
-			*PlanetData.Name);
-
-		// Optional: Delayed scene capture to ensure mesh/materials are ready
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
-			{
-				if (SceneCapture)
-				{
-					SceneCapture->CaptureScene();
-					UE_LOG(LogTemp, Log, TEXT("Captured scene for planet: %s"), *PlanetData.Name);
-				}
-			}), 0.10f, false);
+	else {
+		UE_LOG(LogTemp, Error, TEXT("RenderTarget created for planet %s"), *PlanetData.Name);
 	}
+
+	SceneCapture->TextureTarget = PlanetRenderTarget;
 }
 
-void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
+void APlanetPanelActor::InitPlanet() 
 {
-	PlanetData = InData;
-	Radius = PlanetData.Radius;
-
 	// Texture
 	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
 
@@ -156,13 +143,6 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	// Create dynamic material
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, PlanetMesh);
 	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999)));
-	
-	float ScaleFactor = PlanetUtils::GetPlanetUIScale(Radius);
-	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
-
-	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(PlanetData.Tilt);
-	PlanetMesh->SetRelativeRotation(AxisTilt);
-
 	if (PlanetTexture)
 	{
 		#define UpdateResource UpdateResource
@@ -178,9 +158,22 @@ void APlanetPanelActor::InitializePlanet(FS_PlanetMap InData)
 	PlanetMesh->MarkRenderStateDirty();
 	SceneCapture->CaptureScene();
 
-	UE_LOG(LogTemp, Warning, TEXT("InitializePlanet() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
+	UE_LOG(LogTemp, Warning, TEXT("InitPlanet() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
 		*PlanetData.Name,
 		*GetNameSafe(DynMat),
 		*GetNameSafe(PlanetTexture),
 		*GetNameSafe(PlanetRenderTarget));
+
 }
+
+void APlanetPanelActor::InitializePlanet()
+{
+	float ScaleFactor = PlanetUtils::GetPlanetUIScale(PlanetData.Radius);
+	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
+
+	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(PlanetData.Tilt);
+	PlanetMesh->SetRelativeRotation(AxisTilt);
+
+	//AssignScreenCapture();
+}
+

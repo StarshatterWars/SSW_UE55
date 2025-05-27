@@ -208,7 +208,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 			if (PlanetActor)
 			{
-				PlanetActor->InitializePlanet(Planet);
 				SpawnedPlanetActors.Add(PlanetActor);
 			}	
 		}
@@ -249,6 +248,19 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 				
 			}
 		}
+		
+		FTimerHandle CaptureDelay;
+		GetWorld()->GetTimerManager().SetTimer(CaptureDelay, FTimerDelegate::CreateWeakLambda(this, [this]()
+	 {
+				for (APlanetPanelActor* Actor : SpawnedPlanetActors)
+				{
+					if (Actor)
+					{
+						Actor->AssignScreenCapture();
+					}
+				}
+				SpawnedPlanetActors.Empty();
+			}), 0.05f, false); // Adjust delay as needed (50ms)
 	}
 
 	// Highlight current system
