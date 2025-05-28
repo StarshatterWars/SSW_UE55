@@ -132,8 +132,7 @@ private:
 	FVector2D StartCanvasPosition = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D TargetCanvasPosition = FVector2D::ZeroVector;
-	UPROPERTY()
-	bool bIsCenteringToPlanet = false;
+	
 	UPROPERTY()
 	float StartZoomLevel = 1.0f;
 	UPROPERTY()
@@ -146,11 +145,22 @@ private:
 	float MaxZoomLevel = 3.0f;
 	UPROPERTY()
 	float ZoomLevel = 1.0f; // 1.0 = 100%
+	
+	UPROPERTY()
+	float CenterLerpSpeed = 10.0f; // adjustable
+	UPROPERTY()
+	bool bIsCenteringToPlanet = false;
+	UPROPERTY()
+	bool bIsZoomingToPlanet = false;
+	
 	UPROPERTY()
 	float CenterAnimTime = 0.0f;
 	UPROPERTY()
+	float ZoomAnimTime = 0.0f;
+	
+	UPROPERTY()
 	float CenterAnimDuration = 0.5f;
 	UPROPERTY()
-	float CenterLerpSpeed = 10.0f; // adjustable
+	float ZoomAnimDuration = 0.5f;
 	
 };
