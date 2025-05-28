@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 class UWidget;
+class UCanvasPanel;
 
 /**
  * 
@@ -50,8 +51,8 @@ public:
 	static float ClampHorizontalScroll(float ProposedOffset, float ContentWidth, float ViewportWidth, float Margin = 50.f);
 
 	// Applies combined zoom and tilt transform to a target widget
-	UFUNCTION()
-	static void ApplyZoomAndTilt(UWidget* TargetWidget, float Zoom, float TiltAmount);
+	UFUNCTION()	
+	static void ApplyZoomAndTilt(UCanvasPanel* MapCanvas, float Zoom, float Tilt);
 	
 	UFUNCTION()
 	static void ApplyWidgetTilt(UWidget* Widget, float TiltAmount);
@@ -72,4 +73,8 @@ public:
 	// Returns a clamped canvas offset that keeps content partially visible within the viewport
 	UFUNCTION()
 	static FVector2D ClampCanvasDragOffset(FVector2D ProposedPos, FVector2D CanvasSize, FVector2D ViewportSize, float Margin, FVector2D MapCenterOffset);
+	UFUNCTION()
+	static FVector2D ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize);
+
+	static FBox2D ComputeContentBounds(const TArray<UWidget*>& ContentWidgets, UCanvasPanel* Canvas);
 };

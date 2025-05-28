@@ -3,6 +3,10 @@
 
 #include "SystemMapUtils.h"
 #include "Components/Widget.h"
+#include "Components/CanvasPanel.h"
+#include "../Screen/PlanetMarkerWidget.h"
+#include "../Screen/SystemOrbitWidget.h"
+
 
 float SystemMapUtils::ClampZoomLevel(float ProposedZoom, float MinZoom, float MaxZoom)
 {
@@ -75,19 +79,31 @@ float SystemMapUtils::EaseInOut(float t)
 	return t * t * (3.f - 2.f * t);
 }
 
-void SystemMapUtils::ApplyZoomAndTilt(UWidget* TargetWidget, float Zoom, float TiltAmount)
+void SystemMapUtils::ApplyZoomAndTilt(UCanvasPanel* MapCanvas, float Zoom, float Tilt)
 {
-	if (!TargetWidget)
-		return;
+	if (!MapCanvas) return;
 
-	FWidgetTransform Transform;
-	Transform.Scale = FVector2D(Zoom, Zoom);
+	// Apply zoom and tilt to the canvas itself
+	FWidgetTransform CanvasTransform;
+	CanvasTransform.Scale = FVector2D(Zoom, Zoom);
+	CanvasTransform.Shear = FVector2D(0.0f, -Tilt); // Vertical tilt on canvas
+	MapCanvas->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
+	MapCanvas->SetRenderTransform(CanvasTransform);
 
-	// Apply ARK-style tilt: skew in X-axis to simulate depth
-	Transform.Shear = FVector2D(0.0f, -TiltAmount);
+	// Apply tilt/parallax to children individually (for visual depth)
+	for (UWidget* Child : MapCanvas->GetAllChildren())
+	{
+		if (!Child) continue;
 
-	TargetWidget->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
-	TargetWidget->SetRenderTransform(Transform);
+		// Optional: only apply to specific types
+		if (Child->IsA(UPlanetMarkerWidget::StaticClass()) ||
+			Child->IsA(USystemOrbitWidget::StaticClass()))
+		{
+			FWidgetTransform ChildTransform;
+			ChildTransform.Shear = FVector2D(0.0f, -Tilt * 0.5f); // Shallower parallax
+			Child->SetRenderTransform(ChildTransform);
+		}
+	}
 }
 
 FPlanetFocusResult SystemMapUtils::CenterOnPlanet(
@@ -161,4 +177,35 @@ void SystemMapUtils::ApplyWidgetTilt(UWidget* Widget, float TiltAmount)
 	FWidgetTransform Transform;
 	Transform.Shear = FVector2D(0.0f, -TiltAmount); // Vertical tilt for visible skew
 	Widget->SetRenderTransform(Transform);
+}
+
+FVector2D SystemMapUtils::ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize)
+{
+	return TopLeftPos - (CanvasSize * 0.5f);
+}
+
+FBox2D SystemMapUtils::ComputeContentBounds(const TArray<UWidget*>& ContentWidgets, UCanvasPanel* Canvas)
+{
+	FBox2D Bounds(EForceInit::ForceInitToZero);
+
+	for (UWidget* Widget : ContentWidgets)
+	{
+		if (!Widget || !Canvas) continue;
+
+		UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot);
+		if (!Slot) continue;
+
+		const FVector2D Pos = Slot->GetPosition();
+		const FVector2D Size = Slot->GetSize();
+		const FVector2D Alignment = Slot->GetAlignment();
+
+		// True top-left position
+		const FVector2D TopLeft = Pos - (Size * Alignment);
+		const FVector2D BottomRight = TopLeft + Size;
+
+		Bounds += TopLeft;
+		Bounds += BottomRight;
+	}
+
+	return Bounds;
 }
