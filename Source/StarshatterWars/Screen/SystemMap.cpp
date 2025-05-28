@@ -35,24 +35,7 @@ void USystemMap::NativeConstruct()
 		return;
 	}
 
-	SetIsFocusable(true);
-	SetVisibility(ESlateVisibility::Visible);
-	SetIsEnabled(true);
-	
-
-	// Delay layout-dependent logic like centering
-	FTimerHandle LayoutTimer;
-	GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
-		{
-			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-			{
-				CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-				CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				CanvasSlot->SetPosition(FVector2D(50.f, -200.f));
-
-				SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-			}
-		}), 0.05f, false);
+	InitMapCanvas();
 
 	// Optional: build the system after everything is ready
 	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
@@ -63,7 +46,6 @@ void USystemMap::NativeConstruct()
 		if (System)
 		{
 			UE_LOG(LogTemp, Log, TEXT("USystemMap::NativeConstruct() Found system: %s"), *SelectedSystem);
-			ClearMapCanvas();
 			BuildSystemView(System);
 		}
 	}
@@ -467,46 +449,53 @@ void USystemMap::ZoomToFitAllPlanets()
 FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	float Delta = InMouseEvent.GetWheelDelta();
-	SetZoomLevel(ZoomLevel + Delta * 0.1f);
+	// In NativeTick or MouseWheel:
+	float OldZoom = ZoomLevel;
+	ZoomLevel = FMath::Clamp(ZoomLevel + Delta * ZoomStep, MinZoomLevel, MaxZoomLevel);
+
+	// Maintain center by adjusting position
+	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+	{
+		const FVector2D ViewSize = GetCachedGeometry().GetLocalSize();
+		const FVector2D OldSize = MapCanvas->GetDesiredSize() * OldZoom;
+		const FVector2D NewSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+
+		// Calculate shift in scale
+		const FVector2D SizeDiff = (NewSize - OldSize) * 0.5f;
+
+		// Update canvas position to preserve center
+		const FVector2D OldPos = CanvasSlot->GetPosition();
+		const FVector2D NewPos = OldPos - SizeDiff;
+
+		CanvasSlot->SetPosition(NewPos);
+		CurrentDragOffset = NewPos;
+	}
+
+	// Then apply transform
+	SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+	
 	return FReply::Handled();
 }
 
 FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::MouseButtonDown triggered")); 
-	
-	bIsCenteringToPlanet = false;
-	bIsZoomingToPlanet = false;
-
-	// Inside MouseButtonDown, if desired:
-	if (bIsCenteringToPlanet || bIsZoomingToPlanet)
-	{
-		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-		{
-			CanvasSlot->SetPosition(TargetCanvasPosition);
-		}
-		ZoomLevel = TargetZoomLevel;
-		FWidgetTransform Transform;
-		Transform.Scale = FVector2D(ZoomLevel, ZoomLevel);
-		MapCanvas->SetRenderTransform(Transform);
-	}
-
-	FVector2D Size = MapCanvas->GetDesiredSize();
-	FVector2D Viewport = GetCachedGeometry().GetLocalSize();
-
-	UE_LOG(LogTemp, Warning, TEXT("ContentSize: %s, Viewport: %s"), *Size.ToString(), *Viewport.ToString());
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
 		bIsDragging = true;
+
+		// Store the mouse position in screen space at the moment of click
 		DragStartPos = InMouseEvent.GetScreenSpacePosition();
-		
-		if (MapCanvas)
+
+		// Store the canvas offset at the start of the drag (including MapCenterOffset)
+		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 		{
-			if (UCanvasPanelSlot* MouseSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-			{
-				InitialMapCanvasOffset = MouseSlot->GetPosition();
-			}
+			InitialCanvasOffset = CanvasSlot->GetPosition();
 		}
+
+		// Optional: Cancel any ongoing centering/zooming
+		bIsCenteringToPlanet = false;
+		bIsZoomingToPlanet = false;
+		LastSelectedMarker = nullptr;
 
 		return FReply::Handled();
 	}
@@ -522,23 +511,26 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 		return Super::NativeOnMouseMove(InGeometry, InMouseEvent);
 	}
 
-	FVector2D CurrentMousePos = InMouseEvent.GetScreenSpacePosition();
-	FVector2D Delta = CurrentMousePos - DragStartPos;
+	// 1. Mouse delta since drag started
+	const FVector2D CurrentMousePos = InMouseEvent.GetScreenSpacePosition();
+	const FVector2D Delta = CurrentMousePos - DragStartPos;
 
+	// 2. Apply delta to the position where drag started
+	const FVector2D Proposed = InitialCanvasOffset + Delta;
+
+	// 3. Clamp the new position based on zoomed canvas size and viewport
+	const FVector2D CanvasSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+	const FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
+
+	const FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(
+		Proposed, CanvasSize, ViewportSize, 50.0f, MapCenterOffset // offset-aware clamp
+	);
+
+	// 4. Apply to canvas
 	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 	{
-		FVector2D Proposed = InitialMapCanvasOffset + Delta;
-		FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
-		FVector2D ViewportSize = OuterCanvas->GetCachedGeometry().GetLocalSize();
-
-		FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(Proposed, ContentSize, ViewportSize);
-
 		CanvasSlot->SetPosition(Clamped);
-		CurrentDragOffset = Proposed;
-
-		UE_LOG(LogTemp, Verbose,
-			TEXT("[DRAG CANVAS] Delta=%s | Proposed=%s | Clamped=%s"),
-			*Delta.ToString(), *Proposed.ToString(), *Clamped.ToString());
+		CurrentDragOffset = Clamped;
 	}
 
 	return FReply::Handled();
@@ -546,24 +538,30 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 
 FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::MouseButtonUp triggered"));
-
-	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && bIsDragging)
 	{
 		bIsDragging = false;
-		
-		// Delay before allowing centering or other movements
-		bIsWaitingToProcessMovement = true;
-		MovementDelayTime = 0.0f;
 
-		if (MapCanvas)
+		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 		{
-			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-			{
-				CurrentDragOffset = CanvasSlot->GetPosition(); // Finalized position
-			}
+			// Recalculate and clamp position relative to center + offset
+			const FVector2D CanvasSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+			const FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
+
+			const FVector2D ClampedOffset = SystemMapUtils::ClampCanvasDragOffset(
+				CanvasSlot->GetPosition(),
+				CanvasSize,
+				ViewportSize,
+				50.0f,
+				MapCenterOffset // 
+			);
+
+			CanvasSlot->SetPosition(ClampedOffset);
+			InitialCanvasOffset = ClampedOffset;
+			CurrentDragOffset = ClampedOffset;
 		}
-		return FReply::Handled();
+
+		return FReply::Handled().ReleaseMouseCapture();
 	}
 
 	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
@@ -601,7 +599,7 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 	const FVector2D MarkerVisual = MarkerCenter * ZoomLevel + CanvasPos;
 
 	// 4. Desired screen-space center (0,0 base + your offset)
-	const FVector2D DesiredScreenCenter = InitialMapCanvasOffset;
+	const FVector2D DesiredScreenCenter = MapCenterOffset;
 
 	// 5. How much to move canvas to put marker at desired offset
 	const FVector2D Delta = DesiredScreenCenter - MarkerVisual;
@@ -612,7 +610,7 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 	// 7. Optional: Clamp the result
 	const FVector2D CanvasSize = MapCanvas->GetDesiredSize() * ZoomLevel;
 	const FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
-	const FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(NewCanvasPos, CanvasSize, ViewportSize, 50.0f);
+	const FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(NewCanvasPos, CanvasSize, ViewportSize, 50.0f, MapCenterOffset);
 
 	// 8. Animate
 	StartCanvasPosition = CanvasPos;
@@ -634,7 +632,7 @@ void USystemMap::ApplyTiltToMapCanvas(float TiltAmount)
 	SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
 }
 
-void USystemMap::ClearMapCanvas()
+void USystemMap::InitMapCanvas()
 {
 	ZoomLevel = 1.0f;
 	TargetZoomLevel = 1.0f;
@@ -647,17 +645,28 @@ void USystemMap::ClearMapCanvas()
 	bIsTiltingIn = true;
 	TiltTime = 0.0f;
 
-	InitialMapCanvasOffset = FVector2D(50.f, -200.f);
 	CurrentDragOffset = FVector2D::ZeroVector;
+
+	SetIsFocusable(true);
+	SetVisibility(ESlateVisibility::Visible);
+	SetIsEnabled(true);
 
 	if (MapCanvas) {
 		MapCanvas->ClearChildren();
 		
-		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-		{
-			CanvasSlot->SetPosition(InitialMapCanvasOffset);
-		}
-		SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+		// Delay layout-dependent logic like centering
+		FTimerHandle LayoutTimer;
+		GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+			{
+				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+				{
+					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+					CanvasSlot->SetPosition(MapCenterOffset);
+
+					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+				}
+			}), 0.05f, false); 
 	}
 }
 

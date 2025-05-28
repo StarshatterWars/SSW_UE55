@@ -52,6 +52,9 @@ public:
 	// Applies combined zoom and tilt transform to a target widget
 	UFUNCTION()
 	static void ApplyZoomAndTilt(UWidget* TargetWidget, float Zoom, float TiltAmount);
+	
+	UFUNCTION()
+	static void ApplyWidgetTilt(UWidget* Widget, float TiltAmount);
 
 	// Cubic smooth step: ease-in/out
 	static float EaseInOut(float t);
@@ -65,12 +68,8 @@ public:
 		float CurrentZoom,
 		float RequestedZoom = -1.f,
 		float Margin = 50.f);
-
+	
 	// Returns a clamped canvas offset that keeps content partially visible within the viewport
 	UFUNCTION()
-	static FVector2D ClampCanvasDragOffset(
-		const FVector2D& ProposedOffset,
-		const FVector2D& ContentSize,
-		const FVector2D& ViewportSize,
-		float Padding = 50.0f);
+	static FVector2D ClampCanvasDragOffset(FVector2D ProposedPos, FVector2D CanvasSize, FVector2D ViewportSize, float Margin, FVector2D MapCenterOffset);
 };

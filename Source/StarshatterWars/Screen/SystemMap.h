@@ -42,7 +42,7 @@ public:
 	UMaterialInterface* DefaultPlanetMaterial;
 
 	UFUNCTION()
-	void ClearMapCanvas();
+	void InitMapCanvas();
 
 protected:
 	void NativeConstruct() override;
@@ -138,9 +138,12 @@ private:
 	UPROPERTY()
 	FVector2D TargetCanvasPosition = FVector2D::ZeroVector;
 	UPROPERTY()
-	FVector2D InitialMapCanvasOffset = FVector2D::ZeroVector;
+	FVector2D MapCenterOffset = FVector2D(50.f, -200.f);
 	UPROPERTY()
 	FVector2D CurrentDragOffset = FVector2D::ZeroVector;
+	UPROPERTY()
+	FVector2D InitialCanvasOffset = FVector2D::ZeroVector;
+
 	
 	// Stores the most recently selected planet marker
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
@@ -155,6 +158,8 @@ private:
 	float MinZoomLevel = 0.25f;
 	UPROPERTY()
 	float MaxZoomLevel = 3.0f;
+	UPROPERTY()
+	float ZoomStep = 0.1f;
 	UPROPERTY()
 	float ZoomLevel = 1.0f; // 1.0 = 100%
 	

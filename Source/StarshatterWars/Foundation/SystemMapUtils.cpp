@@ -84,7 +84,7 @@ void SystemMapUtils::ApplyZoomAndTilt(UWidget* TargetWidget, float Zoom, float T
 	Transform.Scale = FVector2D(Zoom, Zoom);
 
 	// Apply ARK-style tilt: skew in X-axis to simulate depth
-	Transform.Shear = FVector2D(-TiltAmount, 0.0f);
+	Transform.Shear = FVector2D(0.0f, -TiltAmount);
 
 	TargetWidget->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
 	TargetWidget->SetRenderTransform(Transform);
@@ -132,19 +132,33 @@ FPlanetFocusResult SystemMapUtils::CenterOnPlanet(
 }
 
 FVector2D SystemMapUtils::ClampCanvasDragOffset(
-	const FVector2D& ProposedOffset,
-	const FVector2D& ContentSize,
-	const FVector2D& ViewportSize,
-	float Padding)
+	FVector2D ProposedPos,
+	FVector2D CanvasSize,
+	FVector2D ViewportSize,
+	float Margin,
+	FVector2D MapCenterOffset)
 {
-	FVector2D HalfContent = ContentSize * 0.5f;
-	FVector2D HalfViewport = ViewportSize * 0.5f;
+	const FVector2D ViewCenter = ViewportSize * 0.5f + MapCenterOffset;
 
-	FVector2D MinOffset = HalfViewport - ContentSize + FVector2D(Padding, Padding);
-	FVector2D MaxOffset = HalfViewport - FVector2D(Padding, Padding);
+	// Clamp X
+	const float MinX = ViewCenter.X - CanvasSize.X + Margin;
+	const float MaxX = ViewCenter.X - Margin;
 
-	float ClampedX = FMath::Clamp(ProposedOffset.X, MinOffset.X, MaxOffset.X);
-	float ClampedY = FMath::Clamp(ProposedOffset.Y, MinOffset.Y, MaxOffset.Y);
+	// Clamp Y
+	const float MinY = ViewCenter.Y - CanvasSize.Y + Margin;
+	const float MaxY = ViewCenter.Y - Margin;
 
-	return FVector2D(ClampedX, ClampedY);
+	return FVector2D(
+		FMath::Clamp(ProposedPos.X, MinX, MaxX),
+		FMath::Clamp(ProposedPos.Y, MinY, MaxY)
+	);
+}
+
+void SystemMapUtils::ApplyWidgetTilt(UWidget* Widget, float TiltAmount)
+{
+	if (!Widget) return;
+
+	FWidgetTransform Transform;
+	Transform.Shear = FVector2D(0.0f, -TiltAmount); // Vertical tilt for visible skew
+	Widget->SetRenderTransform(Transform);
 }

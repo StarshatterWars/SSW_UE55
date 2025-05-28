@@ -1318,7 +1318,7 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 		SystemMap->SetFocus(); // keyboard
 		SystemMap->SetUserFocus(GetOwningPlayer()); // controller
 		SystemMap->SetKeyboardFocus(); // optional redundancy
-		SystemMap->ClearMapCanvas();
+		SystemMap->InitMapCanvas();
 	}
 	
 	if (!SystemMapClass) {
