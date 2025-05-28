@@ -28,17 +28,9 @@ void USystemMap::NativeConstruct()
 	SetIsFocusable(true);
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
+	InitialMapCanvasOffset = FVector2D(200.f, 0.f);
 
 	ZoomLevel = 1.0f;
-
-	// ScrollBox setup
-	if (SystemScrollBox)
-	{
-		SystemScrollBox->SetClipping(EWidgetClipping::ClipToBounds);
-		SystemScrollBox->SetScrollBarVisibility(ESlateVisibility::Collapsed);
-		SystemScrollBox->SetConsumeMouseWheel(EConsumeMouseWheel::Never);
-		SystemScrollBox->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-	}
 
 	// Canvas transform setup
 	if (MapCanvas)
@@ -75,7 +67,7 @@ void USystemMap::NativeConstruct()
 	FTimerHandle LayoutTimer;
 	GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
-			if (!MapCanvas || !SystemScrollBox) return;
+			if (!MapCanvas) return;
 
 			const FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
 			const FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
@@ -85,15 +77,13 @@ void USystemMap::NativeConstruct()
 
 			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 			{
-				CanvasSlot->SetPosition(FVector2D(0.5f, 0.5f)); // Only X position
-				InitialMapCanvasOffset = FVector2D(CenterX, 0.f);
+				CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+				InitialMapCanvasOffset = FVector2D(0.f, 0.f);
 			}
 
 			SystemScrollBox->SetScrollOffset(CenterY);
-
-			UE_LOG(LogTemp, Warning, TEXT("Centered: Canvas X = %.1f, ScrollOffset Y = %.1f"), CenterX, CenterY);
-			UE_LOG(LogTemp, Warning, TEXT("MapCanvas DesiredSize: %s | Viewport: %s"),
-				*ContentSize.ToString(), *ViewportSize.ToString());
 
 		}), 0.05f, false);
 
@@ -270,12 +260,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	// Build planet markers and orbit rings
 	for (const FS_PlanetMap& Planet : ActiveSystem->Stellar[0].Planet)
 	{
-		//float PanelWidth = MapCanvas->GetCachedGeometry().GetLocalSize().X;
-		//float PanelHeight = MapCanvas->GetCachedGeometry().GetLocalSize().Y;
-		
-		float PanelWidth = SystemScrollBox->GetCachedGeometry().GetLocalSize().X;
-		float PanelHeight = SystemScrollBox->GetCachedGeometry().GetLocalSize().Y;
-
 		float Perihelion = 0.f;
 		float Aphelion = 0.f;
 
@@ -291,14 +275,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 		b /= ORBIT_TO_SCREEN;
 
 		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
-
-		//Radius = PlanetOrbitUtils::FitOrbitRadiusToPanel(
-		//	Radius,
-		//	Planet.Inclination,
-		//	PanelSize.X,  // Fixed panel width
-		//	PanelSize.Y,  // Fixed panel height
-		//	50.f     // Optional padding (tweakable)
-		//);
 
 		UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, Radius);
 
@@ -515,14 +491,13 @@ FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FP
 	}
 
 	FVector2D Size = MapCanvas->GetDesiredSize();
-	FVector2D Viewport = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+	FVector2D Viewport = GetCachedGeometry().GetLocalSize();
 
 	UE_LOG(LogTemp, Warning, TEXT("ContentSize: %s, Viewport: %s"), *Size.ToString(), *Viewport.ToString());
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
 		bIsDragging = true;
 		DragStartPos = InMouseEvent.GetScreenSpacePosition();
-		InitialScrollOffset = SystemScrollBox->GetScrollOffset();
 
 		if (MapCanvas)
 		{
@@ -541,7 +516,7 @@ FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FP
 
 FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (!bIsDragging || !MapCanvas || !SystemScrollBox)
+	if (!bIsDragging || !MapCanvas)
 	{
 		return Super::NativeOnMouseMove(InGeometry, InMouseEvent);
 	}
@@ -553,7 +528,7 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 	{
 		FVector2D Proposed = InitialMapCanvasOffset + Delta;
 		FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
-		FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+		FVector2D ViewportSize = MapCanvas->GetCachedGeometry().GetLocalSize();
 
 		FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(Proposed, ContentSize, ViewportSize);
 
@@ -573,9 +548,6 @@ FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPoi
 
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		//const float FinalOffsetY = FMath::Clamp(SystemScrollBox->GetScrollOffset(), MinScrollY, MaxScrollY);
-		//SystemScrollBox->SetScrollOffset(FinalOffsetY);
-
 		bIsDragging = false;
 		return FReply::Handled();
 	}
@@ -596,7 +568,7 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 
 void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 {
-	if (!Marker || !MapCanvas || !SystemScrollBox)
+	if (!Marker || !MapCanvas)
 		return;
 
 	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
@@ -613,7 +585,7 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 
 	// Recalculate content size using *target zoom*
 	FVector2D ContentSize = MapCanvas->GetDesiredSize() * ClampedZoom;
-	FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+	FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
 
 	TargetCanvasPosition = SystemMapUtils::ClampCanvasDragOffset(
 		UnclampedOffset, ContentSize, ViewportSize

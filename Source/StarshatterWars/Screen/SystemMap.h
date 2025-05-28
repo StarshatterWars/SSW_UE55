@@ -117,8 +117,7 @@ private:
 	FVector2D DragStartPos;
 	UPROPERTY()
 	float InitialScrollOffset = 0.f;
-	UPROPERTY()
-	FVector2D InitialMapCanvasOffset = FVector2D::ZeroVector;
+	
 	UPROPERTY()
 	FString SelectedPlanetName;
 
@@ -132,6 +131,8 @@ private:
 	FVector2D StartCanvasPosition = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D TargetCanvasPosition = FVector2D::ZeroVector;
+	UPROPERTY()
+	FVector2D InitialMapCanvasOffset = FVector2D::ZeroVector;
 	
 	UPROPERTY()
 	float StartZoomLevel = 1.0f;
