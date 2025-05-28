@@ -3,6 +3,8 @@
 
 #include "GalaxyManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "../Foundation/PlanetUtils.h"
+#include "Engine/TextureRenderTarget2D.h"
 
 UGalaxyManager* UGalaxyManager::Get(UObject* WorldContext)
 {
@@ -30,5 +32,34 @@ const FS_Galaxy* UGalaxyManager::FindSystemByName(const FString& Name) const
 		}
 	}
 	return nullptr;
+}
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& PlanetName, int32 Resolution)
+{
+	if (PlanetRenderTargets.Contains(PlanetName))
+	{
+		return PlanetRenderTargets[PlanetName];
+	}
+
+	UTextureRenderTarget2D* NewRT = PlanetUtils::CreatePlanetRenderTarget(PlanetName, nullptr, Resolution);
+	if (NewRT)
+	{
+		PlanetRenderTargets.Add(PlanetName, NewRT);
+	}
+	return NewRT;
+}
+
+void UGalaxyManager::ClearAllRenderTargets()
+{
+	for (auto& Pair : PlanetRenderTargets)
+	{
+		if (Pair.Value)
+		{
+			// Mark for garbage collection
+			Pair.Value->MarkAsGarbage();
+		}
+	}
+	PlanetRenderTargets.Empty();
+
+	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all planet render targets."));
 }
 

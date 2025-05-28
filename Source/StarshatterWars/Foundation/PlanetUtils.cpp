@@ -102,7 +102,7 @@ float PlanetUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSiz
 	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
 }
 
-UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer, int32 Resolution)
+/*UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer, int32 Resolution)
 {
 	// Ensure Outer is not null (avoid creating in CDO space)
 	if (!Outer)
@@ -128,6 +128,28 @@ UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Bas
 	RenderTarget->UpdateResourceImmediate(true);
 
 	UE_LOG(LogTemp, Log, TEXT("Created Planet RenderTarget: %s [%p]"), *UniqueName, RenderTarget);
+
+	return RenderTarget;
+}*/
+
+UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Name, UObject* Outer, int32 Resolution)
+{
+	if (!Outer)
+	{
+		Outer = GetTransientPackage(); // fallback
+	}
+
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(Outer, *Name);
+	if (!RenderTarget)
+	{
+		return nullptr;
+	}
+
+	RenderTarget->RenderTargetFormat = RTF_RGBA16f; // good for lit previews
+	RenderTarget->ClearColor = FLinearColor::Black;
+	RenderTarget->bAutoGenerateMips = false;
+	RenderTarget->InitAutoFormat(Resolution, Resolution);
+	RenderTarget->UpdateResourceImmediate(true);
 
 	return RenderTarget;
 }

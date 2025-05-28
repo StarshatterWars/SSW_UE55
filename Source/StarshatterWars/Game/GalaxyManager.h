@@ -16,13 +16,23 @@ class STARSHATTERWARS_API UGalaxyManager : public UObject
 {
 	GENERATED_BODY()
 	
-	public:
+public:
 	static UGalaxyManager* Get(UObject* WorldContext);
 
 	void LoadGalaxy(const TArray<FS_Galaxy>& ParsedSystems);
 	const FS_Galaxy* FindSystemByName(const FString& Name) const;
 
+	UFUNCTION()
+	UTextureRenderTarget2D* GetOrCreateRenderTarget(const FString& PlanetName, int32 Resolution);
+
+	UFUNCTION()
+	void ClearAllRenderTargets();
+
+	UFUNCTION()
 	const TArray<FS_Galaxy>& GetAllSystems() const { return Systems; }
+
+	UPROPERTY()
+	TMap<FString, UTextureRenderTarget2D*> PlanetRenderTargets;
 
 private:
 	UPROPERTY()

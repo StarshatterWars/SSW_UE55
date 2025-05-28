@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+class UWidget;
+
 /**
  * 
  */
@@ -47,7 +49,11 @@ public:
 	UFUNCTION()
 	static float ClampHorizontalScroll(float ProposedOffset, float ContentWidth, float ViewportWidth, float Margin = 50.f);
 
-	// Cubic smoothstep: ease-in/out
+	// Applies combined zoom and tilt transform to a target widget
+	UFUNCTION()
+	static void ApplyZoomAndTilt(UWidget* TargetWidget, float Zoom, float TiltAmount);
+
+	// Cubic smooth step: ease-in/out
 	static float EaseInOut(float t);
 
 	UFUNCTION()

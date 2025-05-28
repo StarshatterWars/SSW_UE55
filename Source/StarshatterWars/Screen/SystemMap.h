@@ -41,6 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	UMaterialInterface* DefaultPlanetMaterial;
 
+	UFUNCTION()
+	void ClearMapCanvas();
+
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
@@ -126,14 +129,22 @@ private:
 
 	UFUNCTION()
 	void CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom);
-
+	
+	UFUNCTION()
+	void ApplyTiltToMapCanvas(float TiltAmount);
+	
 	UPROPERTY()
 	FVector2D StartCanvasPosition = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D TargetCanvasPosition = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D InitialMapCanvasOffset = FVector2D::ZeroVector;
+	UPROPERTY()
+	FVector2D CurrentDragOffset = FVector2D::ZeroVector;
 	
+	// Stores the most recently selected planet marker
+	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
+
 	UPROPERTY()
 	float StartZoomLevel = 1.0f;
 	UPROPERTY()
@@ -164,4 +175,18 @@ private:
 	UPROPERTY()
 	float ZoomAnimDuration = 0.5f;
 	
+	UPROPERTY()
+	float TargetTiltAmount = 0.0f; // Example: 0.2f for subtle tilt
+	UPROPERTY()
+	bool bIsTiltingIn = false;
+	UPROPERTY()
+	float TiltTime = 0.0f;
+	UPROPERTY()
+	float TiltDuration = 0.6f; // time in seconds to fully tilt	
+	UPROPERTY()
+	float MovementDelayTime = 0.0f;
+	UPROPERTY()
+	bool bIsWaitingToProcessMovement = false;
+	UPROPERTY()
+	float MovementDelayDuration = 0.3f; // seconds (adjust as needed)
 };

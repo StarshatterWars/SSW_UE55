@@ -2,6 +2,7 @@
 
 
 #include "SystemMapUtils.h"
+#include "Components/Widget.h"
 
 float SystemMapUtils::ClampZoomLevel(float ProposedZoom, float MinZoom, float MaxZoom)
 {
@@ -72,6 +73,21 @@ float SystemMapUtils::ClampHorizontalScroll(float ProposedOffset, float ContentW
 float SystemMapUtils::EaseInOut(float t)
 {
 	return t * t * (3.f - 2.f * t);
+}
+
+void SystemMapUtils::ApplyZoomAndTilt(UWidget* TargetWidget, float Zoom, float TiltAmount)
+{
+	if (!TargetWidget)
+		return;
+
+	FWidgetTransform Transform;
+	Transform.Scale = FVector2D(Zoom, Zoom);
+
+	// Apply ARK-style tilt: skew in X-axis to simulate depth
+	Transform.Shear = FVector2D(-TiltAmount, 0.0f);
+
+	TargetWidget->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
+	TargetWidget->SetRenderTransform(Transform);
 }
 
 FPlanetFocusResult SystemMapUtils::CenterOnPlanet(

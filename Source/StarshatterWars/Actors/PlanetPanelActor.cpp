@@ -7,6 +7,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "../Foundation/PlanetUtils.h"
+#include "../Game/GalaxyManager.h"
 #include "Windows/MinWindows.h"
 
 
@@ -116,8 +117,9 @@ void APlanetPanelActor::EnsureRenderTarget()
 
 	// Create the render target
 	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
-
-	PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, PlanetMesh, Resolution);
+	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
+	PlanetRenderTarget = Galaxy->GetOrCreateRenderTarget(PlanetData.Name, Resolution);
+	//PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, PlanetMesh, Resolution);
 
 	if (!PlanetRenderTarget)
 	{
