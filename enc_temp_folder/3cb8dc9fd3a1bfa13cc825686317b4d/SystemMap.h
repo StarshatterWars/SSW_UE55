@@ -100,7 +100,8 @@ private:
 	FBox2D ComputeMapContentBounds() const;
 	UFUNCTION()
 	void CenterCanvasOnMapBounds(const FVector2D& ViewportSize);
-
+	UFUNCTION()
+	void AddLayoutExtender();
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()

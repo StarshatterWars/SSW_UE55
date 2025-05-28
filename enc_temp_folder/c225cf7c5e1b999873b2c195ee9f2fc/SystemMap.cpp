@@ -193,6 +193,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 	MapCanvas->ClearChildren();
 	PlanetMarkers.Empty();
+	//AddLayoutExtender();
 
 	const FVector2D Center = MapCanvas->GetCachedGeometry().GetLocalSize() * 0.5f;
 	
@@ -423,6 +424,22 @@ void USystemMap::HandleCentralSunClicked()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("No owner set for USystemMap"));
+	}
+}
+
+void USystemMap::AddLayoutExtender() {
+	UImage* DummyImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+	// Force the image to take space in layout
+	FSlateBrush DummyBrush;
+	DummyBrush.ImageSize = FVector2D(3000.f, 3000.f);  // Force size
+	DummyBrush.TintColor = FLinearColor::Transparent; // Fully invisible
+	DummyImage->SetBrush(DummyBrush);
+	DummyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	if (UCanvasPanelSlot* DummySlot = MapCanvas->AddChildToCanvas(DummyImage))
+	{
+		DummySlot->SetAutoSize(true);                     // Size comes from brush
+		DummySlot->SetPosition(FVector2D(0.f, 0.f));        // Position doesn't matter
 	}
 }
 
