@@ -47,6 +47,9 @@ public:
 	UFUNCTION()
 	static float ClampHorizontalScroll(float ProposedOffset, float ContentWidth, float ViewportWidth, float Margin = 50.f);
 
+	// Cubic smoothstep: ease-in/out
+	static float EaseInOut(float t);
+
 	UFUNCTION()
 	static FPlanetFocusResult CenterOnPlanet(
 		const FVector2D& MarkerPosition,

@@ -69,6 +69,11 @@ float SystemMapUtils::ClampHorizontalScroll(float ProposedOffset, float ContentW
 	return FMath::Clamp(ProposedOffset, MinScrollX, MaxScrollX);
 }
 
+float SystemMapUtils::EaseInOut(float t)
+{
+	return t * t * (3.f - 2.f * t);
+}
+
 FPlanetFocusResult SystemMapUtils::CenterOnPlanet(
 	const FVector2D& MarkerPosition,
 	const FVector2D& MarkerSize,

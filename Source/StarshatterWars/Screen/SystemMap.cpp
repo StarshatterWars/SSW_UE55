@@ -134,7 +134,41 @@ float USystemMap::GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, floa
 
 void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
+	Super::NativeTick(MyGeometry, InDeltaTime);
 
+	if (!bIsCenteringToPlanet || !MapCanvas) return;
+
+	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
+	if (!CanvasSlot) return;
+
+	// Time-based progress
+	CenterAnimTime += InDeltaTime;
+	float Progress = FMath::Clamp(CenterAnimTime / CenterAnimDuration, 0.0f, 1.0f);
+	float SmoothT = SystemMapUtils::EaseInOut(Progress);
+
+	// Interpolate canvas position
+	FVector2D NewPos = FMath::Lerp(StartCanvasPosition, TargetCanvasPosition, SmoothT);
+	CanvasSlot->SetPosition(NewPos);
+
+	// Interpolate zoom
+	ZoomLevel = FMath::Lerp(StartZoomLevel, TargetZoomLevel, SmoothT);
+	FWidgetTransform Transform;
+	Transform.Scale = FVector2D(ZoomLevel, ZoomLevel);
+	MapCanvas->SetRenderTransform(Transform);
+
+	// End animation
+	if (Progress >= 1.0f)
+	{
+		CanvasSlot->SetPosition(TargetCanvasPosition);
+		ZoomLevel = TargetZoomLevel;
+
+		Transform.Scale = FVector2D(ZoomLevel, ZoomLevel);
+		MapCanvas->SetRenderTransform(Transform);
+
+		bIsCenteringToPlanet = false;
+
+		UE_LOG(LogTemp, Log, TEXT("[CENTER+ZOOM COMPLETE] FinalPos=%s | Zoom=%.2f"), *TargetCanvasPosition.ToString(), ZoomLevel);
+	}
 }
 
 
@@ -425,6 +459,11 @@ void USystemMap::SetZoomLevel(float NewZoom)
 	}
 }
 
+void USystemMap::ZoomToFitAllPlanets()
+{
+
+}
+
 FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	float Delta = InMouseEvent.GetWheelDelta();
@@ -459,51 +498,6 @@ FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FP
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
-/*FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-	if (!bIsDragging || !MapCanvas || !SystemScrollBox)
-	{
-		return Super::NativeOnMouseMove(InGeometry, InMouseEvent);
-	}
-
-	const FVector2D CurrentMousePos = InMouseEvent.GetScreenSpacePosition();
-	const FVector2D Delta = CurrentMousePos - DragStartPos;
-
-	// --- Horizontal Drag (MapCanvas X) ---
-	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-	{
-		const float ContentWidth = MapCanvas->GetDesiredSize().X * ZoomLevel;
-		const float ViewportWidth = SystemScrollBox->GetCachedGeometry().GetLocalSize().X;
-
-		const float ProposedX = InitialMapCanvasOffset.X + Delta.X;
-
-		const float ClampedX = SystemMapUtils::ClampHorizontalPosition(
-			ProposedX, ContentWidth, ViewportWidth, 50.f
-		);
-
-		CanvasSlot->SetPosition(FVector2D(ClampedX, CanvasSlot->GetPosition().Y));
-
-		UE_LOG(LogTemp, Verbose, TEXT("Horizontal Drag -> ProposedX: %.1f, ClampedX: %.1f"), ProposedX, ClampedX);
-	}
-
-	// --- Vertical Scroll (Y axis) ---
-	{
-		const float ContentHeight = MapCanvas->GetDesiredSize().Y * ZoomLevel;
-		const float ViewportHeight = SystemScrollBox->GetCachedGeometry().GetLocalSize().Y;
-
-		const float ProposedOffset = InitialScrollOffset - Delta.Y;
-
-		const float ClampedOffset = SystemMapUtils::ClampVerticalScroll(
-			ProposedOffset, ContentHeight, ViewportHeight, 50.f
-		);
-
-		SystemScrollBox->SetScrollOffset(ClampedOffset);
-
-		UE_LOG(LogTemp, Verbose, TEXT("Vertical Scroll -> ProposedY: %.1f, ClampedY: %.1f"), ProposedOffset, ClampedOffset);
-	}
-
-	return FReply::Handled();
-}*/
 
 FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
@@ -556,62 +550,32 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 	{
 		// Optional: center or highlight
 		UE_LOG(LogTemp, Log, TEXT("Planet selected: %s"), *PlanetName);
-		CenterOnPlanetWidget(*Found);
+		CenterOnPlanetWidget(*Found, 1.5f);
 	}
 }
 
-/*void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
-{
-	if (!Marker || !MapCanvas) return;
-
-	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
-	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
-	if (!CanvasSlot || !MarkerSlot) return;
-
-	// Current canvas position (already moved via drag)
-	const FVector2D CanvasOffset = CanvasSlot->GetPosition();
-
-	// Marker center relative to MapCanvas center
-	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
-
-	// Marker position in screen-space (relative to current canvas offset)
-	const FVector2D MarkerVisual = MarkerCenter + CanvasOffset;
-
-	// Desired position is (0,0) — the center of the viewport (panel-centered)
-	const FVector2D Delta = -MarkerVisual;
-
-	const FVector2D NewCanvasPosition = CanvasOffset + Delta;
-
-	CanvasSlot->SetPosition(NewCanvasPosition);
-
-	UE_LOG(LogTemp, Warning,
-		TEXT("[CENTER DRAG-AWARE] MarkerCenter: %s | CanvasOffset: %s | VisualPos: %s | Delta: %s -> SetPos: %s"),
-		*MarkerCenter.ToString(), *CanvasOffset.ToString(), *MarkerVisual.ToString(), *Delta.ToString(), *NewCanvasPosition.ToString());
-}*/
-
-void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
+void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 {
 	if (!Marker || !MapCanvas || !SystemScrollBox) return;
 
-	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
 	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
-	if (!CanvasSlot || !MarkerSlot) return;
+	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
+	if (!MarkerSlot || !CanvasSlot) {
+		return;
+	}	
 
-	// Marker center in layout space
 	FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
-
-	// Offset canvas to place marker at center (0,0)
-	FVector2D TargetOffset = -MarkerCenter;
-
-	// Clamp using SystemMapUtils
-	FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
 	FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+	FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
 
-	FVector2D ClampedOffset = SystemMapUtils::ClampCanvasDragOffset(TargetOffset, ContentSize, ViewportSize);
+	FVector2D Unclamped = -MarkerCenter;
+	TargetCanvasPosition = SystemMapUtils::ClampCanvasDragOffset(Unclamped, ContentSize, ViewportSize);
+	StartCanvasPosition = CanvasSlot->GetPosition();
 
-	CanvasSlot->SetPosition(ClampedOffset);
+	CenterAnimTime = 0.0f;
+	bIsCenteringToPlanet = true;
 
-	UE_LOG(LogTemp, Warning,
-		TEXT("[CENTER CANVAS] MarkerCenter=%s | UnclampedOffset=%s | ClampedOffset=%s"),
-		*MarkerCenter.ToString(), *TargetOffset.ToString(), *ClampedOffset.ToString());
+	UE_LOG(LogTemp, Warning, TEXT("[CENTER START] From=%s -> To=%s"),
+		*StartCanvasPosition.ToString(), *TargetCanvasPosition.ToString());
 }
+
