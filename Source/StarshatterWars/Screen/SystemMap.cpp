@@ -28,7 +28,7 @@ void USystemMap::NativeConstruct()
 	SetIsFocusable(true);
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
-	InitialMapCanvasOffset = FVector2D(200.f, 0.f);
+	InitialMapCanvasOffset = FVector2D(50.f, -200.f);
 
 	ZoomLevel = 1.0f;
 
@@ -39,7 +39,7 @@ void USystemMap::NativeConstruct()
 		{
 			CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 			CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-			CanvasSlot->SetPosition(FVector2D::ZeroVector);
+			CanvasSlot->SetPosition(InitialMapCanvasOffset);
 		}
 
 		// Apply zoom
@@ -51,7 +51,7 @@ void USystemMap::NativeConstruct()
 		UImage* DummyImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
 
 		FSlateBrush DummyBrush;
-		DummyBrush.ImageSize = FVector2D(3000.f, 2000.f);
+		DummyBrush.ImageSize = FVector2D(1920.f, 1080.f);
 		DummyBrush.TintColor = FLinearColor::Transparent;
 		DummyImage->SetBrush(DummyBrush);
 		DummyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -69,22 +69,12 @@ void USystemMap::NativeConstruct()
 		{
 			if (!MapCanvas) return;
 
-			const FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
-			const FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
-
-			const float CenterX = (ViewportSize.X - ContentSize.X) * 0.5f;
-			const float CenterY = FMath::Max((ContentSize.Y - ViewportSize.Y) * 0.5f, 0.f);
-
 			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 			{
 				CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
-				InitialMapCanvasOffset = FVector2D(0.f, 0.f);
+				CanvasSlot->SetPosition(InitialMapCanvasOffset);
 			}
-
-			SystemScrollBox->SetScrollOffset(CenterY);
-
 		}), 0.05f, false);
 
 	// Optional: build the system after everything is ready
@@ -528,7 +518,7 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 	{
 		FVector2D Proposed = InitialMapCanvasOffset + Delta;
 		FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
-		FVector2D ViewportSize = MapCanvas->GetCachedGeometry().GetLocalSize();
+		FVector2D ViewportSize = OuterCanvas->GetCachedGeometry().GetLocalSize();
 
 		FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(Proposed, ContentSize, ViewportSize);
 
@@ -581,11 +571,11 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 	FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
 
 	// Calculate center offset in layout space (panel-centered, 0,0 origin)
-	FVector2D UnclampedOffset = -MarkerCenter;
+	FVector2D UnclampedOffset = -MarkerCenter + InitialMapCanvasOffset;
 
 	// Recalculate content size using *target zoom*
 	FVector2D ContentSize = MapCanvas->GetDesiredSize() * ClampedZoom;
-	FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
+	FVector2D ViewportSize = OuterCanvas->GetCachedGeometry().GetLocalSize();
 
 	TargetCanvasPosition = SystemMapUtils::ClampCanvasDragOffset(
 		UnclampedOffset, ContentSize, ViewportSize
