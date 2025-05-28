@@ -459,7 +459,7 @@ FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FP
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
-FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+/*FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (!bIsDragging || !MapCanvas || !SystemScrollBox)
 	{
@@ -503,8 +503,35 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 	}
 
 	return FReply::Handled();
-}
+}*/
 
+FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (!bIsDragging || !MapCanvas || !SystemScrollBox)
+	{
+		return Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+	}
+
+	FVector2D CurrentMousePos = InMouseEvent.GetScreenSpacePosition();
+	FVector2D Delta = CurrentMousePos - DragStartPos;
+
+	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+	{
+		FVector2D Proposed = InitialMapCanvasOffset + Delta;
+		FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+		FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
+
+		FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(Proposed, ContentSize, ViewportSize);
+
+		CanvasSlot->SetPosition(Clamped);
+
+		UE_LOG(LogTemp, Verbose,
+			TEXT("[DRAG CANVAS] Delta=%s | Proposed=%s | Clamped=%s"),
+			*Delta.ToString(), *Proposed.ToString(), *Clamped.ToString());
+	}
+
+	return FReply::Handled();
+}
 
 FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
@@ -570,35 +597,21 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
 	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
 	if (!CanvasSlot || !MarkerSlot) return;
 
-	// Current canvas position (after drag)
-	const FVector2D CanvasOffset = CanvasSlot->GetPosition();
-
 	// Marker center in layout space
-	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
+	FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
 
-	// Visual position = marker offset by canvas shift
-	const FVector2D MarkerVisual = MarkerCenter + CanvasOffset;
+	// Offset canvas to place marker at center (0,0)
+	FVector2D TargetOffset = -MarkerCenter;
 
-	// Delta to move marker to visual center (0,0 for panel-centered origin)
-	const FVector2D Delta = -MarkerVisual;
+	// Clamp using SystemMapUtils
+	FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
+	FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
 
-	// Proposed new canvas position
-	FVector2D NewCanvasPosition = CanvasOffset + Delta;
+	FVector2D ClampedOffset = SystemMapUtils::ClampCanvasDragOffset(TargetOffset, ContentSize, ViewportSize);
 
-	// Clamp X based on canvas content size and viewport
-	const FVector2D ViewportSize = SystemScrollBox->GetCachedGeometry().GetLocalSize();
-	const FVector2D ContentSize = MapCanvas->GetDesiredSize() * ZoomLevel;
-
-	const float HalfViewportWidth = ViewportSize.X * 0.5f;
-	const float MinX = -(ContentSize.X - HalfViewportWidth);
-	const float MaxX = HalfViewportWidth;
-
-	NewCanvasPosition.X = FMath::Clamp(NewCanvasPosition.X, MinX, MaxX);
-
-	// Apply clamped position
-	CanvasSlot->SetPosition(NewCanvasPosition);
+	CanvasSlot->SetPosition(ClampedOffset);
 
 	UE_LOG(LogTemp, Warning,
-		TEXT("[CENTER CLAMPED] MarkerCenter: %s | CanvasOffset: %s | VisualPos: %s | Delta: %s -> SetPos: %s | ClampX: [%.1f, %.1f]"),
-		*MarkerCenter.ToString(), *CanvasOffset.ToString(), *MarkerVisual.ToString(), *Delta.ToString(), *NewCanvasPosition.ToString(), MinX, MaxX);
+		TEXT("[CENTER CANVAS] MarkerCenter=%s | UnclampedOffset=%s | ClampedOffset=%s"),
+		*MarkerCenter.ToString(), *TargetOffset.ToString(), *ClampedOffset.ToString());
 }

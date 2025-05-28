@@ -109,3 +109,21 @@ FPlanetFocusResult SystemMapUtils::CenterOnPlanet(
 
 	return Result;
 }
+
+FVector2D SystemMapUtils::ClampCanvasDragOffset(
+	const FVector2D& ProposedOffset,
+	const FVector2D& ContentSize,
+	const FVector2D& ViewportSize,
+	float Padding)
+{
+	FVector2D HalfContent = ContentSize * 0.5f;
+	FVector2D HalfViewport = ViewportSize * 0.5f;
+
+	FVector2D MinOffset = HalfViewport - ContentSize + FVector2D(Padding, Padding);
+	FVector2D MaxOffset = HalfViewport - FVector2D(Padding, Padding);
+
+	float ClampedX = FMath::Clamp(ProposedOffset.X, MinOffset.X, MaxOffset.X);
+	float ClampedY = FMath::Clamp(ProposedOffset.Y, MinOffset.Y, MaxOffset.Y);
+
+	return FVector2D(ClampedX, ClampedY);
+}

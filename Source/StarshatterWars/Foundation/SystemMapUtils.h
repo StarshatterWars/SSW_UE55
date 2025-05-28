@@ -56,4 +56,12 @@ public:
 		float CurrentZoom,
 		float RequestedZoom = -1.f,
 		float Margin = 50.f);
+
+	// Returns a clamped canvas offset that keeps content partially visible within the viewport
+	UFUNCTION()
+	static FVector2D ClampCanvasDragOffset(
+		const FVector2D& ProposedOffset,
+		const FVector2D& ContentSize,
+		const FVector2D& ViewportSize,
+		float Padding = 50.0f);
 };
