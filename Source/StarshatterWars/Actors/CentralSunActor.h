@@ -44,13 +44,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
 	USceneCaptureComponent2D* SceneCapture = nullptr;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stellar")
 	UStaticMeshComponent* SunMesh;
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return SunRenderTarget; }
 
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar")
+	UPROPERTY(EditDefaultsOnly, Category = "Stellar" )
 	UMaterialInterface* StarBaseMaterial;
 	
 	UPROPERTY()
