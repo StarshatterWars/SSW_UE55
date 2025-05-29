@@ -102,27 +102,23 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		}
 	}
 	
-	// Phase 1: Center to planet
-	if (bIsCenteringToPlanet)
+	if (bIsAnimatingToPlanet)
 	{
-		CenterAnimTime += InDeltaTime;
-		float Progress = FMath::Clamp(CenterAnimTime / CenterAnimDuration, 0.0f, 1.0f);
-		float SmoothT = SystemMapUtils::EaseInOut(Progress);
+		PlanetFocusTime += InDeltaTime;
+		float Alpha = FMath::Clamp(PlanetFocusTime / PlanetFocusDuration, 0.f, 1.f);
+		float Smoothed = SystemMapUtils::EaseInOut(Alpha); // ease = t * t * (3 - 2t)
 
-		FVector2D NewPos = FMath::Lerp(StartCanvasPosition, TargetCanvasPosition, SmoothT);
-		CanvasSlot->SetPosition(NewPos);
-		CurrentDragOffset = NewPos;
+		const FVector2D InterpPos = FMath::Lerp(StartCanvasPos, TargetCanvasPos, Smoothed);
 
-		if (Progress >= 1.0f)
+		if (UCanvasPanelSlot* PlanetSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 		{
-			CanvasSlot->SetPosition(TargetCanvasPosition);
-			bIsCenteringToPlanet = false;
-			ZoomAnimTime = 0.0f;
-			bIsZoomingToPlanet = true;
+			PlanetSlot->SetPosition(InterpPos);
 		}
 
-		SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-		return;
+		if (Alpha >= 1.f)
+		{
+			bIsAnimatingToPlanet = false;
+		}
 	}
 
 	// Phase 2: Zoom in/out
@@ -345,19 +341,14 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
 	if (!CanvasSlot || !MarkerSlot) return;
 
-	// Marker’s center within canvas space
 	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
-
-	// Viewport center (e.g. screen midpoint)
 	const FVector2D ViewportCenter = CachedViewportSize * 0.5f;
 
-	// Offset map canvas so that marker ends up at viewport center
-	const FVector2D NewCanvasPosition = ViewportCenter - MarkerCenter;
+	StartCanvasPos = CanvasSlot->GetPosition();
+	TargetCanvasPos = ViewportCenter - MarkerCenter;
 
-	CanvasSlot->SetPosition(NewCanvasPosition);
-
-	UE_LOG(LogTemp, Warning, TEXT("[CenterPlanet] MarkerCenter: %s | Viewport: %s | Set Canvas Pos: %s"),
-		*MarkerCenter.ToString(), *ViewportCenter.ToString(), *NewCanvasPosition.ToString());
+	PlanetFocusTime = 0.f;
+	bIsAnimatingToPlanet = true;
 }
 
 void USystemMap::ApplyTiltToMapCanvas(float TiltAmount)

@@ -192,6 +192,19 @@ private:
 	float CenterLerpSpeed = 10.0f; // adjustable
 	UPROPERTY()
 	bool bIsCenteringToPlanet = false;
+
+	UPROPERTY()
+	bool bIsAnimatingToPlanet = false;
+	
+	UPROPERTY()
+	float PlanetFocusTime = 0.f;
+	
+	UPROPERTY()
+	float PlanetFocusDuration = 0.5f; // Half second
+
+	FVector2D StartCanvasPos;
+	FVector2D TargetCanvasPos;
+	
 	UPROPERTY()
 	bool bIsZoomingToPlanet = false;
 	
