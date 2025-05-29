@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_Galaxy struct
 #include "../System/SSWGameInstance.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "SystemMap.generated.h"
 
 class UCanvasPanel;
@@ -169,6 +170,8 @@ private:
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
 	UPROPERTY()
 	TSet<UWidget*> TrackedMapWidgets;
+
+	SystemMapUtils::FSystemMapDragController DragController;
 
 	UPROPERTY()
 	float StartZoomLevel = 1.0f;

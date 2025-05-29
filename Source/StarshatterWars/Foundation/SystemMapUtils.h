@@ -77,4 +77,39 @@ public:
 	static FVector2D ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize);
 	UFUNCTION()
 	static FBox2D ComputeContentBounds(const TSet<UWidget*>& ContentWidgets, UCanvasPanel* Canvas);
+
+	// Converts screen drag positions to local widget delta
+	UFUNCTION()
+	static FVector2D ComputeLocalDragDelta(const FGeometry& Geometry, const FPointerEvent& Event, const FVector2D& DragStartLocal)
+	{
+		const FVector2D CurrentLocal = Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition());
+		return CurrentLocal - DragStartLocal;
+	}
+
+	struct FSystemMapDragController
+	{
+		bool bIsDragging = false;
+		FVector2D DragStartLocal = FVector2D::ZeroVector;
+		FVector2D InitialCanvasOffset = FVector2D::ZeroVector;
+
+		void BeginDrag(const FGeometry& Geometry, const FPointerEvent& Event, const FVector2D& CurrentCanvasOffset)
+		{
+			DragStartLocal = Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition());
+			InitialCanvasOffset = CurrentCanvasOffset;
+			bIsDragging = true;
+		}
+
+		FVector2D ComputeDragDelta(const FGeometry& Geometry, const FPointerEvent& Event) const
+		{
+			if (!bIsDragging) return FVector2D::ZeroVector;
+			const FVector2D CurrentLocal = Geometry.AbsoluteToLocal(Event.GetScreenSpacePosition());
+			return CurrentLocal - DragStartLocal;
+		}
+
+		void EndDrag()
+		{
+			bIsDragging = false;
+		}
+	};
+
 };
