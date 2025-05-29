@@ -41,6 +41,9 @@ public:
 	
 	void AssignScreenCapture();
 
+	UPROPERTY(VisibleAnywhere, Category="Render", meta=(AllowPrivateAccess=true))
+	UTextureRenderTarget2D* SunRenderTarget = nullptr;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
 	USceneCaptureComponent2D* SceneCapture = nullptr;
 
@@ -85,6 +88,5 @@ private:
 	UPROPERTY()
 	FLinearColor StarColor;
 
-	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
-	UTextureRenderTarget2D* SunRenderTarget = nullptr;
+	
 };

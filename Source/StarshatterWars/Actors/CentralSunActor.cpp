@@ -131,7 +131,7 @@ void ACentralSunActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
+	//AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
 }
 
 void ACentralSunActor::EnsureRenderTarget()
@@ -166,10 +166,10 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	float GlowStrength = StarUtils::GetGlowStrength(Class);
 	float SunspotStrength = StarUtils::GetSunspotStrength(Class);
 
-	StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-	StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
-	StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
-	StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
+	//StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
+	//StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
+	//StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
+	//StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
 }
 
 void ACentralSunActor::AssignScreenCapture()
