@@ -30,6 +30,8 @@ public:
 	// Called to draw all planets for the current system
 	void BuildSystemView(const FS_Galaxy* ActiveSystem);
 
+
+	
 	UPROPERTY()
 	UOperationsScreen* OwningOperationsScreen;
 
@@ -92,15 +94,11 @@ protected:
 
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
+	TMap<FString, USystemOrbitWidget*> OrbitMarkers;
 
 	// Holds per-planet orbit angle (randomized once per planet per session)
 	TMap<FString, float> PlanetOrbitAngles;
 	
-	UFUNCTION()
-	FBox2D ComputeMapContentBounds() const;
-	UFUNCTION()
-	void CenterCanvasOnMapBounds(const FVector2D& ViewportSize);
-
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
@@ -118,10 +116,7 @@ private:
 	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
 
 	// For tracking drag state
-	UPROPERTY()
-	bool bIsDragging = false;
-	UPROPERTY()
-	FVector2D DragStartPos;
+	
 	UPROPERTY()
 	float InitialScrollOffset = 0.f;
 	
@@ -137,12 +132,28 @@ private:
 	UFUNCTION()
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
+	void AddCentralStar(const FS_Galaxy* Star);
+	void AddPlanet(const FS_PlanetMap& Planet);
+
+	UFUNCTION()
+	void AssignRenderTargetsToPlanets();
+	
+	UFUNCTION()
+	void HighlightSelectedSystem();
+	UFUNCTION()
+	void FinalizeCanvasLayoutFromContentBounds();
+	UFUNCTION()
+	void DeferredFinalizeLayout();
 	UPROPERTY()
 	FVector2D StartCanvasPosition = FVector2D::ZeroVector;
+
+	UPROPERTY()
+	FVector2D CachedCanvasSize = FVector2D(3000.f, 2000.f);
+
 	UPROPERTY()
 	FVector2D TargetCanvasPosition = FVector2D::ZeroVector;
 	UPROPERTY()
-	FVector2D MapCenterOffset = FVector2D(50.f, -200.f);
+	FVector2D MapCenterOffset = FVector2D(50.f, -100.f);
 	UPROPERTY()
 	FVector2D CurrentDragOffset = FVector2D::ZeroVector;
 	UPROPERTY()
@@ -151,10 +162,13 @@ private:
 	FVector2D CachedViewportSize = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D CachedViewportCenter = FVector2D::ZeroVector;
+	UPROPERTY()
+	FVector2D DragStartPos;
 
-	
 	// Stores the most recently selected planet marker
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
+	UPROPERTY()
+	TSet<UWidget*> TrackedMapWidgets;
 
 	UPROPERTY()
 	float StartZoomLevel = 1.0f;
@@ -204,4 +218,24 @@ private:
 	float MovementDelayDuration = 0.3f; // seconds (adjust as needed)
 	UPROPERTY()
 	bool bPendingCanvasCenter = false;
+	
+	UPROPERTY()
+	bool bPendingLayoutFinalize = false;
+	
+	UPROPERTY()
+	bool bPendingInitialLayout = false;
+	
+	UPROPERTY()
+	bool bIsDragging = false;
+
+	UPROPERTY()
+	bool bIsDraggingConfirmed = false;
+
+	UPROPERTY()
+	bool bLayoutInitialized = false;
+
+	FTimerHandle LayoutRetryTimer;
+
+	UPROPERTY()
+	float ORBIT_TO_SCREEN;
 };

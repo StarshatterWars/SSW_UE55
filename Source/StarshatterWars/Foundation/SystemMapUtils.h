@@ -72,9 +72,9 @@ public:
 	
 	// Returns a clamped canvas offset that keeps content partially visible within the viewport
 	UFUNCTION()
-	static FVector2D ClampCanvasDragOffset(FVector2D ProposedPos, FVector2D CanvasSize, FVector2D ViewportSize, float Margin, FVector2D MapCenterOffset);
+	static FVector2D ClampCanvasDragOffset(const FVector2D& ProposedOffset, const FVector2D& CanvasSize, const FVector2D& ViewportSize, float Margin);
 	UFUNCTION()
 	static FVector2D ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize);
-
-	static FBox2D ComputeContentBounds(const TArray<UWidget*>& ContentWidgets, UCanvasPanel* Canvas);
+	UFUNCTION()
+	static FBox2D ComputeContentBounds(const TSet<UWidget*>& ContentWidgets, UCanvasPanel* Canvas);
 };

@@ -83,15 +83,6 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (!CanvasSlot)
 		return;
 
-	
-	const FVector2D ViewportSize = MyGeometry.GetLocalSize();
-
-	if (bPendingCanvasCenter && ViewportSize.X > 10 && ViewportSize.Y > 10)
-	{
-		CenterCanvasOnMapBounds(ViewportSize);
-		bPendingCanvasCenter = false;
-	}
-
 	// Handle movement delay timer
 	if (bIsWaitingToProcessMovement)
 	{
@@ -186,9 +177,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): System: %s has %d planets"), *ActiveSystem->Name, ActiveSystem->Stellar[0].Planet.Num());
-
-	UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Stellar Classification: %u"), static_cast<uint8>(ActiveSystem->Stellar[0].Class));
 	bPendingCanvasCenter = true;
 
 	MapCanvas->ClearChildren();
@@ -196,207 +184,20 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 	const FVector2D Center = MapCanvas->GetCachedGeometry().GetLocalSize() * 0.5f;
 	
-	if (SunActorClass)
-	{
-		if (SunActor)
-		{
-			SunActor->Destroy();
-			SunActor = nullptr;
-		}
+	AddCentralStar(ActiveSystem);
 
-		// 2. Destroy previous widget (if it exists)
-		if (StarWidget)
-		{
-			StarWidget->RemoveFromParent();
-			StarWidget = nullptr;
-		}
-
-		// Pull the stellar radius from the active system
-		const float StellarRadius = ActiveSystem->Stellar[0].Radius;
-
-		FVector Location = FVector(-500, 0, 200);
-		FRotator Rotation = FRotator::ZeroRotator;
-
-		SunActor = ACentralSunActor::SpawnWithSpectralClass(
-			GetWorld(),
-			Location,
-			Rotation,
-			SunActorClass,
-			ActiveSystem->Stellar[0].Class,     // Spectral class
-			ActiveSystem->Stellar[0].Radius,    // Pass in radius from Galaxy.def
-			ActiveSystem->Stellar[0].Name
-		);
-	}
-
-	// Add central star
-	if (StarWidgetClass)
-	{
-		StarWidget = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
-		// Bind the click delegate to handle galaxy map return
-		StarWidget->OnSunClicked.AddDynamic(this, &USystemMap::HandleCentralSunClicked);
-
-		if (StarWidget && SunActor)
-		{
-			StarWidget->InitializeFromSunActor(SunActor);
-			if (UCanvasPanelSlot* StarSlot = MapCanvas->AddChildToCanvas(StarWidget))
-			{
-				StarSlot->SetAutoSize(true);
-				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				StarSlot->SetPosition(FVector2D(-StarWidget->GetDesiredSize().X, 0.f));
-				StarSlot->SetZOrder(15);
-			}
-		}
-	}
+	// Convert to screen scale
+	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
 
 	// Build planet markers and orbit rings
 	for (const FS_PlanetMap& Planet : ActiveSystem->Stellar[0].Planet)
 	{
-		float Perihelion = 0.f;
-		float Aphelion = 0.f;
-
-		PlanetOrbitUtils::CalculateOrbitExtremes(Planet.Orbit, Planet.Eccentricity, Perihelion, Aphelion);
-
-		// Get ellipse axes
-		float a = (Perihelion + Aphelion) * 0.5f; // semi-major
-		float b = a * FMath::Sqrt(1.0f - FMath::Square(Planet.Eccentricity)); // semi-minor
-
-		// Convert to screen scale
-		float ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
-		a /= ORBIT_TO_SCREEN;
-		b /= ORBIT_TO_SCREEN;
-
-		float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
-
-		UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, Radius);
-
-		if (OrbitWidgetClass)
-		{
-			auto* Orbit = CreateWidget<USystemOrbitWidget>(this, OrbitWidgetClass);
-	
-			//OrbitCenter += Center;
-			// Apply visual configuration
-			Orbit->SetOrbitRadius(Radius);
-			const float InclinationVisual = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination);
-			Orbit->SetOrbitInclination(InclinationVisual);
-
-			// Position orbit ring widget
-			if (UCanvasPanelSlot* OrbitSlot = MapCanvas->AddChildToCanvas(Orbit))
-			{
-				OrbitSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-				OrbitSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				OrbitSlot->SetPosition(FVector2D(0.f, 0.f)); // use panel center
-				OrbitSlot->SetZOrder(0);
-				OrbitSlot->SetAutoSize(true);
-			}
-
-			Orbit->SetVisibility(ESlateVisibility::Visible);
-		}
-		if (PlanetActorClass)
-		{
-			if (PlanetActor)
-			{
-				PlanetActor->Destroy();
-				PlanetActor = nullptr;
-			}
-
-			FVector ActorLocation = FVector(-1000, 0, 200);  // Adjust position as needed
-			FRotator ActorRotation = FRotator::ZeroRotator;
-
-			PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
-				GetWorld(),
-				ActorLocation,
-				ActorRotation,
-				PlanetActorClass,
-				Planet
-			);
-
-			if (PlanetActor)
-			{
-				SpawnedPlanetActors.Add(PlanetActor);
-			}	
-		}
-		// Planet marker
-		if (PlanetMarkerClass)
-		{
-			auto* Marker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
-			if (Marker)
-			{
-				float& OrbitAngle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
-				if (OrbitAngle == 0.0f)
-				{
-					OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
-				}
-				
-				float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
-
-				FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
-					Radius,
-					OrbitAngle,
-					VisualInclination
-				);
-
-				if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(Marker))
-				{
-					PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-					PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					PlanetSlot->SetPosition(TiltedPos);
-					PlanetSlot->SetAutoSize(true);
-					PlanetSlot->SetZOrder(10);
-				}
-				Marker->SetVisibility(ESlateVisibility::Visible);
-				Marker->SetPlanetName(Planet.Name);
-				//Marker->Init(Planet);
-				Marker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
-				Marker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
-
-				PlanetMarkers.Add(Planet.Name, Marker);
-				
-			}
-		}
+		AddPlanet(Planet);		
+	}
 		
-		FTimerHandle CaptureDelay;
-		GetWorld()->GetTimerManager().SetTimer(CaptureDelay, FTimerDelegate::CreateWeakLambda(this, [this]()
-	 {
-				for (APlanetPanelActor* Actor : SpawnedPlanetActors)
-				{
-					if (Actor)
-					{
-						Actor->AssignScreenCapture();
-					}
-				}
-				SpawnedPlanetActors.Empty();
-			}), 0.05f, false); // Adjust delay as needed (50ms)
-	}
+	AssignRenderTargetsToPlanets();
+	HighlightSelectedSystem();
 
-	// Highlight current system
-	if (const USSWGameInstance* GI = GetWorld()->GetGameInstance<USSWGameInstance>())
-	{
-		const FString& CurrentSystem = GI->SelectedSystem;
-
-		if (UPlanetMarkerWidget** Found = PlanetMarkers.Find(CurrentSystem))
-		{
-			UPlanetMarkerWidget* Marker = *Found;
-			Marker->SetSelected(true);
-
-			FTimerHandle Delay;
-			GetWorld()->GetTimerManager().SetTimer(Delay, FTimerDelegate::CreateWeakLambda(this, [this, Marker]()
-				{
-					if (!Marker) return;
-
-					FVector2D Center;
-					if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Marker->Slot))
-					{
-						Center = Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
-					}
-
-					// Optionally center camera or draw selection lines here
-					UE_LOG(LogTemp, Log, TEXT("Selected system: %s at %s"), *Marker->GetPlanetName(), *Center.ToString());
-
-				}), 0.01f, false);
-		}
-	}
-	
 	FTimerHandle LayoutCheck;
 	GetWorld()->GetTimerManager().SetTimer(LayoutCheck, FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
@@ -518,7 +319,7 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 	const FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
 
 	const FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(
-		Proposed, CanvasSize, ViewportSize, 50.0f, MapCenterOffset // offset-aware clamp
+		Proposed, CanvasSize, ViewportSize, 50.0f // offset-aware clamp
 	);
 
 	// 4. Apply to canvas
@@ -547,8 +348,7 @@ FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPoi
 				CanvasSlot->GetPosition(),
 				CanvasSize,
 				ViewportSize,
-				50.0f,
-				MapCenterOffset // 
+				50.0f // 
 			);
 
 			CanvasSlot->SetPosition(ClampedOffset);
@@ -605,7 +405,7 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 	// 7. Optional: Clamp the result
 	const FVector2D CanvasSize = MapCanvas->GetDesiredSize() * ZoomLevel;
 	const FVector2D ViewportSize = GetCachedGeometry().GetLocalSize();
-	const FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(NewCanvasPos, CanvasSize, ViewportSize, 50.0f, MapCenterOffset);
+	const FVector2D Clamped = SystemMapUtils::ClampCanvasDragOffset(NewCanvasPos, CanvasSize, ViewportSize, 50.0f);
 
 	// 8. Animate
 	StartCanvasPosition = CanvasPos;
@@ -625,6 +425,231 @@ void USystemMap::ApplyTiltToMapCanvas(float TiltAmount)
 {
 	TargetTiltAmount = TiltAmount;
 	SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+}
+
+void USystemMap::AddCentralStar(const FS_Galaxy* Star)
+{
+	if (SunActorClass)
+	{
+		if (SunActor)
+		{
+			SunActor->Destroy();
+			SunActor = nullptr;
+		}
+
+		// 2. Destroy previous widget (if it exists)
+		if (StarWidget)
+		{
+			StarWidget->RemoveFromParent();
+			StarWidget = nullptr;
+		}
+
+		FVector Location = FVector(-500, 0, 200);
+		FRotator Rotation = FRotator::ZeroRotator;
+
+		SunActor = ACentralSunActor::SpawnWithSpectralClass(
+			GetWorld(),
+			Location,
+			Rotation,
+			SunActorClass,
+			Star->Stellar[0].Class,     // Spectral class
+			Star->Stellar[0].Radius,    // Pass in radius from Galaxy.def
+			Star->Stellar[0].Name
+		);
+	}
+
+	// Add central star
+	if (StarWidgetClass)
+	{
+		StarWidget = CreateWidget<UCentralSunWidget>(this, StarWidgetClass);
+		// Bind the click delegate to handle galaxy map return
+		StarWidget->OnSunClicked.AddDynamic(this, &USystemMap::HandleCentralSunClicked);
+
+		if (StarWidget && SunActor)
+		{
+			StarWidget->InitializeFromSunActor(SunActor);
+			if (UCanvasPanelSlot* StarSlot = MapCanvas->AddChildToCanvas(StarWidget))
+			{
+				StarSlot->SetAutoSize(true);
+				StarSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				StarSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				StarSlot->SetPosition(FVector2D(0.f, 0.f));
+				StarSlot->SetZOrder(15);
+				StarSlot->SetSize(FVector2D(64.f, 64.f));
+				TrackedMapWidgets.Add(StarWidget);
+
+				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+				{
+					FVector2D CanvasPos = CanvasSlot->GetPosition();
+					FVector2D SlotPos = StarSlot->GetPosition();
+					UE_LOG(LogTemp, Warning, TEXT("CanvasSlot Pos: %s | StarSlot Pos: %s"),
+						*CanvasPos.ToString(),
+						*SlotPos.ToString());
+				}
+			}
+		}
+	}
+}
+
+void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
+{
+	float Perihelion = 0.f;
+	float Aphelion = 0.f;
+
+	PlanetOrbitUtils::CalculateOrbitExtremes(Planet.Orbit, Planet.Eccentricity, Perihelion, Aphelion);
+
+	// Get ellipse axes
+	float a = (Perihelion + Aphelion) * 0.5f; // semi-major
+	float b = a * FMath::Sqrt(1.0f - FMath::Square(Planet.Eccentricity)); // semi-minor
+
+	a /= ORBIT_TO_SCREEN;
+	b /= ORBIT_TO_SCREEN;
+
+	float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
+
+	UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, Radius);
+
+	if (OrbitWidgetClass)
+	{
+		auto* Orbit = CreateWidget<USystemOrbitWidget>(this, OrbitWidgetClass);
+
+		//OrbitCenter += Center;
+		// Apply visual configuration
+		Orbit->SetOrbitRadius(Radius);
+		const float InclinationVisual = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination);
+		Orbit->SetOrbitInclination(InclinationVisual);
+
+		// Position orbit ring widget
+		if (UCanvasPanelSlot* OrbitSlot = MapCanvas->AddChildToCanvas(Orbit))
+		{
+			OrbitSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+			OrbitSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+			OrbitSlot->SetPosition(FVector2D(0.f, 0.f)); // use panel center
+			OrbitSlot->SetZOrder(0);
+			OrbitSlot->SetAutoSize(true);
+		}
+
+		Orbit->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (PlanetActorClass)
+	{
+		if (PlanetActor)
+		{
+			PlanetActor->Destroy();
+			PlanetActor = nullptr;
+		}
+
+		FVector ActorLocation = FVector(-1000, 0, 200);  // Adjust position as needed
+		FRotator ActorRotation = FRotator::ZeroRotator;
+
+		PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
+			GetWorld(),
+			ActorLocation,
+			ActorRotation,
+			PlanetActorClass,
+			Planet
+		);
+
+		if (PlanetActor)
+		{
+			SpawnedPlanetActors.Add(PlanetActor);
+		}
+	}
+	// Planet marker
+	if (PlanetMarkerClass)
+	{
+		auto* Marker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+		if (Marker)
+		{
+			float& OrbitAngle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
+			if (OrbitAngle == 0.0f)
+			{
+				OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
+			}
+
+			float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
+
+			FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+				Radius,
+				OrbitAngle,
+				VisualInclination
+			);
+
+			if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(Marker))
+			{
+				PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				PlanetSlot->SetPosition(TiltedPos);
+				PlanetSlot->SetAutoSize(true);
+				PlanetSlot->SetZOrder(10);
+			}
+			Marker->SetVisibility(ESlateVisibility::Visible);
+			Marker->SetPlanetName(Planet.Name);
+			//Marker->Init(Planet);
+			Marker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
+			Marker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
+
+			PlanetMarkers.Add(Planet.Name, Marker);
+
+		}
+	}
+}
+
+void USystemMap::AssignRenderTargetsToPlanets()
+{
+	FTimerHandle CaptureDelay;
+	GetWorld()->GetTimerManager().SetTimer(CaptureDelay, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			for (APlanetPanelActor* Actor : SpawnedPlanetActors)
+			{
+				if (Actor)
+				{
+					Actor->AssignScreenCapture();
+				}
+			}
+			SpawnedPlanetActors.Empty();
+		}), 0.05f, false); // Adjust delay as needed (50ms)
+}
+
+void USystemMap::HighlightSelectedSystem()
+{
+	// Highlight current system
+	if (const USSWGameInstance* GI = GetWorld()->GetGameInstance<USSWGameInstance>())
+	{
+		const FString& CurrentSystem = GI->SelectedSystem;
+
+		if (UPlanetMarkerWidget** Found = PlanetMarkers.Find(CurrentSystem))
+		{
+			UPlanetMarkerWidget* Marker = *Found;
+			Marker->SetSelected(true);
+
+			FTimerHandle Delay;
+			GetWorld()->GetTimerManager().SetTimer(Delay, FTimerDelegate::CreateWeakLambda(this, [this, Marker]()
+				{
+					if (!Marker) return;
+
+					FVector2D Center;
+					if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Marker->Slot))
+					{
+						Center = Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
+					}
+
+					// Optionally center camera or draw selection lines here
+					UE_LOG(LogTemp, Log, TEXT("Selected system: %s at %s"), *Marker->GetPlanetName(), *Center.ToString());
+
+				}), 0.01f, false);
+		}
+	}
+}
+
+void USystemMap::FinalizeCanvasLayoutFromContentBounds()
+{
+
+}
+
+void USystemMap::DeferredFinalizeLayout()
+{
+
 }
 
 void USystemMap::InitMapCanvas()
@@ -647,6 +672,9 @@ void USystemMap::InitMapCanvas()
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
 
+	if(OuterCanvas) 
+		OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
+	
 	if (MapCanvas) {
 		MapCanvas->ClearChildren();
 		
@@ -658,7 +686,9 @@ void USystemMap::InitMapCanvas()
 				{
 					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+					CanvasSlot->SetSize(FVector2D(3000.f, 2000.f));	
 					CanvasSlot->SetPosition(MapCenterOffset);
+					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
 
 					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
 				}
@@ -666,51 +696,3 @@ void USystemMap::InitMapCanvas()
 	}
 }
 
-FBox2D USystemMap::ComputeMapContentBounds() const
-{
-	if (!MapCanvas)
-	{
-		return FBox2D(EForceInit::ForceInitToZero);
-	}
-
-	TArray<UWidget*> Children;
-	const int32 Count = MapCanvas->GetChildrenCount();
-
-	for (int32 i = 0; i < Count; ++i)
-	{
-		if (UWidget* Child = MapCanvas->GetChildAt(i))
-		{
-			Children.Add(Child);
-		}
-	}
-
-	return SystemMapUtils::ComputeContentBounds(Children, MapCanvas);
-}
-
-void USystemMap::CenterCanvasOnMapBounds(const FVector2D& ViewportSize)
-{
-	FBox2D Bounds = ComputeMapContentBounds();
-
-	UE_LOG(LogTemp, Warning, TEXT("Map Bounds: Min=%s Max=%s Size=%s"),
-		*Bounds.Min.ToString(), *Bounds.Max.ToString(), *Bounds.GetSize().ToString());
-
-	UE_LOG(LogTemp, Warning, TEXT("Viewport Geometry Size = %s"), *ViewportSize.ToString());
-	
-	CachedViewportSize = ViewportSize;
-	CachedViewportCenter = ViewportSize * 0.5f;
-	
-	const FVector2D BoundsCenter = Bounds.GetCenter();
-	const FVector2D ViewportCenter = CachedViewportCenter;
-
-	const FVector2D CanvasPos = CachedViewportCenter + MapCenterOffset - BoundsCenter;
-
-	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-	{
-		CanvasSlot->SetPosition(CanvasPos);
-		InitialCanvasOffset = CanvasPos;
-		CurrentDragOffset = CanvasPos;
-
-		UE_LOG(LogTemp, Warning, TEXT("[CenterOnBounds] CanvasPos: %s | BoundsCenter: %s | Viewport: %s"),
-			*CanvasPos.ToString(), *BoundsCenter.ToString(), *ViewportCenter.ToString());
-	}
-}

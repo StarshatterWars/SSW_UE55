@@ -148,35 +148,29 @@ FPlanetFocusResult SystemMapUtils::CenterOnPlanet(
 }
 
 FVector2D SystemMapUtils::ClampCanvasDragOffset(
-	FVector2D ProposedPos,
-	FVector2D CanvasSize,
-	FVector2D ViewportSize,
-	float Margin,
-	FVector2D MapCenterOffset)
+	const FVector2D& ProposedOffset,
+	const FVector2D& CanvasSize,
+	const FVector2D& ViewportSize,
+	float Margin
+)
 {
-	const FVector2D ViewCenter = ViewportSize * 0.5f + MapCenterOffset;
+	const FVector2D HalfCanvas = CanvasSize * 0.5f;
+	const FVector2D HalfViewport = ViewportSize * 0.5f;
 
-	// Clamp X
-	const float MinX = ViewCenter.X - CanvasSize.X + Margin;
-	const float MaxX = ViewCenter.X - Margin;
+	const float MinX = HalfViewport.X - HalfCanvas.X - Margin;
+	const float MaxX = HalfViewport.X + HalfCanvas.X + Margin;
+	const float MinY = HalfViewport.Y - HalfCanvas.Y - Margin;
+	const float MaxY = HalfViewport.Y + HalfCanvas.Y + Margin;
 
-	// Clamp Y
-	const float MinY = ViewCenter.Y - CanvasSize.Y + Margin;
-	const float MaxY = ViewCenter.Y - Margin;
+	FVector2D Clamped = ProposedOffset;
+	Clamped.X = FMath::Clamp(ProposedOffset.X, MinX, MaxX);
+	Clamped.Y = FMath::Clamp(ProposedOffset.Y, MinY, MaxY);
 
-	return FVector2D(
-		FMath::Clamp(ProposedPos.X, MinX, MaxX),
-		FMath::Clamp(ProposedPos.Y, MinY, MaxY)
-	);
-}
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Clamp FIXED FINAL] Proposed=%s | X=[%.1f, %.1f] Y=[%.1f, %.1f] CanvasSize=%s -> Final=%s"),
+		*ProposedOffset.ToString(), MinX, MaxX, MinY, MaxY, *CanvasSize.ToString(), *Clamped.ToString());
 
-void SystemMapUtils::ApplyWidgetTilt(UWidget* Widget, float TiltAmount)
-{
-	if (!Widget) return;
-
-	FWidgetTransform Transform;
-	Transform.Shear = FVector2D(0.0f, -TiltAmount); // Vertical tilt for visible skew
-	Widget->SetRenderTransform(Transform);
+	return Clamped;
 }
 
 FVector2D SystemMapUtils::ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize)
@@ -184,28 +178,69 @@ FVector2D SystemMapUtils::ConvertTopLeftToCenterAnchored(const FVector2D& TopLef
 	return TopLeftPos - (CanvasSize * 0.5f);
 }
 
-FBox2D SystemMapUtils::ComputeContentBounds(const TArray<UWidget*>& ContentWidgets, UCanvasPanel* Canvas)
+FBox2D SystemMapUtils::ComputeContentBounds(const TSet<UWidget*>& ContentWidgets, UCanvasPanel* Canvas)
 {
-	FBox2D Bounds(EForceInit::ForceInitToZero);
+	FBox2D Bounds(EForceInit::ForceInit);
+
+	if (!Canvas)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ComputeContentBounds: Canvas is null"));
+		return Bounds;
+	}
+
+	int32 Count = 0;
 
 	for (UWidget* Widget : ContentWidgets)
 	{
-		if (!Widget || !Canvas) continue;
+		if (!Widget)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ComputeContentBounds: Null widget skipped"));
+			continue;
+		}
 
-		UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot);
-		if (!Slot) continue;
+		if (!Canvas->GetAllChildren().Contains(Widget))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ComputeContentBounds: Widget %s not found in canvas"), *Widget->GetName());
+			continue;
+		}
 
-		const FVector2D Pos = Slot->GetPosition();
-		const FVector2D Size = Slot->GetSize();
-		const FVector2D Alignment = Slot->GetAlignment();
+		if (const UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
+		{
+			const FVector2D Pos = Slot->GetPosition();
+			const FVector2D Size = Slot->GetSize();
+			const FVector2D Align = Slot->GetAlignment();
 
-		// True top-left position
-		const FVector2D TopLeft = Pos - (Size * Alignment);
-		const FVector2D BottomRight = TopLeft + Size;
+			const FVector2D TopLeft = Pos - Size * Align;
+			const FVector2D BottomRight = TopLeft + Size;
 
-		Bounds += TopLeft;
-		Bounds += BottomRight;
+			UE_LOG(LogTemp, Warning,
+				TEXT("[Bounds] Widget=%s | Pos=%s | Size=%s | Align=%s | TL=%s | BR=%s"),
+				*Widget->GetName(),
+				*Pos.ToString(),
+				*Size.ToString(),
+				*Align.ToString(),
+				*TopLeft.ToString(),
+				*BottomRight.ToString());
+
+			Bounds += TopLeft;
+			Bounds += BottomRight;
+			Count++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("ComputeContentBounds: Widget %s is not in a CanvasPanelSlot"),
+				*Widget->GetName());
+		}
 	}
+	Bounds = Bounds.ExpandBy(FVector2D(400.f, 300.f)); // pad outward
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[ComputeContentBounds] %d valid widgets | Final Bounds: Min=%s Max=%s Size=%s"),
+		Count,
+		*Bounds.Min.ToString(),
+		*Bounds.Max.ToString(),
+		*(Bounds.GetSize().ToString()));
 
 	return Bounds;
 }
