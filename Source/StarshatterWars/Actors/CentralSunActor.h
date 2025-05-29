@@ -41,9 +41,6 @@ public:
 	
 	void AssignScreenCapture();
 
-	UPROPERTY(VisibleAnywhere, Category="Render", meta=(AllowPrivateAccess=true))
-	UTextureRenderTarget2D* SunRenderTarget = nullptr;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
 	USceneCaptureComponent2D* SceneCapture = nullptr;
 
@@ -52,15 +49,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return SunRenderTarget; }
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stellar")
+	UMaterialInterface* StarBaseMaterial;
 	
 	UPROPERTY()
 	USceneComponent* RootScene;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stellar")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stellar")
 	ESPECTRAL_CLASS SpectralClass = ESPECTRAL_CLASS::G;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Stellar")
-	UMaterialInterface* StarBaseMaterial;
 
 	// Star material texture (sunspot mask)
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
@@ -78,6 +75,9 @@ public:
 	UPROPERTY()
 	FString StarName;
 
+	UPROPERTY(EditAnywhere, Category = "Sun")
+	UTexture2D* StarTexture;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stellar")
 	float Radius = 1.6e9f; // Default to sun size
@@ -88,5 +88,6 @@ private:
 	UPROPERTY()
 	FLinearColor StarColor;
 
-	
+	UPROPERTY(VisibleAnywhere, Category="Render", meta=(AllowPrivateAccess=true))
+	UTextureRenderTarget2D* SunRenderTarget;
 };

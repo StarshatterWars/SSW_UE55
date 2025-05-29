@@ -26,7 +26,7 @@ public:
 	UTextureRenderTarget2D* GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution);
 
 	UFUNCTION()
-	UTextureRenderTarget2D* GetOrCreateStarRenderTarget(const FString& PlanetName, int32 Resolution);
+	UTextureRenderTarget2D* GetOrCreateStarRenderTarget(const FString& PlanetName, int32 Resolution, UObject* Object = nullptr);
 
 	UFUNCTION()
 	void ClearAllRenderTargets();

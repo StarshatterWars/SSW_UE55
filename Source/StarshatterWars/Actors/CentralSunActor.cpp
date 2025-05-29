@@ -51,9 +51,11 @@ ACentralSunActor::ACentralSunActor()
 	SceneCapture->ShowFlags.SetDirectionalLights(true);
 	SceneCapture->ShowFlags.SetPostProcessing(false);	
 	SceneCapture->ShowFlags.SetMaterials(true);
+	SceneCapture->ShowOnlyActors.Empty(); // optional
+	SceneCapture->ShowOnlyComponents.Add(SunMesh);
 	SceneCapture->bCaptureEveryFrame = false;      // recommended for manual capture
 	SceneCapture->bCaptureOnMovement = true;       // helps with refresh on transform change
-	SceneCapture->TextureTarget = SunRenderTarget;
+	//SceneCapture->TextureTarget = SunRenderTarget;
 
 }
 
@@ -82,6 +84,7 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 	NewActor->SpectralClass = InSpectralClass;
 	NewActor->Radius = InRadius;
 	NewActor->StarName = InName;
+	NewActor->ApplyStarVisuals(NewActor->SpectralClass);
 
 	// Resume construction, now BeginPlay will see the correct value
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
@@ -92,39 +95,7 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 void ACentralSunActor::BeginPlay()
 {
 	Super::BeginPlay();
-
 	CurrentRotation = GetActorRotation();
-
-	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::BeginPlay() SpectralClass: %u"), static_cast<uint8>(SpectralClass));
-	
-	EnsureRenderTarget();
-	
-	// Assign render target if missing
-	if (SceneCapture && !SceneCapture->TextureTarget)
-	{
-		SceneCapture->TextureTarget = SunRenderTarget;
-	}
-
-	if (!StarMaterialInstance && StarBaseMaterial && SunMesh)
-	{
-		StarMaterialInstance = UMaterialInstanceDynamic::Create(StarBaseMaterial, this);
-		SunMesh->SetMaterial(0, StarMaterialInstance);
-
-		ApplyStarVisuals(SpectralClass);
-
-		// Force update
-		SceneCapture->bCaptureEveryFrame = false;
-		SceneCapture->bCaptureOnMovement = true;
-
-		// Nudge to force re-render
-		
-		UE_LOG(LogTemp, Warning, TEXT("StarMaterialInstance: %s"), *GetNameSafe(StarMaterialInstance));
-		UE_LOG(LogTemp, Warning, TEXT("Mesh Material: %s"), *GetNameSafe(SunMesh->GetMaterial(0)));
-		
-		// Force redraw
-		SunMesh->SetVisibility(false, true);
-		SunMesh->SetVisibility(true, true);
-	}
 }
 
 void ACentralSunActor::Tick(float DeltaTime)
@@ -137,9 +108,9 @@ void ACentralSunActor::Tick(float DeltaTime)
 void ACentralSunActor::EnsureRenderTarget()
 {
 	// Create the render target
-	int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
+	//int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	SunRenderTarget = Galaxy->GetOrCreateStarRenderTarget(StarName, Resolution);
+	SunRenderTarget = Galaxy->GetOrCreateStarRenderTarget(StarName, 512, SunMesh);
 
 	if (!SunRenderTarget)
 	{
@@ -147,7 +118,10 @@ void ACentralSunActor::EnsureRenderTarget()
 		return;
 	}
 	else {
-		UE_LOG(LogTemp, Error, TEXT("RenderTarget created for star %s"), *StarName);
+		UE_LOG(LogTemp, Error, TEXT("Star RenderTarget created: %s [%p] for star %s"), 
+			*GetNameSafe(SunRenderTarget),
+			SunRenderTarget,
+			*StarName);
 	}
 
 	SceneCapture->TextureTarget = SunRenderTarget;
@@ -155,18 +129,38 @@ void ACentralSunActor::EnsureRenderTarget()
 
 void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 {
-	if (!StarMaterialInstance || !SunMesh) return;
-
+	EnsureRenderTarget();
+	// Texture
 	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::ApplyStarVisuals(): SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
 		*UEnum::GetValueAsString(Class),
 		StarColor.R, StarColor.G, StarColor.B);
+
 
 	// Use StarUtils for consistent visuals
 	StarColor = StarUtils::GetColor(Class);
 	float GlowStrength = StarUtils::GetGlowStrength(Class);
 	float SunspotStrength = StarUtils::GetSunspotStrength(Class);
 
-	//StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
+	// Create dynamic material
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(StarBaseMaterial, SunMesh);
+	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *StarName, FMath::RandRange(1000, 9999)));
+	
+	if (StarTexture)
+	{
+		#define UpdateResource UpdateResource
+		StarTexture->UpdateResource();
+		DynMat->SetTextureParameterValue("BaseTexture", StarTexture);
+	}
+
+	// Apply to mesh
+	SunMesh->SetMaterial(0, DynMat);
+	StarMaterialInstance = DynMat;
+
+	// Capture scene (now safe!)
+	SunMesh->MarkRenderStateDirty();
+	SceneCapture->CaptureScene();
+
+	StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
 	//StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
 	//StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
 	//StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
@@ -183,7 +177,7 @@ void ACentralSunActor::AssignScreenCapture()
 				SceneCapture->CaptureScene();
 
 				// Log confirmation
-				UE_LOG(LogTemp, Warning, TEXT("RenderTarget used: %s [%p] for star %s"),
+				UE_LOG(LogTemp, Warning, TEXT("Star RenderTarget used: %s [%p] for star %s"),
 					*GetNameSafe(SunRenderTarget),
 					SunRenderTarget,
 					*StarName);

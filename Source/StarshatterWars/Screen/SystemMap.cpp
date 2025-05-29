@@ -176,6 +176,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	const FVector2D Center = MapCanvas->GetCachedGeometry().GetLocalSize() * 0.5f;
 	
 	AddCentralStar(ActiveSystem);
+	AssignRenderTargetsToStars();
 
 	// Convert to screen scale
 	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
@@ -187,19 +188,8 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	}
 		
 	AssignRenderTargetsToPlanets();
-	AssignRenderTargetsToStars();
 	HighlightSelectedSystem();
-
-	FTimerHandle LayoutCheck;
-	GetWorld()->GetTimerManager().SetTimer(LayoutCheck, FTimerDelegate::CreateWeakLambda(this, [this]()
-		{
-			if (MapCanvas)
-			{
-				FVector2D Size = MapCanvas->GetDesiredSize();
-				UE_LOG(LogTemp, Warning, TEXT("MapCanvas DesiredSize: %s"), *Size.ToString());
-			}
-		}), 0.05f, false);
-
+	
 }
 
 void USystemMap::HandleCentralSunClicked()

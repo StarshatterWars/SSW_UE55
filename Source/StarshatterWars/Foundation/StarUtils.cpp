@@ -131,3 +131,20 @@ int32 StarUtils::GetRenderTargetResolutionForRadius(double RadiusKm)
 	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
 	return ResOptions[Index];
 }
+
+UTexture2D* StarUtils::LoadStarAssetTexture(const FString& TextureName)
+{
+	FString AssetPath = FString::Printf(TEXT("/Game/GameData/Galaxy/StarMaterials/%s.%s"), *TextureName, *TextureName);
+
+	UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *AssetPath));
+	if (!Texture)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load star texture asset: %s"), *AssetPath);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Loaded star texture asset: %s"), *Texture->GetName());
+	}
+
+	return Texture;
+}

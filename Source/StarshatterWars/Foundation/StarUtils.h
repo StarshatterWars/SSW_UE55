@@ -36,4 +36,5 @@ public:
 	// Estimate ideal render target resolution based on star radius in kilometers
 	static int32 GetRenderTargetResolutionForRadius(double RadiusKm);
 
+	UTexture2D* LoadStarAssetTexture(const FString& TextureName);
 };

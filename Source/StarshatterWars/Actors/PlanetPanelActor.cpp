@@ -102,7 +102,7 @@ void APlanetPanelActor::AssignScreenCapture()
 			SceneCapture->CaptureScene();
 			
 			// Log confirmation
-			UE_LOG(LogTemp, Warning, TEXT("RenderTarget used: %s [%p] for planet %s"),
+			UE_LOG(LogTemp, Warning, TEXT("Planet RenderTarget used: %s [%p] for planet %s"),
 				*GetNameSafe(PlanetRenderTarget),
 				PlanetRenderTarget,
 				*PlanetData.Name);

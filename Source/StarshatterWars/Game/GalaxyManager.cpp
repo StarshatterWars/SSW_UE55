@@ -50,14 +50,14 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreatePlanetRenderTarget(const FStr
 	return NewRT;
 }
 
-UTextureRenderTarget2D* UGalaxyManager::GetOrCreateStarRenderTarget(const FString& StarName, int32 Resolution)
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreateStarRenderTarget(const FString& StarName,int32 Resolution, UObject* Star)
 {
-	if (PlanetRenderTargets.Contains(StarName))
+	if (StarRenderTargets.Contains(StarName))
 	{
 		return StarRenderTargets[StarName];
 	}
 
-	UTextureRenderTarget2D* NewRT = StarUtils::CreateStarRenderTarget(StarName, nullptr, Resolution);
+	UTextureRenderTarget2D* NewRT = StarUtils::CreateStarRenderTarget(StarName, Star, Resolution);
 	if (NewRT)
 	{
 		StarRenderTargets.Add(StarName, NewRT);
