@@ -337,7 +337,7 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 	}
 }
 
-void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
+void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 {
 	if (!Marker || !MapCanvas) return;
 
