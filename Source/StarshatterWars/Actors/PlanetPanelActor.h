@@ -83,10 +83,7 @@ protected:
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
 	
-	private:
+private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
 	UTextureRenderTarget2D* PlanetRenderTarget;
-	
-	UPROPERTY()
-	FString RTName;
 };

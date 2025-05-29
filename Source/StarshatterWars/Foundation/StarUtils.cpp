@@ -89,19 +89,45 @@ float StarUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
 	return FMath::Lerp(MinSize, MaxSize, Normalized);
 }
 
-UTextureRenderTarget2D* StarUtils::CreateRenderTarget(const FString& Name, UObject* Outer)
+UTextureRenderTarget2D* StarUtils::CreateStarRenderTarget(const FString& Name, UObject* Outer, int32 Resolution)
 {
-	if (!Outer) return nullptr;
-
-	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(Outer, *Name);
-	if (RT)
+	if (!Outer)
 	{
-		RT->RenderTargetFormat = RTF_RGBA8;
-		RT->ClearColor = FLinearColor::Black;
-		RT->InitAutoFormat(512, 512);
-		RT->UpdateResourceImmediate(true);
-
-		UE_LOG(LogTemp, Log, TEXT("Stellar RenderTarget created: %s"), *Name);
+		Outer = GetTransientPackage(); // fallback
 	}
-	return RT;
+
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(Outer, *Name);
+	if (!RenderTarget)
+	{
+		return nullptr;
+	}
+
+	RenderTarget->RenderTargetFormat = RTF_RGBA16f; // good for lit previews
+	RenderTarget->ClearColor = FLinearColor::Black;
+	RenderTarget->bAutoGenerateMips = false;
+	RenderTarget->InitAutoFormat(Resolution, Resolution);
+	RenderTarget->UpdateResourceImmediate(true);
+
+	return RenderTarget;
+}
+
+int32 StarUtils::GetRenderTargetResolutionForRadius(double RadiusKm)
+{
+	constexpr float MinRadiusKm = 1.2e9f;
+	constexpr float MaxRadiusKm = 2.2e9f;
+
+	// Normalize with optional logarithmic scaling
+	RadiusKm = FMath::Clamp(RadiusKm, MinRadiusKm, MaxRadiusKm);
+
+	const double LogMin = FMath::LogX(10.0, MinRadiusKm);
+	const double LogMax = FMath::LogX(10.0, MaxRadiusKm);
+	const double LogVal = FMath::LogX(10.0, RadiusKm);
+	double T = (LogVal - LogMin) / (LogMax - LogMin); // 0.0 - 1.0
+
+	// Map T to a range of powers of 2: [128, 256, 512, 1024]
+	T = FMath::Clamp(T, 0.0, 1.0);
+	const TArray<int32> ResOptions = { 128, 256, 512, 1024 };
+
+	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
+	return ResOptions[Index];
 }

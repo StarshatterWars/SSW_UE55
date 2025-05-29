@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
+#include "../Game/GalaxyManager.h"
 #include "../Foundation/StarUtils.h"
 
 ACentralSunActor::ACentralSunActor()
@@ -123,7 +124,6 @@ void ACentralSunActor::BeginPlay()
 		// Force redraw
 		SunMesh->SetVisibility(false, true);
 		SunMesh->SetVisibility(true, true);
-		RefreshSceneCapture();
 	}
 }
 
@@ -132,52 +132,25 @@ void ACentralSunActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
-
-	RefreshSceneCapture();
-}
-
-void ACentralSunActor::RefreshSceneCapture()
-{
-	// Delay CaptureScene by one frame
-	FTimerHandle DelayHandle;
-	GetWorldTimerManager().SetTimer(DelayHandle, [this]()
-		{
-			if (SceneCapture)
-			{
-				SceneCapture->CaptureScene();
-			}
-		}, 0.0f, false); // 0.0 = delay to next tick
-
-	SunMesh->MarkRenderStateDirty();
-	SceneCapture->SetRelativeRotation(SceneCapture->GetRelativeRotation() + FRotator(1, 0, 0));
-	SceneCapture->SetRelativeRotation(SceneCapture->GetRelativeRotation() - FRotator(1, 0, 0));
-	UE_LOG(LogTemp, Warning, TEXT("Refreshing SceneCapture"));
-	SceneCapture->CaptureScene();
 }
 
 void ACentralSunActor::EnsureRenderTarget()
 {
-	// 1. Create if null
+	// Create the render target
+	int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
+	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
+	SunRenderTarget = Galaxy->GetOrCreateStarRenderTarget(StarName, Resolution);
+
 	if (!SunRenderTarget)
 	{
-		FString RTName = FString::Printf(TEXT("SunRT_%s_%s"), *StarName, FMath::RandRange(1000, 9999));
-		SunRenderTarget = StarUtils::CreateRenderTarget(RTName, this); 
-		
-		SunRenderTarget = NewObject<UTextureRenderTarget2D>(this);
-		SunRenderTarget->RenderTargetFormat = RTF_RGBA8;
-		SunRenderTarget->ClearColor = FLinearColor::Black;
-		SunRenderTarget->InitAutoFormat(64, 64); // or your preferred size
-		SunRenderTarget->UTextureRenderTarget2D::UpdateResourceImmediate();
-
-		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget for %s created."), *StarName);
+		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for star %s"), *StarName);
+		return;
+	}
+	else {
+		UE_LOG(LogTemp, Error, TEXT("RenderTarget created for star %s"), *StarName);
 	}
 
-	// 2. Assign to SceneCapture if not already
-	if (SceneCapture && SceneCapture->TextureTarget != SunRenderTarget)
-	{
-		SceneCapture->TextureTarget = SunRenderTarget;
-		UE_LOG(LogTemp, Log, TEXT("SunRenderTarget assigned to SceneCapture."));
-	}
+	SceneCapture->TextureTarget = SunRenderTarget;
 }
 
 void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
@@ -197,4 +170,23 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
 	StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
 	StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
+}
+
+void ACentralSunActor::AssignScreenCapture()
+{
+	FTimerHandle DelayHandle;
+	GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (SceneCapture)
+			{
+				SunMesh->MarkRenderStateDirty();
+				SceneCapture->CaptureScene();
+
+				// Log confirmation
+				UE_LOG(LogTemp, Warning, TEXT("RenderTarget used: %s [%p] for star %s"),
+					*GetNameSafe(SunRenderTarget),
+					SunRenderTarget,
+					*StarName);
+			}
+		}), 0.05f, false); // 50ms delay — adjust as needed
 }

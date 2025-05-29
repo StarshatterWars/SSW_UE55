@@ -33,16 +33,13 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	void RefreshSceneCapture();
-
 public:
 	UFUNCTION()
 	void EnsureRenderTarget();
 	UFUNCTION()
 	void ApplyStarVisuals(ESPECTRAL_CLASS Class);
 	
-	UPROPERTY()
-	UTextureRenderTarget2D* SunRenderTarget = nullptr;
+	void AssignScreenCapture();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
 	USceneCaptureComponent2D* SceneCapture = nullptr;
@@ -88,4 +85,6 @@ private:
 	UPROPERTY()
 	FLinearColor StarColor;
 
+	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
+	UTextureRenderTarget2D* SunRenderTarget = nullptr;
 };

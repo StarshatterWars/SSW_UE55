@@ -80,11 +80,28 @@ public:
 	
 	// Returns a clamped canvas offset that keeps content partially visible within the viewport
 	UFUNCTION()
-	static FVector2D ClampCanvasDragOffset(const FVector2D& ProposedOffset, const FVector2D& CanvasSize, const FVector2D& ViewportSize, float Margin);
-	UFUNCTION()
 	static FVector2D ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize);
 	UFUNCTION()
 	static FBox2D ComputeContentBounds(const TSet<UWidget*>& ContentWidgets, UCanvasPanel* Canvas);
+
+	// Returns a clamped canvas offset that keeps content partially visible within the viewport
+	UFUNCTION()
+	static FVector2D ClampCanvasToSafeMargin(
+		const FVector2D& ProposedCanvasPos,
+		const FVector2D& CanvasSize,
+		const FVector2D& ViewportSize,
+		const float Margin = 100.f
+	)
+	{
+		// Ensure at least Margin padding from all edges
+		const FVector2D Min = ViewportSize - CanvasSize + FVector2D(Margin, Margin);
+		const FVector2D Max = FVector2D::ZeroVector - FVector2D(Margin, Margin);
+
+		return FVector2D(
+			FMath::Clamp(ProposedCanvasPos.X, Min.X, Max.X),
+			FMath::Clamp(ProposedCanvasPos.Y, Min.Y, Max.Y)
+		);
+	}
 
 	// Converts screen drag positions to local widget delta
 	UFUNCTION()

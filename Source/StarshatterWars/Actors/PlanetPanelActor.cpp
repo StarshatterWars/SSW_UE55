@@ -103,7 +103,7 @@ void APlanetPanelActor::AssignScreenCapture()
 			
 			// Log confirmation
 			UE_LOG(LogTemp, Warning, TEXT("RenderTarget used: %s [%p] for planet %s"),
-				*RTName,
+				*GetNameSafe(PlanetRenderTarget),
 				PlanetRenderTarget,
 				*PlanetData.Name);
 		}
@@ -112,15 +112,11 @@ void APlanetPanelActor::AssignScreenCapture()
 
 void APlanetPanelActor::EnsureRenderTarget()
 {
-	// Generate unique name based on planet name and a random ID
-	RTName = FString::Printf(TEXT("RT_Planet_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999));
-
 	// Create the render target
 	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	PlanetRenderTarget = Galaxy->GetOrCreateRenderTarget(PlanetData.Name, Resolution);
-	//PlanetRenderTarget = PlanetUtils::CreatePlanetRenderTarget(RTName, PlanetMesh, Resolution);
-
+	PlanetRenderTarget = Galaxy->GetOrCreatePlanetRenderTarget(PlanetData.Name, Resolution);
+	
 	if (!PlanetRenderTarget)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for planet %s"), *PlanetData.Name);

@@ -47,7 +47,7 @@ public:
 	UFUNCTION()
 	void InitMapCanvas();
 
-	void FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker, const FGeometry& Geometry, const FPointerEvent& Event);
+	void FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker);
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
@@ -140,6 +140,9 @@ private:
 
 	UFUNCTION()
 	void AssignRenderTargetsToPlanets();
+
+	UFUNCTION()
+	void AssignRenderTargetsToStars();
 	
 	UFUNCTION()
 	void HighlightSelectedSystem();
@@ -191,7 +194,7 @@ private:
 	UPROPERTY()
 	float ZoomInterpSpeed = 5.f;
 	UPROPERTY()
-	float MinZoom = 0.25f;
+	float MinZoom = 0.5f;
 	UPROPERTY()
 	float MaxZoom = 4.0f;
 	UPROPERTY()

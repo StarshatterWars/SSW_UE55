@@ -4,6 +4,7 @@
 #include "GalaxyManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "../Foundation/PlanetUtils.h"
+#include "../Foundation/StarUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 UGalaxyManager* UGalaxyManager::Get(UObject* WorldContext)
@@ -33,7 +34,8 @@ const FS_Galaxy* UGalaxyManager::FindSystemByName(const FString& Name) const
 	}
 	return nullptr;
 }
-UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& PlanetName, int32 Resolution)
+
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution)
 {
 	if (PlanetRenderTargets.Contains(PlanetName))
 	{
@@ -48,6 +50,22 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& P
 	return NewRT;
 }
 
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreateStarRenderTarget(const FString& StarName, int32 Resolution)
+{
+	if (PlanetRenderTargets.Contains(StarName))
+	{
+		return StarRenderTargets[StarName];
+	}
+
+	UTextureRenderTarget2D* NewRT = StarUtils::CreateStarRenderTarget(StarName, nullptr, Resolution);
+	if (NewRT)
+	{
+		StarRenderTargets.Add(StarName, NewRT);
+	}
+	return NewRT;
+}
+
+
 void UGalaxyManager::ClearAllRenderTargets()
 {
 	for (auto& Pair : PlanetRenderTargets)
@@ -60,6 +78,16 @@ void UGalaxyManager::ClearAllRenderTargets()
 	}
 	PlanetRenderTargets.Empty();
 
-	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all planet render targets."));
+	for (auto& StarPair : StarRenderTargets)
+	{
+		if (StarPair.Value)
+		{
+			// Mark for garbage collection
+			StarPair.Value->MarkAsGarbage();
+		}
+	}
+	StarRenderTargets.Empty();
+
+	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all render targets."));
 }
 

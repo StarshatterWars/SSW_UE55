@@ -147,32 +147,6 @@ FPlanetFocusResult SystemMapUtils::CenterOnPlanet(
 	return Result;
 }
 
-FVector2D SystemMapUtils::ClampCanvasDragOffset(
-	const FVector2D& ProposedOffset,
-	const FVector2D& CanvasSize,
-	const FVector2D& ViewportSize,
-	float Margin
-)
-{
-	const FVector2D HalfCanvas = CanvasSize * 0.5f;
-	const FVector2D HalfViewport = ViewportSize * 0.5f;
-
-	const float MinX = HalfViewport.X - HalfCanvas.X - Margin;
-	const float MaxX = HalfViewport.X + HalfCanvas.X + Margin;
-	const float MinY = HalfViewport.Y - HalfCanvas.Y - Margin;
-	const float MaxY = HalfViewport.Y + HalfCanvas.Y + Margin;
-
-	FVector2D Clamped = ProposedOffset;
-	Clamped.X = FMath::Clamp(ProposedOffset.X, MinX, MaxX);
-	Clamped.Y = FMath::Clamp(ProposedOffset.Y, MinY, MaxY);
-
-	UE_LOG(LogTemp, Warning,
-		TEXT("[Clamp FIXED FINAL] Proposed=%s | X=[%.1f, %.1f] Y=[%.1f, %.1f] CanvasSize=%s -> Final=%s"),
-		*ProposedOffset.ToString(), MinX, MaxX, MinY, MaxY, *CanvasSize.ToString(), *Clamped.ToString());
-
-	return Clamped;
-}
-
 FVector2D SystemMapUtils::ConvertTopLeftToCenterAnchored(const FVector2D& TopLeftPos, const FVector2D& CanvasSize)
 {
 	return TopLeftPos - (CanvasSize * 0.5f);

@@ -187,6 +187,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	}
 		
 	AssignRenderTargetsToPlanets();
+	AssignRenderTargetsToStars();
 	HighlightSelectedSystem();
 
 	FTimerHandle LayoutCheck;
@@ -250,7 +251,7 @@ FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointe
 	// Optional: recenter on last selected planet
 	if (LastSelectedMarker)
 	{
-		CenterOnPlanetWidget(LastSelectedMarker, 1.0f); // will animate based on your setup
+		CenterOnPlanetWidget(LastSelectedMarker, 1.5f); // will animate based on your setup
 	}
 
 	return FReply::Handled();
@@ -263,8 +264,11 @@ FReply USystemMap::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, c
 		// Find planet under cursor (optional — you could just zoom to LastSelectedMarker)
 		if (LastSelectedMarker && MapCanvas)
 		{
-			// Center and zoom to the planet
-			FocusAndZoomToPlanet(LastSelectedMarker, InGeometry, InMouseEvent);
+			if (LastSelectedMarker)
+			{
+				CenterOnPlanetWidget(LastSelectedMarker, 1.5f); // will animate based on your setup
+				SystemMapUtils::ApplyZoomToCanvas(MapCanvas, 2.0f);
+			}
 		}
 		return FReply::Handled();
 	}
@@ -307,8 +311,15 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 			FVector2D Delta = DragController.ComputeDragDelta(InGeometry, InMouseEvent);
 			FVector2D Proposed = DragController.InitialCanvasOffset + Delta;
 
-			FVector2D Final = SystemMapUtils::ClampCanvasDragOffset(Proposed, CachedCanvasSize, CachedViewportSize, 50.f);
-			CanvasSlot->SetPosition(Final);
+			FVector2D Clamped = SystemMapUtils::ClampCanvasToSafeMargin(
+				Proposed,
+				CachedCanvasSize,
+				CachedViewportSize,
+				100.f // margin in pixels
+			);
+
+			//FVector2D Final = SystemMapUtils::ClampCanvasDragOffset(Clamped, CachedCanvasSize, CachedViewportSize, 50.f);
+			CanvasSlot->SetPosition(Proposed);
 		}
 	}
 
@@ -332,6 +343,7 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 {
 	if (UPlanetMarkerWidget** Found = PlanetMarkers.Find(PlanetName))
 	{
+		LastSelectedMarker = *Found;
 		// Optional: center or highlight
 		UE_LOG(LogTemp, Log, TEXT("Planet selected: %s"), *PlanetName);
 		CenterOnPlanetWidget(*Found, 1.0f);
@@ -545,6 +557,18 @@ void USystemMap::AssignRenderTargetsToPlanets()
 		}), 0.05f, false); // Adjust delay as needed (50ms)
 }
 
+void USystemMap::AssignRenderTargetsToStars()
+{
+	FTimerHandle CaptureDelay;
+	GetWorld()->GetTimerManager().SetTimer(CaptureDelay, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		if (SunActor)
+		{
+			SunActor->AssignScreenCapture();
+		}
+	}), 0.05f, false); // Adjust delay as needed (50ms)
+}
+
 void USystemMap::HighlightSelectedSystem()
 {
 	// Highlight current system
@@ -620,7 +644,7 @@ void USystemMap::InitMapCanvas()
 				{
 					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					CanvasSlot->SetSize(FVector2D(3000.f, 2000.f));	
+					CanvasSlot->SetSize(FVector2D(6000.f, 6000.f));	
 					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
 
 					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
@@ -629,7 +653,7 @@ void USystemMap::InitMapCanvas()
 	}
 }
 
-void USystemMap::FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker, const FGeometry& Geometry, const FPointerEvent& Event)
+void USystemMap::FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker)
 {
 	if (!Marker || !MapCanvas) return;
 
@@ -638,22 +662,16 @@ void USystemMap::FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker, const FGeomet
 	if (!CanvasSlot || !MarkerSlot) return;
 
 	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
-	const FVector2D ViewportCenter = Geometry.GetLocalSize() * 0.5f;
+	const FVector2D ViewportCenter = CachedViewportSize * 0.5f;
 
-	// Store current canvas state
+	// Set zoom level instantly or interpolate target
+	TargetZoom = FMath::Clamp(1.5f, MinZoom, MaxZoom); // Change 1.5f to desired zoom
 	ZoomAnchorLocal = ViewportCenter;
 	PreZoomCanvasPos = CanvasSlot->GetPosition();
 
-	// Set zoom target and force smooth zoom
-	TargetZoom = 1.5f; // You can pick this
-	ZoomLevel = FMath::Clamp(ZoomLevel, MinZoom, MaxZoom); // Ensure current is valid
-
-	// Calculate new canvas offset target
-	TargetCanvasPos = ViewportCenter - MarkerCenter;
-
-	// Begin animation
+	// Begin centering animation
 	StartCanvasPos = CanvasSlot->GetPosition();
+	TargetCanvasPos = ViewportCenter - MarkerCenter;
 	PlanetFocusTime = 0.f;
 	bIsAnimatingToPlanet = true;
 }
-

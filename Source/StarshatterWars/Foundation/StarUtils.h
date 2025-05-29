@@ -31,5 +31,9 @@ public:
 	/** Gets a UI image scale (in pixels) from radius using log scale */
 	static float GetUISizeFromRadius(float Radius, float MinSize = 48.f, float MaxSize = 128.f);
 
-	static UTextureRenderTarget2D* CreateRenderTarget(const FString& Name, UObject* Outer);
+	static UTextureRenderTarget2D* CreateStarRenderTarget(const FString& Name, UObject* Outer = nullptr, int32 Resolution = 256);
+
+	// Estimate ideal render target resolution based on star radius in kilometers
+	static int32 GetRenderTargetResolutionForRadius(double RadiusKm);
+
 };
