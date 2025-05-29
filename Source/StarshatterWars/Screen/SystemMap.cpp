@@ -122,30 +122,25 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	}
 
 	// Phase 2: Zoom in/out
-	if (bIsZoomingToPlanet)
+	/*if (!FMath::IsNearlyEqual(ZoomLevel, TargetZoom))
 	{
-		ZoomAnimTime += InDeltaTime;
-		float Progress = FMath::Clamp(ZoomAnimTime / ZoomAnimDuration, 0.0f, 1.0f);
-		float SmoothT = SystemMapUtils::EaseInOut(Progress);
+		const float DeltaZoom = TargetZoom - ZoomLevel;
+		ZoomLevel += DeltaZoom * FMath::Clamp(InDeltaTime * ZoomInterpSpeed, 0.f, 1.f);
 
-		ZoomLevel = FMath::Lerp(StartZoomLevel, TargetZoomLevel, SmoothT);
-
-		SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-
-		if (Progress >= 1.0f)
+		// Zoom at anchor point
+		if (UCanvasPanelSlot* ZoomSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
 		{
-			ZoomLevel = TargetZoomLevel;
-			bIsZoomingToPlanet = false;
+			const FVector2D ScaleDelta = FVector2D(ZoomLevel / FMath::Max(0.01f, ZoomLevel - DeltaZoom));
+			const FVector2D AnchorOffset = ZoomAnchorLocal - PreZoomCanvasPos;
+			const FVector2D ScaledOffset = AnchorOffset * (1.f - ZoomLevel / TargetZoom);
 
-			if (LastSelectedMarker)
-			{
-				CenterOnPlanetWidget(LastSelectedMarker, ZoomLevel); // recenter after zoom
-				//LastSelectedMarker = nullptr;
-			}
-
-			SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+			const FVector2D NewCanvasPos = CanvasSlot->GetPosition() + ScaledOffset;
+			ZoomSlot->SetPosition(NewCanvasPos);
 		}
-	}
+
+		// Apply transform scale
+		SystemMapUtils::ApplyZoomToCanvas(MapCanvas, ZoomLevel);
+	}*/
 
 	// Phase 3: Tilt on load
 	if (bIsTiltingIn)
@@ -238,33 +233,43 @@ void USystemMap::ZoomToFitAllPlanets()
 
 FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	float Delta = InMouseEvent.GetWheelDelta();
-	// In NativeTick or MouseWheel:
-	float OldZoom = ZoomLevel;
-	ZoomLevel = FMath::Clamp(ZoomLevel + Delta * ZoomStep, MinZoomLevel, MaxZoomLevel);
+	const float ScrollDelta = InMouseEvent.GetWheelDelta();
 
-	// Maintain center by adjusting position
-	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+	// Store previous zoom
+	const float PreviousZoom = ZoomLevel;
+
+	// Apply delta
+	ZoomLevel = FMath::Clamp(ZoomLevel + ScrollDelta * ZoomStep, MinZoom, MaxZoom);
+
+	if (ZoomLevel == PreviousZoom)
+		return FReply::Handled(); // no change
+
+	// Reapply transform
+	SystemMapUtils::ApplyZoomToCanvas(MapCanvas, ZoomLevel);
+
+	// Optional: recenter on last selected planet
+	if (LastSelectedMarker)
 	{
-		const FVector2D ViewSize = GetCachedGeometry().GetLocalSize();
-		const FVector2D OldSize = MapCanvas->GetDesiredSize() * OldZoom;
-		const FVector2D NewSize = MapCanvas->GetDesiredSize() * ZoomLevel;
-
-		// Calculate shift in scale
-		const FVector2D SizeDiff = (NewSize - OldSize) * 0.5f;
-
-		// Update canvas position to preserve center
-		const FVector2D OldPos = CanvasSlot->GetPosition();
-		const FVector2D NewPos = OldPos - SizeDiff;
-
-		CanvasSlot->SetPosition(NewPos);
-		CurrentDragOffset = NewPos;
+		CenterOnPlanetWidget(LastSelectedMarker, 1.0f); // will animate based on your setup
 	}
 
-	// Then apply transform
-	SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-	
 	return FReply::Handled();
+}
+
+FReply USystemMap::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		// Find planet under cursor (optional — you could just zoom to LastSelectedMarker)
+		if (LastSelectedMarker && MapCanvas)
+		{
+			// Center and zoom to the planet
+			FocusAndZoomToPlanet(LastSelectedMarker, InGeometry, InMouseEvent);
+		}
+		return FReply::Handled();
+	}
+
+	return Super::NativeOnMouseButtonDoubleClick(InGeometry, InMouseEvent);
 }
 
 FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -584,7 +589,7 @@ void USystemMap::DeferredFinalizeLayout()
 void USystemMap::InitMapCanvas()
 {
 	ZoomLevel = 1.0f;
-	TargetZoomLevel = 1.0f;
+	TargetZoom = 1.0f;
 	TargetTiltAmount = 0.0f;
 
 	bIsCenteringToPlanet = false;
@@ -622,5 +627,33 @@ void USystemMap::InitMapCanvas()
 				}
 			}), 0.05f, false); 
 	}
+}
+
+void USystemMap::FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker, const FGeometry& Geometry, const FPointerEvent& Event)
+{
+	if (!Marker || !MapCanvas) return;
+
+	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
+	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
+	if (!CanvasSlot || !MarkerSlot) return;
+
+	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
+	const FVector2D ViewportCenter = Geometry.GetLocalSize() * 0.5f;
+
+	// Store current canvas state
+	ZoomAnchorLocal = ViewportCenter;
+	PreZoomCanvasPos = CanvasSlot->GetPosition();
+
+	// Set zoom target and force smooth zoom
+	TargetZoom = 1.5f; // You can pick this
+	ZoomLevel = FMath::Clamp(ZoomLevel, MinZoom, MaxZoom); // Ensure current is valid
+
+	// Calculate new canvas offset target
+	TargetCanvasPos = ViewportCenter - MarkerCenter;
+
+	// Begin animation
+	StartCanvasPos = CanvasSlot->GetPosition();
+	PlanetFocusTime = 0.f;
+	bIsAnimatingToPlanet = true;
 }
 

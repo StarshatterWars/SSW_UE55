@@ -47,11 +47,13 @@ public:
 	UFUNCTION()
 	void InitMapCanvas();
 
+	void FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker, const FGeometry& Geometry, const FPointerEvent& Event);
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	
@@ -163,6 +165,15 @@ private:
 	FVector2D CachedViewportSize = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D CachedViewportCenter = FVector2D::ZeroVector;
+
+	// Center of zoom (in screen space ? converted to canvas local)
+	UPROPERTY()
+	FVector2D ZoomAnchorLocal = FVector2D::ZeroVector;
+
+	// Cached position before zoom begins
+	UPROPERTY()
+	
+	FVector2D PreZoomCanvasPos = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D DragStartPos;
 
@@ -176,13 +187,13 @@ private:
 	UPROPERTY()
 	float StartZoomLevel = 1.0f;
 	UPROPERTY()
-	float TargetZoomLevel = 1.0f;
+	float TargetZoom = 1.0f;
 	UPROPERTY()
-	float ZoomLerpSpeed = 10.0f;    
+	float ZoomInterpSpeed = 5.f;
 	UPROPERTY()
-	float MinZoomLevel = 0.25f;
+	float MinZoom = 0.25f;
 	UPROPERTY()
-	float MaxZoomLevel = 3.0f;
+	float MaxZoom = 4.0f;
 	UPROPERTY()
 	float ZoomStep = 0.1f;
 	UPROPERTY()

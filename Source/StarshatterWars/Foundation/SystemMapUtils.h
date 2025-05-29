@@ -3,9 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-class UWidget;
-class UCanvasPanel;
+#include "Components/Widget.h" 
+#include "Components/CanvasPanel.h" 
 
 /**
  * 
@@ -61,6 +60,15 @@ public:
 	static float EaseInOut(float t);
 
 	UFUNCTION()
+	static void ApplyZoomToCanvas(UCanvasPanel* Canvas, float Zoom)
+	{
+		if (!Canvas) return;
+		FWidgetTransform Transform;
+		Transform.Scale = FVector2D(Zoom, Zoom);
+		Canvas->SetRenderTransform(Transform);
+	}
+
+	UFUNCTION()
 	static FPlanetFocusResult CenterOnPlanet(
 		const FVector2D& MarkerPosition,
 		const FVector2D& MarkerSize,
@@ -111,5 +119,4 @@ public:
 			bIsDragging = false;
 		}
 	};
-
 };
