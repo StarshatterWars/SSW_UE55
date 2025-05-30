@@ -115,7 +115,7 @@ void APlanetPanelActor::EnsureRenderTarget()
 	// Create the render target
 	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	PlanetRenderTarget = Galaxy->GetOrCreatePlanetRenderTarget(PlanetData.Name, Resolution);
+	PlanetRenderTarget = Galaxy->GetOrCreatePlanetRenderTarget(PlanetData.Name, Resolution, PlanetMesh);
 	
 	if (!PlanetRenderTarget)
 	{

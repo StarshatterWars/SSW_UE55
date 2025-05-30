@@ -6,6 +6,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
 #include "PlanetMarkerWidget.h"
+#include "MoonMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "CentralSunWidget.h"
 #include "OperationsScreen.h"
@@ -62,6 +63,22 @@ float USystemMap::GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, floa
 	for (const FS_PlanetMap& Planet : Planets)
 	{
 		MaxOrbit = FMath::Max(MaxOrbit, Planet.Orbit);
+	}
+
+	if (MaxOrbit <= 0.f)
+	{
+		return 1.0f; // fallback to avoid divide-by-zero
+	}
+
+	return MaxOrbit / MaxPixelRadius; // e.g. 1e9 km mapped to 500 px = 2e6 scale
+}
+
+float USystemMap::GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const
+{
+	float MaxOrbit = 0.f;
+	for (const FS_MoonMap& Moon : Moons)
+	{
+		MaxOrbit = FMath::Max(MaxOrbit, Moon.Orbit);
 	}
 
 	if (MaxOrbit <= 0.f)
@@ -340,6 +357,17 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 	}
 }
 
+void USystemMap::HandleMoonClicked(const FString& MoonName)
+{
+	if (UMoonMarkerWidget** Found = MoonMarkers.Find(MoonName))
+	{
+		LastMoonSelectedMarker = *Found;
+		// Optional: center or highlight
+		UE_LOG(LogTemp, Log, TEXT("Moon selected: %s"), *MoonName);
+		CenterOnMoonWidget(*Found, 1.0f);
+	}
+}
+
 void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 {
 	if (!Marker || !MapCanvas) return;
@@ -355,6 +383,24 @@ void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
 	TargetCanvasPos = ViewportCenter - MarkerCenter;
 
 	PlanetFocusTime = 0.f;
+	bIsAnimatingToPlanet = true;
+}
+
+void USystemMap::CenterOnMoonWidget(UMoonMarkerWidget* Marker, float Zoom)
+{
+	if (!Marker || !MapCanvas) return;
+
+	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
+	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
+	if (!CanvasSlot || !MarkerSlot) return;
+
+	const FVector2D MarkerCenter = MarkerSlot->GetPosition() + MarkerSlot->GetSize() * MarkerSlot->GetAlignment();
+	const FVector2D ViewportCenter = CachedViewportSize * 0.5f;
+
+	StartCanvasPos = CanvasSlot->GetPosition();
+	TargetCanvasPos = ViewportCenter - MarkerCenter;
+
+	MoonFocusTime = 0.f;
 	bIsAnimatingToPlanet = true;
 }
 
@@ -529,6 +575,11 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 			PlanetMarkers.Add(Planet.Name, Marker);
 		}
 	}
+}
+
+void USystemMap::AddMoon(const FS_MoonMap& Moon)
+{
+
 }
 
 void USystemMap::AssignRenderTargetsToPlanets()

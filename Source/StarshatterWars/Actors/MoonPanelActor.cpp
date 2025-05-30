@@ -1,12 +1,13 @@
 // /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
 
 
-#include "MoonPanelActor.h"#include "Components/SceneCaptureComponent2D.h"
+#include "MoonPanelActor.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "../Foundation/PlanetUtils.h"
+#include "../Foundation/MoonUtils.h"
 #include "../Game/GalaxyManager.h"
 #include "Windows/MinWindows.h"
 
@@ -90,7 +91,7 @@ void AMoonPanelActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	float Time = GetWorld()->GetTimeSeconds();
-	FRotator Spin = PlanetUtils::GetPlanetRotation(Time, RotationSpeed, MoonData.Tilt);
+	FRotator Spin = MoonUtils::GetMoonRotation(Time, RotationSpeed, MoonData.Tilt);
 	MoonMesh->SetRelativeRotation(Spin);
 }
 
@@ -116,9 +117,9 @@ void AMoonPanelActor::AssignScreenCapture()
 void AMoonPanelActor::EnsureRenderTarget()
 {
 	// Create the render target
-	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(MoonData.Radius);
+	int32 Resolution = MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	MoonRenderTarget = Galaxy->GetOrCreatePlanetRenderTarget(MoonData.Name, Resolution);
+	MoonRenderTarget = Galaxy->GetOrCreateMoonRenderTarget(MoonData.Name, Resolution, MoonMesh);
 
 	if (!MoonRenderTarget)
 	{
@@ -135,7 +136,7 @@ void AMoonPanelActor::EnsureRenderTarget()
 void AMoonPanelActor::InitMoon()
 {
 	// Texture
-	MoonTexture = PlanetUtils::LoadPlanetAssetTexture(MoonData.Texture);
+	MoonTexture = MoonUtils::LoadMoonAssetTexture(MoonData.Texture);
 
 	// Ensure a unique render target before using SceneCapture
 	EnsureRenderTarget();
@@ -167,10 +168,10 @@ void AMoonPanelActor::InitMoon()
 
 void AMoonPanelActor::InitializeMoon()
 {
-	float ScaleFactor = PlanetUtils::GetPlanetUIScale(MoonData.Radius);
+	float ScaleFactor = MoonUtils::GetMoonUIScale(MoonData.Radius);
 	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
 
-	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(MoonData.Tilt);
+	FRotator AxisTilt = MoonUtils::GetMoonAxisTilt(MoonData.Tilt);
 	MoonMesh->SetRelativeRotation(AxisTilt);
 }
 

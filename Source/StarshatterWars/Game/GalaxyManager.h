@@ -23,11 +23,13 @@ public:
 	const FS_Galaxy* FindSystemByName(const FString& Name) const;
 
 	UFUNCTION()
-	UTextureRenderTarget2D* GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution);
+	UTextureRenderTarget2D* GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution, UObject* Object = nullptr);
 
 	UFUNCTION()
 	UTextureRenderTarget2D* GetOrCreateStarRenderTarget(const FString& PlanetName, int32 Resolution, UObject* Object = nullptr);
 
+	UFUNCTION()
+	UTextureRenderTarget2D* GetOrCreateMoonRenderTarget(const FString& MoonName, int32 Resolution, UObject* Object = nullptr);
 	UFUNCTION()
 	void ClearAllRenderTargets();
 
@@ -37,7 +39,10 @@ public:
 	UPROPERTY()
 	TMap<FString, UTextureRenderTarget2D*> PlanetRenderTargets;
 
-		UPROPERTY()
+	UPROPERTY()
+	TMap<FString, UTextureRenderTarget2D*> MoonRenderTargets;
+
+	UPROPERTY()
 	TMap<FString, UTextureRenderTarget2D*> StarRenderTargets;
 
 

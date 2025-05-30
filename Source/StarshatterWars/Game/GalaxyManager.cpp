@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/StarUtils.h"
+#include "../Foundation/MoonUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 UGalaxyManager* UGalaxyManager::Get(UObject* WorldContext)
@@ -35,17 +36,32 @@ const FS_Galaxy* UGalaxyManager::FindSystemByName(const FString& Name) const
 	return nullptr;
 }
 
-UTextureRenderTarget2D* UGalaxyManager::GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution)
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution, UObject* Planet /*= nullptr*/)
 {
 	if (PlanetRenderTargets.Contains(PlanetName))
 	{
 		return PlanetRenderTargets[PlanetName];
 	}
 
-	UTextureRenderTarget2D* NewRT = PlanetUtils::CreatePlanetRenderTarget(PlanetName, nullptr, Resolution);
+	UTextureRenderTarget2D* NewRT = PlanetUtils::CreatePlanetRenderTarget(PlanetName, Planet, Resolution);
 	if (NewRT)
 	{
 		PlanetRenderTargets.Add(PlanetName, NewRT);
+	}
+	return NewRT;
+}
+
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreateMoonRenderTarget(const FString& MoonName, int32 Resolution, UObject* Moon)
+{
+	if (MoonRenderTargets.Contains(MoonName))
+	{
+		return MoonRenderTargets[MoonName];
+	}
+
+	UTextureRenderTarget2D* NewRT = MoonUtils::CreateMoonRenderTarget(MoonName, Moon, Resolution);
+	if (NewRT)
+	{
+		PlanetRenderTargets.Add(MoonName, NewRT);
 	}
 	return NewRT;
 }
@@ -77,6 +93,16 @@ void UGalaxyManager::ClearAllRenderTargets()
 		}
 	}
 	PlanetRenderTargets.Empty();
+
+	for (auto& MoonPair : MoonRenderTargets)
+	{
+		if (MoonPair.Value)
+		{
+			// Mark for garbage collection
+			MoonPair.Value->MarkAsGarbage();
+		}
+	}
+	MoonRenderTargets.Empty();
 
 	for (auto& StarPair : StarRenderTargets)
 	{

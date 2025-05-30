@@ -6,6 +6,7 @@
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
 #include "../Foundation/PlanetUtils.h"
+#include "../Foundation/MoonUtils.h"
 #include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
@@ -74,7 +75,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(MoonWidgetMaterial, this);
 	DynMat->SetTextureParameterValue("InputTexture", RT);
 	MoonImage->SetBrushFromMaterial(DynMat);
-	float SizePx = PlanetUtils::GetUISizeFromRadius(Moon.Radius) / 2;
+	float SizePx = MoonUtils::GetUISizeFromRadius(Moon.Radius) / 2;
 
 	// Set brush and visual size
 	MoonImage->SetBrushSize(FVector2D(SizePx, SizePx));

@@ -13,10 +13,12 @@ class UCanvasPanel;
 class UScrollBox;
 class USizeBox;
 class UPlanetMarkerWidget;
+class UMoonMarkerWidget;
 class USystemOrbitWidget;
 class UCentralSunWidget;
 class ACentralSunActor;
 class APlanetPanelActor;
+class AMoonPanelActor;
 class UOperationsScreen;
 
 /**
@@ -31,8 +33,6 @@ public:
 	// Called to draw all planets for the current system
 	void BuildSystemView(const FS_Galaxy* ActiveSystem);
 
-
-	
 	UPROPERTY()
 	UOperationsScreen* OwningOperationsScreen;
 
@@ -43,6 +43,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	UMaterialInterface* DefaultPlanetMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	UMaterialInterface* DefaultMoonMaterial;
 
 	UFUNCTION()
 	void InitMapCanvas();
@@ -68,9 +71,8 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	USizeBox* MapCanvasSize;
 
-	/** Exposed scrollable canvas for placing planets and orbits */
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UScrollBox* SystemScrollBox;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UPlanetMarkerWidget> PlanetMarkerClass;
@@ -87,8 +89,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<APlanetPanelActor> PlanetActorClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<AMoonPanelActor> MoonActorClass;
+
 	UPROPERTY()
 	TArray<APlanetPanelActor*> SpawnedPlanetActors;
+
+	UPROPERTY()
+	TArray<AMoonPanelActor*> SpawnedMoonActors;
 	
 	UFUNCTION()
 	void SetZoomLevel(float NewZoom);
@@ -97,12 +105,18 @@ protected:
 
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
+	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> OrbitMarkers;
 
 	// Holds per-planet orbit angle (randomized once per planet per session)
 	TMap<FString, float> PlanetOrbitAngles;
+
+	// Holds per-mmon orbit angle (randomized once per moon per session)
+	TMap<FString, float> MoonOrbitAngles;
 	
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
+	float GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
+
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
     FVector2D ScreenOffset;
@@ -112,8 +126,18 @@ private:
 	ACentralSunActor* SunActor;
 	UPROPERTY()
 	UCentralSunWidget* StarWidget;
+
 	UPROPERTY()
 	APlanetPanelActor* PlanetActor;
+
+	UPROPERTY()
+	UPlanetMarkerWidget* PlanetWidget;
+
+	UPROPERTY()
+	AMoonPanelActor* MoonActor;
+
+	UPROPERTY()
+	UMoonMarkerWidget* MoonWidget;
 	
 	UPROPERTY()
 	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
@@ -126,17 +150,27 @@ private:
 	UPROPERTY()
 	FString SelectedPlanetName;
 
+	UPROPERTY()
+	FString SelectedMoonName;
+
 	UFUNCTION()
 	void HandlePlanetClicked(const FString& PlanetName);
 
 	UFUNCTION()
+	void HandleMoonClicked(const FString& MoonName);
+
+	UFUNCTION()
 	void CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom);
+
+	UFUNCTION()
+	void CenterOnMoonWidget(UMoonMarkerWidget* Marker, float Zoom);
 	
 	UFUNCTION()
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
 	void AddCentralStar(const FS_Galaxy* Star);
 	void AddPlanet(const FS_PlanetMap& Planet);
+	void AddMoon(const FS_MoonMap& Moon);
 
 	UFUNCTION()
 	void AssignRenderTargetsToPlanets();
@@ -182,6 +216,9 @@ private:
 
 	// Stores the most recently selected planet marker
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
+
+	// Stores the most recently selected planet marker
+	UMoonMarkerWidget* LastMoonSelectedMarker = nullptr;
 	UPROPERTY()
 	TSet<UWidget*> TrackedMapWidgets;
 
@@ -212,6 +249,9 @@ private:
 	
 	UPROPERTY()
 	float PlanetFocusTime = 0.f;
+
+	UPROPERTY()
+	float MoonFocusTime = 0.f;
 	
 	UPROPERTY()
 	float PlanetFocusDuration = 0.5f; // Half second
