@@ -621,7 +621,7 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 			for (const FS_MoonMap& Moon : Planet.Moon)
 			{
-				AddMoon(Moon, PlanetActor, PlanetMarker);
+				//AddMoon(Moon, PlanetActor, PlanetMarker);
 			}
 		}
 	}
