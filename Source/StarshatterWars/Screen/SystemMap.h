@@ -169,6 +169,7 @@ private:
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
 	void AddCentralStar(const FS_Galaxy* Star);
+	void AddOrbitalRing(const FS_PlanetMap& Planet);
 	void AddPlanet(const FS_PlanetMap& Planet);
 	void AddMoon(const FS_MoonMap& Moon);
 
@@ -308,4 +309,7 @@ private:
 
 	UPROPERTY()
 	float ORBIT_TO_SCREEN;
+
+	UPROPERTY()
+	float OrbitRadius;
 };

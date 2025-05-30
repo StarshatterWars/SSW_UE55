@@ -474,7 +474,7 @@ void USystemMap::AddCentralStar(const FS_Galaxy* Star)
 	}
 }
 
-void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
+void USystemMap::AddOrbitalRing(const FS_PlanetMap& Planet)
 {
 	float Perihelion = 0.f;
 	float Aphelion = 0.f;
@@ -488,9 +488,9 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 	a /= ORBIT_TO_SCREEN;
 	b /= ORBIT_TO_SCREEN;
 
-	float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
+	OrbitRadius = Planet.Orbit / ORBIT_TO_SCREEN;
 
-	UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, Radius);
+	UE_LOG(LogTemp, Warning, TEXT("Planet %s -> Orbit radius: %f"), *Planet.Name, OrbitRadius);
 
 	if (OrbitWidgetClass)
 	{
@@ -498,7 +498,7 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 		//OrbitCenter += Center;
 		// Apply visual configuration
-		Orbit->SetOrbitRadius(Radius);
+		Orbit->SetOrbitRadius(OrbitRadius);
 		const float InclinationVisual = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination);
 		Orbit->SetOrbitInclination(InclinationVisual);
 
@@ -514,6 +514,12 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 		Orbit->SetVisibility(ESlateVisibility::Visible);
 	}
+}
+
+void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
+{
+	AddOrbitalRing(Planet);
+
 	if (PlanetActorClass)
 	{
 		if (PlanetActor)
@@ -552,8 +558,10 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 			float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
 
+			OrbitRadius = Planet.Orbit / ORBIT_TO_SCREEN;
+
 			FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
-				Radius,
+				OrbitRadius,
 				OrbitAngle,
 				VisualInclination
 			);
@@ -566,9 +574,9 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 				PlanetSlot->SetAutoSize(true);
 				PlanetSlot->SetZOrder(10);
 			}
+
 			Marker->SetVisibility(ESlateVisibility::Visible);
 			Marker->SetPlanetName(Planet.Name);
-			//Marker->Init(Planet);
 			Marker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
 			Marker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
 
@@ -579,7 +587,69 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 void USystemMap::AddMoon(const FS_MoonMap& Moon)
 {
+	if (MoonActorClass)
+	{
+		if (MoonActor)
+		{
+			MoonActor->Destroy();
+			MoonActor = nullptr;
+		}
 
+		FVector ActorLocation = FVector(-2000, 0, 200);  // Adjust position as needed
+		FRotator ActorRotation = FRotator::ZeroRotator;
+
+		MoonActor = AMoonPanelActor::SpawnWithMoonData(
+			GetWorld(),
+			ActorLocation,
+			ActorRotation,
+			MoonActorClass,
+			Moon
+		);
+
+		if (MoonActor)
+		{
+			SpawnedMoonActors.Add(MoonActor);
+		}
+	}
+	// Planet marker
+	if (MoonMarkerClass)
+	{
+		auto* Marker = CreateWidget<UMoonMarkerWidget>(this, MoonMarkerClass);
+		if (Marker)
+		{
+			float& OrbitAngle = MoonOrbitAngles.FindOrAdd(Moon.Name);
+			if (OrbitAngle == 0.0f)
+			{
+				OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
+			}
+
+			float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Moon.Inclination, 2.0f);
+
+			OrbitRadius = Moon.Orbit / ORBIT_TO_SCREEN;
+
+			FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+				OrbitRadius,
+				OrbitAngle,
+				VisualInclination
+			);
+
+			if (UCanvasPanelSlot* MoonSlot = MapCanvas->AddChildToCanvas(Marker))
+			{
+				MoonSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				MoonSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				MoonSlot->SetPosition(TiltedPos);
+				MoonSlot->SetAutoSize(true);
+				MoonSlot->SetZOrder(10);
+			}
+
+			Marker->SetVisibility(ESlateVisibility::Visible);
+			Marker->SetMoonName(Moon.Name);
+			Marker->InitFromMoonActor(Moon, MoonActor); // pass data and actor
+			Marker->OnMoonClicked.AddDynamic(this, &USystemMap::HandleMoonClicked);
+
+			MoonMarkers.Add(Moon.Name, Marker);
+		}
+	}
 }
 
 void USystemMap::AssignRenderTargetsToPlanets()
