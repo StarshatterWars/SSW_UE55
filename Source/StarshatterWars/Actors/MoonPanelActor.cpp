@@ -6,7 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
-#include "../Foundation/PlanetUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "../Foundation/MoonUtils.h"
 #include "../Game/GalaxyManager.h"
 #include "../Actors/PlanetPanelActor.h"
@@ -96,32 +96,31 @@ void AMoonPanelActor::Tick(float DeltaTime)
 	MoonMesh->SetRelativeRotation(Spin);
 }
 
-void AMoonPanelActor::AssignScreenCapture()
+void AMoonPanelActor::InitializeMoon()
 {
-	FTimerHandle DelayHandle;
-	GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
-		{
-			if (SceneCapture)
-			{
-				MoonMesh->MarkRenderStateDirty();
-				SceneCapture->CaptureScene();
+	float ScaleFactor = MoonUtils::GetMoonUIScale(MoonData.Radius);
+	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
 
-				// Log confirmation
-				UE_LOG(LogTemp, Warning, TEXT("Moon RenderTarget used: %s [%p] for moon %s"),
-					*GetNameSafe(MoonRenderTarget),
-					MoonRenderTarget,
-					*MoonData.Name);
-			}
-		}), 0.05f, false); // 50ms delay — adjust as needed
+	FRotator AxisTilt = MoonUtils::GetMoonAxisTilt(MoonData.Tilt);
+	MoonMesh->SetRelativeRotation(AxisTilt);
 }
 
-void AMoonPanelActor::EnsureRenderTarget()
+void AMoonPanelActor::SetParentPlanet(APlanetPanelActor* InParent)
 {
+	UE_LOG(LogTemp, Warning, TEXT("SetParentPlanet() Parent: %s -> Moon: %s"), *InParent->PlanetData.Name, *MoonData.Name);
+	ParentPlanet = InParent;
+}
+
+void AMoonPanelActor::InitMoon()
+{
+	// Texture
+	MoonTexture = MoonUtils::LoadMoonAssetTexture(MoonData.Texture);
+
+	// Ensure a unique render target before using SceneCapture
 	// Create the render target
 	int32 Resolution = MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
 	MoonRenderTarget = Galaxy->GetOrCreateRenderTarget(MoonData.Name, Resolution, MoonMesh);
-
 	if (!MoonRenderTarget)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for moon %s"), *MoonData.Name);
@@ -132,18 +131,9 @@ void AMoonPanelActor::EnsureRenderTarget()
 	}
 
 	SceneCapture->TextureTarget = MoonRenderTarget;
-}
-
-void AMoonPanelActor::InitMoon()
-{
-	// Texture
-	MoonTexture = MoonUtils::LoadMoonAssetTexture(MoonData.Texture);
-
-	// Ensure a unique render target before using SceneCapture
-	EnsureRenderTarget();
 
 	// Create dynamic material
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(MoonBaseMaterial, MoonMesh);
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(MoonBaseMaterial,MoonMesh);
 	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *MoonData.Name, FMath::RandRange(1000, 9999)));
 	if (MoonTexture)
 	{
@@ -158,27 +148,24 @@ void AMoonPanelActor::InitMoon()
 
 	// Capture scene (now safe!)
 	MoonMesh->MarkRenderStateDirty();
-	//SceneCapture->CaptureScene();
+	SceneCapture->CaptureScene();
 
-	UE_LOG(LogTemp, Warning, TEXT("InitMoon() Moon: %s -> Mat: %s, Tex: %s, RT: %s"),
+	UE_LOG(LogTemp, Warning, TEXT("InitMoon() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
 		*MoonData.Name,
 		*GetNameSafe(DynMat),
 		*GetNameSafe(MoonTexture),
 		*GetNameSafe(MoonRenderTarget));
+
+	// Delay CaptureScene by one tick (safe on all platforms)
+	SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
 }
 
-void AMoonPanelActor::InitializeMoon()
+void AMoonPanelActor::DeferredCaptureScene()
 {
-	float ScaleFactor = MoonUtils::GetMoonUIScale(MoonData.Radius);
-	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
-
-	FRotator AxisTilt = MoonUtils::GetMoonAxisTilt(MoonData.Tilt);
-	MoonMesh->SetRelativeRotation(AxisTilt);
-}
-
-void AMoonPanelActor::SetParentPlanet(APlanetPanelActor* InParent)
-{
-	UE_LOG(LogTemp, Warning, TEXT("SetParentPlanet() Parent: %s -> Moon: %s"), *InParent->PlanetData.Name, *MoonData.Name);
-	ParentPlanet = InParent;
+	if (SceneCapture && MoonRenderTarget)
+	{
+		SceneCapture->CaptureScene();
+		UE_LOG(LogTemp, Log, TEXT("Moon CaptureScene triggered after delay: %s"), *MoonData.Name);
+	}
 }
 

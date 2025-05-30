@@ -33,9 +33,6 @@ public:
 		FS_MoonMap MoonInfo
 	);
 
-	UFUNCTION()
-	void AssignScreenCapture();
-	
 	UFUNCTION(BlueprintCallable, Category = "Moon")
 	void InitializeMoon();
 
@@ -61,12 +58,12 @@ protected:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	UFUNCTION()
-	void EnsureRenderTarget();
 	
 	UFUNCTION()
 	void InitMoon();
+	
+	void DeferredCaptureScene();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
 	UStaticMeshComponent* MoonMesh;
 
