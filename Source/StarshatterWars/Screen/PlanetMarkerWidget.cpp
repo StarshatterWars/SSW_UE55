@@ -11,13 +11,8 @@
 
 void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
 {
+	PlanetName = InName;
 	SetToolTipText(FText::FromString(InName));
-
-	if (PlanetNameText)
-	{
-		PlanetNameText->SetText(FText::FromString(InName));
-		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
-	}
 }
 
 void UPlanetMarkerWidget::SetSelected(bool bSelected)
@@ -33,6 +28,14 @@ void UPlanetMarkerWidget::SetMarkerMaterial(UMaterialInterface* PlanetMat)
 void UPlanetMarkerWidget::Init(const FS_PlanetMap& Planet)
 {
 	PlanetData = Planet;
+	SetToolTipText(FText::FromString(Planet.Name));
+	PlanetName = Planet.Name;
+
+	if (PlanetNameText)
+	{
+		PlanetNameText->SetText(FText::FromString(Planet.Name));
+		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
+	}
 
 	FString IconPath = FPaths::ProjectContentDir() + TEXT("GameData/Galaxy/PlanetIcons/") + Planet.Icon + TEXT(".png");
 	UTexture2D* LoadedTexture = LoadTextureFromFile(IconPath);
@@ -46,6 +49,14 @@ void UPlanetMarkerWidget::Init(const FS_PlanetMap& Planet)
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
 	PlanetData = Planet;
+	SetToolTipText(FText::FromString(Planet.Name));
+	PlanetName = Planet.Name;
+
+	if (PlanetNameText)
+	{
+		PlanetNameText->SetText(FText::FromString(Planet.Name));
+		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
+	}
 
 	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
 	{
