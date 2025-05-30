@@ -3447,6 +3447,7 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 
 	Text   MoonIcon = "";
 	Text   MoonName = "";
+	Text   MoonTexture = "";
 
 	double Radius = 0.0;
 	double Mass = 0.0;
@@ -3471,6 +3472,10 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "icon") {
 				GetDefText(MoonIcon, pdef, fn);
 				NewMoonMap.Icon = FString(MoonIcon);
+			}
+			else if (pdef->name()->value() == "texture") {
+				GetDefText(MoonTexture, pdef, fn);
+				NewMoonMap.Texture = FString(MoonTexture);
 			}
 			else if (pdef->name()->value() == "mass") {
 				GetDefNumber(Mass, pdef, fn);

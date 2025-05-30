@@ -48,6 +48,7 @@ system:
 			moon: {
 			   name:    Synad,
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  2.2e6,
 			   mass:    1.9e22,
 			   orbit:   1.44e8,
@@ -56,6 +57,7 @@ system:
 			moon: {
 			   name:    Olan,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      3.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -65,6 +67,7 @@ system:
 			moon: {
 			   name:    Amnia,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      1.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -89,6 +92,7 @@ system:
 			moon: {
 			   name:    Synad,
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  2.2e6,
 			   mass:    1.9e22,
 			   orbit:   1.44e8,
@@ -97,6 +101,7 @@ system:
 			moon: {
 			   name:    Lanora,
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  1e6,
 			   mass:    8e22,
 			   orbit:   42e6,
@@ -119,6 +124,7 @@ system:
 			moon: {
 			   name:    Malta,
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  0.72e6,
 			   mass:    6e22,
 			   orbit:   32e6,
@@ -142,6 +148,7 @@ system:
 			moon: {
 			   name:    Kash,
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.14e8,
@@ -150,6 +157,7 @@ system:
 			moon: {
 			   name:    Kara
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      5.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -159,6 +167,7 @@ system:
 			moon: {
 			   name:    Soma,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6e6,
 			   rotation: 27.4,
 			   atmosphere: (180,180,255),
@@ -168,6 +177,7 @@ system:
 			moon: {
 			   name:    Tarina,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  4e6,
 			   rotation: 172.1,
 			   atmosphere: (180,180,255),
@@ -246,6 +256,7 @@ system:
 			moon:       {
 			   name:    Bolus
 			   icon:    "garana_map",
+			   texture:  "garana",
 			   radius:  1.77e6,
 			   mass:    12.2e22,
 			   orbit:   51e6,
@@ -253,6 +264,7 @@ system:
 			moon:       {
 			   name:    Kalan
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  0.77e6,
 			   mass:    4.2e22,
 			   orbit:   81e6,
@@ -275,6 +287,7 @@ system:
 			moon: {
 			   name:    "Dana I"
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  5.3e6,
 			   rotation: 16.4,
 			   mass:    5.98e24,
@@ -283,6 +296,7 @@ system:
 			moon: {
 			   name:    "Dana II"
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6.1e6,
 			   rotation: 28.4,
 			   mass:    5.98e24,
@@ -307,23 +321,26 @@ system:
 			moon: {
 			   name:    Vanna
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   5.65e8,
 			   rotation: 100,
 			},
 			moon: {
-			   name:    Mara
-			   icon:    "lunar_map",
-			   radius:      5.2e6,
-			   rotation:    19,
-			   inclination: 0.0,
-			   mass:        6.0e24,
-			   orbit:       6.31e8,
+				name:    Mara
+				icon:    "lunar_map",
+			    texture:  "lunar",
+				radius:      5.2e6,
+				rotation:    19,
+				inclination: 0.0,
+				mass:        6.0e24,
+				orbit:       6.31e8,
 			},
 			moon: {
 			   name:    Folla,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6e6,
 			   rotation: 18.4,
 			   mass:    5.98e24,
@@ -332,6 +349,7 @@ system:
 			moon: {
 			   name:    Amina,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  4e6,
 			   rotation: 32.6,
 			   mass:    3.28e24,
@@ -383,6 +401,7 @@ system: {
 			moon:       {
 			   name:    Nike
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  0.72e6,
 			   mass:    4.1e22,
 			   orbit:   81e6,
@@ -446,6 +465,7 @@ system:
 			moon:       {
 			   name:    Altos
 			   icon:    "maraner_map",
+			   texture:  "maraner",
 			   radius:  0.85e6,
 			   mass:    8e22,
 			   orbit:   43e6,
@@ -469,6 +489,7 @@ system:
 			moon:       {
 			   name:    Porthos
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  1.1e6,
 			   mass:    8e22,
 			   orbit:   39e6,
@@ -476,6 +497,7 @@ system:
 			moon:       {
 			   name:    Aramis,
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  0.5e6,
 			   mass:    8e22,
 			   orbit:   51e6,
@@ -497,6 +519,7 @@ system:
 			moon: {
 			   name:    Synad
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  2.2e6,
 			   mass:    1.9e22,
 			   orbit:   1.44e8,
@@ -505,6 +528,7 @@ system:
 			moon: {
 			   name:    Olan,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      3.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -555,6 +579,7 @@ system:
 			moon:       {
 			   name:    Galad
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  0.724e6,
 			   mass:    7e22,
 			   orbit:   40e6,
@@ -609,6 +634,7 @@ system:
 			moon: {
 			   name:    Penelope
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   3.15e8,
@@ -617,6 +643,7 @@ system:
 			moon: {
 			   name:    Persephone,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      5.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -626,6 +653,7 @@ system:
 			moon: {
 			   name:    Aenia,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -743,6 +771,7 @@ system:
 			moon: {
 			   name:    Fenris,
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.45e8,
@@ -751,6 +780,7 @@ system:
 			moon: {
 			   name:    Navara,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      5.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -827,6 +857,7 @@ system:
 			moon: {
 			   name:    Alar
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:  0.5e6,
 			   mass:    4.3e22,
 			   orbit:   59.5e6,
@@ -868,6 +899,7 @@ system:
 			moon: {
 			   name:    Ovid,
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.65e8,
@@ -876,6 +908,7 @@ system:
 			moon: {
 			   name:    Archimedes
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      5.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -884,7 +917,8 @@ system:
 			},
 			moon: {
 			   name:    Flor,
-			   icon:    "ice_map.pcx",
+			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -939,6 +973,7 @@ system:
 			moon:       {
 			   name:    Tannis
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  1e6,
 			   mass:    8e22,
 			   orbit:   95e6,
@@ -964,6 +999,7 @@ system:
 			moon: {
 			   name:    "Proson I",
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  2.3e6,
 			   rotation: 16.4,
 			   atmosphere: (180,180,255),
@@ -973,6 +1009,7 @@ system:
 			moon: {
 			   name:    "Proson II",
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  4.2e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -997,6 +1034,7 @@ system:
 			moon: {
 			   name:    "Vesta I",
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  5.3e6,
 			   rotation: 16.4,
 			   atmosphere: (180,180,255),
@@ -1006,6 +1044,7 @@ system:
 			moon: {
 			   name:    "Vesta II",
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  3.1e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -1015,6 +1054,7 @@ system:
 			moon: {
 			   name:    "Vesta III",
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6.1e6,
 			   rotation: 38.4,
 			   mass:    5.98e24,
@@ -1081,6 +1121,7 @@ system:
 			moon:       {
 			   name:    Eiller
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:  1e6,
 			   mass:    8e22,
 			   orbit:   85e6,
@@ -1104,6 +1145,7 @@ system:
 			moon: {
 			   name:    Corvus
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  1.3e6,
 			   rotation: 16.4,
 			   mass:    5.98e24,
@@ -1112,6 +1154,7 @@ system:
 			moon: {
 			   name:    Aquilae,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  2.1e6,
 			   rotation: 28.4,
 			   mass:    5.98e24,
@@ -1136,6 +1179,7 @@ system:
 			moon: {
 			   name:    Benares,
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  2.3e6,
 			   rotation: 26.4,
 			   mass:    5.98e24,
@@ -1144,6 +1188,7 @@ system:
 			moon: {
 			   name:    Kala
 			   icon:    "kala_map",
+			   texture:  "kala",
 			   radius:  2.9e6,
 			   rotation: 18.4,
 			   mass:    5.98e24,
@@ -1168,6 +1213,7 @@ system:
 		moon:       {
 		   name:    Eiller
 		   icon:    "lunar_map",
+		   texture:  "lunar",
 		   radius:  1e6,
 		   mass:    8e22,
 		   orbit:   85e6,
@@ -1260,6 +1306,7 @@ system:
 			moon: {
 			   name:    Asur
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  3.541e6,
 			   mass:    3e22,
 			   orbit:   2.65e8,
@@ -1268,6 +1315,7 @@ system:
 			moon: {
 			   name:    Malinus,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      5.211e6,
 			   rotation:    19,
 			   inclination: 7.53,
@@ -1277,6 +1325,7 @@ system:
 			moon: {
 			   name:    Florina,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  3.707e6,
 			   rotation: 12.1,
 			   atmosphere: (180,180,255),
@@ -1346,6 +1395,7 @@ system:
 			moon: {
 			   name:    Ansel
 			   icon:    "bryn_map",
+			   texture:  "bryn",
 			   radius:  2.4e6,
 			   mass:    1.2e22,
 			   orbit:   0.84e8,
@@ -1354,6 +1404,7 @@ system:
 			moon: {
 			   name:    Kaius
 			   icon:    "benares_map",
+			   texture:  "benares",
 			   radius:      3.1e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1379,6 +1430,7 @@ system:
 			moon: {
 			   name:    "Loris I",
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  0.4e6,
 			   mass:    4.3e23,
 			   orbit:   35e6,
@@ -1387,6 +1439,7 @@ system:
 			moon: {
 			   name:    "Loris II",
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:      0.25e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1415,6 +1468,7 @@ system:
 			moon: {
 			   name:    Demeter
 			   icon:    "kala_map",
+			   texture:  "kala",
 			   radius:  2.2e6,
 			   mass:    1.9e22,
 			   orbit:   1.44e8,
@@ -1423,6 +1477,7 @@ system:
 			moon: {
 			   name:    Thoraine,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:      3.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1476,6 +1531,7 @@ system:
 			moon: {
 			   name:    Ur,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:  1e6,
 			   mass:    8e22,
 			   orbit:   85e6,
@@ -1543,6 +1599,7 @@ system:
 			moon: {
 			   name:    "Odin"
 			   icon:    "maraner_map",
+			   texture:  "maraner",
 			   radius:  1.4e6,
 			   mass:    4.3e23,
 			   orbit:   40e6,
@@ -1551,6 +1608,7 @@ system:
 			moon: {
 			   name:    "Dva"
 			   icon:    "Moon2_map",
+			   texture:  "Moon2",
 			   radius:      0.85e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1593,8 +1651,7 @@ system:
 			moon: {
 			   name:    Anya
 			   icon:    "nero_map",
-			   image:   "nero_lo",
-			   high_res:"nero_hi",
+			   texture:  "nero",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.65e8,
@@ -1603,6 +1660,7 @@ system:
 			moon: {
 			   name:    Vlad
 			   icon:    "Moon1_map",
+			   texture:  "Moon1",
 			   radius:      5.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1612,6 +1670,7 @@ system:
 			moon: {
 			   name:    Dmitri,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -1666,6 +1725,7 @@ system:
 			moon: {
 			   name:    Covana
 			   icon:    "benares_map",
+			   texture:  "benares",
 			   radius:      1.1e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1691,6 +1751,7 @@ system:
 			moon:     {
 			   name:    Korius
 			   icon:    "korius_map",
+			   texture:  "korius",
 			   radius:  4e6,
 			   mass:    4.2e24,
 			   atmosphere: (130,130,130),
@@ -1700,6 +1761,7 @@ system:
 			moon:     {
 			   name:    Adantar
 			   icon:    "adantar_map",
+			   texture:  "adantar",
 			   radius:  3.7e6,
 			   mass:    3.4e24,
 			   atmosphere: (120,100,90),
@@ -1851,6 +1913,7 @@ system:
 			moon: {
 			   name:    Trump
 			   icon:    "rock_map",
+			   texture:  "rock",
 			   radius:  2.3e6,
 			   rotation: 16.4,
 			   mass:    5.98e23,
@@ -1874,6 +1937,7 @@ system:
 			moon: {
 			   name:    Ariadne,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:  2.9e6,
 			   rotation: 310.4,
 			   mass:    5.18e23,
@@ -1897,6 +1961,7 @@ system:
 			moon: {
 			   name:    Oberon
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  2.3e6,
 			   rotation: 26.4,
 			   atmosphere: (180,180,255),
@@ -1906,6 +1971,7 @@ system:
 			moon: {
 			   name:    Titania
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  4.1e6,
 			   rotation: 38.4,
 			   atmosphere: (180,180,255),
@@ -1978,7 +2044,8 @@ system:
 			
 			moon: {
 			   name:    Tarawa
-			   icon:    "ice_map.pcx",
+			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  2.3e6,
 			   rotation: 16.4,
 			   atmosphere: (180,180,255),
@@ -1988,6 +2055,7 @@ system:
 			moon: {
 			   name:    Maia,
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  4.2e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -2013,6 +2081,7 @@ system:
 			moon: {
 			   name:    Alin
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  5.3e6,
 			   rotation: 16.4,
 			   atmosphere: (180,180,255),
@@ -2022,6 +2091,7 @@ system:
 			moon: {
 			   name:    Orpheus
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  3.1e6,
 			   rotation: 18.4,
 			   atmosphere: (180,180,255),
@@ -2031,6 +2101,7 @@ system:
 			moon: {
 			   name:    Tenebrus,
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  6.1e6,
 			   rotation: 38.4,
 			   mass:    5.98e24,
@@ -2198,6 +2269,7 @@ system:
 			moon: {
 			   name:    Liriope
 			   icon:    "ice_map",
+			   texture:  "ice",
 			   radius:  2.3e6,
 			   rotation: 26.4,
 			   atmosphere: (180,180,255),
@@ -2207,6 +2279,7 @@ system:
 			moon: {
 			   name:    Echo
 			   icon:    "lanos_map",
+			   texture:  "lanos",
 			   radius:  4.1e6,
 			   rotation: 38.4,
 			   atmosphere: (180,180,255),
@@ -2270,7 +2343,7 @@ system:
 			moon:       {
 			   name:    Manarkan,
 			   icon:    "Moon3_map",
-			   image:   "Moon3",
+			   texture:  "Moon3",
 			   radius:  1e6,
 			   mass:    8e22,
 			   orbit:   42e6,
