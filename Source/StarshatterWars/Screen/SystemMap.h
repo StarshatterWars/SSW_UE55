@@ -174,8 +174,7 @@ private:
 	void AddMoonOrbitalRing(const FS_MoonMap& Planet);
 	void AddPlanet(const FS_PlanetMap& Planet);
 	void AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPlanetMarkerWidget* ParentWidget);
-	UFUNCTION()
-	void AssignRenderTargetsToPlanets();
+
 	UFUNCTION()
 	void AssignRenderTargetsToMoons();
 	UFUNCTION()

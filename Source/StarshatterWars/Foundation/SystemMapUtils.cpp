@@ -7,6 +7,9 @@
 #include "../Screen/PlanetMarkerWidget.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "PlanetOrbitUtils.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "../Screen/SystemOrbitWidget.h"
 
 
@@ -48,6 +51,7 @@ UTextureRenderTarget2D* SystemMapUtils::CreateUniqueRenderTargetForActor(
 
 	return RenderTarget;
 }
+
 
 float SystemMapUtils::ClampZoomLevel(float ProposedZoom, float MinZoom, float MaxZoom)
 {
@@ -294,4 +298,22 @@ FVector2D SystemMapUtils::ComputeMoonOrbitOffset(
 	const float Radius = OrbitKm / OrbitToScreen;
 
 	return PlanetOrbitUtils::Get2DOrbitPositionWithInclination(Radius, AngleRad, Inclined);
+}
+
+void SystemMapUtils::ScheduleSafeCapture(UObject* WorldContext, USceneCaptureComponent2D* Capture)
+{
+	if (!WorldContext || !Capture) return;
+
+	UWorld* World = WorldContext->GetWorld();
+	if (!World) return;
+
+	FTimerHandle TempHandle;
+	World->GetTimerManager().SetTimer(TempHandle, [=]()
+		{
+			if (Capture)
+			{
+				Capture->CaptureScene();
+				UE_LOG(LogTemp, Log, TEXT("Scheduled CaptureScene() fired for %s"), *Capture->GetName());
+			}
+		}, 0.0f, false);
 }

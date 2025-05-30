@@ -31,14 +31,10 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-	UFUNCTION()
-	void AssignScreenCapture();
 	
 	UFUNCTION(BlueprintCallable, Category = "Planet")
 	void InitializePlanet();
-	
-	void AssignRenderTarget(UTextureRenderTarget2D* InRenderTarget);
+
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return PlanetRenderTarget; }
 
@@ -54,10 +50,7 @@ public:
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
 
-protected:
-	UFUNCTION()
-	void EnsureRenderTarget();
-	
+protected:	
 	UFUNCTION()
 	void InitPlanet();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
@@ -84,7 +77,10 @@ protected:
 	UPROPERTY()
 	float Radius = 1.6e9f;
 	
+	void DeferredCaptureScene();
 private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
 	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
+
+	FTimerHandle RenderCheckTimer;
 };

@@ -59,6 +59,9 @@ public:
 	UFUNCTION()
 	static void ApplyWidgetTilt(UWidget* Widget, float TiltAmount);
 
+	// Schedule a safe CaptureScene() call on the next tick
+	static void ScheduleSafeCapture(UObject* WorldContext, USceneCaptureComponent2D* Capture);
+
 	// Cubic smooth step: ease-in/out
 	static float EaseInOut(float t);
 

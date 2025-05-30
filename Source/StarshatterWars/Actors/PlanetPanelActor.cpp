@@ -7,6 +7,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "../Foundation/PlanetUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "../Game/GalaxyManager.h"
 #include "Windows/MinWindows.h"
 
@@ -91,27 +92,12 @@ void APlanetPanelActor::Tick(float DeltaTime)
 	PlanetMesh->SetRelativeRotation(Spin);
 }
 
-void APlanetPanelActor::AssignScreenCapture()
+void APlanetPanelActor::InitPlanet() 
 {
-	FTimerHandle DelayHandle;
-	GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
-	{
-		if (SceneCapture)
-		{
-			PlanetMesh->MarkRenderStateDirty();
-			SceneCapture->CaptureScene();
-			
-			// Log confirmation
-			UE_LOG(LogTemp, Warning, TEXT("Planet RenderTarget used: %s [%p] for planet %s"),
-				*GetNameSafe(PlanetRenderTarget),
-				PlanetRenderTarget,
-				*PlanetData.Name);
-		}
-	}), 0.05f, false); // 50ms delay — adjust as needed
-}
+	// Texture
+	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
 
-void APlanetPanelActor::EnsureRenderTarget()
-{
+	// Ensure a unique render target before using SceneCapture
 	// Create the render target
 	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
@@ -126,15 +112,6 @@ void APlanetPanelActor::EnsureRenderTarget()
 	}
 
 	SceneCapture->TextureTarget = PlanetRenderTarget;
-}
-
-void APlanetPanelActor::InitPlanet() 
-{
-	// Texture
-	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
-
-	// Ensure a unique render target before using SceneCapture
-	EnsureRenderTarget();
 
 	// Create dynamic material
 	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, PlanetMesh);
@@ -159,6 +136,9 @@ void APlanetPanelActor::InitPlanet()
 		*GetNameSafe(DynMat),
 		*GetNameSafe(PlanetTexture),
 		*GetNameSafe(PlanetRenderTarget));
+	
+	// Delay CaptureScene by one tick (safe on all platforms)
+	SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
 }
 
 void APlanetPanelActor::InitializePlanet()
@@ -170,29 +150,11 @@ void APlanetPanelActor::InitializePlanet()
 	PlanetMesh->SetRelativeRotation(AxisTilt);
 }
 
-void APlanetPanelActor::AssignRenderTarget(UTextureRenderTarget2D* InRenderTarget)
+void APlanetPanelActor::DeferredCaptureScene()
 {
-	if (!InRenderTarget || !PlanetMesh)
+	if (SceneCapture && PlanetRenderTarget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AssignRenderTarget failed: Missing input or mesh"));
-		return;
-	}
-
-	PlanetRenderTarget = InRenderTarget;
-
-	if (PlanetMaterialInstance)
-	{
-		UMaterialInterface* BaseMat = PlanetMesh->GetMaterial(0);
-		PlanetMaterialInstance = UMaterialInstanceDynamic::Create(BaseMat, this);
-		if (PlanetMaterialInstance)
-		{
-			PlanetMesh->SetMaterial(0, PlanetMaterialInstance);
-		}
-	}
-
-	if (PlanetMaterialInstance)
-	{
-		PlanetMaterialInstance->SetTextureParameterValue("Preview", PlanetRenderTarget);
-		UE_LOG(LogTemp, Log, TEXT("RenderTarget assigned to planet material [%s]"), *GetName());
+		SceneCapture->CaptureScene();
+		UE_LOG(LogTemp, Log, TEXT("Planet CaptureScene triggered after delay: %s"), *PlanetData.Name);
 	}
 }

@@ -108,9 +108,9 @@ void ACentralSunActor::Tick(float DeltaTime)
 void ACentralSunActor::EnsureRenderTarget()
 {
 	// Create the render target
-	//int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
+	int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	SunRenderTarget = Galaxy->GetOrCreateStarRenderTarget(StarName, 512, SunMesh);
+	SunRenderTarget = Galaxy->GetOrCreateRenderTarget(StarName, 512, SunMesh);
 
 	if (!SunRenderTarget)
 	{
