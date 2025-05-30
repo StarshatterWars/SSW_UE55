@@ -197,7 +197,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	const FVector2D Center = MapCanvas->GetCachedGeometry().GetLocalSize() * 0.5f;
 	
 	AddCentralStar(ActiveSystem);
-	AssignRenderTargetsToStars();
 
 	// Convert to screen scale
 	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
@@ -620,11 +619,10 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 
-			//for (const FS_MoonMap& Moon : Planet.Moon)
-			//{
-			//	AddMoon(Moon, PlanetActor, PlanetMarker);
-			//}
-			//AssignRenderTargetsToMoons();
+			for (const FS_MoonMap& Moon : Planet.Moon)
+			{
+				AddMoon(Moon, PlanetActor, PlanetMarker);
+			}
 		}
 	}
 }
@@ -705,36 +703,6 @@ void USystemMap::AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPla
 		}
 	}
 }
-
-void USystemMap::AssignRenderTargetsToMoons()
-{
-	FTimerHandle CaptureDelay;
-	GetWorld()->GetTimerManager().SetTimer(CaptureDelay, FTimerDelegate::CreateWeakLambda(this, [this]()
-		{
-			for (AMoonPanelActor* Actor : SpawnedMoonActors)
-			{
-				if (Actor)
-				{
-					Actor->AssignScreenCapture();
-				}
-			}
-			SpawnedMoonActors.Empty();
-		}), 0.05f, false); // Adjust delay as needed (50ms)
-}
-
-void USystemMap::AssignRenderTargetsToStars()
-{
-	FTimerHandle CaptureDelay;
-	GetWorld()->GetTimerManager().SetTimer(CaptureDelay, FTimerDelegate::CreateWeakLambda(this, [this]()
-	{
-		if (SunActor)
-		{
-			SunActor->AssignScreenCapture();
-		}
-	}), 0.05f, false); // Adjust delay as needed (50ms)
-}
-
-
 
 void USystemMap::HighlightSelectedSystem()
 {

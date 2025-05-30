@@ -8,6 +8,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "../Game/GalaxyManager.h"
 #include "../Foundation/StarUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 
 ACentralSunActor::ACentralSunActor()
 {
@@ -55,8 +56,6 @@ ACentralSunActor::ACentralSunActor()
 	SceneCapture->ShowOnlyComponents.Add(SunMesh);
 	SceneCapture->bCaptureEveryFrame = false;      // recommended for manual capture
 	SceneCapture->bCaptureOnMovement = true;       // helps with refresh on transform change
-	//SceneCapture->TextureTarget = SunRenderTarget;
-
 }
 
 ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
@@ -105,7 +104,7 @@ void ACentralSunActor::Tick(float DeltaTime)
 	//AddActorLocalRotation(FRotator(0.f, RotationSpeed * DeltaTime, 0.f));
 }
 
-void ACentralSunActor::EnsureRenderTarget()
+void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 {
 	// Create the render target
 	int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
@@ -118,18 +117,14 @@ void ACentralSunActor::EnsureRenderTarget()
 		return;
 	}
 	else {
-		UE_LOG(LogTemp, Error, TEXT("Star RenderTarget created: %s [%p] for star %s"), 
+		UE_LOG(LogTemp, Error, TEXT("Star RenderTarget created: %s [%p] for star %s"),
 			*GetNameSafe(SunRenderTarget),
 			SunRenderTarget,
 			*StarName);
 	}
 
 	SceneCapture->TextureTarget = SunRenderTarget;
-}
-
-void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
-{
-	EnsureRenderTarget();
+	
 	// Texture
 	UE_LOG(LogTemp, Warning, TEXT("ACentralSunActor::ApplyStarVisuals(): SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
 		*UEnum::GetValueAsString(Class),
@@ -164,23 +159,8 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	//StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
 	//StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
 	//StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
+
+	// Delay CaptureScene by one tick (safe on all platforms)
+	SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
 }
 
-void ACentralSunActor::AssignScreenCapture()
-{
-	FTimerHandle DelayHandle;
-	GetWorld()->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
-		{
-			if (SceneCapture)
-			{
-				SunMesh->MarkRenderStateDirty();
-				SceneCapture->CaptureScene();
-
-				// Log confirmation
-				UE_LOG(LogTemp, Warning, TEXT("Star RenderTarget used: %s [%p] for star %s"),
-					*GetNameSafe(SunRenderTarget),
-					SunRenderTarget,
-					*StarName);
-			}
-		}), 0.05f, false); // 50ms delay — adjust as needed
-}

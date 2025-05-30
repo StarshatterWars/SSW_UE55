@@ -176,11 +176,6 @@ private:
 	void AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPlanetMarkerWidget* ParentWidget);
 
 	UFUNCTION()
-	void AssignRenderTargetsToMoons();
-	UFUNCTION()
-	void AssignRenderTargetsToStars();
-	
-	UFUNCTION()
 	void HighlightSelectedSystem();
 	UFUNCTION()
 	void FinalizeCanvasLayoutFromContentBounds();

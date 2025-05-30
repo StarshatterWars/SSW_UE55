@@ -35,12 +35,8 @@ protected:
 
 public:
 	UFUNCTION()
-	void EnsureRenderTarget();
-	UFUNCTION()
 	void ApplyStarVisuals(ESPECTRAL_CLASS Class);
 	
-	void AssignScreenCapture();
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Render")
 	USceneCaptureComponent2D* SceneCapture = nullptr;
 
