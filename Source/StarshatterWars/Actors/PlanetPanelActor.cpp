@@ -115,8 +115,7 @@ void APlanetPanelActor::EnsureRenderTarget()
 	// Create the render target
 	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	PlanetRenderTarget = Galaxy->GetOrCreatePlanetRenderTarget(PlanetData.Name, Resolution, PlanetMesh);
-	
+	PlanetRenderTarget = Galaxy->GetOrCreateRenderTarget(PlanetData.Name, Resolution, PlanetMesh);
 	if (!PlanetRenderTarget)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for planet %s"), *PlanetData.Name);
@@ -171,3 +170,29 @@ void APlanetPanelActor::InitializePlanet()
 	PlanetMesh->SetRelativeRotation(AxisTilt);
 }
 
+void APlanetPanelActor::AssignRenderTarget(UTextureRenderTarget2D* InRenderTarget)
+{
+	if (!InRenderTarget || !PlanetMesh)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AssignRenderTarget failed: Missing input or mesh"));
+		return;
+	}
+
+	PlanetRenderTarget = InRenderTarget;
+
+	if (PlanetMaterialInstance)
+	{
+		UMaterialInterface* BaseMat = PlanetMesh->GetMaterial(0);
+		PlanetMaterialInstance = UMaterialInstanceDynamic::Create(BaseMat, this);
+		if (PlanetMaterialInstance)
+		{
+			PlanetMesh->SetMaterial(0, PlanetMaterialInstance);
+		}
+	}
+
+	if (PlanetMaterialInstance)
+	{
+		PlanetMaterialInstance->SetTextureParameterValue("Preview", PlanetRenderTarget);
+		UE_LOG(LogTemp, Log, TEXT("RenderTarget assigned to planet material [%s]"), *GetName());
+	}
+}

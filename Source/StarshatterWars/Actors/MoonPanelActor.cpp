@@ -9,6 +9,7 @@
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/MoonUtils.h"
 #include "../Game/GalaxyManager.h"
+#include "../Actors/PlanetPanelActor.h"
 #include "Windows/MinWindows.h"
 
 AMoonPanelActor* AMoonPanelActor::SpawnWithMoonData(
@@ -119,7 +120,7 @@ void AMoonPanelActor::EnsureRenderTarget()
 	// Create the render target
 	int32 Resolution = MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius);
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	MoonRenderTarget = Galaxy->GetOrCreateMoonRenderTarget(MoonData.Name, Resolution, MoonMesh);
+	MoonRenderTarget = Galaxy->GetOrCreateRenderTarget(MoonData.Name, Resolution, MoonMesh);
 
 	if (!MoonRenderTarget)
 	{
@@ -157,7 +158,7 @@ void AMoonPanelActor::InitMoon()
 
 	// Capture scene (now safe!)
 	MoonMesh->MarkRenderStateDirty();
-	SceneCapture->CaptureScene();
+	//SceneCapture->CaptureScene();
 
 	UE_LOG(LogTemp, Warning, TEXT("InitMoon() Moon: %s -> Mat: %s, Tex: %s, RT: %s"),
 		*MoonData.Name,
@@ -173,5 +174,11 @@ void AMoonPanelActor::InitializeMoon()
 
 	FRotator AxisTilt = MoonUtils::GetMoonAxisTilt(MoonData.Tilt);
 	MoonMesh->SetRelativeRotation(AxisTilt);
+}
+
+void AMoonPanelActor::SetParentPlanet(APlanetPanelActor* InParent)
+{
+	UE_LOG(LogTemp, Warning, TEXT("SetParentPlanet() Parent: %s -> Moon: %s"), *InParent->PlanetData.Name, *MoonData.Name);
+	ParentPlanet = InParent;
 }
 

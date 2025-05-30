@@ -65,7 +65,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 		return;
 	}
 
-	UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
+	/*UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
 	if (!RT)
 	{
 		Init(Moon);
@@ -84,7 +84,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(MoonImage->Slot))
 	{
 		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
-	}
+	}*/
 }
 
 UTexture2D* UMoonMarkerWidget::LoadTextureFromFile(FString Path)

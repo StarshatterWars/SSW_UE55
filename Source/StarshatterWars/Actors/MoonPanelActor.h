@@ -13,6 +13,7 @@
 class UStaticMeshComponent;
 class USceneCaptureComponent2D;
 class UMaterialInterface;
+class APlanetPanelActor;
 
 UCLASS()
 class STARSHATTERWARS_API AMoonPanelActor : public AActor
@@ -37,7 +38,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Moon")
 	void InitializeMoon();
-	
+
+	void SetParentPlanet(APlanetPanelActor* InParent);
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return MoonRenderTarget; }
 
@@ -46,6 +48,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Moon")
 	UMaterialInterface* MoonBaseMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Moon")
+	APlanetPanelActor* ParentPlanet = nullptr;
 
 	UPROPERTY()
 	bool isSceneDelay = false;
@@ -91,5 +96,5 @@ protected:
 
 private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
-	UTextureRenderTarget2D* MoonRenderTarget;
+	UTextureRenderTarget2D* MoonRenderTarget = nullptr;
 };

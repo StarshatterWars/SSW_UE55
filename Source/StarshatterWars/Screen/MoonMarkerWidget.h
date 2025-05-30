@@ -8,6 +8,7 @@
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
+#include "PlanetMarkerwidget.h"
 #include "../Actors/MoonPanelActor.h"
 #include "MoonMarkerWidget.generated.h"
 
@@ -41,6 +42,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Moon UI")
 	UMaterialInterface* MoonWidgetMaterial;
+
+	UPROPERTY()
+	UPlanetMarkerWidget* ParentPlanetMarker = nullptr;
 
 protected:
 	UPROPERTY(meta = (BindWidgetOptional)) UImage* MoonImage;

@@ -5,8 +5,49 @@
 #include "Components/Widget.h"
 #include "Components/CanvasPanel.h"
 #include "../Screen/PlanetMarkerWidget.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "PlanetOrbitUtils.h"
 #include "../Screen/SystemOrbitWidget.h"
 
+
+UTextureRenderTarget2D* SystemMapUtils::CreateUniqueRenderTargetForActor(
+	const FString& Name,
+	AActor* OwnerActor,
+	int32 Resolution
+)
+{
+	if (!OwnerActor)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CreateUniqueRenderTargetForActor failed: null owner for %s"), *Name);
+		return nullptr;
+	}
+
+	const FName UniqueRTName = FName(*FString::Printf(TEXT("RT_%s_%s"), *OwnerActor->GetName(), *Name));
+
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(
+		OwnerActor,
+		UTextureRenderTarget2D::StaticClass(),
+		UniqueRTName,
+		RF_Transient
+	);
+
+	if (!RenderTarget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create render target for %s"), *Name);
+		return nullptr;
+	}
+
+	RenderTarget->RenderTargetFormat = RTF_RGBA16f;
+	RenderTarget->ClearColor = FLinearColor::Black;
+	RenderTarget->bAutoGenerateMips = false;
+	RenderTarget->InitAutoFormat(Resolution, Resolution);
+	RenderTarget->UpdateResourceImmediate(true);
+
+	UE_LOG(LogTemp, Log, TEXT("Created unique render target: %s [Addr: %p] for actor %s"),
+		*UniqueRTName.ToString(), RenderTarget, *OwnerActor->GetName());
+
+	return RenderTarget;
+}
 
 float SystemMapUtils::ClampZoomLevel(float ProposedZoom, float MinZoom, float MaxZoom)
 {
@@ -152,6 +193,28 @@ FVector2D SystemMapUtils::ConvertTopLeftToCenterAnchored(const FVector2D& TopLef
 	return TopLeftPos - (CanvasSize * 0.5f);
 }
 
+UTextureRenderTarget2D* SystemMapUtils::CreateRenderTarget(const FString& Name, int32 Resolution, UObject* Outer)
+{
+	if (!Outer)
+	{
+		Outer = GetTransientPackage(); // fallback
+	}
+
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(Outer, *Name);
+	if (!RenderTarget)
+	{
+		return nullptr;
+	}
+
+	RenderTarget->RenderTargetFormat = RTF_RGBA16f; // good for lit previews
+	RenderTarget->ClearColor = FLinearColor::Black;
+	RenderTarget->bAutoGenerateMips = false;
+	RenderTarget->InitAutoFormat(Resolution, Resolution);
+	RenderTarget->UpdateResourceImmediate(true);
+
+	return RenderTarget;
+}
+
 FBox2D SystemMapUtils::ComputeContentBounds(const TSet<UWidget*>& ContentWidgets, UCanvasPanel* Canvas)
 {
 	FBox2D Bounds(EForceInit::ForceInit);
@@ -217,4 +280,18 @@ FBox2D SystemMapUtils::ComputeContentBounds(const TSet<UWidget*>& ContentWidgets
 		*(Bounds.GetSize().ToString()));
 
 	return Bounds;
+}
+
+FVector2D SystemMapUtils::ComputeMoonOrbitOffset(
+	float OrbitKm,
+	float OrbitAngleDegrees,
+	float Inclination,
+	float OrbitToScreen
+)
+{
+	const float AngleRad = FMath::DegreesToRadians(FMath::Fmod(OrbitAngleDegrees, 360.0f));
+	const float Inclined = PlanetOrbitUtils::AmplifyInclination(Inclination, 2.0f);
+	const float Radius = OrbitKm / OrbitToScreen;
+
+	return PlanetOrbitUtils::Get2DOrbitPositionWithInclination(Radius, AngleRad, Inclined);
 }

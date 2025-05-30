@@ -38,6 +38,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Planet")
 	void InitializePlanet();
 	
+	void AssignRenderTarget(UTextureRenderTarget2D* InRenderTarget);
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return PlanetRenderTarget; }
 
@@ -49,6 +50,9 @@ public:
 
 	UPROPERTY()
 	bool isSceneDelay = false;
+
+	UPROPERTY()
+	FS_PlanetMap PlanetData;
 
 protected:
 	UFUNCTION()
@@ -79,11 +83,8 @@ protected:
 
 	UPROPERTY()
 	float Radius = 1.6e9f;
-
-	UPROPERTY()
-	FS_PlanetMap PlanetData;
 	
 private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
-	UTextureRenderTarget2D* PlanetRenderTarget;
+	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
 };

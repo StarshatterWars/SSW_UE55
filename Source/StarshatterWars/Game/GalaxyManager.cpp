@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/StarUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "../Foundation/MoonUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
 
@@ -36,35 +37,21 @@ const FS_Galaxy* UGalaxyManager::FindSystemByName(const FString& Name) const
 	return nullptr;
 }
 
-UTextureRenderTarget2D* UGalaxyManager::GetOrCreatePlanetRenderTarget(const FString& PlanetName, int32 Resolution, UObject* Planet /*= nullptr*/)
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& Name, int32 Resolution, UObject* Object)
 {
-	if (PlanetRenderTargets.Contains(PlanetName))
+	if (RenderTargets.Contains(Name))
 	{
-		return PlanetRenderTargets[PlanetName];
+		return RenderTargets[Name];
 	}
 
-	UTextureRenderTarget2D* NewRT = PlanetUtils::CreatePlanetRenderTarget(PlanetName, Planet, Resolution);
+	UTextureRenderTarget2D* NewRT = SystemMapUtils::CreateRenderTarget(Name, Resolution, Object);
 	if (NewRT)
 	{
-		PlanetRenderTargets.Add(PlanetName, NewRT);
+		RenderTargets.Add(Name, NewRT);
 	}
 	return NewRT;
 }
 
-UTextureRenderTarget2D* UGalaxyManager::GetOrCreateMoonRenderTarget(const FString& MoonName, int32 Resolution, UObject* Moon)
-{
-	if (MoonRenderTargets.Contains(MoonName))
-	{
-		return MoonRenderTargets[MoonName];
-	}
-
-	UTextureRenderTarget2D* NewRT = MoonUtils::CreateMoonRenderTarget(MoonName, Moon, Resolution);
-	if (NewRT)
-	{
-		PlanetRenderTargets.Add(MoonName, NewRT);
-	}
-	return NewRT;
-}
 
 UTextureRenderTarget2D* UGalaxyManager::GetOrCreateStarRenderTarget(const FString& StarName,int32 Resolution, UObject* Star)
 {
@@ -84,7 +71,7 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateStarRenderTarget(const FStrin
 
 void UGalaxyManager::ClearAllRenderTargets()
 {
-	for (auto& Pair : PlanetRenderTargets)
+	for (auto& Pair : RenderTargets)
 	{
 		if (Pair.Value)
 		{
@@ -92,17 +79,7 @@ void UGalaxyManager::ClearAllRenderTargets()
 			Pair.Value->MarkAsGarbage();
 		}
 	}
-	PlanetRenderTargets.Empty();
-
-	for (auto& MoonPair : MoonRenderTargets)
-	{
-		if (MoonPair.Value)
-		{
-			// Mark for garbage collection
-			MoonPair.Value->MarkAsGarbage();
-		}
-	}
-	MoonRenderTargets.Empty();
+	RenderTargets.Empty();
 
 	for (auto& StarPair : StarRenderTargets)
 	{

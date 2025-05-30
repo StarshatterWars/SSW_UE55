@@ -106,7 +106,8 @@ protected:
 private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
-	TMap<FString, USystemOrbitWidget*> OrbitMarkers;
+	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
+	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
 
 	// Holds per-planet orbit angle (randomized once per planet per session)
 	TMap<FString, float> PlanetOrbitAngles;
@@ -169,13 +170,14 @@ private:
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
 	void AddCentralStar(const FS_Galaxy* Star);
-	void AddOrbitalRing(const FS_PlanetMap& Planet);
+	void AddPlanetOrbitalRing(const FS_PlanetMap& Planet);
+	void AddMoonOrbitalRing(const FS_MoonMap& Planet);
 	void AddPlanet(const FS_PlanetMap& Planet);
-	void AddMoon(const FS_MoonMap& Moon);
-
+	void AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPlanetMarkerWidget* ParentWidget);
 	UFUNCTION()
 	void AssignRenderTargetsToPlanets();
-
+	UFUNCTION()
+	void AssignRenderTargetsToMoons();
 	UFUNCTION()
 	void AssignRenderTargetsToStars();
 	

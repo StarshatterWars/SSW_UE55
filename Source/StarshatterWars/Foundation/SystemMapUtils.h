@@ -22,6 +22,9 @@ class STARSHATTERWARS_API SystemMapUtils
 
 public:	
 	
+	/** Creates a unique 512x512 RGBA8 render target with black clear color */
+	static UTextureRenderTarget2D* CreateRenderTarget(const FString& BaseName, int32 Resolution = 256, UObject * Outer = nullptr);
+
 	UFUNCTION()
 	static float ClampZoomLevel(float ProposedZoom, float MinZoom = 0.5f, float MaxZoom = 3.0f);
 
@@ -67,6 +70,21 @@ public:
 		Transform.Scale = FVector2D(Zoom, Zoom);
 		Canvas->SetRenderTransform(Transform);
 	}
+
+	static UTextureRenderTarget2D* CreateUniqueRenderTargetForActor(
+		const FString& Name,
+		AActor* OwnerActor,
+		int32 Resolution = 512
+	);
+
+
+	/** Computes a moon's 2D orbit offset based on its orbital parameters */
+	static FVector2D ComputeMoonOrbitOffset(
+		float OrbitKm,
+		float OrbitAngleDegrees,
+		float Inclination,
+		float OrbitToScreen
+	);
 
 	UFUNCTION()
 	static FPlanetFocusResult CenterOnPlanet(
@@ -137,3 +155,4 @@ public:
 		}
 	};
 };
+
