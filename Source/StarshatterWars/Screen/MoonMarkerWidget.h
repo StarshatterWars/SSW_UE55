@@ -36,7 +36,7 @@ public:
 	void Init(const FS_MoonMap& Moon);
 
 	UFUNCTION()
-	void InitFromMoonActor(const FS_MoonMap& Planet, AMoonPanelActor* MoonActor);
+	void InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActor* MoonActor);
 
 	FOnMoonClicked OnMoonClicked;
 

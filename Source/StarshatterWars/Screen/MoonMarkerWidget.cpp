@@ -14,6 +14,11 @@ void UMoonMarkerWidget::SetMoonName(const FString& InName)
 {
 	MoonName = InName;
 	SetToolTipText(FText::FromString(InName));
+	if (MoonNameText)
+	{
+		MoonNameText->SetText(FText::FromString(InName));
+		MoonNameText->SetColorAndOpacity(FLinearColor::White);
+	}
 }
 
 void UMoonMarkerWidget::SetSelected(bool bSelected)
@@ -29,14 +34,6 @@ void UMoonMarkerWidget::SetMarkerMaterial(UMaterialInterface* MoonMat)
 void UMoonMarkerWidget::Init(const FS_MoonMap& Moon)
 {
 	MoonData = Moon;
-	SetToolTipText(FText::FromString(Moon.Name));
-	MoonName = Moon.Name;
-
-	if (MoonNameText)
-	{
-		MoonNameText->SetText(FText::FromString(Moon.Name));
-		MoonNameText->SetColorAndOpacity(FLinearColor::White);
-	}
 
 	FString IconPath = FPaths::ProjectContentDir() + TEXT("GameData/Galaxy/PlanetIcons/") + Moon.Icon + TEXT(".png");
 	UTexture2D* LoadedTexture = LoadTextureFromFile(IconPath);
@@ -50,14 +47,6 @@ void UMoonMarkerWidget::Init(const FS_MoonMap& Moon)
 void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActor* MoonActor)
 {
 	MoonData = Moon;
-	SetToolTipText(FText::FromString(Moon.Name));
-	MoonName = Moon.Name;
-
-	if (MoonNameText)
-	{
-		MoonNameText->SetText(FText::FromString(Moon.Name));
-		MoonNameText->SetColorAndOpacity(FLinearColor::White);
-	}
 
 	if (!MoonImage || !MoonActor || !MoonWidgetMaterial)
 	{
@@ -65,7 +54,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 		return;
 	}
 
-	/*UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
+	UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
 	if (!RT)
 	{
 		Init(Moon);
@@ -84,7 +73,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(MoonImage->Slot))
 	{
 		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
-	}*/
+	}
 }
 
 UTexture2D* UMoonMarkerWidget::LoadTextureFromFile(FString Path)
