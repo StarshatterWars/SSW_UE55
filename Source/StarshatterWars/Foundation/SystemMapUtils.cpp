@@ -359,13 +359,13 @@ UTextureRenderTarget2D* SystemMapUtils::EnsureRenderTarget(
 	UTextureRenderTarget2D* RT = Galaxy->GetOrCreateRenderTarget(Name, Resolution, RTOuter);
 	if (!RT)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create RT for %s"), *Name);
+		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for %s"), *Name);
 		return nullptr;
 	}
 
 	SceneCapture->TextureTarget = RT;
 
-	UE_LOG(LogTemp, Log, TEXT("RT created for %s | Resolution=%d | Outer=%s"),
+	UE_LOG(LogTemp, Log, TEXT("RenderTarget created for %s | Resolution=%d | Outer=%s"),
 		*Name, Resolution, *GetNameSafe(RTOuter));
 
 	return RT;

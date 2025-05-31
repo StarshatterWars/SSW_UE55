@@ -141,11 +141,3 @@ void APlanetPanelActor::InitializePlanet()
 	PlanetMesh->SetRelativeRotation(AxisTilt);
 }
 
-void APlanetPanelActor::DeferredCaptureScene()
-{
-	if (SceneCapture && PlanetRenderTarget)
-	{
-		SceneCapture->CaptureScene();
-		UE_LOG(LogTemp, Log, TEXT("Planet CaptureScene triggered after delay: %s"), *PlanetData.Name);
-	}
-}

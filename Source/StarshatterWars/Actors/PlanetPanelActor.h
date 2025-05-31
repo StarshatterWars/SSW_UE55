@@ -76,8 +76,7 @@ protected:
 
 	UPROPERTY()
 	float Radius = 1.6e9f;
-	
-	void DeferredCaptureScene();
+
 private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
 	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
