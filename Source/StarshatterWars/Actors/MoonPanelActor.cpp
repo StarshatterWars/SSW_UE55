@@ -133,22 +133,25 @@ void AMoonPanelActor::InitMoon()
 		MoonData.Name
 	);
 
-	// Apply to mesh
-	MoonMesh->SetMaterial(0, DynMat);
-	MoonMaterialInstance = DynMat;
+	if (bUseSystemOverviewOnly == false)
+	{
+		// Apply to mesh
+		MoonMesh->SetMaterial(0, DynMat);
+		MoonMaterialInstance = DynMat;
 
-	// Capture scene (now safe!)
-	MoonMesh->MarkRenderStateDirty();
-	SceneCapture->CaptureScene();
+		// Capture scene (now safe!)
+		MoonMesh->MarkRenderStateDirty();
+		SceneCapture->CaptureScene();
 
-	UE_LOG(LogTemp, Warning, TEXT("InitMoon() Moon: %s -> Mat: %s, Tex: %s, RT: %s"),
-		*MoonData.Name,
-		*GetNameSafe(DynMat),
-		*GetNameSafe(MoonTexture),
-		*GetNameSafe(MoonRenderTarget));
+		UE_LOG(LogTemp, Warning, TEXT("InitMoon() Moon: %s -> Mat: %s, Tex: %s, RT: %s"),
+			*MoonData.Name,
+			*GetNameSafe(DynMat),
+			*GetNameSafe(MoonTexture),
+			*GetNameSafe(MoonRenderTarget));
 
-	// Delay CaptureScene by one tick (safe on all platforms)
-	SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
+		// Delay CaptureScene by one tick (safe on all platforms)
+		SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
+	}
 }
 
 void AMoonPanelActor::DeferredCaptureScene()

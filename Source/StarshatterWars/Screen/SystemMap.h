@@ -16,10 +16,12 @@ class USizeBox;
 class UPlanetMarkerWidget;
 class UMoonMarkerWidget;
 class USystemOrbitWidget;
+class USystemOverviewWidget;
 class UCentralSunWidget;
 class ACentralSunActor;
 class APlanetPanelActor;
 class AMoonPanelActor;
+class ASystemOverviewActor;
 class UOperationsScreen;
 
 /**
@@ -79,6 +81,9 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	USizeBox* MapCanvasSize;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	FS_Galaxy SystemData;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
 
@@ -99,6 +104,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<AMoonPanelActor> MoonActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<ASystemOverviewActor> OverviewActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<USystemOverviewWidget> OverlayWidgetClass;
 
 	UPROPERTY()
 	TArray<APlanetPanelActor*> SpawnedPlanetActors;
@@ -146,7 +157,13 @@ private:
 	AMoonPanelActor* MoonActor;
 
 	UPROPERTY()
+	ASystemOverviewActor* OverlayActor;
+
+	UPROPERTY()
 	UMoonMarkerWidget* MoonWidget;
+
+	UPROPERTY()
+	USystemOverviewWidget* OverlayWidget;
 	
 	UPROPERTY()
 	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
@@ -183,6 +200,7 @@ private:
 	UFUNCTION()
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
+	void AddOverlay(UTextureRenderTarget2D* Target);
 	void AddCentralStar(const FS_Galaxy* Star);
 	void AddPlanetOrbitalRing(const FS_PlanetMap& Planet);
 	void AddMoonOrbitalRing(const FS_MoonMap& Planet);

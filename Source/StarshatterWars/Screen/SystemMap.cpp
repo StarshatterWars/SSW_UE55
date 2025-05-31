@@ -14,6 +14,7 @@
 #include "MoonMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "CentralSunWidget.h"
+#include "SystemOverviewWidget.h"
 #include "OperationsScreen.h"
 
 #include "../Game/GameStructs.h" // FS_Galaxy struct
@@ -24,6 +25,7 @@
 
 #include "../Actors/CentralSunActor.h"
 #include "../Actors/PlanetPanelActor.h"
+#include "../Actors/SystemOverviewActor.h"
 
 #include "../Foundation/PlanetOrbitUtils.h"
 #include "../Foundation/SystemMapUtils.h"
@@ -203,8 +205,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	PlanetOrbitMarkers.Empty();
 	MoonMarkers.Empty();
 	MoonOrbitMarkers.Empty();
-
-	const FVector2D Center = MapCanvas->GetCachedGeometry().GetLocalSize() * 0.5f;
 	
 	AddCentralStar(ActiveSystem);
 
@@ -216,8 +216,11 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	{
 		AddPlanet(Planet);		
 	}
-		
+
+	GenerateUnifiedSystemRenderTarget();
+
 	HighlightSelectedSystem();
+	AddOverlay(SystemOverviewRT);
 
 	//FBox2D HardcodedBounds(-CanvasSize * 0.5f, CanvasSize * 0.5f);
 
@@ -426,6 +429,54 @@ void USystemMap::ApplyTiltToMapCanvas(float TiltAmount)
 	SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
 }
 
+void USystemMap::AddOverlay(UTextureRenderTarget2D* Target) {
+	
+	if (OverlayActor)
+	{
+		OverlayActor->Destroy();
+		OverlayActor = nullptr;
+	}
+	// 2. Destroy previous widget (if it exists)
+	
+	if (OverlayWidget)
+	{
+		OverlayWidget->RemoveFromParent();
+		OverlayWidget = nullptr;
+	}
+
+	FVector Location = FVector(-500, 0, 200);
+	FRotator Rotation = FRotator::ZeroRotator;
+
+	OverlayActor = ASystemOverviewActor::SpawnWithSystemData(
+		GetWorld(),
+		Location,
+		Rotation,
+		OverviewActorClass,
+		Target
+	);
+
+	if (OverlayWidgetClass)
+	{
+		OverlayWidget = CreateWidget<USystemOverviewWidget>(this, OverlayWidgetClass);
+		
+		if (OverlayWidget && OverlayActor)
+		{
+			OverlayWidget->InitializeFromOverlayActor(OverlayActor);
+			OverlayWidget->SetVisibility(ESlateVisibility::Visible);
+
+			if (UCanvasPanelSlot* CanvasSlot = MapCanvas->AddChildToCanvas(OverlayWidget))
+			{
+				CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				CanvasSlot->SetSize(CachedCanvasSize);
+				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+				CanvasSlot->SetZOrder(2);
+			}	
+		}
+	}
+
+}
+
 void USystemMap::AddCentralStar(const FS_Galaxy* Star)
 {
 	if (SunActorClass)
@@ -476,15 +527,6 @@ void USystemMap::AddCentralStar(const FS_Galaxy* Star)
 				StarSlot->SetZOrder(15);
 				StarSlot->SetSize(FVector2D(64.f, 64.f));
 				TrackedMapWidgets.Add(StarWidget);
-
-				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-				{
-					FVector2D CanvasPos = CanvasSlot->GetPosition();
-					FVector2D SlotPos = StarSlot->GetPosition();
-					UE_LOG(LogTemp, Warning, TEXT("CanvasSlot Pos: %s | StarSlot Pos: %s"),
-						*CanvasPos.ToString(),
-						*SlotPos.ToString());
-				}
 			}
 		}
 	}
@@ -827,39 +869,37 @@ void USystemMap::GenerateUnifiedSystemRenderTarget()
 {
 	if (!MapCanvas) return;
 
-	FBox2D ContentBounds(-CanvasSize * 0.5f, CanvasSize * 0.5f);
-
-	// Get render target from GalaxyManager
+	FBox2D Bounds(-CanvasSize * 0.5f, CanvasSize * 0.5f);
 	SystemOverviewRT = UGalaxyManager::Get(this)->GetOrCreateSystemOverviewRenderTarget(
-		GetWorld(), ContentBounds, 300.f);
+		GetWorld(), Bounds, 512.f);
 
-	// Create a scene capture actor to render the full system
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	FVector Center = FVector(Bounds.GetCenter(), 0.f);
+	FVector Location = Center + FVector(0.f, 0.f, 3000.f); // top down
+	FRotator Rotation = FRotator(-90.f, 0.f, 0.f); // looking down
 
-	FVector Center = FVector(ContentBounds.GetCenter(), 0.f);
-	FVector CameraOffset(0.f, -2000.f, 2000.f); // top-left angled view
-	FVector Location = Center + CameraOffset;
+	SceneCaptureActor = GetWorld()->SpawnActor<ASceneCapture2D>(Location, Rotation);
+	if (!SceneCaptureActor) return;
 
-	SceneCaptureActor = GetWorld()->SpawnActor<ASceneCapture2D>(Location, FRotator(-45.f, 0.f, 0.f), Params);
-	SceneCaptureActor->GetCaptureComponent2D()->TextureTarget = SystemOverviewRT;
-	SceneCaptureActor->GetCaptureComponent2D()->bCaptureEveryFrame = false;
-	SceneCaptureActor->GetCaptureComponent2D()->bCaptureOnMovement = false;
-	SceneCaptureActor->GetCaptureComponent2D()->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	USceneCaptureComponent2D* SceneCapture = SceneCaptureActor->GetCaptureComponent2D();
+	if (!SceneCapture) return;
 
-	// Delay capture to allow actors to be fully initialized
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+	SceneCapture->ProjectionType = ECameraProjectionMode::Orthographic;
+	SceneCapture->OrthoWidth = Bounds.GetSize().GetMax();
+	SceneCapture->TextureTarget = SystemOverviewRT;
+	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	SceneCapture->bCaptureEveryFrame = false;
+	SceneCapture->bCaptureOnMovement = false;
+
+	FTimerHandle Delay;
+	GetWorld()->GetTimerManager().SetTimer(Delay, [this]()
 		{
 			if (SceneCaptureActor && SceneCaptureActor->GetCaptureComponent2D())
 			{
 				SceneCaptureActor->GetCaptureComponent2D()->CaptureScene();
-				UE_LOG(LogTemp, Warning, TEXT("Unified SystemOverviewRT capture complete."));
-
-				// Apply RT to all planet/moon markers
 				ApplyUnifiedRenderTargetToAllMarkers();
+				UE_LOG(LogTemp, Warning, TEXT("Unified RT captured."));
 			}
-		}, 0.5f, false);
+		}, 0.6f, false);
 }
 
 void USystemMap::ApplyUnifiedRenderTargetToAllMarkers()
@@ -878,7 +918,7 @@ void USystemMap::ApplyUnifiedRenderTargetToAllMarkers()
 	{
 		if (Pair.Value)
 		{
-			//Pair.Value->SetWidgetRenderTarget(SystemOverviewRT);
+			Pair.Value->SetWidgetRenderTarget(SystemOverviewRT);
 		}
 	}
 }

@@ -462,6 +462,9 @@ UTextureRenderTarget2D* SystemMapUtils::CreateSystemOverviewRenderTarget(
 	Capture->ShowFlags.SetSkyLighting(false);
 	Capture->ShowFlags.SetMotionBlur(false);
 	Capture->ShowFlags.SetPostProcessing(false);
+	
+	UE_LOG(LogTemp, Warning, TEXT("SceneCapture using RT: %s"), *GetNameSafe(Capture->TextureTarget));
+
 
 	// Trigger the capture
 	Capture->CaptureScene();

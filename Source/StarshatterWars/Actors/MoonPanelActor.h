@@ -52,6 +52,9 @@ public:
 	UPROPERTY()
 	bool isSceneDelay = false;
 
+	UPROPERTY()
+	bool bUseSystemOverviewOnly = false;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -48,6 +48,9 @@ public:
 	bool isSceneDelay = false;
 
 	UPROPERTY()
+	bool bUseSystemOverviewOnly = true;
+
+	UPROPERTY()
 	FS_PlanetMap PlanetData;
 
 protected:	
@@ -80,6 +83,4 @@ protected:
 private:
 	UPROPERTY(BlueprintReadOnly, Category="Render", meta=(AllowPrivateAccess=true))
 	UTextureRenderTarget2D* PlanetRenderTarget = nullptr;
-
-	FTimerHandle RenderCheckTimer;
 };

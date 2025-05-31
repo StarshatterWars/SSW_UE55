@@ -105,8 +105,6 @@ void APlanetPanelActor::InitPlanet()
 		PlanetMesh
 	);
 	
-	SceneCapture->TextureTarget = PlanetRenderTarget;
-
 	UMaterialInstanceDynamic* DynMat = SystemMapUtils::CreatePreviewMID(
 		this,
 		PlanetBaseMaterial,
@@ -118,18 +116,23 @@ void APlanetPanelActor::InitPlanet()
 	PlanetMesh->SetMaterial(0, DynMat);
 	PlanetMaterialInstance = DynMat;
 
-	// Capture scene (now safe!)
-	PlanetMesh->MarkRenderStateDirty();
-	SceneCapture->CaptureScene();
+	if (bUseSystemOverviewOnly == false)
+	{
+		SceneCapture->TextureTarget = PlanetRenderTarget;
 
-	UE_LOG(LogTemp, Warning, TEXT("InitPlanet() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
-		*PlanetData.Name,
-		*GetNameSafe(DynMat),
-		*GetNameSafe(PlanetTexture),
-		*GetNameSafe(PlanetRenderTarget));
-	
-	// Delay CaptureScene by one tick (safe on all platforms)
-	SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
+		// Capture scene (now safe!)
+		PlanetMesh->MarkRenderStateDirty();
+		SceneCapture->CaptureScene();
+
+		UE_LOG(LogTemp, Warning, TEXT("InitPlanet() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
+			*PlanetData.Name,
+			*GetNameSafe(DynMat),
+			*GetNameSafe(PlanetTexture),
+			*GetNameSafe(PlanetRenderTarget));
+
+		// Delay CaptureScene by one tick (safe on all platforms)
+		SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
+	}
 }
 
 void APlanetPanelActor::InitializePlanet()

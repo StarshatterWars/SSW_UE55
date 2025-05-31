@@ -97,6 +97,23 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
 		TEXT("SystemOverview_Dynamic")
 	);
 
+	if (!SystemOverviewRenderTarget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SystemOverviewRT was NOT created"));
+		return nullptr;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SystemOverviewRT created: %s [%p]"), *SystemOverviewRenderTarget->GetName(), SystemOverviewRenderTarget);
+
+		UE_LOG(LogTemp, Warning,
+			TEXT("SystemOverviewRT Size: %d x %d | Format: %d"),
+			SystemOverviewRenderTarget->SizeX,
+			SystemOverviewRenderTarget->SizeY,
+			(int32)SystemOverviewRenderTarget->RenderTargetFormat
+		);
+	}
+
 	return SystemOverviewRenderTarget;
 }
 

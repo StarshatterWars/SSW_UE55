@@ -29,13 +29,14 @@ class STARSHATTERWARS_API UMoonMarkerWidget : public UUserWidget
 public:
 	void SetSelected(bool bSelected);
 	void SetMarkerMaterial(UMaterialInterface* MoonMat);
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 
 	UFUNCTION()
 	void InitFromMoonActor(const FS_MoonMap& Planet, AMoonPanelActor* MoonActor);
 
 	FOnMoonClicked OnMoonClicked;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Moon UI")
+	UPROPERTY()
 	UMaterialInterface* MoonWidgetMaterial;
 
 	UPROPERTY()
@@ -48,7 +49,5 @@ protected:
 
 private:
 	FS_MoonMap MoonData;
-
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 };
