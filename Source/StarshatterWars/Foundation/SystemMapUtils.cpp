@@ -501,3 +501,4 @@ void SystemMapUtils::ApplyRenderTargetToImage(
 
 	UE_LOG(LogTemp, Log, TEXT("RenderTarget applied to image: %s"), *RenderTarget->GetName());
 }
+

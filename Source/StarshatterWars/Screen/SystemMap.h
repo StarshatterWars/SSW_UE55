@@ -7,6 +7,7 @@
 #include "../Game/GameStructs.h" // FS_Galaxy struct
 #include "../System/SSWGameInstance.h"
 #include "../Foundation/SystemMapUtils.h"
+#include "Engine/SceneCapture2D.h" 
 #include "SystemMap.generated.h"
 
 class UCanvasPanel;
@@ -51,6 +52,13 @@ public:
 	void InitMapCanvas();
 
 	void FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker);
+	
+	UFUNCTION()
+	void GenerateUnifiedSystemRenderTarget();
+
+	UFUNCTION()
+	void ApplyUnifiedRenderTargetToAllMarkers();
+
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
@@ -103,7 +111,7 @@ protected:
 	UFUNCTION()
 	void ZoomToFitAllPlanets();
 
-private:
+private:	
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
@@ -314,4 +322,7 @@ private:
 
 	UPROPERTY()
 	float OrbitRadius;
+	
+	UPROPERTY()
+	ASceneCapture2D* SceneCaptureActor = nullptr;
 };

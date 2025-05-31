@@ -2,23 +2,33 @@
 
 
 #include "SystemMap.h"
+
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
+#include "Components/SceneCaptureComponent2D.h"
+
+#include "Engine/SceneCapture2D.h"
+
 #include "PlanetMarkerWidget.h"
 #include "MoonMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "CentralSunWidget.h"
 #include "OperationsScreen.h"
+
 #include "../Game/GameStructs.h" // FS_Galaxy struct
+#include "../Game/GalaxyManager.h"
+
 #include "../System/SSWGameInstance.h"
 #include "Kismet/GameplayStatics.h"
-#include "../Game/GalaxyManager.h"
+
 #include "../Actors/CentralSunActor.h"
 #include "../Actors/PlanetPanelActor.h"
+
 #include "../Foundation/PlanetOrbitUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 #include "../Foundation/StarUtils.h"
+
 #include "TimerManager.h"
 #include "EngineUtils.h" 
 
@@ -730,7 +740,7 @@ void USystemMap::HighlightSelectedSystem()
 					}
 
 					// Optionally center camera or draw selection lines here
-					UE_LOG(LogTemp, Log, TEXT("Selected system: %s at %s"), *Marker->GetPlanetName(), *Center.ToString());
+					UE_LOG(LogTemp, Log, TEXT("Selected system: %s at %s"), *Marker->PlanetData.Name, *Center.ToString());
 
 				}), 0.01f, false);
 		}
@@ -811,4 +821,64 @@ void USystemMap::FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker)
 	TargetCanvasPos = ViewportCenter - MarkerCenter;
 	PlanetFocusTime = 0.f;
 	bIsAnimatingToPlanet = true;
+}
+
+void USystemMap::GenerateUnifiedSystemRenderTarget()
+{
+	if (!MapCanvas) return;
+
+	FBox2D ContentBounds(-CanvasSize * 0.5f, CanvasSize * 0.5f);
+
+	// Get render target from GalaxyManager
+	SystemOverviewRT = UGalaxyManager::Get(this)->GetOrCreateSystemOverviewRenderTarget(
+		GetWorld(), ContentBounds, 300.f);
+
+	// Create a scene capture actor to render the full system
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	FVector Center = FVector(ContentBounds.GetCenter(), 0.f);
+	FVector CameraOffset(0.f, -2000.f, 2000.f); // top-left angled view
+	FVector Location = Center + CameraOffset;
+
+	SceneCaptureActor = GetWorld()->SpawnActor<ASceneCapture2D>(Location, FRotator(-45.f, 0.f, 0.f), Params);
+	SceneCaptureActor->GetCaptureComponent2D()->TextureTarget = SystemOverviewRT;
+	SceneCaptureActor->GetCaptureComponent2D()->bCaptureEveryFrame = false;
+	SceneCaptureActor->GetCaptureComponent2D()->bCaptureOnMovement = false;
+	SceneCaptureActor->GetCaptureComponent2D()->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+
+	// Delay capture to allow actors to be fully initialized
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+		{
+			if (SceneCaptureActor && SceneCaptureActor->GetCaptureComponent2D())
+			{
+				SceneCaptureActor->GetCaptureComponent2D()->CaptureScene();
+				UE_LOG(LogTemp, Warning, TEXT("Unified SystemOverviewRT capture complete."));
+
+				// Apply RT to all planet/moon markers
+				ApplyUnifiedRenderTargetToAllMarkers();
+			}
+		}, 0.5f, false);
+}
+
+void USystemMap::ApplyUnifiedRenderTargetToAllMarkers()
+{
+	if (!SystemOverviewRT) return;
+
+	for (auto& Pair : PlanetMarkers)
+	{
+		if (Pair.Value)
+		{
+			Pair.Value->SetWidgetRenderTarget(SystemOverviewRT);
+		}
+	}
+
+	for (auto& Pair : MoonMarkers)
+	{
+		if (Pair.Value)
+		{
+			//Pair.Value->SetWidgetRenderTarget(SystemOverviewRT);
+		}
+	}
 }

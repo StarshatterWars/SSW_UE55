@@ -52,23 +52,6 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& N
 	return NewRT;
 }
 
-
-UTextureRenderTarget2D* UGalaxyManager::GetOrCreateStarRenderTarget(const FString& StarName,int32 Resolution, UObject* Star)
-{
-	if (StarRenderTargets.Contains(StarName))
-	{
-		return StarRenderTargets[StarName];
-	}
-
-	UTextureRenderTarget2D* NewRT = StarUtils::CreateStarRenderTarget(StarName, Star, Resolution);
-	if (NewRT)
-	{
-		StarRenderTargets.Add(StarName, NewRT);
-	}
-	return NewRT;
-}
-
-
 void UGalaxyManager::ClearAllRenderTargets()
 {
 	for (auto& Pair : RenderTargets)
@@ -81,20 +64,10 @@ void UGalaxyManager::ClearAllRenderTargets()
 	}
 	RenderTargets.Empty();
 
-	for (auto& StarPair : StarRenderTargets)
-	{
-		if (StarPair.Value)
-		{
-			// Mark for garbage collection
-			StarPair.Value->MarkAsGarbage();
-		}
-	}
-	StarRenderTargets.Empty();
-
 	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all render targets."));
 }
 
-/*UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
+UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
 	UWorld* World,
 	const FBox2D& ContentBounds,
 	float Padding)
@@ -113,7 +86,7 @@ void UGalaxyManager::ClearAllRenderTargets()
 	FVector CaptureLocation = CaptureTarget + FVector(0.f, -Extents2D.Y * 2.f, Extents2D.Y * 2.f); // top-down view
 
 	int32 MaxDim = FMath::CeilToInt(FMath::Max(Extents2D.X, Extents2D.Y) * 2.f);
-	int32 Resolution = FMath::Clamp(FMath::RoundToInt(MaxDim), 512, 4096); // safe limits
+	int32 Resolution = FMath::Clamp(FMath::RoundToInt(static_cast<float>(MaxDim)), 512, 4096);
 
 	// Create fresh every time for now (optional: make it persistent)
 	SystemOverviewRenderTarget = SystemMapUtils::CreateSystemOverviewRenderTarget(
@@ -125,6 +98,6 @@ void UGalaxyManager::ClearAllRenderTargets()
 	);
 
 	return SystemOverviewRenderTarget;
-}*/
+}
 
 

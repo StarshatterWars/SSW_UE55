@@ -25,12 +25,11 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 	SetVisibility(ESlateVisibility::Visible);
 	
 	PlanetData = Planet;
-	SetToolTipText(FText::FromString(Planet.Name));
-	PlanetName = Planet.Name;
+	SetToolTipText(FText::FromString(PlanetData.Name));
 
 	if (PlanetNameText)
 	{
-		PlanetNameText->SetText(FText::FromString(Planet.Name));
+		PlanetNameText->SetText(FText::FromString(PlanetData.Name));
 		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
 	}
 
@@ -49,7 +48,7 @@ FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 {
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		OnPlanetClicked.Broadcast(PlanetName);
+		OnPlanetClicked.Broadcast(PlanetData.Name);
 		return FReply::Handled();
 	}
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);

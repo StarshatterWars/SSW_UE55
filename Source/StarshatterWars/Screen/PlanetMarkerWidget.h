@@ -22,9 +22,12 @@ class STARSHATTERWARS_API UPlanetMarkerWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY()
+	FS_PlanetMap PlanetData;
+	UFUNCTION()
 	void SetSelected(bool bSelected);
-	void SetMarkerMaterial(UMaterialInterface* PlanetMat);
-	const FString& GetPlanetName() const { return PlanetName; }
+	
+	UFUNCTION()void SetMarkerMaterial(UMaterialInterface* PlanetMat);
 
 	UFUNCTION()
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
@@ -34,7 +37,7 @@ public:
 
 	FOnPlanetClicked OnPlanetClicked;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Planet UI")
+	UPROPERTY()
 	UMaterialInterface* PlanetWidgetMaterial;
 
 protected:
@@ -43,9 +46,6 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional)) class UTextBlock* PlanetNameText;
 
 private:
-	FString PlanetName;
-	FS_PlanetMap PlanetData;
-
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	
 	UPROPERTY()

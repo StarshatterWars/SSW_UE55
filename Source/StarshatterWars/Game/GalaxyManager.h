@@ -22,12 +22,12 @@ public:
 	UPROPERTY()
 	UTextureRenderTarget2D* SystemOverviewRenderTarget = nullptr;
 
-	//UFUNCTION(BlueprintCallable, Category = "Galaxy")
-	//UTextureRenderTarget2D* GetOrCreateSystemOverviewRenderTarget(
-	//	UWorld* World,
-	//	const FBox2D& ContentBounds,
-	//	float Padding = 512.f
-	//);
+	UFUNCTION()
+	UTextureRenderTarget2D* GetOrCreateSystemOverviewRenderTarget(
+		UWorld* World,
+		const FBox2D& ContentBounds,
+		float Padding = 512.f
+	);
 
 	static UGalaxyManager* Get(UObject* WorldContext);
 
@@ -38,9 +38,6 @@ public:
 	UTextureRenderTarget2D* GetOrCreateRenderTarget(const FString& Name, int32 Resolution, UObject* Object = nullptr);
 
 	UFUNCTION()
-	UTextureRenderTarget2D* GetOrCreateStarRenderTarget(const FString& PlanetName, int32 Resolution, UObject* Object = nullptr);
-
-	UFUNCTION()
 	void ClearAllRenderTargets();
 
 	UFUNCTION()
@@ -48,10 +45,6 @@ public:
 
 	UPROPERTY()
 	TMap<FString, UTextureRenderTarget2D*> RenderTargets;
-
-	UPROPERTY()
-	TMap<FString, UTextureRenderTarget2D*> StarRenderTargets;
-
 
 private:
 	UPROPERTY()
