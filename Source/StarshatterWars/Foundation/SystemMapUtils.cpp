@@ -2,19 +2,30 @@
 
 
 #include "SystemMapUtils.h"
+
 #include "Components/Widget.h"
 #include "Components/CanvasPanel.h"
-#include "../Screen/PlanetMarkerWidget.h"
-#include "Engine/TextureRenderTarget2D.h"
-#include "PlanetOrbitUtils.h"
-#include "Engine/World.h"
-#include "TimerManager.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/Image.h"
+#include "Components/CanvasPanelSlot.h"
+
+#include "../Screen/PlanetMarkerWidget.h"
+
+#include "PlanetOrbitUtils.h"
+#include "TimerManager.h"
+
 #include "Materials/MaterialInstanceDynamic.h"
+
+#include "Engine/TextureRenderTarget2D.h"
 #include "Engine/Texture.h"
+#include "Engine/SceneCapture2D.h"
+#include "Engine/World.h"
+
 #include "../Game/GalaxyManager.h"
 #include "../Screen/SystemOrbitWidget.h"
+
+#include "Kismet/KismetRenderingLibrary.h"
 
 
 UTextureRenderTarget2D* SystemMapUtils::CreateUniqueRenderTargetForActor(
@@ -397,4 +408,96 @@ UMaterialInstanceDynamic* SystemMapUtils::CreatePreviewMID(
 		*GetNameSafe(BaseTexture));
 
 	return DynMat;
+}
+
+UTextureRenderTarget2D* SystemMapUtils::CreateSystemOverviewRenderTarget(
+	UWorld* World,
+	FVector CaptureLocation,
+	FVector CaptureTarget,
+	int32 Resolution,
+	const FString& Name)
+{
+	if (!World)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateSystemOverviewRenderTarget: World is null"));
+		return nullptr;
+	}
+
+	// Create the render target
+	UTextureRenderTarget2D* RenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(
+		World,
+		Resolution,
+		Resolution,
+		RTF_RGBA16f
+	);
+
+	if (!RenderTarget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create system render target"));
+		return nullptr;
+	}
+
+	RenderTarget->ClearColor = FLinearColor::Black;
+	RenderTarget->UpdateResourceImmediate(true);
+
+	// Spawn a temporary SceneCapture actor
+	ASceneCapture2D* CaptureActor = World->SpawnActor<ASceneCapture2D>(ASceneCapture2D::StaticClass(), CaptureLocation, FRotator::ZeroRotator);
+	if (!CaptureActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn SceneCapture2D"));
+		return nullptr;
+	}
+
+	USceneCaptureComponent2D* Capture = CaptureActor->GetCaptureComponent2D();
+	Capture->SetWorldLocation(CaptureLocation);
+	Capture->SetWorldRotation((CaptureTarget - CaptureLocation).Rotation());
+	Capture->FOVAngle = 30.f;
+	Capture->TextureTarget = RenderTarget;
+	Capture->bCaptureEveryFrame = false;
+	Capture->bCaptureOnMovement = false;
+
+	// Optional: remove unnecessary render features
+	Capture->ShowFlags.SetAtmosphere(false);
+	Capture->ShowFlags.SetFog(false);
+	Capture->ShowFlags.SetSkyLighting(false);
+	Capture->ShowFlags.SetMotionBlur(false);
+	Capture->ShowFlags.SetPostProcessing(false);
+
+	// Trigger the capture
+	Capture->CaptureScene();
+
+	UE_LOG(LogTemp, Log, TEXT("System overview captured to %s (Size: %dx%d)"), *Name, Resolution, Resolution);
+	return RenderTarget;
+}
+
+void SystemMapUtils::ApplyRenderTargetToImage(
+	UObject* Outer,
+	UImage* Image,
+	UMaterialInterface* BaseMaterial,
+	UTextureRenderTarget2D* RenderTarget,
+	FVector2D BrushSize)
+{
+	if (!Image || !BaseMaterial || !RenderTarget || !Outer)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyRenderTargetToImage: Invalid input"));
+		return;
+	}
+
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(BaseMaterial, Outer);
+	if (!DynMat)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create dynamic material"));
+		return;
+	}
+
+	DynMat->SetTextureParameterValue("InputTexture", RenderTarget);
+	Image->SetBrushFromMaterial(DynMat);
+	Image->SetBrushSize(BrushSize);
+
+	if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Image->Slot))
+	{
+		Slot->SetSize(BrushSize);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("RenderTarget applied to image: %s"), *RenderTarget->GetName());
 }

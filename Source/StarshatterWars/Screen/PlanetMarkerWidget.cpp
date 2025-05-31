@@ -6,6 +6,7 @@
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
 #include "../Foundation/PlanetUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
@@ -71,19 +72,7 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 		return;
 	}
 
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetWidgetMaterial, this);
-	DynMat->SetTextureParameterValue("InputTexture", RT);
-	PlanetImage->SetBrushFromMaterial(DynMat);
-	float SizePx = PlanetUtils::GetUISizeFromRadius(Planet.Radius)/2;
-	
-	// Set brush and visual size
-	PlanetImage->SetBrushSize(FVector2D(SizePx, SizePx));
-	// Optional: resize based on radius
-	
-	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(PlanetImage->Slot))
-	{
-		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
-	}
+	SetWidgetRenderTarget(RT);
 }
 
 UTexture2D* UPlanetMarkerWidget::LoadTextureFromFile(FString Path)
@@ -112,4 +101,19 @@ FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 		return FReply::Handled();
 	}
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
+void UPlanetMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
+{
+	if (InRT && PlanetImage && PlanetWidgetMaterial)
+	{
+		float SizePx = PlanetUtils::GetUISizeFromRadius(PlanetData.Radius) / 2;
+		SystemMapUtils::ApplyRenderTargetToImage(
+			this,
+			PlanetImage,
+			PlanetWidgetMaterial,
+			InRT,
+			FVector2D(SizePx, SizePx)
+		);
+	}
 }

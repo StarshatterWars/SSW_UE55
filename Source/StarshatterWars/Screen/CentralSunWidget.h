@@ -45,4 +45,9 @@ public:
 
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
+	ACentralSunActor* CentralStar; 
+	
+	UPROPERTY()
+	float StarSize;
 };

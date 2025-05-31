@@ -7,6 +7,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "../System/SSWGameInstance.h"
 #include "../Foundation/StarUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
@@ -28,37 +29,23 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 		return;
 	} 
 
+	CentralStar = SunActor;
+
 	if (SunNameText) {
-		SunNameText->SetText(FText::FromString(SunActor->StarName));
+		SunNameText->SetText(FText::FromString(CentralStar->StarName));
 	}
 
-	UTextureRenderTarget2D* RenderTarget = SunActor->GetRenderTarget();
+	UTextureRenderTarget2D* RT = CentralStar->GetRenderTarget();
 	
-	if (!RenderTarget)
+	if (!RT)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No render target found on SunActor."));
 		return;
 	}
+	StarSize = StarUtils::GetUISizeFromRadius(CentralStar->GetRadius()) / 2;
+	SetWidgetRenderTarget(RT);
 	
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(SunWidgetMaterial, this);
-	DynMat->SetTextureParameterValue("InputTexture", RenderTarget);
-
-	// Apply to image brush
-	SunImage->SetBrushFromMaterial(DynMat);
-	float SizePx = StarUtils::GetUISizeFromRadius(SunActor->GetRadius());
-
-	// Set brush and visual size
-	SunImage->SetBrushSize(FVector2D(SizePx, SizePx));
-
-	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(SunImage->Slot))
-	{
-		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("CentralSunWidget initialized with render target: %s, radius: %.2e km -> %.1f px"),
-		*GetNameSafe(RenderTarget), SunActor->GetRadius(), SizePx);
-	
-	float Scale = SizePx / 64.f; // assuming 64 is base size
+	float Scale = StarSize / 64.f; // assuming 64 is base size
 	FWidgetTransform Transform;
 	Transform.Scale = FVector2D(Scale, Scale);
 	SunImage->SetRenderTransform(Transform);
@@ -69,4 +56,18 @@ FReply UCentralSunWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 	UE_LOG(LogTemp, Log, TEXT("Sun clicked in CentralSunWidget"));
 	OnSunClicked.Broadcast();
 	return FReply::Handled();
+}
+
+void UCentralSunWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
+{
+	if (InRT && SunImage && SunWidgetMaterial)
+	{
+		SystemMapUtils::ApplyRenderTargetToImage(
+			this,
+			SunImage,
+			SunWidgetMaterial,
+			InRT,
+			FVector2D(StarSize, StarSize)
+		);
+	}
 }

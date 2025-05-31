@@ -107,21 +107,13 @@ void ACentralSunActor::Tick(float DeltaTime)
 void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 {
 	// Create the render target
-	int32 Resolution = StarUtils::GetRenderTargetResolutionForRadius(Radius);
-	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	SunRenderTarget = Galaxy->GetOrCreateRenderTarget(StarName, 512, SunMesh);
-
-	if (!SunRenderTarget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for star %s"), *StarName);
-		return;
-	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("Star RenderTarget created: %s [%p] for star %s"),
-			*GetNameSafe(SunRenderTarget),
-			SunRenderTarget,
-			*StarName);
-	}
+	SunRenderTarget = SystemMapUtils::EnsureRenderTarget(
+		this,
+		StarName,
+		StarUtils::GetRenderTargetResolutionForRadius(Radius),
+		SceneCapture,
+		SunMesh
+	);
 
 	SceneCapture->TextureTarget = SunRenderTarget;
 	
@@ -130,22 +122,18 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 		*UEnum::GetValueAsString(Class),
 		StarColor.R, StarColor.G, StarColor.B);
 
-
 	// Use StarUtils for consistent visuals
 	StarColor = StarUtils::GetColor(Class);
 	float GlowStrength = StarUtils::GetGlowStrength(Class);
 	float SunspotStrength = StarUtils::GetSunspotStrength(Class);
 
 	// Create dynamic material
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(StarBaseMaterial, SunMesh);
-	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *StarName, FMath::RandRange(1000, 9999)));
-	
-	if (StarTexture)
-	{
-		#define UpdateResource UpdateResource
-		StarTexture->UpdateResource();
-		DynMat->SetTextureParameterValue("BaseTexture", StarTexture);
-	}
+	UMaterialInstanceDynamic* DynMat = SystemMapUtils::CreatePreviewMID(
+		this,
+		StarBaseMaterial,
+		StarTexture,
+		StarName
+	);
 
 	// Apply to mesh
 	SunMesh->SetMaterial(0, DynMat);

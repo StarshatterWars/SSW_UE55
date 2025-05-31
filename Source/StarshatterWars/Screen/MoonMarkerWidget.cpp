@@ -7,6 +7,7 @@
 #include "Components/TextBlock.h"
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/MoonUtils.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
@@ -72,19 +73,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 		return;
 	}
 
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(MoonWidgetMaterial, this);
-	DynMat->SetTextureParameterValue("InputTexture", RT);
-	MoonImage->SetBrushFromMaterial(DynMat);
-	float SizePx = MoonUtils::GetUISizeFromRadius(Moon.Radius) / 2;
-
-	// Set brush and visual size
-	MoonImage->SetBrushSize(FVector2D(SizePx, SizePx));
-	// Optional: resize based on radius
-
-	if (UCanvasPanelSlot* ImageSlot = Cast<UCanvasPanelSlot>(MoonImage->Slot))
-	{
-		ImageSlot->SetSize(FVector2D(SizePx, SizePx));
-	}
+	SetWidgetRenderTarget(RT);
 }
 
 UTexture2D* UMoonMarkerWidget::LoadTextureFromFile(FString Path)
@@ -114,5 +103,21 @@ FReply UMoonMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 	}
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
+
+void UMoonMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
+{
+	if (InRT && MoonImage && MoonWidgetMaterial)
+	{
+		float SizePx = MoonUtils::GetUISizeFromRadius(MoonData.Radius) / 2;
+		SystemMapUtils::ApplyRenderTargetToImage(
+			this,
+			MoonImage,
+			MoonWidgetMaterial,
+			InRT,
+			FVector2D(SizePx, SizePx)
+		);
+	}
+}
+
 
 

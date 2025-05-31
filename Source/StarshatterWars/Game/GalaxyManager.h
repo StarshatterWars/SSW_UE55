@@ -17,6 +17,18 @@ class STARSHATTERWARS_API UGalaxyManager : public UObject
 	GENERATED_BODY()
 	
 public:
+		
+	// GalaxyManager.h
+	UPROPERTY()
+	UTextureRenderTarget2D* SystemOverviewRenderTarget = nullptr;
+
+	//UFUNCTION(BlueprintCallable, Category = "Galaxy")
+	//UTextureRenderTarget2D* GetOrCreateSystemOverviewRenderTarget(
+	//	UWorld* World,
+	//	const FBox2D& ContentBounds,
+	//	float Padding = 512.f
+	//);
+
 	static UGalaxyManager* Get(UObject* WorldContext);
 
 	void LoadGalaxy(const TArray<FS_Galaxy>& ParsedSystems);

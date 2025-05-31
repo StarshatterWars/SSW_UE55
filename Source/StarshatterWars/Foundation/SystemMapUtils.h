@@ -14,6 +14,8 @@ class UTexture;
 class UTextureRenderTarget2D;
 class USceneCaptureComponent2D;
 class UStaticMeshComponent;
+class UWorld;
+class UImage;
 
 /**
  * 
@@ -182,5 +184,20 @@ public:
 		const FString& Label = TEXT("Preview")
 	);
 
+	static UTextureRenderTarget2D* CreateSystemOverviewRenderTarget(
+		UWorld* World,
+		FVector CaptureLocation,
+		FVector CaptureTarget,
+		int32 Resolution = 2048,
+		const FString& Name = TEXT("SystemOverview")
+	);
+
+	static void ApplyRenderTargetToImage(
+		UObject* Outer,
+		UImage* Image,
+		UMaterialInterface* BaseMaterial,
+		UTextureRenderTarget2D* RenderTarget,
+		FVector2D BrushSize = FVector2D(128.f, 128.f)
+	);
 };
 

@@ -143,6 +143,10 @@ private:
 	UPROPERTY()
 	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
 
+	// Store a persistent system render overview texture
+	UPROPERTY()
+	UTextureRenderTarget2D* SystemOverviewRT = nullptr;
+
 	// For tracking drag state
 	
 	UPROPERTY()
@@ -153,6 +157,8 @@ private:
 
 	UPROPERTY()
 	FString SelectedMoonName;
+
+	FVector2D CanvasSize = FVector2D(6000.f, 6000.f);
 
 	UFUNCTION()
 	void HandlePlanetClicked(const FString& PlanetName);

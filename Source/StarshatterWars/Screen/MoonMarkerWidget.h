@@ -58,4 +58,5 @@ private:
 	UTexture2D* LoadTextureFromFile(FString Path);
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 };

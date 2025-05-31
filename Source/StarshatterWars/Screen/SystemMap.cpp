@@ -208,6 +208,11 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	}
 		
 	HighlightSelectedSystem();
+
+	//FBox2D HardcodedBounds(-CanvasSize * 0.5f, CanvasSize * 0.5f);
+
+	//UTextureRenderTarget2D* SystemRT = UGalaxyManager::Get(this)->GetOrCreateSystemOverviewRenderTarget(GetWorld(), HardcodedBounds);
+
 }
 
 void USystemMap::HandleCentralSunClicked()
@@ -613,6 +618,7 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 			PlanetMarker->SetVisibility(ESlateVisibility::Visible);
 			PlanetMarker->SetPlanetName(Planet.Name);
+			//PlanetMarker->SetPreviewRenderTarget(SystemOverviewRT);
 			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
 			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
 
@@ -779,7 +785,7 @@ void USystemMap::InitMapCanvas()
 				{
 					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					CanvasSlot->SetSize(FVector2D(6000.f, 6000.f));	
+					CanvasSlot->SetSize(CanvasSize);	
 					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
 
 					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);

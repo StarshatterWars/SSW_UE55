@@ -94,3 +94,37 @@ void UGalaxyManager::ClearAllRenderTargets()
 	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all render targets."));
 }
 
+/*UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
+	UWorld* World,
+	const FBox2D& ContentBounds,
+	float Padding)
+{
+	if (!World)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SystemOverviewRenderTarget: Invalid World"));
+		return nullptr;
+	}
+
+	// Compute center + ideal capture position
+	FVector2D Center2D = ContentBounds.GetCenter();
+	FVector2D Extents2D = ContentBounds.GetSize() * 0.5f + FVector2D(Padding, Padding);
+
+	FVector CaptureTarget = FVector(Center2D.X, Center2D.Y, 0.f);
+	FVector CaptureLocation = CaptureTarget + FVector(0.f, -Extents2D.Y * 2.f, Extents2D.Y * 2.f); // top-down view
+
+	int32 MaxDim = FMath::CeilToInt(FMath::Max(Extents2D.X, Extents2D.Y) * 2.f);
+	int32 Resolution = FMath::Clamp(FMath::RoundToInt(MaxDim), 512, 4096); // safe limits
+
+	// Create fresh every time for now (optional: make it persistent)
+	SystemOverviewRenderTarget = SystemMapUtils::CreateSystemOverviewRenderTarget(
+		World,
+		CaptureLocation,
+		CaptureTarget,
+		Resolution,
+		TEXT("SystemOverview_Dynamic")
+	);
+
+	return SystemOverviewRenderTarget;
+}*/
+
+
