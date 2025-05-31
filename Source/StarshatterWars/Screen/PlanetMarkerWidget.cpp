@@ -10,12 +10,6 @@
 #include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
-void UPlanetMarkerWidget::SetPlanetName(const FString& InName)
-{
-	PlanetName = InName;
-	SetToolTipText(FText::FromString(InName));
-}
-
 void UPlanetMarkerWidget::SetSelected(bool bSelected)
 {
 	// Optional highlight logic
@@ -26,29 +20,10 @@ void UPlanetMarkerWidget::SetMarkerMaterial(UMaterialInterface* PlanetMat)
 	PlanetWidgetMaterial = PlanetMat;
 }
 
-void UPlanetMarkerWidget::Init(const FS_PlanetMap& Planet)
-{
-	PlanetData = Planet;
-	SetToolTipText(FText::FromString(Planet.Name));
-	PlanetName = Planet.Name;
-
-	if (PlanetNameText)
-	{
-		PlanetNameText->SetText(FText::FromString(Planet.Name));
-		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
-	}
-
-	FString IconPath = FPaths::ProjectContentDir() + TEXT("GameData/Galaxy/PlanetIcons/") + Planet.Icon + TEXT(".png");
-	UTexture2D* LoadedTexture = LoadTextureFromFile(IconPath);
-	if (LoadedTexture && PlanetImage)
-	{
-		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(64, 64));
-		PlanetImage->SetBrush(Brush);
-	}
-}
-
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
+	SetVisibility(ESlateVisibility::Visible);
+	
 	PlanetData = Planet;
 	SetToolTipText(FText::FromString(Planet.Name));
 	PlanetName = Planet.Name;
@@ -57,40 +32,17 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 	{
 		PlanetNameText->SetText(FText::FromString(Planet.Name));
 		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
-	}
-
-	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
-	{
-		Init(Planet); // fallback
-		return;
 	}
 
 	UTextureRenderTarget2D* RT = PlanetActor->GetRenderTarget();
-	if (!RT)
+
+	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial || !RT)
 	{
-		Init(Planet);
+		UE_LOG(LogTemp, Warning, TEXT("InitFromPlanetActor: missing setup"));
 		return;
 	}
 
 	SetWidgetRenderTarget(RT);
-}
-
-UTexture2D* UPlanetMarkerWidget::LoadTextureFromFile(FString Path)
-{
-	if (USSWGameInstance* SSW = GetGameInstance<USSWGameInstance>())
-	{
-		return SSW->LoadPNGTextureFromFile(Path);
-	}
-	return nullptr;
-}
-
-FSlateBrush UPlanetMarkerWidget::CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize)
-{
-	FSlateBrush Brush;
-	Brush.SetResourceObject(Texture);
-	Brush.ImageSize = ImageSize;
-	Brush.DrawAs = ESlateBrushDrawType::Image;
-	return Brush;
 }
 
 FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

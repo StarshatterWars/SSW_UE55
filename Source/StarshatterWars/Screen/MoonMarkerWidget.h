@@ -27,13 +27,8 @@ class STARSHATTERWARS_API UMoonMarkerWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	void SetMoonName(const FString& InName);
 	void SetSelected(bool bSelected);
 	void SetMarkerMaterial(UMaterialInterface* MoonMat);
-	const FString& GetMoonName() const { return MoonName; }
-
-	UFUNCTION()
-	void Init(const FS_MoonMap& Moon);
 
 	UFUNCTION()
 	void InitFromMoonActor(const FS_MoonMap& Planet, AMoonPanelActor* MoonActor);
@@ -52,11 +47,8 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional)) class UTextBlock* MoonNameText;
 
 private:
-	FString MoonName;
 	FS_MoonMap MoonData;
 
-	UTexture2D* LoadTextureFromFile(FString Path);
-	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 };

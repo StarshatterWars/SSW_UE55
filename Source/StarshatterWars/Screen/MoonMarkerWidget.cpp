@@ -11,12 +11,6 @@
 #include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
-void UMoonMarkerWidget::SetMoonName(const FString& InName)
-{
-	MoonName = InName;
-	SetToolTipText(FText::FromString(InName));
-}
-
 void UMoonMarkerWidget::SetSelected(bool bSelected)
 {
 	// Optional highlight logic
@@ -27,78 +21,33 @@ void UMoonMarkerWidget::SetMarkerMaterial(UMaterialInterface* MoonMat)
 	MoonWidgetMaterial = MoonMat;
 }
 
-void UMoonMarkerWidget::Init(const FS_MoonMap& Moon)
-{
-	MoonData = Moon;
-	SetToolTipText(FText::FromString(Moon.Name));
-	MoonName = Moon.Name;
-
-	if (MoonNameText)
-	{
-		MoonNameText->SetText(FText::FromString(Moon.Name));
-		MoonNameText->SetColorAndOpacity(FLinearColor::White);
-	}
-
-	FString IconPath = FPaths::ProjectContentDir() + TEXT("GameData/Galaxy/PlanetIcons/") + Moon.Icon + TEXT(".png");
-	UTexture2D* LoadedTexture = LoadTextureFromFile(IconPath);
-	if (LoadedTexture && MoonImage)
-	{
-		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(64, 64));
-		MoonImage->SetBrush(Brush);
-	}
-}
-
 void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActor* MoonActor)
 {
 	MoonData = Moon;
 	SetToolTipText(FText::FromString(Moon.Name));
-	MoonName = Moon.Name;
 
 	if (MoonNameText)
 	{
-		MoonNameText->SetText(FText::FromString(Moon.Name));
+		MoonNameText->SetText(FText::FromString(MoonData.Name));
 		MoonNameText->SetColorAndOpacity(FLinearColor::White);
 	}
 
-	if (!MoonImage || !MoonActor || !MoonWidgetMaterial)
-	{
-		Init(Moon); // fallback
-		return;
-	}
-
 	UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
-	if (!RT)
+
+	if (!MoonImage || !MoonActor || !MoonWidgetMaterial || !RT)
 	{
-		Init(Moon);
+		UE_LOG(LogTemp, Warning, TEXT("InitFromMoonActor: missing setup"));
 		return;
 	}
 
 	SetWidgetRenderTarget(RT);
 }
 
-UTexture2D* UMoonMarkerWidget::LoadTextureFromFile(FString Path)
-{
-	if (USSWGameInstance* SSW = GetGameInstance<USSWGameInstance>())
-	{
-		return SSW->LoadPNGTextureFromFile(Path);
-	}
-	return nullptr;
-}
-
-FSlateBrush UMoonMarkerWidget::CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize)
-{
-	FSlateBrush Brush;
-	Brush.SetResourceObject(Texture);
-	Brush.ImageSize = ImageSize;
-	Brush.DrawAs = ESlateBrushDrawType::Image;
-	return Brush;
-}
-
 FReply UMoonMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		OnMoonClicked.Broadcast(MoonName);
+		OnMoonClicked.Broadcast(MoonData.Name);
 		return FReply::Handled();
 	}
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);

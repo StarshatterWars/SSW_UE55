@@ -616,12 +616,9 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 				PlanetSlot->SetZOrder(10);
 			}
 
-			PlanetMarker->SetVisibility(ESlateVisibility::Visible);
-			PlanetMarker->SetPlanetName(Planet.Name);
 			//PlanetMarker->SetPreviewRenderTarget(SystemOverviewRT);
 			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
 			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
-
 
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 
@@ -700,8 +697,7 @@ void USystemMap::AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPla
 				MoonSlot->SetZOrder(10);
 			}
 
-			Marker->SetVisibility(ESlateVisibility::Visible);
-			Marker->SetMoonName(Moon.Name);
+			Marker->SetVisibility(ESlateVisibility::Visible);;
 			Marker->InitFromMoonActor(Moon, NewMoon);
 			Marker->OnMoonClicked.AddDynamic(this, &USystemMap::HandleMoonClicked);
 

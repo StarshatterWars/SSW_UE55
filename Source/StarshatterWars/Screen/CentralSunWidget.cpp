@@ -11,37 +11,20 @@
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
-	if (!SunActor)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing SunActor"));
-		return;
-	}
-
-	if (!SunImage)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing SunImage"));
-		return;
-	}
-
-	if (!SunWidgetMaterial)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitializeFromSunActor: missing SunWidgetMaterial"));
-		return;
-	} 
-
 	CentralStar = SunActor;
+
+	UTextureRenderTarget2D* RT = CentralStar->GetRenderTarget();
+
+	if (!SunImage || !SunActor || !SunWidgetMaterial || !RT)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InitFromSunActor: missing setup"));
+		return;
+	}
 
 	if (SunNameText) {
 		SunNameText->SetText(FText::FromString(CentralStar->StarName));
 	}
 
-	UTextureRenderTarget2D* RT = CentralStar->GetRenderTarget();
-	
-	if (!RT)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No render target found on SunActor."));
-		return;
-	}
 	StarSize = StarUtils::GetUISizeFromRadius(CentralStar->GetRadius()) / 2;
 	SetWidgetRenderTarget(RT);
 	
