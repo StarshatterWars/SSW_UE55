@@ -92,36 +92,27 @@ void APlanetPanelActor::Tick(float DeltaTime)
 	PlanetMesh->SetRelativeRotation(Spin);
 }
 
-void APlanetPanelActor::InitPlanet() 
+void APlanetPanelActor::InitPlanet()
 {
 	// Texture
 	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
 
-	// Ensure a unique render target before using SceneCapture
-	// Create the render target
-	int32 Resolution = PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius);
-	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	PlanetRenderTarget = Galaxy->GetOrCreateRenderTarget(PlanetData.Name, Resolution, PlanetMesh);
-	if (!PlanetRenderTarget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for planet %s"), *PlanetData.Name);
-		return;
-	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("RenderTarget created for planet %s"), *PlanetData.Name);
-	}
-
+	PlanetRenderTarget = SystemMapUtils::EnsureRenderTarget(
+		this,
+		PlanetData.Name,
+		PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius),
+		SceneCapture,
+		PlanetMesh
+	);
+	
 	SceneCapture->TextureTarget = PlanetRenderTarget;
 
-	// Create dynamic material
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(PlanetBaseMaterial, PlanetMesh);
-	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *PlanetData.Name, FMath::RandRange(1000, 9999)));
-	if (PlanetTexture)
-	{
-		#define UpdateResource UpdateResource
-		PlanetTexture->UpdateResource();
-		DynMat->SetTextureParameterValue("BaseTexture", PlanetTexture);
-	}
+	UMaterialInstanceDynamic* DynMat = SystemMapUtils::CreatePreviewMID(
+		this,
+		PlanetBaseMaterial,
+		PlanetTexture,
+		PlanetData.Name
+	);
 
 	// Apply to mesh
 	PlanetMesh->SetMaterial(0, DynMat);

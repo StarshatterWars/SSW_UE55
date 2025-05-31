@@ -116,31 +116,22 @@ void AMoonPanelActor::InitMoon()
 	// Texture
 	MoonTexture = MoonUtils::LoadMoonAssetTexture(MoonData.Texture);
 
-	// Ensure a unique render target before using SceneCapture
-	// Create the render target
-	int32 Resolution = MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius);
-	UGalaxyManager* Galaxy = UGalaxyManager::Get(this); // use your accessor
-	MoonRenderTarget = Galaxy->GetOrCreateRenderTarget(MoonData.Name, Resolution, MoonMesh);
-	if (!MoonRenderTarget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for moon %s"), *MoonData.Name);
-		return;
-	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("RenderTarget created for moon %s"), *MoonData.Name);
-	}
+	MoonRenderTarget = SystemMapUtils::EnsureRenderTarget(
+		this,
+		MoonData.Name,
+		MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius),
+		SceneCapture,
+		MoonMesh
+	);
 
 	SceneCapture->TextureTarget = MoonRenderTarget;
 
-	// Create dynamic material
-	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(MoonBaseMaterial,MoonMesh);
-	DynMat->Rename(*FString::Printf(TEXT("MID_%s_%d"), *MoonData.Name, FMath::RandRange(1000, 9999)));
-	if (MoonTexture)
-	{
-		#define UpdateResource UpdateResource
-		MoonTexture->UpdateResource();
-		DynMat->SetTextureParameterValue("BaseTexture", MoonTexture);
-	}
+	UMaterialInstanceDynamic* DynMat = SystemMapUtils::CreatePreviewMID(
+		this,
+		MoonBaseMaterial,
+		MoonTexture,
+		MoonData.Name
+	);
 
 	// Apply to mesh
 	MoonMesh->SetMaterial(0, DynMat);
@@ -150,7 +141,7 @@ void AMoonPanelActor::InitMoon()
 	MoonMesh->MarkRenderStateDirty();
 	SceneCapture->CaptureScene();
 
-	UE_LOG(LogTemp, Warning, TEXT("InitMoon() Planet: %s -> Mat: %s, Tex: %s, RT: %s"),
+	UE_LOG(LogTemp, Warning, TEXT("InitMoon() Moon: %s -> Mat: %s, Tex: %s, RT: %s"),
 		*MoonData.Name,
 		*GetNameSafe(DynMat),
 		*GetNameSafe(MoonTexture),

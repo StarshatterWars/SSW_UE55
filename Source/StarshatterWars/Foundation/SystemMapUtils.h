@@ -6,6 +6,15 @@
 #include "Components/Widget.h" 
 #include "Components/CanvasPanel.h" 
 
+
+class UStaticMeshComponent;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
+class UTexture;
+class UTextureRenderTarget2D;
+class USceneCaptureComponent2D;
+class UStaticMeshComponent;
+
 /**
  * 
  */
@@ -157,5 +166,21 @@ public:
 			bIsDragging = false;
 		}
 	};
+
+	static UTextureRenderTarget2D* EnsureRenderTarget(
+		UObject* Context,
+		const FString& Name,
+		int32 Resolution,
+		USceneCaptureComponent2D* SceneCapture,
+		UObject* Owner = nullptr
+	);
+
+	static UMaterialInstanceDynamic* CreatePreviewMID(
+		UObject* Outer,
+		UMaterialInterface* BaseMaterial,
+		UTexture* BaseTexture = nullptr,
+		const FString& Label = TEXT("Preview")
+	);
+
 };
 

@@ -10,6 +10,10 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/StaticMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/Texture.h"
+#include "../Game/GalaxyManager.h"
 #include "../Screen/SystemOrbitWidget.h"
 
 
@@ -316,4 +320,81 @@ void SystemMapUtils::ScheduleSafeCapture(UObject* WorldContext, USceneCaptureCom
 				UE_LOG(LogTemp, Log, TEXT("Scheduled CaptureScene() fired for %s"), *Capture->GetName());
 			}
 		}, 0.0f, false);
+}
+
+UTextureRenderTarget2D* SystemMapUtils::EnsureRenderTarget(
+	UObject* Context,
+	const FString& Name,
+	int32 Resolution,
+	USceneCaptureComponent2D* SceneCapture,
+	UObject* Owner)
+{
+	if (!Context || !SceneCapture)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnsureRenderTarget: Missing context or capture"));
+		return nullptr;
+	}
+
+	UGalaxyManager* Galaxy = UGalaxyManager::Get(Context);
+	if (!Galaxy)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnsureRenderTarget: GalaxyManager not found"));
+		return nullptr;
+	}
+
+	// Default to SceneCapture or Transient if no mesh or owner provided
+	UObject* RTOuter = Owner ? Owner : SceneCapture;
+
+	UTextureRenderTarget2D* RT = Galaxy->GetOrCreateRenderTarget(Name, Resolution, RTOuter);
+	if (!RT)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create RT for %s"), *Name);
+		return nullptr;
+	}
+
+	SceneCapture->TextureTarget = RT;
+
+	UE_LOG(LogTemp, Log, TEXT("RT created for %s | Resolution=%d | Outer=%s"),
+		*Name, Resolution, *GetNameSafe(RTOuter));
+
+	return RT;
+}
+
+UMaterialInstanceDynamic* SystemMapUtils::CreatePreviewMID(
+	UObject* Outer,
+	UMaterialInterface* BaseMaterial,
+	UTexture* BaseTexture,
+	const FString& Label)
+{
+	if (!BaseMaterial || !Outer)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreatePreviewMID failed: Missing base material or outer"));
+		return nullptr;
+	}
+
+	// Create dynamic instance
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(BaseMaterial, Outer);
+	if (!DynMat)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreatePreviewMID failed: UMaterialInstanceDynamic::Create returned null"));
+		return nullptr;
+	}
+
+	// Give it a unique name for debugging
+	const FString MIDName = FString::Printf(TEXT("MID_%s"), *Label);
+	DynMat->Rename(*MIDName);
+
+	// Optionally assign the base texture
+	if (BaseTexture)
+	{
+		BaseTexture->UpdateResource();
+		DynMat->SetTextureParameterValue("BaseTexture", BaseTexture);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Created PreviewMID: %s (Label: %s, Texture: %s)"),
+		*MIDName,
+		*Label,
+		*GetNameSafe(BaseTexture));
+
+	return DynMat;
 }
