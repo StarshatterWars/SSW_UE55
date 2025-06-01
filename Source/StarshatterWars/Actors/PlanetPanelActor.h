@@ -48,7 +48,7 @@ public:
 	bool isSceneDelay = false;
 
 	UPROPERTY()
-	bool bUseSystemOverviewOnly = true;
+	bool bUseSystemOverviewOnly = false;
 
 	UPROPERTY()
 	FS_PlanetMap PlanetData;

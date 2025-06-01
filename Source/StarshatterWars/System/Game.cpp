@@ -70,10 +70,7 @@ void Game::Pause(bool f)
 
 DWORD GetRealTime()
 {
-	if (game)
-		return Game::RealTime();
-
-	return timeGetTime();
+	return Game::RealTime();
 }
 
 DWORD Game::RealTime()

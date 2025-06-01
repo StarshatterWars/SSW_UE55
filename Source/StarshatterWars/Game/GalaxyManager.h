@@ -8,6 +8,9 @@
 #include "../System/SSWGameInstance.h"
 #include "GalaxyManager.generated.h"
 
+class UTextureRenderTarget2D;
+class UUserWidget;
+class FWidgetRenderer;
 /**
  * 
  */
@@ -40,6 +43,10 @@ public:
 	UFUNCTION()
 	void ClearAllRenderTargets();
 
+	// Capture any widget to texture
+	UFUNCTION()
+	UTextureRenderTarget2D* RenderWidgetToTarget(UUserWidget* Widget, int32 Width, int32 Height, float Scale = 1.0f);
+
 	UFUNCTION()
 	const TArray<FS_Galaxy>& GetAllSystems() const { return Systems; }
 
@@ -49,5 +56,7 @@ public:
 private:
 	UPROPERTY()
 	TArray<FS_Galaxy> Systems;
+
+	TSharedPtr<FWidgetRenderer> WidgetRenderer;
 };
 

@@ -18,7 +18,7 @@
 
 void RandomInit()
 {
-	srand(timeGetTime());
+	FMath::RandInit(static_cast<int32>(FDateTime::Now().GetTicks() % MAX_int32));
 }
 
 // +----------------------------------------------------------------------+

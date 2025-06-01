@@ -9,7 +9,6 @@
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 #include "../Game/GalaxyManager.h"
-#include "Windows/MinWindows.h"
 
 
 APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(

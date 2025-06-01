@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{34D5FA08-4DC2-631B-D85B-728B2F17DE37}",
+	"EngineAssociation": "{3C0690A8-42C7-A056-E61B-6BA207A8CB51}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -22,12 +22,12 @@
 		},
 		{
 			"Name": "RuntimeAudioImporter",
-			"Enabled": true,
+			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/81fd278e318e4235a028d3fdf46bf036"
 		},
 		{
 			"Name": "VictoryBPLibrary",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "VisualStudioTools",

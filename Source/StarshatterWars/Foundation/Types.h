@@ -10,9 +10,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-#include <windows.h>
-
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 #include <windowsx.h>
 #include <assert.h>
 #include <math.h>      
@@ -21,7 +21,5 @@
 #include <stdio.h>
 #include <time.h>
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include "Windows/MinWindows.h"
 

@@ -10,7 +10,6 @@
 #include "../Foundation/MoonUtils.h"
 #include "../Game/GalaxyManager.h"
 #include "../Actors/PlanetPanelActor.h"
-#include "Windows/MinWindows.h"
 
 AMoonPanelActor* AMoonPanelActor::SpawnWithMoonData(
 	UWorld* World,

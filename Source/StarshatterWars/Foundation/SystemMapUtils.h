@@ -15,6 +15,7 @@ class UTextureRenderTarget2D;
 class USceneCaptureComponent2D;
 class UStaticMeshComponent;
 class UWorld;
+class UUserWidget;
 class UImage;
 
 /**
@@ -199,5 +200,15 @@ public:
 		UTextureRenderTarget2D* RenderTarget,
 		FVector2D BrushSize = FVector2D(128.f, 128.f)
 	);
+
+	static FVector ComputePlanetWorldPosition(
+		const FVector& StarLocation,
+		float OrbitKm,
+		float OrbitAngleDeg,
+		float InclinationDeg,
+		float OrbitToWorldScale = 100000.0f
+	);
+
+	static UTextureRenderTarget2D* RenderWidgetToTexture(UUserWidget* Widget, int32 Width, int32 Height, float Scale = 1.0f);
 };
 

@@ -9,6 +9,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/WidgetComponent.h"
 
 #include "../Screen/PlanetMarkerWidget.h"
 
@@ -25,6 +26,8 @@
 #include "../Game/GalaxyManager.h"
 #include "../Screen/SystemOrbitWidget.h"
 
+#include "Slate/WidgetRenderer.h"
+#include "Widgets/SViewport.h"
 #include "Kismet/KismetRenderingLibrary.h"
 
 
@@ -505,3 +508,50 @@ void SystemMapUtils::ApplyRenderTargetToImage(
 	UE_LOG(LogTemp, Log, TEXT("RenderTarget applied to image: %s"), *RenderTarget->GetName());
 }
 
+FVector SystemMapUtils::ComputePlanetWorldPosition(
+	const FVector& StarLocation,
+	float OrbitKm,
+	float OrbitAngleDeg,
+	float InclinationDeg,
+	float OrbitToWorldScale
+)
+{
+	const float OrbitRadius = OrbitKm / OrbitToWorldScale;
+	const float AngleRad = FMath::DegreesToRadians(OrbitAngleDeg);
+	const float InclinationRad = FMath::DegreesToRadians(InclinationDeg);
+
+	const float X = FMath::Cos(AngleRad) * OrbitRadius;
+	const float Y = FMath::Sin(AngleRad) * OrbitRadius;
+	const float Z = OrbitRadius * FMath::Sin(InclinationRad); // simple vertical tilt
+
+	return StarLocation + FVector(X, Y, Z);
+}
+
+UTextureRenderTarget2D* SystemMapUtils::RenderWidgetToTexture(UUserWidget* Widget, int32 Width, int32 Height, float Scale)
+{
+	if (!Widget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RenderWidgetToTexture: Widget is null"));
+		return nullptr;
+	}
+
+	// Create temporary shared renderer
+	TSharedRef<FWidgetRenderer> Renderer = MakeShared<FWidgetRenderer>(true);
+
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+	RenderTarget->RenderTargetFormat = RTF_RGBA8;
+	RenderTarget->InitAutoFormat(Width, Height);
+	RenderTarget->ClearColor = FLinearColor::Transparent;
+	RenderTarget->UpdateResourceImmediate();
+
+	// Draw the widget directly into the RT
+	Renderer->DrawWidget(
+		RenderTarget,
+		Widget->TakeWidget(),
+		FVector2D(Width, Height),
+		Scale
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("Widget rendered to RenderTarget: %dx%d"), Width, Height);
+	return RenderTarget;
+}

@@ -7,6 +7,8 @@
 #include "../Foundation/StarUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 #include "../Foundation/MoonUtils.h"
+#include "Slate/WidgetRenderer.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 UGalaxyManager* UGalaxyManager::Get(UObject* WorldContext)
@@ -117,4 +119,34 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
 	return SystemOverviewRenderTarget;
 }
 
+UTextureRenderTarget2D* UGalaxyManager::RenderWidgetToTarget(UUserWidget* Widget, int32 Width, int32 Height, float Scale)
+{
+	if (!Widget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[RenderWidgetToTarget] Null widget"));
+		return nullptr;
+	}
+
+	// Create renderer once
+	if (!WidgetRenderer.IsValid())
+	{
+		WidgetRenderer = MakeShared<FWidgetRenderer>(true);
+	}
+
+	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(this);
+	RT->RenderTargetFormat = RTF_RGBA8;
+	RT->InitAutoFormat(Width, Height);
+	RT->ClearColor = FLinearColor::Transparent;
+	RT->UpdateResourceImmediate();
+
+	WidgetRenderer.Get()->DrawWidget(
+		RT,
+		Widget->TakeWidget(),
+		FVector2D(Width, Height),
+		Scale
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("[RenderWidgetToTarget] Rendered %s to %dx%d"), *Widget->GetName(), Width, Height);
+	return RT;
+}
 

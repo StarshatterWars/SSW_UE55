@@ -54,12 +54,9 @@ public:
 	void InitMapCanvas();
 
 	void FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker);
-	
-	UFUNCTION()
-	void GenerateUnifiedSystemRenderTarget();
 
-	UFUNCTION()
-	void ApplyUnifiedRenderTargetToAllMarkers();
+	void SetOverlay();
+	void SetMarkerVisibility(bool bVisible);
 
 protected:
 	void NativeConstruct() override;
@@ -105,12 +102,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<AMoonPanelActor> MoonActorClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<ASystemOverviewActor> OverviewActorClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<USystemOverviewWidget> OverlayWidgetClass;
-
 	UPROPERTY()
 	TArray<APlanetPanelActor*> SpawnedPlanetActors;
 
@@ -127,6 +118,8 @@ private:
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
 	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
+
+	UCentralSunWidget* CentralStarMarker;
 
 	// Holds per-planet orbit angle (randomized once per planet per session)
 	TMap<FString, float> PlanetOrbitAngles;
@@ -157,14 +150,8 @@ private:
 	AMoonPanelActor* MoonActor;
 
 	UPROPERTY()
-	ASystemOverviewActor* OverlayActor;
-
-	UPROPERTY()
 	UMoonMarkerWidget* MoonWidget;
 
-	UPROPERTY()
-	USystemOverviewWidget* OverlayWidget;
-	
 	UPROPERTY()
 	FVector2D ZoomCenter = FVector2D(0.5f, 0.5f); // Default center
 
@@ -200,7 +187,6 @@ private:
 	UFUNCTION()
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
-	void AddOverlay(UTextureRenderTarget2D* Target);
 	void AddCentralStar(const FS_Galaxy* Star);
 	void AddPlanetOrbitalRing(const FS_PlanetMap& Planet);
 	void AddMoonOrbitalRing(const FS_MoonMap& Planet);

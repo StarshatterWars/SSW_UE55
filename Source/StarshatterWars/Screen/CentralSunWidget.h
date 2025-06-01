@@ -40,12 +40,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Render")
 	UMaterialInterface* SunWidgetMaterial;
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void InitializeFromSunActor(ACentralSunActor* SunActor);
+	UFUNCTION()
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
+	
 	ACentralSunActor* CentralStar; 
 	
 	UPROPERTY()

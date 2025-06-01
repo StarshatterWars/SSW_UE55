@@ -84,7 +84,7 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 	NewActor->Radius = InRadius;
 	NewActor->StarName = InName;
 	NewActor->ApplyStarVisuals(NewActor->SpectralClass);
-
+	
 	// Resume construction, now BeginPlay will see the correct value
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
 
