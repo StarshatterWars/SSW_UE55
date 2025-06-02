@@ -37,6 +37,7 @@ public:
 	void LoadGalaxy(const TArray<FS_Galaxy>& ParsedSystems);
 	const FS_Galaxy* FindSystemByName(const FString& Name) const;
 
+	const FS_PlanetMap* FindSectorByName(const FString& Name) const;
 	UFUNCTION()
 	UTextureRenderTarget2D* GetOrCreateRenderTarget(const FString& Name, int32 Resolution, UObject* Object = nullptr);
 
@@ -58,6 +59,9 @@ public:
 private:
 	UPROPERTY()
 	TArray<FS_Galaxy> Systems;
+
+	UPROPERTY()
+	TArray<FS_PlanetMap> Sectors;
 
 	TSharedPtr<FWidgetRenderer> WidgetRenderer;
 };

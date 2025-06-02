@@ -44,12 +44,6 @@ public:
 	UFUNCTION()
 	void HandleCentralSunClicked();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rendering")
-	UMaterialInterface* DefaultPlanetMaterial;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rendering")
-	UMaterialInterface* DefaultMoonMaterial;
-
 	UPROPERTY(EditDefaultsOnly, Category="Rendering")
 	UMaterialInterface* OverlayMaterial;
 
@@ -69,8 +63,7 @@ protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;	
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -103,14 +96,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<APlanetPanelActor> PlanetActorClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<AMoonPanelActor> MoonActorClass;
-
 	UPROPERTY()
 	TArray<APlanetPanelActor*> SpawnedPlanetActors;
-
-	UPROPERTY()
-	TArray<AMoonPanelActor*> SpawnedMoonActors;
 	
 	UFUNCTION()
 	void SetZoomLevel(float NewZoom);
@@ -122,20 +109,14 @@ protected:
 
 private:	
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
-	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
-	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
 
 	UCentralSunWidget* CentralStarMarker;
 
 	// Holds per-planet orbit angle (randomized once per planet per session)
 	TMap<FString, float> PlanetOrbitAngles;
-
-	// Holds per-mmon orbit angle (randomized once per moon per session)
-	TMap<FString, float> MoonOrbitAngles;
 	
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
-	float GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
 
 	const float OrbitTiltY = 0.6f; // 60% vertical scale for orbital ellipse
 	UPROPERTY()
@@ -183,22 +164,15 @@ private:
 	void HandlePlanetClicked(const FString& PlanetName);
 
 	UFUNCTION()
-	void HandleMoonClicked(const FString& MoonName);
-
-	UFUNCTION()
 	void CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom);
-
-	UFUNCTION()
-	void CenterOnMoonWidget(UMoonMarkerWidget* Marker, float Zoom);
 	
 	UFUNCTION()
 	void ApplyTiltToMapCanvas(float TiltAmount);
 	
 	void AddCentralStar(const FS_Galaxy* Star);
-	void AddPlanetOrbitalRing(const FS_PlanetMap& Planet);
-	void AddMoonOrbitalRing(const FS_MoonMap& Planet);
+	void AddPlanetOrbitalRing(const FS_PlanetMap& Planet);	
 	void AddPlanet(const FS_PlanetMap& Planet);
-	void AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPlanetMarkerWidget* ParentWidget);
+
 
 	UFUNCTION()
 	void HighlightSelectedSystem();
@@ -228,7 +202,6 @@ private:
 
 	// Cached position before zoom begins
 	UPROPERTY()
-	
 	FVector2D PreZoomCanvasPos = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D DragStartPos;
@@ -236,8 +209,6 @@ private:
 	// Stores the most recently selected planet marker
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
 
-	// Stores the most recently selected planet marker
-	UMoonMarkerWidget* LastMoonSelectedMarker = nullptr;
 	UPROPERTY()
 	TSet<UWidget*> TrackedMapWidgets;
 
@@ -268,9 +239,6 @@ private:
 	
 	UPROPERTY()
 	float PlanetFocusTime = 0.f;
-
-	UPROPERTY()
-	float MoonFocusTime = 0.f;
 	
 	UPROPERTY()
 	float PlanetFocusDuration = 0.5f; // Half second
@@ -333,6 +301,4 @@ private:
 	
 	UPROPERTY()
 	ASceneCapture2D* SceneCaptureActor = nullptr;
-
-
 };
