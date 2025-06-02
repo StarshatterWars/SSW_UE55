@@ -190,6 +190,7 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 {	
+	
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Missing MapCanvas"));
@@ -203,7 +204,7 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	PlanetOrbitMarkers.Empty();
 	MoonMarkers.Empty();
 	MoonOrbitMarkers.Empty();
-	
+
 	AddCentralStar(ActiveSystem);
 
 	// Convert to screen scale
@@ -214,9 +215,10 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	{
 		AddPlanet(Planet);		
 	}
-
+	
 	HighlightSelectedSystem();
 	SetOverlay();
+	SetMarkerVisibility(true);
 }
 
 void USystemMap::HandleCentralSunClicked()
@@ -469,7 +471,7 @@ void USystemMap::AddCentralStar(const FS_Galaxy* Star)
 				StarSlot->SetPosition(FVector2D(0.f, 0.f));
 				StarSlot->SetZOrder(15);
 				StarSlot->SetSize(FVector2D(64.f, 64.f));
-				TrackedMapWidgets.Add(StarWidget);
+				CentralStarMarker = StarWidget;
 			}
 		}
 	}
@@ -611,7 +613,6 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 				PlanetSlot->SetZOrder(10);
 			}
 
-			//PlanetMarker->SetPreviewRenderTarget(SystemOverviewRT);
 			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
 			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
 
@@ -732,16 +733,6 @@ void USystemMap::HighlightSelectedSystem()
 	}
 }
 
-void USystemMap::FinalizeCanvasLayoutFromContentBounds()
-{
-
-}
-
-void USystemMap::DeferredFinalizeLayout()
-{
-
-}
-
 void USystemMap::InitMapCanvas()
 {
 	ZoomLevel = 1.0f;
@@ -810,25 +801,13 @@ void USystemMap::FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker)
 
 void USystemMap::SetOverlay()
 {
+	
 	UGalaxyManager* Galaxy = UGalaxyManager::Get(this);
 	if (!Galaxy) return;
 
-	UTextureRenderTarget2D* RT = Galaxy->RenderWidgetToTarget(this, 2048, 2048, 1.0f);
-
-	if (!RT) {
-		return;
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("RenderTarget Valid: %s"), *RT->GetName());
-	}
-
 	UImage* OverlayImage = NewObject<UImage>(this);
-	FSlateBrush Brush;
-	Brush.SetResourceObject(RT);
-	Brush.ImageSize = FVector2D(2048, 2048);
-	OverlayImage->SetBrush(Brush);
-	OverlayImage->SetVisibility(ESlateVisibility::Visible);
-	OverlayImage->SetRenderOpacity(1.0f);
+	
+	bool bSuccess = Galaxy->RenderWidgetToImage(this, OverlayImage, OverlayMaterial, ScreenRenderSize, 1.0f);
 
 	UCanvasPanelSlot* OverlaySlot = MapCanvas->AddChildToCanvas(OverlayImage);
 
@@ -837,7 +816,7 @@ void USystemMap::SetOverlay()
 		OverlaySlot->SetAnchors(FAnchors(0.5f, 0.5f));
 		OverlaySlot->SetAlignment(FVector2D(0.5f, 0.5f));
 		OverlaySlot->SetPosition(FVector2D(0, 0));
-		OverlaySlot->SetAutoSize(true);
+		OverlaySlot->SetSize(FVector2D(2000, 2000));
 		OverlaySlot->SetZOrder(2); // render above all
 	}
 }
@@ -845,6 +824,9 @@ void USystemMap::SetOverlay()
 void USystemMap::SetMarkerVisibility(bool bVisible)
 {
 	const ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
+
+	if(CentralStarMarker) 
+		CentralStarMarker->SetVisibility(Vis);
 
 	for (auto& Elem : PlanetMarkers)
 		if (Elem.Value) Elem.Value->SetVisibility(Vis);

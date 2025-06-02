@@ -44,11 +44,14 @@ public:
 	UFUNCTION()
 	void HandleCentralSunClicked();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rendering")
 	UMaterialInterface* DefaultPlanetMaterial;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rendering")
 	UMaterialInterface* DefaultMoonMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category="Rendering")
+	UMaterialInterface* OverlayMaterial;
 
 	UFUNCTION()
 	void InitMapCanvas();
@@ -57,6 +60,7 @@ public:
 
 	void SetOverlay();
 	void SetMarkerVisibility(bool bVisible);
+
 
 protected:
 	void NativeConstruct() override;
@@ -112,6 +116,9 @@ protected:
 	void SetZoomLevel(float NewZoom);
 	UFUNCTION()
 	void ZoomToFitAllPlanets();
+
+	UPROPERTY()
+	FVector2D ScreenRenderSize = FVector2D(4096.f, 4096.f);
 
 private:	
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
@@ -195,10 +202,7 @@ private:
 
 	UFUNCTION()
 	void HighlightSelectedSystem();
-	UFUNCTION()
-	void FinalizeCanvasLayoutFromContentBounds();
-	UFUNCTION()
-	void DeferredFinalizeLayout();
+
 	UPROPERTY()
 	FVector2D StartCanvasPosition = FVector2D::ZeroVector;
 
@@ -329,4 +333,6 @@ private:
 	
 	UPROPERTY()
 	ASceneCapture2D* SceneCaptureActor = nullptr;
+
+
 };

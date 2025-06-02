@@ -3,6 +3,7 @@
 
 #include "GalaxyManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/Image.h"
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/StarUtils.h"
 #include "../Foundation/SystemMapUtils.h"
@@ -127,26 +128,75 @@ UTextureRenderTarget2D* UGalaxyManager::RenderWidgetToTarget(UUserWidget* Widget
 		return nullptr;
 	}
 
-	// Create renderer once
 	if (!WidgetRenderer.IsValid())
 	{
 		WidgetRenderer = MakeShared<FWidgetRenderer>(true);
 	}
 
 	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(this);
-	RT->RenderTargetFormat = RTF_RGBA8;
+	RT->RenderTargetFormat = RTF_RGBA8; // More compatible with UMG
+	RT->ClearColor = FLinearColor(0, 0, 0, 0); // Fully transparent
 	RT->InitAutoFormat(Width, Height);
-	RT->ClearColor = FLinearColor::Transparent;
-	RT->UpdateResourceImmediate();
+	RT->UpdateResourceImmediate(true);
 
-	WidgetRenderer.Get()->DrawWidget(
-		RT,
-		Widget->TakeWidget(),
-		FVector2D(Width, Height),
-		Scale
-	);
+	// Ensure layout pass before rendering
+	TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
+	SlateWidget->SlatePrepass();
+
+	// Render to texture
+	WidgetRenderer->DrawWidget(RT, SlateWidget, FVector2D(Width, Height), Scale);
 
 	UE_LOG(LogTemp, Log, TEXT("[RenderWidgetToTarget] Rendered %s to %dx%d"), *Widget->GetName(), Width, Height);
 	return RT;
+}
+
+bool UGalaxyManager::RenderWidgetToImage(UUserWidget* Widget, UImage* TargetImage, UMaterialInterface* OverlayMaterial, FVector2D RenderSize, float Scale)
+{
+	if (!Widget || !TargetImage || !OverlayMaterial)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[RenderWidgetToImage] Missing Widget, Image, or Material"));
+		return false;
+	}
+
+	// --- Create Renderer Once ---
+	if (!WidgetRenderer.IsValid())
+	{
+		WidgetRenderer = MakeShared<FWidgetRenderer>(true); // enables alpha
+	}
+
+	// --- Create Render Target ---
+	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(this);
+	RT->RenderTargetFormat = RTF_RGBA8;
+	RT->ClearColor = FLinearColor(0, 0, 0, 0); // transparent
+	RT->InitAutoFormat((int)RenderSize.X, (int)RenderSize.Y);
+	RT->UpdateResourceImmediate(true);
+
+	// --- Prepare Slate Widget ---
+	TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
+	SlateWidget->SlatePrepass();
+
+	// --- Draw Widget to Texture ---
+	WidgetRenderer->DrawWidget(RT, SlateWidget, FVector2D(RenderSize), Scale);
+	UE_LOG(LogTemp, Log, TEXT("[RenderWidgetToImage] Rendered %s to size %dx%d"), *Widget->GetName(), (int)RenderSize.X, (int)RenderSize.Y);
+
+	// --- Create Material Instance with RT ---
+	UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(OverlayMaterial, this);
+	if (!DynMat)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[RenderWidgetToImage] Failed to create dynamic material"));
+		return false;
+	}
+
+	DynMat->SetTextureParameterValue(FName("BaseTexture"), RT);
+
+	// --- Apply to UImage ---
+	FSlateBrush Brush;
+	Brush.SetResourceObject(DynMat);
+	Brush.ImageSize = RenderSize;
+	TargetImage->SetBrush(Brush);
+	TargetImage->SetVisibility(ESlateVisibility::Visible);
+	TargetImage->SetRenderOpacity(1.0f);
+
+	return true;
 }
 

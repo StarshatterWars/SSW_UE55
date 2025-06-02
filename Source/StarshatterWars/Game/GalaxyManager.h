@@ -48,6 +48,8 @@ public:
 	UTextureRenderTarget2D* RenderWidgetToTarget(UUserWidget* Widget, int32 Width, int32 Height, float Scale = 1.0f);
 
 	UFUNCTION()
+	bool RenderWidgetToImage(UUserWidget* Widget, UImage* TargetImage, UMaterialInterface* OverlayMaterial, FVector2D RenderSize, float Scale);
+	UFUNCTION()
 	const TArray<FS_Galaxy>& GetAllSystems() const { return Systems; }
 
 	UPROPERTY()
