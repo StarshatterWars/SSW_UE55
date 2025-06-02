@@ -39,6 +39,10 @@ public:
 	
 	void InitSectorCanvas();
 
+		UFUNCTION()
+	void HighlightSelectedSystem();
+
+	void HandleCentralPlanetClicked();
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
 protected:
@@ -105,6 +109,9 @@ private:
 	SystemMapUtils::FSystemMapDragController DragController;
 	
 	UPROPERTY()
+	FString SelectedMoonName;
+
+	UPROPERTY()
 	float StartZoomLevel = 1.0f;
 	UPROPERTY()
 	float TargetZoom = 1.0f;
@@ -144,6 +151,9 @@ private:
 	bool bIsWaitingToProcessMovement = false;
 	UPROPERTY()
 	float MovementDelayDuration = 0.3f; // seconds (adjust as needed)
+	
+	UPROPERTY()
+	bool bPendingCanvasCenter = false;
 
 	UPROPERTY()
 	float MoonFocusTime = 0.f;
@@ -181,4 +191,10 @@ private:
 	
 	UPROPERTY()
 	FVector2D CachedCanvasSize = FVector2D(3000.f, 2000.f);
+		
+	UPROPERTY()
+	FVector2D CanvasSize = FVector2D(6000.f, 6000.f);
+
+	UPROPERTY()
+	FVector2D CurrentDragOffset = FVector2D::ZeroVector;
 };

@@ -318,6 +318,8 @@ public:
 	UFUNCTION()
 	void ShowSystemMap();
 	UFUNCTION()
+	void ShowSectorMap();
+	UFUNCTION()
 	void OnTheaterSystemButtonHovered(UMenuButton* HoveredButton);
 	UFUNCTION()
 	void OnTheaterSectorButtonSelected(UMenuButton* SelectedButton);
@@ -333,7 +335,7 @@ public:
 	UFUNCTION()
 	void CreateSystemMap(FString Name);
 	UFUNCTION()
-	void CreateSectorMap();
+	void CreateSectorMap(FString Name);
 	UFUNCTION()
 	void GetCurrentCarrierGroup();
 
@@ -457,4 +459,5 @@ private:
 	int CurrentCarrierGroup; 
 	TSubclassOf<UGalaxyMap> GalaxyMapClass;
 	USystemMap* SystemMap =	nullptr;
+	USectorMap* SectorMap = nullptr;
 };

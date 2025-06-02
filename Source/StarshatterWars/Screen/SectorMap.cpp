@@ -222,7 +222,60 @@ void USectorMap::BuildSectorView(const FS_PlanetMap* ActivePlanet)
 
 void USectorMap::InitSectorCanvas()
 {
+	ZoomLevel = 1.0f;
+	TargetZoom = 1.0f;
+	TargetTiltAmount = 0.0f;
 
+	bIsCenteringToMoon = false;
+	bIsZoomingToMoon = false;
+	bIsDragging = false;
+
+	bIsTiltingIn = true;
+	TiltTime = 0.0f;
+
+	CurrentDragOffset = FVector2D::ZeroVector;
+	bPendingCanvasCenter = true;
+
+	SetIsFocusable(true);
+	SetVisibility(ESlateVisibility::Visible);
+	SetIsEnabled(true);
+
+	if (OuterCanvas)
+		OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
+
+	if (MapCanvas) {
+		MapCanvas->ClearChildren();
+
+		// Delay layout-dependent logic like centering
+		FTimerHandle LayoutTimer;
+		GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+			{
+				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+				{
+					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+					CanvasSlot->SetSize(CanvasSize);
+					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+
+					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+				}
+			}), 0.05f, false);
+	}
+}
+
+void USectorMap::HandleCentralPlanetClicked()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Central planet clicked — requesting system map view"));
+
+	if (OwningOperationsScreen)
+	{
+		//ClearMapCanvas();
+		OwningOperationsScreen->ShowSectorMap(); // or equivalent
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No owner set for USectorMap"));
+	}
 }
 
 float USectorMap::GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const
@@ -468,6 +521,35 @@ void USectorMap::SetZoomLevel(float NewZoom)
 	}
 }
 
+void USectorMap::HighlightSelectedSystem()
+{
+	// Highlight current system
+	if (const USSWGameInstance* GI = GetWorld()->GetGameInstance<USSWGameInstance>())
+	{
+		const FString& CurrentSector = GI->SelectedSector;
 
+		if (UMoonMarkerWidget** Found = MoonMarkers.Find(CurrentSector))
+		{
+			UMoonMarkerWidget* Marker = *Found;
+			Marker->SetSelected(true);
+
+			FTimerHandle Delay;
+			GetWorld()->GetTimerManager().SetTimer(Delay, FTimerDelegate::CreateWeakLambda(this, [this, Marker]()
+				{
+					if (!Marker) return;
+
+					FVector2D Center;
+					if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Marker->Slot))
+					{
+						Center = Slot->GetPosition() + Slot->GetSize() * Slot->GetAlignment();
+					}
+
+					// Optionally center camera or draw selection lines here
+					//UE_LOG(LogTemp, Log, TEXT("Selected planet: %s at %s"), *Marker->PlanetData.Name, *Center.ToString());
+
+				}), 0.01f, false);
+		}
+	}
+}
 
 

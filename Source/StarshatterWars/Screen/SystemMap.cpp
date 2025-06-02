@@ -47,8 +47,6 @@ void USystemMap::NativeConstruct()
 		return;
 	}
 
-	InitMapCanvas();
-
 	// Optional: build the system after everything is ready
 	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
 	{

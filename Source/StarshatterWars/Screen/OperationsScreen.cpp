@@ -1173,6 +1173,23 @@ void UOperationsScreen::ShowSystemMap() {
 	CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
 }
 
+
+void UOperationsScreen::ShowSectorMap() {
+
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	SSWInstance->PlayAcceptSound(this);
+
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(2);
+	}
+
+	if (SectorNameText) {
+		SectorNameText->SetText(FText::FromString(SSWInstance->SelectedSystem.ToUpper() + " SECTOR"));
+	}
+	CreateSectorMap(SSWInstance->SelectedSector.ToUpper());
+}
+
+
 void UOperationsScreen::OnTheaterSystemButtonHovered(UMenuButton* HoveredButton)
 {
 	if (!HoveredButton) return;
@@ -1339,14 +1356,32 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 	}
 }
 
-void UOperationsScreen::CreateSectorMap() {
-	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called"));
-	USectorMap* SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);
-	if (!SectorMapClass) return;
+void UOperationsScreen::CreateSectorMap(FString Name) {
+	
+	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Called %s"), *Name);
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+
+	if (!SectorMap)
+	{
+		SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);
+		SectorMap->SetOwner(this); // Assign owner
+		SectorMap->SetFocus(); // keyboard
+		SectorMap->SetUserFocus(GetOwningPlayer()); // controller
+		SectorMap->SetKeyboardFocus(); // optional redundancy
+		SectorMap->InitSectorCanvas();
+	}
+
+	if (!SectorMapClass) {
+		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Widget Not Creaed"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Widget Created"));
 
 	SectorMapCanvas->AddChildToCanvas(SectorMap);
 
-	if (UCanvasPanelSlot* MapSlot = SectorMapCanvas->AddChildToCanvas(SectorMap))
+	if (UCanvasPanelSlot* MapSlot = SystemMapCanvas->AddChildToCanvas(SectorMap))
 	{
 		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
 		MapSlot->SetOffsets(FMargin(0.f));                 // No padding

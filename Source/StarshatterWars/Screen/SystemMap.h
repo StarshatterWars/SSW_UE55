@@ -155,11 +155,6 @@ private:
 	UPROPERTY()
 	FString SelectedPlanetName;
 
-	UPROPERTY()
-	FString SelectedMoonName;
-
-	FVector2D CanvasSize = FVector2D(6000.f, 6000.f);
-
 	UFUNCTION()
 	void HandlePlanetClicked(const FString& PlanetName);
 
@@ -205,6 +200,9 @@ private:
 	FVector2D PreZoomCanvasPos = FVector2D::ZeroVector;
 	UPROPERTY()
 	FVector2D DragStartPos;
+
+	UPROPERTY()
+	FVector2D CanvasSize = FVector2D(6000.f, 6000.f);
 
 	// Stores the most recently selected planet marker
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
