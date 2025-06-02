@@ -79,7 +79,7 @@ void UOperationsScreen::NativeConstruct()
 	}
 	
 	SSWInstance->SelectedSystem = SSWInstance->GetActiveCampaign().System;
-	SSWInstance->SelectedSector = SSWInstance->GetActiveCampaign().Region;
+	SSWInstance->SelectedSector.Name = SSWInstance->GetActiveCampaign().Region;
 
 	if (TheaterGalaxyButton) {
 		TheaterGalaxyButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonSelected);
@@ -1174,7 +1174,7 @@ void UOperationsScreen::ShowSystemMap() {
 }
 
 
-void UOperationsScreen::ShowSectorMap() {
+void UOperationsScreen::ShowSectorMap(FS_PlanetMap Planet) {
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
@@ -1184,9 +1184,9 @@ void UOperationsScreen::ShowSectorMap() {
 	}
 
 	if (SectorNameText) {
-		SectorNameText->SetText(FText::FromString(SSWInstance->SelectedSystem.ToUpper() + " SECTOR"));
+		SectorNameText->SetText(FText::FromString(Planet.Name.ToUpper() + " SECTOR"));
 	}
-	CreateSectorMap(SSWInstance->SelectedSector.ToUpper());
+	CreateSectorMap(Planet.Name.ToUpper());
 }
 
 
@@ -1209,7 +1209,7 @@ void UOperationsScreen::OnTheaterSectorButtonSelected(UMenuButton* SelectedButto
 	}
 
 	if (SectorNameText) {
-		SectorNameText->SetText(FText::FromString(SSWInstance->SelectedSector.ToUpper() + " SECTOR"));
+		SectorNameText->SetText(FText::FromString(SSWInstance->SelectedSector.Name.ToUpper() + " SECTOR"));
 	}
 }
 

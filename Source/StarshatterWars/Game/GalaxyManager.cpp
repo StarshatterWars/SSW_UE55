@@ -40,19 +40,6 @@ const FS_Galaxy* UGalaxyManager::FindSystemByName(const FString& Name) const
 	return nullptr;
 }
 
-
-const FS_PlanetMap* UGalaxyManager::FindSectorByName(const FString& Name) const
-{
-	for (const FS_PlanetMap& S : Sectors)
-	{
-		if (S.Name == Name)
-		{
-			return &S;
-		}
-	}
-	return nullptr;
-}
-
 UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& Name, int32 Resolution, UObject* Object)
 {
 	if (RenderTargets.Contains(Name))

@@ -318,7 +318,7 @@ public:
 	UFUNCTION()
 	void ShowSystemMap();
 	UFUNCTION()
-	void ShowSectorMap();
+	void ShowSectorMap(FS_PlanetMap Planet);
 	UFUNCTION()
 	void OnTheaterSystemButtonHovered(UMenuButton* HoveredButton);
 	UFUNCTION()

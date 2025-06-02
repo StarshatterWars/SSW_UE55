@@ -44,19 +44,13 @@ void USectorMap::NativeConstruct()
 		return;
 	}
 
-	InitSectorCanvas();
-
 	// Optional: build the system after everything is ready
 	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
 	{
-		const FString& SelectedSector = GI->SelectedSector;
-		const FS_PlanetMap* Sector = UGalaxyManager::Get(this)->FindSectorByName(SelectedSector);
+		FS_PlanetMap SelectedSector = GI->SelectedSector;
 
-		if (Sector)
-		{
-			UE_LOG(LogTemp, Log, TEXT("USectorMap::NativeConstruct() Found planet: %s"), *SelectedSector);
-			BuildSectorView(Sector);
-		}
+		UE_LOG(LogTemp, Log, TEXT("USectorMap::NativeConstruct() Found planet: %s"), *SelectedSector.Name);
+		BuildSectorView(GI->SelectedSector);
 	}
 }
 
@@ -213,10 +207,13 @@ void USectorMap::CenterOnMoonWidget(UMoonMarkerWidget* Marker, float Zoom)
 }
 
 
-void USectorMap::BuildSectorView(const FS_PlanetMap* ActivePlanet)
+void USectorMap::BuildSectorView(const FS_PlanetMap& ActivePlanet)
 {
+	PlanetMarkers.Empty();
 	MoonMarkers.Empty();
 	MoonOrbitMarkers.Empty();
+
+	AddCentralPlanet(ActivePlanet);
 }
 
 
@@ -270,7 +267,7 @@ void USectorMap::HandleCentralPlanetClicked()
 	if (OwningOperationsScreen)
 	{
 		//ClearMapCanvas();
-		OwningOperationsScreen->ShowSectorMap(); // or equivalent
+		OwningOperationsScreen->ShowSystemMap(); // or equivalent
 	}
 	else
 	{
@@ -526,7 +523,7 @@ void USectorMap::HighlightSelectedSystem()
 	// Highlight current system
 	if (const USSWGameInstance* GI = GetWorld()->GetGameInstance<USSWGameInstance>())
 	{
-		const FString& CurrentSector = GI->SelectedSector;
+		const FString& CurrentSector = GI->SelectedSector.Name;
 
 		if (UMoonMarkerWidget** Found = MoonMarkers.Find(CurrentSector))
 		{
@@ -545,11 +542,63 @@ void USectorMap::HighlightSelectedSystem()
 					}
 
 					// Optionally center camera or draw selection lines here
-					//UE_LOG(LogTemp, Log, TEXT("Selected planet: %s at %s"), *Marker->PlanetData.Name, *Center.ToString());
+					UE_LOG(LogTemp, Log, TEXT("Selected planet: %s at %s"), *Marker->MoonData.Name, *Center.ToString());
 
 				}), 0.01f, false);
 		}
 	}
 }
 
+void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
+{
+	
+	UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
+	
+	if (PlanetActorClass)
+	{
+		if (PlanetActor)
+		{
+			PlanetActor->Destroy();
+			PlanetActor = nullptr;
+		}
 
+		FVector ActorLocation = FVector::ZeroVector;  // Adjust position as needed
+		FRotator ActorRotation = FRotator::ZeroRotator;
+
+		PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
+			GetWorld(),
+			ActorLocation,
+			ActorRotation,
+			PlanetActorClass,
+			Planet
+		);
+
+		if (PlanetActor)
+		{
+			SpawnedPlanetActors.Add(PlanetActor);
+		}
+	}
+	// Planet marker
+	if (PlanetMarkerClass)
+	{
+	
+		auto* PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+		if (PlanetMarker)
+		{
+			if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(PlanetMarker))
+			{
+				PlanetSlot->SetAutoSize(true);
+				PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				PlanetSlot->SetPosition(FVector2D(0.f, 0.f));
+				PlanetSlot->SetZOrder(15);
+				PlanetSlot->SetSize(FVector2D(64.f, 64.f));
+			}
+
+			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
+			//PlanetMarker->OnPlanetClicked.AddDynamic(this, &USectorMap::HandleCentralPlanetClicked);
+
+			PlanetMarkers.Add(Planet.Name, PlanetMarker);
+		}
+	}
+}

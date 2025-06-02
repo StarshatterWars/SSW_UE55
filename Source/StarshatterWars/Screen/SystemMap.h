@@ -43,8 +43,10 @@ public:
 
 	UFUNCTION()
 	void HandleCentralSunClicked();
+	UFUNCTION()
+	void HandlePlanetSelected(FS_PlanetMap Planet);
 
-	UPROPERTY(EditDefaultsOnly, Category="Rendering")
+	UPROPERTY()
 	UMaterialInterface* OverlayMaterial;
 
 	UFUNCTION()

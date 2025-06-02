@@ -42,6 +42,7 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 	}
 
 	SetWidgetRenderTarget(RT);
+	bIselected = false;
 }
 
 FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

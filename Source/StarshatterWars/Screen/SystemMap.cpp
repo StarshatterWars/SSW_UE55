@@ -216,6 +216,24 @@ void USystemMap::HandleCentralSunClicked()
 	}
 }
 
+void USystemMap::HandlePlanetSelected(FS_PlanetMap Planet)
+{
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	UE_LOG(LogTemp, Warning, TEXT("Planet %s clicked — requesting sector map view"), *Planet.Name);
+
+	if (OwningOperationsScreen)
+	{
+		//ClearMapCanvas();
+		SSWInstance->SelectedSector = Planet;
+		SSWInstance->SelectedSectorName = Planet.Name;
+		OwningOperationsScreen->ShowSectorMap(Planet); // or equivalent
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No owner set for USystemMap"));
+	}
+}
+
 void USystemMap::SetZoomLevel(float NewZoom)
 {
 	ZoomLevel = FMath::Clamp(NewZoom, 0.25f, 4.0f);
@@ -265,8 +283,7 @@ FReply USystemMap::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, c
 		{
 			if (LastSelectedMarker)
 			{
-				CenterOnPlanetWidget(LastSelectedMarker, 1.5f); // will animate based on your setup
-				SystemMapUtils::ApplyZoomToCanvas(MapCanvas, 2.0f);
+				//HandlePlanetSelected(LastSelectedMarker->PlanetData); // will animate based on your setup
 			}
 		}
 		return FReply::Handled();
@@ -342,10 +359,16 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 {
 	if (UPlanetMarkerWidget** Found = PlanetMarkers.Find(PlanetName))
 	{
-		LastSelectedMarker = *Found;
-		// Optional: center or highlight
-		UE_LOG(LogTemp, Log, TEXT("Planet selected: %s"), *PlanetName);
-		CenterOnPlanetWidget(*Found, 1.0f);
+		if (LastSelectedMarker == *Found) {
+			UE_LOG(LogTemp, Log, TEXT("Planet already selected: %s, loading sector view"), *PlanetName);
+			HandlePlanetSelected(LastSelectedMarker->PlanetData);
+		}
+		else {
+			LastSelectedMarker = *Found;
+			// Optional: center or highlight
+			UE_LOG(LogTemp, Log, TEXT("Planet selected: %s"), *PlanetName);
+			CenterOnPlanetWidget(*Found, 1.0f);
+		}
 	}
 }
 
@@ -540,7 +563,6 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
 			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
-
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 
 		}

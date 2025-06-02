@@ -40,6 +40,9 @@ public:
 	UPROPERTY()
 	UMaterialInterface* PlanetWidgetMaterial;
 
+	UPROPERTY()
+	bool bIselected = false;
+
 protected:
 	UPROPERTY(meta = (BindWidgetOptional)) UImage* PlanetImage;
 	UPROPERTY(meta = (BindWidgetOptional)) UBorder* HighlightBorder;

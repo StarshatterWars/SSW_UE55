@@ -35,13 +35,14 @@ public:
 	void SetOwner(UOperationsScreen* Owner) { OwningOperationsScreen = Owner; }
 	
 	// Called to draw all planets for the current system
-	void BuildSectorView(const FS_PlanetMap* ActivePlanet);
+	void BuildSectorView(const FS_PlanetMap& ActivePlanet);
 	
 	void InitSectorCanvas();
 
 		UFUNCTION()
 	void HighlightSelectedSystem();
 
+	void AddCentralPlanet(const FS_PlanetMap& Planet);
 	void HandleCentralPlanetClicked();
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
@@ -69,16 +70,31 @@ protected:
 	FS_PlanetMap PlanetData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<USystemOrbitWidget> OrbitWidgetClass;
+	TSubclassOf<APlanetPanelActor> PlanetActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<AMoonPanelActor> MoonActorClass;
 
 	UPROPERTY()
+	TArray<APlanetPanelActor*> SpawnedPlanetActors;
+
+	UPROPERTY()
 	TArray<AMoonPanelActor*> SpawnedMoonActors;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<UPlanetMarkerWidget> PlanetMarkerClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
+	TSubclassOf<USystemOrbitWidget> OrbitWidgetClass;
+
+	UPROPERTY()
+	APlanetPanelActor* PlanetActor;
+
+	UPROPERTY()
+	UPlanetMarkerWidget* PlanetWidget;
 
 	UFUNCTION()
 	void SetZoomLevel(float NewZoom);

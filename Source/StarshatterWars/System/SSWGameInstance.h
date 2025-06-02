@@ -278,7 +278,9 @@ public:
 	UPROPERTY()
 	FString SelectedSystem;
 	UPROPERTY()
-	FString SelectedSector;
+	FString SelectedSectorName;
+	UPROPERTY()
+	FS_PlanetMap SelectedSector;
 
 	DataLoader* loader;
 

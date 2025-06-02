@@ -27,6 +27,9 @@ class STARSHATTERWARS_API UMoonMarkerWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY()
+	FS_MoonMap MoonData;
+	
 	void SetSelected(bool bSelected);
 	void SetMarkerMaterial(UMaterialInterface* MoonMat);
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
@@ -48,6 +51,5 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional)) class UTextBlock* MoonNameText;
 
 private:
-	FS_MoonMap MoonData;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 };
