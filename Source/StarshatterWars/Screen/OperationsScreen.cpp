@@ -1335,6 +1335,7 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 		SystemMap->SetFocus(); // keyboard
 		SystemMap->SetUserFocus(GetOwningPlayer()); // controller
 		SystemMap->SetKeyboardFocus(); // optional redundancy
+		SystemMap->SetClipping(EWidgetClipping::ClipToBoundsAlways);
 	}
 	
 	if (!SystemMapClass) {
@@ -1367,6 +1368,7 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 		SectorMap->SetFocus(); // keyboard
 		SectorMap->SetUserFocus(GetOwningPlayer()); // controller
 		SectorMap->SetKeyboardFocus(); // optional redundancy
+		SectorMap->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
 	}
 
 	if (!SectorMapClass) {

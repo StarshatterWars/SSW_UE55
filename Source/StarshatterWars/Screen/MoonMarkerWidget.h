@@ -35,7 +35,7 @@ public:
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 
 	UFUNCTION()
-	void InitFromMoonActor(const FS_MoonMap& Planet, AMoonPanelActor* MoonActor);
+	void InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActor* MoonActor);
 
 	FOnMoonClicked OnMoonClicked;
 
