@@ -9,7 +9,7 @@
 
 #include "Engine/SceneCapture2D.h"
 
-#include "PlanetMarkerWidget.h"
+#include "CentralPlanetWidget.h"
 #include "MoonMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "OperationsScreen.h"
@@ -20,7 +20,7 @@
 #include "../System/SSWGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "../Actors/PlanetPanelActor.h"
+#include "../Actors/CentralPlanetActor.h"
 
 #include "../Foundation/PlanetOrbitUtils.h"
 #include "../Foundation/SystemMapUtils.h"
@@ -167,15 +167,15 @@ void USectorMap::AddMoonOrbitalRing(const FS_MoonMap& Moon)
 	}
 }
 
-void USectorMap::HandleMoonClicked(const FString& MoonName)
-{
-	if (UMoonMarkerWidget** Found = MoonMarkers.Find(MoonName))
+
+void USectorMap::HandleMoonClicked(const FString& MoonName) {
+	/*if (UMoonMarkerWidget** Found = MoonMarkers.Find(MoonName))
 	{
 		LastSelectedMoonMarker = *Found;
 		// Optional: center or highlight
 		UE_LOG(LogTemp, Log, TEXT("Moon selected: %s"), *MoonName);
 		CenterOnMoonWidget(*Found, 1.0f);
-	}
+	}*/
 }
 
 void USectorMap::CenterOnMoonWidget(UMoonMarkerWidget* Marker, float Zoom)
@@ -211,7 +211,7 @@ void USectorMap::BuildSectorView(const FS_PlanetMap& ActivePlanet)
 	// Build moon markers and orbit rings
 	for (const FS_MoonMap& Moon : ActivePlanet.Moon)
 	{
-		AddMoon(Moon);
+		//AddMoon(Moon);
 	}
 
 	HighlightSelectedSystem();
@@ -244,8 +244,6 @@ void USectorMap::InitSectorCanvas()
 	{
 		return;
 	}
-
-	OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
 		
 	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
 	{
@@ -253,6 +251,8 @@ void USectorMap::InitSectorCanvas()
 	}
 
 	MapCanvas->ClearChildren();
+	PlanetMarkers.Empty();
+	MoonMarkers.Empty();
 
 	// Delay layout-dependent logic like centering
 	FTimerHandle LayoutTimer;
@@ -360,7 +360,7 @@ void USectorMap::AddMoon(const FS_MoonMap& Moon)
 
 			MoonMarker->SetVisibility(ESlateVisibility::Visible);;
 			MoonMarker->InitFromMoonActor(Moon, MoonActor);
-			MoonMarker->OnMoonClicked.AddDynamic(this, &USectorMap::HandleMoonClicked);
+			//MoonMarker->OnMoonClicked.AddDynamic(this, &USectorMap::HandleMoonClicked);
 
 			MoonMarkers.Add(Moon.Name, MoonMarker);
 		}
@@ -562,14 +562,14 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 		FVector ActorLocation = FVector::ZeroVector;  // Adjust position as needed
 		FRotator ActorRotation = FRotator::ZeroRotator;
 
-		PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
+		PlanetActor = ACentralPlanetActor::SpawnWithPlanetData(
 			GetWorld(),
 			ActorLocation,
 			ActorRotation,
 			PlanetActorClass,
 			Planet
 		);
-
+	
 		if (PlanetActor)
 		{
 			SpawnedPlanetActors.Add(PlanetActor);
@@ -577,10 +577,13 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 	}
 	// Planet marker
 	if (PlanetMarkerClass)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
+	{		
+		if (PlanetMarker) {
+			PlanetMarker->RemoveFromParent();
+			PlanetMarker = nullptr;
+		}
 
-		auto* PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+		PlanetMarker = CreateWidget<UCentralPlanetWidget>(this, PlanetMarkerClass);
 		if (PlanetMarker)
 		{
 			if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(PlanetMarker))
@@ -593,8 +596,10 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 				PlanetSlot->SetSize(FVector2D(64.f, 64.f));
 			}
 
+			UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
+
 			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
-			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USectorMap::HandleCentralPlanetClicked);
+			PlanetMarker->OnCentralPlanetClicked.AddDynamic(this, &USectorMap::HandleCentralPlanetClicked);
 
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 		}

@@ -603,8 +603,6 @@ void USystemMap::InitMapCanvas()
 		return;
 	}
 
-	OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
-
 	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
 	{
 		MainSlot->SetPosition(FVector2D::ZeroVector);
@@ -623,7 +621,7 @@ void USystemMap::InitMapCanvas()
 				CanvasSlot->SetSize(CanvasSize);
 				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
 
-				SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+				//SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
 			}
 		}), 0.05f, false);
 

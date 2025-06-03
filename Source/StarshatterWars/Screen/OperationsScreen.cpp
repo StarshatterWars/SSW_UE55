@@ -1369,6 +1369,7 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 		SectorMap->SetUserFocus(GetOwningPlayer()); // controller
 		SectorMap->SetKeyboardFocus(); // optional redundancy
 		SectorMap->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
+		SectorMap->InitSectorCanvas();
 	}
 
 	if (!SectorMapClass) {

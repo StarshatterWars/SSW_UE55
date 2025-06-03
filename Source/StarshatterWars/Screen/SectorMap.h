@@ -13,10 +13,10 @@
 class UCanvasPanel;
 class UScrollBox;
 class USizeBox;
-class UPlanetMarkerWidget;
+class UCentralPlanetWidget;
 class UMoonMarkerWidget;
 class USystemOrbitWidget;
-class APlanetPanelActor;
+class ACentralPlanetActor;
 class AMoonPanelActor;
 class UOperationsScreen;
 /**
@@ -72,19 +72,19 @@ protected:
 	FS_PlanetMap PlanetData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<APlanetPanelActor> PlanetActorClass;
+	TSubclassOf<ACentralPlanetActor> PlanetActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<AMoonPanelActor> MoonActorClass;
 
 	UPROPERTY()
-	TArray<APlanetPanelActor*> SpawnedPlanetActors;
+	TArray<ACentralPlanetActor*> SpawnedPlanetActors;
 
 	UPROPERTY()
 	TArray<AMoonPanelActor*> SpawnedMoonActors;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<UPlanetMarkerWidget> PlanetMarkerClass;
+	TSubclassOf<UCentralPlanetWidget> PlanetMarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
@@ -93,16 +93,16 @@ protected:
 	TSubclassOf<USystemOrbitWidget> OrbitWidgetClass;
 
 	UPROPERTY()
-	APlanetPanelActor* PlanetActor;
+	ACentralPlanetActor* PlanetActor;
 
 	UPROPERTY()
-	UPlanetMarkerWidget* PlanetWidget;
+	UCentralPlanetWidget* PlanetMarker = nullptr;
 
 	UFUNCTION()
 	void SetZoomLevel(float NewZoom);
 
 private:
-	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
+	TMap<FString, UCentralPlanetWidget*> PlanetMarkers;
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
 	
@@ -115,6 +115,7 @@ private:
 
 	float GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
 
+	UFUNCTION()
 	void HandleMoonClicked(const FString& MoonName);
 	UFUNCTION()
 	void CenterOnMoonWidget(UMoonMarkerWidget* Marker, float Zoom);
