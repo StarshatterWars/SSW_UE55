@@ -39,11 +39,13 @@ public:
 	
 	void InitSectorCanvas();
 
-		UFUNCTION()
+	UFUNCTION()
 	void HighlightSelectedSystem();
 
 	void AddCentralPlanet(const FS_PlanetMap& Planet);
-	void HandleCentralPlanetClicked();
+	float GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
+	UFUNCTION()
+	void HandleCentralPlanetClicked(const FString& PlanetName);
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
 protected:
@@ -103,12 +105,13 @@ private:
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
+	
+	// Holds per-planet orbit angle (randomized once per planet per session)
+	TMap<FString, float> MoonOrbitAngles;
+
 
 	// Stores the most recently selected planet marker
 	UMoonMarkerWidget* LastSelectedMoonMarker = nullptr;
-	
-	// Holds per-mmon orbit angle (randomized once per moon per session)
-	TMap<FString, float> MoonOrbitAngles;
 
 	float GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
 
@@ -118,7 +121,7 @@ private:
 
 	void AddMoonOrbitalRing(const FS_MoonMap& Moon);
 
-	void AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPlanetMarkerWidget* ParentWidget);
+	void AddMoon(const FS_MoonMap& Moon);
 
 	void SetMarkerVisibility(bool bVisible);
 

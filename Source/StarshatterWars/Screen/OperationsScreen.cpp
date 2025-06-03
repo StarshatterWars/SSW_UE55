@@ -1317,7 +1317,7 @@ void UOperationsScreen::CreateGalaxyMap() {
 		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
 		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
 		MapSlot->SetAlignment(FVector2D(0.f, 0.f));        // Top-left corner alignment
-		MapSlot->SetZOrder(11);
+		MapSlot->SetZOrder(2);
 	}
 	//GalaxyMap->SetVisibility(ESlateVisibility::Collapsed);
 }
@@ -1335,7 +1335,6 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 		SystemMap->SetFocus(); // keyboard
 		SystemMap->SetUserFocus(GetOwningPlayer()); // controller
 		SystemMap->SetKeyboardFocus(); // optional redundancy
-		SystemMap->InitMapCanvas();
 	}
 	
 	if (!SystemMapClass) {
@@ -1352,7 +1351,7 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
 		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
 		MapSlot->SetAlignment(FVector2D(0.f, 0.f));        // Top-left corner alignment
-		MapSlot->SetZOrder(11);
+		MapSlot->SetZOrder(2);
 	}
 }
 
@@ -1361,7 +1360,6 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Called %s"), *Name);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
-
 	if (!SectorMap)
 	{
 		SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);
@@ -1369,7 +1367,6 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 		SectorMap->SetFocus(); // keyboard
 		SectorMap->SetUserFocus(GetOwningPlayer()); // controller
 		SectorMap->SetKeyboardFocus(); // optional redundancy
-		SectorMap->InitSectorCanvas();
 	}
 
 	if (!SectorMapClass) {
@@ -1381,12 +1378,12 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 
 	SectorMapCanvas->AddChildToCanvas(SectorMap);
 
-	if (UCanvasPanelSlot* MapSlot = SystemMapCanvas->AddChildToCanvas(SectorMap))
+	if (UCanvasPanelSlot* MapSlot = SectorMapCanvas->AddChildToCanvas(SectorMap))
 	{
 		MapSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f)); // Stretch to all edges
 		MapSlot->SetOffsets(FMargin(0.f));                 // No padding
 		MapSlot->SetAlignment(FVector2D(0.f, 0.f));        // Top-left corner alignment
-		MapSlot->SetZOrder(11);
+		MapSlot->SetZOrder(2);
 	}
 }
 

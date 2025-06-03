@@ -36,29 +36,7 @@
 void USystemMap::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
-	{
-		MainSlot->SetPosition(FVector2D::ZeroVector);
-	}
-
-	if (!MapCanvas) 
-	{
-		return;
-	}
-
-	// Optional: build the system after everything is ready
-	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
-	{
-		const FString& SelectedSystem = GI->SelectedSystem;
-		const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem);
-
-		if (System)
-		{
-			UE_LOG(LogTemp, Log, TEXT("USystemMap::NativeConstruct() Found system: %s"), *SelectedSystem);
-			BuildSystemView(System);
-		}
-	}
+	InitMapCanvas();
 }
 
 void USystemMap::NativeDestruct()
@@ -619,27 +597,48 @@ void USystemMap::InitMapCanvas()
 	SetIsFocusable(true);
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
-
-	if(OuterCanvas) 
-		OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
 	
-	if (MapCanvas) {
-		MapCanvas->ClearChildren();
-		
-		// Delay layout-dependent logic like centering
-		FTimerHandle LayoutTimer;
-		GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
-			{
-				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-				{
-					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					CanvasSlot->SetSize(CanvasSize);	
-					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+	if (!OuterCanvas || !MapCanvas)
+	{
+		return;
+	}
 
-					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-				}
-			}), 0.05f, false); 
+	OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
+
+	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
+	{
+		MainSlot->SetPosition(FVector2D::ZeroVector);
+	}
+	
+	MapCanvas->ClearChildren();
+
+	// Delay layout-dependent logic like centering
+	FTimerHandle LayoutTimer;
+	GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+			{
+				CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				CanvasSlot->SetSize(CanvasSize);
+				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+
+				SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+			}
+		}), 0.05f, false);
+
+	// Optional: build the system after everything is ready
+	
+	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
+	{
+		const FString& SelectedSystem = GI->SelectedSystem;
+		const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem);
+
+		if (System)
+		{
+			UE_LOG(LogTemp, Log, TEXT("USystemMap::InitMapCanvas() Found system: %s"), *SelectedSystem);
+			BuildSystemView(System);
+		}
 	}
 }
 

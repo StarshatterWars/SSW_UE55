@@ -33,18 +33,8 @@
 void USectorMap::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
-	{
-		MainSlot->SetPosition(FVector2D::ZeroVector);
-	}
-
-	if (!MapCanvas)
-	{
-		return;
-	}
-
-	// Optional: build the system after everything is ready
+	InitSectorCanvas();
+	
 	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
 	{
 		FS_PlanetMap SelectedSector = GI->SelectedSector;
@@ -214,6 +204,19 @@ void USectorMap::BuildSectorView(const FS_PlanetMap& ActivePlanet)
 	MoonOrbitMarkers.Empty();
 
 	AddCentralPlanet(ActivePlanet);
+
+	// Convert to screen scale
+	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActivePlanet.Moon, 480.f);
+
+	// Build moon markers and orbit rings
+	for (const FS_MoonMap& Moon : ActivePlanet.Moon)
+	{
+		AddMoon(Moon);
+	}
+
+	HighlightSelectedSystem();
+	//SetOverlay();
+	SetMarkerVisibility(true);
 }
 
 
@@ -237,32 +240,40 @@ void USectorMap::InitSectorCanvas()
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
 
-	if (OuterCanvas)
-		OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
-
-	if (MapCanvas) {
-		MapCanvas->ClearChildren();
-
-		// Delay layout-dependent logic like centering
-		FTimerHandle LayoutTimer;
-		GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
-			{
-				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-				{
-					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					CanvasSlot->SetSize(CanvasSize);
-					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
-
-					SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-				}
-			}), 0.05f, false);
+	if (!MapCanvas || OuterCanvas)
+	{
+		return;
 	}
+
+	OuterCanvas->SetClipping(EWidgetClipping::ClipToBoundsAlways);  // strict
+		
+	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
+	{
+		MainSlot->SetPosition(FVector2D::ZeroVector);
+	}
+
+	MapCanvas->ClearChildren();
+
+	// Delay layout-dependent logic like centering
+	FTimerHandle LayoutTimer;
+	GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+			{
+				CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+				CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+				CanvasSlot->SetSize(CanvasSize);
+				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+				CanvasSlot->SetZOrder(3);
+				
+				//SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+			}
+		}), 0.05f, false);
 }
 
-void USectorMap::HandleCentralPlanetClicked()
+void USectorMap::HandleCentralPlanetClicked(const FString& PlanetName)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Central planet clicked — requesting system map view"));
+	UE_LOG(LogTemp, Warning, TEXT("Central planet %s clicked — requesting system map view"), *PlanetName);
 
 	if (OwningOperationsScreen)
 	{
@@ -291,34 +302,16 @@ float USectorMap::GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, floa
 	return MaxOrbit / MaxPixelRadius; // e.g. 1e9 km mapped to 500 px = 2e6 scale
 }
 
-void USectorMap::AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPlanetMarkerWidget* ParentMarker)
+void USectorMap::AddMoon(const FS_MoonMap& Moon)
 {
-	if (!Parent || !MapCanvas || !MoonActorClass) return;
+	if (!MapCanvas || !MoonActorClass) return;
 
 	AddMoonOrbitalRing(Moon);
 
-	// --- Get or assign a stable orbit angle ---
-	float& OrbitAngle = MoonOrbitAngles.FindOrAdd(Moon.Name);
-	if (OrbitAngle == 0.0f)
-	{
-		OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
-	}
-
-	// --- Compute orbit offset from parent ---
-
-	constexpr float MoonOrbitBoost = 10.0f;
-
-	FVector2D OrbitOffset2D = SystemMapUtils::ComputeMoonOrbitOffset(
-		Moon.Orbit * MoonOrbitBoost,
-		OrbitAngle,
-		Moon.Inclination,
-		ORBIT_TO_SCREEN
-	);
-
 	// --- Spawn moon actor ---
-	const FVector MoonWorldPos = Parent->GetActorLocation() + FVector(OrbitOffset2D.X, OrbitOffset2D.Y, 0);
+	const FVector MoonWorldPos = FVector::ZeroVector;
 
-	AMoonPanelActor* NewMoon = AMoonPanelActor::SpawnWithMoonData(
+	AMoonPanelActor* MoonActor = AMoonPanelActor::SpawnWithMoonData(
 		GetWorld(),
 		MoonWorldPos,
 		FRotator::ZeroRotator,
@@ -326,43 +319,50 @@ void USectorMap::AddMoon(const FS_MoonMap& Moon, APlanetPanelActor* Parent, UPla
 		Moon
 	);
 
-	if (NewMoon)
+	if (MoonActor)
 	{
-		NewMoon->SetParentPlanet(Parent);
-		NewMoon->AttachToActor(Parent, FAttachmentTransformRules::KeepWorldTransform);
-		SpawnedMoonActors.Add(NewMoon);
-
-		UE_LOG(LogTemp, Log, TEXT("SetParentPlanet() Parent: %s -> Moon: %s"), *Parent->PlanetData.Name, *Moon.Name);
+		UTextureRenderTarget2D* PlanetRT = SystemMapUtils::CreateUniqueRenderTargetForActor(Moon.Name, MoonActor);
+		SpawnedMoonActors.Add(MoonActor);
+		UE_LOG(LogTemp, Log, TEXT("Moon Created: %s"), *Moon.Name);
 	}
 
 	// --- Spawn moon marker (UI) ---
 	if (MoonMarkerClass)
 	{
-		UMoonMarkerWidget* Marker = CreateWidget<UMoonMarkerWidget>(this, MoonMarkerClass);
-		if (Marker)
-		{
-			FVector2D MarkerPos = OrbitOffset2D;
-
-			if (UCanvasPanelSlot* ParentSlot = Cast<UCanvasPanelSlot>(ParentMarker->Slot))
+		UMoonMarkerWidget* MoonMarker = CreateWidget<UMoonMarkerWidget>(this, MoonMarkerClass);
+		
+		if (MoonMarker)
+		{	
+			float& OrbitAngle =MoonOrbitAngles.FindOrAdd(Moon.Name);
+			if (OrbitAngle == 0.0f)
 			{
-				FVector2D ParentCenter = ParentSlot->GetPosition() + ParentSlot->GetSize() * ParentSlot->GetAlignment();
-				MarkerPos += ParentCenter;
+				OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
 			}
 
-			if (UCanvasPanelSlot* MoonSlot = MapCanvas->AddChildToCanvas(Marker))
+			float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Moon.Inclination, 2.0f);
+
+			OrbitRadius = Moon.Orbit / ORBIT_TO_SCREEN;
+
+			FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+				OrbitRadius,
+				OrbitAngle,
+				VisualInclination
+			);
+
+			if (UCanvasPanelSlot* MoonSlot = MapCanvas->AddChildToCanvas(MoonMarker))
 			{
 				MoonSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				MoonSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				MoonSlot->SetPosition(MarkerPos);
+				MoonSlot->SetPosition(TiltedPos);
 				MoonSlot->SetAutoSize(true);
 				MoonSlot->SetZOrder(10);
 			}
 
-			Marker->SetVisibility(ESlateVisibility::Visible);;
-			Marker->InitFromMoonActor(Moon, NewMoon);
-			Marker->OnMoonClicked.AddDynamic(this, &USectorMap::HandleMoonClicked);
+			MoonMarker->SetVisibility(ESlateVisibility::Visible);;
+			MoonMarker->InitFromMoonActor(Moon, MoonActor);
+			MoonMarker->OnMoonClicked.AddDynamic(this, &USectorMap::HandleMoonClicked);
 
-			MoonMarkers.Add(Moon.Name, Marker);
+			MoonMarkers.Add(Moon.Name, MoonMarker);
 		}
 	}
 }
@@ -551,9 +551,6 @@ void USectorMap::HighlightSelectedSystem()
 
 void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 {
-	
-	UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
-	
 	if (PlanetActorClass)
 	{
 		if (PlanetActor)
@@ -581,7 +578,8 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 	// Planet marker
 	if (PlanetMarkerClass)
 	{
-	
+		UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
+
 		auto* PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
 		if (PlanetMarker)
 		{
@@ -591,14 +589,30 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 				PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 				PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 				PlanetSlot->SetPosition(FVector2D(0.f, 0.f));
-				PlanetSlot->SetZOrder(15);
+				PlanetSlot->SetZOrder(12);
 				PlanetSlot->SetSize(FVector2D(64.f, 64.f));
 			}
 
 			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
-			//PlanetMarker->OnPlanetClicked.AddDynamic(this, &USectorMap::HandleCentralPlanetClicked);
+			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USectorMap::HandleCentralPlanetClicked);
 
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 		}
 	}
+}
+
+float USectorMap::GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const
+{
+	float MaxOrbit = 0.f;
+	for (const FS_MoonMap& Moon : Moons)
+	{
+		MaxOrbit = FMath::Max(MaxOrbit, Moon.Orbit);
+	}
+
+	if (MaxOrbit <= 0.f)
+	{
+		return 1.0f; // fallback to avoid divide-by-zero
+	}
+
+	return MaxOrbit / MaxPixelRadius; // e.g. 1e9 km mapped to 500 px = 2e6 scale
 }
