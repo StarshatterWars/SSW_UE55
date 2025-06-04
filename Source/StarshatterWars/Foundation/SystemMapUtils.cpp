@@ -11,8 +11,6 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/WidgetComponent.h"
 
-#include "../Screen/PlanetMarkerWidget.h"
-
 #include "PlanetOrbitUtils.h"
 #include "TimerManager.h"
 
@@ -25,6 +23,20 @@
 
 #include "../Game/GalaxyManager.h"
 #include "../Screen/SystemOrbitWidget.h"
+
+#include "../Actors/CentralSunActor.h"
+#include "../Actors/CentralPlanetActor.h"
+#include "../Actors/PlanetPanelActor.h"
+#include "../Actors/MoonPanelActor.h"
+
+#include "../Screen/SystemMap.h"
+#include "../Screen/SectorMap.h"
+
+#include "../Screen/CentralSunWidget.h"
+#include "../Screen/CentralPlanetWidget.h"
+#include "../Screen/PlanetMarkerWidget.h"
+#include "../Screen/SystemOrbitWidget.h"
+#include "../Screen/MoonMarkerWidget.h"
 
 #include "Slate/WidgetRenderer.h"
 #include "Widgets/SViewport.h"
@@ -555,3 +567,90 @@ UTextureRenderTarget2D* SystemMapUtils::RenderWidgetToTexture(UUserWidget* Widge
 	UE_LOG(LogTemp, Log, TEXT("Widget rendered to RenderTarget: %dx%d"), Width, Height);
 	return RenderTarget;
 }
+
+void SystemMapUtils::DestroyAllSystemActors(UWorld* World)
+{
+	DestroyAllActorsOfType<APlanetPanelActor>(World);
+	DestroyAllActorsOfType<ACentralSunActor>(World);
+}
+
+void SystemMapUtils::DestroyAllSectorActors(UWorld* World)
+{
+	DestroyAllActorsOfType<ACentralPlanetActor>(World);
+	DestroyAllActorsOfType<AMoonPanelActor>(World);
+}
+
+void SystemMapUtils::ClearAllSystemUIElements(USystemMap* Map)
+{
+	if (!Map || !Map->MapCanvas)
+		return;
+
+	// Remove all children from MapCanvas
+	Map->MapCanvas->ClearChildren();
+
+	// Destroy planet markers
+	for (auto& Pair : Map->PlanetMarkers)
+	{
+		if (UPlanetMarkerWidget* Marker = Pair.Value)
+		{
+			Marker->RemoveFromParent();
+			Marker->MarkAsGarbage();
+		}
+	}
+	Map->PlanetMarkers.Empty();
+
+	// Destroy orbit rings
+	for (auto& Pair : Map->PlanetOrbitMarkers)
+	{
+		if (USystemOrbitWidget* Ring = Pair.Value)
+		{
+			Ring->RemoveFromParent();
+			Ring->MarkAsGarbage();
+		}
+	}
+	Map->PlanetOrbitMarkers.Empty();
+
+	// Clear selection
+	Map->LastSelectedMarker = nullptr;
+	Map->PlanetOrbitAngles.Empty();
+
+	UE_LOG(LogTemp, Warning, TEXT("[SystemMapUtils] Cleared all UI system elements (markers + rings)"));
+}
+
+void SystemMapUtils::ClearAllSectorUIElements(USectorMap* Map)
+{
+	if (!Map || !Map->MapCanvas)
+		return;
+
+	// Remove all children from MapCanvas
+	Map->MapCanvas->ClearChildren();
+
+	// Destroy planet markers
+	for (auto& Pair : Map->PlanetMarkers)
+	{
+		if (UCentralPlanetWidget* Marker = Pair.Value)
+		{
+			Marker->RemoveFromParent();
+			Marker->MarkAsGarbage();
+		}
+	}
+	Map->PlanetMarkers.Empty();
+
+	// Destroy orbit rings
+	for (auto& Pair : Map->MoonOrbitMarkers)
+	{
+		if (USystemOrbitWidget* Ring = Pair.Value)
+		{
+			Ring->RemoveFromParent();
+			Ring->MarkAsGarbage();
+		}
+	}
+	Map->MoonOrbitMarkers.Empty();
+
+	// Clear selection
+	Map->LastSelectedMoonMarker = nullptr;
+	Map->MoonOrbitAngles.Empty();
+
+	UE_LOG(LogTemp, Warning, TEXT("[SystemMapUtils] Cleared all Sector UI elements (markers + rings)"));
+}
+

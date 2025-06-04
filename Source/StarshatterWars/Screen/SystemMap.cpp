@@ -607,8 +607,6 @@ void USystemMap::InitMapCanvas()
 	{
 		MainSlot->SetPosition(FVector2D::ZeroVector);
 	}
-	
-	MapCanvas->ClearChildren();
 
 	// Delay layout-dependent logic like centering
 	FTimerHandle LayoutTimer;
@@ -696,5 +694,23 @@ void USystemMap::SetMarkerVisibility(bool bVisible)
 		if (Elem.Value) Elem.Value->SetVisibility(Vis);
 }
 
+void USystemMap::ClearSystemView()
+{
+	if (MapCanvas)
+	{
+		MapCanvas->ClearChildren();
+	}
 
+	PlanetMarkers.Empty();
+	PlanetOrbitMarkers.Empty();
+	LastSelectedMarker = nullptr;
+
+	SystemMapUtils::DestroyAllSystemActors(GetWorld());
+	if (UGalaxyManager* Galaxy = UGalaxyManager::Get(this))
+	{
+		Galaxy->ClearAllRenderTargets();
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[SystemMap] Cleared all markers, actors, and render targets"));
+}
 

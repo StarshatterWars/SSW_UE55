@@ -48,6 +48,21 @@ public:
 	void HandleCentralPlanetClicked(const FString& PlanetName);
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
+	TMap<FString, UCentralPlanetWidget*> PlanetMarkers;
+	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
+	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
+
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	UCanvasPanel* MapCanvas;
+
+	// Holds per-planet orbit angle (randomized once per planet per session)
+	TMap<FString, float> MoonOrbitAngles;
+
+	// Stores the most recently selected planet marker
+	UMoonMarkerWidget* LastSelectedMoonMarker = nullptr;
+
+
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
@@ -58,9 +73,6 @@ protected:
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	UCanvasPanel* MapCanvas;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanel* OuterCanvas;
@@ -102,17 +114,6 @@ protected:
 	void SetZoomLevel(float NewZoom);
 
 private:
-	TMap<FString, UCentralPlanetWidget*> PlanetMarkers;
-	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
-	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
-	
-	// Holds per-planet orbit angle (randomized once per planet per session)
-	TMap<FString, float> MoonOrbitAngles;
-
-
-	// Stores the most recently selected planet marker
-	UMoonMarkerWidget* LastSelectedMoonMarker = nullptr;
-
 	float GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
 
 	UFUNCTION()

@@ -98,7 +98,7 @@ void ACentralPlanetActor::InitPlanet()
 
 	PlanetRenderTarget = SystemMapUtils::EnsureRenderTarget(
 		this,
-		PlanetData.Name,
+		PlanetData.Name +".Planet",
 		PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius),
 		SceneCapture,
 		PlanetMesh
@@ -108,7 +108,7 @@ void ACentralPlanetActor::InitPlanet()
 		this,
 		PlanetBaseMaterial,
 		PlanetTexture,
-		PlanetData.Name
+		PlanetData.Name + ".Planet"
 	);
 
 	// Apply to mesh

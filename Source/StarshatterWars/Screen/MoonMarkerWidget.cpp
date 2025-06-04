@@ -16,11 +16,6 @@ void UMoonMarkerWidget::SetSelected(bool bSelected)
 	// Optional highlight logic
 }
 
-void UMoonMarkerWidget::SetMarkerMaterial(UMaterialInterface* MoonMat)
-{
-	MoonWidgetMaterial = MoonMat;
-}
-
 void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActor* MoonActor)
 {
 	MoonData = Moon;
@@ -32,15 +27,13 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 		MoonNameText->SetColorAndOpacity(FLinearColor::White);
 	}
 
-	UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
-
-	if (!MoonImage || !MoonActor || !MoonWidgetMaterial || !RT)
+	if (!MoonImage || !MoonActor || !MoonWidgetMaterial)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("InitFromMoonActor: missing setup"));
 		return;
 	}
 
-	SetWidgetRenderTarget(RT);
+	SetWidgetRenderTarget(MoonActor->GetRenderTarget());
 }
 
 FReply UMoonMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

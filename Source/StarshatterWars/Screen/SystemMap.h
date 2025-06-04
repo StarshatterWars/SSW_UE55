@@ -58,6 +58,20 @@ public:
 	void SetMarkerVisibility(bool bVisible);
 
 
+	void ClearSystemView();
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UCanvasPanel* MapCanvas;
+
+	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
+	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
+
+	// Stores the most recently selected planet marker
+	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
+
+	// Holds per-planet orbit angle (randomized once per planet per session)
+	TMap<FString, float> PlanetOrbitAngles;
+
 protected:
 	void NativeConstruct() override;
 	void NativeDestruct() override;
@@ -67,9 +81,6 @@ protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;	
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	UCanvasPanel* MapCanvas;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanel* OuterCanvas;
@@ -110,13 +121,7 @@ protected:
 	FVector2D ScreenRenderSize = FVector2D(4096.f, 4096.f);
 
 private:	
-	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
-	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
-
 	UCentralSunWidget* CentralStarMarker;
-
-	// Holds per-planet orbit angle (randomized once per planet per session)
-	TMap<FString, float> PlanetOrbitAngles;
 	
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
 
@@ -205,9 +210,6 @@ private:
 
 	UPROPERTY()
 	FVector2D CanvasSize = FVector2D(6000.f, 6000.f);
-
-	// Stores the most recently selected planet marker
-	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
 
 	UPROPERTY()
 	TSet<UWidget*> TrackedMapWidgets;

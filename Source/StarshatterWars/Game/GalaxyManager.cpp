@@ -55,21 +55,6 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateRenderTarget(const FString& N
 	return NewRT;
 }
 
-void UGalaxyManager::ClearAllRenderTargets()
-{
-	for (auto& Pair : RenderTargets)
-	{
-		if (Pair.Value)
-		{
-			// Mark for garbage collection
-			Pair.Value->MarkAsGarbage();
-		}
-	}
-	RenderTargets.Empty();
-
-	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all render targets."));
-}
-
 UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
 	UWorld* World,
 	const FBox2D& ContentBounds,
@@ -198,5 +183,20 @@ bool UGalaxyManager::RenderWidgetToImage(UUserWidget* Widget, UImage* TargetImag
 	TargetImage->SetRenderOpacity(1.0f);
 
 	return true;
+}
+
+void UGalaxyManager::ClearAllRenderTargets()
+{
+	for (auto& Pair : RenderTargets)
+	{
+		if (UTextureRenderTarget2D* RT = Pair.Value)
+		{
+			RT->MarkAsGarbage(); // optional
+			RT->ConditionalBeginDestroy();
+		}
+	}
+
+	RenderTargets.Empty();
+	UE_LOG(LogTemp, Warning, TEXT("[GalaxyManager] Cleared all render targets"));
 }
 

@@ -15,11 +15,6 @@ void UPlanetMarkerWidget::SetSelected(bool bSelected)
 	// Optional highlight logic
 }
 
-void UPlanetMarkerWidget::SetMarkerMaterial(UMaterialInterface* PlanetMat)
-{
-	PlanetWidgetMaterial = PlanetMat;
-}
-
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
 	SetVisibility(ESlateVisibility::Visible);
@@ -33,15 +28,13 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
 	}
 
-	UTextureRenderTarget2D* RT = PlanetActor->GetRenderTarget();
-
-	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial || !RT)
+	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("InitFromPlanetActor: missing setup"));
 		return;
 	}
 
-	SetWidgetRenderTarget(RT);
+	SetWidgetRenderTarget(PlanetActor->GetRenderTarget());
 	bIselected = false;
 }
 

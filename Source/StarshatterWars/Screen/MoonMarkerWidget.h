@@ -31,7 +31,6 @@ public:
 	FS_MoonMap MoonData;
 	
 	void SetSelected(bool bSelected);
-	void SetMarkerMaterial(UMaterialInterface* MoonMat);
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 
 	UFUNCTION()
@@ -41,9 +40,6 @@ public:
 
 	UPROPERTY()
 	UMaterialInterface* MoonWidgetMaterial;
-
-	UPROPERTY()
-	UPlanetMarkerWidget* ParentPlanetMarker = nullptr;
 
 protected:
 	UPROPERTY(meta = (BindWidgetOptional)) UImage* MoonImage;

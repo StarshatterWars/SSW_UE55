@@ -211,17 +211,20 @@ void USectorMap::BuildSectorView(const FS_PlanetMap& ActivePlanet)
 	// Build moon markers and orbit rings
 	for (const FS_MoonMap& Moon : ActivePlanet.Moon)
 	{
-		//AddMoon(Moon);
+		AddMoon(Moon);
 	}
 
 	HighlightSelectedSystem();
-	//SetOverlay();
 	SetMarkerVisibility(true);
 }
 
 
 void USectorMap::InitSectorCanvas()
 {
+	UGalaxyManager::Get(this)->ClearAllRenderTargets();
+	SystemMapUtils::ClearAllSectorUIElements(this);
+	SystemMapUtils::DestroyAllSectorActors(GetWorld());
+
 	ZoomLevel = 1.0f;
 	TargetZoom = 1.0f;
 	TargetTiltAmount = 0.0f;
@@ -250,10 +253,6 @@ void USectorMap::InitSectorCanvas()
 		MainSlot->SetPosition(FVector2D::ZeroVector);
 	}
 
-	MapCanvas->ClearChildren();
-	PlanetMarkers.Empty();
-	MoonMarkers.Empty();
-
 	// Delay layout-dependent logic like centering
 	FTimerHandle LayoutTimer;
 	GetWorld()->GetTimerManager().SetTimer(LayoutTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
@@ -277,7 +276,6 @@ void USectorMap::HandleCentralPlanetClicked(const FString& PlanetName)
 
 	if (OwningOperationsScreen)
 	{
-		//ClearMapCanvas();
 		OwningOperationsScreen->ShowSystemMap(); // or equivalent
 	}
 	else
@@ -321,7 +319,6 @@ void USectorMap::AddMoon(const FS_MoonMap& Moon)
 
 	if (MoonActor)
 	{
-		UTextureRenderTarget2D* PlanetRT = SystemMapUtils::CreateUniqueRenderTargetForActor(Moon.Name, MoonActor);
 		SpawnedMoonActors.Add(MoonActor);
 		UE_LOG(LogTemp, Log, TEXT("Moon Created: %s"), *Moon.Name);
 	}
@@ -621,3 +618,4 @@ float USectorMap::GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float Ma
 
 	return MaxOrbit / MaxPixelRadius; // e.g. 1e9 km mapped to 500 px = 2e6 scale
 }
+

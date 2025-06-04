@@ -64,8 +64,6 @@ protected:
 	
 	UFUNCTION()
 	void InitMoon();
-	
-	void DeferredCaptureScene();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Render")
 	UStaticMeshComponent* MoonMesh;

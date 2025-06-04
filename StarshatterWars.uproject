@@ -1,50 +1,47 @@
 {
-	"FileVersion": 3,
-	"EngineAssociation": "{3C0690A8-42C7-A056-E61B-6BA207A8CB51}",
-	"Category": "",
-	"Description": "",
-	"Modules": [
-		{
-			"Name": "StarshatterWars",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"UMG",
-				"CoreUObject",
-				"Engine"
-			]
-		}
-	],
-	"Plugins": [
-		{
-			"Name": "ModelingToolsEditorMode",
-			"Enabled": true
-		},
-		{
-			"Name": "RuntimeAudioImporter",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/81fd278e318e4235a028d3fdf46bf036"
-		},
-		{
-			"Name": "VictoryBPLibrary",
-			"Enabled": false
-		},
-		{
-			"Name": "VisualStudioTools",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/362651520df94e4fa65492dbcba44ae2",
-			"SupportedTargetPlatforms": [
-				"Win64"
-			]
-		},
-		{
-			"Name": "Fab",
-			"Enabled": false,
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"Mac",
-				"Linux"
-			]
-		}
-	]
+  "FileVersion": 3,
+  "EngineAssociation": "{3C0690A8-42C7-A056-E61B-6BA207A8CB51}",
+  "Category": "",
+  "Description": "",
+  "Modules": [
+    {
+      "Name": "StarshatterWars",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "ModelingToolsEditorMode",
+      "Enabled": true
+    },
+    {
+      "Name": "RuntimeAudioImporter",
+      "Enabled": false
+    },
+    {
+      "Name": "VictoryBPLibrary",
+      "Enabled": false
+    },
+    {
+      "Name": "VisualStudioTools",
+      "Enabled": true,
+      "SupportedTargetPlatforms": [
+        "Win64"
+      ]
+    },
+    {
+      "Name": "Fab",
+      "Enabled": false,
+      "SupportedTargetPlatforms": [
+        "Win64",
+        "Mac",
+        "Linux"
+      ]
+    }
+  ],
+  "TargetPlatforms": [],
+  "AdditionalRootDirectories": [],
+  "AdditionalPluginDirectories": [],
+  "EpicSampleNameHash": ""
 }

@@ -26,8 +26,6 @@ public:
 	FS_PlanetMap PlanetData;
 	UFUNCTION()
 	void SetSelected(bool bSelected);
-	
-	UFUNCTION()void SetMarkerMaterial(UMaterialInterface* PlanetMat);
 
 	UFUNCTION()
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);

@@ -1327,7 +1327,10 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called %s"), *Name);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
-
+	if (SystemMap) {
+		SystemMap->ClearSystemView();
+		SystemMap->InitMapCanvas();
+	}
 	if (!SystemMap)
 	{
 		SystemMap = CreateWidget<USystemMap>(this, SystemMapClass);
@@ -1336,6 +1339,7 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 		SystemMap->SetUserFocus(GetOwningPlayer()); // controller
 		SystemMap->SetKeyboardFocus(); // optional redundancy
 		SystemMap->SetClipping(EWidgetClipping::ClipToBoundsAlways);
+		SystemMap->InitMapCanvas();
 	}
 	
 	if (!SystemMapClass) {

@@ -95,15 +95,6 @@ void AMoonPanelActor::Tick(float DeltaTime)
 	MoonMesh->SetRelativeRotation(Spin);
 }
 
-void AMoonPanelActor::InitializeMoon()
-{
-	float ScaleFactor = MoonUtils::GetMoonUIScale(MoonData.Radius);
-	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
-
-	FRotator AxisTilt = MoonUtils::GetMoonAxisTilt(MoonData.Tilt);
-	MoonMesh->SetRelativeRotation(AxisTilt);
-}
-
 void AMoonPanelActor::SetParentPlanet(APlanetPanelActor* InParent)
 {
 	UE_LOG(LogTemp, Warning, TEXT("SetParentPlanet() Parent: %s -> Moon: %s"), *InParent->PlanetData.Name, *MoonData.Name);
@@ -153,12 +144,12 @@ void AMoonPanelActor::InitMoon()
 	}
 }
 
-void AMoonPanelActor::DeferredCaptureScene()
+void AMoonPanelActor::InitializeMoon()
 {
-	if (SceneCapture && MoonRenderTarget)
-	{
-		SceneCapture->CaptureScene();
-		UE_LOG(LogTemp, Log, TEXT("Moon CaptureScene triggered after delay: %s"), *MoonData.Name);
-	}
+	float ScaleFactor = MoonUtils::GetMoonUIScale(MoonData.Radius);
+	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
+
+	FRotator AxisTilt = MoonUtils::GetMoonAxisTilt(MoonData.Tilt);
+	MoonMesh->SetRelativeRotation(AxisTilt);
 }
 

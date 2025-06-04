@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/Widget.h" 
+#include "Kismet/GameplayStatics.h"
 #include "Components/CanvasPanel.h" 
 
 
@@ -17,6 +18,15 @@ class UStaticMeshComponent;
 class UWorld;
 class UUserWidget;
 class UImage;
+
+class USystemMap;
+class USectorMap;
+class UPlanetMarkerWidget;
+class UCentralSUnWidget;
+class UCentralPlanetWidget;
+class UMoonMarkerWidget;
+class UOrbitRingWidget;
+
 
 /**
  * 
@@ -210,5 +220,28 @@ public:
 	);
 
 	static UTextureRenderTarget2D* RenderWidgetToTexture(UUserWidget* Widget, int32 Width, int32 Height, float Scale = 1.0f);
+
+	static void DestroyAllSystemActors(UWorld* World);	
+	static void DestroyAllSectorActors(UWorld* World);
+	
+	template<typename T>
+	static void DestroyAllActorsOfType(UWorld* WorldContext)
+	{
+		if (!WorldContext) return;
+
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(WorldContext, T::StaticClass(), FoundActors);
+
+		for (AActor* Actor : FoundActors)
+		{
+			if (IsValid(Actor))
+			{
+				Actor->Destroy();
+			}
+		}
+	}
+
+	static void ClearAllSystemUIElements(USystemMap* Map);
+	static void ClearAllSectorUIElements(USectorMap* Map);
 };
 
