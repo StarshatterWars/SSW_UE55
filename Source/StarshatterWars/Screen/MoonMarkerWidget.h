@@ -38,7 +38,7 @@ public:
 
 	FOnMoonClicked OnMoonClicked;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	UMaterialInterface* MoonWidgetMaterial;
 
 protected:

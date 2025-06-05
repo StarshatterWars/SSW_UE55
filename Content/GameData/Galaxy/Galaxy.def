@@ -48,7 +48,7 @@ system:
 			moon: {
 			   name:    Synad,
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "synad",
 			   radius:  2.2e6,
 			   mass:    1.9e22,
 			   orbit:   1.44e8,
@@ -89,15 +89,6 @@ system:
 			eccentricity: 0.157,
 			rotation: 27,
 			
-			moon: {
-			   name:    Synad,
-			   icon:    "rock_map",
-			   texture:  "rock",
-			   radius:  2.2e6,
-			   mass:    1.9e22,
-			   orbit:   1.44e8,
-			   rotation: 30,
-			},
 			moon: {
 			   name:    Lanora,
 			   icon:    "lanos_map",
@@ -148,7 +139,7 @@ system:
 			moon: {
 			   name:    Kash,
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "kash",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.14e8,
@@ -321,7 +312,7 @@ system:
 			moon: {
 			   name:    Vanna
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "vanna",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   5.65e8,
@@ -515,26 +506,6 @@ system:
 			aphelion: 2.94e11,
 			eccentricity: 0.143,
 			rotation: 35,
-			
-			moon: {
-			   name:    Synad
-			   icon:    "rock_map",
-			   texture:  "rock",
-			   radius:  2.2e6,
-			   mass:    1.9e22,
-			   orbit:   1.44e8,
-			   rotation: 30,
-			},
-			moon: {
-			   name:    Olan,
-			   icon:    "lunar_map",
-			   texture:  "lunar",
-			   radius:      3.2e6,
-			   rotation:    19,
-			   inclination: 0.0,
-			   mass:        1.7e24,
-			   orbit:       2.251e8,
-			},
 		},
 	},
 }
@@ -579,7 +550,7 @@ system:
 			moon:       {
 			   name:    Galad
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "galad",
 			   radius:  0.724e6,
 			   mass:    7e22,
 			   orbit:   40e6,
@@ -634,7 +605,7 @@ system:
 			moon: {
 			   name:    Penelope
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "penelope",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   3.15e8,
@@ -722,6 +693,7 @@ system:
 			moon: {
 			   name:    Hermes,
 			   icon:    "rock_map",
+			   texture:  "hermes",
 			   radius:  5e5,
 			   mass:    2e21,
 			   orbit:   24.3e6,
@@ -745,6 +717,7 @@ system:
 			moon:       {
 			   name:    Lanos,
 			   icon:    "lunar_map",
+			   texture:  "lunar",
 			   radius:  1e6,
 			   mass:    8e22,
 			   orbit:   42e6,
@@ -771,7 +744,7 @@ system:
 			moon: {
 			   name:    Fenris,
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "fenris",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.45e8,
@@ -849,6 +822,7 @@ system:
 			moon: {
 			   name:    Kalon
 			   icon:    "omane_map",
+			   texture:  "omane",
 			   radius:  1.83e6,
 			   mass:    8.12e22,
 			   orbit:   45e6,
@@ -899,7 +873,7 @@ system:
 			moon: {
 			   name:    Ovid,
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "ovid",
 			   radius:  3e6,
 			   mass:    3e22,
 			   orbit:   2.65e8,
@@ -1145,7 +1119,7 @@ system:
 			moon: {
 			   name:    Corvus
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "corvus",
 			   radius:  1.3e6,
 			   rotation: 16.4,
 			   mass:    5.98e24,
@@ -1179,7 +1153,7 @@ system:
 			moon: {
 			   name:    Benares,
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "benares",
 			   radius:  2.3e6,
 			   rotation: 26.4,
 			   mass:    5.98e24,
@@ -1306,7 +1280,7 @@ system:
 			moon: {
 			   name:    Asur
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "asur",
 			   radius:  3.541e6,
 			   mass:    3e22,
 			   orbit:   2.65e8,
@@ -1430,7 +1404,7 @@ system:
 			moon: {
 			   name:    "Loris I",
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "loris1",
 			   radius:  0.4e6,
 			   mass:    4.3e23,
 			   orbit:   35e6,
@@ -1439,7 +1413,7 @@ system:
 			moon: {
 			   name:    "Loris II",
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "loris2",
 			   radius:      0.25e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -1913,7 +1887,7 @@ system:
 			moon: {
 			   name:    Trump
 			   icon:    "rock_map",
-			   texture:  "rock",
+			   texture:  "trump",
 			   radius:  2.3e6,
 			   rotation: 16.4,
 			   mass:    5.98e23,

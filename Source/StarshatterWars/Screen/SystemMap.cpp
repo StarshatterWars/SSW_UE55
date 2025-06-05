@@ -598,6 +598,10 @@ void USystemMap::InitMapCanvas()
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
 	
+	UGalaxyManager::Get(this)->ClearAllRenderTargets();
+	SystemMapUtils::ClearAllSystemUIElements(this);
+	SystemMapUtils::DestroyAllSystemActors(GetWorld());
+
 	if (!OuterCanvas || !MapCanvas)
 	{
 		return;

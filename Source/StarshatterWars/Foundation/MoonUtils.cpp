@@ -34,7 +34,7 @@ float MoonUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
 
 UTexture2D* MoonUtils::LoadMoonAssetTexture(const FString& TextureName)
 {
-	FString AssetPath = FString::Printf(TEXT("/Game/GameData/Galaxy/PlanetMaterials/%s.%s"), *TextureName, *TextureName);
+	FString AssetPath = FString::Printf(TEXT("/Game/GameData/Galaxy/MoonMaterials/%s.%s"), *TextureName, *TextureName);
 
 	UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *AssetPath));
 	if (!Texture)

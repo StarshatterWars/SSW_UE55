@@ -33,6 +33,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 		return;
 	}
 
+
 	SetWidgetRenderTarget(MoonActor->GetRenderTarget());
 }
 
