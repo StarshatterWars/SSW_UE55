@@ -116,10 +116,11 @@ void AMoonPanelActor::InitMoon()
 	// Apply to mesh
 	MoonMesh->SetMaterial(0, MoonMaterialInstance);
 
+	int32 Resolution = FMath::Clamp(MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius), 256, 2048);
 	MoonRenderTarget = SystemMapUtils::EnsureRenderTarget(
 		this,
 		MoonData.Name,
-		MoonUtils::GetRenderTargetResolutionForRadius(MoonData.Radius),
+		Resolution,
 		SceneCapture,
 		MoonMesh
 	);

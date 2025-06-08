@@ -57,7 +57,7 @@ system:
 			moon: {
 			   name:    Olan,
 			   icon:    "lunar_map",
-			   texture:  "lunar",
+			   texture:  "olan",
 			   radius:      3.2e6,
 			   rotation:    19,
 			   inclination: 0.0,
@@ -67,7 +67,7 @@ system:
 			moon: {
 			   name:    Amnia,
 			   icon:    "lunar_map",
-			   texture:  "lunar",
+			   texture:  "amnia",
 			   radius:      1.2e6,
 			   rotation:    19,
 			   inclination: 0.0,

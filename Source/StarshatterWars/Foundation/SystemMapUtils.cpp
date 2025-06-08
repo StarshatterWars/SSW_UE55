@@ -240,6 +240,7 @@ UTextureRenderTarget2D* SystemMapUtils::CreateRenderTarget(const FString& Name, 
 		return nullptr;
 	}
 
+	Resolution = FMath::Clamp(Resolution, 256, 2048);
 	RenderTarget->RenderTargetFormat = RTF_RGBA16f; // good for lit previews
 	RenderTarget->ClearColor = FLinearColor::Black;
 	RenderTarget->bAutoGenerateMips = false;
@@ -612,7 +613,7 @@ void SystemMapUtils::ClearAllSystemUIElements(USystemMap* Map)
 
 	// Clear selection
 	Map->LastSelectedMarker = nullptr;
-	Map->PlanetOrbitAngles.Empty();
+	//Map->PlanetOrbitAngles.Empty();
 
 	UE_LOG(LogTemp, Warning, TEXT("[SystemMapUtils] Cleared all UI system elements (markers + rings)"));
 }
