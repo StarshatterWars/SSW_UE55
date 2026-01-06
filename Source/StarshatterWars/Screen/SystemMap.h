@@ -11,6 +11,8 @@
 #include "SystemMap.generated.h"
 
 class UCanvasPanel;
+class UImage;
+class UTextureRenderTarget2D;
 class UScrollBox;
 class USizeBox;
 class UPlanetMarkerWidget;
@@ -33,6 +35,21 @@ class STARSHATTERWARS_API USystemMap : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(meta = (BindWidgetOptional))
+	UCanvasPanel* MapCanvas;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UImage* OverviewImage = nullptr;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UCanvasPanel* OuterCanvas;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	USizeBox* MapCanvasSize;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	FS_Galaxy SystemData;
+	
 	// Called to draw all planets for the current system
 	void BuildSystemView(const FS_Galaxy* ActiveSystem);
 
@@ -57,11 +74,9 @@ public:
 	void SetOverlay();
 	void SetMarkerVisibility(bool bVisible);
 
-
 	void ClearSystemView();
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	UCanvasPanel* MapCanvas;
+	void EnsureOverviewImage();
+	void UpdateOverviewBrush();
 
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
@@ -82,14 +97,6 @@ protected:
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;	
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-	UPROPERTY(meta = (BindWidgetOptional))
-	UCanvasPanel* OuterCanvas;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	USizeBox* MapCanvasSize;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	FS_Galaxy SystemData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
