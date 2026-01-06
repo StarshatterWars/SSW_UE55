@@ -150,7 +150,7 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 {	
-	
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Missing MapCanvas"));
@@ -167,7 +167,10 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 	// Convert to screen scale
 	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
-
+	
+	SSWInstance->EnsureSystemOverview(this, 1024);
+	SSWInstance->RebuildSystemOverview(ActiveSystem->Stellar[0]);
+	
 	// Build planet markers and orbit rings
 	for (const FS_PlanetMap& Planet : ActiveSystem->Stellar[0].Planet)
 	{

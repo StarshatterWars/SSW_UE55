@@ -250,6 +250,7 @@ public:
 	void CreateOOBTable();
 	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
 	void SetActiveOOBForce(FS_OOBForce& Force);
+
 	TArray<FS_Combatant> GetCombatantList();
 
 	void FlattenForce(const FS_OOBForce& ForceData, TArray<FS_OOBFlatEntry>& OutFlatList);
@@ -291,6 +292,9 @@ public:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextureRenderTarget2D> OverviewRT = nullptr;
+	
+	UPROPERTY()
+	FString LastOverviewSystemName;
 
 	DataLoader* loader;
 
@@ -373,6 +377,8 @@ public:
 	void DestroySystemOverview();
 
 	void RebuildSystemOverview(const FS_StarMap& Star);
+
+	void EnsureSystemOverview(UObject* Context, const FS_StarMap& StarMap, int32 Resolution);
 	
 protected:
 	virtual void Init() override;

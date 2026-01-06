@@ -2385,3 +2385,29 @@ void USSWGameInstance::RebuildSystemOverview(const FS_StarMap& StarMap)
 	OverviewActor->FrameDiorama();
 	OverviewActor->CaptureOnce();
 }
+
+void USSWGameInstance::EnsureSystemOverview(
+	UObject* Context,
+	const FS_StarMap& StarMap,
+	int32 Resolution)
+{
+	if (!Context) return;
+
+	UWorld* World = Context->GetWorld();
+	if (!World) return;
+
+	EnsureOverviewRT(Resolution);
+	EnsureOverviewActor(World);
+
+	if (!OverviewActor || !OverviewRT) return;
+
+	OverviewActor->SetRenderTarget(OverviewRT);
+	OverviewActor->ConfigureCaptureForUI();
+
+	// Only rebuild if system changed
+	if (LastOverviewSystemName != StarMap.Name)
+	{
+		LastOverviewSystemName = StarMap.Name;
+		RebuildSystemOverview(StarMap);
+	}
+}

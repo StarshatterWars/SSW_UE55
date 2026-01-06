@@ -64,7 +64,7 @@ float StarUtils::GetSunspotStrength(ESPECTRAL_CLASS Class)
 	}
 }
 
-FString StarUtils::GetClassName(ESPECTRAL_CLASS Class)
+FString StarUtils::GetSystemClassName(ESPECTRAL_CLASS Class)
 {
 	const UEnum* EnumPtr = StaticEnum<ESPECTRAL_CLASS>();
 	if (!EnumPtr)

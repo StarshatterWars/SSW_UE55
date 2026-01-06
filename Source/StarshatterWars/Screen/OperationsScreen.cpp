@@ -1326,9 +1326,6 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 	
 	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Called %s"), *Name);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
-	SSWInstance->EnsureSystemOverview(this, 1024);
-	SSWInstance->RebuildSystemOverview(SSWInstance->SelectedStarSystem);
 	
 	if (SystemMap) {
 		SystemMap->ClearSystemView();

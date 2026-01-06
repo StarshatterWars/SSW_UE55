@@ -23,7 +23,7 @@ public:
 	static float GetSunspotStrength(ESPECTRAL_CLASS SpectralClass);
 
 	/** Format class as text label (e.g., "G-Class Star") */
-	static FString GetClassName(ESPECTRAL_CLASS SpectralClass);
+	static FString GetSystemClassName(ESPECTRAL_CLASS SpectralClass);
 	
 	/** Stellar Rotation */
 	static float GetRotationSpeed(float Rotation);
