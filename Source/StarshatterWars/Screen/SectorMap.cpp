@@ -5,9 +5,6 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
-#include "Components/SceneCaptureComponent2D.h"
-
-#include "Engine/SceneCapture2D.h"
 
 #include "CentralPlanetWidget.h"
 #include "MoonMarkerWidget.h"
@@ -221,9 +218,20 @@ void USectorMap::BuildSectorView(const FS_PlanetMap& ActivePlanet)
 
 void USectorMap::InitSectorCanvas()
 {
-	UGalaxyManager::Get(this)->ClearAllRenderTargets();
 	SystemMapUtils::ClearAllSectorUIElements(this);
 	SystemMapUtils::DestroyAllSectorActors(GetWorld());
+
+	// DO NOT do this here — it destroys SystemMap’s one-shot RT too.
+	// UGalaxyManager::Get(this)->ClearAllRenderTargets();
+
+	// This was backwards. If OuterCanvas exists, you were returning early.
+	if (!MapCanvas || !OuterCanvas)
+	{
+		return;
+	}
+	//UGalaxyManager::Get(this)->ClearAllRenderTargets();
+	//SystemMapUtils::ClearAllSectorUIElements(this);
+	//SystemMapUtils::DestroyAllSectorActors(GetWorld());
 
 	ZoomLevel = 1.0f;
 	TargetZoom = 1.0f;
@@ -243,10 +251,6 @@ void USectorMap::InitSectorCanvas()
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsEnabled(true);
 
-	if (!MapCanvas || OuterCanvas)
-	{
-		return;
-	}
 		
 	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
 	{
@@ -282,22 +286,6 @@ void USectorMap::HandleCentralPlanetClicked(const FString& PlanetName)
 	{
 		UE_LOG(LogTemp, Error, TEXT("No owner set for USectorMap"));
 	}
-}
-
-float USectorMap::GetDynamicMoonOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const
-{
-	float MaxOrbit = 0.f;
-	for (const FS_MoonMap& Moon : Moons)
-	{
-		MaxOrbit = FMath::Max(MaxOrbit, Moon.Orbit);
-	}
-
-	if (MaxOrbit <= 0.f)
-	{
-		return 1.0f; // fallback to avoid divide-by-zero
-	}
-
-	return MaxOrbit / MaxPixelRadius; // e.g. 1e9 km mapped to 500 px = 2e6 scale
 }
 
 void USectorMap::AddMoon(const FS_MoonMap& Moon)
@@ -486,7 +474,8 @@ FReply USectorMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 			);
 
 			//FVector2D Final = SystemMapUtils::ClampCanvasDragOffset(Clamped, CachedCanvasSize, CachedViewportSize, 50.f);
-			CanvasSlot->SetPosition(Proposed);
+			CanvasSlot->SetPosition(Clamped);
+			//CanvasSlot->SetPosition(Proposed);
 		}
 	}
 

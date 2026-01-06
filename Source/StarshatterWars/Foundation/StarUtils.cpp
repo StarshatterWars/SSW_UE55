@@ -3,6 +3,7 @@
 
 #include "StarUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "UObject/EnumProperty.h" // often not required, but safe in some setups
 
 FLinearColor StarUtils::GetColor(ESPECTRAL_CLASS SpectralClass)
 {
