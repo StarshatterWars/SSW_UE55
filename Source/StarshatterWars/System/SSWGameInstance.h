@@ -52,6 +52,8 @@
  class DataLoader;
  class UPlayerSaveGame;
 
+ class ASystemOverview;
+ class UTextureRenderTarget2D;
 
 UCLASS()
 class STARSHATTERWARS_API USSWGameInstance : public UGameInstance
@@ -281,6 +283,14 @@ public:
 	FString SelectedSectorName;
 	UPROPERTY()
 	FS_PlanetMap SelectedSector;
+	UPROPERTY()
+	FS_StarMap SelectedStarSystem;
+
+	UPROPERTY(Transient)
+	TObjectPtr<ASystemOverview> OverviewActor = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextureRenderTarget2D> OverviewRT = nullptr;
 
 	DataLoader* loader;
 
@@ -344,6 +354,25 @@ public:
 	bool bIsDisplayElementChanged;
 	UFUNCTION()
 	FS_OOBForce GetActiveOOBForce();
+
+	/** Ensures OverviewActor (world-owned) and OverviewRT (GI-owned) exist and are valid. */
+	UFUNCTION(BlueprintCallable, Category = "System Overview")
+	void EnsureSystemOverview(UObject* InWorldContext, int32 Resolution = 2048);
+
+	/** Build the diorama bodies and capture once to OverviewRT. */
+	void BuildAndCaptureSystemOverview(const TArray<struct FOverviewBody>& Bodies);
+
+	UFUNCTION(BlueprintCallable, Category = "System Overview")
+	UTextureRenderTarget2D* GetSystemOverviewRT() const { return OverviewRT; }
+
+	UFUNCTION(BlueprintCallable, Category = "System Overview")
+	ASystemOverview* GetSystemOverviewActor() const { return OverviewActor; }
+
+	/** Optional cleanup (typically only needed on shutdown or debugging). */
+	UFUNCTION(BlueprintCallable, Category = "System Overview")
+	void DestroySystemOverview();
+
+	void RebuildSystemOverview(const FS_StarMap& Star);
 	
 protected:
 	virtual void Init() override;
@@ -412,6 +441,9 @@ protected:
 		int32 SelectionActionNr;
 		UPROPERTY()
 		int32 SelectionRosterNr;
+
+		void EnsureOverviewRT(int32 Resolution);
+		void EnsureOverviewActor(UWorld* World);
 		
 		void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 		void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);

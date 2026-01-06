@@ -67,9 +67,22 @@ float StarUtils::GetSunspotStrength(ESPECTRAL_CLASS Class)
 FString StarUtils::GetClassName(ESPECTRAL_CLASS Class)
 {
 	const UEnum* EnumPtr = StaticEnum<ESPECTRAL_CLASS>();
-	if (!EnumPtr) return FString("Unknown");
+	if (!EnumPtr)
+	{
+		return TEXT("Unknown");
+	}
 
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(Class)).ToString();
+	const int64 Value = static_cast<int64>(Class);
+
+	// Prefer DisplayName if present
+	const FText DisplayText = EnumPtr->GetDisplayNameTextByValue(Value);
+	if (!DisplayText.IsEmpty())
+	{
+		return DisplayText.ToString();
+	}
+
+	// Fallback to raw enum name (e.g. "G2V")
+	return EnumPtr->GetNameStringByValue(Value);
 }
 
 float StarUtils::GetRotationSpeed(float Rotation)

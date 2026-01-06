@@ -30,6 +30,8 @@
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
+#include "Engine/TextureRenderTarget2D.h" 
+#include "../Space/SystemOverview.h"
 
 #undef UpdateResource
 #undef PlaySound
@@ -2199,4 +2201,187 @@ void USSWGameInstance::SetupMusicController()
 
 	FVector Location = FVector(-1000, 0, 0);
 	World->SpawnActor<AMusicController>(AMusicController::StaticClass(), Location, FRotator::ZeroRotator);
+}
+
+void USSWGameInstance::EnsureSystemOverview(UObject* InWorldContext, int32 Resolution)
+{
+	if (!InWorldContext)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EnsureSystemOverview: InWorldContext is null"));
+		return;
+	}
+
+	UWorld* World = InWorldContext->GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EnsureSystemOverview: World is null"));
+		return;
+	}
+
+	EnsureOverviewRT(Resolution);
+	EnsureOverviewActor(World);
+
+	if (OverviewActor && OverviewRT)
+	{
+		OverviewActor->SetRenderTarget(OverviewRT);
+		OverviewActor->ConfigureCaptureForUI();
+	}
+}
+
+void USSWGameInstance::EnsureOverviewRT(int32 Resolution)
+{
+	Resolution = FMath::Clamp(Resolution, 256, 4096);
+
+	// If RT exists but wrong size, recreate it (optional).
+	if (OverviewRT && OverviewRT.Get())
+	{
+		if (OverviewRT->SizeX == Resolution && OverviewRT->SizeY == Resolution)
+		{
+			return;
+		}
+
+		// Recreate to new size
+		OverviewRT = nullptr;
+	}
+
+	// IMPORTANT: Outer = GameInstance, so it survives widget rebuilds and UI transitions
+	OverviewRT = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_SystemOverview"), RF_Transient);
+	if (!OverviewRT)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnsureOverviewRT: Failed to allocate OverviewRT"));
+		return;
+	}
+
+	OverviewRT->RenderTargetFormat = RTF_RGBA16f;
+	OverviewRT->ClearColor = FLinearColor::Black;
+	OverviewRT->bAutoGenerateMips = false;
+	OverviewRT->InitAutoFormat(Resolution, Resolution);
+	OverviewRT->UpdateResourceImmediate(true);
+
+	UE_LOG(LogTemp, Log, TEXT("EnsureOverviewRT: Created OverviewRT %s (%dx%d) Outer=%s"),
+		*GetNameSafe(OverviewRT.Get()), OverviewRT->SizeX, OverviewRT->SizeY, *GetNameSafe(this));
+}
+
+void USSWGameInstance::EnsureOverviewActor(UWorld* World)
+{
+	if (!World)
+	{
+		return;
+	}
+
+	// Actor is world-owned. GI holds a reference and respawns if level/world changes.
+	if (OverviewActor && IsValid(OverviewActor))
+	{
+		if (OverviewActor->GetWorld() == World)
+		{
+			return;
+		}
+
+		// Different world (level travel): drop pointer so we respawn
+		OverviewActor = nullptr;
+	}
+
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.Name = TEXT("SystemOverviewActor");
+
+	// Spawn far away so it's never seen in the playable scene
+	const FVector SpawnLoc(1000000.f, 1000000.f, 1000000.f);
+	const FRotator SpawnRot = FRotator::ZeroRotator;
+
+	OverviewActor = World->SpawnActor<ASystemOverview>(ASystemOverview::StaticClass(), SpawnLoc, SpawnRot, Params);
+	if (!OverviewActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnsureOverviewActor: Failed to spawn ASystemOverview"));
+		return;
+	}
+
+	OverviewActor->SetActorHiddenInGame(true);
+	OverviewActor->SetActorEnableCollision(false);
+
+	UE_LOG(LogTemp, Log, TEXT("EnsureOverviewActor: Spawned %s in World=%s"),
+		*GetNameSafe(OverviewActor), *GetNameSafe(World));
+}
+
+void USSWGameInstance::BuildAndCaptureSystemOverview(const TArray<FOverviewBody>& Bodies)
+{
+	if (!OverviewActor || !IsValid(OverviewActor))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuildAndCaptureSystemOverview: OverviewActor invalid"));
+		return;
+	}
+
+	if (!OverviewRT || !IsValid(OverviewRT))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuildAndCaptureSystemOverview: OverviewRT invalid"));
+		return;
+	}
+
+	OverviewActor->SetRenderTarget(OverviewRT);
+	OverviewActor->BuildDiorama(Bodies);
+	OverviewActor->CaptureOnce();
+}
+
+void USSWGameInstance::DestroySystemOverview()
+{
+	if (OverviewActor && IsValid(OverviewActor))
+	{
+		OverviewActor->Destroy();
+	}
+	OverviewActor = nullptr;
+
+	// Usually keep the RT alive, since you said GI should own it.
+	// If you want to fully clean up, uncomment:
+	// OverviewRT = nullptr;
+}
+
+void USSWGameInstance::RebuildSystemOverview(const FS_StarMap& StarMap)
+{
+	if (!OverviewActor)
+	{
+		return;
+	}
+
+	TArray<FOverviewBody> Bodies;
+	Bodies.Reserve(1 + StarMap.Planet.Num() * 2); // rough reserve
+
+	// Star (index 0)
+	FOverviewBody Star;
+	Star.Name = StarMap.Name;
+	Star.ParentIndex = INDEX_NONE;
+	Star.RadiusKm = StarMap.Radius;
+	Star.OrbitKm = 0.f;
+	Bodies.Add(Star);
+
+	const int32 StarIndex = 0;
+
+	// Planets
+	for (const FS_PlanetMap& Planet : StarMap.Planet)
+	{
+		FOverviewBody PlanetBody;
+		PlanetBody.Name = Planet.Name;
+		PlanetBody.ParentIndex = StarIndex;
+		PlanetBody.OrbitKm = Planet.Orbit;
+		PlanetBody.RadiusKm = Planet.Radius;
+		PlanetBody.OrbitAngleDeg = Planet.OrbitAngle;      // if you have it; otherwise random/cache
+		PlanetBody.InclinationDeg = Planet.Inclination;    // if present
+		const int32 ThisPlanetIndex = Bodies.Add(PlanetBody);
+
+		// Moons (parent = this planet)
+		for (const FS_MoonMap& Moon : Planet.Moon)
+		{
+			FOverviewBody MoonBody;
+			MoonBody.Name = Moon.Name;
+			MoonBody.ParentIndex = ThisPlanetIndex;
+			MoonBody.OrbitKm = Moon.Orbit;
+			MoonBody.RadiusKm = Moon.Radius;
+			MoonBody.InclinationDeg = Moon.Inclination;
+			MoonBody.OrbitAngleDeg = Moon.OrbitAngle;       // if you have it; otherwise random/cache
+			Bodies.Add(MoonBody);
+		}
+	}
+
+	OverviewActor->BuildDiorama(Bodies);
+	OverviewActor->FrameDiorama();
+	OverviewActor->CaptureOnce();
 }

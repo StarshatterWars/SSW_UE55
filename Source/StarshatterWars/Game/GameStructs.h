@@ -621,6 +621,8 @@ struct FS_MoonMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double OrbitAngle = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Inclination;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot;
@@ -640,6 +642,7 @@ struct FS_MoonMap : public FTableRowBase {
 		Radius = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		OrbitAngle = 0.0;
 		Inclination = 0.0;
 		Rot = 0.0;
 		Tscale = 1.0;
@@ -672,6 +675,8 @@ struct FS_PlanetMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double OrbitAngle = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Inclination;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Rot;
@@ -703,6 +708,7 @@ struct FS_PlanetMap : public FTableRowBase {
 		Radius = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		OrbitAngle = 0.0;
 		Inclination = 0.0;
 		Rot = 0.0;
 		Minrad = 0.0;
@@ -742,6 +748,8 @@ struct FS_StarMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Orbit = 0.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double OrbitAngle = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	double Tscale = 1.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool   Retro = false;
@@ -762,6 +770,7 @@ struct FS_StarMap : public FTableRowBase {
 		Rot = 0.0;
 		Mass = 0.0;
 		Orbit = 0.0;
+		OrbitAngle = 0.0;
 		Tscale = 1.0;
 		Retro = false;
 		Color = FColor(0, 0, 0, 0);
