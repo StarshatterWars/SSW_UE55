@@ -624,7 +624,7 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 		if (NewPlanetActor)
 		{
-			SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, NewPlanetActor);
+			//SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, NewPlanetActor); REMOVE RENDERER
 			SpawnedPlanetActors.Add(NewPlanetActor);
 		}
 	}
