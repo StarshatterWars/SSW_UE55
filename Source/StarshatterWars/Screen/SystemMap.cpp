@@ -149,8 +149,13 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 }
 
 void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
-{	
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+{
+	if (!ActiveSystem || ActiveSystem->Stellar.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): ActiveSystem missing Stellar[0]"));
+		return;
+	}
+
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("USystemMap::BuildSystemView(): Missing MapCanvas"));
@@ -165,20 +170,14 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 	AddCentralStar(ActiveSystem);
 
-	// Convert to screen scale
 	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
-	
-	SSWInstance->EnsureSystemOverview(this, 1024);
-	SSWInstance->RebuildSystemOverview(ActiveSystem->Stellar[0]);
-	
-	// Build planet markers and orbit rings
+
 	for (const FS_PlanetMap& Planet : ActiveSystem->Stellar[0].Planet)
 	{
-		AddPlanet(Planet);		
+		AddPlanet(Planet);
 	}
-	
+
 	HighlightSelectedSystem();
-	//SetOverlay();
 	SetMarkerVisibility(true);
 }
 
@@ -486,18 +485,14 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 {
 	AddPlanetOrbitalRing(Planet);
 
+	APlanetPanelActor* NewPlanetActor = nullptr;
+
 	if (PlanetActorClass)
 	{
-		if (PlanetActor)
-		{
-			PlanetActor->Destroy();
-			PlanetActor = nullptr;
-		}
+		const FVector ActorLocation = FVector(-1000, 0, 200); // off-screen / staging
+		const FRotator ActorRotation = FRotator::ZeroRotator;
 
-		FVector ActorLocation = FVector(-1000, 0, 200);  // Adjust position as needed
-		FRotator ActorRotation = FRotator::ZeroRotator;
-
-		PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
+		NewPlanetActor = APlanetPanelActor::SpawnWithPlanetData(
 			GetWorld(),
 			ActorLocation,
 			ActorRotation,
@@ -505,29 +500,40 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 			Planet
 		);
 
-		if (PlanetActor)
+		if (NewPlanetActor)
 		{
-			UTextureRenderTarget2D* PlanetRT = SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, PlanetActor);
-			SpawnedPlanetActors.Add(PlanetActor);
+			UTextureRenderTarget2D* PlanetRT =
+				SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, NewPlanetActor);
+
+			SpawnedPlanetActors.Add(NewPlanetActor);
+
+			UE_LOG(LogTemp, Log, TEXT("Spawned PlanetActor for %s (RT=%s)"),
+				*Planet.Name,
+				PlanetRT ? *PlanetRT->GetName() : TEXT("NULL"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn PlanetActor for %s"), *Planet.Name);
 		}
 	}
+
 	// Planet marker
 	if (PlanetMarkerClass)
 	{
-		auto* PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+		UPlanetMarkerWidget* PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
 		if (PlanetMarker)
 		{
 			float& OrbitAngle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
-			if (OrbitAngle == 0.0f)
+			if (FMath::IsNearlyZero(OrbitAngle))
 			{
 				OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
 			}
 
-			float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
+			const float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
 
 			OrbitRadius = Planet.Orbit / ORBIT_TO_SCREEN;
 
-			FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+			const FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
 				OrbitRadius,
 				OrbitAngle,
 				VisualInclination
@@ -542,10 +548,11 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 				PlanetSlot->SetZOrder(10);
 			}
 
-			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
+			// IMPORTANT: init with THIS planet's actor, not a shared member you destroy later
+			PlanetMarker->InitFromPlanetActor(Planet, NewPlanetActor);
+
 			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
-
 		}
 	}
 }
