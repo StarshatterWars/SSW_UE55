@@ -8,8 +8,9 @@
 #include "Components/Image.h"
 
 #include "Engine/TextureRenderTarget2D.h"
-#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "EngineUtils.h"
 
 #include "PlanetMarkerWidget.h"
 #include "MoonMarkerWidget.h"
@@ -18,6 +19,7 @@
 #include "OperationsScreen.h"
 
 #include "../Game/GalaxyManager.h"
+#include "../System/SSWGameInstance.h"
 
 #include "../Actors/CentralSunActor.h"
 #include "../Actors/PlanetPanelActor.h"
@@ -25,33 +27,27 @@
 #include "../Foundation/PlanetOrbitUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 
+// NEW RENDERER
+#include "../Space/SystemOverview.h"   // adjust include path to where ASystemOverview lives
+
 void USystemMap::NativeConstruct()
 {
 	Super::NativeConstruct();
-
 	InitMapCanvas();
-
-	// Ensure the image exists early (either bound or created)
-	EnsureOverviewImage();
-
-	// Ensure RT + actor exist (lazy creation, safe)
-	EnsureOverviewRenderTarget(OverviewRTSize);
-	EnsureOverviewActor();
-	UpdateOverviewBrush();
 }
 
 void USystemMap::NativeDestruct()
 {
 	ClearSystemView();
 
-	// Destroy overview actor (owned by widget)
+	// Destroy overview actor (SystemMap-owned)
 	if (SystemOverviewActor)
 	{
 		SystemOverviewActor->Destroy();
 		SystemOverviewActor = nullptr;
 	}
 
-	// Release RT (owned by widget)
+	// Release RT (GC will handle, but null it for safety)
 	SystemOverviewRT = nullptr;
 
 	Super::NativeDestruct();
@@ -77,6 +73,9 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
+	// Always keep viewport cache current (this was a common cause of “drift” when it was zero)
+	CachedViewportSize = MyGeometry.GetLocalSize();
+
 	if (!MapCanvas)
 		return;
 
@@ -84,9 +83,11 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (!CanvasSlot)
 		return;
 
+	// Movement delay
 	if (bIsWaitingToProcessMovement)
 	{
 		MovementDelayTime += InDeltaTime;
+
 		if (MovementDelayTime >= MovementDelayDuration)
 		{
 			bIsWaitingToProcessMovement = false;
@@ -94,12 +95,13 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			if (LastSelectedMarker)
 			{
-				CenterOnPlanetWidget(LastSelectedMarker, ZoomLevel);
+				CenterOnPlanetWidget(LastSelectedMarker);
 				LastSelectedMarker = nullptr;
 			}
 		}
 	}
 
+	// Focus animation
 	if (bIsAnimatingToPlanet)
 	{
 		PlanetFocusTime += InDeltaTime;
@@ -115,6 +117,7 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		}
 	}
 
+	// Tilt-in phase (optional)
 	if (bIsTiltingIn)
 	{
 		TiltTime += InDeltaTime;
@@ -128,6 +131,73 @@ void USystemMap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		{
 			bIsTiltingIn = false;
 			SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
+		}
+	}
+}
+
+void USystemMap::InitMapCanvas()
+{
+	ZoomLevel = 1.0f;
+	TargetTiltAmount = 0.0f;
+
+	bIsDragging = false;
+	bIsAnimatingToPlanet = false;
+
+	bIsTiltingIn = true;
+	TiltTime = 0.0f;
+
+	bPendingCanvasCenter = true;
+
+	SetIsFocusable(true);
+	SetVisibility(ESlateVisibility::Visible);
+	SetIsEnabled(true);
+
+	// Clear old UI + actors
+	if (UGalaxyManager* GM = UGalaxyManager::Get(this))
+	{
+		GM->ClearAllRenderTargets();
+	}
+	SystemMapUtils::ClearAllSystemUIElements(this);
+	SystemMapUtils::DestroyAllSystemActors(GetWorld());
+
+	if (!OuterCanvas || !MapCanvas)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("USystemMap::InitMapCanvas(): OuterCanvas/MapCanvas not bound"));
+		return;
+	}
+
+	// Layout init (centered canvas)
+	FTimerHandle LayoutTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		LayoutTimer,
+		FTimerDelegate::CreateWeakLambda(this, [this]()
+			{
+				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
+				{
+					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+					CanvasSlot->SetSize(CanvasSize);
+					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
+				}
+			}),
+		0.05f,
+		false
+	);
+
+	// Ensure new renderer resources exist up front (safe even if no system yet)
+	EnsureOverviewResources();
+	UpdateOverviewBrush();
+
+	// Build initial system if one is selected
+	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
+	{
+		const FString& SelectedSystem = GI->SelectedSystem;
+		const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem);
+
+		if (System)
+		{
+			UE_LOG(LogTemp, Log, TEXT("USystemMap::InitMapCanvas() Found system: %s"), *SelectedSystem);
+			BuildSystemView(System);
 		}
 	}
 }
@@ -152,9 +222,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	PlanetMarkers.Empty();
 	PlanetOrbitMarkers.Empty();
 
-	// Put overview image behind rings/markers (re-add if needed)
-	EnsureOverviewImage();
-
 	AddCentralStar(ActiveSystem);
 
 	ORBIT_TO_SCREEN = GetDynamicOrbitScale(ActiveSystem->Stellar[0].Planet, 480.f);
@@ -167,8 +234,115 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 	HighlightSelectedSystem();
 	SetMarkerVisibility(true);
 
-	// NEW: widget-owned overview capture
-	RebuildAndCaptureOverview(ActiveSystem);
+	// ---- NEW RENDERER: build + capture overview ----
+	EnsureOverviewResources();
+
+	if (SystemOverviewActor && SystemOverviewRT)
+	{
+		TArray<FOverviewBody> Bodies;
+
+		// Body 0 = star (root)
+		{
+			FOverviewBody StarBody;
+			StarBody.Name = ActiveSystem->Stellar[0].Name;
+			StarBody.ParentIndex = INDEX_NONE;
+			StarBody.OrbitKm = 0.f;
+			// If you have star radius in your stellar struct, use it; otherwise set a reasonable value:
+			StarBody.RadiusKm = FMath::Max(ActiveSystem->Stellar[0].Radius, 100000.f);
+			StarBody.OrbitAngleDeg = 0.f;
+			StarBody.InclinationDeg = 0.f;
+			Bodies.Add(StarBody);
+		}
+
+		// Planets = parent 0
+		for (const FS_PlanetMap& P : ActiveSystem->Stellar[0].Planet)
+		{
+			const int32 PlanetIndex = Bodies.Num();
+
+			FOverviewBody PlanetBody;
+			PlanetBody.Name = P.Name;
+			PlanetBody.ParentIndex = 0;
+			PlanetBody.OrbitKm = P.Orbit;
+			PlanetBody.RadiusKm = FMath::Max(P.Radius, 1000.f); // if your FS_PlanetMap uses different field name, adjust
+			PlanetBody.OrbitAngleDeg = PlanetOrbitAngles.FindRef(P.Name);
+			PlanetBody.InclinationDeg = P.Inclination;
+			Bodies.Add(PlanetBody);
+
+			// OPTIONAL: moons (only if your FS_PlanetMap actually has a moons array)
+			// Adjust field names to your real structs if needed.
+			/*
+			for (const FS_MoonMap& M : P.Moons)
+			{
+				FOverviewBody MoonBody;
+				MoonBody.Name = M.Name;
+				MoonBody.ParentIndex = PlanetIndex;
+				MoonBody.OrbitKm = M.Orbit;
+				MoonBody.RadiusKm = FMath::Max(M.Radius, 100.f);
+				MoonBody.OrbitAngleDeg = FMath::FRandRange(0.f, 360.f);
+				MoonBody.InclinationDeg = M.Inclination;
+				Bodies.Add(MoonBody);
+			}
+			*/
+		}
+
+		SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
+		SystemOverviewActor->BuildDiorama(Bodies);
+		SystemOverviewActor->CaptureOnce();
+
+		UpdateOverviewBrush();
+	}
+}
+
+void USystemMap::EnsureOverviewResources()
+{
+	// Create RT if needed (SystemMap owns it)
+	if (!SystemOverviewRT)
+	{
+		SystemOverviewRT = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_SystemOverview"), RF_Transient);
+		SystemOverviewRT->RenderTargetFormat = RTF_RGBA8;
+		SystemOverviewRT->ClearColor = FLinearColor::Black;
+		SystemOverviewRT->bAutoGenerateMips = false;
+		SystemOverviewRT->InitAutoFormat(OverviewRTSize, OverviewRTSize);
+		SystemOverviewRT->UpdateResourceImmediate(true);
+	}
+
+	// Ensure actor exists
+	if (!SystemOverviewActor)
+	{
+		UWorld* World = GetWorld();
+		if (!World)
+			return;
+
+		TSubclassOf<ASystemOverview> UseClass = SystemOverviewActorClass;
+		if (!UseClass)
+		{
+			UseClass = ASystemOverview::StaticClass();
+		}
+
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		Params.ObjectFlags |= RF_Transient;
+
+		SystemOverviewActor = World->SpawnActor<ASystemOverview>(UseClass, FVector(500000.f, 0.f, 0.f), FRotator::ZeroRotator, Params);
+		if (SystemOverviewActor)
+		{
+			SystemOverviewActor->SetActorHiddenInGame(true);
+			SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
+		}
+	}
+
+	// If OverviewImage isn't bound in BP, we can't display it (but capture still works)
+}
+
+void USystemMap::UpdateOverviewBrush()
+{
+	if (!OverviewImage || !SystemOverviewRT)
+		return;
+
+	FSlateBrush Brush;
+	Brush.SetResourceObject(SystemOverviewRT);
+	Brush.ImageSize = FVector2D((float)OverviewRTSize, (float)OverviewRTSize);
+	OverviewImage->SetBrush(Brush);
 }
 
 void USystemMap::HandleCentralSunClicked()
@@ -187,16 +361,13 @@ void USystemMap::HandleCentralSunClicked()
 
 void USystemMap::HandlePlanetSelected(FS_PlanetMap Planet)
 {
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	UE_LOG(LogTemp, Warning, TEXT("Planet %s clicked — requesting sector map view"), *Planet.Name);
 
 	if (OwningOperationsScreen)
 	{
-		if (USSWGameInstance* SSWInstance = GetGameInstance<USSWGameInstance>())
-		{
-			SSWInstance->SelectedSector = Planet;
-			SSWInstance->SelectedSectorName = Planet.Name;
-		}
-
+		SSWInstance->SelectedSector = Planet;
+		SSWInstance->SelectedSectorName = Planet.Name;
 		OwningOperationsScreen->ShowSectorMap(Planet);
 	}
 	else
@@ -205,100 +376,21 @@ void USystemMap::HandlePlanetSelected(FS_PlanetMap Planet)
 	}
 }
 
-void USystemMap::InitMapCanvas()
-{
-	ZoomLevel = 1.0f;
-	TargetTiltAmount = 0.0f;
-
-	bIsDragging = false;
-	bIsTiltingIn = true;
-	TiltTime = 0.0f;
-
-	bPendingCanvasCenter = true;
-
-	SetIsFocusable(true);
-	SetVisibility(ESlateVisibility::Visible);
-	SetIsEnabled(true);
-
-	// Clear system UI elements / actors you already manage
-	if (UGalaxyManager::Get(this))
-	{
-		UGalaxyManager::Get(this)->ClearAllRenderTargets();
-	}
-	SystemMapUtils::ClearAllSystemUIElements(this);
-	SystemMapUtils::DestroyAllSystemActors(GetWorld());
-
-	if (!OuterCanvas || !MapCanvas)
-	{
-		return;
-	}
-
-	if (UCanvasPanelSlot* MainSlot = Cast<UCanvasPanelSlot>(OuterCanvas->Slot))
-	{
-		MainSlot->SetPosition(FVector2D::ZeroVector);
-	}
-
-	FTimerHandle LayoutTimer;
-	GetWorld()->GetTimerManager().SetTimer(
-		LayoutTimer,
-		FTimerDelegate::CreateWeakLambda(this, [this]()
-			{
-				if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-				{
-					CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-					CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-					CanvasSlot->SetSize(CanvasSize);
-					CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
-				}
-
-				// Cache viewport size (if your project sets this elsewhere, keep that)
-				CachedViewportSize = CanvasSize; // fallback
-			}),
-		0.05f,
-		false
-	);
-
-	// Optional: auto-build current selected system
-	if (USSWGameInstance* GI = GetGameInstance<USSWGameInstance>())
-	{
-		const FString& SelectedSystem = GI->SelectedSystem;
-		if (const FS_Galaxy* System = UGalaxyManager::Get(this)->FindSystemByName(SelectedSystem))
-		{
-			UE_LOG(LogTemp, Log, TEXT("USystemMap::InitMapCanvas() Found system: %s"), *SelectedSystem);
-			BuildSystemView(System);
-		}
-	}
-}
-
-void USystemMap::SetZoomLevel(float NewZoom)
-{
-	ZoomLevel = FMath::Clamp(NewZoom, 0.25f, 4.0f);
-
-	if (MapCanvas)
-	{
-		SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-	}
-}
-
-void USystemMap::ZoomToFitAllPlanets()
-{
-	// Your future implementation
-}
-
 FReply USystemMap::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	const float ScrollDelta = InMouseEvent.GetWheelDelta();
-	const float PreviousZoom = ZoomLevel;
+	const float PrevZoom = ZoomLevel;
 
 	ZoomLevel = FMath::Clamp(ZoomLevel + ScrollDelta * ZoomStep, MinZoom, MaxZoom);
-	if (ZoomLevel == PreviousZoom)
+
+	if (FMath::IsNearlyEqual(ZoomLevel, PrevZoom))
 		return FReply::Handled();
 
 	SystemMapUtils::ApplyZoomToCanvas(MapCanvas, ZoomLevel);
 
 	if (LastSelectedMarker)
 	{
-		CenterOnPlanetWidget(LastSelectedMarker, 1.5f);
+		CenterOnPlanetWidget(LastSelectedMarker);
 	}
 
 	return FReply::Handled();
@@ -310,7 +402,6 @@ FReply USystemMap::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, c
 	{
 		return FReply::Handled();
 	}
-
 	return Super::NativeOnMouseButtonDoubleClick(InGeometry, InMouseEvent);
 }
 
@@ -319,7 +410,6 @@ FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FP
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
 		bIsDragging = true;
-
 		DragStartPos = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
 
 		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
@@ -327,10 +417,12 @@ FReply USystemMap::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FP
 			DragController.BeginDrag(InGeometry, InMouseEvent, CanvasSlot->GetPosition());
 		}
 
-		LastSelectedMarker = nullptr;
+		// Cancel any pending post-drag recenters
+		bIsWaitingToProcessMovement = false;
+		MovementDelayTime = 0.f;
+
 		return FReply::Handled();
 	}
-
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
@@ -343,16 +435,9 @@ FReply USystemMap::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 			const FVector2D Delta = DragController.ComputeDragDelta(InGeometry, InMouseEvent);
 			const FVector2D Proposed = DragController.InitialCanvasOffset + Delta;
 
-			// NOTE: you compute Clamped but you were applying Proposed.
-			// If you want clamping, set Clamped.
-			const FVector2D Clamped = SystemMapUtils::ClampCanvasToSafeMargin(
-				Proposed,
-				CachedCanvasSize,
-				CachedViewportSize,
-				100.f
-			);
-
-			CanvasSlot->SetPosition(Clamped);
+			// If you want clamping, apply it here (you had Clamped but weren’t using it)
+			// const FVector2D Clamped = SystemMapUtils::ClampCanvasToSafeMargin(Proposed, CachedCanvasSize, CachedViewportSize, 100.f);
+			CanvasSlot->SetPosition(Proposed);
 		}
 	}
 
@@ -365,9 +450,13 @@ FReply USystemMap::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPoi
 	{
 		bIsDragging = false;
 		DragController.EndDrag();
+
+		// Optional: start delay before recentering to the last selection
+		// bIsWaitingToProcessMovement = true;
+		// MovementDelayTime = 0.f;
+
 		return FReply::Handled().ReleaseMouseCapture();
 	}
-
 	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
 }
 
@@ -375,56 +464,61 @@ void USystemMap::HandlePlanetClicked(const FString& PlanetName)
 {
 	if (UPlanetMarkerWidget** Found = PlanetMarkers.Find(PlanetName))
 	{
+		// Second click loads sector map
 		if (LastSelectedMarker == *Found)
 		{
 			UE_LOG(LogTemp, Log, TEXT("Planet already selected: %s, loading sector view"), *PlanetName);
 			HandlePlanetSelected(LastSelectedMarker->PlanetData);
+			return;
 		}
-		else
-		{
-			LastSelectedMarker = *Found;
-			UE_LOG(LogTemp, Log, TEXT("Planet selected: %s"), *PlanetName);
-			CenterOnPlanetWidget(*Found, 1.0f);
-		}
+
+		LastSelectedMarker = *Found;
+		UE_LOG(LogTemp, Log, TEXT("Planet selected: %s (centering)"), *PlanetName);
+
+		CenterOnPlanetWidget(*Found);
 	}
 }
 
-void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom)
+/*
+ * CENTERING FIX (IMPORTANT):
+ * - Uses OuterCanvas cached geometry to compute delta in the SAME SPACE that the MapCanvas slot uses.
+ * - Avoids brittle CanvasPanelSlot Position/Alignment/Size math that breaks once zoom/tilt/render transforms exist.
+ * - This addresses the “runs down and to the right after clicking” symptom.
+ */
+void USystemMap::CenterOnPlanetWidget(UPlanetMarkerWidget* Marker)
 {
-	if (!Marker || !MapCanvas) return;
+	if (!Marker || !MapCanvas || !OuterCanvas)
+		return;
 
 	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot);
-	UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot);
-	if (!CanvasSlot || !MarkerSlot) return;
+	if (!CanvasSlot)
+		return;
 
-	// Marker position is in MapCanvas local space.
-	// IMPORTANT: AutoSize widgets often report 0 size at runtime; use DesiredSize as fallback.
-	FVector2D MarkerSize = MarkerSlot->GetSize();
-	if (MarkerSize.IsNearlyZero())
-	{
-		MarkerSize = Marker->GetDesiredSize();
-	}
+	const FGeometry OuterGeo = OuterCanvas->GetCachedGeometry();
+	const FGeometry MarkerGeo = Marker->GetCachedGeometry();
 
-	const FVector2D MarkerCenter =
-		MarkerSlot->GetPosition() + (MarkerSize * MarkerSlot->GetAlignment());
+	// Marker center in absolute space, then convert to OuterCanvas local
+	const FVector2D MarkerAbsCenter = MarkerGeo.GetAbsolutePosition() + (MarkerGeo.GetLocalSize() * 0.5f);
+	const FVector2D MarkerLocalInOuter = OuterGeo.AbsoluteToLocal(MarkerAbsCenter);
 
-	const FVector2D ViewportCenter = GetViewportCenterInCanvasSpace();
+	// Viewport center in OuterCanvas local space
+	const FVector2D ViewCenterLocal = OuterGeo.GetLocalSize() * 0.5f;
+
+	// Delta needed to move marker to the center
+	const FVector2D DeltaLocal = ViewCenterLocal - MarkerLocalInOuter;
 
 	StartCanvasPos = CanvasSlot->GetPosition();
-	TargetCanvasPos = ViewportCenter - MarkerCenter;
+	TargetCanvasPos = StartCanvasPos + DeltaLocal;
 
 	PlanetFocusTime = 0.f;
 	bIsAnimatingToPlanet = true;
 }
 
-void USystemMap::ApplyTiltToMapCanvas(float TiltAmount)
-{
-	TargetTiltAmount = TiltAmount;
-	SystemMapUtils::ApplyZoomAndTilt(MapCanvas, ZoomLevel, TargetTiltAmount);
-}
-
 void USystemMap::AddCentralStar(const FS_Galaxy* Star)
 {
+	if (!Star || Star->Stellar.Num() == 0)
+		return;
+
 	if (SunActorClass)
 	{
 		if (SunActor)
@@ -439,7 +533,7 @@ void USystemMap::AddCentralStar(const FS_Galaxy* Star)
 			StarWidget = nullptr;
 		}
 
-		const FVector Location(-500, 0, 200);
+		const FVector Location = FVector(-500, 0, 200);
 		const FRotator Rotation = FRotator::ZeroRotator;
 
 		SunActor = ACentralSunActor::SpawnWithSpectralClass(
@@ -484,7 +578,6 @@ void USystemMap::AddPlanetOrbitalRing(const FS_PlanetMap& Planet)
 
 	float a = (Perihelion + Aphelion) * 0.5f;
 	float b = a * FMath::Sqrt(1.0f - FMath::Square(Planet.Eccentricity));
-
 	a /= ORBIT_TO_SCREEN;
 	b /= ORBIT_TO_SCREEN;
 
@@ -493,8 +586,8 @@ void USystemMap::AddPlanetOrbitalRing(const FS_PlanetMap& Planet)
 	if (OrbitWidgetClass)
 	{
 		USystemOrbitWidget* PlanetOrbitRing = CreateWidget<USystemOrbitWidget>(this, OrbitWidgetClass);
-		PlanetOrbitRing->SetOrbitRadius(OrbitRadius);
 
+		PlanetOrbitRing->SetOrbitRadius(OrbitRadius);
 		const float InclinationVisual = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination);
 		PlanetOrbitRing->SetOrbitInclination(InclinationVisual);
 
@@ -517,11 +610,12 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 {
 	AddPlanetOrbitalRing(Planet);
 
+	// Spawn a UNIQUE actor per planet (no shared member that gets destroyed each iteration)
 	APlanetPanelActor* NewPlanetActor = nullptr;
 
 	if (PlanetActorClass)
 	{
-		const FVector ActorLocation(-1000, 0, 200);
+		const FVector ActorLocation = FVector(-1000, 0, 200);
 		const FRotator ActorRotation = FRotator::ZeroRotator;
 
 		NewPlanetActor = APlanetPanelActor::SpawnWithPlanetData(
@@ -534,14 +628,8 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 
 		if (NewPlanetActor)
 		{
-			UTextureRenderTarget2D* PlanetRT =
-				SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, NewPlanetActor);
-
+			SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, NewPlanetActor);
 			SpawnedPlanetActors.Add(NewPlanetActor);
-
-			UE_LOG(LogTemp, Log, TEXT("Spawned PlanetActor for %s (RT=%s)"),
-				*Planet.Name,
-				PlanetRT ? *PlanetRT->GetName() : TEXT("NULL"));
 		}
 	}
 
@@ -553,7 +641,7 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 			float& OrbitAngle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
 			if (FMath::IsNearlyZero(OrbitAngle))
 			{
-				OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
+				OrbitAngle = FMath::FRandRange(0.f, 360.f);
 			}
 
 			const float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
@@ -596,6 +684,11 @@ void USystemMap::HighlightSelectedSystem()
 	}
 }
 
+void USystemMap::SetOverlay()
+{
+	// Optional: keep your overlay code here if you still want it.
+}
+
 void USystemMap::SetMarkerVisibility(bool bVisible)
 {
 	const ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
@@ -623,225 +716,10 @@ void USystemMap::ClearSystemView()
 
 	SystemMapUtils::DestroyAllSystemActors(GetWorld());
 
-	// Overview actor remains owned by widget; keep it and reuse.
-	// If you want to destroy it on clear, uncomment:
-	/*
-	if (SystemOverviewActor)
+	if (UGalaxyManager* GM = UGalaxyManager::Get(this))
 	{
-		SystemOverviewActor->Destroy();
-		SystemOverviewActor = nullptr;
-	}
-	*/
-
-	UE_LOG(LogTemp, Warning, TEXT("[SystemMap] Cleared all markers and actors"));
-}
-
-// =====================
-// Overview RT pipeline
-// =====================
-
-void USystemMap::EnsureOverviewImage()
-{
-	if (OverviewImage)
-	{
-		// Already bound in widget BP
-		return;
+		GM->ClearAllRenderTargets();
 	}
 
-	if (!MapCanvas || bOverviewImageAdded)
-	{
-		return;
-	}
-
-	OverviewImage = NewObject<UImage>(this, UImage::StaticClass(), TEXT("SystemOverviewImage"));
-	if (!OverviewImage)
-		return;
-
-	if (UCanvasPanelSlot* OverviewSlot = MapCanvas->AddChildToCanvas(OverviewImage))
-	{
-		OverviewSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-		OverviewSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-		OverviewSlot->SetPosition(FVector2D(0.f, 0.f));
-
-		// Large enough behind your system; tune as needed
-		OverviewSlot->SetSize(FVector2D(2000.f, 2000.f));
-
-		// Behind orbits/planets but above canvas background
-		OverviewSlot->SetZOrder(1);
-
-		bOverviewImageAdded = true;
-	}
-
-	OverviewImage->SetVisibility(ESlateVisibility::Visible);
-}
-
-void USystemMap::EnsureOverviewRenderTarget(int32 Size)
-{
-	if (SystemOverviewRT && SystemOverviewRT->SizeX == Size && SystemOverviewRT->SizeY == Size)
-		return;
-
-	SystemOverviewRT = NewObject<UTextureRenderTarget2D>(this, UTextureRenderTarget2D::StaticClass(), TEXT("RT_SystemOverview"));
-	if (!SystemOverviewRT)
-		return;
-
-	SystemOverviewRT->RenderTargetFormat = ETextureRenderTargetFormat::RTF_RGBA8;
-	SystemOverviewRT->ClearColor = FLinearColor::Black;
-	SystemOverviewRT->bAutoGenerateMips = false;
-	SystemOverviewRT->InitAutoFormat(Size, Size);
-	SystemOverviewRT->UpdateResourceImmediate(true);
-}
-
-void USystemMap::EnsureOverviewActor()
-{
-	if (SystemOverviewActor)
-		return;
-
-	if (!GetWorld())
-		return;
-
-	TSubclassOf<ASystemOverview> SpawnClass = SystemOverviewActorClass;
-	if (!SpawnClass)
-	{
-		// If you do not want to expose a BP class, you can spawn native:
-		SpawnClass = ASystemOverview::StaticClass();
-	}
-
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	Params.ObjectFlags |= RF_Transient;
-
-	// Spawn off-screen; it only captures to RT
-	SystemOverviewActor = GetWorld()->SpawnActor<ASystemOverview>(
-		SpawnClass,
-		FVector(100000.f, 100000.f, 100000.f),
-		FRotator::ZeroRotator,
-		Params
-	);
-
-	if (SystemOverviewActor)
-	{
-		SystemOverviewActor->ConfigureCaptureForUI();
-		if (SystemOverviewRT)
-		{
-			SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
-		}
-	}
-}
-
-void USystemMap::BuildOverviewBodiesFromSystem(const FS_Galaxy* ActiveSystem, TArray<FOverviewBody>& OutBodies) const
-{
-	OutBodies.Reset();
-
-	if (!ActiveSystem || ActiveSystem->Stellar.Num() == 0)
-		return;
-
-	const auto& Star = ActiveSystem->Stellar[0];
-
-	// Root star
-	{
-		FOverviewBody StarBody;
-		StarBody.Name = Star.Name;
-		StarBody.ParentIndex = INDEX_NONE;
-		StarBody.OrbitKm = 0.f;
-		StarBody.InclinationDeg = 0.f;
-		StarBody.OrbitAngleDeg = 0.f;
-
-		// Star radius: use your star radius field (you used Star.Radius already in sun spawn)
-		StarBody.RadiusKm = Star.Radius;
-
-		OutBodies.Add(StarBody);
-	}
-
-	// Planets (parent = star index 0)
-	for (const FS_PlanetMap& Planet : Star.Planet)
-	{
-		FOverviewBody P;
-		P.Name = Planet.Name;
-		P.ParentIndex = 0;
-		P.OrbitKm = Planet.Orbit;
-
-		// If you store inclination in degrees already, keep it.
-		// If it's radians, convert here.
-		P.InclinationDeg = Planet.Inclination;
-
-		// Use the same random angle map you already keep, so the overview matches 2D map layout.
-		const float Angle = PlanetOrbitAngles.Contains(Planet.Name) ? PlanetOrbitAngles[Planet.Name] : 0.f;
-		P.OrbitAngleDeg = Angle;
-
-		// IMPORTANT: adjust this line to your struct
-		P.RadiusKm = Planet.Radius; // <-- rename if your field differs (e.g. Planet.Radius)
-
-		OutBodies.Add(P);
-	}
-
-	// If you later add moons, extend here (ParentIndex = that planet's index in OutBodies)
-}
-
-void USystemMap::RebuildAndCaptureOverview(const FS_Galaxy* ActiveSystem)
-{
-	EnsureOverviewImage();
-	EnsureOverviewRenderTarget(OverviewRTSize);
-	EnsureOverviewActor();
-
-	if (!SystemOverviewActor || !SystemOverviewRT)
-		return;
-
-	// Ensure actor has our RT
-	SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
-
-	TArray<FOverviewBody> Bodies;
-	BuildOverviewBodiesFromSystem(ActiveSystem, Bodies);
-
-	SystemOverviewActor->BuildDiorama(Bodies);
-
-	// Capture once after build
-	SystemOverviewActor->CaptureOnce();
-
-	// Push RT into UMG image
-	UpdateOverviewBrush();
-}
-
-void USystemMap::UpdateOverviewBrush()
-{
-	if (!OverviewImage || !SystemOverviewRT)
-		return;
-
-	FSlateBrush Brush;
-	Brush.SetResourceObject(SystemOverviewRT);
-	Brush.ImageSize = FVector2D(SystemOverviewRT->SizeX, SystemOverviewRT->SizeY);
-	OverviewImage->SetBrush(Brush);
-	OverviewImage->SetOpacity(1.0f);
-	OverviewImage->SetVisibility(ESlateVisibility::Visible);
-}
-
-FVector2D USystemMap::GetViewportCenterInCanvasSpace() const
-{
-	// Prefer OuterCanvas geometry; fall back to this widget geometry.
-	const FVector2D ViewSize =
-		OuterCanvas ? OuterCanvas->GetCachedGeometry().GetLocalSize()
-		: GetCachedGeometry().GetLocalSize();
-
-	// If the MapCanvas slot is center-anchored, its local origin is already at "center".
-	if (MapCanvas)
-	{
-		if (const UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MapCanvas->Slot))
-		{
-			const FAnchors A = CanvasSlot->GetAnchors();
-
-			// Common case in your code: anchored at exact center.
-			const bool bCenterAnchored =
-				FMath::IsNearlyEqual(A.Minimum.X, 0.5f) &&
-				FMath::IsNearlyEqual(A.Minimum.Y, 0.5f) &&
-				FMath::IsNearlyEqual(A.Maximum.X, 0.5f) &&
-				FMath::IsNearlyEqual(A.Maximum.Y, 0.5f);
-
-			if (bCenterAnchored)
-			{
-				return FVector2D::ZeroVector; // center-origin space
-			}
-		}
-	}
-
-	// Otherwise treat as top-left origin space
-	return ViewSize * 0.5f;
+	UE_LOG(LogTemp, Warning, TEXT("[SystemMap] Cleared all markers, actors, and render targets"));
 }

@@ -6,13 +6,12 @@
 #include "Blueprint/UserWidget.h"
 #include "../Game/GameStructs.h" // FS_Galaxy, FS_PlanetMap, etc.
 #include "../Foundation/SystemMapUtils.h"
-#include "../Space/SystemOverview.h"
 #include "SystemMap.generated.h"
 
 class UCanvasPanel;
 class UCanvasPanelSlot;
-class USizeBox;
 class UImage;
+class USizeBox;
 class UTextureRenderTarget2D;
 
 class UPlanetMarkerWidget;
@@ -22,23 +21,20 @@ class UCentralSunWidget;
 
 class ACentralSunActor;
 class APlanetPanelActor;
-class AMoonPanelActor;
 
 class UOperationsScreen;
 
-// Overview body struct lives in SystemOverview.h; forward-declare only
+// NEW RENDERER
+class ASystemOverview;
 struct FOverviewBody;
 
-/**
- * System map widget: builds orbits + markers AND renders a system overview RT.
- */
 UCLASS()
 class STARSHATTERWARS_API USystemMap : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
-	// ====== Bound widgets (optional) ======
+	// ---- Bound widgets ----
 	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanel* MapCanvas = nullptr;
 
@@ -48,76 +44,73 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional))
 	USizeBox* MapCanvasSize = nullptr;
 
-	// Image used to show the overview RT (either bound in BP or created at runtime)
+	// New renderer output
 	UPROPERTY(meta = (BindWidgetOptional))
 	UImage* OverviewImage = nullptr;
 
-	// ====== External owner ======
+	// ---- Data / ownership ----
+	UPROPERTY(meta = (BindWidgetOptional))
+	FS_Galaxy SystemData;
+
 	UPROPERTY()
 	UOperationsScreen* OwningOperationsScreen = nullptr;
 
 	void SetOwner(UOperationsScreen* Owner) { OwningOperationsScreen = Owner; }
 
-	// ====== System build ======
+	// ---- Core entry points ----
 	void BuildSystemView(const FS_Galaxy* ActiveSystem);
 
-	// ====== Navigation ======
+	UFUNCTION()
+	void InitMapCanvas();
+
 	UFUNCTION()
 	void HandleCentralSunClicked();
 
 	UFUNCTION()
 	void HandlePlanetSelected(FS_PlanetMap Planet);
 
-	// ====== Canvas init / cleanup ======
-	UFUNCTION()
-	void InitMapCanvas();
-
 	void ClearSystemView();
 
-	// ====== Marker interaction ======
-	void FocusAndZoomToPlanet(UPlanetMarkerWidget* Marker);
-	void SetMarkerVisibility(bool bVisible);
-
-	// ====== Overview RT pipeline ======
-	// Ensures OverviewImage exists (bound or created) and is placed in the canvas
-	void EnsureOverviewImage();
-
-	// Creates RT if missing (owned by SystemMap)
-	void EnsureOverviewRenderTarget(int32 Size);
-
-	// Spawns overview actor if missing (owned by SystemMap)
-	void EnsureOverviewActor();
-
-	// Builds diorama + capture once + updates UMG brush
-	void RebuildAndCaptureOverview(const FS_Galaxy* ActiveSystem);
-
-	// Push RT into OverviewImage brush
-	void UpdateOverviewBrush();
-
-	// ====== Maps ======
+	// ---- Planet widgets ----
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
 
-	// Stores the most recently selected planet marker
-	UPROPERTY()
 	UPlanetMarkerWidget* LastSelectedMarker = nullptr;
-
-	// Holds per-planet orbit angle (randomized once per planet per session)
-	UPROPERTY()
 	TMap<FString, float> PlanetOrbitAngles;
 
+	// ---- Overlay (optional) ----
+	UPROPERTY()
+	UMaterialInterface* OverlayMaterial = nullptr;
+
+	UPROPERTY()
+	FVector2D ScreenRenderSize = FVector2D(4096.f, 4096.f);
+
+	void SetOverlay();
+	void SetMarkerVisibility(bool bVisible);
+
+	// ---- New renderer (SystemMap owns RT) ----
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System|Overview")
+	TSubclassOf<ASystemOverview> SystemOverviewActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System|Overview")
+	int32 OverviewRTSize = 1024;
+
+	void EnsureOverviewResources();
+	void UpdateOverviewBrush();
+
 protected:
+	// UUserWidget
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-	// ====== BP-configurable classes ======
+	// ---- Widget classes ----
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
 
@@ -136,26 +129,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<APlanetPanelActor> PlanetActorClass;
 
-	// NEW: overview actor class to spawn
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Overview")
-	TSubclassOf<ASystemOverview> SystemOverviewActorClass;
-
-	// NEW: RT resolution
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Overview")
-	int32 OverviewRTSize = 1024;
-
 	UPROPERTY()
 	TArray<APlanetPanelActor*> SpawnedPlanetActors;
 
-	// ====== Zoom / Fit (optional) ======
-	UFUNCTION()
-	void SetZoomLevel(float NewZoom);
-
-	UFUNCTION()
-	void ZoomToFitAllPlanets();
-
 private:
-	// ====== Central star ======
+	// ---- Old-ish visuals (sun + rings + markers) ----
 	UPROPERTY()
 	UCentralSunWidget* CentralStarMarker = nullptr;
 
@@ -165,54 +143,52 @@ private:
 	UPROPERTY()
 	UCentralSunWidget* StarWidget = nullptr;
 
-	// ====== Overview RT owned by this widget ======
+	// ---- Planet preview actors (optional / independent of overview) ----
+	// NOTE: Do not reuse a single PlanetActor pointer for all planets.
+	// We keep only the spawned list.
+	UPROPERTY()
+	APlanetPanelActor* PlanetActor_DEPRECATED = nullptr;
+
+	// ---- New renderer instances ----
 	UPROPERTY(Transient)
 	UTextureRenderTarget2D* SystemOverviewRT = nullptr;
 
 	UPROPERTY(Transient)
 	ASystemOverview* SystemOverviewActor = nullptr;
 
-	UPROPERTY()
-	bool bOverviewImageAdded = false;
-
-	FVector2D GetViewportCenterInCanvasSpace() const;
-
-	// ====== Helpers ======
+	// ---- Helpers ----
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
+
+	UFUNCTION()
+	void HandlePlanetClicked(const FString& PlanetName);
+
+	// Centering (FIXED implementation lives in .cpp)
+	void CenterOnPlanetWidget(UPlanetMarkerWidget* Marker);
 
 	void AddCentralStar(const FS_Galaxy* Star);
 	void AddPlanetOrbitalRing(const FS_PlanetMap& Planet);
 	void AddPlanet(const FS_PlanetMap& Planet);
 
-	// Build overview bodies from FS_Galaxy into the diorama format
-	void BuildOverviewBodiesFromSystem(const FS_Galaxy* ActiveSystem, TArray<FOverviewBody>& OutBodies) const;
-
-	UFUNCTION()
 	void HighlightSelectedSystem();
 
-	UFUNCTION()
-	void HandlePlanetClicked(const FString& PlanetName);
-
-	UFUNCTION()
-	void CenterOnPlanetWidget(UPlanetMarkerWidget* Marker, float Zoom);
-
-	UFUNCTION()
-	void ApplyTiltToMapCanvas(float TiltAmount);
-
-	// ====== Layout / drag / animation state ======
-	UPROPERTY()
-	FVector2D CachedCanvasSize = FVector2D(3000.f, 2000.f);
-
+	// ---- Viewport/cache ----
 	UPROPERTY()
 	FVector2D CachedViewportSize = FVector2D::ZeroVector;
 
 	UPROPERTY()
-	FVector2D DragStartPos = FVector2D::ZeroVector;
+	FVector2D CachedCanvasSize = FVector2D(3000.f, 2000.f);
 
 	UPROPERTY()
 	FVector2D CanvasSize = FVector2D(6000.f, 6000.f);
 
+	// ---- Drag/zoom ----
 	SystemMapUtils::FSystemMapDragController DragController;
+
+	UPROPERTY()
+	bool bIsDragging = false;
+
+	UPROPERTY()
+	FVector2D DragStartPos = FVector2D::ZeroVector;
 
 	UPROPERTY()
 	float MinZoom = 0.5f;
@@ -227,8 +203,9 @@ private:
 	float ZoomLevel = 1.0f;
 
 	UPROPERTY()
-	bool bIsDragging = false;
+	float TargetTiltAmount = 0.0f;
 
+	// ---- Animation (planet focus) ----
 	UPROPERTY()
 	bool bIsAnimatingToPlanet = false;
 
@@ -241,33 +218,33 @@ private:
 	FVector2D StartCanvasPos = FVector2D::ZeroVector;
 	FVector2D TargetCanvasPos = FVector2D::ZeroVector;
 
-	UPROPERTY()
-	float TargetTiltAmount = 0.0f;
-
-	UPROPERTY()
-	bool bIsTiltingIn = false;
-
-	UPROPERTY()
-	float TiltTime = 0.0f;
-
-	UPROPERTY()
-	float TiltDuration = 0.6f;
-
-	UPROPERTY()
-	float MovementDelayTime = 0.0f;
-
-	UPROPERTY()
-	bool bIsWaitingToProcessMovement = false;
-
-	UPROPERTY()
-	float MovementDelayDuration = 0.3f;
-
+	// ---- Misc ----
 	UPROPERTY()
 	bool bPendingCanvasCenter = false;
 
 	UPROPERTY()
-	float ORBIT_TO_SCREEN = 1.0f;
+	float ORBIT_TO_SCREEN = 1.f;
 
 	UPROPERTY()
 	float OrbitRadius = 0.f;
+
+	// Tilt-in phase (optional)
+	UPROPERTY()
+	bool bIsTiltingIn = false;
+
+	UPROPERTY()
+	float TiltTime = 0.f;
+
+	UPROPERTY()
+	float TiltDuration = 0.6f;
+
+	// Movement delay (optional)
+	UPROPERTY()
+	bool bIsWaitingToProcessMovement = false;
+
+	UPROPERTY()
+	float MovementDelayTime = 0.f;
+
+	UPROPERTY()
+	float MovementDelayDuration = 0.3f;
 };
