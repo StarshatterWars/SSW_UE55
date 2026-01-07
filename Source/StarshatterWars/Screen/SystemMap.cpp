@@ -286,8 +286,15 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 		}
 
 		SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
+
 		SystemOverviewActor->BuildDiorama(Bodies);
+		SystemOverviewActor->FrameDiorama();
 		SystemOverviewActor->CaptureOnce();
+
+		// IMPORTANT: update brush AFTER capture resolves
+		GetWorld()->GetTimerManager().SetTimerForNextTick(
+			FTimerDelegate::CreateUObject(this, &USystemMap::UpdateOverviewBrush)
+		);
 
 		UpdateOverviewBrush();
 	}
@@ -332,17 +339,6 @@ void USystemMap::EnsureOverviewResources()
 	}
 
 	// If OverviewImage isn't bound in BP, we can't display it (but capture still works)
-}
-
-void USystemMap::UpdateOverviewBrush()
-{
-	if (!OverviewImage || !SystemOverviewRT)
-		return;
-
-	FSlateBrush Brush;
-	Brush.SetResourceObject(SystemOverviewRT);
-	Brush.ImageSize = FVector2D((float)OverviewRTSize, (float)OverviewRTSize);
-	OverviewImage->SetBrush(Brush);
 }
 
 void USystemMap::HandleCentralSunClicked()
@@ -722,4 +718,102 @@ void USystemMap::ClearSystemView()
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("[SystemMap] Cleared all markers, actors, and render targets"));
+}
+
+void USystemMap::EnsureSystemOverviewRT()
+{
+	if (SystemOverviewRT)
+		return;
+
+	SystemOverviewRT = NewObject<UTextureRenderTarget2D>(this);
+	SystemOverviewRT->RenderTargetFormat = RTF_RGBA16f;
+	SystemOverviewRT->ClearColor = FLinearColor::Black;
+	SystemOverviewRT->bAutoGenerateMips = false;
+	SystemOverviewRT->InitAutoFormat(2048, 2048);
+	SystemOverviewRT->UpdateResourceImmediate(true);
+}
+
+void USystemMap::EnsureSystemOverviewActor()
+{
+	if (SystemOverviewActor)
+		return;
+
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	SystemOverviewActor =
+		World->SpawnActor<ASystemOverview>(ASystemOverview::StaticClass());
+
+	if (SystemOverviewRT)
+	{
+		SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
+	}
+}
+void USystemMap::BuildSystemOverviewData(
+	const FS_Galaxy* ActiveSystem,
+	TArray<FOverviewBody>& OutBodies
+)
+{
+	OutBodies.Reset();
+
+	// Star
+	const auto& Star = ActiveSystem->Stellar[0];
+	OutBodies.Add({
+		Star.Name,
+		0.f,
+		(float) Star.Radius,
+		0.f,
+		0.f,
+		INDEX_NONE
+		});
+
+	// Planets
+	for (int32 i = 0; i < Star.Planet.Num(); ++i)
+	{
+		const FS_PlanetMap& Planet = Star.Planet[i];
+
+		OutBodies.Add({
+			Planet.Name,
+			(float) Planet.Orbit,
+			(float) Planet.Radius,
+			FMath::FRandRange(0.f, 360.f),
+			(float) Planet.Inclination,
+			0 // parent = star
+			});
+	}
+}
+void USystemMap::EnsureOverviewImage()
+{
+	if (!MapCanvas || OverviewImage)
+		return;
+
+	OverviewImage = NewObject<UImage>(this);
+	MapCanvas->AddChild(OverviewImage);
+
+	if (UCanvasPanelSlot* OverviewSlot =
+		Cast<UCanvasPanelSlot>(OverviewImage->Slot))
+	{
+		OverviewSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+		OverviewSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+		OverviewSlot->SetSize(CanvasSize);
+		OverviewSlot->SetZOrder(-10); // behind markers
+	}
+
+	OverviewImage->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void USystemMap::UpdateOverviewBrush()
+{
+	EnsureOverviewImage();
+
+	if (!OverviewImage || !SystemOverviewRT)
+		return;
+
+	// DO NOT use SetBrushFromTexture (wrong type)
+	FSlateBrush Brush;
+	Brush.SetResourceObject(SystemOverviewRT);
+	Brush.ImageSize = ScreenRenderSize;
+
+	OverviewImage->SetBrush(Brush);
 }

@@ -71,6 +71,14 @@ public:
 
 	void ClearSystemView();
 
+	void EnsureSystemOverviewRT();
+
+	void EnsureSystemOverviewActor();
+
+	void BuildSystemOverviewData(const FS_Galaxy* ActiveSystem, TArray<FOverviewBody>& OutBodies);
+
+	void EnsureOverviewImage();
+
 	// ---- Planet widgets ----
 	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, USystemOrbitWidget*> PlanetOrbitMarkers;
@@ -97,6 +105,16 @@ public:
 
 	void EnsureOverviewResources();
 	void UpdateOverviewBrush();
+
+	// New overview renderer (disabled initially)
+	UPROPERTY()
+	ASystemOverview* SystemOverviewActor = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "System|Overview")
+	UMaterialInterface* OverviewMaterial = nullptr;
+
+	UPROPERTY()
+	bool bUseNewRenderer = false;   // OFF BY DEFAULT
 
 protected:
 	// UUserWidget
@@ -152,9 +170,6 @@ private:
 	// ---- New renderer instances ----
 	UPROPERTY(Transient)
 	UTextureRenderTarget2D* SystemOverviewRT = nullptr;
-
-	UPROPERTY(Transient)
-	ASystemOverview* SystemOverviewActor = nullptr;
 
 	// ---- Helpers ----
 	float GetDynamicOrbitScale(const TArray<FS_PlanetMap>& Planets, float MaxPixelRadius) const;
