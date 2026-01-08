@@ -15,8 +15,6 @@
 class UImage;
 class UBorder;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetClicked, const FString&, PlanetName);
-
 UCLASS()
 class STARSHATTERWARS_API UPlanetMarkerWidget : public USystemMarkerWidget
 {
@@ -25,7 +23,6 @@ class STARSHATTERWARS_API UPlanetMarkerWidget : public USystemMarkerWidget
 public:
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
-	
 
 	UFUNCTION()
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
@@ -33,14 +30,10 @@ public:
 	UFUNCTION()
 	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor);
 
-	FOnPlanetClicked OnPlanetClicked;
-
 	UPROPERTY()
 	UMaterialInterface* PlanetWidgetMaterial;	
 
 private:
-	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	
 	UPROPERTY()
 	UTextureRenderTarget2D* PlanetRT = nullptr;
 

@@ -28,6 +28,17 @@ void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius)
 	}
 }
 
+FReply USystemMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		OnObjectClicked.Broadcast(CachedName);
+		return FReply::Handled();
+	}
+	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
+
 
 
 

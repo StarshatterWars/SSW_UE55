@@ -23,15 +23,6 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 	SetWidgetRenderTarget(PlanetActor->GetRenderTarget());
 }
 
-FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
-	{
-		OnPlanetClicked.Broadcast(PlanetData.Name);
-		return FReply::Handled();
-	}
-	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
-}
 
 void UPlanetMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
 {

@@ -599,7 +599,7 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 			}
 
 			PlanetMarker->InitFromPlanetActor(Planet, NewPlanetActor);
-			PlanetMarker->OnPlanetClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
+			PlanetMarker->OnObjectClicked.AddDynamic(this, &USystemMap::HandlePlanetClicked);
 
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 		}
@@ -892,7 +892,7 @@ void USystemMap::BuildPlanetMarkersOnly()
 		}
 
 		//Marker->InitFromPlanetDataOnly(Planet);
-		Marker->OnPlanetClicked.AddDynamic(
+		Marker->OnObjectClicked.AddDynamic(
 			this, &USystemMap::HandlePlanetClicked
 		);
 
