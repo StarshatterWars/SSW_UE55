@@ -14,14 +14,13 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 
 	InitCommon(PlanetData.Name, PlanetData.Radius); 
 
-	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
+	if (!ObjectImage || !PlanetActor || !PlanetWidgetMaterial)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("InitFromPlanetActor: missing setup"));
 		return;
 	}
 
 	SetWidgetRenderTarget(PlanetActor->GetRenderTarget());
-	bIselected = false;
 }
 
 FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -36,12 +35,12 @@ FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 
 void UPlanetMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
 {
-	if (InRT && PlanetImage && PlanetWidgetMaterial)
+	if (InRT && ObjectImage && PlanetWidgetMaterial)
 	{
 		float SizePx = PlanetUtils::GetUISizeFromRadius(PlanetData.Radius) / 2;
 		SystemMapUtils::ApplyRenderTargetToImage(
 			this,
-			PlanetImage,
+			ObjectImage,
 			PlanetWidgetMaterial,
 			InRT,
 			FVector2D(SizePx, SizePx)

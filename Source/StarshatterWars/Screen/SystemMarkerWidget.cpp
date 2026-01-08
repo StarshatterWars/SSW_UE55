@@ -3,11 +3,12 @@
 
 #include "SystemMarkerWidget.h"
 
-void USystemMarkerWidget::SetSelected(bool bSelected)
+void USystemMarkerWidget::SetSelected(bool isSelected)
 {
-	if (ObjectBorder)
+	if (HighlightBorder)
 	{
-		ObjectBorder->SetVisibility(bSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		bSelected = isSelected;
+		HighlightBorder->SetVisibility(bSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }
 

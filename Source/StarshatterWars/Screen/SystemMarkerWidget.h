@@ -35,12 +35,21 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional)) 
 	class UTextBlock* ObjectNameText;
 
+	UPROPERTY(meta = (BindWidgetOptional)) 
+	class UImage* ObjectImage;
+
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UBorder* ObjectBorder;
+	class UBorder* HighlightBorder;
 
 	UPROPERTY()
 	FString CachedName;
 
 	UPROPERTY()
+	UMaterialInterface* ObjectWidgetMaterial;
+
+	UPROPERTY()
 	float CachedRadius = 0.f;
+
+	UPROPERTY()
+	bool bSelected = false;
 };

@@ -36,15 +36,7 @@ public:
 	FOnPlanetClicked OnPlanetClicked;
 
 	UPROPERTY()
-	UMaterialInterface* PlanetWidgetMaterial;
-
-	UPROPERTY()
-	bool bIselected = false;
-
-protected:
-	UPROPERTY(meta = (BindWidgetOptional)) UImage* PlanetImage;
-	UPROPERTY(meta = (BindWidgetOptional)) UBorder* HighlightBorder;
-	
+	UMaterialInterface* PlanetWidgetMaterial;	
 
 private:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
