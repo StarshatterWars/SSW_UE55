@@ -279,7 +279,11 @@ void USectorMap::HandleCentralPlanetClicked(const FString& PlanetName)
 	UE_LOG(LogTemp, Warning, TEXT("Central planet %s clicked — requesting system map view"), *PlanetName);
 
 	if (OwningOperationsScreen)
+
 	{
+		SetVisibility(ESlateVisibility::Collapsed);
+		SetIsEnabled(false);
+		ClearSectorView();
 		OwningOperationsScreen->ShowSystemMap(); // or equivalent
 	}
 	else
@@ -606,5 +610,27 @@ float USectorMap::GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float Ma
 	}
 
 	return MaxOrbit / MaxPixelRadius; // e.g. 1e9 km mapped to 500 px = 2e6 scale
+}
+
+void USectorMap::ClearSectorView()
+{
+	if (MapCanvas)
+	{
+		MapCanvas->ClearChildren();
+	}
+
+	PlanetMarkers.Empty();
+	MoonMarkers.Empty();
+	MoonOrbitMarkers.Empty();
+	LastSelectedMarker = nullptr;
+
+	SystemMapUtils::DestroyAllSectorActors(GetWorld());
+
+	if (UGalaxyManager* GM = UGalaxyManager::Get(this))
+	{
+		GM->ClearAllRenderTargets();
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[SectorMap] Cleared all markers, actors, and render targets"));
 }
 

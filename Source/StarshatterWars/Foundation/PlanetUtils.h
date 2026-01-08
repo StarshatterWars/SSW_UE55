@@ -21,20 +21,8 @@ public:
 	/** Creates a unique 512x512 RGBA8 render target with black clear color */
 	static UTextureRenderTarget2D* CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer = nullptr, int32 Resolution = 256);
 
-	/** Load uasset materials */
-	static UTexture2D* LoadPlanetAssetTexture(const FString& TextureName);
-
-	// Estimate ideal render target resolution based on planet radius in kilometers
-	static int32 GetRenderTargetResolutionForRadius(double RadiusKm);
-
-	// Scale the UI based on planet radius in kilometers
-	static float GetPlanetUIScale(double RadiusKm); // in kilometers
-
 	// tilt the planet
 	static FRotator GetPlanetAxisTilt(float TiltDegrees);
-
-	// planet rotation
-	static FRotator GetPlanetRotation(float TimeSeconds, float RotationSpeedDegreesPerSec, float TiltDegrees);
 
 	static float GetNormalizedPlanetUIScale(double RadiusKm);
 

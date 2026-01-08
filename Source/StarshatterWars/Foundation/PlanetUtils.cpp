@@ -102,36 +102,6 @@ float PlanetUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSiz
 	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
 }
 
-/*UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer, int32 Resolution)
-{
-	// Ensure Outer is not null (avoid creating in CDO space)
-	if (!Outer)
-	{
-		Outer = GetTransientPackage();
-	}
-
-	// Generate unique name
-	FString UniqueName = FString::Printf(TEXT("RT_%s_%d"), *BaseName, FMath::RandRange(1000, 9999));
-
-	// Create transient render target
-	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(Outer, *UniqueName, RF_Transient);
-	if (!RenderTarget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget: %s"), *UniqueName);
-		return nullptr;
-	}
-
-	RenderTarget->RenderTargetFormat = RTF_RGBA8;
-	RenderTarget->ClearColor = FLinearColor::Transparent;
-	RenderTarget->bAutoGenerateMips = false;
-	RenderTarget->InitAutoFormat(Resolution, Resolution);
-	RenderTarget->UpdateResourceImmediate(true);
-
-	UE_LOG(LogTemp, Log, TEXT("Created Planet RenderTarget: %s [%p]"), *UniqueName, RenderTarget);
-
-	return RenderTarget;
-}*/
-
 UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Name, UObject* Outer, int32 Resolution)
 {
 	if (!Outer)
@@ -154,65 +124,6 @@ UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Nam
 	return RenderTarget;
 }
 
-
-UTexture2D* PlanetUtils::LoadPlanetAssetTexture(const FString& TextureName)
-{
-	FString AssetPath = FString::Printf(TEXT("/Game/GameData/Galaxy/PlanetMaterials/%s.%s"), *TextureName, *TextureName);
-
-	UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *AssetPath));
-	if (!Texture)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to load planet texture asset: %s"), *AssetPath);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("Loaded planet texture asset: %s"), *Texture->GetName());
-	}
-
-	return Texture;
-}
-
-int32 PlanetUtils::GetRenderTargetResolutionForRadius(double RadiusKm)
-{
-	const double MinRadius = 1000.0;      // Small asteroid
-	const double MaxRadius = 150000.0;    // Gas giant
-
-	// Normalize with optional logarithmic scaling
-	RadiusKm = FMath::Clamp(RadiusKm, MinRadius, MaxRadius);
-
-	const double LogMin = FMath::LogX(10.0, MinRadius);
-	const double LogMax = FMath::LogX(10.0, MaxRadius);
-	const double LogVal = FMath::LogX(10.0, RadiusKm);
-	double T = (LogVal - LogMin) / (LogMax - LogMin); // 0.0 - 1.0
-
-	// Map T to a range of powers of 2: [128, 256, 512, 1024]
-	T = FMath::Clamp(T, 0.0, 1.0);
-	const TArray<int32> ResOptions = { 128, 256, 512, 1024 };
-
-	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
-	return ResOptions[Index];
-}
-
-float PlanetUtils::GetPlanetUIScale(double RadiusKm)
-{
-	// Min and max expected radius (from Galaxy.def or design)
-	constexpr double MinRadius = 2000.0;     // Small moons
-	constexpr double MaxRadius = 150000.0;   // Large gas giants
-
-	// Get normalized [0.0, 1.0] range
-	double Normalized = FMath::Clamp((RadiusKm - MinRadius) / (MaxRadius - MinRadius), 0.0, 1.0);
-
-	// UI scaling range — safe for mesh scale and texture logic
-	constexpr float MinUIScale = 0.5f;
-	constexpr float MaxUIScale = 4.0f;
-
-	// Final safe UI scale
-	float UIScale = FMath::Lerp(MinUIScale, MaxUIScale, static_cast<float>(Normalized));
-
-	// Clamp final value to hard max
-	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
-}
-
 FRotator PlanetUtils::GetPlanetAxisTilt(float TiltDegrees)
 {
 	// Clamp tilt to reasonable real-world range (-90 to +90)
@@ -221,18 +132,6 @@ FRotator PlanetUtils::GetPlanetAxisTilt(float TiltDegrees)
 	// Apply tilt to pitch (or roll if rotating sideways)
 	// This assumes planet spins around Y-axis (roll)
 	return FRotator(0.0f, 0.0f, ClampedTilt);
-}
-
-FRotator PlanetUtils::GetPlanetRotation(float TimeSeconds, float RotationSpeedDegreesPerSec, float TiltDegrees)
-{
-	// Clamp tilt for safety
-	float ClampedTilt = FMath::Clamp(TiltDegrees, -90.0f, 90.0f);
-
-	// Compute current Yaw based on speed and time
-	float CurrentYaw = FMath::Fmod(TimeSeconds * RotationSpeedDegreesPerSec, 360.0f);
-
-	// Rotation = spin (Yaw) combined with axis tilt (Roll or Pitch)
-	return FRotator(0.0f, CurrentYaw, ClampedTilt); // (Pitch, Yaw, Roll)
 }
 
 float PlanetUtils::GetNormalizedPlanetUIScale(double RadiusKm)

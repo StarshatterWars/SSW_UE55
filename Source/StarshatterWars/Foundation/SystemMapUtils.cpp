@@ -655,3 +655,65 @@ void SystemMapUtils::ClearAllSectorUIElements(USectorMap* Map)
 	UE_LOG(LogTemp, Warning, TEXT("[SystemMapUtils] Cleared all Sector UI elements (markers + rings)"));
 }
 
+int32 SystemMapUtils::GetRenderTargetResolutionForRadius(double RadiusKm, double MinRadius, double MaxRadius)
+{
+	// Normalize with optional logarithmic scaling
+	RadiusKm = FMath::Clamp(RadiusKm, MinRadius, MaxRadius);
+
+	const double LogMin = FMath::LogX(10.0, MinRadius);
+	const double LogMax = FMath::LogX(10.0, MaxRadius);
+	const double LogVal = FMath::LogX(10.0, RadiusKm);
+	double T = (LogVal - LogMin) / (LogMax - LogMin); // 0.0 - 1.0
+
+	// Map T to a range of powers of 2: [128, 256, 512, 1024]
+	T = FMath::Clamp(T, 0.0, 1.0);
+	const TArray<int32> ResOptions = { 128, 256, 512, 1024 };
+
+	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
+	return ResOptions[Index];
+}
+float SystemMapUtils::GetBodyUIScale(double MinRadius, double MaxRadius, double RadiusKm)
+{
+	// Get normalized [0.0, 1.0] range
+	double Normalized = FMath::Clamp((RadiusKm - MinRadius) / (MaxRadius - MinRadius), 0.0, 1.0);
+
+	// UI scaling range — safe for mesh scale and texture logic
+	constexpr float MinUIScale = 0.5f;
+	constexpr float MaxUIScale = 4.0f;
+
+	// Final safe UI scale
+	float UIScale = FMath::Lerp(MinUIScale, MaxUIScale, static_cast<float>(Normalized));
+
+	// Clamp final value to hard max
+	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
+}
+
+FRotator SystemMapUtils::GetBodyRotation(float TimeSeconds, float RotationSpeedDegreesPerSec, float TiltDegrees)
+{
+	// Clamp tilt for safety
+	float ClampedTilt = FMath::Clamp(TiltDegrees, -90.0f, 90.0f);
+
+	// Compute current Yaw based on speed and time
+	float CurrentYaw = FMath::Fmod(TimeSeconds * RotationSpeedDegreesPerSec, 360.0f);
+
+	// Rotation = spin (Yaw) combined with axis tilt (Roll or Pitch)
+	return FRotator(0.0f, CurrentYaw, ClampedTilt); // (Pitch, Yaw, Roll)
+}
+
+UTexture2D* SystemMapUtils::LoadBodyAssetTexture(const FString& AssetName, const FString& TextureName)
+{
+	FString AssetPath = FString::Printf(TEXT("/Game/GameData/Galaxy/%sMaterials/%s.%s"), *AssetName, *TextureName, *TextureName);
+
+	UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *AssetPath));
+	if (!Texture)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load body texture asset: %s"), *AssetPath);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Loaded body texture asset: %s"), *Texture->GetName());
+	}
+
+	return Texture;
+}
+

@@ -49,27 +49,6 @@ UTexture2D* MoonUtils::LoadMoonAssetTexture(const FString& TextureName)
 	return Texture;
 }
 
-int32 MoonUtils::GetRenderTargetResolutionForRadius(double RadiusKm)
-{
-	const double MinRadius = 0.25e6;      // Small asteroid
-	const double MaxRadius = 6e6;    // Gas giant
-
-	// Normalize with optional logarithmic scaling
-	RadiusKm = FMath::Clamp(RadiusKm, MinRadius, MaxRadius);
-
-	const double LogMin = FMath::LogX(10.0, MinRadius);
-	const double LogMax = FMath::LogX(10.0, MaxRadius);
-	const double LogVal = FMath::LogX(10.0, RadiusKm);
-	double T = (LogVal - LogMin) / (LogMax - LogMin); // 0.0 - 1.0
-
-	// Map T to a range of powers of 2: [128, 256, 512, 1024]
-	T = FMath::Clamp(T, 0.0, 1.0);
-	const TArray<int32> ResOptions = { 128, 256, 512, 1024 };
-
-	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
-	return ResOptions[Index];
-}
-
 float MoonUtils::GetMoonUIScale(double RadiusKm)
 {
 	// Min and max expected radius (from Galaxy.def or design)

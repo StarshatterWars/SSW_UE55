@@ -243,5 +243,15 @@ public:
 
 	static void ClearAllSystemUIElements(USystemMap* Map);
 	static void ClearAllSectorUIElements(USectorMap* Map);
+	
+	// Estimate ideal render target resolution based on planet radius in kilometers
+	static int32 GetRenderTargetResolutionForRadius(double RadiusKm, double MinRadius, double MaxRadius);
+
+	static float GetBodyUIScale(double MinRadius, double MaxRadius, double RadiusKm);
+
+	static FRotator GetBodyRotation(float TimeSeconds, float RotationSpeedDegreesPerSec, float TiltDegrees);
+
+	/** Load uasset materials */
+	static UTexture2D* LoadBodyAssetTexture(const FString& AssetName, const FString& TextureName);
 };
 

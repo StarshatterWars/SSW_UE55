@@ -50,6 +50,8 @@ public:
 	// Single orbit scale helper (keep one name)
 	float GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
 
+	void ClearSectorView();
+
 	UFUNCTION()
 	void HandleCentralPlanetClicked(const FString& PlanetName);
 
@@ -63,6 +65,7 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanel* MapCanvas = nullptr;
 
+	UMoonMarkerWidget* LastSelectedMarker = nullptr;
 	// Holds per-moon orbit angle (randomized once per moon per session)
 	TMap<FString, float> MoonOrbitAngles;
 

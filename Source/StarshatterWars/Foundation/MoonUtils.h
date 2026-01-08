@@ -21,9 +21,6 @@ public:
 	/** Creates a unique 512x512 RGBA8 render target with black clear color */
 	static UTextureRenderTarget2D* CreateMoonRenderTarget(const FString& BaseName, UObject* Outer = nullptr, int32 Resolution = 256);
 
-	// Estimate ideal render target resolution based on planet radius in kilometers
-	static int32 GetRenderTargetResolutionForRadius(double RadiusKm);
-
 	// Scale the UI based on planet radius in kilometers
 	static float GetMoonUIScale(double RadiusKm); // in kilometers
 

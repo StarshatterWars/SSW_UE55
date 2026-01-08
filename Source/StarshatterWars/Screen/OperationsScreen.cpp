@@ -1364,7 +1364,6 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 	
 	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Called %s"), *Name);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
 	if (!SectorMap)
 	{
 		SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);

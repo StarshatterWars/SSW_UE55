@@ -198,7 +198,7 @@ void USystemMap::InitMapCanvas()
 		{
 			UE_LOG(LogTemp, Log, TEXT("USystemMap::InitMapCanvas() Found system: %s"), *SelectedSystem);
 			BuildSystemView(System);
-			CreateSystemView(System);
+			//CreateSystemView(System);
 		}
 	}
 }
@@ -234,71 +234,6 @@ void USystemMap::BuildSystemView(const FS_Galaxy* ActiveSystem)
 
 	HighlightSelectedSystem();
 	SetMarkerVisibility(true);
-
-	// ---- NEW RENDERER: build + capture overview ----
-	EnsureOverviewResources();
-
-	if (SystemOverviewActor && SystemOverviewRT)
-	{
-		TArray<FOverviewBody> Bodies;
-
-		// Body 0 = star (root)
-		{
-			FOverviewBody StarBody;
-			StarBody.Name = ActiveSystem->Stellar[0].Name;
-			StarBody.ParentIndex = INDEX_NONE;
-			StarBody.OrbitKm = 0.f;
-			// If you have star radius in your stellar struct, use it; otherwise set a reasonable value:
-			StarBody.RadiusKm = FMath::Max(ActiveSystem->Stellar[0].Radius, 100000.f);
-			StarBody.OrbitAngleDeg = 0.f;
-			StarBody.InclinationDeg = 0.f;
-			Bodies.Add(StarBody);
-		}
-
-		// Planets = parent 0
-		for (const FS_PlanetMap& P : ActiveSystem->Stellar[0].Planet)
-		{
-			const int32 PlanetIndex = Bodies.Num();
-
-			FOverviewBody PlanetBody;
-			PlanetBody.Name = P.Name;
-			PlanetBody.ParentIndex = 0;
-			PlanetBody.OrbitKm = P.Orbit;
-			PlanetBody.RadiusKm = FMath::Max(P.Radius, 1000.f); // if your FS_PlanetMap uses different field name, adjust
-			PlanetBody.OrbitAngleDeg = PlanetOrbitAngles.FindRef(P.Name);
-			PlanetBody.InclinationDeg = P.Inclination;
-			Bodies.Add(PlanetBody);
-
-			// OPTIONAL: moons (only if your FS_PlanetMap actually has a moons array)
-			// Adjust field names to your real structs if needed.
-			/*
-			for (const FS_MoonMap& M : P.Moons)
-			{
-				FOverviewBody MoonBody;
-				MoonBody.Name = M.Name;
-				MoonBody.ParentIndex = PlanetIndex;
-				MoonBody.OrbitKm = M.Orbit;
-				MoonBody.RadiusKm = FMath::Max(M.Radius, 100.f);
-				MoonBody.OrbitAngleDeg = FMath::FRandRange(0.f, 360.f);
-				MoonBody.InclinationDeg = M.Inclination;
-				Bodies.Add(MoonBody);
-			}
-			*/
-		}
-
-		SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
-
-		SystemOverviewActor->BuildDiorama(Bodies);
-		SystemOverviewActor->FrameDiorama();
-		SystemOverviewActor->CaptureOnce();
-
-		// IMPORTANT: update brush AFTER capture resolves
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			FTimerDelegate::CreateUObject(this, &USystemMap::UpdateOverviewBrush)
-		);
-
-		UpdateOverviewBrush();
-	}
 }
 
 void USystemMap::EnsureOverviewResources()
@@ -365,6 +300,10 @@ void USystemMap::HandlePlanetSelected(FS_PlanetMap Planet)
 	{
 		SSWInstance->SelectedSector = Planet;
 		SSWInstance->SelectedSectorName = Planet.Name;
+		SetVisibility(ESlateVisibility::Collapsed);
+		SetIsEnabled(false);
+
+		ClearSystemView();
 		OwningOperationsScreen->ShowSectorMap(Planet);
 	}
 	else
@@ -702,6 +641,7 @@ void USystemMap::SetMarkerVisibility(bool bVisible)
 
 void USystemMap::ClearSystemView()
 {
+	// 1) UI
 	if (MapCanvas)
 	{
 		MapCanvas->ClearChildren();
@@ -711,14 +651,24 @@ void USystemMap::ClearSystemView()
 	PlanetOrbitMarkers.Empty();
 	LastSelectedMarker = nullptr;
 
-	SystemMapUtils::DestroyAllSystemActors(GetWorld());
-
-	if (UGalaxyManager* GM = UGalaxyManager::Get(this))
+	// 2) Destroy per-planet preview actors we spawned (best: destroy only what WE spawned)
+	for (APlanetPanelActor* Actor : SpawnedPlanetActors)
 	{
-		GM->ClearAllRenderTargets();
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+	SpawnedPlanetActors.Empty();
+
+	// If you also spawned a SunActor inside SystemMap:
+	if (IsValid(SunActor))
+	{
+		SunActor->Destroy();
+		SunActor = nullptr;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("[SystemMap] Cleared all markers, actors, and render targets"));
+	UE_LOG(LogTemp, Warning, TEXT("[SystemMap] Cleared markers, actors, and map-owned render targets"));
 }
 
 void USystemMap::EnsureSystemOverviewRT()

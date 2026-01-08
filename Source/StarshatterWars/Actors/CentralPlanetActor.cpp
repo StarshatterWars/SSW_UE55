@@ -87,19 +87,19 @@ void ACentralPlanetActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	float Time = GetWorld()->GetTimeSeconds();
-	FRotator Spin = PlanetUtils::GetPlanetRotation(Time, RotationSpeed, PlanetData.Tilt);
+	FRotator Spin = SystemMapUtils::GetBodyRotation(Time, RotationSpeed, PlanetData.Tilt);
 	PlanetMesh->SetRelativeRotation(Spin);
 }
 
 void ACentralPlanetActor::InitPlanet()
 {
 	// Texture
-	PlanetTexture = PlanetUtils::LoadPlanetAssetTexture(PlanetData.Texture);
+	PlanetTexture = SystemMapUtils::LoadBodyAssetTexture("Planet", PlanetData.Texture);
 
 	PlanetRenderTarget = SystemMapUtils::EnsureRenderTarget(
 		this,
 		PlanetData.Name +".Planet",
-		PlanetUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius),
+		SystemMapUtils::GetRenderTargetResolutionForRadius(1000.0, 150000.0, PlanetData.Radius),
 		SceneCapture,
 		PlanetMesh
 	);
@@ -136,7 +136,7 @@ void ACentralPlanetActor::InitPlanet()
 
 void ACentralPlanetActor::InitializePlanet()
 {
-	float ScaleFactor = PlanetUtils::GetPlanetUIScale(PlanetData.Radius);
+	float ScaleFactor = SystemMapUtils::GetBodyUIScale(2000.0, 150000.0, PlanetData.Radius);
 	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
 
 	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(PlanetData.Tilt);
