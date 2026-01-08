@@ -2,31 +2,15 @@
 
 
 #include "PlanetMarkerWidget.h"
-#include "Components/Image.h"
-#include "Components/Border.h"
-#include "Components/TextBlock.h"
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 #include "../Actors/PlanetPanelActor.h"
-#include "../System/SSWGameInstance.h"
 
-void UPlanetMarkerWidget::SetSelected(bool bSelected)
-{
-	// Optional highlight logic
-}
 
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
-	SetVisibility(ESlateVisibility::Visible);
-	
 	PlanetData = Planet;
-	SetToolTipText(FText::FromString(PlanetData.Name));
-
-	if (PlanetNameText)
-	{
-		PlanetNameText->SetText(FText::FromString(PlanetData.Name));
-		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
-	}
+	InitCommon(PlanetData.Name, PlanetData.Radius); 
 
 	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
 	{
