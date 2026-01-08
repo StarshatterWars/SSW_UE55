@@ -10,6 +10,8 @@
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
 	PlanetData = Planet;
+	bSelected = false;
+
 	InitCommon(PlanetData.Name, PlanetData.Radius); 
 
 	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
