@@ -198,6 +198,7 @@ void USystemMap::InitMapCanvas()
 		{
 			UE_LOG(LogTemp, Log, TEXT("USystemMap::InitMapCanvas() Found system: %s"), *SelectedSystem);
 			BuildSystemView(System);
+			CreateSystemView(System);
 		}
 	}
 }
@@ -735,7 +736,7 @@ void USystemMap::EnsureSystemOverviewRT()
 
 void USystemMap::EnsureSystemOverviewActor()
 {
-	if (SystemOverviewActor)
+	if (SystemOverviewActor && IsValid(SystemOverviewActor))
 		return;
 
 	UWorld* World = GetWorld();
@@ -745,11 +746,23 @@ void USystemMap::EnsureSystemOverviewActor()
 	SystemOverviewActor =
 		World->SpawnActor<ASystemOverview>(ASystemOverview::StaticClass());
 
-	if (SystemOverviewRT)
-	{
-		SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
-	}
+	check(SystemOverviewActor);
+
+	// Create RT ONCE
+	SystemOverviewRT = NewObject<UTextureRenderTarget2D>(
+		this,
+		TEXT("SystemOverviewRT"),
+		RF_Transient
+	);
+
+	SystemOverviewRT->RenderTargetFormat = RTF_RGBA16f;
+	SystemOverviewRT->InitAutoFormat(2048, 2048);
+	SystemOverviewRT->ClearColor = FLinearColor::Black;
+	SystemOverviewRT->UpdateResourceImmediate(true);
+
+	SystemOverviewActor->SetRenderTarget(SystemOverviewRT);
 }
+
 void USystemMap::BuildSystemOverviewData(
 	const FS_Galaxy* ActiveSystem,
 	TArray<FOverviewBody>& OutBodies
@@ -805,15 +818,134 @@ void USystemMap::EnsureOverviewImage()
 
 void USystemMap::UpdateOverviewBrush()
 {
-	EnsureOverviewImage();
-
-	if (!OverviewImage || !SystemOverviewRT)
+	if (!OverviewImage || !SystemOverviewRT || !OverlayMaterial)
 		return;
 
-	// DO NOT use SetBrushFromTexture (wrong type)
-	FSlateBrush Brush;
-	Brush.SetResourceObject(SystemOverviewRT);
-	Brush.ImageSize = ScreenRenderSize;
+	UMaterialInstanceDynamic* MID =
+		UMaterialInstanceDynamic::Create(OverlayMaterial, this);
 
-	OverviewImage->SetBrush(Brush);
+	MID->SetTextureParameterValue(
+		TEXT("InputTexture"),
+		SystemOverviewRT
+	);
+
+	OverviewImage->SetBrushFromMaterial(MID);
+}
+
+void USystemMap::CreateSystemView(const FS_Galaxy* ActiveSystem)
+{
+	//ClearSystemView();
+
+	// STEP 1: Build overview bodies
+	TArray<FOverviewBody> Bodies = BuildOverviewBodies(ActiveSystem);
+
+	UE_LOG(LogTemp, Log, TEXT("Overview bodies: %d"), Bodies.Num());
+
+	// STEP 2: Spawn overview actor (ONCE)
+	EnsureSystemOverviewActor();
+
+	UE_LOG(LogTemp, Log, TEXT("SystemOverviewActor: %s"), *GetNameSafe(SystemOverviewActor));
+
+	// STEP 3: Send data to new renderer
+	SystemOverviewActor->BuildDiorama(Bodies);
+
+	// STEP 4: Capture
+	SystemOverviewActor->CaptureOnce();
+
+	// STEP 5: Apply RT to OverviewImage
+	UpdateOverviewBrush();
+
+	// STEP 6: Build UI markers ONLY (no planet actors)
+	BuildPlanetMarkersOnly();
+}
+
+TArray<FOverviewBody> USystemMap::BuildOverviewBodies(const FS_Galaxy* ActiveSystem)
+{
+	TArray<FOverviewBody> Bodies;
+
+	if (!ActiveSystem || ActiveSystem->Stellar.Num() == 0)
+		return Bodies;
+
+	const auto& Star = ActiveSystem->Stellar[0];
+
+	// ---- STAR (index 0) ----
+	{
+		FOverviewBody StarBody;
+		StarBody.Name = Star.Name;
+		StarBody.RadiusKm = Star.Radius;
+		StarBody.OrbitKm = 0.f;
+		StarBody.OrbitAngleDeg = 0.f;
+		StarBody.InclinationDeg = 0.f;
+		StarBody.ParentIndex = INDEX_NONE;
+		Bodies.Add(StarBody);
+	}
+
+	// ---- PLANETS ----
+	for (const FS_PlanetMap& Planet : Star.Planet)
+	{
+		FOverviewBody PlanetBody;
+		PlanetBody.Name = Planet.Name;
+		PlanetBody.OrbitKm = Planet.Orbit;
+		PlanetBody.RadiusKm = Planet.Radius;
+		PlanetBody.OrbitAngleDeg = PlanetOrbitAngles.FindOrAdd(Planet.Name);
+		PlanetBody.InclinationDeg = Planet.Inclination;
+		PlanetBody.ParentIndex = 0; // star
+
+		Bodies.Add(PlanetBody);
+	}
+
+	return Bodies;
+}
+
+void USystemMap::BuildPlanetMarkersOnly()
+{
+	PlanetMarkers.Empty();
+	PlanetOrbitMarkers.Empty();
+
+	if (!SystemData.Stellar.Num())
+		return;
+
+	const auto& Planets = SystemData.Stellar[0].Planet;
+
+	ORBIT_TO_SCREEN = GetDynamicOrbitScale(Planets, 480.f);
+
+	for (const FS_PlanetMap& Planet : Planets)
+	{
+		AddPlanetOrbitalRing(Planet);
+
+		if (!PlanetMarkerClass)
+			continue;
+
+		UPlanetMarkerWidget* Marker =
+			CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+
+		float& Angle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
+		if (FMath::IsNearlyZero(Angle))
+			Angle = FMath::FRandRange(0.f, 360.f);
+
+		const float Radius = Planet.Orbit / ORBIT_TO_SCREEN;
+
+		const FVector2D Pos =
+			PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+				Radius,
+				Angle,
+				PlanetOrbitUtils::AmplifyInclination(Planet.Inclination)
+			);
+
+		if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(Marker))
+		{
+			PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+			PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+			PlanetSlot->SetPosition(Pos);
+			PlanetSlot->SetAutoSize(true);
+			PlanetSlot->SetZOrder(10);
+		}
+
+		//Marker->InitFromPlanetDataOnly(Planet);
+		Marker->OnPlanetClicked.AddDynamic(
+			this, &USystemMap::HandlePlanetClicked
+		);
+
+		PlanetMarkers.Add(Planet.Name, Marker);
+	}
 }

@@ -106,6 +106,12 @@ public:
 	void EnsureOverviewResources();
 	void UpdateOverviewBrush();
 
+	void CreateSystemView(const FS_Galaxy* ActiveSystem);
+
+	TArray<FOverviewBody> BuildOverviewBodies(const FS_Galaxy* ActiveSystem);
+
+	void BuildPlanetMarkersOnly();
+
 	// New overview renderer (disabled initially)
 	UPROPERTY()
 	ASystemOverview* SystemOverviewActor = nullptr;
