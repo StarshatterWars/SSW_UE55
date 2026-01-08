@@ -1,77 +1,62 @@
 #include "SystemMarkerWidget.h"
-
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
+#include "Input/Reply.h"
+#include "Engine/Engine.h"
 #include "../Foundation/SystemMapUtils.h"
 
-void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius)
+void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius, UTextureRenderTarget2D* RenderTarget)
 {
-	SetVisibility(ESlateVisibility::Visible);
+    SetVisibility(ESlateVisibility::Visible);
 
-	CachedName = DisplayName;
-	CachedRadius = Radius;
-	bIselected = false;
+    CachedName = DisplayName;
+    CachedRadius = Radius;
 
-	SetToolTipText(FText::FromString(CachedName));
+    SetToolTipText(FText::FromString(CachedName));
 
-	if (UTextBlock* NameText = GetMarkerNameText())
-	{
-		NameText->SetText(FText::FromString(CachedName));
-		NameText->SetColorAndOpacity(FLinearColor::White);
-	}
+    UTextBlock* NameText = GetMarkerNameText();
+    if (NameText)
+    {
+        NameText->SetText(FText::FromString(CachedName));
+        NameText->SetColorAndOpacity(FLinearColor::White);
+    }
 
-	/*UImage* Img = GetMarkerImage();
+    UImage* Image = GetMarkerImage();
 
-	UE_LOG(LogTemp, Warning, TEXT("InitCommon(%s): Img=%s Mat=%s RT=%s"),
-		*CachedName,
-		*GetNameSafe(Img),
-		*GetNameSafe(WidgetMaterial),
-		*GetNameSafe(RenderTarget));
+    if (!Image || !BodyWidgetMaterial)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("InitCommon(%s): missing Image or Material"), *CachedName);
+        return;
+    }
 
-	// This is the equivalent of your old: if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial) return;
-	if (!Img || !WidgetMaterial)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitCommon(%s): missing Image or WidgetMaterial"), *CachedName);
-		return;
-	}
+    if (!RenderTarget)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("InitCommon(%s): RenderTarget is null"), *CachedName);
+        return;
+    }
 
-	if (!RenderTarget)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitCommon(%s): RenderTarget is null"), *CachedName);
-		return;
-	}
+    UE_LOG(LogTemp, Warning,
+        TEXT("InitCommon(%s) Image=%s Text=%s Border=%s"),
+        *CachedName,
+        *GetNameSafe(GetMarkerImage()),
+        *GetNameSafe(GetMarkerNameText()),
+        *GetNameSafe(GetMarkerHighlightBorder())
+    );
 
-	ApplyRT(RenderTarget);*/
-}
-
-void USystemMarkerWidget::ApplyRT(UTextureRenderTarget2D* InRT)
-{
-	UImage* Img = GetMarkerImage();
-	if (!InRT || !Img || !WidgetMaterial)
-	{
-		return;
-	}
-
-	const float SizePx = ComputeSizePx(CachedRadius);
-
-	SystemMapUtils::ApplyRenderTargetToImage(
-		this,
-		Img,
-		WidgetMaterial,
-		InRT,
-		FVector2D(SizePx, SizePx)
-	);
+    ApplyRT(RenderTarget); // make ApplyRT use GetMarkerImage() too (see below)
 }
 
 void USystemMarkerWidget::SetSelected(bool bSelected)
 {
-	if (UBorder* Border = GetMarkerHighlightBorder())
-	{
-		Border->SetVisibility(bSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-	}
-}
+    if (UBorder* Border = GetMarkerHighlightBorder())
+    {
+        Border->SetVisibility(
+            bSelected ? ESlateVisibility::Visible : ESlateVisibility::Hidden
+        );
+    }
 
+}
 FReply USystemMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
@@ -81,4 +66,21 @@ FReply USystemMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 	}
 
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
+void USystemMarkerWidget::ApplyRT(UTextureRenderTarget2D* InRT)
+{
+    UImage* Image = GetMarkerImage();
+    if (!InRT || !Image || !BodyWidgetMaterial)
+        return;
+
+    const float SizePx = ComputeSizePx(CachedRadius);
+
+    SystemMapUtils::ApplyRenderTargetToImage(
+        this,
+        Image,
+        BodyWidgetMaterial,
+        InRT,
+        FVector2D(SizePx, SizePx)
+    );
 }

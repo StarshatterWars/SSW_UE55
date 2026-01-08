@@ -10,12 +10,23 @@
 #include "../Actors/PlanetPanelActor.h"
 #include "../System/SSWGameInstance.h"
 
+void UPlanetMarkerWidget::SetSelected(bool bSelected)
+{
+	// Optional highlight logic
+}
+
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
+	SetVisibility(ESlateVisibility::Visible);
+	
 	PlanetData = Planet;
-	UTextureRenderTarget2D* RT = PlanetActor ? PlanetActor->GetRenderTarget() : nullptr;
+	SetToolTipText(FText::FromString(PlanetData.Name));
 
-	InitCommon(PlanetData.Name, PlanetData.Radius);
+	if (PlanetNameText)
+	{
+		PlanetNameText->SetText(FText::FromString(PlanetData.Name));
+		PlanetNameText->SetColorAndOpacity(FLinearColor::White);
+	}
 
 	if (!PlanetImage || !PlanetActor || !PlanetWidgetMaterial)
 	{
@@ -24,8 +35,18 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 	}
 
 	SetWidgetRenderTarget(PlanetActor->GetRenderTarget());
+	bIselected = false;
 }
 
+FReply UPlanetMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		OnPlanetClicked.Broadcast(PlanetData.Name);
+		return FReply::Handled();
+	}
+	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
 
 void UPlanetMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
 {
