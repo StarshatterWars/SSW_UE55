@@ -1,31 +1,26 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
-#include "Engine/TextureRenderTarget2D.h"
-#include "Components/Image.h"
-#include "Components/CanvasPanelSlot.h"
-#include "Materials/MaterialInterface.h"
-#include "../Actors/PlanetPanelActor.h"
+#include "SystemMarkerWidget.h"
+#include "../Game/GameStructs.h"
 #include "PlanetMarkerWidget.generated.h"
 
+class APlanetPanelActor;
 class UImage;
 class UBorder;
+class UTextBlock;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetClicked, const FString&, PlanetName);
 
 UCLASS()
-class STARSHATTERWARS_API UPlanetMarkerWidget : public UUserWidget
+class STARSHATTERWARS_API UPlanetMarkerWidget : public USystemMarkerWidget
 {
 	GENERATED_BODY()
+
 	
 public:
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
-	UFUNCTION()
-	void SetSelected(bool bSelected);
 
 	UFUNCTION()
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
@@ -38,18 +33,18 @@ public:
 	UPROPERTY()
 	UMaterialInterface* PlanetWidgetMaterial;
 
-	UPROPERTY()
-	bool bIselected = false;
-
 protected:
-	UPROPERTY(meta = (BindWidgetOptional)) UImage* PlanetImage;
-	UPROPERTY(meta = (BindWidgetOptional)) UBorder* HighlightBorder;
-	UPROPERTY(meta = (BindWidgetOptional)) class UTextBlock* PlanetNameText;
+	// These names MUST match your PlanetMarkerWidget BP widget variable names
+	UPROPERTY(meta = (BindWidgetOptional)) UImage* PlanetImage = nullptr;
+	UPROPERTY(meta = (BindWidgetOptional)) UBorder* HighlightBorder = nullptr;
+	UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* PlanetNameText = nullptr;
 
-private:
-	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	
+	// Base widget hooks: these ensure the base uses PlanetImage (not BodyImage)
+	virtual UImage* GetMarkerImage() const override { return PlanetImage; }
+	virtual UBorder* GetMarkerHighlightBorder() const override { return HighlightBorder; }
+	virtual UTextBlock* GetMarkerNameText() const override { return PlanetNameText; }
+
+private:	
 	UPROPERTY()
 	UTextureRenderTarget2D* PlanetRT = nullptr;
-
 };
