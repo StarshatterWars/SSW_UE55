@@ -808,9 +808,34 @@ UTexture2D* SystemMapUtils::LoadBodyAssetTexture(const FString& AssetName, const
 
 float SystemMapUtils::GetUISizeFromRadius(float RadiusKm, EBodyUISizeClass SizeClass)
 {
-	// Dataset-derived bounds (km)
-	constexpr double MinRadiusKm = 0.25e6;  // smallest moon
-	constexpr double MaxRadiusKm = 38.2e6;  // largest planet
+	double MinRadiusKm;
+	double MaxRadiusKm;
+	
+	switch (SizeClass)
+		{
+		case EBodyUISizeClass::Moon:
+		{
+			MinRadiusKm = 0.25e6;  // smallest moon
+			MaxRadiusKm = 6.1e6;  // largest moon
+			break;
+		}
+
+		case EBodyUISizeClass::Planet:
+		{
+			// Dataset-derived bounds (km)
+			MinRadiusKm = 2.15e6;  // smallest planet
+			MaxRadiusKm = 38.2e6;  // largest planet
+			break;
+		}
+
+		case EBodyUISizeClass::Star:
+		default:
+		{
+			MinRadiusKm = 1.2e9;  // smallest moon
+			MaxRadiusKm = 2.2e9;  // largest planet
+			break;
+		}
+	}
 
 	const double R = FMath::Clamp<double>(RadiusKm, MinRadiusKm, MaxRadiusKm);
 
