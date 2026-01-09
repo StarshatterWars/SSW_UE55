@@ -55,7 +55,7 @@ protected:
 	UPROPERTY()
 	FString CachedName;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UMaterialInterface* ObjectWidgetMaterial;
 
 	UPROPERTY()

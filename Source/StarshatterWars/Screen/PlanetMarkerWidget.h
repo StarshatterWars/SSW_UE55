@@ -22,9 +22,6 @@ public:
 	UFUNCTION()
 	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor);
 
-	UPROPERTY()
-	UMaterialInterface* PlanetWidgetMaterial;	
-
 private:
 	UPROPERTY()
 	UTextureRenderTarget2D* PlanetRT = nullptr;

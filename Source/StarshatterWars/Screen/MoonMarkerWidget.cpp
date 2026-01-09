@@ -10,12 +10,12 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 
 	InitCommon(MoonData.Name, MoonData.Radius);
 
-	if (!ObjectImage || !MoonActor || !MoonWidgetMaterial)
+	if (!ObjectImage || !MoonActor || !ObjectWidgetMaterial)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("InitFromMoonActor: missing setup"));
 		return;
 	}
 
-	SetWidgetRenderTarget(MoonActor->GetRenderTarget(), MoonWidgetMaterial);
+	SetWidgetRenderTarget(MoonActor->GetRenderTarget(), ObjectWidgetMaterial);
 }
 

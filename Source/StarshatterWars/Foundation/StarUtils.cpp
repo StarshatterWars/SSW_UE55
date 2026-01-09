@@ -7,30 +7,44 @@
 
 FLinearColor StarUtils::GetColor(ESPECTRAL_CLASS SpectralClass)
 {
-	
-	FLinearColor StarColor; 
+	FLinearColor StarColor;
 
 	switch (SpectralClass)
 	{
-	case ESPECTRAL_CLASS::O: StarColor = FLinearColor(0.5f, 0.6f, 1.0f); break;
-	case ESPECTRAL_CLASS::B: StarColor = FLinearColor(0.7f, 0.7f, 1.0f); break;
-	case ESPECTRAL_CLASS::A: StarColor = FLinearColor(0.9f, 0.9f, 1.0f); break;
-	case ESPECTRAL_CLASS::F: StarColor = FLinearColor(1.0f, 1.0f, 0.9f); break;
-	case ESPECTRAL_CLASS::G: StarColor = FLinearColor(1.0f, 0.95f, 0.6f); break;
-	case ESPECTRAL_CLASS::K: StarColor = FLinearColor(1.0f, 0.6f, 0.3f); break;
-	case ESPECTRAL_CLASS::M: StarColor = FLinearColor(1.0f, 0.2f, 0.1f); break;
-	case ESPECTRAL_CLASS::R: StarColor = FLinearColor(0.9f, 0.1f, 0.1f); break;
-	case ESPECTRAL_CLASS::N: StarColor = FLinearColor(0.75f, 0.05f, 0.05f); break;
-	case ESPECTRAL_CLASS::S: StarColor = FLinearColor(0.95f, 0.4f, 0.2f); break;
-	case ESPECTRAL_CLASS::BLACK_HOLE: StarColor = FLinearColor::Black; break;
-	case ESPECTRAL_CLASS::WHITE_DWARF: StarColor = FLinearColor::White; break;
-	case ESPECTRAL_CLASS::RED_GIANT: StarColor = FLinearColor(1.0f, 0.5f, 0.3f); break;
-	default: StarColor = FLinearColor::Gray; break;
+		// HOT / BLUE
+	case ESPECTRAL_CLASS::O: StarColor = FLinearColor(0.55f, 0.65f, 1.25f); break;
+	case ESPECTRAL_CLASS::B: StarColor = FLinearColor(0.65f, 0.75f, 1.15f); break;
+	case ESPECTRAL_CLASS::A: StarColor = FLinearColor(0.85f, 0.90f, 1.05f); break;
+
+		// WHITE / YELLOW
+	case ESPECTRAL_CLASS::F: StarColor = FLinearColor(1.05f, 1.00f, 0.85f); break;
+	case ESPECTRAL_CLASS::G: StarColor = FLinearColor(1.15f, 1.05f, 0.70f); break;
+
+		// ORANGE / RED
+	case ESPECTRAL_CLASS::K: StarColor = FLinearColor(1.20f, 0.75f, 0.45f); break;
+	case ESPECTRAL_CLASS::M: StarColor = FLinearColor(1.30f, 0.45f, 0.30f); break;
+
+		// CARBON STARS
+	case ESPECTRAL_CLASS::R: StarColor = FLinearColor(1.10f, 0.30f, 0.25f); break;
+	case ESPECTRAL_CLASS::N: StarColor = FLinearColor(0.90f, 0.20f, 0.20f); break;
+	case ESPECTRAL_CLASS::S: StarColor = FLinearColor(1.10f, 0.55f, 0.35f); break;
+
+		// SPECIAL
+	case ESPECTRAL_CLASS::WHITE_DWARF: StarColor = FLinearColor(1.4f, 1.4f, 1.4f); break;
+	case ESPECTRAL_CLASS::RED_GIANT:   StarColor = FLinearColor(1.3f, 0.6f, 0.4f); break;
+	case ESPECTRAL_CLASS::BLACK_HOLE:  StarColor = FLinearColor::Black; break;
+
+	default:
+		StarColor = FLinearColor(0.5f, 0.5f, 0.5f);
+		break;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("SpectralClass = %s, StarColor = R=%.2f G=%.2f B=%.2f"),
+#if !UE_BUILD_SHIPPING
+	UE_LOG(LogTemp, Verbose,
+		TEXT("SpectralClass=%s | Color=R %.2f G %.2f B %.2f"),
 		*UEnum::GetValueAsString(SpectralClass),
 		StarColor.R, StarColor.G, StarColor.B);
+#endif
 
 	return StarColor;
 }
@@ -94,12 +108,22 @@ float StarUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
 {
 	constexpr float MinRadiusKm = 1.2e9f;
 	constexpr float MaxRadiusKm = 2.2e9f;
+	constexpr float PerceptualPower = 0.7f;
 
-	float LogRadius = FMath::LogX(10.f, FMath::Max(Radius, 1.f));
+	// Clamp physical domain first
+	float ClampedRadius = FMath::Clamp(Radius, MinRadiusKm, MaxRadiusKm);
+
+	// Log normalization
+	float LogRadius = FMath::LogX(10.f, ClampedRadius);
 	float MinLog = FMath::LogX(10.f, MinRadiusKm);
 	float MaxLog = FMath::LogX(10.f, MaxRadiusKm);
 
-	float Normalized = FMath::Clamp((LogRadius - MinLog) / (MaxLog - MinLog), 0.f, 1.f);
+	float Normalized = (LogRadius - MinLog) / (MaxLog - MinLog);
+	Normalized = FMath::Clamp(Normalized, 0.f, 1.f);
+
+	// Perceptual boost
+	Normalized = FMath::Pow(Normalized, PerceptualPower);
+
 	return FMath::Lerp(MinSize, MaxSize, Normalized);
 }
 
@@ -161,4 +185,44 @@ UTexture2D* StarUtils::LoadStarAssetTexture(const FString& TextureName)
 	}
 
 	return Texture;
+}
+
+float StarUtils::GetEmissiveFromClass(ESPECTRAL_CLASS Class)
+{
+	// Values assume:
+	// - Emissive multiplied by HDR color
+	// - Bloom enabled
+	// - Exposure not manually clamped
+	//
+	// Tuned for UI render targets + 3D previews
+
+	switch (Class)
+	{
+		// EXTREMELY HOT
+	case ESPECTRAL_CLASS::O:  return 120.0f;
+	case ESPECTRAL_CLASS::B:  return 90.0f;
+	case ESPECTRAL_CLASS::A:  return 65.0f;
+
+		// MAIN SEQUENCE
+	case ESPECTRAL_CLASS::F:  return 45.0f;
+	case ESPECTRAL_CLASS::G:  return 30.0f;  // Sun-like
+	case ESPECTRAL_CLASS::K:  return 20.0f;
+	case ESPECTRAL_CLASS::M:  return 14.0f;
+
+		// EVOLVED / SPECIAL
+	case ESPECTRAL_CLASS::WHITE_DWARF: return 80.0f;
+	case ESPECTRAL_CLASS::RED_GIANT:   return 55.0f;
+
+		// CARBON STARS
+	case ESPECTRAL_CLASS::R: return 40.0f;
+	case ESPECTRAL_CLASS::N: return 35.0f;
+	case ESPECTRAL_CLASS::S: return 42.0f;
+
+		// NON-EMISSIVE
+	case ESPECTRAL_CLASS::BLACK_HOLE:
+		return 0.0f;
+
+	default:
+		return 25.0f;
+	}
 }

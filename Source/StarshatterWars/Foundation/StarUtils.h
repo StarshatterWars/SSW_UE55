@@ -29,9 +29,12 @@ public:
 	static float GetRotationSpeed(float Rotation);
 
 	/** Gets a UI image scale (in pixels) from radius using log scale */
-	static float GetUISizeFromRadius(float Radius, float MinSize = 48.f, float MaxSize = 128.f);
+	static float GetUISizeFromRadius(float Radius, float MinSize = 16.f, float MaxSize = 256.f);
 
 	static UTextureRenderTarget2D* CreateStarRenderTarget(const FString& Name, UObject* Outer = nullptr, int32 Resolution = 256);
+
+	// Set Astronomically-correct emmissive values
+	static float GetEmissiveFromClass(ESPECTRAL_CLASS Class);
 
 	// Estimate ideal render target resolution based on star radius in kilometers
 	static int32 GetRenderTargetResolutionForRadius(double RadiusKm);

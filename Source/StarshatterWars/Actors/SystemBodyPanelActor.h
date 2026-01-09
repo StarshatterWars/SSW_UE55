@@ -36,11 +36,11 @@ public:
 	void InitializeBody(); // Applies scale + tilt (derived provided)
 
 	FRotator ComputeSpinRotation(float WorldTimeSeconds) const;
-	UTexture2D* LoadBodyTexture();
+	UTexture2D* LoadBodyTexture(FString AssetType);
 
 protected:
 	// --- One-time init called during deferred spawn before FinishSpawning ---
-	void InitBody();
+	void InitBody(FString AssetType);
 
 	// --- Derived class hooks ---
 	virtual FString GetBodyName() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBodyName, return TEXT("Body"););

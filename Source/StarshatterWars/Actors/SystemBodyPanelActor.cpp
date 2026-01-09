@@ -72,10 +72,10 @@ void ASystemBodyPanelActor::Tick(float DeltaTime)
 	}
 }
 
-void ASystemBodyPanelActor::InitBody()
+void ASystemBodyPanelActor::InitBody(FString AssetType)
 {
 	// Texture (derived decides how)
-	BodyTexture = LoadBodyTexture();
+	BodyTexture = LoadBodyTexture(AssetType);
 
 	// Material
 	BodyMaterialInstance = SystemMapUtils::CreatePreviewMID(
@@ -140,9 +140,9 @@ FRotator ASystemBodyPanelActor::ComputeSpinRotation(float WorldTimeSeconds) cons
 	return SystemMapUtils::GetBodyRotation(WorldTimeSeconds, RotationSpeed, BodyTilt);
 }
 
-UTexture2D* ASystemBodyPanelActor::LoadBodyTexture()
+UTexture2D* ASystemBodyPanelActor::LoadBodyTexture(FString AssetType)
 {
-	return SystemMapUtils::LoadBodyAssetTexture("Planet", TextureName);
+	return SystemMapUtils::LoadBodyAssetTexture(AssetType, TextureName);
 }
 
 int32 ASystemBodyPanelActor::ComputeRenderTargetResolution(float Radius) const

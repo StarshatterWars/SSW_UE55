@@ -611,6 +611,8 @@ struct FS_MoonMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Name;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Parent;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Icon;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	FString  Texture;
@@ -637,6 +639,7 @@ struct FS_MoonMap : public FTableRowBase {
 
 	FS_MoonMap() {
 		Name = "";
+		Parent = "";
 		Icon = "";
 		Texture = "";
 		Radius = 0.0;

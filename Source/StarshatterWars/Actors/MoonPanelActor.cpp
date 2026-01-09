@@ -1,6 +1,5 @@
 #include "MoonPanelActor.h"
 #include "PlanetPanelActor.h"
-#include "../Foundation/MoonUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 
 AMoonPanelActor::AMoonPanelActor()
@@ -32,7 +31,7 @@ AMoonPanelActor* AMoonPanelActor::SpawnWithMoonData(
 	NewActor->MoonData = MoonInfo;
 	NewActor->BodyTilt = MoonInfo.Tilt;
 	NewActor->TextureName = MoonInfo.Texture;
-	NewActor->InitBody();
+	NewActor->InitBody("Moon");
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
 
 	return NewActor;

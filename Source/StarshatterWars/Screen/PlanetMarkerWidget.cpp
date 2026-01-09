@@ -1,9 +1,13 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project nGenEx
+	Fractal Dev Games
+	Copyright (C) 2024. All Rights Reserved.
+	SUBSYSTEM:    SSW	
+	FILE:         PlanetMarkerWidget.cpp
+	AUTHOR:       Carlos Bott
+*/
 
 
 #include "PlanetMarkerWidget.h"
-#include "../Foundation/PlanetUtils.h"
-#include "../Foundation/SystemMapUtils.h"
 #include "../Actors/PlanetPanelActor.h"
 
 
@@ -14,12 +18,12 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 
 	InitCommon(PlanetData.Name, PlanetData.Radius); 
 
-	if (!ObjectImage || !PlanetActor || !PlanetWidgetMaterial)
+	if (!ObjectImage || !PlanetActor || !ObjectWidgetMaterial)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("InitFromPlanetActor: missing setup"));
 		return;
 	}
 
-	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), PlanetWidgetMaterial);
+	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial);
 }
 

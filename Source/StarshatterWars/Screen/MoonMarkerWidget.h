@@ -22,9 +22,6 @@ public:
 	UFUNCTION()
 	void InitFromMoonActor(const FS_MoonMap& Planet, AMoonPanelActor* MoonActor);
 
-	UPROPERTY()
-	UMaterialInterface* MoonWidgetMaterial;
-
 private:
 	UPROPERTY()
 	UTextureRenderTarget2D* MoonRT = nullptr;
