@@ -25,5 +25,4 @@ public:
 private:
 	UPROPERTY()
 	UTextureRenderTarget2D* PlanetRT = nullptr;
-
 };

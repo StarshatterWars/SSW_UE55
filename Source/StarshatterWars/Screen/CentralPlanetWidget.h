@@ -10,6 +10,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
 #include "../Actors/CentralPlanetActor.h"
+#include "../Game/GameStructs.h"
 #include "CentralPlanetWidget.generated.h"
 
 /**

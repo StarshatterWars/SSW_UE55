@@ -48,6 +48,8 @@ protected:
 	virtual float GetBodyTiltDegrees() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBodyTiltDegrees, return 0.0f;);
 	virtual UMaterialInterface* GetBaseMaterial() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBaseMaterial, return nullptr;);
 	
+	void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
 	// Render target resolution computation: derived implements (planet vs moon)
 	int32 ComputeRenderTargetResolution(float Radius) const;
 	// Whether to apply computed scale (sometimes you may want fixed mesh scale)

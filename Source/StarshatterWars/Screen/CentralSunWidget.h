@@ -43,7 +43,7 @@ public:
 	UFUNCTION()
 	void InitializeFromSunActor(ACentralSunActor* SunActor);
 	UFUNCTION()
-	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, EBodyUISizeClass SizeClass);
 
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

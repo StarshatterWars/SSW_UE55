@@ -59,7 +59,7 @@ void UCentralPlanetWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
 {
 	if (InRT && PlanetImage && PlanetWidgetMaterial)
 	{
-		float SizePx = SystemMapUtils::GetUISizeFromRadius(PlanetData.Radius) / 2;
+		float SizePx = SystemMapUtils::GetUISizeFromRadius(PlanetData.Radius, EBodyUISizeClass::Planet) / 2;
 		SystemMapUtils::ApplyRenderTargetToImage(
 			this,
 			PlanetImage,

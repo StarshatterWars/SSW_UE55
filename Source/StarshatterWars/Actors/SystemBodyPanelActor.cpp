@@ -26,11 +26,24 @@ ASystemBodyPanelActor::ASystemBodyPanelActor()
 	}
 
 	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
-	SceneCapture->SetupAttachment(RootScene);
-	SceneCapture->SetRelativeLocation(FVector(-600.f, 0.f, 0.f));
+	SceneCapture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+
+	const FBoxSphereBounds Bounds = BodyMesh->Bounds;
+	const float R = FMath::Max(Bounds.SphereRadius, 10.f);
+
+	// Put camera far enough back to see whole sphere reliably
+	const float Distance = R * 3.0f;
+
+	SceneCapture->SetRelativeLocation(FVector(-Distance, 0.f, 0.f));
 	SceneCapture->SetRelativeRotation(FRotator::ZeroRotator);
+
+	SceneCapture->SetupAttachment(RootScene);
+	//SceneCapture->SetRelativeLocation(FVector(-600.f, 0.f, 0.f));
+	//SceneCapture->SetRelativeRotation(FRotator::ZeroRotator);
 	SceneCapture->FOVAngle = 60.f;
-	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	//SceneCapture->FOVAngle = 30.f;
+	//SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR; 
 	SceneCapture->bCaptureEveryFrame = false;
 	SceneCapture->bCaptureOnMovement = true;
 
@@ -101,11 +114,13 @@ void ASystemBodyPanelActor::InitBody(FString AssetType)
 	);
 
 	BodyRenderTarget = RT;
+	SceneCapture->ShowOnlyComponents.Empty();
+	SceneCapture->ShowOnlyComponents.Add(BodyMesh);
 	SceneCapture->TextureTarget = BodyRenderTarget;
 
 	// Capture now + safe capture next tick
 	BodyMesh->MarkRenderStateDirty();
-	SceneCapture->CaptureScene();
+
 	SystemMapUtils::ScheduleSafeCapture(this, SceneCapture);
 
 	UE_LOG(LogTemp, Warning, TEXT("InitBody() %s -> Mat: %s, Tex: %s, RT: %s"),
@@ -114,6 +129,7 @@ void ASystemBodyPanelActor::InitBody(FString AssetType)
 		*GetNameSafe(BodyTexture),
 		*GetNameSafe(BodyRenderTarget));
 }
+
 float ASystemBodyPanelActor::ComputeUIScale(float Radius) const
 {
 	return SystemMapUtils::GetBodyUIScale(Radius);
@@ -148,4 +164,14 @@ UTexture2D* ASystemBodyPanelActor::LoadBodyTexture(FString AssetType)
 int32 ASystemBodyPanelActor::ComputeRenderTargetResolution(float Radius) const
 {
 	return FMath::Clamp(SystemMapUtils::GetRenderTargetResolutionForRadius(Radius), 256, 1024);
+}
+
+void ASystemBodyPanelActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearAllTimersForObject(this);
+	}
 }

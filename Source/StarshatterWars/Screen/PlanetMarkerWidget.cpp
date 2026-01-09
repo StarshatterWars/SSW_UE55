@@ -24,6 +24,6 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 		return;
 	}
 
-	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial);
+	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial, EBodyUISizeClass::Planet);
 }
 

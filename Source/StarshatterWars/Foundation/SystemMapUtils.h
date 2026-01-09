@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/Widget.h" 
 #include "Kismet/GameplayStatics.h"
+#include "../Game/GameStructs.h"
 #include "Components/CanvasPanel.h" 
-
 
 class UStaticMeshComponent;
 class UMaterialInterface;
@@ -27,7 +27,6 @@ class UCentralPlanetWidget;
 class UMoonMarkerWidget;
 class UOrbitRingWidget;
 
-
 /**
  * 
  */
@@ -46,6 +45,9 @@ public:
 	
 	/** Creates a unique 512x512 RGBA8 render target with black clear color */
 	static UTextureRenderTarget2D* CreateRenderTarget(const FString& BaseName, int32 Resolution = 256, UObject * Outer = nullptr);
+
+	UFUNCTION()
+	static float GetUISizeFromRadiusKm(float RadiusKm, EBodyUISizeClass SizeClass);
 
 	UFUNCTION()
 	static float ClampZoomLevel(float ProposedZoom, float MinZoom = 0.5f, float MaxZoom = 3.0f);
@@ -180,13 +182,7 @@ public:
 		}
 	};
 
-	static UTextureRenderTarget2D* EnsureRenderTarget(
-		UObject* Context,
-		const FString& Name,
-		int32 Resolution,
-		USceneCaptureComponent2D* SceneCapture,
-		UObject* Owner = nullptr
-	);
+	static UTextureRenderTarget2D* EnsureRenderTarget(UObject* Owner, const FString& Label, int32 Resolution, USceneCaptureComponent2D* Capture, UPrimitiveComponent* ShowOnlyComp);
 
 	static UMaterialInstanceDynamic* CreatePreviewMID(
 		UObject* Outer,
@@ -255,7 +251,7 @@ public:
 	static UTexture2D* LoadBodyAssetTexture(const FString& AssetName, const FString& TextureName);
 
 	/** Gets a UI image scale (in pixels) from radius using log scale */
-	static float GetUISizeFromRadius(float Radius);
-
+	static float GetUISizeFromRadius(float Radius, EBodyUISizeClass SizeClass);
 };
 
+static float MapLogRadiusToSize(float RadiusKm, float MinRadiusKm, float MaxRadiusKm, float MinPx, float MaxPx, float Power);

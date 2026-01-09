@@ -11,6 +11,16 @@
 /************************************************************************/
 /* ENUMS                                                                */
 /************************************************************************/
+
+UENUM(BlueprintType)
+enum class EBodyUISizeClass : uint8 {
+	Moon,
+	Planet,
+	Star, 
+	Jumpgate, 
+	None
+};
+
 UENUM(BlueprintType)
 enum class EGraphicsRHI : uint8 {
 	RHI_DX11 UMETA(DisplayName = "DirectX 11"),

@@ -153,9 +153,9 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	SceneCapture->CaptureScene();
 
 	StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-	StarMaterialInstance->SetVectorParameterValue("Main Color High", StarColor);
-	StarMaterialInstance->SetVectorParameterValue("Main Color Low", StarColor);
-	//StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
+	//StarMaterialInstance->SetVectorParameterValue("Main Color High", StarColor);
+	//StarMaterialInstance->SetVectorParameterValue("Main Color Low", StarColor);
+	StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
 	//StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
 	//StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
 

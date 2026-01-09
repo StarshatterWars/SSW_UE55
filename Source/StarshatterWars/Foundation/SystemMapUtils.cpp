@@ -250,6 +250,64 @@ UTextureRenderTarget2D* SystemMapUtils::CreateRenderTarget(const FString& Name, 
 	return RenderTarget;
 }
 
+static float MapLogRadiusToSize(float RadiusKm, float MinRadiusKm, float MaxRadiusKm, float MinPx, float MaxPx, float Power)
+{
+	RadiusKm = FMath::Clamp(RadiusKm, MinRadiusKm, MaxRadiusKm);
+
+	const float LogR = FMath::LogX(10.f, RadiusKm);
+	const float LogMin = FMath::LogX(10.f, MinRadiusKm);
+	const float LogMax = FMath::LogX(10.f, MaxRadiusKm);
+
+	float T = (LogR - LogMin) / (LogMax - LogMin);
+	T = FMath::Clamp(T, 0.f, 1.f);
+
+	// Perceptual curve: <1 boosts large end; >1 boosts small end
+	T = FMath::Pow(T, Power);
+
+	return FMath::Lerp(MinPx, MaxPx, T);
+}
+
+float SystemMapUtils::GetUISizeFromRadiusKm(float RadiusKm, EBodyUISizeClass SizeClass)
+{
+	switch (SizeClass)
+	{
+		case EBodyUISizeClass::Moon:
+		{
+			// Example moon radii range: ~300 km to ~3000 km
+			// (tune for your data)
+			const float Size = MapLogRadiusToSize(RadiusKm,
+				300.f, 3500.f,
+				18.f, 44.f,
+				0.85f); // keeps differences but prevents tiny moons
+
+			return FMath::Max(Size, 18.f); // hard minimum for clickability
+		}
+
+		case EBodyUISizeClass::Planet:
+		{
+			// Example planet radii range: ~2500 km to ~70000 km
+			const float Size = MapLogRadiusToSize(RadiusKm,
+				2000.f, 80000.f,
+				28.f, 92.f,
+				0.75f);
+
+			return Size;
+		}
+
+		case EBodyUISizeClass::Star:
+		default:
+		{
+			// Your star ranges are much larger; use your existing StarUtils if you prefer.
+			const float Size = MapLogRadiusToSize(RadiusKm,
+				1.2e9f, 2.2e9f,
+				64.f, 160.f,
+				0.70f);
+
+			return Size;
+		}
+	}
+}
+
 FBox2D SystemMapUtils::ComputeContentBounds(const TSet<UWidget*>& ContentWidgets, UCanvasPanel* Canvas)
 {
 	FBox2D Bounds(EForceInit::ForceInit);
@@ -333,56 +391,81 @@ FVector2D SystemMapUtils::ComputeMoonOrbitOffset(
 
 void SystemMapUtils::ScheduleSafeCapture(UObject* WorldContext, USceneCaptureComponent2D* Capture)
 {
-	if (!WorldContext || !Capture) return;
+	if (!WorldContext || !Capture)
+	{
+		return;
+	}
 
 	UWorld* World = WorldContext->GetWorld();
-	if (!World) return;
+	if (!World)
+	{
+		return;
+	}
 
-	FTimerHandle TempHandle;
-	World->GetTimerManager().SetTimer(TempHandle, [=]()
+	// Weak refs prevent use-after-free when actors/components are destroyed
+	TWeakObjectPtr<USceneCaptureComponent2D> WeakCapture(Capture);
+
+	World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([WeakCapture]()
 		{
-			if (Capture)
+			if (!WeakCapture.IsValid())
 			{
-				Capture->CaptureScene();
-				UE_LOG(LogTemp, Log, TEXT("Scheduled CaptureScene() fired for %s"), *Capture->GetName());
+				return;
 			}
-		}, 0.0f, false);
+
+			USceneCaptureComponent2D* Cap = WeakCapture.Get();
+
+			// Additional guards: during teardown these can be false/invalid
+			if (!IsValid(Cap) || Cap->IsUnreachable() || Cap->HasAnyFlags(RF_BeginDestroyed))
+			{
+				return;
+			}
+
+			// Must have a target and be registered
+			if (!Cap->IsRegistered() || Cap->TextureTarget == nullptr)
+			{
+				return;
+			}
+
+			Cap->CaptureScene();
+		}));
 }
 
+
 UTextureRenderTarget2D* SystemMapUtils::EnsureRenderTarget(
-	UObject* Context,
-	const FString& Name,
+	UObject* Owner,
+	const FString& Label,
 	int32 Resolution,
-	USceneCaptureComponent2D* SceneCapture,
-	UObject* Owner)
+	USceneCaptureComponent2D* Capture,
+	UPrimitiveComponent* ShowOnlyComp)
 {
-	if (!Context || !SceneCapture)
+	if (!Owner || !Capture) return nullptr;
+
+	// Unique RT object name per actor instance
+	const FName UniqueRTName = MakeUniqueObjectName(
+		Owner,
+		UTextureRenderTarget2D::StaticClass(),
+		FName(*FString::Printf(TEXT("RT_%s"), *Label))
+	);
+
+	UTextureRenderTarget2D* RT = NewObject<UTextureRenderTarget2D>(Owner, UniqueRTName);
+	RT->RenderTargetFormat = RTF_RGBA16f;
+	RT->ClearColor = FLinearColor::Black;
+	RT->bAutoGenerateMips = false;
+	RT->InitAutoFormat(Resolution, Resolution);
+	RT->UpdateResourceImmediate(true);
+
+	// Configure capture to only this component
+	Capture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+	Capture->ShowOnlyComponents.Empty();
+	if (ShowOnlyComp)
 	{
-		UE_LOG(LogTemp, Error, TEXT("EnsureRenderTarget: Missing context or capture"));
-		return nullptr;
+		Capture->ShowOnlyComponents.Add(ShowOnlyComp);
 	}
 
-	UGalaxyManager* Galaxy = UGalaxyManager::Get(Context);
-	if (!Galaxy)
-	{
-		UE_LOG(LogTemp, Error, TEXT("EnsureRenderTarget: GalaxyManager not found"));
-		return nullptr;
-	}
+	Capture->TextureTarget = RT;
 
-	// Default to SceneCapture or Transient if no mesh or owner provided
-	UObject* RTOuter = Owner ? Owner : SceneCapture;
-
-	UTextureRenderTarget2D* RT = Galaxy->GetOrCreateRenderTarget(Name, Resolution, RTOuter);
-	if (!RT)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create RenderTarget for %s"), *Name);
-		return nullptr;
-	}
-
-	SceneCapture->TextureTarget = RT;
-
-	UE_LOG(LogTemp, Log, TEXT("RenderTarget created for %s | Resolution=%d | Outer=%s"),
-		*Name, Resolution, *GetNameSafe(RTOuter));
+	UE_LOG(LogTemp, Warning, TEXT("RT CREATED: %s  PTR=%p  Outer=%s"),
+		*RT->GetName(), RT, *GetNameSafe(Owner));
 
 	return RT;
 }
@@ -723,7 +806,7 @@ UTexture2D* SystemMapUtils::LoadBodyAssetTexture(const FString& AssetName, const
 	return Texture;
 }
 
-float SystemMapUtils::GetUISizeFromRadius(float RadiusKm)
+float SystemMapUtils::GetUISizeFromRadius(float RadiusKm, EBodyUISizeClass SizeClass)
 {
 	// Dataset-derived bounds (km)
 	constexpr double MinRadiusKm = 0.25e6;  // smallest moon
@@ -762,4 +845,9 @@ float SystemMapUtils::GetUISizeFromRadius(float RadiusKm)
 	const float SizePx = FMath::Lerp(MinPx, MaxPx, (float)T);
 	return FMath::Clamp(SizePx, MinPx, MaxPx);
 }
+
+
+
+
+
 
