@@ -41,6 +41,4 @@ protected:
 	virtual float GetBodyRadius() const override { return MoonData.Radius; }
 	virtual float GetBodyTiltDegrees() const override { return MoonData.Tilt; }
 	virtual UMaterialInterface* GetBaseMaterial() const override { return MoonBaseMaterial; }
-	
-	virtual int32 ComputeRenderTargetResolution(float Radius) const override;
 };

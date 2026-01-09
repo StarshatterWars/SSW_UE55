@@ -655,8 +655,11 @@ void SystemMapUtils::ClearAllSectorUIElements(USectorMap* Map)
 	UE_LOG(LogTemp, Warning, TEXT("[SystemMapUtils] Cleared all Sector UI elements (markers + rings)"));
 }
 
-int32 SystemMapUtils::GetRenderTargetResolutionForRadius(double RadiusKm, double MinRadius, double MaxRadius)
+int32 SystemMapUtils::GetRenderTargetResolutionForRadius(double RadiusKm)
 {
+	double MinRadius = 0.25e6;
+	double MaxRadius = 38.2e6;
+
 	// Normalize with optional logarithmic scaling
 	RadiusKm = FMath::Clamp(RadiusKm, MinRadius, MaxRadius);
 
@@ -672,8 +675,11 @@ int32 SystemMapUtils::GetRenderTargetResolutionForRadius(double RadiusKm, double
 	int32 Index = FMath::FloorToInt(T * (ResOptions.Num() - 1));
 	return ResOptions[Index];
 }
-float SystemMapUtils::GetBodyUIScale(double MinRadius, double MaxRadius, double RadiusKm)
+
+float SystemMapUtils::GetBodyUIScale(double RadiusKm)
 {
+	double MinRadius = 0.25e6;
+	double MaxRadius = 38.2e6; 
 	// Get normalized [0.0, 1.0] range
 	double Normalized = FMath::Clamp((RadiusKm - MinRadius) / (MaxRadius - MinRadius), 0.0, 1.0);
 
@@ -715,5 +721,45 @@ UTexture2D* SystemMapUtils::LoadBodyAssetTexture(const FString& AssetName, const
 	}
 
 	return Texture;
+}
+
+float SystemMapUtils::GetUISizeFromRadius(float RadiusKm)
+{
+	// Dataset-derived bounds (km)
+	constexpr double MinRadiusKm = 0.25e6;  // smallest moon
+	constexpr double MaxRadiusKm = 38.2e6;  // largest planet
+
+	const double R = FMath::Clamp<double>(RadiusKm, MinRadiusKm, MaxRadiusKm);
+
+	// Log normalization: compresses dynamic range while preserving ordering
+	const double LogR = FMath::LogX(10.0, R);
+	const double LogMin = FMath::LogX(10.0, MinRadiusKm);
+	const double LogMax = FMath::LogX(10.0, MaxRadiusKm);
+
+	double T = (LogR - LogMin) / (LogMax - LogMin);
+	T = FMath::Clamp(T, 0.0, 1.0);
+
+	// Perceptual shaping:
+	// - Lower than 1.0 makes big bodies grow faster (more readable size differences)
+	// - 0.60–0.75 is a practical range; 0.65 is a good default
+	constexpr double PerceptualPower = 0.65;
+	T = FMath::Pow(T, PerceptualPower);
+
+	// Optional: top-end boost so the largest planets separate more clearly.
+	// This only kicks in above ~70% of the range.
+	// Comment out if you want pure pow() only.
+	if (T > 0.70)
+	{
+		const double U = (T - 0.70) / 0.30;      // remap to 0..1
+		const double Boost = FMath::Pow(U, 0.55); // emphasize the top end
+		T = 0.70 + (0.30 * Boost);
+	}
+
+	// UI pixel range (tune to taste)
+	constexpr float MinPx = 16.f;   // smallest moon still visible
+	constexpr float MaxPx = 64.f;  // allow giants to feel giant
+
+	const float SizePx = FMath::Lerp(MinPx, MaxPx, (float)T);
+	return FMath::Clamp(SizePx, MinPx, MaxPx);
 }
 

@@ -49,8 +49,7 @@ protected:
 	virtual UMaterialInterface* GetBaseMaterial() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBaseMaterial, return nullptr;);
 	
 	// Render target resolution computation: derived implements (planet vs moon)
-	virtual int32 ComputeRenderTargetResolution(float Radius) const PURE_VIRTUAL(ASystemBodyPanelActor::ComputeRenderTargetResolution, return 1024;);
-
+	int32 ComputeRenderTargetResolution(float Radius) const;
 	// Whether to apply computed scale (sometimes you may want fixed mesh scale)
 	UPROPERTY(EditAnywhere, Category = "Body")
 	bool bApplyUIScale = true;

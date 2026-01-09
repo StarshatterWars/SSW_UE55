@@ -99,7 +99,7 @@ void ACentralPlanetActor::InitPlanet()
 	PlanetRenderTarget = SystemMapUtils::EnsureRenderTarget(
 		this,
 		PlanetData.Name +".Planet",
-		SystemMapUtils::GetRenderTargetResolutionForRadius(1000.0, 150000.0, PlanetData.Radius),
+		SystemMapUtils::GetRenderTargetResolutionForRadius(PlanetData.Radius),
 		SceneCapture,
 		PlanetMesh
 	);
@@ -136,7 +136,7 @@ void ACentralPlanetActor::InitPlanet()
 
 void ACentralPlanetActor::InitializePlanet()
 {
-	float ScaleFactor = SystemMapUtils::GetBodyUIScale(2000.0, 150000.0, PlanetData.Radius);
+	float ScaleFactor = SystemMapUtils::GetBodyUIScale(PlanetData.Radius);
 	//PlanetMesh->SetRelativeScale3D(FVector(1.0f));
 
 	FRotator AxisTilt = PlanetUtils::GetPlanetAxisTilt(PlanetData.Tilt);

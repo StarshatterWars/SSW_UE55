@@ -116,7 +116,7 @@ void ASystemBodyPanelActor::InitBody()
 }
 float ASystemBodyPanelActor::ComputeUIScale(float Radius) const
 {
-	return SystemMapUtils::GetBodyUIScale(2000.0, 150000.0, Radius);
+	return SystemMapUtils::GetBodyUIScale(Radius);
 }
 
 void ASystemBodyPanelActor::InitializeBody()
@@ -145,3 +145,7 @@ UTexture2D* ASystemBodyPanelActor::LoadBodyTexture()
 	return SystemMapUtils::LoadBodyAssetTexture("Planet", TextureName);
 }
 
+int32 ASystemBodyPanelActor::ComputeRenderTargetResolution(float Radius) const
+{
+	return FMath::Clamp(SystemMapUtils::GetRenderTargetResolutionForRadius(Radius), 256, 1024);
+}

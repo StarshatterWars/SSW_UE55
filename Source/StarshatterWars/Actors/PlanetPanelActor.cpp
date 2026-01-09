@@ -42,9 +42,9 @@ APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
 	return NewActor;
 }
 
-int32 APlanetPanelActor::ComputeRenderTargetResolution(float Radius) const
-{
+//int32 APlanetPanelActor::ComputeRenderTargetResolution(float Radius) const
+//{
 	// Add clamp like moon, for safety:
-	return FMath::Clamp(SystemMapUtils::GetRenderTargetResolutionForRadius(1000.0, 150000.0, Radius), 256, 4096);
-}
+//	return FMath::Clamp(SystemMapUtils::GetRenderTargetResolutionForRadius(1000.0, 150000.0, Radius), 256, 4096);
+//}
 

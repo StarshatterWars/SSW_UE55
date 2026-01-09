@@ -15,9 +15,6 @@ public:
 	/** Loads Planet Texture */
 	static UTexture2D* LoadPlanetTexture(const FString& TextureName);
 
-	/** Gets a UI image scale (in pixels) from radius using log scale */
-	static float GetUISizeFromRadius(float Radius, float MinSize = 48.f, float MaxSize = 128.f);
-
 	/** Creates a unique 512x512 RGBA8 render target with black clear color */
 	static UTextureRenderTarget2D* CreatePlanetRenderTarget(const FString& BaseName, UObject* Outer = nullptr, int32 Resolution = 256);
 

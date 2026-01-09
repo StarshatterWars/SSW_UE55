@@ -10,7 +10,8 @@
 #include "Components/Border.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
-
+#include "Materials/MaterialInterface.h"
+#include "../Foundation/SystemMapUtils.h"
 #include "../System/SSWGameInstance.h"
 #include "SystemMarkerWidget.generated.h"
 
@@ -38,6 +39,9 @@ public:
 	
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	UFUNCTION()
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, UMaterialInterface* WidgetMaterial);
 
 	UPROPERTY(meta = (BindWidgetOptional)) 
 	class UTextBlock* ObjectNameText;

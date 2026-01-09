@@ -38,6 +38,22 @@ FReply USystemMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
+void USystemMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, UMaterialInterface* WidgetMaterial)
+{
+	if (InRT && ObjectImage && WidgetMaterial)
+	{
+		float SizePx = SystemMapUtils::GetUISizeFromRadius(CachedRadius / 2);
+		SystemMapUtils::ApplyRenderTargetToImage(
+			this,
+			ObjectImage,
+			WidgetMaterial,
+			InRT,
+			FVector2D(SizePx, SizePx)
+		);
+	}
+}
+
+
 
 
 

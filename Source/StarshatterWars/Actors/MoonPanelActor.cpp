@@ -46,8 +46,4 @@ void AMoonPanelActor::SetParentPlanet(APlanetPanelActor* InParent)
 	UE_LOG(LogTemp, Warning, TEXT("SetParentPlanet() Parent: %s -> Moon: %s"), *ParentName, *MoonData.Name);
 }
 
-int32 AMoonPanelActor::ComputeRenderTargetResolution(float Radius) const
-{
-	return FMath::Clamp(SystemMapUtils::GetRenderTargetResolutionForRadius(0.25e6, 6e6, Radius), 256, 2048);
-}
 

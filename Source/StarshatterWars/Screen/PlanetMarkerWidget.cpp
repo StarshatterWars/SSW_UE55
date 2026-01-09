@@ -20,21 +20,6 @@ void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlane
 		return;
 	}
 
-	SetWidgetRenderTarget(PlanetActor->GetRenderTarget());
+	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), PlanetWidgetMaterial);
 }
 
-
-void UPlanetMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
-{
-	if (InRT && ObjectImage && PlanetWidgetMaterial)
-	{
-		float SizePx = PlanetUtils::GetUISizeFromRadius(PlanetData.Radius) / 2;
-		SystemMapUtils::ApplyRenderTargetToImage(
-			this,
-			ObjectImage,
-			PlanetWidgetMaterial,
-			InRT,
-			FVector2D(SizePx, SizePx)
-		);
-	}
-}

@@ -36,6 +36,4 @@ protected:
 	virtual float GetBodyRadius() const override { return PlanetData.Radius; }
 	virtual float GetBodyTiltDegrees() const override { return PlanetData.Tilt; }
 	virtual UMaterialInterface* GetBaseMaterial() const override { return PlanetBaseMaterial; }
-
-	virtual int32 ComputeRenderTargetResolution(float Radius) const override;
 };

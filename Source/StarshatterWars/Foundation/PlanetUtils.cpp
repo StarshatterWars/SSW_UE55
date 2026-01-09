@@ -79,29 +79,6 @@ UTexture2D* PlanetUtils::LoadPlanetTexture(const FString& TextureName)
 	return Texture;
 }
 
-float PlanetUtils::GetUISizeFromRadius(float Radius, float MinSize, float MaxSize)
-{
-	constexpr float MinRadiusKm = 3.15e6;
-	constexpr float MaxRadiusKm = 38.2e6;
-
-	float LogRadius = FMath::LogX(10.f, FMath::Max(Radius, 1.f));
-	float MinLog = FMath::LogX(10.f, MinRadiusKm);
-	float MaxLog = FMath::LogX(10.f, MaxRadiusKm);
-
-	float Normalized = FMath::Clamp((LogRadius - MinLog) / (MaxLog - MinLog), 0.f, 1.f);
-	//return FMath::Lerp(MinSize, MaxSize, Normalized);
-
-	// UI scaling range — safe for mesh scale and texture logic
-	constexpr float MinUIScale = 32.0f;
-	constexpr float MaxUIScale = 96.0f;
-
-	// Final safe UI scale
-	float UIScale = FMath::Lerp(MinUIScale, MaxUIScale, static_cast<float>(Normalized));
-
-	// Clamp final value to hard max
-	return FMath::Clamp(UIScale, MinUIScale, MaxUIScale);
-}
-
 UTextureRenderTarget2D* PlanetUtils::CreatePlanetRenderTarget(const FString& Name, UObject* Outer, int32 Resolution)
 {
 	if (!Outer)
