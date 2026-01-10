@@ -1,14 +1,17 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+// Project nGenEx
+// Fractal Dev Games
+// Copyright (C) 2024. All Rights Reserved.
+// 
+// SUBSYSTEM:    SSW
+// FILE:         MoonMarkerWidget.cpp
+// AUTHOR:       Carlos Bott
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "SystemMarkerWidget.h"
 #include "../Actors/MoonPanelActor.h"
-#include "MoonMarkerWidget.generated.h"
-
-class UImage;
-class UBorder;
+#include "MoonMarkerWidget.generated.h";
 
 UCLASS()
 class STARSHATTERWARS_API UMoonMarkerWidget : public USystemMarkerWidget
@@ -21,8 +24,4 @@ public:
 
 	UFUNCTION()
 	void InitFromMoonActor(const FS_MoonMap& Planet, AMoonPanelActor* MoonActor);
-
-private:
-	UPROPERTY()
-	UTextureRenderTarget2D* MoonRT = nullptr;
 };

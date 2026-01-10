@@ -1,4 +1,10 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+// Project nGenEx
+// Fractal Dev Games
+// Copyright (C) 2024. All Rights Reserved.
+// 
+// SUBSYSTEM:    SSW
+// FILE:         PlanetMarkerWidget.h
+// AUTHOR:       Carlos Bott
 
 #pragma once
 
@@ -7,8 +13,6 @@
 #include "../Actors/PlanetPanelActor.h"
 #include "PlanetMarkerWidget.generated.h"
 
-class UImage;
-class UBorder;
 
 UCLASS()
 class STARSHATTERWARS_API UPlanetMarkerWidget : public USystemMarkerWidget
@@ -20,9 +24,5 @@ public:
 	FS_PlanetMap PlanetData;
 
 	UFUNCTION()
-	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor);
-
-private:
-	UPROPERTY()
-	UTextureRenderTarget2D* PlanetRT = nullptr;
+	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 };
