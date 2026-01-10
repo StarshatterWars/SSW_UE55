@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "../Game/GameStructs.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "SystemBodyPanelActor.generated.h"
 
@@ -38,12 +39,12 @@ public:
 	FRotator ComputeSpinRotation(float WorldTimeSeconds) const;
 	UTexture2D* LoadBodyTexture(FString AssetType);
 
-
 	bool bApplyAxisTilt = true;
 	float RotationSpeed = 20.f;
 	float BodyTilt;
 	double BodyRadius;
 	FString BodyName;
+	EBodyUISizeClass BodyType;
 
 protected:
 	// --- One-time init called during deferred spawn before FinishSpawning ---

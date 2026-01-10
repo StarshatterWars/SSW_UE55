@@ -14,16 +14,7 @@
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
 	PlanetData = Planet;
-	bSelected = false;
-
-	InitCommon(PlanetData.Name, PlanetData.Radius); 
-
-	if (!ObjectImage || !PlanetActor || !ObjectWidgetMaterial)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitFromPlanetActor: missing setup"));
-		return;
-	}
-
-	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial, EBodyUISizeClass::Planet);
+	InitCommon(PlanetActor->BodyName, PlanetActor->BodyRadius);
+	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial, PlanetActor->BodyType);
 }
 

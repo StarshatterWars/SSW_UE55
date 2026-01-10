@@ -14,27 +14,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 	MoonData = Moon;
 	bSelected = false;
 
-	InitCommon(MoonData.Name, MoonData.Radius);
-
-	if (!ObjectImage || !MoonActor || !ObjectWidgetMaterial)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InitFromMoonActor: missing setup"));
-		return;
-	}
-
-	UTextureRenderTarget2D* RT = MoonActor->GetRenderTarget();
-
-	UE_LOG(LogTemp, Warning, TEXT("Moon Init: Moon=%s Actor=%s RT=%s"),
-		*MoonData.Name,
-		*MoonActor->GetName(),
-		RT ? *RT->GetName() : TEXT("NULL"));
-
-	if (!RT)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Moon Init: RT is NULL (init called too early)"));
-		return;
-	}
-
-		SetWidgetRenderTarget(RT, ObjectWidgetMaterial,  EBodyUISizeClass::Moon);
+	InitCommon(MoonActor->BodyName, MoonActor->BodyRadius);
+	SetWidgetRenderTarget(MoonActor->GetRenderTarget(), ObjectWidgetMaterial, MoonActor->BodyType);
 }
 

@@ -16,6 +16,7 @@ void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius)
 {
 	SetVisibility(ESlateVisibility::Visible);
 
+	bSelected = false;
 	CachedName = DisplayName;
 	CachedRadius = Radius;
 

@@ -37,6 +37,7 @@ APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
 	NewActor->BodyTilt = PlanetInfo.Tilt;
 	NewActor->BodyRadius = PlanetInfo.Radius;
 	NewActor->BodyName = PlanetInfo.Name;
+	NewActor->BodyType = EBodyUISizeClass::Planet;
 	NewActor->TextureName = PlanetInfo.Texture;
 	NewActor->InitBody("Planet");
 	NewActor->FinishSpawning(FTransform(Rotation, Location));

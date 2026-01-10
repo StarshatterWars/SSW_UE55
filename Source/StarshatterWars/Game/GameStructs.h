@@ -646,7 +646,9 @@ struct FS_MoonMap : public FTableRowBase {
 	bool   Retro;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Atmos;
-
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EBodyUISizeClass  BodyType;
+	
 	FS_MoonMap() {
 		Name = "";
 		Parent = "";
@@ -662,6 +664,7 @@ struct FS_MoonMap : public FTableRowBase {
 		Tilt = 0.0;
 		Retro = false;
 		Atmos = FColor::Black;
+		BodyType = EBodyUISizeClass::Moon;
 	}
 };
 
@@ -712,6 +715,8 @@ struct FS_PlanetMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Atmos;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EBodyUISizeClass  BodyType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_MoonMap> Moon;
 
 	FS_PlanetMap() {
@@ -733,6 +738,7 @@ struct FS_PlanetMap : public FTableRowBase {
 		Eccentricity = 0.0f;
 		Retro = false;
 		Atmos = FColor::Black;
+		BodyType = EBodyUISizeClass::Planet;
 	}
 };
 
@@ -771,6 +777,8 @@ struct FS_StarMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FColor  Back;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EBodyUISizeClass  BodyType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_PlanetMap> Planet;
 
 	FS_StarMap() {
@@ -789,6 +797,7 @@ struct FS_StarMap : public FTableRowBase {
 		Color = FColor(0, 0, 0, 0);
 		Back = FColor(0, 0, 0, 0);
 		Class = ESPECTRAL_CLASS::G;
+		BodyType = EBodyUISizeClass::Star;
 	}
 };
 
