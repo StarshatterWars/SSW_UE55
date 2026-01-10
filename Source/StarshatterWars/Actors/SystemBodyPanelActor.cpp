@@ -55,6 +55,10 @@ ASystemBodyPanelActor::ASystemBodyPanelActor()
 	SceneCapture->ShowFlags.SetMotionBlur(false);
 	SceneCapture->ShowFlags.SetScreenSpaceReflections(false);
 	SceneCapture->ShowFlags.SetPostProcessing(false);
+
+	RotationSpeed = 20.f;
+	bApplyUIScale = false;
+	bApplyAxisTilt = false;
 }
 
 void ASystemBodyPanelActor::BeginPlay()

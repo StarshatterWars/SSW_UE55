@@ -4,11 +4,7 @@
 
 AMoonPanelActor::AMoonPanelActor()
 {
-	RotationSpeed = 20.f;
-	bApplyUIScale = true;
 
-	// Avoid double-tilt if MoonUtils already includes tilt in rotation:
-	bApplyAxisTilt = false;
 }
 
 AMoonPanelActor* AMoonPanelActor::SpawnWithMoonData(

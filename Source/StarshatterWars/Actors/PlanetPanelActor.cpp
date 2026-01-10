@@ -4,16 +4,6 @@
 
 APlanetPanelActor::APlanetPanelActor()
 {
-	// Use the base tick/tilt composition policy
-	RotationSpeed = 20.f;
-	bApplyUIScale = false;
-
-	// Since PlanetUtils likely already bakes tilt into rotation, you may set:
-	// bApplyAxisTilt = false;
-	// and handle tilt in ComputeSpinRotation().
-	//
-	// For safety and to avoid double-tilt, default to false and use your existing util rotation:
-	bApplyAxisTilt = false;
 }
 
 APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
