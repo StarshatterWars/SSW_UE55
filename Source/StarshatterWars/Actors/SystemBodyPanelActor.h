@@ -38,6 +38,13 @@ public:
 	FRotator ComputeSpinRotation(float WorldTimeSeconds) const;
 	UTexture2D* LoadBodyTexture(FString AssetType);
 
+
+	bool bApplyAxisTilt = true;
+	float RotationSpeed = 20.f;
+	float BodyTilt;
+	double BodyRadius;
+	FString BodyName;
+
 protected:
 	// --- One-time init called during deferred spawn before FinishSpawning ---
 	void InitBody(FString AssetType);
@@ -55,16 +62,6 @@ protected:
 	// Whether to apply computed scale (sometimes you may want fixed mesh scale)
 	UPROPERTY(EditAnywhere, Category = "Body")
 	bool bApplyUIScale = true;
-
-	// Whether to apply axis tilt on top of spin rotation
-	UPROPERTY(EditAnywhere, Category = "Body")
-	bool bApplyAxisTilt = true;
-
-	UPROPERTY(EditAnywhere, Category = "Body")
-	float RotationSpeed = 20.f;
-	
-	UPROPERTY(EditAnywhere, Category = "Body")
-	float BodyTilt;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Body")
 	USceneComponent* RootScene = nullptr;

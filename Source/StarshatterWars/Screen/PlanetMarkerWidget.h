@@ -24,5 +24,5 @@ public:
 	FS_PlanetMap PlanetData;
 
 	UFUNCTION()
-	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
+	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor);
 };

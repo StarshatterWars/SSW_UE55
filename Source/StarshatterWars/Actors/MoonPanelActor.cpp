@@ -30,6 +30,8 @@ AMoonPanelActor* AMoonPanelActor::SpawnWithMoonData(
 
 	NewActor->MoonData = MoonInfo;
 	NewActor->BodyTilt = MoonInfo.Tilt;
+	NewActor->BodyRadius = MoonInfo.Radius;
+	NewActor->BodyName = MoonInfo.Name;
 	NewActor->TextureName = MoonInfo.Texture;
 	NewActor->InitBody("Moon");
 	NewActor->FinishSpawning(FTransform(Rotation, Location));

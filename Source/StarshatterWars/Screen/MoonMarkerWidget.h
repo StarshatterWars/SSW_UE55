@@ -11,7 +11,7 @@
 #include "CoreMinimal.h"
 #include "SystemMarkerWidget.h"
 #include "../Actors/MoonPanelActor.h"
-#include "MoonMarkerWidget.generated.h";
+#include "MoonMarkerWidget.generated.h"
 
 UCLASS()
 class STARSHATTERWARS_API UMoonMarkerWidget : public USystemMarkerWidget
