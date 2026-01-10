@@ -12,7 +12,7 @@
 #include "../Game/GameStructs.h"
 #include "../System/SSWGameInstance.h"
 #include "../Foundation/SystemMapUtils.h"
-
+#include "../Actors/PlanetPanelActor.h"
 #include "SectorMap.generated.h"
 
 class UCanvasPanel;
@@ -22,7 +22,6 @@ class UCentralPlanetWidget;
 class UMoonMarkerWidget;
 class USystemOrbitWidget;
 
-class ACentralPlanetActor;
 class AMoonPanelActor;
 class UOperationsScreen;
 
@@ -53,7 +52,7 @@ public:
 	void ClearSectorView();
 
 	UFUNCTION()
-	void HandleCentralPlanetClicked(const FString& PlanetName);
+	void HandlePlanetClicked(const FString& PlanetName);
 
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
@@ -95,13 +94,13 @@ protected:
 	FS_PlanetMap PlanetData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<ACentralPlanetActor> PlanetActorClass;
+	TSubclassOf<APlanetPanelActor> PlanetActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<AMoonPanelActor> MoonActorClass;
 
 	UPROPERTY()
-	TArray<ACentralPlanetActor*> SpawnedPlanetActors;
+	TArray<APlanetPanelActor*> SpawnedPlanetActors;
 
 	UPROPERTY()
 	TArray<AMoonPanelActor*> SpawnedMoonActors;
@@ -116,7 +115,7 @@ protected:
 	TSubclassOf<USystemOrbitWidget> OrbitWidgetClass;
 
 	UPROPERTY()
-	ACentralPlanetActor* PlanetActor = nullptr;
+	APlanetPanelActor* PlanetActor = nullptr;
 
 	UPROPERTY()
 	UCentralPlanetWidget* PlanetMarker = nullptr;

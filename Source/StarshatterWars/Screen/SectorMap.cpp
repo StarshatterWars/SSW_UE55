@@ -17,8 +17,6 @@
 #include "../System/SSWGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "../Actors/CentralPlanetActor.h"
-
 #include "../Foundation/PlanetOrbitUtils.h"
 #include "../Foundation/SystemMapUtils.h"
 #include "../Foundation/StarUtils.h"
@@ -274,7 +272,7 @@ void USectorMap::InitSectorCanvas()
 		}), 0.05f, false);
 }
 
-void USectorMap::HandleCentralPlanetClicked(const FString& PlanetName)
+void USectorMap::HandlePlanetClicked(const FString& PlanetName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Central planet %s clicked — requesting system map view"), *PlanetName);
 
@@ -552,7 +550,7 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 		FVector ActorLocation = FVector::ZeroVector;  // Adjust position as needed
 		FRotator ActorRotation = FRotator::ZeroRotator;
 
-		PlanetActor = ACentralPlanetActor::SpawnWithPlanetData(
+		PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
 			GetWorld(),
 			ActorLocation,
 			ActorRotation,
@@ -588,8 +586,8 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 
 			UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
 
-			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor); // pass data and actor
-			PlanetMarker->OnCentralPlanetClicked.AddDynamic(this, &USectorMap::HandleCentralPlanetClicked);
+			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor);
+			PlanetMarker->OnObjectClicked.AddDynamic(this, &USectorMap::HandlePlanetClicked);
 
 			PlanetMarkers.Add(Planet.Name, PlanetMarker);
 		}

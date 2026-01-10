@@ -21,7 +21,7 @@ class UBorder;
  * 
  */
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectClicked, const FString&, ObjectName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetClicked, const FString&, ObjectName);
 
 UCLASS()
 class STARSHATTERWARS_API USystemMarkerWidget : public UUserWidget
@@ -35,7 +35,7 @@ public:
 	
 	void InitCommon(const FString& DisplayName, float Radius /*,TextureRenderTarget2D* RenderTarget*/);
 
-	FOnObjectClicked OnObjectClicked;
+	FOnPlanetClicked OnObjectClicked;
 	
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

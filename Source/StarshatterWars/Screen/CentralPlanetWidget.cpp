@@ -7,7 +7,7 @@
 #include "Components/TextBlock.h"
 #include "../Foundation/PlanetUtils.h"
 #include "../Foundation/SystemMapUtils.h"
-#include "../Actors/CentralPlanetActor.h"
+
 #include "../System/SSWGameInstance.h"
 
 void UCentralPlanetWidget::SetSelected(bool bSelected)
@@ -20,7 +20,7 @@ void UCentralPlanetWidget::SetMarkerMaterial(UMaterialInterface* PlanetMat)
 	PlanetWidgetMaterial = PlanetMat;
 }
 
-void UCentralPlanetWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, ACentralPlanetActor* PlanetActor)
+void UCentralPlanetWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
 	SetVisibility(ESlateVisibility::Visible);
 
@@ -49,7 +49,7 @@ FReply UCentralPlanetWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry
 {
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		OnCentralPlanetClicked.Broadcast(PlanetData.Name);
+		OnObjectClicked.Broadcast(PlanetData.Name);
 		return FReply::Handled();
 	}
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);

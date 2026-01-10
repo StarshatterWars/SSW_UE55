@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/UserWidget.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
-#include "../Actors/CentralPlanetActor.h"
+#include "../Actors/PlanetPanelActor.h"
 #include "../Game/GameStructs.h"
 #include "CentralPlanetWidget.generated.h"
 
@@ -20,7 +19,7 @@
 class UImage;
 class UBorder;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCentralPlanetClicked, const FString&, PlanetName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectClicked, const FString&, PlanetName);
 
 UCLASS()
 class STARSHATTERWARS_API UCentralPlanetWidget : public UUserWidget
@@ -39,9 +38,9 @@ class STARSHATTERWARS_API UCentralPlanetWidget : public UUserWidget
 	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT);
 
 	UFUNCTION()
-	void InitFromPlanetActor(const FS_PlanetMap& Planet, ACentralPlanetActor* PlanetActor);
+	void InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor);
 
-	FOnCentralPlanetClicked OnCentralPlanetClicked;
+	FOnObjectClicked OnObjectClicked;
 
 	UPROPERTY()
 	UMaterialInterface* PlanetWidgetMaterial;

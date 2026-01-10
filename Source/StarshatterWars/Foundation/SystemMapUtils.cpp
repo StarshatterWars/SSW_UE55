@@ -25,7 +25,6 @@
 #include "../Screen/SystemOrbitWidget.h"
 
 #include "../Actors/CentralSunActor.h"
-#include "../Actors/CentralPlanetActor.h"
 #include "../Actors/PlanetPanelActor.h"
 #include "../Actors/MoonPanelActor.h"
 
@@ -660,7 +659,7 @@ void SystemMapUtils::DestroyAllSystemActors(UWorld* World)
 
 void SystemMapUtils::DestroyAllSectorActors(UWorld* World)
 {
-	DestroyAllActorsOfType<ACentralPlanetActor>(World);
+	DestroyAllActorsOfType<APlanetPanelActor>(World);
 	DestroyAllActorsOfType<AMoonPanelActor>(World);
 }
 
@@ -865,7 +864,7 @@ float SystemMapUtils::GetUISizeFromRadius(float RadiusKm, EBodyUISizeClass SizeC
 
 	// UI pixel range (tune to taste)
 	constexpr float MinPx = 16.f;   // smallest moon still visible
-	constexpr float MaxPx = 64.f;  // allow giants to feel giant
+	constexpr float MaxPx = 96.f;  // allow giants to feel giant
 
 	const float SizePx = FMath::Lerp(MinPx, MaxPx, (float)T);
 	return FMath::Clamp(SizePx, MinPx, MaxPx);
