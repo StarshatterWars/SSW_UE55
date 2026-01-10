@@ -32,9 +32,7 @@
 #include "../Screen/SectorMap.h"
 
 #include "../Screen/CentralSunWidget.h"
-#include "../Screen/CentralPlanetWidget.h"
 #include "../Screen/PlanetMarkerWidget.h"
-#include "../Screen/SystemOrbitWidget.h"
 #include "../Screen/MoonMarkerWidget.h"
 
 #include "Slate/WidgetRenderer.h"
@@ -711,7 +709,7 @@ void SystemMapUtils::ClearAllSectorUIElements(USectorMap* Map)
 	// Destroy planet markers
 	for (auto& Pair : Map->PlanetMarkers)
 	{
-		if (UCentralPlanetWidget* Marker = Pair.Value)
+		if (UPlanetMarkerWidget* Marker = Pair.Value)
 		{
 			Marker->RemoveFromParent();
 			Marker->MarkAsGarbage();

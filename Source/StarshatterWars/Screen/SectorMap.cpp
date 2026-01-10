@@ -6,8 +6,6 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
 
-#include "CentralPlanetWidget.h"
-#include "MoonMarkerWidget.h"
 #include "SystemOrbitWidget.h"
 #include "OperationsScreen.h"
 
@@ -571,7 +569,7 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 			PlanetMarker = nullptr;
 		}
 
-		PlanetMarker = CreateWidget<UCentralPlanetWidget>(this, PlanetMarkerClass);
+		PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
 		if (PlanetMarker)
 		{
 			if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(PlanetMarker))

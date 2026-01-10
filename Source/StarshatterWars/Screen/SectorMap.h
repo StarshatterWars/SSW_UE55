@@ -13,13 +13,13 @@
 #include "../System/SSWGameInstance.h"
 #include "../Foundation/SystemMapUtils.h"
 #include "../Actors/PlanetPanelActor.h"
+#include "PlanetMarkerWidget.h"
+#include "MoonMarkerWidget.h"
 #include "SectorMap.generated.h"
 
 class UCanvasPanel;
 class USizeBox;
 
-class UCentralPlanetWidget;
-class UMoonMarkerWidget;
 class USystemOrbitWidget;
 
 class AMoonPanelActor;
@@ -57,7 +57,7 @@ public:
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
 	// UI lookup maps
-	TMap<FString, UCentralPlanetWidget*> PlanetMarkers;
+	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
 
@@ -106,7 +106,7 @@ protected:
 	TArray<AMoonPanelActor*> SpawnedMoonActors;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<UCentralPlanetWidget> PlanetMarkerClass;
+	TSubclassOf<UPlanetMarkerWidget> PlanetMarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
@@ -118,7 +118,7 @@ protected:
 	APlanetPanelActor* PlanetActor = nullptr;
 
 	UPROPERTY()
-	UCentralPlanetWidget* PlanetMarker = nullptr;
+	UPlanetMarkerWidget* PlanetMarker = nullptr;
 
 	UFUNCTION()
 	void SetZoomLevel(float NewZoom);
