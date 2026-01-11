@@ -332,6 +332,16 @@ void USSWGameInstance::ReadCampaignData()
 	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
 }
 
+void USSWGameInstance::UpdateUniverseTime(float DeltaSeconds)
+{
+	UniverseTimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds * UniverseTimeScale);
+}
+
+void USSWGameInstance::UpdatePlayerPlaytime(float DeltaSeconds)
+{
+	PlayerPlaytimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds);
+}
+
 void USSWGameInstance::ReadCombatRosterData() {
 	UE_LOG(LogTemp, Log, TEXT("USSWGameInstance::ReadCombatRosterData()"));
 	static const FString ContextString(TEXT("ReadDataTable"));

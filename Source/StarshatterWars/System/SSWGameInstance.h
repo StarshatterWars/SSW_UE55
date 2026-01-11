@@ -345,11 +345,21 @@ public:
 	UPROPERTY()
 	AMusicController* MusicController;
 
-	UPROPERTY() FString UniverseId;
+	// Universe time
+	UPROPERTY(EditAnywhere, Category = "Time") 
+	FString UniverseId;
+	UPROPERTY(EditAnywhere, Category = "Time")
+	uint64 UniverseSeed = 0;
+	UPROPERTY(EditAnywhere, Category = "Time") 
+	uint64 UniverseTimeSeconds = 0;
+	UPROPERTY(EditAnywhere, Category = "Time")
+	double UniverseTimeScale = 60.0; // 1 real second = 60 universe seconds
 
-	UPROPERTY() uint64 UniverseSeed = 0;
-
-	UPROPERTY() double UniverseTimeSeconds = 0.0;
+	// Player time
+	UPROPERTY(EditAnywhere, Category = "Time")
+	int64 PlayerPlaytimeSeconds = 0;
+	UPROPERTY(EditAnywhere, Category = "Time")
+	bool bCountPlaytimeWhilePaused = false;
 
 	void SetActiveUnit(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc);
 	void SetActiveElement(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATUNIT_TYPE Type, FString Loc);
@@ -386,11 +396,17 @@ public:
 
 	void EnsureSystemOverview(UObject* Context, const FS_StarMap& StarMap, int32 Resolution);
 	
+	UFUNCTION()
+	void UpdateUniverseTime(float DeltaSeconds);
+	UFUNCTION()
+	void UpdatePlayerPlaytime(float DeltaSeconds);
+
 protected:
 	virtual void Init() override;
 	
 	virtual void Shutdown() override;
 	void ReadCampaignData();
+
 	void ReadCombatRosterData();
 	
 	virtual bool InitContent();
