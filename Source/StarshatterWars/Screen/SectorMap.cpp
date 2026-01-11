@@ -290,9 +290,21 @@ void USectorMap::HandlePlanetClicked(const FString& PlanetName)
 
 void USectorMap::AddMoon(const FS_MoonMap& Moon)
 {
-	if (!MapCanvas || !MoonActorClass) return;
+	if (!MapCanvas || !MoonActorClass)
+		return;
 
 	AddMoonOrbitalRing(Moon);
+
+	// ---------------- ORBIT CONTEXT (FIX) ----------------
+	// In sector view, moons orbit the CENTRAL PLANET.
+	// Use the planet as orbit authority for time.
+	ASystemBodyPanelActor* OrbitAuthority = PlanetActor;
+
+	// Deterministic seed: planet + moon
+	const FString Seed = PlanetActor
+		? (PlanetActor->BodyName + TEXT("_") + Moon.Name)
+		: Moon.Name;
+	// ----------------------------------------------------
 
 	// --- Spawn moon actor ---
 	const FVector MoonWorldPos = FVector::ZeroVector;
@@ -302,12 +314,21 @@ void USectorMap::AddMoon(const FS_MoonMap& Moon)
 		MoonWorldPos,
 		FRotator::ZeroRotator,
 		MoonActorClass,
-		Moon
+		Moon,
+		OrbitAuthority,
+		Seed
 	);
 
 	if (MoonActor)
 	{
 		SpawnedMoonActors.Add(MoonActor);
+
+		// Make moon follow moving planet center
+		if (PlanetActor)
+		{
+			MoonActor->SetParentPlanet(PlanetActor);
+		}
+
 		UE_LOG(LogTemp, Log, TEXT("Moon Created: %s"), *Moon.Name);
 	}
 
@@ -315,24 +336,38 @@ void USectorMap::AddMoon(const FS_MoonMap& Moon)
 	if (MoonMarkerClass)
 	{
 		UMoonMarkerWidget* MoonMarker = CreateWidget<UMoonMarkerWidget>(this, MoonMarkerClass);
-		
 		if (MoonMarker)
-		{	
-			float& OrbitAngle =MoonOrbitAngles.FindOrAdd(Moon.Name);
-			if (OrbitAngle == 0.0f)
-			{
-				OrbitAngle = FMath::FRandRange(0.0f, 360.0f);
-			}
+		{
+			// ---------- DETERMINISTIC ORBIT ANGLE ----------
+			const uint32 H = FCrc::StrCrc32(*Seed);
+			const float Phase0Deg =
+				((H & 0x00FFFFFFu) / float(0x01000000u)) * 360.0f;
 
-			float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Moon.Inclination, 2.0f);
+			const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+
+			// Visual tuning constant
+			const float BaseDegPerSec = 10.0f;
+
+			// Outer moons slower
+			const float RefOrbit = 100000.f;
+			const float OrbitScale =
+				FMath::Sqrt(FMath::Max(RefOrbit, 1.f) / FMath::Max(Moon.Orbit, 1.f));
+
+			const float OrbitAngle =
+				FMath::Fmod(Phase0Deg + Now * BaseDegPerSec * OrbitScale, 360.0f);
+			// ---------------------------------------------
+
+			const float VisualInclination =
+				PlanetOrbitUtils::AmplifyInclination(Moon.Inclination, 2.0f);
 
 			OrbitRadius = Moon.Orbit / ORBIT_TO_SCREEN;
 
-			FVector2D TiltedPos = PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
-				OrbitRadius,
-				OrbitAngle,
-				VisualInclination
-			);
+			const FVector2D TiltedPos =
+				PlanetOrbitUtils::Get2DOrbitPositionWithInclination(
+					OrbitRadius,
+					OrbitAngle,
+					VisualInclination
+				);
 
 			if (UCanvasPanelSlot* MoonSlot = MapCanvas->AddChildToCanvas(MoonMarker))
 			{
@@ -343,9 +378,8 @@ void USectorMap::AddMoon(const FS_MoonMap& Moon)
 				MoonSlot->SetZOrder(10);
 			}
 
-			MoonMarker->SetVisibility(ESlateVisibility::Visible);;
+			MoonMarker->SetVisibility(ESlateVisibility::Visible);
 			MoonMarker->InitFromMoonActor(Moon, MoonActor);
-			//MoonMarker->OnMoonClicked.AddDynamic(this, &USectorMap::HandleMoonClicked);
 
 			MoonMarkers.Add(Moon.Name, MoonMarker);
 		}

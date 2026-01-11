@@ -16,12 +16,16 @@ class STARSHATTERWARS_API AMoonPanelActor : public ASystemBodyPanelActor
 public:
 	AMoonPanelActor();
 
+	virtual void Tick(float DeltaTime) override;
+
 	static AMoonPanelActor* SpawnWithMoonData(
 		UWorld* World,
 		const FVector& Location,
 		const FRotator& Rotation,
 		TSubclassOf<AMoonPanelActor> ActorClass,
-		FS_MoonMap MoonInfo
+		const FS_MoonMap& MoonInfo,
+		ASystemBodyPanelActor* OrbitAuthority,
+		const FString& SystemSeed
 	);
 
 	void SetParentPlanet(APlanetPanelActor* InParent);
