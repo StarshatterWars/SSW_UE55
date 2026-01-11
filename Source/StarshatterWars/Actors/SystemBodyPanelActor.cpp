@@ -86,20 +86,25 @@ void ASystemBodyPanelActor::Tick(float DeltaTime)
 	// ===================== ORBIT (WORLD LOCATION) =====================
 	if (bEnableOrbit)
 	{
+		// Use deterministic orbit time (prefer authority time; falls back internally as needed)
 		const double NowSeconds =
 			OrbitAuthority ? OrbitAuthority->GetOrbitTimeSeconds()
-			: (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0);
+			: GetOrbitTimeSeconds();
 
 		UpdateOrbitLocation(NowSeconds);
 	}
 
 	// ===================== SPIN (MESH ROTATION) =====================
-	const float Time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	// Spin is purely visual; choose ONE of the two time sources below:
 
-	// Spin rotation from derived logic
-	const FRotator SpinRot = ComputeSpinRotation(Time);
+	// Option A (recommended): spin uses world runtime (doesn't jump on load, looks smooth)
+	const float SpinTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
 
-	// Optional tilt composition
+	// Option B: spin follows universe time (time-warp affects spin; can jump after load)
+	// const float SpinTime = (float)GetOrbitTimeSeconds();
+
+	const FRotator SpinRot = ComputeSpinRotation(SpinTime);
+
 	if (bApplyAxisTilt)
 	{
 		const FRotator TiltRot(0.f, 0.f, GetBodyTiltDegrees());
@@ -110,7 +115,7 @@ void ASystemBodyPanelActor::Tick(float DeltaTime)
 	{
 		BodyMesh->SetRelativeRotation(SpinRot);
 	}
-}
+}	
 
 void ASystemBodyPanelActor::InitBody(FString AssetType)
 {
@@ -205,8 +210,14 @@ void ASystemBodyPanelActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 double ASystemBodyPanelActor::GetOrbitTimeSeconds() const
 {
-	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
-	return OrbitEpochSeconds + (Now - OrbitEpochSeconds) * OrbitTimeScale;
+	const USSWGameInstance* GI = GetGameInstance<USSWGameInstance>();
+	if (!GI)
+	{
+		return 0.0;
+	}
+
+	const double UniverseNow = (double)GI->GetUniverseTimeSeconds();
+	return UniverseNow;
 }
 
 float ASystemBodyPanelActor::HashTo01(const FString& Key)

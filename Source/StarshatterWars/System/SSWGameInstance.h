@@ -400,6 +400,9 @@ public:
 	void UpdateUniverseTime(float DeltaSeconds);
 	UFUNCTION()
 	void UpdatePlayerPlaytime(float DeltaSeconds);
+	
+	int64 GetUniverseTimeSeconds() const { return UniverseTimeSeconds; }
+	int64 GetPlayerPlaytimeSeconds() const { return PlayerPlaytimeSeconds; }
 
 protected:
 	virtual void Init() override;
