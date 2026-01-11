@@ -64,6 +64,18 @@ ASystemBodyPanelActor::ASystemBodyPanelActor()
 void ASystemBodyPanelActor::BeginPlay()
 {
 	Super::BeginPlay();
+	// If epoch was not explicitly set, anchor it to world time
+		if (OrbitEpochSeconds <= 0.0)
+		{
+			OrbitEpochSeconds = GetWorld()->GetTimeSeconds();
+		}
+
+	// If no explicit seed was provided, fall back to actor name
+	if (SystemSeed.IsEmpty())
+	{
+		SystemSeed = GetName();
+	}
+
 	InitializeBody();
 }
 
@@ -71,6 +83,17 @@ void ASystemBodyPanelActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// ===================== ORBIT (WORLD LOCATION) =====================
+	if (bEnableOrbit)
+	{
+		const double NowSeconds =
+			OrbitAuthority ? OrbitAuthority->GetOrbitTimeSeconds()
+			: (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0);
+
+		UpdateOrbitLocation(NowSeconds);
+	}
+
+	// ===================== SPIN (MESH ROTATION) =====================
 	const float Time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
 
 	// Spin rotation from derived logic
@@ -79,7 +102,7 @@ void ASystemBodyPanelActor::Tick(float DeltaTime)
 	// Optional tilt composition
 	if (bApplyAxisTilt)
 	{
-		const FRotator TiltRot(0.f, 0.f, GetBodyTiltDegrees()); // if your tilt is not roll, adjust in derived
+		const FRotator TiltRot(0.f, 0.f, GetBodyTiltDegrees());
 		const FQuat FinalQ = FQuat(SpinRot) * FQuat(TiltRot);
 		BodyMesh->SetRelativeRotation(FinalQ.Rotator());
 	}
@@ -178,4 +201,81 @@ void ASystemBodyPanelActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
+}
+
+double ASystemBodyPanelActor::GetOrbitTimeSeconds() const
+{
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	return OrbitEpochSeconds + (Now - OrbitEpochSeconds) * OrbitTimeScale;
+}
+
+float ASystemBodyPanelActor::HashTo01(const FString& Key)
+{
+	const uint32 H = FCrc::StrCrc32(*Key);
+	return (H & 0x00FFFFFFu) / float(0x01000000u);
+}
+
+void ASystemBodyPanelActor::InitializeOrbit(ASystemBodyPanelActor* InAuthority, float InOrbitRadiusKm, const FString& InOrbitSeed)
+{
+	OrbitAuthority = InAuthority;
+	OrbitRadiusKm = InOrbitRadiusKm;
+	OrbitSeed = InOrbitSeed;
+
+	// Only enable if radius is valid
+	bEnableOrbit = (OrbitRadiusKm > 0.f);
+
+	// If seed not provided, fall back to actor name (still deterministic)
+	if (OrbitSeed.IsEmpty())
+	{
+		OrbitSeed = GetName();
+	}
+}
+
+FVector ASystemBodyPanelActor::GetOrbitCenterForThisBody() const
+{
+	// Moons can orbit moving planets by updating CustomOrbitCenter externally each tick
+	if (bUseCustomOrbitCenter)
+	{
+		return CustomOrbitCenter;
+	}
+
+	// Default: orbit around authority's location (usually the star)
+	if (OrbitAuthority)
+	{
+		return OrbitAuthority->GetOrbitCenter();
+	}
+
+	// Fallback if no authority (orbit around world origin)
+	return FVector::ZeroVector;
+}
+
+void ASystemBodyPanelActor::UpdateOrbitLocation(double NowSeconds)
+{
+	if (!bEnableOrbit || OrbitRadiusKm <= 0.f)
+	{
+		return;
+	}
+
+	const FVector Center = GetOrbitCenterForThisBody();
+
+	// Epoch comes from authority if set, otherwise local epoch
+	const double Epoch = OrbitAuthority ? OrbitAuthority->OrbitEpochSeconds : OrbitEpochSeconds;
+
+	// km -> cm (UE units)
+	const float r = FMath::Max(OrbitRadiusKm * 100000.f, 1.f);
+
+	// Deterministic starting phase from seed
+	const float Phase0 = HashTo01(OrbitSeed) * 2.f * PI;
+
+	// Simple Kepler-ish scaling: v -> 1/sqrt(r)
+	const float RefR = FMath::Max(ReferenceRadiusKm * 100000.f, 1.f);
+	const float v = BaseSpeedCmPerSec * FMath::Sqrt(RefR / r);
+	const float Omega = v / r;
+
+	const float Phase = Phase0 + Omega * float(NowSeconds - Epoch);
+
+	const FVector NewLocation =
+		Center + FVector(FMath::Cos(Phase) * r, FMath::Sin(Phase) * r, 0.f);
+
+	SetActorLocation(NewLocation);
 }

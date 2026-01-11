@@ -14,7 +14,7 @@ void UMoonMarkerWidget::InitFromMoonActor(const FS_MoonMap& Moon, AMoonPanelActo
 	MoonData = Moon;
 	bSelected = false;
 
-	InitCommon(MoonActor->BodyName, MoonActor->BodyRadius);
-	SetWidgetRenderTarget(MoonActor->GetRenderTarget(), ObjectWidgetMaterial, MoonActor->BodyType);
+	InitCommon(MoonData.Name, MoonData.Radius, EBodyUISizeClass::Moon);
+	SetWidgetRenderTarget(MoonActor->GetRenderTarget(), ObjectWidgetMaterial);
 }
 

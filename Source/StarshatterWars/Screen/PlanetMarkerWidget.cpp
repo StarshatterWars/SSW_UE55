@@ -14,7 +14,7 @@
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)
 {
 	PlanetData = Planet;
-	InitCommon(PlanetActor->BodyName, PlanetActor->BodyRadius);
-	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial, PlanetActor->BodyType);
+	InitCommon(PlanetData.Name, PlanetData.Radius, EBodyUISizeClass::Planet);
+	SetWidgetRenderTarget(PlanetActor->GetRenderTarget(), ObjectWidgetMaterial);
 }
 

@@ -546,7 +546,6 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 {
 	AddPlanetOrbitalRing(Planet);
 
-	// Spawn a UNIQUE actor per planet (no shared member that gets destroyed each iteration)
 	APlanetPanelActor* NewPlanetActor = nullptr;
 
 	if (PlanetActorClass)
@@ -554,31 +553,51 @@ void USystemMap::AddPlanet(const FS_PlanetMap& Planet)
 		const FVector ActorLocation = FVector(-1000, 0, 200);
 		const FRotator ActorRotation = FRotator::ZeroRotator;
 
+		// IMPORTANT:
+		// Replace SystemStarActor with YOUR actual pointer to the star/authority actor.
+		// It must be a class derived from ASystemBodyPanelActor.
+		APlanetPanelActor* OrbitAuthority = NewPlanetActor;     // <-- rename to your real variable
+		const FString SystemSeed = OrbitAuthority ? OrbitAuthority->SystemSeed : FString(TEXT("SYS"));
+
 		NewPlanetActor = APlanetPanelActor::SpawnWithPlanetData(
 			GetWorld(),
 			ActorLocation,
 			ActorRotation,
 			PlanetActorClass,
-			Planet
+			Planet,
+			OrbitAuthority,
+			SystemSeed
 		);
 
 		if (NewPlanetActor)
 		{
-			//SystemMapUtils::CreateUniqueRenderTargetForActor(Planet.Name, NewPlanetActor); REMOVE RENDERER
 			SpawnedPlanetActors.Add(NewPlanetActor);
 		}
 	}
 
-	if (PlanetMarkerClass)
+	if (PlanetMarkerClass && MapCanvas)
 	{
 		UPlanetMarkerWidget* PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
 		if (PlanetMarker)
 		{
-			float& OrbitAngle = PlanetOrbitAngles.FindOrAdd(Planet.Name);
-			if (FMath::IsNearlyZero(OrbitAngle))
-			{
-				OrbitAngle = FMath::FRandRange(0.f, 360.f);
-			}
+			// ---------------- DETERMINISTIC ORBIT ANGLE (NO RANDOM) ----------------
+			// Stable starting phase from seed:
+			const FString PlanetSeed = (TEXT("PLANET_") + Planet.Name);
+			const uint32 H = FCrc::StrCrc32(*PlanetSeed);
+			const float Phase0Deg = ((H & 0x00FFFFFFu) / float(0x01000000u)) * 360.0f;
+
+			// Advance with time; outer planets slower:
+			const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+
+			// Tune this constant for “system map” speed
+			const float BaseDegPerSec = 6.0f;
+
+			// Planet.Orbit is your orbital radius (same field you already use below)
+			const float RefOrbit = 100000.f; // choose a reference in same units as Planet.Orbit
+			const float OrbitScale = FMath::Sqrt(FMath::Max(RefOrbit, 1.f) / FMath::Max(Planet.Orbit, 1.f));
+
+			const float OrbitAngle = FMath::Fmod(Phase0Deg + Now * BaseDegPerSec * OrbitScale, 360.0f);
+			// ----------------------------------------------------------------------
 
 			const float VisualInclination = PlanetOrbitUtils::AmplifyInclination(Planet.Inclination, 2.0f);
 			OrbitRadius = Planet.Orbit / ORBIT_TO_SCREEN;

@@ -345,6 +345,12 @@ public:
 	UPROPERTY()
 	AMusicController* MusicController;
 
+	UPROPERTY() FString UniverseId;
+
+	UPROPERTY() uint64 UniverseSeed = 0;
+
+	UPROPERTY() double UniverseTimeSeconds = 0.0;
+
 	void SetActiveUnit(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc);
 	void SetActiveElement(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATUNIT_TYPE Type, FString Loc);
 

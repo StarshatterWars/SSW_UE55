@@ -16,6 +16,7 @@ UENUM(BlueprintType)
 enum class EBodyUISizeClass : uint8 {
 	Moon,
 	Planet,
+	GasGiant,
 	Star, 
 	Jumpgate, 
 	None
@@ -3710,4 +3711,15 @@ struct FS_FormDesign : public FTableRowBase {
 		Style = 0;
 		Align = 0;
 	}
+};
+
+USTRUCT(BlueprintType)
+struct FSystemState
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FName SystemName;      // key
+	UPROPERTY() int32 OwnerIff = 0;    // or EFactionId
+	UPROPERTY() float Influence = 1.f; // optional
+	UPROPERTY() bool bContested = false;
 };

@@ -252,6 +252,7 @@ public:
 
 	/** Gets a UI image scale (in pixels) from radius using log scale */
 	static float GetUISizeFromRadius(float Radius, EBodyUISizeClass SizeClass);
+	static float GetInitialPhaseDeg(uint64 UniverseSeed, const FString& BodyKey);
 };
 
 static float MapLogRadiusToSize(float RadiusKm, float MinRadiusKm, float MaxRadiusKm, float MinPx, float MaxPx, float Power);

@@ -33,14 +33,14 @@ public:
 	void SetSelected(bool bSelected);
 	// Call from derived InitFromXActor after it sets its data struct
 	
-	void InitCommon(const FString& DisplayName, float Radius /*,TextureRenderTarget2D* RenderTarget*/);
+	void InitCommon(const FString& DisplayName, float Radius, EBodyUISizeClass SizeClass);
 
 	FOnPlanetClicked OnObjectClicked;
 	
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, UMaterialInterface* WidgetMaterial, EBodyUISizeClass SizeClass);
+	void SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, UMaterialInterface* WidgetMaterial);
 
 	UPROPERTY(meta = (BindWidgetOptional)) 
 	class UTextBlock* ObjectNameText;
@@ -59,6 +59,9 @@ protected:
 
 	UPROPERTY()
 	float CachedRadius = 0.f;
+
+	UPROPERTY()
+	float MarkerSize = 0.f;
 
 	UPROPERTY()
 	bool bSelected = false;

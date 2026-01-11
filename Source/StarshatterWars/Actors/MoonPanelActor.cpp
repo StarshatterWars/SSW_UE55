@@ -1,6 +1,5 @@
 #include "MoonPanelActor.h"
 #include "PlanetPanelActor.h"
-#include "../Foundation/SystemMapUtils.h"
 
 AMoonPanelActor::AMoonPanelActor()
 {

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "../Game/GameStructs.h"
+#include "Misc/Crc.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "SystemBodyPanelActor.generated.h"
 
@@ -12,6 +13,20 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UTexture2D;
 
+/**
+ * Base class for all system bodies (star, planet, moon) rendered
+ * in the system view. Supports:
+ *  - axial spin + tilt
+ *  - optional deterministic orbital motion (seed + time based)
+ *
+ * Star bodies typically:
+ *  - provide orbit authority (time + center)
+ *  - do NOT enable orbit movement
+ *
+ * Planets / moons:
+ *  - enable orbit
+ *  - reference an orbit authority (usually the star)
+ */
 UCLASS(Abstract)
 class STARSHATTERWARS_API ASystemBodyPanelActor : public AActor
 {
@@ -23,47 +38,131 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	// ------------------------------------------------------------
+	// UI / Rendering access
+	// ------------------------------------------------------------
+
 	float ComputeUIScale(float Radius) const;
-	
-	// --- Public accessors for UI ---
+
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UTextureRenderTarget2D* GetRenderTarget() const { return BodyRenderTarget; }
 
 	UFUNCTION(BlueprintCallable, Category = "Render")
 	UMaterialInstanceDynamic* GetMaterialInstance() const { return BodyMaterialInstance; }
 
-	// --- Optional: call after setting derived data ---
+	// Call after derived data is set (radius, tilt, etc.)
 	UFUNCTION(BlueprintCallable, Category = "Body")
-	void InitializeBody(); // Applies scale + tilt (derived provided)
+	void InitializeBody();
 
 	FRotator ComputeSpinRotation(float WorldTimeSeconds) const;
 	UTexture2D* LoadBodyTexture(FString AssetType);
 
+	// ------------------------------------------------------------
+	// ORBIT AUTHORITY (time + center)
+	// ------------------------------------------------------------
+
+	/** Stable epoch for deterministic orbital phase */
+	UPROPERTY(EditAnywhere, Category = "Orbit")
+	double OrbitEpochSeconds = 0.0;
+
+	/** Orbit speed multiplier for the whole system (1 = real time) */
+	UPROPERTY(EditAnywhere, Category = "Orbit")
+	float OrbitTimeScale = 1.0f;
+
+	/** Stable system seed (usually system name) */
+	UPROPERTY(EditAnywhere, Category = "Orbit")
+	FString SystemSeed;
+
+	/** World-space center for system orbits (star location) */
+	FORCEINLINE FVector GetOrbitCenter() const
+	{
+		return GetActorLocation();
+	}
+
+	/** Scaled orbit time used by orbiting bodies */
+	double GetOrbitTimeSeconds() const;
+
+	// ------------------------------------------------------------
+	// ORBIT (BASE SUPPORT FOR PLANETS / MOONS)
+	// ------------------------------------------------------------
+
+	/** Enable deterministic orbit movement */
+	UPROPERTY(EditAnywhere, Category = "Orbit")
+	bool bEnableOrbit = false;
+
+	/** Authority providing orbit center + time (usually the star) */
+	UPROPERTY()
+	TObjectPtr<ASystemBodyPanelActor> OrbitAuthority = nullptr;
+
+	/** Orbit radius in kilometers */
+	UPROPERTY(EditAnywhere, Category = "Orbit", meta = (EditCondition = "bEnableOrbit"))
+	float OrbitRadiusKm = 0.f;
+
+	/** Deterministic seed for phase (SystemName_BodyName) */
+	UPROPERTY(EditAnywhere, Category = "Orbit", meta = (EditCondition = "bEnableOrbit"))
+	FString OrbitSeed;
+
+	/** If true, orbit around a custom center (e.g. moon around planet) */
+	UPROPERTY(EditAnywhere, Category = "Orbit", meta = (EditCondition = "bEnableOrbit"))
+	bool bUseCustomOrbitCenter = false;
+
+	UPROPERTY(EditAnywhere, Category = "Orbit", meta = (EditCondition = "bEnableOrbit && bUseCustomOrbitCenter"))
+	FVector CustomOrbitCenter = FVector::ZeroVector;
+
+	/** Game-scaled orbital speed (cm/s) at ReferenceRadiusKm */
+	UPROPERTY(EditAnywhere, Category = "Orbit", meta = (EditCondition = "bEnableOrbit"))
+	float BaseSpeedCmPerSec = 40000.f;
+
+	/** Reference radius (km) used for sqrt(Ref / r) scaling */
+	UPROPERTY(EditAnywhere, Category = "Orbit", meta = (EditCondition = "bEnableOrbit"))
+	float ReferenceRadiusKm = 1.0e6f;
+
+	/** Initialize deterministic orbit parameters */
+	UFUNCTION(BlueprintCallable, Category = "Orbit")
+	void InitializeOrbit(
+		ASystemBodyPanelActor* InAuthority,
+		float InOrbitRadiusKm,
+		const FString& InOrbitSeed
+	);
+
+	// ------------------------------------------------------------
+	// BODY / SPIN DATA (existing)
+	// ------------------------------------------------------------
+
 	bool bApplyAxisTilt = true;
 	float RotationSpeed = 20.f;
-	float BodyTilt;
-	double BodyRadius;
+	float BodyTilt = 0.f;
+	double BodyRadius = 0.0;
 	FString BodyName;
 	EBodyUISizeClass BodyType;
 
 protected:
-	// --- One-time init called during deferred spawn before FinishSpawning ---
+	// ------------------------------------------------------------
+	// One-time setup
+	// ------------------------------------------------------------
+
 	void InitBody(FString AssetType);
 
-	// --- Derived class hooks ---
+	// ------------------------------------------------------------
+	// Derived class hooks
+	// ------------------------------------------------------------
+
 	virtual FString GetBodyName() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBodyName, return TEXT("Body"););
 	virtual float GetBodyRadius() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBodyRadius, return 1.0f;);
 	virtual float GetBodyTiltDegrees() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBodyTiltDegrees, return 0.0f;);
 	virtual UMaterialInterface* GetBaseMaterial() const PURE_VIRTUAL(ASystemBodyPanelActor::GetBaseMaterial, return nullptr;);
-	
+
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
-	// Render target resolution computation: derived implements (planet vs moon)
+	// ------------------------------------------------------------
+	// Render helpers
+	// ------------------------------------------------------------
+
 	int32 ComputeRenderTargetResolution(float Radius) const;
-	// Whether to apply computed scale (sometimes you may want fixed mesh scale)
+
 	UPROPERTY(EditAnywhere, Category = "Body")
 	bool bApplyUIScale = true;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Body")
 	USceneComponent* RootScene = nullptr;
 
@@ -73,7 +172,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Body")
 	USceneCaptureComponent2D* SceneCapture = nullptr;
 
-	// Render state
 	UPROPERTY()
 	UMaterialInstanceDynamic* BodyMaterialInstance = nullptr;
 
@@ -84,6 +182,18 @@ protected:
 	FString TextureName;
 
 private:
+	// ------------------------------------------------------------
+	// Orbit internals
+	// ------------------------------------------------------------
+
+	static float HashTo01(const FString& Key);
+	void UpdateOrbitLocation(double NowSeconds);
+	FVector GetOrbitCenterForThisBody() const;
+
+	// ------------------------------------------------------------
+	// Render target
+	// ------------------------------------------------------------
+
 	UPROPERTY(BlueprintReadOnly, Category = "Render", meta = (AllowPrivateAccess = true))
 	UTextureRenderTarget2D* BodyRenderTarget = nullptr;
 };

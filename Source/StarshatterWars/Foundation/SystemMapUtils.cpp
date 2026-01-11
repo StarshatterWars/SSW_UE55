@@ -862,11 +862,40 @@ float SystemMapUtils::GetUISizeFromRadius(float RadiusKm, EBodyUISizeClass SizeC
 
 	// UI pixel range (tune to taste)
 	constexpr float MinPx = 16.f;   // smallest moon still visible
-	constexpr float MaxPx = 96.f;  // allow giants to feel giant
+	constexpr float MaxPx = 128.f;  // allow giants to feel giant
 
 	const float SizePx = FMath::Lerp(MinPx, MaxPx, (float)T);
 	return FMath::Clamp(SizePx, MinPx, MaxPx);
 }
+
+static uint32 HashStringStable(const FString& S)
+{
+	// Stable across runs for same string
+	return FCrc::StrCrc32(*S);
+}
+
+static uint32 HashCombine32(uint32 A, uint32 B)
+{
+	return HashCombineFast(A, B);
+}
+
+float SystemMapUtils::GetInitialPhaseDeg(uint64 UniverseSeed, const FString& BodyKey)
+{
+	const uint32 SeedLo = uint32(UniverseSeed & 0xFFFFFFFFull);
+	const uint32 SeedHi = uint32((UniverseSeed >> 32) & 0xFFFFFFFFull);
+
+	uint32 H = HashStringStable(BodyKey);
+	H = HashCombine32(H, SeedLo);
+	H = HashCombine32(H, SeedHi);
+
+	// Map to [0,360)
+	const float U = (H / 4294967296.0f); // [0,1)
+	return U * 360.0f;
+}
+
+
+
+
 
 
 

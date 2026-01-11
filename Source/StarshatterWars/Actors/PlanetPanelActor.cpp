@@ -1,6 +1,5 @@
 #include "PlanetPanelActor.h"
-#include "../Foundation/PlanetUtils.h"
-#include "../Foundation/SystemMapUtils.h"
+
 
 APlanetPanelActor::APlanetPanelActor()
 {
@@ -11,7 +10,9 @@ APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
 	const FVector& Location,
 	const FRotator& Rotation,
 	TSubclassOf<APlanetPanelActor> ActorClass,
-	FS_PlanetMap PlanetInfo
+	const FS_PlanetMap& PlanetInfo,
+	ASystemBodyPanelActor* OrbitAuthority,
+	const FString& SystemSeed
 )
 {
 	if (!World || !*ActorClass) return nullptr;
@@ -29,9 +30,30 @@ APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
 	NewActor->BodyName = PlanetInfo.Name;
 	NewActor->BodyType = EBodyUISizeClass::Planet;
 	NewActor->TextureName = PlanetInfo.Texture;
-	NewActor->InitBody("Planet");
-	NewActor->FinishSpawning(FTransform(Rotation, Location));
 
+	// Your existing setup
+	NewActor->InitBody("Planet");
+
+	// -------------------- ORBIT SETUP (NEW) --------------------
+	// Enable orbit here so base Tick moves the actor.
+	if (OrbitAuthority)
+	{
+		// Radius used for orbit must be the orbital radius (km), not body radius.
+		// I’m assuming FS_PlanetMap has OrbitKm (or Orbit). Use your actual field name.
+		const float OrbitKm = PlanetInfo.Orbit; // <-- adjust field name if different
+
+		NewActor->InitializeOrbit(
+			OrbitAuthority,
+			OrbitKm,
+			SystemSeed + TEXT("_") + PlanetInfo.Name
+		);
+
+		// Optional: keep planet orbits in XY plane at star's Z (or system plane)
+		// If you want a system-plane Z offset, set CustomOrbitCenter on authority instead.
+	}
+	// -----------------------------------------------------------
+
+	NewActor->FinishSpawning(FTransform(Rotation, Location));
 	return NewActor;
 }
 

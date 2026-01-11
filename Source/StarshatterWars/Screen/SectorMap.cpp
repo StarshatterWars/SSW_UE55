@@ -535,61 +535,106 @@ void USectorMap::HighlightSelectedSystem()
 	}
 }
 
+
 void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 {
+	// You cannot add UI to a null canvas
+	if (!MapCanvas)
+	{
+		UE_LOG(LogTemp, Error, TEXT("USectorMap::AddCentralPlanet() MapCanvas is null"));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Error, TEXT("USectorMap::AddCentralPlanet() World is null"));
+		return;
+	}
+
+	// -------------------- CENTRAL PLANET ACTOR --------------------
 	if (PlanetActorClass)
 	{
+		// Destroy previous actor cleanly
 		if (PlanetActor)
 		{
 			PlanetActor->Destroy();
 			PlanetActor = nullptr;
 		}
 
-		FVector ActorLocation = FVector::ZeroVector;  // Adjust position as needed
-		FRotator ActorRotation = FRotator::ZeroRotator;
+		const FVector ActorLocation = FVector::ZeroVector;
+		const FRotator ActorRotation = FRotator::ZeroRotator;
 
+		// FIX: call the new signature (OrbitAuthority + SystemSeed)
 		PlanetActor = APlanetPanelActor::SpawnWithPlanetData(
-			GetWorld(),
+			World,
 			ActorLocation,
 			ActorRotation,
 			PlanetActorClass,
-			Planet
+			Planet,
+			/*OrbitAuthority*/ nullptr,   // sector view: central planet does not orbit
+			/*SystemSeed*/    Planet.Name // stable seed for deterministic UI/orbit math if needed
 		);
-	
+
 		if (PlanetActor)
 		{
+			// In sector view, the central planet should not orbit.
+			PlanetActor->bEnableOrbit = false;
+			PlanetActor->OrbitEpochSeconds = World->GetTimeSeconds();
+			PlanetActor->OrbitTimeScale = 1.0f;
+			PlanetActor->SystemSeed = Planet.Name;
+
 			SpawnedPlanetActors.Add(PlanetActor);
 		}
-	}
-	// Planet marker
-	if (PlanetMarkerClass)
-	{		
-		if (PlanetMarker) {
-			PlanetMarker->RemoveFromParent();
-			PlanetMarker = nullptr;
-		}
-
-		PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
-		if (PlanetMarker)
+		else
 		{
-			if (UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(PlanetMarker))
-			{
-				PlanetSlot->SetAutoSize(true);
-				PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-				PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-				PlanetSlot->SetPosition(FVector2D(0.f, 0.f));
-				PlanetSlot->SetZOrder(12);
-				PlanetSlot->SetSize(FVector2D(64.f, 64.f));
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
-
-			PlanetMarker->InitFromPlanetActor(Planet, PlanetActor);
-			PlanetMarker->OnObjectClicked.AddDynamic(this, &USectorMap::HandlePlanetClicked);
-
-			PlanetMarkers.Add(Planet.Name, PlanetMarker);
+			UE_LOG(LogTemp, Error, TEXT("USectorMap::AddCentralPlanet() Failed to spawn planet actor for %s"), *Planet.Name);
 		}
 	}
+
+	// -------------------- CENTRAL PLANET MARKER --------------------
+	if (!PlanetMarkerClass)
+	{
+		return;
+	}
+
+	// Remove existing marker
+	if (PlanetMarker)
+	{
+		PlanetMarker->RemoveFromParent();
+		PlanetMarker = nullptr;
+	}
+
+	PlanetMarker = CreateWidget<UPlanetMarkerWidget>(this, PlanetMarkerClass);
+	if (!PlanetMarker)
+	{
+		UE_LOG(LogTemp, Error, TEXT("USectorMap::AddCentralPlanet() Failed to create PlanetMarker widget for %s"), *Planet.Name);
+		return;
+	}
+
+	UCanvasPanelSlot* PlanetSlot = MapCanvas->AddChildToCanvas(PlanetMarker);
+	if (!PlanetSlot)
+	{
+		UE_LOG(LogTemp, Error, TEXT("USectorMap::AddCentralPlanet() Failed to add PlanetMarker to MapCanvas"));
+		PlanetMarker->RemoveFromParent();
+		PlanetMarker = nullptr;
+		return;
+	}
+
+	PlanetSlot->SetAutoSize(true);
+	PlanetSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+	PlanetSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+	PlanetSlot->SetPosition(FVector2D(0.f, 0.f));
+	PlanetSlot->SetZOrder(12);
+	PlanetSlot->SetSize(FVector2D(64.f, 64.f));
+
+	UE_LOG(LogTemp, Warning, TEXT("Adding Central Planet %s"), *Planet.Name);
+
+	PlanetMarker->InitFromPlanetActor(Planet, PlanetActor);
+	PlanetMarker->OnObjectClicked.AddDynamic(this, &USectorMap::HandlePlanetClicked);
+
+	PlanetMarkers.Remove(Planet.Name);
+	PlanetMarkers.Add(Planet.Name, PlanetMarker);
 }
 
 float USectorMap::GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const

@@ -12,7 +12,7 @@ void USystemMarkerWidget::SetSelected(bool isSelected)
 	}
 }
 
-void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius)
+void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius, EBodyUISizeClass SizeClass)
 {
 	SetVisibility(ESlateVisibility::Visible);
 
@@ -20,11 +20,12 @@ void USystemMarkerWidget::InitCommon(const FString& DisplayName, float Radius)
 	CachedName = DisplayName;
 	CachedRadius = Radius;
 
-	SetToolTipText(FText::FromString(CachedName));
+	MarkerSize = SystemMapUtils::GetUISizeFromRadius(Radius / 10, SizeClass);
+	SetToolTipText(FText::FromString(DisplayName));
 
 	if (ObjectNameText)
 	{
-		ObjectNameText->SetText(FText::FromString(CachedName));
+		ObjectNameText->SetText(FText::FromString(DisplayName));
 		ObjectNameText->SetColorAndOpacity(FLinearColor::White);
 	}
 }
@@ -39,17 +40,16 @@ FReply USystemMarkerWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
-void USystemMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, UMaterialInterface* WidgetMaterial, EBodyUISizeClass SizeClass)
+void USystemMarkerWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, UMaterialInterface* WidgetMaterial)
 {
 	if (InRT && ObjectImage && WidgetMaterial)
 	{
-		float SizePx = SystemMapUtils::GetUISizeFromRadius(CachedRadius / 2, SizeClass);
 		SystemMapUtils::ApplyRenderTargetToImage(
 			this,
 			ObjectImage,
 			WidgetMaterial,
 			InRT,
-			FVector2D(SizePx, SizePx)
+			FVector2D(MarkerSize, MarkerSize)
 		);
 	}
 }
