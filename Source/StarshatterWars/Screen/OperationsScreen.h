@@ -124,6 +124,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 	class UTextBlock* GameTimeText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* CampaignTPlusText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GalaxyNameText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* SystemNameText;

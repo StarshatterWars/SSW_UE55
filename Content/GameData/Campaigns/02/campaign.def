@@ -37,6 +37,7 @@ action_groups: 83
 index: 1
 available: true
 image: main
+date:  "01/00:00:00"
 
 combatant: {
 	name:    "Terellian",

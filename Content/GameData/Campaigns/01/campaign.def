@@ -33,6 +33,7 @@ scripted: true
 index: 0
 available: true
 image: main
+date:  "01/00:00:00"
 
 combatant_groups: 0
 action_groups: 1

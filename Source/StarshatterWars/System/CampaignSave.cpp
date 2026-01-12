@@ -19,20 +19,17 @@ void UCampaignSave::InitializeCampaignClock(uint64 UniverseTimeSecondsNow)
 
 uint64 UCampaignSave::GetTPlusSeconds(uint64 UniverseTimeSecondsNow) const
 {
-	if (!bInitialized)
+	if (CampaignStartUniverseSeconds == 0)
 	{
-		return NULL;
+		return 0ULL;
 	}
 
-	const int64 Now = (int64)UniverseTimeSecondsNow;
-
-	// Guard against underflow / weird load ordering
-	if (Now <= CampaignStartUniverseSeconds)
+	if (UniverseTimeSecondsNow <= CampaignStartUniverseSeconds)
 	{
-		return NULL;
+		return 0ULL;
 	}
 
-	return (uint64)(Now - CampaignStartUniverseSeconds);
+	return UniverseTimeSecondsNow - CampaignStartUniverseSeconds;
 }
 
 FString UCampaignSave::FormatTPlus_DD_HHMMSS(uint64 TPlusSeconds)

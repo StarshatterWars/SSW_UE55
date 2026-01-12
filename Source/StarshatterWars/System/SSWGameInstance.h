@@ -614,6 +614,11 @@ public:
 	bool bUniverseAutosaveRequested = false;
 	bool bUniverseLoaded;
 
+	UFUNCTION(BlueprintCallable, Category = "Time")
+	FString GetCampaignTPlusString() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Time")
+	FString GetCampaignAndUniverseTimeLine() const;
 	// =====================================================================
 	// Campaign Save (in-memory)
 	// =====================================================================

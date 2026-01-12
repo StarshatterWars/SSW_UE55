@@ -50,6 +50,9 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	class UTextBlock* LocationSystemText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationRegionText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* CampaignStartTimeText;
+
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* CampaignImage;

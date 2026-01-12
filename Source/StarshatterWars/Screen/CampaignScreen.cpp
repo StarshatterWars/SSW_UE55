@@ -198,6 +198,9 @@ void UCampaignScreen::SetSelectedData(int selected)
 		CampaignImage->SetBrush(Brush);
 	}
 
+	if (CampaignStartTimeText) {
+		CampaignStartTimeText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Start));
+	}
 	if (DescriptionText) {
 		DescriptionText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Description));
 	}

@@ -2782,3 +2782,26 @@ AMusicController* USSWGameInstance::GetMusicController()
 	// If you don’t have one, leave it null and just guard calls.
 	return nullptr;
 }
+
+FString USSWGameInstance::GetCampaignTPlusString() const
+{
+	if (CampaignSave)
+	{
+		// Uses CampaignSave anchor + UniverseTimeSeconds
+		return CampaignSave->GetTPlusDisplay(UniverseTimeSeconds);
+	}
+
+	// Not loaded yet
+	return TEXT("T+ --/--:--:--");
+}
+
+FString USSWGameInstance::GetCampaignAndUniverseTimeLine() const
+{
+	// Example composite line you can show in Intel header
+	// "UNIVERSE: 2228-01-01 12:34:56   |   T+ 01/00:10:03"
+	return FString::Printf(
+		TEXT("UNIVERSE: %s   |   T+ %s"),
+		*GetUniverseDateTimeString(),
+		*GetCampaignTPlusString()
+	);
+}

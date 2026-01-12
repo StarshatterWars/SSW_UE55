@@ -1967,6 +1967,8 @@ struct FS_Campaign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Situation;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Start;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FString> Orders;	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool bScripted;

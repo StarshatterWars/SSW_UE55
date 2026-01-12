@@ -260,10 +260,20 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	}
 
 	if (GameTimeText) {
-		FString CustomDate = SSWInstance->GetUniverseDateTimeString();
+		const FString CustomDate = SSWInstance->GetUniverseDateTimeString();
 		GameTimeText->SetText(FText::FromString(*CustomDate));
 	}
-	AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
+
+	if (CampaignTPlusText)
+	{
+		const FString TPlus = "T+" + SSWInstance->GetCampaignTPlusString();
+		CampaignTPlusText->SetText(FText::FromString(TPlus));
+	}
+
+	if (AudioButton)
+	{
+		AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
+	}
 }
 
 void UOperationsScreen::OnSelectButtonClicked()

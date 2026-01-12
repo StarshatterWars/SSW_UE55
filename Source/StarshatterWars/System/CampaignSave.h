@@ -42,7 +42,7 @@ public:
 
 	/** UniverseTimeSeconds when campaign began (anchor for T+). */
 	UPROPERTY()
-	int64 CampaignStartUniverseSeconds = 0;
+	uint64 CampaignStartUniverseSeconds = 0;
 
 	/** Set true after InitializeClock is called at campaign start. */
 	UPROPERTY()

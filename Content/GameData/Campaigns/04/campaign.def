@@ -24,6 +24,7 @@ region: Adonis
 index: 3
 available: true
 image: main
+date:  "01/00:00:00"
 
 combatant_groups: 5
 

@@ -321,6 +321,10 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 					GetDefText(MainImage, def, filename);
 					NewCampaignData.MainImage = FString(MainImage);
 				}
+				else if (def->name()->value() == "date") {
+					GetDefText(start, def, filename);
+					NewCampaignData.Start = FString(start);
+				}
 				else if (def->name()->value() == "orders") {
 						GetDefText(orders, def, filename);
 						OrdersArray.Add(FString(orders));
