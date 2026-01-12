@@ -127,7 +127,15 @@ void UMenuDlg::NativeConstruct()
 void UMenuDlg::OnStartButtonClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (!SSWInstance)
+		return;
+
 	SSWInstance->PlayAcceptSound(this);
+
+	// Ensure SelectedCampaignIndex/RowName/DisplayName + CampaignSave are valid
+	SSWInstance->EnsureCampaignSaveLoaded();
+
+	// Now safe to go to Ops
 	SSWInstance->LoadOperationsScreen();
 }
 

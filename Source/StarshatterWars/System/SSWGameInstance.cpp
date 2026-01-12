@@ -1165,14 +1165,19 @@ void USSWGameInstance::PlaySoundFromFile(FString& AudioPath)
 		return;
 	}
 
-	if (AMusicController* Music = GetMusicController(this))
+	if (AMusicController* Music = GetMusicController())
 	{
 		Music->PlayUISound(Sound);
 	}
 }
 
-bool USSWGameInstance::IsSoundPlaying() {
-	return MusicController->IsSoundPlaying();
+bool USSWGameInstance::IsSoundPlaying()
+{
+	if (AMusicController* MC = GetMusicController())
+	{
+		return MC->IsSoundPlaying();
+	}
+	return false;
 }
 
 void USSWGameInstance::InitializeAudioSystem()
@@ -2660,13 +2665,120 @@ UCampaignSave* USSWGameInstance::LoadOrCreateSelectedCampaignSave()
 
 void USSWGameInstance::EnsureCampaignSaveLoaded()
 {
+	// If already loaded, nothing to do
+	if (CampaignSave)
+		return;
+
+	// If player has never selected a campaign, do not start silently.
+	// You can decide to auto-pick 0, but your earlier requirement implied
+	// "Start should work" (no crash) — so we will default to 0 if unset.
+	int32 UiIndex = PlayerInfo.Campaign;
+	if (UiIndex < 0)
+	{
+		UiIndex = 0;
+		PlayerInfo.Campaign = 0; // optional: persist later if you want
+	}
+
+	// ---- Determine RowName + DisplayName + 1-based CampaignIndex ----
+	SelectedCampaignRowName = NAME_None;
+	SelectedCampaignDisplayName = TEXT("");
+
+	// Preferred: look up by DT RowNames (stable)
+	if (CampaignDataTable)
+	{
+		TArray<FName> RowNames = CampaignDataTable->GetRowNames();
+
+		// We need a deterministic mapping from UiIndex -> row.
+		// Your UI dropdown is now built from the DataTable, so UiIndex should match that order.
+		// BUT DataTables do not guarantee row order; safest is to sort by FS_Campaign::Index.
+		struct FTempCampaignRef
+		{
+			int32 Index0 = 0;
+			FName RowName = NAME_None;
+			FString Name;
+			bool bAvailable = false;
+		};
+
+		TArray<FTempCampaignRef> Sorted;
+		Sorted.Reserve(RowNames.Num());
+
+		for (const FName& RN : RowNames)
+		{
+			const FS_Campaign* Row = CampaignDataTable->FindRow<FS_Campaign>(RN, TEXT("EnsureCampaignSaveLoaded"));
+			if (!Row)
+				continue;
+
+			FTempCampaignRef Ref;
+			Ref.Index0 = Row->Index;     // 0-based in your struct
+			Ref.RowName = RN;
+			Ref.Name = Row->Name;
+			Ref.bAvailable = Row->bAvailable;
+			Sorted.Add(Ref);
+		}
+
+		Sorted.Sort([](const FTempCampaignRef& A, const FTempCampaignRef& B)
+			{
+				return A.Index0 < B.Index0;
+			});
+
+		UiIndex = FMath::Clamp(UiIndex, 0, Sorted.Num() - 1);
+
+		if (Sorted.IsValidIndex(UiIndex))
+		{
+			SelectedCampaignRowName = Sorted[UiIndex].RowName;
+			SelectedCampaignDisplayName = Sorted[UiIndex].Name;
+
+			// Convert UI 0-based -> campaign 1-based for save slot naming
+			SelectedCampaignIndex = Sorted[UiIndex].Index0 + 1;
+		}
+	}
+	else
+	{
+		// Fallback: use cached CampaignData array (less stable, but better than crashing)
+		if (CampaignData.Num() > 0)
+		{
+			UiIndex = FMath::Clamp(UiIndex, 0, CampaignData.Num() - 1);
+			SelectedCampaignDisplayName = CampaignData[UiIndex].Name;
+			SelectedCampaignIndex = UiIndex + 1; // 1-based slot index
+		}
+	}
+
+	// If we still don't have a campaign, force user back to campaign screen
+	if (SelectedCampaignIndex < 1)
+	{
+		ShowCampaignScreen();
+		return;
+	}
+
+	// ---- Load/Create the campaign save ----
+	LoadOrCreateSelectedCampaignSave();
+
+	// If load failed, do not proceed to Operations (avoid crash)
 	if (!CampaignSave)
 	{
-		// If selection isn't set, default to campaign 1
-		if (SelectedCampaignIndex < 1)
-		{
-			SelectedCampaignIndex = 1;
-		}
-		LoadOrCreateSelectedCampaignSave();
+		UE_LOG(LogTemp, Error, TEXT("EnsureCampaignSaveLoaded: Failed to load/create CampaignSave"));
+		ShowCampaignScreen();
 	}
+}
+
+AMusicController* USSWGameInstance::GetMusicController()
+{
+	if (MusicController && IsValid(MusicController))
+	{
+		return MusicController;
+	}
+
+	// Try to find an existing one in the world
+	if (UWorld* World = GetWorld())
+	{
+		for (TActorIterator<AMusicController> It(World); It; ++It)
+		{
+			MusicController = *It;
+			return MusicController;
+		}
+	}
+
+	// Optional: spawn if you have a class to spawn
+	// If you don’t have one, leave it null and just guard calls.
+	return nullptr;
 }
