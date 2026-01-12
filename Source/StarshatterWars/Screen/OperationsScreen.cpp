@@ -495,6 +495,7 @@ void UOperationsScreen::PopulateIntelList()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
+	
 	if (!IntelList) return;
 
 	IntelList->ClearListItems();
@@ -503,6 +504,7 @@ void UOperationsScreen::PopulateIntelList()
 	for (int32 i = 0; i < SSWInstance->GetActiveCampaign().Action.Num(); ++i)
 	{
 		if (SSWInstance->GetActiveCampaign().Action[i].Type == "event") {
+			if (SSWInstance->GetActiveCampaign().Action[i].Date <= SSWInstance->GetCampaignTPlusString()) { // Show only Active Actions
 			UIntelListObject* ListItem = NewObject<UIntelListObject>();
 			FS_CampaignAction ActiveAction;
 
@@ -532,6 +534,7 @@ void UOperationsScreen::PopulateIntelList()
 			IntelList->GetIndexForItem(ListItem);
 			ActionList.Add(ActiveAction);
 			IntelList->AddItem(ListItem);
+			}
 		}
 	}
 }
