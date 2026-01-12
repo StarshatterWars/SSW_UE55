@@ -23,5 +23,8 @@ public:
 
 	// Mutable layer:
 	UPROPERTY() TMap<FName, FSystemState> SystemStates;
+
+	UPROPERTY(SaveGame)
+	int64 UniverseBaseUnixSeconds = 0;  // base “Jan 1, 2228 00:00:00” in Unix seconds
 	
 };

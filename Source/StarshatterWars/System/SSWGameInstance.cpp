@@ -19,6 +19,7 @@
 #include "../Screen/CampaignLoading.h"
 
 #include "../Game/PlayerSaveGame.h"
+#include "UniverseSaveGame.h" 
 #include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
 #include "Misc/FileHelper.h"
@@ -266,6 +267,8 @@ void USSWGameInstance::Init()
 
 	PlayerSaveName = "PlayerSaveSlot";
 	PlayerSaveSlot = 0;
+	UniverseSaveSlotName = "Universe_Main";
+	UniverseSaveUserIndex = 0;
 
 	FDateTime GameDate(2228, 1, 1);
 	SetGameTime(GameDate.ToUnixTimestamp());
@@ -302,6 +305,14 @@ void USSWGameInstance::Init()
 	CreateOOBTable();
 	SetupMusicController();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
+
+	// Re-arm universe clock after every map load (timers are per-world)
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
+		this, &USSWGameInstance::HandlePostLoadMap
+	);
+
+	// Start once for the current world too (covers first loaded map)
+	StartUniverseClock();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -334,7 +345,7 @@ void USSWGameInstance::ReadCampaignData()
 
 void USSWGameInstance::UpdateUniverseTime(float DeltaSeconds)
 {
-	UniverseTimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds * UniverseTimeScale);
+	UniverseTimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds * TimeScale);
 }
 
 void USSWGameInstance::UpdatePlayerPlaytime(float DeltaSeconds)
@@ -2420,4 +2431,164 @@ void USSWGameInstance::EnsureSystemOverview(
 		LastOverviewSystemName = StarMap.Name;
 		RebuildSystemOverview(StarMap);
 	}
+}
+
+void USSWGameInstance::SetTimeScale(double NewTimeScale)
+{
+	TimeScale = FMath::Clamp(NewTimeScale, 0.0, 1.0e7);
+	UE_LOG(LogTemp, Warning, TEXT("TimeScale set to %.2f"), TimeScale);
+}
+
+void USSWGameInstance::StartUniverseClock()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StartUniverseClock: World is null"));
+		return;
+	}
+
+	if (TimeStepSeconds <= 0.0)
+	{
+		TimeStepSeconds = 1.0;
+	}
+
+	FTimerManager& TM = World->GetTimerManager();
+
+	// Prevent duplicates
+	if (TM.IsTimerActive(UniverseTimerHandle))
+	{
+		TM.ClearTimer(UniverseTimerHandle);
+	}
+
+	TM.SetTimer(
+		UniverseTimerHandle,
+		this,
+		&USSWGameInstance::OnUniverseClockTick,
+		(float)TimeStepSeconds,
+		true
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("Universe clock started: Active=%s Step=%.3f TimeScale=%.2f"),
+		TM.IsTimerActive(UniverseTimerHandle) ? TEXT("TRUE") : TEXT("FALSE"),
+		TimeStepSeconds,
+		TimeScale);
+}
+
+void USSWGameInstance::StopUniverseClock()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(UniverseTimerHandle);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Universe clock stopped"));
+}
+
+void USSWGameInstance::OnUniverseClockTick()
+{
+	// Accumulate fractional universe seconds
+	UniverseTimeAccumulator += TimeStepSeconds * TimeScale;
+
+	const uint64 WholeSeconds = (uint64)FMath::FloorToDouble(UniverseTimeAccumulator);
+	if (WholeSeconds > 0)
+	{
+		UniverseTimeSeconds += WholeSeconds;
+		UniverseTimeAccumulator -= (double)WholeSeconds;
+	}
+
+	// Player playtime (real time)
+	PlayerPlaytimeSeconds += (int64)FMath::RoundToDouble(TimeStepSeconds);
+
+	// Autosave (throttled inside SaveUniverse)
+	SaveUniverse();
+	bUniverseAutosaveRequested = false;
+}
+
+void USSWGameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
+{
+	// Timers belong to the loaded UWorld, so restart the clock after travel
+	StartUniverseClock();
+
+	UE_LOG(LogTemp, Log, TEXT("HandlePostLoadMap: restarted universe clock for World=%s"),
+		*GetNameSafe(LoadedWorld));
+}
+
+void USSWGameInstance::SetUniverseSaveContext(const FString& SlotName, int32 UserIndex, UUniverseSaveGame* LoadedSave)
+{
+	UniverseSaveSlotName = SlotName;
+	UniverseSaveUserIndex = UserIndex;
+	CachedUniverseSave = LoadedSave;
+
+	UE_LOG(LogTemp, Log, TEXT("Universe save context set: Slot=%s UserIndex=%d SaveObj=%s"),
+		*UniverseSaveSlotName, UniverseSaveUserIndex, *GetNameSafe(CachedUniverseSave.Get()));
+}
+
+bool USSWGameInstance::SaveUniverse()
+{
+	UE_LOG(LogTemp, Error, TEXT("in USSWGameInstance::SaveUniverse()"));
+
+	// Guard: must have valid save context
+	if (UniverseId.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("SaveUniverse: UniverseId is empty (not loaded?)"));
+		return false;
+	}
+
+	// Create a NEW object each time (no caching, no GC surprises)
+	UUniverseSaveGame* SaveObj = Cast<UUniverseSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UUniverseSaveGame::StaticClass())
+	);
+	if (!SaveObj)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SaveUniverse: CreateSaveGameObject failed"));
+		return false;
+	}
+
+	SaveObj->UniverseId = UniverseId;
+	SaveObj->UniverseSeed = UniverseSeed;
+	SaveObj->UniverseBaseUnixSeconds = UniverseBaseUnixSeconds;
+	SaveObj->UniverseTimeSeconds = UniverseTimeSeconds;
+
+	// Use slot saving first (simplest + safest)
+	const FString Slot = GetUniverseSlotName();   // MUST return a valid slot
+	constexpr int32 UserIndex = 0;
+
+	const bool bOK = UGameplayStatics::SaveGameToSlot(SaveObj, Slot, UserIndex);
+	UE_LOG(LogTemp, Warning, TEXT("SaveUniverse: slot=%s ok=%d time=%llu"),
+		*Slot, bOK ? 1 : 0, (unsigned long long)UniverseTimeSeconds);
+
+	return bOK;
+}
+
+void USSWGameInstance::RequestUniverseAutosave()
+{
+	bUniverseAutosaveRequested = true;
+}
+
+bool USSWGameInstance::SavePlayer(bool bForce)
+{
+	// call your existing SaveGame(PlayerSaveName, PlayerSaveSlot) here
+	// return success/failure from your SaveGame implementation
+	SaveGame(PlayerSaveName, PlayerSaveSlot, PlayerInfo);
+	return true; // replace if your SaveGame returns a bool
+}
+
+FDateTime USSWGameInstance::GetUniverseDateTime() const
+{
+	const int64 Base = (UniverseBaseUnixSeconds > 0)
+		? UniverseBaseUnixSeconds
+		: FDateTime(2228, 1, 1).ToUnixTimestamp();
+
+	const uint64 Elapsed = UniverseTimeSeconds;
+	const int64 ElapsedI64 = (Elapsed > (uint64)MAX_int64) ? MAX_int64 : (int64)Elapsed;
+
+	return FDateTime::FromUnixTimestamp(Base + ElapsedI64);
+}
+
+FString USSWGameInstance::GetUniverseDateTimeString() const
+{
+	// Example: "2228-01-15 13:42:05"
+	const FDateTime DT = GetUniverseDateTime();
+	return DT.ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 }

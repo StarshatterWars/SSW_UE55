@@ -260,7 +260,7 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	}
 
 	if (GameTimeText) {
-		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
+		FString CustomDate = SSWInstance->GetUniverseDateTimeString();
 		GameTimeText->SetText(FText::FromString(*CustomDate));
 	}
 	AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());

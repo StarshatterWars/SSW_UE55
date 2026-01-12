@@ -26,7 +26,7 @@
 #include "Misc/TimeSpan.h"
 
 #include "Sound/SoundBase.h"
-
+#include "UniverseSaveGame.h" // your class
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "SSWGameInstance.generated.h"
 
@@ -346,20 +346,68 @@ public:
 	AMusicController* MusicController;
 
 	// Universe time
-	UPROPERTY(EditAnywhere, Category = "Time") 
+	UPROPERTY()
 	FString UniverseId;
-	UPROPERTY(EditAnywhere, Category = "Time")
+	UPROPERTY()
 	uint64 UniverseSeed = 0;
-	UPROPERTY(EditAnywhere, Category = "Time") 
+	UPROPERTY()
 	uint64 UniverseTimeSeconds = 0;
-	UPROPERTY(EditAnywhere, Category = "Time")
-	double UniverseTimeScale = 60.0; // 1 real second = 60 universe seconds
+	UPROPERTY()
+	double UniverseTimeAccumulator = 0.0;
+	FTimerHandle UniverseTimerHandle;
 
 	// Player time
-	UPROPERTY(EditAnywhere, Category = "Time")
+	UPROPERTY()
 	int64 PlayerPlaytimeSeconds = 0;
-	UPROPERTY(EditAnywhere, Category = "Time")
+	UPROPERTY()
 	bool bCountPlaytimeWhilePaused = false;
+
+	/** 1.0 = real time, 60 = 1 min/sec, 3600 = 1 hr/sec */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
+	double TimeScale = 60.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
+	double TimeStepSeconds = 1.0;
+
+	UFUNCTION()
+	void SetTimeScale(double NewTimeScale);
+	UFUNCTION()
+	void StartUniverseClock();
+	UFUNCTION()
+	void StopUniverseClock();
+	UFUNCTION()
+	void OnUniverseClockTick();
+
+	UFUNCTION()
+	double GetTimeScale() const { return TimeScale; }
+
+	// Universe save slot (provided by GameLoader once)
+	FString UniverseSaveSlotName;
+	int32 UniverseSaveUserIndex = 0;
+
+	void SetUniverseSaveContext(const FString& SlotName, int32 UserIndex, UUniverseSaveGame* LoadedSave);
+
+	// Save throttling
+	double LastUniverseSaveRealSeconds = 0.0;
+	double MinSecondsBetweenUniverseSaves = 10.0;
+
+	int64 UniverseBaseUnixSeconds = 0;
+
+	// Conversion helpers
+	FDateTime GetUniverseDateTime() const;
+	FString GetUniverseDateTimeString() const;
+
+	// Universe save API
+	bool SaveUniverse();
+	bool SavePlayer(bool bForce = false);   // optional wrapper for your existing SaveGame()
+	void RequestUniverseAutosave();         // optional (sets a flag)
+
+	// Cached universe save object (optional but recommended)
+	TObjectPtr<class UUniverseSaveGame> CachedUniverseSave = nullptr;
+
+	bool bUniverseAutosaveRequested = false;
+	// Universe save slot helper
+	FString GetUniverseSlotName() const { return TEXT("Universe_Main"); }
 
 	void SetActiveUnit(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc);
 	void SetActiveElement(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATUNIT_TYPE Type, FString Loc);
@@ -454,6 +502,7 @@ protected:
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 
 	private:
+		
 		UPROPERTY()
 		bool bUniverseLoaded;
 
@@ -485,6 +534,8 @@ protected:
 
 		void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 		void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
+
+		void HandlePostLoadMap(UWorld* LoadedWorld);
 		
 		UFUNCTION()
 		void RemoveScreens();

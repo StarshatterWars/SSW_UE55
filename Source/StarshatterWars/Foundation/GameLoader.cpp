@@ -83,47 +83,76 @@ void AGameLoader::LoadMainMenu()
 
 void AGameLoader::LoadOrCreateUniverse()
 {
+	// When campaign starts
 	const FString Slot = GetUniverseSlotName();
 	constexpr int32 UserIndex = 0;
 
-	// Load if exists
+	UUniverseSaveGame* LoadedSave = nullptr;
+
+	// -------------------- LOAD IF EXISTS --------------------
 	if (UGameplayStatics::DoesSaveGameExist(Slot, UserIndex))
 	{
-		USaveGame* Raw = UGameplayStatics::LoadGameFromSlot(Slot, UserIndex);
-		UniverseSave = Cast<UUniverseSaveGame>(Raw);
+		if (USaveGame* Raw = UGameplayStatics::LoadGameFromSlot(Slot, UserIndex))
+		{
+			LoadedSave = Cast<UUniverseSaveGame>(Raw);
+		}
 	}
 
-	// Create if missing/corrupt
+	UniverseSave = LoadedSave;
+
+	// -------------------- CREATE IF MISSING/CORRUPT --------------------
 	if (!UniverseSave)
 	{
 		UniverseSave = Cast<UUniverseSaveGame>(
 			UGameplayStatics::CreateSaveGameObject(UUniverseSaveGame::StaticClass())
 		);
 
-		UniverseSave->UniverseId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphensLower);
+		if (!UniverseSave)
+		{
+			UE_LOG(LogTemp, Error, TEXT("LoadOrCreateUniverse: Failed to create UUniverseSaveGame"));
+			return;
+		}
 
-		// Generate seed ONCE
+		UniverseSave->UniverseId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphensLower);
 		UniverseSave->UniverseSeed = FPlatformTime::Cycles64();
-		UniverseSave->UniverseTimeSeconds = 0.0;
+
+		// Base date set ONCE on create
+		const FDateTime BaseDate(2228, 1, 1);
+		UniverseSave->UniverseBaseUnixSeconds = BaseDate.ToUnixTimestamp();
+
+		// Start of campaign
+		UniverseSave->UniverseTimeSeconds = 0;
 
 		UGameplayStatics::SaveGameToSlot(UniverseSave, Slot, UserIndex);
 	}
+	else
+	{
+		// -------------------- REPAIR OLDER SAVES --------------------
+		// If you added UniverseBaseUnixSeconds later, older saves may have 0.
+		if (UniverseSave->UniverseBaseUnixSeconds <= 0)
+		{
+			const FDateTime BaseDate(2228, 1, 1);
+			UniverseSave->UniverseBaseUnixSeconds = BaseDate.ToUnixTimestamp();
 
-	UE_LOG(LogTemp, Log, TEXT("Universe loaded: Id=%s Seed=%llu Time=%.2f"),
+			UGameplayStatics::SaveGameToSlot(UniverseSave, Slot, UserIndex);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Universe loaded: Id=%s Seed=%llu Base=%lld Time=%llu"),
 		*UniverseSave->UniverseId,
 		(unsigned long long)UniverseSave->UniverseSeed,
-		UniverseSave->UniverseTimeSeconds);
+		(long long)UniverseSave->UniverseBaseUnixSeconds,
+		(unsigned long long)UniverseSave->UniverseTimeSeconds);
 
-	// Push into GameInstance (runtime source of truth)
+	// -------------------- PUSH INTO GAME INSTANCE --------------------
 	if (USSWGameInstance* GI = GetSSWGameInstance())
 	{
-		// You will add these UPROPERTY fields to the GameInstance:
 		GI->UniverseId = UniverseSave->UniverseId;
 		GI->UniverseSeed = UniverseSave->UniverseSeed;
+		GI->UniverseBaseUnixSeconds = UniverseSave->UniverseBaseUnixSeconds;
 		GI->UniverseTimeSeconds = UniverseSave->UniverseTimeSeconds;
+
+		GI->SetUniverseSaveContext(Slot, UserIndex, UniverseSave);
+		GI->StartUniverseClock();
 	}
 }
-
-
-
-
