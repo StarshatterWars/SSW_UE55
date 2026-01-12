@@ -41,6 +41,7 @@ action: {
    id:      0,
    type:    event,
    subtype: campaign_start,
+   date:    "01/00:00:00",
    team:    1,
    rgn:     Janus,
    source:  News,

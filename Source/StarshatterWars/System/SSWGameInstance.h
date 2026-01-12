@@ -26,7 +26,8 @@
 #include "Misc/TimeSpan.h"
 
 #include "Sound/SoundBase.h"
-#include "UniverseSaveGame.h" // your class
+#include "UniverseSaveGame.h" 
+#include "CampaignSave.h" 
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "SSWGameInstance.generated.h"
 
@@ -385,6 +386,10 @@ public:
 	FString UniverseSaveSlotName;
 	int32 UniverseSaveUserIndex = 0;
 
+	// Campaign save slot 
+	FString CampaignSaveSlotName;
+	int32 CampaignSaveIndex = 0;
+
 	void SetUniverseSaveContext(const FString& SlotName, int32 UserIndex, UUniverseSaveGame* LoadedSave);
 
 	// Save throttling
@@ -409,6 +414,28 @@ public:
 	// Universe save slot helper
 	FString GetUniverseSlotName() const { return TEXT("Universe_Main"); }
 
+	// Current loaded/active campaign save in memory
+	UPROPERTY()
+	UCampaignSave* CampaignSave = nullptr;
+
+	// Current campaign selection (set by Campaign button)
+	UPROPERTY()
+	int32 SelectedCampaignIndex = 1;
+
+	UPROPERTY()
+	FName SelectedCampaignRowName = NAME_None;
+
+	UPROPERTY()
+	FString SelectedCampaignDisplayName;
+
+	// Call this when a campaign is chosen OR as a safety in Start
+	UCampaignSave* LoadOrCreateCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName);
+
+	// Convenience wrapper: uses current selection fields
+	UCampaignSave* LoadOrCreateSelectedCampaignSave();
+
+	// Start button can call this to guarantee CampaignSave exists before showing Operations
+	void EnsureCampaignSaveLoaded();
 	void SetActiveUnit(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc);
 	void SetActiveElement(bool bShow, FString Unit, EEMPIRE_NAME Empire, ECOMBATUNIT_TYPE Type, FString Loc);
 

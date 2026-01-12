@@ -79,6 +79,12 @@ protected:
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
 	
+	// UI selection state
+	int32 Selected = 0;
+	FName PickedRowName = NAME_None;
+	TArray<FName> CampaignRowNamesByOptionIndex;
+	TArray<int32> CampaignIndexByOptionIndex;
+	
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()
@@ -105,7 +111,6 @@ protected:
 	void GetCampaignImageFile(int selected);
 	UFUNCTION()
 	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
-	int Selected;
 
 	UPROPERTY()
 	FString ImagePath;

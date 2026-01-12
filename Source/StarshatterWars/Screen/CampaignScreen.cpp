@@ -101,6 +101,14 @@ void UCampaignScreen::OnPlayButtonClicked()
 	FDateTime GameDate(2228 + Selected, 1, 1);
 	SSWInstance->SetCampaignTime(GameDate.ToUnixTimestamp());
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
+	
+	SSWInstance->SelectedCampaignDisplayName = SSWInstance->GetActiveCampaign().Name;
+	SSWInstance->SelectedCampaignIndex =
+		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
+
+	SSWInstance->SelectedCampaignRowName = PickedRowName;
+
+	SSWInstance->LoadOrCreateSelectedCampaignSave();
 	SSWInstance->ShowCampaignLoading();
 }
 
@@ -131,32 +139,48 @@ void UCampaignScreen::OnCancelButtonUnHovered()
 
 void UCampaignScreen::SetCampaignDDList()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	USSWGameInstance* GI = (USSWGameInstance*)GetGameInstance();
 
-	if (CampaignSelectDD) {
-		CampaignSelectDD->ClearOptions();
-		CampaignSelectDD->ClearSelection();
+	if (!CampaignSelectDD || !GI || !GI->CampaignDataTable)
+		return;
 
-		for (int index = 0; index < SSWInstance->CampaignData.Num(); index++) {
-		
-			if(SSWInstance->CampaignData[index].bAvailable) {
-				CampaignSelectDD->AddOption(SSWInstance->CampaignData[index].Name);
-			}
-		}
+	CampaignSelectDD->ClearOptions();
+	CampaignSelectDD->ClearSelection();
 
-		CampaignSelectDD->SetSelectedIndex(SSWInstance->PlayerInfo.Campaign);
+	CampaignRowNamesByOptionIndex.Reset();
+	CampaignIndexByOptionIndex.Reset();
+
+	const TArray<FName> RowNames = GI->CampaignDataTable->GetRowNames();
+
+	for (const FName& RowName : RowNames)
+	{
+		const FS_Campaign* Row = GI->CampaignDataTable->FindRow<FS_Campaign>(RowName, TEXT("CampaignScreen"));
+		if (!Row)
+			continue;
+
+		if (!Row->bAvailable)
+			continue;
+
+		// Add visible option text
+		CampaignSelectDD->AddOption(Row->Name);
+
+		// Store RowName at same option index
+		CampaignRowNamesByOptionIndex.Add(RowName);
+
+		// IMPORTANT: your FS_Campaign has "Index" (0-based in your current usage)
+		// If your SaveGame slot naming expects 1-based campaign index, store Index+1.
+		CampaignIndexByOptionIndex.Add(Row->Index + 1);
 	}
 
-	if (CampaignNameText) {
+	const int32 MaxIndex = FMath::Max(0, CampaignRowNamesByOptionIndex.Num() - 1);
+	const int32 SelectedOptionIndex = FMath::Clamp(GI->PlayerInfo.Campaign, 0, MaxIndex);
 
-		if (SSWInstance->PlayerInfo.Campaign == -1) {
-			CampaignNameText->SetText(FText::FromString("Campaign Not Set"));
-			Selected = 0;
-		} else {
-			CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[SSWInstance->PlayerInfo.Campaign].Name));
-			Selected = SSWInstance->PlayerInfo.Campaign;
-		}
-	}
+	CampaignSelectDD->SetSelectedIndex(SelectedOptionIndex);
+
+	Selected = SelectedOptionIndex;
+	PickedRowName = CampaignRowNamesByOptionIndex.IsValidIndex(Selected)
+		? CampaignRowNamesByOptionIndex[Selected]
+		: NAME_None;
 }
 
 void UCampaignScreen::SetSelectedData(int selected)

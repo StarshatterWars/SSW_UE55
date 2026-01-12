@@ -269,6 +269,8 @@ void USSWGameInstance::Init()
 	PlayerSaveSlot = 0;
 	UniverseSaveSlotName = "Universe_Main";
 	UniverseSaveUserIndex = 0;
+	CampaignSaveSlotName = "Campaign";
+	CampaignSaveIndex = 0;
 
 	FDateTime GameDate(2228, 1, 1);
 	SetGameTime(GameDate.ToUnixTimestamp());
@@ -2591,4 +2593,80 @@ FString USSWGameInstance::GetUniverseDateTimeString() const
 	// Example: "2228-01-15 13:42:05"
 	const FDateTime DT = GetUniverseDateTime();
 	return DT.ToString(TEXT("%Y-%m-%d %H:%M:%S"));
+}
+
+UCampaignSave* USSWGameInstance::LoadOrCreateCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName)
+{
+	// Normalize
+	CampaignIndex = FMath::Max(1, CampaignIndex);
+
+	const FString Slot = UCampaignSave::MakeSlotNameFromCampaignIndex(CampaignIndex);
+	constexpr int32 UserIndex = 0;
+
+	// Try load
+	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(Slot, UserIndex))
+	{
+		if (UCampaignSave* LoadedSave = Cast<UCampaignSave>(Loaded))
+		{
+			// Optionally repair missing identity fields
+			if (LoadedSave->CampaignIndex != CampaignIndex)
+			{
+				LoadedSave->CampaignIndex = CampaignIndex;
+			}
+			if (LoadedSave->CampaignRowName.IsNone() && !RowName.IsNone())
+			{
+				LoadedSave->CampaignRowName = RowName;
+			}
+			if (LoadedSave->CampaignDisplayName.IsEmpty() && !DisplayName.IsEmpty())
+			{
+				LoadedSave->CampaignDisplayName = DisplayName;
+			}
+
+			CampaignSave = LoadedSave;
+			return CampaignSave;
+		}
+	}
+
+	// Create new
+	UCampaignSave* NewSave = Cast<UCampaignSave>(UGameplayStatics::CreateSaveGameObject(UCampaignSave::StaticClass()));
+	if (!NewSave)
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadOrCreateCampaignSave: Failed to create SaveGame object"));
+		return nullptr;
+	}
+
+	NewSave->CampaignIndex = CampaignIndex;
+	NewSave->CampaignRowName = RowName;
+	NewSave->CampaignDisplayName = DisplayName;
+
+	// Anchor campaign clock to current universe time
+	NewSave->InitializeCampaignClock(UniverseTimeSeconds);
+
+	// Persist
+	if (!UGameplayStatics::SaveGameToSlot(NewSave, Slot, UserIndex))
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadOrCreateCampaignSave: SaveGameToSlot failed for %s"), *Slot);
+		// still return it (you may choose to return nullptr instead)
+	}
+
+	CampaignSave = NewSave;
+	return CampaignSave;
+}
+
+UCampaignSave* USSWGameInstance::LoadOrCreateSelectedCampaignSave()
+{
+	return LoadOrCreateCampaignSave(SelectedCampaignIndex, SelectedCampaignRowName, SelectedCampaignDisplayName);
+}
+
+void USSWGameInstance::EnsureCampaignSaveLoaded()
+{
+	if (!CampaignSave)
+	{
+		// If selection isn't set, default to campaign 1
+		if (SelectedCampaignIndex < 1)
+		{
+			SelectedCampaignIndex = 1;
+		}
+		LoadOrCreateSelectedCampaignSave();
+	}
 }
