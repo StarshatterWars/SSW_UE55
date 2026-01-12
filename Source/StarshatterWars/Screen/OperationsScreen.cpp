@@ -495,7 +495,6 @@ void UOperationsScreen::PopulateIntelList()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
-	
 	if (!IntelList) return;
 
 	IntelList->ClearListItems();
