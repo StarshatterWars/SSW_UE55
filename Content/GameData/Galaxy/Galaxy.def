@@ -44,7 +44,15 @@ system:
 			minrad:  1.5,
 			maxrad:  1.9,
 			rotation: 19.5,
-			
+			region: {
+			   name:    Adonis,
+			   parent:  Adonis,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   1.15e8,
+			   inclination: 0.45
+			},
 			moon: {
 			   name:    Synad,
 			   icon:    "rock_map",
@@ -88,7 +96,15 @@ system:
 			aphelion: 1.62e11,
 			eccentricity: 0.157,
 			rotation: 27,
-			
+			region: {
+			   name:    Jarnell,
+			   parent:  Jarnell,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   19e6,
+			   inclination: 0.5
+			},
 			moon: {
 			   name:    Lanora,
 			   icon:    "lanos_map",
@@ -111,7 +127,15 @@ system:
 			aphelion: 2.47e11,
 			eccentricity: 0.231,
 			rotation: 32,
-			
+			region: {
+			   name:    Caladan,
+			   parent:  Caladan,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   12e6,
+			   inclination: 0.35
+			},
 			moon: {
 			   name:    Malta,
 			   icon:    "lanos_map",
@@ -135,7 +159,20 @@ system:
 			tscale:  2,
 			tilt:    0.12,
 			rotation: 27.3,
-		   
+			region: {
+			   name:    Dawn,
+			   parent:  Dawn,
+			   parent:  Caladan,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   1.0e8,
+			   inclination: 0.25,
+			   link:    Pallas, // Athenar
+			   link:    Tulkas, // Borova
+			   link:    Sparta, // Thralis
+			   link:    Atlan,  // Paragon
+			},
 			moon: {
 			   name:    Kash,
 			   icon:    "rock_map",
@@ -203,8 +240,22 @@ system:
 	   light:   1.9e11,
 	   color:   (240, 240, 255),// - blue-white
 	   back:    ( 25,  35,  65), // - nebula1
-	   
-	   planet: {
+
+	   region: {
+		   name:    Tulkas,
+		   parent:  Talantar,
+		   type:    Star,
+		   radius:  480e3,
+		   grid:    20e3,
+		   orbit:   5.38e11,
+		   inclination: 0.13,
+		   asteroids: 70,
+		   link:    Navara, // Janus
+		   link:    Dawn,   // Jarnell
+		   link:    Atlan,  // Paragon
+		   link:    Nero,   // Silessia
+		},
+		planet: {
 			name:    Talistar
 			icon:   "lanos_map",
 			texture: "lanos",
@@ -216,6 +267,15 @@ system:
 			aphelion: 0.57e11,
 			eccentricity: 0.219,
 			rotation: 95,
+			region:     {
+			   name:    Talistar,
+			   parent:  Talistar,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   10.0e6,
+			   inclination: 0.6
+			},
 		},
 		planet:       {
 			name:     Maraner,
@@ -229,6 +289,15 @@ system:
 			aphelion: 1.00e11,
 			eccentricity: 0.122,
 		   rotation: 35,
+		   region:     {
+			   name:    Maraner,
+			   parent:  Maraner,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   11.0e6,
+			   inclination: 0.7
+			},
 		},
 		planet:     {
 			name:    Borova
@@ -244,6 +313,16 @@ system:
 			eccentricity: 0.127,
 			rotation: 29,
 			
+			region:     {
+			   name:    Borova,
+			   parent:  Borova,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   18.5e6,
+			   inclination: 0.3
+			},
+
 			moon:       {
 			   name:    Bolus
 			   icon:    "garana_map",
@@ -274,7 +353,17 @@ system:
 			aphelion: 4.63e11,
 			eccentricity: 0.173,
 			rotation: 31.3,
-		   
+			
+			region: {
+			   name:    Danova,
+			   parent:  Danova,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   49.53e6,
+			   inclination: 0.2
+			},
+
 			moon: {
 			   name:    "Dana I"
 			   icon:    "ice_map",
@@ -308,6 +397,16 @@ system:
 			tscale:  2,
 			tilt:    0.21,
 			rotation: 46.2,
+			
+			region: {
+			   name:    Zhalisal,
+			   parent:  Zhalisal,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   1.2e8,
+			   inclination: 0.3,
+			},
 			
 			moon: {
 			   name:    Vanna
@@ -388,6 +487,15 @@ system: {
 			aphelion: 2.43e11,
 			eccentricity: 0.246,
 
+			region:     {
+			   name:    Athenar,
+			   parent:  Athenar,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   18e6,
+			   inclination: 0.4
+			},
 			
 			moon:       {
 			   name:    Nike
@@ -410,6 +518,18 @@ system: {
 			perihelion: 3.37e11,
 			aphelion: 5.13e11,
 			eccentricity: 0.206,
+
+			region:     {
+			   name:    Pallas,
+			   parent:  Pallas,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   19e6,
+			   inclination: 0.2,
+			   link:    Navara, // Janus
+			   link:    Dawn,   // Jarnell
+			},
 		},
 	},
 }
@@ -675,6 +795,15 @@ system:
 			aphelion: 0.66e11,
 			eccentricity: 0.141,
 			rotation: 11,
+			region: {
+			   name:    Ilon,
+			   parent:  Ilon,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   9.3e6,
+			   inclination: 0.75
+			},
 		},
 		planet: {
 			name:    Dante,
@@ -689,7 +818,15 @@ system:
 			aphelion: 0.82e11,
 			eccentricity: 0.133,
 			rotation: 8,
-			
+			region: {
+			   name:    Dante,
+			   parent:  Dante,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   18e6,
+			   inclination: 0.66
+			},
 			moon: {
 			   name:    Hermes,
 			   icon:    "rock_map",
@@ -713,7 +850,15 @@ system:
 			aphelion: 1.71e11,
 			eccentricity: 0.223,
 			rotation: 20,
-			
+			region:     {
+			   name:    Janek,
+			   parent:  Janek,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   17e6,
+			   inclination: 0.5
+			},
 			moon:       {
 			   name:    Lanos,
 			   icon:    "lunar_map",
@@ -740,7 +885,15 @@ system:
 			minrad:  1.3,
 			maxrad:  2.1,
 			rotation: 16.3,
-			
+			region: {
+			   name:    Alystra,
+			   parent:  Alystra,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   1.55e8,
+			   inclination: 0.4
+			},
 			moon: {
 			   name:    Fenris,
 			   icon:    "rock_map",
@@ -759,6 +912,20 @@ system:
 			   inclination: 0.0,
 			   mass:        6.0e24,
 			   orbit:       4.1e8,
+			   region: {
+				   name:    Navara,
+				   parent:  Navara,
+				   type:    Moon,
+				   radius:  480e3,
+				   grid:    20e3,
+				   orbit:   20e6,
+				   inclination: 0.4,
+				   link:    Trellis, // Solus
+				   link:    Pallas,  // Athenar
+				   link:    Tulkas,  // Borova
+				   link:    Kala,    // Haiche
+				   link:    Nero,    // Silessia
+				},
 			},
 		},
 	},
@@ -1092,6 +1259,16 @@ system:
 			aphelion: 1.15e11,
 			eccentricity: 0.223,
 			
+			region:     {
+			   name:    Haiche,
+			   parent:  Haiche,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   19e6,
+			   inclination: 0.45
+			},
+			
 			moon:       {
 			   name:    Eiller
 			   icon:    "lunar_map",
@@ -1115,7 +1292,15 @@ system:
 			aphelion: 2.85e11,
 			eccentricity: 0.214,
 			rotation: 31.3,
-			
+			region: {
+			   name:    Cygnus,
+			   parent:  Cygnus,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   100e6,
+			   inclination: 0.2
+			},
 			moon: {
 			   name:    Corvus
 			   icon:    "rock_map",
@@ -1149,7 +1334,15 @@ system:
 			aphelion: 3.82e11,
 			eccentricity: 0.12,
 			rotation: 31.3,
-			
+			region: {
+			   name:    "Tal Amin",
+			   parent:  "Tal Amin",
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   150e6,
+			   inclination: 0.2
+			},
 			moon: {
 			   name:    Benares,
 			   icon:    "rock_map",
@@ -1168,29 +1361,6 @@ system:
 			   mass:    5.98e24,
 			   orbit:   5.74e8,
 			},
-		},
-	},
-	planet:       {
-		name:    Haiche
-		icon:    "haiche_map"
-		texture: "haiche",
-		radius:  4.8e6,
-		mass:    5.75e24,
-		atmosphere: (200,180,160),
-		orbit:   0.94e11,
-		inclination: 11.09,
-		perihelion: 0.82e11,
-		aphelion: 1.07e11,
-		eccentricity: 0.133,
-		rotation: 17.3,
-		
-		moon:       {
-		   name:    Eiller
-		   icon:    "lunar_map",
-		   texture:  "lunar",
-		   radius:  1e6,
-		   mass:    8e22,
-		   orbit:   85e6,
 		},
 	},
 }
@@ -1998,6 +2168,15 @@ system:
 			aphelion: 2.06e11,
 			eccentricity: 0.146,
 			rotation: 26.3,
+			region:     {
+			   name:    Garden,
+			   parent:  Garden,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   17e6,
+			   inclination: 0.4
+			},
 		},
 		planet: {
 			name:    Senesca,
@@ -2015,7 +2194,15 @@ system:
 			aphelion: 3.19e11,
 			eccentricity: 0.205,
 			rotation: 61.3,
-			
+			region: {
+			   name:    Senesca,
+			   parent:  Senesca,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   55.53e6,
+			   inclination: 0.3
+			},	
 			moon: {
 			   name:    Tarawa
 			   icon:    "ice_map",
@@ -2051,7 +2238,15 @@ system:
 			aphelion: 4.02e11,
 			eccentricity: 0.2,
 			rotation: 31.3,
-			
+			region: {
+			   name:    Ramek,
+			   parent:  Ramek,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   65.3e6,
+			   inclination: 0.3
+			},	
 			moon: {
 			   name:    Alin
 			   icon:    "ice_map",
@@ -2094,7 +2289,21 @@ system:
 			perihelion: 3.58e11,
 			aphelion: 4.7e11,
 			eccentricity: 0.143,
-			rotation: 14.3,
+			rotation: 14.3,	
+			region:     {
+			   name:    Relay,
+			   parent:  Relay,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   14e6,
+			   inclination: 0.3,
+			   link:    Solnas,   // Korius
+			   link:    Volova,   // Kolchev
+			   link:    Cavenda,  // Radix
+			   link:    Nerasil,  // Garrison
+			   link:    Path,     // Trocanther
+			},
 		},
 	},
 }
@@ -2137,6 +2346,16 @@ system:
 			aphelion: 1.13e11,
 			eccentricity: 0.155,
 			rotation: 32.7,
+			
+			region: {
+			   name:    Rhofar,
+			   parent:  Rhofar,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   16e6,
+			   inclination: 0.4,
+			},
 		}
 		planet: {
 			name:    Garrison
@@ -2154,6 +2373,16 @@ system:
 			aphelion: 1.61e11,
 			eccentricity: 0.155,
 			rotation: 21.7,
+
+			region: {
+			   name:    Garrison,
+			   parent:  Garrison,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   20e6,
+			   inclination: 0.4,
+			},
 		},
 		planet: {
 			name:    Korul
@@ -2171,6 +2400,16 @@ system:
 			aphelion: 2.69e11,
 			eccentricity: 0.122,
 			rotation: 21.7,
+			
+			region: {
+			   name:    Korul,
+			   parent:  Korul,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   1e8,
+			   inclination: 0.3,
+			},
 		},
 		planet: {
 			name:    Nerasil
@@ -2185,6 +2424,17 @@ system:
 			aphelion: 5.08e11,
 			eccentricity: 0.21,
 			rotation: 17.2,
+			region: {
+			   name:    Nerasil,
+			   parent:  Nerasil,
+			   type:    Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   15e6,
+			   inclination: 0.2,
+			   link:    Relay,   // Isham
+			   link:    Cavenda, // Radix
+			},
 		},
 	},
 }

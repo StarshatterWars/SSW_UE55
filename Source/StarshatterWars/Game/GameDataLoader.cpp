@@ -3374,7 +3374,7 @@ void AGameDataLoader::ParseRegion(TermStruct* val, const char* fn)
 	TArray<FString> LinksName;
 	List<Text> links;
 
-	FS_Region NewRegionData;
+	FS_RegionMap NewRegionData;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 
@@ -3440,7 +3440,7 @@ void AGameDataLoader::ParseRegion(TermStruct* val, const char* fn)
 		}
 
 	}
-	RegionDataArray.Add(NewRegionData);
+	RegionMapArray.Add(NewRegionData);
 }
 
 // +--------------------------------------------------------------------+
@@ -3465,6 +3465,7 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 	FColor AtmosColor = FColor::Black;
 
 	FS_MoonMap NewMoonMap;
+	RegionMapArray.Empty();
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3544,6 +3545,7 @@ AGameDataLoader::ParseStarMap(TermStruct* val, const char* fn)
 
 	FS_StarMap NewStarMap;
 	PlanetMapArray.Empty();
+	RegionDataArray.Empty();
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3646,6 +3648,16 @@ AGameDataLoader::ParseStarMap(TermStruct* val, const char* fn)
 					NewStarMap.Planet = PlanetMapArray;
 				}
 			}
+			else if (pdef->name()->value() == "region") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					ParseRegion(pdef->term()->isStruct(), fn);
+					NewStarMap.Region = RegionMapArray;
+					;
+				}
+			}
 		}
 	}
 	StarMapArray.Add(NewStarMap);
@@ -3679,6 +3691,7 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 
 	FS_PlanetMap NewPlanetMap;
 	MoonMapArray.Empty();
+	RegionMapArray.Empty();
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3774,6 +3787,16 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 				else {
 					ParseMoonMap(pdef->term()->isStruct(), fn);
 					NewPlanetMap.Moon = MoonMapArray;
+				}
+			}
+
+			else if (pdef->name()->value() == "region") {
+				if (!pdef->term() || !pdef->term()->isStruct()) {
+					UE_LOG(LogTemp, Log, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
+				}
+				else {
+					ParseRegion(pdef->term()->isStruct(), fn);
+					NewPlanetMap.Region = RegionMapArray;
 				}
 			}
 		}

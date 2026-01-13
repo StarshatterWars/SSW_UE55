@@ -615,6 +615,42 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		}
 	}
 };
+
+USTRUCT(BlueprintType)
+struct FS_RegionMap : public FTableRowBase {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Name;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FString> Link;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Size;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Orbit;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Grid;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	double Inclination;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int Asteroids;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FString Parent;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TEnumAsByte<EOrbitalType> Type;
+
+	FS_RegionMap() {
+		Name = "";
+		Size = 1.0e6;
+		Orbit = 0.0;
+		Grid = 25000;
+		Inclination = 0;
+		Asteroids = 0;
+		Parent = "";
+		Type = EOrbitalType::NOTHING;
+	}
+};
+
 USTRUCT(BlueprintType)
 struct FS_MoonMap : public FTableRowBase {
 	GENERATED_BODY()
@@ -649,7 +685,9 @@ struct FS_MoonMap : public FTableRowBase {
 	FColor  Atmos;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	EBodyUISizeClass  BodyType;
-	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_RegionMap> Region; 
+
 	FS_MoonMap() {
 		Name = "";
 		Parent = "";
@@ -718,6 +756,8 @@ struct FS_PlanetMap : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	EBodyUISizeClass  BodyType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_RegionMap> Region;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_MoonMap> Moon;
 
 	FS_PlanetMap() {
@@ -779,6 +819,8 @@ struct FS_StarMap : public FTableRowBase {
 	FColor  Back;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	EBodyUISizeClass  BodyType;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	TArray<FS_RegionMap> Region;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<FS_PlanetMap> Planet;
 
