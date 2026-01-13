@@ -261,6 +261,7 @@ protected:
 	TArray<FS_StarMap> StarMapArray;
 	TArray<FS_PlanetMap> PlanetMapArray;
 	TArray<FS_MoonMap> MoonMapArray;
+	TArray<FS_RegionMap> RegionMapArray;
 
 	TArray<FS_TemplateMission> TemplateMissionArray;
 	TArray<FS_TemplateMission> ScriptedMissionArray;
@@ -377,3 +378,4 @@ protected:
 	bool	Ceremony;
 };
 
+bool RegionTypeFromString(const FString& InString, EOrbitalType& OutValue);

@@ -367,6 +367,7 @@ protected:
 
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
@@ -430,7 +431,6 @@ protected:
 	 // TSubclassOf must be set in UMG (or via C++)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TSubclassOf<USectorMap> SectorMapClass;
-    
 
 private:
 	FS_Campaign ActiveCampaign;
@@ -463,4 +463,8 @@ private:
 	TSubclassOf<UGalaxyMap> GalaxyMapClass;
 	USystemMap* SystemMap =	nullptr;
 	USectorMap* SectorMap = nullptr;
+
+	void HandleUniverseSecondTick(uint64 UniverseSecondsNow);
+	void HandleUniverseMinuteTick(uint64 UniverseSecondsNow);
+	void HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds);
 };
