@@ -354,11 +354,13 @@ enum EWEATHER_STATE : uint8
 UENUM(BlueprintType)
 enum EOrbitalType : uint8 
 { 
-	NOTHING UMETA(DisplayName = "Nothing"),
+	NOTHING UMETA(DisplayName = "None"),
 	STAR UMETA(DisplayName = "Star"),
 	PLANET UMETA(DisplayName = "Planet"),
 	MOON UMETA(DisplayName = "Moon"),
+	JUMPGATE UMETA(DisplayName = "JumpGate"),
 	REGION UMETA(DisplayName = "Region"),
+	STATION UMETA(DisplayName = "Station"),
 	TERRAIN UMETA(DisplayName = "Terrain")
 };
 

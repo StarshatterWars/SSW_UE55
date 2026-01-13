@@ -378,3 +378,4 @@ protected:
 	bool	Ceremony;
 };
 
+bool RegionTypeFromString(const FString& InString, EOrbitalType& OutValue);

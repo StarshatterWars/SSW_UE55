@@ -47,7 +47,7 @@ system:
 			region: {
 			   name:    Adonis,
 			   parent:  Adonis,
-			   type:    Planet,
+			   type:	Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.15e8,
@@ -99,7 +99,7 @@ system:
 			region: {
 			   name:    Jarnell,
 			   parent:  Jarnell,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   19e6,
@@ -130,7 +130,7 @@ system:
 			region: {
 			   name:    Caladan,
 			   parent:  Caladan,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   12e6,
@@ -163,7 +163,7 @@ system:
 			   name:    Dawn,
 			   parent:  Dawn,
 			   parent:  Caladan,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.0e8,
@@ -244,7 +244,7 @@ system:
 	   region: {
 		   name:    Tulkas,
 		   parent:  Talantar,
-		   type:    Star,
+		   type: Star,
 		   radius:  480e3,
 		   grid:    20e3,
 		   orbit:   5.38e11,
@@ -270,7 +270,7 @@ system:
 			region:     {
 			   name:    Talistar,
 			   parent:  Talistar,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   10.0e6,
@@ -292,7 +292,7 @@ system:
 		   region:     {
 			   name:    Maraner,
 			   parent:  Maraner,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   11.0e6,
@@ -316,7 +316,7 @@ system:
 			region:     {
 			   name:    Borova,
 			   parent:  Borova,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18.5e6,
@@ -357,7 +357,7 @@ system:
 			region: {
 			   name:    Danova,
 			   parent:  Danova,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   49.53e6,
@@ -401,7 +401,7 @@ system:
 			region: {
 			   name:    Zhalisal,
 			   parent:  Zhalisal,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.2e8,
@@ -490,7 +490,7 @@ system: {
 			region:     {
 			   name:    Athenar,
 			   parent:  Athenar,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -522,7 +522,7 @@ system: {
 			region:     {
 			   name:    Pallas,
 			   parent:  Pallas,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   19e6,
@@ -575,7 +575,7 @@ system:
 			region: {
 			   name:    Dorrath,
 			   parent:  Dorrath,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   16e6,
@@ -607,7 +607,7 @@ system:
 			region:     {
 			   name:    Paragon,
 			   parent:  Paragon,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   20e6,
@@ -645,7 +645,7 @@ system:
 			region: {
 			   name:    Bryn,
 			   parent:  "Bryn Mawr",
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   12.0e6,
@@ -672,7 +672,7 @@ system:
 			region:     {
 			   name:    Atlan,
 			   parent:  Atlan,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.15e8,
@@ -728,7 +728,7 @@ system:
 	   region: {
 		   name:    Sparta,
 		   parent:  Apollus,
-		   type:    Star,
+		   type: Star,
 		   radius:  480e3,
 		   grid:    20e3,
 		   orbit:   5.12e11,
@@ -752,7 +752,7 @@ system:
 			region: {
 			   name:    Pollux,
 			   parent:  Pollux,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   17.5e6,
@@ -783,7 +783,7 @@ system:
 			region:     {
 			   name:    Thrale,
 			   parent:  Thrale,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   22e6,
@@ -807,7 +807,7 @@ system:
 			region: {
 			   name:    Hera,
 			   parent:  Hera,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   103.53e6,
@@ -833,7 +833,7 @@ system:
 			region: {
 			   name:    Zeus,
 			   parent:  Zeus,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.2e8,
@@ -915,7 +915,7 @@ system:
 			region: {
 			   name:    Ilon,
 			   parent:  Ilon,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   9.3e6,
@@ -938,7 +938,7 @@ system:
 			region: {
 			   name:    Dante,
 			   parent:  Dante,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -970,7 +970,7 @@ system:
 			region:     {
 			   name:    Janek,
 			   parent:  Janek,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   17e6,
@@ -1005,7 +1005,7 @@ system:
 			region: {
 			   name:    Alystra,
 			   parent:  Alystra,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.55e8,
@@ -1032,7 +1032,7 @@ system:
 			   region: {
 				   name:    Navara,
 				   parent:  Navara,
-				   type:    Moon,
+				   type: Moon,
 				   radius:  480e3,
 				   grid:    20e3,
 				   orbit:   20e6,
@@ -1091,7 +1091,7 @@ system:
 		   region: {
 			   name:    Meridian
 			   parent:  Meridian,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   9.5e6,
@@ -1114,7 +1114,7 @@ system:
 			region: {
 			   name:    Solus,
 			   parent:  Solus,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -1155,7 +1155,7 @@ system:
 			region: {
 			   name:    Jalah,
 			   parent:  Jalah,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   55.8e6,
@@ -1182,7 +1182,7 @@ system:
 			region: {
 			   name:    Trellis,
 			   parent:  Trellis,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.2e8,
@@ -1267,7 +1267,7 @@ system:
 			region:     {
 			   name:    Silessia,
 			   parent:  Silessia,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   19e6,
@@ -1301,7 +1301,7 @@ system:
 			region: {
 			   name:    Prosenar,
 			   parent:  Prosenar,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   55.53e6,
@@ -1344,7 +1344,7 @@ system:
 			region: {
 			   name:    Vesta,
 			   parent:  Vesta,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   65.3e6,
@@ -1395,7 +1395,7 @@ system:
 			region: {
 			   name:    Nero,
 			   parent:  Nero,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   15e6,
@@ -1453,7 +1453,7 @@ system:
 			region:     {
 			   name:    Haiche,
 			   parent:  Haiche,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   19e6,
@@ -1486,7 +1486,7 @@ system:
 			region: {
 			   name:    Cygnus,
 			   parent:  Cygnus,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   100e6,
@@ -1528,7 +1528,7 @@ system:
 			region: {
 			   name:    "Tal Amin",
 			   parent:  "Tal Amin",
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   150e6,
@@ -1586,7 +1586,7 @@ system:
 	   region: {
 		   name:    Lornas,
 		   parent:  Renset,
-		   type:    Star,
+		   type: Star,
 		   radius:  480e3,
 		   grid:    20e3,
 		   orbit:   4.78e11,
@@ -1613,7 +1613,7 @@ system:
 			region: {
 			   name:    Garana,
 			   parent:  Garana,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   13.9e6,
@@ -1635,7 +1635,7 @@ system:
 			region: {
 			   name:    Rhomindal,
 			   parent:  Rhomindal,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   22.0e6,
@@ -1658,7 +1658,7 @@ system:
 			region: {
 			   name:    Renser,
 			   parent:  Renser,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -1681,7 +1681,7 @@ system:
 			region: {
 			   name:    Marisol,
 			   parent:  Marisol,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   0.75e8,
@@ -1733,7 +1733,7 @@ system:
 			region: {
 			   name:    Khaital,
 			   parent:  Khaital,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -1788,7 +1788,7 @@ system:
 			region:     {
 			   name:    Duna,
 			   parent:  Duna,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   65e6,
@@ -1831,7 +1831,7 @@ system:
 			region:     {
 			   name:    Loris,
 			   parent:  Loris,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   15e6,
@@ -1877,7 +1877,7 @@ system:
 			region:     {
 			   name:    Casalle,
 			   parent:  Casalle,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   175e6,
@@ -1952,7 +1952,7 @@ system:
 			region: {
 			   name:    Aram,
 			   parent:  Aram,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   19e6,
@@ -2018,7 +2018,7 @@ system:
 			   name:    Ilya,
 			   parent:  Ilya,
 			   parent:  Caladan,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -2041,7 +2041,7 @@ system:
 			region:     {
 			   name:    Kolchev,
 			   parent:  Kolchev,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   21e6,
@@ -2084,7 +2084,7 @@ system:
 			region: {
 			   name:    Anatoly,
 			   parent:  Anatoly,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   79.53e6,
@@ -2110,7 +2110,7 @@ system:
 			region: {
 			   name:    Volova,
 			   parent:  Volova,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1.2e8,
@@ -2185,7 +2185,7 @@ system:
 	   region: {
 		   name:    Solnas,
 		   parent:  Koriset,
-		   type:    Star,
+		   type: Star,
 		   radius:  480e3,
 		   grid:    20e3,
 		   orbit:   4.18e11,
@@ -2212,7 +2212,7 @@ system:
 			region:     {
 			   name:    Moneta,
 			   parent:  Moneta,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   12e6,
@@ -2266,7 +2266,7 @@ system:
 			   region:     {
 				   name:    Adantar,
 				   parent:  Adantar,
-				   type:    Moon,
+				   type: Moon,
 				   radius:  480e3,
 				   grid:    20e3,
 				   orbit:   15e6,
@@ -2305,7 +2305,7 @@ system:
 	   region: {
 		   name:    Sintar,
 		   parent:  Tarset,
-		   type:    Star,
+		   type: Star,
 		   radius:  480e3,
 		   grid:    20e3,
 		   orbit:   1.25e11,
@@ -2328,7 +2328,7 @@ system:
 			region: {
 			   name:    Tarsus,
 			   parent:  "Tarsus",
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   17e6,
@@ -2350,7 +2350,7 @@ system:
 			region: {
 			   name:    "Theramin",
 			   parent:  "Theramin",
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   13e6,
@@ -2402,7 +2402,7 @@ system:
 			rotation: 160.3,
 			region:     {
 			   name:    Nergal,
-			   type:    Planet,
+			   type: Planet,
 			   parent:  Nergal,
 			   radius:  480e3,
 			   grid:    20e3,
@@ -2458,7 +2458,7 @@ system:
 			region:     {
 			   name:    Senna,
 			   parent:  Senna,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -2490,7 +2490,7 @@ system:
 			region:     {
 			   name:    Radix,
 			   parent:  Radix,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -2522,7 +2522,7 @@ system:
 			region: {
 			   name:    Cavenda,
 			   parent:  Cavenda,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   55e6,
@@ -2601,7 +2601,7 @@ system:
 			region:     {
 			   name:    Garden,
 			   parent:  Garden,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   17e6,
@@ -2627,7 +2627,7 @@ system:
 			region: {
 			   name:    Senesca,
 			   parent:  Senesca,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   55.53e6,
@@ -2671,7 +2671,7 @@ system:
 			region: {
 			   name:    Ramek,
 			   parent:  Ramek,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   65.3e6,
@@ -2723,7 +2723,7 @@ system:
 			region:     {
 			   name:    Relay,
 			   parent:  Relay,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   14e6,
@@ -2733,6 +2733,73 @@ system:
 			   link:    Cavenda,  // Radix
 			   link:    Nerasil,  // Garrison
 			   link:    Path,     // Trocanther
+			},
+		},
+	},
+}
+
+system: 
+{
+	loc: (-8.0, -2.6,  1.0),
+	class: F,
+	iff: 2,
+	empire: 1,
+	name: Marak,
+	
+	link: Trocanther,
+	star: Marakanis,
+
+	stellar:        {
+	   name:    Marakanis
+	   map:     "StarF_map",
+	   image:   "F8",
+	   class:	F,
+	   tscale:  6,
+	   radius:  16e8,
+	   mass:    2e30,
+	   light:   1.6e11,
+	   color:   (255, 255, 255),// - F White
+	   back:    (120,  20,  14), // - nebula21   
+	   region: {
+		   name:    Xanthe,
+		   parent:  Marakanis,
+		   type:	Star,
+		   radius:  480e3,
+		   grid:    20e3,
+		   orbit:   4.38e11,
+		   inclination: 0.16,
+		   asteroids: 70,
+		   link:    Path, // Trocanther
+		},
+		planet:     {
+			name:    Marak
+			icon:    "marak_map",
+			texture: "marak",
+			atmosphere: (90,90,130),
+			radius:  6.1e6,
+			mass:    5.3e24,
+			orbit:   1.1e11,
+			inclination: 9.99,
+			perihelion: 0.96e11,
+			aphelion: 1.24e11,
+			eccentricity: 0.125,
+			rotation: 23.7,
+			region:     {
+			   name:    Marak,
+			   parent:  Marak,
+			   type: Planet,
+			   radius:  480e3,
+			   grid:    20e3,
+			   orbit:   21e6,
+			   inclination: 0.4,
+			},
+			moon:       {
+			   name:    Manarkan,
+			   icon:    "Moon3_map",
+			   texture:  "Moon3",
+			   radius:  1e6,
+			   mass:    8e22,
+			   orbit:   42e6,
 			},
 		},
 	},
@@ -2780,7 +2847,7 @@ system:
 			region: {
 			   name:    Rhofar,
 			   parent:  Rhofar,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   16e6,
@@ -2807,7 +2874,7 @@ system:
 			region: {
 			   name:    Garrison,
 			   parent:  Garrison,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   20e6,
@@ -2834,7 +2901,7 @@ system:
 			region: {
 			   name:    Korul,
 			   parent:  Korul,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   1e8,
@@ -2857,7 +2924,7 @@ system:
 			region: {
 			   name:    Nerasil,
 			   parent:  Nerasil,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   15e6,
@@ -2909,7 +2976,7 @@ system:
 			region: {
 			   name:    Volante,
 			   parent:  Volante,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   18e6,
@@ -2931,7 +2998,7 @@ system:
 			region: {
 			   name:    Narcissus,
 			   parent:  Narcissus,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   55e6,
@@ -2973,79 +3040,13 @@ system:
 			region: {
 			   name:    Path,
 			   parent:  Path,
-			   type:    Planet,
+			   type: Planet,
 			   radius:  480e3,
 			   grid:    20e3,
 			   orbit:   15e6,
 			   inclination: 0.2,
 			   link:    Xanthe, // Marak
 			   link:    Relay,  // Isham
-			},
-		},
-	},
-}
-
-system: 
-{
-	loc: (-8.0, -2.6,  1.0),
-	class: F,
-	iff: 2,
-	empire: 1,
-	name: Marak,
-	
-	link: Trocanther,
-	star: Marakanis,
-
-	stellar:        {
-	   name:    Marakanis
-	   map:     "StarF_map",
-	   image:   "F8",
-	   class:	F,
-	   tscale:  6,
-	   radius:  16e8,
-	   mass:    2e30,
-	   light:   1.6e11,
-	   color:   (255, 255, 255),// - F White
-	   back:    (120,  20,  14), // - nebula21
-	   region: {
-		   name:    Xanthe,
-		   parent:  Marakanis,
-		   radius:  480e3,
-		   grid:    20e3,
-		   orbit:   4.38e11,
-		   inclination: 0.13,
-		   asteroids: 70,
-		   link:    Path, // Trocanther
-		},
-		planet:     {
-			name:    Marak
-			icon:    "marak_map",
-			texture: "marak",
-			atmosphere: (90,90,130),
-			radius:  6.1e6,
-			mass:    5.3e24,
-			orbit:   1.1e11,
-			inclination: 9.99,
-			perihelion: 0.96e11,
-			aphelion: 1.24e11,
-			eccentricity: 0.125,
-			rotation: 23.7,
-			region:     {
-			   name:    Marak,
-			   parent:  Marak,
-			   type:    Planet,
-			   radius:  480e3,
-			   grid:    20e3,
-			   orbit:   21e6,
-			   inclination: 0.4,
-			},
-			moon:       {
-			   name:    Manarkan,
-			   icon:    "Moon3_map",
-			   texture:  "Moon3",
-			   radius:  1e6,
-			   mass:    8e22,
-			   orbit:   42e6,
 			},
 		},
 	},
