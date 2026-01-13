@@ -91,6 +91,22 @@ class UPlayerSaveGame;
 class ASystemOverview;
 class UTextureRenderTarget2D;
 
+// =======================================================
+// Time / Pub-Sub Delegates
+// =======================================================
+
+// Fired every universe second (optional, lightweight listeners only)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUniverseSecond, uint64 /*UniverseSeconds*/);
+
+// Fired every universe minute (Intel, UI refresh, etc.)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUniverseMinute, uint64 /*UniverseSeconds*/);
+
+// Fired when campaign T+ changes (UI display)
+DECLARE_MULTICAST_DELEGATE_TwoParams(
+	FOnCampaignTPlusChanged,
+	uint64 /*UniverseSeconds*/,
+	uint64 /*TPlusSeconds*/
+);
 
 // =========================================================================
 // GameInstance
@@ -424,6 +440,7 @@ public:
 	FDateTime GetUniverseDateTime() const;
 	FString GetUniverseDateTimeString() const;
 
+
 	// =====================================================================
 	// Campaign Save API
 	// =====================================================================
@@ -619,6 +636,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Time")
 	FString GetCampaignAndUniverseTimeLine() const;
+
+
 	// =====================================================================
 	// Campaign Save (in-memory)
 	// =====================================================================
@@ -639,6 +658,13 @@ public:
 	// =====================================================================
 	bool bIsDisplayUnitChanged;
 	bool bIsDisplayElementChanged;
+
+	// =====================================================================
+	// PUB/SUB 
+	// =====================================================================
+	FOnUniverseSecond OnUniverseSecond;
+	FOnUniverseMinute OnUniverseMinute;
+	FOnCampaignTPlusChanged OnCampaignTPlusChanged;
 
 protected:
 	virtual void Init() override;
@@ -748,6 +774,11 @@ private:
 	TSubclassOf<class UMissionLoading> MissionLoadingWidgetClass;
 	TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 	TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
+
+	// Timer Pub/Sub
+	uint64 LastBroadcastSecond = 0;
+	uint64 LastBroadcastMinute = 0;
+	uint64 LastBroadcastTPlus = 0;
 
 	void SetupMusicController();
 

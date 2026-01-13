@@ -2494,22 +2494,51 @@ void USSWGameInstance::StopUniverseClock()
 
 void USSWGameInstance::OnUniverseClockTick()
 {
-	// Accumulate fractional universe seconds
-	UniverseTimeAccumulator += TimeStepSeconds * TimeScale;
+	// Advance universe time
+	const double DeltaUniverse = TimeStepSeconds * TimeScale;
+	const uint64 AddSeconds = (uint64)FMath::Max(1.0, FMath::RoundToDouble(DeltaUniverse));
+	UniverseTimeSeconds += AddSeconds;
 
-	const uint64 WholeSeconds = (uint64)FMath::FloorToDouble(UniverseTimeAccumulator);
-	if (WholeSeconds > 0)
+	// ---------------------------------------------
+	// PUB-SUB BROADCASTS
+	// ---------------------------------------------
+
+	// 1) Per-second broadcast
+	if (UniverseTimeSeconds != LastBroadcastSecond)
 	{
-		UniverseTimeSeconds += WholeSeconds;
-		UniverseTimeAccumulator -= (double)WholeSeconds;
+		LastBroadcastSecond = UniverseTimeSeconds;
+		OnUniverseSecond.Broadcast(UniverseTimeSeconds);
 	}
 
-	// Player playtime (real time)
-	PlayerPlaytimeSeconds += (int64)FMath::RoundToDouble(TimeStepSeconds);
+	// 2) Per-minute broadcast (Intel refresh)
+	const uint64 CurrentMinute = UniverseTimeSeconds / 60ULL;
+	if (CurrentMinute != LastBroadcastMinute)
+	{
+		LastBroadcastMinute = CurrentMinute;
+		OnUniverseMinute.Broadcast(UniverseTimeSeconds);
+	}
 
-	// Autosave (throttled inside SaveUniverse)
-	SaveUniverse();
-	bUniverseAutosaveRequested = false;
+	// 3) Campaign T+ broadcast (only if campaign active)
+	if (CampaignSave)
+	{
+		const uint64 TPlus = CampaignSave->GetTPlusSeconds(UniverseTimeSeconds);
+		if (TPlus != LastBroadcastTPlus)
+		{
+			LastBroadcastTPlus = TPlus;
+			OnCampaignTPlusChanged.Broadcast(UniverseTimeSeconds, TPlus);
+		}
+	}
+
+	// ---------------------------------------------
+	// Autosave / playtime logic (unchanged)
+	// ---------------------------------------------
+	PlayerPlaytimeSeconds += (int64)TimeStepSeconds;
+
+	if (bUniverseAutosaveRequested)
+	{
+		SaveUniverse();
+		bUniverseAutosaveRequested = false;
+	}
 }
 
 void USSWGameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
