@@ -308,13 +308,6 @@ void USSWGameInstance::Init()
 	SetupMusicController();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
 
-	// Re-arm universe clock after every map load (timers are per-world)
-	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
-		this, &USSWGameInstance::HandlePostLoadMap
-	);
-
-	// Start once for the current world too (covers first loaded map)
-	StartUniverseClock();
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -343,16 +336,6 @@ void USSWGameInstance::ReadCampaignData()
 	SetActiveCampaign(CampaignData[PlayerInfo.Campaign]);
 	FString NewCampaign = GetActiveCampaign().Name;
 	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
-}
-
-void USSWGameInstance::UpdateUniverseTime(float DeltaSeconds)
-{
-	UniverseTimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds * TimeScale);
-}
-
-void USSWGameInstance::UpdatePlayerPlaytime(float DeltaSeconds)
-{
-	PlayerPlaytimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds);
 }
 
 void USSWGameInstance::ReadCombatRosterData() {
@@ -2440,13 +2423,13 @@ void USSWGameInstance::EnsureSystemOverview(
 	}
 }
 
-void USSWGameInstance::SetTimeScale(double NewTimeScale)
-{
-	TimeScale = FMath::Clamp(NewTimeScale, 0.0, 1.0e7);
-	UE_LOG(LogTemp, Warning, TEXT("TimeScale set to %.2f"), TimeScale);
-}
+//void USSWGameInstance::SetTimeScale(double NewTimeScale)
+//{
+//	TimeScale = FMath::Clamp(NewTimeScale, 0.0, 1.0e7);
+//	UE_LOG(LogTemp, Warning, TEXT("TimeScale set to %.2f"), TimeScale);
+//}
 
-void USSWGameInstance::StartUniverseClock()
+/*void USSWGameInstance::StartUniverseClock()
 {
 	UWorld* World = GetWorld();
 	if (!World)
@@ -2527,28 +2510,28 @@ void USSWGameInstance::OnUniverseClockTick()
 			LastBroadcastTPlus = TPlus;
 			OnCampaignTPlusChanged.Broadcast(UniverseTimeSeconds, TPlus);
 		}
-	}
+	}*/
 
 	// ---------------------------------------------
 	// Autosave / playtime logic (unchanged)
 	// ---------------------------------------------
-	PlayerPlaytimeSeconds += (int64)TimeStepSeconds;
+	//PlayerPlaytimeSeconds += (int64)TimeStepSeconds;
 
-	if (bUniverseAutosaveRequested)
-	{
-		SaveUniverse();
-		bUniverseAutosaveRequested = false;
-	}
-}
+	//if (bUniverseAutosaveRequested)
+	//{
+	//	SaveUniverse();
+		//bUniverseAutosaveRequested = false;
+	//}
+//}
 
-void USSWGameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
+/*void USSWGameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
 {
 	// Timers belong to the loaded UWorld, so restart the clock after travel
 	StartUniverseClock();
 
 	UE_LOG(LogTemp, Log, TEXT("HandlePostLoadMap: restarted universe clock for World=%s"),
 		*GetNameSafe(LoadedWorld));
-}
+}*/
 
 void USSWGameInstance::SetUniverseSaveContext(const FString& SlotName, int32 UserIndex, UUniverseSaveGame* LoadedSave)
 {
@@ -2562,6 +2545,7 @@ void USSWGameInstance::SetUniverseSaveContext(const FString& SlotName, int32 Use
 
 bool USSWGameInstance::SaveUniverse()
 {
+	const UTimerSubsystem* Timer = UGameInstance::GetSubsystem<UTimerSubsystem>();
 	UE_LOG(LogTemp, Error, TEXT("in USSWGameInstance::SaveUniverse()"));
 
 	// Guard: must have valid save context
@@ -2583,8 +2567,8 @@ bool USSWGameInstance::SaveUniverse()
 
 	SaveObj->UniverseId = UniverseId;
 	SaveObj->UniverseSeed = UniverseSeed;
-	SaveObj->UniverseBaseUnixSeconds = UniverseBaseUnixSeconds;
-	SaveObj->UniverseTimeSeconds = UniverseTimeSeconds;
+	SaveObj->UniverseBaseUnixSeconds = Timer->UniverseBaseUnixSeconds;
+	SaveObj->UniverseTimeSeconds = Timer->UniverseTimeSeconds;
 
 	// Use slot saving first (simplest + safest)
 	const FString Slot = GetUniverseSlotName();   // MUST return a valid slot
@@ -2592,7 +2576,7 @@ bool USSWGameInstance::SaveUniverse()
 
 	const bool bOK = UGameplayStatics::SaveGameToSlot(SaveObj, Slot, UserIndex);
 	UE_LOG(LogTemp, Warning, TEXT("SaveUniverse: slot=%s ok=%d time=%llu"),
-		*Slot, bOK ? 1 : 0, (unsigned long long)UniverseTimeSeconds);
+		*Slot, bOK ? 1 : 0, (unsigned long long)Timer->UniverseTimeSeconds);
 
 	return bOK;
 }
@@ -2610,59 +2594,72 @@ bool USSWGameInstance::SavePlayer(bool bForce)
 	return true; // replace if your SaveGame returns a bool
 }
 
-FDateTime USSWGameInstance::GetUniverseDateTime() const
-{
-	const int64 Base = (UniverseBaseUnixSeconds > 0)
-		? UniverseBaseUnixSeconds
-		: FDateTime(2228, 1, 1).ToUnixTimestamp();
-
-	const uint64 Elapsed = UniverseTimeSeconds;
-	const int64 ElapsedI64 = (Elapsed > (uint64)MAX_int64) ? MAX_int64 : (int64)Elapsed;
-
-	return FDateTime::FromUnixTimestamp(Base + ElapsedI64);
-}
-
-FString USSWGameInstance::GetUniverseDateTimeString() const
-{
-	// Example: "2228-01-15 13:42:05"
-	const FDateTime DT = GetUniverseDateTime();
-	return DT.ToString(TEXT("%Y-%m-%d %H:%M:%S"));
-}
-
 UCampaignSave* USSWGameInstance::LoadOrCreateCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName)
 {
 	// Normalize
 	CampaignIndex = FMath::Max(1, CampaignIndex);
 
-	const FString Slot = UCampaignSave::MakeSlotNameFromCampaignIndex(CampaignIndex);
+	const FString Slot = UCampaignSave::MakeSlotNameFromRowName(RowName);
 	constexpr int32 UserIndex = 0;
+
+	UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>();
 
 	// Try load
 	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(Slot, UserIndex))
 	{
 		if (UCampaignSave* LoadedSave = Cast<UCampaignSave>(Loaded))
 		{
-			// Optionally repair missing identity fields
+			UE_LOG(LogTemp, Warning, TEXT("Campaign load attempt: Index=%d Slot=%s"),
+				CampaignIndex, *Slot);
+
+			UE_LOG(LogTemp, Warning, TEXT("Campaign load result: %s"),
+				Loaded ? TEXT("SUCCESS") : TEXT("FAIL"));
+
+			// Repair identity fields (optional)
 			if (LoadedSave->CampaignIndex != CampaignIndex)
-			{
 				LoadedSave->CampaignIndex = CampaignIndex;
-			}
+
 			if (LoadedSave->CampaignRowName.IsNone() && !RowName.IsNone())
-			{
 				LoadedSave->CampaignRowName = RowName;
-			}
+
 			if (LoadedSave->CampaignDisplayName.IsEmpty() && !DisplayName.IsEmpty())
-			{
 				LoadedSave->CampaignDisplayName = DisplayName;
-			}
 
 			CampaignSave = LoadedSave;
+
+			if (Timer)
+			{
+				// ---- One-time repair for older saves that never stored the anchor ----
+				if (!CampaignSave->bInitialized || CampaignSave->CampaignStartUniverseSeconds == 0)
+				{
+					const uint64 Now = Timer->GetUniverseTimeSeconds();
+					CampaignSave->InitializeCampaignClock(Now);
+
+					// Persist the repaired anchor so it doesn't "reset" next load:
+					UGameplayStatics::SaveGameToSlot(CampaignSave, Slot, UserIndex);
+				}
+
+				CampaignSave = LoadedSave;
+				UE_LOG(LogTemp, Warning,
+					TEXT("Loaded campaign from slot=%s  ObjName=%s  Row=%s  Index=%d  Start=%llu  Init=%d"),
+					*Slot,
+					*GetNameSafe(LoadedSave),
+					*LoadedSave->CampaignRowName.ToString(),
+					LoadedSave->CampaignIndex,
+					(unsigned long long)LoadedSave->CampaignStartUniverseSeconds,
+					LoadedSave->bInitialized ? 1 : 0);
+
+				Timer->SetCampaignSave(LoadedSave);  // explicitly LoadedSave
+			}
+
 			return CampaignSave;
 		}
 	}
 
 	// Create new
-	UCampaignSave* NewSave = Cast<UCampaignSave>(UGameplayStatics::CreateSaveGameObject(UCampaignSave::StaticClass()));
+	UCampaignSave* NewSave = Cast<UCampaignSave>(
+		UGameplayStatics::CreateSaveGameObject(UCampaignSave::StaticClass())
+	);
 	if (!NewSave)
 	{
 		UE_LOG(LogTemp, Error, TEXT("LoadOrCreateCampaignSave: Failed to create SaveGame object"));
@@ -2673,17 +2670,24 @@ UCampaignSave* USSWGameInstance::LoadOrCreateCampaignSave(int32 CampaignIndex, F
 	NewSave->CampaignRowName = RowName;
 	NewSave->CampaignDisplayName = DisplayName;
 
-	// Anchor campaign clock to current universe time
-	NewSave->InitializeCampaignClock(UniverseTimeSeconds);
+	// Anchor campaign clock to CURRENT universe time (from subsystem)
+	const uint64 NowUniverse = Timer ? Timer->GetUniverseTimeSeconds() : 0ULL;
+	NewSave->InitializeCampaignClock(NowUniverse);
 
 	// Persist
 	if (!UGameplayStatics::SaveGameToSlot(NewSave, Slot, UserIndex))
 	{
 		UE_LOG(LogTemp, Error, TEXT("LoadOrCreateCampaignSave: SaveGameToSlot failed for %s"), *Slot);
-		// still return it (you may choose to return nullptr instead)
 	}
 
+	// Assign + inject
 	CampaignSave = NewSave;
+
+	if (Timer)
+	{
+		Timer->SetCampaignSave(CampaignSave);
+	}
+
 	return CampaignSave;
 }
 
@@ -2814,10 +2818,11 @@ AMusicController* USSWGameInstance::GetMusicController()
 
 FString USSWGameInstance::GetCampaignTPlusString() const
 {
+	const UTimerSubsystem* Timer = UGameInstance::GetSubsystem<UTimerSubsystem>();
 	if (CampaignSave)
 	{
 		// Uses CampaignSave anchor + UniverseTimeSeconds
-		return CampaignSave->GetTPlusDisplay(UniverseTimeSeconds);
+		return CampaignSave->GetTPlusDisplay(Timer->UniverseTimeSeconds);
 	}
 
 	// Not loaded yet
@@ -2826,11 +2831,17 @@ FString USSWGameInstance::GetCampaignTPlusString() const
 
 FString USSWGameInstance::GetCampaignAndUniverseTimeLine() const
 {
-	// Example composite line you can show in Intel header
-	// "UNIVERSE: 2228-01-01 12:34:56   |   T+ 01/00:10:03"
+	const UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>();
+
+	const FString UniverseStr = Timer
+		? Timer->GetUniverseDateTimeString()
+		: TEXT("--");
+
+	const FString TPlusStr = GetCampaignTPlusString(); // your existing method, still fine
+
 	return FString::Printf(
 		TEXT("UNIVERSE: %s   |   T+ %s"),
-		*GetUniverseDateTimeString(),
-		*GetCampaignTPlusString()
+		*UniverseStr,
+		*TPlusStr
 	);
 }

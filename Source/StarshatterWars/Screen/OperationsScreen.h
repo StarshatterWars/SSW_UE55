@@ -469,3 +469,5 @@ private:
 	void HandleUniverseMinuteTick(uint64 UniverseSecondsNow);
 	void HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds);
 };
+
+static FString FormatTPlus(uint64 TPlusSeconds);

@@ -1,11 +1,13 @@
 #include "TimerSubsystem.h"
-#include "Engine/World.h"
-#include "TimerManager.h"
+#include "CampaignSave.h"
+#include "Containers/Ticker.h"
 
 void UTimerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	// StartClock(); // optional
+
+	// Universe time should never stop:
+	StartClock();
 }
 
 void UTimerSubsystem::Deinitialize()
@@ -16,34 +18,59 @@ void UTimerSubsystem::Deinitialize()
 
 void UTimerSubsystem::StartClock()
 {
-	UWorld* World = GetWorld();
-	if (!World) return;
+	// Prevent duplicates
+	if (TickHandle.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(TickHandle);
+		TickHandle.Reset();
+	}
 
-	StopClock();
+	if (TimeStepSeconds <= 0.0)
+	{
+		TimeStepSeconds = 1.0;
+	}
 
-	World->GetTimerManager().SetTimer(
-		ClockTimerHandle,
-		this,
-		&UTimerSubsystem::OnClockTick,
-		(float)TimeStepSeconds,
-		true
+	AccumRealSeconds = 0.0;
+
+	TickHandle = FTSTicker::GetCoreTicker().AddTicker(
+		FTickerDelegate::CreateUObject(this, &UTimerSubsystem::Tick)
 	);
+
+	UE_LOG(LogTemp, Log, TEXT("UTimerSubsystem::StartClock (Ticker) Step=%.3f UniverseScale=%.2f MissionScale=%.2f"),
+		TimeStepSeconds, TimeScale, MissionTimeScale);
 }
 
 void UTimerSubsystem::StopClock()
 {
-	if (UWorld* World = GetWorld())
+	if (TickHandle.IsValid())
 	{
-		World->GetTimerManager().ClearTimer(ClockTimerHandle);
+		FTSTicker::GetCoreTicker().RemoveTicker(TickHandle);
+		TickHandle.Reset();
 	}
+
+	UE_LOG(LogTemp, Log, TEXT("UTimerSubsystem::StopClock (Ticker)"));
+}
+
+bool UTimerSubsystem::Tick(float DeltaSeconds)
+{
+	AccumRealSeconds += (double)DeltaSeconds;
+
+	// Fixed-step advancement (preserves your original TimerManager cadence semantics)
+	while (AccumRealSeconds >= TimeStepSeconds)
+	{
+		AccumRealSeconds -= TimeStepSeconds;
+		OnClockTick();
+	}
+
+	return true; // keep ticking
 }
 
 // -------------------- Mission API --------------------
 
 void UTimerSubsystem::StartMissionRun(bool bResetToZero)
 {
-	// Ensure the master clock is running (so mission timeline advances)
-	StartClock();
+	// IMPORTANT:
+	// Do NOT call StartClock() here. Universe clock is always running.
 
 	if (bResetToZero)
 	{
@@ -136,10 +163,26 @@ void UTimerSubsystem::OnClockTick()
 			OnMissionSecond.Broadcast(CurMissionSec);
 		}
 	}
+
+	// ---- Campaign (T+) ----
+	if (CampaignSave.IsValid())
+	{
+		const uint64 NewTPlus = CampaignSave->GetTPlusSeconds(UniverseTimeSeconds);
+		CachedCampaignTPlusSeconds = NewTPlus;
+
+		if (NewTPlus != LastBroadcastTPlus)
+		{
+			LastBroadcastTPlus = NewTPlus;
+			OnCampaignTPlusChanged.Broadcast(UniverseTimeSeconds, NewTPlus);
+		}
+	}
 }
+
+// -------------------- Date/Time helpers --------------------
 
 FDateTime UTimerSubsystem::GetUniverseDateTime() const
 {
+	// If you want a specific base date, set UniverseBaseUnixSeconds externally (e.g., 2228-01-01)
 	if (UniverseBaseUnixSeconds <= 0)
 	{
 		return FDateTime::FromUnixTimestamp((int64)UniverseTimeSeconds);
@@ -152,4 +195,49 @@ FDateTime UTimerSubsystem::GetUniverseDateTime() const
 FString UTimerSubsystem::GetUniverseDateTimeString() const
 {
 	return GetUniverseDateTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
+}
+
+void UTimerSubsystem::SetTimeScale(double NewTimeScale)
+{
+	TimeScale = FMath::Clamp(NewTimeScale, 0.0, 1.0e7);
+	UE_LOG(LogTemp, Warning, TEXT("TimeScale set to %.2f"), TimeScale);
+}
+
+void UTimerSubsystem::UpdateUniverseTime(float DeltaSeconds)
+{
+	UniverseTimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds * TimeScale);
+}
+
+void UTimerSubsystem::UpdatePlayerPlaytime(float DeltaSeconds)
+{
+	PlayerPlaytimeSeconds += (int64)FMath::RoundToInt(DeltaSeconds);
+}
+
+void UTimerSubsystem::SetCampaignSave(UCampaignSave* InCampaignSave)
+{
+	CampaignSave = InCampaignSave;
+
+	// Force next tick to broadcast immediately so UI updates right away:
+	LastBroadcastTPlus = MAX_uint64;
+	CachedCampaignTPlusSeconds = 0;
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("TimerSubsystem: SetCampaignSave ObjName=%s Row=%s Index=%d Start=%llu Init=%d"),
+		*GetNameSafe(InCampaignSave),
+		InCampaignSave ? *InCampaignSave->CampaignRowName.ToString() : TEXT("None"),
+		InCampaignSave ? InCampaignSave->CampaignIndex : -1,
+		(unsigned long long)(InCampaignSave ? InCampaignSave->CampaignStartUniverseSeconds : 0ULL),
+		InCampaignSave ? (InCampaignSave->bInitialized ? 1 : 0) : 0
+	);
+}
+
+
+
+void UTimerSubsystem::ClearCampaignSave()
+{
+	CampaignSave = nullptr;
+	LastBroadcastTPlus = MAX_uint64;
+	CachedCampaignTPlusSeconds = 0;
+
+	UE_LOG(LogTemp, Log, TEXT("TimerSubsystem: CampaignSave cleared"));
 }

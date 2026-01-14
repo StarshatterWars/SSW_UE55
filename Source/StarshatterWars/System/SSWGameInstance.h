@@ -59,6 +59,11 @@
 #include "CampaignSave.h"
 
 // =========================================================================
+// Subsystems
+// =========================================================================
+
+#include "TimerSubsystem.h"
+// =========================================================================
 // Generated
 // =========================================================================
 #include "SSWGameInstance.generated.h"
@@ -91,22 +96,6 @@ class UPlayerSaveGame;
 class ASystemOverview;
 class UTextureRenderTarget2D;
 
-// =======================================================
-// Time / Pub-Sub Delegates
-// =======================================================
-
-// Fired every universe second (optional, lightweight listeners only)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUniverseSecond, uint64 /*UniverseSeconds*/);
-
-// Fired every universe minute (Intel, UI refresh, etc.)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUniverseMinute, uint64 /*UniverseSeconds*/);
-
-// Fired when campaign T+ changes (UI display)
-DECLARE_MULTICAST_DELEGATE_TwoParams(
-	FOnCampaignTPlusChanged,
-	uint64 /*UniverseSeconds*/,
-	uint64 /*TPlusSeconds*/
-);
 
 // =========================================================================
 // GameInstance
@@ -400,29 +389,29 @@ public:
 	// =====================================================================
 	// Universe Clock
 	// =====================================================================
-	UFUNCTION()
-	void SetTimeScale(double NewTimeScale);
+	//UFUNCTION()
+	//void SetTimeScale(double NewTimeScale);
 
-	UFUNCTION()
-	void StartUniverseClock();
+	//UFUNCTION()
+	//void StartUniverseClock();
 
-	UFUNCTION()
-	void StopUniverseClock();
+	//UFUNCTION()
+	//void StopUniverseClock();
 
-	UFUNCTION()
-	void OnUniverseClockTick();
+	//UFUNCTION()
+	//void OnUniverseClockTick();
 
-	UFUNCTION()
-	void UpdateUniverseTime(float DeltaSeconds);
+	//UFUNCTION()
+	//void UpdateUniverseTime(float DeltaSeconds);
 
-	UFUNCTION()
-	void UpdatePlayerPlaytime(float DeltaSeconds);
+	//UFUNCTION()
+	//void UpdatePlayerPlaytime(float DeltaSeconds);
 
-	UFUNCTION()
-	double GetTimeScale() const { return TimeScale; }
+	//UFUNCTION()
+	// GetTimeScale() const { return TimeScale; }
 
-	int64 GetUniverseTimeSeconds() const { return UniverseTimeSeconds; }
-	int64 GetPlayerPlaytimeSeconds() const { return PlayerPlaytimeSeconds; }
+	//int64 GetUniverseTimeSeconds() const { return UniverseTimeSeconds; }
+	//int64 GetPlayerPlaytimeSeconds() const { return PlayerPlaytimeSeconds; }
 
 	// =====================================================================
 	// Universe Save API
@@ -590,26 +579,7 @@ public:
 	uint64 UniverseSeed = 0;
 
 	UPROPERTY()
-	uint64 UniverseTimeSeconds = 0;
-
-	UPROPERTY()
 	double UniverseTimeAccumulator = 0.0;
-
-	FTimerHandle UniverseTimerHandle;
-
-	// Player time
-	UPROPERTY()
-	int64 PlayerPlaytimeSeconds = 0;
-
-	UPROPERTY()
-	bool bCountPlaytimeWhilePaused = false;
-
-	/** 1.0 = real time, 60 = 1 min/sec, 3600 = 1 hr/sec */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
-	double TimeScale = 60.0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
-	double TimeStepSeconds = 1.0;
 
 	// Universe save slot (provided by GameLoader once)
 	FString UniverseSaveSlotName;
@@ -658,13 +628,6 @@ public:
 	// =====================================================================
 	bool bIsDisplayUnitChanged;
 	bool bIsDisplayElementChanged;
-
-	// =====================================================================
-	// PUB/SUB 
-	// =====================================================================
-	FOnUniverseSecond OnUniverseSecond;
-	FOnUniverseMinute OnUniverseMinute;
-	FOnCampaignTPlusChanged OnCampaignTPlusChanged;
 
 protected:
 	virtual void Init() override;
@@ -763,8 +726,6 @@ private:
 	void InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer);
 	void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 	void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
-
-	void HandlePostLoadMap(UWorld* LoadedWorld);
 
 	// Widget classes
 	TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;

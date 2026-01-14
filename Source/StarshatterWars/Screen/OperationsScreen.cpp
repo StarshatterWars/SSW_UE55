@@ -55,6 +55,21 @@ bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive 
 	return true;
 }
 
+static FString FormatTPlus(uint64 TPlusSeconds)
+{
+	const uint64 Days = TPlusSeconds / 86400ULL;
+	const uint64 Rem = TPlusSeconds % 86400ULL;
+	const uint64 Hours = Rem / 3600ULL;
+	const uint64 Minutes = (Rem % 3600ULL) / 60ULL;
+	const uint64 Seconds = Rem % 60ULL;
+
+	return FString::Printf(TEXT("T+ %02llu/%02llu:%02llu:%02llu"),
+		(unsigned long long)Days,
+		(unsigned long long)Hours,
+		(unsigned long long)Minutes,
+		(unsigned long long)Seconds);
+}
+
 void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -74,6 +89,7 @@ void UOperationsScreen::NativeConstruct()
 	{
 		Timer->OnUniverseSecond.AddUObject(this, &UOperationsScreen::HandleUniverseSecondTick);
 		Timer->OnUniverseMinute.AddUObject(this, &UOperationsScreen::HandleUniverseMinuteTick);
+		Timer->OnCampaignTPlusChanged.AddUObject(this, &UOperationsScreen::HandleCampaignTPlusChanged);
 
 		// Initial push:
 		const uint64 Now = Timer->GetUniverseTimeSeconds();
@@ -84,181 +100,181 @@ void UOperationsScreen::NativeConstruct()
 		{
 			HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
 		}
+	}
 
-		CombatantList = SSWInstance->GetCombatantList();
+	CombatantList = SSWInstance->GetCombatantList();
 
-		GetCurrentCarrierGroup();
+	GetCurrentCarrierGroup();
 
-		if (TitleText)
-			TitleText->SetText(FText::FromString("Operational Command").ToUpper());
+	if (TitleText)
+		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
 
-		if (CancelButton) {
-			CancelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnCancelButtonClicked);
-			CancelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnCancelButtonHovered);
-		}
+	if (CancelButton) {
+		CancelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnCancelButtonClicked);
+		CancelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnCancelButtonHovered);
+	}
 
-		if (CancelButtonText) {
-			CancelButtonText->SetText(FText::FromString("BACK"));
-		}
+	if (CancelButtonText) {
+		CancelButtonText->SetText(FText::FromString("BACK"));
+	}
 	
-		SSWInstance->SelectedSystem = SSWInstance->GetActiveCampaign().System;
-		SSWInstance->SelectedSector.Name = SSWInstance->GetActiveCampaign().Region;
+	SSWInstance->SelectedSystem = SSWInstance->GetActiveCampaign().System;
+	SSWInstance->SelectedSector.Name = SSWInstance->GetActiveCampaign().Region;
 
-		if (TheaterGalaxyButton) {
-			TheaterGalaxyButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonSelected);
-			TheaterGalaxyButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonHovered);
-			// Optional: set a label
-			if (UTextBlock* Label = Cast<UTextBlock>(TheaterGalaxyButton->GetWidgetFromName("Label")))
-			{
-				Label->SetText(FText::FromString("GALAXY"));
-			}
-		}
-
-		if (TheaterSystemButton) {
-			TheaterSystemButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonSelected);
-			TheaterSystemButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonHovered);
-			// Optional: set a label
-			if (UTextBlock* Label = Cast<UTextBlock>(TheaterSystemButton->GetWidgetFromName("Label")))
-			{
-				Label->SetText(FText::FromString("SYSTEM"));
-			}
-		}
-
-		if (TheaterSectorButton) {
-			TheaterSectorButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonSelected);
-			TheaterSectorButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonHovered);
-			// Optional: set a label
-			if (UTextBlock* Label = Cast<UTextBlock>(TheaterSectorButton->GetWidgetFromName("Label")))
-			{
-				Label->SetText(FText::FromString("SECTOR"));
-			}
-		}
-	
-		if (CurrentLocationText)
+	if (TheaterGalaxyButton) {
+		TheaterGalaxyButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonSelected);
+		TheaterGalaxyButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonHovered);
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(TheaterGalaxyButton->GetWidgetFromName("Label")))
 		{
-			CurrentLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().System + " System").ToUpper());
+			Label->SetText(FText::FromString("GALAXY"));
 		}
+	}
 
-		if (EmpireSelectionDD) {
+	if (TheaterSystemButton) {
+		TheaterSystemButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonSelected);
+		TheaterSystemButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonHovered);
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(TheaterSystemButton->GetWidgetFromName("Label")))
+		{
+			Label->SetText(FText::FromString("SYSTEM"));
+		}
+	}
+
+	if (TheaterSectorButton) {
+		TheaterSectorButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonSelected);
+		TheaterSectorButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonHovered);
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(TheaterSectorButton->GetWidgetFromName("Label")))
+		{
+			Label->SetText(FText::FromString("SECTOR"));
+		}
+	}
+	
+	if (CurrentLocationText)
+	{
+		CurrentLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().System + " System").ToUpper());
+	}
+
+	if (EmpireSelectionDD) {
 		
-			EmpireSelectionDD->ClearOptions();
-			EmpireSelectionDD->OnSelectionChanged.AddDynamic(this, &UOperationsScreen::OnSetEmpireSelected);
-		}
+		EmpireSelectionDD->ClearOptions();
+		EmpireSelectionDD->OnSelectionChanged.AddDynamic(this, &UOperationsScreen::OnSetEmpireSelected);
+	}
 
-		if (AudioButton) {
-			AudioButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnAudioButtonClicked);
-		}
-		if (SelectButton) {
-			SelectButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnSelectButtonClicked);
-			SelectButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonHovered);
-		}
+	if (AudioButton) {
+		AudioButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnAudioButtonClicked);
+	}
+	if (SelectButton) {
+		SelectButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnSelectButtonClicked);
+		SelectButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonHovered);
+	}
 
-		if (PlayButtonText) {
-			PlayButtonText->SetText(FText::FromString("SELECT"));
-		}
+	if (PlayButtonText) {
+		PlayButtonText->SetText(FText::FromString("SELECT"));
+	}
 
-		if (!MenuButtonClass || !MenuToggleGroup || !MenuButtonContainer) return;
+	if (!MenuButtonClass || !MenuToggleGroup || !MenuButtonContainer) return;
 
-		for (int32 i = 0; i < 5; ++i)
+	for (int32 i = 0; i < 5; ++i)
+	{
+		UMenuButton* NewButton = CreateWidget<UMenuButton>(this, MenuButtonClass);
+		if (!NewButton) continue;
+
+		// Optional: set a label
+		if (UTextBlock* Label = Cast<UTextBlock>(NewButton->GetWidgetFromName("Label")))
 		{
-			UMenuButton* NewButton = CreateWidget<UMenuButton>(this, MenuButtonClass);
-			if (!NewButton) continue;
-
-			// Optional: set a label
-			if (UTextBlock* Label = Cast<UTextBlock>(NewButton->GetWidgetFromName("Label")))
-			{
-				Label->SetText(FText::FromString(MenuItems[i]).ToUpper());
-			}
-			NewButton->MenuOption = MenuItems[i];
-
-			// Add to container and to toggle group
-			MenuButtonContainer->AddChild(NewButton);
-			MenuToggleGroup->RegisterButton(NewButton);
-
-			// Optional: listen for selection in this screen
-			NewButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnMenuToggleSelected);
-			NewButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMenuToggleHovered);
-			AllMenuButtons.Add(NewButton);
+			Label->SetText(FText::FromString(MenuItems[i]).ToUpper());
 		}
+		NewButton->MenuOption = MenuItems[i];
 
-		if (PlayerNameText) {
-			PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
-		}
+		// Add to container and to toggle group
+		MenuButtonContainer->AddChild(NewButton);
+		MenuToggleGroup->RegisterButton(NewButton);
 
-		if (OperationalSwitcher) {
-			OperationalSwitcher->SetActiveWidgetIndex(0);
-		}
+		// Optional: listen for selection in this screen
+		NewButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnMenuToggleSelected);
+		NewButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMenuToggleHovered);
+		AllMenuButtons.Add(NewButton);
+	}
 
-		if (MapSwitcher) {
-			MapSwitcher->SetActiveWidgetIndex(0);
-		}
-		if (OperationsModeText) {
-			OperationsModeText->SetText(FText::FromString("ORDERS"));
-		}
+	if (PlayerNameText) {
+		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
+	}
 
-		ActiveCampaign = SSWInstance->GetActiveCampaign();
+	if (OperationalSwitcher) {
+		OperationalSwitcher->SetActiveWidgetIndex(0);
+	}
 
-		if (SSWInstance->GetActiveCampaign().Index == 0) {
-			if (TheaterButton) {
-				TheaterButton->SetIsEnabled(false);
-			}
-			if (ForcesButton) {
-				ForcesButton->SetIsEnabled(false);
-			}
-			if (IntelButton) {
-				IntelButton->SetIsEnabled(false);
-			}
-		}
-		else {
-			if (TheaterButton) {
-				TheaterButton->SetIsEnabled(true);
-			}
-			if (ForcesButton) {
-				ForcesButton->SetIsEnabled(true);
-			}
-			if (IntelButton) {
-				IntelButton->SetIsEnabled(true);
-			}
-		}
+	if (MapSwitcher) {
+		MapSwitcher->SetActiveWidgetIndex(0);
+	}
+	if (OperationsModeText) {
+		OperationsModeText->SetText(FText::FromString("ORDERS"));
+	}
 
-		if (ForceListView) {
-			ForceListView->ClearListItems();
+	ActiveCampaign = SSWInstance->GetActiveCampaign();
+
+	if (SSWInstance->GetActiveCampaign().Index == 0) {
+		if (TheaterButton) {
+			TheaterButton->SetIsEnabled(false);
+		}
+		if (ForcesButton) {
+			ForcesButton->SetIsEnabled(false);
+		}
+		if (IntelButton) {
+			IntelButton->SetIsEnabled(false);
+		}
+	}
+	else {
+		if (TheaterButton) {
+			TheaterButton->SetIsEnabled(true);
+		}
+		if (ForcesButton) {
+			ForcesButton->SetIsEnabled(true);
+		}
+		if (IntelButton) {
+			IntelButton->SetIsEnabled(true);
+		}
+	}
+
+	if (ForceListView) {
+		ForceListView->ClearListItems();
 		
-			for (const FS_OOBForce& Force : LoadedForces)
-			{
-				UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
-				ForceItem->Data = Force;
-				ForceListView->AddItem(ForceItem);
-				//UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), ForceItem->Data);
-			}
-		}
-	
-		SelectedMission = 0;
-	
-		if (AllMenuButtons.Num() > 0)
+		for (const FS_OOBForce& Force : LoadedForces)
 		{
-			AllMenuButtons[0]->SetSelected(true);
+			UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
+			ForceItem->Data = Force;
+			ForceListView->AddItem(ForceItem);
+			//UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), ForceItem->Data);
 		}
+	}
+	
+	SelectedMission = 0;
+	
+	if (AllMenuButtons.Num() > 0)
+	{
+		AllMenuButtons[0]->SetSelected(true);
+	}
 
-		ScreenOffset.X = 600;
-		ScreenOffset.Y = 300;
+	ScreenOffset.X = 600;
+	ScreenOffset.Y = 300;
 	
 
-		CreateGalaxyMap();
-		SetCampaignOrders();
-		PopulateMissionList();
-		PopulateEmpireDDList();
-		PopulateIntelList();
-		SetCampaignMissions();
-		LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
-		CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
+	CreateGalaxyMap();
+	SetCampaignOrders();
+	PopulateMissionList();
+	PopulateEmpireDDList();
+	PopulateIntelList();
+	SetCampaignMissions();
+	LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
+	CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
 
-		const FS_OOBWing* Wing = FindWingForCarrierGroup(CurrentCarrierGroup, LoadedForces);
+	const FS_OOBWing* Wing = FindWingForCarrierGroup(CurrentCarrierGroup, LoadedForces);
 
-		if (CurrentUnitText && Wing != nullptr)
-		{
-			CurrentUnitText->SetText(FText::FromString(Wing->Name).ToUpper());
-		}
+	if (CurrentUnitText && Wing != nullptr)
+	{
+		CurrentUnitText->SetText(FText::FromString(Wing->Name).ToUpper());
 	}
 }
 
@@ -271,13 +287,8 @@ void UOperationsScreen::NativeDestruct()
 			Timer->OnUniverseSecond.RemoveAll(this);
 			Timer->OnUniverseMinute.RemoveAll(this);
 			Timer->OnMissionSecond.RemoveAll(this); 
+			Timer->OnCampaignTPlusChanged.RemoveAll(this);
 		}
-	}
-
-	if (USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance()))
-	{
-		SSWInstance->OnCampaignTPlusChanged.RemoveAll(this);
-		// keep removing any other non-timer binds you have on GI
 	}
 
 	Super::NativeDestruct();
@@ -1492,10 +1503,13 @@ void UOperationsScreen::HandleUniverseSecondTick(uint64 UniverseSecondsNow)
 	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
 	if (!GI) return;
 
+	UTimerSubsystem* Timer = GI->GetSubsystem<UTimerSubsystem>();
+	if (!Timer) return;
+
 	if (GameTimeText)
 	{
 		GameTimeText->SetText(
-			FText::FromString(GI->GetUniverseDateTimeString())
+			FText::FromString(Timer->GetUniverseDateTimeString())
 		);
 	}
 }
@@ -1522,15 +1536,8 @@ void UOperationsScreen::HandleUniverseMinuteTick(uint64 UniverseSecondsNow)
 
 void UOperationsScreen::HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds)
 {
-	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
-	if (!GI || !GI->CampaignSave) return;
+	if (!CampaignTPlusText) return;
 
-	if (CampaignTPlusText) 
-	{
-		const FString TPlusString = "T+ " + GI->CampaignSave->GetTPlusDisplay(UniverseSecondsNow);
-		CampaignTPlusText->SetText(FText::FromString(TPlusString));
-	}
+	CampaignTPlusText->SetText(FText::FromString(FormatTPlus(TPlusSeconds)));
 }
-
-
 

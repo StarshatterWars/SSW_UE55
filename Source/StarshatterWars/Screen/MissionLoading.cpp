@@ -14,8 +14,31 @@ void UMissionLoading::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+	if (!SSWInstance) return;
+
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
+
+	// -------------------------------
+	// PUB/SUB SUBSCRIBE	// -------------------------------
+
+	UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>();
+
+	if (Timer)
+	{
+		Timer->OnUniverseSecond.AddUObject(this, &UMissionLoading::HandleUniverseSecondTick);
+		Timer->OnUniverseMinute.AddUObject(this, &UMissionLoading::HandleUniverseMinuteTick);
+
+		// Initial push:
+		const uint64 Now = Timer->GetUniverseTimeSeconds();
+		HandleUniverseSecondTick(Now);
+
+		// If campaign T+ depends on universe seconds, keep this:
+		if (SSWInstance && SSWInstance->CampaignSave)
+		{
+			HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
+		}
+	}
 
 	if (TitleText)
 		TitleText->SetText(FText::FromString("Mission Briefing").ToUpper());
@@ -92,6 +115,22 @@ void UMissionLoading::NativeConstruct()
 
 void UMissionLoading::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
+}
+
+void UMissionLoading::NativeDestruct()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UTimerSubsystem* Timer = GI->GetSubsystem<UTimerSubsystem>())
+		{
+			Timer->OnUniverseSecond.RemoveAll(this);
+			Timer->OnUniverseMinute.RemoveAll(this);
+			Timer->OnMissionSecond.RemoveAll(this);
+			Timer->OnCampaignTPlusChanged.RemoveAll(this);
+		}
+	}
+
+	Super::NativeDestruct();
 }
 
 void UMissionLoading::OnSelectButtonClicked()
@@ -179,3 +218,45 @@ void UMissionLoading::OnCancelButtonHovered()
 void UMissionLoading::OnCancelButtonUnHovered()
 {
 }
+
+void UMissionLoading::HandleUniverseSecondTick(uint64 UniverseSecondsNow)
+{
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	UTimerSubsystem* Timer = GI->GetSubsystem<UTimerSubsystem>();
+	if (!Timer) return;
+
+	if (GameTimeText)
+	{
+		GameTimeText->SetText(
+			FText::FromString(Timer->GetUniverseDateTimeString())
+		);
+	}
+}
+
+void UMissionLoading::HandleUniverseMinuteTick(uint64 UniverseSecondsNow)
+{
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	// Refresh Intel only if Intel page is currently visible
+	// In your code Intel index appears to be 3 (OperationalSwitcher->SetActiveWidgetIndex(3) in LoadIntelInfo)
+
+}
+
+void UMissionLoading::HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds)
+{
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI || !GI->CampaignSave) return;
+
+	if (CampaignTPlusText)
+	{
+		const FString TPlusString = "T+ " + GI->CampaignSave->GetTPlusDisplay(UniverseSecondsNow);
+		CampaignTPlusText->SetText(FText::FromString(TPlusString));
+	}
+}
+
+
+
+

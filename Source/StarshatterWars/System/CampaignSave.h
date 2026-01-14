@@ -21,19 +21,22 @@ class STARSHATTERWARS_API UCampaignSave : public USaveGame
 
 public:
 	// ----------------------
-	// Identity
-	// ----------------------
+// Identity
+// ----------------------
 
-	/** 1-based campaign index (Campaign 1, Campaign 2...). Original logic uses this heavily. */
-	UPROPERTY()
+/** 1-based campaign index (Campaign 1, Campaign 2...). */
+	UPROPERTY(SaveGame)
 	int32 CampaignIndex = 1;
 
+	// NEW – preferred, stable slot naming
+	static FString MakeSlotNameFromRowName(FName RowName);
+
 	/** Stable identifier for DT_Campaign lookup/validation. */
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	FName CampaignRowName = NAME_None;
 
 	/** Optional display name for menus/Operations header. */
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	FString CampaignDisplayName;
 
 	// ----------------------
@@ -41,11 +44,11 @@ public:
 	// ----------------------
 
 	/** UniverseTimeSeconds when campaign began (anchor for T+). */
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	uint64 CampaignStartUniverseSeconds = 0;
 
 	/** Set true after InitializeClock is called at campaign start. */
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	bool bInitialized = false;
 
 public:

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/LevelScriptActor.h"
 #include "../System/SSWGameInstance.h"
+#include "../System/TimerSubsystem.h"
 #include "../System/UniverseSaveGame.h"
 #include "../Foundation/DataLoader.h"
 #include "GameLoader.generated.h"

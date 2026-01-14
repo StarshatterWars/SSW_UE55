@@ -210,13 +210,13 @@ void ASystemBodyPanelActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 double ASystemBodyPanelActor::GetOrbitTimeSeconds() const
 {
-	const USSWGameInstance* GI = GetGameInstance<USSWGameInstance>();
-	if (!GI)
+	const UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>();
+	if (!Timer)
 	{
 		return 0.0;
 	}
 
-	const double UniverseNow = (double)GI->GetUniverseTimeSeconds();
+	const double UniverseNow = (double)Timer->GetUniverseTimeSeconds();
 	return UniverseNow;
 }
 

@@ -144,15 +144,18 @@ void AGameLoader::LoadOrCreateUniverse()
 		(long long)UniverseSave->UniverseBaseUnixSeconds,
 		(unsigned long long)UniverseSave->UniverseTimeSeconds);
 
+
 	// -------------------- PUSH INTO GAME INSTANCE --------------------
-	if (USSWGameInstance* GI = GetSSWGameInstance())
+	UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>();
+	USSWGameInstance* GI = GetSSWGameInstance();
+
+	//if (USSWGameInstance* GI = GetSSWGameInstance())
 	{
 		GI->UniverseId = UniverseSave->UniverseId;
 		GI->UniverseSeed = UniverseSave->UniverseSeed;
-		GI->UniverseBaseUnixSeconds = UniverseSave->UniverseBaseUnixSeconds;
-		GI->UniverseTimeSeconds = UniverseSave->UniverseTimeSeconds;
+		Timer->UniverseBaseUnixSeconds = UniverseSave->UniverseBaseUnixSeconds;
+		Timer->UniverseTimeSeconds = UniverseSave->UniverseTimeSeconds;
 
 		GI->SetUniverseSaveContext(Slot, UserIndex, UniverseSave);
-		GI->StartUniverseClock();
 	}
 }

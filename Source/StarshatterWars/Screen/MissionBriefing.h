@@ -16,6 +16,7 @@
 #include "Components/ListView.h"
 
 #include "../System/SSWGameInstance.h"
+#include "../System/TimerSubsystem.h"
 #include "MissionBriefing.generated.h"
 
 /**

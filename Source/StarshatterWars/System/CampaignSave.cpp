@@ -13,7 +13,13 @@ FString UCampaignSave::MakeSlotNameFromCampaignIndex(int32 InCampaignIndex)
 
 void UCampaignSave::InitializeCampaignClock(uint64 UniverseTimeSecondsNow)
 {
-	CampaignStartUniverseSeconds = (int64)UniverseTimeSecondsNow;
+	// One-shot: never allow re-anchoring
+	if (bInitialized && CampaignStartUniverseSeconds > 0)
+	{
+		return;
+	}
+
+	CampaignStartUniverseSeconds = UniverseTimeSecondsNow;
 	bInitialized = true;
 }
 
@@ -54,4 +60,14 @@ FString UCampaignSave::FormatTPlus_DD_HHMMSS(uint64 TPlusSeconds)
 FString UCampaignSave::GetTPlusDisplay(uint64 UniverseTimeSecondsNow) const
 {
 	return FormatTPlus_DD_HHMMSS(GetTPlusSeconds(UniverseTimeSecondsNow));
+}
+
+FString UCampaignSave::MakeSlotNameFromRowName(FName RowName)
+{
+	checkf(!RowName.IsNone(), TEXT("MakeSlotNameFromRowName called with None"));
+
+	return FString::Printf(
+		TEXT("CampaignSave_%s"),
+		*RowName.ToString()
+	);
 }
