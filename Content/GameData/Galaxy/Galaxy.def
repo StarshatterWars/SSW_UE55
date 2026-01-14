@@ -2750,27 +2750,29 @@ system:
 	star: Marakanis,
 
 	stellar:        {
-	   name:    Marakanis
-	   map:     "StarF_map",
-	   image:   "F8",
-	   class:	F,
-	   tscale:  6,
-	   radius:  16e8,
-	   mass:    2e30,
-	   light:   1.6e11,
-	   color:   (255, 255, 255),// - F White
-	   back:    (120,  20,  14), // - nebula21   
-	   region: {
+		name:    Marakanis
+		map:     "StarF_map",
+		image:   "F8",
+		class:	F,
+		tscale:  6,
+		radius:  16e8,
+		mass:    2e30,
+		light:   1.6e11,
+		color:   (255, 255, 255),
+		back:    (120,  20,  14),  
+
+		region: {
 		   name:    Xanthe,
 		   parent:  Marakanis,
-		   type:	Star,
+		   type: Star,
 		   radius:  480e3,
 		   grid:    20e3,
-		   orbit:   4.38e11,
-		   inclination: 0.16,
-		   asteroids: 70,
-		   link:    Path, // Trocanther
+		   orbit:   6.12e11,
+		   inclination: 0.13,
+		   asteroids: 90,
+		   link:    Path,
 		},
+
 		planet:     {
 			name:    Marak
 			icon:    "marak_map",
@@ -2784,6 +2786,7 @@ system:
 			aphelion: 1.24e11,
 			eccentricity: 0.125,
 			rotation: 23.7,
+			
 			region:     {
 			   name:    Marak,
 			   parent:  Marak,
