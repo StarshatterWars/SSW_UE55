@@ -3446,6 +3446,7 @@ void AGameDataLoader::ParseRegion(TermStruct* val, const char* fn)
 		// call AddRow to insert the record
 		//RegionsDataTable->AddRow(RowName, NewRegionData);
 	}
+
 	RegionMapArray.Add(NewRegionData);
 }
 

@@ -59,37 +59,32 @@ void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
+	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
+	if (!SSWInstance) return;
 
+	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
+	
 	// -------------------------------
 	// PUB/SUB SUBSCRIBE 
 	// -------------------------------
-	if (SSWInstance)
+	
+	UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>();
+
+	if (Timer)
 	{
-		SSWInstance->OnUniverseSecond.AddUObject(
-			this,
-			&UOperationsScreen::HandleUniverseSecondTick
-		);
+		Timer->OnUniverseSecond.AddUObject(this, &UOperationsScreen::HandleUniverseSecondTick);
+		Timer->OnUniverseMinute.AddUObject(this, &UOperationsScreen::HandleUniverseMinuteTick);
 
-		SSWInstance->OnUniverseMinute.AddUObject(
-			this,
-			&UOperationsScreen::HandleUniverseMinuteTick
-		);
-
-		SSWInstance->OnCampaignTPlusChanged.AddUObject(
-			this,
-			&UOperationsScreen::HandleCampaignTPlusChanged
-		);
-
-		// Initial “push” so UI is correct immediately:
-		const uint64 Now = (uint64)SSWInstance->GetUniverseTimeSeconds();
+		// Initial push:
+		const uint64 Now = Timer->GetUniverseTimeSeconds();
 		HandleUniverseSecondTick(Now);
 
-		if (SSWInstance->CampaignSave)
+		// If campaign T+ depends on universe seconds, keep this:
+		if (SSWInstance && SSWInstance->CampaignSave)
 		{
 			HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
 		}
+
 		CombatantList = SSWInstance->GetCombatantList();
 
 		GetCurrentCarrierGroup();
@@ -269,10 +264,20 @@ void UOperationsScreen::NativeConstruct()
 
 void UOperationsScreen::NativeDestruct()
 {
-	if (USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance()))
+	if (UGameInstance* GI = GetGameInstance())
 	{
-		GI->OnUniverseMinute.RemoveAll(this);
-		GI->OnCampaignTPlusChanged.RemoveAll(this);
+		if (UTimerSubsystem* Timer = GI->GetSubsystem<UTimerSubsystem>())
+		{
+			Timer->OnUniverseSecond.RemoveAll(this);
+			Timer->OnUniverseMinute.RemoveAll(this);
+			Timer->OnMissionSecond.RemoveAll(this); 
+		}
+	}
+
+	if (USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance()))
+	{
+		SSWInstance->OnCampaignTPlusChanged.RemoveAll(this);
+		// keep removing any other non-timer binds you have on GI
 	}
 
 	Super::NativeDestruct();

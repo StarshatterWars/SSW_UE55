@@ -1,15 +1,3 @@
-// 
-// /*  Project nGenEx
-// Fractal Dev Games
-// Copyright (C) 2024. All Rights Reserved.	
-// 
-// SUBSYSTEM:    SSW
-// FILE:         TimerSubsystem.cpp	
-// AUTHOR:       Carlos Bott
-// 
-// */
-
-
 #include "TimerSubsystem.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -17,9 +5,7 @@
 void UTimerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-
-	// You can auto-start here, or start from your StartGame path:
-	// StartClock();
+	// StartClock(); // optional
 }
 
 void UTimerSubsystem::Deinitialize()
@@ -52,18 +38,70 @@ void UTimerSubsystem::StopClock()
 	}
 }
 
+// -------------------- Mission API --------------------
+
+void UTimerSubsystem::StartMissionRun(bool bResetToZero)
+{
+	// Ensure the master clock is running (so mission timeline advances)
+	StartClock();
+
+	if (bResetToZero)
+	{
+		ResetMissionClock();
+	}
+
+	MissionClockState = EMissionClockState::Running;
+}
+
+void UTimerSubsystem::StopMissionRun()
+{
+	MissionClockState = EMissionClockState::Stopped;
+}
+
+void UTimerSubsystem::PauseMissionClock()
+{
+	if (MissionClockState == EMissionClockState::Running)
+	{
+		MissionClockState = EMissionClockState::Paused;
+	}
+}
+
+void UTimerSubsystem::ResumeMissionClock()
+{
+	if (MissionClockState == EMissionClockState::Paused)
+	{
+		MissionClockState = EMissionClockState::Running;
+	}
+}
+
+void UTimerSubsystem::ResetMissionClock()
+{
+	MissionTimelineSeconds = 0.0;
+	LastMissionSecondBroadcast = TNumericLimits<int32>::Min();
+
+	// Immediately broadcast 0 so UI/cutscene systems snap to 00:00 on restart
+	OnMissionSecond.Broadcast(0);
+}
+
+FText UTimerSubsystem::GetMissionTimerTextMMSS() const
+{
+	const int32 TotalSeconds = GetMissionTimeSecondsInt();
+	const int32 Minutes = TotalSeconds / 60;
+	const int32 Seconds = TotalSeconds % 60;
+	return FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds));
+}
+
+// -------------------- Clock Tick --------------------
+
 void UTimerSubsystem::OnClockTick()
 {
-	// Deterministic step in universe seconds
+	// ---- Universe time ----
 	const double DeltaUniverse = TimeStepSeconds * TimeScale;
 	const uint64 AddSeconds = (uint64)FMath::Max(1.0, FMath::RoundToDouble(DeltaUniverse));
-
 	UniverseTimeSeconds += AddSeconds;
 
-	// Always broadcast per-second tick (lightweight subscribers only)
 	OnUniverseSecond.Broadcast(UniverseTimeSeconds);
 
-	// Cadence gates
 	const uint64 CurMinute = UniverseTimeSeconds / 60ULL;
 	if (CurMinute != LastMinute)
 	{
@@ -84,13 +122,26 @@ void UTimerSubsystem::OnClockTick()
 		LastDay = CurDay;
 		OnUniverseDay.Broadcast(UniverseTimeSeconds);
 	}
+
+	// ---- Mission/Cutscene timeline (shared) ----
+	if (MissionClockState == EMissionClockState::Running)
+	{
+		// Mission timeline advances in real seconds by default
+		MissionTimelineSeconds += (TimeStepSeconds * MissionTimeScale);
+
+		const int32 CurMissionSec = GetMissionTimeSecondsInt();
+		if (CurMissionSec != LastMissionSecondBroadcast)
+		{
+			LastMissionSecondBroadcast = CurMissionSec;
+			OnMissionSecond.Broadcast(CurMissionSec);
+		}
+	}
 }
 
 FDateTime UTimerSubsystem::GetUniverseDateTime() const
 {
 	if (UniverseBaseUnixSeconds <= 0)
 	{
-		// fallback: treat universe seconds as unix seconds (debug)
 		return FDateTime::FromUnixTimestamp((int64)UniverseTimeSeconds);
 	}
 
@@ -102,7 +153,3 @@ FString UTimerSubsystem::GetUniverseDateTimeString() const
 {
 	return GetUniverseDateTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 }
-
-
-
-

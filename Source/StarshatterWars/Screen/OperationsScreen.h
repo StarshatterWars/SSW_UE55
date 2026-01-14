@@ -22,6 +22,7 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
+#include "../System/TimerSubsystem.h"
 #include "OperationsScreen.generated.h"
 
 // Forward declarations
