@@ -307,7 +307,11 @@ void USSWGameInstance::Init()
 	CreateOOBTable();
 	SetupMusicController();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
-
+	if (UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>())
+	{
+		Timer->OnUniverseMinute.AddUObject(this, &USSWGameInstance::HandleUniverseMinuteAutosave);
+		// optional: OnUniverseSecond for finer cadence, but minute is safer.
+	}
 }
 
 void USSWGameInstance::ReadCampaignData()
@@ -2586,6 +2590,40 @@ void USSWGameInstance::RequestUniverseAutosave()
 	bUniverseAutosaveRequested = true;
 }
 
+#include "CampaignSave.h"
+#include "Kismet/GameplayStatics.h"
+
+bool USSWGameInstance::SaveCampaign()
+{
+	if (!CampaignSave)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SaveCampaign: No CampaignSave loaded"));
+		return false;
+	}
+
+	if (CampaignSave->CampaignRowName.IsNone())
+	{
+		UE_LOG(LogTemp, Error, TEXT("SaveCampaign: CampaignRowName is None"));
+		return false;
+	}
+
+	const FString Slot =
+		UCampaignSave::MakeSlotNameFromRowName(CampaignSave->CampaignRowName);
+
+	constexpr int32 UserIndex = 0;
+
+	const bool bOK =
+		UGameplayStatics::SaveGameToSlot(CampaignSave, Slot, UserIndex);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("SaveCampaign: slot=%s ok=%d row=%s"),
+		*Slot,
+		bOK ? 1 : 0,
+		*CampaignSave->CampaignRowName.ToString());
+
+	return bOK;
+}
+
 bool USSWGameInstance::SavePlayer(bool bForce)
 {
 	// call your existing SaveGame(PlayerSaveName, PlayerSaveSlot) here
@@ -2691,6 +2729,64 @@ UCampaignSave* USSWGameInstance::LoadOrCreateCampaignSave(int32 CampaignIndex, F
 	return CampaignSave;
 }
 
+UCampaignSave* USSWGameInstance::CreateNewCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName)
+{
+	// Normalize
+	CampaignIndex = FMath::Max(1, CampaignIndex);
+
+	if (RowName.IsNone())
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateNewCampaignSave: RowName is None"));
+		return nullptr;
+	}
+
+	const FString Slot = UCampaignSave::MakeSlotNameFromRowName(RowName);
+	constexpr int32 UserIndex = 0;
+
+	UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>();
+
+	// Create new save object
+	UCampaignSave* NewSave = Cast<UCampaignSave>(
+		UGameplayStatics::CreateSaveGameObject(UCampaignSave::StaticClass())
+	);
+
+	if (!NewSave)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateNewCampaignSave: Failed to create SaveGame object"));
+		return nullptr;
+	}
+
+	// Identity
+	NewSave->CampaignIndex = CampaignIndex;
+	NewSave->CampaignRowName = RowName;
+	NewSave->CampaignDisplayName = DisplayName;
+
+	// Reset campaign timeline by anchoring to current universe time
+	const uint64 NowUniverse = Timer ? Timer->GetUniverseTimeSeconds() : 0ULL;
+	NewSave->InitializeCampaignClock(NowUniverse);
+
+	// Persist (overwrites existing slot for this campaign row)
+	const bool bOK = UGameplayStatics::SaveGameToSlot(NewSave, Slot, UserIndex);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("CreateNewCampaignSave: slot=%s ok=%d row=%s index=%d start=%llu"),
+		*Slot,
+		bOK ? 1 : 0,
+		*RowName.ToString(),
+		CampaignIndex,
+		(unsigned long long)NewSave->CampaignStartUniverseSeconds);
+
+	// Assign + inject into timer subsystem so UI starts at T+ 00:00:00
+	CampaignSave = NewSave;
+
+	if (Timer)
+	{
+		Timer->SetCampaignSave(NewSave);
+	}
+
+	return NewSave;
+}
+
 UCampaignSave* USSWGameInstance::LoadOrCreateSelectedCampaignSave()
 {
 	return LoadOrCreateCampaignSave(SelectedCampaignIndex, SelectedCampaignRowName, SelectedCampaignDisplayName);
@@ -2702,28 +2798,20 @@ void USSWGameInstance::EnsureCampaignSaveLoaded()
 	if (CampaignSave)
 		return;
 
-	// If player has never selected a campaign, do not start silently.
-	// You can decide to auto-pick 0, but your earlier requirement implied
-	// "Start should work" (no crash) — so we will default to 0 if unset.
 	int32 UiIndex = PlayerInfo.Campaign;
 	if (UiIndex < 0)
 	{
 		UiIndex = 0;
-		PlayerInfo.Campaign = 0; // optional: persist later if you want
+		PlayerInfo.Campaign = 0;
 	}
 
-	// ---- Determine RowName + DisplayName + 1-based CampaignIndex ----
 	SelectedCampaignRowName = NAME_None;
 	SelectedCampaignDisplayName = TEXT("");
 
-	// Preferred: look up by DT RowNames (stable)
 	if (CampaignDataTable)
 	{
 		TArray<FName> RowNames = CampaignDataTable->GetRowNames();
 
-		// We need a deterministic mapping from UiIndex -> row.
-		// Your UI dropdown is now built from the DataTable, so UiIndex should match that order.
-		// BUT DataTables do not guarantee row order; safest is to sort by FS_Campaign::Index.
 		struct FTempCampaignRef
 		{
 			int32 Index0 = 0;
@@ -2738,11 +2826,10 @@ void USSWGameInstance::EnsureCampaignSaveLoaded()
 		for (const FName& RN : RowNames)
 		{
 			const FS_Campaign* Row = CampaignDataTable->FindRow<FS_Campaign>(RN, TEXT("EnsureCampaignSaveLoaded"));
-			if (!Row)
-				continue;
+			if (!Row) continue;
 
 			FTempCampaignRef Ref;
-			Ref.Index0 = Row->Index;     // 0-based in your struct
+			Ref.Index0 = Row->Index;
 			Ref.RowName = RN;
 			Ref.Name = Row->Name;
 			Ref.bAvailable = Row->bAvailable;
@@ -2760,23 +2847,19 @@ void USSWGameInstance::EnsureCampaignSaveLoaded()
 		{
 			SelectedCampaignRowName = Sorted[UiIndex].RowName;
 			SelectedCampaignDisplayName = Sorted[UiIndex].Name;
-
-			// Convert UI 0-based -> campaign 1-based for save slot naming
 			SelectedCampaignIndex = Sorted[UiIndex].Index0 + 1;
 		}
 	}
 	else
 	{
-		// Fallback: use cached CampaignData array (less stable, but better than crashing)
 		if (CampaignData.Num() > 0)
 		{
 			UiIndex = FMath::Clamp(UiIndex, 0, CampaignData.Num() - 1);
 			SelectedCampaignDisplayName = CampaignData[UiIndex].Name;
-			SelectedCampaignIndex = UiIndex + 1; // 1-based slot index
+			SelectedCampaignIndex = UiIndex + 1;
 		}
 	}
 
-	// If we still don't have a campaign, force user back to campaign screen
 	if (SelectedCampaignIndex < 1)
 	{
 		ShowCampaignScreen();
@@ -2791,6 +2874,15 @@ void USSWGameInstance::EnsureCampaignSaveLoaded()
 	{
 		UE_LOG(LogTemp, Error, TEXT("EnsureCampaignSaveLoaded: Failed to load/create CampaignSave"));
 		ShowCampaignScreen();
+		return;
+	}
+
+	// ---------------------------------------------------------
+	// NEW: Inject the loaded campaign save into the TimerSubsystem
+	// ---------------------------------------------------------
+	if (UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>())
+	{
+		Timer->SetCampaignSave(CampaignSave);
 	}
 }
 
@@ -2844,4 +2936,13 @@ FString USSWGameInstance::GetCampaignAndUniverseTimeLine() const
 		*UniverseStr,
 		*TPlusStr
 	);
+}
+
+void USSWGameInstance::HandleUniverseMinuteAutosave(uint64 UniverseSecondsNow)
+{
+	// Universe autosave (your existing method)
+	SaveUniverse();
+
+	// Campaign autosave (only if you actually have mutable campaign state)
+	SaveCampaign();
 }

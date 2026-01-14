@@ -14,7 +14,7 @@
 #include "Components/EditableTextBox.h"
 #include "Kismet/GameplayStatics.h"
 #include "../System/SSWGameInstance.h"
-
+#include "../System/TimerSubsystem.h"
 #include "CampaignScreen.generated.h"
 
 /**
@@ -63,9 +63,13 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayButtonText;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* RestartButtonText;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CancelButtonText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* PlayButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* RestartButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
@@ -95,6 +99,12 @@ protected:
 	UFUNCTION()
 	void OnPlayButtonUnHovered();
 	UFUNCTION()
+	void OnRestartButtonClicked();
+	UFUNCTION()
+	void OnRestartButtonHovered();
+	UFUNCTION()
+	void OnRestartButtonUnHovered();
+	UFUNCTION()
 	void OnCancelButtonClicked();
 	UFUNCTION()
 	void OnCancelButtonHovered();
@@ -114,6 +124,11 @@ protected:
 	void GetCampaignImageFile(int selected);
 	UFUNCTION()
 	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
+	UFUNCTION()
+	bool DoesSelectedCampaignSaveExist() const;
+
+	UFUNCTION()
+	void UpdateCampaignButtons();
 
 	UPROPERTY()
 	FString ImagePath;

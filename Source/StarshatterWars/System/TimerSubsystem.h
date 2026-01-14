@@ -149,6 +149,11 @@ public:
 	UFUNCTION()
 	UCampaignSave* GetCampaignSave() const { return CampaignSave.Get(); }
 
+	// Explicitly restart (reset) campaign timeline anchor so T+ becomes 0.
+	// Does NOT affect Universe time.
+	UFUNCTION(BlueprintCallable, Category = "Time|Campaign")
+	void RestartCampaignClock(bool bSaveImmediately = true);
+
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;

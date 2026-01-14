@@ -44,7 +44,24 @@ void UCampaignScreen::NativeConstruct()
 		}
 		
 		if (PlayButtonText) {
-			PlayButtonText->SetText(FText::FromString("APPLY"));
+			PlayButtonText->SetText(FText::FromString("CONTINUE"));
+		}
+
+		if (RestartButton) {
+			RestartButton->OnClicked.AddDynamic(this, &UCampaignScreen::OnRestartButtonClicked);
+			RestartButton->OnHovered.AddDynamic(this, &UCampaignScreen::OnRestartButtonHovered);
+			RestartButton->OnUnhovered.AddDynamic(this, &UCampaignScreen::OnRestartButtonUnHovered);
+
+			if (SSWInstance->PlayerInfo.Campaign >= 0) {
+				RestartButton->SetIsEnabled(true);
+			}
+			else {
+				RestartButton->SetIsEnabled(false);
+			}
+
+			if (RestartButtonText) {
+				RestartButtonText->SetText(FText::FromString("RESTART"));
+			}
 		}
 	}
 
@@ -64,14 +81,13 @@ void UCampaignScreen::NativeConstruct()
 	else {
 		SetSelectedData(SSWInstance->PlayerInfo.Campaign);
 	}
-	
+	UpdateCampaignButtons();
 }
 
 void UCampaignScreen::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 {
 	Super::NativeTick(MyGeometry, DeltaTime);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
 }
 
 UTexture2D* UCampaignScreen::LoadTextureFromFile()
@@ -93,22 +109,39 @@ FSlateBrush UCampaignScreen::CreateBrushFromTexture(UTexture2D* Texture, FVector
 void UCampaignScreen::OnPlayButtonClicked()
 {
 	PlayUISound(this, AcceptSound);
+
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (!SSWInstance)
+		return;
+
+	const bool bHasSave = DoesSelectedCampaignSaveExist();
+
 	SSWInstance->PlayerInfo.Campaign = Selected;
 	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
-	FString NewCampaign = SSWInstance->GetActiveCampaign().Name;
-	UE_LOG(LogTemp, Log, TEXT("Campaign Name Selected: %s"), *NewCampaign);
-	FDateTime GameDate(2228 + Selected, 1, 1);
-	SSWInstance->SetCampaignTime(GameDate.ToUnixTimestamp());
-	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
-	
-	SSWInstance->SelectedCampaignDisplayName = SSWInstance->GetActiveCampaign().Name;
+
+	SSWInstance->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
 	SSWInstance->SelectedCampaignIndex =
 		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
-
 	SSWInstance->SelectedCampaignRowName = PickedRowName;
 
-	SSWInstance->LoadOrCreateSelectedCampaignSave();
+	// Persist player selection (optional but consistent with your flow)
+	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
+
+	if (bHasSave)
+	{
+		// CONTINUE: load existing, do NOT reset
+		SSWInstance->LoadOrCreateSelectedCampaignSave();
+	}
+	else
+	{
+		// START: create new save and reset timeline
+		SSWInstance->CreateNewCampaignSave(
+			SSWInstance->SelectedCampaignIndex,
+			PickedRowName,
+			SSWInstance->SelectedCampaignDisplayName
+		);
+	}
+
 	SSWInstance->ShowCampaignLoading();
 }
 
@@ -118,6 +151,48 @@ void UCampaignScreen::OnPlayButtonHovered()
 }
 
 void UCampaignScreen::OnPlayButtonUnHovered()
+{
+}
+void UCampaignScreen::OnRestartButtonClicked()
+{
+	PlayUISound(this, AcceptSound);
+
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	if (!SSWInstance)
+		return;
+
+	SSWInstance->PlayerInfo.Campaign = Selected;
+	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
+
+	SSWInstance->SelectedCampaignDisplayName = SSWInstance->GetActiveCampaign().Name;
+	SSWInstance->SelectedCampaignIndex =
+		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
+	SSWInstance->SelectedCampaignRowName = PickedRowName;
+
+	// Create/overwrite save FIRST (so timer points at correct object)
+	SSWInstance->CreateNewCampaignSave(
+		SSWInstance->SelectedCampaignIndex,
+		PickedRowName,
+		SSWInstance->SelectedCampaignDisplayName
+	);
+
+	// Then restart campaign clock on the newly injected save
+	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
+	{
+		Timer->SetCampaignSave(SSWInstance->CampaignSave);
+		Timer->RestartCampaignClock(true);
+	}
+
+	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
+	SSWInstance->ShowCampaignLoading();
+}
+
+void UCampaignScreen::OnRestartButtonHovered()
+{
+	PlayUISound(this, HoverSound);
+}
+
+void UCampaignScreen::OnRestartButtonUnHovered()
 {
 }
 
@@ -198,6 +273,9 @@ void UCampaignScreen::SetSelectedData(int selected)
 		CampaignImage->SetBrush(Brush);
 	}
 
+	if (CampaignNameText) {
+		CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Name));
+	}
 	if (CampaignStartTimeText) {
 		CampaignStartTimeText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Start));
 	}
@@ -235,32 +313,30 @@ void UCampaignScreen::SetSelectedData(int selected)
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
 }
 
-void UCampaignScreen::OnSetSelected(FString dropDownInt, ESelectInfo::Type type)
+void UCampaignScreen::OnSetSelected(FString /*SelectedItem*/, ESelectInfo::Type Type)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	
-	if (type == ESelectInfo::OnMouseClick) {
-		int value;
-
-		if (dropDownInt == SSWInstance->CampaignData[0].Name) {
-			value = 0;
-		} 
-		else if (dropDownInt == SSWInstance->CampaignData[1].Name) {
-			value = 1;
-		}
-		else if (dropDownInt == SSWInstance->CampaignData[2].Name) {
-			value = 2;
-		}
-		else if (dropDownInt == SSWInstance->CampaignData[3].Name) {
-			value = 3;
-		}
-		else if (dropDownInt == SSWInstance->CampaignData[4].Name) {
-			value = 4;
-		}
-
-		SetSelectedData(value);
-		PlayButton->SetIsEnabled(true);
+	// You probably want this to respond to all user-driven changes:
+	if (Type == ESelectInfo::Direct) // ignore programmatic SetSelectedIndex
+	{
+		return;
 	}
+
+	if (!CampaignSelectDD)
+		return;
+
+	const int32 NewIndex = CampaignSelectDD->FindOptionIndex(CampaignSelectDD->GetSelectedOption());
+	if (NewIndex == INDEX_NONE)
+		return;
+
+	// Update our picked row name from the option index arrays you already maintain
+	Selected = NewIndex;
+	PickedRowName = CampaignRowNamesByOptionIndex.IsValidIndex(NewIndex)
+		? CampaignRowNamesByOptionIndex[NewIndex]
+		: NAME_None;
+
+	// Update the right-panel details and save player selection
+	SetSelectedData(NewIndex);
+	UpdateCampaignButtons();
 }
 
 void UCampaignScreen::GetCampaignImageFile(int selected)
@@ -281,3 +357,44 @@ void UCampaignScreen::PlayUISound(UObject* WorldContext, USoundBase* UISound)
 		UGameplayStatics::PlaySound2D(WorldContext, UISound);
 	}
 }
+
+bool UCampaignScreen::DoesSelectedCampaignSaveExist() const
+{
+	const USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI)
+		return false;
+
+	// You need the selected campaign RowName at this point.
+	// If you store it on selection, use that:
+	if (PickedRowName.IsNone())
+		return false;
+
+	const FString GameSlot = UCampaignSave::MakeSlotNameFromRowName(PickedRowName);
+	constexpr int32 UserIndex = 0;
+	return UGameplayStatics::DoesSaveGameExist(GameSlot, UserIndex);
+}
+
+void UCampaignScreen::UpdateCampaignButtons()
+{
+	const bool bHasSave = DoesSelectedCampaignSaveExist();
+
+	// PLAY button is always enabled when a campaign is selected
+	if (PlayButton)
+	{
+		PlayButton->SetIsEnabled(true);
+	}
+
+	// Label depends on save existence
+	if (PlayButtonText)
+	{
+		PlayButtonText->SetText(FText::FromString(bHasSave ? TEXT("CONTINUE") : TEXT("START")));
+	}
+
+	// Restart only makes sense if there is something to restart
+	if (RestartButton)
+	{
+		RestartButton->SetIsEnabled(bHasSave);
+	}
+}
+
+

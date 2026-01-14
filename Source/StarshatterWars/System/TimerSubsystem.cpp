@@ -1,6 +1,48 @@
 #include "TimerSubsystem.h"
 #include "CampaignSave.h"
+#include "Kismet/GameplayStatics.h"
 #include "Containers/Ticker.h"
+
+void UTimerSubsystem::RestartCampaignClock(bool bSaveImmediately)
+{
+	UCampaignSave* CS = CampaignSave.Get();
+	if (!CS)
+	{
+		UE_LOG(LogTemp, Error, TEXT("TimerSubsystem::RestartCampaignClock: No CampaignSave set"));
+		return;
+	}
+
+	// Re-anchor to current universe time; Universe time itself continues.
+	const uint64 Now = UniverseTimeSeconds;
+
+	// Reset anchor (this is the restart)
+	CS->CampaignStartUniverseSeconds = Now;
+	CS->bInitialized = true;
+
+	// Force immediate UI refresh
+	LastBroadcastTPlus = MAX_uint64;
+	CachedCampaignTPlusSeconds = 0;
+
+	// Optional persistence: overwrite the per-campaign slot
+	if (bSaveImmediately)
+	{
+		if (CS->CampaignRowName.IsNone())
+		{
+			UE_LOG(LogTemp, Error, TEXT("RestartCampaignClock: CampaignRowName is None; cannot save"));
+		}
+		else
+		{
+			const FString Slot = UCampaignSave::MakeSlotNameFromRowName(CS->CampaignRowName);
+			constexpr int32 UserIndex = 0;
+
+			const bool bOK = UGameplayStatics::SaveGameToSlot(CS, Slot, UserIndex);
+			UE_LOG(LogTemp, Warning, TEXT("RestartCampaignClock: Saved slot=%s ok=%d"), *Slot, bOK ? 1 : 0);
+		}
+	}
+
+	// Broadcast immediately so any screen snaps to T+ 00...
+	OnCampaignTPlusChanged.Broadcast(UniverseTimeSeconds, 0ULL);
+}
 
 void UTimerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

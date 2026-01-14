@@ -8,6 +8,7 @@
 #include "Components/TextBlock.h"
 #include "Blueprint/UserWidget.h"
 #include "../System/SSWGameInstance.h"
+#include "../System/TimerSubsystem.h"
 #include "CampaignLoading.generated.h"
 
 /**

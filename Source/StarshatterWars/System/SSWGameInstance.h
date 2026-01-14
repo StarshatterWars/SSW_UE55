@@ -422,6 +422,8 @@ public:
 	bool SavePlayer(bool bForce = false);   // optional wrapper for your existing SaveGame()
 	void RequestUniverseAutosave();         // optional (sets a flag)
 
+	bool SaveCampaign();
+
 	// Universe slot helper
 	FString GetUniverseSlotName() const { return TEXT("Universe_Main"); }
 
@@ -435,6 +437,7 @@ public:
 	// =====================================================================
 	// Call this when a campaign is chosen OR as a safety in Start
 	UCampaignSave* LoadOrCreateCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName);
+	UCampaignSave* CreateNewCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName);
 
 	// Convenience wrapper: uses current selection fields
 	UCampaignSave* LoadOrCreateSelectedCampaignSave();
@@ -608,6 +611,8 @@ public:
 	FString GetCampaignAndUniverseTimeLine() const;
 
 
+
+
 	// =====================================================================
 	// Campaign Save (in-memory)
 	// =====================================================================
@@ -735,6 +740,8 @@ private:
 	TSubclassOf<class UMissionLoading> MissionLoadingWidgetClass;
 	TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
 	TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
+
+	void HandleUniverseMinuteAutosave(uint64 UniverseSecondsNow);
 
 	// Timer Pub/Sub
 	uint64 LastBroadcastSecond = 0;
