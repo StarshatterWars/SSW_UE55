@@ -2,23 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "../Game/GameStructs.h" 
 #include "SaveSubsystem.generated.h"
 
 class UTimerSubsystem;
 class UCampaignSave;
 class UUniverseSaveGame;
-
-// Optional: wrap PlayerInfo in your existing struct type
-USTRUCT(BlueprintType)
-struct FPlayerSaveData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) FString Name;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) int32 Campaign = -1;
-
-	// Add whatever else you store in PlayerInfo
-};
+class UPlayerSaveGame;
 
 UENUM(BlueprintType)
 enum class EAutosavePolicy : uint8
@@ -44,32 +34,38 @@ public:
 	// ------------------------
 	// Config
 	// ------------------------
-	UPROPERTY(EditAnywhere, Category = "Save")
+	UPROPERTY()
 	EAutosavePolicy AutosavePolicy = EAutosavePolicy::EveryMinute;
 
-	UPROPERTY(EditAnywhere, Category = "Save")
+	UPROPERTY()
 	int32 UserIndex = 0;
 
 	// ------------------------
-	// Player Save API
+	// Player Save API (REAL)
 	// ------------------------
-	UFUNCTION(BlueprintCallable, Category = "Save|Player")
+	
+	UPROPERTY()
+	FS_PlayerGameInfo PlayerInfo;
+
+	UFUNCTION()
 	bool LoadPlayer(const FString& SlotName);
 
-	UFUNCTION(BlueprintCallable, Category = "Save|Player")
+	UFUNCTION()
 	bool SavePlayer(const FString& SlotName, bool bForce = false);
 
-	UFUNCTION(BlueprintCallable, Category = "Save|Player")
-	const FPlayerSaveData& GetPlayerData() const { return PlayerData; }
+	UFUNCTION()
+	bool DoesPlayerSaveExist(const FString& SlotName) const;
 
-	UFUNCTION(BlueprintCallable, Category = "Save|Player")
-	void SetPlayerData(const FPlayerSaveData& InData) { PlayerData = InData; }
+	// Cached player info used by the game
+	const FS_PlayerGameInfo& GetPlayerInfo() const { return PlayerInfo; }
+	FS_PlayerGameInfo& GetPlayerInfoMutable() { return PlayerInfo; }
+	void SetPlayerInfo(const FS_PlayerGameInfo& InInfo) { PlayerInfo = InInfo; }
 
 	// ------------------------
 	// Universe Save API
 	// ------------------------
 	UFUNCTION()
-	bool LoadOrCreateUniverse(const FString& UniverseId, int64 BaseUnixSecondsIfNew);
+	bool LoadOrCreateUniverse(const FString& InUniverseId, int64 BaseUnixSecondsIfNew);
 
 	UFUNCTION()
 	bool SaveUniverse(bool bForce = false);
@@ -79,9 +75,6 @@ public:
 
 	UFUNCTION()
 	int64 GetUniverseBaseUnixSeconds() const { return UniverseBaseUnixSeconds; }
-
-	// Set from TimerSubsystem tick
-	void SetUniverseTimeSeconds(uint64 InSeconds) { UniverseTimeSeconds = InSeconds; }
 
 	// ------------------------
 	// Campaign Save API
@@ -109,16 +102,15 @@ public:
 
 private:
 	// ------------------------
-	// Internal - autosave wiring
+	// Timer binding (autosave trigger)
 	// ------------------------
 	void BindToTimer();
 	void UnbindFromTimer();
 	void HandleUniverseMinute(uint64 UniverseSecondsNow);
-
 	int32 GetAutosaveIntervalMinutes() const;
 
 	// ------------------------
-	// Internal - slot naming
+	// Slot naming
 	// ------------------------
 	FString GetUniverseSlotName() const;
 
@@ -126,9 +118,6 @@ private:
 	// Cached slot context
 	UPROPERTY() FString PlayerSlotName;
 	UPROPERTY() FString UniverseId;
-
-	// Stored player data
-	UPROPERTY() FPlayerSaveData PlayerData;
 
 	// Universe state mirrored for saving
 	uint64 UniverseTimeSeconds = 0;

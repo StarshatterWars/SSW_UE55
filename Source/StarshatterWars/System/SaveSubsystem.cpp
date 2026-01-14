@@ -1,22 +1,10 @@
-// /*  Project nGenEx
-// Fractal Dev Games
-// Copyright (C) 2024. All Rights Reserved.	
-// 
-// SUBSYSTEM:    SSW
-// FILE:         SaveSubsystem.h
-// 
-// AUTHOR:       Carlos Bott
-// */
-
-
 #include "SaveSubsystem.h"
 
 #include "TimerSubsystem.h"
 #include "CampaignSave.h"
-#include "Kismet/GameplayStatics.h"
-
-// Include your Universe save type:
 #include "UniverseSaveGame.h"
+#include "../Game/PlayerSaveGame.h"         // FS_PlayerInfo
+#include "Kismet/GameplayStatics.h"
 
 void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -71,10 +59,8 @@ void USaveSubsystem::HandleUniverseMinute(uint64 UniverseSecondsNow)
 		return;
 
 	const uint64 CurMinute = UniverseSecondsNow / 60ULL;
-	if (CurMinute == LastAutosaveMinute)
-		return;
 
-	// throttle to interval
+	// first tick or throttle
 	if (LastAutosaveMinute != MAX_uint64)
 	{
 		const uint64 Delta = CurMinute - LastAutosaveMinute;
@@ -84,12 +70,18 @@ void USaveSubsystem::HandleUniverseMinute(uint64 UniverseSecondsNow)
 
 	LastAutosaveMinute = CurMinute;
 
-	// Pull authoritative time from timer (optional; UniverseSecondsNow is already authoritative)
+	// mirror time
 	UniverseTimeSeconds = UniverseSecondsNow;
 
+	// Save Universe + Campaign always (if configured/loaded)
 	SaveUniverse(false);
 	SaveCampaign(false);
-	SavePlayer(PlayerSlotName, false);
+
+	// Only save player if we have a valid slot name already
+	if (!PlayerSlotName.IsEmpty())
+	{
+		SavePlayer(PlayerSlotName, false);
+	}
 }
 
 void USaveSubsystem::SetAutosaveEnabled(bool bEnabled)
@@ -98,27 +90,48 @@ void USaveSubsystem::SetAutosaveEnabled(bool bEnabled)
 }
 
 // ------------------------
-// Player save
+// Player save (REAL using UPlayerSaveGame)
 // ------------------------
+
+bool USaveSubsystem::DoesPlayerSaveExist(const FString& SlotName) const
+{
+	return !SlotName.IsEmpty() && UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex);
+}
 
 bool USaveSubsystem::LoadPlayer(const FString& SlotName)
 {
 	PlayerSlotName = SlotName;
 
-	// Replace with your actual player save class if you have one.
-	// Here we assume you serialize PlayerData via some USaveGame type, or your existing SaveGame(...) wrapper.
-	// If your current player save is custom, this function should wrap that exact object.
+	if (SlotName.IsEmpty())
+		return false;
 
-	// Placeholder: implement with your existing player save object type.
-	return true;
+	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex))
+	{
+		if (UPlayerSaveGame* PS = Cast<UPlayerSaveGame>(Loaded))
+		{
+			PlayerInfo = PS->PlayerInfo;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool USaveSubsystem::SavePlayer(const FString& SlotName, bool /*bForce*/)
 {
 	PlayerSlotName = SlotName;
 
-	// Placeholder: implement with your existing player save type.
-	return true;
+	if (SlotName.IsEmpty())
+		return false;
+
+	UPlayerSaveGame* SaveObj = Cast<UPlayerSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UPlayerSaveGame::StaticClass())
+	);
+	if (!SaveObj)
+		return false;
+
+	SaveObj->PlayerInfo = PlayerInfo;
+	return UGameplayStatics::SaveGameToSlot(SaveObj, SlotName, UserIndex);
 }
 
 // ------------------------
@@ -127,8 +140,7 @@ bool USaveSubsystem::SavePlayer(const FString& SlotName, bool /*bForce*/)
 
 FString USaveSubsystem::GetUniverseSlotName() const
 {
-	// Keep consistent with what you used before
-	// Example: "Universe_<UniverseId>"
+	// Keep consistent and stable per universe id
 	return FString::Printf(TEXT("Universe_%s"), *UniverseId);
 }
 
@@ -136,17 +148,20 @@ bool USaveSubsystem::LoadOrCreateUniverse(const FString& InUniverseId, int64 Bas
 {
 	UniverseId = InUniverseId;
 
-	const FString Slot = GetUniverseSlotName();
-	const int32 UI = UserIndex;
+	if (UniverseId.IsEmpty())
+		return false;
 
-	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(Slot, UI))
+	const FString Slot = GetUniverseSlotName();
+
+	// Load if exists
+	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(Slot, UserIndex))
 	{
 		if (UUniverseSaveGame* U = Cast<UUniverseSaveGame>(Loaded))
 		{
 			UniverseBaseUnixSeconds = U->UniverseBaseUnixSeconds;
 			UniverseTimeSeconds = U->UniverseTimeSeconds;
 
-			// Push into timer subsystem (authoritative runtime time)
+			// Push into timer (runtime authority)
 			if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 			{
 				Timer->SetUniverseBaseUnixSeconds(UniverseBaseUnixSeconds);
@@ -178,7 +193,7 @@ bool USaveSubsystem::LoadOrCreateUniverse(const FString& InUniverseId, int64 Bas
 		Timer->SetUniverseTimeSeconds(UniverseTimeSeconds);
 	}
 
-	return UGameplayStatics::SaveGameToSlot(NewObj, Slot, UI);
+	return UGameplayStatics::SaveGameToSlot(NewObj, Slot, UserIndex);
 }
 
 bool USaveSubsystem::SaveUniverse(bool /*bForce*/)
@@ -190,8 +205,10 @@ bool USaveSubsystem::SaveUniverse(bool /*bForce*/)
 	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 	{
 		UniverseTimeSeconds = Timer->GetUniverseTimeSeconds();
-		UniverseBaseUnixSeconds = Timer->GetUniverseDateTime().ToUnixTimestamp() - (int64)UniverseTimeSeconds;
-		// If you already store UniverseBaseUnixSeconds directly in timer, use that instead.
+
+		// DO NOT recompute base time using GetUniverseDateTime().
+		// Base unix seconds is a persistent anchor and must remain stable.
+		// Use the cached value we loaded/created (UniverseBaseUnixSeconds).
 	}
 
 	UUniverseSaveGame* SaveObj = Cast<UUniverseSaveGame>(
@@ -233,14 +250,17 @@ UCampaignSave* USaveSubsystem::LoadOrCreateCampaignSave(int32 CampaignIndex, FNa
 	{
 		if (UCampaignSave* LoadedSave = Cast<UCampaignSave>(Loaded))
 		{
+			// Repair identity
 			LoadedSave->CampaignIndex = CampaignIndex;
 			LoadedSave->CampaignRowName = RowName;
 			if (!DisplayName.IsEmpty())
+			{
 				LoadedSave->CampaignDisplayName = DisplayName;
+			}
 
 			CampaignSave = LoadedSave;
 
-			// Inject into timer (so T+ updates)
+			// Inject into timer for T+
 			if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 			{
 				Timer->SetCampaignSave(CampaignSave);
@@ -250,7 +270,7 @@ UCampaignSave* USaveSubsystem::LoadOrCreateCampaignSave(int32 CampaignIndex, FNa
 		}
 	}
 
-	// Create new
+	// Create new if missing
 	return CreateNewCampaignSave(CampaignIndex, RowName, DisplayName);
 }
 
@@ -272,14 +292,15 @@ UCampaignSave* USaveSubsystem::CreateNewCampaignSave(int32 CampaignIndex, FName 
 	NewSave->CampaignRowName = RowName;
 	NewSave->CampaignDisplayName = DisplayName;
 
-	// Anchor to current universe time
-	uint64 Now = 0;
+	// Anchor to current universe seconds
+	uint64 NowUniverse = 0ULL;
 	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 	{
-		Now = Timer->GetUniverseTimeSeconds();
+		NowUniverse = Timer->GetUniverseTimeSeconds();
 	}
-	NewSave->InitializeCampaignClock(Now);
+	NewSave->InitializeCampaignClock(NowUniverse);
 
+	// Persist
 	const bool bOK = UGameplayStatics::SaveGameToSlot(NewSave, Slot, UserIndex);
 	if (!bOK)
 		return nullptr;
@@ -303,5 +324,3 @@ bool USaveSubsystem::SaveCampaign(bool /*bForce*/)
 	const FString Slot = UCampaignSave::MakeSlotNameFromRowName(CampaignSave->CampaignRowName);
 	return UGameplayStatics::SaveGameToSlot(CampaignSave, Slot, UserIndex);
 }
-
-
