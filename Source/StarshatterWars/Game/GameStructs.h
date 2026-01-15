@@ -70,6 +70,13 @@ enum DEBUGLEVEL : uint8
 	MAXIMAL UMETA(DisplayName = "Maximal")
 };
 
+UENUM()
+enum class EMissionPrimaryDomain : uint8
+{
+	Fighter,
+	Starship
+};
+
 UENUM(BlueprintType)
 enum ECAM_MODE : uint8 
 {
@@ -3768,4 +3775,30 @@ struct FSystemState
 	UPROPERTY() int32 OwnerIff = 0;    // or EFactionId
 	UPROPERTY() float Influence = 1.f; // optional
 	UPROPERTY() bool bContested = false;
+};
+
+USTRUCT()
+struct FCampaignMissionReq
+{
+	GENERATED_BODY()
+
+	UPROPERTY() int32 MissionType = 0;              // map to your mission enum/int
+	UPROPERTY() uint64 StartUniverseSeconds = 0;    // absolute universe time
+	UPROPERTY() int32 OwningIff = -1;
+
+	// “Primary group” in SS terms:
+	UPROPERTY() int32 PrimaryGroupId = -1;
+	UPROPERTY() ECOMBATGROUP_TYPE PrimaryGroupType = ECOMBATGROUP_TYPE::UNKNOWN;
+
+	// Optional objective group:
+	UPROPERTY() int32 ObjectiveGroupId = -1;
+	UPROPERTY() ECOMBATGROUP_TYPE ObjectiveGroupType = ECOMBATGROUP_TYPE::UNKNOWN;
+
+	// Optional: for scripted/template missions
+	UPROPERTY() FName ScriptRowName = NAME_None;
+	UPROPERTY() FString ScriptText;
+
+	UPROPERTY() FString ObjectiveText;
+
+	UPROPERTY() EMissionPrimaryDomain Domain = EMissionPrimaryDomain::Fighter;
 };
