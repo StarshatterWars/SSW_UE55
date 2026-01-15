@@ -13,10 +13,10 @@
 */
 
 #include "GameDataLoader.h"
-#include "../System/SSWGameInstance.h"
-#include "../System/Game.h"
-#include "../Space/Starsystem.h"
-#include "../Space/Galaxy.h"
+#include "SSWGameInstance.h"
+#include "Game.h"
+#include "Starsystem.h"
+#include "Galaxy.h"
 #include "CombatGroup.h"
 #include "CombatRoster.h"
 #include "CombatAction.h"
@@ -30,8 +30,8 @@
 #include "PlayerData.h"
 #include "SystemDesign.h"
 #include "ComponentDesign.h"
-#include "../Foundation/GameContent.h"
-#include "../Game/Galaxymanager.h"
+#include "GameContent.h"
+#include "Galaxymanager.h"
 #include "Engine/TimerHandle.h"
 #include "TimerManager.h"
 

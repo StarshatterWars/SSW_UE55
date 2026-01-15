@@ -15,13 +15,12 @@
 
 #include "CoreMinimal.h"
 #include "SimObject.h"
-#include "SimObject.h"
 //#include "DetailSet.h"
 //#include "Director.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/List.h"
+#include "Types.h"
+#include "Geometry.h"
+#include "Color.h"
+#include "List.h"
 #include "Ship.generated.h"
 
 

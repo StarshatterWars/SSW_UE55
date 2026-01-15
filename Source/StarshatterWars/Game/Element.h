@@ -14,11 +14,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
+#include "Types.h"
+#include "Geometry.h"
 #include "SimObject.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
+#include "List.h"
+#include "Text.h"
 
 // +--------------------------------------------------------------------+
 

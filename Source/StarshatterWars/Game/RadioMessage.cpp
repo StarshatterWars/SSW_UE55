@@ -3,7 +3,7 @@
 
 #include "RadioMessage.h"
 #include "Ship.h"
-#include "../Foundation/Text.h"
+#include "Text.h"
 
 
 RadioMessage::RadioMessage()

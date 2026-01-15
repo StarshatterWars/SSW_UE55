@@ -14,13 +14,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/List.h"
-#include "../Foundation/DataLoader.h"
-#include "../System/SSWGameInstance.h"
+#include "Text.h"
+#include "Geometry.h"
+#include "Color.h"
+#include "Term.h"
+#include "List.h"
+#include "DataLoader.h"
+#include "SSWGameInstance.h"
 
 class MissionInfo;
 /**

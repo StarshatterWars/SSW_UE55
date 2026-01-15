@@ -26,7 +26,7 @@
 #include "CombatZone.h"
 #include "ZoneForce.h"
 #include "Callsign.h"
-#include "../Space/Galaxy.h"
+#include "Galaxy.h"
 #include "Mission.h"
 #include "MissionInfo.h"
 #include "MissionLoad.h"
@@ -37,13 +37,13 @@
 #include "Intel.h"
 #include "ShipDesign.h"
 //#include "Starshatter.h"
-#include "../Space/StarSystem.h"
-#include "../Space/Orbital.h"
-#include "../Space/OrbitalRegion.h"
-#include "../System/SSWGameInstance.h"
+#include "StarSystem.h"
+#include "Orbital.h"
+#include "OrbitalRegion.h"
+#include "SSWGameInstance.h"
 #include "PlayerData.h"
 
-#include "../Foundation/Random.h"
+#include "Random.h"
 
 CampaignMissionFighter::CampaignMissionFighter()
 {

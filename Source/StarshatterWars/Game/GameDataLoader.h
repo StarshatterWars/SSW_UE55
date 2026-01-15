@@ -16,13 +16,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/ParseUtil.h"
-#include "../Foundation/Random.h"
-#include "../Foundation/FormatUtil.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/GameLoader.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
+#include "Random.h"
+#include "FormatUtil.h"
+#include "Text.h"
+#include "Term.h"
+#include "GameLoader.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -30,7 +30,7 @@
 #include "HAL/FileManagerGeneric.h"
 #include "GameStructs.h"
 
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "GameDataLoader.generated.h"
 
 class Campaign;

@@ -3,7 +3,7 @@
 
 #include "RadioTraffic.h"
 #include "RadioMessage.h"
-#include "../Screen/W_RadioView.h"
+#include "W_RadioView.h"
 #include "RadioVox.h"
 #include "Instruction.h"
 #include "Ship.h"
@@ -13,8 +13,8 @@
 //#include "NetGame.h"
 //#include "NetData.h"
 
-#include "../System/Game.h"
-#include "../Foundation/Text.h"
+#include "Game.h"
+#include "Text.h"
 
 // +----------------------------------------------------------------------+
 

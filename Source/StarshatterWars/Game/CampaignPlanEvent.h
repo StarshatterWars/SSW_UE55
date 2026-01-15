@@ -18,8 +18,8 @@
 
 #include "CoreMinimal.h"
 #include "CampaignPlan.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "Text.h"
 #include "CampaignPlanEvent.generated.h"
 
 // +--------------------------------------------------------------------+

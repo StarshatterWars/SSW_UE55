@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "List.h"
+#include "Geometry.h"
+#include "Text.h"
 #include "Physical.h"
 
 #include "SystemComponent.generated.h"

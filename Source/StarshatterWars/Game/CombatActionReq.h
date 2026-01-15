@@ -14,7 +14,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 class Combatant;
 /**

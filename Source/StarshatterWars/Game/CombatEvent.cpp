@@ -20,10 +20,10 @@
 //#include "ShipDesign.h"
 //#include "Ship.h"
 
-#include "../Foundation/Term.h"
-#include "../Foundation/ParseUtil.h"
-#include "../Foundation/FormatUtil.h"
-#include "../Foundation/DataLoader.h"
+#include "Term.h"
+#include "ParseUtil.h"
+#include "FormatUtil.h"
+#include "DataLoader.h"
 
 CombatEvent::CombatEvent()
 {

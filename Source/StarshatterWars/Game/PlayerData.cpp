@@ -19,16 +19,16 @@
 //#include "SimEvent.h"
 #include "Campaign.h"
 //#include "CampaignSaveGame.h"
-#include "../Foundation/Random.h"
+#include "Random.h"
 //#include "HUDView.h"
 //#include "MFD.h"
 
-#include "../Foundation/DataLoader.h"
+#include "DataLoader.h"
 //#include "Encrypt.h"
-#include "../Foundation/ParseUtil.h"
-#include "../Foundation/FormatUtil.h"
+#include "ParseUtil.h"
+#include "FormatUtil.h"
 //#include "Bitmap.h"
-#include "../System/Game.h"
+#include "Game.h"
 
 PlayerData::PlayerData()
 {

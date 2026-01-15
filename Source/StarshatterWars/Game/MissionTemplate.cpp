@@ -15,8 +15,8 @@
 
 #include "MissionTemplate.h"
 #include "MissionEvent.h"
-#include "../Space/StarSystem.h"
-#include "../Space/Galaxy.h"
+#include "StarSystem.h"
+#include "Galaxy.h"
 #include "Callsign.h"
 #include "Campaign.h"
 #include "Combatant.h"
@@ -28,11 +28,11 @@
 #include "Element.h"
 #include "Instruction.h"
 #include "Intel.h"
-#include "../Foundation/Random.h"
+#include "Random.h"
 
-#include "../System/Game.h"
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/ParseUtil.h"
+#include "Game.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
 
 // +--------------------------------------------------------------------+
 

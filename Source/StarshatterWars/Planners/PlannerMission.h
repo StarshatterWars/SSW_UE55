@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CampaignPlanner.h"
-#include "../System/CampaignSubsystem.h"
+#include "CampaignSubsystem.h"
 
 class FPlannerMission final : public FCampaignPlannerBase
 {

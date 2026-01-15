@@ -18,7 +18,7 @@
 #include "Combatant.h"
 #include "CombatActionReq.h"
 #include "PlayerData.h"
-#include "../Foundation/Random.h"
+#include "Random.h"
 
 // +----------------------------------------------------------------------+
 

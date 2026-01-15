@@ -17,7 +17,7 @@
 #include "CombatGroup.h"
 #include "Mission.h"
 
-#include "../System/Game.h"
+#include "Game.h"
 
 // +--------------------------------------------------------------------+
 

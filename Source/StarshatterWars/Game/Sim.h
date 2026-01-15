@@ -15,13 +15,13 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Foundation/Types.h"
-#include "../Space/Universe.h"
+#include "Types.h"
+#include "Universe.h"
 //#include "Scene.h"
 #include "Physical.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
+#include "Geometry.h"
+#include "List.h"
+#include "Text.h"
 #include "Sim.generated.h"
 
 // +--------------------------------------------------------------------+

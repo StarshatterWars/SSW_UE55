@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/List.h"
+#include "Types.h"
+#include "List.h"
 #include "SystemComponent.h"
 #include "PowerComponent.generated.h"
 

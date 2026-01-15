@@ -33,15 +33,15 @@
 //#include "SystemDesign.h"
 //#include "Component.h"
 
-#include "../System/Game.h"
+#include "Game.h"
 //#include "Solid.h"
 //#include "Skin.h"
 //#include "Sprite.h"
 //#include "Light.h"
 //#include "Bitmap.h"
 //#include "Sound.h"
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/ParseUtil.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
 
 // +--------------------------------------------------------------------+
 

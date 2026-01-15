@@ -8,7 +8,7 @@
 #include "ShipDesign.h"
 #include "Ship.h"
 
-#include "../System/Game.h"
+#include "Game.h"
 
 CombatUnit::CombatUnit()
 {

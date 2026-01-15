@@ -28,7 +28,7 @@
 #include "SystemMapUtils.h"
 
 // NEW RENDERER
-#include "../Space/SystemOverview.h"   // adjust include path to where ASystemOverview lives
+#include "SystemOverview.h"   // adjust include path to where ASystemOverview lives
 
 void USystemMap::NativeConstruct()
 {

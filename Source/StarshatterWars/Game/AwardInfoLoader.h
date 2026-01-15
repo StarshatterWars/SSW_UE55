@@ -17,21 +17,21 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/ParseUtil.h"
-#include "../Foundation/Random.h"
-#include "../Foundation/FormatUtil.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/GameLoader.h"
-#include "../Game/GameStructs.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
+#include "Random.h"
+#include "FormatUtil.h"
+#include "Text.h"
+#include "Term.h"
+#include "GameLoader.h"
+#include "GameStructs.h"
 
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "AwardInfoLoader.generated.h"
 
 UCLASS()

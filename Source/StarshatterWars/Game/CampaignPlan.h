@@ -23,7 +23,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Tickable.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "CampaignPlan.generated.h"
 
 class UCampaign;

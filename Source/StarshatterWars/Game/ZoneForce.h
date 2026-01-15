@@ -15,8 +15,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/List.h"
-#include "../System/SSWGameInstance.h"
+#include "List.h"
+#include "SSWGameInstance.h"
 
 class CombatGroup;
 

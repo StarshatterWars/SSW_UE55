@@ -3,7 +3,7 @@
 
 #include "Window.h"
 //#include "Bitmap.h"
-#include "../Foundation/Color.h"
+#include "Color.h"
 //#include "Fix.h"
 //#include "Font.h"
 //#include "Polygon.h"

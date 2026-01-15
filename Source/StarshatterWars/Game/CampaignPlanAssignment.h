@@ -17,8 +17,8 @@
 
 #include "CoreMinimal.h"
 #include "CampaignPlan.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/List.h"
+#include "Types.h"
+#include "List.h"
 #include "CampaignPlanAssignment.generated.h"
 
 // +--------------------------------------------------------------------+

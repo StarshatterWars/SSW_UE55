@@ -9,7 +9,5 @@
  */
 class STARSHATTERWARS_API CampaignSituationReport
 {
-public:
-	CampaignSituationReport();
-	~CampaignSituationReport();
+
 };

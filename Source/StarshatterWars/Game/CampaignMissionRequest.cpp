@@ -11,8 +11,8 @@
 #include "Mission.h"
 //#include "Instruction.h"
 #include "ShipDesign.h"
-#include "../Space/StarSystem.h"
-#include "../Foundation/Random.h"
+#include "StarSystem.h"
+#include "Random.h"
 
 CampaignMissionRequest::CampaignMissionRequest()
 {

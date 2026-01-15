@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
+#include "Types.h"
 
 /**
  * 

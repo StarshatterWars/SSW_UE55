@@ -13,18 +13,18 @@
 
 #pragma once
 
-#include "../Foundation/Types.h"
+#include "Types.h"
 #include "Intel.h"
-#include "../Foundation/RLoc.h"
-#include "../Space/Universe.h"
+#include "RLoc.h"
+#include "Universe.h"
 //#include "Scene.h"
 //#include "Skin.h"
 //#include "Physical.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
+#include "Geometry.h"
+#include "List.h"
+#include "Text.h"
 #include "GameStructs.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 
 // +--------------------------------------------------------------------+

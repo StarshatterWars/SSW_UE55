@@ -16,11 +16,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
-#include "../Game/GameStructs.h"
+#include "Types.h"
+#include "Geometry.h"
+#include "List.h"
+#include "Text.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 

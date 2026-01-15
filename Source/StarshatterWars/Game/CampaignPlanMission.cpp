@@ -27,10 +27,10 @@
 #include "CombatZone.h"
 #include "Mission.h"
 #include "MissionInfo.h"
-#include "../Space/StarSystem.h"
-#include "../Space/Orbital.h"
-#include "../Space/OrbitalRegion.h"
-#include "../Foundation/Random.h"
+#include "StarSystem.h"
+#include "Orbital.h"
+#include "OrbitalRegion.h"
+#include "Random.h"
 
 UCampaignPlanMission::UCampaignPlanMission()
 {

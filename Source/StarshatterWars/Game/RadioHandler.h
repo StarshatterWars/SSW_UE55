@@ -7,8 +7,8 @@
 /**
  * 
  */
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
+#include "Types.h"
+#include "Geometry.h"
 #include "SimObject.h"
 
  // +--------------------------------------------------------------------+

@@ -16,9 +16,9 @@
 #include "CombatRoster.h"
 #include "CombatGroup.h"
 
-#include "../System/Game.h"
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/Text.h"
+#include "Game.h"
+#include "DataLoader.h"
+#include "Text.h"
 
 // +--------------------------------------------------------------------+
 

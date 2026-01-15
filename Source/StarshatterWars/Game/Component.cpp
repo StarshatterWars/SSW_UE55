@@ -16,7 +16,7 @@
 #include "Component.h"
 #include "SystemComponent.h"
 #include "ComponentDesign.h"
-#include "../System/Game.h"
+#include "Game.h"
 
 
 // +----------------------------------------------------------------------+

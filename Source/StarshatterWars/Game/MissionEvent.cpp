@@ -14,8 +14,8 @@
 
 #include "MissionEvent.h"
 #include "Mission.h"
-#include "../Space/StarSystem.h"
-#include "../Space/Galaxy.h"
+#include "StarSystem.h"
+#include "Galaxy.h"
 //#include "Starshatter.h"
 //#include "StarServer.h"
 #include "Ship.h"
@@ -39,16 +39,16 @@
 //#include "NetData.h"
 //#include "NetUtil.h"
 
-#include "../System/Game.h"
-#include "../Foundation/DataLoader.h"
+#include "Game.h"
+#include "DataLoader.h"
 //#include "Font.h"
 //#include "FontMgr.h"
 //#include "Sound.h"
-#include "../Foundation/ParseUtil.h"
-#include "../Foundation/FormatUtil.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Random.h"
+#include "ParseUtil.h"
+#include "FormatUtil.h"
+#include "Text.h"
+#include "List.h"
+#include "Random.h"
 
 const char* FormatGameTime();
 

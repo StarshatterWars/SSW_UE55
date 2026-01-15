@@ -19,8 +19,8 @@
 #include "Ship.h"
 //#include "NetUtil.h"
 
-#include "../System/Game.h"
-#include "../System/SSWGameInstance.h"
+#include "Game.h"
+#include "SSWGameInstance.h"
 
 static int id_key = 1000;
 

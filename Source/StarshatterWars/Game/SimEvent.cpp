@@ -17,7 +17,7 @@
 #include "SimEvent.h"
 #include "SimEvent.h"
 #include "Sim.h"
-#include "../System/Game.h"
+#include "Game.h"
 
 SimEvent::SimEvent()
 {

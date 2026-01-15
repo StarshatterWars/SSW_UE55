@@ -14,15 +14,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/List.h"
-#include "../Foundation/DataLoader.h"
+#include "Text.h"
+#include "Geometry.h"
+#include "Color.h"
+#include "Term.h"
+#include "List.h"
+#include "DataLoader.h"
 #include "UObject/NoExportTypes.h"
 #include "Tickable.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"

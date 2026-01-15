@@ -4,10 +4,4 @@
 #include "CampaignSituationReport.h"
 
 
-CampaignSituationReport::CampaignSituationReport()
-{
-}
 
-CampaignSituationReport::~CampaignSituationReport()
-{
-}

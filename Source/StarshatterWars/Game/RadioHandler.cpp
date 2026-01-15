@@ -13,7 +13,7 @@
 #include "Ship.h"
 #include "ShipDesign.h"
 #include "Sim.h"
-#include "../Space/StarSystem.h"
+#include "StarSystem.h"
 //#include "Power.h"
 //#include "Drive.h"
 //#include "Shield.h"
@@ -22,8 +22,8 @@
 //#include "WeaponGroup.h"
 //#include "SteerAI.h"
 
-#include "../Foundation/Text.h"
-#include "../System/Game.h"
+#include "Text.h"
+#include "Game.h"
 
 RadioHandler::RadioHandler()
 {

@@ -18,8 +18,8 @@
 #include "Ship.h"
 #include "Sim.h"
 
-#include "../System/Game.h"
-#include "../Foundation/Text.h"
+#include "Game.h"
+#include "Text.h"
 
 // +----------------------------------------------------------------------+
 

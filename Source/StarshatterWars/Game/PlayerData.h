@@ -14,9 +14,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "List.h"
+#include "Text.h"
 
 // +-------------------------------------------------------------------+
 

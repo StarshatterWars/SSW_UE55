@@ -30,9 +30,9 @@
 //#include "Ship.h"
 #include "ShipDesign.h"
 //#include "Starshatter.h"
-#include "../Space/StarSystem.h"
+#include "StarSystem.h"
 #include "PlayerData.h"
-#include "../Foundation/Random.h"
+#include "Random.h"
 
 // +--------------------------------------------------------------------+
 

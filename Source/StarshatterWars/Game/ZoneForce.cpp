@@ -21,9 +21,9 @@
 #include "ShipDesign.h"
 //#include "Ship.h"
 
-#include "../System/Game.h"
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/ParseUtil.h"
+#include "Game.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
 
 ZoneForce::ZoneForce()
 {

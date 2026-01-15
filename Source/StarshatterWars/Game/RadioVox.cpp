@@ -4,13 +4,13 @@
 #include "RadioVox.h"
 #include "RadioVoxController.h"
 
-#include "../Screen/W_RadioView.h"
+#include "W_RadioView.h"
 //#include "AudioConfig.h"
 
 //#include "DataLoader.h"
-#include "../System/Game.h"
+#include "Game.h"
 //#include "Sound.h"
-#include "../Foundation/ThreadSync.h"
+#include "ThreadSync.h"
 
 // +====================================================================+
 //

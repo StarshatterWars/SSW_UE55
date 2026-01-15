@@ -15,8 +15,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/List.h"
+#include "Types.h"
+#include "List.h"
 #include "Physical.h"
 #include "SimObject.generated.h"
 

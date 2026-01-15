@@ -26,10 +26,10 @@
 #include "CombatUnit.h"
 #include "CombatZone.h"
 #include "Mission.h"
-#include "../Foundation/Random.h"
+#include "Random.h"
 //#include "Ship.h"
 #include "ShipDesign.h"
-#include "../Foundation/FormatUtil.h"
+#include "FormatUtil.h"
 
 // +--------------------------------------------------------------------+
 

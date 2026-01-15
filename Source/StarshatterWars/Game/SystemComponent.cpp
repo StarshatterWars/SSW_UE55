@@ -2,7 +2,7 @@
 
 
 #include "SystemComponent.h"
-#include "../System/Game.h"
+#include "Game.h"
 #include "Component.h"
 #include "SystemDesign.h"
 

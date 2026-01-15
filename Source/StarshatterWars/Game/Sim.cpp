@@ -6,7 +6,7 @@
 //#include "SimEvent.h"
 #include "SimObject.h"
 //#include "Starshatter.h"
-#include "../Space/StarSystem.h"
+#include "StarSystem.h"
 
 //#include "Contact.h"
 #include "Ship.h"
@@ -55,18 +55,18 @@
 //#include "NetUtil.h"
 //#include "NetData.h"
 
-#include "../System/Game.h"
+#include "Game.h"
 //#include "Sound.h"
 //#include "Bolt.h"
 //#include "Solid.h"
 //#include "Sprite.h"
 //#include "Light.h"
 //#include "Bitmap.h"
-#include "../Foundation/DataLoader.h"
-#include "../Foundation/ParseUtil.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
 //#include "MouseController.h"
 #include "PlayerData.h"
-#include "../Foundation/Random.h"
+#include "Random.h"
 //#include "Video.h"
 
 const char* FormatGameTime();

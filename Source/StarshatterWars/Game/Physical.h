@@ -14,8 +14,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
+#include "Types.h"
+#include "Geometry.h"
 #include "Camera.h"
 #include "UObject/NoExportTypes.h"
 #include "Physical.generated.h"

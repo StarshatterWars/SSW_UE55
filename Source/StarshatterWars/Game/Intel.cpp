@@ -2,8 +2,8 @@
 
 
 #include "Intel.h"
-#include "../System/Game.h"
-#include "../Foundation/DataLoader.h"
+#include "Game.h"
+#include "DataLoader.h"
 
 // +--------------------------------------------------------------------+
 
