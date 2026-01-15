@@ -78,6 +78,8 @@ public:
 	void StartClock();
 	void StopClock();
 
+	void OnClockTick();
+	
 	UFUNCTION()
 	uint64 GetUniverseTimeSeconds() const { return UniverseTimeSeconds; }
 
@@ -177,7 +179,7 @@ private:
 	int32 LastMissionSecondBroadcast = TNumericLimits<int32>::Min();
 
 	bool Tick(float DeltaSeconds);
-	void OnClockTick();
+
 
 	// ----Campaign(T + ) State----
 	TWeakObjectPtr<UCampaignSave> CampaignSave;
