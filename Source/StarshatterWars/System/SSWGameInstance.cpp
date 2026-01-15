@@ -3,22 +3,22 @@
 
 #include "SSWGameInstance.h"
 #include "GameFramework/Actor.h"
-#include "../Space/Universe.h"
-#include "../Space/Galaxy.h"
-#include "../Foundation/DataLoader.h"
-#include "../Game/Sim.h"
-#include "../Game/GameDataLoader.h"
-#include "../Game/AwardInfoLoader.h"
+#include "Universe.h"
+#include "Galaxy.h"
+#include "DataLoader.h"
+#include "Sim.h"
+#include "GameDataLoader.h"
+#include "AwardInfoLoader.h"
 
-#include "../Screen/MenuDlg.h"
-#include "../Screen/QuitDlg.h"
-#include "../Screen/FirstRun.h"
-#include "../Screen/CampaignScreen.h"
-#include "../Screen/OperationsScreen.h"
-#include "../Screen/MissionLoading.h"
-#include "../Screen/CampaignLoading.h"
+#include "MenuDlg.h"
+#include "QuitDlg.h"
+#include "FirstRun.h"
+#include "CampaignScreen.h"
+#include "OperationsScreen.h"
+#include "MissionLoading.h"
+#include "CampaignLoading.h"
 
-#include "../Game/PlayerSaveGame.h"
+#include "PlayerSaveGame.h"
 #include "UniverseSaveGame.h" 
 #include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
@@ -26,13 +26,13 @@
 #include "Misc/Paths.h"
 #include "UObject/Package.h" // For data asset support
 
-#include "../Foundation/MusicController.h"
-#include "../Foundation/MusicControllerInit.h"
+#include "MusicController.h"
+#include "MusicControllerInit.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "Engine/TextureRenderTarget2D.h" 
-#include "../Space/SystemOverview.h"
+#include "SystemOverview.h"
 
 #undef UpdateResource
 #undef PlaySound

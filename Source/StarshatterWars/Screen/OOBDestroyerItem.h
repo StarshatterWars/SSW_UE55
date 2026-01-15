@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h" // FS_OOBDestroyer definition
+#include "GameStructs.h" // FS_OOBDestroyer definition
 #include "OOBDestroyerItem.generated.h"
 
 /**

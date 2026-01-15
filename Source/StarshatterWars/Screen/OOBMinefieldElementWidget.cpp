@@ -6,7 +6,7 @@
 #include "OOBMinefieldElement.h"
 #include "Components/Image.h"
 #include "OperationsScreen.h"
-#include "../Game/GameStructs.h" // FS_OOB Minefield Element definition
+#include "GameStructs.h" // FS_OOB Minefield Element definition
 
 void UOOBMinefieldElementWidget::NativeConstruct()
 {

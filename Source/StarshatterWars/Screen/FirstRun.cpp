@@ -4,7 +4,7 @@
 #include "FirstRun.h"
 #include "Misc/DateTime.h"
 #include "Misc/TimeSpan.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 void UFirstRun::NativeConstruct()
 {

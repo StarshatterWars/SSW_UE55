@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "../Planners/CampaignPlanner.h"
+#include "CampaignPlanner.h"
 #include "CampaignSubsystem.generated.h"
 
 // -------------------------

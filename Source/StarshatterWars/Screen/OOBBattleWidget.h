@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "GameStructs.h" // FS_OOBFleet definition
 #include "Blueprint/IUserObjectListEntry.h"
 #include "OOBBattleWidget.generated.h"
 

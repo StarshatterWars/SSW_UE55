@@ -1,4 +1,12 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+// /*  Project nGenEx
+// Fractal Dev Games
+// 
+// Copyright (C) 2024. All Rights Reserved.
+// 
+// SUBSYSTEM:    SSW	
+// FILE:         CampaignScheduler.h
+// AUTHOR:       Carlos Bott
+// */
 
 #pragma once
 #include "CoreMinimal.h"

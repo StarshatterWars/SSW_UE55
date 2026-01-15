@@ -7,7 +7,7 @@
 #include "RosterViewObject.h"
 
 #include "Blueprint/IUserObjectListEntry.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "Components/ListView.h"
 #include "CombatGroupObject.h"
 

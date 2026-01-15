@@ -10,9 +10,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "Color.h"
+#include "Text.h"
 #include "SSWGameInstance.h"
 
 //#include "Screen.h"

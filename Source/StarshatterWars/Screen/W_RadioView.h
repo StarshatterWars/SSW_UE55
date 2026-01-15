@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Foundation/Types.h"
-#include "../Game/View.h"
-#include "../Foundation/Color.h"
-#include "../Game/SimObject.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "View.h"
+#include "Color.h"
+#include "SimObject.h"
+#include "Text.h"
 #include "W_RadioView.generated.h"
 
 

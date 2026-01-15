@@ -6,9 +6,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
-#include "../Game/GalaxyManager.h"
-#include "../Foundation/StarUtils.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "GalaxyManager.h"
+#include "StarUtils.h"
+#include "SystemMapUtils.h"
 
 ACentralSunActor::ACentralSunActor()
 {

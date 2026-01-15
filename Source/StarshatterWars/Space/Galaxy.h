@@ -12,16 +12,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/List.h"
+#include "Text.h"
+#include "Term.h"
+#include "List.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 
-#include "../System/SSWGameInstance.h"
-#include "../Game/GameStructs.h"
+#include "SSWGameInstance.h"
+#include "GameStructs.h"
 #include "Galaxy.generated.h"
 
 /**

@@ -10,7 +10,7 @@
 
 #include "CoreMinimal.h"
 #include "SystemMarkerWidget.h"
-#include "../Actors/PlanetPanelActor.h"
+#include "PlanetPanelActor.h"
 #include "PlanetMarkerWidget.generated.h"
 
 

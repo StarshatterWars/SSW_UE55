@@ -2,7 +2,7 @@
 
 
 #include "QuitDlg.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 void UQuitDlg::OnApplyClicked()
 {

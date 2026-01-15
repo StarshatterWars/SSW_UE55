@@ -6,7 +6,7 @@
 #include "Components/TextBlock.h"
 #include "UObject/ConstructorHelpers.h"
 
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "OOBForceItem.h"
 #include "OOBFleetItem.h"
 #include "OOBCarrierGroupItem.h" 

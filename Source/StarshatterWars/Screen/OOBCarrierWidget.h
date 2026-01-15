@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_OOBCarrier definition
+#include "GameStructs.h" // FS_OOBCarrier definition
 #include "Blueprint/IUserObjectListEntry.h"
 #include "OOBCarrierWidget.generated.h"
 

@@ -18,14 +18,14 @@
 #include "CentralSunWidget.h"
 #include "OperationsScreen.h"
 
-#include "../Game/GalaxyManager.h"
-#include "../System/SSWGameInstance.h"
+#include "GalaxyManager.h"
+#include "SSWGameInstance.h"
 
-#include "../Actors/CentralSunActor.h"
-#include "../Actors/PlanetPanelActor.h"
+#include "CentralSunActor.h"
+#include "PlanetPanelActor.h"
 
-#include "../Foundation/PlanetOrbitUtils.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "PlanetOrbitUtils.h"
+#include "SystemMapUtils.h"
 
 // NEW RENDERER
 #include "../Space/SystemOverview.h"   // adjust include path to where ASystemOverview lives

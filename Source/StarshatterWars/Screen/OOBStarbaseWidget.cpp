@@ -7,7 +7,7 @@
 #include "Components/Image.h"
 #include "OOBUnitItem.h"
 #include "OperationsScreen.h"
-#include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "GameStructs.h" // FS_OOBFleet definition
 
 void UOOBStarbaseWidget::NativeConstruct()
 {

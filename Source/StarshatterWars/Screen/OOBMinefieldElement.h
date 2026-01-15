@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h" // FS_OOBMinefield Element definition
+#include "GameStructs.h" // FS_OOBMinefield Element definition
 #include "OOBMinefieldElement.generated.h"
 
 /**

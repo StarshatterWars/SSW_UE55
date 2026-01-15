@@ -1,9 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "SystemBodyPanelActor.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "SystemMapUtils.h"
 #include "PlanetPanelActor.generated.h"
 
 class UMaterialInterface;

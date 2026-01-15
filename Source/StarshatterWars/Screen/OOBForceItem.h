@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h" // FS_OOBForce definition
+#include "GameStructs.h" // FS_OOBForce definition
 #include "OOBForceItem.generated.h"
 
 /**

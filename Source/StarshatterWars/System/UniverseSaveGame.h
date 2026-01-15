@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "UniverseSaveGame.generated.h"
 
 /**

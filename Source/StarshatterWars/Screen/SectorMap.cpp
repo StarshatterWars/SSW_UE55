@@ -9,15 +9,15 @@
 #include "SystemOrbitWidget.h"
 #include "OperationsScreen.h"
 
-#include "../Game/GameStructs.h" // FS_Galaxy struct
-#include "../Game/GalaxyManager.h"
+#include "GameStructs.h" // FS_Galaxy struct
+#include "GalaxyManager.h"
 
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "../Foundation/PlanetOrbitUtils.h"
-#include "../Foundation/SystemMapUtils.h"
-#include "../Foundation/StarUtils.h"
+#include "PlanetOrbitUtils.h"
+#include "SystemMapUtils.h"
+#include "StarUtils.h"
 
 #include "TimerManager.h"
 #include "EngineUtils.h" 

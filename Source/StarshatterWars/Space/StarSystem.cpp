@@ -11,18 +11,18 @@
 //#include "TerrainHaze.h"
 //#include "Weather.h"
 #include "Star.h"
-#include "../System/Game.h"
+#include "Game.h"
 #include "Engine/World.h"
 //#include "Sound.h"
 //#include "Solid.h"
 //#include "Light.h"
 //#include "Bitmap.h"
-#include "../Foundation/DataLoader.h"
-#include "../System/SSWGameInstance.h"
+#include "DataLoader.h"
+#include "SSWGameInstance.h"
 //#include "Scene.h"
 #include "GameTime.h"
-#include "../Game/GameStructs.h"
-#include "../Foundation/ParseUtil.h"
+#include "GameStructs.h"
+#include "ParseUtil.h"
 
 const double epoch = 0.5e9;
 double AStarSystem::StarDate = 0;

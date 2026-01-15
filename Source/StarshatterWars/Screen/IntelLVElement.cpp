@@ -3,7 +3,7 @@
 
 #include "IntelLVElement.h"
 #include "OperationsScreen.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 
 

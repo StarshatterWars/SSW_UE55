@@ -8,15 +8,15 @@
 */
 
 #include "GameLoader.h"
-#include "../Space/Universe.h"
-#include "../Game/Sim.h"
-#include "../Game/Campaign.h"
-#include "../Foundation/DataLoader.h"
+#include "Universe.h"
+#include "Sim.h"
+#include "Campaign.h"
+#include "DataLoader.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/Guid.h"
 #include "HAL/PlatformTime.h"
-#include "../System/UniverseSaveGame.h"
-#include "../Foundation/MusicController.h"
+#include "UniverseSaveGame.h"
+#include "MusicController.h"
 
 void AGameLoader::BeginPlay()
 {

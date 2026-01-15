@@ -21,19 +21,19 @@
 #include "Engine/SceneCapture2D.h"
 #include "Engine/World.h"
 
-#include "../Game/GalaxyManager.h"
-#include "../Screen/SystemOrbitWidget.h"
+#include "GalaxyManager.h"
+#include "SystemOrbitWidget.h"
 
-#include "../Actors/CentralSunActor.h"
-#include "../Actors/PlanetPanelActor.h"
-#include "../Actors/MoonPanelActor.h"
+#include "CentralSunActor.h"
+#include "PlanetPanelActor.h"
+#include "MoonPanelActor.h"
 
-#include "../Screen/SystemMap.h"
-#include "../Screen/SectorMap.h"
+#include "SystemMap.h"
+#include "SectorMap.h"
 
-#include "../Screen/CentralSunWidget.h"
-#include "../Screen/PlanetMarkerWidget.h"
-#include "../Screen/MoonMarkerWidget.h"
+#include "CentralSunWidget.h"
+#include "PlanetMarkerWidget.h"
+#include "MoonMarkerWidget.h"
 
 #include "Slate/WidgetRenderer.h"
 #include "Widgets/SViewport.h"

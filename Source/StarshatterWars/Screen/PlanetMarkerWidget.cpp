@@ -8,7 +8,7 @@
 
 
 #include "PlanetMarkerWidget.h"
-#include "../Actors/PlanetPanelActor.h"
+#include "PlanetPanelActor.h"
 
 
 void UPlanetMarkerWidget::InitFromPlanetActor(const FS_PlanetMap& Planet, APlanetPanelActor* PlanetActor)

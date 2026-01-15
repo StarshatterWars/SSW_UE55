@@ -11,9 +11,9 @@
 
 #include "Galaxy.h"
 #include "StarSystem.h"
-#include "../System/SSWGameInstance.h"
-#include "../Foundation/ParseUtil.h"
-#include "../Foundation/DataLoader.h"
+#include "SSWGameInstance.h"
+#include "ParseUtil.h"
+#include "DataLoader.h"
 #include "Engine/DataTable.h"
 
 // Called when the game starts or when spawned

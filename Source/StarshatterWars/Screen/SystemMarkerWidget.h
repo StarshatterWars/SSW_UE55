@@ -10,9 +10,9 @@
 #include "Components/Border.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
-#include "../Foundation/SystemMapUtils.h"
-#include "../Game/GameStructs.h"
-#include "../System/SSWGameInstance.h"
+#include "SystemMapUtils.h"
+#include "GameStructs.h"
+#include "SSWGameInstance.h"
 #include "SystemMarkerWidget.generated.h"
 
 class UImage;

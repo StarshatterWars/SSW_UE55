@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "../Game/GameStructs.h" 
+#include "GameStructs.h" 
 #include "SaveSubsystem.generated.h"
 
 class UTimerSubsystem;

@@ -7,7 +7,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "../Actors/CentralSunActor.h"
+#include "CentralSunActor.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Materials/MaterialInterface.h"
 #include "CentralSunWidget.generated.h"

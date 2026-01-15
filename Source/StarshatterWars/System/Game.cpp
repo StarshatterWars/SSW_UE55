@@ -10,7 +10,7 @@
 
 
 #include "Game.h"
-#include "../Game/GameDataLoader.h"	
+#include "GameDataLoader.h"	
 
 Game* game = 0;
 

@@ -5,9 +5,9 @@
 #include "Components/Image.h"
 #include "Components/Widget.h"
 #include "Components/CanvasPanelSlot.h"
-#include "../System/SSWGameInstance.h"
-#include "../Foundation/StarUtils.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "SSWGameInstance.h"
+#include "StarUtils.h"
+#include "SystemMapUtils.h"
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {

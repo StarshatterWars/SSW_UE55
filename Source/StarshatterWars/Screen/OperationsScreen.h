@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -21,8 +21,8 @@
 #include "Components/ListView.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "../System/SSWGameInstance.h"
-#include "../System/TimerSubsystem.h"
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
 #include "OperationsScreen.generated.h"
 
 // Forward declarations

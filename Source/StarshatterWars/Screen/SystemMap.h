@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_Galaxy, FS_PlanetMap, etc.
-#include "../Foundation/SystemMapUtils.h"
+#include "GameStructs.h" // FS_Galaxy, FS_PlanetMap, etc.
+#include "SystemMapUtils.h"
 #include "SystemMap.generated.h"
 
 class UCanvasPanel;

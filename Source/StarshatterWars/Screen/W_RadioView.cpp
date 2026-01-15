@@ -2,18 +2,18 @@
 
 
 #include "W_RadioView.h"
-#include "../Game/RadioMessage.h"
-#include "../Game/RadioTraffic.h"
+#include "RadioMessage.h"
+#include "RadioTraffic.h"
 //#include "QuantumView.h"
 //#include "HUDView.h"
-#include "../Game/Ship.h"
-#include "../Game/Element.h"
-#include "../Game/Sim.h"
+#include "Ship.h"
+#include "Element.h"
+#include "Sim.h"
 //#include "Starshatter.h"
 
 //#include "CameraView.h"
 //#include "Color.h"
-#include "../Game/Window.h"
+#include "Window.h"
 //#include "Video.h"
 //#include "Screen.h"
 //#include "DataLoader.h"
@@ -22,8 +22,8 @@
 //#include "FormatUtil.h"
 //#include "Keyboard.h"
 //#include "Mouse.h"
-#include "../System/Game.h"
-#include "../Game/Menu.h"
+#include "Game.h"
+#include "Menu.h"
 
 static Color  hud_color = Color::Black;
 static Color  txt_color = Color::White;

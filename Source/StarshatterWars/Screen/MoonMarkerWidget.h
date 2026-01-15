@@ -10,7 +10,7 @@
 
 #include "CoreMinimal.h"
 #include "SystemMarkerWidget.h"
-#include "../Actors/MoonPanelActor.h"
+#include "MoonPanelActor.h"
 #include "MoonMarkerWidget.generated.h"
 
 UCLASS()

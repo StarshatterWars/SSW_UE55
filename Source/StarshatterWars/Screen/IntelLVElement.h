@@ -10,7 +10,7 @@
 #include "IntelListObject.h"
 #include "Blueprint/IUserObjectListEntry.h"
 
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "IntelLVElement.generated.h"
 
 /**

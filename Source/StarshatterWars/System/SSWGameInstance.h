@@ -30,7 +30,7 @@
 // Data / Tables
 // =========================================================================
 #include "Engine/DataTable.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 
 // =========================================================================
 // Image Loading

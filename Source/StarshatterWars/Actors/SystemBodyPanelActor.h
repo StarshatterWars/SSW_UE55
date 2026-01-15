@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "Misc/Crc.h"
-#include "../System/SSWGameInstance.h"
-#include "../System/TimerSubsystem.h"
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "SystemBodyPanelActor.generated.h"
 

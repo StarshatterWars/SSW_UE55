@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -15,8 +15,8 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/ListView.h"
 
-#include "../System/SSWGameInstance.h"
-#include "../System/TimerSubsystem.h"
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
 #include "MissionLoading.generated.h"
 
 /**

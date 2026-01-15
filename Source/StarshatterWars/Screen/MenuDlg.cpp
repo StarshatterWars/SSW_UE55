@@ -13,8 +13,8 @@
 
 
 #include "MenuDlg.h"
-#include "../System/SSWGameInstance.h"
-#include "../System/Game.h"
+#include "SSWGameInstance.h"
+#include "Game.h"
 
 void UMenuDlg::NativePreConstruct()
 {

@@ -11,12 +11,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/List.h"
-#include "../System/SSWGameInstance.h"
+#include "Geometry.h"
+#include "Color.h"
+#include "Text.h"
+#include "Term.h"
+#include "List.h"
+#include "SSWGameInstance.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"

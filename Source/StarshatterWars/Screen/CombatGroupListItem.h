@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h"
-#include "../System/SSWGameInstance.h"
+#include "GameStructs.h"
+#include "SSWGameInstance.h"
 #include "CombatGroupListItem.generated.h"
 
 /**

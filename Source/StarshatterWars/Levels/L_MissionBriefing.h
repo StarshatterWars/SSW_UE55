@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/LevelScriptActor.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "UObject/UObjectGlobals.h"
 #include "L_MissionBriefing.generated.h"
 

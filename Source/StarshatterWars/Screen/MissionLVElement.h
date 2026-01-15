@@ -8,7 +8,7 @@
 #include "Components/Button.h"
 #include "MissionListObject.h"
 #include "Blueprint/IUserObjectListEntry.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 #include "MissionLVElement.generated.h"
 

@@ -3,7 +3,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "SystemMapUtils.h"
 
 ASystemBodyPanelActor::ASystemBodyPanelActor()
 {

@@ -7,17 +7,17 @@
 //#include "Solid.h"
 //#include "Bitmap.h"
 #include "Star.h"
-#include "../Foundation/Geometry.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/List.h"
+#include "Geometry.h"
+#include "Color.h"
+#include "Text.h"
+#include "Term.h"
+#include "List.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 
 #include "StarSystem.generated.h"
 

@@ -7,12 +7,12 @@
 #include "TimerSubsystem.h"
 
 // Planner headers
-#include "../Planners/CampaignPlanner.h"
-#include "../Planners/PlannerStrategic.h"
-#include "../Planners/PlannerAssignment.h"
-#include "../Planners/PlannerMovement.h"
-#include "../Planners/PlannerMission.h"
-#include "../Planners/PlannerEvent.h"
+#include "CampaignPlanner.h"
+#include "PlannerStrategic.h"
+#include "PlannerAssignment.h"
+#include "PlannerMovement.h"
+#include "PlannerMission.h"
+#include "PlannerEvent.h"
 
 void UCampaignSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

@@ -8,7 +8,7 @@
 #include "OperationsScreen.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "GameStructs.h" // FS_OOBFleet definition
 #include "Components/ListView.h" 
 
 void UOOBForceWidget::NativeConstruct()

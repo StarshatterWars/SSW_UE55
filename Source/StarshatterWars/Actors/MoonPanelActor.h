@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "SystemBodyPanelActor.h"
 #include "MoonPanelActor.generated.h"
 

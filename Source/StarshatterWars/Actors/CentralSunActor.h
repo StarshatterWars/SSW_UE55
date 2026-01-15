@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "Engine/TextureRenderTarget2D.h" 
 #include "CentralSunActor.generated.h"
 

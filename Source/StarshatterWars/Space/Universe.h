@@ -11,16 +11,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Text.h"
-#include "../Foundation/Term.h"
-#include "../Foundation/List.h"
+#include "Text.h"
+#include "Term.h"
+#include "List.h"
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/DataTable.h"
 #include "UObject/NoExportTypes.h"
 #include "Tickable.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "Universe.generated.h"
 
 UCLASS()

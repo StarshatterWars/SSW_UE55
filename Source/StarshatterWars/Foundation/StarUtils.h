@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Game/GameStructs.h" 
+#include "GameStructs.h" 
 #include "Engine/TextureRenderTarget2D.h"
 
 /**

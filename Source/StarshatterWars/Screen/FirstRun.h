@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "FirstRun.generated.h"
 
 /**

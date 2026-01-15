@@ -6,7 +6,7 @@
 #include "IntelListObject.h"
 #include "RosterTVElement.h"
 #include "Components/ListView.h"
-#include "../Foundation/MenuButton.h"
+#include "MenuButton.h"
 
 #include "OOBForceItem.h"
 #include "OOBFleetItem.h"
@@ -27,10 +27,10 @@
 #include "GalaxyMap.h"
 #include "SystemMap.h"
 #include "SectorMap.h"
-#include "../Game/GalaxyManager.h"
+#include "GalaxyManager.h"
 
-#include "../Foundation/SelectableButtonGroup.h"
-#include "../Foundation/MenuButton.h"
+#include "SelectableButtonGroup.h"
+#include "MenuButton.h"
 #include "Components/PanelWidget.h"
 #include "Components/ScrollBox.h"
 #include "Components/CanvasPanel.h"

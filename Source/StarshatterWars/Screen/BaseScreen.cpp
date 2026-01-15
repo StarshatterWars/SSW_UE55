@@ -11,7 +11,7 @@
 
 
 #include "BaseScreen.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 
 void UBaseScreen::NativeConstruct()
