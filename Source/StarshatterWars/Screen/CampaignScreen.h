@@ -136,4 +136,16 @@ protected:
 	// Display-only cached row
 	FS_Campaign CachedCampaignRow;
 	bool bHasCachedCampaignRow = false;	
+
+
+	UPROPERTY(Transient)
+	FName CachedCampaignRowName = NAME_None;
+
+	UPROPERTY(Transient)
+	int32 CachedCampaignIndex1Based = 0; // for save slot / display
+
+	bool CacheCampaignRowByOptionIndex(int32 OptionIndex);
+	
+	const FS_Campaign* GetCachedCampaignRow() const { return bHasCachedCampaignRow ? &CachedCampaignRow : nullptr; }
 };
+

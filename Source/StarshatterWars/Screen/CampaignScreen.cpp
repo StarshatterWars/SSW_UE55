@@ -253,6 +253,7 @@ void UCampaignScreen::OnCancelButtonUnHovered()
 void UCampaignScreen::SetCampaignDDList()
 {
 	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+
 	if (!CampaignSelectDD || !GI || !GI->CampaignDataTable)
 		return;
 
@@ -266,44 +267,35 @@ void UCampaignScreen::SetCampaignDDList()
 
 	for (const FName& RowName : RowNames)
 	{
-		const FS_Campaign* Row =
-			GI->CampaignDataTable->FindRow<FS_Campaign>(RowName, TEXT("CampaignScreen"));
+		const FS_Campaign* Row = GI->CampaignDataTable->FindRow<FS_Campaign>(RowName, TEXT("CampaignScreen"));
+		if (!Row)
+			continue;
 
-		if (!Row || !Row->bAvailable)
+		if (!Row->bAvailable)
 			continue;
 
 		CampaignSelectDD->AddOption(Row->Name);
 
+		// parallel arrays by option index:
 		CampaignRowNamesByOptionIndex.Add(RowName);
+
+		// Index is 0-based in FS_Campaign; store 1-based for save slot conventions:
 		CampaignIndexByOptionIndex.Add(Row->Index + 1);
 	}
 
 	const int32 MaxIndex = FMath::Max(0, CampaignRowNamesByOptionIndex.Num() - 1);
-	const int32 SelectedOptionIndex =
-		FMath::Clamp(GI->PlayerInfo.Campaign, 0, MaxIndex);
+	const int32 SelectedOptionIndex = FMath::Clamp(GI->PlayerInfo.Campaign, 0, MaxIndex);
 
 	CampaignSelectDD->SetSelectedIndex(SelectedOptionIndex);
 
 	Selected = SelectedOptionIndex;
-	PickedRowName =
-		CampaignRowNamesByOptionIndex.IsValidIndex(Selected)
+
+	// NEW: set row name and cache row now:
+	PickedRowName = CampaignRowNamesByOptionIndex.IsValidIndex(Selected)
 		? CampaignRowNamesByOptionIndex[Selected]
 		: NAME_None;
 
-	// -----------------------------
-	// CACHE DISPLAY ROW (KEY FIX)
-	// -----------------------------
-	bHasCachedCampaignRow = false;
-
-	if (!PickedRowName.IsNone())
-	{
-		if (const FS_Campaign* Row =
-			GI->CampaignDataTable->FindRow<FS_Campaign>(PickedRowName, TEXT("CampaignScreen")))
-		{
-			CachedCampaignRow = *Row; // snapshot copy
-			bHasCachedCampaignRow = true;
-		}
-	}
+	CacheCampaignRowByOptionIndex(Selected);
 }
 
 void UCampaignScreen::SetSelectedData(int selected)
@@ -312,127 +304,74 @@ void UCampaignScreen::SetSelectedData(int selected)
 	if (!GI)
 		return;
 
-	Selected = selected;
-
-	if (!bHasCachedCampaignRow)
+	const FS_Campaign* Row = GetCachedCampaignRow();
+	if (!Row)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CampaignScreen: No cached campaign row for selection %d"), selected);
+		UE_LOG(LogTemp, Warning, TEXT("SetSelectedData: No cached campaign row"));
 		return;
 	}
 
-	// -----------------------------
-	// Campaign Image
-	// -----------------------------
 	GetCampaignImageFile(selected);
 
 	if (UTexture2D* LoadedTexture = LoadTextureFromFile())
 	{
 		if (CampaignImage)
 		{
-			const FVector2D ImageSize(
-				LoadedTexture->GetSizeX(),
-				LoadedTexture->GetSizeY()
+			FSlateBrush Brush = CreateBrushFromTexture(
+				LoadedTexture,
+				FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY())
 			);
-
-			FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, ImageSize);
 			CampaignImage->SetBrush(Brush);
 		}
 	}
 
-	// -----------------------------
-	// Text Fields (DISPLAY ONLY)
-	// -----------------------------
-	if (CampaignNameText)
-		CampaignNameText->SetText(FText::FromString(CachedCampaignRow.Name));
+	if (CampaignNameText)      CampaignNameText->SetText(FText::FromString(Row->Name));
+	if (CampaignStartTimeText) CampaignStartTimeText->SetText(FText::FromString(Row->Start));
+	if (DescriptionText)       DescriptionText->SetText(FText::FromString(Row->Description));
+	if (SituationText)         SituationText->SetText(FText::FromString(Row->Situation));
 
-	if (CampaignStartTimeText)
-		CampaignStartTimeText->SetText(FText::FromString(CachedCampaignRow.Start));
+	// Orders – you have 4 slots in the UI:
+	if (Orders1Text) Orders1Text->SetText(FText::FromString(Row->Orders.IsValidIndex(0) ? Row->Orders[0] : TEXT("")));
+	if (Orders2Text) Orders2Text->SetText(FText::FromString(Row->Orders.IsValidIndex(1) ? Row->Orders[1] : TEXT("")));
+	if (Orders3Text) Orders3Text->SetText(FText::FromString(Row->Orders.IsValidIndex(2) ? Row->Orders[2] : TEXT("")));
+	if (Orders4Text) Orders4Text->SetText(FText::FromString(Row->Orders.IsValidIndex(3) ? Row->Orders[3] : TEXT("")));
 
-	if (DescriptionText)
-		DescriptionText->SetText(FText::FromString(CachedCampaignRow.Description));
-
-	if (SituationText)
-		SituationText->SetText(FText::FromString(CachedCampaignRow.Situation));
-
-	// -----------------------------
-	// Orders (no mutation)
-	// -----------------------------
-	if (Orders1Text)
-		Orders1Text->SetText(FText::FromString(
-			CachedCampaignRow.Orders.IsValidIndex(0) ? CachedCampaignRow.Orders[0] : TEXT("")
-		));
-
-	if (Orders2Text)
-		Orders2Text->SetText(FText::FromString(
-			CachedCampaignRow.Orders.IsValidIndex(1) ? CachedCampaignRow.Orders[1] : TEXT("")
-		));
-
-	if (Orders3Text)
-		Orders3Text->SetText(FText::FromString(
-			CachedCampaignRow.Orders.IsValidIndex(2) ? CachedCampaignRow.Orders[2] : TEXT("")
-		));
-
-	if (Orders4Text)
-		Orders4Text->SetText(FText::FromString(
-			CachedCampaignRow.Orders.IsValidIndex(3) ? CachedCampaignRow.Orders[3] : TEXT("")
-		));
-
-	// -----------------------------
-	// Location
-	// -----------------------------
 	if (LocationSystemText)
 	{
-		const FString LocationText =
-			CachedCampaignRow.System + TEXT("/") + CachedCampaignRow.Region;
-
+		const FString LocationText = Row->System + TEXT("/") + Row->Region;
 		LocationSystemText->SetText(FText::FromString(LocationText));
 	}
 
-	// -----------------------------
-	// Optional: Persist selection
-	// -----------------------------
+	// Persist selection in player info (still fine):
+	Selected = selected;
 	GI->PlayerInfo.Campaign = Selected;
 	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
 }
 
+
 void UCampaignScreen::OnSetSelected(FString /*SelectedItem*/, ESelectInfo::Type Type)
 {
-	// Ignore programmatic changes
+	// Ignore programmatic SetSelectedIndex calls:
 	if (Type == ESelectInfo::Direct)
 		return;
 
 	if (!CampaignSelectDD)
 		return;
 
-	const int32 NewIndex =
-		CampaignSelectDD->FindOptionIndex(CampaignSelectDD->GetSelectedOption());
-
+	const int32 NewIndex = CampaignSelectDD->FindOptionIndex(CampaignSelectDD->GetSelectedOption());
 	if (NewIndex == INDEX_NONE)
 		return;
 
 	Selected = NewIndex;
-	PickedRowName =
-		CampaignRowNamesByOptionIndex.IsValidIndex(NewIndex)
+
+	PickedRowName = CampaignRowNamesByOptionIndex.IsValidIndex(NewIndex)
 		? CampaignRowNamesByOptionIndex[NewIndex]
 		: NAME_None;
 
-	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	// NEW: cache the actual row
+	CacheCampaignRowByOptionIndex(NewIndex);
 
-	// -----------------------------
-	// CACHE DISPLAY ROW (KEY FIX)
-	// -----------------------------
-	bHasCachedCampaignRow = false;
-
-	if (GI && GI->CampaignDataTable && !PickedRowName.IsNone())
-	{
-		if (const FS_Campaign* Row =
-			GI->CampaignDataTable->FindRow<FS_Campaign>(PickedRowName, TEXT("CampaignScreen")))
-		{
-			CachedCampaignRow = *Row;
-			bHasCachedCampaignRow = true;
-		}
-	}
-
+	// Update right panel from cached row only:
 	SetSelectedData(NewIndex);
 	UpdateCampaignButtons();
 }
@@ -496,4 +435,29 @@ void UCampaignScreen::UpdateCampaignButtons()
 	}
 }
 
+bool UCampaignScreen::CacheCampaignRowByOptionIndex(int32 OptionIndex)
+{
+	bHasCachedCampaignRow = false;
+	CachedCampaignRowName = NAME_None;
+	CachedCampaignIndex1Based = 0;
+
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI || !GI->CampaignDataTable)
+		return false;
+
+	if (!CampaignRowNamesByOptionIndex.IsValidIndex(OptionIndex))
+		return false;
+
+	const FName RowName = CampaignRowNamesByOptionIndex[OptionIndex];
+	const FS_Campaign* Row = GI->CampaignDataTable->FindRow<FS_Campaign>(RowName, TEXT("CacheCampaignRowByOptionIndex"));
+	if (!Row)
+		return false;
+
+	CachedCampaignRow = *Row;
+	CachedCampaignRowName = RowName;
+	CachedCampaignIndex1Based = Row->Index + 1;
+	bHasCachedCampaignRow = true;
+
+	return true;
+}
 
