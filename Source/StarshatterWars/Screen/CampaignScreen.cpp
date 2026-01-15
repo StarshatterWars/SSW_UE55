@@ -84,11 +84,6 @@ void UCampaignScreen::NativeConstruct()
 	UpdateCampaignButtons();
 }
 
-void UCampaignScreen::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
-{
-	Super::NativeTick(MyGeometry, DeltaTime);
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-}
 
 UTexture2D* UCampaignScreen::LoadTextureFromFile()
 {
@@ -106,7 +101,7 @@ FSlateBrush UCampaignScreen::CreateBrushFromTexture(UTexture2D* Texture, FVector
 	return Brush;
 }
 
-void UCampaignScreen::OnPlayButtonClicked()
+/*void UCampaignScreen::OnPlayButtonClicked()
 {
 	PlayUISound(this, AcceptSound);
 
@@ -143,6 +138,77 @@ void UCampaignScreen::OnPlayButtonClicked()
 	}
 
 	SSWInstance->ShowCampaignLoading();
+}*/
+
+void UCampaignScreen::OnPlayButtonClicked()
+{
+	PlayUISound(this, AcceptSound);
+
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI)
+		return;
+
+	if (PickedRowName.IsNone())
+		return;
+
+	const bool bHasSave = DoesSelectedCampaignSaveExist();
+
+	// Persist selection in PlayerInfo (fine to keep)
+	GI->PlayerInfo.Campaign = Selected;
+	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
+
+	// Resolve the numeric campaign index you use for naming/legacy (you already compute it)
+	GI->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
+	GI->SelectedCampaignIndex =
+		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
+	GI->SelectedCampaignRowName = PickedRowName;
+
+	// --- Save workflow ---
+	if (bHasSave)
+	{
+		GI->LoadOrCreateSelectedCampaignSave();   // should load into GI->CampaignSave
+	}
+	else
+	{
+		GI->CreateNewCampaignSave(
+			GI->SelectedCampaignIndex,
+			PickedRowName,
+			GI->SelectedCampaignDisplayName
+		);
+	}
+
+	// Point timer at the active campaign save (required)
+	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
+	{
+		Timer->SetCampaignSave(GI->CampaignSave);
+
+		// If you want CONTINUE to keep its time, do not restart here.
+		// If you want START to reset timeline, restart only for new campaigns.
+		if (!bHasSave)
+		{
+			Timer->RestartCampaignClock(true);
+		}
+	}
+
+	// --- Campaign subsystem now becomes authoritative ---
+	if (UCampaignSubsystem* Campaign = GetGameInstance()->GetSubsystem<UCampaignSubsystem>())
+	{
+		// Transitional: ensure CampaignSubsystem knows where the DT is (until you move to GameDataSubsystem)
+		Campaign->SetCampaignDataTable(GI->CampaignDataTable);
+
+		if (bHasSave)
+		{
+			// Resume campaign runtime state from save (if you have it, else just StartCampaign)
+			Campaign->StartCampaign(GI->SelectedCampaignIndex);
+			// Later: Campaign->ResumeCampaign(GI->CampaignSave);
+		}
+		else
+		{
+			Campaign->StartCampaign(GI->SelectedCampaignIndex);
+		}
+	}
+
+	GI->ShowCampaignLoading();
 }
 
 void UCampaignScreen::OnPlayButtonHovered()
@@ -181,6 +247,12 @@ void UCampaignScreen::OnRestartButtonClicked()
 	{
 		Timer->SetCampaignSave(SSWInstance->CampaignSave);
 		Timer->RestartCampaignClock(true);
+	}
+
+	if (UCampaignSubsystem* Campaign = GetGameInstance()->GetSubsystem<UCampaignSubsystem>())
+	{
+		Campaign->SetCampaignDataTable(SSWInstance->CampaignDataTable);
+		Campaign->StartCampaign(SSWInstance->SelectedCampaignIndex); // Start fresh
 	}
 
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);

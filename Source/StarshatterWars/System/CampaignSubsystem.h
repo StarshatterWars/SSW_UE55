@@ -3,8 +3,12 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "CampaignPlanner.h"
+#include "GameStructs.h"   // contains FS_Campaign
 #include "CampaignSubsystem.generated.h"
 
+
+
+class UDataTable;
 // -------------------------
 // Plain C++ mission offer
 // -------------------------
@@ -61,6 +65,12 @@ public:
 	void AddMissionOffer(FMissionOffer Offer);
 	void ClearMissionOffers();
 
+	// Inject DT pointer from your existing loader (clean transitional step)
+	void SetCampaignDataTable(UDataTable* InCampaignDT) { CampaignDT = InCampaignDT; }
+
+	// Read-only access for UI / planners
+	const FS_Campaign* GetActiveCampaign() const { return bHasActiveCampaign ? &ActiveCampaignConfig : nullptr; }
+
 private:
 	// Build planner stubs and reset their gating state
 	void BuildPlanners();
@@ -69,7 +79,6 @@ private:
 	// Placeholder: later you will hydrate caches from DataTables here
 	void HydrateFromDataTables();
 
-private:
 	// State
 	bool bRunning = false;
 	int32 ActiveCampaignId = -1;
@@ -86,4 +95,17 @@ private:
 
 	// Last known time (handy for StartCampaign reset)
 	int64 LastNowSeconds = 0;
+
+	uint64 LastUniverseSeconds = 0;
+	bool   bHasLastUniverseSeconds = false;
+
+	// Active campaign config snapshot (copied from DT row)
+	FS_Campaign ActiveCampaignConfig;
+	bool bHasActiveCampaign = false;
+
+	// Temporary: pointer to campaign DT (until you move GameData later)
+	UDataTable* CampaignDT = nullptr;
+
+	bool LoadActiveCampaignRowByIndex(int32 CampaignIndex);
+	void BuildTrainingOffers();     // MissionList -> MissionOffers
 };
