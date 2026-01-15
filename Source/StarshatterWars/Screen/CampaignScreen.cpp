@@ -101,44 +101,7 @@ FSlateBrush UCampaignScreen::CreateBrushFromTexture(UTexture2D* Texture, FVector
 	return Brush;
 }
 
-/*void UCampaignScreen::OnPlayButtonClicked()
-{
-	PlayUISound(this, AcceptSound);
 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	if (!SSWInstance)
-		return;
-
-	const bool bHasSave = DoesSelectedCampaignSaveExist();
-
-	SSWInstance->PlayerInfo.Campaign = Selected;
-	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
-
-	SSWInstance->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
-	SSWInstance->SelectedCampaignIndex =
-		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
-	SSWInstance->SelectedCampaignRowName = PickedRowName;
-
-	// Persist player selection (optional but consistent with your flow)
-	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
-
-	if (bHasSave)
-	{
-		// CONTINUE: load existing, do NOT reset
-		SSWInstance->LoadOrCreateSelectedCampaignSave();
-	}
-	else
-	{
-		// START: create new save and reset timeline
-		SSWInstance->CreateNewCampaignSave(
-			SSWInstance->SelectedCampaignIndex,
-			PickedRowName,
-			SSWInstance->SelectedCampaignDisplayName
-		);
-	}
-
-	SSWInstance->ShowCampaignLoading();
-}*/
 
 void UCampaignScreen::OnPlayButtonClicked()
 {
@@ -155,21 +118,25 @@ void UCampaignScreen::OnPlayButtonClicked()
 
 	// Persist selection in PlayerInfo (fine to keep)
 	GI->PlayerInfo.Campaign = Selected;
-	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
 
-	// Resolve the numeric campaign index you use for naming/legacy (you already compute it)
+	// Capture selection metadata used by save and UI
 	GI->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
 	GI->SelectedCampaignIndex =
 		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
 	GI->SelectedCampaignRowName = PickedRowName;
 
-	// --- Save workflow ---
+	// Persist player selection
+	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
+
+	// --- Ensure CampaignSave exists/loaded ---
 	if (bHasSave)
 	{
-		GI->LoadOrCreateSelectedCampaignSave();   // should load into GI->CampaignSave
+		// CONTINUE: load existing, do NOT reset
+		GI->LoadOrCreateSelectedCampaignSave();
 	}
 	else
 	{
+		// START: create new save and reset timeline
 		GI->CreateNewCampaignSave(
 			GI->SelectedCampaignIndex,
 			PickedRowName,
@@ -177,39 +144,31 @@ void UCampaignScreen::OnPlayButtonClicked()
 		);
 	}
 
-	// Point timer at the active campaign save (required)
+	// --- Timer should always point at current campaign save ---
 	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 	{
 		Timer->SetCampaignSave(GI->CampaignSave);
 
-		// If you want CONTINUE to keep its time, do not restart here.
-		// If you want START to reset timeline, restart only for new campaigns.
+		// Only restart clock when starting fresh
 		if (!bHasSave)
 		{
 			Timer->RestartCampaignClock(true);
 		}
 	}
 
-	// --- Campaign subsystem now becomes authoritative ---
+	// --- CampaignSubsystem becomes authoritative for runtime campaign logic ---
 	if (UCampaignSubsystem* Campaign = GetGameInstance()->GetSubsystem<UCampaignSubsystem>())
 	{
-		// Transitional: ensure CampaignSubsystem knows where the DT is (until you move to GameDataSubsystem)
+		// Transitional: allow CampaignSubsystem to read the DT until you move to GameDataSubsystem
 		Campaign->SetCampaignDataTable(GI->CampaignDataTable);
 
-		if (bHasSave)
-		{
-			// Resume campaign runtime state from save (if you have it, else just StartCampaign)
-			Campaign->StartCampaign(GI->SelectedCampaignIndex);
-			// Later: Campaign->ResumeCampaign(GI->CampaignSave);
-		}
-		else
-		{
-			Campaign->StartCampaign(GI->SelectedCampaignIndex);
-		}
+		// Start (or resume later once you add ResumeCampaign)
+		Campaign->StartCampaign(GI->SelectedCampaignIndex);
 	}
 
 	GI->ShowCampaignLoading();
 }
+
 
 void UCampaignScreen::OnPlayButtonHovered()
 {
@@ -219,45 +178,52 @@ void UCampaignScreen::OnPlayButtonHovered()
 void UCampaignScreen::OnPlayButtonUnHovered()
 {
 }
+
 void UCampaignScreen::OnRestartButtonClicked()
 {
 	PlayUISound(this, AcceptSound);
 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	if (!SSWInstance)
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI)
 		return;
 
-	SSWInstance->PlayerInfo.Campaign = Selected;
-	SSWInstance->SetActiveCampaign(SSWInstance->CampaignData[Selected]);
+	if (PickedRowName.IsNone())
+		return;
 
-	SSWInstance->SelectedCampaignDisplayName = SSWInstance->GetActiveCampaign().Name;
-	SSWInstance->SelectedCampaignIndex =
+	GI->PlayerInfo.Campaign = Selected;
+
+	GI->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
+	GI->SelectedCampaignIndex =
 		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
-	SSWInstance->SelectedCampaignRowName = PickedRowName;
+	GI->SelectedCampaignRowName = PickedRowName;
 
-	// Create/overwrite save FIRST (so timer points at correct object)
-	SSWInstance->CreateNewCampaignSave(
-		SSWInstance->SelectedCampaignIndex,
+	// Overwrite/create save FIRST
+	GI->CreateNewCampaignSave(
+		GI->SelectedCampaignIndex,
 		PickedRowName,
-		SSWInstance->SelectedCampaignDisplayName
+		GI->SelectedCampaignDisplayName
 	);
 
-	// Then restart campaign clock on the newly injected save
+	// Restart campaign clock on the new save
 	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 	{
-		Timer->SetCampaignSave(SSWInstance->CampaignSave);
+		Timer->SetCampaignSave(GI->CampaignSave);
 		Timer->RestartCampaignClock(true);
 	}
 
+	// Restart campaign runtime
 	if (UCampaignSubsystem* Campaign = GetGameInstance()->GetSubsystem<UCampaignSubsystem>())
 	{
-		Campaign->SetCampaignDataTable(SSWInstance->CampaignDataTable);
-		Campaign->StartCampaign(SSWInstance->SelectedCampaignIndex); // Start fresh
+		Campaign->SetCampaignDataTable(GI->CampaignDataTable);
+		Campaign->StartCampaign(GI->SelectedCampaignIndex);
 	}
 
-	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
-	SSWInstance->ShowCampaignLoading();
+	// Save player selection
+	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
+
+	GI->ShowCampaignLoading();
 }
+
 
 void UCampaignScreen::OnRestartButtonHovered()
 {
@@ -286,8 +252,7 @@ void UCampaignScreen::OnCancelButtonUnHovered()
 
 void UCampaignScreen::SetCampaignDDList()
 {
-	USSWGameInstance* GI = (USSWGameInstance*)GetGameInstance();
-
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
 	if (!CampaignSelectDD || !GI || !GI->CampaignDataTable)
 		return;
 
@@ -301,115 +266,177 @@ void UCampaignScreen::SetCampaignDDList()
 
 	for (const FName& RowName : RowNames)
 	{
-		const FS_Campaign* Row = GI->CampaignDataTable->FindRow<FS_Campaign>(RowName, TEXT("CampaignScreen"));
-		if (!Row)
+		const FS_Campaign* Row =
+			GI->CampaignDataTable->FindRow<FS_Campaign>(RowName, TEXT("CampaignScreen"));
+
+		if (!Row || !Row->bAvailable)
 			continue;
 
-		if (!Row->bAvailable)
-			continue;
-
-		// Add visible option text
 		CampaignSelectDD->AddOption(Row->Name);
 
-		// Store RowName at same option index
 		CampaignRowNamesByOptionIndex.Add(RowName);
-
-		// IMPORTANT: your FS_Campaign has "Index" (0-based in your current usage)
-		// If your SaveGame slot naming expects 1-based campaign index, store Index+1.
 		CampaignIndexByOptionIndex.Add(Row->Index + 1);
 	}
 
 	const int32 MaxIndex = FMath::Max(0, CampaignRowNamesByOptionIndex.Num() - 1);
-	const int32 SelectedOptionIndex = FMath::Clamp(GI->PlayerInfo.Campaign, 0, MaxIndex);
+	const int32 SelectedOptionIndex =
+		FMath::Clamp(GI->PlayerInfo.Campaign, 0, MaxIndex);
 
 	CampaignSelectDD->SetSelectedIndex(SelectedOptionIndex);
 
 	Selected = SelectedOptionIndex;
-	PickedRowName = CampaignRowNamesByOptionIndex.IsValidIndex(Selected)
+	PickedRowName =
+		CampaignRowNamesByOptionIndex.IsValidIndex(Selected)
 		? CampaignRowNamesByOptionIndex[Selected]
 		: NAME_None;
+
+	// -----------------------------
+	// CACHE DISPLAY ROW (KEY FIX)
+	// -----------------------------
+	bHasCachedCampaignRow = false;
+
+	if (!PickedRowName.IsNone())
+	{
+		if (const FS_Campaign* Row =
+			GI->CampaignDataTable->FindRow<FS_Campaign>(PickedRowName, TEXT("CampaignScreen")))
+		{
+			CachedCampaignRow = *Row; // snapshot copy
+			bHasCachedCampaignRow = true;
+		}
+	}
 }
 
 void UCampaignScreen::SetSelectedData(int selected)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI)
+		return;
 
-	SSWInstance->CampaignData[selected].Orders.SetNum(4);
-	
+	Selected = selected;
+
+	if (!bHasCachedCampaignRow)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CampaignScreen: No cached campaign row for selection %d"), selected);
+		return;
+	}
+
+	// -----------------------------
+	// Campaign Image
+	// -----------------------------
 	GetCampaignImageFile(selected);
 
-	UTexture2D* LoadedTexture = LoadTextureFromFile();
-	if (LoadedTexture && CampaignImage)
+	if (UTexture2D* LoadedTexture = LoadTextureFromFile())
 	{
-		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
-		CampaignImage->SetBrush(Brush);
+		if (CampaignImage)
+		{
+			const FVector2D ImageSize(
+				LoadedTexture->GetSizeX(),
+				LoadedTexture->GetSizeY()
+			);
+
+			FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, ImageSize);
+			CampaignImage->SetBrush(Brush);
+		}
 	}
 
-	if (CampaignNameText) {
-		CampaignNameText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Name));
-	}
-	if (CampaignStartTimeText) {
-		CampaignStartTimeText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Start));
-	}
-	if (DescriptionText) {
-		DescriptionText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Description));
-	}
+	// -----------------------------
+	// Text Fields (DISPLAY ONLY)
+	// -----------------------------
+	if (CampaignNameText)
+		CampaignNameText->SetText(FText::FromString(CachedCampaignRow.Name));
 
-	if (SituationText) {
-		SituationText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Situation));
-	}
+	if (CampaignStartTimeText)
+		CampaignStartTimeText->SetText(FText::FromString(CachedCampaignRow.Start));
 
-	if(Orders1Text) {
-		
-		Orders1Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[0]));
-	}
-	if (Orders2Text) {
+	if (DescriptionText)
+		DescriptionText->SetText(FText::FromString(CachedCampaignRow.Description));
 
-		Orders2Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[1]));
-	}
-	if (Orders3Text) {
+	if (SituationText)
+		SituationText->SetText(FText::FromString(CachedCampaignRow.Situation));
 
-		Orders3Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[2]));
-	}
-	if (Orders4Text) {
+	// -----------------------------
+	// Orders (no mutation)
+	// -----------------------------
+	if (Orders1Text)
+		Orders1Text->SetText(FText::FromString(
+			CachedCampaignRow.Orders.IsValidIndex(0) ? CachedCampaignRow.Orders[0] : TEXT("")
+		));
 
-		Orders4Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[3]));
-	}
-	if (LocationSystemText) {
-		FString LocationText = SSWInstance->CampaignData[selected].System + "/" + SSWInstance->CampaignData[selected].Region;
+	if (Orders2Text)
+		Orders2Text->SetText(FText::FromString(
+			CachedCampaignRow.Orders.IsValidIndex(1) ? CachedCampaignRow.Orders[1] : TEXT("")
+		));
+
+	if (Orders3Text)
+		Orders3Text->SetText(FText::FromString(
+			CachedCampaignRow.Orders.IsValidIndex(2) ? CachedCampaignRow.Orders[2] : TEXT("")
+		));
+
+	if (Orders4Text)
+		Orders4Text->SetText(FText::FromString(
+			CachedCampaignRow.Orders.IsValidIndex(3) ? CachedCampaignRow.Orders[3] : TEXT("")
+		));
+
+	// -----------------------------
+	// Location
+	// -----------------------------
+	if (LocationSystemText)
+	{
+		const FString LocationText =
+			CachedCampaignRow.System + TEXT("/") + CachedCampaignRow.Region;
+
 		LocationSystemText->SetText(FText::FromString(LocationText));
 	}
 
-	Selected = selected;
-	SSWInstance->PlayerInfo.Campaign = Selected;
-	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
+	// -----------------------------
+	// Optional: Persist selection
+	// -----------------------------
+	GI->PlayerInfo.Campaign = Selected;
+	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
 }
 
 void UCampaignScreen::OnSetSelected(FString /*SelectedItem*/, ESelectInfo::Type Type)
 {
-	// You probably want this to respond to all user-driven changes:
-	if (Type == ESelectInfo::Direct) // ignore programmatic SetSelectedIndex
-	{
+	// Ignore programmatic changes
+	if (Type == ESelectInfo::Direct)
 		return;
-	}
 
 	if (!CampaignSelectDD)
 		return;
 
-	const int32 NewIndex = CampaignSelectDD->FindOptionIndex(CampaignSelectDD->GetSelectedOption());
+	const int32 NewIndex =
+		CampaignSelectDD->FindOptionIndex(CampaignSelectDD->GetSelectedOption());
+
 	if (NewIndex == INDEX_NONE)
 		return;
 
-	// Update our picked row name from the option index arrays you already maintain
 	Selected = NewIndex;
-	PickedRowName = CampaignRowNamesByOptionIndex.IsValidIndex(NewIndex)
+	PickedRowName =
+		CampaignRowNamesByOptionIndex.IsValidIndex(NewIndex)
 		? CampaignRowNamesByOptionIndex[NewIndex]
 		: NAME_None;
 
-	// Update the right-panel details and save player selection
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+
+	// -----------------------------
+	// CACHE DISPLAY ROW (KEY FIX)
+	// -----------------------------
+	bHasCachedCampaignRow = false;
+
+	if (GI && GI->CampaignDataTable && !PickedRowName.IsNone())
+	{
+		if (const FS_Campaign* Row =
+			GI->CampaignDataTable->FindRow<FS_Campaign>(PickedRowName, TEXT("CampaignScreen")))
+		{
+			CachedCampaignRow = *Row;
+			bHasCachedCampaignRow = true;
+		}
+	}
+
 	SetSelectedData(NewIndex);
 	UpdateCampaignButtons();
 }
+
 
 void UCampaignScreen::GetCampaignImageFile(int selected)
 {

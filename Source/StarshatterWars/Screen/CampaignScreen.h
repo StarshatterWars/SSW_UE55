@@ -132,7 +132,8 @@ protected:
 
 	UPROPERTY()
 	FString ImagePath;
-
-private:
 	
+	// Display-only cached row
+	FS_Campaign CachedCampaignRow;
+	bool bHasCachedCampaignRow = false;	
 };
