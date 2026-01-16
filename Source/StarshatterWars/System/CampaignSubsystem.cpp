@@ -415,6 +415,160 @@ void UCampaignSubsystem::TickCampaignSeconds(uint64 UniverseSeconds)
 {
 	HandleUniverseSecond(UniverseSeconds);
 }
+static bool IsWithinWindowSeconds(int64 Now, int32 StartAfter, int32 StartBefore)
+{
+	if (StartAfter > 0 && Now < (int64)StartAfter) return false;
+	if (StartBefore > 0 && Now > (int64)StartBefore) return false;
+	return true;
+}
+
+bool UCampaignSubsystem::TryBuildOfferFromCampaignAction(const FCampaignTickContext& Ctx, FMissionOffer& OutOffer)
+{
+	OutOffer = FMissionOffer{};
+
+	if (!bHasActiveCampaign)
+		return false;
+
+	if (ActiveCampaignConfig.Action.Num() <= 0)
+		return false;
+
+	// Scan for eligible MISSION_TEMPLATE actions.
+	for (const FS_CampaignAction& A : ActiveCampaignConfig.Action)
+	{
+		if (!A.Type.Equals(TEXT("MISSION_TEMPLATE"), ESearchCase::IgnoreCase))
+			continue;
+
+		// Time window gate
+		if (!IsWithinWindowSeconds(Ctx.NowSeconds, A.StartAfter, A.StartBefore))
+			continue;
+
+		// IFF gate (0 means wildcard/unrestricted)
+		if (A.Iff != 0 && A.Iff != CachedPlayerIff)
+			continue;
+
+		// Rank gate (rank not wired yet => CachedPlayerRank == 0, which is safe)
+		if (!RankOk(CachedPlayerRank, A.MinRank, A.MaxRank))
+			continue;
+
+		// Cooldown: use Delay if present; else Starshatter default 7200 sec
+		const int64 Cooldown = (A.Delay > 0) ? (int64)A.Delay : 7200;
+
+		if (const int64* LastExec = ActionLastExecSeconds.Find(A.Id))
+		{
+			if (*LastExec > 0 && (Ctx.NowSeconds - *LastExec) < Cooldown)
+				continue;
+		}
+
+		// Probability gate (0 = always)
+		if (A.Probability > 0 && Ctx.Rng)
+		{
+			const int32 Roll = Ctx.Rng->RandRange(1, 100);
+			if (Roll > A.Probability)
+				continue;
+		}
+
+		// Determine mission template script name from action.
+		// Prefer Source (common), then Scene.
+		FName TemplateRow = NAME_None;
+		if (!A.Source.IsEmpty())
+			TemplateRow = FName(*A.Source);
+		else if (!A.Scene.IsEmpty())
+			TemplateRow = FName(*A.Scene);
+
+		// If not specified, fall back to template list selection (but do not recurse)
+		if (TemplateRow.IsNone())
+			continue;
+
+		OutOffer.OfferId = AllocateOfferId();
+		OutOffer.MissionTemplateRow = TemplateRow;
+		OutOffer.SourceTag = FString::Printf(
+			TEXT("ACTION:%d SUB:%d IFF:%d SYS:%s REG:%s TITLE:%s"),
+			A.Id, A.Subtype, A.Iff, *A.System, *A.Region, *A.Title
+		);
+
+		ActionLastExecSeconds.Add(A.Id, Ctx.NowSeconds);
+
+		UE_LOG(LogTemp, Log, TEXT("[Campaign][Mission] Action->Offer actionId=%d template=%s"),
+			A.Id, *TemplateRow.ToString());
+
+		return true;
+	}
+
+	return false;
+}
+
+bool UCampaignSubsystem::TryBuildOfferFromTemplateList(const FCampaignTickContext& Ctx, FMissionOffer& OutOffer)
+{
+	OutOffer = FMissionOffer{};
+
+	if (!bHasActiveCampaign)
+		return false;
+
+	const TArray<FS_CampaignTemplateList>& List = ActiveCampaignConfig.TemplateList;
+	if (List.Num() <= 0)
+		return false;
+
+	// Player rank not wired; treat as unknown.
+	// This will naturally exclude templates that require MinRank > 0.
+	const int32 LocalRank = CachedPlayerRank;
+
+	TArray<int32> Eligible;
+	Eligible.Reserve(List.Num());
+
+	for (int32 i = 0; i < List.Num(); ++i)
+	{
+		const FS_CampaignTemplateList& T = List[i];
+
+		if (T.Script.IsEmpty())
+			continue;
+
+		// Time window gate
+		if (!IsWithinWindowSeconds(Ctx.NowSeconds, T.StartAfter, T.StartBefore))
+			continue;
+
+		// Rank gate
+		if (!RankOk(LocalRank, T.MinRank, T.MaxRank))
+			continue;
+
+		// ExecOnce gate
+		if (T.ExecOnce != 0 && ExecutedTemplateIds.Contains(T.Id))
+			continue;
+
+		// Optional action gating:
+		// If Template references an ActionId + ActionStatus, require the action status match if you track it later.
+		// For now, do not block on this since ActionStatus storage is not wired.
+
+		Eligible.Add(i);
+	}
+
+	if (Eligible.Num() <= 0)
+		return false;
+
+	const int32 PickIdx = (Ctx.Rng) ? Eligible[Ctx.Rng->RandRange(0, Eligible.Num() - 1)] : Eligible[0];
+	const FS_CampaignTemplateList& Pick = List[PickIdx];
+
+	const FName TemplateRow = FName(*Pick.Script);
+	if (TemplateRow.IsNone())
+		return false;
+
+	OutOffer.OfferId = AllocateOfferId();
+	OutOffer.MissionTemplateRow = TemplateRow;
+	OutOffer.SourceTag = FString::Printf(
+		TEXT("TEMPLATE:%d NAME:%s REGION:%s MT:%d GT:%d"),
+		Pick.Id, *Pick.Name, *Pick.Region, Pick.MissionType, Pick.GroupType
+	);
+
+	if (Pick.ExecOnce != 0)
+	{
+		ExecutedTemplateIds.Add(Pick.Id);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[Campaign][Mission] Template->Offer templateId=%d script=%s"),
+		Pick.Id, *Pick.Script);
+
+	return true;
+}
+
 
 
 

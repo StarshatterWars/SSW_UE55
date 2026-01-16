@@ -1,5 +1,11 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
-
+// Project nGenEx
+// Fractal Dev Games
+// Copyright (C) 2024. All Rights Reserved.
+// 
+// SUBSYSTEM:    SSW
+// FILE:         PlannerMission.cpp
+// AUTHOR:       Carlos Bott
+// 
 
 #include "PlannerMission.h"
 
@@ -10,11 +16,22 @@ namespace
 		if (Interval <= 0)
 			return Value;
 
-		const int64 Remainder = Value % Interval;
-		if (Remainder == 0)
-			return Value;
+		const int64 R = Value % Interval;
+		return (R == 0) ? Value : (Value + (Interval - R));
+	}
 
-		return Value + (Interval - Remainder);
+	static int64 SelectStartTimeSeconds(const TArray<FMissionOffer>& Existing, int64 NowSeconds)
+	{
+		// Starshatter feel: schedule in 30-minute blocks, at least one block out.
+		constexpr int64 Block = 1800; // 30 min
+		int64 Base = NowSeconds + Block;
+
+		if (Existing.Num() > 0)
+		{
+			Base = FMath::Max(Base, Existing.Last().StartTimeSeconds);
+		}
+
+		return RoundUpToInterval(Base + Block, Block);
 	}
 }
 
@@ -23,51 +40,36 @@ void FPlannerMission::TickCampaign(const FCampaignTickContext& Ctx)
 	if (!ShouldRun(Ctx))
 		return;
 
-	// Training campaigns build offers up-front in StartCampaign().
 	const FS_Campaign* Campaign = Owner.GetActiveCampaign();
 	if (!Campaign)
 		return;
 
-	// No templates = nothing dynamic to generate.
-	if (Campaign->TemplateList.Num() == 0)
+	// Training campaigns: offers built in StartCampaign() via BuildTrainingOffers().
+	const bool bDynamic = (Campaign->TemplateList.Num() > 0) || (Campaign->Action.Num() > 0);
+	if (!bDynamic)
 		return;
 
-	// Cap offers (fighters = 5 classic behavior).
+	// Offer cap (classic Starshatter fighter behavior is 5; can later be group-type driven)
 	const int32 MaxOffers = Owner.GetMaxMissionOffers();
 	if (Owner.GetMissionOffers().Num() >= MaxOffers)
 		return;
 
-	// Pick a mission template row.
-	FName TemplateRow = NAME_None;
-	if (!Owner.TryPickRandomMissionTemplateRow(TemplateRow))
-		return;
-
-	// Start time selection (classic behavior: 30-minute blocks)
-	constexpr int64 MissionDelay = 1800; // 30 minutes
-
-	int64 BaseTime = Ctx.NowSeconds + MissionDelay;
-
-	const TArray<FMissionOffer>& Existing = Owner.GetMissionOffers();
-	if (Existing.Num() > 0)
+	// 1) Try campaign actions (scripted beats)
+	FMissionOffer Offer;
+	if (Owner.TryBuildOfferFromCampaignAction(Ctx, Offer))
 	{
-		BaseTime = FMath::Max(BaseTime, Existing.Last().StartTimeSeconds);
+		Offer.StartTimeSeconds = SelectStartTimeSeconds(Owner.GetMissionOffers(), Ctx.NowSeconds);
+		Owner.AddMissionOffer(MoveTemp(Offer));
+		return;
 	}
 
-	const int64 StartTime = RoundUpToInterval(BaseTime + MissionDelay, MissionDelay);
+	// 2) Fallback: eligible template list
+	if (Owner.TryBuildOfferFromTemplateList(Ctx, Offer))
+	{
+		Offer.StartTimeSeconds = SelectStartTimeSeconds(Owner.GetMissionOffers(), Ctx.NowSeconds);
+		Owner.AddMissionOffer(MoveTemp(Offer));
+		return;
+	}
 
-	FMissionOffer Offer;
-	Offer.OfferId = Owner.AllocateOfferId();
-	Offer.MissionTemplateRow = TemplateRow;
-	Offer.StartTimeSeconds = StartTime;
-	Offer.SourceTag = FString::Printf(TEXT("DYNAMIC:%s"), *TemplateRow.ToString());
-
-	Owner.AddMissionOffer(MoveTemp(Offer));
-
-	UE_LOG(LogTemp, Log, TEXT("[Campaign][Mission] Offer %d template=%s start=%lld (now=%lld)"),
-		Owner.GetMissionOffers().Last().OfferId,
-		*TemplateRow.ToString(),
-		StartTime,
-		Ctx.NowSeconds);
+	// Nothing eligible this tick.
 }
-
-

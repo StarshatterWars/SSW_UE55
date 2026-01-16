@@ -1,4 +1,11 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+// 
+// Project nGenEx
+// Fractal Dev Games	
+// Copyright (C) 2024. All Rights Reserved.
+// SUBSYSTEM:    SSW
+// FILE:         PlannerMission.h
+// AUTHOR:       Carlos Bott
+// */
 
 #pragma once
 
@@ -13,10 +20,7 @@ public:
 	{
 	}
 
-	const TCHAR* GetName() const override
-	{
-		return TEXT("Mission");
-	}
+	const TCHAR* GetName() const override { return TEXT("Mission"); }
 
 	void TickCampaign(const FCampaignTickContext& Ctx) override;
 };

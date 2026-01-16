@@ -85,12 +85,11 @@ public:
 	// Optional wrapper: lets other systems tick campaign without going through timer event
 	void TickCampaignSeconds(uint64 UniverseSeconds);
 
-private:
-	
-	
-	// Templates that are allowed to execute once.
-	TSet<int32> ExecutedTemplateIds;
+	// Build a single offer candidate. Planner sets StartTimeSeconds and calls AddMissionOffer().
+	bool TryBuildOfferFromCampaignAction(const FCampaignTickContext& Ctx, FMissionOffer& OutOffer);
+	bool TryBuildOfferFromTemplateList(const FCampaignTickContext& Ctx, FMissionOffer& OutOffer);
 
+private:
 	// Action status cache (if you want ActionStatus gating to be persistent)
 	TMap<int32, int32> ActionStatusById;
 	
@@ -130,5 +129,13 @@ private:
 
 	bool LoadActiveCampaignRowByIndex(int32 CampaignIndex);
 	void BuildTrainingOffers();     // MissionList -> MissionOffers
+
+	// Action/template gating state (subsystem-owned, planners remain stateless)
+	TMap<int32, int64> ActionLastExecSeconds; // actionId -> last exec time (seconds)
+	TSet<int32> ExecutedTemplateIds;          // templateId executed when ExecOnce != 0
+
+	// Not wired yet; keep at defaults (0 means "unknown/unrestricted" for gating)
+	int32 CachedPlayerRank = 0;
+	int32 CachedPlayerIff = 0;
 };
 

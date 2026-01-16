@@ -19,7 +19,7 @@
 #include "CampaignScreen.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
@@ -79,19 +79,19 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* AcceptSound;
 
-	
+
 protected:
 	void NativeConstruct() override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
-	
+
 	// UI selection state
 	int32 Selected = 0;
 	FName PickedRowName = NAME_None;
 	TArray<FName> CampaignRowNamesByOptionIndex;
 	TArray<int32> CampaignIndexByOptionIndex;
-	
+
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()
@@ -132,20 +132,7 @@ protected:
 
 	UPROPERTY()
 	FString ImagePath;
-	
-	// Display-only cached row
-	FS_Campaign CachedCampaignRow;
-	bool bHasCachedCampaignRow = false;	
 
+private:
 
-	UPROPERTY(Transient)
-	FName CachedCampaignRowName = NAME_None;
-
-	UPROPERTY(Transient)
-	int32 CachedCampaignIndex1Based = 0; // for save slot / display
-
-	bool CacheCampaignRowByOptionIndex(int32 OptionIndex);
-	
-	const FS_Campaign* GetCachedCampaignRow() const { return bHasCachedCampaignRow ? &CachedCampaignRow : nullptr; }
 };
-

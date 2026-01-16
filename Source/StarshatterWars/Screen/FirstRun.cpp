@@ -48,6 +48,7 @@ void UFirstRun::OnApplyClicked()
 	PlayerData.PlayerShip = "Unassigned";
 	PlayerData.PlayerSystem = "Borova";
 	PlayerData.PlayerRegion = "Borova";
+	PlayerData.CampaignRowName = "Operation Live Fire";
 	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, PlayerData);
 	SSWInstance->ToggleFirstRunDlg(false);
 }

@@ -498,6 +498,8 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 	FString Nickname;
 	UPROPERTY(BlueprintReadWrite)
 	int32 Campaign;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName CampaignRowName;
 	UPROPERTY(BlueprintReadWrite)
 	int32 Avatar;
 	UPROPERTY(BlueprintReadWrite)
@@ -617,6 +619,7 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		GameTime = 0;
 		CampaignTime = 0;
 		FlightTime = 0;
+		CampaignRowName = NAME_None;
 
 		CampaignComplete.SetNum(5);
 		for (int i = 0; i < CampaignComplete.Num(); i++) {
