@@ -18,16 +18,5 @@ public:
 		return TEXT("Mission");
 	}
 
-	void TickCampaign(const FCampaignTickContext& Ctx) override
-	{
-		if (!ShouldRun(Ctx))
-			return;
-
-		// TODO:
-		// - Check mission offer count
-		// - Evaluate campaign actions / assignments
-		// - Select mission templates
-		// - Create FMissionOffer entries
-		UE_LOG(LogTemp, Log, TEXT("[Campaign][Mission] t=%lld"), Ctx.NowSeconds);
-	}
+	void TickCampaign(const FCampaignTickContext& Ctx) override;
 };

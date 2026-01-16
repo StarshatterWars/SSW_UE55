@@ -14,6 +14,76 @@
 #include "PlannerMission.h"
 #include "PlannerEvent.h"
 
+#include <type_traits>
+
+namespace
+{
+	template <typename T, typename = void>
+	struct THasMember_RowName : std::false_type {};
+	template <typename T>
+	struct THasMember_RowName<T, std::void_t<decltype(std::declval<const T&>().RowName)>> : std::true_type {};
+
+	template <typename T, typename = void>
+	struct THasMember_TemplateRow : std::false_type {};
+	template <typename T>
+	struct THasMember_TemplateRow<T, std::void_t<decltype(std::declval<const T&>().TemplateRow)>> : std::true_type {};
+
+	template <typename T, typename = void>
+	struct THasMember_MissionTemplateRow : std::false_type {};
+	template <typename T>
+	struct THasMember_MissionTemplateRow<T, std::void_t<decltype(std::declval<const T&>().MissionTemplateRow)>> : std::true_type {};
+
+	template <typename T>
+	static FName ExtractTemplateRowName(const T& Elem)
+	{
+		if constexpr (std::is_same<T, FName>::value)
+			return Elem;
+		else if constexpr (THasMember_TemplateRow<T>::value)
+			return Elem.TemplateRow;
+		else if constexpr (THasMember_MissionTemplateRow<T>::value)
+			return Elem.MissionTemplateRow;
+		else if constexpr (THasMember_RowName<T>::value)
+			return Elem.RowName;
+		else
+			return NAME_None;
+	}
+}
+
+int32 UCampaignSubsystem::GetMaxMissionOffers() const
+{
+	// Classic Starshatter fighter cap.
+	// Later: make data-driven (player asset type, difficulty, campaign, etc.)
+	return 5;
+}
+
+bool UCampaignSubsystem::TryPickRandomMissionTemplateRow(FName& OutTemplateRow) const
+{
+	OutTemplateRow = NAME_None;
+
+	if (!bHasActiveCampaign)
+		return false;
+
+	const auto& List = ActiveCampaignConfig.TemplateList;
+	if (List.Num() <= 0)
+		return false;
+
+	const int32 StartIndex = Rng.RandRange(0, List.Num() - 1);
+
+	for (int32 i = 0; i < List.Num(); ++i)
+	{
+		const int32 Idx = (StartIndex + i) % List.Num();
+		const FName Row = ExtractTemplateRowName(List[Idx]);
+
+		if (!Row.IsNone())
+		{
+			OutTemplateRow = Row;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UCampaignSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -238,6 +308,112 @@ void UCampaignSubsystem::BuildTrainingOffers()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[CampaignSubsystem] Training offers built: %d"), MissionOffers.Num());
+}
+
+static bool IsWithinWindow(const int64 Now, int32 StartAfter, int32 StartBefore)
+{
+	if (StartAfter > 0 && Now < (int64)StartAfter) return false;
+	if (StartBefore > 0 && Now > (int64)StartBefore) return false;
+	return true;
+}
+
+static bool RankOk(int32 PlayerRank, int32 MinRank, int32 MaxRank)
+{
+	if (MinRank > 0 && PlayerRank < MinRank) return false;
+	if (MaxRank > 0 && PlayerRank > MaxRank) return false;
+	return true;
+}
+
+bool UCampaignSubsystem::TryPickEligibleMissionTemplate(
+	const FCampaignTickContext& Ctx,
+	FName& OutTemplateRow,
+	FString& OutDebug
+) const
+{
+	OutTemplateRow = NAME_None;
+	OutDebug.Empty();
+
+	if (!bHasActiveCampaign)
+		return false;
+
+	const TArray<FS_CampaignTemplateList>& List = ActiveCampaignConfig.TemplateList;
+	if (List.Num() <= 0)
+		return false;
+
+	// If you later wire player rank/iff properly, these become real.
+	const int32 LocalPlayerRank = Ctx.PlayerRank;
+
+	// We will gather eligible indices then pick randomly among them.
+	TArray<int32> Eligible;
+	Eligible.Reserve(List.Num());
+
+	for (int32 i = 0; i < List.Num(); ++i)
+	{
+		const FS_CampaignTemplateList& T = List[i];
+
+		// Must have something to execute
+		if (T.Script.IsEmpty())
+			continue;
+
+		// Time window gate
+		if (!IsWithinWindow(Ctx.NowSeconds, T.StartAfter, T.StartBefore))
+			continue;
+
+		// Rank gate
+		if (!RankOk(LocalPlayerRank, T.MinRank, T.MaxRank))
+			continue;
+
+		// ExecOnce gate
+		if (T.ExecOnce != 0 && ExecutedTemplateIds.Contains(T.Id))
+			continue;
+
+		// Action gating (optional, but struct supports it)
+		// If ActionId is set, require ActionStatus match, if you’re tracking it.
+		if (T.ActionId != 0)
+		{
+			const int32* Status = ActionStatusById.Find(T.ActionId);
+
+			// If we have no status recorded, treat as “not ready” when ActionStatus is non-zero.
+			if (T.ActionStatus != 0)
+			{
+				if (!Status || *Status != T.ActionStatus)
+					continue;
+			}
+		}
+
+		Eligible.Add(i);
+	}
+
+	if (Eligible.Num() <= 0)
+		return false;
+
+	// Randomly choose an eligible template
+	const int32 PickIdx = (Ctx.Rng)
+		? Eligible[Ctx.Rng->RandRange(0, Eligible.Num() - 1)]
+		: Eligible[0];
+
+	const FS_CampaignTemplateList& Pick = List[PickIdx];
+
+	OutTemplateRow = FName(*Pick.Script);
+	OutDebug = FString::Printf(
+		TEXT("TID:%d NAME:%s SCRIPT:%s REGION:%s MT:%d GT:%d"),
+		Pick.Id, *Pick.Name, *Pick.Script, *Pick.Region, Pick.MissionType, Pick.GroupType
+	);
+
+	return !OutTemplateRow.IsNone();
+}
+
+void UCampaignSubsystem::MarkTemplateExecutedIfOnce(const FS_CampaignTemplateList& T)
+{
+	if (T.ExecOnce != 0)
+	{
+		ExecutedTemplateIds.Add(T.Id);
+	}
+}
+
+void UCampaignSubsystem::TickCampaignSeconds(uint64 UniverseSeconds)
+{
+	HandleUniverseSecond(UniverseSeconds);
 }
 
 

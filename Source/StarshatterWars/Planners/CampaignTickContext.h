@@ -17,4 +17,7 @@ struct FCampaignTickContext
 
 	// Shared deterministic RNG (owned by CampaignSubsystem)
 	FRandomStream* Rng = nullptr;
+
+	int32 PlayerRank = 0;
+	int32 PlayerIff = 0;
 };

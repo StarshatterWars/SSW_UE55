@@ -71,7 +71,29 @@ public:
 	// Read-only access for UI / planners
 	const FS_Campaign* GetActiveCampaign() const { return bHasActiveCampaign ? &ActiveCampaignConfig : nullptr; }
 
+	// Picks a mission template row from the active campaign's TemplateList.
+	// Returns false if no usable template is available.
+	bool TryPickRandomMissionTemplateRow(FName& OutTemplateRow) const;
+
+	bool TryPickEligibleMissionTemplate(const FCampaignTickContext& Ctx, FName& OutTemplateRow, FString& OutDebug) const;
+	
+	void MarkTemplateExecutedIfOnce(const FS_CampaignTemplateList& T);
+	
+	// Cap how many offers can exist at once (fighters = 5 in classic Starshatter).
+	int32 GetMaxMissionOffers() const;
+
+	// Optional wrapper: lets other systems tick campaign without going through timer event
+	void TickCampaignSeconds(uint64 UniverseSeconds);
+
 private:
+	
+	
+	// Templates that are allowed to execute once.
+	TSet<int32> ExecutedTemplateIds;
+
+	// Action status cache (if you want ActionStatus gating to be persistent)
+	TMap<int32, int32> ActionStatusById;
+	
 	// Build planner stubs and reset their gating state
 	void BuildPlanners();
 	void ResetPlanners(int64 NowSeconds);
@@ -109,3 +131,4 @@ private:
 	bool LoadActiveCampaignRowByIndex(int32 CampaignIndex);
 	void BuildTrainingOffers();     // MissionList -> MissionOffers
 };
+
