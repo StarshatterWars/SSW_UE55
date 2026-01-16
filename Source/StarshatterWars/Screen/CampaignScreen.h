@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -13,12 +13,17 @@
 #include "Components/Image.h"
 #include "Components/EditableTextBox.h"
 #include "Kismet/GameplayStatics.h"
-#include "../System/SSWGameInstance.h"
-#include "../System/TimerSubsystem.h"
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
+
+
+// Campaign simulation/planner subsystem (mission offers, etc.)
+#include "CampaignSubsystem.h"
+
 #include "CampaignScreen.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
@@ -53,6 +58,8 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CampaignStartTimeText;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* CampaignTPlusText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* CampaignImage;
@@ -78,20 +85,19 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* AcceptSound;
 
-	
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float DeltaTime) override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
-	
+
 	// UI selection state
 	int32 Selected = 0;
 	FName PickedRowName = NAME_None;
 	TArray<FName> CampaignRowNamesByOptionIndex;
 	TArray<int32> CampaignIndexByOptionIndex;
-	
+
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()
@@ -134,5 +140,14 @@ protected:
 	FString ImagePath;
 
 private:
-	
+	// Cached pointer for quick access (may be null if subsystem not loaded)
+	UPROPERTY(Transient)
+	TObjectPtr<UCampaignSubsystem> CampaignSubsystem = nullptr;
+
+	UCampaignSubsystem* GetCampaignSubsystem() const;
+
+	void HandleUniverseSecondTick(uint64 UniverseSecondsNow);
+	void HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds);
 };
+
+static FString FormatTPlus(uint64 TPlusSeconds);

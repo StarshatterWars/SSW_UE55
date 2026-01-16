@@ -12,13 +12,75 @@
 #include "Brushes/SlateImageBrush.h"
 #include "Styling/SlateBrush.h"
 
+static FString FormatTPlus(uint64 TPlusSeconds)
+{
+	const uint64 Days = TPlusSeconds / 86400ULL;
+	const uint64 Rem = TPlusSeconds % 86400ULL;
+	const uint64 Hours = Rem / 3600ULL;
+	const uint64 Minutes = (Rem % 3600ULL) / 60ULL;
+	const uint64 Seconds = Rem % 60ULL;
+
+	return FString::Printf(TEXT("T+ %02llu/%02llu:%02llu:%02llu"),
+		(unsigned long long)Days,
+		(unsigned long long)Hours,
+		(unsigned long long)Minutes,
+		(unsigned long long)Seconds);
+}
+UCampaignSubsystem* UCampaignScreen::GetCampaignSubsystem() const
+{
+	if (CampaignSubsystem)
+		return CampaignSubsystem;
+
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		UCampaignScreen* MutableThis = const_cast<UCampaignScreen*>(this);
+		MutableThis->CampaignSubsystem = GI->GetSubsystem<UCampaignSubsystem>();
+		return MutableThis->CampaignSubsystem;
+	}
+
+	return nullptr;
+}
+
 void UCampaignScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
-	
+
+	// -------------------------------
+// PUB/SUB SUBSCRIBE 
+// -------------------------------
+
+	UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>();
+
+	if (Timer)
+	{
+		Timer->OnUniverseSecond.AddUObject(this, &UCampaignScreen::HandleUniverseSecondTick);
+		Timer->OnCampaignTPlusChanged.AddUObject(this, &UCampaignScreen::HandleCampaignTPlusChanged);
+
+		// Initial push:
+		const uint64 Now = Timer->GetUniverseTimeSeconds();
+		HandleUniverseSecondTick(Now);
+
+		// If campaign T+ depends on universe seconds, keep this:
+		if (SSWInstance && SSWInstance->CampaignSave)
+		{
+			HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
+		}
+	}
+
+	// Campaign simulation/planner subsystem tie-in:
+	// - Inject the campaign DataTable (transitional; DT still owned by GameInstance)
+	// - Starting/stopping campaigns is handled on Play/Restart
+	if (UCampaignSubsystem* CS = GetCampaignSubsystem())
+	{
+		if (SSWInstance->CampaignDataTable)
+		{
+			CS->SetCampaignDataTable(SSWInstance->CampaignDataTable);
+		}
+	}
+
 	if (TitleText) {
 		TitleText->SetText(FText::FromString("Dynamic Campaigns").ToUpper());
 	}
@@ -35,14 +97,14 @@ void UCampaignScreen::NativeConstruct()
 		PlayButton->OnClicked.AddDynamic(this, &UCampaignScreen::OnPlayButtonClicked);
 		PlayButton->OnHovered.AddDynamic(this, &UCampaignScreen::OnPlayButtonHovered);
 		PlayButton->OnUnhovered.AddDynamic(this, &UCampaignScreen::OnPlayButtonUnHovered);
-		
-		if(SSWInstance->PlayerInfo.Campaign >= 0) {
+
+		if (SSWInstance->PlayerInfo.Campaign >= 0) {
 			PlayButton->SetIsEnabled(true);
 		}
 		else {
 			PlayButton->SetIsEnabled(false);
 		}
-		
+
 		if (PlayButtonText) {
 			PlayButtonText->SetText(FText::FromString("CONTINUE"));
 		}
@@ -92,7 +154,7 @@ void UCampaignScreen::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 
 UTexture2D* UCampaignScreen::LoadTextureFromFile()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();	
+	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	UTexture2D* LoadedTexture = SSWInstance->LoadPNGTextureFromFile(ImagePath);
 	return LoadedTexture;
 }
@@ -142,6 +204,14 @@ void UCampaignScreen::OnPlayButtonClicked()
 		);
 	}
 
+	// Kick the campaign simulation layer (mission planners/offers)
+	// Uses CampaignId convention expected by UCampaignSubsystem::StartCampaign()
+	if (UCampaignSubsystem* CS = GetCampaignSubsystem())
+	{
+		CS->StopCampaign();
+		CS->StartCampaign(SSWInstance->SelectedCampaignIndex);
+	}
+
 	SSWInstance->ShowCampaignLoading();
 }
 
@@ -176,6 +246,13 @@ void UCampaignScreen::OnRestartButtonClicked()
 		SSWInstance->SelectedCampaignDisplayName
 	);
 
+	// Kick the campaign simulation layer (mission planners/offers)
+	if (UCampaignSubsystem* CS = GetCampaignSubsystem())
+	{
+		CS->StopCampaign();
+		CS->StartCampaign(SSWInstance->SelectedCampaignIndex);
+	}
+
 	// Then restart campaign clock on the newly injected save
 	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
 	{
@@ -200,6 +277,14 @@ void UCampaignScreen::OnCancelButtonClicked()
 {
 	PlayUISound(this, AcceptSound);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+
+	// Optional: stop campaign simulation when leaving this screen.
+	// (If you want the campaign to keep simulating behind the UI, remove this.)
+	if (UCampaignSubsystem* CS = GetCampaignSubsystem())
+	{
+		CS->StopCampaign();
+	}
+
 	SSWInstance->ToggleCampaignScreen(false);
 }
 
@@ -263,7 +348,7 @@ void UCampaignScreen::SetSelectedData(int selected)
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 
 	SSWInstance->CampaignData[selected].Orders.SetNum(4);
-	
+
 	GetCampaignImageFile(selected);
 
 	UTexture2D* LoadedTexture = LoadTextureFromFile();
@@ -287,8 +372,8 @@ void UCampaignScreen::SetSelectedData(int selected)
 		SituationText->SetText(FText::FromString(SSWInstance->CampaignData[selected].Situation));
 	}
 
-	if(Orders1Text) {
-		
+	if (Orders1Text) {
+
 		Orders1Text->SetText(FText::FromString(SSWInstance->CampaignData[selected].Orders[0]));
 	}
 	if (Orders2Text) {
@@ -397,4 +482,26 @@ void UCampaignScreen::UpdateCampaignButtons()
 	}
 }
 
+void UCampaignScreen::HandleUniverseSecondTick(uint64 UniverseSecondsNow)
+{
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	UTimerSubsystem* Timer = GI->GetSubsystem<UTimerSubsystem>();
+	if (!Timer) return;
+
+	if (GameTimeText)
+	{
+		GameTimeText->SetText(
+			FText::FromString(Timer->GetUniverseDateTimeString())
+		);
+	}
+}
+
+void UCampaignScreen::HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds)
+{
+	if (!CampaignTPlusText) return;
+
+	CampaignTPlusText->SetText(FText::FromString(FormatTPlus(TPlusSeconds)));
+}
 
