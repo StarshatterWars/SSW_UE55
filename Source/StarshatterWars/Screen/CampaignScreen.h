@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameStructs.h"
+#include "../Game/GameStructs.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -13,13 +13,12 @@
 #include "Components/Image.h"
 #include "Components/EditableTextBox.h"
 #include "Kismet/GameplayStatics.h"
-#include "SSWGameInstance.h"
-#include "TimerSubsystem.h"
-#include "CampaignSubsystem.h"
+#include "../System/SSWGameInstance.h"
+#include "../System/TimerSubsystem.h"
 #include "CampaignScreen.generated.h"
 
 /**
- *
+ * 
  */
 UCLASS()
 class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
@@ -79,19 +78,20 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* AcceptSound;
 
-
+	
 protected:
 	void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float DeltaTime) override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
-
+	
 	// UI selection state
 	int32 Selected = 0;
 	FName PickedRowName = NAME_None;
 	TArray<FName> CampaignRowNamesByOptionIndex;
 	TArray<int32> CampaignIndexByOptionIndex;
-
+	
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()
@@ -134,5 +134,5 @@ protected:
 	FString ImagePath;
 
 private:
-
+	
 };
