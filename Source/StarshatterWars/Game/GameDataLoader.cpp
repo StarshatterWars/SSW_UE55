@@ -17,12 +17,12 @@
 #include "Game.h"
 #include "Starsystem.h"
 #include "Galaxy.h"
-#include "CombatGroup.h"
-#include "CombatRoster.h"
-#include "CombatAction.h"
-#include "CombatActionReq.h"
-#include "CombatEvent.h"
-#include "Combatant.h"
+//#include "CombatGroup.h"
+//#include "CombatRoster.h"
+//#include "CombatAction.h"
+//#include "CombatActionReq.h"
+//#include "CombatEvent.h"
+//#include "Combatant.h"
 #include "Mission.h"
 #include "Intel.h"
 #include "Ship.h"
@@ -433,7 +433,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 									//else if (type == CombatAction::COMBAT_EVENT) {
 									//	ActionSubtype = CombatEvent::TypeFromName(txt);
 									//}
-									if (ActionType == CombatAction::INTEL_EVENT) {
+									if (ActionType == ECOMBATACTION_TYPE::INTEL_EVENT) {
 										ActionSubtype = Intel::IntelFromName(txt);
 									}
 									NewCampaignAction.Subtype = ActionSubtype;
@@ -604,7 +604,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								TermStruct* val2 = pdef->term()->isStruct();
 								CampaignActionReqArray.Empty();
 								Action = 0;
-								ActionStatus = CombatAction::COMPLETE;
+								ActionStatus = ECOMBATACTION_STATUS::COMPLETE;
 								NotAction = false;
 
 								Combatant1 ="";
@@ -617,7 +617,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 								gid = 0;
 
 								FS_CampaignReq NewCampaignReq;
-
+								ECOMBATACTION_STATUS AStatus = ECOMBATACTION_STATUS::UNKNOWN;
 								for (int index = 0; index < val2->elements()->size(); index++) {
 									TermDef* pdef2 = val2->elements()->at(index)->isDef();
 									
@@ -629,9 +629,14 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 										else if (pdef2->name()->value() == "status") {
 											char txt[64];
 											GetDefText(txt, pdef2, filename);
-											ActionStatus = CombatAction::StatusFromName(txt);
-											NewCampaignReq.Status = FString(ActionStatus);
-
+											if (FStringToEnum<ECOMBATACTION_STATUS>(FString(txt).ToUpper(), AStatus, false)) {
+												UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), static_cast<int32>(AStatus));
+											}
+											else
+											{
+												UE_LOG(LogTemp, Warning, TEXT("Invalid enum string"));
+											}
+											NewCampaignReq.Status = AStatus;
 										}
 										else if (pdef2->name()->value() == "not") {
 											GetDefBool(NotAction, pdef2, filename);
@@ -651,7 +656,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 										else if (pdef2->name()->value() == "comp") {
 											char txt[64];
 											GetDefText(txt, pdef2, filename);
-											comp = CombatActionReq::CompFromName(txt);
+											//comp = CombatActionReq::CompFromName(txt);
 											NewCampaignReq.Comp = comp;
 
 										}
@@ -677,7 +682,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 										else if (pdef2->name()->value() == "group_type") {
 											char type_name[64];
 											GetDefText(type_name, pdef2, filename);
-											gtype = CombatGroup::TypeFromName(type_name);
+											//gtype = CombatGroup::TypeFromName(type_name);
 											NewCampaignReq.GroupType = gtype;
 
 										}
@@ -1119,7 +1124,7 @@ AGameDataLoader::LoadTemplateList(FString Path)
 						else if (pdef->name()->value() == "group") {
 							char typestr[64];
 							GetDefText(typestr, pdef, fn);
-							grp_type = CombatGroup::TypeFromName(typestr);
+							//grp_type = CombatGroup::TypeFromName(typestr);
 							NewTemplateList.GroupType = grp_type;
 						}
 
@@ -7588,7 +7593,7 @@ AGameDataLoader::GetEmpireName(int32 emp)
 CombatGroup*
 AGameDataLoader::CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group)
 {
-	CombatGroup* orig_parent = group->GetParent();
+	/*CombatGroup* orig_parent = group->GetParent();
 
 	if (orig_parent) {
 		CombatGroup* clone_parent = clone->FindGroup(orig_parent->Type(), orig_parent->GetID());
@@ -7607,7 +7612,8 @@ AGameDataLoader::CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* 
 	}
 	else {
 		return clone;
-	}
+	}*/
+	return 0;
 }
 
 // +--------------------------------------------------------------------+
@@ -7677,13 +7683,13 @@ AGameDataLoader::Clear()
 Combatant*
 AGameDataLoader::GetCombatant(const char* cname)
 {
-	ListIter<Combatant> iter = combatants;
+	/*ListIter<Combatant> iter = combatants;
 	while (++iter) {
 		Combatant* c = iter.value();
 		if (!strcmp(c->Name(), cname))
 			return c;
 	}
-
+	*/
 	return 0;
 }
 

@@ -23,7 +23,7 @@
 
 // +--------------------------------------------------------------------+
 
-class UCampaign;
+class Campaign;
 class CampaignPlan;
 class Combatant;
 class CombatGroup;
@@ -46,9 +46,9 @@ public:
 	CampaignSaveGame();
 	~CampaignSaveGame();	
 
-	void SetCampaign(UCampaign* c);
+	void SetCampaign(Campaign* c);
 
-	UCampaign* GetCampaign() { return campaign; }
+	Campaign* GetCampaign() { return campaign; }
 
 	void Load(const char* name);
 	void Save(const char* name);
@@ -66,5 +66,5 @@ private:
 	static Text GetSaveDirectory(PlayerData* p);
 	static void CreateSaveDirectory();
 
-	UCampaign* campaign;
+	Campaign* campaign;
 };

@@ -24,7 +24,7 @@ CampaignSaveGame::~CampaignSaveGame()
 {
 }
 
-void CampaignSaveGame::SetCampaign(UCampaign* c)
+void CampaignSaveGame::SetCampaign(Campaign* c)
 {
 
 }

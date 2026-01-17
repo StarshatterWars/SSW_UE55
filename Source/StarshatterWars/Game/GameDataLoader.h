@@ -317,7 +317,7 @@ protected:
 	Text ZoneSystem;
 
 	int  Action = 0;
-	Text ActionStatus;
+	ECOMBATACTION_STATUS ActionStatus;
 	bool NotAction = false;
 
 	Text Combatant1;

@@ -164,6 +164,17 @@ enum ECOMBATACTION_TYPE : uint8
 };
 
 UENUM(BlueprintType)
+enum ECOMBATACTION_STATUS : uint8
+{
+	UNKNOWN UMETA(DisplayName = "Unknown"),
+	PENDING UMETA(DisplayName = "Pending"), 
+	ACTIVE UMETA(DisplayName = "Active"), 
+	SKIPPED UMETA(DisplayName = "Skipped"),
+	FAILED UMETA(DisplayName = "Failed"), 
+	COMPLETE UMETA(DisplayName = "Complete")
+};
+
+UENUM(BlueprintType)
 enum class EINTEL_TYPE : uint8 {
 	UNKNOWN		UMETA(DisplayName = "Unknown"), // This status should not exist in game
 	RESERVE		UMETA(DisplayName = "Reserve"), // out-system reserve: this group is not even here
@@ -171,16 +182,6 @@ enum class EINTEL_TYPE : uint8 {
 	KNOWN		UMETA(DisplayName = "Known"),    // enemy knows this group is in the system
 	LOCATED		UMETA(DisplayName = "Located"),  // enemy has located at least the lead ship
 	TRACKED		UMETA(DisplayName = "Tracked"),  // enemy is tracking all elements
-};
-
-UENUM(BlueprintType)
-enum  ECOMBATACTION_STATUS : uint8
-{
-	PENDING UMETA(DisplayName = "Pending"),
-	ACTIVE UMETA(DisplayName = "Active"),
-	SKIPPED UMETA(DisplayName = "Skipped"),
-	FAILED UMETA(DisplayName = "Failed"),
-	COMPLETE UMETA(DisplayName = "Complete")
 };
 
 UENUM(BlueprintType)
@@ -1168,7 +1169,7 @@ struct FS_CampaignReq : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int Action;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Status;
+	TEnumAsByte<ECOMBATACTION_STATUS> Status;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	bool NotAction;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1188,7 +1189,7 @@ struct FS_CampaignReq : public FTableRowBase {
 
 	FS_CampaignReq() {
 		Action = 0;
-		Status = "";
+		Status = ECOMBATACTION_STATUS::UNKNOWN;
 		NotAction = false;
 
 		Combatant1 = "";

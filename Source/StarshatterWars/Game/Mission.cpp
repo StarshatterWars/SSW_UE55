@@ -2,7 +2,7 @@
 
 
 #include "Mission.h"
-#include "MissionEvent.h"
+//#include "MissionEvent.h"
 #include "StarSystem.h"
 #include "Galaxy.h"
 #include "../StarshatterWars.h"
@@ -19,8 +19,8 @@
 #include "FormatUtil.h"
 #include "Random.h"
 //#include "Skin.h"
-#include "MissionElement.h"
-#include "MissionLoad.h"
+//#include "MissionElement.h"
+//#include "MissionLoad.h"
 
 
 static int elem_id = 351;

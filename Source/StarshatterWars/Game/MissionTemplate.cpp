@@ -14,14 +14,14 @@
 
 
 #include "MissionTemplate.h"
-#include "MissionEvent.h"
+//#include "MissionEvent.h"
 #include "StarSystem.h"
 #include "Galaxy.h"
 #include "Callsign.h"
 #include "Campaign.h"
-#include "Combatant.h"
-#include "CombatGroup.h"
-#include "CombatUnit.h"
+//#include "Combatant.h"
+//#include "CombatGroup.h"
+//#include "CombatUnit.h"
 //#include "Starshatter.h"
 //#include "Ship.h"
 #include "ShipDesign.h"

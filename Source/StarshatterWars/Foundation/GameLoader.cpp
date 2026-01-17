@@ -70,9 +70,8 @@ void AGameLoader::InitializeGame()
 	USim* Sim;
 	Sim = NewObject<USim>();
 
-	UCampaign* Campaign;
-	Campaign = NewObject<UCampaign>();
-	//UCampaign::Initialize();
+	//Campaign* Campaign;
+	//Campaign::Initialize();
 }
 
 void AGameLoader::LoadMainMenu()

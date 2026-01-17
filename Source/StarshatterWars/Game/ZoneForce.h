@@ -16,6 +16,7 @@
 
 #include "CoreMinimal.h"
 #include "List.h"
+#include "GameStructs.h"
 #include "SSWGameInstance.h"
 
 class CombatGroup;
