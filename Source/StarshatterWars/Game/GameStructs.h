@@ -182,6 +182,7 @@ enum class EINTEL_TYPE : uint8 {
 	KNOWN		UMETA(DisplayName = "Known"),    // enemy knows this group is in the system
 	LOCATED		UMETA(DisplayName = "Located"),  // enemy has located at least the lead ship
 	TRACKED		UMETA(DisplayName = "Tracked"),  // enemy is tracking all elements
+	ACTIVE		UMETA(DisplayName = "Active"),   // enemy is Intel Tracking is Active
 };
 
 UENUM(BlueprintType)

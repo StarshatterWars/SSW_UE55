@@ -1,4 +1,8 @@
 #include "Campaign.h"
+#include "CombatGroup.h"
+#include "CombatZone.h"
+#include "CombatAction.h"
+#include "Combatant.h"
 
 // ----------------------------------------------------------------------------
 // Static catalog state (optional; you can relocate to subsystem later)
@@ -45,6 +49,15 @@ bool FMissionInfo::IsAvailable(Campaign* CampaignObj, const FCampaignRuntimeCont
 
 	if (ExecOnce > 0)
 		ExecOnce = -1;
+
+	if (!Region.IsEmpty())
+	{
+		if (CombatGroup* PG = CampaignObj->GetPlayerGroup())
+		{
+			if (!PG->GetRegion().Equals(Region, ESearchCase::IgnoreCase))
+				return false;
+		}
+	}
 
 	return true;
 }
@@ -295,9 +308,13 @@ void Campaign::CheckPlayerGroup()
 	// Stub: original picks default wing/destroyer squadron from combatants.
 }
 
-CombatZone* Campaign::GetZone(const FString& /*Region*/)
+CombatZone* Campaign::GetZone(const FString& Region)
 {
-	// Stub
+	for (CombatZone* Z : Zones)
+	{
+		if (Z && Z->HasRegion(Region))
+			return Z;
+	}
 	return nullptr;
 }
 
@@ -307,9 +324,13 @@ void* Campaign::GetSystem(const FString& /*SystemName*/)
 	return nullptr;
 }
 
-Combatant* Campaign::GetCombatant(const FString& /*CombatantName*/)
+Combatant* Campaign::GetCombatant(const FString& CombatantName)
 {
-	// Stub
+	for (Combatant* C : Combatants)
+	{
+		if (C->GetName().Equals(CombatantName, ESearchCase::IgnoreCase))
+			return C;
+	}
 	return nullptr;
 }
 
@@ -357,24 +378,84 @@ void Campaign::LoadNetMission(int32 /*Id*/, const FString& /*NetMissionScript*/)
 	// Stub
 }
 
-CombatAction* Campaign::FindAction(int32 /*ActionId*/)
+CombatAction* Campaign::FindAction(int32 ActionId)
 {
-	// Stub
+	for (CombatAction* A : Actions)
+	{
+		if (!A) continue;
+		if (A->Identity() == ActionId)
+			return A;
+	}
 	return nullptr;
 }
 
-FMissionInfo* Campaign::FindMissionTemplate(int32 /*MissionType*/, CombatGroup* /*InPlayerGroup*/)
+FMissionInfo* Campaign::FindMissionTemplate(int32 MissionType, CombatGroup* InPlayerGroup)
 {
-	// Stub
+	if (!InPlayerGroup)
+		return nullptr;
+
+	// You will likely have: InPlayerGroup->Type()
+	using TUnder = std::underlying_type_t<ECOMBATGROUP_TYPE>;
+	const int32 GroupType = static_cast<int32>(static_cast<TUnder>(InPlayerGroup->GetType()));
+
+	FTemplateList* Bucket = GetTemplateList(MissionType, GroupType);
+	if (!Bucket || Bucket->Missions.Num() <= 0)
+		return nullptr;
+
+	const int32 Count = Bucket->Missions.Num();
+	int32 Tries = 0;
+
+	FCampaignRuntimeContext Ctx;
+	Ctx.NowSeconds = 0;                // not needed for your gating; you gate on campaign time below
+	Ctx.PlayerRank = 0;                // fill if you have it globally; otherwise set via host later
+	Ctx.PlayerIFF = GetPlayerIFF();   // safe default
+
+	// If you have a better source for rank, use it; otherwise leave 0 for now:
+	// Ctx.PlayerRank = ...;
+
+	while (Tries < Count)
+	{
+		int32 Index = Bucket->Index;
+		if (Index >= Count)
+			Index = 0;
+
+		Bucket->Index = Index + 1;
+		Tries++;
+
+		TUniquePtr<FMissionInfo>& CandidatePtr = Bucket->Missions[Index];
+		if (!CandidatePtr)
+			continue;
+
+		FMissionInfo* Info = CandidatePtr.Get();
+
+		// Action gating (mirrors original)
+		if (Info->ActionId != 0)
+		{
+			CombatAction* A = FindAction(Info->ActionId);
+			if (A && A->Status() != Info->ActionStatus)
+				continue;
+		}
+
+		// Availability gating
+		if (!Info->IsAvailable(this, Ctx))
+			continue;
+
+		return Info;
+	}
+
 	return nullptr;
 }
 
-FTemplateList* Campaign::GetTemplateList(int32 /*MissionType*/, int32 /*GroupType*/)
+FTemplateList* Campaign::GetTemplateList(int32 MissionType, int32 GroupType)
 {
-	// Stub
+	for (const TUniquePtr<FTemplateList>& TL : Templates)
+	{
+		if (!TL) continue;
+		if (TL->MissionType == MissionType && TL->GroupType == GroupType)
+			return TL.Get();
+	}
 	return nullptr;
 }
-
 void Campaign::SetMissionId(int32 Id)
 {
 	if (Id > 0)
@@ -436,9 +517,20 @@ CombatGroup* Campaign::FindStrikeTarget(int32 /*Iff*/, CombatGroup* /*StrikeGrou
 
 void Campaign::CommitExpiredActions()
 {
-	// Stub: mark available actions complete
+	for (CombatAction* A : Actions)
+	{
+		if (!A) continue;
+
+		// Mirror: if (a->IsAvailable()) a->SetStatus(COMPLETE);
+		if (A->IsAvailable((int32)GetTime()))
+		{
+			A->SetStatus(ECOMBATACTION_STATUS::COMPLETE);
+		}
+	}
+
 	UpdateTime = TimeSeconds;
 }
+
 
 int32 Campaign::GetPlayerTeamScore()
 {
@@ -476,7 +568,7 @@ void Campaign::SelectDefaultPlayerGroup(CombatGroup* /*Group*/, int32 /*Type*/)
 double Campaign::GetCurrentStardate()
 {
 	Campaign* C = Campaign::GetCampaign();
-	return C ? C->GetCurrentStardate() : 0.0;
+	return C ? C->GetCampaignTimeSeconds() : 0.0;
 }
 
 int64 Campaign::GetTime() const

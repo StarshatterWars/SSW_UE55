@@ -37,6 +37,8 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "Actors"),
             Path.Combine(ModuleDirectory, "Campaign"),
             Path.Combine(ModuleDirectory, "Foundation"),
+            Path.Combine(ModuleDirectory, "Combat"),
+            Path.Combine(ModuleDirectory, "Mission"),
         });
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameStructs.h"
 
 // Forward declarations (you will replace these with real UE-side equivalents later)
 class Combatant;
