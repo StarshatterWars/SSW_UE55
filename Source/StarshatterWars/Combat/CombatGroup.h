@@ -38,6 +38,10 @@ public:
 	// ---------------------------------------------------------------------
 	const FString& GetName() const { return GroupName; }
 	ECOMBATGROUP_TYPE GetType() const { return GroupType; }
+
+	const FString& GetDescription() const { return Description; }
+	void SetDescription(const FString& InDesc) { Description = InDesc; }
+
 	int32 GetID() const { return Id; }
 	int32 GetIFF() const { return Iff; }
 
@@ -91,6 +95,7 @@ private:
 private:
 	ECOMBATGROUP_TYPE   GroupType;
 	int32        Id = 0;
+	FString		 Description;
 	FString      GroupName;
 	int32        Iff = 1;
 	EINTEL_TYPE  EnemyIntel = EINTEL_TYPE::ACTIVE;

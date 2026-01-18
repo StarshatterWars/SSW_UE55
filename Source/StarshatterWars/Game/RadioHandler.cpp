@@ -496,7 +496,7 @@ RadioHandler::Support(RadioMessage* msg, UShip* ship)
 		Element* e = s->GetElement();
 
 		if (e && s->IsDropship() &&
-			e->Type() == Mission::PATROL &&
+			e->Type() == EMISSIONTYPE::PATROL &&
 			e != baby &&
 			cmdr->CanCommand(e) &&
 			s->GetRadioOrders()->Action() == RadioMessage::NONE) {

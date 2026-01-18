@@ -426,6 +426,35 @@ enum EControlType : uint8
 	WINDEF_RICH,
 };
 
+UENUM(BlueprintType)
+enum class EMISSIONTYPE : uint8
+{
+	PATROL,
+	SWEEP,
+	INTERCEPT,
+	AIR_PATROL,
+	AIR_SWEEP,
+	AIR_INTERCEPT,
+	STRIKE,     // ground attack
+	ASSAULT,    // starship attack
+	DEFEND,
+	ESCORT,
+	ESCORT_FREIGHT,
+	ESCORT_SHUTTLE,
+	ESCORT_STRIKE,
+	INTEL,
+	SCOUT,
+	RECON,
+	BLOCKADE,
+	FLEET,
+	BOMBARDMENT,
+	FLIGHT_OPS,
+	TRANSPORT,
+	CARGO,
+	TRAINING,
+	OTHER, 
+	UNKNOWN,
+};
 /**
  * STRUCTS
  */

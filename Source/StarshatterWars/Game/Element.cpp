@@ -24,7 +24,7 @@
 
 static int id_key = 1000;
 
-Element::Element(const char* call_sign, int a_iff, int a_type)
+Element::Element(const char* call_sign, int a_iff, EMISSIONTYPE a_type)
 {	id = id_key++;
 	name = call_sign;
 	type = a_type;

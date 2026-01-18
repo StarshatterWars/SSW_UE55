@@ -19,6 +19,7 @@
 #include "SimObject.h"
 #include "List.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -39,13 +40,13 @@ public:
 public:
 	// CONSTRUCTORS:
 	Element();
-	Element(const char* call_sign, int iff, int type = 0 /*PATROL*/);
+	Element(const char* call_sign, int iff, EMISSIONTYPE type = EMISSIONTYPE::PATROL /*PATROL*/);
 
 	int operator == (const Element& e) const { return id == e.id; }
 
 	// GENERAL ACCESSORS:
 	int               Identity()        const { return id; }
-	int               Type()            const { return type; }
+	EMISSIONTYPE      Type()            const { return type; }
 	const Text& Name()            const { return name; }
 	void              SetName(const char* s) { name = s; }
 	virtual int       GetIFF()          const { return iff; }
@@ -138,7 +139,7 @@ public:
 protected:
 	int               id;
 	int               iff;
-	int               type;
+	EMISSIONTYPE      type;
 	int               player;
 	int               command_ai;
 	int               respawns;

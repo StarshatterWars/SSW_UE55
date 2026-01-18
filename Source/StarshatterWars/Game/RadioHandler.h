@@ -10,6 +10,7 @@
 #include "Types.h"
 #include "Geometry.h"
 #include "SimObject.h"
+#include "GameStructs.h"
 
  // +--------------------------------------------------------------------+
 
