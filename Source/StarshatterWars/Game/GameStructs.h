@@ -163,7 +163,7 @@ enum ECOMBATACTION_TYPE : uint8
 	CAMPAIGN_ORDERS UMETA(DisplayName = "Campaign Orders"),
 };
 
-UENUM(BlueprintType)
+UENUM()
 enum ECOMBATACTION_STATUS : uint8
 {
 	UNKNOWN UMETA(DisplayName = "Unknown"),
@@ -174,7 +174,7 @@ enum ECOMBATACTION_STATUS : uint8
 	COMPLETE UMETA(DisplayName = "Complete")
 };
 
-UENUM(BlueprintType)
+UENUM()
 enum class EINTEL_TYPE : uint8 {
 	UNKNOWN		UMETA(DisplayName = "Unknown"), // This status should not exist in game
 	RESERVE		UMETA(DisplayName = "Reserve"), // out-system reserve: this group is not even here
@@ -185,28 +185,79 @@ enum class EINTEL_TYPE : uint8 {
 	ACTIVE		UMETA(DisplayName = "Active"),   // enemy is Intel Tracking is Active
 };
 
-UENUM(BlueprintType)
-enum ECOMBATEVENT_TYPE : uint8 
+UENUM()
+enum class ECOMBATEVENT_TYPE : uint8 
 {
-	ATTACK,
-	DEFEND,
-	MOVE_TO,
-	CAPTURE,
-	STRATEGY,
-	CAMPAIGN_START,
-	STORY,
-	CAMPAIGN_END,
-	CAMPAIGN_FAIL
+	ATTACK			UMETA(DisplayName = "Attack"),
+	DEFEND			UMETA(DisplayName = "Defend"), 
+	MOVE_TO			UMETA(DisplayName = "Move to"), 
+	CAPTURE			UMETA(DisplayName = "Capture"), 
+	STRATEGY		UMETA(DisplayName = "Strategy"), 
+	CAMPAIGN_START	UMETA(DisplayName = "Campaign Start"), 
+	STORY			UMETA(DisplayName = "Story"), 
+	CAMPAIGN_END	UMETA(DisplayName = "Campaign End"),
+	CAMPAIGN_FAIL	UMETA(DisplayName = "Campaign Fail"),
 };
 
-UENUM(BlueprintType)
-enum ECOMBATEVENT_SOURCE : uint8 
+UENUM()
+enum class ECOMBATEVENT_SOURCE : uint8
 {
-	FORCOM,
-	TACNET,
-	INTEL,
-	MAIL,
-	NEWS
+	FORCOM			UMETA(DisplayName = "FORCOM"), 
+	TACNET			UMETA(DisplayName = "TACNET"),
+	INTEL			UMETA(DisplayName = "Intel"),
+	MAIL			UMETA(DisplayName = "Mail"),
+	NEWS			UMETA(DisplayName = "News"),
+};
+
+UENUM()
+enum class MISSIONEVENT_TYPE : uint8
+{
+	MESSAGE			UMETA(DisplayName = "Message"),
+	OBJECTIVE		UMETA(DisplayName = "Objective"),
+	INSTRUCTION		UMETA(DisplayName = "Instruction"),
+	IFF				UMETA(DisplayName = "IFF"),
+	DAMAGE			UMETA(DisplayName = "Damage"), 
+	JUMP			UMETA(DisplayName = "Jump"),
+	HOLD			UMETA(DisplayName = "Hold"),
+	SKIP			UMETA(DisplayName = "Skip"),
+	END_MISSION		UMETA(DisplayName = "End Mission"),
+	BEGIN_SCENE		UMETA(DisplayName = "Begin Scene"),
+	CAMERA			UMETA(DisplayName = "Camera"),
+	VOLUME			UMETA(DisplayName = "Volume"),
+	DISPLAY			UMETA(DisplayName = "Display"),
+	FIRE_WEAPON		UMETA(DisplayName = "Fire Weapon"),
+	END_SCENE		UMETA(DisplayName = "End Scene"),
+	NUM_EVENTS
+};
+
+UENUM()
+enum class MISSIONEVENT_STATUS : uint8
+{
+	PENDING			UMETA(DisplayName = "Pending"), 
+	ACTIVE			UMETA(DisplayName = "Active"),
+	COMPLETE		UMETA(DisplayName = "Complete"),
+	SKIPPED			UMETA(DisplayName = "Skipped"),
+};
+
+UENUM()
+enum class MISSIONEVENT_TRIGGER : uint8
+{
+	TRIGGER_TIME		UMETA(DisplayName = "Trigger Time"),
+	TRIGGER_DAMAGE		UMETA(DisplayName = "Trigger Damage"),
+	TRIGGER_DESTROYED	UMETA(DisplayName = "Trigger Destroyed"),
+	TRIGGER_JUMP		UMETA(DisplayName = "Trigger Jump"),
+	TRIGGER_LAUNCH		UMETA(DisplayName = "Trigger Launch"),
+	TRIGGER_DOCK		UMETA(DisplayName = "Trigger Dock"),
+	TRIGGER_NAVPT		UMETA(DisplayName = "Trigger Navpoint"),
+	TRIGGER_EVENT		UMETA(DisplayName = "Trigger Event"),
+	TRIGGER_SKIPPED		UMETA(DisplayName = "Trigger Skipped"),
+	TRIGGER_TARGET		UMETA(DisplayName = "Trigger Target"),
+	TRIGGER_SHIPS_LEFT	UMETA(DisplayName = "Trigger Ships Left"),
+	TRIGGER_DETECT		UMETA(DisplayName = "Trigger Detect"),
+	TRIGGER_RANGE		UMETA(DisplayName = "Trigger Range"),
+	TRIGGER_EVENT_ALL	UMETA(DisplayName = "Trigger Event All"),
+	TRIGGER_EVENT_ANY	UMETA(DisplayName = "Trigger Event Any"),
+	NUM_TRIGGERS
 };
 
 UENUM(BlueprintType)
