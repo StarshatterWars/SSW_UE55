@@ -1,238 +1,219 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter 4.5
+    Fractal Dev Studios
+    Copyright © 2025.
+
+    SUBSYSTEM:    Stars.exe
+    FILE:         CombatAction.h
+    AUTHOR:       Carlos Bott
+
+    UNREAL PORT:
+    - Maintains all variables and methods (names, signatures, members).
+    - Uses UE-compatible shims for Text, List, Point (Geometry.h).
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Types.h"
+#include "Geometry.h"
+#include "Text.h"
+#include "List.h"
 #include "GameStructs.h"
 
-// Forward declarations (match your port structure)
-class Campaign;
+// +--------------------------------------------------------------------+
+
 class Combatant;
-class CombatGroup;
+class CombatAction;
+class CombatActionReq;
+class Campaign;
 
-/**
- * Mirror of Starshatter CombatActionReq.
- * In Starshatter this supported:
- *  - action dependency (action id + status + not)
- *  - group dependency (combatant + group_type + group_id + comp + score + intel)
- *  - score dependency (c1 + c2 + comp + score)
- */
-struct FCombatActionReq
-{
-	// ----- Requirement "kinds" -----
-	// If ActionId != 0, it is an action dependency.
-	int32 ActionId = 0;
-	int32 ActionStatus = 0;
-	bool  bNot = false;
+// +--------------------------------------------------------------------+
 
-	// If GroupType != 0, it is a group dependency.
-	Combatant* C1 = nullptr;
-	Combatant* C2 = nullptr;
-
-	int32 GroupType = 0;
-	int32 GroupId = 0;
-
-	// Generic comparator for score/intel/etc.
-	int32 Comp = 0;
-	int32 Score = 0;
-	int32 Intel = 0;
-
-	// ---- Comparators (Starshatter: CombatActionReq::CompFromName) ----
-	static int32 CompFromName(const FString& In);
-	static bool  Compare(int32 L, int32 Comp, int32 R);
-};
-
-
-// ------------------------------------------------------------
-// CombatAction
-// ------------------------------------------------------------
 class CombatAction
 {
 public:
-	// ---- Mirror enums (int-based to match original Starshatter style) ----
-	enum : int32
-	{
-		// Types (CombatAction::TypeFromName)
-		// NOTE: Keep these stable because campaign.def uses names, not numbers.
-		// You can extend later without breaking.
-		UNKNOWN_ACTION = 0,
-		INTEL_EVENT = 1,
-		COMBAT_EVENT = 2,
-		MISSION_TEMPLATE = 3,
-		MOVE_GROUP = 4,   // common scripted action in Starshatter campaigns
-		SET_INTEL = 5,   // optional / helper
-	};
+    static const char* TYPENAME() { return "CombatAction"; }
 
-	enum : int32
-	{
-		// Status (CombatAction::StatusFromName)
-		INCOMPLETE = 0,
-		ACTIVE = 1,
-		COMPLETE = 2,
-		FAILED = 3,
-	};
+    enum TYPE
+    {
+        NO_ACTION,
+        STRATEGIC_DIRECTIVE,
+        ZONE_ASSIGNMENT,
+        SYSTEM_ASSIGNMENT,
+        MISSION_TEMPLATE,
+        COMBAT_EVENT,
+        INTEL_EVENT,
+        CAMPAIGN_SITUATION,
+        CAMPAIGN_ORDERS
+    };
 
-public:
-	CombatAction();
-	CombatAction(int32 InId, int32 InType, int32 InSubtype, int32 InTeam);
-	~CombatAction();
+    enum STATUS
+    {
+        PENDING,
+        ACTIVE,
+        SKIPPED,
+        FAILED,
+        COMPLETE
+    };
 
-	// Identity
-	int32 Identity() const { return Id; }
-	int32 Type() const { return ActionType; }
-	int32 Subtype() const { return ActionSubtype; }
+    CombatAction(int id, int type, int subtype, int team);
+    ~CombatAction();
 
-	// Status
-	int32  Status() const { return ActionStatus; }
-	void   SetStatus(int32 InStatus) { ActionStatus = InStatus; }
+    int  operator==(const CombatAction& a) const { return id == a.id; }
 
-	// Timing / gating
-	bool   IsAvailable(Campaign* CampaignObj) const;     // mirrors Starshatter usage
-	bool   IsAvailable(int64 CampaignTimeSeconds) const; // convenience for UE
-	bool   IsActive(Campaign* CampaignObj) const;
+    bool IsAvailable() const;
+    void FireAction();
+    void FailAction();
 
-	int32  StartAfter()  const { return StartAfterSeconds; }
-	int32  StartBefore() const { return StartBeforeSeconds; }
+    void AddRequirement(int action, int stat, bool not = false);
+    void AddRequirement(Combatant* c1, Combatant* c2, int comp, int score);
+    void AddRequirement(Combatant* c1, int group_type, int group_id, int comp, int score, int intel = 0);
 
-	void   SetStartAfter(int32 In) { StartAfterSeconds = In; }
-	void   SetStartBefore(int32 In) { StartBeforeSeconds = In; }
+    static int TypeFromName(const char* n);
+    static int StatusFromName(const char* n);
 
-	// Probability / delay
-	int32  Delay() const { return DelaySeconds; }
-	int32  Probability() const { return ProbabilityPct; }
+    // accessors/mutators:
+    int         Identity()     const { return id; }
+    int         Type()         const { return type; }
+    int         Subtype()      const { return subtype; }
+    int         OpposingType() const { return opp_type; }
+    int         GetIFF()       const { return team; }
+    int         Status()       const { return status; }
+    int         Source()       const { return source; }
+    Point       Location()     const { return loc; }
+    const char* System()       const { return system.data(); }
+    const char* Region()       const { return region.data(); }
+    const char* Filename()     const { return text_file.data(); }
+    const char* ImageFile()    const { return image_file.data(); }
+    const char* SceneFile()    const { return scene_file.data(); }
+    int         Count()        const { return count; }
+    int         ExecTime()     const { return time; }
+    int         StartBefore()  const { return start_before; }
+    int         StartAfter()   const { return start_after; }
+    int         MinRank()      const { return min_rank; }
+    int         MaxRank()      const { return max_rank; }
+    int         Delay()        const { return delay; }
+    int         Probability()  const { return probability; }
+    int         AssetType()    const { return asset_type; }
+    int         AssetId()      const { return asset_id; }
+    List<Text>& AssetKills() { return asset_kills; }
+    int         TargetType()   const { return target_type; }
+    int         TargetId()     const { return target_id; }
+    int         TargetIFF()    const { return target_iff; }
+    List<Text>& TargetKills() { return target_kills; }
+    const char* GetText()      const { return text.data(); }
 
-	void   SetDelay(int32 In) { DelaySeconds = In; }
-	void   SetProbability(int32 In) { ProbabilityPct = In; }
-
-	// Rank gates
-	int32  MinRank() const { return MinRankValue; }
-	int32  MaxRank() const { return MaxRankValue; }
-
-	void   SetMinRank(int32 In) { MinRankValue = In; }
-	void   SetMaxRank(int32 In) { MaxRankValue = In; }
-
-	// Location / system / region
-	const FVector& GetLocation() const { return Location; }
-	const FString& GetSystem() const { return System; }
-	const FString& GetRegion() const { return Region; }
-
-	void SetLocation(const FVector& In) { Location = In; }
-	void SetSystem(const FString& In) { System = In; }
-	void SetRegion(const FString& In) { Region = In; }
-
-	// Text / files (briefings, intel, scenes)
-	const FString& GetFilename() const { return Filename; }
-	const FString& GetImageFile() const { return ImageFile; }
-	const FString& GetSceneFile() const { return SceneFile; }
-	const FString& GetText() const { return Text; }
-	const FString& GetTitle() const { return Title; }
-
-	void SetFilename(const FString& In) { Filename = In; }
-	void SetImageFile(const FString& In) { ImageFile = In; }
-	void SetSceneFile(const FString& In) { SceneFile = In; }
-	void SetText(const FString& In) { Text = In; }
-	void SetTitle(const FString& In) { Title = In; }
-
-	// Team / IFF / source
-	int32 GetTeam() const { return Team; }
-	int32 GetIFF() const { return Iff; }
-	int32 GetSource() const { return Source; }
-
-	void SetTeam(int32 In) { Team = In; }
-	void SetIFF(int32 In) { Iff = In; }
-	void SetSource(int32 In) { Source = In; }
-
-	// Opposing type / count (Starshatter fields)
-	int32 OpposingType() const { return OppType; }
-	void  SetOpposingType(int32 In) { OppType = In; }
-
-	int32 Count() const { return CountValue; }
-	void  SetCount(int32 In) { CountValue = In; }
-
-	// Asset/Target fields (used in campaign.def actions)
-	int32 AssetType() const { return AssetTypeValue; }
-	int32 AssetId()   const { return AssetIdValue; }
-	int32 TargetType() const { return TargetTypeValue; }
-	int32 TargetId()   const { return TargetIdValue; }
-	int32 TargetIFF()  const { return TargetIffValue; }
-
-	void SetAssetType(int32 In) { AssetTypeValue = In; }
-	void SetAssetId(int32 In) { AssetIdValue = In; }
-	void SetTargetType(int32 In) { TargetTypeValue = In; }
-	void SetTargetId(int32 In) { TargetIdValue = In; }
-	void SetTargetIFF(int32 In) { TargetIffValue = In; }
-
-	// Kills lists (Starshatter: Text list)
-	TArray<FString>& AssetKills() { return AssetKillNames; }
-	TArray<FString>& TargetKills() { return TargetKillNames; }
-	const TArray<FString>& AssetKills() const { return AssetKillNames; }
-	const TArray<FString>& TargetKills() const { return TargetKillNames; }
-
-	// Requirements
-	void AddRequirement(int32 InActionId, int32 InStatus, bool bInNot);
-	void AddRequirement(Combatant* InC1, int32 InGroupType, int32 InGroupId, int32 InComp, int32 InScore, int32 InIntel);
-	void AddRequirement(Combatant* InC1, Combatant* InC2, int32 InComp, int32 InScore);
-
-	const TArray<FCombatActionReq>& Requirements() const { return Req; }
-
-	// Evaluate requirements (stub-safe; uses campaign lookups if available)
-	bool RequirementsMet(Campaign* CampaignObj) const;
-
-	// Name parsing helpers (mirrors Starshatter API)
-	static int32 TypeFromName(const FString& In);
-	static int32 StatusFromName(const FString& In);
+    void SetType(int t) { type = (char)t; }
+    void SetSubtype(int s) { subtype = (char)s; }
+    void SetOpposingType(int t) { opp_type = (char)t; }
+    void SetIFF(int t) { team = (char)t; }
+    void SetStatus(int s) { status = (char)s; }
+    void SetSource(int s) { source = s; }
+    void SetLocation(const Point& p) { loc = p; }
+    void SetSystem(Text sys) { system = sys; }
+    void SetRegion(Text rgn) { region = rgn; }
+    void SetFilename(Text f) { text_file = f; }
+    void SetImageFile(Text f) { image_file = f; }
+    void SetSceneFile(Text f) { scene_file = f; }
+    void SetCount(int n) { count = (char)n; }
+    void SetExecTime(int t) { time = t; }
+    void SetStartBefore(int s) { start_before = s; }
+    void SetStartAfter(int s) { start_after = s; }
+    void SetMinRank(int n) { min_rank = (char)n; }
+    void SetMaxRank(int n) { max_rank = (char)n; }
+    void SetDelay(int d) { delay = d; }
+    void SetProbability(int n) { probability = n; }
+    void SetAssetType(int t) { asset_type = t; }
+    void SetAssetId(int n) { asset_id = n; }
+    void SetTargetType(int t) { target_type = t; }
+    void SetTargetId(int n) { target_id = n; }
+    void SetTargetIFF(int n) { target_iff = n; }
+    void SetText(Text t) { text = t; }
 
 private:
-	// Core identity
-	int32 Id = 0;
-	int32 ActionType = UNKNOWN_ACTION;
-	int32 ActionSubtype = 0;
-	int32 Team = 0;
-	int32 Iff = 0;
+    int     id = 0;
+    char    type = 0;
+    char    subtype = 0;
+    char    opp_type = 0;
+    char    team = 0;
+    char    status = PENDING;
+    char    min_rank = 0;
+    char    max_rank = 100;
 
-	// Source / opposing / counts
-	int32 Source = 0;
-	int32 OppType = -1;
-	int32 CountValue = 1;
+    int     source = 0;
+    Point   loc;
 
-	// Time gate
-	int32 StartBeforeSeconds = 1000000000; // TIME_NEVER
-	int32 StartAfterSeconds = 0;
+    Text    system;
+    Text    region;
+    Text    text_file;
+    Text    image_file;
+    Text    scene_file;
 
-	// Rank gate
-	int32 MinRankValue = 0;
-	int32 MaxRankValue = 100;
+    char    count = 0;
+    int     start_before = TIME_NEVER;
+    int     start_after = 0;
+    int     delay = 0;
+    int     probability = 0;
+    int     rval = -1;
+    int     time = 0;
 
-	// Delay / probability
-	int32 DelaySeconds = 0;
-	int32 ProbabilityPct = 100;
+    Text    text;
 
-	// Location / region info
-	FVector Location = FVector::ZeroVector;
-	FString System;
-	FString Region;
+    int     asset_type = 0;
+    int     asset_id = 0;
+    List<Text> asset_kills;
 
-	// Files / text
-	FString Filename;
-	FString ImageFile;
-	FString SceneFile;
-	FString Text;
-	FString Title;
+    int     target_type = 0;
+    int     target_id = 0;
+    int     target_iff = 0;
+    List<Text> target_kills;
 
-	// Asset/target
-	int32 AssetTypeValue = 0;
-	int32 AssetIdValue = 0;
-	int32 TargetTypeValue = 0;
-	int32 TargetIdValue = 0;
-	int32 TargetIffValue = 0;
+    List<CombatActionReq> requirements;
+};
 
-	// Kill lists
-	TArray<FString> AssetKillNames;
-	TArray<FString> TargetKillNames;
+// +--------------------------------------------------------------------+
 
-	// Requirements
-	TArray<FCombatActionReq> Req;
+class CombatActionReq
+{
+public:
+    static const char* TYPENAME() { return "CombatActionReq"; }
 
-	// Current status
-	int32 ActionStatus = INCOMPLETE;
+    enum COMPARISON_OPERATOR
+    {
+        LT, LE, GT, GE, EQ,    // absolute
+        RLT, RLE, RGT, RGE, REQ    // relative
+    };
+
+    CombatActionReq(int a, int s, bool n = false)
+        : action(a), stat(s), not(n), c1(nullptr), c2(nullptr),
+        comp(0), score(0), intel(0), group_type(0), group_id(0)
+    {
+    }
+
+    CombatActionReq(Combatant* a1, Combatant* a2, int comparison, int value)
+        : action(0), stat(0), not(false), c1(a1), c2(a2),
+        comp(comparison), score(value), intel(0), group_type(0), group_id(0)
+    {
+    }
+
+    CombatActionReq(Combatant* a1, int gtype, int gid, int comparison, int value, int intel_level = 0)
+        : action(0), stat(0), not(false), c1(a1), c2(nullptr),
+        comp(comparison), score(value), intel(intel_level), group_type(gtype), group_id(gid)
+    {
+    }
+
+    static int CompFromName(const char* sym);
+
+    int        action = 0;
+    int        stat = 0;
+    bool       not = false;
+
+    Combatant* c1 = nullptr;
+    Combatant* c2 = nullptr;
+
+    int        comp = 0;
+    int        score = 0;
+    int        intel = 0;
+
+    int        group_type = 0;
+    int        group_id = 0;
 };

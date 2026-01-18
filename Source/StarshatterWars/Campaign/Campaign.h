@@ -1,298 +1,275 @@
+/*  Project Starshatter 4.5
+	Fractal Dev Studios
+	Copyright © 2025. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         Campaign.h
+	AUTHOR:       Carlos Bott
+
+	UNREAL PORT:
+	- Maintains all variables and methods (names, signatures, members).
+	- Uses UE-compatible shims for Text, List, Bitmap, TermStruct.
+*/
+
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameStructs.h"
+// Original includes mapped to Unreal-compatible shims:
+#include "Types.h"
+//#include "Bitmap.h"
+#include "Geometry.h"
+#include "Text.h"
+#include "Term.h"
+#include "List.h"
 
-// Forward declarations (you will replace these with real UE-side equivalents later)
+// +--------------------------------------------------------------------+
+
+class Campaign;
+class CampaignPlan;
 class Combatant;
 class CombatAction;
 class CombatEvent;
 class CombatGroup;
-class CombatRoster;
 class CombatUnit;
 class CombatZone;
-class Galaxy;
+class DataLoader;
 class Mission;
+class MissionTemplate;
+class StarSystem;
 
-// -----------------------------------------------------------------------------
-// Constants (match original intent)
-// -----------------------------------------------------------------------------
-static constexpr int32 TIME_NEVER = 1000000000;          // ~1e9
-static constexpr int32 ONE_DAY = 24 * 3600;
+// +--------------------------------------------------------------------+
 
-// -----------------------------------------------------------------------------
-// Runtime context injected by UCampaignSubsystem (or other owner).
-// This replaces external Host access.
-// -----------------------------------------------------------------------------
-struct FCampaignRuntimeContext
+class MissionInfo
 {
-	int64 NowSeconds = 0;  // Universe seconds
-	int32 DeltaSeconds = 1;  // Tick delta, may be > 1
-	int32 PlayerRank = 0;
-	int32 PlayerIFF = 1;
+public:
+	static const char* TYPENAME() { return "MissionInfo"; }
+
+	MissionInfo();
+	~MissionInfo();
+
+	int operator == (const MissionInfo& m) const { return id == m.id; }
+	int operator <  (const MissionInfo& m) const { return id < m.id; }
+	int operator <= (const MissionInfo& m) const { return id <= m.id; }
+
+	bool     IsAvailable();
+
+	int      id = 0;
+	FString     name;
+	FString     player_info;
+	FString     description;
+	FString     system;
+	FString     region;
+	FString     script;
+	int      start = 0;
+	int      type = 0;
+
+	int      min_rank = 0;
+	int      max_rank = 100;
+	int      action_id = 0;
+	int      action_status = 0;
+	int      exec_once = 0;
+	int      start_before = 0;
+	int      start_after = 0;
+
+	Mission* mission = nullptr;
 };
 
-// -----------------------------------------------------------------------------
-// Mirror of Starshatter MissionInfo (stub)
-// -----------------------------------------------------------------------------
-struct FMissionInfo
+class TemplateList
 {
-	FMissionInfo();
-	~FMissionInfo();
+public:
+	static const char* TYPENAME() { return "TemplateList"; }
 
-	Mission* MissionPtr = nullptr;
+	TemplateList();
+	~TemplateList();
 
-	int32 Start = 0;
-	int32 Type = 0;
-	int32 Id = 0;
-
-	int32 MinRank = 0;
-	int32 MaxRank = 0;
-	int32 ActionId = 0;
-	int32 ActionStatus = 0;
-
-	int32 ExecOnce = 0;
-	int32 StartBefore = TIME_NEVER;
-	int32 StartAfter = 0;
-
-	FString Name;
-	FString Description;
-	FString System;
-	FString Region;
-	FString Script; // filename or template script name
-
-	// Availability gate (stub logic implemented in cpp)
-	bool IsAvailable(class Campaign* CampaignObj, const FCampaignRuntimeContext& Ctx);
+	int               mission_type = 0;
+	int               group_type = 0;
+	int               index = 0;
+	List<MissionInfo> missions;
 };
 
-// -----------------------------------------------------------------------------
-// Template bucket (mission_type + group_type) (stub)
-// -----------------------------------------------------------------------------
-struct FTemplateList
-{
-	int32 MissionType = 0;
-	int32 GroupType = 0;
-	int32 Index = 0;
+// +--------------------------------------------------------------------+
 
-	TArray<TUniquePtr<FMissionInfo>> Missions;
-};
-
-// -----------------------------------------------------------------------------
-// Campaign status mirror
-// -----------------------------------------------------------------------------
-enum class ECampaignStatus : uint8
-{
-	CAMPAIGN_INIT = 0,
-	CAMPAIGN_ACTIVE,
-	CAMPAIGN_SUCCESS,
-	CAMPAIGN_FAILURE
-};
-
-// -----------------------------------------------------------------------------
-// Campaign core class (plain C++ object; owned by subsystem)
-// -----------------------------------------------------------------------------
 class Campaign
 {
 public:
-	// Construction mirrors original: id + name (+ optional path)
-	Campaign(int32 InId, const FString& InName);
-	Campaign(int32 InId, const FString& InName, const FString& InPath);
-	~Campaign();
+	static const char* TYPENAME() { return "Campaign"; }
 
-	// Catalog (optional; you can move this to subsystem later)
-	static void InitializeCatalog(); // stub
-	static void CloseCatalog();
+	enum CONSTANTS {
+		TRAINING_CAMPAIGN = 1,
+		DYNAMIC_CAMPAIGN,
+		MOD_CAMPAIGN = 100,
+		SINGLE_MISSIONS = 1000,
+		MULTIPLAYER_MISSIONS,
+		CUSTOM_MISSIONS,
 
-	static Campaign* GetCampaign(); // current_campaign
-	static Campaign* SelectCampaign(const FString& Name);
-	static Campaign* CreateCustomCampaign(const FString& Name, const FString& Path);
+		NUM_IMAGES = 6
+	};
 
-	static TArray<Campaign*>& GetAllCampaigns();
-	static int32 GetLastCampaignId();
+	enum STATUS {
+		CAMPAIGN_INIT,
+		CAMPAIGN_ACTIVE,
+		CAMPAIGN_SUCCESS,
+		CAMPAIGN_FAILED
+	};
 
-	// ---------------------------------------------------------------------
-	// Lifecycle
-	// ---------------------------------------------------------------------
-	void Clear();
-	void Load();            // stub
-	void Unload();          // stub
-	void Prep();            // stub
-	void Start();           // stub
-	void Stop();            // stub
+	Campaign(int id, const char* name = 0);
+	Campaign(int id, const char* name, const char* path);
+	virtual ~Campaign();
 
-	// Replacement for Starshatter ExecFrame: subsystem calls Tick with Ctx.
-	void Tick(const FCampaignRuntimeContext& Ctx);
+	int operator == (const Campaign& s) const { return name == s.name; }
+	int operator <  (const Campaign& s) const { return campaign_id < s.campaign_id; }
 
-	void LockoutEvents(int32 Seconds);
+	// operations:
+	virtual void         Load();
+	virtual void         Prep();
+	virtual void         Start();
+	virtual void         ExecFrame();
+	virtual void         Unload();
 
-	// ---------------------------------------------------------------------
-	// Data loading (stubs)
-	// ---------------------------------------------------------------------
-	void LoadCampaign(void* Loader, bool bFull = true);
-	void ParseGroup(void* Val, CombatGroup* Force, CombatGroup* Clone, const TCHAR* Filename);
-	void ParseAction(void* Val, const TCHAR* Filename);
+	virtual void         Clear();
+	virtual void         CommitExpiredActions();
+	virtual void         LockoutEvents(int seconds);
+	virtual void         CheckPlayerGroup();
+	void                 CreatePlanners();
 
-	CombatGroup* CloneOver(CombatGroup* Force, CombatGroup* Clone, CombatGroup* Group);
+	// accessors:
+	FString Name() const { return name; }
+	FString Description()  const { return description; }
+	FString Path()         const { return path; }
 
-	void LoadMissionList(void* Loader);
-	void LoadCustomMissions(void* Loader);
-	void LoadTemplateList(void* Loader);
+	FString Situation()    const { return situation; }
+	FString Orders()       const { return orders; }
 
-	// ---------------------------------------------------------------------
-	// Planners (stubs; later store TUniquePtr<ICampaignPlanner>)
-	// ---------------------------------------------------------------------
-	void CreatePlanners();
+	void                 SetSituation(const char* s) { situation = s; }
+	void                 SetOrders(const char* o) { orders = o; }
 
-	// ---------------------------------------------------------------------
-	// Player selection / validation (stubs)
-	// ---------------------------------------------------------------------
-	int32 GetPlayerIFF() const;
-	void SetPlayerGroup(CombatGroup* InPlayerGroup);
-	void SetPlayerUnit(CombatUnit* Unit);
-	void CheckPlayerGroup();
+	int                  GetPlayerTeamScore();
+	List<MissionInfo>& GetMissionList() { return missions; }
+	List<Combatant>& GetCombatants() { return combatants; }
+	List<CombatZone>& GetZones() { return zones; }
+	List<StarSystem>& GetSystemList() { return systems; }
+	List<CombatAction>& GetActions() { return actions; }
+	List<CombatEvent>& GetEvents() { return events; }
+	CombatEvent* GetLastEvent();
 
-	// ---------------------------------------------------------------------
-	// Zones / Systems / Combatants (stubs)
-	// ---------------------------------------------------------------------
-	CombatZone* GetZone(const FString& Region);
-	void* GetSystem(const FString& SystemName);
-	Combatant* GetCombatant(const FString& CombatantName);
+	CombatAction* FindAction(int id);
 
-	// ---------------------------------------------------------------------
-	// Missions (stubs)
-	// ---------------------------------------------------------------------
+	int                  CountNewEvents() const;
+
+	int                  GetPlayerIFF();
+	CombatGroup* GetPlayerGroup() { return player_group; }
+	void                 SetPlayerGroup(CombatGroup* pg);
+	CombatUnit* GetPlayerUnit() { return player_unit; }
+	void                 SetPlayerUnit(CombatUnit* pu);
+
+	Combatant* GetCombatant(const char* name);
+	CombatGroup* FindGroup(int iff, int type, int id);
+	CombatGroup* FindGroup(int iff, int type, CombatGroup* near_group = 0);
+	CombatGroup* FindStrikeTarget(int iff, CombatGroup* strike_group);
+
+	StarSystem* GetSystem(const char* sys);
+	CombatZone* GetZone(const char* rgn);
+	MissionInfo* CreateNewMission();
+	void                 DeleteMission(int id);
 	Mission* GetMission();
-	Mission* GetMission(int32 Id);
-	Mission* GetMissionByFile(const FString& Filename);
+	Mission* GetMission(int id);
+	Mission* GetMissionByFile(const char* filename);
+	MissionInfo* GetMissionInfo(int id);
+	MissionInfo* FindMissionTemplate(int msn_type, CombatGroup* player_group);
+	void                 ReloadMission(int id);
+	void                 LoadNetMission(int id, const char* net_mission);
+	void                 StartMission();
+	void                 RollbackMission();
 
-	FMissionInfo* CreateNewMission();
-	void DeleteMission(int32 Id);
+	void                 SetCampaignId(int id);
+	int                  GetCampaignId()   const { return campaign_id; }
+	void                 SetMissionId(int id);
+	int                  GetMissionId()    const { return mission_id; }
+	//Bitmap* GetImage(int n) { return &image[n]; }
+	double               GetTime()         const { return time; }
+	double               GetStartTime()    const { return startTime; }
+	void                 SetStartTime(double t) { startTime = t; }
+	double               GetLoadTime()     const { return loadTime; }
+	void                 SetLoadTime(double t) { loadTime = t; }
+	double               GetUpdateTime()   const { return updateTime; }
+	void                 SetUpdateTime(double t) { updateTime = t; }
 
-	FMissionInfo* GetMissionInfo(int32 Id);
-	void ReloadMission(int32 Id);
-	void LoadNetMission(int32 Id, const FString& NetMissionScript);
+	bool                 InCutscene()      const;
+	bool                 IsDynamic()       const;
+	bool                 IsTraining()      const;
+	bool                 IsScripted()      const;
+	bool                 IsSequential()    const;
+	bool                 IsSaveGame()      const { return loaded_from_savegame; }
+	void                 SetSaveGame(bool s) { loaded_from_savegame = s; }
 
-	// ---------------------------------------------------------------------
-	// Actions / Templates (stubs)
-	// ---------------------------------------------------------------------
-	CombatAction* FindAction(int32 ActionId);
-	FMissionInfo* FindMissionTemplate(int32 MissionType, CombatGroup* InPlayerGroup);
-	FTemplateList* GetTemplateList(int32 MissionType, int32 GroupType);
+	bool                 IsActive()        const { return status == CAMPAIGN_ACTIVE; }
+	bool                 IsComplete()      const { return status == CAMPAIGN_SUCCESS; }
+	bool                 IsFailed()        const { return status == CAMPAIGN_FAILED; }
+	void                 SetStatus(int s);
+	int                  GetStatus()       const { return status; }
 
-	// ---------------------------------------------------------------------
-	// Mission state control (stubs)
-	// ---------------------------------------------------------------------
-	void SetMissionId(int32 Id);
+	int                  GetAllCombatUnits(int iff, List<CombatUnit>& units);
 
-	// Stardate mapping:
-	// In Starshatter this was StarSystem::Stardate().
-	// In Unreal you can map this to your Universe clock or a base-time offset.
-	double Stardate(const FCampaignRuntimeContext& Ctx) const;
+	static void          Initialize();
+	static void          Close();
+	static Campaign* GetCampaign();
+	static List<Campaign>& GetAllCampaigns();
+	static int           GetLastCampaignId();
+	static Campaign* SelectCampaign(const char* name);
+	static Campaign* CreateCustomCampaign(const char* name, const char* path);
 
-	void StartMission();     // stub
-	void RollbackMission();  // stub
+	static double        Stardate();
 
-	// ---------------------------------------------------------------------
-	// Queries / flags
-	// ---------------------------------------------------------------------
-	bool InCutscene() const; // stub
-	bool IsDynamic() const;
-	bool IsTraining() const;
-	bool IsScripted() const { return bScripted; }
-	bool IsSequential() const { return bSequential; }
+protected:
+	void                 LoadCampaign(DataLoader* loader, bool full = false);
+	void                 LoadTemplateList(DataLoader* loader);
+	void                 LoadMissionList(DataLoader* loader);
+	void                 LoadCustomMissions(DataLoader* loader);
+	void ParseGroup(TermStruct* val,
+					CombatGroup* force,
+					CombatGroup* clone,
+					const char* filename);
+	void ParseAction(TermStruct* val,
+					 const char* filename);
+					 CombatGroup* CloneOver(CombatGroup* force,
+					 CombatGroup* clone,
+					 CombatGroup* group);
+	void                 SelectDefaultPlayerGroup(CombatGroup* g, int type);
+	TemplateList* GetTemplateList(int msn_type, int grp_type);
 
-	// ---------------------------------------------------------------------
-	// Group queries (stubs)
-	// ---------------------------------------------------------------------
-	CombatGroup* FindGroup(int32 Iff, int32 Type, int32 Id);
-	CombatGroup* FindGroup(int32 Iff, int32 Type, CombatGroup* NearGroup);
-	CombatGroup* FindStrikeTarget(int32 Iff, CombatGroup* StrikeGroup);
+	// attributes:
+	int                  campaign_id = 0;
+	int                  status = CAMPAIGN_INIT;
+	FString              filename;
+	FString              path;
+	FString              name;
+	FString              description;
+	FString              situation;
+	FString              orders;
+	//Bitmap               image[NUM_IMAGES];
 
-	// ---------------------------------------------------------------------
-	// Action bookkeeping / scoring (stubs)
-	// ---------------------------------------------------------------------
-	void CommitExpiredActions();
-	int32 GetPlayerTeamScore();
-	void SetStatus(ECampaignStatus InStatus);
+	bool                 scripted = false;
+	bool                 sequential = false;
+	bool                 loaded_from_savegame = false;
 
-	// ---------------------------------------------------------------------
-	// Unit aggregation (stub)
-	// ---------------------------------------------------------------------
-	int32 GetAllCombatUnits(int32 Iff, TArray<CombatUnit*>& OutUnits);
+	List<Combatant>      combatants;
+	List<StarSystem>     systems;
+	List<CombatZone>     zones;
+	List<CampaignPlan>   planners;
+	List<MissionInfo>    missions;
+	List<TemplateList>   templates;
+	List<CombatAction>   actions;
+	List<CombatEvent>    events;
+	CombatGroup* player_group = nullptr;
+	CombatUnit* player_unit = nullptr;
 
-	// ---------------------------------------------------------------------
-	// Accessors
-	// ---------------------------------------------------------------------
-	int32 GetCampaignId() const { return CampaignId; }
-	const FString& Name() const { return CampaignName; }
-	const FString& Path() const { return CampaignPath; }
-	ECampaignStatus Status() const { return CampaignStatus; }
-	bool IsRunning() const { return bRunning; }
+	int                  mission_id = 0;
+	Mission* mission = nullptr;
+	Mission* net_mission = nullptr;
 
-	double GetCampaignTimeSeconds() const;
-
-	static double GetCurrentStardate();
-	int64 GetTime() const;   // mirrors original Campaign::GetTime()
-
-	CombatGroup* GetPlayerGroup() const;   // mirror of Starshatter Campaign::GetPlayerGroup()
-	CombatUnit* GetPlayerUnit() const;   // mirror of original Campaign::GetPlayerUnit()
-
-	const TArray<Combatant*>& GetCombatants() const;
-	const TArray<CombatAction*>& GetActions() const;
-
-private:
-	// helpers (stub)
-	void SelectDefaultPlayerGroup(CombatGroup* Group, int32 Type);
-
-private:
-	// Identity
-	int32   CampaignId = 0;
-	FString CampaignName;
-	FString CampaignPath;
-
-	// Mission runtime
-	int32   MissionId = -1;
-	Mission* CurrentMission = nullptr;
-	Mission* NetMission = nullptr;
-
-	// Flags
-	bool bScripted = false;
-	bool bSequential = false;
-
-	// Time: Starshatter used double seconds since startTime
-	double TimeSeconds = 0.0;
-	double StartTime = 0.0;
-	double LoadTime = 0.0;
-
-	// Running state
-	bool bRunning = false;
-
-	// Player context (stubs)
-	CombatGroup* PlayerGroup = nullptr;
-	CombatUnit* PlayerUnit = nullptr;
-
-	// Campaign state
-	ECampaignStatus CampaignStatus = ECampaignStatus::CAMPAIGN_INIT;
-	int32 LockoutSeconds = 0;
-	bool  bLoadedFromSaveGame = false;
-
-	// Data containers (stubs; convert to UObjects/structs later)
-	TArray<CombatAction*> Actions;
-	TArray<CombatEvent*>  Events;
-	TArray<TUniquePtr<FMissionInfo>> Missions;
-	TArray<TUniquePtr<FTemplateList>> Templates;
-	TArray<void*> Planners;     // later: TUniquePtr<ICampaignPlanner>
-	TArray<CombatZone*> Zones;
-	TArray<Combatant*> Combatants;
-
-	// Systems list (StarSystem* in original) - stub as void*
-	TArray<void*> Systems;
-
-	// Strings (mirror)
-	FString Description;
-	FString Situation;
-	TArray<FString> Orders;
-
-	// Bookkeeping
-	double UpdateTime = 0.0;
+	double               time = 0.0;
+	double               loadTime = 0.0;
+	double               startTime = 0.0;
+	double               updateTime = 0.0;
+	int                  lockout = 0;
 };

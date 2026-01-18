@@ -6,9 +6,11 @@ Combatant::Combatant()
 {
 }
 
-Combatant::Combatant(const FString& InName, int32 InIFF)
+
+Combatant::Combatant(const FString& InName, CombatGroup* InForce, int32 InIff)
 	: Name(InName)
-	, IFF(InIFF)
+	, IFF(InIff)
+	, Force(InForce)
 {
 }
 
@@ -81,6 +83,7 @@ CombatGroup* Combatant::FindGroup(ECOMBATGROUP_TYPE Type, CombatGroup* NearGroup
 	return nullptr;
 }
 
+
 // ---------------------------------------------------------------------
 // Zones / Regions
 // ---------------------------------------------------------------------
@@ -115,3 +118,6 @@ int32 Combatant::GetAllGroups(TArray<CombatGroup*>& OutGroups) const
 
 	return OutGroups.Num();
 }
+
+
+

@@ -22,7 +22,8 @@ class Combatant
 {
 public:
 	Combatant();
-	explicit Combatant(const FString& InName, int32 InIFF);
+	explicit Combatant(const FString& InName, CombatGroup* InForce = nullptr, int32 InIff = 0);
+
 	~Combatant();
 
 	// ---------------------------------------------------------------------
@@ -58,11 +59,27 @@ public:
 	// ---------------------------------------------------------------------
 	int32 GetAllGroups(TArray<CombatGroup*>& OutGroups) const;
 
+	// ---------------------------------------------------------------------
+	// Forces
+	// ---------------------------------------------------------------------
+	CombatGroup* GetForce() const { return Force; }
+	void SetForce(CombatGroup* InForce) { Force = InForce; }
+
+	// ---------------------------------------------------------------------
+	// Scores
+	// ---------------------------------------------------------------------
+	int32 GetScore() const { return Score; }
+	void SetScore(int32 InScore) { Score = InScore; }
+
 private:
 	// Identity
 	FString Name;
 	int32   IFF = 0;
+	int32   Score = 0;
 
 	// Top-level force groups
 	TArray<CombatGroup*> Groups;
+
+	// Root force tree (e.g., "Dantari Separatists" force)
+	CombatGroup* Force = nullptr;
 };

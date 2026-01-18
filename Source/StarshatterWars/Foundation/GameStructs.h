@@ -111,6 +111,13 @@ enum COMPARISON_OPERATOR {
 	RLT, RLE, RGT, RGE, REQ    // delta score comparison
 };
 
+UENUM()
+enum class ECombatActionReqComp : uint8
+{
+	LT, LE, GT, GE, EQ,    // absolute score comparison
+	RLT, RLE, RGT, RGE, REQ    // delta score comparison
+};
+
 UENUM(BlueprintType)
 enum EDAMAGE_STATUS : uint8 
 {
@@ -171,7 +178,8 @@ enum ECOMBATACTION_STATUS : uint8
 	ACTIVE UMETA(DisplayName = "Active"), 
 	SKIPPED UMETA(DisplayName = "Skipped"),
 	FAILED UMETA(DisplayName = "Failed"), 
-	COMPLETE UMETA(DisplayName = "Complete")
+	COMPLETE UMETA(DisplayName = "Complete"),
+	INCOMPLETE UMETA(DisplayName = "Incomplete"),
 };
 
 UENUM()

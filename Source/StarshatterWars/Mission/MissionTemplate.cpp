@@ -3,6 +3,11 @@
 
 #include "MissionTemplate.h"
 #include "Mission.h"
+#include "Campaign.h"
+#include "CombatGroup.h"
+#include "CombatUnit.h"
+#include "MissionEvent.h"
+// #include "MissionElement.h"
 
 bool MissionTemplate::IsAvailable(int64 NowSeconds, int32 PlayerRank) const
 {
