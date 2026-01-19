@@ -37,7 +37,7 @@ RadioMessage::RadioMessage(Ship* dst, const Ship* s, int a)
 		channel = s->GetIFF();
 }
 
-RadioMessage::RadioMessage(Element* dst, const Ship* s, int a)
+RadioMessage::RadioMessage(SimElement* dst, const Ship* s, int a)
 	: sender(s)
 	, dst_ship(nullptr)
 	, dst_elem(dst)

@@ -26,7 +26,7 @@
 
 // +--------------------------------------------------------------------+
 
-class Element;
+class SimElement;
 class Ship;
 class SimObject;
 
@@ -116,7 +116,7 @@ public:
 	};
 
 	RadioMessage(Ship* dst, const Ship* sender, int action);
-	RadioMessage(Element* dst, const Ship* sender, int action);
+	RadioMessage(SimElement* dst, const Ship* sender, int action);
 	RadioMessage(const RadioMessage& rm);
 	virtual ~RadioMessage();
 
@@ -125,7 +125,7 @@ public:
 
 	const Ship* Sender()          const { return sender; }
 	Ship* DestinationShip() const { return dst_ship; }
-	Element* DestinationElem() const { return dst_elem; }
+	SimElement* DestinationElem() const { return dst_elem; }
 	int               Action()          const { return action; }
 	List<SimObject>& TargetList() { return target_list; }
 	const FVector& Location()        const { return location; }
@@ -134,7 +134,7 @@ public:
 
 	// mutators:
 	void              SetDestinationShip(Ship* s) { dst_ship = s; }
-	void              SetDestinationElem(Element* e) { dst_elem = e; }
+	void              SetDestinationElem(SimElement* e) { dst_elem = e; }
 	void              AddTarget(SimObject* s);
 	void              SetLocation(const FVector& l) { location = l; }
 	void              SetInfo(Text msg) { info = msg; }
@@ -143,7 +143,7 @@ public:
 protected:
 	const Ship* sender;
 	Ship* dst_ship;
-	Element* dst_elem;
+	SimElement* dst_elem;
 	int               action;
 	List<SimObject>   target_list;
 	FVector           location = FVector::ZeroVector;

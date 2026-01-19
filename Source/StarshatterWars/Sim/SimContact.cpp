@@ -70,7 +70,7 @@ SimContact::SimContact(Ship* s, float p, float a)
 	Observe(ship);
 }
 
-SimContact::SimContact(Shot* s, float p, float a)
+SimContact::SimContact(SimShot* s, float p, float a)
 	: ship(nullptr),
 	shot(s),
 	loc(FVector::ZeroVector),
@@ -205,16 +205,16 @@ void
 SimContact::GetBearing(const Ship* observer, double& az, double& el, double& rng) const
 {
 	// translate:
-	const FVector targ_pt = loc - observer->Location();
+	const FVector TargPt = loc - observer->Location();
 
 	// rotate:
 	const Camera* cam = &observer->Cam();
-	const double  tx = targ_pt * cam->vrt();
-	const double  ty = targ_pt * cam->vup();
-	const double  tz = targ_pt * cam->vpn();
 
+	const double tx = FVector::DotProduct(TargPt, cam->vrt());
+	const double ty = FVector::DotProduct(TargPt, cam->vup());
+	const double tz = FVector::DotProduct(TargPt, cam->vpn());
 	// convert to spherical coords:
-	rng = targ_pt.Length();
+	rng = TargPt.Length();
 	az = asin(fabs(tx) / rng);
 	el = asin(fabs(ty) / rng);
 
@@ -254,15 +254,14 @@ SimContact::Range(const Ship* observer, double limit) const
 
 // +----------------------------------------------------------------------+
 
-bool
-SimContact::InFront(const Ship* observer) const
+bool SimContact::InFront(const Ship* observer) const
 {
 	// translate:
 	const FVector targ_pt = loc - observer->Location();
 
 	// rotate:
 	const Camera* cam = &observer->Cam();
-	const double  tz = targ_pt * cam->vpn();
+	const double tz = FVector::DotProduct(targ_pt, cam->vpn());
 
 	return tz > 1.0;
 }

@@ -126,7 +126,7 @@ bool CombatAction::IsAvailable() const
             }
 
             // group-based requirement
-            else if (r->group_type > 0)
+            else if (r->group_type != ECOMBATGROUP_TYPE::NONE)
             {
                 if (r->c1)
                 {
@@ -251,9 +251,9 @@ void CombatAction::AddRequirement(Combatant* c1, Combatant* c2, int comp, int sc
     requirements.append(new  CombatActionReq(c1, c2, comp, score));
 }
 
-void CombatAction::AddRequirement(Combatant* c1, int group_type, int group_id, int comp, int score, int intel)
+void CombatAction::AddRequirement(Combatant* c1, ECOMBATGROUP_TYPE group_type, int group_id, int comp, int score, int intel)
 {
-    requirements.append(new  CombatActionReq(c1, group_type, group_id, comp, score, intel));
+    requirements.append(new CombatActionReq(c1, group_type, group_id, comp, score, intel));
 }
 
 int CombatAction::TypeFromName(const char* n)

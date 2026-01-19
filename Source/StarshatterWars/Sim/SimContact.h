@@ -25,7 +25,7 @@
 // +--------------------------------------------------------------------+
 
 class Ship;
-class Shot;
+class SimShot;
 
 class SimContact : public SimObserver
 {
@@ -36,13 +36,13 @@ public:
 
 	SimContact();
 	SimContact(Ship* s, float p, float a);
-	SimContact(Shot* s, float p, float a);
+	SimContact(SimShot* s, float p, float a);
 	virtual ~SimContact();
 
 	int operator == (const SimContact& c) const;
 
 	Ship* GetShip()   const { return ship; }
-	Shot* GetShot()   const { return shot; }
+	SimShot* GetShot()   const { return shot; }
 	FVector  Location()  const { return loc; }
 
 	double   PasReturn() const { return d_pas; }
@@ -74,7 +74,7 @@ public:
 
 private:
 	Ship* ship = nullptr;
-	Shot* shot = nullptr;
+	SimShot* shot = nullptr;
 	FVector  loc = FVector::ZeroVector;
 
 	DWORD    acquire_time = 0;

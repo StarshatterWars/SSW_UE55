@@ -83,6 +83,11 @@ public:
 	static double     GetMaxFrameLength() { return max_frame_length; }
 	static double     GetMinFrameLength() { return min_frame_length; }
 
+	static void       SetMaxTexSize(int n);
+
+	static int        MaxTexSize();
+	static int        MaxTexAspect();
+
 	static Game* GetInstance();
 	
 	static Color      GetScreenColor();

@@ -72,7 +72,7 @@ public:
 
     void AddRequirement(int action, int stat, bool notx = false);
     void AddRequirement(Combatant* c1, Combatant* c2, int comp, int score);
-    void AddRequirement(Combatant* c1, int group_type, int group_id, int comp, int score, int intel = 0);
+    void AddRequirement(Combatant* c1, ECOMBATGROUP_TYPE group_type, int group_id, int comp, int score, int intel = 0);
 
     static int TypeFromName(const char* n);
     static int StatusFromName(const char* n);
@@ -190,20 +190,50 @@ public:
     };
 
     CombatActionReq(int a, int s, bool n = false)
-        : action(a), stat(s), notx(n), c1(nullptr), c2(nullptr),
-        comp(0), score(0), intel(0), group_type(0), group_id(0)
+        : action(a)
+        , stat(s)
+        , notx(n)
+        , c1(nullptr)
+        , c2(nullptr)
+        , comp(0)
+        , score(0)
+        , intel(0)
+        , group_type(ECOMBATGROUP_TYPE::NONE) 
+        , group_id(0)
     {
     }
 
     CombatActionReq(Combatant* a1, Combatant* a2, int comparison, int value)
-        : action(0), stat(0), notx(false), c1(a1), c2(a2),
-        comp(comparison), score(value), intel(0), group_type(0), group_id(0)
+        : action(0)
+        , stat(0)
+        , notx(false)
+        , c1(a1)
+        , c2(a2)
+        , comp(comparison)
+        , score(value)
+        , intel(0)
+        , group_type(ECOMBATGROUP_TYPE::NONE) 
+        , group_id(0)
     {
     }
 
-    CombatActionReq(Combatant* a1, int gtype, int gid, int comparison, int value, int intel_level = 0)
-        : action(0), stat(0), notx(false), c1(a1), c2(nullptr),
-        comp(comparison), score(value), intel(intel_level), group_type(gtype), group_id(gid)
+    CombatActionReq(
+        Combatant* a1,
+        ECOMBATGROUP_TYPE gtype,
+        int gid,
+        int comparison,
+        int value,
+        int intel_level = 0)
+        : action(0)
+        , stat(0)
+        , notx(false)
+        , c1(a1)
+        , c2(nullptr)
+        , comp(comparison)
+        , score(value)
+        , intel(intel_level)
+        , group_type(gtype)   
+        , group_id(gid)
     {
     }
 
@@ -220,6 +250,6 @@ public:
     int        score = 0;
     int        intel = 0;
 
-    int        group_type = 0;
+    ECOMBATGROUP_TYPE group_type;
     int        group_id = 0;
 };

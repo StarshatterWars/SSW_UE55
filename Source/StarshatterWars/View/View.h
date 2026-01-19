@@ -1,30 +1,21 @@
-/*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
-
-	SUBSYSTEM:    nGenEx.lib
-	FILE:         View.h
-	AUTHOR:       Carlos Bott
-
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
-
-	OVERVIEW
-	========
-	Abstract View class
-*/
+// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Types.h"
 
-// +--------------------------------------------------------------------+
+/**
+ * 
+ */
+
+ // +--------------------------------------------------------------------+
 
 class Window;
 
 // +--------------------------------------------------------------------+
 
-class View
+class STARSHATTERWARS_API View
 {
 	friend class Window;
 
@@ -43,7 +34,7 @@ public:
 	virtual void      OnHide() {}
 
 	virtual void      SetWindow(Window* w) { window = w; OnWindowMove(); }
-	virtual Window* GetWindow() { return window; }
+	virtual Window*   GetWindow() { return window; }
 
 protected:
 	Window* window;

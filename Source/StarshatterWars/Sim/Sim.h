@@ -261,6 +261,24 @@ public:
     Ship* GetPlayerShip() { return player_ship; }
     void  SetPlayerShip(Ship* ship);
 
+    List<Ship>& GetShips() { return ships; }
+    const List<Ship>& GetShips() const { return ships; }
+
+    List<Drone>& GetDrones() { return drones; }
+    const List<Drone>& GetDrones() const { return drones; }
+
+    List<SimShot>& GetShots() { return shots; }
+    const List<SimShot>& GetShots() const { return shots; }
+
+    List<Explosion>& GetExplosions() { return explosions; }
+    const List<Explosion>& GetExplosions() const { return explosions; }
+
+    List<Debris>& GetDebrisField() { return debris; }
+    const List<Debris>& GetDebrisField() const { return debris; }
+
+    List<Asteroid>& GetAsteroids() { return asteroids; }
+    const List<Asteroid>& GetAsteroids() const { return asteroids; }
+
     OrbitalRegion* GetOrbitalRegion() { return orbital_region; }
     Terrain* GetTerrain() { return terrain; }
 
@@ -272,6 +290,20 @@ public:
     virtual Ship* FindShipByObjID(uint32 objid);
     virtual SimShot* FindShotByObjID(uint32 objid);
 
+    List<SimContact>& TrackList(int iff)
+    {
+        iff = iff < 0 ? 0 : iff;
+        iff = iff > 4 ? 4 : iff;
+        return track_database[iff];
+    }
+
+    const List<SimContact>& TrackList(int iff) const
+    {
+        iff = iff < 0 ? 0 : iff;
+        iff = iff > 4 ? 4 : iff;
+        return track_database[iff];
+    }
+
     const char* Name() const { return name; }
     int Type() const { return type; }
 
@@ -281,15 +313,15 @@ protected:
     Sim* sim;
     Text            name;
     int             type;
-    StarSystem* star_system;
-    OrbitalRegion* orbital_region;
+    StarSystem*     star_system;
+    OrbitalRegion*  orbital_region;
     FVector         location;
 
-    Grid* grid;
-    Terrain* terrain;
+    Grid*           grid;
+    Terrain*        terrain;
     bool            active;
 
-    Ship* player_ship;
+    Ship*           player_ship;
     int             current_view;
 
     List<Ship>      ships;

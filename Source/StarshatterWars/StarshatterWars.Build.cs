@@ -36,6 +36,8 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "Ship"),
             Path.Combine(ModuleDirectory, "Sim"),
             Path.Combine(ModuleDirectory, "Game"),
+            Path.Combine(ModuleDirectory, "View"),
+            Path.Combine(ModuleDirectory, "Network"),
             Path.Combine(ModuleDirectory, "Design"),
             Path.Combine(ModuleDirectory, "Levels"),
             Path.Combine(ModuleDirectory, "Actors"),

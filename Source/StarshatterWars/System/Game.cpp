@@ -10,6 +10,8 @@
 
 
 #include "Game.h"
+#include "Screen.h"
+#include "Video.h"
 #include "GameDataLoader.h"	
 
 Game* game = 0;
@@ -170,6 +172,40 @@ double Game::GUITime()
 	return 0.0;
 }
 
+void
+Game::SetMaxTexSize(int n)
+{
+	if (game && n >= 64 && n <= 4096)
+		game->max_tex_size = n;
+}
+
+int
+Game::MaxTexSize()
+{
+	if (game && game->video) {
+		int max_vid_size = game->video->MaxTexSize();
+		return max_vid_size < game->max_tex_size ?
+			max_vid_size : game->max_tex_size;
+	}
+	else if (Video::GetInstance()) {
+		return Video::GetInstance()->MaxTexSize();
+	}
+
+	return 256;
+}
+
+int
+Game::MaxTexAspect()
+{
+	if (game && game->video) {
+		return game->video->MaxTexAspect();
+	}
+	else if (Video::GetInstance()) {
+		return Video::GetInstance()->MaxTexAspect();
+	}
+
+	return 1;
+}
 Game* Game::GetInstance()
 {
 	return nullptr;
