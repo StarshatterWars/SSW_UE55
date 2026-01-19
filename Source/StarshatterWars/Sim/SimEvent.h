@@ -1,40 +1,37 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	SUBSYSTEM:    Stars.exe
 	FILE:         SimEvent.h
 	AUTHOR:       Carlos Bott
+	ORIGINAL:     John DiCamillo / Destroyer Studios LLC
 
-	OVERVIEW
-	========
 	OVERVIEW
 	========
 	Simulation Universe and Region classes
 */
-
 #pragma once
-
-#include "CoreMinimal.h"
 #include "Types.h"
 #include "List.h"
 #include "Text.h"
 
-// +-------------------------------------------------------------------- +
+// +--------------------------------------------------------------------+
+// Forward declarations (keep header light)
 
-class USim;
+class UTexture2D;
+
+class Sim;
 class SimRegion;
-class USimObject;
+class SimObject;
 class SimObserver;
 class SimHyper;
 class CombatGroup;
 class CombatUnit;
 
 // +--------------------------------------------------------------------+
-/**
- * 
- */
-class STARSHATTERWARS_API SimEvent
+
+class SimEvent
 {
 public:
 	static const char* TYPENAME() { return "SimEvent"; }
@@ -48,7 +45,6 @@ public:
 		LAUNCH_PROBE, SCAN_TARGET
 	};
 
-	SimEvent();
 	SimEvent(int event, const char* tgt = 0, const char* info = 0);
 	~SimEvent();
 
@@ -90,34 +86,33 @@ public:
 
 	void           Summarize();
 
-	const char* GetName()         const { return name; }
-	const char* GetType()         const { return type; }
-	const char* GetRole()         const { return role; }
-	const char* GetRegion()       const { return region; }
-	CombatGroup* GetCombatGroup()  const { return combat_group; }
-	CombatUnit* GetCombatUnit()   const { return combat_unit; }
-	int            GetElementIndex() const { return elem_index; }
-	int            GetShipClass()    const { return ship_class; }
-	int            GetIFF()          const { return iff; }
-	int            GetGunKills()     const { return kill1; }
-	int            GetMissileKills() const { return kill2; }
-	int            GetDeaths()       const { return lost; }
-	int            GetColls()        const { return coll; }
-	int            GetPoints()       const { return points; }
-	int            GetCommandPoints()const { return cmd_points; }
+	const char* GetName()          const { return name; }
+	const char* GetType()          const { return type; }
+	const char* GetRole()          const { return role; }
+	const char* GetRegion()        const { return region; }
+	CombatGroup* GetCombatGroup()   const { return combat_group; }
+	CombatUnit* GetCombatUnit()    const { return combat_unit; }
+	int            GetElementIndex()  const { return elem_index; }
+	int            GetShipClass()     const { return ship_class; }
+	int            GetIFF()           const { return iff; }
+	int            GetGunKills()      const { return kill1; }
+	int            GetMissileKills()  const { return kill2; }
+	int            GetDeaths()        const { return lost; }
+	int            GetColls()         const { return coll; }
+	int            GetPoints()        const { return points; }
+	int            GetCommandPoints() const { return cmd_points; }
 
-	int            GetGunShots()     const { return gun_shots; }
-	int            GetGunHits()      const { return gun_hits; }
-	int            GetMissileShots() const { return missile_shots; }
-	int            GetMissileHits()  const { return missile_hits; }
+	int            GetGunShots()      const { return gun_shots; }
+	int            GetGunHits()       const { return gun_hits; }
+	int            GetMissileShots()  const { return missile_shots; }
+	int            GetMissileHits()   const { return missile_hits; }
 
-	bool           IsPlayer()        const { return player; }
+	bool           IsPlayer()         const { return player; }
 
-	List<SimEvent>&
-		GetEvents() { return events; }
+	List<SimEvent>& GetEvents() { return events; }
 	SimEvent* AddEvent(SimEvent* e);
 	SimEvent* AddEvent(int event, const char* tgt = 0, const char* info = 0);
-	bool           HasEvent(int event);
+	bool            HasEvent(int event);
 
 	void           SetShipClass(int c) { ship_class = c; }
 	void           SetIFF(int i) { iff = i; }
@@ -163,3 +158,5 @@ private:
 
 	List<SimEvent> events;
 };
+
+

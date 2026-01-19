@@ -30,7 +30,7 @@
 #include "Mission.h"
 #include "StarSystem.h"
 #include "Starshatter.h"
-#include "Player.h"
+#include "PlayerCharacter.h"
 #include "DataLoader.h"
 #include "ParseUtil.h"
 #include "Random.h"
@@ -89,7 +89,7 @@ MissionInfo::~MissionInfo()
 bool MissionInfo::IsAvailable()
 {
     Campaign* campaign = Campaign::GetCampaign();
-    Player* player = Player::GetCurrentPlayer();
+    PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
 
     if (!campaign || !player)
         return false;

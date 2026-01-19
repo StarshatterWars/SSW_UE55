@@ -1,123 +1,230 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter 4.5
+	Destroyer Studios LLC
+	Copyright © 1997-2004.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         CombatGroup.h
+	AUTHOR:       John DiCamillo
+
+	UNREAL PORT:
+	- Maintains all variables and methods (names, signatures, members).
+	- Uses UE-compatible shims for Text, List, Point, etc. (Types.h / Geometry.h / Text.h / List.h / Intel.h).
+*/
+
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameStructs.h"
+// Original includes mapped to Unreal-compatible shims:
+#include "Types.h"
+#include "Geometry.h"
+#include "Text.h"
+#include "List.h"
+#include "Intel.h"
 
-/**
- * UE-friendly port of Starshatter CombatGroup.
- * - Pure C++ (no UObject)
- * - Preserves key logic: hierarchy, reserve/intel gating, region, type/iff/id
- * - Stubs remain where you haven't ported dependent systems yet (units/zones/assignments).
- */
-class CombatZone;
+// +--------------------------------------------------------------------+
+
+class Campaign;
 class Combatant;
+class CombatGroup;
 class CombatUnit;
+class CombatZone;
+class CombatAssignment;
+
+// +--------------------------------------------------------------------+
 
 class CombatGroup
 {
 public:
-	CombatGroup(ECOMBATGROUP_TYPE InType, int32 InId, const FString& InName, int32 InIff, EINTEL_TYPE InIntel, CombatGroup* InParent = nullptr);
+	static const char* TYPENAME() { return "CombatGroup"; }
+
+	enum GROUP_TYPE {
+		FORCE = 1,           // Commander In Chief
+
+		WING,                // Air Force
+		INTERCEPT_SQUADRON,  // a2a fighter
+		FIGHTER_SQUADRON,    // multi-role fighter
+		ATTACK_SQUADRON,     // strike / attack
+		LCA_SQUADRON,        // landing craft
+
+		FLEET,               // Navy
+		DESTROYER_SQUADRON,  // destroyer
+		BATTLE_GROUP,        // heavy cruiser(s)
+		CARRIER_GROUP,       // fleet carrier
+
+		BATTALION,           // Army
+		MINEFIELD,
+		BATTERY,
+		MISSILE,
+		STATION,             // orbital station
+		STARBASE,            // planet-side base
+
+		C3I,                 // Command, Control, Communications, Intelligence
+		COMM_RELAY,
+		EARLY_WARNING,
+		FWD_CONTROL_CTR,
+		ECM,
+
+		SUPPORT,
+		COURIER,
+		MEDICAL,
+		SUPPLY,
+		REPAIR,
+
+		CIVILIAN,            // root for civilian groups
+
+		WAR_PRODUCTION,
+		FACTORY,
+		REFINERY,
+		RESOURCE,
+
+		INFRASTRUCTURE,
+		TRANSPORT,
+		NETWORK,
+		HABITAT,
+		STORAGE,
+
+		NON_COM,             // other civilian traffic
+		FREIGHT,
+		PASSENGER,
+		PRIVATE
+	};
+
+	CombatGroup(int t, int n, const char* s, int i, int e, CombatGroup* p = 0);
 	~CombatGroup();
 
-	// ---------------------------------------------------------------------
-	// Hierarchy / composition (core)
-	// ---------------------------------------------------------------------
-	void AddComponent(CombatGroup* Group);                 // takes ownership? (see notes below)
-	CombatGroup* GetParent() const { return Parent; }
-	const TArray<CombatGroup*>& GetComponents() const { return Components; }
+	// comparison operators are used to sort combat groups into a priority list
+	// in DESCENDING order, so the sense of the comparison is backwards from
+	// usual...
+	int operator <  (const CombatGroup& g) const { return value > g.value; }
+	int operator <= (const CombatGroup& g) const { return value >= g.value; }
+	int operator == (const CombatGroup& g) const { return this == &g; }
 
-	CombatGroup* FindGroup(ECOMBATGROUP_TYPE InType, int32 InId = -1);
-	const CombatGroup* FindGroup(ECOMBATGROUP_TYPE InType, int32 InId = -1) const;
+	// operations:
+	static CombatGroup* LoadOrderOfBattle(const char* fname, int iff, Combatant* combatant);
+	static void         SaveOrderOfBattle(const char* fname, CombatGroup* force);
+	static void         MergeOrderOfBattle(BYTE* block, const char* fname, int iff, Combatant* combatant, Campaign* campaign);
 
-	// Clone behavior similar to original: shallow or deep copy of hierarchy.
-	CombatGroup* Clone(bool bDeep = true) const;
+	void                AddComponent(CombatGroup* g);
+	CombatGroup* FindGroup(int t, int n = -1);
+	CombatGroup* Clone(bool deep = true);
 
-	// ---------------------------------------------------------------------
-	// Accessors
-	// ---------------------------------------------------------------------
-	const FString& GetName() const { return GroupName; }
-	ECOMBATGROUP_TYPE GetType() const { return GroupType; }
+	// accessors and mutators:
+	const char* GetDescription()      const;
+	const char* GetShortDescription() const;
 
-	const FString& GetDescription() const { return Description; }
-	void SetDescription(const FString& InDesc) { Description = InDesc; }
+	void                SetCombatant(Combatant* c) { combatant = c; }
 
-	int32 GetID() const { return Id; }
-	int32 GetIFF() const { return Iff; }
+	Combatant* GetCombatant() { return combatant; }
+	CombatGroup* GetParent() { return parent; }
+	List<CombatGroup>& GetComponents() { return components; }
+	List<CombatGroup>& GetLiveComponents() { return live_comp; }
+	List<CombatUnit>& GetUnits() { return units; }
+	CombatUnit* GetRandomUnit();
+	CombatUnit* GetFirstUnit();
+	CombatUnit* GetNextUnit();
+	CombatUnit* FindUnit(const char* name);
+	CombatGroup* FindCarrier();
 
-	// Optional setters (used during parsing)
-	void SetId(int32 InId) { Id = InId; }
-	void SetType(ECOMBATGROUP_TYPE InType) { GroupType = InType; }
+	const Text& Name()               const { return name; }
+	int                 Type()               const { return type; }
+	int                 CountUnits()         const;
+	int                 IntelLevel()         const { return enemy_intel; }
+	int                 GetID()              const { return id; }
+	int                 GetIFF()             const { return iff; }
+	Point               Location()           const { return location; }
+	void                MoveTo(const Point& loc);
+	const Text& GetRegion()          const { return region; }
+	void                SetRegion(Text rgn) { region = rgn; }
+	void                AssignRegion(Text rgn);
+	int                 Value()              const { return value; }
+	int                 Sorties()            const { return sorties; }
+	void                SetSorties(int n) { sorties = n; }
+	int                 Kills()              const { return kills; }
+	void                SetKills(int n) { kills = n; }
+	int                 Points()             const { return points; }
+	void                SetPoints(int n) { points = n; }
+	int                 UnitIndex()          const { return unit_index; }
 
-	const FString& GetRegion() const { return Region; }
-	void SetRegion(const FString& InRegion) { Region = InRegion; }
-	void AssignRegion(const FString& InRegion); // mirrors Starshatter behavior (here: same as SetRegion)
+	double              GetNextJumpTime()    const;
 
-	EINTEL_TYPE IntelLevel() const { return EnemyIntel; }
-	void SetIntelLevel(EINTEL_TYPE InIntel) { EnemyIntel = InIntel; }
+	double              GetPlanValue()       const { return plan_value; }
+	void                SetPlanValue(double v) { plan_value = v; }
 
-	int32 Value() const { return CachedValue; }
-	int32 CalcValue(); // stubbed but functional: sums children + local "unit count" placeholder
+	bool                IsAssignable()       const;
+	bool                IsTargetable()       const;
+	bool                IsDefensible()       const;
+	bool                IsStrikeTarget()     const;
+	bool                IsMovable()          const;
+	bool                IsFighterGroup()     const;
+	bool                IsStarshipGroup()    const;
+	bool                IsReserve()          const;
 
-	bool IsReserve() const;         // mirrors original logic
-	bool IsMovable() const;         // mirrors original switch table
-	bool IsFighterGroup() const;    // mirrors original switch table
-	bool IsStarshipGroup() const;   // mirrors original switch table
-	bool IsStrikeTarget() const;    // mirrors original logic shape
-	bool IsTargetable() const;      // mirrors original logic shape
-	bool IsDefensible() const;      // mirrors original logic shape
-	bool IsAssignable() const;      // mirrors original logic shape
+	// these two methods return zero terminated arrays of
+	// integers identifying the preferred assets for attack
+	// or defense in priority order:
+	static const int* PreferredAttacker(int type);
+	static const int* PreferredDefender(int type);
 
-	// ---------------------------------------------------------------------
-	// Future integration hooks (stubs for now)
-	// ---------------------------------------------------------------------
-	void SetCombatant(Combatant* InCombatant) { OwningCombatant = InCombatant; }
-	Combatant* GetCombatant() const { return OwningCombatant; }
+	bool                IsExpanded()         const { return expanded; }
+	void                SetExpanded(bool e) { expanded = e; }
 
-	CombatZone* GetCurrentZone() const { return CurrentZone; }
-	void SetCurrentZone(CombatZone* InZone) { CurrentZone = InZone; }
+	const Text& GetAssignedSystem()  const { return assigned_system; }
+	void                SetAssignedSystem(const char* s);
+	CombatZone* GetCurrentZone()     const { return current_zone; }
+	void                SetCurrentZone(CombatZone* z) { current_zone = z; }
+	CombatZone* GetAssignedZone()    const { return assigned_zone; }
+	void                SetAssignedZone(CombatZone* z);
+	void                ClearUnlockedZones();
+	bool                IsZoneLocked()       const { return assigned_zone && zone_lock; }
+	void                SetZoneLock(bool lock = true);
+	bool                IsSystemLocked()     const { return assigned_system.length() > 0; }
 
-	CombatZone* GetAssignedZone() const { return AssignedZone; }
-	void SetAssignedZone(CombatZone* InZone) { AssignedZone = InZone; }
+	const Text& GetStrategicDirection()      const { return strategic_direction; }
+	void                SetStrategicDirection(Text dir) { strategic_direction = dir; }
 
-	bool IsZoneLocked() const { return AssignedZone != nullptr && bZoneLock; }
-	void SetZoneLock(bool bLock = true) { bZoneLock = bLock; }
+	void                SetIntelLevel(int n);
+	int                 CalcValue();
 
-	bool IsSystemLocked() const { return !AssignedSystem.IsEmpty(); }
-	const FString& GetAssignedSystem() const { return AssignedSystem; }
-	void SetAssignedSystem(const FString& InSystem) { AssignedSystem = InSystem; }
+	List<CombatAssignment>& GetAssignments() { return assignments; }
+	void                    ClearAssignments();
+
+	static int          TypeFromName(const char* name);
+	static const char* NameFromType(int type);
 
 private:
-	static bool IsFighterType(ECOMBATGROUP_TYPE T);
-	static bool IsStarshipType(ECOMBATGROUP_TYPE T);
-	static bool IsMovableType(ECOMBATGROUP_TYPE T);
+	const char* GetOrdinal() const;
 
-private:
-	ECOMBATGROUP_TYPE   GroupType;
-	int32        Id = 0;
-	FString		 Description;
-	FString      GroupName;
-	int32        Iff = 1;
-	EINTEL_TYPE  EnemyIntel = EINTEL_TYPE::ACTIVE;
+	// attributes:
+	int                 type;
+	int                 id;
+	Text                name;
+	int                 iff;
+	int                 enemy_intel;
 
-	CombatGroup* Parent = nullptr;
+	double              plan_value; // scratch pad for plan modules
 
-	// NOTE: For now, we do not delete Components in destructor automatically
-	// because you may already be managing ownership elsewhere (UE subsystem, save state, etc.).
-	// Once you decide ownership, you can convert to TUniquePtr or explicit deletes.
-	TArray<CombatGroup*> Components;
+	List<CombatUnit>    units;
+	List<CombatGroup>   components;
+	List<CombatGroup>   live_comp;
+	Combatant* combatant;
+	CombatGroup* parent;
+	Text                region;
+	Point               location;
+	int                 value;
+	int                 unit_index;
 
-	// Minimal state mirrored from original
-	FString Region;
+	int                 sorties;
+	int                 kills;
+	int                 points;
 
-	int32 CachedValue = 0;
+	bool                expanded;   // for tree control
 
-	Combatant* OwningCombatant = nullptr;
+	Text                assigned_system;
+	CombatZone* current_zone;
+	CombatZone* assigned_zone;
+	bool                zone_lock;
+	List<CombatAssignment> assignments;
 
-	CombatZone* CurrentZone = nullptr;
-	CombatZone* AssignedZone = nullptr;
-	bool bZoneLock = false;
-
-	FString AssignedSystem;
+	Text                strategic_direction;
 };
 
+// +--------------------------------------------------------------------+

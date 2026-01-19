@@ -26,6 +26,7 @@
 #include "Mission.h"
 #include "Intel.h"
 #include "Ship.h"
+#include "RLoc.h"
 #include "ShipDesign.h"
 #include "PlayerData.h"
 #include "SystemDesign.h"
@@ -4713,7 +4714,7 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 					ShipType = ClassForName(ShipClass);
 
-					if (ShipType <= (int)UShip::LCA) {
+					if (ShipType <= (int)Ship::LCA) {
 						repair_auto = false;
 						repair_screen = false;
 						wep_screen = false;
@@ -4976,7 +4977,7 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 					ShipType = ClassForName(ShipClass);
 
-					if (ShipType <= (int) UShip::LCA) {
+					if (ShipType <= (int) Ship::LCA) {
 						repair_auto = false;
 						repair_screen = false;
 						wep_screen = false;
@@ -8628,13 +8629,13 @@ AGameDataLoader::LoadAwardTables()
 								else if (pdef->name()->value() == ("min_ship_class")) {
 									Text classname;
 									GetDefText(classname, pdef, filename);
-									MinShipClass = UShip::ClassForName(classname);
+									MinShipClass = Ship::ClassForName(classname);
 								}
 
 								else if (pdef->name()->value() == ("max_ship_class")) {
 									Text classname;
 									GetDefText(classname, pdef, filename);
-									MaxShipClass = UShip::ClassForName(classname);
+									MaxShipClass = Ship::ClassForName(classname);
 								}
 
 								else if (pdef->name()->value().indexOf("grant") == 0)

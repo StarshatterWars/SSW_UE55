@@ -7,8 +7,8 @@
 #include "RadioTraffic.h"
 #include "Instruction.h"
 
-//#include "Contact.h"
-#include "Element.h"
+#include "SimContact.h"
+#include "SimElement.h"
 #include "Mission.h"
 #include "Ship.h"
 #include "ShipDesign.h"

@@ -1,67 +1,71 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Foundation
+	SUBSYSTEM:    nGen.lib
 	FILE:         RLoc.h
 	AUTHOR:       Carlos Bott
 
+	ORIGINAL AUTHOR AND STUDIO:
+	John DiCamillo / Destroyer Studios LLC
+
 	OVERVIEW
 	========
-	Navigation Point class implementation
+	Relative Location (RLoc) class declaration
 */
-
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Types.h"
-#include "Geometry.h"
 
-/**
- * 
- */
-class STARSHATTERWARS_API RLoc
+// Minimal Unreal include required for FVector:
+#include "Math/Vector.h"
+
+// +--------------------------------------------------------------------+
+
+class RLoc
 {
 public:
 	RLoc();
-	RLoc(const Point& loc, double d, double dv = 5e3);
-	RLoc(RLoc* rloc, double d, double dv = 5e3);
-	RLoc(const RLoc& r);
+	RLoc(const FVector& InLoc, double InDistance, double InDistanceVar = 5e3);
+	RLoc(RLoc* InRefLoc, double InDistance, double InDistanceVar = 5e3);
+	RLoc(const RLoc& R);
 	~RLoc();
 
 	// accessors:
-	const Point& Location();
-	const Point& BaseLocation()          const { return base_loc; }
-	RLoc* ReferenceLoc()          const { return rloc; }
-	double            Distance()              const { return dex; }
-	double            DistanceVar()           const { return dex_var; }
-	double            Azimuth()               const { return az; }
-	double            AzimuthVar()            const { return az_var; }
-	double            Elevation()             const { return el; }
-	double            ElevationVar()          const { return el_var; }
+	const FVector& Location();
+	const FVector& BaseLocation() const { return BaseLoc; }
+	RLoc* ReferenceLoc() const { return RefLoc; }
+	double             Distance()     const { return Dex; }
+	double             DistanceVar()  const { return DexVar; }
+	double             Azimuth()      const { return Az; }
+	double             AzimuthVar()   const { return AzVar; }
+	double             Elevation()    const { return El; }
+	double             ElevationVar() const { return ElVar; }
 
-	void              Resolve();
+	void               Resolve();
 
 	// mutators:
-	void              SetBaseLocation(const Point& l);
-	void              SetReferenceLoc(RLoc* r) { rloc = r; }
-	void              SetDistance(double d) { dex = (float)d; }
-	void              SetDistanceVar(double dv) { dex_var = (float)dv; }
-	void              SetAzimuth(double a) { az = (float)a; }
-	void              SetAzimuthVar(double av) { az_var = (float)av; }
-	void              SetElevation(double e) { el = (float)e; }
-	void              SetElevationVar(double ev) { el_var = (float)ev; }
+	void               SetBaseLocation(const FVector& InBaseLoc);
+	void               SetReferenceLoc(RLoc* InRef) { RefLoc = InRef; }
+	void               SetDistance(double InDistance) { Dex = (float)InDistance; }
+	void               SetDistanceVar(double InVar) { DexVar = (float)InVar; }
+	void               SetAzimuth(double InAzimuth) { Az = (float)InAzimuth; }
+	void               SetAzimuthVar(double InVar) { AzVar = (float)InVar; }
+	void               SetElevation(double InElevation) { El = (float)InElevation; }
+	void               SetElevationVar(double InVar) { ElVar = (float)InVar; }
 
 private:
-	Point             loc;
-	Point             base_loc;
-	RLoc* rloc;
+	FVector            Loc = FVector::ZeroVector;
+	FVector            BaseLoc = FVector::ZeroVector;
+	RLoc* RefLoc = nullptr;
 
-	float             dex;
-	float             dex_var;
-	float             az;
-	float             az_var;
-	float             el;
-	float             el_var;
+	float              Dex = 0.0f;
+	float              DexVar = 0.0f;
+	float              Az = 0.0f;
+	float              AzVar = 0.0f;
+	float              El = 0.0f;
+	float              ElVar = 0.0f;
 };
+
+// +--------------------------------------------------------------------+

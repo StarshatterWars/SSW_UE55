@@ -1,17 +1,18 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
-	FILE:         Element.cpp
+	SUBSYSTEM:    Stars
+	FILE:         SimElement.cpp
 	AUTHOR:       Carlos Bott
+	ORIGINAL:     John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
-	Package Element (e.g. Flight) class
+	Package Element (e.g. Flight) class implementation
 */
 
-#include "Element.h"
+#include "SimElement.h"
 #include "Instruction.h"
 #include "RadioMessage.h"
 #include "RadioHandler.h"
@@ -20,46 +21,66 @@
 //#include "NetUtil.h"
 
 #include "Game.h"
-#include "SSWGameInstance.h"
+
+// Minimal Unreal include required for UE_LOG in a .cpp:
+#include "Logging/LogMacros.h"
+
+// +----------------------------------------------------------------------+
+
+#ifndef LOG_SIM
+#define LOG_SIM LogTemp
+#endif
 
 static int id_key = 1000;
 
-Element::Element(const char* call_sign, int a_iff, EMISSIONTYPE a_type)
-{	id = id_key++;
-	name = call_sign;
-	type = a_type;
-	iff = a_iff;
-	player = 0;
-	command_ai = 1;
-	commander = 0;
-	assignment = 0;
-	carrier = 0;
-	combat_group = 0;
-	combat_unit = 0;
-	launch_time = 0;
-	hold_time = 0;
-	zone_lock = 0;
-	respawns = 0;
-	count = 0;
-	rogue = false;
-	playable = true;
-	intel = 0;
-
+SimElement::SimElement(const char* call_sign, int a_iff, int a_type)
+	: id(id_key++)
+	, iff(a_iff)
+	, type(a_type)
+	, player(0)
+	, command_ai(1)
+	, respawns(0)
+	, intel(0)
+	, name(call_sign)
+	, count(0)
+	, commander(0)
+	, assignment(0)
+	, carrier(0)
+	, squadron()
+	, combat_group(0)
+	, combat_unit(0)
+	, launch_time(0)
+	, hold_time(0)
+	, rogue(false)
+	, playable(true)
+	, zone_lock(false)
+	, load{ 0 }
+{
 	if (!call_sign) {
 		char buf[32];
 		sprintf_s(buf, "Pkg %d", id);
 		name = buf;
 	}
 
-	id_key = 1000;
 	SetLoadout(0);
 }
 
+SimElement::~SimElement()
+{
+	flight_plan.destroy();
+	objectives.destroy();
+	instructions.destroy();
+
+	for (int i = 0; i < ships.size(); i++)
+		ships[i]->SetElement(0);
+
+	respawns = 0;
+}
 
 // +----------------------------------------------------------------------+
 
 int
-Element::AddShip(UShip* ship, int index)
+SimElement::AddShip(Ship* ship, int index)
 {
 	if (ship && !ships.contains(ship)) {
 		Observe(ship);
@@ -74,27 +95,27 @@ Element::AddShip(UShip* ship, int index)
 
 		ship->SetElement(this);
 
-		if (respawns < ship->GetRespawnCount())
-			respawns = ship->GetRespawnCount();
+		if (respawns < ship->RespawnCount())
+			respawns = ship->RespawnCount();
 	}
 
 	return index;
 }
 
 void
-Element::DelShip(UShip* ship)
+SimElement::DelShip(Ship* ship)
 {
 	if (ship && ships.contains(ship)) {
 		ships.remove(ship);
 		ship->SetElement(0);
 
 		if (ships.isEmpty())
-			respawns = ship->GetRespawnCount();
+			respawns = ship->RespawnCount();
 	}
 }
 
-UShip*
-Element::GetShip(int index)
+Ship*
+SimElement::GetShip(int index)
 {
 	if (index >= 1 && index <= ships.size())
 		return ships[index - 1];
@@ -103,33 +124,33 @@ Element::GetShip(int index)
 }
 
 int
-Element::GetShipClass()
+SimElement::GetShipClass()
 {
 	if (ships.size())
-		return ships[0]->GetShipClass();
+		return ships[0]->Class();
 
 	return 0;
 }
 
 int
-Element::FindIndex(const UShip* s)
+SimElement::FindIndex(const Ship* s)
 {
 	return ships.index(s) + 1;
 }
 
 bool
-Element::Contains(const UShip* s)
+SimElement::Contains(const Ship* s)
 {
 	return ships.contains(s);
 }
 
 bool
-Element::IsActive() const
+SimElement::IsActive() const
 {
 	bool active = false;
 
 	for (int i = 0; i < ships.size() && !active; i++) {
-		UShip* s = ships[i];
+		Ship* s = ships[i];
 		if (s->Life() && s->MissionClock())
 			active = true;
 	}
@@ -138,7 +159,7 @@ Element::IsActive() const
 }
 
 bool
-Element::IsFinished() const
+SimElement::IsFinished() const
 {
 	bool finished = false;
 
@@ -147,11 +168,13 @@ Element::IsFinished() const
 
 		if (ships.size() > 0) {
 			for (int i = 0; i < ships.size() && finished; i++) {
-				UShip* s = ships[i];
-				if (s->GetRespawnCount() > 0 ||
+				Ship* s = ships[i];
+				if (s->RespawnCount() > 0 ||
 					s->MissionClock() == 0 ||
-					s->Life() && !s->GetInbound())
+					(s->Life() && !s->GetInbound()))
+				{
 					finished = false;
+				}
 			}
 		}
 	}
@@ -159,8 +182,8 @@ Element::IsFinished() const
 	return finished;
 }
 
-/*bool
-Element::IsNetObserver() const
+bool
+SimElement::IsNetObserver() const
 {
 	bool observer = !IsSquadron();
 
@@ -172,21 +195,21 @@ Element::IsNetObserver() const
 	}
 
 	return observer;
-}*/
+}
 
 bool
-Element::IsSquadron() const
+SimElement::IsSquadron() const
 {
 	return count > 0;
 }
 
 bool
-Element::IsStatic() const
+SimElement::IsStatic() const
 {
 	if (IsSquadron() || IsFinished())
 		return false;
 
-	const UShip* s = ships.at(0);
+	const Ship* s = ships.at(0);
 	if (s && s->IsStatic())
 		return true;
 
@@ -196,7 +219,7 @@ Element::IsStatic() const
 // +----------------------------------------------------------------------+
 
 bool
-Element::IsHostileTo(const UShip* s) const
+SimElement::IsHostileTo(const Ship* s) const
 {
 	if (iff <= 0 || iff >= 100 || !s || launch_time == 0 || IsFinished())
 		return false;
@@ -219,7 +242,7 @@ Element::IsHostileTo(const UShip* s) const
 }
 
 bool
-Element::IsHostileTo(int iff_code) const
+SimElement::IsHostileTo(int iff_code) const
 {
 	if (iff <= 0 || iff >= 100 || launch_time == 0 || IsFinished())
 		return false;
@@ -234,7 +257,7 @@ Element::IsHostileTo(int iff_code) const
 }
 
 bool
-Element::IsObjectiveTargetOf(const UShip* s) const
+SimElement::IsObjectiveTargetOf(const Ship* s) const
 {
 	if (!s || launch_time == 0 || IsFinished())
 		return false;
@@ -248,7 +271,7 @@ Element::IsObjectiveTargetOf(const UShip* s) const
 		int         o_len = 0;
 
 		if (o_name && *o_name)
-			o_len = strlen(o_name);
+			o_len = (int)strlen(o_name);
 
 		if (e_len < o_len)
 			o_len = e_len;
@@ -257,7 +280,7 @@ Element::IsObjectiveTargetOf(const UShip* s) const
 			return true;
 	}
 
-	Element* elem = s->GetElement();
+	SimElement* elem = s->GetElement();
 	if (elem) {
 		for (int i = 0; i < elem->NumObjectives(); i++) {
 			Instruction* obj = elem->GetObjective(i);
@@ -267,7 +290,7 @@ Element::IsObjectiveTargetOf(const UShip* s) const
 				int         o_len = 0;
 
 				if (o_name && *o_name)
-					o_len = strlen(o_name);
+					o_len = (int)strlen(o_name);
 
 				if (e_len < o_len)
 					o_len = e_len;
@@ -284,39 +307,39 @@ Element::IsObjectiveTargetOf(const UShip* s) const
 // +----------------------------------------------------------------------+
 
 void
-Element::SetLaunchTime(DWORD t)
+SimElement::SetLaunchTime(DWORD t)
 {
 	if (launch_time == 0 || t == 0)
 		launch_time = t;
 }
 
 double
-Element::GetHoldTime()
+SimElement::GetHoldTime()
 {
 	return hold_time;
 }
 
 void
-Element::SetHoldTime(double t)
+SimElement::SetHoldTime(double t)
 {
 	if (t >= 0)
 		hold_time = t;
 }
 
 bool
-Element::GetZoneLock()
+SimElement::GetZoneLock()
 {
 	return zone_lock;
 }
 
 void
-Element::SetZoneLock(bool z)
+SimElement::SetZoneLock(bool z)
 {
 	zone_lock = z;
 }
 
 void
-Element::SetLoadout(int* l)
+SimElement::SetLoadout(int* l)
 {
 	if (l) {
 		CopyMemory(load, l, sizeof(load));
@@ -330,33 +353,39 @@ Element::SetLoadout(int* l)
 // +----------------------------------------------------------------------+
 
 bool
-Element::Update(USimObject* obj)
+SimElement::Update(SimObject* obj)
 {
 	// false alarm, keep watching:
-	if (obj->Life() != 0) {
-		::Print("Element (%s) false update on (%s) life = %f\n", Name().data(), obj->Name(), obj->Life());
+	if (obj && obj->Life() != 0) {
+		UE_LOG(LOG_SIM, Warning, TEXT("SimElement (%hs) false update on (%hs) life = %f"),
+			Name().data(),
+			obj->Name(),
+			obj->Life());
 		return false;
 	}
 
-	UShip* s = (UShip*)obj;
+	Ship* s = (Ship*)obj;
 	ships.remove(s);
 
 	if (ships.isEmpty())
-		respawns = s->GetRespawnCount();
+		respawns = s->RespawnCount();
 
 	return SimObserver::Update(obj);
 }
 
 const char*
-Element::GetObserverName() const
+SimElement::GetObserverName() const
 {
-	return (const char*)(Text("Element ") + Name());
+	// Preserve original API (const char*) without pointer truncation:
+	static char Buf[128];
+	std::snprintf(Buf, sizeof(Buf), "SimElement %s", Name().data());
+	return Buf;
 }
 
 // +----------------------------------------------------------------------+
 
 void
-Element::AddNavPoint(Instruction* pt, Instruction* afterPoint, bool send)
+SimElement::AddNavPoint(Instruction* pt, Instruction* afterPoint, bool send)
 {
 	if (pt && !flight_plan.contains(pt)) {
 		int index = -1;
@@ -369,19 +398,18 @@ Element::AddNavPoint(Instruction* pt, Instruction* afterPoint, bool send)
 			else
 				flight_plan.append(pt);
 		}
-
 		else {
 			flight_plan.append(pt);
 		}
 
-		//if (send) {
-		//	NetUtil::SendNavData(true, this, index, pt);
-		//}
+		if (send) {
+			NetUtil::SendNavData(true, this, index, pt);
+		}
 	}
 }
 
 void
-Element::DelNavPoint(Instruction* pt, bool send)
+SimElement::DelNavPoint(Instruction* pt, bool send)
 {
 	// XXX MEMORY LEAK
 	// This is a small memory leak, but I'm not sure if it is
@@ -393,31 +421,31 @@ Element::DelNavPoint(Instruction* pt, bool send)
 		int index = flight_plan.index(pt);
 		flight_plan.remove(pt);
 
-		//if (send) {
-		//	NetUtil::SendNavDelete(this, index);
-		//}
+		if (send) {
+			NetUtil::SendNavDelete(this, index);
+		}
 	}
 }
 
 // +----------------------------------------------------------------------+
 
 void
-Element::ClearFlightPlan(bool send)
+SimElement::ClearFlightPlan(bool send)
 {
 	hold_time = 0;
 	flight_plan.destroy();
 	objectives.destroy();
 	instructions.destroy();
 
-	//if (send) {
-	//	NetUtil::SendNavDelete(this, -1);
-	//}
+	if (send) {
+		NetUtil::SendNavDelete(this, -1);
+	}
 }
 
 // +----------------------------------------------------------------------+
 
 Instruction*
-Element::GetNextNavPoint()
+SimElement::GetNextNavPoint()
 {
 	if (hold_time <= 0 && flight_plan.size() > 0) {
 		ListIter<Instruction> iter = flight_plan;
@@ -438,7 +466,7 @@ Element::GetNextNavPoint()
 // +----------------------------------------------------------------------+
 
 int
-Element::GetNavIndex(const Instruction* n)
+SimElement::GetNavIndex(const Instruction* n)
 {
 	int index = 0;
 
@@ -457,13 +485,13 @@ Element::GetNavIndex(const Instruction* n)
 // +----------------------------------------------------------------------+
 
 List<Instruction>&
-Element::GetFlightPlan()
+SimElement::GetFlightPlan()
 {
 	return flight_plan;
 }
 
 int
-Element::FlightPlanLength()
+SimElement::FlightPlanLength()
 {
 	return flight_plan.size();
 }
@@ -471,26 +499,25 @@ Element::FlightPlanLength()
 // +----------------------------------------------------------------------+
 
 void
-Element::ClearObjectives()
+SimElement::ClearObjectives()
 {
 	objectives.destroy();
 }
 
 void
-Element::AddObjective(Instruction* obj)
+SimElement::AddObjective(Instruction* obj)
 {
 	objectives.append(obj);
 }
 
 Instruction*
-Element::GetObjective(int index)
+SimElement::GetObjective(int index)
 {
 	if (objectives.isEmpty())
 		return 0;
 
 	if (index < 0)
 		index = 0;
-
 	else if (index >= objectives.size())
 		index = index % objectives.size();
 
@@ -498,7 +525,7 @@ Element::GetObjective(int index)
 }
 
 Instruction*
-Element::GetTargetObjective()
+SimElement::GetTargetObjective()
 {
 	for (int i = 0; i < objectives.size(); i++) {
 		Instruction* obj = objectives[i];
@@ -527,19 +554,19 @@ Element::GetTargetObjective()
 // +----------------------------------------------------------------------+
 
 void
-Element::ClearInstructions()
+SimElement::ClearInstructions()
 {
 	instructions.clear();
 }
 
 void
-Element::AddInstruction(const char* instr)
+SimElement::AddInstruction(const char* instr)
 {
-	instructions.append(new Text(instr));
+	instructions.append(new(__FILE__, __LINE__) Text(instr));
 }
 
 Text
-Element::GetInstruction(int index)
+SimElement::GetInstruction(int index)
 {
 	if (instructions.isEmpty())
 		return Text();
@@ -556,7 +583,7 @@ Element::GetInstruction(int index)
 // +----------------------------------------------------------------------+
 
 void
-Element::ResumeAssignment()
+SimElement::ResumeAssignment()
 {
 	SetAssignment(0);
 
@@ -579,28 +606,26 @@ Element::ResumeAssignment()
 		}
 	}
 
-	/*if (objective) {
-		USim* sim = SSWInstance->Sim;
-		
-		//USim::GetSim();
+	if (objective) {
+		Sim* sim = Sim::GetSim();
 
-		ListIter<Element> iter = sim->GetElements();
+		ListIter<SimElement> iter = sim->GetElements();
 		while (++iter) {
-			Element* elem = iter.value();
-			USimObject* tgt = objective->GetTarget();
+			SimElement* elem = iter.value();
+			SimObject* tgt = objective->GetTarget();
 
-			if (tgt && tgt->Type() == USimObject::SIM_SHIP && elem->Contains((const UShip*)tgt)) {
+			if (tgt && tgt->Type() == SimObject::SIM_SHIP && elem->Contains((const Ship*)tgt)) {
 				SetAssignment(elem);
 				return;
 			}
 		}
-	}*/
+	}
 }
 
 // +----------------------------------------------------------------------+
 
 void
-Element::HandleRadioMessage(RadioMessage* msg)
+SimElement::HandleRadioMessage(RadioMessage* msg)
 {
 	if (!msg) return;
 
@@ -612,14 +637,13 @@ Element::HandleRadioMessage(RadioMessage* msg)
 	int full_report = ships.contains(msg->Sender());
 	int reported = false;
 
-	ListIter<UShip> s = ships;
+	ListIter<Ship> s = ships;
 	while (++s) {
 		if (rh.ProcessMessage(msg, s.value())) {
 			if (full_report) {
 				if (s.value() != msg->Sender())
 					rh.AcknowledgeMessage(msg, s.value());
 			}
-
 			else if (!reported) {
 				rh.AcknowledgeMessage(msg, s.value());
 				reported = true;
@@ -631,7 +655,7 @@ Element::HandleRadioMessage(RadioMessage* msg)
 // +----------------------------------------------------------------------+
 
 bool
-Element::CanCommand(Element* e)
+SimElement::CanCommand(SimElement* e)
 {
 	while (e) {
 		if (e->commander == this)
@@ -645,7 +669,7 @@ Element::CanCommand(Element* e)
 // +----------------------------------------------------------------------+
 
 void
-Element::ExecFrame(double seconds)
+SimElement::ExecFrame(double seconds)
 {
 	if (hold_time > 0) {
 		hold_time -= seconds;
@@ -664,9 +688,8 @@ Element::ExecFrame(double seconds)
 // +----------------------------------------------------------------------+
 
 void
-Element::SetIFF(int siff)
+SimElement::SetIFF(int NewIFF)
 {
 	for (int i = 0; i < ships.size(); i++)
-		ships[i]->SetIFF(siff);
+		ships[i]->SetIFF(NewIFF);
 }
-

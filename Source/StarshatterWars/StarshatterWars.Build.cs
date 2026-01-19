@@ -29,9 +29,12 @@ public class StarshatterWars : ModuleRules
         PublicIncludePaths.AddRange(new string[]
         {
             Path.Combine(ModuleDirectory, "System"),
+            Path.Combine(ModuleDirectory, "Player"),
             Path.Combine(ModuleDirectory, "Planners"),
             Path.Combine(ModuleDirectory, "Space"),
             Path.Combine(ModuleDirectory, "Screen"),
+            Path.Combine(ModuleDirectory, "Ship"),
+            Path.Combine(ModuleDirectory, "Sim"),
             Path.Combine(ModuleDirectory, "Game"),
             Path.Combine(ModuleDirectory, "Levels"),
             Path.Combine(ModuleDirectory, "Actors"),

@@ -1,65 +1,142 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
-
 #pragma once
-#include "CoreMinimal.h"
+
+/*  Project Starshatter 4.5
+    Destroyer Studios LLC
+    Copyright © 1997-2004. All Rights Reserved.
+
+    SUBSYSTEM:    Stars.exe
+    FILE:         CombatUnit.h
+    AUTHOR:       John DiCamillo
+
+    OVERVIEW
+    ========
+    A ship, station, or ground unit in the dynamic campaign.
+*/
+
+#include "Types.h"
+#include "Geometry.h"
+#include "Color.h"
+#include "Text.h"
+#include "List.h"
+#include "GameStructs.h"
+#include "Math/Vector.h"   // FVector
+
+// +--------------------------------------------------------------------+
 
 class CombatGroup;
-class CombatZone;
+class ShipDesign;
 
-/*
- * CombatUnit
- * ----------
- * Leaf-level unit (ship, fighter, facility, etc.)
- * Mirrors Starshatter CombatUnit interface, stripped to essentials.
- */
+// +--------------------------------------------------------------------+
+
 class CombatUnit
 {
 public:
-	CombatUnit();
-	virtual ~CombatUnit();
+    static const char* TYPENAME() { return "CombatUnit"; }
 
-	// Identity
-	int32        GetId() const { return Id; }
-	const FString& GetName() const { return Name; }
+    CombatUnit(const char* n, const char* reg, int t, const char* dname, int number, int i);
+    CombatUnit(const CombatUnit& unit);
 
-	// Ownership / hierarchy
-	CombatGroup* GetGroup() const { return Group; }
-	void         SetGroup(CombatGroup* InGroup);
+    int operator == (const CombatUnit& u) const { return this == &u; }
 
-	// Location / zone
-	const FString& GetRegion() const { return Region; }
-	void           SetRegion(const FString& InRegion);
+    const char* GetDescription()           const;
 
-	CombatZone* GetZone() const { return Zone; }
-	void        SetZone(CombatZone* InZone);
+    int            GetValue()                    const;
+    int            GetSingleValue()              const;
+    bool           CanDefend(CombatUnit* unit)   const;
+    bool           CanLaunch()                   const;
+    double         PowerVersus(CombatUnit* tgt)  const;
+    int            AssignMission();
+    void           CompleteMission();
 
-	// IFF / team
-	int32 GetIFF() const { return Iff; }
-	void  SetIFF(int32 InIff) { Iff = InIff; }
+    double         MaxRange()                    const;
+    double         MaxEffectiveRange()           const;
+    double         OptimumRange()                const;
 
-	// Status flags (minimal but expandable)
-	bool IsDestroyed() const { return bDestroyed; }
-	void SetDestroyed(bool bInDestroyed) { bDestroyed = bInDestroyed; }
+    void           Engage(CombatUnit* tgt);
+    void           Disengage();
 
-	// Lifecycle (stubs)
-	virtual void ExecFrame(double /*DeltaSeconds*/) {}
-	virtual void Reset() {}
+    // accessors and mutators:
+    const Text& Name()                        const { return name; }
+    const Text& Registry()                    const { return regnum; }
+    const Text& DesignName()                  const { return design_name; }
+    const Text& Skin()                        const { return skin; }
+    void           SetSkin(const char* s) { skin = s; }
+
+    int            Type()                        const { return type; }
+    int            Count()                       const { return count; }
+    int            LiveCount()                   const { return count - dead_count; }
+    int            DeadCount()                   const { return dead_count; }
+    void           SetDeadCount(int n) { dead_count = n; }
+    int            Kill(int n);
+
+    int            Available()                   const { return available; }
+    int            GetIFF()                      const { return iff; }
+
+    bool           IsLeader()                    const { return leader; }
+    void           SetLeader(bool l) { leader = l; }
+
+    FVector        Location()                    const { return location; }
+    void           MoveTo(const FVector& loc);
+
+    Text           GetRegion()                   const { return region; }
+    void           SetRegion(Text rgn) { region = rgn; }
+
+    CombatGroup* GetCombatGroup()              const { return group; }
+    void           SetCombatGroup(CombatGroup* g) { group = g; }
+
+    Color          MarkerColor()                 const;
+    bool           IsGroundUnit()                const;
+    bool           IsStarship()                  const;
+    bool           IsDropship()                  const;
+    bool           IsStatic()                    const;
+
+    CombatUnit* GetCarrier()                  const { return carrier; }
+    void           SetCarrier(CombatUnit* c) { carrier = c; }
+
+    const ShipDesign* GetDesign();
+    int            GetShipClass()                const;
+
+    List<CombatUnit>& GetAttackers() { return attackers; }
+
+    double         GetPlanValue()                const { return plan_value; }
+    void           SetPlanValue(int v) { plan_value = v; }
+
+    double         GetSustainedDamage()          const { return sustained_damage; }
+    void           SetSustainedDamage(double d) { sustained_damage = d; }
+
+    double         GetHeading()                  const { return heading; }
+    void           SetHeading(double d) { heading = d; }
+
+    double         GetNextJumpTime()             const { return jump_time; }
 
 private:
-	// Identity
-	int32   Id = 0;
-	FString Name;
+    Text                 name;
+    Text                 regnum;
+    Text                 design_name;
+    Text                 skin;
 
-	// Hierarchy
-	CombatGroup* Group = nullptr;
+    int                  type;
+    const ShipDesign* design;
 
-	// Location
-	FString     Region;
-	CombatZone* Zone = nullptr;
+    int                  count;
+    int                  dead_count;
+    int                  available;
 
-	// Team
-	int32 Iff = 0;
+    int                  iff;
+    bool                 leader;
 
-	// State
-	bool bDestroyed = false;
+    Text                 region;
+
+    FVector              location;        // TEMPLATE: was Point
+
+    double               plan_value;      // scratch pad for plan modules
+    double               launch_time;
+    double               jump_time;
+    double               sustained_damage;
+    double               heading;
+
+    CombatUnit* carrier;
+    List<CombatUnit>     attackers;
+    CombatUnit* target;
+    CombatGroup* group;
 };

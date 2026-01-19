@@ -1,31 +1,25 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	SUBSYSTEM:    Stars.exe
 	FILE:         SimEvent.cpp
 	AUTHOR:       Carlos Bott
+	ORIGINAL:     John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
-	OVERVIEW
-	========
-	Simulation Universe and Region classes
+	Simulation Events for mission summary
 */
 
-
-#include "SimEvent.h"
 #include "SimEvent.h"
 #include "Sim.h"
 #include "Game.h"
 
-SimEvent::SimEvent()
-{
-}
+// Minimal Unreal logging support:
+#include "Logging/LogMacros.h"
 
-SimEvent::~SimEvent()
-{
-}
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSimEvent, Log, All);
 
 // +====================================================================+
 
@@ -34,11 +28,9 @@ List<ShipStats>   records;
 // +====================================================================+
 
 SimEvent::SimEvent(int e, const char* t, const char* i)
+	: event(e), count(0)
 {
-	event = e;
-	count = 0;
-	
-	USim* sim = USim::GetSim();
+	Sim* sim = Sim::GetSim();
 	if (sim) {
 		time = (int)sim->MissionClock();
 	}
@@ -48,6 +40,10 @@ SimEvent::SimEvent(int e, const char* t, const char* i)
 
 	SetTarget(t);
 	SetInfo(i);
+}
+
+SimEvent::~SimEvent()
+{
 }
 
 // +--------------------------------------------------------------------+
@@ -267,5 +263,3 @@ ShipStats::Find(const char* name)
 
 	return 0;
 }
-
-

@@ -1,42 +1,74 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Foundation
+	SUBSYSTEM:    nGen.lib
 	FILE:         RLoc.cpp
 	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR AND STUDIO:
+	John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
 	Navigation Point class implementation
 */
 
-
 #include "RLoc.h"
 #include "Random.h"
+#include "Math/UnrealMathUtility.h"
+// Minimal Unreal include required for FVector math:
+#include "Math/Vector.h"
 
 // +----------------------------------------------------------------------+
 
 RLoc::RLoc()
-	: rloc(0), dex(0), dex_var(5.0e3f), az(0), az_var(3.1415f), el(0), el_var(0.1f)
-{ }
+	: RefLoc(nullptr),
+	Dex(0.0f),
+	DexVar(5.0e3f),
+	Az(0.0f),
+	AzVar(3.1415f),
+	El(0.0f),
+	ElVar(0.1f)
+{
+}
 
-RLoc::RLoc(const Point& l, double d, double dv)
-	: loc(l), base_loc(l), rloc(0), dex((float)d), dex_var((float)dv),
-	az(0), az_var(3.1415f), el(0), el_var(0.1f)
-{ }
+RLoc::RLoc(const FVector& InLoc, double InDistance, double InDistanceVar)
+	: Loc(InLoc),
+	BaseLoc(InLoc),
+	RefLoc(nullptr),
+	Dex((float)InDistance),
+	DexVar((float)InDistanceVar),
+	Az(0.0f),
+	AzVar(3.1415f),
+	El(0.0f),
+	ElVar(0.1f)
+{
+}
 
-RLoc::RLoc(RLoc* l, double d, double dv)
-	: rloc(l), dex((float)d), dex_var((float)dv),
-	az(0), az_var(3.1415f), el(0), el_var(0.1f)
-{ }
+RLoc::RLoc(RLoc* InRefLoc, double InDistance, double InDistanceVar)
+	: RefLoc(InRefLoc),
+	Dex((float)InDistance),
+	DexVar((float)InDistanceVar),
+	Az(0.0f),
+	AzVar(3.1415f),
+	El(0.0f),
+	ElVar(0.1f)
+{
+}
 
-RLoc::RLoc(const RLoc& r)
-	: loc(r.loc), base_loc(r.base_loc), rloc(r.rloc),
-	dex(r.dex), dex_var(r.dex_var),
-	az(r.az), az_var(r.az_var),
-	el(r.el), el_var(r.el_var)
-{ }
+RLoc::RLoc(const RLoc& R)
+	: Loc(R.Loc),
+	BaseLoc(R.BaseLoc),
+	RefLoc(R.RefLoc),
+	Dex(R.Dex),
+	DexVar(R.DexVar),
+	Az(R.Az),
+	AzVar(R.AzVar),
+	El(R.El),
+	ElVar(R.ElVar)
+{
+}
 
 RLoc::~RLoc()
 {
@@ -44,11 +76,13 @@ RLoc::~RLoc()
 
 // +----------------------------------------------------------------------+
 
-const Point&
+const FVector&
 RLoc::Location()
 {
-	if (rloc || dex > 0) Resolve();
-	return loc;
+	if (RefLoc || Dex > 0.0f)
+		Resolve();
+
+	return Loc;
 }
 
 // +----------------------------------------------------------------------+
@@ -56,34 +90,37 @@ RLoc::Location()
 void
 RLoc::Resolve()
 {
-	if (rloc) {
-		base_loc = rloc->Location();
-		rloc = 0;
+	if (RefLoc) {
+		BaseLoc = RefLoc->Location();
+		RefLoc = nullptr;
 	}
 
-	if (dex > 0) {
-		double d = dex + RandomDouble(-dex_var, dex_var);
-		double a = az + RandomDouble(-az_var, az_var);
-		double e = el + RandomDouble(-el_var, el_var);
+	if (Dex > 0.0f) {
+		const double D = (double)Dex + (double)FMath::FRandRange(-(float)DexVar, (float)DexVar);
+		const double A = (double)Az + (double)FMath::FRandRange(-(float)AzVar, (float)AzVar);
+		const double E = (double)El + (double)FMath::FRandRange(-(float)ElVar, (float)ElVar);
 
-		Point  p = Point(d * sin(a),
-			d * -cos(a),
-			d * sin(e));
+		// Original Starshatter coordinate intent preserved:
+		// x = d*sin(a), y = -d*cos(a), z = d*sin(e)
+		const FVector Offset(
+			(float)(D * sin(A)),
+			(float)(D * -cos(A)),
+			(float)(D * sin(E))
+		);
 
-		loc = base_loc + p;
-		dex = 0;
+		Loc = BaseLoc + Offset;
+		Dex = 0.0f;
 	}
 	else {
-		loc = base_loc;
+		Loc = BaseLoc;
 	}
 }
 
 // +----------------------------------------------------------------------+
 
 void
-RLoc::SetBaseLocation(const Point& l)
+RLoc::SetBaseLocation(const FVector& InBaseLoc)
 {
-	base_loc = l;
-	loc = l;
+	BaseLoc = InBaseLoc;
+	Loc = InBaseLoc;
 }
-

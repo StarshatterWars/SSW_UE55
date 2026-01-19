@@ -1,19 +1,22 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	SUBSYSTEM:    Stars.exe
 	FILE:         Instruction.cpp
 	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR AND STUDIO:
+	John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
 	Navigation Point class implementation
 */
 
-
 #include "Instruction.h"
-#include "Element.h"
+
+#include "SimElement.h"
 #include "RadioMessage.h"
 #include "Ship.h"
 #include "Sim.h"
@@ -21,86 +24,84 @@
 #include "Game.h"
 #include "Text.h"
 
+// Minimal Unreal includes (used only for logging + FVector):
+#include "Math/Vector.h"
+#include "Logging/LogMacros.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsInstruction, Log, All);
+
 // +----------------------------------------------------------------------+
 
-Instruction::Instruction(int act, const char* tgt)	
-{ 
-	region = 0;
-	action = act;
-	formation = 0;
-	tgt_name = tgt;
-	status = PENDING;
-	speed = 0;
-	target = 0;
-	emcon = 0;
-	wep_free = 0;
-	priority = PRIMARY;
-	farcast = 0;
-	hold_time = 0;
+Instruction::Instruction(int act, const char* tgt)
+	: region(0),
+	action(act),
+	formation(0),
+	tgt_name(tgt),
+	status(PENDING),
+	speed(0),
+	target(0),
+	emcon(0),
+	wep_free(0),
+	priority(PRIMARY),
+	farcast(0),
+	hold_time(0)
+{
 }
 
-Instruction::Instruction(const char* rgn, Point loc, int act)
+Instruction::Instruction(const char* rgn, FVector loc, int act)
+	: region(0),
+	action(act),
+	formation(0),
+	status(PENDING),
+	speed(0),
+	target(0),
+	emcon(0),
+	wep_free(0),
+	priority(PRIMARY),
+	farcast(0),
+	hold_time(0)
 {
-	region = 0;
-	action = act;
-	formation = 0;
-	status = PENDING;
-	speed = 0;
-	target = 0;
-	emcon = 0;
-	wep_free = 0;
-	priority = PRIMARY;
-	farcast = 0;
-	hold_time = 0;
-
 	rgn_name = rgn;
 	rloc.SetBaseLocation(loc);
 	rloc.SetDistance(0);
 }
 
-Instruction::Instruction(SimRegion* rgn, Point loc, int act)
+Instruction::Instruction(SimRegion* rgn, FVector loc, int act)
+	: region(rgn),
+	action(act),
+	formation(0),
+	status(PENDING),
+	speed(0),
+	target(0),
+	emcon(0),
+	wep_free(0),
+	priority(PRIMARY),
+	farcast(0),
+	hold_time(0)
 {
-	region = 0;
-	action = act;
-	formation = 0;
-	status = PENDING;
-	speed = 0;
-	target = 0;
-	emcon = 0;
-	wep_free = 0;
-	priority = PRIMARY;
-	farcast = 0;
-	hold_time = 0;
-
-	//rgn_name = region->Name();
+	rgn_name = region->Name();
 	rloc.SetBaseLocation(loc);
 	rloc.SetDistance(0);
 }
 
 Instruction::Instruction(const Instruction& instr)
+	: region(instr.region),
+	rgn_name(instr.rgn_name),
+	rloc(instr.rloc),
+	action(instr.action),
+	formation(instr.formation),
+	status(instr.status),
+	speed(instr.speed),
+	target(0),
+	tgt_name(instr.tgt_name),
+	tgt_desc(instr.tgt_desc),
+	emcon(instr.emcon),
+	wep_free(instr.wep_free),
+	priority(instr.priority),
+	farcast(instr.farcast),
+	hold_time(instr.hold_time)
 {
-	region = instr.region;
-	rgn_name = instr.rgn_name;
-	rloc = instr.rloc;
-	action = instr.action;
-	formation = instr.formation;
-	status = instr.status;
-	speed = instr.speed;
-	target = 0;
-	tgt_name = instr.tgt_name;
-	tgt_desc = instr.tgt_desc;
-	emcon = instr.emcon;
-	wep_free = instr.wep_free;
-	priority = instr.priority;
-	farcast = instr.farcast;
-	hold_time = instr.hold_time;
-
 	SetTarget(instr.target);
-}
-
-
-Instruction::Instruction()
-{
 }
 
 Instruction::~Instruction()
@@ -110,7 +111,7 @@ Instruction::~Instruction()
 // +--------------------------------------------------------------------+
 
 Instruction&
-Instruction::operator = (const Instruction& n)
+Instruction::operator=(const Instruction& n)
 {
 	rgn_name = n.rgn_name;
 	region = n.region;
@@ -135,7 +136,7 @@ Instruction::operator = (const Instruction& n)
 
 // +--------------------------------------------------------------------+
 
-Point
+FVector
 Instruction::Location() const
 {
 	Instruction* pThis = (Instruction*)this;
@@ -143,7 +144,7 @@ Instruction::Location() const
 }
 
 void
-Instruction::SetLocation(const Point& l)
+Instruction::SetLocation(const FVector& l)
 {
 	rloc.SetBaseLocation(l);
 	rloc.SetReferenceLoc(0);
@@ -152,14 +153,14 @@ Instruction::SetLocation(const Point& l)
 
 // +----------------------------------------------------------------------+
 
-USimObject*
+SimObject*
 Instruction::GetTarget()
 {
 	if (!target && tgt_name.length() > 0) {
-		USim* sim = USim::GetSim();
+		Sim* sim = Sim::GetSim();
 
 		if (sim) {
-			UShip* s = sim->FindShip(tgt_name, rgn_name);
+			Ship* s = sim->FindShip(tgt_name, rgn_name);
 
 			if (s) {
 				target = s;
@@ -184,7 +185,7 @@ Instruction::SetTarget(const char* n)
 }
 
 void
-Instruction::SetTarget(USimObject* s)
+Instruction::SetTarget(SimObject* s)
 {
 	if (s && target != s) {
 		tgt_name = s->Name();
@@ -213,7 +214,7 @@ Instruction::ClearTarget()
 // +----------------------------------------------------------------------+
 
 bool
-Instruction::Update(USimObject* obj)
+Instruction::Update(SimObject* obj)
 {
 	if (target == obj)
 		target = 0;
@@ -230,24 +231,24 @@ Instruction::GetObserverName() const
 // +----------------------------------------------------------------------+
 
 void
-Instruction::Evaluate(UShip* ship)
+Instruction::Evaluate(Ship* ship)
 {
-	USim* sim = USim::GetSim();
+	Sim* sim = Sim::GetSim();
 
 	switch (action) {
 	case VECTOR:
 		break;
 
 	case LAUNCH:
-		if (ship->GetFlightPhase() == UShip::ACTIVE)
+		if (ship->GetFlightPhase() == Ship::ACTIVE)
 			SetStatus(COMPLETE);
 		break;
 
 	case DOCK:
 	case RTB:
 		if (sim->GetPlayerShip() == ship &&
-			(ship->GetFlightPhase() == UShip::DOCKING ||
-				ship->GetFlightPhase() == UShip::DOCKED))
+			(ship->GetFlightPhase() == Ship::DOCKING ||
+				ship->GetFlightPhase() == Ship::DOCKED))
 			SetStatus(COMPLETE);
 		else if (ship->Integrity() < 1)
 			SetStatus(FAILED);
@@ -259,9 +260,9 @@ Instruction::Evaluate(UShip* ship)
 		bool found = false;
 		bool safe = true;
 
-		ListIter<Element> iter = sim->GetElements();
+		ListIter<SimElement> iter = sim->GetElements();
 		while (++iter && !found) {
-			Element* e = iter.value();
+			SimElement* e = iter.value();
 
 			if (e->IsFinished() || e->IsSquadron())
 				continue;
@@ -272,7 +273,7 @@ Instruction::Evaluate(UShip* ship)
 				found = true;
 
 				for (int i = 0; i < e->NumShips(); i++) {
-					UShip* s = e->GetShip(i + 1);
+					Ship* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() < 1)
 						SetStatus(FAILED);
@@ -293,8 +294,8 @@ Instruction::Evaluate(UShip* ship)
 
 		if (status == PENDING && safe &&
 			sim->GetPlayerShip() == ship &&
-			(ship->GetFlightPhase() == UShip::DOCKING ||
-				ship->GetFlightPhase() == UShip::DOCKED)) {
+			(ship->GetFlightPhase() == Ship::DOCKING ||
+				ship->GetFlightPhase() == Ship::DOCKED)) {
 			SetStatus(COMPLETE);
 		}
 	}
@@ -303,19 +304,18 @@ Instruction::Evaluate(UShip* ship)
 	case PATROL:
 	case SWEEP:
 	{
-		USim* simx = USim::GetSim();
 		bool alive = false;
 
-		ListIter<Element> iter = simx->GetElements();
+		ListIter<SimElement> iter = sim->GetElements();
 		while (++iter) {
-			Element* e = iter.value();
+			SimElement* e = iter.value();
 
 			if (e->IsFinished() || e->IsSquadron())
 				continue;
 
 			if (e->GetIFF() && e->GetIFF() != ship->GetIFF()) {
 				for (int i = 0; i < e->NumShips(); i++) {
-					UShip* s = e->GetShip(i + 1);
+					Ship* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() >= 1)
 						alive = true;
@@ -333,19 +333,18 @@ Instruction::Evaluate(UShip* ship)
 	case STRIKE:
 	case ASSAULT:
 	{
-		USim* simx = USim::GetSim();
 		bool alive = false;
 
-		ListIter<Element> iter = simx->GetElements();
+		ListIter<SimElement> iter = sim->GetElements();
 		while (++iter) {
-			Element* e = iter.value();
+			SimElement* e = iter.value();
 
 			if (e->IsFinished() || e->IsSquadron())
 				continue;
 
 			if (e->Name() == tgt_name) {
 				for (int i = 0; i < e->NumShips(); i++) {
-					UShip* s = e->GetShip(i + 1);
+					Ship* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() >= 1)
 						alive = true;
@@ -551,21 +550,21 @@ const char*
 Instruction::ActionName(int a)
 {
 	switch (a) {
-	case VECTOR:      return "Vector";
-	case LAUNCH:      return "Launch";
-	case DOCK:        return "Dock";
-	case RTB:         return "RTB";
+	case VECTOR:    return "Vector";
+	case LAUNCH:    return "Launch";
+	case DOCK:      return "Dock";
+	case RTB:       return "RTB";
 
-	case DEFEND:      return "Defend";
-	case ESCORT:      return "Escort";
-	case PATROL:      return "Patrol";
-	case SWEEP:       return "Sweep";
-	case INTERCEPT:   return "Intercept";
-	case STRIKE:      return "Strike";
-	case ASSAULT:     return "Assault";
-	case RECON:       return "Recon";
+	case DEFEND:    return "Defend";
+	case ESCORT:    return "Escort";
+	case PATROL:    return "Patrol";
+	case SWEEP:     return "Sweep";
+	case INTERCEPT: return "Intercept";
+	case STRIKE:    return "Strike";
+	case ASSAULT:   return "Assault";
+	case RECON:     return "Recon";
 
-	default:          return "Unknown";
+	default:        return "Unknown";
 	}
 }
 
@@ -573,14 +572,14 @@ const char*
 Instruction::StatusName(int s)
 {
 	switch (s) {
-	case PENDING:     return "Pending";
-	case ACTIVE:      return "Active";
-	case SKIPPED:     return "Skipped";
-	case ABORTED:     return "Aborted";
-	case FAILED:      return "Failed";
-	case COMPLETE:    return "Complete";
+	case PENDING:  return "Pending";
+	case ACTIVE:   return "Active";
+	case SKIPPED:  return "Skipped";
+	case ABORTED:  return "Aborted";
+	case FAILED:   return "Failed";
+	case COMPLETE: return "Complete";
 
-	default:          return "Unknown";
+	default:       return "Unknown";
 	}
 }
 
@@ -588,12 +587,12 @@ const char*
 Instruction::FormationName(int f)
 {
 	switch (f) {
-	case DIAMOND:     return "Diamond";
-	case SPREAD:      return "Spread";
-	case BOX:         return "Box";
-	case TRAIL:       return "Trail";
+	case DIAMOND: return "Diamond";
+	case SPREAD:  return "Spread";
+	case BOX:     return "Box";
+	case TRAIL:   return "Trail";
 
-	default:          return "Unknown";
+	default:      return "Unknown";
 	}
 }
 
@@ -601,11 +600,10 @@ const char*
 Instruction::PriorityName(int p)
 {
 	switch (p) {
-	case PRIMARY:     return "Primary";
-	case SECONDARY:   return "Secondary";
-	case BONUS:       return "Bonus";
+	case PRIMARY:   return "Primary";
+	case SECONDARY: return "Secondary";
+	case BONUS:     return "Bonus";
 
-	default:          return "Unknown";
+	default:        return "Unknown";
 	}
 }
-

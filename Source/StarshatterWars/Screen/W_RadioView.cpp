@@ -7,7 +7,7 @@
 //#include "QuantumView.h"
 //#include "HUDView.h"
 #include "Ship.h"
-#include "Element.h"
+#include "SimElement.h"
 #include "Sim.h"
 //#include "Starshatter.h"
 
@@ -350,7 +350,7 @@ void
 UW_RadioView::SendRadioMessage(UShip* shp, MenuItem* item)
 {
 	if (!ship || !item) return;
-	Element* elem = ship->GetElement();
+	SimElement* elem = ship->GetElement();
 	if (!elem) return;
 
 	// check destination:

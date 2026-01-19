@@ -1,0 +1,38 @@
+No F prefix 
+
+Plain C++ class (not a UObject)
+
+Keep Starshatter core types (Text, List, Color, etc.)
+
+Replace render assets like Bitmap with UTexture2D* (forward-declared in the header)
+
+Use forward declarations aggressively to keep the header light
+
+Add minimal Unreal includes only where necessary (e.g., FVector)
+
+Convert all Vec3 andf Point to FVector and include the proper header
+
+Output only the given file 
+
+remove MewmDebug.h (Unreal doesnt support it)
+
+convert all Print type debugging to UE_LOG
+
+Change Author to Carlos Bott
+
+Credit John DiCamillo/ Destroyer Studios as Original Author and Studio
+
+Use Fractal Dev Studios as the Studio
+
+Copyright 2025-2026
+
+Game is called Starshatter Wars
+
+add #pragma once to all header (.h)
+
+apply this template to the pasted file
+
+show complete resultant file
+
+
+
