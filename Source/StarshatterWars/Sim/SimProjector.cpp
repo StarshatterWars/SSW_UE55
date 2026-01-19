@@ -279,14 +279,14 @@ SimProjector::SetWorldspaceClipPlane(FVector& normal, Plane& plane)
 	FVector worldNormal = FVector::ZeroVector;
 	ViewToWorld(normal, worldNormal);
 
-	plane.normal.x = worldNormal.X;
-	plane.normal.y = worldNormal.Y;
-	plane.normal.z = worldNormal.Z;
+	plane.normal.X = worldNormal.X;
+	plane.normal.Y = worldNormal.Y;
+	plane.normal.Z = worldNormal.Z;
 
 	const FVector camPos = Pos();
-	plane.distance = (float)(camPos.X * plane.normal.x +
-		camPos.Y * plane.normal.y +
-		camPos.Z * plane.normal.z +
+	plane.distance = (float)(camPos.X * plane.normal.X +
+		camPos.Y * plane.normal.Y +
+		camPos.Z * plane.normal.Z +
 		CLIP_PLANE_EPSILON);
 }
 
@@ -308,17 +308,17 @@ SimProjector::SetUpFrustum()
 	normal.X = (float)s;
 	normal.Y = 0.0f;
 	normal.Z = (float)c;
-	view_planes[0].normal.x = normal.X;
-	view_planes[0].normal.y = normal.Y;
-	view_planes[0].normal.z = normal.Z;
+	view_planes[0].normal.X = normal.X;
+	view_planes[0].normal.Y = normal.Y;
+	view_planes[0].normal.Z = normal.Z;
 	view_planes[0].distance = CLIP_PLANE_EPSILON;
 	SetWorldspaceClipPlane(normal, world_planes[0]);
 
 	// Right clip plane
 	normal.X = (float)-s;
-	view_planes[1].normal.x = normal.X;
-	view_planes[1].normal.y = normal.Y;
-	view_planes[1].normal.z = normal.Z;
+	view_planes[1].normal.X = normal.X;
+	view_planes[1].normal.Y = normal.Y;
+	view_planes[1].normal.Z = normal.Z;
 	view_planes[1].distance = CLIP_PLANE_EPSILON;
 	SetWorldspaceClipPlane(normal, world_planes[1]);
 
@@ -330,17 +330,17 @@ SimProjector::SetUpFrustum()
 	normal.X = 0.0f;
 	normal.Y = (float)s;
 	normal.Z = (float)c;
-	view_planes[2].normal.x = normal.X;
-	view_planes[2].normal.y = normal.Y;
-	view_planes[2].normal.z = normal.Z;
+	view_planes[2].normal.X = normal.X;
+	view_planes[2].normal.Y = normal.Y;
+	view_planes[2].normal.Z = normal.Z;
 	view_planes[2].distance = CLIP_PLANE_EPSILON;
 	SetWorldspaceClipPlane(normal, world_planes[2]);
 
 	// Top clip plane
 	normal.Y = (float)-s;
-	view_planes[3].normal.x = normal.X;
-	view_planes[3].normal.y = normal.Y;
-	view_planes[3].normal.z = normal.Z;
+	view_planes[3].normal.X = normal.X;
+	view_planes[3].normal.Y = normal.Y;
+	view_planes[3].normal.Z = normal.Z;
 	view_planes[3].distance = CLIP_PLANE_EPSILON;
 	SetWorldspaceClipPlane(normal, world_planes[3]);
 
@@ -358,25 +358,29 @@ SimProjector::IsVisible(const FVector& v, float radius) const
 	int visible = 1;
 	int complete = 1;
 
-	Plane* plane = (Plane*)frustum_planes;
+	const Plane* plane = frustum_planes;
+
 	if (infinite) {
 		complete = 0;
 
-		for (int i = 0; visible && (i < NUM_FRUSTUM_PLANES); i++) {
-			const float dot = (float)(v.X * plane->normal.x + v.Y * plane->normal.y + v.Z * plane->normal.z);
+		for (int i = 0; visible && (i < NUM_FRUSTUM_PLANES); ++i, ++plane) {
+			const float dot = FVector::DotProduct(v, plane->normal);
 			visible = (dot >= CLIP_PLANE_EPSILON);
-			plane++;
 		}
 	}
 	else {
-		for (int i = 0; visible && (i < NUM_FRUSTUM_PLANES); i++) {
-			const float dot = (float)(v.X * plane->normal.x + v.Y * plane->normal.y + v.Z * plane->normal.z);
+		for (int i = 0; visible && (i < NUM_FRUSTUM_PLANES); ++i, ++plane) {
+			const float dot = FVector::DotProduct(v, plane->normal);
+
 			visible = ((dot + radius) >= plane->distance);
 			complete = complete && ((dot - radius) >= plane->distance);
-			plane++;
 		}
 	}
 
+	// Return values (legacy Starshatter behavior):
+	// 0 = not visible
+	// 1 = partially visible
+	// 2 = completely inside
 	return visible + complete;
 }
 
@@ -388,40 +392,44 @@ SimProjector::IsVisible(const FVector& v, float radius) const
 int
 SimProjector::IsBoxVisible(const FVector* p) const
 {
-	int i, j, outside = 0;
+	int outside = 0;
 
-	// if all eight corners are outside of the same frustum plane, then the box is notxvisible
-	Plane* plane = (Plane*)frustum_planes;
+	// If all eight corners are outside of the same frustum plane, the box is not visible:
+	const Plane* plane = frustum_planes;
 
 	if (infinite) {
-		for (i = 0; !outside && (i < NUM_FRUSTUM_PLANES); i++) {
-			for (j = 0; j < 8; j++) {
-				const float dot = (float)(p[j].X * plane->normal.x + p[j].Y * plane->normal.y + p[j].Z * plane->normal.z);
-				outside += dot < CLIP_PLANE_EPSILON;
+		for (int i = 0; (outside == 0) && (i < NUM_FRUSTUM_PLANES); ++i, ++plane) {
+
+			int count = 0;
+			for (int j = 0; j < 8; ++j) {
+				const float dot = FVector::DotProduct(p[j], plane->normal);
+				if (dot < CLIP_PLANE_EPSILON)
+					++count;
 			}
 
-			if (outside < 8)
-				outside = 0;
-
-			plane++;
+			// all 8 corners outside this plane:
+			if (count == 8)
+				outside = 1;
 		}
 	}
 	else {
-		for (i = 0; !outside && (i < NUM_FRUSTUM_PLANES); i++) {
-			for (j = 0; j < 8; j++) {
-				const float dot = (float)(p[j].X * plane->normal.x + p[j].Y * plane->normal.y + p[j].Z * plane->normal.z);
-				outside += dot < plane->distance;
+		for (int i = 0; (outside == 0) && (i < NUM_FRUSTUM_PLANES); ++i, ++plane) {
+
+			int count = 0;
+			for (int j = 0; j < 8; ++j) {
+				const float dot = FVector::DotProduct(p[j], plane->normal);
+				if (dot < plane->distance)
+					++count;
 			}
 
-			if (outside < 8)
-				outside = 0;
-
-			plane++;
+			// all 8 corners outside this plane:
+			if (count == 8)
+				outside = 1;
 		}
 	}
 
-	// if notxoutside, then the box is visible
-	return !outside;
+	// if not outside, then the box is visible:
+	return outside ? 0 : 1;
 }
 
 // +--------------------------------------------------------------------+

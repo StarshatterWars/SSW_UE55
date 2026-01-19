@@ -25,11 +25,11 @@ bool GetDefVec(Vec3& dst, TermDef* def, const char* file)
 			UE_LOG(LogTemp, Log, TEXT("WARNING: malformed vector in '%s'"), *FString(file));
 		}
 		else {
-			dst.x = (float)(val->elements()->at(0)->isNumber()->value());
-			dst.y = (float)(val->elements()->at(1)->isNumber()->value());
-			dst.z = (float)(val->elements()->at(2)->isNumber()->value());
+			dst.X = (float)(val->elements()->at(0)->isNumber()->value());
+			dst.Y = (float)(val->elements()->at(1)->isNumber()->value());
+			dst.Z = (float)(val->elements()->at(2)->isNumber()->value());
 
-			UE_LOG(LogTemp, Log, TEXT("%s: [ %f,%f,%f ]"), *FString(def->name()->value()), dst.x, dst.y, dst.z);
+			UE_LOG(LogTemp, Log, TEXT("%s: [ %f,%f,%f ]"), *FString(def->name()->value()), dst.X, dst.Y, dst.Z);
 			return true;
 		}
 	}

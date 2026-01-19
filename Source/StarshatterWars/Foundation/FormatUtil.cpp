@@ -148,9 +148,9 @@ void FormatPoint(char* txt, const Point& p)
 	char y[16];
 	char z[16];
 
-	FormatNumber(x, p.x);
-	FormatNumber(y, p.y);
-	FormatNumber(z, p.z);
+	FormatNumber(x, p.X);
+	FormatNumber(y, p.Y);
+	FormatNumber(z, p.Z);
 
 	sprintf(txt, "(%s, %s, %s)", x, y, z);
 }

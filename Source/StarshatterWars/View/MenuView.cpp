@@ -22,7 +22,7 @@
 #include "Video.h"
 #include "DataLoader.h"
 #include "SimScene.h"
-#include "FontMgr.h"
+#include "FontManager.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "MouseController.h"

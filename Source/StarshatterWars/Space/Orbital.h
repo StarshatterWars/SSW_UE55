@@ -40,8 +40,8 @@ public:
 	USceneComponent* Root;
 
 	int operator == (const AOrbital& o) const { return type == o.type && name == o.name && system == o.system; }
-	int operator <  (const AOrbital& o) const { return loc.length() < o.loc.length(); }
-	int operator <= (const AOrbital& o) const { return loc.length() <= o.loc.length(); }
+	int operator <  (const AOrbital& o) const { return loc.Length() < o.loc.Length(); }
+	int operator <= (const AOrbital& o) const { return loc.Length() <= o.loc.Length(); }
 
 	// operations:
 	virtual void      Update();

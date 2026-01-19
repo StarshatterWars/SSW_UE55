@@ -378,7 +378,7 @@ RadioView::SendRadioMessage(Ship* ship, MenuItem* item)
 
 	// check destination:
 	if (dst_elem) {
-		RadioMessage* msg = new(__FILE__, __LINE__) RadioMessage(dst_elem, ship, item->GetData());
+		RadioMessage* msg = new RadioMessage(dst_elem, ship, item->GetData());
 
 		if (TargetRequired(item))
 			msg->AddTarget(ship->GetTarget());
@@ -401,7 +401,7 @@ RadioView::SendRadioMessage(Ship* ship, MenuItem* item)
 		if (wing) {
 			Ship* dst = elem->GetShip(wing);
 			if (dst) {
-				RadioMessage* msg = new(__FILE__, __LINE__) RadioMessage(dst, ship, item->GetData());
+				RadioMessage* msg = new RadioMessage(dst, ship, item->GetData());
 
 				if (TargetRequired(item))
 					msg->AddTarget(ship->GetTarget());
@@ -412,7 +412,7 @@ RadioView::SendRadioMessage(Ship* ship, MenuItem* item)
 	}
 
 	else if (history.Find(Game::GetText("RadioView.menu.ELEMENT"))) { // element menu
-		RadioMessage* msg = new(__FILE__, __LINE__) RadioMessage(elem, ship, item->GetData());
+		RadioMessage* msg = new RadioMessage(elem, ship, item->GetData());
 
 		if (TargetRequired(item))
 			msg->AddTarget(ship->GetTarget());
@@ -425,7 +425,7 @@ RadioView::SendRadioMessage(Ship* ship, MenuItem* item)
 		Ship* controller_ship = ship->GetController();
 
 		if (controller_ship) {
-			msg = new(__FILE__, __LINE__) RadioMessage(controller_ship, ship, item->GetData());
+			msg = new RadioMessage(controller_ship, ship, item->GetData());
 			RadioTraffic::Transmit(msg);
 		}
 	}

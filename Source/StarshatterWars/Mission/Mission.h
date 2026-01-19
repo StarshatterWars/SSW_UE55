@@ -294,7 +294,7 @@ public:
 	int               GetNavIndex(const Instruction* n);
 
 	void              AddObjective(Instruction* obj) { objectives.append(obj); }
-	void              AddInstruction(const char* i) { instructions.append(new(__FILE__, __LINE__) Text(i)); }
+	void              AddInstruction(const char* i) { instructions.append(new Text(i)); }
 
 	CombatGroup* GetCombatGroup() { return combat_group; }
 	void              SetCombatGroup(CombatGroup* g) { combat_group = g; }

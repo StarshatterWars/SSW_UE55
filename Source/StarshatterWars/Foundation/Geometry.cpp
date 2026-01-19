@@ -1,7 +1,21 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (c) 2025-2026. All Rights Reserved.
 
+	SUBSYSTEM:    nGenEx.lib
+	FILE:         Geometry.cpp
+	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR AND STUDIO:
+	John DiCamillo / Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	Geometric Utilities
+*/
 
 #include "Geometry.h"
+#include "Math/Vector.h"
 
 // +--------------------------------------------------------------------+
 
@@ -41,67 +55,6 @@ int Rect::Contains(int ax, int ay) const
 
 // +--------------------------------------------------------------------+
 
-double
-Point::Normalize()
-{
-	double scale = 1.0;
-	double len = length();
-
-	if (len)
-		scale /= len;
-
-	x *= scale;
-	y *= scale;
-	z *= scale;
-
-	return len;
-}
-
-// +--------------------------------------------------------------------+
-
-void
-Point::SetElement(int i, double v)
-{
-	switch (i) {
-	case 0:  x = v; break;
-	case 1:  y = v; break;
-	case 2:  z = v; break;
-	default:        break;
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-Point
-Point::operator*(const Matrix& m) const
-{
-	Point result;
-
-	result.x = (m.elem[0][0] * x) + (m.elem[1][0] * y) + (m.elem[2][0] * z);
-	result.y = (m.elem[0][1] * x) + (m.elem[1][1] * y) + (m.elem[2][1] * z);
-	result.z = (m.elem[0][2] * x) + (m.elem[1][2] * y) + (m.elem[2][2] * z);
-
-	return result;
-}
-
-// +--------------------------------------------------------------------+
-
-double ClosestApproachTime(const Point& loc1, const Point& vel1,
-	const Point& loc2, const Point& vel2)
-{
-	double t = 0;
-
-	Point D = loc1 - loc2;
-	Point Dv = vel1 - vel2;
-
-	if (Dv.x || Dv.y || Dv.z)
-		t = -1 * (Dv * D) / (Dv * Dv);
-
-	return t;
-}
-
-// +--------------------------------------------------------------------+
-
 float
 Vec2::Normalize()
 {
@@ -119,48 +72,16 @@ Vec2::Normalize()
 
 // +--------------------------------------------------------------------+
 
-float
-Vec3::Normalize()
+double ClosestApproachTime(const FVector& loc1, const FVector& vel1,
+	const FVector& loc2, const FVector& vel2)
 {
-	float  scale = 1.0f;
-	float  len = length();
+	double t = 0.0;
 
-	if (len)
-		scale /= len;
+	const FVector D = loc1 - loc2;
+	const FVector Dv = vel1 - vel2;
 
-	x *= scale;
-	y *= scale;
-	z *= scale;
-
-	return len;
-}
-
-// +--------------------------------------------------------------------+
-
-Vec3
-Vec3::operator*(const Matrix& m) const
-{
-	Vec3 result;
-
-	result.x = (float)((m.elem[0][0] * x) + (m.elem[1][0] * y) + (m.elem[2][0] * z));
-	result.y = (float)((m.elem[0][1] * x) + (m.elem[1][1] * y) + (m.elem[2][1] * z));
-	result.z = (float)((m.elem[0][2] * x) + (m.elem[1][2] * y) + (m.elem[2][2] * z));
-
-	return result;
-}
-
-// +--------------------------------------------------------------------+
-
-double ClosestApproachTime(const Vec3& loc1, const Vec3& vel1,
-	const Vec3& loc2, const Vec3& vel2)
-{
-	double t = 0;
-
-	Point D = loc1 - loc2;
-	Point Dv = vel1 - vel2;
-
-	if (Dv.x || Dv.y || Dv.z)
-		t = -1 * (Dv * D) / (Dv * Dv);
+	if (!Dv.IsNearlyZero())
+		t = -FVector::DotProduct(Dv, D) / FVector::DotProduct(Dv, Dv);
 
 	return t;
 }
@@ -196,19 +117,19 @@ Matrix::Matrix(const Matrix& m)
 	memcpy(elem, m.elem, sizeof(elem));
 }
 
-Matrix::Matrix(const Point& vrt, const Point& vup, const Point& vpn)
+Matrix::Matrix(const FVector& vrt, const FVector& vup, const FVector& vpn)
 {
-	elem[0][0] = vrt.x;
-	elem[0][1] = vrt.y;
-	elem[0][2] = vrt.z;
+	elem[0][0] = (double)vrt.X;
+	elem[0][1] = (double)vrt.Y;
+	elem[0][2] = (double)vrt.Z;
 
-	elem[1][0] = vup.x;
-	elem[1][1] = vup.y;
-	elem[1][2] = vup.z;
+	elem[1][0] = (double)vup.X;
+	elem[1][1] = (double)vup.Y;
+	elem[1][2] = (double)vup.Z;
 
-	elem[2][0] = vpn.x;
-	elem[2][1] = vpn.y;
-	elem[2][2] = vpn.z;
+	elem[2][0] = (double)vpn.X;
+	elem[2][1] = (double)vpn.Y;
+	elem[2][2] = (double)vpn.Z;
 }
 
 // +--------------------------------------------------------------------+
@@ -417,28 +338,14 @@ Matrix::operator*(const Matrix& m) const
 
 // +--------------------------------------------------------------------+
 
-Point
-Matrix::operator*(const Point& p) const
+FVector
+Matrix::operator*(const FVector& p) const
 {
-	Point result;
+	FVector result;
 
-	result.x = (elem[0][0] * p.x) + (elem[0][1] * p.y) + (elem[0][2] * p.z);
-	result.y = (elem[1][0] * p.x) + (elem[1][1] * p.y) + (elem[1][2] * p.z);
-	result.z = (elem[2][0] * p.x) + (elem[2][1] * p.y) + (elem[2][2] * p.z);
-
-	return result;
-}
-
-// +--------------------------------------------------------------------+
-
-Vec3
-Matrix::operator*(const Vec3& v) const
-{
-	Vec3 result;
-
-	result.x = (float)((elem[0][0] * v.x) + (elem[0][1] * v.y) + (elem[0][2] * v.z));
-	result.y = (float)((elem[1][0] * v.x) + (elem[1][1] * v.y) + (elem[1][2] * v.z));
-	result.z = (float)((elem[2][0] * v.x) + (elem[2][1] * v.y) + (elem[2][2] * v.z));
+	result.X = (float)((elem[0][0] * (double)p.X) + (elem[0][1] * (double)p.Y) + (elem[0][2] * (double)p.Z));
+	result.Y = (float)((elem[1][0] * (double)p.X) + (elem[1][1] * (double)p.Y) + (elem[1][2] * (double)p.Z));
+	result.Z = (float)((elem[2][0] * (double)p.X) + (elem[2][1] * (double)p.Y) + (elem[2][2] * (double)p.Z));
 
 	return result;
 }
@@ -494,58 +401,47 @@ Matrix::Invert()
 // +--------------------------------------------------------------------+
 
 Plane::Plane()
-	: distance(0.0f)
-{ }
-
-Plane::Plane(const Point& p0, const Point& p1, const Point& p2)
+	: distance(0.0f),
+	normal(FVector::ZeroVector)
 {
-	Point d1 = p1 - p0;
-	Point d2 = p2 - p0;
+}
 
-	normal = (Vec3)d1.cross(d2);
+Plane::Plane(const FVector& p0, const FVector& p1, const FVector& p2)
+{
+	const FVector d1 = p1 - p0;
+	const FVector d2 = p2 - p0;
+
+	normal = FVector::CrossProduct(d1, d2);
 	normal.Normalize();
 
-	distance = (float)(normal * p0);
+	distance = FVector::DotProduct(normal, p0);
 }
 
-Plane::Plane(const Vec3& v0, const Vec3& v1, const Vec3& v2)
+void Plane::Rotate(const FVector& v0, const Matrix& m)
 {
-	Vec3 d1 = v1 - v0;
-	Vec3 d2 = v2 - v0;
-
-	normal = d1.cross(d2);
-	normal.Normalize();
-
-	distance = normal * v0;
+	normal = m * normal;
+	distance = FVector::DotProduct(normal, v0);
 }
 
-void Plane::Rotate(const Vec3& v0, const Matrix& m)
+void Plane::Translate(const FVector& v0)
 {
-	normal = normal * m;
-	distance = normal * v0;
-}
-
-void Plane::Translate(const Vec3& v0)
-{
-	distance = normal * v0;
+	distance = FVector::DotProduct(normal, v0);
 }
 
 // +--------------------------------------------------------------------+
 // 3-D dot product.
 
-double DotProduct(const Point& a, const Point& b)
+double DotProduct(const FVector& a, const FVector& b)
 {
-	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+	return (double)FVector::DotProduct(a, b);
 }
 
 // +--------------------------------------------------------------------+
 // 3-D cross product.
 
-void CrossProduct(const Point& a, const Point& b, Point& out)
+void CrossProduct(const FVector& a, const FVector& b, FVector& out)
 {
-	out.x = (a.y * b.z) - (a.z * b.y);
-	out.y = (a.z * b.x) - (a.x * b.z);
-	out.z = (a.x * b.y) - (a.y * b.x);
+	out = FVector::CrossProduct(a, b);
 }
 
 // +--------------------------------------------------------------------+
@@ -594,14 +490,6 @@ void MConcat(double in1[3][3], double in2[3][3], double out[3][3])
 *        DO_INTERSECT      1
 *        COLLINEAR         2
 *
-* Error conditions:
-*
-*     Depending upon the possible ranges, and particularly on 16-bit
-*     computers, care should be taken to protect from overflow.
-*
-*     In the following code, 'long' values have been used for this
-*     purpose, instead of 'int'.
-*
 */
 
 #define DONT_INTERSECT    0
@@ -623,56 +511,35 @@ lines_intersect(
 	double r1, r2, r3, r4;         /* 'Sign' values */
 	double denom, offset, num;     /* Intermediate values */
 
-	/* Compute a1, b1, c1, where line joining points 1 and 2
-	* is "a1 x  +  b1 y  +  c1  =  0".  */
-
 	a1 = y2 - y1;
 	b1 = x1 - x2;
 	c1 = x2 * y1 - x1 * y2;
 
-	/* Compute r3 and r4.  */
-
 	r3 = a1 * x3 + b1 * y3 + c1;
 	r4 = a1 * x4 + b1 * y4 + c1;
-
-	/* Check signs of r3 and r4.  If both point 3 and point 4 lie on
-	* same side of line 1, the line segments do notxintersect.  */
 
 	if (r3 != 0 &&
 		r4 != 0 &&
 		SAME_SIGNS(r3, r4))
 		return (DONT_INTERSECT);
 
-	/* Compute a2, b2, c2 */
-
 	a2 = y4 - y3;
 	b2 = x3 - x4;
 	c2 = x4 * y3 - x3 * y4;
 
-	/* Compute r1 and r2 */
-
 	r1 = a2 * x1 + b2 * y1 + c2;
 	r2 = a2 * x2 + b2 * y2 + c2;
-
-	/* Check signs of r1 and r2.  If both point 1 and point 2 lie
-	* on same side of second line segment, the line segments do
-	* notxintersect.  */
 
 	if (r1 != 0 &&
 		r2 != 0 &&
 		SAME_SIGNS(r1, r2))
 		return (DONT_INTERSECT);
 
-	/* Line segments intersect: compute intersection point.  */
-
 	denom = a1 * b2 - a2 * b1;
 	if (denom == 0)
 		return (DONT_INTERSECT);
-	offset = denom < 0 ? -denom / 2 : denom / 2;
 
-	/* The denom/2 is to get rounding instead of truncating.  It
-	* is added or subtracted to the numerator, depending upon the
-	* sign of the numerator.  */
+	offset = denom < 0 ? -denom / 2 : denom / 2;
 
 	num = b1 * c2 - b2 * c1;
 	ix = (num < 0 ? num - offset : num + offset) / denom;
@@ -682,5 +549,3 @@ lines_intersect(
 
 	return (DO_INTERSECT);
 }
-
-

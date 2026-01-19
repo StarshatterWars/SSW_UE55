@@ -380,23 +380,23 @@ Poly::Contains(const FVector& pt) const
 	// find largest 2d projection of this 3d Poly:
 	int projaxis;
 
-	const double pnx = fabs(plane.normal.x);
-	const double pny = fabs(plane.normal.y);
-	const double pnz = fabs(plane.normal.z);
+	const double pnx = fabs(plane.normal.X);
+	const double pny = fabs(plane.normal.Y);
+	const double pnz = fabs(plane.normal.Z);
 
 	if (pnx > pny)
 		if (pnx > pnz)
-			if (plane.normal.x > 0) projaxis = 1;
+			if (plane.normal.X > 0) projaxis = 1;
 			else                    projaxis = -1;
 		else
-			if (plane.normal.z > 0) projaxis = 3;
+			if (plane.normal.Z > 0) projaxis = 3;
 			else                    projaxis = -3;
 	else
 		if (pny > pnz)
-			if (plane.normal.y > 0) projaxis = 2;
+			if (plane.normal.Y > 0) projaxis = 2;
 			else                    projaxis = -2;
 		else
-			if (plane.normal.z > 0) projaxis = 3;
+			if (plane.normal.Z > 0) projaxis = 3;
 			else                    projaxis = -3;
 
 	for (int i = 0; i < nverts; i++) {

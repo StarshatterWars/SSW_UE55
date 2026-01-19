@@ -11,7 +11,7 @@
 
 class Color;
 class Bitmap;
-class Font;
+class SystemFont;
 class Screen;
 class View;
 
@@ -71,8 +71,8 @@ public:
 	void              FillEllipse(int x1, int y1, int x2, int y2, Color color, int blend = 0);
 
 	// text methods:
-	void              SetFont(Font* f) { font = f; }
-	Font* GetFont()            const { return font; }
+	void              SetFont(SystemFont* f) { font = f; }
+	SystemFont*		  GetFont()            const { return font; }
 
 	void              Print(int x1, int y1, const char* fmt, ...);
 	void              DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags);
@@ -85,7 +85,7 @@ protected:
 	Rect              rect;
 	Screen* screen;
 	bool              shown;
-	Font* font;
+	SystemFont* font;
 
 	List<View>        view_list;
 };
