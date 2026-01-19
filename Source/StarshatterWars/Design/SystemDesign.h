@@ -1,15 +1,18 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	SUBSYSTEM:    Stars.exe
 	FILE:         SystemDesign.h
 	AUTHOR:       Carlos Bott
 
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
+
 	OVERVIEW
 	========
-	Generic Ship Design class
-	Note: Loaded from Data Tables
+	Generic ship System Design class
 */
 
 #pragma once
@@ -17,10 +20,6 @@
 #include "Types.h"
 #include "List.h"
 #include "Text.h"
-#include "CoreMinimal.h"
-//#include "UObject/NoExportTypes.h"
-#include "GameStructs.h"
-
 
 // +--------------------------------------------------------------------+
 
@@ -28,31 +27,25 @@ class ComponentDesign;
 
 // +--------------------------------------------------------------------+
 
-/**
- * 
- */
-class STARSHATTERWARS_API SystemDesign//  : public UObject
+class SystemDesign
 {
 public:
-	SystemDesign();
-	virtual ~SystemDesign();
-
 	static const char* TYPENAME() { return "SystemDesign"; }
+
+	SystemDesign();
+	~SystemDesign();
 
 	int operator == (const SystemDesign& rhs) const { return name == rhs.name; }
 
-	static void		     Initialize(TArray<FS_SystemDesign*> Systems);
-	void				 Load(TArray<FS_SystemDesign*> Systems);
+	static void          Initialize(const char* filename);
 	static void          Close();
-	static SystemDesign* Find(Text name);
+	static SystemDesign* Find(const char* name);
 
 	// Unique ID:
-	Text              name;
+	Text name;
 
 	// Sub-components:
 	List<ComponentDesign> components;
 
-	static List<SystemDesign>  catalog;
-
-	TArray<FS_SystemDesign> SystemDesignArray;
+	static List<SystemDesign> catalog;
 };

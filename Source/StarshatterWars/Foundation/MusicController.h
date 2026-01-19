@@ -28,7 +28,7 @@ public:
 
 	// One-shot sound effects
 	void PlayUISound(USoundBase* Sound);
-	void StopSound(); // Placeholder — not used unless you manage 2D sound instances
+	void StopSound(); // Placeholder — notxused unless you manage 2D sound instances
 
 	// Status check
 	bool IsSoundPlaying();

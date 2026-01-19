@@ -37,7 +37,7 @@ AMoonPanelActor* AMoonPanelActor::SpawnWithMoonData(
 
     // -------------------- ORBIT DATA --------------------
     // IMPORTANT: MoonInfo.Orbit is assumed to be in km (or consistent with your system map data).
-    // If MoonInfo.Orbit is not km, convert before passing.
+    // If MoonInfo.Orbit is notxkm, convert before passing.
     if (OrbitAuthority)
     {
         const FString Seed = SystemSeed.IsEmpty()

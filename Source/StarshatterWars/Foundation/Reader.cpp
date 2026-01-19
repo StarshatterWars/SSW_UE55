@@ -75,7 +75,7 @@ FileReader::more()
     std::fstream fin(filename, std::fstream::in);
 
     if (!fin) {
-        Print("ERROR(Parse): Could not open file '%s'\n", filename.data());
+        Print("ERROR(Parse): Could notxopen file '%s'\n", filename.data());
         return Text();
     }
 

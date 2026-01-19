@@ -1,30 +1,41 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         RadioMessage.h
+	AUTHOR:       Carlos Bott
+	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+
+
+	OVERVIEW
+	========
+	RadioMessage (radio comms) class declaration
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Types.h"
-#include "Geometry.h"
 #include "SimObject.h"
 #include "Instruction.h"
 #include "List.h"
 #include "Text.h"
 
+// Minimal Unreal include required for FVector:
+#include "Math/Vector.h"
+
 // +--------------------------------------------------------------------+
 
 class Element;
-class UShip;
-class USimObject;
+class Ship;
+class SimObject;
 
 // +--------------------------------------------------------------------+
-/**
- * 
- */
-class STARSHATTERWARS_API RadioMessage
+
+class RadioMessage
 {
 public:
-	
-	enum  ACTION
+	enum ACTION
 	{
 		NONE = 0,
 
@@ -104,44 +115,38 @@ public:
 		NUM_ACTIONS
 	};
 
-	RadioMessage();
-	~RadioMessage();
-
-	RadioMessage(UShip* dst, const UShip* sender, int action);
-	RadioMessage(Element* dst, const UShip* sender, int action);
+	RadioMessage(Ship* dst, const Ship* sender, int action);
+	RadioMessage(Element* dst, const Ship* sender, int action);
 	RadioMessage(const RadioMessage& rm);
-
-	void SetRadioMessage(UShip* dst, const UShip* s, int a);
-	void SetRadioMessage(Element* dst, const UShip* s, int a);
-	void SetRadioMessage(const RadioMessage& rm);
+	virtual ~RadioMessage();
 
 	// accessors:
 	static const char* ActionName(int a);
 
-	const UShip* Sender()          const { return sender; }
-	UShip* DestinationShip() const { return dst_ship; }
+	const Ship* Sender()          const { return sender; }
+	Ship* DestinationShip() const { return dst_ship; }
 	Element* DestinationElem() const { return dst_elem; }
 	int               Action()          const { return action; }
-	List<USimObject>& TargetList() { return target_list; }
-	const Point& Location()        const { return location; }
+	List<SimObject>& TargetList() { return target_list; }
+	const FVector& Location()        const { return location; }
 	const Text& Info()            const { return info; }
 	int               Channel()         const { return channel; }
 
 	// mutators:
-	void              SetDestinationShip(UShip* s) { dst_ship = s; }
+	void              SetDestinationShip(Ship* s) { dst_ship = s; }
 	void              SetDestinationElem(Element* e) { dst_elem = e; }
-	void              AddTarget(USimObject* s);
-	void              SetLocation(const Point& l) { location = l; }
+	void              AddTarget(SimObject* s);
+	void              SetLocation(const FVector& l) { location = l; }
 	void              SetInfo(Text msg) { info = msg; }
 	void              SetChannel(int c) { channel = c; }
 
 protected:
-	const UShip*	  sender;
-	UShip*			  dst_ship;
-	Element*		  dst_elem;
+	const Ship* sender;
+	Ship* dst_ship;
+	Element* dst_elem;
 	int               action;
-	List<USimObject>  target_list;
-	Point             location;
+	List<SimObject>   target_list;
+	FVector           location = FVector::ZeroVector;
 	Text              info;
 	int               channel;
 };

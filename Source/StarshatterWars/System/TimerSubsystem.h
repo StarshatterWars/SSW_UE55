@@ -152,7 +152,7 @@ public:
 	UCampaignSave* GetCampaignSave() const { return CampaignSave.Get(); }
 
 	// Explicitly restart (reset) campaign timeline anchor so T+ becomes 0.
-	// Does NOT affect Universe time.
+	// Does notxaffect Universe time.
 	UFUNCTION(BlueprintCallable, Category = "Time|Campaign")
 	void RestartCampaignClock(bool bSaveImmediately = true);
 

@@ -1,62 +1,78 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
-	FILE:         Component.cpp
+	SUBSYSTEM:    Stars.exe
+	FILE:         SimComponent.cpp
 	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
 	Generic ship system sub-component class
 */
 
-
-
-#include "Component.h"
-#include "SystemComponent.h"
-#include "ComponentDesign.h"
+#include "SimComponent.h"
+#include "SimSystem.h"
 #include "Game.h"
-
 
 // +----------------------------------------------------------------------+
 
-void UComponent::SetComponent(ComponentDesign* d, USystemComponent* s)
+ComponentDesign::ComponentDesign()
+	: repair_time(0.0f),
+	replace_time(0.0f),
+	spares(0),
+	affects(0)
 {
-	design = d;
-	system = s;
-	status = NOMINAL;
-	availability = 100.0f;
-	time_remaining = 0.0f;
-	spares = 0;
-	jerried = 0;
+}
 
+// +----------------------------------------------------------------------+
+
+ComponentDesign::~ComponentDesign()
+{
+}
+
+// +----------------------------------------------------------------------+
+
+SimComponent::SimComponent(ComponentDesign* d, SimSystem* s)
+	: design(d),
+	status(NOMINAL),
+	availability(100.0f),
+	time_remaining(0.0f),
+	spares(0),
+	jerried(0),
+	system(s)
+{
 	if (design)
 		spares = design->spares;
 }
 
 // +----------------------------------------------------------------------+
 
-void UComponent::SetComponent(const UComponent& c)
+SimComponent::SimComponent(const SimComponent& c)
+	: design(c.design),
+	status(c.status),
+	availability(c.availability),
+	time_remaining(c.time_remaining),
+	spares(c.spares),
+	jerried(c.jerried),
+	system(c.system)
 {
-	design = c.design;
-	system = c.system;
-	status = c.status;
-	availability = c.availability;
-	time_remaining = c.time_remaining;
-	spares = c.spares;
-	jerried = c.jerried;
 }
 
 // +--------------------------------------------------------------------+
 
-UComponent::~UComponent()
-{ }
+SimComponent::~SimComponent()
+{
+}
 
 // +--------------------------------------------------------------------+
 
 void
-UComponent::ExecMaintFrame(double seconds)
+SimComponent::ExecMaintFrame(double seconds)
 {
 	if (status > NOMINAL) {
 		time_remaining -= (float)seconds;
@@ -70,7 +86,8 @@ UComponent::ExecMaintFrame(double seconds)
 
 				if (jerried < 5)
 					availability += 50.0f - 10 * jerried;
-				if (availability > 100) availability = 100.0f;
+				if (availability > 100)
+					availability = 100.0f;
 			}
 			else {
 				availability = 100.0f;
@@ -94,10 +111,11 @@ UComponent::ExecMaintFrame(double seconds)
 // +--------------------------------------------------------------------+
 
 void
-UComponent::ApplyDamage(double damage)
+SimComponent::ApplyDamage(double damage)
 {
 	availability -= (float)damage;
-	if (availability < 1) availability = 0.0f;
+	if (availability < 1)
+		availability = 0.0f;
 
 	if (status < REPLACE) {
 		if (availability > 99)
@@ -115,7 +133,7 @@ UComponent::ApplyDamage(double damage)
 // +--------------------------------------------------------------------+
 
 void
-UComponent::Repair()
+SimComponent::Repair()
 {
 	if (status < NOMINAL) {
 		status = REPAIR;
@@ -129,7 +147,7 @@ UComponent::Repair()
 // +--------------------------------------------------------------------+
 
 void
-UComponent::Replace()
+SimComponent::Replace()
 {
 	if (status <= NOMINAL) {
 		status = REPLACE;
@@ -144,7 +162,7 @@ UComponent::Replace()
 // +--------------------------------------------------------------------+
 
 float
-UComponent::Availability() const
+SimComponent::Availability() const
 {
 	if (status > NOMINAL && availability > 50)
 		return 50.0f;
@@ -153,60 +171,25 @@ UComponent::Availability() const
 }
 
 float
-UComponent::TimeRemaining() const
+SimComponent::TimeRemaining() const
 {
 	return (float)time_remaining;
 }
 
 int
-UComponent::SpareCount() const
+SimComponent::SpareCount() const
 {
 	return spares;
 }
 
 bool
-UComponent::IsJerried() const
+SimComponent::IsJerried() const
 {
 	return jerried ? true : false;
 }
 
 int
-UComponent::NumJerried() const
+SimComponent::NumJerried() const
 {
 	return jerried;
-}
-
-const char* UComponent::Name() const
-{
-	return design->name;
-}
-
-const char* UComponent::Abbreviation() const 
-{
-	return design->abrv;
-}
-
-float UComponent::RepairTime() const 
-{
-	return design->repair_time;
-}
-
-float UComponent::ReplaceTime() const 
-{
-	return design->replace_time;
-}
-
-bool UComponent::DamageEfficiency() const 
-{
-	return (design->affects & DAMAGE_EFFICIENCY) ? true : false; 
-}
-
-bool UComponent::DamageSafety() const 
-{
-	return (design->affects & DAMAGE_SAFETY) ? true : false; 
-}
-
-bool UComponent::DamageStability() const 
-{
-	return (design->affects & DAMAGE_STABILITY) ? true : false;
 }

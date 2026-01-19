@@ -5,7 +5,7 @@
 #include "Campaign.h"
 #include "CombatGroup.h"
 
-// Forward-declared types (Campaign, CombatGroup) are intentionally not included here.
+// Forward-declared types (Campaign, CombatGroup) are intentionally notxincluded here.
 // Include them only where you actually need their full definitions.
 
 CampaignMissionRequest::CampaignMissionRequest(

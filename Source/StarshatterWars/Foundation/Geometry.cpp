@@ -636,7 +636,7 @@ lines_intersect(
 	r4 = a1 * x4 + b1 * y4 + c1;
 
 	/* Check signs of r3 and r4.  If both point 3 and point 4 lie on
-	* same side of line 1, the line segments do not intersect.  */
+	* same side of line 1, the line segments do notxintersect.  */
 
 	if (r3 != 0 &&
 		r4 != 0 &&
@@ -656,7 +656,7 @@ lines_intersect(
 
 	/* Check signs of r1 and r2.  If both point 1 and point 2 lie
 	* on same side of second line segment, the line segments do
-	* not intersect.  */
+	* notxintersect.  */
 
 	if (r1 != 0 &&
 		r2 != 0 &&

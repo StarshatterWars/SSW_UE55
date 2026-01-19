@@ -23,7 +23,7 @@ class UTexture2D;
  *
  * Star bodies typically:
  *  - provide orbit authority (time + center)
- *  - do NOT enable orbit movement
+ *  - do notxenable orbit movement
  *
  * Planets / moons:
  *  - enable orbit

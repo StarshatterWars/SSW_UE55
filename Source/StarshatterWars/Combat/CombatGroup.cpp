@@ -39,7 +39,7 @@
 
 // +----------------------------------------------------------------------+
 
-CombatGroup::CombatGroup(int t, int n, const char* s, int iff_code, int e, CombatGroup* p)
+CombatGroup::CombatGroup(ECOMBATGROUP_TYPE t, int n, const char* s, int iff_code, int e, CombatGroup* p)
 	: type(t)
 	, id(n)
 	, name(s)
@@ -94,14 +94,14 @@ bool
 CombatGroup::IsAssignable() const
 {
 	switch (type) {
-	case CARRIER_GROUP:
-	case BATTLE_GROUP:
-	case DESTROYER_SQUADRON:
-	case ATTACK_SQUADRON:
-	case FIGHTER_SQUADRON:
-	case INTERCEPT_SQUADRON:
-	case LCA_SQUADRON:
-		return ((CombatGroup*)this)->CalcValue() > 0;
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+	case ECOMBATGROUP_TYPE::LCA_SQUADRON:
+		return CalcValue() > 0;
 	}
 
 	return false;
@@ -110,16 +110,16 @@ CombatGroup::IsAssignable() const
 bool
 CombatGroup::IsTargetable() const
 {
-	// neutral / non-combatants are not *strategic* targets
+	// neutral / non-combatants are notx*strategic* targets
 	// for any combatant:
 	if (iff < 1 || iff >= 100)
 		return false;
 
-	// civilian / non-combatant are not strategic targets:
-	if (type == PASSENGER ||
-		type == PRIVATE ||
-		type == MEDICAL ||
-		type == HABITAT)
+	// civilian / non-combatant are notxstrategic targets:
+	if (type == ECOMBATGROUP_TYPE::PASSENGER ||
+		type == ECOMBATGROUP_TYPE::PRIVATE ||
+		type == ECOMBATGROUP_TYPE::MEDICAL ||
+		type == ECOMBATGROUP_TYPE::HABITAT)
 		return false;
 
 	// must have units of our own to be targetable:
@@ -132,8 +132,8 @@ CombatGroup::IsTargetable() const
 bool
 CombatGroup::IsDefensible() const
 {
-	if (type >= SUPPORT)
-		return ((CombatGroup*)this)->CalcValue() > 0;
+	if (type >= ECOMBATGROUP_TYPE::SUPPORT)
+		return CalcValue() > 0;
 
 	return false;
 }
@@ -141,15 +141,15 @@ CombatGroup::IsDefensible() const
 bool
 CombatGroup::IsStrikeTarget() const
 {
-	if (type < BATTALION ||
-		type == MINEFIELD ||   // assault, not strike
-		type == PASSENGER ||
-		type == PRIVATE ||
-		type == MEDICAL ||
-		type == HABITAT)
+	if (type < ECOMBATGROUP_TYPE::BATTALION ||
+		type == ECOMBATGROUP_TYPE::MINEFIELD ||   // assault, notxstrike
+		type == ECOMBATGROUP_TYPE::PASSENGER ||
+		type == ECOMBATGROUP_TYPE::PRIVATE ||
+		type == ECOMBATGROUP_TYPE::MEDICAL ||
+		type == ECOMBATGROUP_TYPE::HABITAT)
 		return false;
 
-	return ((CombatGroup*)this)->CalcValue() > 0;
+	return CalcValue() > 0;
 }
 
 // +--------------------------------------------------------------------+
@@ -158,20 +158,20 @@ bool
 CombatGroup::IsMovable() const
 {
 	switch (type) {
-	case CARRIER_GROUP:
-	case BATTLE_GROUP:
-	case DESTROYER_SQUADRON:
-	case ATTACK_SQUADRON:
-	case FIGHTER_SQUADRON:
-	case INTERCEPT_SQUADRON:
-	case LCA_SQUADRON:
-	case COURIER:
-	case MEDICAL:
-	case SUPPLY:
-	case REPAIR:
-	case FREIGHT:
-	case PASSENGER:
-	case PRIVATE:
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+	case ECOMBATGROUP_TYPE::LCA_SQUADRON:
+	case ECOMBATGROUP_TYPE::COURIER:
+	case ECOMBATGROUP_TYPE::MEDICAL:
+	case ECOMBATGROUP_TYPE::SUPPLY:
+	case ECOMBATGROUP_TYPE::REPAIR:
+	case ECOMBATGROUP_TYPE::FREIGHT:
+	case ECOMBATGROUP_TYPE::PASSENGER:
+	case ECOMBATGROUP_TYPE::PRIVATE:
 		return true;
 	}
 
@@ -184,10 +184,10 @@ bool
 CombatGroup::IsFighterGroup() const
 {
 	switch (type) {
-	case WING:
-	case INTERCEPT_SQUADRON:
-	case FIGHTER_SQUADRON:
-	case ATTACK_SQUADRON:
+	case ECOMBATGROUP_TYPE::WING:
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
 		return true;
 	}
 
@@ -198,9 +198,9 @@ bool
 CombatGroup::IsStarshipGroup() const
 {
 	switch (type) {
-	case DESTROYER_SQUADRON:
-	case BATTLE_GROUP:
-	case CARRIER_GROUP:
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:
 		return true;
 	}
 
@@ -223,159 +223,160 @@ CombatGroup::IsReserve() const
 
 // +--------------------------------------------------------------------+
 
-const int*
-CombatGroup::PreferredAttacker(int type)
+const int* CombatGroup::PreferredAttacker(ECOMBATGROUP_TYPE InType)
 {
-	static int p[8];
-	FMemory::Memzero(p, sizeof(p));
+	static int Pref[8];
+	FMemory::Memzero(Pref, sizeof(Pref));
 
-	switch (type) {
-	case DESTROYER_SQUADRON:
-		p[0] = DESTROYER_SQUADRON;
-		p[1] = BATTLE_GROUP;
-		p[2] = CARRIER_GROUP;
-		p[3] = ATTACK_SQUADRON;
+	switch (InType) {
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::CARRIER_GROUP;
+		Pref[3] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
 		break;
 
-	case BATTLE_GROUP:
-		p[0] = BATTLE_GROUP;
-		p[1] = DESTROYER_SQUADRON;
-		p[2] = CARRIER_GROUP;
-		p[3] = ATTACK_SQUADRON;
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::CARRIER_GROUP;
+		Pref[3] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
 		break;
 
-	case CARRIER_GROUP:
-		p[0] = ATTACK_SQUADRON;
-		p[1] = BATTLE_GROUP;
-		p[2] = DESTROYER_SQUADRON;
-		p[3] = CARRIER_GROUP;
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[3] = (int)ECOMBATGROUP_TYPE::CARRIER_GROUP;
 		break;
 
-	case LCA_SQUADRON:
-	case ATTACK_SQUADRON:
-	case INTERCEPT_SQUADRON:
-	case FIGHTER_SQUADRON:
-		p[0] = INTERCEPT_SQUADRON;
-		p[1] = FIGHTER_SQUADRON;
+	case ECOMBATGROUP_TYPE::LCA_SQUADRON:
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
 		break;
 
-	case STATION:
-		p[0] = BATTLE_GROUP;
-		p[1] = CARRIER_GROUP;
+	case ECOMBATGROUP_TYPE::STATION:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::CARRIER_GROUP;
 		break;
 
-	case STARBASE:
-	case BATTERY:
-	case MISSILE:
-		p[0] = ATTACK_SQUADRON;
-		p[1] = FIGHTER_SQUADRON;
+	case ECOMBATGROUP_TYPE::STARBASE:
+	case ECOMBATGROUP_TYPE::BATTERY:
+	case ECOMBATGROUP_TYPE::MISSILE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
 		break;
 
-	case MINEFIELD:
-	case COMM_RELAY:
-	case EARLY_WARNING:
-	case FWD_CONTROL_CTR:
-	case ECM:
-		p[0] = ATTACK_SQUADRON;
-		p[1] = FIGHTER_SQUADRON;
-		p[2] = DESTROYER_SQUADRON;
+	case ECOMBATGROUP_TYPE::MINEFIELD:
+	case ECOMBATGROUP_TYPE::COMM_RELAY:
+	case ECOMBATGROUP_TYPE::EARLY_WARNING:
+	case ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:
+	case ECOMBATGROUP_TYPE::ECM:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
 		break;
 
-	case COURIER:
-	case MEDICAL:
-	case SUPPLY:
-	case REPAIR:
-		p[0] = DESTROYER_SQUADRON;
-		p[1] = BATTLE_GROUP;
-		p[2] = ATTACK_SQUADRON;
+	case ECOMBATGROUP_TYPE::COURIER:
+	case ECOMBATGROUP_TYPE::MEDICAL:
+	case ECOMBATGROUP_TYPE::SUPPLY:
+	case ECOMBATGROUP_TYPE::REPAIR:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
 		break;
 
-	case FACTORY:
-	case REFINERY:
-	case RESOURCE:
-		p[0] = ATTACK_SQUADRON;
-		p[1] = FIGHTER_SQUADRON;
+	case ECOMBATGROUP_TYPE::FACTORY:
+	case ECOMBATGROUP_TYPE::REFINERY:
+	case ECOMBATGROUP_TYPE::RESOURCE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
 		break;
 
-	case TRANSPORT:
-	case NETWORK:
-	case HABITAT:
-	case STORAGE:
-		p[0] = ATTACK_SQUADRON;
-		p[1] = FIGHTER_SQUADRON;
+	case ECOMBATGROUP_TYPE::TRANSPORT:
+	case ECOMBATGROUP_TYPE::NETWORK:
+	case ECOMBATGROUP_TYPE::HABITAT:
+	case ECOMBATGROUP_TYPE::STORAGE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
 		break;
 
-	case FREIGHT:
-	case PASSENGER:
-	case PRIVATE:
-		p[0] = DESTROYER_SQUADRON;
-		p[1] = ATTACK_SQUADRON;
+	case ECOMBATGROUP_TYPE::FREIGHT:
+	case ECOMBATGROUP_TYPE::PASSENGER:
+	case ECOMBATGROUP_TYPE::PRIVATE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
+		break;
+
+	default:
 		break;
 	}
 
-	return p;
+	return Pref;
 }
 
 // +--------------------------------------------------------------------+
 
-const int*
-CombatGroup::PreferredDefender(int type)
+const int* CombatGroup::PreferredDefender(ECOMBATGROUP_TYPE InType)
 {
-	static int p[8];
-	FMemory::Memzero(p, sizeof(p));
+	static int Pref[8];
+	FMemory::Memzero(Pref, sizeof(Pref));
 
-	switch (type) {
-	case STATION:
-		p[0] = BATTLE_GROUP;
-		p[1] = CARRIER_GROUP;
-		p[2] = DESTROYER_SQUADRON;
+	switch (InType) {
+	case ECOMBATGROUP_TYPE::STATION:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::CARRIER_GROUP;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
 		break;
 
-	case STARBASE:
-	case MINEFIELD:
-	case BATTERY:
-	case MISSILE:
-		p[0] = FIGHTER_SQUADRON;
-		p[1] = INTERCEPT_SQUADRON;
+	case ECOMBATGROUP_TYPE::STARBASE:
+	case ECOMBATGROUP_TYPE::MINEFIELD:
+	case ECOMBATGROUP_TYPE::BATTERY:
+	case ECOMBATGROUP_TYPE::MISSILE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
 		break;
 
-	case COMM_RELAY:
-	case EARLY_WARNING:
-	case FWD_CONTROL_CTR:
-	case ECM:
-		p[0] = FIGHTER_SQUADRON;
-		p[1] = INTERCEPT_SQUADRON;
+	case ECOMBATGROUP_TYPE::COMM_RELAY:
+	case ECOMBATGROUP_TYPE::EARLY_WARNING:
+	case ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:
+	case ECOMBATGROUP_TYPE::ECM:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
 		break;
 
-	case COURIER:
-	case MEDICAL:
-	case SUPPLY:
-	case REPAIR:
-		p[0] = DESTROYER_SQUADRON;
-		p[1] = BATTLE_GROUP;
-		p[2] = ATTACK_SQUADRON;
+	case ECOMBATGROUP_TYPE::COURIER:
+	case ECOMBATGROUP_TYPE::MEDICAL:
+	case ECOMBATGROUP_TYPE::SUPPLY:
+	case ECOMBATGROUP_TYPE::REPAIR:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
+		Pref[2] = (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
 		break;
 
-	case FACTORY:
-	case REFINERY:
-	case RESOURCE:
-		p[0] = FIGHTER_SQUADRON;
-		p[1] = INTERCEPT_SQUADRON;
+	case ECOMBATGROUP_TYPE::FACTORY:
+	case ECOMBATGROUP_TYPE::REFINERY:
+	case ECOMBATGROUP_TYPE::RESOURCE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
 		break;
 
-	case TRANSPORT:
-	case NETWORK:
-	case HABITAT:
-	case STORAGE:
-		p[0] = FIGHTER_SQUADRON;
-		p[1] = INTERCEPT_SQUADRON;
+	case ECOMBATGROUP_TYPE::TRANSPORT:
+	case ECOMBATGROUP_TYPE::NETWORK:
+	case ECOMBATGROUP_TYPE::HABITAT:
+	case ECOMBATGROUP_TYPE::STORAGE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
 		break;
 
-	case FREIGHT:
-	case PASSENGER:
-	case PRIVATE:
-		p[0] = DESTROYER_SQUADRON;
-		p[1] = BATTLE_GROUP;
+	case ECOMBATGROUP_TYPE::FREIGHT:
+	case ECOMBATGROUP_TYPE::PASSENGER:
+	case ECOMBATGROUP_TYPE::PRIVATE:
+		Pref[0] = (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
+		Pref[1] = (int)ECOMBATGROUP_TYPE::BATTLE_GROUP;
 		break;
 
 		// ship groups / squadrons: no preferred defender list here
@@ -383,13 +384,13 @@ CombatGroup::PreferredDefender(int type)
 		break;
 	}
 
-	return p;
+	return Pref;
 }
 
 // +--------------------------------------------------------------------+
 
 CombatGroup*
-CombatGroup::FindGroup(int t, int n)
+CombatGroup::FindGroup(ECOMBATGROUP_TYPE t, int n)
 {
 	CombatGroup* result = 0;
 
@@ -429,10 +430,10 @@ CombatGroup::Clone(bool deep)
 			CombatGroup* g = components[i]->Clone(deep);
 			clone->AddComponent(g);
 
-			if (g->Type() == FIGHTER_SQUADRON ||
-				g->Type() == INTERCEPT_SQUADRON ||
-				g->Type() == ATTACK_SQUADRON ||
-				g->Type() == LCA_SQUADRON) {
+			if (g->GetType() == ECOMBATGROUP_TYPE::FIGHTER_SQUADRON ||
+				g->GetType() == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON ||
+				g->GetType() == ECOMBATGROUP_TYPE::ATTACK_SQUADRON ||
+				g->GetType() == ECOMBATGROUP_TYPE::LCA_SQUADRON) {
 
 				if (units.size() > 0) {
 					CombatUnit* carrier = units[0];
@@ -503,52 +504,52 @@ CombatGroup::GetDescription() const
 		name_desc[0] = 0;
 
 	switch (type) {
-	case FORCE:                strcpy_s(desc, (const char*)name); break;
+	case ECOMBATGROUP_TYPE::FORCE:				  strcpy_s(desc, (const char*)name); break;
 
-	case FLEET:                sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.FLEET").data(), name_desc); break;
-	case CARRIER_GROUP:        sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.CARRIER_GROUP").data(), name_desc); break;
-	case BATTLE_GROUP:         sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.BATTLE_GROUP").data(), name_desc); break;
-	case DESTROYER_SQUADRON:   sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.DESTROYER_SQUADRON").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::FLEET:                sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.FLEET").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:        sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.CARRIER_GROUP").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:         sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.BATTLE_GROUP").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:   sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.DESTROYER_SQUADRON").data(), name_desc); break;
 
-	case WING:                 sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.WING").data(), name_desc); break;
-	case ATTACK_SQUADRON:      sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.ATTACK_SQUADRON").data(), name_desc); break;
-	case FIGHTER_SQUADRON:     sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.FIGHTER_SQUADRON").data(), name_desc); break;
-	case INTERCEPT_SQUADRON:   sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.INTERCEPT_SQUADRON").data(), name_desc); break;
-	case LCA_SQUADRON:         sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.LCA_SQUADRON").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::WING:                 sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.WING").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:      sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.ATTACK_SQUADRON").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:     sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.FIGHTER_SQUADRON").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:   sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.INTERCEPT_SQUADRON").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::LCA_SQUADRON:         sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.LCA_SQUADRON").data(), name_desc); break;
 
-	case BATTALION:            sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.BATTALION").data(), name_desc); break;
-	case STATION:              sprintf_s(desc, "%s %s", Game::GetText("CombatGroup.STATION").data(), name.data()); break;
-	case STARBASE:             sprintf_s(desc, "%s %d%s", Game::GetText("CombatGroup.STARBASE").data(), id, name_desc); break;
-	case MINEFIELD:            sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.MINEFIELD").data(), name_desc); break;
-	case BATTERY:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.BATTERY").data(), name_desc); break;
-	case MISSILE:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.MISSILE").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::BATTALION:            sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.BATTALION").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::STATION:              sprintf_s(desc, "%s %s", Game::GetText("CombatGroup.STATION").data(), name.data()); break;
+	case ECOMBATGROUP_TYPE::STARBASE:             sprintf_s(desc, "%s %d%s", Game::GetText("CombatGroup.STARBASE").data(), id, name_desc); break;
+	case ECOMBATGROUP_TYPE::MINEFIELD:            sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.MINEFIELD").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::BATTERY:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.BATTERY").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::MISSILE:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.MISSILE").data(), name_desc); break;
 
-	case C3I:                  sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.C3I").data(), name_desc); break;
-	case COMM_RELAY:           sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.COMM_RELAY").data(), name_desc); break;
-	case EARLY_WARNING:        sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.EARLY_WARNING").data(), name_desc); break;
-	case FWD_CONTROL_CTR:      sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.FWD_CONTROL_CTR").data(), name_desc); break;
-	case ECM:                  sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.ECM").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::C3I:                  sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.C3I").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::COMM_RELAY:           sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.COMM_RELAY").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::EARLY_WARNING:        sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.EARLY_WARNING").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:      sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.FWD_CONTROL_CTR").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::ECM:                  sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.ECM").data(), name_desc); break;
 
-	case SUPPORT:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.SUPPORT").data(), name_desc); break;
-	case COURIER:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.COURIER").data(), name_desc); break;
-	case SUPPLY:               sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.SUPPLY").data(), name_desc); break;
-	case REPAIR:               sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.REPAIR").data(), name_desc); break;
-	case MEDICAL:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.MEDICAL").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::SUPPORT:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.SUPPORT").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::COURIER:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.COURIER").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::SUPPLY:               sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.SUPPLY").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::REPAIR:               sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.REPAIR").data(), name_desc); break;
+	case ECOMBATGROUP_TYPE::MEDICAL:              sprintf_s(desc, "%s %s%s", GetOrdinal(), Game::GetText("CombatGroup.MEDICAL").data(), name_desc); break;
 
-	case CIVILIAN:
-	case WAR_PRODUCTION:
-	case FACTORY:
-	case REFINERY:
-	case RESOURCE:             strcpy_s(desc, (const char*)name); break;
+	case ECOMBATGROUP_TYPE::CIVILIAN:
+	case ECOMBATGROUP_TYPE::WAR_PRODUCTION:
+	case ECOMBATGROUP_TYPE::FACTORY:
+	case ECOMBATGROUP_TYPE::REFINERY:
+	case ECOMBATGROUP_TYPE::RESOURCE:             strcpy_s(desc, (const char*)name); break;
 
-	case INFRASTRUCTURE:
-	case TRANSPORT:
-	case NETWORK:
-	case HABITAT:
-	case STORAGE:
-	case FREIGHT:
-	case PASSENGER:
-	case PRIVATE:              strcpy_s(desc, (const char*)name); break;
+	case ECOMBATGROUP_TYPE::INFRASTRUCTURE:
+	case ECOMBATGROUP_TYPE::TRANSPORT:
+	case ECOMBATGROUP_TYPE::NETWORK:
+	case ECOMBATGROUP_TYPE::HABITAT:
+	case ECOMBATGROUP_TYPE::STORAGE:
+	case ECOMBATGROUP_TYPE::FREIGHT:
+	case ECOMBATGROUP_TYPE::PASSENGER:
+	case ECOMBATGROUP_TYPE::PRIVATE:              strcpy_s(desc, (const char*)name); break;
 
 	default:                   sprintf_s(desc, "%s%s", Game::GetText("CombatGroup.default").data(), name_desc); break;
 	}
@@ -562,51 +563,51 @@ CombatGroup::GetShortDescription() const
 	static char desc[256];
 
 	switch (type) {
-	case FORCE:                strcpy_s(desc, (const char*)name); break;
+	case ECOMBATGROUP_TYPE::FORCE:                strcpy_s(desc, (const char*)name); break;
 
-	case FLEET:                sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.FLEET").data()); break;
-	case CARRIER_GROUP:        sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.CARRIER_GROUP").data()); break;
-	case BATTLE_GROUP:         sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.BATTLE_GROUP").data()); break;
-	case DESTROYER_SQUADRON:   sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.DESTROYER_SQUADRON").data()); break;
+	case ECOMBATGROUP_TYPE::FLEET:                sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.FLEET").data()); break;
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:        sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.CARRIER_GROUP").data()); break;
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:         sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.BATTLE_GROUP").data()); break;
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:   sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.DESTROYER_SQUADRON").data()); break;
 
-	case WING:                 sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.WING").data()); break;
-	case ATTACK_SQUADRON:      sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.ATTACK_SQUADRON").data()); break;
-	case FIGHTER_SQUADRON:     sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.FIGHTER_SQUADRON").data()); break;
-	case INTERCEPT_SQUADRON:   sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.INTERCEPT_SQUADRON").data()); break;
-	case LCA_SQUADRON:         sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.LCA_SQUADRON").data()); break;
+	case ECOMBATGROUP_TYPE::WING:                 sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.WING").data()); break;
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:      sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.ATTACK_SQUADRON").data()); break;
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:     sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.FIGHTER_SQUADRON").data()); break;
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:   sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.INTERCEPT_SQUADRON").data()); break;
+	case ECOMBATGROUP_TYPE::LCA_SQUADRON:         sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.LCA_SQUADRON").data()); break;
 
-	case BATTALION:            sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.BATTALION").data()); break;
-	case STATION:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.STATION").data()); break;
-	case STARBASE:             sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.STARBASE").data()); break;
-	case MINEFIELD:            sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.MINEFIELD").data()); break;
-	case BATTERY:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.BATTERY").data()); break;
+	case ECOMBATGROUP_TYPE::BATTALION:            sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.BATTALION").data()); break;
+	case ECOMBATGROUP_TYPE::STATION:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.STATION").data()); break;
+	case ECOMBATGROUP_TYPE::STARBASE:             sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.STARBASE").data()); break;
+	case ECOMBATGROUP_TYPE::MINEFIELD:            sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.MINEFIELD").data()); break;
+	case ECOMBATGROUP_TYPE::BATTERY:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.BATTERY").data()); break;
 
-	case C3I:                  sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.C3I").data()); break;
-	case COMM_RELAY:           sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.COMM_RELAY").data()); break;
-	case EARLY_WARNING:        sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.EARLY_WARNING").data()); break;
-	case FWD_CONTROL_CTR:      sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.FWD_CONTROL_CTR").data()); break;
-	case ECM:                  sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.ECM").data()); break;
+	case ECOMBATGROUP_TYPE::C3I:                  sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.C3I").data()); break;
+	case ECOMBATGROUP_TYPE::COMM_RELAY:           sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.COMM_RELAY").data()); break;
+	case ECOMBATGROUP_TYPE::EARLY_WARNING:        sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.EARLY_WARNING").data()); break;
+	case ECOMBATGROUP_TYPE::FWD_CONTROL_CTR:      sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.FWD_CONTROL_CTR").data()); break;
+	case ECOMBATGROUP_TYPE::ECM:                  sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.ECM").data()); break;
 
-	case SUPPORT:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.SUPPORT").data()); break;
-	case COURIER:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.COURIER").data()); break;
-	case MEDICAL:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.MEDICAL").data()); break;
-	case SUPPLY:               sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.SUPPLY").data()); break;
-	case REPAIR:               sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.REPAIR").data()); break;
+	case ECOMBATGROUP_TYPE::SUPPORT:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.SUPPORT").data()); break;
+	case ECOMBATGROUP_TYPE::COURIER:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.COURIER").data()); break;
+	case ECOMBATGROUP_TYPE::MEDICAL:              sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.MEDICAL").data()); break;
+	case ECOMBATGROUP_TYPE::SUPPLY:               sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.SUPPLY").data()); break;
+	case ECOMBATGROUP_TYPE::REPAIR:               sprintf_s(desc, "%s %s", GetOrdinal(), Game::GetText("CombatGroup.abrv.REPAIR").data()); break;
 
-	case CIVILIAN:
-	case WAR_PRODUCTION:
-	case FACTORY:
-	case REFINERY:
-	case RESOURCE:             strcpy_s(desc, (const char*)name); break;
+	case ECOMBATGROUP_TYPE::CIVILIAN:
+	case ECOMBATGROUP_TYPE::WAR_PRODUCTION:
+	case ECOMBATGROUP_TYPE::FACTORY:
+	case ECOMBATGROUP_TYPE::REFINERY:
+	case ECOMBATGROUP_TYPE::RESOURCE:             strcpy_s(desc, (const char*)name); break;
 
-	case INFRASTRUCTURE:
-	case TRANSPORT:
-	case NETWORK:
-	case HABITAT:
-	case STORAGE:
-	case FREIGHT:
-	case PASSENGER:
-	case PRIVATE:              strcpy_s(desc, (const char*)name); break;
+	case ECOMBATGROUP_TYPE::INFRASTRUCTURE:
+	case ECOMBATGROUP_TYPE::TRANSPORT:
+	case ECOMBATGROUP_TYPE::NETWORK:
+	case ECOMBATGROUP_TYPE::HABITAT:
+	case ECOMBATGROUP_TYPE::STORAGE:
+	case ECOMBATGROUP_TYPE::FREIGHT:
+	case ECOMBATGROUP_TYPE::PASSENGER:
+	case ECOMBATGROUP_TYPE::PRIVATE:              strcpy_s(desc, (const char*)name); break;
 
 	default:                   sprintf_s(desc, "%s", Game::GetText("CombatGroup.abrv.default").data()); break;
 	}
@@ -632,7 +633,7 @@ CombatGroup::GetNextJumpTime() const
 // +--------------------------------------------------------------------+
 
 void
-CombatGroup::MoveTo(const Point& loc)
+CombatGroup::MoveTo(FVector& loc)
 {
 	location = loc;
 }
@@ -791,9 +792,9 @@ CombatGroup::FindCarrier()
 	CombatGroup* p = GetParent();
 
 	while (p != 0 &&
-		p->Type() != CombatGroup::CARRIER_GROUP &&
-		p->Type() != CombatGroup::STATION &&
-		p->Type() != CombatGroup::STARBASE)
+		p->GetType() != ECOMBATGROUP_TYPE::CARRIER_GROUP &&
+		p->GetType() != ECOMBATGROUP_TYPE::STATION &&
+		p->GetType() != ECOMBATGROUP_TYPE::STARBASE)
 		p = p->GetParent();
 
 	if (p && p->GetUnits().size())
@@ -955,22 +956,33 @@ static const char* group_name[] = {
 
 // +--------------------------------------------------------------------+
 
-int
+ECOMBATGROUP_TYPE
 CombatGroup::TypeFromName(const char* type_name)
 {
-	for (int i = FORCE; i < PRIVATE; i++)
-		if (!_stricmp(type_name, group_name[i]))
-			return i;
+	if (!type_name || !type_name[0])
+		return ECOMBATGROUP_TYPE::UNKNOWN;
 
-	return 0;
+	for (int i = (int)ECOMBATGROUP_TYPE::FORCE;
+		i < (int)ECOMBATGROUP_TYPE::PRIVATE;
+		i++)
+	{
+		if (!_stricmp(type_name, group_name[i]))
+			return static_cast<ECOMBATGROUP_TYPE>(i);
+	}
+
+	return ECOMBATGROUP_TYPE::UNKNOWN;
 }
 
 const char*
-CombatGroup::NameFromType(int type)
+CombatGroup::NameFromType(ECOMBATGROUP_TYPE type)
 {
-	return group_name[type];
-}
+	const int index = static_cast<int>(type);
 
+	if (index >= FORCE && index < PRIVATE)
+		return group_name[index];
+
+	return "UNKNOWN";
+}
 // +--------------------------------------------------------------------+
 
 int ShipClassFromName(const char* type_name)
@@ -1003,7 +1015,7 @@ CombatGroup::LoadOrderOfBattle(const char* filename, int team, Combatant* combat
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could not parse order of battle '%s'\n", filename);
+		Print("ERROR: could notxparse order of battle '%s'\n", filename);
 		return 0;
 	}
 	else {
@@ -1089,53 +1101,55 @@ else GET_DEF_NUM(id);
 										Print("WARNING: unit struct missing for group '%s' in '%s'\n", name, filename);
 									}
 									else {
-										TermStruct* val = pdef->term()->isStruct();
+										TermStruct* valx = pdef->term()->isStruct();
 
 										char unit_region[64];
 										char design[256];
-										Vec3 unit_loc = Vec3(1.0e9f, 0.0f, 0.0f);
+										FVector unit_loc = FVector(1.0e9f, 0.0f, 0.0f);
 										unit_count = 1;
 
 										FMemory::Memzero(unit_region, sizeof(unit_region));
 										FMemory::Memzero(design, sizeof(design));
 
-										for (int i = 0; i < val->elements()->size(); i++) {
-											TermDef* pdef = val->elements()->at(i)->isDef();
-											if (pdef) {
-												if (pdef->name()->value() == "name") {
-													GetDefText(unit_name, pdef, filename);
+										for (int ix = 0; ix < valx->elements()->size(); ix++) {
+											TermDef* pdefx = valx->elements()->at(ix)->isDef();
+											if (pdefx) {
+												if (pdefx->name()->value() == "name") {
+													GetDefText(unit_name, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "regnum") {
-													GetDefText(unit_regnum, pdef, filename);
+												else if (pdefx->name()->value() == "regnum") {
+													GetDefText(unit_regnum, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "region") {
-													GetDefText(unit_region, pdef, filename);
+												else if (pdefx->name()->value() == "region") {
+													GetDefText(unit_region, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "loc") {
-													GetDefVec(unit_loc, pdef, filename);
+												else if (pdefx->name()->value() == "loc") {
+													Vec3 temp; 
+													GetDefVec(temp, pdefx, filename);
+													unit_loc = FVector(temp.x, temp.y, temp.z); 
 												}
-												else if (pdef->name()->value() == "type") {
+												else if (pdefx->name()->value() == "type") {
 													char typestr[32];
-													GetDefText(typestr, pdef, filename);
+													GetDefText(typestr, pdefx, filename);
 													unit_class = ShipDesign::ClassForName(typestr);
 												}
-												else if (pdef->name()->value() == "design") {
-													GetDefText(unit_design, pdef, filename);
+												else if (pdefx->name()->value() == "design") {
+													GetDefText(unit_design, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "skin") {
-													GetDefText(unit_skin, pdef, filename);
+												else if (pdefx->name()->value() == "skin") {
+													GetDefText(unit_skin, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "count") {
-													GetDefNumber(unit_count, pdef, filename);
+												else if (pdefx->name()->value() == "count") {
+													GetDefNumber(unit_count, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "dead_count") {
-													GetDefNumber(unit_dead, pdef, filename);
+												else if (pdefx->name()->value() == "dead_count") {
+													GetDefNumber(unit_dead, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "damage") {
-													GetDefNumber(unit_damage, pdef, filename);
+												else if (pdefx->name()->value() == "damage") {
+													GetDefNumber(unit_damage, pdefx, filename);
 												}
-												else if (pdef->name()->value() == "heading") {
-													GetDefNumber(unit_heading, pdef, filename);
+												else if (pdefx->name()->value() == "heading") {
+													GetDefNumber(unit_heading, pdefx, filename);
 												}
 											}
 										}
@@ -1154,7 +1168,7 @@ else GET_DEF_NUM(id);
 										cu->SetHeading(unit_heading * DEGREES);
 										unit_list.append(cu);
 									}
-									}
+								}
 							}
 						}  // elements
 
@@ -1176,10 +1190,10 @@ else GET_DEF_NUM(id);
 								if (parent_group)
 									g->location = parent_group->location;
 								else
-									g->location = Vec3(0, 0, 0);
+									g->location = FVector::Zero();
 							}
 							else {
-								g->location = loc;
+								g->location = FVector(loc.x, loc.y, loc.z);
 							}
 
 							if (unit_list.size()) {
@@ -1245,7 +1259,7 @@ CombatGroup::MergeOrderOfBattle(BYTE* block, const char* filename, int team, Com
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could not parse order of battle '%s'\n", filename);
+		Print("ERROR: could notxparse order of battle '%s'\n", filename);
 		return;
 	}
 	else {
@@ -1335,50 +1349,52 @@ else GET_DEF_NUM(id);
 										Print("WARNING: unit struct missing for group '%s' in '%s'\n", name, filename);
 									}
 									else {
-										TermStruct* val = pdef->term()->isStruct();
+										TermStruct* valu = pdef->term()->isStruct();
 
 										char unit_region[64];
 										char design[256];
-										Vec3 unit_loc = Vec3(0.0f, 0.0f, 0.0f);
+										FVector unit_loc = FVector::ZeroVector;
 										unit_count = 1;
 
 										FMemory::Memzero(unit_region, sizeof(unit_region));
 										FMemory::Memzero(design, sizeof(design));
 
-										for (int i = 0; i < val->elements()->size(); i++) {
-											TermDef* pdef = val->elements()->at(i)->isDef();
-											if (pdef) {
-												if (pdef->name()->value() == "name") {
-													GetDefText(unit_name, pdef, filename);
+										for (int iu = 0; iu < valu->elements()->size(); iu++) {
+											TermDef* pdefu = valu->elements()->at(iu)->isDef();
+											if (pdefu) {
+												if (pdefu->name()->value() == "name") {
+													GetDefText(unit_name, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "regnum") {
-													GetDefText(unit_regnum, pdef, filename);
+												else if (pdefu->name()->value() == "regnum") {
+													GetDefText(unit_regnum, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "region") {
-													GetDefText(unit_region, pdef, filename);
+												else if (pdefu->name()->value() == "region") {
+													GetDefText(unit_region, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "loc") {
-													GetDefVec(unit_loc, pdef, filename);
+												else if (pdefu->name()->value() == "loc") {
+													Vec3 temp;
+													GetDefVec(temp, pdefu, filename);
+													unit_loc = FVector(temp.x, temp.y, temp.z);
 												}
-												else if (pdef->name()->value() == "type") {
+												else if (pdefu->name()->value() == "type") {
 													char typestr[32];
-													GetDefText(typestr, pdef, filename);
+													GetDefText(typestr, pdefu, filename);
 													unit_class = ShipDesign::ClassForName(typestr);
 												}
-												else if (pdef->name()->value() == "design") {
-													GetDefText(unit_design, pdef, filename);
+												else if (pdefu->name()->value() == "design") {
+													GetDefText(unit_design, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "count") {
-													GetDefNumber(unit_count, pdef, filename);
+												else if (pdefu->name()->value() == "count") {
+													GetDefNumber(unit_count, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "dead_count") {
-													GetDefNumber(unit_dead, pdef, filename);
+												else if (pdefu->name()->value() == "dead_count") {
+													GetDefNumber(unit_dead, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "damage") {
-													GetDefNumber(unit_damage, pdef, filename);
+												else if (pdefu->name()->value() == "damage") {
+													GetDefNumber(unit_damage, pdefu, filename);
 												}
-												else if (pdef->name()->value() == "heading") {
-													GetDefNumber(unit_heading, pdef, filename);
+												else if (pdefu->name()->value() == "heading") {
+													GetDefNumber(unit_heading, pdefu, filename);
 												}
 											}
 										}
@@ -1403,18 +1419,23 @@ else GET_DEF_NUM(id);
 						}  // elements
 
 						if (iff >= 0 && (iff == team || team < 0)) {
-							// have we found the force group we are looking for yet?
-							if (!force && !_stricmp(name, combatant->Name())) {
-								force = combatant->GetForce();
-							}
-							else {
-								if (!force)
-									continue;
+							// have we found the force group we are looking for yet ?
+							if (!force)
+							{
+								const FString NameStr = FString(ANSI_TO_TCHAR(name));
 
+								if (combatant && combatant->GetName().Equals(NameStr, ESearchCase::IgnoreCase))
+								{
+									force = combatant->GetForce();
+								}
+							}
+							else
+							{
 								// if we already have a force, and we find a second one,
 								// it must be the start of a different combatant.
 								// So don't process any further:
-								if (TypeFromName(type) == CombatGroup::FORCE) {
+								if (TypeFromName(type) == ECOMBATGROUP_TYPE::FORCE)
+								{
 									break;
 								}
 							}
@@ -1428,7 +1449,7 @@ else GET_DEF_NUM(id);
 
 							g->region = region;
 							g->combatant = combatant;
-							g->location = loc;
+							g->location = FVector(loc.x, loc.y, loc.z);
 							g->enemy_intel = Intel::IntelFromName(intel);
 							g->unit_index = unit_index;
 
@@ -1440,7 +1461,7 @@ else GET_DEF_NUM(id);
 									g->SetZoneLock(zone_locked);
 								}
 								else {
-									::Print("WARNING: could not find combat zone '%s' for group %s %d '%s' in '%s'\n", zone, type, id, name, filename);
+									::Print("WARNING: could notxfind combat zone '%s' for group %s %d '%s' in '%s'\n", zone, type, id, name, filename);
 								}
 							}
 							else if (*system) {
@@ -1550,7 +1571,7 @@ void
 SaveCombatGroup(FILE* f, CombatGroup* g)
 {
 	fprintf(f, "group: {");
-	fprintf(f, " type: %s,", CombatGroup::NameFromType(g->Type()));
+	fprintf(f, " type: %s,", CombatGroup::NameFromType(g->GetType()));
 	fprintf(f, " id: %d,", g->GetID());
 	fprintf(f, " name: \"%s\",", g->Name().data());
 	fprintf(f, " intel: %s,", Intel::NameFromIntel(g->IntelLevel()));
@@ -1566,21 +1587,25 @@ SaveCombatGroup(FILE* f, CombatGroup* g)
 	}
 
 	if (g->GetAssignedZone()) {
-		fprintf(f, " zone: \"%s\",", g->GetAssignedZone()->Name().data());
+		fwprintf(
+			f,
+			L" zone: \"%s\",",
+			ANSI_TO_TCHAR(g->GetAssignedZone()->GetName())
+		);
 		if (g->IsZoneLocked()) {
 			fprintf(f, " zone_locked: true,");
 		}
 	}
 
-	Text x = FormatNumber(g->Location().x);
-	Text y = FormatNumber(g->Location().y);
-	Text z = FormatNumber(g->Location().z);
+	Text x = FormatNumber(g->Location().X);
+	Text y = FormatNumber(g->Location().Y);
+	Text z = FormatNumber(g->Location().Z);
 
 	fprintf(f, " loc: (%s, %s, %s),", x.data(), y.data(), z.data());
 
 	CombatGroup* parent = g->GetParent();
 	if (parent) {
-		fprintf(f, " parent_type:%s,", CombatGroup::NameFromType(parent->Type()));
+		fprintf(f, " parent_type:%s,", CombatGroup::NameFromType(parent->GetType()));
 		fprintf(f, " parent_id:%d,", parent->GetID());
 	}
 

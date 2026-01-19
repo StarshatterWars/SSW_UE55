@@ -1,156 +1,428 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         Mission.h
+	AUTHOR:       Carlos Bott
+	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+
+
+	OVERVIEW
+	========
+	Simulation Universe and Region classes
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Types.h"
+#include "Intel.h"
+#include "RLoc.h"
+#include "SimUniverse.h"
+#include "SimScene.h"
+#include "Skin.h"
+#include "Physical.h"
+#include "List.h"
+#include "Text.h"
 
-// Forward declarations (match your incremental porting approach)
-class StarSystem;
+// Starshatter core used Point/Vec3 previously; we standardize on FVector:
+#include "Math/Vector.h"
+
+// +--------------------------------------------------------------------+
+
+class Mission;
 class MissionElement;
+class MissionLoad;
 class MissionEvent;
+class MissionShip;
 
-/**
- * Mission (Starshatter-style, UE stub-first)
- *
- * Goals:
- * - Keep original surface area (construct/load/parse/validate, start/active/complete, etc.)
- * - Use UE types (FString, TArray) and remain compile-safe
- * - Defer real parsing/sim integration until later
- */
+class CombatGroup;
+class CombatUnit;
+
+class Ship;
+class SimSystem;
+class SimElement;
+class ShipDesign;
+class WeaponDesign;
+class StarSystem;
+class Instruction;
+
+class Term;
+class TermArray;
+class TermStruct;
+
+// +--------------------------------------------------------------------+
+
 class Mission
 {
 public:
-	// Mirrors Starshatter constructors:
-	// Mission(int identity, const char* fname, const char* pname)
-	Mission(int32 InIdentity, const FString& InFilename = TEXT(""), const FString& InPath = TEXT("Missions/"));
-	~Mission();
+	static const char* TYPENAME() { return "Mission"; }
 
-	// ---------------------------------------------------------------------
-	// Load / Parse / Validate (stubs for now)
-	// ---------------------------------------------------------------------
-	bool Load();                               // load from Filename+Path (stub)
-	bool ParseMission(const FString& Script);  // parse from in-memory text (stub)
-	void Validate();                           // post-parse validation (stub)
+	enum TYPE
+	{
+		PATROL,
+		SWEEP,
+		INTERCEPT,
+		AIR_PATROL,
+		AIR_SWEEP,
+		AIR_INTERCEPT,
+		STRIKE,     // ground attack
+		ASSAULT,    // starship attack
+		DEFEND,
+		ESCORT,
+		ESCORT_FREIGHT,
+		ESCORT_SHUTTLE,
+		ESCORT_STRIKE,
+		INTEL,
+		SCOUT,
+		RECON,
+		BLOCKADE,
+		FLEET,
+		BOMBARDMENT,
+		FLIGHT_OPS,
+		TRANSPORT,
+		CARGO,
+		TRAINING,
+		OTHER
+	};
 
-	// ---------------------------------------------------------------------
-	// Identity / basics
-	// ---------------------------------------------------------------------
-	int32 Identity() const { return Id; }
+	Mission(int id, const char* filename = 0, const char* path = 0);
+	virtual ~Mission();
 
-	const FString& Name() const { return NameStr; }
-	void SetName(const FString& InName) { NameStr = InName; }
+	int operator == (const Mission& m)   const { return id == m.id; }
 
-	int32 GetType() const { return Type; }
-	void  SetType(int32 InType) { Type = InType; }
+	virtual void            Validate();
+	virtual bool            Load(const char* filename = 0, const char* path = 0);
+	virtual bool            Save();
+	virtual bool            ParseMission(const char* buffer);
+	virtual void            SetPlayer(MissionElement* player_element);
+	virtual MissionElement* GetPlayer();
 
-	int32 GetTeam() const { return Team; }
-	void  SetTeam(int32 InTeam) { Team = InTeam; }
+	// accessors/mutators:
+	int                  Identity()      const { return id; }
+	const char* FileName()      const { return filename; }
+	const char* Name()          const { return name; }
+	const char* Description()   const { return desc; }
+	const char* Situation()     const { return sitrep; }
+	const char* Objective()     const { return objective; }
+	const char* Subtitles()     const;
+	int                  Start()         const { return start; }
+	double               Stardate()      const { return stardate; }
+	int                  Type()          const { return type; }
+	const char* TypeName()      const { return RoleName(type); }
+	int                  Team()          const { return team; }
+	bool                 IsOK()          const { return ok; }
+	bool                 IsActive()      const { return active; }
+	bool                 IsComplete()    const { return complete; }
 
-	// ---------------------------------------------------------------------
-	// Time fields (Starshatter uses start in seconds-from-day start)
-	// ---------------------------------------------------------------------
-	int32 Start() const { return StartSeconds; }
-	void  SetStart(int32 InStartSeconds) { StartSeconds = InStartSeconds; }
+	StarSystem* GetStarSystem() const { return star_system; }
+	List<StarSystem>& GetSystemList() { return system_list; }
+	const char* GetRegion()     const { return region; }
 
-	double Stardate() const { return StardateSeconds; }
-	void   SetStardate(double InStardate) { StardateSeconds = InStardate; }
+	List<MissionElement>& GetElements() { return elements; }
+	virtual MissionElement* FindElement(const char* name);
+	virtual void            AddElement(MissionElement* elem);
 
-	// ---------------------------------------------------------------------
-	// Status flags
-	// ---------------------------------------------------------------------
-	bool IsOk() const { return bOk; }
-	bool IsActive() const { return bActive; }
-	bool IsComplete() const { return bComplete; }
+	List<MissionEvent>& GetEvents() { return events; }
+	MissionEvent* FindEvent(int event_type) const;
+	virtual void         AddEvent(MissionEvent* event);
 
-	void SetOk(bool bInOk) { bOk = bInOk; }
-	void SetActive(bool bInActive) { bActive = bInActive; }
-	void SetComplete(bool bInComplete) { bComplete = bInComplete; }
+	MissionElement* GetTarget()     const { return target; }
+	MissionElement* GetWard()       const { return ward; }
 
-	// ---------------------------------------------------------------------
-	// Text blocks (objective/sitrep/situation) used by campaign UI
-	// ---------------------------------------------------------------------
-	const FString& Objective() const { return ObjectiveStr; }
-	void SetObjective(const FString& InObjective) { ObjectiveStr = InObjective; }
+	void                 SetName(const char* n) { name = n; }
+	void                 SetDescription(const char* d) { desc = d; }
+	void                 SetSituation(const char* sit) { sitrep = sit; }
+	void                 SetObjective(const char* obj) { objective = obj; }
+	void                 SetStart(int s) { start = s; }
+	void                 SetType(int t) { type = t; }
+	void                 SetTeam(int iff) { team = iff; }
+	void                 SetStarSystem(StarSystem* s);
+	void                 SetRegion(const char* rgn) { region = rgn; }
+	void                 SetOK(bool a) { ok = a; }
+	void                 SetActive(bool a) { active = a; }
+	void                 SetComplete(bool c) { complete = c; }
+	void                 SetTarget(MissionElement* t) { target = t; }
+	void                 SetWard(MissionElement* w) { ward = w; }
 
-	const FString& Sitrep() const { return SitrepStr; }
-	void SetSitrep(const FString& InSitrep) { SitrepStr = InSitrep; }
+	void                 ClearSystemList();
 
-	const FString& Situation() const { return SituationStr; }
-	void SetSituation(const FString& InSituation) { SituationStr = InSituation; }
+	void                 IncreaseElemPriority(int index);
+	void                 DecreaseElemPriority(int index);
+	void                 IncreaseEventPriority(int index);
+	void                 DecreaseEventPriority(int index);
 
-	const FString& Subtitles() const { return SubtitlesStr; }
-	void SetSubtitles(const FString& InSubtitles) { SubtitlesStr = InSubtitles; }
+	static const char* RoleName(int role);
+	static int           TypeFromName(const char* n);
 
-	// ---------------------------------------------------------------------
-	// File references
-	// ---------------------------------------------------------------------
-	const FString& GetFilename() const { return Filename; }
-	const FString& GetPath() const { return Path; }
-	void SetFilename(const FString& InFilename) { Filename = InFilename; }
-	void SetPath(const FString& InPath) { Path = InPath; }
+	Text                 ErrorMessage() const { return errmsg; }
+	void                 AddError(Text err);
 
-	// ---------------------------------------------------------------------
-	// Star system association (stubs)
-	// ---------------------------------------------------------------------
-	StarSystem* GetStarSystem() const { return StarSystemPtr; }
-	void SetStarSystem(StarSystem* InSystem);
-	void ClearSystemList();
+	Text                 Serialize(const char* player_elem = 0, int player_index = 0);
 
-	// ---------------------------------------------------------------------
-	// Elements / Events (stubs)
-	// ---------------------------------------------------------------------
-	void AddElement(MissionElement* Elem);
-	MissionElement* FindElement(const FString& ElemName);
+protected:
+	MissionElement* ParseElement(TermStruct* val);
+	MissionEvent* ParseEvent(TermStruct* val);
+	MissionShip* ParseShip(TermStruct* val, MissionElement* element);
+	Instruction* ParseInstruction(TermStruct* val, MissionElement* element);
+	void                 ParseLoadout(TermStruct* val, MissionElement* element);
+	RLoc* ParseRLoc(TermStruct* val);
 
-	void IncreaseElemPriority(int32 ElemIndex);
-	void DecreaseElemPriority(int32 ElemIndex);
+	int                  id;
+	char                 filename[64];
+	char                 path[64];
+	Text                 region;
+	Text                 name;
+	Text                 desc;
+	int                  type;
+	int                  team;
+	int                  start;
+	double               stardate;
+	bool                 ok;
+	bool                 active;
+	bool                 complete;
+	bool                 degrees;
+	Text                 objective;
+	Text                 sitrep;
+	Text                 errmsg;
+	Text                 subtitles;
+	StarSystem* star_system;
+	List<StarSystem>     system_list;
 
-	void AddEvent(MissionEvent* Ev);
-	void IncreaseEventPriority(int32 EventIndex);
-	void DecreaseEventPriority(int32 EventIndex);
+	List<MissionElement> elements;
+	List<MissionEvent>   events;
 
-	const TArray<MissionElement*>& GetElements() const { return Elements; }
-	const TArray<MissionEvent*>& GetEvents() const { return Events; }
+	MissionElement* target;
+	MissionElement* ward;
+	MissionElement* current;
+};
 
-	// ---------------------------------------------------------------------
-	// Type mapping (stubs — fill in when you port Mission::TypeFromName)
-	// ---------------------------------------------------------------------
-	static int32 TypeFromName(const FString& TypeName);
-	static FString NameFromType(int32 InType);
+// +--------------------------------------------------------------------+
 
-private:
-	// Identity
-	int32 Id = -1;
+class MissionElement
+{
+	friend class Mission;
 
-	// Type/team (Starshatter: type, team)
-	int32 Type = 0;
-	int32 Team = 1;
+public:
+	static const char* TYPENAME() { return "MissionElement"; }
 
-	// Status flags (Starshatter: ok, active, complete)
-	bool bOk = false;
-	bool bActive = false;
-	bool bComplete = false;
+	MissionElement();
+	~MissionElement();
 
-	// Time
-	int32  StartSeconds = 33 * 3600;   // mirrors original default
-	double StardateSeconds = 0.0;
+	int operator == (const MissionElement& r) const { return id == r.id; }
 
-	// File references
-	FString Filename;
-	FString Path;
+	int               Identity()     const { return id; }
+	const Text& Name()         const { return name; }
+	Text              Abbreviation() const;
+	const Text& Carrier()      const { return carrier; }
+	const Text& Commander()    const { return commander; }
+	const Text& Squadron()     const { return squadron; }
+	const Text& Path()         const { return path; }
+	int               ElementID()    const { return elem_id; }
+	const ShipDesign* GetDesign()    const { return design; }
+	const Skin* GetSkin()      const { return skin; }
+	int               Count()        const { return count; }
+	int               MaintCount()   const { return maint_count; }
+	int               DeadCount()    const { return dead_count; }
+	int               GetIFF()       const { return IFF_code; }
+	int               IntelLevel()   const { return intel; }
+	int               MissionRole()  const { return mission_role; }
+	int               Player()       const { return player; }
+	Text              RoleName()     const;
+	Color             MarkerColor()  const;
+	bool              IsStarship()   const;
+	bool              IsDropship()   const;
+	bool              IsStatic()     const;
+	bool              IsGroundUnit() const;
+	bool              IsSquadron()   const;
+	bool              IsCarrier()    const;
+	bool              IsAlert()      const { return alert; }
+	bool              IsPlayable()   const { return playable; }
+	bool              IsRogue()      const { return rogue; }
+	bool              IsInvulnerable() const { return invulnerable; }
+	int               RespawnCount() const { return respawns; }
+	int               HoldTime()     const { return hold_time; }
+	int               CommandAI()    const { return command_ai; }
+	int               ZoneLock()     const { return zone_lock; }
 
-	// Strings (objective/sitrep/situation/subtitles/name)
-	FString NameStr;
-	FString ObjectiveStr;
-	FString SitrepStr;
-	FString SituationStr;
-	FString SubtitlesStr;
+	const Text& Region()       const { return rgn_name; }
+	FVector           Location()     const;
+	RLoc& GetRLoc() { return rloc; }
+	double            Heading()      const { return heading; }
 
-	// Star system pointers (stubs)
-	StarSystem* StarSystemPtr = nullptr;
-	TArray<StarSystem*> SystemList;
+	Text              GetShipName(int n) const;
+	Text              GetRegistry(int n) const;
 
-	// Elements / events
-	TArray<MissionElement*> Elements;
-	TArray<MissionEvent*> Events;
+	List<Instruction>& Objectives() { return objectives; }
+	List<Text>& Instructions() { return instructions; }
+	List<Instruction>& NavList() { return navlist; }
+	List<MissionLoad>& Loadouts() { return loadouts; }
+	List<MissionShip>& Ships() { return ships; }
+
+	void              SetName(const char* n) { name = n; }
+	void              SetCarrier(const char* c) { carrier = c; }
+	void              SetCommander(const char* c) { commander = c; }
+	void              SetSquadron(const char* s) { squadron = s; }
+	void              SetPath(const char* p) { path = p; }
+	void              SetElementID(int id) { elem_id = id; }
+	void              SetDesign(const ShipDesign* d) { design = d; }
+	void              SetSkin(const Skin* s) { skin = s; }
+	void              SetCount(int n) { count = n; }
+	void              SetMaintCount(int n) { maint_count = n; }
+	void              SetDeadCount(int n) { dead_count = n; }
+	void              SetIFF(int iff) { IFF_code = iff; }
+	void              SetIntelLevel(int i) { intel = i; }
+	void              SetMissionRole(int r) { mission_role = r; }
+	void              SetPlayer(int p) { player = p; }
+	void              SetPlayable(bool p) { playable = p; }
+	void              SetRogue(bool r) { rogue = r; }
+	void              SetInvulnerable(bool n) { invulnerable = n; }
+	void              SetAlert(bool a) { alert = a; }
+	void              SetCommandAI(int a) { command_ai = a; }
+	void              SetRegion(const char* rgn) { rgn_name = rgn; }
+
+	void              SetLocation(const FVector& p);
+	void              SetRLoc(const RLoc& r);
+	void              SetHeading(double h) { heading = h; }
+	void              SetRespawnCount(int r) { respawns = r; }
+	void              SetHoldTime(int t) { hold_time = t; }
+	void              SetZoneLock(int z) { zone_lock = z; }
+
+	void              AddNavPoint(Instruction* pt, Instruction* afterPoint = 0);
+	void              DelNavPoint(Instruction* pt);
+	void              ClearFlightPlan();
+	int               GetNavIndex(const Instruction* n);
+
+	void              AddObjective(Instruction* obj) { objectives.append(obj); }
+	void              AddInstruction(const char* i) { instructions.append(new(__FILE__, __LINE__) Text(i)); }
+
+	CombatGroup* GetCombatGroup() { return combat_group; }
+	void              SetCombatGroup(CombatGroup* g) { combat_group = g; }
+	CombatUnit* GetCombatUnit() { return combat_unit; }
+	void              SetCombatUnit(CombatUnit* u) { combat_unit = u; }
+
+protected:
+	int               id;
+	Text              name;
+	Text              carrier;
+	Text              commander;
+	Text              squadron;
+	Text              path;
+	int               elem_id;
+	const ShipDesign* design;
+	const Skin* skin;
+	int               count;
+	int               maint_count;
+	int               dead_count;
+	int               IFF_code;
+	int               mission_role;
+	int               intel;
+	int               respawns;
+	int               hold_time;
+	int               zone_lock;
+	int               player;
+	int               command_ai;
+	bool              alert;
+	bool              playable;
+	bool              rogue;
+	bool              invulnerable;
+
+	Text              rgn_name;
+	RLoc              rloc;
+	double            heading;
+
+	CombatGroup* combat_group;
+	CombatUnit* combat_unit;
+
+	List<Instruction> objectives;
+	List<Text>        instructions;
+	List<Instruction> navlist;
+	List<MissionLoad> loadouts;
+	List<MissionShip> ships;
+};
+
+// +--------------------------------------------------------------------+
+
+class MissionLoad
+{
+	friend class Mission;
+
+public:
+	static const char* TYPENAME() { return "MissionLoad"; }
+
+	MissionLoad(int ship = -1, const char* name = 0);
+	~MissionLoad();
+
+	int               GetShip() const;
+	void              SetShip(int ship);
+
+	Text              GetName() const;
+	void              SetName(Text name);
+
+	int* GetStations();
+	int               GetStation(int index);
+	void              SetStation(int index, int selection);
+
+protected:
+	int               ship;
+	Text              name;
+	int               load[16];
+};
+
+// +--------------------------------------------------------------------+
+
+class MissionShip
+{
+	friend class Mission;
+
+public:
+	static const char* TYPENAME() { return "MissionShip"; }
+
+	MissionShip();
+	~MissionShip() {}
+
+	const Text& Name()                  const { return name; }
+	const Text& RegNum()                const { return regnum; }
+	const Text& Region()                const { return region; }
+	const Skin* GetSkin()               const { return skin; }
+	const FVector& Location()              const { return loc; }
+	const FVector& Velocity()              const { return velocity; }
+	int               Respawns()              const { return respawns; }
+	double            Heading()               const { return heading; }
+	double            Integrity()             const { return integrity; }
+	int               Decoys()                const { return decoys; }
+	int               Probes()                const { return probes; }
+	const int* Ammo()                  const { return ammo; }
+	const int* Fuel()                  const { return fuel; }
+
+	void              SetName(const char* n) { name = n; }
+	void              SetRegNum(const char* n) { regnum = n; }
+	void              SetRegion(const char* n) { region = n; }
+	void              SetSkin(const Skin* s) { skin = s; }
+
+	void              SetLocation(const FVector& p) { loc = p; }
+	void              SetVelocity(const FVector& p) { velocity = p; }
+
+	void              SetRespawns(int r) { respawns = r; }
+	void              SetHeading(double h) { heading = h; }
+	void              SetIntegrity(double n) { integrity = n; }
+	void              SetDecoys(int d) { decoys = d; }
+	void              SetProbes(int p) { probes = p; }
+	void              SetAmmo(const int* a);
+	void              SetFuel(const int* f);
+
+protected:
+	Text              name;
+	Text              regnum;
+	Text              region;
+	const Skin* skin;
+	FVector           loc;
+	FVector           velocity;
+	int               respawns;
+	double            heading;
+	double            integrity;
+	int               decoys;
+	int               probes;
+	int               ammo[16];
+	int               fuel[4];
 };

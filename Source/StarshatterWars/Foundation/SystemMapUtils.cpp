@@ -327,7 +327,7 @@ FBox2D SystemMapUtils::ComputeContentBounds(const TSet<UWidget*>& ContentWidgets
 
 		if (!Canvas->GetAllChildren().Contains(Widget))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ComputeContentBounds: Widget %s not found in canvas"), *Widget->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("ComputeContentBounds: Widget %s notxfound in canvas"), *Widget->GetName());
 			continue;
 		}
 
@@ -356,7 +356,7 @@ FBox2D SystemMapUtils::ComputeContentBounds(const TSet<UWidget*>& ContentWidgets
 		else
 		{
 			UE_LOG(LogTemp, Warning,
-				TEXT("ComputeContentBounds: Widget %s is not in a CanvasPanelSlot"),
+				TEXT("ComputeContentBounds: Widget %s is notxin a CanvasPanelSlot"),
 				*Widget->GetName());
 		}
 	}

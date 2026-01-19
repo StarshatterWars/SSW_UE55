@@ -1399,7 +1399,7 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 	}
 	
 	if (!SystemMapClass) {
-		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Widget Not Creaed"));
+		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Widget notxCreaed"));
 		return;
 	}
 	
@@ -1432,7 +1432,7 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 	}
 
 	if (!SectorMapClass) {
-		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Widget Not Creaed"));
+		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Widget notxCreaed"));
 		return;
 	}
 
@@ -1468,14 +1468,14 @@ const FS_OOBWing* UOperationsScreen::FindWingForCarrierGroup(int CarrierGroupId,
 					}
 					else
 					{
-						UE_LOG(LogTemp, Log, TEXT("Selected carrier wing not found"));
+						UE_LOG(LogTemp, Log, TEXT("Selected carrier wing notxfound"));
 						return nullptr; // no wings attached
 					}
 				}
 			}
 		}
 	}
-	return nullptr; // carrier group not found
+	return nullptr; // carrier group notxfound
 }
 void UOperationsScreen::GetCurrentCarrierGroup() 
 {

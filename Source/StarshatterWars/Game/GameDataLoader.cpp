@@ -9,7 +9,7 @@
 	OVERVIEW
 	========
 	Loader and Parser class for initial generation of Master Game Data Tables
-	Will not be used after Dable Table is Generated.
+	Will notxbe used after Dable Table is Generated.
 */
 
 #include "GameDataLoader.h"
@@ -17,12 +17,11 @@
 #include "Game.h"
 #include "Starsystem.h"
 #include "Galaxy.h"
-//#include "CombatGroup.h"
-//#include "CombatRoster.h"
-//#include "CombatAction.h"
-//#include "CombatActionReq.h"
-//#include "CombatEvent.h"
-//#include "Combatant.h"
+#include "CombatGroup.h"
+#include "CombatRoster.h"
+#include "CombatAction.h"
+#include "CombatEvent.h"
+#include "Combatant.h"
 #include "Mission.h"
 #include "Intel.h"
 #include "Ship.h"
@@ -30,11 +29,11 @@
 #include "ShipDesign.h"
 #include "PlayerData.h"
 #include "SystemDesign.h"
-#include "ComponentDesign.h"
 #include "GameContent.h"
 #include "Galaxymanager.h"
 #include "Engine/TimerHandle.h"
 #include "TimerManager.h"
+#include "SimComponent.h"
 
 const char* ShipDesignClassName[32] = {
 	"Drone",          "Fighter",
@@ -269,7 +268,7 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *fs);
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *fs);
 		return;
 	}
 	else {
@@ -903,7 +902,7 @@ AGameDataLoader::LoadMissionList(FString Path)
 
 	if(FFileManagerGeneric::Get().FileExists(*FileName) == false)
 	{ 
-		UE_LOG(LogTemp, Log, TEXT("Mission List does not exist"));
+		UE_LOG(LogTemp, Log, TEXT("Mission List does notxexist"));
 		return;
 	}
 
@@ -1042,7 +1041,7 @@ AGameDataLoader::LoadTemplateList(FString Path)
 
 	if (FFileManagerGeneric::Get().FileExists(*FileName) == false)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Template List does not exist"));
+		UE_LOG(LogTemp, Log, TEXT("Template List does notxexist"));
 		return;
 	}
 
@@ -1285,7 +1284,7 @@ AGameDataLoader::ParseMission(const char* fn)
 		const char* result = TCHAR_TO_ANSI(*FileString);
 	}
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FString(fn));
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *FString(fn));
 		return;
 	}
 	else {
@@ -2271,7 +2270,7 @@ AGameDataLoader::ParseScriptedTemplate(const char* fn)
 		const char* result = TCHAR_TO_ANSI(*FileString);
 	}
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FString(fn));
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *FString(fn));
 		return;
 	}
 	else {
@@ -2449,7 +2448,7 @@ AGameDataLoader::ParseMissionTemplate(const char* fn)
 		const char* result = TCHAR_TO_ANSI(*FileString);
 	}
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FString(fn));
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *FString(fn));
 		return;
 	}
 	else {
@@ -2839,7 +2838,7 @@ AGameDataLoader::LoadGalaxyMap()
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FileName);
+		UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *FileName);
 		return;
 	}
 	else {
@@ -4038,7 +4037,7 @@ void AGameDataLoader::ParseTerrain(TermStruct* val, const char* fn)
 				else {
 
 					//if (!region)
-					//	region = new(__FILE__, __LINE__) TerrainRegion(this, rgn_name, size, primary);
+					//	region = new  TerrainRegion(this, rgn_name, size, primary);
 
 					//TermStruct* val = pdef->term()->isStruct();
 					//ParseLayer(region, val);
@@ -4100,7 +4099,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("ERROR: could not parse '%s'"), *FString(fn));
+		UE_LOG(LogTemp, Log, TEXT("ERROR: could notxparse '%s'"), *FString(fn));
 		return;
 	}
 	else {
@@ -5440,7 +5439,7 @@ AGameDataLoader::ParseDrive(TermStruct* val, const char* fn)
 				}
 
 				if (!drive)
-					drive = new(__FILE__, __LINE__) Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
+					drive = new  Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
 
 				drive->AddPort(port, flare_scale);
 			}
@@ -5563,7 +5562,7 @@ ShipDesign::ParseQuantumDrive(TermStruct* val)
 		}
 	}
 
-	QuantumDrive* drive = new(__FILE__, __LINE__) QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
+	QuantumDrive* drive = new  QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
 	drive->SetSourceIndex(reactors.size() - 1);
 	drive->Mount(loc, size, hull);
 	drive->SetCountdown(countdown);
@@ -5668,7 +5667,7 @@ ShipDesign::ParseFarcaster(TermStruct* val)
 		}
 	}
 
-	Farcaster* caster = new(__FILE__, __LINE__) Farcaster(capacity, consumption);
+	Farcaster* caster = new  Farcaster(capacity, consumption);
 	caster->SetSourceIndex(reactors.size() - 1);
 	caster->Mount(loc, size, hull);
 
@@ -5806,7 +5805,7 @@ ShipDesign::ParseThruster(TermStruct* val)
 				}
 
 				if (!drive)
-					drive = new(__FILE__, __LINE__) Thruster(dtype, thrust, tscale);
+					drive = new  Thruster(dtype, thrust, tscale);
 
 				if (defname == "port" || defname == "port_bottom")
 					drive->AddPort(Thruster::BOTTOM, port, fire, port_scale);
@@ -5842,7 +5841,7 @@ ShipDesign::ParseThruster(TermStruct* val)
 	}
 
 	if (!drive)
-		drive = new(__FILE__, __LINE__) Thruster(dtype, thrust, tscale);
+		drive = new  Thruster(dtype, thrust, tscale);
 	drive->SetSourceIndex(reactors.size() - 1);
 	drive->Mount(loc, size, hull);
 
@@ -5946,7 +5945,7 @@ ShipDesign::ParseNavlight(TermStruct* val)
 		}
 	}
 
-	NavLight* nav = new(__FILE__, __LINE__) NavLight(period, dscale);
+	NavLight* nav = new  NavLight(period, dscale);
 	if (dname.length()) nav->SetName(dname);
 	if (dabrv.length()) nav->SetAbbreviation(dabrv);
 
@@ -6101,7 +6100,7 @@ ShipDesign::ParseFlightDeck(TermStruct* val)
 		}
 	}
 
-	FlightDeck* deck = new(__FILE__, __LINE__) FlightDeck();
+	FlightDeck* deck = new  FlightDeck();
 	deck->Mount(loc, size, hull);
 	if (dname.length()) deck->SetName(dname);
 	if (dabrv.length()) deck->SetAbbreviation(dabrv);
@@ -6201,9 +6200,9 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 					}
 
 					if (ngear < LandingGear::MAX_GEAR) {
-						Model* m = new(__FILE__, __LINE__) Model;
+						Model* m = new  Model;
 						if (!m->Load(mod_name, scale)) {
-							Print("WARNING: Could not load landing gear model '%s'\n", mod_name);
+							Print("WARNING: Could notxload landing gear model '%s'\n", mod_name);
 							delete m;
 							m = 0;
 						}
@@ -6222,7 +6221,7 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 		}
 	}
 
-	gear = new(__FILE__, __LINE__) LandingGear();
+	gear = new  LandingGear();
 	if (dname.length()) gear->SetName(dname);
 	if (dabrv.length()) gear->SetAbbreviation(dabrv);
 
@@ -6389,7 +6388,7 @@ ShipDesign::ParseWeapon(TermStruct* val)
 				muzzles[i] *= (float)meta->scale;
 		}
 
-		Weapon* gun = new(__FILE__, __LINE__) Weapon(meta, nmuz, muzzles, az, el);
+		Weapon* gun = new  Weapon(meta, nmuz, muzzles, az, el);
 		gun->SetSourceIndex(reactors.size() - 1);
 		gun->Mount(loc, size, hull);
 
@@ -6514,7 +6513,7 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 		}
 	}
 
-	HardPoint* hp = new(__FILE__, __LINE__) HardPoint(muzzle, az, el);
+	HardPoint* hp = new  HardPoint(muzzle, az, el);
 	if (hp) {
 		for (int i = 0; i < ntypes; i++) {
 			WeaponDesign* meta = WeaponDesign::Find(wtypes[i]);
@@ -6543,7 +6542,7 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 void
 ShipDesign::ParseLoadout(TermStruct* val)
 {
-	ShipLoad* load = new(__FILE__, __LINE__) ShipLoad;
+	ShipLoad* load = new  ShipLoad;
 
 	if (!load) return;
 
@@ -6623,7 +6622,7 @@ ShipDesign::ParseSensor(TermStruct* val)
 	}
 
 	if (!sensor) {
-		sensor = new(__FILE__, __LINE__) Sensor();
+		sensor = new  Sensor();
 
 		if (design_name.length()) {
 			SystemDesign* sd = SystemDesign::Find(design_name);
@@ -6684,7 +6683,7 @@ ShipDesign::ParseNavsys(TermStruct* val)
 	}
 
 	if (!navsys) {
-		navsys = new(__FILE__, __LINE__) NavSystem;
+		navsys = new  NavSystem;
 
 		if (design_name.length()) {
 			SystemDesign* sd = SystemDesign::Find(design_name);
@@ -6745,7 +6744,7 @@ ShipDesign::ParseComputer(TermStruct* val)
 		}
 	}
 
-	Computer* comp = new(__FILE__, __LINE__) Computer(comp_type, comp_name);
+	Computer* comp = new  Computer(comp_type, comp_name);
 	comp->Mount(loc, size, hull);
 	comp->SetAbbreviation(comp_abrv);
 	comp->SetSourceIndex(reactors.size() - 1);
@@ -6857,7 +6856,7 @@ ShipDesign::ParseShield(TermStruct* val)
 
 	if (!shield) {
 		if (shield_type) {
-			shield = new(__FILE__, __LINE__) Shield((Shield::SUBTYPE)shield_type);
+			shield = new  Shield((Shield::SUBTYPE)shield_type);
 			shield->SetSourceIndex(reactors.size() - 1);
 			shield->Mount(loc, size, hull);
 			if (dname.length()) shield->SetName(dname);
@@ -6890,9 +6889,9 @@ ShipDesign::ParseShield(TermStruct* val)
 				shield->SetEMCONPower(1, emcon_3);
 
 			if (model_name.length()) {
-				shield_model = new(__FILE__, __LINE__) Model;
+				shield_model = new  Model;
 				if (!shield_model->Load(model_name, scale)) {
-					Print("ERROR: Could not load shield model '%s'\n", model_name.data());
+					Print("ERROR: Could notxload shield model '%s'\n", model_name.data());
 					delete shield_model;
 					shield_model = 0;
 					valid = false;
@@ -6989,9 +6988,9 @@ ShipDesign::ParseDeathSpiral(TermStruct* val)
 				if (def->term() && def->term()->isText()) {
 					Text model_name;
 					GetDefText(model_name, def, filename);
-					Model* model = new(__FILE__, __LINE__) Model;
+					Model* model = new  Model;
 					if (!model->Load(model_name, scale)) {
-						Print("Could not load debris model '%s'\n", model_name.data());
+						Print("Could notxload debris model '%s'\n", model_name.data());
 						delete model;
 						return;
 					}
@@ -7097,9 +7096,9 @@ ShipDesign::ParseDebris(TermStruct* val, int index)
 
 			if (defname == "model") {
 				GetDefText(model_name, def, filename);
-				Model* model = new(__FILE__, __LINE__) Model;
+				Model* model = new  Model;
 				if (!model->Load(model_name, scale)) {
-					Print("Could not load debris model '%s'\n", model_name);
+					Print("Could notxload debris model '%s'\n", model_name);
 					delete model;
 					return;
 				}
@@ -7164,7 +7163,7 @@ ShipDesign::ParseMap(TermStruct* val)
 			if (defname == "sprite") {
 				GetDefText(sprite_name, pdef, filename);
 
-				Bitmap* sprite = new(__FILE__, __LINE__) Bitmap();
+				Bitmap* sprite = new  Bitmap();
 				DataLoader* loader = DataLoader::GetLoader();
 				loader->LoadBitmap(sprite_name, *sprite, Bitmap::BMP_TRANSLUCENT);
 
@@ -7208,7 +7207,7 @@ ShipDesign::ParseSquadron(TermStruct* val)
 		}
 	}
 
-	ShipSquadron* s = new(__FILE__, __LINE__) ShipSquadron;
+	ShipSquadron* s = new  ShipSquadron;
 	strcpy_s(s->name, name);
 
 	s->design = Get(design);
@@ -7237,7 +7236,7 @@ ShipDesign::ParseSkin(TermStruct* val)
 			if (defname == "name") {
 				GetDefText(name, def, filename);
 
-				skin = new(__FILE__, __LINE__) Skin(name);
+				skin = new  Skin(name);
 			}
 			else if (defname == "material" || defname == "mtl") {
 				if (!def->term() || !def->term()->isStruct()) {
@@ -7266,7 +7265,7 @@ ShipDesign::ParseSkin(TermStruct* val)
 void
 ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 {
-	Material* mtl = new(__FILE__, __LINE__) Material;
+	Material* mtl = new  Material;
 	if (mtl == nullptr)
 		return;
 

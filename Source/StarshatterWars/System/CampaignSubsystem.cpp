@@ -147,7 +147,7 @@ void UCampaignSubsystem::HydrateFromDataTables()
 {
 	// Stub for now:
 	// - Later, load DT rows into plain C++ caches here
-	// - Do NOT touch DTs inside planners
+	// - Do notxtouch DTs inside planners
 	UE_LOG(LogTemp, Log, TEXT("[CampaignSubsystem] HydrateFromDataTables (stub)"));
 }
 
@@ -299,7 +299,7 @@ void UCampaignSubsystem::BuildTrainingOffers()
 		FMissionOffer Offer;
 		Offer.OfferId = AllocateOfferId();
 
-		// For training missions, this is not a template row; store the mission name/id as a tag.
+		// For training missions, this is notxa template row; store the mission name/id as a tag.
 		Offer.MissionTemplateRow = NAME_None;
 		Offer.StartTimeSeconds = LastNowSeconds;
 		Offer.SourceTag = FString::Printf(TEXT("TRAINING:%d:%s"), M.Id, *M.Name);
@@ -373,7 +373,7 @@ bool UCampaignSubsystem::TryPickEligibleMissionTemplate(
 		{
 			const int32* Status = ActionStatusById.Find(T.ActionId);
 
-			// If we have no status recorded, treat as “not ready” when ActionStatus is non-zero.
+			// If we have no status recorded, treat as “notxready” when ActionStatus is non-zero.
 			if (T.ActionStatus != 0)
 			{
 				if (!Status || *Status != T.ActionStatus)
@@ -446,7 +446,7 @@ bool UCampaignSubsystem::TryBuildOfferFromCampaignAction(const FCampaignTickCont
 		if (A.Iff != 0 && A.Iff != CachedPlayerIff)
 			continue;
 
-		// Rank gate (rank not wired yet => CachedPlayerRank == 0, which is safe)
+		// Rank gate (rank notxwired yet => CachedPlayerRank == 0, which is safe)
 		if (!RankOk(CachedPlayerRank, A.MinRank, A.MaxRank))
 			continue;
 
@@ -475,7 +475,7 @@ bool UCampaignSubsystem::TryBuildOfferFromCampaignAction(const FCampaignTickCont
 		else if (!A.Scene.IsEmpty())
 			TemplateRow = FName(*A.Scene);
 
-		// If not specified, fall back to template list selection (but do not recurse)
+		// If notxspecified, fall back to template list selection (but do notxrecurse)
 		if (TemplateRow.IsNone())
 			continue;
 
@@ -508,7 +508,7 @@ bool UCampaignSubsystem::TryBuildOfferFromTemplateList(const FCampaignTickContex
 	if (List.Num() <= 0)
 		return false;
 
-	// Player rank not wired; treat as unknown.
+	// Player rank notxwired; treat as unknown.
 	// This will naturally exclude templates that require MinRank > 0.
 	const int32 LocalRank = CachedPlayerRank;
 
@@ -536,7 +536,7 @@ bool UCampaignSubsystem::TryBuildOfferFromTemplateList(const FCampaignTickContex
 
 		// Optional action gating:
 		// If Template references an ActionId + ActionStatus, require the action status match if you track it later.
-		// For now, do not block on this since ActionStatus storage is not wired.
+		// For now, do notxblock on this since ActionStatus storage is notxwired.
 
 		Eligible.Add(i);
 	}

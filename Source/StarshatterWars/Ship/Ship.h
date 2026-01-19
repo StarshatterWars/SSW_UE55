@@ -12,7 +12,7 @@
 
     UE PORT NOTES
     =============
-    - Plain C++ class (NOT a UObject)
+    - Plain C++ class (notxa UObject)
     - Keeps Starshatter core types (Text, List, Color, etc.)
     - Replaces Bitmap with UTexture2D* (forward-declared)
     - Uses forward declarations aggressively to keep header light
@@ -31,7 +31,7 @@
 
 // +--------------------------------------------------------------------+
 
-class Shot;
+class SimShot;
 class Drone;
 
 class UTexture2D;
@@ -277,13 +277,13 @@ public:
     virtual WeaponGroup* GetPrimaryGroup() const;
     virtual WeaponGroup* GetSecondaryGroup() const;
     virtual Weapon* GetDecoy() const;
-    virtual List<Shot>& GetActiveDecoys();
+    virtual List<SimShot>& GetActiveDecoys();
     virtual void      AddActiveDecoy(Drone* d);
     virtual int* GetLoadout() { return loadout; }
 
-    List<Shot>& GetThreatList();
-    void              AddThreat(Shot* s);
-    void              DropThreat(Shot* s);
+    List<SimShot>& GetThreatList();
+    void              AddThreat(SimShot* s);
+    void              DropThreat(SimShot* s);
 
     virtual bool         Update(SimObject* obj);
     virtual const char* GetObserverName() const { return name; }
@@ -309,10 +309,10 @@ public:
     void              SetWard(Ship* s);
 
     // SHIELD SYSTEMS:
-    virtual double    InflictDamage(double damage, Shot* shot = 0, int hit_type = 3, FVector hull_impact = FVector(0, 0, 0));
-    virtual double    InflictSystemDamage(double damage, Shot* shot, FVector impact);
+    virtual double    InflictDamage(double damage, SimShot* shot = 0, int hit_type = 3, FVector hull_impact = FVector(0, 0, 0));
+    virtual double    InflictSystemDamage(double damage, SimShot* shot, FVector impact);
 
-    virtual void      InflictNetDamage(double damage, Shot* shot = 0);
+    virtual void      InflictNetDamage(double damage, SimShot* shot = 0);
     virtual void      InflictNetSystemDamage(SimSystem* system, double damage, BYTE type);
     virtual void      SetNetSystemStatus(SimSystem* system, int status, int power, int reactor, double avail);
     virtual void      SetIntegrity(float n) { integrity = n; }
@@ -320,7 +320,7 @@ public:
     virtual void      Destroy();
     virtual int       ShieldStrength() const;
     virtual int       HullStrength() const;
-    virtual int       HitBy(Shot* shot, FVector& impact);
+    virtual int       HitBy(SimShot* shot, FVector& impact);
     virtual int       CollidesWith(Physical& o);
 
     // SENSORS AND VISIBILITY:
@@ -463,7 +463,7 @@ public:
     static void             SetFriendlyFireLevel(double f) { friendly_fire_level = f; }
 
 protected:
-    int               CheckShotIntersection(Shot* shot, FVector& ipt, FVector& hpt, Weapon** wep = 0);
+    int               CheckShotIntersection(SimShot* shot, FVector& ipt, FVector& hpt, Weapon** wep = 0);
     WeaponGroup* FindWeaponGroup(const char* name);
 
     char              regnum[16];
@@ -492,15 +492,15 @@ protected:
     int               primary;
     int               secondary;
 
-    const Skin* skin;
-    Solid* cockpit;
-    Drive* main_drive;
-    QuantumDrive* quantum_drive;
-    Farcaster* farcaster;
-    Shield* shield;
-    ShieldRep* shieldRep;
-    NavSystem* navsys;
-    FlightComp* flcs;
+    const Skin*         skin;
+    Solid*              cockpit;
+    Drive*              main_drive;
+    QuantumDrive*       quantum_drive;
+    Farcaster*          farcaster;
+    Shield*             shield;
+    ShieldRep*          shieldRep;
+    NavSystem*          navsys;
+    FlightComp*         flcs;
     Sensor* sensor;
     LandingGear* gear;
     Thruster* thruster;
@@ -508,8 +508,8 @@ protected:
     Weapon* probe;
     Drone* sensor_drone;
     Hangar* hangar;
-    List<Shot>        decoy_list;
-    List<Shot>        threat_list;
+    List<SimShot>  decoy_list;
+    List<SimShot>  threat_list;
 
     List<SimSystem>   systems;
     List<PowerSource> reactors;

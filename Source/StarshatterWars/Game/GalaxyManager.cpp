@@ -87,7 +87,7 @@ UTextureRenderTarget2D* UGalaxyManager::GetOrCreateSystemOverviewRenderTarget(
 
 	if (!SystemOverviewRenderTarget)
 	{
-		UE_LOG(LogTemp, Error, TEXT("SystemOverviewRT was NOT created"));
+		UE_LOG(LogTemp, Error, TEXT("SystemOverviewRT was notxcreated"));
 		return nullptr;
 	}
 	else

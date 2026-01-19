@@ -1,85 +1,72 @@
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (c) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         Combatant.h
+	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	One side in a military conflict
+*/
+
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Types.h"
+#include "Geometry.h"
+#include "Text.h"
+#include "List.h"
 #include "GameStructs.h"
 
-// Forward declarations
-class CombatGroup;
-class CombatZone;
+// +--------------------------------------------------------------------+
 
-/*
- * Combatant
- *
- * Mirrors Starshatter Combatant exactly:
- * - Owns top-level force groups
- * - Identified by name + IFF
- * - Provides lookup and aggregation helpers
- *
- * In Starshatter:
- *   class Combatant : public SimObserver
- */
+class CombatGroup;
+class Mission;
+
+// +--------------------------------------------------------------------+
+
 class Combatant
 {
 public:
-	Combatant();
-	explicit Combatant(const FString& InName, CombatGroup* InForce = nullptr, int32 InIff = 0);
+	static const char* TYPENAME() { return "Combatant"; }
 
+	Combatant(const char* com_name, const char* file_name, int iff);
+	Combatant(const char* com_name, CombatGroup* force);
 	~Combatant();
 
-	// ---------------------------------------------------------------------
-	// Identity
-	// ---------------------------------------------------------------------
-	int32 GetIFF() const { return IFF; }
+	// operations:
 
-	// Starshatter-equivalent accessor
-	const FString& GetName() const;
+	// accessors:
+	const char*				GetName() const { return name; }
+	int						GetIFF() const { return iff; }
+	int						GetScore() const { return score; }
+	const char*				GetDescription() const { return name; }
+	CombatGroup*			GetForce() { return force; }
+	CombatGroup*			FindGroup(ECOMBATGROUP_TYPE type, int id = -1);
+	List<CombatGroup>&		GetTargetList() { return target_list; }
+	List<CombatGroup>&		GetDefendList() { return defend_list; }
+	List<Mission>&			GetMissionList() { return mission_list; }
 
-	void SetName(const FString& InName) { Name = InName; }
-	void SetIFF(int32 InIFF) { IFF = InIFF; }
+	void                    AddMission(Mission* m);
+	void                    SetScore(int points) { score = points; }
+	void                    AddScore(int points) { score += points; }
 
-	// ---------------------------------------------------------------------
-	// Groups
-	// ---------------------------------------------------------------------
-	void AddGroup(CombatGroup* Group);
-	void RemoveGroup(CombatGroup* Group);
-
-	const TArray<CombatGroup*>& GetGroups() const { return Groups; }
-
-	// Starshatter helpers
-	CombatGroup* FindGroup(ECOMBATGROUP_TYPE Type, int32 Id);
-	CombatGroup* FindGroup(ECOMBATGROUP_TYPE Type, CombatGroup* NearGroup);
-
-	// ---------------------------------------------------------------------
-	// Zones / Regions
-	// ---------------------------------------------------------------------
-	bool HasZone(const FString& Region) const;
-
-	// ---------------------------------------------------------------------
-	// Aggregation
-	// ---------------------------------------------------------------------
-	int32 GetAllGroups(TArray<CombatGroup*>& OutGroups) const;
-
-	// ---------------------------------------------------------------------
-	// Forces
-	// ---------------------------------------------------------------------
-	CombatGroup* GetForce() const { return Force; }
-	void SetForce(CombatGroup* InForce) { Force = InForce; }
-
-	// ---------------------------------------------------------------------
-	// Scores
-	// ---------------------------------------------------------------------
-	int32 GetScore() const { return Score; }
-	void SetScore(int32 InScore) { Score = InScore; }
+	double                  GetTargetStratFactor(ECOMBATGROUP_TYPE type);
+	void                    SetTargetStratFactor(ECOMBATGROUP_TYPE type, double f);
 
 private:
-	// Identity
-	FString Name;
-	int32   IFF = 0;
-	int32   Score = 0;
+	Text                    name;
+	int                     iff;
+	int                     score;
 
-	// Top-level force groups
-	TArray<CombatGroup*> Groups;
+	CombatGroup* force;
+	List<CombatGroup>       target_list;
+	List<CombatGroup>       defend_list;
+	List<Mission>           mission_list;
 
-	// Root force tree (e.g., "Dantari Separatists" force)
-	CombatGroup* Force = nullptr;
+	double                  target_factor[8];
 };

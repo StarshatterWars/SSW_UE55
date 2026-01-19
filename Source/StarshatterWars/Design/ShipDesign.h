@@ -1,10 +1,14 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	SUBSYSTEM:    Stars.exe
 	FILE:         ShipDesign.h
 	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
@@ -13,15 +17,17 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Types.h"
-//#include "Bitmap.h"
-#include "Geometry.h"
-#include "Term.h"
 #include "List.h"
+#include "Text.h"
+#include "term.h"
+
+// Minimal Unreal includes only where required:
+#include "Math/Vector.h" // FVector
 
 // +----------------------------------------------------------------------+
 
+class UTexture2D; // Unreal render asset (replaces Bitmap)
 class ShipDesign;
 class Model;
 class Skin;
@@ -43,10 +49,69 @@ class System;
 class Sound;
 
 // +====================================================================+
-/**
- * 
- */
-class STARSHATTERWARS_API ShipDesign
+
+class ShipLoad
+{
+public:
+	static const char* TYPENAME() { return "ShipLoad"; }
+
+	ShipLoad();
+
+	char     name[64];
+	int      load[16];
+	double   mass;
+};
+
+class ShipSquadron
+{
+public:
+	static const char* TYPENAME() { return "ShipSquadron"; }
+
+	ShipSquadron();
+
+	char        name[64];
+	ShipDesign* design;
+	int         count;
+	int         avail;
+};
+
+class ShipExplosion
+{
+public:
+	static const char* TYPENAME() { return "ShipExplosion"; }
+
+	ShipExplosion();
+
+	int               type;
+	float             time;
+	FVector           loc;
+	bool              final;
+};
+
+class ShipDebris
+{
+public:
+	static const char* TYPENAME() { return "ShipDebris"; }
+
+	ShipDebris();
+
+	Model* model;
+	int               count;
+	int               life;
+	FVector           loc;
+	float             mass;
+	float             speed;
+	float             drag;
+	int               fire_type;
+	FVector           fire_loc[5];
+};
+
+// +====================================================================+
+// Used to share common information about ships of a single type.
+// ShipDesign objects are loaded from a text file and stored in a
+// static list (catalog) member for use by the Ship.
+
+class ShipDesign
 {
 public:
 	static const char* TYPENAME() { return "ShipDesign"; }
@@ -122,14 +187,14 @@ public:
 
 	// LOD representation:
 	int               lod_levels;
-	//List<Model>       models[4];
-	List<Point>       offsets[4];
+	List<Model>       models[4];
+	List<FVector>     offsets[4];      // Point -> FVector
 	float             feature_size[4];
-	List<Point>       spin_rates;
+	List<FVector>     spin_rates;      // Point -> FVector
 
 	// player selectable skins:
-	//List<Skin>        skins;
-	//const Skin* FindSkin(const char* skin_name) const;
+	List<Skin>        skins;
+	const Skin* FindSkin(const char* skin_name) const;
 
 	// virtual cockpit:
 	Model* cockpit_model;
@@ -146,9 +211,9 @@ public:
 	float             trans_y;
 	float             trans_z;
 	float             turn_bank;
-	Vec3              chase_vec;
-	Vec3              bridge_vec;
-	Vec3              beauty_cam;
+	FVector           chase_vec;       // Vec3 -> FVector
+	FVector           bridge_vec;      // Vec3 -> FVector
+	FVector           beauty_cam;      // Vec3 -> FVector
 
 	float             prep_time;
 
@@ -183,16 +248,16 @@ public:
 	// death spriral sequence:
 	float             death_spiral_time;
 	float             explosion_scale;
-	//ShipExplosion     explosion[MAX_EXPLOSIONS];
-	//ShipDebris        debris[MAX_DEBRIS];
+	ShipExplosion     explosion[MAX_EXPLOSIONS];
+	ShipDebris        debris[MAX_DEBRIS];
 
-	List<PowerSource> reactors;
-	List<Weapon>      weapons;
-	List<HardPoint>   hard_points;
-	List<Drive>       drives;
-	List<Computer>    computers;
-	List<FlightDeck>  flight_decks;
-	List<NavLight>    navlights;
+	List<PowerSource>  reactors;
+	List<Weapon>       weapons;
+	List<HardPoint>    hard_points;
+	List<Drive>        drives;
+	List<Computer>     computers;
+	List<FlightDeck>   flight_decks;
+	List<NavLight>     navlights;
 	QuantumDrive* quantum_drive;
 	Farcaster* farcaster;
 	Thruster* thruster;
@@ -204,24 +269,28 @@ public:
 	Weapon* probe;
 	LandingGear* gear;
 
-	float             splash_radius;
-	float             scuttle;
-	float             repair_speed;
-	int               repair_teams;
-	bool              repair_auto;
-	bool              repair_screen;
-	bool              wep_screen;
+	float              splash_radius;
+	float              scuttle;
+	float              repair_speed;
+	int                repair_teams;
+	bool               repair_auto;
+	bool               repair_screen;
+	bool               wep_screen;
 
-	Text              bolt_hit_sound;
-	Text              beam_hit_sound;
+	Text               bolt_hit_sound;
+	Text               beam_hit_sound;
 
-	//Sound* bolt_hit_sound_resource;
-	//Sound* beam_hit_sound_resource;
+	Sound* bolt_hit_sound_resource;
+	Sound* beam_hit_sound_resource;
 
-	//List<ShipLoad>    loadouts;
-	//List<Bitmap>      map_sprites;
-	//List<ShipSquadron>      squadrons;
+	List<ShipLoad>     loadouts;
 
-	//Bitmap            beauty;
-	//Bitmap            hud_icon;
+	// Map sprites and icons: Bitmap -> UTexture2D*
+	List<UTexture2D*>  map_sprites;
+
+	List<ShipSquadron> squadrons;
+
+	// Render assets: Bitmap -> UTexture2D*
+	UTexture2D* beauty;
+	UTexture2D* hud_icon;
 };

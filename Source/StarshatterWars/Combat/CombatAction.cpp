@@ -16,7 +16,7 @@
 #include "Campaign.h"
 #include "Combatant.h"
 #include "CombatGroup.h"
-#include "Player.h"
+#include "PlayerCharacter.h"
 
 #include "Math/UnrealMathUtility.h"
 
@@ -75,7 +75,7 @@ bool CombatAction::IsAvailable() const
 
     if (min_rank > 0 || max_rank < 100)
     {
-        Player* player = Player::GetCurrentPlayer();
+        PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
         if (!player)
             return false;
 
@@ -111,7 +111,7 @@ bool CombatAction::IsAvailable() const
 
                     if (a->Identity() == r->action)
                     {
-                        if (r->not_req)
+                        if (r->notx)
                         {
                             if (a->Status() == r->stat)
                                 return false;
@@ -171,7 +171,7 @@ bool CombatAction::IsAvailable() const
                 {
                     if (r->c1)
                     {
-                        const int test = r->c1->Score();
+                        const int test = r->c1->GetScore();
 
                         switch (r->comp)
                         {
@@ -188,7 +188,7 @@ bool CombatAction::IsAvailable() const
                 {
                     if (r->c1 && r->c2)
                     {
-                        const int test = r->c1->Score() - r->c2->Score();
+                        const int test = r->c1->GetScore() - r->c2->GetScore();
 
                         switch (r->comp)
                         {
@@ -243,17 +243,17 @@ void CombatAction::FailAction()
 
 void CombatAction::AddRequirement(int action, int stat, bool not_req)
 {
-    requirements.append(new(__FILE__, __LINE__) CombatActionReq(action, stat, not_req));
+    requirements.append(new  CombatActionReq(action, stat, not_req));
 }
 
 void CombatAction::AddRequirement(Combatant* c1, Combatant* c2, int comp, int score)
 {
-    requirements.append(new(__FILE__, __LINE__) CombatActionReq(c1, c2, comp, score));
+    requirements.append(new  CombatActionReq(c1, c2, comp, score));
 }
 
 void CombatAction::AddRequirement(Combatant* c1, int group_type, int group_id, int comp, int score, int intel)
 {
-    requirements.append(new(__FILE__, __LINE__) CombatActionReq(c1, group_type, group_id, comp, score, intel));
+    requirements.append(new  CombatActionReq(c1, group_type, group_id, comp, score, intel));
 }
 
 int CombatAction::TypeFromName(const char* n)

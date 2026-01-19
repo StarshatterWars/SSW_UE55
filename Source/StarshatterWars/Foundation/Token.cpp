@@ -387,7 +387,7 @@ Scanner::Get(Need need)
         char match = *p;
         while (++p < eos) {
             if (*p == match) {         // find matching quote
-                if (*(p - 1) != '\\') {   // if not escaped
+                if (*(p - 1) != '\\') {   // if notxescaped
                     p++;                 // token includes matching quote
                     break;
                 }

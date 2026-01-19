@@ -212,7 +212,7 @@ SimScene::IsLightObscured(const FVector& obj_pos,
 
 				const FVector delta = (g->Location() - light_pos);
 
-				if (delta.Size() > g->Radius() / 100) { // not the object that is emitting the light
+				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
 					FVector impact = FVector::ZeroVector;
 					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
 
@@ -224,7 +224,7 @@ SimScene::IsLightObscured(const FVector& obj_pos,
 			else if (obj_radius < 0 && gdist < 0.1) { // special case for camera (needed for cockpits)
 				const FVector delta = (g->Location() - light_pos);
 
-				if (delta.Size() > g->Radius() / 100) { // not the object that is emitting the light
+				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
 					FVector impact = FVector::ZeroVector;
 					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
 				}
@@ -245,7 +245,7 @@ SimScene::IsLightObscured(const FVector& obj_pos,
 
 				const FVector delta = (g->Location() - light_pos);
 
-				if (delta.Size() > g->Radius() / 100) { // not the object that is emitting the light
+				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
 					FVector impact = FVector::ZeroVector;
 					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
 
@@ -257,7 +257,7 @@ SimScene::IsLightObscured(const FVector& obj_pos,
 			else if (obj_radius < 0 && gdist < 0.1) { // special case for camera (needed for cockpits)
 				const FVector delta = (g->Location() - light_pos);
 
-				if (delta.Size() > g->Radius() / 100) { // not the object that is emitting the light
+				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
 					FVector impact = FVector::ZeroVector;
 					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
 				}

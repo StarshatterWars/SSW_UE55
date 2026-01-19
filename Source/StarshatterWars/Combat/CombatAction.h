@@ -19,6 +19,10 @@
 #include "List.h"
 #include "GameStructs.h"
 
+// Minimal Unreal include required for FVector:
+#include "Math/Vector.h"
+
+
 // +--------------------------------------------------------------------+
 
 class Combatant;
@@ -60,11 +64,13 @@ public:
 
     int  operator==(const CombatAction& a) const { return id == a.id; }
 
+    static const int32 TIME_NEVER = (int32)1e9;
+
     bool IsAvailable() const;
     void FireAction();
     void FailAction();
 
-    void AddRequirement(int action, int stat, bool not = false);
+    void AddRequirement(int action, int stat, bool notx = false);
     void AddRequirement(Combatant* c1, Combatant* c2, int comp, int score);
     void AddRequirement(Combatant* c1, int group_type, int group_id, int comp, int score, int intel = 0);
 
@@ -79,7 +85,7 @@ public:
     int         GetIFF()       const { return team; }
     int         Status()       const { return status; }
     int         Source()       const { return source; }
-    Point       Location()     const { return loc; }
+    FVector     Location()     const { return loc; }
     const char* System()       const { return system.data(); }
     const char* Region()       const { return region.data(); }
     const char* Filename()     const { return text_file.data(); }
@@ -108,7 +114,7 @@ public:
     void SetIFF(int t) { team = (char)t; }
     void SetStatus(int s) { status = (char)s; }
     void SetSource(int s) { source = s; }
-    void SetLocation(const Point& p) { loc = p; }
+    void SetLocation(const FVector& p) { loc = p; }
     void SetSystem(Text sys) { system = sys; }
     void SetRegion(Text rgn) { region = rgn; }
     void SetFilename(Text f) { text_file = f; }
@@ -140,7 +146,7 @@ private:
     char    max_rank = 100;
 
     int     source = 0;
-    Point   loc;
+    FVector loc;
 
     Text    system;
     Text    region;
@@ -184,19 +190,19 @@ public:
     };
 
     CombatActionReq(int a, int s, bool n = false)
-        : action(a), stat(s), not(n), c1(nullptr), c2(nullptr),
+        : action(a), stat(s), notx(n), c1(nullptr), c2(nullptr),
         comp(0), score(0), intel(0), group_type(0), group_id(0)
     {
     }
 
     CombatActionReq(Combatant* a1, Combatant* a2, int comparison, int value)
-        : action(0), stat(0), not(false), c1(a1), c2(a2),
+        : action(0), stat(0), notx(false), c1(a1), c2(a2),
         comp(comparison), score(value), intel(0), group_type(0), group_id(0)
     {
     }
 
     CombatActionReq(Combatant* a1, int gtype, int gid, int comparison, int value, int intel_level = 0)
-        : action(0), stat(0), not(false), c1(a1), c2(nullptr),
+        : action(0), stat(0), notx(false), c1(a1), c2(nullptr),
         comp(comparison), score(value), intel(intel_level), group_type(gtype), group_id(gid)
     {
     }
@@ -205,7 +211,7 @@ public:
 
     int        action = 0;
     int        stat = 0;
-    bool       not = false;
+    bool       notx = false;
 
     Combatant* c1 = nullptr;
     Combatant* c2 = nullptr;

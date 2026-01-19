@@ -77,10 +77,10 @@ private:
 	TSharedPtr<FOnlineSessionSearch> SearchObject;
 	TSharedPtr<FOnlineSessionSearch> SearchObjectDedicated;
 
-	// Whether or not to search LAN
+	// Whether or notxto search LAN
 	bool bUseLAN;
 
-	// Whether or not to search for dedicated servers
+	// Whether or notxto search for dedicated servers
 	EBPServerPresenceSearchType ServerSearchType;
 
 	// Maximum number of results to return

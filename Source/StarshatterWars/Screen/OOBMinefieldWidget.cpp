@@ -90,7 +90,7 @@ void UOOBMinefieldWidget::ToggleExpansion()
 void UOOBMinefieldWidget::BuildChildren(const FS_OOBMinefield& MinefieldDataStruct)
 {
     if (!ElementListView) {
-        UE_LOG(LogTemp, Error, TEXT("Minefield Unit ListView is not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Minefield Unit ListView is notxvalid!"));
         return;
     }
 

@@ -178,7 +178,7 @@ Starshatter::Starshatter()
 	if (loadstat != DataLoader::DATAFILE_OK) {
 		const char* err_msg = loadstat == DataLoader::DATAFILE_INVALID ?
 			"The file 'shatter.dat' appears to have been damaged.  Please re-install Starshatter Wars." :
-			"Starshatter Wars cannot open the file 'shatter.dat'.  Please re-install Starshatter Wars.";
+			"Starshatter Wars cannotxopen the file 'shatter.dat'.  Please re-install Starshatter Wars.";
 
 		::MessageBox(hwnd, err_msg, "Starshatter Wars - Error", MB_OK);
 
@@ -201,20 +201,20 @@ Starshatter::Starshatter()
 	// create the fonts
 	loader->SetDataPath("Fonts/");
 
-	HUDfont = new(__FILE__, __LINE__) Font("HUDfont");
+	HUDfont = new  Font("HUDfont");
 	FontMgr::Register("HUD", HUDfont);
 
-	GUIfont = new(__FILE__, __LINE__) Font("GUIfont");
+	GUIfont = new  Font("GUIfont");
 	FontMgr::Register("GUI", GUIfont);
 
-	GUI_small_font = new(__FILE__, __LINE__) Font("GUIsmall");
+	GUI_small_font = new  Font("GUIsmall");
 	FontMgr::Register("GUIsmall", GUI_small_font);
 
-	limerick12 = new(__FILE__, __LINE__) Font("Limerick12");
-	limerick18 = new(__FILE__, __LINE__) Font("Limerick18");
-	terminal = new(__FILE__, __LINE__) Font("Terminal");
-	verdana = new(__FILE__, __LINE__) Font("Verdana");
-	ocrb = new(__FILE__, __LINE__) Font("OCRB");
+	limerick12 = new  Font("Limerick12");
+	limerick18 = new  Font("Limerick18");
+	terminal = new  Font("Terminal");
+	verdana = new  Font("Verdana");
+	ocrb = new  Font("OCRB");
 
 	FontMgr::Register("Limerick12", limerick12);
 	FontMgr::Register("Limerick18", limerick18);
@@ -415,22 +415,22 @@ Starshatter::InitGame()
 		UE_LOG(LogStarshatterWars, Log, TEXT("Loaded key.cfg"));
 
 	// create the appropriate motion controller and player_ship
-	input = new(__FILE__, __LINE__) MultiController;
-	Keyboard* k = new(__FILE__, __LINE__) Keyboard;
+	input = new  MultiController;
+	Keyboard* k = new  Keyboard;
 	input->AddController(k);
 	ActivateKeyboardLayout(GetKeyboardLayout(0), 0);
 
-	mouse_input = new(__FILE__, __LINE__) MouseController;
+	mouse_input = new  MouseController;
 	input->AddController(mouse_input);
 
 	UE_LOG(LogStarshatterWars, Verbose, TEXT("Starshatter::InitGame() create joystick"));
-	Joystick* j = new(__FILE__, __LINE__) Joystick;
+	Joystick* j = new  Joystick;
 	j->SetSensitivity(15, 5000);
 	input->AddController(j);
 
 	Joystick::EnumerateDevices();
 
-	head_tracker = new(__FILE__, __LINE__) TrackIR();
+	head_tracker = new  TrackIR();
 	MapKeys();
 
 	SystemDesign::Initialize("sys.def");
@@ -754,7 +754,7 @@ Starshatter::CreateWorld()
 
 	// create world
 	if (!world) {
-		Sim* sim = new(__FILE__, __LINE__) Sim(input);
+		Sim* sim = new  Sim(input);
 		world = sim;
 		UE_LOG(LogStarshatterWars, Log, TEXT("World Created."));
 	}
@@ -2075,7 +2075,7 @@ Starshatter::DoChatMode()
 		break;
 		}
 
-		// Converted Print-style HUD text to UE_LOG (HUDView::Message is game UI, not debug output)
+		// Converted Print-style HUD text to UE_LOG (HUDView::Message is game UI, notxdebug output)
 		UE_LOG(LogTemp, Log, TEXT("%s> %s"),
 			UTF8_TO_TCHAR(name.data()),
 			UTF8_TO_TCHAR(chat_text.data()));
@@ -2266,11 +2266,11 @@ Starshatter::SetupSplash()
 	int screen_width = GetScreenWidth();
 	int screen_height = GetScreenHeight();
 
-	gamewin = new(__FILE__, __LINE__) Window(screen, 0, 0, screen_width, screen_height);
-	splash = new(__FILE__, __LINE__) FadeView(gamewin, 2, 2, 2);
+	gamewin = new  Window(screen, 0, 0, screen_width, screen_height);
+	splash = new  FadeView(gamewin, 2, 2, 2);
 
 	gamewin->AddView(splash);
-	gamewin->AddView(new(__FILE__, __LINE__) ImgView(gamewin, &splash_image));
+	gamewin->AddView(new  ImgView(gamewin, &splash_image));
 	screen->AddWindow(gamewin);
 }
 
@@ -2284,7 +2284,7 @@ Starshatter::SetupMenuScreen()
 		menuscreen = 0;
 	}
 
-	menuscreen = new(__FILE__, __LINE__) MenuScreen();
+	menuscreen = new  MenuScreen();
 	menuscreen->Setup(screen);
 }
 
@@ -2298,7 +2298,7 @@ Starshatter::SetupCmpnScreen()
 		cmpnscreen = 0;
 	}
 
-	cmpnscreen = new(__FILE__, __LINE__) CmpnScreen();
+	cmpnscreen = new  CmpnScreen();
 	cmpnscreen->Setup(screen);
 }
 
@@ -2312,7 +2312,7 @@ Starshatter::SetupPlanScreen()
 		planscreen = 0;
 	}
 
-	planscreen = new(__FILE__, __LINE__) PlanScreen();
+	planscreen = new  PlanScreen();
 	planscreen->Setup(screen);
 }
 
@@ -2326,7 +2326,7 @@ Starshatter::SetupLoadScreen()
 		loadscreen = 0;
 	}
 
-	loadscreen = new(__FILE__, __LINE__) LoadScreen();
+	loadscreen = new  LoadScreen();
 	loadscreen->Setup(screen);
 }
 
@@ -2340,7 +2340,7 @@ Starshatter::SetupGameScreen()
 		gamescreen = 0;
 	}
 
-	gamescreen = new(__FILE__, __LINE__) GameScreen();
+	gamescreen = new  GameScreen();
 	gamescreen->Setup(screen);
 	gamescreen->SetFieldOfView(field_of_view);
 
@@ -2383,7 +2383,7 @@ Starshatter::LoadVideoConfig(const char* filename)
 		blocklen = (int)ftell(f);
 		::fseek(f, 0, SEEK_SET);
 
-		block = new(__FILE__, __LINE__) BYTE[blocklen + 1];
+		block = new  BYTE[blocklen + 1];
 		block[blocklen] = 0;
 
 		::fread(block, blocklen, 1, f);
@@ -2393,11 +2393,11 @@ Starshatter::LoadVideoConfig(const char* filename)
 	if (blocklen == 0)
 		return;
 
-	Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block, blocklen));
+	Parser parser(new  BlockReader((const char*)block, blocklen));
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		UE_LOG(LogTemp, Error, TEXT("Starshatter::LoadVideoConfig: could not parse '%s'."), UTF8_TO_TCHAR(filename));
+		UE_LOG(LogTemp, Error, TEXT("Starshatter::LoadVideoConfig: could notxparse '%s'."), UTF8_TO_TCHAR(filename));
 		exit(-3);
 	}
 	else {
@@ -2662,7 +2662,7 @@ Starshatter::ExecCutscene(const char* msn_file, const char* path)
 	if (!world)
 		CreateWorld();
 
-	cutscene_mission = new(__FILE__, __LINE__) Mission(0);
+	cutscene_mission = new  Mission(0);
 	cutscene_basetime = StarSystem::GetBaseTime();
 
 	if (cutscene_mission->Load(msn_file, path)) {
@@ -2820,7 +2820,7 @@ Starshatter::StartLobby()
 			NetServerConfig* server_config = NetServerConfig::GetInstance();
 
 			if (server_config)
-				net_lobby = new(__FILE__, __LINE__) NetLobbyServer;
+				net_lobby = new  NetLobbyServer;
 		}
 
 		else {

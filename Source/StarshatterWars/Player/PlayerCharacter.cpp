@@ -956,7 +956,7 @@ PlayerCharacter::Load()
         blocklen = ftell(f);
         ::fseek(f, 0, SEEK_SET);
 
-        block = new(__FILE__, __LINE__) BYTE[blocklen + 1];
+        block = new  BYTE[blocklen + 1];
         block[blocklen] = 0;
 
         ::fread(block, blocklen, 1, f);
@@ -966,11 +966,11 @@ PlayerCharacter::Load()
     if (blocklen == 0)
         return;
 
-    Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block, blocklen));
+    Parser parser(new  BlockReader((const char*)block, blocklen));
     Term* term = parser.ParseTerm();
 
     if (!term) {
-        Print("ERROR: could not parse '%s'.\n", filename);
+        Print("ERROR: could notxparse '%s'.\n", filename);
         return;
     }
     else {
@@ -1000,7 +1000,7 @@ PlayerCharacter::Load()
                         Print("WARNING: player structure missing in '%s'\n", filename);
                     }
                     else {
-                        PlayerCharacter* player = new(__FILE__, __LINE__) PlayerCharacter;
+                        PlayerCharacter* player = new  PlayerCharacter;
                         bool        current = false;
                         TermStruct* val = def->term()->isStruct();
 
@@ -1343,7 +1343,7 @@ PlayerCharacter::LoadAwardTables()
 
     loader->SetDataPath("Awards/");
     loader->LoadBuffer(filename, block, true);
-    Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block));
+    Parser parser(new  BlockReader((const char*)block));
 
     Term* term = parser.ParseTerm();
 
@@ -1375,7 +1375,7 @@ PlayerCharacter::LoadAwardTables()
                         Print("WARNING: award structure missing in '%s'\n", filename);
                     }
                     else {
-                        AwardInfo* award = new(__FILE__, __LINE__) AwardInfo;
+                        AwardInfo* award = new  AwardInfo;
                         TermStruct* val = def->term()->isStruct();
 
                         for (int i = 0; i < val->elements()->size(); i++) {

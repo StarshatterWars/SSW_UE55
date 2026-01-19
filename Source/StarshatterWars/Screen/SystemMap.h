@@ -168,7 +168,7 @@ private:
 	UCentralSunWidget* StarWidget = nullptr;
 
 	// ---- Planet preview actors (optional / independent of overview) ----
-	// NOTE: Do not reuse a single PlanetActor pointer for all planets.
+	// NOTE: Do notxreuse a single PlanetActor pointer for all planets.
 	// We keep only the spawned list.
 	UPROPERTY()
 	APlanetPanelActor* PlanetActor_DEPRECATED = nullptr;

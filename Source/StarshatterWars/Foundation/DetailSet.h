@@ -11,7 +11,7 @@
 	========
 	Level of Detail Manager class
 */
-
+#pragma once
 #include "Types.h"
 #include "Geometry.h"
 #include "Graphic.h"

@@ -33,9 +33,9 @@ enum class EBPUserPrivileges : uint8
 UENUM(BlueprintType)
 enum class EBPLoginStatus : uint8
 {
-	/** Player has not logged in or chosen a local profile */
+	/** Player has notxlogged in or chosen a local profile */
 	NotLoggedIn,
-	/** Player is using a local profile but is not logged in */
+	/** Player is using a local profile but is notxlogged in */
 	UsingLocalProfile,
 	/** Player has been validated by the platform specific authentication service */
 	LoggedIn
@@ -67,10 +67,10 @@ enum class ESessionSettingSearchResult : uint8
 	// Found the setting
 	Found,
 
-	// Did not find the setting
+	// Did notxfind the setting
 	NotFound,
 
-	// Was not the correct type
+	// Was notxthe correct type
 	WrongType
 };
 
@@ -122,7 +122,7 @@ enum class EBPOnlinePresenceState : uint8
 UENUM(BlueprintType)
 enum class EBPOnlineSessionState : uint8
 {
-	/** An online session has not been created yet */
+	/** An online session has notxbeen created yet */
 	NoSession,
 	/** An online session is in the process of being created */
 	Creating,
@@ -337,7 +337,7 @@ struct FSessionsSearchSetting
 	//UPROPERTY()
 
 
-	// Had to make a copy of this to account for the original not being exposed to blueprints
+	// Had to make a copy of this to account for the original notxbeing exposed to blueprints
 	/** How is this session setting compared on the backend searches */
 	EOnlineComparisonOpRedux ComparisonOp;
 
@@ -345,7 +345,7 @@ struct FSessionsSearchSetting
 	FSessionPropertyKeyPair PropertyKeyPair;
 };
 
-// Couldn't use the default one as it is not exposed to other modules, had to re-create it here
+// Couldn't use the default one as it is notxexposed to other modules, had to re-create it here
 // Helper class for various methods to reduce the call hierarchy
 struct FOnlineSubsystemBPCallHelperAdvanced
 {
@@ -369,7 +369,7 @@ public:
 			UserID = PlayerState->GetUniqueId().GetUniqueNetId();
 			if (!UserID.IsValid())
 			{
-				FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s - Cannot map local player to unique net ID"), FunctionContext), ELogVerbosity::Warning);
+				FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s - Cannotxmap local player to unique net ID"), FunctionContext), ELogVerbosity::Warning);
 			}
 		}
 		else

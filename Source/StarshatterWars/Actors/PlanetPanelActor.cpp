@@ -38,7 +38,7 @@ APlanetPanelActor* APlanetPanelActor::SpawnWithPlanetData(
 	// Enable orbit here so base Tick moves the actor.
 	if (OrbitAuthority)
 	{
-		// Radius used for orbit must be the orbital radius (km), not body radius.
+		// Radius used for orbit must be the orbital radius (km), notxbody radius.
 		// I’m assuming FS_PlanetMap has OrbitKm (or Orbit). Use your actual field name.
 		const float OrbitKm = PlanetInfo.Orbit; // <-- adjust field name if different
 

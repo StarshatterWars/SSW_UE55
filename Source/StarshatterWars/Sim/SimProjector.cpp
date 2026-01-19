@@ -390,7 +390,7 @@ SimProjector::IsBoxVisible(const FVector* p) const
 {
 	int i, j, outside = 0;
 
-	// if all eight corners are outside of the same frustum plane, then the box is not visible
+	// if all eight corners are outside of the same frustum plane, then the box is notxvisible
 	Plane* plane = (Plane*)frustum_planes;
 
 	if (infinite) {
@@ -420,7 +420,7 @@ SimProjector::IsBoxVisible(const FVector* p) const
 		}
 	}
 
-	// if not outside, then the box is visible
+	// if notxoutside, then the box is visible
 	return !outside;
 }
 

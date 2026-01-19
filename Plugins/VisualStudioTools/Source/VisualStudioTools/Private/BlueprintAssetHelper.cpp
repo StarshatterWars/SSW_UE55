@@ -18,7 +18,7 @@ namespace AssetHelpers
 {
 /*
 * These helpers handle the usage of some APIs that were deprecated in 5.1
-* but the replacements are not available in older versions.
+* but the replacements are notxavailable in older versions.
 * Might be overridden by the `Build.cs` rules
 */
 #if FILTER_ASSETS_BY_CLASS_PATH
@@ -99,7 +99,7 @@ void ForEachAsset(
 
 			FString Msg = !GenClassPath.ToString().Contains(ObjectPathString)
 				? FString::Printf(
-					TEXT("ObjectPath is not compatible with GenClassPath, consider re-saving it to avoid future issues. { ObjectPath: %s, GenClassPath: %s }"),
+					TEXT("ObjectPath is notxcompatible with GenClassPath, consider re-saving it to avoid future issues. { ObjectPath: %s, GenClassPath: %s }"),
 					*ObjectPathString,
 					*GenClassPath.ToString())
 				: FString::Printf(TEXT("ClassPath: %s"), *GenClassPath.ToString());

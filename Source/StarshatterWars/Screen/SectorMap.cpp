@@ -217,7 +217,7 @@ void USectorMap::InitSectorCanvas()
 	SystemMapUtils::ClearAllSectorUIElements(this);
 	SystemMapUtils::DestroyAllSectorActors(GetWorld());
 
-	// DO NOT do this here — it destroys SystemMap’s one-shot RT too.
+	// DO notxdo this here — it destroys SystemMap’s one-shot RT too.
 	// UGalaxyManager::Get(this)->ClearAllRenderTargets();
 
 	// This was backwards. If OuterCanvas exists, you were returning early.
@@ -572,7 +572,7 @@ void USectorMap::HighlightSelectedSystem()
 
 void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 {
-	// You cannot add UI to a null canvas
+	// You cannotxadd UI to a null canvas
 	if (!MapCanvas)
 	{
 		UE_LOG(LogTemp, Error, TEXT("USectorMap::AddCentralPlanet() MapCanvas is null"));
@@ -606,13 +606,13 @@ void USectorMap::AddCentralPlanet(const FS_PlanetMap& Planet)
 			ActorRotation,
 			PlanetActorClass,
 			Planet,
-			/*OrbitAuthority*/ nullptr,   // sector view: central planet does not orbit
+			/*OrbitAuthority*/ nullptr,   // sector view: central planet does notxorbit
 			/*SystemSeed*/    Planet.Name // stable seed for deterministic UI/orbit math if needed
 		);
 
 		if (PlanetActor)
 		{
-			// In sector view, the central planet should not orbit.
+			// In sector view, the central planet should notxorbit.
 			PlanetActor->bEnableOrbit = false;
 			PlanetActor->OrbitEpochSeconds = World->GetTimeSeconds();
 			PlanetActor->OrbitTimeScale = 1.0f;

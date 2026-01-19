@@ -11,7 +11,7 @@
 	========
 	A 3D Scene, basically a collection of 3D graphic objects
 */
-
+#pragma once
 #include "Types.h"
 #include "Color.h"
 #include "Geometry.h"

@@ -19,6 +19,10 @@
 #include "Text.h"
 #include "List.h"
 #include "Intel.h"
+#include "GameStructs.h"
+
+// Minimal Unreal include (required for by-value FVector in the public API):
+#include "Math/Vector.h"
 
 // +--------------------------------------------------------------------+
 
@@ -88,7 +92,7 @@ public:
 		PRIVATE
 	};
 
-	CombatGroup(int t, int n, const char* s, int i, int e, CombatGroup* p = 0);
+	CombatGroup(ECOMBATGROUP_TYPE t, int n, const char* s, int i, int e, CombatGroup* p = 0);
 	~CombatGroup();
 
 	// comparison operators are used to sort combat groups into a priority list
@@ -104,7 +108,7 @@ public:
 	static void         MergeOrderOfBattle(BYTE* block, const char* fname, int iff, Combatant* combatant, Campaign* campaign);
 
 	void                AddComponent(CombatGroup* g);
-	CombatGroup* FindGroup(int t, int n = -1);
+	CombatGroup* FindGroup(ECOMBATGROUP_TYPE t, int n = -1);
 	CombatGroup* Clone(bool deep = true);
 
 	// accessors and mutators:
@@ -125,14 +129,14 @@ public:
 	CombatGroup* FindCarrier();
 
 	const Text& Name()               const { return name; }
-	int                 Type()               const { return type; }
+	ECOMBATGROUP_TYPE   GetType()     const { return type; }
 	int                 CountUnits()         const;
 	int                 IntelLevel()         const { return enemy_intel; }
 	int                 GetID()              const { return id; }
 	int                 GetIFF()             const { return iff; }
-	Point               Location()           const { return location; }
-	void                MoveTo(const Point& loc);
-	const Text& GetRegion()          const { return region; }
+	FVector             Location()           const { return location; }
+	void                MoveTo(FVector& loc);
+	const				Text& GetRegion()          const { return region; }
 	void                SetRegion(Text rgn) { region = rgn; }
 	void                AssignRegion(Text rgn);
 	int                 Value()              const { return value; }
@@ -158,11 +162,14 @@ public:
 	bool                IsStarshipGroup()    const;
 	bool                IsReserve()          const;
 
+	int  CalcValue() const;
+
 	// these two methods return zero terminated arrays of
 	// integers identifying the preferred assets for attack
 	// or defense in priority order:
-	static const int* PreferredAttacker(int type);
-	static const int* PreferredDefender(int type);
+
+	static const int* PreferredAttacker(ECOMBATGROUP_TYPE InType);
+	static const int* PreferredDefender(ECOMBATGROUP_TYPE InType);
 
 	bool                IsExpanded()         const { return expanded; }
 	void                SetExpanded(bool e) { expanded = e; }
@@ -187,14 +194,14 @@ public:
 	List<CombatAssignment>& GetAssignments() { return assignments; }
 	void                    ClearAssignments();
 
-	static int          TypeFromName(const char* name);
-	static const char* NameFromType(int type);
+	static ECOMBATGROUP_TYPE TypeFromName(const char* type_name);
+	static const char* NameFromType(ECOMBATGROUP_TYPE type);
 
 private:
 	const char* GetOrdinal() const;
 
 	// attributes:
-	int                 type;
+	ECOMBATGROUP_TYPE   type;
 	int                 id;
 	Text                name;
 	int                 iff;
@@ -208,7 +215,7 @@ private:
 	Combatant* combatant;
 	CombatGroup* parent;
 	Text                region;
-	Point               location;
+	FVector             location;
 	int                 value;
 	int                 unit_index;
 

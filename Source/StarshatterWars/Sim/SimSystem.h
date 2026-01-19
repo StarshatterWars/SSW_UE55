@@ -26,7 +26,7 @@
 
 // +--------------------------------------------------------------------+
 
-class Component;
+class SimComponent;
 class Ship;
 class SystemDesign;
 
@@ -34,7 +34,7 @@ class SystemDesign;
 
 class SimSystem
 {
-	friend Component;
+	friend SimComponent;
 
 public:
 	static const char* TYPENAME() { return "SimSystem"; }
@@ -74,7 +74,7 @@ public:
 	double            NetAvail()      const { return net_avail; }
 	void              SetNetAvail(double d) { net_avail = (float)d; }
 
-	List<Component>& GetComponents() { return components; }
+	List<SimComponent>& GetComponents() { return components; }
 
 	virtual void      ApplyDamage(double damage);
 	virtual void      ExecFrame(double seconds);
@@ -124,7 +124,7 @@ public:
 	int               GetExplosionType() const { return explosion_type; }
 	void              SetExplosionType(int t) { explosion_type = t; }
 
-	Ship* GetShip()      const { return ship; }
+	Ship*			  GetShip() const { return ship; }
 	void              SetShip(Ship* s) { ship = s; }
 	int               GetID()        const { return id; }
 	void              SetID(int n) { id = n; }
@@ -171,6 +171,6 @@ protected:
 
 	// Subcomponents:
 	SystemDesign* design;
-	List<Component>   components;
+	List<SimComponent>  components;
 };
 

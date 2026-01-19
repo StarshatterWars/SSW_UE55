@@ -9,7 +9,7 @@
 	OVERVIEW
 	========
 	Loader and Parser class for initial generation of Ship Design Data Table
-	Will not be used after Dable Table is Generated.
+	Will notxbe used after Dable Table is Generated.
 */
 
 #pragma once

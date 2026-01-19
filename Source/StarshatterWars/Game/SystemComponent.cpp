@@ -81,7 +81,7 @@ USystemComponent::SetPowerLevel(double level)
 
 	if (power_level != level) {
 		// if the system is on emergency override power,
-		// do not let the EMCON system use this method
+		// do notxlet the EMCON system use this method
 		// to drop it back to normal power:
 		if (power_level > 1 && level == 1)
 			return;

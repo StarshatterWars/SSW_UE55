@@ -64,7 +64,7 @@ ASystemBodyPanelActor::ASystemBodyPanelActor()
 void ASystemBodyPanelActor::BeginPlay()
 {
 	Super::BeginPlay();
-	// If epoch was not explicitly set, anchor it to world time
+	// If epoch was notxexplicitly set, anchor it to world time
 		if (OrbitEpochSeconds <= 0.0)
 		{
 			OrbitEpochSeconds = GetWorld()->GetTimeSeconds();
@@ -235,7 +235,7 @@ void ASystemBodyPanelActor::InitializeOrbit(ASystemBodyPanelActor* InAuthority, 
 	// Only enable if radius is valid
 	bEnableOrbit = (OrbitRadiusKm > 0.f);
 
-	// If seed not provided, fall back to actor name (still deterministic)
+	// If seed notxprovided, fall back to actor name (still deterministic)
 	if (OrbitSeed.IsEmpty())
 	{
 		OrbitSeed = GetName();

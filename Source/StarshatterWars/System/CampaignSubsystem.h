@@ -134,7 +134,7 @@ private:
 	TMap<int32, int64> ActionLastExecSeconds; // actionId -> last exec time (seconds)
 	TSet<int32> ExecutedTemplateIds;          // templateId executed when ExecOnce != 0
 
-	// Not wired yet; keep at defaults (0 means "unknown/unrestricted" for gating)
+	// notxwired yet; keep at defaults (0 means "unknown/unrestricted" for gating)
 	int32 CachedPlayerRank = 0;
 	int32 CachedPlayerIff = 0;
 };

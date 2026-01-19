@@ -14,7 +14,7 @@ class STARSHATTERWARS_API Intel
 
 public:
 	enum INTEL_TYPE {
-		RESERVE = 1,   // out-system reserve: this group is not even here
+		RESERVE = 1,   // out-system reserve: this group is notxeven here
 		SECRET,        // enemy is completely unaware of this group
 		KNOWN,         // enemy knows this group is in the system
 		LOCATED,       // enemy has located at least the lead ship

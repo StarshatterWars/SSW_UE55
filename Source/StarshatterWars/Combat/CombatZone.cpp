@@ -1,180 +1,296 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
+	Original Author and Studio:
+	John DiCamillo, Destroyer Studios LLC
+	Copyright (C) 1997-2004. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         CombatZone.cpp
+	AUTHOR:       Carlos Bott
+
+
+	OVERVIEW
+	========
+	CombatZone is used by the dynamic campaign strategy
+	and logistics algorithms to assign forces to locations
+	within the campaign.  A CombatZone is a collection of
+	closely related sectors, and the assets contained
+	within them.
+*/
 
 #include "CombatZone.h"
+
 #include "CombatGroup.h"
+#include "CombatUnit.h"
+#include "Campaign.h"
+#include "ShipDesign.h"
+#include "Ship.h"
 
-// Your CombatGroup port should expose these (Starshatter-equivalent):
-//   int32 GetIFF() const;
-//   void  SetCurrentZone(CombatZone*);
-// If your signatures differ, adjust these two call sites only.
+#include "Game.h"
+#include "DataLoader.h"
+#include "ParseUtil.h"
+#include "GameStructs.h"
 
-void CombatZone::Clear()
+// Unreal logging (replaces Print):
+#include "Logging/LogMacros.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterCombatZone, Log, All);
+
+// +----------------------------------------------------------------------+
+
+CombatZone::CombatZone()
 {
-	// Starshatter: forces.destroy();
-	for (ZoneForce* F : Forces)
-	{
-		delete F;
-	}
-	Forces.Reset();
 }
 
-void CombatZone::AddGroup(CombatGroup* Group)
+CombatZone::~CombatZone()
 {
-	if (!Group)
-		return;
-
-	const int32 Iff = Group->GetIFF();
-	ZoneForce* F = FindForce(Iff);
-	if (F)
-	{
-		F->AddGroup(Group);
-		Group->SetCurrentZone(this);
-	}
+	regions.destroy();
+	forces.destroy();
 }
 
-void CombatZone::RemoveGroup(CombatGroup* Group)
-{
-	if (!Group)
-		return;
+// +--------------------------------------------------------------------+
 
-	const int32 Iff = Group->GetIFF();
-	ZoneForce* F = FindForce(Iff);
-	if (F)
-	{
-		F->RemoveGroup(Group);
-		Group->SetCurrentZone(nullptr);
-	}
+void
+CombatZone::Clear()
+{
+	forces.destroy();
 }
 
-bool CombatZone::HasGroup(CombatGroup* Group)
+// +--------------------------------------------------------------------+
+
+void
+CombatZone::AddGroup(CombatGroup* group)
 {
-	if (!Group)
-		return false;
-
-	const int32 Iff = Group->GetIFF();
-	ZoneForce* F = FindForce(Iff);
-	return F ? F->HasGroup(Group) : false;
-}
-
-void CombatZone::AddRegion(const FString& Region)
-{
-	if (Region.IsEmpty())
-		return;
-
-	Regions.Add(Region);
-
-	// Starshatter: if (name.length() < 1) name = rgn;
-	if (NameStr.IsEmpty())
-	{
-		NameStr = Region;
+	if (group) {
+		int iff = group->GetIFF();
+		ZoneForce* f = FindForce(iff);
+		f->AddGroup(group);
+		group->SetCurrentZone(this);
 	}
 }
 
-bool CombatZone::HasRegion(const FString& Region) const
+void
+CombatZone::RemoveGroup(CombatGroup* group)
 {
-	if (Region.IsEmpty() || Regions.Num() == 0)
-		return false;
+	if (group) {
+		int iff = group->GetIFF();
+		ZoneForce* f = FindForce(iff);
+		f->RemoveGroup(group);
+		group->SetCurrentZone(0);
+	}
+}
 
-	// Starshatter used Text contains; we do case-insensitive match for safety
-	for (const FString& R : Regions)
-	{
-		if (R.Equals(Region, ESearchCase::IgnoreCase))
-			return true;
+bool
+CombatZone::HasGroup(CombatGroup* group)
+{
+	if (group) {
+		int iff = group->GetIFF();
+		ZoneForce* f = FindForce(iff);
+		return f->HasGroup(group);
 	}
 
 	return false;
 }
 
-void CombatZone::AddRegion(const char* RegionAnsi)
-{
-	if (!RegionAnsi || !*RegionAnsi)
-		return;
+// +--------------------------------------------------------------------+
 
-	AddRegion(FString(UTF8_TO_TCHAR(RegionAnsi)));
+void
+CombatZone::AddRegion(const char* rgn)
+{
+	if (rgn && *rgn) {
+		regions.append(new  Text(rgn));
+
+		if (name.length() < 1)
+			name = rgn;
+	}
 }
 
-bool CombatZone::HasRegion(const char* RegionAnsi) const
-{
-	if (!RegionAnsi || !*RegionAnsi)
-		return false;
+// +--------------------------------------------------------------------+
 
-	return HasRegion(FString(UTF8_TO_TCHAR(RegionAnsi)));
-}
-
-ZoneForce* CombatZone::FindForce(int32 Iff)
+bool
+CombatZone::HasRegion(const char* rgn)
 {
-	// Starshatter: iterate forces and return match else MakeForce(iff)
-	for (ZoneForce* F : Forces)
-	{
-		if (F && F->GetIFF() == Iff)
-			return F;
+	if (rgn && *rgn && regions.size()) {
+		Text test(rgn);
+		return regions.contains(&test);
 	}
 
-	return MakeForce(Iff);
+	return false;
 }
 
-ZoneForce* CombatZone::MakeForce(int32 Iff)
+// +--------------------------------------------------------------------+
+
+ZoneForce*
+CombatZone::FindForce(int iff)
 {
-	ZoneForce* F = new ZoneForce(Iff);
-	Forces.Add(F);
-	return F;
+	ListIter<ZoneForce> f = forces;
+	while (++f) {
+		if (f->GetIFF() == iff)
+			return f.value();
+	}
+
+	return MakeForce(iff);
 }
 
-// -----------------------------------------------------------------------------
-// ZoneForce
-// -----------------------------------------------------------------------------
-ZoneForce::ZoneForce(int32 InIff)
-	: Iff(InIff)
+// +--------------------------------------------------------------------+
+
+ZoneForce*
+CombatZone::MakeForce(int iff)
 {
-	for (int32 i = 0; i < 8; ++i)
-		Need[i] = 0;
+	ZoneForce* f = new ZoneForce(iff);
+	forces.append(f);
+	return f;
 }
 
-void ZoneForce::AddGroup(CombatGroup* Group)
-{
-	if (!Group)
-		return;
+// +--------------------------------------------------------------------+
 
-	Groups.Add(Group);
+static List<CombatZone> zonelist;
+
+List<CombatZone>&
+CombatZone::Load(const char* filename)
+{
+	zonelist.clear();
+
+	DataLoader* loader = DataLoader::GetLoader();
+	BYTE* block = 0;
+
+	loader->LoadBuffer(filename, block, true);
+	Parser parser(new BlockReader((const char*)block));
+
+	Term* term = parser.ParseTerm();
+
+	if (!term) {
+		return zonelist;
+	}
+	else {
+		TermText* file_type = term->isText();
+		if (!file_type || file_type->value() != "ZONES") {
+			return zonelist;
+		}
+	}
+
+	do {
+		delete term; term = 0;
+		term = parser.ParseTerm();
+
+		if (term) {
+			TermDef* def = term->isDef();
+			if (def) {
+				if (def->name()->value() == "zone") {
+					if (!def->term() || !def->term()->isStruct()) {
+						UE_LOG(
+							LogStarshatterCombatZone,
+							Warning,
+							TEXT("Zone struct missing in '%s%s'"),
+							*loader->GetDataPath(),
+							ANSI_TO_TCHAR(filename)
+						);
+					}
+					else {
+						TermStruct* val = def->term()->isStruct();
+
+						CombatZone* zone = new CombatZone();
+						char        rgn[64];
+						ZeroMemory(rgn, sizeof(rgn));
+
+						for (int i = 0; i < val->elements()->size(); i++) {
+							TermDef* pdef = val->elements()->at(i)->isDef();
+							if (pdef) {
+								if (pdef->name()->value() == "region") {
+									GetDefText(rgn, pdef, filename);
+									zone->AddRegion(rgn);
+								}
+								else if (pdef->name()->value() == "system") {
+									GetDefText(rgn, pdef, filename);
+									zone->system = rgn;
+								}
+							}
+						}
+
+						zonelist.append(zone);
+					}
+				}
+			}
+		}
+	} while (term);
+
+	loader->ReleaseBuffer(block);
+
+	return zonelist;
 }
 
-void ZoneForce::RemoveGroup(CombatGroup* Group)
-{
-	if (!Group)
-		return;
+// +--------------------------------------------------------------------+
 
-	Groups.RemoveSingle(Group);
+ZoneForce::ZoneForce(int i)
+{
+	iff = i;
+
+	for (int n = 0; n < 8; n++)
+		need[n] = 0;
 }
 
-bool ZoneForce::HasGroup(CombatGroup* Group) const
+void
+ZoneForce::AddGroup(CombatGroup* group)
 {
-	if (!Group)
-		return false;
-
-	return Groups.Contains(Group);
+	if (group)
+		groups.append(group);
 }
 
-int32 ZoneForce::GetNeed(int32 GroupTypeIndex) const
+void
+ZoneForce::RemoveGroup(CombatGroup* group)
 {
-	if (GroupTypeIndex < 0 || GroupTypeIndex >= 8)
-		return 0;
-
-	return Need[GroupTypeIndex];
+	if (group)
+		groups.remove(group);
 }
 
-void ZoneForce::SetNeed(int32 GroupTypeIndex, int32 Needed)
+bool
+ZoneForce::HasGroup(CombatGroup* group)
 {
-	if (GroupTypeIndex < 0 || GroupTypeIndex >= 8)
-		return;
+	if (group)
+		return groups.contains(group);
 
-	Need[GroupTypeIndex] = Needed;
+	return false;
 }
 
-void ZoneForce::AddNeed(int32 GroupTypeIndex, int32 Needed)
+int
+ZoneForce::GetNeed(ECOMBATGROUP_TYPE group_type) const
 {
-	if (GroupTypeIndex < 0 || GroupTypeIndex >= 8)
-		return;
+	switch (group_type) {
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:       return need[0];
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:        return need[1];
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  return need[2];
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:     return need[3];
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    return need[4];
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:  return need[5];
+	}
 
-	Need[GroupTypeIndex] += Needed;
+	return 0;
+}
+
+void
+ZoneForce::SetNeed(ECOMBATGROUP_TYPE group_type, int needed)
+{
+	switch (group_type) {
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:       need[0] = needed; break;
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:        need[1] = needed; break;
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  need[2] = needed; break;
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:     need[3] = needed; break;
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    need[4] = needed; break;
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:  need[5] = needed; break;
+	}
+}
+
+void
+ZoneForce::AddNeed(ECOMBATGROUP_TYPE group_type, int needed)
+{
+	switch (group_type) {
+	case ECOMBATGROUP_TYPE::CARRIER_GROUP:       need[0] += needed; break;
+	case ECOMBATGROUP_TYPE::BATTLE_GROUP:        need[1] += needed; break;
+	case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:  need[2] += needed; break;
+	case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:     need[3] += needed; break;
+	case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:    need[4] += needed; break;
+	case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:  need[5] += needed; break;
+	}
 }

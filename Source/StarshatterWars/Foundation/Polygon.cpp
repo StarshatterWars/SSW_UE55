@@ -575,7 +575,7 @@ Material::CreateThumbnail(int size)
 	//
 	// Keep API compatibility but avoid unsafe UObject creation here.
 	UE_LOG(LogStarshatterPolygon, Verbose,
-		TEXT("Material::CreateThumbnail(%d) ignored (UTexture2D creation not supported in plain C++ Material)."),
+		TEXT("Material::CreateThumbnail(%d) ignored (UTexture2D creation notxsupported in plain C++ Material)."),
 		size);
 
 	thumbnail = 0;
@@ -584,7 +584,7 @@ Material::CreateThumbnail(int size)
 DWORD
 Material::GetThumbColor(int i, int j, int size)
 {
-	// Preserve the analytic lighting behavior, but do not sample textures here.
+	// Preserve the analytic lighting behavior, but do notxsample textures here.
 	// Texture sampling would require explicit engine helpers (bulk data read, SRGB, etc.).
 	Color result = Color::LightGray;
 

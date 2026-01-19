@@ -364,7 +364,7 @@ SimContact::UpdateTrack()
 		return;
 
 	if (!track) {
-		track = new(__FILE__, __LINE__) FVector[DEFAULT_TRACK_LENGTH];
+		track = new  FVector[DEFAULT_TRACK_LENGTH];
 		track[0] = loc;
 		ntrack = 1;
 		track_time = time;

@@ -38,6 +38,9 @@ class SimSplash;
 class SimElement;
 class SimSystem;
 
+class SimContact;
+class SimShot;
+
 class StarSystem;
 class Orbital;
 class OrbitalRegion;
@@ -45,12 +48,10 @@ class Asteroid;
 
 class NetGame;
 class CameraDirector;
-class Contact;
+
 class Ship;
 class ShipDesign;
 
-
-class Shot;
 class Drone;
 class Explosion;
 class Debris;
@@ -111,7 +112,7 @@ public:
 
     Ship* FindShip(const char* name, const char* rgn_name = nullptr);
 
-    Shot* CreateShot(
+    SimShot* CreateShot(
         const FVector& pos,
         const Camera& shot_cam,
         WeaponDesign* d,
@@ -134,12 +135,12 @@ public:
     Asteroid* CreateAsteroid(const FVector& pos, int type, double mass, SimRegion* rgn = nullptr);
 
     void CreateSplashDamage(Ship* ship);
-    void CreateSplashDamage(Shot* shot);
+    void CreateSplashDamage(SimShot* shot);
     void DestroyShip(Ship* ship);
     void NetDockShip(Ship* ship, Ship* carrier, FlightDeck* deck);
 
     virtual Ship* FindShipByObjID(uint32 objid);
-    virtual Shot* FindShotByObjID(uint32 objid);
+    virtual SimShot* FindShotByObjID(uint32 objid);
 
     Mission* GetMission() { return mission; }
     List<MissionEvent>& GetEvents() { return events; }
@@ -269,7 +270,7 @@ public:
     bool CanTimeSkip() const;
 
     virtual Ship* FindShipByObjID(uint32 objid);
-    virtual Shot* FindShotByObjID(uint32 objid);
+    virtual SimShot* FindShotByObjID(uint32 objid);
 
     const char* Name() const { return name; }
     int Type() const { return type; }
@@ -295,12 +296,12 @@ protected:
     List<Ship>      carriers;
     List<Ship>      selection;
     List<Ship>      dead_ships;
-    List<Shot>      shots;
+    List<SimShot>      shots;
     List<Drone>     drones;
     List<Explosion> explosions;
     List<Debris>    debris;
     List<Asteroid>  asteroids;
-    List<Contact>   track_database[5];
+    List<SimContact>   track_database[5];
     List<SimRegion> links;
 
     uint32          sim_time;

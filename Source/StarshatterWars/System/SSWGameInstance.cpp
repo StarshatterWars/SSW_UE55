@@ -115,7 +115,7 @@ void USSWGameInstance::SpawnGalaxy()
 	}
 
 	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
+	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
 	//}		
 }
 
@@ -147,7 +147,7 @@ void USSWGameInstance::GetGameData()
 	}
 
 	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
+	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
 	//}		
 }
 
@@ -2555,7 +2555,7 @@ bool USSWGameInstance::SaveUniverse()
 	// Guard: must have valid save context
 	if (UniverseId.IsEmpty())
 	{
-		UE_LOG(LogTemp, Error, TEXT("SaveUniverse: UniverseId is empty (not loaded?)"));
+		UE_LOG(LogTemp, Error, TEXT("SaveUniverse: UniverseId is empty (notxloaded?)"));
 		return false;
 	}
 
@@ -2869,7 +2869,7 @@ void USSWGameInstance::EnsureCampaignSaveLoaded()
 	// ---- Load/Create the campaign save ----
 	LoadOrCreateSelectedCampaignSave();
 
-	// If load failed, do not proceed to Operations (avoid crash)
+	// If load failed, do notxproceed to Operations (avoid crash)
 	if (!CampaignSave)
 	{
 		UE_LOG(LogTemp, Error, TEXT("EnsureCampaignSaveLoaded: Failed to load/create CampaignSave"));
@@ -2917,7 +2917,7 @@ FString USSWGameInstance::GetCampaignTPlusString() const
 		return CampaignSave->GetTPlusDisplay(Timer->UniverseTimeSeconds);
 	}
 
-	// Not loaded yet
+	// notxloaded yet
 	return TEXT("T+ --/--:--:--");
 }
 

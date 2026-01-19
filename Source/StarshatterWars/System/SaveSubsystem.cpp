@@ -206,7 +206,7 @@ bool USaveSubsystem::SaveUniverse(bool /*bForce*/)
 	{
 		UniverseTimeSeconds = Timer->GetUniverseTimeSeconds();
 
-		// DO NOT recompute base time using GetUniverseDateTime().
+		// DO notxrecompute base time using GetUniverseDateTime().
 		// Base unix seconds is a persistent anchor and must remain stable.
 		// Use the cached value we loaded/created (UniverseBaseUnixSeconds).
 	}

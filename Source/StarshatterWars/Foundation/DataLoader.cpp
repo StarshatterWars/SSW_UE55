@@ -137,7 +137,7 @@ DataLoader::EnableDatafile(const char* name)
 		loader = this;
 	}
 	else {
-		Print("   WARNING: could not open datafile '%s'\n", name);
+		Print("   WARNING: could notxopen datafile '%s'\n", name);
 		status = DATAFILE_NOTEXIST;
 	}
 
@@ -366,7 +366,7 @@ DataLoader::LoadPartialFile(const char* name, BYTE*& buf, int max_load, bool opt
 			len = max_load;
 		}
 
-		buf = new(__FILE__, __LINE__) BYTE[len];
+		buf = new  BYTE[len];
 
 		if (buf)
 			::fread(buf, len, 1, f);
@@ -377,7 +377,7 @@ DataLoader::LoadPartialFile(const char* name, BYTE*& buf, int max_load, bool opt
 	}
 
 	if (!optional)
-		Print("WARNING - DataLoader could not load partial file '%s'\n", filename);
+		Print("WARNING - DataLoader could notxload partial file '%s'\n", filename);
 	return 0;
 }
 
@@ -410,8 +410,8 @@ DataLoader::CacheBitmap(const char* name, Bitmap*& bitmap, int type, bool option
 	bitmap = Bitmap::CheckCache(name);
 	if (bitmap) return 1;
 
-	// not in cache yet:
-	bitmap = new(__FILE__, __LINE__) Bitmap;
+	// notxin cache yet:
+	bitmap = new  Bitmap;
 
 	if (bitmap)
 		result = LoadBitmap(name, *bitmap, type, optional);
@@ -443,7 +443,7 @@ DataLoader::LoadBitmap(const char* name, Bitmap& bitmap, int type, bool optional
 	bitmap.SetFilename(name);
 
 	if (!result && !optional)
-		Print("WARNING - DataLoader could not load bitmap '%s%s'\n", datapath.data(), name);
+		Print("WARNING - DataLoader could notxload bitmap '%s%s'\n", datapath.data(), name);
 
 	return result;
 }
@@ -467,8 +467,8 @@ DataLoader::LoadTexture(const char* name, Bitmap*& bitmap, int type, bool preloa
 	bitmap = Bitmap::CheckCache(filename);
 	if (bitmap) return 1;
 
-	// not in cache yet:
-	bitmap = new(__FILE__, __LINE__) Bitmap;
+	// notxin cache yet:
+	bitmap = new  Bitmap;
 
 	if (bitmap) {
 		result = LoadHiColor(name, *bitmap, type);
@@ -488,11 +488,11 @@ DataLoader::LoadTexture(const char* name, Bitmap*& bitmap, int type, bool preloa
 			bitmap = 0;
 
 			if (!optional)
-				Print("WARNING - DataLoader could not load texture '%s%s'\n", datapath.data(), name);
+				Print("WARNING - DataLoader could notxload texture '%s%s'\n", datapath.data(), name);
 		}
 	}
 	else if (!optional) {
-		Print("WARNING - DataLoader could not allocate texture '%s%s'\n", datapath.data(), name);
+		Print("WARNING - DataLoader could notxallocate texture '%s%s'\n", datapath.data(), name);
 	}
 
 	return result;
@@ -1006,7 +1006,7 @@ int DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bo
 	}
 
 	if (!optional)
-		Print("WARNING - DataLoader could not load buffer '%s'\n", filename); 
+		Print("WARNING - DataLoader could notxload buffer '%s'\n", filename); 
 	return 0;
 }
 

@@ -1,12 +1,25 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         RadioHandler.cpp
+	AUTHOR:       Carlos Bott
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios LLC
 
 
+	OVERVIEW
+	========
+	Radio message handler class implementation
+*/
+
 #include "RadioHandler.h"
-#include "RadioHandler.h"
+
 #include "RadioMessage.h"
 #include "RadioTraffic.h"
 #include "Instruction.h"
-
+#include "SimDirector.h"
 #include "SimContact.h"
 #include "SimElement.h"
 #include "Mission.h"
@@ -14,16 +27,25 @@
 #include "ShipDesign.h"
 #include "Sim.h"
 #include "StarSystem.h"
-//#include "Power.h"
-//#include "Drive.h"
-//#include "Shield.h"
-//#include "Hangar.h"
-//#include "FlightDeck.h"
-//#include "WeaponGroup.h"
-//#include "SteerAI.h"
+#include "Power.h"
+#include "Drive.h"
+#include "Shield.h"
+#include "Hangar.h"
+#include "FlightDeck.h"
+#include "WeaponGroup.h"
+#include "SteerAI.h"
 
 #include "Text.h"
 #include "Game.h"
+
+// Minimal Unreal includes for UE_LOG + FVector conversions used below:
+#include "Math/Vector.h"
+#include "Logging/LogMacros.h"
+
+// Create a local log category for this translation unit:
+DEFINE_LOG_CATEGORY_STATIC(LogRadioHandler, Log, All);
+
+// +--------------------------------------------------------------------+
 
 RadioHandler::RadioHandler()
 {
@@ -33,19 +55,19 @@ RadioHandler::~RadioHandler()
 {
 }
 
-// +----------------------------------------------------------------------+
+// +--------------------------------------------------------------------+
 
 bool
-RadioHandler::ProcessMessage(RadioMessage* msg, UShip* s)
+RadioHandler::ProcessMessage(RadioMessage* msg, Ship* s)
 {
 	if (!s || !msg || !msg->Sender())
 		return false;
 
-	if (s->GetShipClass() >= UShip::FARCASTER && s->GetShipClass() <= UShip::C3I)
+	if (s->Class() >= Ship::FARCASTER && s->Class() <= Ship::C3I)
 		return false;
 
 	if (msg->Sender()->IsRogue()) {
-		UShip* sender = (UShip*)msg->Sender();  // cast-away const
+		Ship* sender = (Ship*)msg->Sender();  // cast-away const
 		RadioMessage* nak = new RadioMessage(sender, s, RadioMessage::NACK);
 		RadioTraffic::Transmit(nak);
 		return false;
@@ -56,7 +78,6 @@ RadioHandler::ProcessMessage(RadioMessage* msg, UShip* s)
 	// SPECIAL CASE:
 	// skip navpoint must be processed by elem leader,
 	// even if the elem leader sent the message:
-
 	if (msg->Action() == RadioMessage::SKIP_NAVPOINT && !respond)
 		ProcessMessageAction(msg, s);
 
@@ -134,9 +155,9 @@ RadioHandler::IsOrder(int action)
 // +----------------------------------------------------------------------+
 
 bool
-RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
+RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 {
-	/*Instruction* instruction = ship->GetRadioOrders();
+	Instruction* instruction = ship->GetRadioOrders();
 	int          action = 0;
 
 	if (msg && msg->Action() == RadioMessage::RESUME_MISSION) {
@@ -168,7 +189,7 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 			if (ship != msg->Sender())
 				ship->DropTarget();
 
-			Director* dir = ship->GetDirector();
+			SimDirector* dir = ship->GetDirector();
 			if (dir && dir->Type() >= SteerAI::SEEKER && dir->Type() <= SteerAI::GROUND) {
 				SteerAI* ai = (SteerAI*)dir;
 				ai->SetTarget(0);
@@ -176,14 +197,14 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 
 			// farcast and quantum jump radio messages:
 			if (action >= RadioMessage::QUANTUM_TO) {
-				USim* sim = USim::GetSim();
+				Sim* sim = Sim::GetSim();
 
 				if (sim) {
 					SimRegion* rgn = sim->FindRegion(msg->Info());
 
 					if (rgn) {
 						instruction->SetAction(action);
-						instruction->SetLocation(Point(0, 0, 0));
+						instruction->SetLocation(FVector::ZeroVector); // Point(0,0,0) -> FVector
 						instruction->SetRegion(rgn);
 						instruction->SetFarcast(action == RadioMessage::FARCAST_TO);
 						instruction->SetWeaponsFree(false);
@@ -225,13 +246,15 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 			instruction->ClearTarget();
 
 			if (msg->TargetList().size() > 0) {
-				USimObject* msg_tgt = msg->TargetList().at(0);
+				SimObject* msg_tgt = msg->TargetList().at(0);
 				instruction->SetTarget(msg_tgt);
+
+				// Point(...) is a Starshatter helper type; convert to FVector directly:
 				instruction->SetLocation(msg_tgt->Location());
 			}
 
 			else if (action == RadioMessage::COVER_ME) {
-				instruction->SetTarget((UShip*)msg->Sender());
+				instruction->SetTarget((Ship*)msg->Sender());
 				instruction->SetLocation(msg->Sender()->Location());
 			}
 
@@ -241,15 +264,15 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 
 			// handle element engagement:
 			if (action == RadioMessage::ATTACK && msg->TargetList().size() > 0) {
-				Element* elem = msg->DestinationElem();
+				SimElement* elem = msg->DestinationElem();
 
 				if (!elem && msg->DestinationShip())
 					elem = msg->DestinationShip()->GetElement();
 
 				if (elem) {
-					USimObject* msg_tgt = msg->TargetList().at(0);
-					if (msg_tgt && msg_tgt->Type() == USimObject::SIM_SHIP) {
-						Element* tgt = ((UShip*)msg_tgt)->GetElement();
+					SimObject* msg_tgt = msg->TargetList().at(0);
+					if (msg_tgt && msg_tgt->Type() == SimObject::SIM_SHIP) {
+						SimElement* tgt = ((Ship*)msg_tgt)->GetElement();
 						elem->SetAssignment(tgt);
 
 						if (msg->TargetList().size() > 1)
@@ -264,7 +287,7 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 			}
 
 			else if (action == RadioMessage::RESUME_MISSION) {
-				Element* elem = msg->DestinationElem();
+				SimElement* elem = msg->DestinationElem();
 
 				if (!elem && msg->DestinationShip())
 					elem = msg->DestinationShip()->GetElement();
@@ -277,7 +300,7 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 
 		instruction->SetWeaponsFree(action <= RadioMessage::WEP_FREE);
 		return true;
-	}*/
+	}
 
 	return false;
 }
@@ -285,7 +308,7 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg,UShip* ship)
 // +----------------------------------------------------------------------+
 
 bool
-RadioHandler::ProcessMessageAction(RadioMessage* msg, UShip* ship)
+RadioHandler::ProcessMessageAction(RadioMessage* msg, Ship* ship)
 {
 	if (!msg) return false;
 
@@ -311,7 +334,7 @@ RadioHandler::ProcessMessageAction(RadioMessage* msg, UShip* ship)
 }
 
 bool
-RadioHandler::SkipNavpoint(RadioMessage* msg, UShip* ship)
+RadioHandler::SkipNavpoint(RadioMessage* msg, Ship* ship)
 {
 	// Find next Instruction:
 	Instruction* navpt = ship->GetNextNavPoint();
@@ -325,7 +348,7 @@ RadioHandler::SkipNavpoint(RadioMessage* msg, UShip* ship)
 }
 
 bool
-RadioHandler::LaunchProbe(RadioMessage* msg, UShip* ship)
+RadioHandler::LaunchProbe(RadioMessage* msg, Ship* ship)
 {
 	if (ship && ship->GetProbeLauncher()) {
 		ship->LaunchProbe();
@@ -336,9 +359,9 @@ RadioHandler::LaunchProbe(RadioMessage* msg, UShip* ship)
 }
 
 bool
-RadioHandler::Inbound(RadioMessage* msg, UShip* ship)
+RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 {
-	/*UShip* inbound = (UShip*)msg->Sender();
+	Ship* inbound = (Ship*)msg->Sender();
 	Hangar* hangar = ship->GetHangar();
 	FlightDeck* deck = 0;
 	int         squadron = -1;
@@ -424,28 +447,29 @@ RadioHandler::Inbound(RadioMessage* msg, UShip* ship)
 		approach->SetInfo(info);
 	}
 
-	RadioTraffic::Transmit(approach);*/
+	RadioTraffic::Transmit(approach);
 
 	return false;
 }
 
 bool
-RadioHandler::Picture(RadioMessage* msg, UShip* ship)
+RadioHandler::Picture(RadioMessage* msg, Ship* ship)
 {
-	/*if (!ship) return false;
+	if (!ship) return false;
 
 	// try to find some enemy fighters in the area:
-	UShip* tgt = 0;
+	Ship* tgt = 0;
 	double      range = 1e9;
 
-	ListIter<Contact> iter = ship->ContactList();
+	ListIter<SimContact> iter = ship->ContactList();
 	while (++iter) {
-		Contact* c = iter.value();
+		SimContact* c = iter.value();
 		int      iff = c->GetIFF(ship);
 		Ship* s = c->GetShip();
 
 		if (s && s->IsDropship() && s->IsHostileTo(ship)) {
-			double s_range = Point(msg->Sender()->Location() - s->Location()).length();
+			const FVector Delta = msg->Sender()->Location() - s->Location();
+			const double s_range = (double)Delta.Size();
 			if (!tgt || s_range < range) {
 				tgt = s;
 				range = s_range;
@@ -455,8 +479,8 @@ RadioHandler::Picture(RadioMessage* msg, UShip* ship)
 
 	// found some:
 	if (tgt) {
-		Element* sender = msg->Sender()->GetElement();
-		Element* tgt_elem = tgt->GetElement();
+		SimElement* sender = msg->Sender()->GetElement();
+		SimElement* tgt_elem = tgt->GetElement();
 		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::ATTACK);
 
 		if (tgt_elem) {
@@ -472,31 +496,31 @@ RadioHandler::Picture(RadioMessage* msg, UShip* ship)
 
 	// nobody worth killin':
 	else {
-		UShip* sender = (UShip*)msg->Sender();  // cast-away const
+		Ship* sender = (Ship*)msg->Sender();  // cast-away const
 		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::PICTURE);
 		RadioTraffic::Transmit(response);
-	}*/
+	}
 
 	return false;
 }
 
 bool
-RadioHandler::Support(RadioMessage* msg, UShip* ship)
+RadioHandler::Support(RadioMessage* msg, Ship* ship)
 {
 	if (!ship) return false;
 
 	// try to find some fighters with time on their hands...
-	Element* help = 0;
-	Element* cmdr = ship->GetElement();
-	Element* baby = msg->Sender()->GetElement();
+	SimElement* help = 0;
+	SimElement* cmdr = ship->GetElement();
+	SimElement* baby = msg->Sender()->GetElement();
 	SimRegion* rgn = msg->Sender()->GetRegion();
 
 	for (int i = 0; i < rgn->Ships().size(); i++) {
-		UShip* s = rgn->Ships().at(i);
+		Ship* s = rgn->Ships().at(i);
 		Element* e = s->GetElement();
 
 		if (e && s->IsDropship() &&
-			e->Type() == EMISSIONTYPE::PATROL &&
+			e->Type() == Mission::PATROL &&
 			e != baby &&
 			cmdr->CanCommand(e) &&
 			s->GetRadioOrders()->Action() == RadioMessage::NONE) {
@@ -512,7 +536,7 @@ RadioHandler::Support(RadioMessage* msg, UShip* ship)
 		RadioTraffic::Transmit(escort);
 
 		Text ok = Game::GetText("RadioHandler.help-enroute");
-		UShip* sender = (UShip*)msg->Sender();  // cast-away const
+		Ship* sender = (Ship*)msg->Sender();  // cast-away const
 		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::ACK);
 		response->SetInfo(ok);
 		RadioTraffic::Transmit(response);
@@ -521,7 +545,7 @@ RadioHandler::Support(RadioMessage* msg, UShip* ship)
 	// no help in sight:
 	else {
 		Text nope = Game::GetText("RadioHandler.no-help-for-you");
-		UShip* sender = (UShip*)msg->Sender();  // cast-away const
+		Ship* sender = (Ship*)msg->Sender();  // cast-away const
 		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::NACK);
 		response->SetInfo(nope);
 		RadioTraffic::Transmit(response);
@@ -533,15 +557,14 @@ RadioHandler::Support(RadioMessage* msg, UShip* ship)
 // +----------------------------------------------------------------------+
 
 void
-RadioHandler::AcknowledgeMessage(RadioMessage* msg, UShip* s)
+RadioHandler::AcknowledgeMessage(RadioMessage* msg, Ship* s)
 {
 	if (s && msg && msg->Sender() && msg->Action()) {
 		if (msg->Action() >= RadioMessage::ACK && msg->Action() <= RadioMessage::NACK)
 			return;  // nothing to say here
 
-		UShip* sender = (UShip*)msg->Sender();  // cast-away const
+		Ship* sender = (Ship*)msg->Sender();  // cast-away const
 		RadioMessage* ack = new RadioMessage(sender, s, RadioMessage::ACK);
 		RadioTraffic::Transmit(ack);
 	}
 }
-

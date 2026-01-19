@@ -90,7 +90,7 @@ void UOOBFighterSquadronWidget::ToggleExpansion()
 void UOOBFighterSquadronWidget::BuildChildren(const FS_OOBFighter& FighterDataStruct)
 {
     if (!ElementListView) {
-        UE_LOG(LogTemp, Error, TEXT("Fighter Squadron ListView is not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Fighter Squadron ListView is notxvalid!"));
         return;
     }
 

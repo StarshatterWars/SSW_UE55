@@ -122,7 +122,7 @@ static int32 RunTests(const FString& TestListFile, const FString& ResultsFile)
 
 		while (!Framework.ExecuteLatentCommands())
 		{
-			// Because we are not 'ticked' by the Engine we need to pump the TaskGraph
+			// Because we are notx'ticked' by the Engine we need to pump the TaskGraph
 			FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
 
 			const FDateTime Now = FDateTime::UtcNow();
@@ -144,7 +144,7 @@ static int32 RunTests(const FString& TestListFile, const FString& ResultsFile)
 
 		const FString Result = CurrentTestSuccessful ? TEXT("OK") : TEXT("FAIL");
 
-		// [RUNTEST] is part of the protocol, so do not remove.
+		// [RUNTEST] is part of the protocol, so do notxremove.
 		OutFile << TEXT("[RUNTEST]") << *TestCommand << TEXT("|") << *DisplayName << TEXT("|") << *Result << TEXT("|") << ExecutionInfo.Duration << std::endl;
 
 		if (!CurrentTestSuccessful)

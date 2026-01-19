@@ -148,7 +148,7 @@ AGalaxy::Load(const char* FileName)
 		Term* term = parser.ParseTerm();
 
 		if (!term) {
-			UE_LOG(LogTemp, Log, TEXT("WARNING: could not parse '%s'"), *FilePath);
+			UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *FilePath);
 			return;
 		}
 		else {

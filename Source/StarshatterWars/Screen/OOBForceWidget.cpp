@@ -101,7 +101,7 @@ void UOOBForceWidget::SetVisible(bool bIsVisible)
 void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
 {
     if (!FleetListView || !BattalionListView) {
-        UE_LOG(LogTemp, Error, TEXT("Force ListViews are not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Force ListViews are notxvalid!"));
         return;
     }
 

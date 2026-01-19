@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-// Forward declarations (match your port style: plain C++ classes, not UObjects)
+// Forward declarations (match your port style: plain C++ classes, notxUObjects)
 class Campaign;
 class CombatGroup;
 

@@ -332,7 +332,7 @@ void CampaignMissionStarship::GenerateMissionElements()
     CreateTargets();
 
     if (ward && player) {
-        Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, ward->Name());
+        Instruction* obj = new  Instruction(Instruction::ESCORT, ward->Name());
 
         if (obj) {
             switch (mission->Type()) {
@@ -389,11 +389,11 @@ void CampaignMissionStarship::CreatePlayer()
         player = elem;
     }
     else if (player_group) {
-        ::Print("CMS GenerateMissionElements() could not find player element '%s'\n",
+        ::Print("CMS GenerateMissionElements() could notxfind player element '%s'\n",
             player_group->Name().data());
     }
     else {
-        ::Print("CMS GenerateMissionElements() could not find player element (no player group)\n");
+        ::Print("CMS GenerateMissionElements() could notxfind player element (no player group)\n");
     }
 }
 
@@ -425,7 +425,7 @@ void CampaignMissionStarship::CreateElements(CombatGroup* g)
 
                 if (g->Type() == CombatGroup::CARRIER_GROUP &&
                     elem->MissionRole() == Mission::ESCORT) {
-                    Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, cmdr->Name());
+                    Instruction* obj = new  Instruction(Instruction::ESCORT, cmdr->Name());
                     if (obj) {
                         obj->SetTargetDesc(Text("the ") + g->GetDescription());
                         elem->AddObjective(obj);
@@ -457,7 +457,7 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
             return nullptr;
     }
 
-    MissionElement* elem = new(__FILE__, __LINE__) MissionElement;
+    MissionElement* elem = new  MissionElement;
     if (!elem) {
         Exit();
         return nullptr;
@@ -525,7 +525,7 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
             Text src = name.substring(0, dash);
             Text dst = name.substring(dash + 1, name.length() - (dash + 1));
 
-            Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::VECTOR, dst + "-" + src);
+            Instruction* obj = new  Instruction(Instruction::VECTOR, dst + "-" + src);
             if (obj)
                 elem->AddObjective(obj);
         }
@@ -565,7 +565,7 @@ void CampaignMissionStarship::CreateSquadron(CombatGroup* g)
     int live_count = fighter->LiveCount();
     int maint_count = (live_count > 4) ? live_count / 2 : 0;
 
-    MissionElement* elem = new(__FILE__, __LINE__) MissionElement;
+    MissionElement* elem = new  MissionElement;
 
     if (!elem) {
         Exit();
@@ -639,7 +639,7 @@ void CampaignMissionStarship::CreateWardFreight()
     delta *= 200.0e3;
     navpt_loc += delta;
 
-    Instruction* n = new(__FILE__, __LINE__) Instruction(elem->Region(), navpt_loc, Instruction::VECTOR);
+    Instruction* n = new  Instruction(elem->Region(), navpt_loc, Instruction::VECTOR);
     if (n) {
         n->SetSpeed(500);
         elem->AddNavPoint(n);
@@ -652,7 +652,7 @@ void CampaignMissionStarship::CreateWardFreight()
     else
         rgn2 = *zones[zones.size() - 1]->GetRegions()[0];
 
-    n = new(__FILE__, __LINE__) Instruction(rgn2, Point(0, 0, 0), Instruction::VECTOR);
+    n = new  Instruction(rgn2, Point(0, 0, 0), Instruction::VECTOR);
     if (n) {
         n->SetSpeed(750);
         elem->AddNavPoint(n);
@@ -713,7 +713,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
 
                     if (!player_lead) return;
 
-                    Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ASSAULT, prime_target->Name());
+                    Instruction* obj = new  Instruction(Instruction::ASSAULT, prime_target->Name());
                     if (obj)
                     {
                         // If you replaced Text with FString, this becomes FString::Printf or concatenation.
@@ -741,7 +741,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
                     rloc.SetAzimuth(90.0 * DEGREES_TO_RADIANS);
                     rloc.SetAzimuthVar(45.0 * DEGREES_TO_RADIANS);
 
-                    instr = new(__FILE__, __LINE__) Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
+                    instr = new  Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
 
                     if (!instr)
                         return;
@@ -762,7 +762,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
                         rloc2.SetDistance(50e3);
                         rloc2.SetDistanceVar(5e3);
 
-                        instr = new(__FILE__, __LINE__) Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
+                        instr = new  Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
 
                         if (!instr)
                             return;
@@ -797,7 +797,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
                     rloc.SetAzimuth(90.0 * DEGREES_TO_RADIANS);
                     rloc.SetAzimuthVar(45.0 * DEGREES_TO_RADIANS);
 
-                    instr = new(__FILE__, __LINE__) Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
+                    instr = new  Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
 
                     if (!instr)
                         return;
@@ -819,7 +819,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
                         rloc2.SetDistance(50e3);
                         rloc2.SetDistanceVar(5e3);
 
-                        instr = new(__FILE__, __LINE__) Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
+                        instr = new  Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
 
                         if (!instr)
                             return;
@@ -869,14 +869,14 @@ void CampaignMissionStarship::CreateTargetsPatrol()
     FVector base_loc = player->Location();
     FVector patrol_loc = base_loc + RandomDirection() * (float)RandomRangeDouble(170e3, 250e3);
 
-    Instruction* n = new(__FILE__, __LINE__) Instruction(region, patrol_loc, Instruction::PATROL);
+    Instruction* n = new  Instruction(region, patrol_loc, Instruction::PATROL);
     player->AddNavPoint(n);
 
     for (int i = 1; i < player_group_elements.size(); i++)
     {
         MissionElement* elem = player_group_elements[i];
 
-        n = new(__FILE__, __LINE__) Instruction(
+        n = new  Instruction(
             region,
             patrol_loc + RandomDirection() * (float)RandomRangeDouble(20e3, 40e3),
             Instruction::PATROL);
@@ -887,7 +887,7 @@ void CampaignMissionStarship::CreateTargetsPatrol()
 
     FVector loc2 = patrol_loc + RandomDirection() * (float)RandomRangeDouble(150e3, 200e3);
 
-    n = new(__FILE__, __LINE__) Instruction(region, loc2, Instruction::PATROL);
+    n = new  Instruction(region, loc2, Instruction::PATROL);
     if (n)
         player->AddNavPoint(n);
 
@@ -895,7 +895,7 @@ void CampaignMissionStarship::CreateTargetsPatrol()
     {
         MissionElement* elem = player_group_elements[i];
 
-        n = new(__FILE__, __LINE__) Instruction(
+        n = new  Instruction(
             region,
             loc2 + RandomDirection() * (float)RandomRangeDouble(20e3, 40e3),
             Instruction::PATROL);
@@ -915,7 +915,7 @@ void CampaignMissionStarship::CreateTargetsPatrol()
         if (t < 1) ntries--;
     }
 
-    Instruction* obj = new(__FILE__, __LINE__) Instruction(*n);
+    Instruction* obj = new  Instruction(*n);
     if (obj)
     {
         obj->SetTargetDesc("inbound enemy units");
@@ -945,7 +945,7 @@ void CampaignMissionStarship::CreateTargetsFreightEscort()
 
         elem->SetLocation(ward->Location() + RandomPoint() * 5.0f);
 
-        Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ASSAULT, ward->Name());
+        Instruction* obj = new  Instruction(Instruction::ASSAULT, ward->Name());
         if (obj)
             elem->AddObjective(obj);
 
@@ -957,7 +957,7 @@ void CampaignMissionStarship::CreateTargetsFreightEscort()
             e2->SetIntelLevel(Intel::KNOWN);
             e2->SetLocation(elem->Location() + RandomPoint() * 0.25f);
 
-            Instruction* obj2 = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, elem->Name());
+            Instruction* obj2 = new  Instruction(Instruction::ESCORT, elem->Name());
             if (obj2)
                 e2->AddObjective(obj2);
 
@@ -965,7 +965,7 @@ void CampaignMissionStarship::CreateTargetsFreightEscort()
         }
     }
 
-    Instruction* obj3 = new(__FILE__, __LINE__) Instruction(
+    Instruction* obj3 = new  Instruction(
         mission->GetRegion(),
         FVector(0, 0, 0),
         Instruction::PATROL);
@@ -1059,7 +1059,7 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                         e2->SetRegion(rgn);
                         e2->SetLocation(elem->Location() + RandomPoint() * 0.5f);
 
-                        Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, elem->Name());
+                        Instruction* obj = new  Instruction(Instruction::ESCORT, elem->Name());
                         if (obj)
                             e2->AddObjective(obj);
 
@@ -1101,14 +1101,14 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
             {
                 elem->SetIntelLevel(Intel::KNOWN);
                 elem->Loadouts().destroy();
-                elem->Loadouts().append(new(__FILE__, __LINE__) MissionLoad(-1, "Ship Strike"));
+                elem->Loadouts().append(new  MissionLoad(-1, "Ship Strike"));
                 elem->SetRegion(rgn);
                 elem->SetLocation(base_loc + RandomPoint());
                 mission->AddElement(elem);
 
                 if (player)
                 {
-                    Instruction* n = new(__FILE__, __LINE__) Instruction(
+                    Instruction* n = new  Instruction(
                         player->Region(),
                         player->Location() + RandomPoint(),
                         Instruction::ASSAULT);
@@ -1134,14 +1134,14 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
             {
                 elem->SetIntelLevel(Intel::KNOWN);
                 elem->Loadouts().destroy();
-                elem->Loadouts().append(new(__FILE__, __LINE__) MissionLoad(-1, "Hvy Ship Strike"));
+                elem->Loadouts().append(new  MissionLoad(-1, "Hvy Ship Strike"));
                 elem->SetRegion(rgn);
                 elem->SetLocation(base_loc + RandomPoint() * 1.3f);
                 mission->AddElement(elem);
 
                 if (player)
                 {
-                    Instruction* n = new(__FILE__, __LINE__) Instruction(
+                    Instruction* n = new  Instruction(
                         player->Region(),
                         player->Location() + RandomPoint(),
                         Instruction::ASSAULT);
@@ -1184,7 +1184,7 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                         e2->SetRegion(rgn);
                         e2->SetLocation(elem->Location() + RandomPoint() * 0.5f);
 
-                        Instruction* obj = new(__FILE__, __LINE__) Instruction(Instruction::ESCORT, elem->Name());
+                        Instruction* obj = new  Instruction(Instruction::ESCORT, elem->Name());
                         if (obj)
                             e2->AddObjective(obj);
 
@@ -1227,7 +1227,7 @@ MissionElement* CampaignMissionStarship::CreateFighterPackage(CombatGroup* squad
         return 0;
     }
 
-    MissionElement* elem = new(__FILE__, __LINE__) MissionElement;
+    MissionElement* elem = new  MissionElement;
 
     if (!elem)
     {
@@ -1255,7 +1255,7 @@ MissionElement* CampaignMissionStarship::CreateFighterPackage(CombatGroup* squad
     elem->SetRegion(fighter->GetRegion());
     elem->SetSquadron(fighter->Name());
     elem->SetMissionRole(role);
-    elem->Loadouts().append(new(__FILE__, __LINE__) MissionLoad(-1, "ACM Medium Range"));
+    elem->Loadouts().append(new  MissionLoad(-1, "ACM Medium Range"));
 
     if (carrier)
         elem->SetLocation(carrier->Location() + RandomPoint() * 0.3f);
@@ -1371,7 +1371,7 @@ MissionInfo* CampaignMissionStarship::DescribeMission()
         strcpy_s(player_info, player->GetCombatGroup()->GetDescription());
     }
 
-    MissionInfo* info = new(__FILE__, __LINE__) MissionInfo;
+    MissionInfo* info = new  MissionInfo;
 
     if (info)
     {

@@ -89,7 +89,7 @@ void UOOBInterceptSquadronWidget::ToggleExpansion()
 void UOOBInterceptSquadronWidget::BuildChildren(const FS_OOBIntercept& FighterDataStruct)
 {
     if (!ElementListView) {
-        UE_LOG(LogTemp, Error, TEXT("Intercept Squadron ListView is not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Intercept Squadron ListView is notxvalid!"));
         return;
     }
 

@@ -1,150 +1,173 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (c) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         MissionEvent.h
+	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	Events for mission scripting
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameStructs.h"
+#include "Types.h"
+#include "List.h"
+#include "Text.h"
+#include "Geometry.h"
 
-// Forward declarations (wire later)
+// Minimal Unreal include for FVector:
+#include "Math/Vector.h"
+
+// +--------------------------------------------------------------------+
+
+class UTexture2D;
+
 class Mission;
+class MissionTemplate;
+class MissionElement;
+class MissionLoad;
 
-/**
- * MissionEvent
- *  - UE port stub of Starshatter MissionEvent
- *  - Preserves method inventory and gating structure
- *  - Uses UE containers/types; no hard dependencies on other subsystems yet
- */
+class MsnEditDlg;
+class MsnEventDlg;
+
+class Ship;
+class SimSystem;
+class SimElement;
+class ShipDesign;
+class WeaponDesign;
+class StarSystem;
+class Instruction;
+class Sound;
+
+// +--------------------------------------------------------------------+
+
 class MissionEvent
 {
+	friend class Mission;
+	friend class MissionTemplate;
+	friend class MsnEditDlg;
+	friend class MsnEventDlg;
+
 public:
-	static const TCHAR* TYPENAME() { return TEXT("MissionEvent"); }
+	static const char* TYPENAME() { return "MissionEvent"; }
+
+	enum EVENT_TYPE {
+		MESSAGE,
+		OBJECTIVE,
+		INSTRUCTION,
+		IFF,
+		DAMAGE,
+		JUMP,
+		HOLD,
+		SKIP,
+		END_MISSION,
+
+		BEGIN_SCENE,
+		CAMERA,
+		VOLUME,
+		DISPLAY,
+		FIRE_WEAPON,
+		END_SCENE,
+
+		NUM_EVENTS
+	};
+
+	enum EVENT_STATUS {
+		PENDING, ACTIVE, COMPLETE, SKIPPED
+	};
+
+	enum EVENT_TRIGGER {
+		TRIGGER_TIME, TRIGGER_DAMAGE, TRIGGER_DESTROYED,
+		TRIGGER_JUMP, TRIGGER_LAUNCH, TRIGGER_DOCK,
+		TRIGGER_NAVPT, TRIGGER_EVENT, TRIGGER_SKIPPED,
+		TRIGGER_TARGET, TRIGGER_SHIPS_LEFT, TRIGGER_DETECT,
+		TRIGGER_RANGE, TRIGGER_EVENT_ALL, TRIGGER_EVENT_ANY,
+		NUM_TRIGGERS
+	};
 
 	MissionEvent();
-	virtual ~MissionEvent() = default;
+	~MissionEvent();
 
 	// operations:
-	void         ExecFrame(double Seconds);
-	void         Activate();
+	void                 ExecFrame(double seconds);
+	void                 Activate();
 
-	virtual bool CheckTrigger();
-	virtual void Execute(bool bSilent = false);
-	virtual void Skip();
+	virtual bool         CheckTrigger();
+	virtual void         Execute(bool silent = false);
+	virtual void         Skip();
 
 	// accessors:
-	int32        EventID()      const { return Id; }
-	MISSIONEVENT_STATUS Status() const { return StatusValue; }
-	bool         IsPending()    const { return StatusValue == MISSIONEVENT_STATUS::PENDING; }
-	bool         IsActive()     const { return StatusValue == MISSIONEVENT_STATUS::ACTIVE; }
-	bool         IsComplete()   const { return StatusValue == MISSIONEVENT_STATUS::COMPLETE; }
-	bool         IsSkipped()    const { return StatusValue == MISSIONEVENT_STATUS::SKIPPED; }
+	int                  EventID()         const { return id; }
+	int                  Status()          const { return status; }
+	bool                 IsPending()       const { return status == PENDING; }
+	bool                 IsActive()        const { return status == ACTIVE; }
+	bool                 IsComplete()      const { return status == COMPLETE; }
+	bool                 IsSkipped()       const { return status == SKIPPED; }
 
-	double       Time()         const { return TimeSeconds; }
-	double       Delay()        const { return DelaySeconds; }
+	double               Time()            const { return time; }
+	double               Delay()           const { return delay; }
 
-	MISSIONEVENT_TYPE Event()   const { return EventType; }
-	const TCHAR* EventName()    const;
+	int                  Event()           const { return event; }
+	const char* EventName()       const;
+	Text                 EventShip()       const { return event_ship; }
+	Text                 EventSource()     const { return event_source; }
+	Text                 EventTarget()     const { return event_target; }
+	Text                 EventMessage()    const { return event_message; }
+	Text                 EventSound()      const { return event_sound; }
 
-	const FString& EventShip()    const { return EventShipName; }
-	const FString& EventSource()  const { return EventSourceName; }
-	const FString& EventTarget()  const { return EventTargetName; }
-	const FString& EventMessage() const { return EventMessageText; }
-	const FString& EventSound()   const { return EventSoundName; }
+	int                  EventParam(int index = 0)    const;
+	int                  NumEventParams()           const;
 
-	int32        EventParam(int32 Index = 0) const;
-	int32        NumEventParams() const { return EventParamCount; }
+	int                  EventChance()     const { return event_chance; }
+	FVector              EventPoint()      const { return event_point; }
+	Rect                 EventRect()       const { return event_rect; }
 
-	int32        EventChance()  const { return EventChancePct; }
+	int                  Trigger()         const { return trigger; }
+	const char* TriggerName()     const;
+	Text                 TriggerShip()     const { return trigger_ship; }
+	Text                 TriggerTarget()   const { return trigger_target; }
 
-	const FVector2D& EventPoint() const { return EventPoint2D; }
-	const FBox2D&    EventRect()  const { return EventRect2D; }
+	Text                 TriggerParamStr()          const;
+	int                  TriggerParam(int index = 0)  const;
+	int                  NumTriggerParams()         const;
 
-	MISSIONEVENT_TRIGGER Trigger() const { return TriggerType; }
-	const TCHAR* TriggerName()  const;
-
-	const FString& TriggerShip()   const { return TriggerShipName; }
-	const FString& TriggerTarget() const { return TriggerTargetName; }
-
-	FString      TriggerParamStr() const;
-	int32        TriggerParam(int32 Index = 0) const;
-	int32        NumTriggerParams() const { return TriggerParamCount; }
-
-	static const TCHAR* EventName(int32 N);
-	static int32        EventForName(const FString& Name);
-	static const TCHAR* TriggerName(int32 N);
-	static int32        TriggerForName(const FString& Name);
-
-	// Optional wiring hooks (later)
-	void SetMission(Mission* InMission) { OwnerMission = InMission; }
-
-	// Setters for parsing/DT hydration (safe, optional)
-	void SetId(int32 InId) { Id = InId; }
-	void SetEvent(MISSIONEVENT_TYPE InEventType) { EventType = InEventType; }
-	void SetTrigger(MISSIONEVENT_TRIGGER InTriggerType) { TriggerType = InTriggerType; }
-
-	void SetTime(double InTimeSeconds) { TimeSeconds = InTimeSeconds; }
-	void SetDelay(double InDelaySeconds) { DelaySeconds = InDelaySeconds; }
-
-	void SetEventShip(const FString& In) { EventShipName = In; }
-	void SetEventSource(const FString& In) { EventSourceName = In; }
-	void SetEventTarget(const FString& In) { EventTargetName = In; }
-	void SetEventMessage(const FString& In) { EventMessageText = In; }
-	void SetEventSound(const FString& In) { EventSoundName = In; }
-
-	void SetEventChance(int32 InChancePct) { EventChancePct = FMath::Clamp(InChancePct, 0, 100); }
-
-	void SetEventPoint(const FVector2D& In) { EventPoint2D = In; }
-	void SetEventRect(const FBox2D& In) { EventRect2D = In; }
-
-	void SetTriggerShip(const FString& In) { TriggerShipName = In; }
-	void SetTriggerTarget(const FString& In) { TriggerTargetName = In; }
-
-	void SetEventParams(const TArray<int32>& InParams);
-	void SetTriggerParams(const TArray<int32>& InParams);
+	static const char* EventName(int n);
+	static int           EventForName(const char* n);
+	static const char* TriggerName(int n);
+	static int           TriggerForName(const char* n);
 
 protected:
-	// Internal helpers
-	bool PassChanceGate() const;
+	int                  id = 0;
+	int                  status = PENDING;
+	double               time = 0.0;
+	double               delay = 0.0;
 
-protected:
-	// Identity + state
-	int32   Id = 0;
-	MISSIONEVENT_STATUS StatusValue = MISSIONEVENT_STATUS::PENDING;
+	int                  event = MESSAGE;
+	Text                 event_ship;
+	Text                 event_source;
+	Text                 event_target;
+	Text                 event_message;
+	Text                 event_sound;
+	int                  event_param[10] = { 0 };
+	int                  event_nparams = 0;
+	int                  event_chance = 100;
+	FVector              event_point = FVector::ZeroVector;
+	Rect                 event_rect;
 
-	// Time
-	double  TimeSeconds = 0.0;
-	double  DelaySeconds = 0.0;
+	int                  trigger = TRIGGER_TIME;
+	Text                 trigger_ship;
+	Text                 trigger_target;
+	int                  trigger_param[10] = { 0 };
+	int                  trigger_nparams = 0;
 
-	// Event
-	MISSIONEVENT_TYPE EventType = MISSIONEVENT_TYPE::MESSAGE;
-	int32   EventChancePct = 100;
+	// Starshatter core Bitmap -> Unreal render asset pointer:
+	UTexture2D* image = nullptr;
 
-	FString EventShipName;
-	FString EventSourceName;
-	FString EventTargetName;
-	FString EventMessageText;
-	FString EventSoundName;
-
-	static constexpr int32 MaxEventParams = 6;
-	int32   EventParams[MaxEventParams];
-	int32   EventParamCount = 0;
-
-	FVector2D EventPoint2D = FVector2D::ZeroVector;
-	FBox2D    EventRect2D = FBox2D(EForceInit::ForceInitToZero);
-
-	// Trigger
-	MISSIONEVENT_TRIGGER TriggerType = MISSIONEVENT_TRIGGER::TRIGGER_TIME;
-
-	FString TriggerShipName;
-	FString TriggerTargetName;
-
-	static constexpr int32 MaxTriggerParams = 10;
-	int32   TriggerParams[MaxTriggerParams];
-	int32   TriggerParamCount = 0;
-
-	// Owner (optional)
-	Mission* OwnerMission = nullptr;
-
-	// Basic frame bookkeeping
-	double  AccumulatedSeconds = 0.0;
+	Sound* sound = nullptr;
 };
-

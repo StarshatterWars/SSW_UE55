@@ -27,7 +27,7 @@ void UStartSessionCallbackProxyAdvanced::Activate()
 			Sessions->StartSession(NAME_GameSession);
 			return;
 		}
-		FFrame::KismetExecutionMessage(TEXT("Sessions not supported by Online Subsystem"), ELogVerbosity::Warning);
+		FFrame::KismetExecutionMessage(TEXT("Sessions notxsupported by Online Subsystem"), ELogVerbosity::Warning);
 	}
 
 	// Fail immediately

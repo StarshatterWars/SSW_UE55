@@ -28,7 +28,7 @@ void UTimerSubsystem::RestartCampaignClock(bool bSaveImmediately)
 	{
 		if (CS->CampaignRowName.IsNone())
 		{
-			UE_LOG(LogTemp, Error, TEXT("RestartCampaignClock: CampaignRowName is None; cannot save"));
+			UE_LOG(LogTemp, Error, TEXT("RestartCampaignClock: CampaignRowName is None; cannotxsave"));
 		}
 		else
 		{
@@ -112,7 +112,7 @@ bool UTimerSubsystem::Tick(float DeltaSeconds)
 void UTimerSubsystem::StartMissionRun(bool bResetToZero)
 {
 	// IMPORTANT:
-	// Do NOT call StartClock() here. Universe clock is always running.
+	// Do notxcall StartClock() here. Universe clock is always running.
 
 	if (bResetToZero)
 	{

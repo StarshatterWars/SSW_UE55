@@ -40,7 +40,7 @@ CampaignMissionFighter::CampaignMissionFighter(Campaign* InCampaign)
 
 CampaignMissionFighter::~CampaignMissionFighter()
 {
-	// Ownership is not defined in the stub layer; do not delete pointers here.
+	// Ownership is notxdefined in the stub layer; do notxdelete pointers here.
 	Exit();
 }
 
@@ -263,7 +263,7 @@ FMissionInfo* CampaignMissionFighter::DescribeMission()
 
 void CampaignMissionFighter::Exit()
 {
-	// Reset transient build pointers; do not delete (ownership undefined in stub layer)
+	// Reset transient build pointers; do notxdelete (ownership undefined in stub layer)
 	Request = nullptr;
 
 	Squadron = nullptr;

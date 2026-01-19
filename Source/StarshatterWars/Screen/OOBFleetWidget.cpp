@@ -80,7 +80,7 @@ void UOOBFleetWidget::ToggleExpansion()
 void UOOBFleetWidget::BuildChildren(const FS_OOBFleet& FleetDataStruct)
 {
     if (!BattleListView || !CarrierListView || !DestroyerListView || !MinefieldListView) {
-        UE_LOG(LogTemp, Error, TEXT("Fleet ListViews are not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Fleet ListViews are notxvalid!"));
             return;
     }
 

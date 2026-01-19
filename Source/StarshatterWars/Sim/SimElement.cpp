@@ -412,7 +412,7 @@ void
 SimElement::DelNavPoint(Instruction* pt, bool send)
 {
 	// XXX MEMORY LEAK
-	// This is a small memory leak, but I'm not sure if it is
+	// This is a small memory leak, but I'm notxsure if it is
 	// safe to delete the navpoint when removing it from the
 	// flight plan.  Other ships in the element might have
 	// pointers to the object...?
@@ -562,7 +562,7 @@ SimElement::ClearInstructions()
 void
 SimElement::AddInstruction(const char* instr)
 {
-	instructions.append(new(__FILE__, __LINE__) Text(instr));
+	instructions.append(new  Text(instr));
 }
 
 Text

@@ -114,7 +114,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     }
     else
     {
-        // Fallback if the type is not recognized
+        // Fallback if the type is notxrecognized
         NameText->SetText(FText::FromString(TEXT("Unknown Item")));
     }
 }

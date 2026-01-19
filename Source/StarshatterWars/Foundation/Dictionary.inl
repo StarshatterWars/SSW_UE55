@@ -70,7 +70,7 @@ T& Dictionary<T>::operator[](const Text& key)
         while (cell->next && cell->key != key)
             cell = cell->next;
 
-        if (cell->key != key) {    // not found in chain
+        if (cell->key != key) {    // notxfound in chain
             items++;
 
             cell->next = new DictionaryCell<T>(key);
@@ -106,7 +106,7 @@ void Dictionary<T>::Remove(const Text& key)
         while (cell->next && cell->key != key)
             cell = cell->next;
 
-        if (cell->key != key) {    // not found in chain
+        if (cell->key != key) {    // notxfound in chain
             return;
         }
         else {         // found: remove it!

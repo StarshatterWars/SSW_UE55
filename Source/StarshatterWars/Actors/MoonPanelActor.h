@@ -36,7 +36,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Moon")
 	UMaterialInterface* MoonBaseMaterial = nullptr;
 
-	// Runtime relationship, not defaults
+	// Runtime relationship, notxdefaults
 	UPROPERTY(Transient)
 	TObjectPtr<APlanetPanelActor> ParentPlanet = nullptr;
 

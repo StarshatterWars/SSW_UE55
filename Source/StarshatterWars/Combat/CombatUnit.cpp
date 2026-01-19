@@ -71,7 +71,7 @@ CombatUnit::CombatUnit(const CombatUnit& u)
     sustained_damage(u.sustained_damage),
     heading(u.heading),
     carrier(u.carrier),
-    attackers(),     // do not copy attackers list (matches original intent)
+    attackers(),     // do notxcopy attackers list (matches original intent)
     target(0),
     group(0)
 {
@@ -294,8 +294,6 @@ CombatUnit::PowerVersus(CombatUnit* tgt) const
         else
             return type * 0.1 * effectiveness;
     }
-
-    return 0;
 }
 
 // +----------------------------------------------------------------------+

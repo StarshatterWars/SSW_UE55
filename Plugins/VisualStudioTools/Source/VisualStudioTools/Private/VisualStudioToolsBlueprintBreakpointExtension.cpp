@@ -160,7 +160,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::GetRunningVisualStudioDTE(T
 							}
 							else
 							{
-								UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could not get solution from DTE"));
+								UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could notxget solution from DTE"));
 							}
 
 							SysFreeString(OutPath);
@@ -169,7 +169,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::GetRunningVisualStudioDTE(T
 				}
 				else
 				{
-					UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could not get display name for moniker"));
+					UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could notxget display name for moniker"));
 				}
 				BindContext->Release();
 				CurrentMoniker->Release();
@@ -180,12 +180,12 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::GetRunningVisualStudioDTE(T
 		}
 		else
 		{
-			UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could not enumerate Running Object Table"));
+			UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could notxenumerate Running Object Table"));
 		}
 	}
 	else
 	{
-		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could not get Running Object Table"));
+		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could notxget Running Object Table"));
 	}
 
 	return bResult;
@@ -196,14 +196,14 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::CanAddVisualStudioBreakpoin
 	const UK2Node_CallFunction* K2Node = Cast<const UK2Node_CallFunction>(Node);
 	if (!K2Node)
 	{
-		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Log, TEXT("Node is not a UK2Node_CallFunction"));
+		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Log, TEXT("Node is notxa UK2Node_CallFunction"));
 		return false;
 	}
 
 	UFunction* Function = K2Node->GetTargetFunction();
 	if (!Function || !Function->IsNative())
 	{
-		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Log, TEXT("Function is not native"));
+		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Log, TEXT("Function is notxnative"));
 		return false;
 	}
 
@@ -212,7 +212,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::CanAddVisualStudioBreakpoin
 	UClass* OwnerClass = Function->GetOwnerClass();
 	if (!OwnerClass->HasAllClassFlags(CLASS_Native))
 	{
-		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Log, TEXT("Owning class is not native"));
+		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Log, TEXT("Owning class is notxnative"));
 		return false;
 	}
 
@@ -244,7 +244,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::PreloadModule(HANDLE Proces
 
 	if (!GetModuleInformation(ProcessHandle, ModuleHandle, &ModuleInfo, sizeof(ModuleInfo)))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not read GetModuleInformation");
+		PRINT_PLATFORM_ERROR_MSG("Could notxread GetModuleInformation");
 		return false;
 	}
 
@@ -252,7 +252,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::PreloadModule(HANDLE Proces
 	ImageHelpModule.SizeOfStruct = sizeof(ImageHelpModule);
 	if (!SymGetModuleInfo64(ProcessHandle, (DWORD64)ModuleInfo.EntryPoint, &ImageHelpModule))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not SymGetModuleInfo64 from module");
+		PRINT_PLATFORM_ERROR_MSG("Could notxSymGetModuleInfo64 from module");
 		return false;
 	}
 
@@ -263,13 +263,13 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::PreloadModule(HANDLE Proces
 
 	if (!GetModuleFileNameExW(ProcessHandle, ModuleHandle, ImageName, 1024))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not GetModuleFileNameExW");
+		PRINT_PLATFORM_ERROR_MSG("Could notxGetModuleFileNameExW");
 		return false;
 	}
 
 	if (!GetModuleBaseNameW(ProcessHandle, ModuleHandle, ModuleName, 1024))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not GetModuleBaseNameW");
+		PRINT_PLATFORM_ERROR_MSG("Could notxGetModuleBaseNameW");
 		return false;
 	}
 
@@ -295,7 +295,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::PreloadModule(HANDLE Proces
 
 	if (!SymSetSearchPathW(ProcessHandle, *SearchPathList))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not SymSetSearchPathW");
+		PRINT_PLATFORM_ERROR_MSG("Could notxSymSetSearchPathW");
 		return false;
 	}
 
@@ -310,7 +310,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::PreloadModule(HANDLE Proces
 		0);
 	if (!BaseAddress)
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not load the module");
+		PRINT_PLATFORM_ERROR_MSG("Could notxload the module");
 		return false;
 	}
 
@@ -339,7 +339,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::GetFunctionDefinitionLocati
 
 	if (!SymGetSymFromName64(ProcessHandle, TCHAR_TO_ANSI(*FullyQualifiedSymbolName), SymbolInfoPtr))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not load module symbol information");
+		PRINT_PLATFORM_ERROR_MSG("Could notxload module symbol information");
 		return false;
 	}
 
@@ -349,7 +349,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::GetFunctionDefinitionLocati
 	uint32 SourceColumnNumber = 0;
 	if (!SymGetLineFromAddr64(ProcessHandle, SymbolInfoPtr->Address, (::DWORD*)&SourceColumnNumber, &FileAndLineInfo))
 	{
-		PRINT_PLATFORM_ERROR_MSG("Could not query module file and line number");
+		PRINT_PLATFORM_ERROR_MSG("Could notxquery module file and line number");
 		return false;
 	}
 
@@ -404,7 +404,7 @@ bool UVisualStudioToolsBlueprintBreakpointExtension::GetProcessById(const TComPt
 	long Count = 0;
 	if (FAILED(Processes->get_Count(&Count)))
 	{
-		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could not get the process count"));
+		UE_LOG(LogUVisualStudioToolsBlueprintBreakpointExtension, Error, TEXT("Could notxget the process count"));
 		return false;
 	}
 
@@ -555,7 +555,7 @@ void UVisualStudioToolsBlueprintBreakpointExtension::AddVisualStudioBreakpoint(c
 
 void UVisualStudioToolsBlueprintBreakpointExtension::ShowOperationResultNotification(bool bBreakpointAdded, const FString &SymbolName)
 {
-	FNotificationInfo Info(bBreakpointAdded ? FText::FromString(FString::Printf(TEXT("Breakpoint added at %s"), *SymbolName)) : FText::FromString("Could not add Breakpoint in Visual Studio"));
+	FNotificationInfo Info(bBreakpointAdded ? FText::FromString(FString::Printf(TEXT("Breakpoint added at %s"), *SymbolName)) : FText::FromString("Could notxadd Breakpoint in Visual Studio"));
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 1
 	Info.Image = FAppStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
 #else

@@ -111,7 +111,7 @@ void UCreateSessionCallbackProxyAdvanced::Activate()
 		}
 		else
 		{
-			FFrame::KismetExecutionMessage(TEXT("Sessions not supported by Online Subsystem"), ELogVerbosity::Warning);
+			FFrame::KismetExecutionMessage(TEXT("Sessions notxsupported by Online Subsystem"), ELogVerbosity::Warning);
 		}
 	}
 

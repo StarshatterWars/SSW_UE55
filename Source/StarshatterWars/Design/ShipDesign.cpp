@@ -1,47 +1,57 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	SUBSYSTEM:    Stars.exe
 	FILE:         ShipDesign.cpp
 	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR / STUDIO
+	========================
+	John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
 	Starship Design parameters class
 */
 
-
 #include "ShipDesign.h"
-//#include "Ship.h"
-//#include "Shot.h"
-//#include "Power.h"
-//#include "HardPoint.h"
-//#include "Weapon.h"
-//#include "WeaponDesign.h"
-//#include "Shield.h"
-//#include "Sensor.h"
-//#include "NavLight.h"
-//#include "NavSystem.h"
-//#include "Drive.h"
-//#include "QuantumDrive.h"
-//#include "Farcaster.h"
-//#include "Thruster.h"
-//#include "FlightDeck.h"
-//#include "LandingGear.h"
-//#include "Computer.h"
-//#include "SystemDesign.h"
-//#include "Component.h"
+#include "CoreMinimal.h"
+#include "Math/Vector.h"
+#include "Engine/Texture2D.h"
+
+#include "Ship.h"
+#include "SimShot.h"
+#include "Power.h"
+#include "HardPoint.h"
+#include "Weapon.h"
+#include "WeaponDesign.h"
+#include "Shield.h"
+#include "Sensor.h"
+#include "NavLight.h"
+#include "NavSystem.h"
+#include "Drive.h"
+#include "QuantumDrive.h"
+#include "Farcaster.h"
+#include "Thruster.h"
+#include "FlightDeck.h"
+#include "LandingGear.h"
+#include "Computer.h"
+#include "SystemDesign.h"
+#include "Component.h"
 
 #include "Game.h"
-//#include "Solid.h"
-//#include "Skin.h"
-//#include "Sprite.h"
-//#include "Light.h"
-//#include "Bitmap.h"
-//#include "Sound.h"
+#include "Solid.h"
+#include "Skin.h"
+#include "Sprite.h"
+#include "SimLight.h"
+#include "Sound.h"
 #include "DataLoader.h"
 #include "ParseUtil.h"
+#include "List.h"
+#include "Text.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogShipDesign, Log, All);
 
 // +--------------------------------------------------------------------+
 
@@ -71,9 +81,8 @@ const char* ship_design_class_name[32] = {
 
 // +--------------------------------------------------------------------+
 
-//static const int     NAMELEN = 64;
+static const int     NAMELEN = 64;
 static bool          degrees = false;
-
 
 struct ShipCatalogEntry {
 	static const char* TYPENAME() { return "ShipCatalogEntry"; }
@@ -81,7 +90,8 @@ struct ShipCatalogEntry {
 	ShipCatalogEntry() : hide(false), design(0) {}
 
 	ShipCatalogEntry(const char* n, const char* t, const char* p, const char* f, bool h = false) :
-		name(n), type(t), path(p), file(f), hide(h), design(0) {}
+		name(n), type(t), path(p), file(f), hide(h), design(0) {
+	}
 
 	~ShipCatalogEntry() { delete design; }
 
@@ -93,42 +103,60 @@ struct ShipCatalogEntry {
 
 	ShipDesign* design;
 };
+
 static List<ShipCatalogEntry> catalog;
 static List<ShipCatalogEntry> mod_catalog;
 
 // +--------------------------------------------------------------------+
 
-//#define GET_DEF_BOOL(n) if (defname==(#n)) GetDefBool((n),   def, filename)
-//#define GET_DEF_TEXT(n) if (defname==(#n)) GetDefText((n),   def, filename)
-//#define GET_DEF_NUM(n)  if (defname==(#n)) GetDefNumber((n), def, filename)
-//#define GET_DEF_VEC(n)  if (defname==(#n)) GetDefVec((n),    def, filename)
+#define GET_DEF_BOOL(n) if (defname==(#n)) GetDefBool((n),   def, filename)
+#define GET_DEF_TEXT(n) if (defname==(#n)) GetDefText((n),   def, filename)
+#define GET_DEF_NUM(n)  if (defname==(#n)) GetDefNumber((n), def, filename)
+#define GET_DEF_VEC(n)  if (defname==(#n)) GetDefVec((n),    def, filename)
 
 static char        cockpit_name[80];
 static List<Text>  detail[4];
-static List<Point> offset[4];
+static List<FVector> offset[4];
 
 static char errmsg[256];
 
 // +--------------------------------------------------------------------+
+
+ShipLoad::ShipLoad()
+{
+	mass = 0;
+}
+
+ShipSquadron::ShipSquadron()
+{
+	name[0] = 0;
+	design = 0;
+	count = 4;
+	avail = 4;
+}
+
+static void PrepareModel(Model& model)
+{
+	bool uses_bumps = false;
+
+	ListIter<Material> iter = model.GetMaterials();
+	while (++iter && !uses_bumps) {
+		Material* mtl = iter.value();
+		if (mtl->tex_bumpmap != 0 && mtl->bump != 0)
+			uses_bumps = true;
+	}
+
+	if (uses_bumps)
+		model.ComputeTangents();
+}
+
+// +--------------------------------------------------------------------+
+
 ShipDesign::ShipDesign()
-{
-}
-
-ShipDesign::~ShipDesign()
-{
-}
-
-/*ShipDesign::ShipDesign()
 	: sensor(0), navsys(0), shield(0), type(0), decoy(0),
 	probe(0), gear(0), valid(false), secret(false), auto_roll(1), cockpit_model(0),
 	bolt_hit_sound_resource(0), beam_hit_sound_resource(0), lod_levels(0)
 {
-	ZeroMemory(filename, sizeof(filename));
-	ZeroMemory(path_name, sizeof(path_name));
-	ZeroMemory(name, sizeof(name));
-	ZeroMemory(display_name, sizeof(display_name));
-	ZeroMemory(abrv, sizeof(abrv));
-
 	for (int i = 0; i < 4; i++)
 		feature_size[i] = 0.0f;
 }
@@ -141,12 +169,6 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	probe(0), gear(0), valid(false), secret(s), auto_roll(1), cockpit_model(0),
 	bolt_hit_sound_resource(0), beam_hit_sound_resource(0), lod_levels(0)
 {
-	ZeroMemory(filename, sizeof(filename));
-	ZeroMemory(path_name, sizeof(path_name));
-	ZeroMemory(name, sizeof(name));
-	ZeroMemory(display_name, sizeof(display_name));
-	ZeroMemory(abrv, sizeof(abrv));
-
 	strcpy_s(name, n);
 
 	if (!strstr(fname, ".def"))
@@ -197,9 +219,9 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	repair_screen = true;
 	wep_screen = true;
 
-	chase_vec = Vec3(0, -100, 20);
-	bridge_vec = Vec3(0, 0, 0);
-	beauty_cam = Vec3(0, 0, 0);
+	chase_vec = FVector(0, -100, 20);
+	bridge_vec = FVector(0, 0, 0);
+	beauty_cam = FVector(0, 0, 0);
 	cockpit_scale = 1.0f;
 
 	radius = 1.0f;
@@ -220,7 +242,9 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	death_spiral_time = 3.0f;
 
 	if (!secret)
-		Print("Loading ShipDesign '%s'\n", name);
+	{
+		UE_LOG(LogShipDesign, Log, TEXT("Loading ShipDesign '%s'"), ANSI_TO_TCHAR(name));
+	}
 
 	strcpy_s(path_name, p);
 	if (path_name[strlen(path_name) - 1] != '/')
@@ -233,24 +257,24 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	BYTE* block;
 	int blocklen = loader->LoadBuffer(filename, block, true);
 
-	// file not found:
+	// file notxfound:
 	if (blocklen <= 4) {
 		valid = false;
 		return;
 	}
 
-	Parser parser(new BlockReader((const char*)block, blocklen));
+	Parser parser(new  BlockReader((const char*)block, blocklen));
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could not parse '%s'\n", filename);
+		UE_LOG(LogShipDesign, Error, TEXT("ERROR: could notxparse '%s'"), ANSI_TO_TCHAR(filename));
 		valid = false;
 		return;
 	}
 	else {
 		TermText* file_type = term->isText();
 		if (!file_type || file_type->value() != "SHIP") {
-			Print("ERROR: invalid ship design file '%s'\n", filename);
+			UE_LOG(LogShipDesign, Error, TEXT("ERROR: invalid ship design file '%s'"), ANSI_TO_TCHAR(filename));
 			valid = false;
 			return;
 		}
@@ -271,7 +295,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 				ParseShip(def);
 			}
 			else {
-				Print("WARNING: term ignored in '%s'\n", filename);
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: term ignored in '%s'"), ANSI_TO_TCHAR(filename));
 				term->print();
 			}
 		}
@@ -283,9 +307,9 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		while (++iter) {
 			const char* model_name = iter.value()->data();
 
-			Model* model = new Model;
+			Model* model = new  Model;
 			if (!model->Load(model_name, scale)) {
-				Print("ERROR: Could not load detail %d, model '%s'\n", i, model_name);
+				UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could notxload detail %d, model '%s'"), i, ANSI_TO_TCHAR(model_name));
 				delete model;
 				model = 0;
 				valid = false;
@@ -305,7 +329,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 					offsets[i].append(offset[i].at(n)); // transfer ownership
 				}
 				else
-					offsets[i].append(new(__FILE__, __LINE__) Point);
+					offsets[i].append(new  FVector::FReal(0)); // placeholder if your List expects ptrs; update to your container semantics
 
 				n++;
 			}
@@ -315,102 +339,59 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	}
 
 	if (!secret)
-		Print("   Ship Design Radius = %f\n", radius);
+	{
+		UE_LOG(LogShipDesign, Log, TEXT("   Ship Design Radius = %f"), radius);
+	}
 
 	if (cockpit_name[0]) {
 		const char* model_name = cockpit_name;
 
-		cockpit_model = new Model;
+		cockpit_model = new  Model;
 		if (!cockpit_model->Load(model_name, cockpit_scale)) {
-			Print("ERROR: Could not load cockpit model '%s'\n", model_name);
+			UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could notxload cockpit model '%s'"), ANSI_TO_TCHAR(model_name));
 			delete cockpit_model;
 			cockpit_model = 0;
 		}
 		else {
 			if (!secret)
-				Print("   Loaded cockpit model '%s', preparing tangents\n", model_name);
+			{
+				UE_LOG(LogShipDesign, Log, TEXT("   Loaded cockpit model '%s', preparing tangents"), ANSI_TO_TCHAR(model_name));
+			}
 			PrepareModel(*cockpit_model);
 		}
 	}
 
-	if (beauty.Width() < 1 && loader->FindFile("beauty.pcx"))
-		loader->LoadBitmap("beauty.pcx", beauty);
+	// Bitmap -> UTexture2D*
+	if (!beauty && loader->FindFile("beauty.pcx"))
+		loader->LoadTexture("beauty.pcx", beauty);
 
-	if (hud_icon.Width() < 1 && loader->FindFile("hud_icon.pcx"))
-		loader->LoadBitmap("hud_icon.pcx", hud_icon);
+	if (!hud_icon && loader->FindFile("hud_icon.pcx"))
+		loader->LoadTexture("hud_icon.pcx", hud_icon);
 
 	loader->ReleaseBuffer(block);
 	loader->SetDataPath(0);
 
 	if (abrv[0] == 0) {
 		switch (type) {
-		case (int)CLASSIFICATION::DRONE:    
-			strcpy_s(abrv, "DR");
-			break;
-
-		case (int)CLASSIFICATION::FIGHTER: 
-			strcpy_s(abrv, "F"); 
-			break;
-
-		case (int)CLASSIFICATION::ATTACK: 
-			strcpy_s(abrv, "F/A");
-			break;
-
-		case (int)CLASSIFICATION::LCA: 
-			strcpy_s(abrv, "LCA"); 
-			break;
-
-		case (int)CLASSIFICATION::CORVETTE:
-			strcpy_s(abrv, "FC");  
-			break;
-
-		case (int)CLASSIFICATION::COURIER:
-		case (int)CLASSIFICATION::CARGO:
-		case (int)CLASSIFICATION::FREIGHTER:  
-			strcpy_s(abrv, "MV");
-			break;
-
-		case (int)CLASSIFICATION::FRIGATE: 
-			strcpy_s(abrv, "FF");
-			break;
-
-		case (int)CLASSIFICATION::DESTROYER:  
-			strcpy_s(abrv, "DD");
-			break;
-
-		case (int)CLASSIFICATION::CRUISER:  
-			strcpy_s(abrv, "CA");
-			break;
-
-		case (int)CLASSIFICATION::BATTLESHIP: 
-			strcpy_s(abrv, "BB");
-			break;
-
-		case (int)CLASSIFICATION::CARRIER: 
-			strcpy_s(abrv, "CV");  
-			break;
-
-		case (int)CLASSIFICATION::DREADNAUGHT: 
-			strcpy_s(abrv, "DN");
-			break;
-
-		case (int)CLASSIFICATION::MINE:   
-			strcpy_s(abrv, "MINE");
-			break;
-
-		case (int)CLASSIFICATION::COMSAT:  
-			strcpy_s(abrv, "COMS"); 
-			break;
-
-		case (int)CLASSIFICATION::DEFSAT:  
-			strcpy_s(abrv, "DEFS");
-			break;
-		case (int)CLASSIFICATION::SWACS:  
-			strcpy_s(abrv, "SWAC");
-			break;
-
-		default:   
-			break;
+		case Ship::DRONE:       strcpy_s(abrv, "DR");     break;
+		case Ship::FIGHTER:     strcpy_s(abrv, "F");      break;
+		case Ship::ATTACK:      strcpy_s(abrv, "F/A");    break;
+		case Ship::LCA:         strcpy_s(abrv, "LCA");    break;
+		case Ship::CORVETTE:    strcpy_s(abrv, "FC");     break;
+		case Ship::COURIER:
+		case Ship::CARGO:
+		case Ship::FREIGHTER:   strcpy_s(abrv, "MV");     break;
+		case Ship::FRIGATE:     strcpy_s(abrv, "FF");     break;
+		case Ship::DESTROYER:   strcpy_s(abrv, "DD");     break;
+		case Ship::CRUISER:     strcpy_s(abrv, "CA");     break;
+		case Ship::BATTLESHIP:  strcpy_s(abrv, "BB");     break;
+		case Ship::CARRIER:     strcpy_s(abrv, "CV");     break;
+		case Ship::DREADNAUGHT: strcpy_s(abrv, "DN");     break;
+		case Ship::MINE:        strcpy_s(abrv, "MINE");   break;
+		case Ship::COMSAT:      strcpy_s(abrv, "COMS");   break;
+		case Ship::DEFSAT:      strcpy_s(abrv, "DEFS");   break;
+		case Ship::SWACS:       strcpy_s(abrv, "SWAC");   break;
+		default:                                        break;
 		}
 	}
 
@@ -424,25 +405,25 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		repair_speed = 1.0e-6f;
 
 	if (commit_range <= 0) {
-		if (type <= (int)CLASSIFICATION::LCA)
+		if (type <= Ship::LCA)
 			commit_range = 80.0e3f;
 		else
 			commit_range = 200.0e3f;
 	}
 
 	// calc standard loadout weights:
-	//ListIter<ShipLoad> sl = loadouts;
-	//while (++sl) {
-	//	for (int i = 0; i < hard_points.size(); i++) {
-	//		HardPoint* hp = hard_points[i];
-	//		sl->mass += hp->GetCarryMass(sl->load[i]);
-	//	}
-	//}
+	ListIter<ShipLoad> sl = loadouts;
+	while (++sl) {
+		for (int i = 0; i < hard_points.size(); i++) {
+			HardPoint* hp = hard_points[i];
+			sl->mass += hp->GetCarryMass(sl->load[i]);
+		}
+	}
 }
 
 // +--------------------------------------------------------------------+
 
-/*ShipDesign::~ShipDesign()
+ShipDesign::~ShipDesign()
 {
 	delete bolt_hit_sound_resource;
 	delete beam_hit_sound_resource;
@@ -478,7 +459,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	for (int i = 0; i < 10; i++) {
 		delete debris[i].model;
 	}
-}*/
+}
 
 const char*
 ShipDesign::DisplayName() const
@@ -491,7 +472,7 @@ ShipDesign::DisplayName() const
 
 // +--------------------------------------------------------------------+
 
-/*void AddModCatalogEntry(const char* design_name, const char* design_path)
+void AddModCatalogEntry(const char* design_name, const char* design_path)
 {
 	if (!design_name || !*design_name)
 		return;
@@ -524,7 +505,7 @@ ShipDesign::DisplayName() const
 		}
 	}
 
-	// still here? not found yet:
+	// still here? notxfound yet:
 	Text file = Text(design_name) + ".def";
 	Text path = Text("Mods/Ships/");
 	Text name;
@@ -544,23 +525,23 @@ ShipDesign::DisplayName() const
 	BYTE* block;
 	int blocklen = loader->LoadBuffer(file, block, true);
 
-	// file not found:
+	// file notxfound:
 	if (blocklen <= 4) {
 		return;
 	}
 
-	Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block, blocklen));
+	Parser parser(new  BlockReader((const char*)block, blocklen));
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could not parse '%s'\n", file.data());
+		UE_LOG(LogShipDesign, Error, TEXT("ERROR: could notxparse '%s'"), ANSI_TO_TCHAR(file.data()));
 		delete block;
 		return;
 	}
 	else {
 		TermText* file_type = term->isText();
 		if (!file_type || file_type->value() != "SHIP") {
-			Print("ERROR: invalid ship design file '%s'\n", file.data());
+			UE_LOG(LogShipDesign, Error, TEXT("ERROR: invalid ship design file '%s'"), ANSI_TO_TCHAR(file.data()));
 			delete block;
 			return;
 		}
@@ -581,20 +562,20 @@ ShipDesign::DisplayName() const
 
 				if (defname == "class") {
 					if (!GetDefText(type, def, file)) {
-						Print("WARNING: invalid or missing ship class in '%s'\n", file.data());
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship class in '%s'"), ANSI_TO_TCHAR(file.data()));
 						valid = false;
 					}
 				}
 
 				else if (defname == "name") {
 					if (!GetDefText(name, def, file)) {
-						Print("WARNING: invalid or missing ship name in '%s'\n", file.data());
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship name in '%s'"), ANSI_TO_TCHAR(file.data()));
 						valid = false;
 					}
 				}
 			}
 			else {
-				Print("WARNING: term ignored in '%s'\n", file.data());
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: term ignored in '%s'"), ANSI_TO_TCHAR(file.data()));
 				term->print();
 			}
 		}
@@ -603,10 +584,11 @@ ShipDesign::DisplayName() const
 	delete block;
 
 	if (valid && name.length() && type.length()) {
-		Print("Add Mod Catalog Entry '%s' Class '%s'\n", name.data(), type.data());
+		UE_LOG(LogShipDesign, Log, TEXT("Add Mod Catalog Entry '%s' Class '%s'"),
+			ANSI_TO_TCHAR(name.data()), ANSI_TO_TCHAR(type.data()));
 
-		ShipCatalogEntry* entry = new(__FILE__, __LINE__) ShipCatalogEntry(name, type, path, file);
-		mod_catalog.append(entry);
+		ShipCatalogEntry* entry2 = new  ShipCatalogEntry(name, type, path, file);
+		mod_catalog.append(entry2);
 	}
 }
 
@@ -647,11 +629,7 @@ ShipDesign::Initialize()
 				}
 			}
 
-			// Just do a quick parse of the def file and add the
-			// info to the catalog.  DON'T preload all of the models,
-			// textures, and weapons at this time.  That takes way
-			// too long with some of the larger user mods.
-
+			// Quick parse to add info to catalog (do notxpreload heavy assets).
 			AddModCatalogEntry(name, path);
 		}
 	}
@@ -679,18 +657,18 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 	loader->SetDataPath(path);
 
 	char filename[NAMELEN];
-	ZeroMemory(filename, NAMELEN);
+	FMemory::Memzero(filename, NAMELEN);
 	strncpy(filename, fname, NAMELEN - 1);
 
-	Print("Loading ship design catalog: %s%s\n", path, filename);
+	UE_LOG(LogShipDesign, Log, TEXT("Loading ship design catalog: %s%s"), ANSI_TO_TCHAR(path), ANSI_TO_TCHAR(filename));
 
 	BYTE* block;
 	int blocklen = loader->LoadBuffer(filename, block, true);
-	Parser parser(new(__FILE__, __LINE__) BlockReader((const char*)block, blocklen));
+	Parser parser(new BlockReader((const char*)block, blocklen));
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could not parse '%s'\n", filename);
+		UE_LOG(LogShipDesign, Error, TEXT("ERROR: could notxparse '%s'"), ANSI_TO_TCHAR(filename));
 		loader->ReleaseBuffer(block);
 		loader->SetDataPath(0);
 		return result;
@@ -698,7 +676,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 	else {
 		TermText* file_type = term->isText();
 		if (!file_type || file_type->value() != "SHIPCATALOG") {
-			Print("ERROR: invalid ship catalog file '%s'\n", filename);
+			UE_LOG(LogShipDesign, Error, TEXT("ERROR: invalid ship catalog file '%s'"), ANSI_TO_TCHAR(filename));
 			loader->ReleaseBuffer(block);
 			loader->SetDataPath(0);
 			return result;
@@ -710,7 +688,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 
 		term = parser.ParseTerm();
 
-		Text name, type, fname, path;
+		Text name, type, fname2, path2;
 		bool hide = false;
 
 		if (term) {
@@ -726,19 +704,19 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 
 						if (defname == "name") {
 							if (!GetDefText(name, pdef, filename))
-								Print("WARNING: invalid or missing ship name in '%s'\n", filename);
+								UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship name in '%s'"), ANSI_TO_TCHAR(filename));
 						}
 						else if (defname == "type") {
 							if (!GetDefText(type, pdef, filename))
-								Print("WARNING: invalid or missing ship type in '%s'\n", filename);
+								UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship type in '%s'"), ANSI_TO_TCHAR(filename));
 						}
 						else if (defname == "path") {
-							if (!GetDefText(path, pdef, filename))
-								Print("WARNING: invalid or missing ship path in '%s'\n", filename);
+							if (!GetDefText(path2, pdef, filename))
+								UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship path in '%s'"), ANSI_TO_TCHAR(filename));
 						}
 						else if (defname == "file") {
-							if (!GetDefText(fname, pdef, filename))
-								Print("WARNING: invalid or missing ship file in '%s'\n", filename);
+							if (!GetDefText(fname2, pdef, filename))
+								UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship file in '%s'"), ANSI_TO_TCHAR(filename));
 						}
 						else if (defname == "hide" || defname == "secret") {
 							GetDefBool(hide, pdef, filename);
@@ -746,7 +724,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 					}
 				}
 
-				ShipCatalogEntry* entry = new(__FILE__, __LINE__) ShipCatalogEntry(name, type, path, fname, hide);
+				ShipCatalogEntry* entry = new  ShipCatalogEntry(name, type, path2, fname2, hide);
 
 				if (mod) mod_catalog.append(entry);
 				else     catalog.append(entry);
@@ -754,7 +732,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 				result++;
 			}
 			else {
-				Print("WARNING: term ignored in '%s'\n", filename);
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: term ignored in '%s'"), ANSI_TO_TCHAR(filename));
 				term->print();
 			}
 		}
@@ -786,23 +764,23 @@ ShipDesign::LoadSkins(const char* path, const char* archive)
 		BYTE* block;
 		int   blocklen = loader->LoadBuffer(filename, block, true);
 
-		// file not found:
+		// file notxfound:
 		if (blocklen <= 4) {
 			continue;
 		}
 
-		Parser      parser(new(__FILE__, __LINE__) BlockReader((const char*)block, blocklen));
+		Parser      parser(new  BlockReader((const char*)block, blocklen));
 		Term* term = parser.ParseTerm();
 		ShipDesign* design = 0;
 
 		if (!term) {
-			Print("ERROR: could not parse '%s'\n", filename.data());
+			UE_LOG(LogShipDesign, Error, TEXT("ERROR: could notxparse '%s'"), ANSI_TO_TCHAR(filename.data()));
 			return;
 		}
 		else {
 			TermText* file_type = term->isText();
 			if (!file_type || file_type->value() != "SKIN") {
-				Print("ERROR: invalid skin file '%s'\n", filename.data());
+				UE_LOG(LogShipDesign, Error, TEXT("ERROR: invalid skin file '%s'"), ANSI_TO_TCHAR(filename.data()));
 				return;
 			}
 		}
@@ -819,14 +797,14 @@ ShipDesign::LoadSkins(const char* path, const char* archive)
 					defname.setSensitive(false);
 
 					if (defname == "name") {
-						Text name;
-						GetDefText(name, def, filename);
-						design = Get(name);
+						Text name2;
+						GetDefText(name2, def, filename);
+						design = Get(name2);
 					}
 
 					else if (defname == "skin" && design != 0) {
 						if (!def->term() || !def->term()->isStruct()) {
-							Print("WARNING: skin struct missing in '%s'\n", filename.data());
+							UE_LOG(LogShipDesign, Warning, TEXT("WARNING: skin struct missing in '%s'"), ANSI_TO_TCHAR(filename.data()));
 						}
 						else {
 							TermStruct* val = def->term()->isStruct();
@@ -869,7 +847,7 @@ ShipDesign::PreloadCatalog(int index)
 			return;
 
 		if (!entry->design) {
-			entry->design = new(__FILE__, __LINE__) ShipDesign(entry->name,
+			entry->design = new  ShipDesign(entry->name,
 				entry->path,
 				entry->file,
 				entry->hide);
@@ -882,7 +860,7 @@ ShipDesign::PreloadCatalog(int index)
 			ShipCatalogEntry* entry = iter.value();
 
 			if (!entry->design) {
-				entry->design = new(__FILE__, __LINE__) ShipDesign(entry->name,
+				entry->design = new  ShipDesign(entry->name,
 					entry->path,
 					entry->file,
 					entry->hide);
@@ -957,7 +935,7 @@ ShipDesign::Get(const char* design_name, const char* design_path)
 
 	if (entry) {
 		if (!entry->design) {
-			entry->design = new(__FILE__, __LINE__) ShipDesign(entry->name,
+			entry->design = new  ShipDesign(entry->name,
 				entry->path,
 				entry->file,
 				entry->hide);
@@ -965,7 +943,7 @@ ShipDesign::Get(const char* design_name, const char* design_path)
 		return entry->design;
 	}
 	else {
-		Print("ShipDesign: no catalog entry for design '%s', checking mods...\n", design_name);
+		UE_LOG(LogShipDesign, Warning, TEXT("ShipDesign: no catalog entry for design '%s', checking mods..."), ANSI_TO_TCHAR(design_name));
 		return ShipDesign::FindModDesign(design_name, design_path);
 	}
 }
@@ -984,12 +962,12 @@ ShipDesign::FindModDesign(const char* design_name, const char* design_path)
 	DataLoader* loader = DataLoader::GetLoader();
 	loader->SetDataPath(path);
 
-	ShipDesign* design = new(__FILE__, __LINE__) ShipDesign(design_name, path, file);
+	ShipDesign* design = new  ShipDesign(design_name, path, file);
 
 	if (design->valid) {
-		Print("ShipDesign: found mod design '%s'\n", design->name);
+		UE_LOG(LogShipDesign, Log, TEXT("ShipDesign: found mod design '%s'"), ANSI_TO_TCHAR(design->name));
 
-		ShipCatalogEntry* entry = new(__FILE__, __LINE__) ShipCatalogEntry(design->name,
+		ShipCatalogEntry* entry = new  ShipCatalogEntry(design->name,
 			ClassName(design->type),
 			path,
 			file);
@@ -1037,7 +1015,7 @@ ShipDesign::GetDesignList(int type, List<Text>& designs)
 		int etype = ClassForName(e->type);
 		if (etype & type) {
 			if (!e->design)
-				e->design = new(__FILE__, __LINE__) ShipDesign(e->name,
+				e->design = new  ShipDesign(e->name,
 					e->path,
 					e->file,
 					e->hide);
@@ -1059,7 +1037,7 @@ ShipDesign::GetDesignList(int type, List<Text>& designs)
 	}
 
 	return designs.size();
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
@@ -1098,82 +1076,93 @@ ShipDesign::ClassName(int type)
 
 // +--------------------------------------------------------------------+
 
-/*void
+void
 ShipDesign::ParseShip(TermDef* def)
 {
-	char           detail_name[NAMELEN];
-	Vec3           off_loc;
-	Vec3           spin;
-	Text           defname = def->name()->value();
+	char    detail_name[NAMELEN];
+	FVector off_loc(0, 0, 0);
+	FVector spin(0, 0, 0);
+	Text    defname = def->name()->value();
 
 	defname.setSensitive(false);
 
 	if (defname == "cockpit_model") {
-		if (!GetDefText(cockpit_name, def, filename))
-			Print("WARNING: invalid or missing cockpit_model in '%s'\n", filename);
+		if (!GetDefText(cockpit_name, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing cockpit_model in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 	}
 
 	else if (defname == "model" || defname == "detail_0") {
-		if (!GetDefText(detail_name, def, filename))
-			Print("WARNING: invalid or missing model in '%s'\n", filename);
+		if (!GetDefText(detail_name, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing model in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		detail[0].append(new(__FILE__, __LINE__) Text(detail_name));
+		detail[0].append(new(__FILE__,__LINE__) Text(detail_name));
 	}
 
 	else if (defname == "detail_1") {
-		if (!GetDefText(detail_name, def, filename))
-			Print("WARNING: invalid or missing detail_1 in '%s'\n", filename);
+		if (!GetDefText(detail_name, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing detail_1 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		detail[1].append(new(__FILE__, __LINE__) Text(detail_name));
+		detail[1].append(new(__FILE__,__LINE__) Text(detail_name));
 	}
 
 	else if (defname == "detail_2") {
-		if (!GetDefText(detail_name, def, filename))
-			Print("WARNING: invalid or missing detail_2 in '%s'\n", filename);
+		if (!GetDefText(detail_name, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing detail_2 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		detail[2].append(new(__FILE__, __LINE__) Text(detail_name));
+		detail[2].append(new(__FILE__,__LINE__) Text(detail_name));
 	}
 
 	else if (defname == "detail_3") {
-		if (!GetDefText(detail_name, def, filename))
-			Print("WARNING: invalid or missing detail_3 in '%s'\n", filename);
+		if (!GetDefText(detail_name, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing detail_3 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		detail[3].append(new(__FILE__, __LINE__) Text(detail_name));
+		detail[3].append(new(__FILE__,__LINE__) Text(detail_name));
 	}
 
 	else if (defname == "spin") {
-		if (!GetDefVec(spin, def, filename))
-			Print("WARNING: invalid or missing spin in '%s'\n", filename);
+		if (!GetDefVec(spin, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing spin in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		spin_rates.append(new(__FILE__, __LINE__) Point(spin));
+		// Point/Vec3 -> FVector
+		spin_rates.append(new(__FILE__,__LINE__) FVector(spin));
 	}
 
 	else if (defname == "offset_0") {
-		if (!GetDefVec(off_loc, def, filename))
-			Print("WARNING: invalid or missing offset_0 in '%s'\n", filename);
+		if (!GetDefVec(off_loc, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_0 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		offset[0].append(new(__FILE__, __LINE__) Point(off_loc));
+		offset[0].append(new(__FILE__,__LINE__) FVector(off_loc));
 	}
 
 	else if (defname == "offset_1") {
-		if (!GetDefVec(off_loc, def, filename))
-			Print("WARNING: invalid or missing offset_1 in '%s'\n", filename);
+		if (!GetDefVec(off_loc, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_1 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		offset[1].append(new(__FILE__, __LINE__) Point(off_loc));
+		offset[1].append(new(__FILE__,__LINE__) FVector(off_loc));
 	}
 
 	else if (defname == "offset_2") {
-		if (!GetDefVec(off_loc, def, filename))
-			Print("WARNING: invalid or missing offset_2 in '%s'\n", filename);
+		if (!GetDefVec(off_loc, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_2 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		offset[2].append(new(__FILE__, __LINE__) Point(off_loc));
+		offset[2].append(new(__FILE__,__LINE__) FVector(off_loc));
 	}
 
 	else if (defname == "offset_3") {
-		if (!GetDefVec(off_loc, def, filename))
-			Print("WARNING: invalid or missing offset_3 in '%s'\n", filename);
+		if (!GetDefVec(off_loc, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_3 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-		offset[3].append(new(__FILE__, __LINE__) Point(off_loc));
+		offset[3].append(new(__FILE__,__LINE__) FVector(off_loc));
 	}
 
 	else if (defname == "beauty") {
@@ -1181,70 +1170,76 @@ ShipDesign::ParseShip(TermDef* def)
 			GetDefVec(beauty_cam, def, filename);
 
 			if (degrees) {
-				beauty_cam.x *= (float)DEGREES;
-				beauty_cam.y *= (float)DEGREES;
+				beauty_cam.X *= (float) DEGREES;
+				beauty_cam.Y *= (float) DEGREES;
 			}
 		}
 
 		else {
 			char beauty_name[64];
-			if (!GetDefText(beauty_name, def, filename))
-				Print("WARNING: invalid or missing beauty in '%s'\n", filename);
+			if (!GetDefText(beauty_name, def, filename)) {
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing beauty in '%s'"), ANSI_TO_TCHAR(filename));
+			}
 
 			DataLoader* loader = DataLoader::GetLoader();
-			loader->LoadBitmap(beauty_name, beauty);
+			loader->LoadTexture(beauty_name, beauty); // Bitmap -> UTexture2D*
 		}
 	}
 
 	else if (defname == "hud_icon") {
 		char hud_icon_name[64];
-		if (!GetDefText(hud_icon_name, def, filename))
-			Print("WARNING: invalid or missing hud_icon in '%s'\n", filename);
+		if (!GetDefText(hud_icon_name, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing hud_icon in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
 		DataLoader* loader = DataLoader::GetLoader();
-		loader->LoadBitmap(hud_icon_name, hud_icon);
+		loader->LoadTexture(hud_icon_name, hud_icon); // Bitmap -> UTexture2D*
 	}
 
 	else if (defname == "feature_0") {
-		if (!GetDefNumber(feature_size[0], def, filename))
-			Print("WARNING: invalid or missing feature_0 in '%s'\n", filename);
+		if (!GetDefNumber(feature_size[0], def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing feature_0 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 	}
 
 	else if (defname == "feature_1") {
-		if (!GetDefNumber(feature_size[1], def, filename))
-			Print("WARNING: invalid or missing feature_1 in '%s'\n", filename);
+		if (!GetDefNumber(feature_size[1], def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing feature_1 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 	}
 
 	else if (defname == "feature_2") {
-		if (!GetDefNumber(feature_size[2], def, filename))
-			Print("WARNING: invalid or missing feature_2 in '%s'\n", filename);
+		if (!GetDefNumber(feature_size[2], def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing feature_2 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 	}
 
 	else if (defname == "feature_3") {
-		if (!GetDefNumber(feature_size[3], def, filename))
-			Print("WARNING: invalid or missing feature_3 in '%s'\n", filename);
+		if (!GetDefNumber(feature_size[3], def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing feature_3 in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 	}
-
 
 	else if (defname == "class") {
 		char typestr[64];
-		if (!GetDefText(typestr, def, filename))
-			Print("WARNING: invalid or missing ship class in '%s'\n", filename);
+		if (!GetDefText(typestr, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing ship class in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
 		type = ClassForName(typestr);
 
 		if (type <= Ship::LCA) {
-			repair_auto = false;
+			repair_auto   = false;
 			repair_screen = false;
-			wep_screen = false;
+			wep_screen    = false;
 		}
 	}
 
 	else GET_DEF_TEXT(name);
-else GET_DEF_TEXT(description);
-else GET_DEF_TEXT(display_name);
-else GET_DEF_TEXT(abrv);
-else GET_DEF_NUM(pcs);
+	else GET_DEF_TEXT(description);
+	else GET_DEF_TEXT(display_name);
+	else GET_DEF_TEXT(abrv);
+	else GET_DEF_NUM(pcs);
 	else GET_DEF_NUM(acs);
 	else GET_DEF_NUM(detet);
 	else GET_DEF_NUM(scale);
@@ -1292,267 +1287,268 @@ else GET_DEF_NUM(pcs);
 
 	else if (defname == "emcon_1") {
 		GetDefNumber(e_factor[0], def, filename);
-		}
+	}
 
 	else if (defname == "emcon_2") {
-			GetDefNumber(e_factor[1], def, filename);
-			}
+		GetDefNumber(e_factor[1], def, filename);
+	}
 
 	else if (defname == "emcon_3") {
-				GetDefNumber(e_factor[2], def, filename);
-				}
+		GetDefNumber(e_factor[2], def, filename);
+	}
 
 	else if (defname == "chase") {
-					if (!GetDefVec(chase_vec, def, filename))
-						Print("WARNING: invalid or missing chase cam loc in '%s'\n", filename);
+		if (!GetDefVec(chase_vec, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing chase cam loc in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-					chase_vec *= (float)scale;
-					}
+		chase_vec *= (float) scale;
+	}
 
 	else if (defname == "bridge") {
-						if (!GetDefVec(bridge_vec, def, filename))
-							Print("WARNING: invalid or missing bridge cam loc in '%s'\n", filename);
+		if (!GetDefVec(bridge_vec, def, filename)) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing bridge cam loc in '%s'"), ANSI_TO_TCHAR(filename));
+		}
 
-						bridge_vec *= (float)scale;
-						}
+		bridge_vec *= (float) scale;
+	}
 
 	else if (defname == "power") {
-							if (!def->term() || !def->term()->isStruct()) {
-								Print("WARNING: power source struct missing in '%s'\n", filename);
-							}
-							else {
-								TermStruct* val = def->term()->isStruct();
-								ParsePower(val);
-							}
-							}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: power source struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParsePower(val);
+		}
+	}
 
 	else if (defname == "main_drive" || defname == "drive") {
-								if (!def->term() || !def->term()->isStruct()) {
-									Print("WARNING: main drive struct missing in '%s'\n", filename);
-								}
-								else {
-									TermStruct* val = def->term()->isStruct();
-									ParseDrive(val);
-								}
-								}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: main drive struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseDrive(val);
+		}
+	}
 
 	else if (defname == "quantum" || defname == "quantum_drive") {
-									if (!def->term() || !def->term()->isStruct()) {
-										Print("WARNING: quantum_drive struct missing in '%s'\n", filename);
-									}
-									else {
-										TermStruct* val = def->term()->isStruct();
-										ParseQuantumDrive(val);
-									}
-									}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: quantum_drive struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseQuantumDrive(val);
+		}
+	}
 
 	else if (defname == "sender" || defname == "farcaster") {
-										if (!def->term() || !def->term()->isStruct()) {
-											Print("WARNING: farcaster struct missing in '%s'\n", filename);
-										}
-										else {
-											TermStruct* val = def->term()->isStruct();
-											ParseFarcaster(val);
-										}
-										}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: farcaster struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseFarcaster(val);
+		}
+	}
 
 	else if (defname == "thruster") {
-											if (!def->term() || !def->term()->isStruct()) {
-												Print("WARNING: thruster struct missing in '%s'\n", filename);
-											}
-											else {
-												TermStruct* val = def->term()->isStruct();
-												ParseThruster(val);
-											}
-											}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: thruster struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseThruster(val);
+		}
+	}
 
 	else if (defname == "navlight") {
-												if (!def->term() || !def->term()->isStruct()) {
-													Print("WARNING: navlight struct missing in '%s'\n", filename);
-												}
-												else {
-													TermStruct* val = def->term()->isStruct();
-													ParseNavlight(val);
-												}
-												}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: navlight struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseNavlight(val);
+		}
+	}
 
 	else if (defname == "flightdeck") {
-													if (!def->term() || !def->term()->isStruct()) {
-														Print("WARNING: flightdeck struct missing in '%s'\n", filename);
-													}
-													else {
-														TermStruct* val = def->term()->isStruct();
-														ParseFlightDeck(val);
-													}
-													}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: flightdeck struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseFlightDeck(val);
+		}
+	}
 
 	else if (defname == "gear") {
-														if (!def->term() || !def->term()->isStruct()) {
-															Print("WARNING: gear struct missing in '%s'\n", filename);
-														}
-														else {
-															TermStruct* val = def->term()->isStruct();
-															ParseLandingGear(val);
-														}
-														}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: gear struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseLandingGear(val);
+		}
+	}
 
 	else if (defname == "weapon") {
-															if (!def->term() || !def->term()->isStruct()) {
-																Print("WARNING: weapon struct missing in '%s'\n", filename);
-															}
-															else {
-																TermStruct* val = def->term()->isStruct();
-																ParseWeapon(val);
-															}
-															}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: weapon struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseWeapon(val);
+		}
+	}
 
 	else if (defname == "hardpoint") {
-																if (!def->term() || !def->term()->isStruct()) {
-																	Print("WARNING: hardpoint struct missing in '%s'\n", filename);
-																}
-																else {
-																	TermStruct* val = def->term()->isStruct();
-																	ParseHardPoint(val);
-																}
-																}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: hardpoint struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseHardPoint(val);
+		}
+	}
 
 	else if (defname == "loadout") {
-																	if (!def->term() || !def->term()->isStruct()) {
-																		Print("WARNING: loadout struct missing in '%s'\n", filename);
-																	}
-																	else {
-																		TermStruct* val = def->term()->isStruct();
-																		ParseLoadout(val);
-																	}
-																	}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: loadout struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseLoadout(val);
+		}
+	}
 
 	else if (defname == "decoy") {
-																		if (!def->term() || !def->term()->isStruct()) {
-																			Print("WARNING: decoy struct missing in '%s'\n", filename);
-																		}
-																		else {
-																			TermStruct* val = def->term()->isStruct();
-																			ParseWeapon(val);
-																		}
-																		}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: decoy struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseWeapon(val);
+		}
+	}
 
 	else if (defname == "probe") {
-																			if (!def->term() || !def->term()->isStruct()) {
-																				Print("WARNING: probe struct missing in '%s'\n", filename);
-																			}
-																			else {
-																				TermStruct* val = def->term()->isStruct();
-																				ParseWeapon(val);
-																			}
-																			}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: probe struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseWeapon(val);
+		}
+	}
 
 	else if (defname == "sensor") {
-																				if (!def->term() || !def->term()->isStruct()) {
-																					Print("WARNING: sensor struct missing in '%s'\n", filename);
-																				}
-																				else {
-																					TermStruct* val = def->term()->isStruct();
-																					ParseSensor(val);
-																				}
-																				}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: sensor struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseSensor(val);
+		}
+	}
 
 	else if (defname == "nav") {
-																					if (!def->term() || !def->term()->isStruct()) {
-																						Print("WARNING: nav struct missing in '%s'\n", filename);
-																					}
-																					else {
-																						TermStruct* val = def->term()->isStruct();
-																						ParseNavsys(val);
-																					}
-																					}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: nav struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseNavsys(val);
+		}
+	}
 
 	else if (defname == "computer") {
-																						if (!def->term() || !def->term()->isStruct()) {
-																							Print("WARNING: computer struct missing in '%s'\n", filename);
-																						}
-																						else {
-																							TermStruct* val = def->term()->isStruct();
-																							ParseComputer(val);
-																						}
-																						}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: computer struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseComputer(val);
+		}
+	}
 
 	else if (defname == "shield") {
-																							if (!def->term() || !def->term()->isStruct()) {
-																								Print("WARNING: shield struct missing in '%s'\n", filename);
-																							}
-																							else {
-																								TermStruct* val = def->term()->isStruct();
-																								ParseShield(val);
-																							}
-																							}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: shield struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseShield(val);
+		}
+	}
 
 	else if (defname == "death_spiral") {
-																								if (!def->term() || !def->term()->isStruct()) {
-																									Print("WARNING: death spiral struct missing in '%s'\n", filename);
-																								}
-																								else {
-																									TermStruct* val = def->term()->isStruct();
-																									ParseDeathSpiral(val);
-																								}
-																								}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: death spiral struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseDeathSpiral(val);
+		}
+	}
 
 	else if (defname == "map") {
-																									if (!def->term() || !def->term()->isStruct()) {
-																										Print("WARNING: map struct missing in '%s'\n", filename);
-																									}
-																									else {
-																										TermStruct* val = def->term()->isStruct();
-																										ParseMap(val);
-																									}
-																									}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: map struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseMap(val);
+		}
+	}
 
 	else if (defname == "squadron") {
-																										if (!def->term() || !def->term()->isStruct()) {
-																											Print("WARNING: squadron struct missing in '%s'\n", filename);
-																										}
-																										else {
-																											TermStruct* val = def->term()->isStruct();
-																											ParseSquadron(val);
-																										}
-																										}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: squadron struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseSquadron(val);
+		}
+	}
 
 	else if (defname == "skin") {
-																											if (!def->term() || !def->term()->isStruct()) {
-																												Print("WARNING: skin struct missing in '%s'\n", filename);
-																											}
-																											else {
-																												TermStruct* val = def->term()->isStruct();
-																												ParseSkin(val);
-																											}
-																											}
+		if (!def->term() || !def->term()->isStruct()) {
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: skin struct missing in '%s'"), ANSI_TO_TCHAR(filename));
+		}
+		else {
+			TermStruct* val = def->term()->isStruct();
+			ParseSkin(val);
+		}
+	}
 
 	else {
-																												Print("WARNING: unknown parameter '%s' in '%s'\n",
-																													defname.data(), filename);
-																													}
+		UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown parameter '%s' in '%s'"),
+			ANSI_TO_TCHAR(defname.data()),
+			ANSI_TO_TCHAR(filename));
+	}
 
-																													if (description.length())
-																														description = Game::GetText(description);
+	if (description.length())
+		description = Game::GetText(description);
 }
-
-// +--------------------------------------------------------------------+
 
 void
 ShipDesign::ParsePower(TermStruct* val)
 {
-	int   stype = 0;
-	float output = 1000.0f;
-	float fuel = 0.0f;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	Text  design_name;
-	Text  pname;
-	Text  pabrv;
-	int   etype = 0;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
+	int    stype = 0;
+	float  output = 1000.0f;
+	float  fuel = 0.0f;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float  size = 0.0f;
+	float  hull = 0.5f;
+	Text   design_name;
+	Text   pname;
+	Text   pabrv;
+	int    etype = 0;
+	int    emcon_1 = -1;
+	int    emcon_2 = -1;
+	int    emcon_3 = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -1567,7 +1563,11 @@ ShipDesign::ParsePower(TermStruct* val)
 					if (tname->value()[0] == 'B') stype = PowerSource::BATTERY;
 					else if (tname->value()[0] == 'A') stype = PowerSource::AUX;
 					else if (tname->value()[0] == 'F') stype = PowerSource::FUSION;
-					else Print("WARNING: unknown power source type '%s' in '%s'\n", tname->value().data(), filename);
+					else {
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown power source type '%s' in '%s'"),
+							ANSI_TO_TCHAR(tname->value().data()),
+							ANSI_TO_TCHAR(filename));
+					}
 				}
 			}
 
@@ -1586,6 +1586,7 @@ ShipDesign::ParsePower(TermStruct* val)
 			else if (defname == "max_output") {
 				GetDefNumber(output, pdef, filename);
 			}
+
 			else if (defname == "fuel_range") {
 				GetDefNumber(fuel, pdef, filename);
 			}
@@ -1594,10 +1595,12 @@ ShipDesign::ParsePower(TermStruct* val)
 				GetDefVec(loc, pdef, filename);
 				loc *= (float)scale;
 			}
+
 			else if (defname == "size") {
 				GetDefNumber(size, pdef, filename);
 				size *= (float)scale;
 			}
+
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
@@ -1620,7 +1623,7 @@ ShipDesign::ParsePower(TermStruct* val)
 		}
 	}
 
-	PowerSource* source = new(__FILE__, __LINE__) PowerSource((PowerSource::SUBTYPE)stype, output);
+	PowerSource* source = new  PowerSource((PowerSource::SUBTYPE)stype, output);
 	if (pname.length()) source->SetName(pname);
 	if (pabrv.length()) source->SetName(pabrv);
 	source->SetFuelRange(fuel);
@@ -1637,10 +1640,10 @@ ShipDesign::ParsePower(TermStruct* val)
 		source->SetEMCONPower(1, emcon_1);
 
 	if (emcon_2 >= 0 && emcon_2 <= 100)
-		source->SetEMCONPower(1, emcon_2);
+		source->SetEMCONPower(2, emcon_2);
 
 	if (emcon_3 >= 0 && emcon_3 <= 100)
-		source->SetEMCONPower(1, emcon_3);
+		source->SetEMCONPower(3, emcon_3);
 
 	reactors.append(source);
 }
@@ -1650,21 +1653,21 @@ ShipDesign::ParsePower(TermStruct* val)
 void
 ShipDesign::ParseDrive(TermStruct* val)
 {
-	Text  dname;
-	Text  dabrv;
-	int   dtype = 0;
-	int   etype = 0;
-	float dthrust = 1.0f;
-	float daug = 0.0f;
-	float dscale = 1.0f;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	Text  design_name;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-	bool  trail = true;
+	Text   dname;
+	Text   dabrv;
+	int    dtype = 0;
+	int    etype = 0;
+	float  dthrust = 1.0f;
+	float  daug = 0.0f;
+	float  dscale = 1.0f;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float  size = 0.0f;
+	float  hull = 0.5f;
+	Text   design_name;
+	int    emcon_1 = -1;
+	int    emcon_2 = -1;
+	int    emcon_3 = -1;
+	bool   trail = true;
 	Drive* drive = 0;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
@@ -1681,50 +1684,66 @@ ShipDesign::ParseDrive(TermStruct* val)
 					tval.setSensitive(false);
 
 					if (tval == "Plasma")       dtype = Drive::PLASMA;
-					else if (tval == "Fusion")  dtype = Drive::FUSION;
-					else if (tval == "Alien")   dtype = Drive::GREEN;
-					else if (tval == "Green")   dtype = Drive::GREEN;
-					else if (tval == "Red")     dtype = Drive::RED;
-					else if (tval == "Blue")    dtype = Drive::BLUE;
-					else if (tval == "Yellow")  dtype = Drive::YELLOW;
-					else if (tval == "Stealth") dtype = Drive::STEALTH;
-
-					else Print("WARNING: unknown drive type '%s' in '%s'\n", tname->value().data(), filename);
+					else if (tval == "Fusion")       dtype = Drive::FUSION;
+					else if (tval == "Alien")        dtype = Drive::GREEN;
+					else if (tval == "Green")        dtype = Drive::GREEN;
+					else if (tval == "Red")          dtype = Drive::RED;
+					else if (tval == "Blue")         dtype = Drive::BLUE;
+					else if (tval == "Yellow")       dtype = Drive::YELLOW;
+					else if (tval == "Stealth")      dtype = Drive::STEALTH;
+					else {
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown drive type '%s' in '%s'"),
+							ANSI_TO_TCHAR(tname->value().data()),
+							ANSI_TO_TCHAR(filename));
+					}
 				}
 			}
+
 			else if (defname == "name") {
-				if (!GetDefText(dname, pdef, filename))
-					Print("WARNING: invalid or missing name for drive in '%s'\n", filename);
+				if (!GetDefText(dname, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing name for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "abrv") {
-				if (!GetDefText(dabrv, pdef, filename))
-					Print("WARNING: invalid or missing abrv for drive in '%s'\n", filename);
+				if (!GetDefText(dabrv, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing abrv for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "design") {
-				if (!GetDefText(design_name, pdef, filename))
-					Print("WARNING: invalid or missing design for drive in '%s'\n", filename);
+				if (!GetDefText(design_name, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing design for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "thrust") {
-				if (!GetDefNumber(dthrust, pdef, filename))
-					Print("WARNING: invalid or missing thrust for drive in '%s'\n", filename);
+				if (!GetDefNumber(dthrust, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing thrust for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "augmenter") {
-				if (!GetDefNumber(daug, pdef, filename))
-					Print("WARNING: invalid or missing augmenter for drive in '%s'\n", filename);
+				if (!GetDefNumber(daug, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing augmenter for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "scale") {
-				if (!GetDefNumber(dscale, pdef, filename))
-					Print("WARNING: invalid or missing scale for drive in '%s'\n", filename);
+				if (!GetDefNumber(dscale, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing scale for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "port") {
-				Vec3  port;
-				float flare_scale = 0;
+				FVector port(0, 0, 0);
+				float   flare_scale = 0;
 
 				if (pdef->term()->isArray()) {
 					GetDefVec(port, pdef, filename);
@@ -1754,31 +1773,39 @@ ShipDesign::ParseDrive(TermStruct* val)
 				}
 
 				if (!drive)
-					drive = new(__FILE__, __LINE__) Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
+					drive = new  Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
 
 				drive->AddPort(port, flare_scale);
 			}
 
 			else if (defname == "loc") {
-				if (!GetDefVec(loc, pdef, filename))
-					Print("WARNING: invalid or missing loc for drive in '%s'\n", filename);
+				if (!GetDefVec(loc, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing loc for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 				loc *= (float)scale;
 			}
 
 			else if (defname == "size") {
-				if (!GetDefNumber(size, pdef, filename))
-					Print("WARNING: invalid or missing size for drive in '%s'\n", filename);
+				if (!GetDefNumber(size, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing size for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 				size *= (float)scale;
 			}
 
 			else if (defname == "hull_factor") {
-				if (!GetDefNumber(hull, pdef, filename))
-					Print("WARNING: invalid or missing hull_factor for drive in '%s'\n", filename);
+				if (!GetDefNumber(hull, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing hull_factor for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "explosion") {
-				if (!GetDefNumber(etype, pdef, filename))
-					Print("WARNING: invalid or missing explosion for drive in '%s'\n", filename);
+				if (!GetDefNumber(etype, pdef, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing explosion for drive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 			}
 
 			else if (defname == "emcon_1") {
@@ -1800,7 +1827,7 @@ ShipDesign::ParseDrive(TermStruct* val)
 	}
 
 	if (!drive)
-		drive = new(__FILE__, __LINE__) Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
+		drive = new  Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
 
 	drive->SetSourceIndex(reactors.size() - 1);
 	drive->Mount(loc, size, hull);
@@ -1818,10 +1845,10 @@ ShipDesign::ParseDrive(TermStruct* val)
 		drive->SetEMCONPower(1, emcon_1);
 
 	if (emcon_2 >= 0 && emcon_2 <= 100)
-		drive->SetEMCONPower(1, emcon_2);
+		drive->SetEMCONPower(2, emcon_2);
 
 	if (emcon_3 >= 0 && emcon_3 <= 100)
-		drive->SetEMCONPower(1, emcon_3);
+		drive->SetEMCONPower(3, emcon_3);
 
 	main_drive = drives.size();
 	drives.append(drive);
@@ -1832,19 +1859,19 @@ ShipDesign::ParseDrive(TermStruct* val)
 void
 ShipDesign::ParseQuantumDrive(TermStruct* val)
 {
-	double   capacity = 250e3;
-	double   consumption = 1e3;
-	Vec3     loc(0.0f, 0.0f, 0.0f);
-	float    size = 0.0f;
-	float    hull = 0.5f;
-	float    countdown = 5.0f;
-	Text     design_name;
-	Text     type_name;
-	Text     abrv;
-	int      subtype = QuantumDrive::QUANTUM;
-	int      emcon_1 = -1;
-	int      emcon_2 = -1;
-	int      emcon_3 = -1;
+	double  capacity = 250e3;
+	double  consumption = 1e3;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	float   countdown = 5.0f;
+	Text    design_name;
+	Text    type_name;
+	Text    abrv;
+	int     subtype = QuantumDrive::QUANTUM;
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -1889,22 +1916,19 @@ ShipDesign::ParseQuantumDrive(TermStruct* val)
 			else if (defname == "countdown") {
 				GetDefNumber(countdown, pdef, filename);
 			}
-
 			else if (defname == "emcon_1") {
 				GetDefNumber(emcon_1, pdef, filename);
 			}
-
 			else if (defname == "emcon_2") {
 				GetDefNumber(emcon_2, pdef, filename);
 			}
-
 			else if (defname == "emcon_3") {
 				GetDefNumber(emcon_3, pdef, filename);
 			}
 		}
 	}
 
-	QuantumDrive* drive = new(__FILE__, __LINE__) QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
+	QuantumDrive* drive = new  QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
 	drive->SetSourceIndex(reactors.size() - 1);
 	drive->Mount(loc, size, hull);
 	drive->SetCountdown(countdown);
@@ -1922,10 +1946,10 @@ ShipDesign::ParseQuantumDrive(TermStruct* val)
 		drive->SetEMCONPower(1, emcon_1);
 
 	if (emcon_2 >= 0 && emcon_2 <= 100)
-		drive->SetEMCONPower(1, emcon_2);
+		drive->SetEMCONPower(2, emcon_2);
 
 	if (emcon_3 >= 0 && emcon_3 <= 100)
-		drive->SetEMCONPower(1, emcon_3);
+		drive->SetEMCONPower(3, emcon_3);
 
 	quantum_drive = drive;
 }
@@ -1935,19 +1959,19 @@ ShipDesign::ParseQuantumDrive(TermStruct* val)
 void
 ShipDesign::ParseFarcaster(TermStruct* val)
 {
-	Text     design_name;
-	double   capacity = 300e3;
-	double   consumption = 15e3;  // twenty second recharge
-	int      napproach = 0;
-	Vec3     approach[Farcaster::NUM_APPROACH_PTS];
-	Vec3     loc(0.0f, 0.0f, 0.0f);
-	Vec3     start(0.0f, 0.0f, 0.0f);
-	Vec3     end(0.0f, 0.0f, 0.0f);
-	float    size = 0.0f;
-	float    hull = 0.5f;
-	int      emcon_1 = -1;
-	int      emcon_2 = -1;
-	int      emcon_3 = -1;
+	Text    design_name;
+	double  capacity = 300e3;
+	double  consumption = 15e3;  // twenty second recharge
+	int     napproach = 0;
+	FVector approach[Farcaster::NUM_APPROACH_PTS];
+	FVector loc(0.0f, 0.0f, 0.0f);
+	FVector start(0.0f, 0.0f, 0.0f);
+	FVector end(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -1975,7 +1999,6 @@ ShipDesign::ParseFarcaster(TermStruct* val)
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
-
 			else if (defname == "start") {
 				GetDefVec(start, pdef, filename);
 				start *= (float)scale;
@@ -1990,26 +2013,24 @@ ShipDesign::ParseFarcaster(TermStruct* val)
 					approach[napproach++] *= (float)scale;
 				}
 				else {
-					Print("WARNING: farcaster approach point ignored in '%s' (max=%d)\n",
-						filename, Farcaster::NUM_APPROACH_PTS);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: farcaster approach point ignored in '%s' (max=%d)"),
+						ANSI_TO_TCHAR(filename),
+						Farcaster::NUM_APPROACH_PTS);
 				}
 			}
-
 			else if (defname == "emcon_1") {
 				GetDefNumber(emcon_1, pdef, filename);
 			}
-
 			else if (defname == "emcon_2") {
 				GetDefNumber(emcon_2, pdef, filename);
 			}
-
 			else if (defname == "emcon_3") {
 				GetDefNumber(emcon_3, pdef, filename);
 			}
 		}
 	}
 
-	Farcaster* caster = new(__FILE__, __LINE__) Farcaster(capacity, consumption);
+	Farcaster* caster = new  Farcaster(capacity, consumption);
 	caster->SetSourceIndex(reactors.size() - 1);
 	caster->Mount(loc, size, hull);
 
@@ -2029,10 +2050,10 @@ ShipDesign::ParseFarcaster(TermStruct* val)
 		caster->SetEMCONPower(1, emcon_1);
 
 	if (emcon_2 >= 0 && emcon_2 <= 100)
-		caster->SetEMCONPower(1, emcon_2);
+		caster->SetEMCONPower(2, emcon_2);
 
 	if (emcon_3 >= 0 && emcon_3 <= 100)
-		caster->SetEMCONPower(1, emcon_3);
+		caster->SetEMCONPower(3, emcon_3);
 
 	farcaster = caster;
 }
@@ -2043,21 +2064,20 @@ void
 ShipDesign::ParseThruster(TermStruct* val)
 {
 	if (thruster) {
-		Print("WARNING: additional thruster ignored in '%s'\n", filename);
+		UE_LOG(LogShipDesign, Warning, TEXT("WARNING: additional thruster ignored in '%s'"), ANSI_TO_TCHAR(filename));
 		return;
 	}
 
-	double thrust = 100;
-
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	Text  design_name;
-	float tscale = 1.0f;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-	int   dtype = 0;
+	double  thrust = 100;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	Text    design_name;
+	float   tscale = 1.0f;
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
+	int     dtype = 0;
 
 	Thruster* drive = 0;
 
@@ -2067,7 +2087,6 @@ ShipDesign::ParseThruster(TermStruct* val)
 			Text defname = pdef->name()->value();
 			defname.setSensitive(false);
 
-
 			if (defname == "type") {
 				TermText* tname = pdef->term()->isText();
 
@@ -2076,15 +2095,18 @@ ShipDesign::ParseThruster(TermStruct* val)
 					tval.setSensitive(false);
 
 					if (tval == "Plasma")       dtype = Drive::PLASMA;
-					else if (tval == "Fusion")  dtype = Drive::FUSION;
-					else if (tval == "Alien")   dtype = Drive::GREEN;
-					else if (tval == "Green")   dtype = Drive::GREEN;
-					else if (tval == "Red")     dtype = Drive::RED;
-					else if (tval == "Blue")    dtype = Drive::BLUE;
-					else if (tval == "Yellow")  dtype = Drive::YELLOW;
-					else if (tval == "Stealth") dtype = Drive::STEALTH;
-
-					else Print("WARNING: unknown thruster type '%s' in '%s'\n", tname->value().data(), filename);
+					else if (tval == "Fusion")       dtype = Drive::FUSION;
+					else if (tval == "Alien")        dtype = Drive::GREEN;
+					else if (tval == "Green")        dtype = Drive::GREEN;
+					else if (tval == "Red")          dtype = Drive::RED;
+					else if (tval == "Blue")         dtype = Drive::BLUE;
+					else if (tval == "Yellow")       dtype = Drive::YELLOW;
+					else if (tval == "Stealth")      dtype = Drive::STEALTH;
+					else {
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown thruster type '%s' in '%s'"),
+							ANSI_TO_TCHAR(tname->value().data()),
+							ANSI_TO_TCHAR(filename));
+					}
 				}
 			}
 
@@ -2100,20 +2122,24 @@ ShipDesign::ParseThruster(TermStruct* val)
 				GetDefVec(loc, pdef, filename);
 				loc *= (float)scale;
 			}
+
 			else if (defname == "size") {
 				GetDefNumber(size, pdef, filename);
 				size *= (float)scale;
 			}
+
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
+
 			else if (defname == "scale") {
 				GetDefNumber(tscale, pdef, filename);
 			}
+
 			else if (defname.contains("port") && pdef->term()) {
-				Vec3  port;
-				float port_scale = 0;
-				DWORD fire = 0;
+				FVector port(0, 0, 0);
+				float   port_scale = 0;
+				uint32  fire = 0;
 
 				if (pdef->term()->isArray()) {
 					GetDefVec(port, pdef, filename);
@@ -2147,23 +2173,18 @@ ShipDesign::ParseThruster(TermStruct* val)
 				}
 
 				if (!drive)
-					drive = new(__FILE__, __LINE__) Thruster(dtype, thrust, tscale);
+					drive = new  Thruster(dtype, thrust, tscale);
 
 				if (defname == "port" || defname == "port_bottom")
 					drive->AddPort(Thruster::BOTTOM, port, fire, port_scale);
-
 				else if (defname == "port_top")
 					drive->AddPort(Thruster::TOP, port, fire, port_scale);
-
 				else if (defname == "port_left")
 					drive->AddPort(Thruster::LEFT, port, fire, port_scale);
-
 				else if (defname == "port_right")
 					drive->AddPort(Thruster::RIGHT, port, fire, port_scale);
-
 				else if (defname == "port_fore")
 					drive->AddPort(Thruster::FORE, port, fire, port_scale);
-
 				else if (defname == "port_aft")
 					drive->AddPort(Thruster::AFT, port, fire, port_scale);
 			}
@@ -2183,7 +2204,8 @@ ShipDesign::ParseThruster(TermStruct* val)
 	}
 
 	if (!drive)
-		drive = new(__FILE__, __LINE__) Thruster(dtype, thrust, tscale);
+		drive = new  Thruster(dtype, thrust, tscale);
+
 	drive->SetSourceIndex(reactors.size() - 1);
 	drive->Mount(loc, size, hull);
 
@@ -2197,10 +2219,10 @@ ShipDesign::ParseThruster(TermStruct* val)
 		drive->SetEMCONPower(1, emcon_1);
 
 	if (emcon_2 >= 0 && emcon_2 <= 100)
-		drive->SetEMCONPower(1, emcon_2);
+		drive->SetEMCONPower(2, emcon_2);
 
 	if (emcon_3 >= 0 && emcon_3 <= 100)
-		drive->SetEMCONPower(1, emcon_3);
+		drive->SetEMCONPower(3, emcon_3);
 
 	thruster = drive;
 }
@@ -2210,15 +2232,15 @@ ShipDesign::ParseThruster(TermStruct* val)
 void
 ShipDesign::ParseNavlight(TermStruct* val)
 {
-	Text  dname;
-	Text  dabrv;
-	Text  design_name;
-	int   nlights = 0;
-	float dscale = 1.0f;
-	float period = 10.0f;
-	Vec3  bloc[NavLight::MAX_LIGHTS];
-	int   btype[NavLight::MAX_LIGHTS];
-	DWORD pattern[NavLight::MAX_LIGHTS];
+	Text   dname;
+	Text   dabrv;
+	Text   design_name;
+	int    nlights = 0;
+	float  dscale = 1.0f;
+	float  period = 10.0f;
+	FVector bloc[NavLight::MAX_LIGHTS];
+	int    btype[NavLight::MAX_LIGHTS];
+	uint32 pattern[NavLight::MAX_LIGHTS];
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2228,29 +2250,31 @@ ShipDesign::ParseNavlight(TermStruct* val)
 
 			if (defname == "name")
 				GetDefText(dname, pdef, filename);
+
 			else if (defname == "abrv")
 				GetDefText(dabrv, pdef, filename);
 
-			else if (defname == "design") {
+			else if (defname == "design")
 				GetDefText(design_name, pdef, filename);
-			}
 
-			else if (defname == "scale") {
+			else if (defname == "scale")
 				GetDefNumber(dscale, pdef, filename);
-			}
-			else if (defname == "period") {
+
+			else if (defname == "period")
 				GetDefNumber(period, pdef, filename);
-			}
+
 			else if (defname == "light") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
-					Print("WARNING: light struct missing for ship '%s' in '%s'\n", name, filename);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: light struct missing for ship '%s' in '%s'"),
+						ANSI_TO_TCHAR(name),
+						ANSI_TO_TCHAR(filename));
 				}
 				else {
 					TermStruct* val = pdef->term()->isStruct();
 
-					Vec3  loc;
-					int   t = 0;
-					DWORD ptn = 0;
+					FVector loc(0, 0, 0);
+					int     t = 0;
+					uint32  ptn = 0;
 
 					for (int i = 0; i < val->elements()->size(); i++) {
 						TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2258,15 +2282,14 @@ ShipDesign::ParseNavlight(TermStruct* val)
 							Text defname = pdef->name()->value();
 							defname.setSensitive(false);
 
-							if (defname == "type") {
+							if (defname == "type")
 								GetDefNumber(t, pdef, filename);
-							}
-							else if (defname == "loc") {
+
+							else if (defname == "loc")
 								GetDefVec(loc, pdef, filename);
-							}
-							else if (defname == "pattern") {
+
+							else if (defname == "pattern")
 								GetDefNumber(ptn, pdef, filename);
-							}
 						}
 					}
 
@@ -2280,14 +2303,16 @@ ShipDesign::ParseNavlight(TermStruct* val)
 						nlights++;
 					}
 					else {
-						Print("WARNING: Too many lights ship '%s' in '%s'\n", name, filename);
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: Too many lights ship '%s' in '%s'"),
+							ANSI_TO_TCHAR(name),
+							ANSI_TO_TCHAR(filename));
 					}
 				}
 			}
 		}
 	}
 
-	NavLight* nav = new(__FILE__, __LINE__) NavLight(period, dscale);
+	NavLight* nav = new  NavLight(period, dscale);
 	if (dname.length()) nav->SetName(dname);
 	if (dabrv.length()) nav->SetAbbreviation(dabrv);
 
@@ -2308,32 +2333,31 @@ ShipDesign::ParseNavlight(TermStruct* val)
 void
 ShipDesign::ParseFlightDeck(TermStruct* val)
 {
-	Text  dname;
-	Text  dabrv;
-	Text  design_name;
-	float dscale = 1.0f;
-	float az = 0.0f;
-	int   etype = 0;
+	Text   dname;
+	Text   dabrv;
+	Text   design_name;
+	float  dscale = 1.0f;
+	float  az = 0.0f;
+	int    etype = 0;
 
-	bool  launch = false;
-	bool  recovery = false;
-	int   nslots = 0;
-	int   napproach = 0;
-	int   nrunway = 0;
-	DWORD filters[10];
-	Vec3  spots[10];
-	Vec3  approach[FlightDeck::NUM_APPROACH_PTS];
-	Vec3  runway[2];
-	Vec3  loc(0, 0, 0);
-	Vec3  start(0, 0, 0);
-	Vec3  end(0, 0, 0);
-	Vec3  cam(0, 0, 0);
-	Vec3  box(0, 0, 0);
-	float cycle_time = 0.0f;
-	float size = 0.0f;
-	float hull = 0.5f;
-
-	float light = 0.0f;
+	bool   launch = false;
+	bool   recovery = false;
+	int    nslots = 0;
+	int    napproach = 0;
+	int    nrunway = 0;
+	uint32 filters[10];
+	FVector spots[10];
+	FVector approach[FlightDeck::NUM_APPROACH_PTS];
+	FVector runway[2];
+	FVector loc(0, 0, 0);
+	FVector start(0, 0, 0);
+	FVector end(0, 0, 0);
+	FVector cam(0, 0, 0);
+	FVector box(0, 0, 0);
+	float  cycle_time = 0.0f;
+	float  size = 0.0f;
+	float  hull = 0.5f;
+	float  light = 0.0f;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2343,8 +2367,10 @@ ShipDesign::ParseFlightDeck(TermStruct* val)
 
 			if (defname == "name")
 				GetDefText(dname, pdef, filename);
+
 			else if (defname == "abrv")
 				GetDefText(dabrv, pdef, filename);
+
 			else if (defname == "design")
 				GetDefText(design_name, pdef, filename);
 
@@ -2370,8 +2396,9 @@ ShipDesign::ParseFlightDeck(TermStruct* val)
 					approach[napproach++] *= (float)scale;
 				}
 				else {
-					Print("WARNING: flight deck approach point ignored in '%s' (max=%d)\n",
-						filename, FlightDeck::NUM_APPROACH_PTS);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: flight deck approach point ignored in '%s' (max=%d)"),
+						ANSI_TO_TCHAR(filename),
+						FlightDeck::NUM_APPROACH_PTS);
 				}
 			}
 			else if (defname == "runway") {
@@ -2429,20 +2456,23 @@ ShipDesign::ParseFlightDeck(TermStruct* val)
 				GetDefVec(loc, pdef, filename);
 				loc *= (float)scale;
 			}
+
 			else if (defname == "size") {
 				GetDefNumber(size, pdef, filename);
 				size *= (float)scale;
 			}
+
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
+
 			else if (defname == "explosion") {
 				GetDefNumber(etype, pdef, filename);
 			}
 		}
 	}
 
-	FlightDeck* deck = new(__FILE__, __LINE__) FlightDeck();
+	FlightDeck* deck = new  FlightDeck();
 	deck->Mount(loc, size, hull);
 	if (dname.length()) deck->SetName(dname);
 	if (dabrv.length()) deck->SetAbbreviation(dabrv);
@@ -2488,12 +2518,12 @@ ShipDesign::ParseFlightDeck(TermStruct* val)
 void
 ShipDesign::ParseLandingGear(TermStruct* val)
 {
-	Text  dname;
-	Text  dabrv;
-	Text  design_name;
-	int   ngear = 0;
-	Vec3  start[LandingGear::MAX_GEAR];
-	Vec3  end[LandingGear::MAX_GEAR];
+	Text    dname;
+	Text    dabrv;
+	Text    design_name;
+	int     ngear = 0;
+	FVector start[LandingGear::MAX_GEAR];
+	FVector end[LandingGear::MAX_GEAR];
 	Model* model[LandingGear::MAX_GEAR];
 
 	for (int i = 0; i < val->elements()->size(); i++) {
@@ -2504,24 +2534,27 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 
 			if (defname == "name")
 				GetDefText(dname, pdef, filename);
+
 			else if (defname == "abrv")
 				GetDefText(dabrv, pdef, filename);
 
-			else if (defname == "design") {
+			else if (defname == "design")
 				GetDefText(design_name, pdef, filename);
-			}
 
 			else if (defname == "gear") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
-					Print("WARNING: gear struct missing for ship '%s' in '%s'\n", name, filename);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: gear struct missing for ship '%s' in '%s'"),
+						ANSI_TO_TCHAR(name),
+						ANSI_TO_TCHAR(filename));
 				}
 				else {
 					TermStruct* val = pdef->term()->isStruct();
 
-					Vec3  v1, v2;
-					char  mod_name[256];
+					FVector v1(0, 0, 0);
+					FVector v2(0, 0, 0);
+					char    mod_name[256];
 
-					ZeroMemory(mod_name, sizeof(mod_name));
+					FMemory::Memzero(mod_name, sizeof(mod_name));
 
 					for (int i = 0; i < val->elements()->size(); i++) {
 						TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2542,9 +2575,10 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 					}
 
 					if (ngear < LandingGear::MAX_GEAR) {
-						Model* m = new(__FILE__, __LINE__) Model;
+						Model* m = new  Model;
 						if (!m->Load(mod_name, scale)) {
-							Print("WARNING: Could not load landing gear model '%s'\n", mod_name);
+							UE_LOG(LogShipDesign, Warning, TEXT("WARNING: Could notxload landing gear model '%s'"),
+								ANSI_TO_TCHAR(mod_name));
 							delete m;
 							m = 0;
 						}
@@ -2556,14 +2590,16 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 						}
 					}
 					else {
-						Print("WARNING: Too many landing gear ship '%s' in '%s'\n", name, filename);
+						UE_LOG(LogShipDesign, Warning, TEXT("WARNING: Too many landing gear ship '%s' in '%s'"),
+							ANSI_TO_TCHAR(name),
+							ANSI_TO_TCHAR(filename));
 					}
 				}
 			}
 		}
 	}
 
-	gear = new(__FILE__, __LINE__) LandingGear();
+	gear = new LandingGear();
 	if (dname.length()) gear->SetName(dname);
 	if (dabrv.length()) gear->SetAbbreviation(dabrv);
 
@@ -2576,34 +2612,31 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 	for (int i = 0; i < ngear; i++)
 		gear->AddGear(model[i], start[i], end[i]);
 }
-
-// +--------------------------------------------------------------------+
-
 void
 ShipDesign::ParseWeapon(TermStruct* val)
 {
-	Text  wtype;
-	Text  wname;
-	Text  wabrv;
-	Text  design_name;
-	Text  group_name;
-	int   nmuz = 0;
-	Vec3  muzzles[Weapon::MAX_BARRELS];
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	float az = 0.0f;
-	float el = 0.0f;
-	float az_max = 1e6f;
-	float az_min = 1e6f;
-	float el_max = 1e6f;
-	float el_min = 1e6f;
-	float az_rest = 1e6f;
-	float el_rest = 1e6f;
-	int   etype = 0;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
+	Text    wtype;
+	Text    wname;
+	Text    wabrv;
+	Text    design_name;
+	Text    group_name;
+	int     nmuz = 0;
+	FVector muzzles[Weapon::MAX_BARRELS];
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	float   az = 0.0f;
+	float   el = 0.0f;
+	float   az_max = 1e6f;
+	float   az_min = 1e6f;
+	float   el_max = 1e6f;
+	float   el_min = 1e6f;
+	float   az_rest = 1e6f;
+	float   el_rest = 1e6f;
+	int     etype = 0;
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2613,12 +2646,16 @@ ShipDesign::ParseWeapon(TermStruct* val)
 
 			if (defname == "type")
 				GetDefText(wtype, pdef, filename);
+
 			else if (defname == "name")
 				GetDefText(wname, pdef, filename);
+
 			else if (defname == "abrv")
 				GetDefText(wabrv, pdef, filename);
+
 			else if (defname == "design")
 				GetDefText(design_name, pdef, filename);
+
 			else if (defname == "group")
 				GetDefText(group_name, pdef, filename);
 
@@ -2628,57 +2665,64 @@ ShipDesign::ParseWeapon(TermStruct* val)
 					nmuz++;
 				}
 				else {
-					Print("WARNING: too many muzzles (max=%d) for weapon in '%s'\n", filename, Weapon::MAX_BARRELS);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: too many muzzles (max=%d) for weapon in '%s'"),
+						Weapon::MAX_BARRELS,
+						ANSI_TO_TCHAR(filename));
 				}
 			}
+
 			else if (defname == "loc") {
 				GetDefVec(loc, pdef, filename);
 				loc *= (float)scale;
 			}
+
 			else if (defname == "size") {
 				GetDefNumber(size, pdef, filename);
 				size *= (float)scale;
 			}
+
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
+
 			else if (defname == "azimuth") {
 				GetDefNumber(az, pdef, filename);
 				if (degrees) az *= (float)DEGREES;
 			}
+
 			else if (defname == "elevation") {
 				GetDefNumber(el, pdef, filename);
 				if (degrees) el *= (float)DEGREES;
 			}
 
-			else if (defname == ("aim_az_max")) {
+			else if (defname == "aim_az_max") {
 				GetDefNumber(az_max, pdef, filename);
 				if (degrees) az_max *= (float)DEGREES;
 				az_min = 0.0f - az_max;
 			}
 
-			else if (defname == ("aim_el_max")) {
+			else if (defname == "aim_el_max") {
 				GetDefNumber(el_max, pdef, filename);
 				if (degrees) el_max *= (float)DEGREES;
 				el_min = 0.0f - el_max;
 			}
 
-			else if (defname == ("aim_az_min")) {
+			else if (defname == "aim_az_min") {
 				GetDefNumber(az_min, pdef, filename);
 				if (degrees) az_min *= (float)DEGREES;
 			}
 
-			else if (defname == ("aim_el_min")) {
+			else if (defname == "aim_el_min") {
 				GetDefNumber(el_min, pdef, filename);
 				if (degrees) el_min *= (float)DEGREES;
 			}
 
-			else if (defname == ("aim_az_rest")) {
+			else if (defname == "aim_az_rest") {
 				GetDefNumber(az_rest, pdef, filename);
 				if (degrees) az_rest *= (float)DEGREES;
 			}
 
-			else if (defname == ("aim_el_rest")) {
+			else if (defname == "aim_el_rest") {
 				GetDefNumber(el_rest, pdef, filename);
 				if (degrees) el_rest *= (float)DEGREES;
 			}
@@ -2687,10 +2731,12 @@ ShipDesign::ParseWeapon(TermStruct* val)
 				GetDefNumber(az_rest, pdef, filename);
 				if (degrees) az_rest *= (float)DEGREES;
 			}
+
 			else if (defname == "rest_elevation") {
 				GetDefNumber(el_rest, pdef, filename);
 				if (degrees) el_rest *= (float)DEGREES;
 			}
+
 			else if (defname == "explosion") {
 				GetDefNumber(etype, pdef, filename);
 			}
@@ -2706,16 +2752,20 @@ ShipDesign::ParseWeapon(TermStruct* val)
 			else if (defname == "emcon_3") {
 				GetDefNumber(emcon_3, pdef, filename);
 			}
+
 			else {
-				Print("WARNING: unknown weapon parameter '%s' in '%s'\n",
-					defname.data(), filename);
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown weapon parameter '%s' in '%s'"),
+					ANSI_TO_TCHAR(defname.data()),
+					ANSI_TO_TCHAR(filename));
 			}
 		}
 	}
 
 	WeaponDesign* meta = WeaponDesign::Find(wtype);
 	if (!meta) {
-		Print("WARNING: unusual weapon name '%s' in '%s'\n", (const char*)wtype, filename);
+		UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unusual weapon name '%s' in '%s'"),
+			ANSI_TO_TCHAR((const char*)wtype),
+			ANSI_TO_TCHAR(filename));
 	}
 	else {
 		// non-turret weapon muzzles are relative to ship scale:
@@ -2730,26 +2780,26 @@ ShipDesign::ParseWeapon(TermStruct* val)
 				muzzles[i] *= (float)meta->scale;
 		}
 
-		Weapon* gun = new(__FILE__, __LINE__) Weapon(meta, nmuz, muzzles, az, el);
+		Weapon* gun = new  Weapon(meta, nmuz, muzzles, az, el);
 		gun->SetSourceIndex(reactors.size() - 1);
 		gun->Mount(loc, size, hull);
 
-		if (az_max < 1e6)    gun->SetAzimuthMax(az_max);
-		if (az_min < 1e6)    gun->SetAzimuthMin(az_min);
-		if (az_rest < 1e6)   gun->SetRestAzimuth(az_rest);
+		if (az_max < 1e6f)  gun->SetAzimuthMax(az_max);
+		if (az_min < 1e6f)  gun->SetAzimuthMin(az_min);
+		if (az_rest < 1e6f) gun->SetRestAzimuth(az_rest);
 
-		if (el_max < 1e6)    gun->SetElevationMax(el_max);
-		if (el_min < 1e6)    gun->SetElevationMin(el_min);
-		if (el_rest < 1e6)   gun->SetRestElevation(el_rest);
+		if (el_max < 1e6f)  gun->SetElevationMax(el_max);
+		if (el_min < 1e6f)  gun->SetElevationMin(el_min);
+		if (el_rest < 1e6f) gun->SetRestElevation(el_rest);
 
 		if (emcon_1 >= 0 && emcon_1 <= 100)
 			gun->SetEMCONPower(1, emcon_1);
 
 		if (emcon_2 >= 0 && emcon_2 <= 100)
-			gun->SetEMCONPower(1, emcon_2);
+			gun->SetEMCONPower(2, emcon_2);
 
 		if (emcon_3 >= 0 && emcon_3 <= 100)
-			gun->SetEMCONPower(1, emcon_3);
+			gun->SetEMCONPower(3, emcon_3);
 
 		if (wname.length()) gun->SetName(wname);
 		if (wabrv.length()) gun->SetAbbreviation(wabrv);
@@ -2760,9 +2810,8 @@ ShipDesign::ParseWeapon(TermStruct* val)
 				gun->SetDesign(sd);
 		}
 
-		if (group_name.length()) {
+		if (group_name.length())
 			gun->SetGroup(group_name);
-		}
 
 		gun->SetExplosionType(etype);
 
@@ -2783,20 +2832,20 @@ ShipDesign::ParseWeapon(TermStruct* val)
 void
 ShipDesign::ParseHardPoint(TermStruct* val)
 {
-	Text  wtypes[8];
-	Text  wname;
-	Text  wabrv;
-	Text  design;
-	Vec3  muzzle;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	float az = 0.0f;
-	float el = 0.0f;
-	int   ntypes = 0;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
+	Text    wtypes[8];
+	Text    wname;
+	Text    wabrv;
+	Text    design;
+	FVector muzzle(0.0f, 0.0f, 0.0f);
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	float   az = 0.0f;
+	float   el = 0.0f;
+	int     ntypes = 0;
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2804,12 +2853,20 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 			Text defname = pdef->name()->value();
 			defname.setSensitive(false);
 
-			if (defname == "type")
-				GetDefText(wtypes[ntypes++], pdef, filename);
+			if (defname == "type") {
+				if (ntypes < 8)
+					GetDefText(wtypes[ntypes++], pdef, filename);
+				else
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: too many hardpoint weapon types (max=8) in '%s'"),
+						ANSI_TO_TCHAR(filename));
+			}
+
 			else if (defname == "name")
 				GetDefText(wname, pdef, filename);
+
 			else if (defname == "abrv")
 				GetDefText(wabrv, pdef, filename);
+
 			else if (defname == "design")
 				GetDefText(design, pdef, filename);
 
@@ -2817,21 +2874,26 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 				GetDefVec(muzzle, pdef, filename);
 				muzzle *= (float)scale;
 			}
+
 			else if (defname == "loc") {
 				GetDefVec(loc, pdef, filename);
 				loc *= (float)scale;
 			}
+
 			else if (defname == "size") {
 				GetDefNumber(size, pdef, filename);
 				size *= (float)scale;
 			}
+
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
+
 			else if (defname == "azimuth") {
 				GetDefNumber(az, pdef, filename);
 				if (degrees) az *= (float)DEGREES;
 			}
+
 			else if (defname == "elevation") {
 				GetDefNumber(el, pdef, filename);
 				if (degrees) el *= (float)DEGREES;
@@ -2848,19 +2910,23 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 			else if (defname == "emcon_3") {
 				GetDefNumber(emcon_3, pdef, filename);
 			}
+
 			else {
-				Print("WARNING: unknown weapon parameter '%s' in '%s'\n",
-					defname.data(), filename);
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown weapon parameter '%s' in '%s'"),
+					ANSI_TO_TCHAR(defname.data()),
+					ANSI_TO_TCHAR(filename));
 			}
 		}
 	}
 
-	HardPoint* hp = new(__FILE__, __LINE__) HardPoint(muzzle, az, el);
+	HardPoint* hp = new  HardPoint(muzzle, az, el);
 	if (hp) {
 		for (int i = 0; i < ntypes; i++) {
 			WeaponDesign* meta = WeaponDesign::Find(wtypes[i]);
 			if (!meta) {
-				Print("WARNING: unusual weapon name '%s' in '%s'\n", (const char*)wtypes[i], filename);
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unusual weapon name '%s' in '%s'"),
+					ANSI_TO_TCHAR((const char*)wtypes[i]),
+					ANSI_TO_TCHAR(filename));
 			}
 			else {
 				hp->AddDesign(meta);
@@ -2871,6 +2937,15 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 		if (wname.length())  hp->SetName(wname);
 		if (wabrv.length())  hp->SetAbbreviation(wabrv);
 		if (design.length()) hp->SetDesign(design);
+
+		if (emcon_1 >= 0 && emcon_1 <= 100)
+			hp->SetEMCONPower(1, emcon_1);
+
+		if (emcon_2 >= 0 && emcon_2 <= 100)
+			hp->SetEMCONPower(2, emcon_2);
+
+		if (emcon_3 >= 0 && emcon_3 <= 100)
+			hp->SetEMCONPower(3, emcon_3);
 
 		hard_points.append(hp);
 	}
@@ -2884,9 +2959,9 @@ ShipDesign::ParseHardPoint(TermStruct* val)
 void
 ShipDesign::ParseLoadout(TermStruct* val)
 {
-	ShipLoad* load = new(__FILE__, __LINE__) ShipLoad;
-
-	if (!load) return;
+	ShipLoad* load = new  ShipLoad;
+	if (!load)
+		return;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2900,9 +2975,11 @@ ShipDesign::ParseLoadout(TermStruct* val)
 			else if (defname == "stations")
 				GetDefArray(load->load, 16, pdef, filename);
 
-			else
-				Print("WARNING: unknown loadout parameter '%s' in '%s'\n",
-					defname.data(), filename);
+			else {
+				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: unknown loadout parameter '%s' in '%s'"),
+					ANSI_TO_TCHAR(defname.data()),
+					ANSI_TO_TCHAR(filename));
+			}
 		}
 	}
 
@@ -2914,17 +2991,17 @@ ShipDesign::ParseLoadout(TermStruct* val)
 void
 ShipDesign::ParseSensor(TermStruct* val)
 {
-	Text  design_name;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	int   nranges = 0;
-	float ranges[8];
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
+	Text    design_name;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	int     nranges = 0;
+	float   ranges[8];
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
 
-	ZeroMemory(ranges, sizeof(ranges));
+	FMemory::Memzero(ranges, sizeof(ranges));
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -2933,22 +3010,31 @@ ShipDesign::ParseSensor(TermStruct* val)
 			defname.setSensitive(false);
 
 			if (defname == "range") {
-				GetDefNumber(ranges[nranges++], pdef, filename);
+				if (nranges < 8)
+					GetDefNumber(ranges[nranges++], pdef, filename);
+				else
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: too many sensor ranges (max=8) in '%s'"),
+						ANSI_TO_TCHAR(filename));
 			}
+
 			else if (defname == "loc") {
 				GetDefVec(loc, pdef, filename);
 				loc *= (float)scale;
 			}
+
 			else if (defname == "size") {
-				size *= (float)scale;
 				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
 			}
+
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
+
 			else if (defname == "design") {
 				GetDefText(design_name, pdef, filename);
 			}
+
 			else if (defname == "emcon_1") {
 				GetDefNumber(emcon_1, pdef, filename);
 			}
@@ -2964,7 +3050,7 @@ ShipDesign::ParseSensor(TermStruct* val)
 	}
 
 	if (!sensor) {
-		sensor = new(__FILE__, __LINE__) Sensor();
+		sensor = new  Sensor();
 
 		if (design_name.length()) {
 			SystemDesign* sd = SystemDesign::Find(design_name);
@@ -2979,16 +3065,17 @@ ShipDesign::ParseSensor(TermStruct* val)
 			sensor->SetEMCONPower(1, emcon_1);
 
 		if (emcon_2 >= 0 && emcon_2 <= 100)
-			sensor->SetEMCONPower(1, emcon_2);
+			sensor->SetEMCONPower(2, emcon_2);
 
 		if (emcon_3 >= 0 && emcon_3 <= 100)
-			sensor->SetEMCONPower(1, emcon_3);
+			sensor->SetEMCONPower(3, emcon_3);
 
 		sensor->Mount(loc, size, hull);
 		sensor->SetSourceIndex(reactors.size() - 1);
 	}
 	else {
-		Print("WARNING: additional sensor ignored in '%s'\n", filename);
+		UE_LOG(LogShipDesign, Warning, TEXT("WARNING: additional sensor ignored in '%s'"),
+			ANSI_TO_TCHAR(filename));
 	}
 }
 
@@ -2997,10 +3084,10 @@ ShipDesign::ParseSensor(TermStruct* val)
 void
 ShipDesign::ParseNavsys(TermStruct* val)
 {
-	Text  design_name;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
+	Text    design_name;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3013,19 +3100,20 @@ ShipDesign::ParseNavsys(TermStruct* val)
 				loc *= (float)scale;
 			}
 			else if (defname == "size") {
-				size *= (float)scale;
 				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
 			}
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
 			}
-			else if (defname == "design")
+			else if (defname == "design") {
 				GetDefText(design_name, pdef, filename);
+			}
 		}
 	}
 
 	if (!navsys) {
-		navsys = new(__FILE__, __LINE__) NavSystem;
+		navsys = new  NavSystem;
 
 		if (design_name.length()) {
 			SystemDesign* sd = SystemDesign::Find(design_name);
@@ -3037,7 +3125,8 @@ ShipDesign::ParseNavsys(TermStruct* val)
 		navsys->SetSourceIndex(reactors.size() - 1);
 	}
 	else {
-		Print("WARNING: additional nav system ignored in '%s'\n", filename);
+		UE_LOG(LogShipDesign, Warning, TEXT("WARNING: additional nav system ignored in '%s'"),
+			ANSI_TO_TCHAR(filename));
 	}
 }
 
@@ -3046,13 +3135,13 @@ ShipDesign::ParseNavsys(TermStruct* val)
 void
 ShipDesign::ParseComputer(TermStruct* val)
 {
-	Text  comp_name("Computer");
-	Text  comp_abrv("Comp");
-	Text  design_name;
-	int   comp_type = 1;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
+	Text    comp_name("Computer");
+	Text    comp_abrv("Comp");
+	Text    design_name;
+	int     comp_type = 1;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3077,8 +3166,8 @@ ShipDesign::ParseComputer(TermStruct* val)
 				loc *= (float)scale;
 			}
 			else if (defname == "size") {
-				size *= (float)scale;
 				GetDefNumber(size, pdef, filename);
+				size *= (float)scale;
 			}
 			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
@@ -3086,7 +3175,7 @@ ShipDesign::ParseComputer(TermStruct* val)
 		}
 	}
 
-	Computer* comp = new(__FILE__, __LINE__) Computer(comp_type, comp_name);
+	Computer* comp = new  Computer(comp_type, comp_name);
 	comp->Mount(loc, size, hull);
 	comp->SetAbbreviation(comp_abrv);
 	comp->SetSourceIndex(reactors.size() - 1);
@@ -3105,26 +3194,26 @@ ShipDesign::ParseComputer(TermStruct* val)
 void
 ShipDesign::ParseShield(TermStruct* val)
 {
-	Text     dname;
-	Text     dabrv;
-	Text     design_name;
-	Text     model_name;
-	double   factor = 0;
-	double   capacity = 0;
-	double   consumption = 0;
-	double   cutoff = 0;
-	double   curve = 0;
-	double   def_cost = 1;
-	int      shield_type = 0;
-	Vec3     loc(0.0f, 0.0f, 0.0f);
-	float    size = 0.0f;
-	float    hull = 0.5f;
-	int      etype = 0;
-	bool     shield_capacitor = false;
-	bool     shield_bubble = false;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
+	Text    dname;
+	Text    dabrv;
+	Text    design_name;
+	Text    model_name;
+	double  factor = 0;
+	double  capacity = 0;
+	double  consumption = 0;
+	double  cutoff = 0;
+	double  curve = 0;
+	double  def_cost = 1;
+	int     shield_type = 0;
+	FVector loc(0.0f, 0.0f, 0.0f);
+	float   size = 0.0f;
+	float   hull = 0.5f;
+	int     etype = 0;
+	bool    shield_capacitor = false;
+	bool    shield_bubble = false;
+	int     emcon_1 = -1;
+	int     emcon_2 = -1;
+	int     emcon_3 = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3135,14 +3224,18 @@ ShipDesign::ParseShield(TermStruct* val)
 			if (defname == "type") {
 				GetDefNumber(shield_type, pdef, filename);
 			}
-			else if (defname == "name")
+			else if (defname == "name") {
 				GetDefText(dname, pdef, filename);
-			else if (defname == "abrv")
+			}
+			else if (defname == "abrv") {
 				GetDefText(dabrv, pdef, filename);
-			else if (defname == "design")
+			}
+			else if (defname == "design") {
 				GetDefText(design_name, pdef, filename);
-			else if (defname == "model")
+			}
+			else if (defname == "model") {
 				GetDefText(model_name, pdef, filename);
+			}
 
 			else if (defname == "loc") {
 				GetDefVec(loc, pdef, filename);
@@ -3152,36 +3245,44 @@ ShipDesign::ParseShield(TermStruct* val)
 				GetDefNumber(size, pdef, filename);
 				size *= (float)scale;
 			}
-			else if (defname == "hull_factor")
+			else if (defname == "hull_factor") {
 				GetDefNumber(hull, pdef, filename);
+			}
 
-			else if (defname.contains("factor"))
+			else if (defname.contains("factor")) {
 				GetDefNumber(factor, pdef, filename);
-			else if (defname.contains("cutoff"))
+			}
+			else if (defname.contains("cutoff")) {
 				GetDefNumber(cutoff, pdef, filename);
-			else if (defname.contains("curve"))
+			}
+			else if (defname.contains("curve")) {
 				GetDefNumber(curve, pdef, filename);
-			else if (defname.contains("capacitor"))
+			}
+			else if (defname.contains("capacitor")) {
 				GetDefBool(shield_capacitor, pdef, filename);
-			else if (defname.contains("bubble"))
+			}
+			else if (defname.contains("bubble")) {
 				GetDefBool(shield_bubble, pdef, filename);
-			else if (defname == "capacity")
+			}
+			else if (defname == "capacity") {
 				GetDefNumber(capacity, pdef, filename);
-			else if (defname == "consumption")
+			}
+			else if (defname == "consumption") {
 				GetDefNumber(consumption, pdef, filename);
-			else if (defname == "deflection_cost")
+			}
+			else if (defname == "deflection_cost") {
 				GetDefNumber(def_cost, pdef, filename);
-			else if (defname == "explosion")
+			}
+			else if (defname == "explosion") {
 				GetDefNumber(etype, pdef, filename);
+			}
 
 			else if (defname == "emcon_1") {
 				GetDefNumber(emcon_1, pdef, filename);
 			}
-
 			else if (defname == "emcon_2") {
 				GetDefNumber(emcon_2, pdef, filename);
 			}
-
 			else if (defname == "emcon_3") {
 				GetDefNumber(emcon_3, pdef, filename);
 			}
@@ -3189,7 +3290,6 @@ ShipDesign::ParseShield(TermStruct* val)
 			else if (defname == "bolt_hit_sound") {
 				GetDefText(bolt_hit_sound, pdef, filename);
 			}
-
 			else if (defname == "beam_hit_sound") {
 				GetDefText(beam_hit_sound, pdef, filename);
 			}
@@ -3198,7 +3298,7 @@ ShipDesign::ParseShield(TermStruct* val)
 
 	if (!shield) {
 		if (shield_type) {
-			shield = new(__FILE__, __LINE__) Shield((Shield::SUBTYPE)shield_type);
+			shield = new  Shield((Shield::SUBTYPE)shield_type);
 			shield->SetSourceIndex(reactors.size() - 1);
 			shield->Mount(loc, size, hull);
 			if (dname.length()) shield->SetName(dname);
@@ -3225,15 +3325,16 @@ ShipDesign::ParseShield(TermStruct* val)
 				shield->SetEMCONPower(1, emcon_1);
 
 			if (emcon_2 >= 0 && emcon_2 <= 100)
-				shield->SetEMCONPower(1, emcon_2);
+				shield->SetEMCONPower(2, emcon_2);
 
 			if (emcon_3 >= 0 && emcon_3 <= 100)
-				shield->SetEMCONPower(1, emcon_3);
+				shield->SetEMCONPower(3, emcon_3);
 
 			if (model_name.length()) {
-				shield_model = new(__FILE__, __LINE__) Model;
+				shield_model = new  Model;
 				if (!shield_model->Load(model_name, scale)) {
-					Print("ERROR: Could not load shield model '%s'\n", model_name.data());
+					UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could notxload shield model '%s'"),
+						ANSI_TO_TCHAR(model_name.data()));
 					delete shield_model;
 					shield_model = 0;
 					valid = false;
@@ -3245,7 +3346,7 @@ ShipDesign::ParseShield(TermStruct* val)
 			}
 
 			DataLoader* loader = DataLoader::GetLoader();
-			DWORD       SOUND_FLAGS = Sound::LOCALIZED | Sound::LOC_3D;
+			const uint32 SOUND_FLAGS = Sound::LOCALIZED | Sound::LOC_3D;
 
 			if (bolt_hit_sound.length()) {
 				if (!loader->LoadSound(bolt_hit_sound, bolt_hit_sound_resource, SOUND_FLAGS, true)) {
@@ -3264,22 +3365,22 @@ ShipDesign::ParseShield(TermStruct* val)
 			}
 		}
 		else {
-			Print("WARNING: invalid shield type in '%s'\n", filename);
+			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid shield type in '%s'"),
+				ANSI_TO_TCHAR(filename));
 		}
 	}
 	else {
-		Print("WARNING: additional shield ignored in '%s'\n", filename);
+		UE_LOG(LogShipDesign, Warning, TEXT("WARNING: additional shield ignored in '%s'"),
+			ANSI_TO_TCHAR(filename));
 	}
-}
-
-// +--------------------------------------------------------------------+
+} 
 
 void
 ShipDesign::ParseDeathSpiral(TermStruct* val)
 {
-	int   exp_index = -1;
-	int   debris_index = -1;
-	int   fire_index = -1;
+	int exp_index = -1;
+	int debris_index = -1;
+	int fire_index = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* def = val->elements()->at(i)->isDef();
@@ -3293,11 +3394,12 @@ ShipDesign::ParseDeathSpiral(TermStruct* val)
 
 			else if (defname == "explosion") {
 				if (!def->term() || !def->term()->isStruct()) {
-					Print("WARNING: explosion struct missing in '%s'\n", filename);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: explosion struct missing in '%s'"),
+						ANSI_TO_TCHAR(filename));
 				}
 				else {
-					TermStruct* val = def->term()->isStruct();
-					ParseExplosion(val, ++exp_index);
+					TermStruct* v = def->term()->isStruct();
+					ParseExplosion(v, ++exp_index);
 				}
 			}
 
@@ -3325,14 +3427,15 @@ ShipDesign::ParseDeathSpiral(TermStruct* val)
 				explosion[exp_index].loc *= (float)scale;
 			}
 
-
 			else if (defname == "debris") {
 				if (def->term() && def->term()->isText()) {
 					Text model_name;
 					GetDefText(model_name, def, filename);
-					Model* model = new(__FILE__, __LINE__) Model;
+
+					Model* model = new Model;
 					if (!model->Load(model_name, scale)) {
-						Print("Could not load debris model '%s'\n", model_name.data());
+						UE_LOG(LogShipDesign, Warning, TEXT("Could notxload debris model '%s'"),
+							ANSI_TO_TCHAR(model_name.data()));
 						delete model;
 						return;
 					}
@@ -3342,11 +3445,12 @@ ShipDesign::ParseDeathSpiral(TermStruct* val)
 					fire_index = -1;
 				}
 				else if (!def->term() || !def->term()->isStruct()) {
-					Print("WARNING: debris struct missing in '%s'\n", filename);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: debris struct missing in '%s'"),
+						ANSI_TO_TCHAR(filename));
 				}
 				else {
-					TermStruct* val = def->term()->isStruct();
-					ParseDebris(val, ++debris_index);
+					TermStruct* v = def->term()->isStruct();
+					ParseDebris(v, ++debris_index);
 				}
 			}
 
@@ -3435,12 +3539,15 @@ ShipDesign::ParseDebris(TermStruct* val, int index)
 		TermDef* def = val->elements()->at(i)->isDef();
 		if (def) {
 			Text defname = def->name()->value();
+			defname.setSensitive(false);
 
 			if (defname == "model") {
 				GetDefText(model_name, def, filename);
-				Model* model = new(__FILE__, __LINE__) Model;
+
+				Model* model = new Model;
 				if (!model->Load(model_name, scale)) {
-					Print("Could not load debris model '%s'\n", model_name);
+					UE_LOG(LogShipDesign, Warning, TEXT("Could notxload debris model '%s'"),
+						ANSI_TO_TCHAR(model_name));
 					delete model;
 					return;
 				}
@@ -3494,7 +3601,7 @@ ShipDesign::ParseDebris(TermStruct* val, int index)
 void
 ShipDesign::ParseMap(TermStruct* val)
 {
-	char  sprite_name[NAMELEN];
+	char sprite_name[NAMELEN];
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -3505,9 +3612,12 @@ ShipDesign::ParseMap(TermStruct* val)
 			if (defname == "sprite") {
 				GetDefText(sprite_name, pdef, filename);
 
-				Bitmap* sprite = new(__FILE__, __LINE__) Bitmap();
+				UTexture2D* sprite = nullptr;
 				DataLoader* loader = DataLoader::GetLoader();
-				loader->LoadBitmap(sprite_name, *sprite, Bitmap::BMP_TRANSLUCENT);
+
+				// NOTE: DataLoader is expected to be modernized to fill a UTexture2D* (or return one).
+				// The legacy Bitmap path is removed per Unreal migration requirements.
+				loader->LoadTexture(sprite_name, sprite);
 
 				map_sprites.append(sprite);
 			}
@@ -3520,10 +3630,10 @@ ShipDesign::ParseMap(TermStruct* val)
 void
 ShipDesign::ParseSquadron(TermStruct* val)
 {
-	char  name[NAMELEN];
-	char  design[NAMELEN];
-	int   count = 4;
-	int   avail = 4;
+	char name[NAMELEN];
+	char design[NAMELEN];
+	int  count = 4;
+	int  avail = 4;
 
 	name[0] = 0;
 	design[0] = 0;
@@ -3549,7 +3659,7 @@ ShipDesign::ParseSquadron(TermStruct* val)
 		}
 	}
 
-	ShipSquadron* s = new(__FILE__, __LINE__) ShipSquadron;
+	ShipSquadron* s = new ShipSquadron;
 	strcpy_s(s->name, name);
 
 	s->design = Get(design);
@@ -3577,16 +3687,17 @@ ShipDesign::ParseSkin(TermStruct* val)
 
 			if (defname == "name") {
 				GetDefText(name, def, filename);
-
-				skin = new(__FILE__, __LINE__) Skin(name);
+				skin = new Skin(name);
 			}
+
 			else if (defname == "material" || defname == "mtl") {
 				if (!def->term() || !def->term()->isStruct()) {
-					Print("WARNING: skin struct missing in '%s'\n", filename);
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: skin struct missing in '%s'"),
+						ANSI_TO_TCHAR(filename));
 				}
 				else {
-					TermStruct* val = def->term()->isStruct();
-					ParseSkinMtl(val, skin);
+					TermStruct* v = def->term()->isStruct();
+					ParseSkinMtl(v, skin);
 				}
 			}
 		}
@@ -3595,7 +3706,6 @@ ShipDesign::ParseSkin(TermStruct* val)
 	if (skin && skin->NumCells()) {
 		skins.append(skin);
 	}
-
 	else if (skin) {
 		delete skin;
 		skin = 0;
@@ -3607,8 +3717,8 @@ ShipDesign::ParseSkin(TermStruct* val)
 void
 ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 {
-	Material* mtl = new(__FILE__, __LINE__) Material;
-	if (mtl == nullptr)
+	Material* mtl = new Material;
+	if (!mtl)
 		return;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
@@ -3643,20 +3753,18 @@ ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 			}
 
 			else if (defname == "blend") {
-				if (def->term() && def->term()->isNumber())
+				if (def->term() && def->term()->isNumber()) {
 					GetDefNumber(mtl->blend, def, filename);
-
+				}
 				else if (def->term() && def->term()->isText()) {
-					Text val;
-					GetDefText(val, def, filename);
-					val.setSensitive(false);
+					Text blend_val;
+					GetDefText(blend_val, def, filename);
+					blend_val.setSensitive(false);
 
-					if (val == "alpha" || val == "translucent")
+					if (blend_val == "alpha" || blend_val == "translucent")
 						mtl->blend = Material::MTL_TRANSLUCENT;
-
-					else if (val == "additive")
+					else if (blend_val == "additive")
 						mtl->blend = Material::MTL_ADDITIVE;
-
 					else
 						mtl->blend = Material::MTL_SOLID;
 				}
@@ -3664,8 +3772,10 @@ ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 
 			else if (defname.indexOf("tex_d") == 0) {
 				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_diffuse in '%s'\n", filename);
+				if (!GetDefText(tex_name, def, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing tex_diffuse in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 
 				DataLoader* loader = DataLoader::GetLoader();
 				loader->LoadTexture(tex_name, mtl->tex_diffuse);
@@ -3673,8 +3783,10 @@ ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 
 			else if (defname.indexOf("tex_s") == 0) {
 				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_specular in '%s'\n", filename);
+				if (!GetDefText(tex_name, def, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing tex_specular in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 
 				DataLoader* loader = DataLoader::GetLoader();
 				loader->LoadTexture(tex_name, mtl->tex_specular);
@@ -3682,8 +3794,10 @@ ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 
 			else if (defname.indexOf("tex_b") == 0) {
 				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_bumpmap in '%s'\n", filename);
+				if (!GetDefText(tex_name, def, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing tex_bumpmap in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 
 				DataLoader* loader = DataLoader::GetLoader();
 				loader->LoadTexture(tex_name, mtl->tex_bumpmap);
@@ -3691,11 +3805,12 @@ ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 
 			else if (defname.indexOf("tex_e") == 0) {
 				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_emissive in '%s'\n", filename);
+				if (!GetDefText(tex_name, def, filename)) {
+					UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing tex_emissive in '%s'"),
+						ANSI_TO_TCHAR(filename));
+				}
 
 				DataLoader* loader = DataLoader::GetLoader();
-
 				loader->LoadTexture(tex_name, mtl->tex_emissive);
 			}
 		}
@@ -3708,7 +3823,7 @@ ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
 const Skin*
 ShipDesign::FindSkin(const char* skin_name) const
 {
-	int n = skins.size();
+	const int n = skins.size();
 
 	for (int i = 0; i < n; i++) {
 		Skin* s = skins[n - 1 - i];
@@ -3718,9 +3833,6 @@ ShipDesign::FindSkin(const char* skin_name) const
 	}
 
 	return 0;
-}*/
-
-ShipDesign* ShipDesign::Get(const char* design_name, const char* design_path)
-{
-	return nullptr;
 }
+
+

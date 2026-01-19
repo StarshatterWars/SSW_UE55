@@ -174,7 +174,7 @@ void UGalaxyMap::BuildGalaxyMap(const TArray<FS_Galaxy>& Systems)
 					}
 					else
 					{
-						UE_LOG(LogTemp, Error, TEXT("UGalaxyMap: Owner not set — cannot enter system"));
+						UE_LOG(LogTemp, Error, TEXT("UGalaxyMap: Owner notxset — cannotxenter system"));
 					}
 					return;
 				}

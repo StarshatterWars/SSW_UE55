@@ -89,7 +89,7 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	USizeBox* MapCanvasSize = nullptr;
 
-	// This is data, not a widget binding
+	// This is data, notxa widget binding
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
 

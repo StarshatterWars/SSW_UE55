@@ -397,7 +397,7 @@ void AStarSystem::Load(const char* FileName)
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("ERROR: could not parse '%s'"), *FString(FileName));
+		UE_LOG(LogTemp, Log, TEXT("ERROR: could notxparse '%s'"), *FString(FileName));
 		exit(-3);
 		return;
 	}
@@ -1389,7 +1389,7 @@ void AStarSystem::ParseTerrain(TermStruct* val)
 				else {
 
 					//if (!region)
-					//	region = new(__FILE__, __LINE__) TerrainRegion(this, rgn_name, size, primary);
+					//	region = new  TerrainRegion(this, rgn_name, size, primary);
 
 					//TermStruct* val = pdef->term()->isStruct();
 					//ParseLayer(region, val);

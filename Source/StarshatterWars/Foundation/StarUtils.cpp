@@ -3,7 +3,7 @@
 
 #include "StarUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
-#include "UObject/EnumProperty.h" // often not required, but safe in some setups
+#include "UObject/EnumProperty.h" // often notxrequired, but safe in some setups
 
 FLinearColor StarUtils::GetColor(ESPECTRAL_CLASS SpectralClass)
 {
@@ -192,7 +192,7 @@ float StarUtils::GetEmissiveFromClass(ESPECTRAL_CLASS Class)
 	// Values assume:
 	// - Emissive multiplied by HDR color
 	// - Bloom enabled
-	// - Exposure not manually clamped
+	// - Exposure notxmanually clamped
 	//
 	// Tuned for UI render targets + 3D previews
 

@@ -106,7 +106,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 // ---------------------------------------------------------------------
 // Per your instruction, Point/Vec3 usages are being migrated toward FVector.
 // This file was pasted with extensive Point/Matrix math (length(), cross(),
-// OtherHand(), etc.) that does not map 1:1 to FVector without additional
+// OtherHand(), etc.) that does notxmap 1:1 to FVector without additional
 // helper shims. This conversion is applied where the pasted content allows
 // mechanical replacement without inventing missing engine glue.
 // ---------------------------------------------------------------------
@@ -572,7 +572,7 @@ Ship::Ship(const char* ship_name, const char* reg_num, ShipDesign* ship_dsn, int
 
 Ship::~Ship()
 {
-	// the loadout can not be cleared during Destroy, because it
+	// the loadout can notxbe cleared during Destroy, because it
 	// is needed after Destroy to create the re-spawned ship
 
 	delete[] loadout;
@@ -643,7 +643,7 @@ Ship::Destroy()
 	main_drive = 0;
 	flcs = 0;
 
-	// repair queue does not own the systems under repair:
+	// repair queue does notxown the systems under repair:
 	repair_queue.clear();
 
 	navlights.destroy();
@@ -1070,7 +1070,7 @@ Ship::ClearTrack()
 	const int DEFAULT_TRACK_LENGTH = 20; // 10 seconds
 
 	if (!track) {
-		track = new(__FILE__, __LINE__) FVector[DEFAULT_TRACK_LENGTH];
+		track = new  FVector[DEFAULT_TRACK_LENGTH];
 	}
 
 	track[0] = Location();
@@ -1087,7 +1087,7 @@ Ship::UpdateTrack()
 	DWORD time = Game::GameTime();
 
 	if (!track) {
-		track = new(__FILE__, __LINE__) FVector[DEFAULT_TRACK_LENGTH];
+		track = new  FVector[DEFAULT_TRACK_LENGTH];
 		track[0] = Location();
 		ntrack = 1;
 		track_time = time;
@@ -1514,7 +1514,7 @@ Ship::CollidesWith(Physical& o)
 static DWORD ff_warn_time = 0;
 
 int
-Ship::HitBy(Shot* shot, FVector& impact)
+Ship::HitBy(SimShot* shot, FVector& impact)
 {
 	if (shot->Owner() == this || IsNetObserver())
 		return HIT_NOTHING;
@@ -1671,7 +1671,7 @@ Ship::HitBy(Shot* shot, FVector& impact)
 
 				if (Class() > DRONE && s->Class() > DRONE) {
 					if (s->IsRogue() && !was_rogue) {
-						RadioMessage* warn = new(__FILE__, __LINE__) RadioMessage(s, this, RadioMessage::DECLARE_ROGUE);
+						RadioMessage* warn = new RadioMessage(s, this, RadioMessage::DECLARE_ROGUE);
 						RadioTraffic::Transmit(warn);
 					}
 					else if (!s->IsRogue() && (Game::GameTime() - ff_warn_time) > 5000) {
@@ -1679,9 +1679,9 @@ Ship::HitBy(Shot* shot, FVector& impact)
 
 						RadioMessage* warn = 0;
 						if (s->GetTarget() == this)
-							warn = new(__FILE__, __LINE__) RadioMessage(s, this, RadioMessage::WARN_TARGETED);
+							warn = new RadioMessage(s, this, RadioMessage::WARN_TARGETED);
 						else
-							warn = new(__FILE__, __LINE__) RadioMessage(s, this, RadioMessage::WARN_ACCIDENT);
+							warn = new RadioMessage(s, this, RadioMessage::WARN_ACCIDENT);
 
 						RadioTraffic::Transmit(warn);
 					}
@@ -1727,15 +1727,15 @@ static bool CheckRaySphereIntersection(const FVector& loc, double radius, const 
 	const FVector leading_delta = leading_edge - loc;
 	const double  leading_dist = leading_delta.Length();
 
-	// if the leading edge is not within the sphere,
+	// if the leading edge is notxwithin the sphere,
 	if (leading_dist > radius) {
 		// check to see if the closest point is between the
 		// ray's endpoints:
 		const FVector delta1 = closest - Q;
 		const FVector delta2 = leading_edge - Q; // this is w*len
 
-		// if the closest point is not between the leading edge
-		// and the origin, this ray does not intersect:
+		// if the closest point is notxbetween the leading edge
+		// and the origin, this ray does notxintersect:
 		if ((delta1 | delta2) < 0.0f || delta1.Length() > len) {
 			return false;
 		}
@@ -2164,7 +2164,7 @@ Ship::CommandMode()
 {
 	if (!dir || dir->Type() != ShipCtrl::DIR_TYPE) {
 		const char* msg = "Captain on the bridge";
-		RadioVox* vox = new(__FILE__, __LINE__) RadioVox(0, "1", msg);
+		RadioVox* vox = new  RadioVox(0, "1", msg);
 
 		if (vox) {
 			vox->AddPhrase(msg);
@@ -2180,7 +2180,7 @@ Ship::CommandMode()
 
 	else {
 		const char* msg = "Exec, you have the conn";
-		RadioVox* vox = new(__FILE__, __LINE__) RadioVox(0, "1", msg);
+		RadioVox* vox = new  RadioVox(0, "1", msg);
 
 		if (vox) {
 			vox->AddPhrase(msg);
@@ -2371,8 +2371,8 @@ Ship::CycleSubTarget(int dir)
 	if (dir > 0) {
 		int latch = (subtarget == 0);
 		while (++sys) {
-			if (sys->Type() == SimSystem::COMPUTER || // computers are not targetable
-				sys->Type() == SimSystem::SENSOR)     // sensors   are not targetable
+			if (sys->Type() == SimSystem::COMPUTER || // computers are notxtargetable
+				sys->Type() == SimSystem::SENSOR)     // sensors   are notxtargetable
 				continue;
 
 			if (sys.value() == subtarget) {
@@ -2390,8 +2390,8 @@ Ship::CycleSubTarget(int dir)
 		SimSystem* prev = 0;
 
 		while (++sys) {
-			if (sys->Type() == SimSystem::COMPUTER || // computers are not targetable
-				sys->Type() == SimSystem::SENSOR)     // sensors   are not targetable
+			if (sys->Type() == SimSystem::COMPUTER || // computers are notxtargetable
+				sys->Type() == SimSystem::SENSOR)     // sensors   are notxtargetable
 				continue;
 
 			if (sys.value() == subtarget) {
@@ -2440,7 +2440,7 @@ Ship::ExecFrame(double seconds)
 		}
 	}
 
-	// observers do not run out of power:
+	// observers do notxrun out of power:
 	if (IsNetObserver()) {
 		for (int i = 0; i < reactors.size(); i++)
 			reactors[i]->SetFuelRange(1e6);
@@ -2617,7 +2617,7 @@ Ship::ExecNavFrame(double seconds)
 		}
 	}
 
-	// even if we are not on auto pilot,
+	// even if we are notxon auto pilot,
 	// have we completed the next navpoint?
 
 	Instruction* navpt = GetNextNavPoint();
@@ -2750,12 +2750,12 @@ Ship::ExecSystems(double seconds)
 		sys->Orient(this);
 
 		// sensors have already been executed,
-		// they can not be run twice in a frame!
+		// they can notxbe run twice in a frame!
 		if (sys->Type() != SimSystem::SENSOR)
 			sys->ExecFrame(seconds);
 	}
 
-	// hangars and weapon groups are not systems
+	// hangars and weapon groups are notxsystems
 	// they must be executed separately from above
 	if (hangar)
 		hangar->ExecFrame(seconds);
@@ -2808,7 +2808,7 @@ Ship::ExecSystems(double seconds)
 
 		CycleSecondary();
 
-		// do not winchester-cycle to an A2G missile type,
+		// do notxwinchester-cycle to an A2G missile type,
 		// or a missile that is also out of ammo,
 		// keep going!
 		while (secondary != old_secondary) {
@@ -3702,7 +3702,7 @@ void
 Ship::DeathSpiral()
 {
 	if (!killer)
-		killer = new(__FILE__, __LINE__) ShipKiller(this);
+		killer = new  ShipKiller(this);
 
 	ListIter<System> iter = systems;
 	while (++iter)
@@ -3886,7 +3886,7 @@ Ship::FindWeaponGroup(const char* name)
 	}
 
 	if (!group) {
-		group = new(__FILE__, __LINE__) WeaponGroup(name);
+		group = new  WeaponGroup(name);
 		weapons.append(group);
 	}
 
@@ -4451,7 +4451,7 @@ Ship::GetThreatList()
 }
 
 void
-Ship::AddThreat(Shot* s)
+Ship::AddThreat(SimShot* s)
 {
 	if (!threat_list.contains(s)) {
 		Observe(s);
@@ -4460,7 +4460,7 @@ Ship::AddThreat(Shot* s)
 }
 
 void
-Ship::DropThreat(Shot* s)
+Ship::DropThreat(SimShot* s)
 {
 	if (threat_list.contains(s)) {
 		threat_list.remove(s);
@@ -4544,7 +4544,7 @@ Ship::LockTarget(SimObject* candidate)
 // +--------------------------------------------------------------------+
 
 double
-Ship::InflictDamage(double damage, Shot* shot, int hit_type, FVector impact)
+Ship::InflictDamage(double damage, SimShot* shot, int hit_type, FVector impact)
 {
 	double damage_applied = 0;
 
@@ -4660,7 +4660,7 @@ Ship::InflictDamage(double damage, Shot* shot, int hit_type, FVector impact)
 }
 
 double
-Ship::InflictSystemDamage(double damage, Shot* shot, FVector impact)
+Ship::InflictSystemDamage(double damage, SimShot* shot, FVector impact)
 {
 	if (IsNetObserver())
 		return 0;
@@ -5001,7 +5001,7 @@ Ship::SetControls(MotionController* m)
 	if (IsDropping() || IsAttaining()) {
 		if (dir && dir->Type() != DropShipAI::DIR_TYPE) {
 			delete dir;
-			dir = new(__FILE__, __LINE__) DropShipAI(this);
+			dir = new  DropShipAI(this);
 		}
 
 		return;
@@ -5027,7 +5027,7 @@ Ship::SetControls(MotionController* m)
 
 	else if (life == 0) {
 		if (dir || navsys) {
-			UE_LOG(LogTemp, Warning, TEXT("Warning: dying ship '%s' still has not been destroyed!"), *FString(name.data()));
+			UE_LOG(LogTemp, Warning, TEXT("Warning: dying ship '%s' still has notxbeen destroyed!"), *FString(name.data()));
 			delete dir;
 			dir = 0;
 

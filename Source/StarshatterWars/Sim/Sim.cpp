@@ -23,7 +23,7 @@
 #include "SimElement.h"
 #include "Instruction.h"
 #include "RadioTraffic.h"
-#include "Shot.h"
+#include "SimShot.h"
 #include "Drone.h"
 #include "Explosion.h"
 #include "Debris.h"
@@ -83,7 +83,7 @@
 #include "Math/Vector.h"
 
 // NOTE: Render assets like Bitmap are handled as Unreal assets elsewhere (e.g., UTexture2D*).
-// This translation unit does not include Bitmap.h.
+// This translation unit does notxinclude Bitmap.h.
 
 // --------------------------------------------------------------------
 // UE logging bridge (replaces legacy Print debugging)
@@ -198,7 +198,7 @@ Sim::Sim(MotionController* c)
 	Explosion::Initialize();
 	FlightDeck::Initialize();
 	NavLight::Initialize();
-	Shot::Initialize();
+	SimShot::Initialize();
 	MFD::Initialize();
 	Asteroid::Initialize();
 
@@ -212,7 +212,7 @@ Sim::~Sim()
 {
 	UnloadMission();
 
-	Shot::Close();
+	SimShot::Close();
 	FlightDeck::Close();
 	NavLight::Close();
 	Token::close();
@@ -1117,10 +1117,10 @@ Sim::FindShipByObjID(DWORD objid)
 	return ship;
 }
 
-Shot*
+SimShot*
 Sim::FindShotByObjID(DWORD objid)
 {
-	Shot* shot = 0;
+	SimShot* shot = 0;
 
 	ListIter<SimRegion> rgn = regions;
 	while (++rgn && !shot)
@@ -1150,15 +1150,15 @@ Sim::FindOrbitalBody(const char* name)
 
 // +--------------------------------------------------------------------+
 
-Shot*
+SimShot*
 Sim::CreateShot(const FVector& pos, const Camera& shot_cam, WeaponDesign* design, const Ship* ship, SimRegion* rgn)
 {
-	Shot* shot = 0;
+	SimShot* shot = 0;
 
 	if (design->drone)
 		shot = new Drone(pos, shot_cam, design, ship);
 	else
-		shot = new Shot(pos, shot_cam, design, ship);
+		shot = new SimShot(pos, shot_cam, design, ship);
 
 	if (rgn)
 		rgn->InsertObject(shot);
@@ -1241,7 +1241,7 @@ Sim::CreateSplashDamage(Ship* ship)
 // +--------------------------------------------------------------------+
 
 void
-Sim::CreateSplashDamage(Shot* shot)
+Sim::CreateSplashDamage(SimShot* shot)
 {
 	if (shot && shot->GetRegion()) {
 		double damage = shot->Damage();
@@ -1269,7 +1269,7 @@ Sim::CreateSplashDamage(Shot* shot)
 void
 Sim::ShowGrid(int show)
 {
-	Player* player = Player::GetCurrentPlayer();
+	PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
 
 	if (player && player->GridMode() == 0) {
 		show = 0;

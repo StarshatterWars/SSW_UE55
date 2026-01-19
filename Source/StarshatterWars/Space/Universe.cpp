@@ -79,7 +79,7 @@ void UUniverse::SpawnGalaxy()
 	//}
 
 	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
+	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
 	//}		
 }
 

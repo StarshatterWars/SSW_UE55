@@ -1,284 +1,889 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (c) 2025-2026. All Rights Reserved.
 
+	SUBSYSTEM:    Stars.exe
+	FILE:         MissionEvent.cpp
+	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	Events for mission scripting
+*/
 
 #include "MissionEvent.h"
 
-namespace
-{
-	static const TCHAR* GetTypeNameToTChar(MISSIONEVENT_TYPE Value)
-	{
-		const UEnum* Enum = StaticEnum<MISSIONEVENT_TYPE>();
-		if (!Enum)
-		{
-			return TEXT("Invalid");
-		}
+// NOTE: This file is legacy Starshatter core code being ported.
+// Keep includes as-is unless they cause Unreal build issues; remove unsupported debug headers.
+#include "Mission.h"
+#include "StarSystem.h"
+#include "Galaxy.h"
+#include "Starshatter.h"
+#include "StarServer.h"
+#include "Ship.h"
+#include "ShipDesign.h"
+#include "SimElement.h"
+#include "DisplayView.h"
+#include "HUDView.h"
+#include "Instruction.h"
+#include "QuantumDrive.h"
+#include "Sim.h"
+#include "AudioConfig.h"
+#include "CameraDirector.h"
+#include "RadioMessage.h"
+#include "RadioTraffic.h"
+#include "Weapon.h"
+#include "WeaponGroup.h"
+#include "PlayerCharacter.h"
+#include "Campaign.h"
+#include "CombatGroup.h"
 
-		thread_local FString Temp;
-		Temp = Enum->GetDisplayNameTextByValue(static_cast<int64>(Value)).ToString();
-		return *Temp;
-	}
+#include "NetData.h"
+#include "NetUtil.h"
 
-	static const TCHAR* GetTriggerNameToTChar(MISSIONEVENT_TRIGGER Value)
-	{
-		const UEnum* Enum = StaticEnum<MISSIONEVENT_TRIGGER>();
-		if (!Enum)
-		{
-			return TEXT("Invalid");
-		}
+#include "Game.h"
+#include "DataLoader.h"
+#include "Font.h"
+#include "FontMgr.h"
+#include "Sound.h"
+#include "ParseUtil.h"
+#include "FormatUtil.h"
+#include "Random.h"
 
-		thread_local FString Temp;
-		Temp = Enum->GetDisplayNameTextByValue(static_cast<int64>(Value)).ToString();
-		return *Temp;
-	}
+// Minimal Unreal logging support:
+#include "Logging/LogMacros.h"
 
-	// Keep names stable for debug tooling and parity with Starshatter
-	static const TCHAR* GEventNames[(int8)MISSIONEVENT_TYPE::NUM_EVENTS] =
-	{
-		TEXT("MESSAGE"),
-		TEXT("OBJECTIVE"),
-		TEXT("INSTRUCTION"),
-		TEXT("IFF"),
-		TEXT("DAMAGE"),
-		TEXT("JUMP"),
-		TEXT("HOLD"),
-		TEXT("SKIP"),
-		TEXT("END_MISSION"),
-		TEXT("BEGIN_SCENE"),
-		TEXT("CAMERA"),
-		TEXT("VOLUME"),
-		TEXT("DISPLAY"),
-		TEXT("FIRE_WEAPON"),
-		TEXT("END_SCENE"),
-	};
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsMissionEvent, Log, All);
 
-	static const TCHAR* GTriggerNames[(int8)MISSIONEVENT_TRIGGER::NUM_TRIGGERS] =
-	{
-		TEXT("TIME"),
-		TEXT("DAMAGE"),
-		TEXT("DESTROYED"),
-		TEXT("JUMP"),
-		TEXT("LAUNCH"),
-		TEXT("DOCK"),
-		TEXT("NAVPT"),
-		TEXT("EVENT"),
-		TEXT("SKIPPED"),
-		TEXT("TARGET"),
-		TEXT("SHIPS_LEFT"),
-		TEXT("DETECT"),
-		TEXT("RANGE"),
-		TEXT("EVENT_ALL"),
-		TEXT("EVENT_ANY"),
-	};
+const char* FormatGameTime();
 
-	static int32 FindNameIndex(const TCHAR* const* Names, int32 Count, const FString& Query)
-	{
-		if (Query.IsEmpty())
-			return -1;
-
-		for (int32 i = 0; i < Count; ++i)
-		{
-			if (Query.Equals(Names[i], ESearchCase::IgnoreCase))
-				return i;
-		}
-		return -1;
-	}
-}
+// +--------------------------------------------------------------------+
 
 MissionEvent::MissionEvent()
+	: id(0),
+	status(PENDING),
+	time(0),
+	delay(0),
+	event(0),
+	event_nparams(0),
+	event_chance(100),
+	trigger(0),
+	trigger_nparams(0),
+	sound(0)
 {
-	// Initialize param arrays deterministically
-	for (int32 i = 0; i < MaxEventParams; ++i)
-		EventParams[i] = 0;
-
-	for (int32 i = 0; i < MaxTriggerParams; ++i)
-		TriggerParams[i] = 0;
-
-	// Defaults mirror Starshatter intent:
-	StatusValue = MISSIONEVENT_STATUS::PENDING;
-	EventType = MISSIONEVENT_TYPE::MESSAGE;
-	TriggerType = MISSIONEVENT_TRIGGER::TRIGGER_TIME;
-	EventChancePct = 100;
-	TimeSeconds = 0.0;
-	DelaySeconds = 0.0;
+	ZeroMemory(event_param, sizeof(event_param));
+	ZeroMemory(trigger_param, sizeof(trigger_param));
 }
 
-void MissionEvent::ExecFrame(double Seconds)
+MissionEvent::~MissionEvent()
 {
-	if (Seconds <= 0.0)
+	if (sound) {
+		sound->Stop();
+		sound->Release();
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+MissionEvent::ExecFrame(double seconds)
+{
+	Sim* sim = Sim::GetSim();
+
+	if (!sim) {
+		status = PENDING;
 		return;
+	}
 
-	AccumulatedSeconds += Seconds;
+	if (status == PENDING)
+		CheckTrigger();
 
-	// Stub behavior:
-	// - If pending, test triggers
-	// - If active, execute once (or keep active for HOLD/SCENE later)
-	if (IsPending())
-	{
-		if (CheckTrigger())
-		{
+	if (status == ACTIVE) {
+		if (delay > 0)
+			delay -= seconds;
+		else
+			Execute();
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+MissionEvent::Activate()
+{
+	if (status == PENDING) {
+		if (event_chance > 0 && event_chance < 100) {
+			const int32 Roll = FMath::RandRange(0, 100);
+			if (Roll < event_chance)
+				status = ACTIVE;
+			else
+				status = SKIPPED;
+		}
+		else {
+			status = ACTIVE;
+		}
+
+		if (status == SKIPPED) {
+			Sim::GetSim()->ProcessEventTrigger(TRIGGER_SKIPPED, id);
+		}
+	}
+}
+
+void
+MissionEvent::Skip()
+{
+	if (status == PENDING) {
+		status = SKIPPED;
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+bool
+MissionEvent::CheckTrigger()
+{
+	Sim* sim = Sim::GetSim();
+
+	if (time > 0 && time > sim->MissionClock())
+		return false;
+
+	switch (trigger) {
+	case TRIGGER_TIME: {
+		if (time <= sim->MissionClock())
 			Activate();
+	}
+					 break;
+
+	case TRIGGER_DAMAGE: {
+		Ship* ship = sim->FindShip(trigger_ship);
+		if (ship) {
+			double damage = 100.0 * (ship->Design()->integrity - ship->Integrity()) /
+				(ship->Design()->integrity);
+
+			if (damage >= trigger_param[0])
+				Activate();
+		}
+	}
+					   break;
+
+	case TRIGGER_DETECT: {
+		Ship* ship = sim->FindShip(trigger_ship);
+		Ship* tgt = sim->FindShip(trigger_target);
+
+		if (ship && tgt) {
+			if (ship->FindContact(tgt))
+				Activate();
+		}
+		else {
+			Skip();
+		}
+	}
+					   break;
+
+	case TRIGGER_RANGE: {
+		Ship* ship = sim->FindShip(trigger_ship);
+		Ship* tgt = sim->FindShip(trigger_target);
+
+		if (ship && tgt) {
+			double range = (ship->Location() - tgt->Location()).length();
+			double min_range = 0;
+			double max_range = 1e12;
+
+			if (trigger_param[0] > 0)
+				min_range = trigger_param[0];
+			else
+				max_range = -trigger_param[0];
+
+			if (range < min_range || range > max_range)
+				Activate();
+		}
+		else {
+			Skip();
+		}
+	}
+					  break;
+
+	case TRIGGER_SHIPS_LEFT: {
+		int alive = 0;
+		int count = 0;
+		int iff = -1;
+		int nparams = NumTriggerParams();
+
+		if (nparams > 0) count = TriggerParam(0);
+		if (nparams > 1) iff = TriggerParam(1);
+
+		ListIter<SimRegion> iter = sim->GetRegions();
+		while (++iter) {
+			SimRegion* rgn = iter.value();
+
+			ListIter<Ship> s_iter = rgn->Ships();
+			while (++s_iter) {
+				Ship* ship = s_iter.value();
+
+				if (ship->Type() >= Ship::STATION)
+					continue;
+
+				if (ship->Life() == 0 && ship->RespawnCount() < 1)
+					continue;
+
+				if (iff < 0 || ship->GetIFF() == iff)
+					alive++;
+			}
+		}
+
+		if (alive <= count)
+			Activate();
+	}
+						   break;
+
+	case TRIGGER_EVENT_ALL: {
+		bool  all = true;
+		int   nparams = NumTriggerParams();
+		for (int i = 0; all && i < nparams; i++) {
+			int trigger_id = TriggerParam(i);
+
+			ListIter<MissionEvent> iter = sim->GetEvents();
+			while (++iter) {
+				MissionEvent* e = iter.value();
+				if (e->EventID() == trigger_id) {
+					if (e->Status() != COMPLETE)
+						all = false;
+					break;
+				}
+				else if (e->EventID() == -trigger_id) {
+					if (e->Status() == COMPLETE)
+						all = false;
+					break;
+				}
+			}
+		}
+
+		if (all)
+			Activate();
+	}
+						  break;
+
+	case TRIGGER_EVENT_ANY: {
+		bool  any = false;
+		int   nparams = NumTriggerParams();
+		for (int i = 0; !any && i < nparams; i++) {
+			int trigger_id = TriggerParam(i);
+
+			ListIter<MissionEvent> iter = sim->GetEvents();
+			while (++iter) {
+				MissionEvent* e = iter.value();
+				if (e->EventID() == trigger_id) {
+					if (e->Status() == COMPLETE)
+						any = true;
+					break;
+				}
+			}
+		}
+
+		if (any)
+			Activate();
+	}
+						  break;
+	}
+
+	return status == ACTIVE;
+}
+
+// +--------------------------------------------------------------------+
+
+void
+MissionEvent::Execute(bool silent)
+{
+	Starshatter* stars = Starshatter::GetInstance();
+	HUDView* hud = HUDView::GetInstance();
+	Sim* sim = Sim::GetSim();
+	Ship* player = sim->GetPlayerShip();
+	Ship* ship = 0;
+	Ship* src = 0;
+	Ship* tgt = 0;
+	SimElement* elem = 0;
+	int            pan = 0;
+	bool           end_mission = false;
+
+	if (event_ship.length())
+		ship = sim->FindShip(event_ship);
+	else
+		ship = player;
+
+	if (event_source.length())
+		src = sim->FindShip(event_source);
+
+	if (event_target.length())
+		tgt = sim->FindShip(event_target);
+
+	if (ship)
+		elem = ship->GetElement();
+	else if (event_ship.length()) {
+		elem = sim->FindElement(event_ship);
+
+		if (elem)
+			ship = elem->GetShip(1);
+	}
+
+	// expire the delay, if any remains
+	delay = 0;
+
+	// fire the event action
+	switch (event) {
+	case MESSAGE:
+		if (event_message.length() > 0) {
+			if (ship) {
+				RadioMessage* msg = new RadioMessage(ship, src, event_param[0]);
+				msg->SetInfo(event_message);
+				msg->SetChannel(ship->GetIFF());
+				if (tgt)
+					msg->AddTarget(tgt);
+				RadioTraffic::Transmit(msg);
+			}
+			else if (elem) {
+				RadioMessage* msg = new RadioMessage(elem, src, event_param[0]);
+				msg->SetInfo(event_message);
+				msg->SetChannel(elem->GetIFF());
+				if (tgt)
+					msg->AddTarget(tgt);
+				RadioTraffic::Transmit(msg);
+			}
+		}
+
+		if (event_sound.length() > 0) {
+			pan = event_param[0];
+		}
+		break;
+
+	case OBJECTIVE:
+		if (elem) {
+			if (event_param[0]) {
+				elem->ClearInstructions();
+				elem->ClearObjectives();
+			}
+
+			Instruction* obj = new Instruction(event_param[0], 0);
+			obj->SetTarget(event_target);
+			elem->AddObjective(obj);
+
+			if (elem->Contains(player)) {
+				HUDView* hud_local = HUDView::GetInstance();
+				if (hud_local)
+					hud_local->ShowHUDInst();
+			}
+		}
+		break;
+
+	case INSTRUCTION:
+		if (elem) {
+			if (event_param[0])
+				elem->ClearInstructions();
+
+			elem->AddInstruction(event_message);
+
+			if (elem->Contains(player) && event_message.length() > 0) {
+				HUDView* hud_local = HUDView::GetInstance();
+				if (hud_local)
+					hud_local->ShowHUDInst();
+			}
+		}
+		break;
+
+	case IFF:
+		if (elem) {
+			elem->SetIFF(event_param[0]);
+		}
+		else if (ship) {
+			ship->SetIFF(event_param[0]);
+		}
+		break;
+
+	case DAMAGE:
+		if (ship) {
+			ship->InflictDamage(event_param[0]);
+
+			if (ship->Integrity() < 1) {
+				NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
+				ship->DeathSpiral();
+
+				UE_LOG(LogStarshatterWarsMissionEvent, Log,
+					TEXT("Ship '%hs' killed by scripted event %d (%hs)"),
+					(const char*)ship->Name(), id, FormatGameTime());
+			}
+		}
+		else {
+			UE_LOG(LogStarshatterWarsMissionEvent, Warning,
+				TEXT("EVENT %d: Could not apply damage to ship '%hs' (not found)."),
+				id, (const char*)event_ship);
+		}
+		break;
+
+	case JUMP:
+		if (ship) {
+			SimRegion* rgn = sim->FindRegion(event_target);
+
+			if (rgn && ship->GetRegion() != rgn) {
+				if (rgn->IsOrbital()) {
+					QuantumDrive* quantum_drive = ship->GetQuantumDrive();
+					if (quantum_drive) {
+						quantum_drive->SetDestination(rgn, Point(0, 0, 0));
+						quantum_drive->Engage(true); // request immediate jump
+					}
+					else if (ship->IsAirborne()) {
+						ship->MakeOrbit();
+					}
+				}
+				else {
+					ship->DropOrbit();
+				}
+			}
+		}
+		break;
+
+	case HOLD:
+		if (elem)
+			elem->SetHoldTime(event_param[0]);
+		break;
+
+	case SKIP: {
+		for (int i = 0; i < event_nparams; i++) {
+			int skip_id = event_param[i];
+
+			ListIter<MissionEvent> iter = sim->GetEvents();
+			while (++iter) {
+				MissionEvent* e = iter.value();
+				if (e->EventID() == skip_id) {
+					if (e->status != COMPLETE)
+						e->status = SKIPPED;
+				}
+			}
+		}
+	}
+			 break;
+
+	case END_MISSION:
+		UE_LOG(LogStarshatterWarsMissionEvent, Log,
+			TEXT("END MISSION by scripted event %d (%hs)"),
+			id, FormatGameTime());
+		end_mission = true;
+		break;
+
+		//
+		// NOTE: CUTSCENE EVENTS DO NOT APPLY IN MULTIPLAYER
+		//
+	case BEGIN_SCENE:
+		UE_LOG(LogStarshatterWarsMissionEvent, Log, TEXT("------------------------------------"));
+		UE_LOG(LogStarshatterWarsMissionEvent, Log, TEXT("Begin Cutscene '%hs'"), event_message.data());
+		stars->BeginCutscene();
+		break;
+
+	case END_SCENE:
+		UE_LOG(LogStarshatterWarsMissionEvent, Log, TEXT("End Cutscene '%hs'"), event_message.data());
+		UE_LOG(LogStarshatterWarsMissionEvent, Log, TEXT("------------------------------------"));
+		stars->EndCutscene();
+		break;
+
+	case CAMERA:
+		if (stars->InCutscene()) {
+			CameraDirector* cam_dir = CameraDirector::GetInstance();
+
+			if (!cam_dir->GetShip())
+				cam_dir->SetShip(player);
+
+			switch (event_param[0]) {
+			case 1:
+				if (cam_dir->GetMode() != CameraDirector::MODE_COCKPIT)
+					cam_dir->SetMode(CameraDirector::MODE_COCKPIT, event_rect.x);
+				break;
+
+			case 2:
+				if (cam_dir->GetMode() != CameraDirector::MODE_CHASE)
+					cam_dir->SetMode(CameraDirector::MODE_CHASE, event_rect.x);
+				break;
+
+			case 3:
+				if (cam_dir->GetMode() != CameraDirector::MODE_ORBIT)
+					cam_dir->SetMode(CameraDirector::MODE_ORBIT, event_rect.x);
+				break;
+
+			case 4:
+				if (cam_dir->GetMode() != CameraDirector::MODE_TARGET)
+					cam_dir->SetMode(CameraDirector::MODE_TARGET, event_rect.x);
+				break;
+			}
+
+			if (event_target.length()) {
+				UE_LOG(LogStarshatterWarsMissionEvent, Verbose,
+					TEXT("Mission Event %d: setting camera target to %hs"),
+					id, (const char*)event_target);
+
+				Ship* s_tgt = 0;
+
+				if (event_target.indexOf("body:") < 0)
+					s_tgt = sim->FindShip(event_target);
+
+				if (s_tgt) {
+					UE_LOG(LogStarshatterWarsMissionEvent, Verbose,
+						TEXT("   found ship %hs"), s_tgt->Name());
+
+					cam_dir->SetViewOrbital(0);
+
+					if (cam_dir->GetViewObject() != s_tgt) {
+
+						if (event_param[0] == 6) {
+							s_tgt->DropCam(event_param[1], event_param[2]);
+							cam_dir->SetShip(s_tgt);
+							cam_dir->SetMode(CameraDirector::MODE_DROP, 0);
+						}
+						else {
+							Ship* cam_ship = cam_dir->GetShip();
+
+							if (cam_ship && cam_ship->IsDropCam()) {
+								cam_ship->CompleteTransition();
+							}
+
+							if (cam_dir->GetShip() != sim->GetPlayerShip())
+								cam_dir->SetShip(sim->GetPlayerShip());
+							cam_dir->SetViewObject(s_tgt, true); // immediate, no transition
+						}
+					}
+				}
+				else {
+					const char* body_name = event_target.data();
+
+					if (!strncmp(body_name, "body:", 5))
+						body_name += 5;
+
+					Orbital* orb = sim->FindOrbitalBody(body_name);
+
+					if (orb) {
+						UE_LOG(LogStarshatterWarsMissionEvent, Verbose,
+							TEXT("   found body %hs"), orb->Name());
+						cam_dir->SetViewOrbital(orb);
+					}
+				}
+			}
+
+			if (event_param[0] == 3) {
+				cam_dir->SetOrbitPoint(event_point.X, event_point.Y, event_point.Z);
+			}
+			else if (event_param[0] == 5) {
+				cam_dir->SetOrbitRates(event_point.X, event_point.Y, event_point.Z);
+			}
+		}
+		break;
+
+	case VOLUME:
+		if (stars->InCutscene()) {
+			AudioConfig* audio_cfg = AudioConfig::GetInstance();
+
+			audio_cfg->SetEfxVolume(event_param[0]);
+			audio_cfg->SetWrnVolume(event_param[0]);
+		}
+		break;
+
+	case DISPLAY:
+		if (stars->InCutscene()) {
+			DisplayView* disp_view = DisplayView::GetInstance();
+
+			if (disp_view) {
+				Color color;
+				color.Set(event_param[0]);
+
+				if (event_message.length() && event_source.length()) {
+
+					if (event_message.contains('$')) {
+						Campaign* campaign = Campaign::GetCampaign();
+						Player* user = Player::GetCurrentPlayer();
+						CombatGroup* group = campaign->GetPlayerGroup();
+
+						if (user) {
+							event_message = FormatTextReplace(event_message, "$NAME", user->Name().data());
+							event_message = FormatTextReplace(event_message, "$RANK", Player::RankName(user->Rank()));
+						}
+
+						if (group) {
+							event_message = FormatTextReplace(event_message, "$GROUP", group->GetDescription());
+						}
+
+						if (event_message.contains("$TIME")) {
+							char timestr[32];
+							FormatDayTime(timestr, campaign->GetTime(), true);
+							event_message = FormatTextReplace(event_message, "$TIME", timestr);
+						}
+					}
+
+					disp_view->AddText(event_message,
+						FontMgr::Find(event_source),
+						color,
+						event_rect,
+						event_point.Y,
+						event_point.X,
+						event_point.Z);
+
+				}
+				else if (event_target.length()) {
+					DataLoader* loader = DataLoader::GetLoader();
+
+					// Legacy bitmap loading path retained; image now is a UTexture2D* in the header.
+					// The DataLoader interface must be ported accordingly elsewhere.
+					if (loader) {
+						loader->SetDataPath(0);
+						loader->LoadBitmap(event_target, image, 0, true);
+					}
+
+					if (image) {
+						disp_view->AddImage(image,
+							color,
+							Video::BLEND_ALPHA,
+							event_rect,
+							event_point.Y,
+							event_point.X,
+							event_point.Z);
+					}
+				}
+			}
+		}
+		break;
+
+	case FIRE_WEAPON:
+		if (ship) {
+			// fire single weapon:
+			if (event_param[0] >= 0) {
+				ship->FireWeapon(event_param[0]);
+			}
+			// fire all weapons:
+			else {
+				ListIter<WeaponGroup> g_iter = ship->Weapons();
+				while (++g_iter) {
+					ListIter<Weapon> w_iter = g_iter->GetWeapons();
+					while (++w_iter) {
+						Weapon* w = w_iter.value();
+						w->Fire();
+					}
+				}
+			}
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	sim->ProcessEventTrigger(TRIGGER_EVENT, id);
+
+	if (!silent && !sound && event_sound.length()) {
+		DataLoader* loader = DataLoader::GetLoader();
+		bool        use_fs = loader->IsFileSystemEnabled();
+		DWORD       flags = pan ? Sound::LOCKED | Sound::LOCALIZED :
+			Sound::LOCKED | Sound::AMBIENT;
+
+		loader->UseFileSystem(true);
+		loader->SetDataPath("Sounds/");
+		loader->LoadSound(event_sound, sound, flags);
+		loader->SetDataPath(0);
+
+		if (!sound) {
+			loader->SetDataPath("Mods/Sounds/");
+			loader->LoadSound(event_sound, sound, flags);
+			loader->SetDataPath(0);
+		}
+
+		if (!sound) {
+			loader->LoadSound(event_sound, sound, flags);
+		}
+
+		loader->UseFileSystem(use_fs);
+
+		// fire and forget:
+		if (sound) {
+			if (sound->GetFlags() & Sound::STREAMED) {
+				sound->SetFlags(flags | sound->GetFlags());
+				sound->SetVolume(AudioConfig::VoxVolume());
+				sound->Play();
+			}
+			else {
+				sound->SetFlags(flags);
+				sound->SetVolume(AudioConfig::VoxVolume());
+				sound->SetPan(pan);
+				sound->SetFilename(event_sound);
+				sound->AddToSoundCard();
+				sound->Play();
+			}
 		}
 	}
 
-	if (IsActive())
-	{
-		Execute(/*bSilent=*/false);
+	status = COMPLETE;
+
+	if (end_mission) {
+		StarServer* server = StarServer::GetInstance();
+
+		if (stars) {
+			stars->EndMission();
+		}
+		else if (server) {
+			// end mission event uses event_target member
+			// to forward server to next mission in the chain:
+			if (event_target.length())
+				server->SetNextMission(event_target);
+
+			server->SetGameMode(StarServer::MENU_MODE);
+		}
 	}
 }
 
-void MissionEvent::Activate()
-{
-	if (!IsPending())
-		return;
+// +--------------------------------------------------------------------+
 
-	StatusValue = MISSIONEVENT_STATUS::ACTIVE;
-}
-
-bool MissionEvent::CheckTrigger()
+Text
+MissionEvent::TriggerParamStr() const
 {
-	// This is intentionally conservative:
-	// - TRIGGER_TIME: activates when accumulated time >= (TimeSeconds + DelaySeconds)
-	// - Other triggers: not wired yet, return false
-	switch (TriggerType)
-	{
-	case MISSIONEVENT_TRIGGER::TRIGGER_TIME:
-	{
-		const double Gate = TimeSeconds + DelaySeconds;
-		return AccumulatedSeconds >= Gate;
+	Text result;
+	char buffer[8];
+
+	if (trigger_param[0] == 0) {
+		// nothing
 	}
-	default:
-		return false;
+	else if (trigger_param[1] == 0) {
+		sprintf_s(buffer, "%d", trigger_param[0]);
+		result = buffer;
 	}
-}
+	else {
+		result = "(";
 
-bool MissionEvent::PassChanceGate() const
-{
-	// Starshatter default: probability 100
-	if (EventChancePct <= 0)
-		return false;
+		for (int i = 0; i < 8; i++) {
+			if (trigger_param[i] == 0)
+				break;
 
-	if (EventChancePct >= 100)
-		return true;
+			if (i < 7 && trigger_param[i + 1] != 0)
+				sprintf_s(buffer, "%d, ", trigger_param[i]);
+			else
+				sprintf_s(buffer, "%d", trigger_param[i]);
 
-	// Deterministic-ish: use rand for now; replace with your campaign RNG later
-	const int32 Roll = FMath::RandRange(1, 100);
-	return Roll <= EventChancePct;
-}
+			result += buffer;
+		}
 
-void MissionEvent::Execute(bool bSilent)
-{
-	// Mirror Starshatter “one shot” behavior for most events:
-	// - gate on chance
-	// - mark COMPLETE unless you later model HOLD/SCENE with persistent active state
-	if (!IsActive())
-		return;
-
-	if (!PassChanceGate())
-	{
-		StatusValue = MISSIONEVENT_STATUS::COMPLETE;
-		return;
+		result += ")";
 	}
 
-	// Stub: later, fire message/intel/objective hooks into UI, audio, etc.
-	// We keep bSilent to match original signature.
-	(void)bSilent;
-
-	StatusValue = MISSIONEVENT_STATUS::COMPLETE;
+	return result;
 }
 
-void MissionEvent::Skip()
-{
-	if (IsComplete())
-		return;
+// +--------------------------------------------------------------------+
 
-	StatusValue = MISSIONEVENT_STATUS::SKIPPED;
+int
+MissionEvent::EventParam(int index) const
+{
+	if (index >= 0 && index < NumEventParams())
+		return event_param[index];
+
+	return 0;
 }
 
-const TCHAR* MissionEvent::EventName() const
+int
+MissionEvent::NumEventParams() const
 {
-	return GetTypeNameToTChar(EventType);
+	return event_nparams;
 }
 
-const TCHAR* MissionEvent::TriggerName() const
+// +--------------------------------------------------------------------+
+
+int
+MissionEvent::TriggerParam(int index) const
 {
-	return GetTriggerNameToTChar(TriggerType);
+	if (index >= 0 && index < NumTriggerParams())
+		return trigger_param[index];
+
+	return 0;
 }
 
-int32 MissionEvent::EventParam(int32 Index) const
+int
+MissionEvent::NumTriggerParams() const
 {
-	if (Index < 0 || Index >= EventParamCount || Index >= MaxEventParams)
-		return 0;
-
-	return EventParams[Index];
+	return trigger_nparams;
 }
 
-int32 MissionEvent::TriggerParam(int32 Index) const
-{
-	if (Index < 0 || Index >= TriggerParamCount || Index >= MaxTriggerParams)
-		return 0;
+// +--------------------------------------------------------------------+
 
-	return TriggerParams[Index];
+static const char* event_names[] = {
+	"Message",
+	"Objective",
+	"Instruction",
+	"IFF",
+	"Damage",
+	"Jump",
+	"Hold",
+	"Skip",
+	"Exit",
+
+	"BeginScene",
+	"Camera",
+	"Volume",
+	"Display",
+	"Fire",
+	"EndScene"
+};
+
+static const char* trigger_names[] = {
+	"Time",
+	"Damage",
+	"Destroyed",
+	"Jump",
+	"Launch",
+	"Dock",
+	"Navpoint",
+	"Event",
+	"Skipped",
+	"Target",
+	"Ships Left",
+	"Detect",
+	"Range",
+	"Event (ALL)",
+	"Event (ANY)"
+};
+
+const char*
+MissionEvent::EventName() const
+{
+	return event_names[event];
 }
 
-FString MissionEvent::TriggerParamStr() const
+const char*
+MissionEvent::EventName(int n)
 {
-	if (TriggerParamCount <= 0)
-		return FString();
-
-	FString Out;
-	for (int32 i = 0; i < TriggerParamCount; ++i)
-	{
-		if (i > 0)
-			Out += TEXT(",");
-
-		Out += FString::FromInt(TriggerParams[i]);
-	}
-	return Out;
+	return event_names[n];
 }
 
-const TCHAR* MissionEvent::EventName(int32 N)
+int
+MissionEvent::EventForName(const char* n)
 {
-	if (N < 0 || N >= (int32)MISSIONEVENT_TYPE::NUM_EVENTS)
-		return TEXT("UNKNOWN_EVENT");
+	for (int i = 0; i < NUM_EVENTS; i++)
+		if (!_stricmp(n, event_names[i]))
+			return i;
 
-	return GEventNames[N];
+	return 0;
 }
 
-int32 MissionEvent::EventForName(const FString& Name)
+const char*
+MissionEvent::TriggerName() const
 {
-	return FindNameIndex(GEventNames, (int32)MISSIONEVENT_TYPE::NUM_EVENTS, Name);
+	return trigger_names[trigger];
 }
 
-const TCHAR* MissionEvent::TriggerName(int32 N)
+const char*
+MissionEvent::TriggerName(int n)
 {
-	if (N < 0 || N >= (int32)MISSIONEVENT_TRIGGER::NUM_TRIGGERS)
-		return TEXT("UNKNOWN_TRIGGER");
-
-	return GTriggerNames[N];
+	return trigger_names[n];
 }
 
-int32 MissionEvent::TriggerForName(const FString& Name)
+int
+MissionEvent::TriggerForName(const char* n)
 {
-	return FindNameIndex(GTriggerNames, (int32)MISSIONEVENT_TRIGGER::NUM_TRIGGERS, Name);
-}
+	for (int i = 0; i < NUM_TRIGGERS; i++)
+		if (!_stricmp(n, trigger_names[i]))
+			return i;
 
-void MissionEvent::SetEventParams(const TArray<int32>& InParams)
-{
-	EventParamCount = FMath::Clamp(InParams.Num(), 0, MaxEventParams);
-	for (int32 i = 0; i < EventParamCount; ++i)
-		EventParams[i] = InParams[i];
-
-	// Clear remainder for determinism
-	for (int32 i = EventParamCount; i < MaxEventParams; ++i)
-		EventParams[i] = 0;
-}
-
-void MissionEvent::SetTriggerParams(const TArray<int32>& InParams)
-{
-	TriggerParamCount = FMath::Clamp(InParams.Num(), 0, MaxTriggerParams);
-	for (int32 i = 0; i < TriggerParamCount; ++i)
-		TriggerParams[i] = InParams[i];
-
-	for (int32 i = TriggerParamCount; i < MaxTriggerParams; ++i)
-		TriggerParams[i] = 0;
+	return 0;
 }

@@ -106,7 +106,7 @@ void UOOBCarrierWidget::ToggleExpansion()
 void UOOBCarrierWidget::BuildChildren(const FS_OOBCarrier& CarrierDataStruct)
 {
     if (!ElementListView || !WingListView) {
-        UE_LOG(LogTemp, Error, TEXT("Carrier ListViews are not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Carrier ListViews are notxvalid!"));
         return;
     }
 

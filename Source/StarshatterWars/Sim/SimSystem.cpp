@@ -16,7 +16,7 @@
 
 #include "SimSystem.h"
 #include "SystemDesign.h"
-#include "Component.h"
+#include "SimComponent.h"
 #include "NetUtil.h"
 #include "Game.h"
 
@@ -110,9 +110,9 @@ SimSystem::SimSystem(const SimSystem& s)
 
 	if (design) {
 		// cast-away const (matches original Starshatter behavior):
-		ListIter<Component> c = (List<Component>&) s.components;
+		ListIter<SimComponent> c = (List<SimComponent>&) s.components;
 		while (++c) {
-			Component* comp = new(__FILE__, __LINE__) Component(*(c.value()));
+			SimComponent* comp = new SimComponent(*(c.value()));
 			comp->SetSystem(this);
 			components.append(comp);
 		}
@@ -145,7 +145,7 @@ SimSystem::SetDesign(SystemDesign* d)
 
 		ListIter<ComponentDesign> cd = design->components;
 		while (++cd) {
-			Component* comp = new(__FILE__, __LINE__) Component(cd.value(), this);
+			SimComponent* comp = new SimComponent(cd.value(), this);
 			components.append(comp);
 		}
 	}
@@ -165,7 +165,7 @@ SimSystem::SetPowerLevel(double level)
 
 	if (power_level != level) {
 		// if the system is on emergency override power,
-		// do not let the EMCON system use this method
+		// do notxlet the EMCON system use this method
 		// to drop it back to normal power:
 		if (power_level > 1 && level == 1)
 			return;
@@ -253,9 +253,9 @@ SimSystem::ExecFrame(double seconds)
 	bool repair = false;
 
 	if (components.size() > 0) {
-		ListIter<Component> comp = components;
+		ListIter<SimComponent> comp = components;
 		while (++comp) {
-			if (comp->Status() > Component::NOMINAL) {
+			if (comp->Status() > SimComponent::NOMINAL) {
 				repair = true;
 				break;
 			}
@@ -312,9 +312,9 @@ void
 SimSystem::ExecMaintFrame(double seconds)
 {
 	if (components.size() > 0) {
-		ListIter<Component> comp = components;
+		ListIter<SimComponent> comp = components;
 		while (++comp) {
-			if (comp->Status() > Component::NOMINAL) {
+			if (comp->Status() > SimComponent::NOMINAL) {
 				comp->ExecMaintFrame(seconds);
 			}
 		}
@@ -361,7 +361,7 @@ SimSystem::CalcStatus()
 		safety = 1.0f;
 		stability = 1.0f;
 
-		ListIter<Component> comp = components;
+		ListIter<SimComponent> comp = components;
 		while (++comp) {
 			if (comp->DamageEfficiency())
 				availability *= comp->Availability() / 100.0f;
@@ -409,9 +409,9 @@ SimSystem::Orient(const Physical* rep)
 	// NOTE: Physical/Camera types are part of Starshatter core.
 	// This retains original behavior; only the stored vectors are now FVector.
 	const Matrix& orientation = rep->Cam().Orientation();
-	const Point   loc = rep->Location();
+	const FVector loc = rep->Location();
 
-	const Point ss_mount = (Point(mount_rel.X, mount_rel.Y, mount_rel.Z) * orientation) + loc;
+	const FVector ss_mount = (Point(mount_rel.X, mount_rel.Y, mount_rel.Z) * orientation) + loc;
 
 	mount_loc = FVector((float)ss_mount.x, (float)ss_mount.y, (float)ss_mount.z);
 }

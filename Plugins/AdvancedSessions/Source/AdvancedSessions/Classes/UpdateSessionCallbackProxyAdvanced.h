@@ -43,10 +43,10 @@ private:
 	// Number of private connections
 	int NumPrivateConnections = 0;
 
-	// Whether or not to search LAN
+	// Whether or notxto search LAN
 	bool bUseLAN = false;
 
-	// Whether or not to allow invites
+	// Whether or notxto allow invites
 	bool bAllowInvites = true;
 
 	// Store extra settings

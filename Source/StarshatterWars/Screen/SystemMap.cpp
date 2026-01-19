@@ -162,7 +162,7 @@ void USystemMap::InitMapCanvas()
 
 	if (!OuterCanvas || !MapCanvas)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("USystemMap::InitMapCanvas(): OuterCanvas/MapCanvas not bound"));
+		UE_LOG(LogTemp, Warning, TEXT("USystemMap::InitMapCanvas(): OuterCanvas/MapCanvas notxbound"));
 		return;
 	}
 

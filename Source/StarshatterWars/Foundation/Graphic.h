@@ -11,7 +11,7 @@
 	========
 	Abstract 3D Graphic Object
 */
-
+#pragma once
 #include "Geometry.h"
 #include "Color.h"
 #include "List.h"

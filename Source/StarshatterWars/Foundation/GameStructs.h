@@ -184,8 +184,8 @@ enum ECOMBATACTION_STATUS : uint8
 
 UENUM()
 enum class EINTEL_TYPE : uint8 {
-	UNKNOWN		UMETA(DisplayName = "Unknown"), // This status should not exist in game
-	RESERVE		UMETA(DisplayName = "Reserve"), // out-system reserve: this group is not even here
+	UNKNOWN		UMETA(DisplayName = "Unknown"), // This status should notxexist in game
+	RESERVE		UMETA(DisplayName = "Reserve"), // out-system reserve: this group is notxeven here
 	SECRET		UMETA(DisplayName = "Secret"),   // enemy is completely unaware of this group
 	KNOWN		UMETA(DisplayName = "Known"),    // enemy knows this group is in the system
 	LOCATED		UMETA(DisplayName = "Located"),  // enemy has located at least the lead ship
@@ -268,7 +268,7 @@ enum class MISSIONEVENT_TRIGGER : uint8
 	NUM_TRIGGERS
 };
 
-UENUM(BlueprintType)
+UENUM()
 enum class ECOMBATGROUP_TYPE : uint8 
 {
 	NONE, 
