@@ -185,7 +185,7 @@ DisplayView::ClearDisplay()
 
 void
 DisplayView::AddText(const char* text,
-	Font* font,
+	SystemFont* font,
 	Color        color,
 	const Rect& rect,
 	double       hold,

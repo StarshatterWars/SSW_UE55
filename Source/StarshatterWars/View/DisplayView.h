@@ -27,7 +27,7 @@
 class UTexture2D;
 
 class DisplayElement;
-class Font;
+class SystemFont;
 
 // +--------------------------------------------------------------------+
 
@@ -44,7 +44,7 @@ public:
 	virtual void      ClearDisplay();
 
 	virtual void      AddText(const char* txt,
-		Font* font,
+		SystemFont* font,
 		Color        color,
 		const Rect& rect,
 		double       hold = 1e9,

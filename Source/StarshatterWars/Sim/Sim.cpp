@@ -43,7 +43,7 @@
 #include "AudioConfig.h"
 #include "Mission.h"
 #include "MissionEvent.h"
-#include "CameraDirector.h"
+#include "CameraManagerr.h"
 #include "MusicDirector.h"
 #include "Combatant.h"
 #include "CombatGroup.h"
@@ -69,7 +69,7 @@
 #include "Bolt.h"
 #include "Solid.h"
 #include "Sprite.h"
-#include "Light.h"
+#include "SimLight.h"
 #include "DataLoader.h"
 #include "ParseUtil.h"
 #include "MouseController.h"
@@ -205,7 +205,7 @@ Sim::Sim(MotionController* c)
 	if (!sim)
 		sim = this;
 
-	cam_dir = CameraDirector::GetInstance();
+	cam_dir = CameraManagerr::GetInstance();
 }
 
 Sim::~Sim()
@@ -264,7 +264,7 @@ Sim::CommitMission()
 				Combatant* c = group->GetCombatant();
 
 				if (c)
-					c->Score(s->GetPoints());
+					c->GetScore(s->GetPoints());
 
 				if (s->GetElementIndex() == 1)
 					group->SetSorties(group->Sorties() + 1);

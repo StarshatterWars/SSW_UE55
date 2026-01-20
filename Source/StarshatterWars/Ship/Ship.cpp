@@ -23,10 +23,10 @@
 // Starshatter core includes (kept):
 
 #include "ShipAI.h"
-#include "ShipCtrl.h"
+#include "ShipManager.h"
 #include "ShipDesign.h"
 #include "ShipKiller.h"
-#include "Shot.h"
+#include "SimShot.h"
 #include "Drone.h"
 #include "SeekerAI.h"
 #include "HardPoint.h"
@@ -2162,7 +2162,7 @@ Ship::SetAutoNav(bool engage)
 void
 Ship::CommandMode()
 {
-	if (!dir || dir->Type() != ShipCtrl::DIR_TYPE) {
+	if (!dir || dir->Type() != ShipManager::DIR_TYPE) {
 		const char* msg = "Captain on the bridge";
 		RadioVox* vox = new  RadioVox(0, "1", msg);
 
@@ -5070,7 +5070,7 @@ Ship::SetControls(MotionController* m)
 	if (m) {
 		Keyboard::FlushKeys();
 		m->Acquire();
-		dir = new ShipCtrl(this, m);
+		dir = new ShipManager(this, m);
 		director_info = Game::GetText("flcs.auto");
 	}
 	else if (GetIFF() < 100) {

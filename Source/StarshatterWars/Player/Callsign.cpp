@@ -1,23 +1,25 @@
-/*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+/*  Project STARSHATTER WARS
+	Fractal Dev Studios
+	Copyright © 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Game
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios
+
+	SUBSYSTEM:    Stars.exe
 	FILE:         Callsign.cpp
 	AUTHOR:       Carlos Bott
+
 
 	OVERVIEW
 	========
 	Package Callsign catalog class
 */
 
-
 #include "Callsign.h"
-
 
 // +----------------------------------------------------------------------+
 
-static int  callsign_index = -1;
+static int callsign_index = -1;
 
 static char civilian_catalog[32][16] = {
 	"Aleph",    "Vehan",    "Galvin",   "Caleb",
@@ -79,7 +81,6 @@ static char zolon_catalog[32][16] = {
 	"Scad",     "Pompano",  "Tusk",     "Nautilus"
 };
 
-
 // +----------------------------------------------------------------------+
 
 const char*
@@ -100,4 +101,3 @@ Callsign::GetCallsign(int IFF)
 	case 4:     return zolon_catalog[callsign_index++];
 	}
 }
-
