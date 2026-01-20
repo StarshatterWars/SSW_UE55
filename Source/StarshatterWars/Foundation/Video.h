@@ -39,7 +39,7 @@ struct Rect;
 struct Poly;
 struct Material;
 struct VertexSet;
-class  Light;
+class  SimLight;
 class  Solid;
 class  Surface;
 
@@ -201,7 +201,7 @@ public:
     virtual bool   SetEnvironment(UTexture2D** /*faces*/) { return false; }
 
     virtual bool   SetAmbient(Color c) { return false; }
-    virtual bool   SetLights(const List<Light>& lights) { return false; }
+    virtual bool   SetLights(const List<SimLight>& lights) { return false; }
     virtual bool   SetRenderState(RENDER_STATE state, DWORD value) { return false; }
     virtual bool   SetBlendType(int blend_type) { return false; }
     virtual bool   StartFrame() { return false; }

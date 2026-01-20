@@ -196,11 +196,15 @@ CameraView::FindDepth(Graphic* g)
 		return;
 	}
 
-	// Translate into a viewpoint-relative coordinate
-	const FVector loc = (FVector)(g->Location() - camera->Pos());
+	// Viewpoint-relative vector (world space):
+	const FVector loc = g->Location() - camera->Pos();
 
-	// Rotate into the view orientation
-	const float z = (float)(loc * (FVector)camera->vpn());
+	// UE FIX:
+	// Starshatter used (Vec3 * Vec3) as dot product. In UE, use FVector::DotProduct.
+	// Also avoid C-style casts.
+	const FVector vpn = camera->vpn(); // assuming vpn() already returns FVector in your port
+
+	const float z = FVector::DotProduct(loc, vpn);
 	g->SetDepth(z);
 }
 
@@ -278,7 +282,7 @@ CameraView::TranslateScene()
 
 	ListIter<SimLight> l_iter = scene->Lights();
 	while (++l_iter) {
-		Light* light = l_iter.value();
+		SimLight* light = l_iter.value();
 		if (light)
 			light->TranslateBy((FVector)camera_loc);
 	}
@@ -741,7 +745,7 @@ CameraView::RenderLensFlare()
 		if (!light || !light->IsActive())
 			continue;
 
-		if (light->Type() == Light::LIGHT_DIRECTIONAL && light->Intensity() < 1)
+		if (light->Type() == SimLight::LIGHT_DIRECTIONAL && light->Intensity() < 1)
 			continue;
 
 		const double distance = (light->Location() - camera->Pos()).Length();
@@ -761,8 +765,8 @@ CameraView::RenderLensFlare()
 
 				projector.Project(sun_pos, false);
 
-				int x = (int)(sun_pos.x);
-				int y = (int)(sun_pos.y);
+				int x = (int)(sun_pos.X);
+				int y = (int)(sun_pos.Y);
 				int w = (int)(window->Width() / 4.0);
 				int h = w;
 
@@ -771,7 +775,7 @@ CameraView::RenderLensFlare()
 
 				// lens elements:
 				if (elem_texture[0]) {
-					const FVector sun((float)sun_pos.x, (float)sun_pos.y, (float)sun_pos.z);
+					const FVector sun((float)sun_pos.X, (float)sun_pos.Y, (float)sun_pos.Z);
 
 					FVector vector = center - sun;
 					const float vlen = vector.Size();
@@ -809,16 +813,18 @@ CameraView::RenderLensFlare()
 void
 CameraView::WorldPlaneToView(Plane& plane)
 {
-	// Determine the distance from the viewpoint
-	FVector tnormal = plane.normal;
+	// Cache original normal
+	const FVector WorldNormal = plane.normal;
 
-	if (!infinite)
-		plane.distance -= (float)(camera->Pos() * tnormal);
+	// Distance from camera position along plane normal
+	if (!infinite && camera) {
+		plane.distance -= FVector::DotProduct(camera->Pos(), WorldNormal);
+	}
 
-	// Rotate the normal into view orientation
-	plane.normal.x = tnormal * (FVector)cvrt;
-	plane.normal.y = tnormal * (FVector)cvup;
-	plane.normal.z = tnormal * (FVector)cvpn;
+	// Rotate normal into view space using camera basis vectors
+	plane.normal.X = FVector::DotProduct(WorldNormal, cvrt);
+	plane.normal.Y = FVector::DotProduct(WorldNormal, cvup);
+	plane.normal.Z = FVector::DotProduct(WorldNormal, cvpn);
 }
 
 void

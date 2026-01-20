@@ -20,7 +20,7 @@
 #include "DataLoader.h"
 #include "SimLight.h"
 #include "Shadow.h"
-#include "Sim/Projector.h"
+#include "SimProjector.h"
 #include "OPCODE.h"
 
 // Unreal logging + minimal core types:

@@ -525,7 +525,7 @@ else GET_DEF_BOOL(visible_stores);
 							}
 
 							if (p.length())
-								loader->SetDataPath(p);
+								loader->SetDataPath(FString(p.data()));
 
 							design->turret_model = new  Model;
 							design->turret_model->Load(t, design->scale);
@@ -548,7 +548,7 @@ else GET_DEF_BOOL(visible_stores);
 								}
 
 								if (p.length())
-									loader->SetDataPath(p);
+									loader->SetDataPath(FString(p.data()));
 
 								design->turret_base_model = new  Model;
 								design->turret_base_model->Load(t, design->scale);
@@ -576,12 +576,12 @@ else GET_DEF_BOOL(visible_stores);
 							}
 
 							if (p.length())
-								loader->SetDataPath(p);
+								loader->SetDataPath(FString(path));
 
 							design->shot_model = new  Model;
 							design->shot_model->Load(t, design->scale);
 
-							loader->SetDataPath(path);
+							loader->SetDataPath(FString(p.data()));
 						}
 
 						if (design->trail.length()) {

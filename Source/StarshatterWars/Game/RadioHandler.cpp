@@ -515,9 +515,9 @@ RadioHandler::Support(RadioMessage* msg, Ship* ship)
 	SimElement* baby = msg->Sender()->GetElement();
 	SimRegion* rgn = msg->Sender()->GetRegion();
 
-	for (int i = 0; i < rgn->Ships().size(); i++) {
-		Ship* s = rgn->Ships().at(i);
-		Element* e = s->GetElement();
+	for (int i = 0; i < rgn->GetShips().size(); i++) {
+		Ship* s = rgn->GetShips().at(i);
+		SimElement* e = s->GetElement();
 
 		if (e && s->IsDropship() &&
 			e->Type() == Mission::PATROL &&

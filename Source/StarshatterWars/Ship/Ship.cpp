@@ -35,7 +35,7 @@
 #include "Shield.h"
 #include "ShieldRep.h"
 #include "Computer.h"
-#include "FlightComp.h"
+#include "FlightComputer.h"
 #include "Drive.h"
 #include "QuantumDrive.h"
 #include "Farcaster.h"
@@ -65,11 +65,11 @@
 #include "TerrainRegion.h"
 #include "Terrain.h"
 #include "SimSystem.h"
-#include "Component.h"
+#include "SimComponent.h"
 #include "KeyMap.h"
 #include "RadioView.h"
 #include "AudioConfig.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "HUDView.h"
 #include "Random.h"
 #include "RadioVox.h"
@@ -86,7 +86,7 @@
 #include "Shadow.h"
 #include "Skin.h"
 #include "Sprite.h"
-#include "Light.h"
+#include "SimLight.h"
 #include "Bitmap.h"
 #include "Button.h"
 #include "Sound.h"
@@ -462,7 +462,7 @@ Ship::Ship(const char* ship_name, const char* reg_num, ShipDesign* ship_dsn, int
 		Computer* comp = 0;
 
 		if (design->computers[i]->Subtype() == Computer::FLIGHT) {
-			flcs = new FlightComp(*design->computers[i]);
+			flcs = new FlightComputer(*design->computers[i]);
 
 			flcs->SetShip(this);
 			flcs->SetMode(flcs_mode);
@@ -665,7 +665,7 @@ Ship::Destroy()
 
 	GRAPHIC_DESTROY(cockpit);
 	GRAPHIC_DESTROY(shieldRep);
-	LIGHT_DESTROY(light);
+	SIMLIGHT_DESTROY(light);
 
 	delete launch_point;
 	launch_point = 0;
@@ -869,7 +869,7 @@ Ship::GetTextureList(List<UTexture2D*>& Textures)
 // +--------------------------------------------------------------------+
 
 void
-Ship::Activate(Scene& scene)
+Ship::Activate(SimScene& scene)
 {
 	int i = 0;
 	SimObject::Activate(scene);
@@ -959,7 +959,7 @@ Ship::Activate(Scene& scene)
 }
 
 void
-Ship::Deactivate(Scene& scene)
+Ship::Deactivate(SimScene& scene)
 {
 	int i = 0;
 	SimObject::Deactivate(scene);
@@ -2503,7 +2503,7 @@ Ship::ExecFrame(double seconds)
 	ExecMaintFrame(seconds);
 
 	if (flight_decks.size() > 0) {
-		Camera* global_cam = CameraDirector::GetInstance()->GetCamera();
+		Camera* global_cam = CameraManager:GetInstance()->GetCamera();
 		FVector global_cam_loc = global_cam->Pos();
 		bool disable_shadows = false;
 

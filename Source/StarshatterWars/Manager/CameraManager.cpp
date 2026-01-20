@@ -147,8 +147,6 @@ CameraManager::SetShip(Ship* s)
 	}
 }
 
-// +--------------------------------------------------------------------+
-
 void
 CameraManager::SetMode(int m, double t)
 {
@@ -161,9 +159,7 @@ CameraManager::SetMode(int m, double t)
 	if (m == MODE_DROP && mode != MODE_DROP)
 		old_mode = mode;
 
-	// if manually leaving drop mode, forget about
-	// restoring the previous mode when the drop
-	// expires...
+	// if manually leaving drop mode, forget about restoring the previous mode:
 	else if (m != MODE_DROP && mode == MODE_DROP)
 		old_mode = MODE_NONE;
 
@@ -173,7 +169,6 @@ CameraManager::SetMode(int m, double t)
 	if (mode == m) {
 		if (mode == MODE_TARGET || mode == MODE_ORBIT)
 			CycleViewObject();
-
 		return;
 	}
 
@@ -181,11 +176,10 @@ CameraManager::SetMode(int m, double t)
 		if (m <= MODE_VIRTUAL) {
 			requested_mode = m;
 			transition = t;
-			external_ship = 0;
+			external_ship = nullptr;
 			ClearGroup();
 
-			// no easy way to do a smooth transition between
-			// certain modes, so just go immediately:
+			// no easy way to do a smooth transition between certain modes, so go immediately:
 			if ((mode == MODE_TARGET && m == MODE_CHASE) ||
 				(mode == MODE_COCKPIT && m == MODE_VIRTUAL) ||
 				(mode == MODE_VIRTUAL && m == MODE_COCKPIT))
@@ -195,17 +189,15 @@ CameraManager::SetMode(int m, double t)
 				transition = 0;
 			}
 		}
-
 		else if (m == MODE_TRANSLATE || m == MODE_ZOOM) {
 			requested_mode = m;
 			transition = t;
 			base_range = range;
 		}
-
 		else if (m >= MODE_DOCKING) {
 			mode = m;
 			transition = 0;
-			external_ship = 0;
+			external_ship = nullptr;
 			ClearGroup();
 		}
 
@@ -223,24 +215,24 @@ static const char* get_camera_mode_name(int m)
 {
 	switch (m) {
 	default:
-	case CameraManager::MODE_NONE:      return "";           break;
-	case CameraManager::MODE_COCKPIT:   return "";           break;
-	case CameraManager::MODE_CHASE:     return "Chase Cam";  break;
-	case CameraManager::MODE_TARGET:    return "Padlock";    break;
-	case CameraManager::MODE_THREAT:    return "Threatlock"; break;
-	case CameraManager::MODE_VIRTUAL:   return "Virtual";    break;
+	case CameraManager::MODE_NONE:      return "";
+	case CameraManager::MODE_COCKPIT:   return "";
+	case CameraManager::MODE_CHASE:     return "Chase Cam";
+	case CameraManager::MODE_TARGET:    return "Padlock";
+	case CameraManager::MODE_THREAT:    return "Threatlock";
+	case CameraManager::MODE_VIRTUAL:   return "Virtual";
 	case CameraManager::MODE_ORBIT:
 	case CameraManager::MODE_TRANSLATE:
-	case CameraManager::MODE_ZOOM:      return "Orbit Cam";  break;
-	case CameraManager::MODE_DOCKING:   return "Dock Cam";   break;
-	case CameraManager::MODE_DROP:      return "";           break;
+	case CameraManager::MODE_ZOOM:      return "Orbit Cam";
+	case CameraManager::MODE_DOCKING:   return "Dock Cam";
+	case CameraManager::MODE_DROP:      return "";
 	}
 }
 
 const char*
 CameraManager::GetModeName()
 {
-	int m = GetCameraMode();
+	const int m = GetCameraMode();
 
 	if (m != CameraManager::MODE_VIRTUAL) {
 		return get_camera_mode_name(m);
@@ -248,19 +240,14 @@ CameraManager::GetModeName()
 	else if (instance) {
 		if (instance->virt_az > 30 * DEGREES && instance->virt_az < 100 * DEGREES)
 			return "RIGHT";
-
 		else if (instance->virt_az >= 100 * DEGREES)
 			return "RIGHT-AFT";
-
 		else if (instance->virt_az < -30 * DEGREES && instance->virt_az > -100 * DEGREES)
 			return "LEFT";
-
 		else if (instance->virt_az <= -100 * DEGREES)
 			return "LEFT-AFT";
-
 		else if (instance->virt_el > 15 * DEGREES)
 			return "UP";
-
 		else if (instance->virt_el < -15 * DEGREES)
 			return "DOWN";
 
@@ -292,30 +279,6 @@ CameraManager::SetCameraMode(int m, double t)
 
 // +--------------------------------------------------------------------+
 
-double
-CameraManager::GetRangeLimit()
-{
-	return range_max_limit;
-}
-
-void
-CameraManager::SetRangeLimit(double r)
-{
-	if (r >= 1e3)
-		range_max_limit = r;
-}
-
-void
-CameraManager::SetRangeLimits(double min, double max)
-{
-	if (instance) {
-		instance->range_min = min;
-		instance->range_max = max;
-	}
-}
-
-// +--------------------------------------------------------------------+
-
 void
 CameraManager::ClearGroup()
 {
@@ -329,33 +292,31 @@ CameraManager::CycleViewObject()
 {
 	if (!ship) return;
 
-	Ship* current = external_ship;
-	external_ship = 0;
+	Ship* const Current = external_ship;
+	external_ship = nullptr;
 
 	ListIter<SimContact> iter = ship->ContactList();
 	while (++iter && !external_ship) {
 		SimContact* c = iter.value();
-		Ship* c_ship = c->GetShip();
+		Ship* c_ship = c ? c->GetShip() : nullptr;
 
-		if (c_ship && !current) {
+		if (c_ship && !Current) {
 			external_ship = c_ship;
 		}
-
-		else if (current && c_ship == current) {
+		else if (Current && c_ship == Current) {
 			while (++iter && !external_ship) {
 				c = iter.value();
-				if (c->ActLock())
+				if (c && c->ActLock())
 					external_ship = c->GetShip();
 			}
 		}
 	}
 
-	if (external_ship != current) {
+	if (external_ship != Current) {
 		if (external_ship) {
 			if (external_ship->Life() == 0 || external_ship->IsDying() || external_ship->IsDead()) {
-				const Point loc = external_ship->Location();
-				external_point = FVector((float)loc.X, (float)loc.Y, (float)loc.Z);
-				external_ship = 0;
+				external_point = external_ship->Location(); // FVector in UE port
+				external_ship = nullptr;
 			}
 			else {
 				Observe(external_ship);
@@ -379,7 +340,7 @@ CameraManager::SetViewOrbital(Orbital* orb)
 	if (external_body) {
 		range_min = external_body->Radius() * 2.5;
 		ClearGroup();
-		external_ship = 0;
+		external_ship = nullptr;
 
 		if (sim) {
 			region = sim->FindNearestSpaceRegion(orb);
@@ -404,7 +365,7 @@ CameraManager::SetViewObject(Ship* obj, bool quick)
 		region = ship->GetRegion();
 	}
 
-	external_body = 0;
+	external_body = nullptr;
 	external_point = FVector::ZeroVector;
 
 	Starshatter* stars = Starshatter::GetInstance();
@@ -418,9 +379,7 @@ CameraManager::SetViewObject(Ship* obj, bool quick)
 
 	if (mode == MODE_TARGET) {
 		ClearGroup();
-		if (external_ship) {
-			external_ship = 0;
-		}
+		external_ship = nullptr;
 	}
 	else if (mode >= MODE_ORBIT) {
 		if (quick) {
@@ -433,20 +392,15 @@ CameraManager::SetViewObject(Ship* obj, bool quick)
 
 		if (external_group.size()) {
 			ClearGroup();
-
-			if (external_ship) {
-				external_ship = 0;
-			}
+			external_ship = nullptr;
 		}
-
 		else {
-			if ((obj == external_ship) || (obj == ship && external_ship == 0)) {
+			if ((obj == external_ship) || (obj == ship && external_ship == nullptr)) {
 				if (!quick)
 					SetMode(MODE_ZOOM);
 			}
-
 			else if (external_ship) {
-				external_ship = 0;
+				external_ship = nullptr;
 			}
 		}
 	}
@@ -458,7 +412,7 @@ CameraManager::SetViewObject(Ship* obj, bool quick)
 			region = external_ship->GetRegion();
 
 			if (external_ship->Life() == 0 || external_ship->IsDying() || external_ship->IsDead()) {
-				external_ship = 0;
+				external_ship = nullptr;
 				range_min = 100;
 			}
 			else {
@@ -478,222 +432,21 @@ CameraManager::SetViewObject(Ship* obj, bool quick)
 
 // +--------------------------------------------------------------------+
 
-void
-CameraManager::SetViewObjectGroup(ListIter<Ship> group, bool quick)
-{
-	if (!ship) return;
-
-	Starshatter* stars = Starshatter::GetInstance();
-
-	if (!stars->InCutscene()) {
-		// only view solid contacts:
-		while (++group) {
-			Ship* s = group.value();
-
-			if (s->GetIFF() != ship->GetIFF()) {
-				SimContact* c = ship->FindContact(s);
-				if (!c || !c->ActLock())
-					return;
-			}
-
-			if (s->Life() == 0 || s->IsDying() || s->IsDead())
-				return;
-		}
-	}
-
-	group.reset();
-
-	if (external_group.size() > 1 &&
-		external_group.size() == group.size()) {
-
-		bool same = true;
-
-		for (int i = 0; same && i < external_group.size(); i++) {
-			if (external_group[i] != group.container()[i])
-				same = false;
-		}
-
-		if (same) {
-			SetMode(MODE_ZOOM);
-			return;
-		}
-	}
-
-	ClearGroup();
-
-	if (quick) {
-		mode = MODE_ORBIT;
-		transition = 0;
-	}
-	else {
-		SetMode(MODE_TRANSLATE);
-	}
-
-	external_group.append(group.container());
-
-	ListIter<Ship> iter = external_group;
-	while (++iter) {
-		Ship* s = iter.value();
-		region = s->GetRegion();
-		Observe(s);
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-CameraManager::VirtualHead(double az, double el)
-{
-	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
-		const double alimit = 3 * PI / 4;
-		const double e_lo = PI / 8;
-		const double e_hi = PI / 3;
-		const double escale = e_hi;
-
-		virt_az = az * alimit;
-		virt_el = el * escale;
-
-		if (virt_az > alimit)
-			virt_az = alimit;
-		else if (virt_az < -alimit)
-			virt_az = -alimit;
-
-		if (virt_el > e_hi)
-			virt_el = e_hi;
-		else if (virt_el < -e_lo)
-			virt_el = -e_lo;
-	}
-}
-
-void
-CameraManager::VirtualHeadOffset(double x, double y, double z)
-{
-	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
-		virt_x = x;
-		virt_y = y;
-		virt_z = z;
-	}
-}
-
-void
-CameraManager::VirtualAzimuth(double delta)
-{
-	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
-		virt_az += delta;
-
-		const double alimit = 3 * PI / 4;
-
-		if (virt_az > alimit)
-			virt_az = alimit;
-		else if (virt_az < -alimit)
-			virt_az = -alimit;
-	}
-}
-
-void
-CameraManager::VirtualElevation(double delta)
-{
-	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
-		virt_el += delta;
-
-		const double e_lo = PI / 8;
-		const double e_hi = PI / 3;
-
-		if (virt_el > e_hi)
-			virt_el = e_hi;
-		else if (virt_el < -e_lo)
-			virt_el = -e_lo;
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-CameraManager::ExternalAzimuth(double delta)
-{
-	azimuth += delta;
-
-	if (azimuth > PI)
-		azimuth = -2 * PI + azimuth;
-
-	else if (azimuth < -PI)
-		azimuth = 2 * PI + azimuth;
-}
-
-void
-CameraManager::ExternalElevation(double delta)
-{
-	elevation += delta;
-
-	const double limit = (0.43 * PI);
-
-	if (elevation > limit)
-		elevation = limit;
-	else if (elevation < -limit)
-		elevation = -limit;
-}
-
-void
-CameraManager::ExternalRange(double delta)
-{
-	range *= delta;
-
-	if (ship && ship->IsAirborne())
-		range_max = 30e3;
-	else
-		range_max = range_max_limit;
-
-	if (range < range_min)
-		range = range_min;
-	else if (range > range_max)
-		range = range_max;
-}
-
-// +--------------------------------------------------------------------+
-
-void
-CameraManager::SetOrbitPoint(double a, double e, double r)
-{
-	azimuth = a;
-	elevation = e;
-	range = r;
-
-	if (external_body) {
-		if (range < external_body->Radius() * 2)
-			range = external_body->Radius() * 2;
-		else if (range > external_body->Radius() * 6)
-			range = external_body->Radius() * 6;
-	}
-	else {
-		if (range < range_min)
-			range = range_min;
-		else if (range > range_max)
-			range = range_max;
-	}
-}
-
-void
-CameraManager::SetOrbitRates(double ar, double er, double rr)
-{
-	az_rate = ar;
-	el_rate = er;
-	range_rate = rr;
-}
-
-// +--------------------------------------------------------------------+
-
 bool
 CameraManager::Update(SimObject* obj)
 {
+	if (!obj)
+		return SimObserver::Update(obj);
+
 	if (obj->Type() == SimObject::SIM_SHIP) {
 		Ship* s = (Ship*)obj;
+
 		if (ship == s)
-			ship = 0;
+			ship = nullptr;
 
 		if (external_ship == s) {
-			const Point loc = s->Location();
-			external_point = FVector((float)loc.x, (float)loc.y, (float)loc.z);
-			external_ship = 0;
+			external_point = s->Location(); // FVector
+			external_ship = nullptr;
 		}
 
 		if (external_group.contains(s))
@@ -701,12 +454,6 @@ CameraManager::Update(SimObject* obj)
 	}
 
 	return SimObserver::Update(obj);
-}
-
-const char*
-CameraManager::GetObserverName() const
-{
-	return "CameraManager";
 }
 
 // +--------------------------------------------------------------------+
@@ -719,7 +466,7 @@ CameraManager::ExecFrame(double seconds)
 
 	hud = HUDView::GetInstance();
 
-	int flight_phase = ship->GetFlightPhase();
+	const int flight_phase = ship->GetFlightPhase();
 
 	if (flight_phase < Ship::LOCKED)
 		SetMode(MODE_DOCKING);
@@ -734,7 +481,7 @@ CameraManager::ExecFrame(double seconds)
 	}
 
 	if (flight_phase >= Ship::LOCKED && flight_phase < Ship::ACTIVE) {
-		int m = GetMode();
+		const int m = GetMode();
 		if (m != MODE_COCKPIT && m != MODE_VIRTUAL)
 			SetMode(MODE_COCKPIT);
 	}
@@ -755,18 +502,16 @@ CameraManager::ExecFrame(double seconds)
 
 	Starshatter* stars = Starshatter::GetInstance();
 
-	// if we are in padlock, and have not locked a ship
-	// try to padlock the current target:
+	// if we are in padlock, and have not locked a ship, try to padlock the current target:
 	if (op_mode == MODE_TARGET && !external_ship) {
 		SimObject* tgt = ship->GetTarget();
 		if (tgt && tgt->Type() == SimObject::SIM_SHIP)
 			SetViewObject((Ship*)tgt);
 	}
-
 	// if in an external mode, check the external ship:
 	else if (op_mode >= MODE_TARGET && op_mode <= MODE_ZOOM) {
 		if (external_ship && external_ship != ship && !stars->InCutscene()) {
-			Contact* c = ship->FindContact(external_ship);
+			SimContact* c = ship->FindContact(external_ship);
 			if (!c || !c->ActLock()) {
 				SetViewObject(ship);
 			}
@@ -814,60 +559,19 @@ CameraManager::ExecFrame(double seconds)
 	}
 
 	if (ship->Shake() > 0 &&
-		(op_mode < MODE_ORBIT ||
-			(op_mode == MODE_VIRTUAL && ship->Cockpit()))) {
-
-		Point vib = ship->Vibration() * 0.2;
-		camera.MoveBy(vib);
-		camera.Aim(0, vib.y, vib.z);
+		(op_mode < MODE_ORBIT || (op_mode == MODE_VIRTUAL && ship->Cockpit())))
+	{
+		const FVector Vib = ship->Vibration() * 0.2f;
+		camera.MoveBy(Vib);
+		camera.Aim(0, Vib.Y, Vib.Z);
 	}
 
 	Transition(seconds);
 
 	{
-		const Point cam = camera.Pos();
-		DetailSet::SetReference(region, FVector((float)cam.x, (float)cam.y, (float)cam.z));
+		const FVector Cam = camera.Pos();
+		DetailSet::SetReference(region, Cam);
 	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-CameraManager::Transition(double seconds)
-{
-	if (transition > 0)
-		transition -= seconds * 1.5;
-
-	if (transition <= 0) {
-		transition = 0;
-
-		if (requested_mode && requested_mode != mode)
-			mode = requested_mode;
-
-		requested_mode = 0;
-
-		if (mode == MODE_TRANSLATE || mode == MODE_ZOOM) {
-			if (mode == MODE_ZOOM)
-				range = range_min;
-
-			mode = MODE_ORBIT;
-		}
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-bool
-CameraManager::IsViewCentered()
-{
-	if (instance) {
-		double fvaz = FMath::Abs(instance->virt_az);
-		double fvel = FMath::Abs(instance->virt_el);
-
-		return fvaz < 15 * DEGREES && fvel < 15 * DEGREES;
-	}
-
-	return true;
 }
 
 // +--------------------------------------------------------------------+
@@ -877,13 +581,15 @@ CameraManager::Cockpit(double seconds)
 {
 	camera.Clone(ship->Cam());
 
-	Point bridge = ship->BridgeLocation();
-	Point cpos = camera.Pos() +
-		camera.vrt() * bridge.x +
-		camera.vpn() * bridge.y +
-		camera.vup() * bridge.z;
+	const FVector Bridge = ship->BridgeLocation();
 
-	camera.MoveTo(cpos);
+	const FVector Cpos =
+		camera.Pos() +
+		camera.vrt() * Bridge.X +
+		camera.vpn() * Bridge.Y +
+		camera.vup() * Bridge.Z;
+
+	camera.MoveTo(Cpos);
 }
 
 // +--------------------------------------------------------------------+
@@ -893,36 +599,30 @@ CameraManager::Virtual(double seconds)
 {
 	camera.Clone(ship->Cam());
 
-	Point bridge = ship->BridgeLocation();
-	Point cpos = camera.Pos() +
-		camera.vrt() * (bridge.x + virt_x) +
-		camera.vpn() * (bridge.y + virt_z) +
-		camera.vup() * (bridge.z + virt_y);
+	const FVector Bridge = ship->BridgeLocation();
 
-	camera.MoveTo(cpos);
+	const FVector Cpos =
+		camera.Pos() +
+		camera.vrt() * (float)(Bridge.X + virt_x) +
+		camera.vpn() * (float)(Bridge.Y + virt_z) +
+		camera.vup() * (float)(Bridge.Z + virt_y);
+
+	camera.MoveTo(Cpos);
 
 	camera.Yaw(virt_az);
 	camera.Pitch(-virt_el);
 
-	double fvaz = FMath::Abs(virt_az);
-	double fvel = FMath::Abs(virt_el);
+	const double fvaz = FMath::Abs(virt_az);
+	const double fvel = FMath::Abs(virt_el);
 
 	if (fvaz > 0.01 * DEGREES && fvaz < 15 * DEGREES) {
-		double bleed = fvaz * 2;
-
-		if (virt_az > 0)
-			virt_az -= bleed * seconds;
-		else
-			virt_az += bleed * seconds;
+		const double bleed = fvaz * 2;
+		virt_az += (virt_az > 0 ? -1.0 : 1.0) * bleed * seconds;
 	}
 
 	if (fvel > 0.01 * DEGREES && fvel < 15 * DEGREES) {
-		double bleed = fvel;
-
-		if (virt_el > 0)
-			virt_el -= bleed * seconds;
-		else
-			virt_el += bleed * seconds;
+		const double bleed = fvel;
+		virt_el += (virt_el > 0 ? -1.0 : 1.0) * bleed * seconds;
 	}
 }
 
@@ -931,50 +631,55 @@ CameraManager::Virtual(double seconds)
 void
 CameraManager::Chase(double seconds)
 {
-	double step = 1;
+	double step = 1.0;
 
 	if (requested_mode == MODE_COCKPIT)
 		step = transition;
-
 	else if (requested_mode == MODE_CHASE)
-		step = 1 - transition;
+		step = 1.0 - transition;
 
 	camera.Clone(ship->Cam());
-	Point velocity = camera.vpn();
 
-	if (ship->Velocity().Length() > 10) {
-		velocity = ship->Velocity();
-		velocity.Normalize();
-		velocity *= 0.25;
-		velocity += camera.vpn() * 2;
-		velocity.Normalize();
+	FVector VelocityDir = camera.vpn();
+
+	const FVector ShipVel = ship->Velocity();
+	if (ShipVel.Length() > 10.0f) {
+		VelocityDir = ShipVel.GetSafeNormal();
+		VelocityDir *= 0.25f;
+		VelocityDir += camera.vpn() * 2.0f;
+		VelocityDir = VelocityDir.GetSafeNormal();
 	}
 
-	Point chase = ship->ChaseLocation();
-	Point bridge = ship->BridgeLocation();
-	Point cpos = camera.Pos() +
-		camera.vrt() * bridge.X * (1 - step) +
-		camera.vpn() * bridge.Y * (1 - step) +
-		camera.vup() * bridge.Z * (1 - step) +
-		velocity * chase.y * step +
-		camera.vup() * chase.z * step;
+	const FVector Chase = ship->ChaseLocation();   // UE: return FVector
+	const FVector Bridge = ship->BridgeLocation();  // UE: return FVector
 
-	camera.MoveTo(cpos);
+	const FVector Cpos =
+		camera.Pos() +
+		camera.vrt() * (Bridge.X * (float)(1.0 - step)) +
+		camera.vpn() * (Bridge.Y * (float)(1.0 - step)) +
+		camera.vup() * (Bridge.Z * (float)(1.0 - step)) +
+		VelocityDir * (Chase.Y * (float)step) +
+		camera.vup() * (Chase.Z * (float)step);
+
+	camera.MoveTo(Cpos);
 }
 
 // +--------------------------------------------------------------------+
-
 void
 CameraManager::Target(double seconds)
 {
-	FVector target_loc = Point(external_point.X, external_point.Y, external_point.Z);
+	// If external_point is already an FVector in your UE port, just use it.
+	// If it's still a legacy Point type, ensure it can convert to FVector, or keep this explicit mapping.
+	FVector TargetLoc(external_point.X, external_point.Y, external_point.Z);
 
-	if (external_ship)
-		target_loc = external_ship->Location();
+	if (external_ship) {
+		TargetLoc = external_ship->Location();
+	}
 
+	// If we have no meaningful external target (or it's our own ship), fall back:
 	if (!external_ship || external_ship == ship) {
 		if (external_point.IsZero()) {
-			if (ship->Cockpit())
+			if (ship && ship->Cockpit())
 				Virtual(seconds);
 			else
 				Orbit(seconds);
@@ -983,30 +688,39 @@ CameraManager::Target(double seconds)
 		}
 	}
 
-	double step = 1;
+	// transition step:
+	double Step = 1.0;
 
 	if (requested_mode == MODE_COCKPIT)
-		step = transition;
-
+		Step = transition;
 	else if (requested_mode == MODE_TARGET)
-		step = 1 - transition;
+		Step = 1.0 - transition;
 
-	if (ship->Cockpit()) {
+	if (ship && ship->Cockpit()) {
 		// internal padlock:
 		Cockpit(seconds);
-		camera.Padlock(target_loc, 3 * PI / 4, PI / 8, PI / 3);
+
+		// If camera.Padlock takes FVector and radians, this is fine.
+		// If it takes legacy Point, convert TargetLoc back to that type (but prefer FVector in UE).
+		camera.Padlock(TargetLoc, 3.0 * PI / 4.0, PI / 8.0, PI / 3.0);
 	}
 	else {
 		// external padlock:
-		FVector delta = target_loc - ship->Location();
-		delta.Normalize();
-		delta *= -5 * ship->Radius() * step;
-		delta.y += ship->Radius() * step;
+		const FVector ShipLoc = ship ? ship->Location() : FVector::ZeroVector;
 
-		camera.MoveTo(ship->Location() + delta);
-		camera.LookAt(target_loc);
+		FVector Delta = TargetLoc - ShipLoc;
+		Delta = Delta.GetSafeNormal(); // UE-safe normalize (handles zero length)
+
+		const double Radius = ship ? ship->Radius() : 0.0;
+
+		Delta *= (float)(-5.0 * Radius * Step);
+		Delta.Y += (float)(Radius * Step);
+
+		camera.MoveTo(ShipLoc + Delta);
+		camera.LookAt(TargetLoc);
 	}
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -1021,61 +735,59 @@ CameraManager::Threat(double seconds)
 void
 CameraManager::Orbit(double seconds)
 {
-	Point cpos = ship->Location();
-	int   op_mode = GetCameraMode();
+	// UE: clamp delta-time
+	if (seconds < 0.0)        seconds = 0.0;
+	else if (seconds > 0.2)   seconds = 0.2;
 
-	if (seconds < 0)        seconds = 0;
-	else if (seconds > 0.2) seconds = 0.2;
+	// Use UE vectors for spatial math in this function:
+	FVector Cpos = ship ? ship->Location() : FVector::ZeroVector;
+	const int32 OpMode = GetCameraMode();
+	(void)OpMode; // retained for parity / potential future use
 
 	// auto rotate
 	azimuth += az_rate * seconds;
 	elevation += el_rate * seconds;
-	range *= 1 + range_rate * seconds;
+	range *= (1.0 + range_rate * seconds);
 
+	// Determine orbit focus + min range
 	if (external_body && external_body->Rep()) {
 		range_min = external_body->Radius() * 2.5;
-		cpos = external_body->Rep()->Location();
+		Cpos = external_body->Rep()->Location();
 	}
-
 	else if (external_group.size()) {
-		Point neg(1e9, 1e9, 1e9);
-		Point pos(-1e9, -1e9, -1e9);
+		FVector Neg(1e9, 1e9, 1e9);
+		FVector Pos(-1e9, -1e9, -1e9);
 
 		ListIter<Ship> iter(external_group);
 		while (++iter) {
-			Point loc = iter->Location();
+			const FVector Loc = iter->Location();
 
-			if (loc.x < neg.x) neg.x = loc.x;
-			if (loc.x > pos.x) pos.x = loc.x;
-			if (loc.y < neg.y) neg.y = loc.y;
-			if (loc.y > pos.y) pos.y = loc.y;
-			if (loc.z < neg.z) neg.z = loc.z;
-			if (loc.z > pos.z) pos.z = loc.z;
+			if (Loc.X < Neg.X) Neg.X = Loc.X;
+			if (Loc.X > Pos.X) Pos.X = Loc.X;
+			if (Loc.Y < Neg.Y) Neg.Y = Loc.Y;
+			if (Loc.Y > Pos.Y) Pos.Y = Loc.Y;
+			if (Loc.Z < Neg.Z) Neg.Z = Loc.Z;
+			if (Loc.Z > Pos.Z) Pos.Z = Loc.Z;
 		}
 
-		double dx = pos.x - neg.x;
-		double dy = pos.y - neg.y;
-		double dz = pos.z - neg.z;
+		const double dx = (double)(Pos.X - Neg.X);
+		const double dy = (double)(Pos.Y - Neg.Y);
+		const double dz = (double)(Pos.Z - Neg.Z);
 
-		if (dx > dy) {
-			if (dx > dz)   range_min = dx * 1.2;
-			else           range_min = dz * 1.2;
-		}
-		else {
-			if (dy > dz)   range_min = dy * 1.2;
-			else           range_min = dz * 1.2;
-		}
+		// UE: compute max extent cleanly
+		const double maxExtent = FMath::Max(dx, FMath::Max(dy, dz));
+		range_min = maxExtent * 1.2;
 
 		// focus on median location:
-		cpos = neg + Point(dx / 2, dy / 2, dz / 2);
+		Cpos = Neg + FVector((float)(dx * 0.5), (float)(dy * 0.5), (float)(dz * 0.5));
 	}
 	else if (external_ship) {
 		range_min = external_ship->Radius() * 1.5;
-		cpos = external_ship->Location();
+		Cpos = external_ship->Location();
 	}
-	else {
+	else if (ship) {
 		range_min = ship->Radius() * 1.5;
-		cpos = ship->Location();
+		Cpos = ship->Location();
 	}
 
 	if (range < range_min)
@@ -1085,12 +797,10 @@ CameraManager::Orbit(double seconds)
 	double az = azimuth;
 	double el = elevation;
 
+	// MODE_TRANSLATE: blend focus point toward base_loc
 	if (requested_mode == MODE_TRANSLATE) {
-		const FVector cpos_v((float)cpos.x, (float)cpos.y, (float)cpos.z);
-		const FVector lerp = cpos_v * (float)(1 - transition) + base_loc * (float)(transition);
-		cpos = Point(lerp.X, lerp.Y, lerp.Z);
+		Cpos = (Cpos * (float)(1.0 - transition)) + (base_loc * (float)transition);
 	}
-
 	else if (requested_mode == MODE_ZOOM) {
 		er = base_range * transition;
 
@@ -1101,70 +811,71 @@ CameraManager::Orbit(double seconds)
 			requested_mode = 0;
 		}
 	}
-
 	// transitions:
-	else if (mode < MODE_ORBIT || requested_mode > 0 && requested_mode < MODE_ORBIT) {
-		double az0 = ship->CompassHeading();
-		if (FMath::Abs(az - az0) > PI) az0 -= 2 * PI;
+	else if (mode < MODE_ORBIT || (requested_mode > 0 && requested_mode < MODE_ORBIT)) {
+		double az0 = ship ? ship->CompassHeading() : 0.0;
+		if (FMath::Abs(az - az0) > PI) az0 -= 2.0 * PI;
 
-		double r0 = 0;
-		double z0 = 0;
+		double r0 = 0.0;
+		double z0 = 0.0;
 
-		if (mode == MODE_CHASE || requested_mode == MODE_CHASE ||
-			mode == MODE_TARGET || requested_mode == MODE_TARGET) {
-			r0 = ship->ChaseLocation().Length();
-			z0 = 20 * DEGREES;
+		if (ship &&
+			(mode == MODE_CHASE || requested_mode == MODE_CHASE ||
+				mode == MODE_TARGET || requested_mode == MODE_TARGET)) {
+			r0 = (double)ship->ChaseLocation().Length();
+			z0 = 20.0 * DEGREES;
 		}
 
 		// pull out:
 		if (mode < MODE_ORBIT) {
-			er *= (1 - transition);
-			az *= (1 - transition);
-			el *= (1 - transition);
+			er *= (1.0 - transition);
+			az *= (1.0 - transition);
+			el *= (1.0 - transition);
 
 			er += r0 * transition;
 			az += az0 * transition;
 			el += z0 * transition;
 		}
-
 		// push in:
 		else {
 			er *= transition;
 			az *= transition;
 			el *= transition;
 
-			er += r0 * (1 - transition);
-			az += az0 * (1 - transition);
-			el += z0 * (1 - transition);
+			er += r0 * (1.0 - transition);
+			az += az0 * (1.0 - transition);
+			el += z0 * (1.0 - transition);
 		}
 	}
-
 	else {
 		// save base location for next time we re-focus
-		const Point tmp = cpos;
-		base_loc = FVector((float)tmp.x, (float)tmp.y, (float)tmp.z);
+		base_loc = Cpos;
 	}
 
+	// UE: use trig with FVector output
 	const double dx = er * FMath::Sin(az) * FMath::Cos(el);
 	const double dy = er * FMath::Cos(az) * FMath::Cos(el);
 	const double dz = er * FMath::Sin(el);
 
-	Point cloc = cpos + Point(dx, dz, dy);
+	// NOTE: Original mapping was Point(dx, dz, dy) (swapped Y/Z for engine coords)
+	FVector Cloc = Cpos + FVector((float)dx, (float)dz, (float)dy);
 
-	Terrain* terrain = ship->GetRegion()->GetTerrain();
-
+	// Terrain AGL clamp (keep original axis usage: Height(x, z) and compare against .Y)
+	Terrain* terrain = (ship && ship->GetRegion()) ? ship->GetRegion()->GetTerrain() : nullptr;
 	if (terrain) {
-		double cam_agl = cloc.y - terrain->Height(cloc.x, cloc.z);
+		const double ground = terrain->Height((double)Cloc.X, (double)Cloc.Z);
+		const double cam_agl = (double)Cloc.Y - ground;
 
-		if (cam_agl < 100)
-			cloc.y = terrain->Height(cloc.x, cloc.z) + 100;
+		if (cam_agl < 100.0)
+			Cloc.Y = (float)(ground + 100.0);
 	}
 
-	if (external_ship == 0 && er < 0.5 * ship->Radius())
+	if (!external_ship && ship && ship->Rep() && er < 0.5 * ship->Radius())
 		ship->Rep()->Hide();
 
-	camera.MoveTo(cloc.x, cloc.y, cloc.z);
-	camera.LookAt(cpos);
+	// camera API assumed Starshatter-style; feed UE-space values
+	camera.MoveTo((double)Cloc.X, (double)Cloc.Y, (double)Cloc.Z);
+	camera.LookAt(Cpos);
 }
 
 // +--------------------------------------------------------------------+
@@ -1172,51 +883,63 @@ CameraManager::Orbit(double seconds)
 void
 CameraManager::Docking(double seconds)
 {
-	FlightDeck* dock = ship->GetDock();
+	FlightDeck* dock = ship ? ship->GetDock() : nullptr;
 
 	if (!dock) {
 		Cockpit(seconds);
 		return;
 	}
 
-	if (!ship->IsAirborne())
+	// If you still have legacy sim/scene/color plumbing, keep it.
+	// Otherwise, replace with your UE scene/PPV/lighting pipeline later.
+	if (ship && !ship->IsAirborne() && sim && sim->GetScene()) {
 		sim->GetScene()->SetAmbient(Color(120, 130, 140));
+	}
 
-	int flight_phase = ship->GetFlightPhase();
+	const int32 flight_phase = ship ? ship->GetFlightPhase() : 0;
 
-	Point bridge = ship->BridgeLocation();
-	Point cloc = ship->Location() +
-		ship->Cam().vrt() * bridge.x +
-		ship->Cam().vpn() * bridge.y +
-		ship->Cam().vup() * bridge.z;
+	// --- Bridge focus point (look-at) ---
+	// Convert Point math to FVector math locally for UE compatibility.
+	const FVector Bridge = ship ? ship->BridgeLocation() : FVector::ZeroVector;
 
-	Point cpos = dock->CamLoc();
+	// NOTE: Cam().vrt/vpn/vup are assumed to return axis vectors (legacy camera basis).
+	// If they return Point/Vec3, ensure implicit conversion or update those accessors to FVector.
+	const FVector ShipLoc = ship ? ship->Location() : FVector::ZeroVector;
+
+	const FVector Vrt = ship ? ship->Cam().vrt() : FVector::RightVector;
+	const FVector Vpn = ship ? ship->Cam().vpn() : FVector::ForwardVector;
+	const FVector Vup = ship ? ship->Cam().vup() : FVector::UpVector;
+
+	const FVector Cloc = ShipLoc
+		+ (Vrt * Bridge.X)
+		+ (Vpn * Bridge.Y)
+		+ (Vup * Bridge.Z);
+
+	// --- Camera position (from flight deck) ---
+	FVector Cpos = dock->CamLoc();
 
 	// preflight:
 	if (flight_phase < Ship::LOCKED) {
-		base_loc = FVector((float)cpos.x, (float)cpos.y, (float)cpos.z);
+		base_loc = Cpos;
 	}
-
 	else if (flight_phase == Ship::LOCKED) {
 		if (hud)
 			hud->SetHUDMode(HUDView::HUD_MODE_TAC);
 
-		const FVector base = base_loc;
-		const FVector cloc_v((float)cloc.x, (float)cloc.y, (float)cloc.z);
-		const FVector lerp = base * (float)transition + cloc_v * (float)(1 - transition);
-		cpos = Point(lerp.X, lerp.Y, lerp.Z);
+		// NOTE: preserve original lerp direction:
+		// cpos = base*transition + cloc*(1-transition)
+		Cpos = (base_loc * (float)transition) + (Cloc * (float)(1.0 - transition));
 	}
-
 	// recovery:
 	else if (flight_phase > Ship::APPROACH) {
 		if (hud)
 			hud->SetTacticalMode(1);
 	}
 
-	camera.MoveTo(cpos);
-	camera.LookAt(cloc);
+	// If your camera API has FVector overloads, use them:
+	camera.MoveTo(Cpos);
+	camera.LookAt(Cloc);
 }
-
 // +--------------------------------------------------------------------+
 
 void

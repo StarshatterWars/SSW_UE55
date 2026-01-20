@@ -45,7 +45,7 @@ class SimSystem;
 class SimObject;
 class SimDirector;
 class Farcaster;
-class FlightComp;
+class FlightComputer;
 class FlightDeck;
 class Hangar;
 class InboundSlot;
@@ -71,7 +71,7 @@ class Weapon;
 class WeaponDesign;
 class WeaponGroup;
 
-class Scene;
+class SimScene;
 class SimRegion;
 class Sim;
 
@@ -155,8 +155,8 @@ public:
     void              ExecThrottle(double seconds);
     void              ExecSystems(double seconds);
 
-    virtual void      Activate(Scene& scene);
-    virtual void      Deactivate(Scene& scene);
+    virtual void      Activate(SimScene& scene);
+    virtual void      Deactivate(SimScene& scene);
     virtual void      SelectDetail(double seconds);
     virtual void      SetRegion(SimRegion* rgn);
 
@@ -167,7 +167,7 @@ public:
     virtual void      SetControls(MotionController* m);
     virtual void      SetNetworkControl(SimDirector* net_ctrl = 0);
     void              SetDirectorInfo(const char* msg) { director_info = msg; }
-    const char* GetDirectorInfo() const { return director_info; }
+    const char*       GetDirectorInfo() const { return director_info; }
     void              SetAIMode(int n) { ai_mode = (BYTE)n; }
     int               GetAIMode() const { return (int)ai_mode; }
     void              SetCommandAILevel(int n) { command_ai_level = (BYTE)n; }
@@ -337,24 +337,24 @@ public:
     virtual int       GetSensorMode() const;
     virtual void      SetSensorMode(int mode);
     virtual void      LaunchProbe();
-    virtual Weapon* GetProbeLauncher() const { return probe; }
-    virtual Drone* GetProbe() const { return sensor_drone; }
-    virtual void      SetProbe(Drone* d);
-    virtual int       GetEMCON() const { return emcon; }
-    virtual void      SetEMCON(int e, bool from_net = false);
+    virtual Weapon*    GetProbeLauncher() const { return probe; }
+    virtual Drone*     GetProbe() const { return sensor_drone; }
+    virtual void       SetProbe(Drone* d);
+    virtual int        GetEMCON() const { return emcon; }
+    virtual void       SetEMCON(int e, bool from_net = false);
     virtual SimContact* FindContact(SimObject* s) const;
-    virtual bool      IsHostileTo(const SimObject* o) const;
+    virtual bool       IsHostileTo(const SimObject* o) const;
 
     // GENERAL ACCESSORS:
-    const char* Registry() const { return regnum; }
+    const char*       Registry() const { return regnum; }
     void              SetName(const char* ident) { strcpy_s(name, ident); }
     const ShipDesign* Design() const { return design; }
-    const char* Abbreviation() const;
-    const char* DesignName() const;
-    const char* DesignFileName() const;
+    const char*       Abbreviation() const;
+    const char*        DesignName() const;
+    const char*        DesignFileName() const;
     static const char* ClassName(int c);
     static int        ClassForName(const char* name);
-    const char* ClassName() const;
+    const char*       ClassName() const;
     CLASSIFICATION    Class() const;
     bool              IsGroundUnit() const;
     bool              IsStarship() const;
@@ -367,28 +367,28 @@ public:
     void              IncFriendlyFire(int f = 1);
     double            Agility() const { return agility; }
     DWORD             MissionClock() const;
-    Graphic* Cockpit() const;
+    Graphic*          Cockpit() const;
     void              ShowCockpit();
     void              HideCockpit();
     int               Value() const;
     double            AIValue() const;
     static int        Value(int type);
 
-    const Skin* GetSkin() const { return skin; }
-    void              UseSkin(const Skin* s) { skin = s; }
-    void              ShowRep();
-    void              HideRep();
-    void              EnableShadows(bool enable);
+    const Skin*         GetSkin() const { return skin; }
+    void                UseSkin(const Skin* s) { skin = s; }
+    void                ShowRep();
+    void                HideRep();
+    void                EnableShadows(bool enable);
 
-    int               RespawnCount() const { return respawns; }
-    void              SetRespawnCount(int r) { respawns = r; }
-    const FVector& RespawnLoc() const { return respawn_loc; }
-    void              SetRespawnLoc(const FVector& rl) { respawn_loc = rl; }
+    int                 RespawnCount() const { return respawns; }
+    void                SetRespawnCount(int r) { respawns = r; }
+    const FVector&      RespawnLoc() const { return respawn_loc; }
+    void                SetRespawnLoc(const FVector& rl) { respawn_loc = rl; }
 
-    double            WarpFactor() const { return warp_fov; }
-    void              SetWarp(double w) { warp_fov = (float)w; }
+    double              WarpFactor() const { return warp_fov; }
+    void                SetWarp(double w) { warp_fov = (float)w; }
 
-    void              MatchOrientation(const Ship& s);
+    void                MatchOrientation(const Ship& s);
 
     // ORDERS AND NAVIGATION:
     void                    ExecEvalFrame(double seconds);
@@ -396,20 +396,20 @@ public:
     void                    AddNavPoint(Instruction* pt, Instruction* afterPoint = 0);
     void                    DelNavPoint(Instruction* pt);
     void                    ClearFlightPlan();
-    Instruction* GetNextNavPoint();
+    Instruction*            GetNextNavPoint();
     int                     GetNavIndex(const Instruction* n);
     double                  RangeToNavPoint(const Instruction* n);
     void                    SetNavptStatus(Instruction* n, int status);
-    List<Instruction>& GetFlightPlan();
+    List<Instruction>&      GetFlightPlan();
     int                     FlightPlanLength();
-    CombatUnit* GetCombatUnit() const { return combat_unit; }
-    SimElement* GetElement() const { return element; }
-    Ship* GetLeader() const;
+    CombatUnit*             GetCombatUnit() const { return combat_unit; }
+    SimElement*             GetElement() const { return element; }
+    Ship*                   GetLeader() const;
     int                     GetElementIndex() const;
     int                     GetOrigElementIndex() const;
     void                    SetElement(SimElement* e);
 
-    Instruction* GetRadioOrders() const;
+    Instruction*            GetRadioOrders() const;
     void                    ClearRadioOrders();
     void                    HandleRadioMessage(RadioMessage* msg);
     bool                    IsAutoNavEngaged();
@@ -422,7 +422,7 @@ public:
     FVector                 TrackPoint(int i) const;
 
     // DAMAGE CONTROL AND ENGINEERING:
-    List<SimSystem>& RepairQueue() { return repair_queue; }
+    List<SimSystem>&        RepairQueue() { return repair_queue; }
     double                  RepairSpeed() const;
     int                     RepairTeams() const;
     void                    RepairSystem(SimSystem* sys);
@@ -446,7 +446,7 @@ public:
     Solid* GetShieldRep() { return (Solid*)shieldRep; }
     Sensor* GetSensor() { return sensor; }
     NavSystem* GetNavSystem() { return navsys; }
-    FlightComp* GetFLCS() { return flcs; }
+    FlightComputer* GetFLCS() { return flcs; }
     Thruster* GetThruster() { return thruster; }
     Hangar* GetHangar() { return hangar; }
     LandingGear* GetGear() { return gear; }
@@ -467,8 +467,8 @@ protected:
     WeaponGroup* FindWeaponGroup(const char* name);
 
     char              regnum[16];
-    ShipDesign* design;
-    ShipKiller* killer;
+    ShipDesign*       design;
+    ShipKiller*       killer;
     DetailSet         detail;
     int               detail_level;
     Sim* sim;
@@ -500,7 +500,7 @@ protected:
     Shield*             shield;
     ShieldRep*          shieldRep;
     NavSystem*          navsys;
-    FlightComp*         flcs;
+    FlightComputer*     flcs;
     Sensor* sensor;
     LandingGear* gear;
     Thruster* thruster;

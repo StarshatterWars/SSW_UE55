@@ -43,8 +43,8 @@
 #include "AudioConfig.h"
 #include "Mission.h"
 #include "MissionEvent.h"
-#include "CameraManagerr.h"
-#include "MusicDirector.h"
+#include "CameraManager.h"
+#include "MusicManager.h"
 #include "Combatant.h"
 #include "CombatGroup.h"
 #include "CombatUnit.h"
@@ -76,7 +76,7 @@
 #include "PlayerCharacter.h"
 #include "Random.h"
 #include "Video.h"
-#include "Graphics.h"
+#include "Graphic.h"
 
 // Minimal Unreal includes (logging + FVector):
 #include "Logging/LogMacros.h"
@@ -205,7 +205,7 @@ Sim::Sim(MotionController* c)
 	if (!sim)
 		sim = this;
 
-	cam_dir = CameraManagerr::GetInstance();
+	cam_dir = CameraManager::GetInstance();
 }
 
 Sim::~Sim()

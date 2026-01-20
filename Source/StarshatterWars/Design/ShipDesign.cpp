@@ -38,7 +38,7 @@
 #include "LandingGear.h"
 #include "Computer.h"
 #include "SystemDesign.h"
-#include "Component.h"
+#include "SimComponent.h"
 
 #include "Game.h"
 #include "Solid.h"
@@ -369,7 +369,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		loader->LoadTexture("hud_icon.pcx", hud_icon);
 
 	loader->ReleaseBuffer(block);
-	loader->SetDataPath(0);
+	loader->SetDataPath("");
 
 	if (abrv[0] == 0) {
 		switch (type) {
@@ -520,7 +520,7 @@ void AddModCatalogEntry(const char* design_name, const char* design_path)
 	path += "/";
 
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(path);
+	loader->SetDataPath(FString(path.data()));
 
 	BYTE* block;
 	int blocklen = loader->LoadBuffer(file, block, true);
@@ -635,7 +635,7 @@ ShipDesign::Initialize()
 	}
 
 	mod_designs.destroy();
-	loader->SetDataPath(0);
+	loader->SetDataPath("");
 }
 
 void
@@ -670,7 +670,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 	if (!term) {
 		UE_LOG(LogShipDesign, Error, TEXT("ERROR: could notxparse '%s'"), ANSI_TO_TCHAR(filename));
 		loader->ReleaseBuffer(block);
-		loader->SetDataPath(0);
+		loader->SetDataPath("");
 		return result;
 	}
 	else {
@@ -678,7 +678,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 		if (!file_type || file_type->value() != "SHIPCATALOG") {
 			UE_LOG(LogShipDesign, Error, TEXT("ERROR: invalid ship catalog file '%s'"), ANSI_TO_TCHAR(filename));
 			loader->ReleaseBuffer(block);
-			loader->SetDataPath(0);
+			loader->SetDataPath("");
 			return result;
 		}
 	}
@@ -739,7 +739,7 @@ ShipDesign::LoadCatalog(const char* path, const char* fname, bool mod)
 	} while (term);
 
 	loader->ReleaseBuffer(block);
-	loader->SetDataPath(0);
+	loader->SetDataPath("");
 
 	return result;
 }
@@ -960,7 +960,7 @@ ShipDesign::FindModDesign(const char* design_name, const char* design_path)
 		path += design_name;
 
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(path);
+	loader->SetDataPath(FString(path.data()));
 
 	ShipDesign* design = new  ShipDesign(design_name, path, file);
 
@@ -1097,7 +1097,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing model in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		detail[0].append(new(__FILE__,__LINE__) Text(detail_name));
+		detail[0].append(new Text(detail_name));
 	}
 
 	else if (defname == "detail_1") {
@@ -1105,7 +1105,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing detail_1 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		detail[1].append(new(__FILE__,__LINE__) Text(detail_name));
+		detail[1].append(new Text(detail_name));
 	}
 
 	else if (defname == "detail_2") {
@@ -1113,7 +1113,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing detail_2 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		detail[2].append(new(__FILE__,__LINE__) Text(detail_name));
+		detail[2].append(new Text(detail_name));
 	}
 
 	else if (defname == "detail_3") {
@@ -1121,7 +1121,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing detail_3 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		detail[3].append(new(__FILE__,__LINE__) Text(detail_name));
+		detail[3].append(new Text(detail_name));
 	}
 
 	else if (defname == "spin") {
@@ -1130,7 +1130,7 @@ ShipDesign::ParseShip(TermDef* def)
 		}
 
 		// Point/Vec3 -> FVector
-		spin_rates.append(new(__FILE__,__LINE__) FVector(spin));
+		spin_rates.append(new FVector(spin));
 	}
 
 	else if (defname == "offset_0") {
@@ -1138,7 +1138,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_0 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		offset[0].append(new(__FILE__,__LINE__) FVector(off_loc));
+		offset[0].append(new FVector(off_loc));
 	}
 
 	else if (defname == "offset_1") {
@@ -1146,7 +1146,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_1 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		offset[1].append(new(__FILE__,__LINE__) FVector(off_loc));
+		offset[1].append(new FVector(off_loc));
 	}
 
 	else if (defname == "offset_2") {
@@ -1154,7 +1154,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_2 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		offset[2].append(new(__FILE__,__LINE__) FVector(off_loc));
+		offset[2].append(new FVector(off_loc));
 	}
 
 	else if (defname == "offset_3") {
@@ -1162,7 +1162,7 @@ ShipDesign::ParseShip(TermDef* def)
 			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing offset_3 in '%s'"), ANSI_TO_TCHAR(filename));
 		}
 
-		offset[3].append(new(__FILE__,__LINE__) FVector(off_loc));
+		offset[3].append(new FVector(off_loc));
 	}
 
 	else if (defname == "beauty") {

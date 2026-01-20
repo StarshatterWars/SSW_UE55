@@ -30,6 +30,17 @@ Game is called Starshatter Wars
 
 add #pragma once to all header (.h)
 
+Element* should be SimElement*
+Contact* should by SimContact*
+System* should be SimSystem*
+Scene* should be SimScene*
+Projector* should be SimProjector*
+Light* should be SimLight*
+StarSystem* should remain StarSystem*
+
+
+Remove any (__FILE__, __LINE__) as not supported in Unreal
+
 apply this template to the pasted file
 
 show complete resultant file
