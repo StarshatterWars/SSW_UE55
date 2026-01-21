@@ -29,18 +29,15 @@ class GameScreen;
 class Ship;
 class Sim;
 class FadeView;
-class CameraDirector;
+class CameraManager;
 class MultiController;
 class MouseController;
-class MusicDirector;
+class MusicManager;
 class DataLoader;
-class Font;
+class SystemFont;
 class TrackIR;
 class Mission;
-
-class NetServer;
-class NetLobby;
-
+class Window;
 // +--------------------------------------------------------------------+
 
 class Starshatter : public Game
@@ -66,12 +63,6 @@ public:
 		LOAD_MODE,  // loading mission into simulator
 		PLAY_MODE,  // active simulation
 		EXIT_MODE   // shutting down
-	};
-
-	enum LOBBY
-	{
-		NET_LOBBY_CLIENT,
-		NET_LOBBY_SERVER
 	};
 
 	int       GetGameMode() { return game_mode; }
@@ -157,7 +148,7 @@ protected:
 	virtual void InitMouse();
 
 	static Starshatter* instance;
-	Window* gamewin;
+	Window*		gamewin;
 	MenuScreen* menuscreen;
 	LoadScreen* loadscreen;
 	PlanScreen* planscreen;
@@ -176,18 +167,18 @@ protected:
 	DataLoader* loader;
 
 	Ship* player_ship;
-	CameraDirector* cam_dir;
-	MusicDirector* music_dir;
+	CameraManager* cam_dir;
+	MusicManager* music_dir;
 
-	Font* HUDfont;
-	Font* GUIfont;
-	Font* GUI_small_font;
-	Font* terminal;
-	Font* verdana;
-	Font* title_font;
-	Font* limerick18;
-	Font* limerick12;
-	Font* ocrb;
+	SystemFont* HUDfont;
+	SystemFont* GUIfont;
+	SystemFont* GUI_small_font;
+	SystemFont* terminal;
+	SystemFont* verdana;
+	SystemFont* title_font;
+	SystemFont* limerick18;
+	SystemFont* limerick12;
+	SystemFont* ocrb;
 
 	DWORD               time_mark;
 	DWORD               minutes;
@@ -225,7 +216,6 @@ protected:
 
 	int                 cutscene;
 	int                 lobby_mode;
-	NetLobby* net_lobby;
 	int                 chat_mode;
 	Text                chat_text;
 };

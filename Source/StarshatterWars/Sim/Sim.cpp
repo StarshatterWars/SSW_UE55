@@ -1,3 +1,6 @@
+#include "Sim.h"
+#include "Sim.h"
+#include "Sim.h"
 /*  Project Starshatter Wars
 	Fractal Dev Studios
 	Copyright (C) 2025-2026. All Rights Reserved.
@@ -75,6 +78,7 @@
 // Minimal Unreal includes (logging + FVector):
 #include "Logging/LogMacros.h"
 #include "Math/Vector.h"
+#include "Math/RandomStream.h"
 
 // NOTE: Render assets like Bitmap are handled as Unreal assets elsewhere (e.g., UTexture2D*).
 // This translation unit does notxinclude Bitmap.h.
@@ -477,7 +481,7 @@ Sim::CreateRegions()
 					while (++rgn) {
 						SimRegion* sim_region = new SimRegion(this, rgn.value());
 						regions.append(sim_region);
-						if (!strcmp(active_region_name, sim_region->Name())) {
+						if (!strcmp(active_region_name, sim_region->GetName())) {
 							ActivateRegion(sim_region);
 						}
 					}
@@ -487,7 +491,7 @@ Sim::CreateRegions()
 				while (++rgn) {
 					SimRegion* sim_region = new SimRegion(this, rgn.value());
 					regions.append(sim_region);
-					if (!strcmp(active_region_name, sim_region->Name())) {
+					if (!strcmp(active_region_name, sim_region->GetName())) {
 						ActivateRegion(sim_region);
 					}
 				}
@@ -497,7 +501,7 @@ Sim::CreateRegions()
 			while (++rgn) {
 				SimRegion* sim_region = new SimRegion(this, rgn.value());
 				regions.append(sim_region);
-				if (!strcmp(active_region_name, sim_region->Name())) {
+				if (!strcmp(active_region_name, sim_region->GetName())) {
 					ActivateRegion(sim_region);
 				}
 			}
@@ -522,8 +526,8 @@ Sim::BuildLinks()
 
 				SimRegion* tgt = FindRegion(*t);
 
-				if (tgt && !rgn->Links().contains(tgt))
-					rgn->Links().append(tgt);
+				if (tgt && !rgn->GetLinks().contains(tgt))
+					rgn->GetLinks().append(tgt);
 			}
 		}
 	}
@@ -999,7 +1003,7 @@ Sim::DestroyElement(SimElement* elem)
 	delete elem;
 }
 
-Element*
+SimElement*
 Sim::FindElement(const char* name)
 {
 	ListIter<SimElement> iter = elements;
@@ -1053,7 +1057,7 @@ Sim::CreateShip(const char* name, const char* reg_num, ShipDesign* design, const
 	ship->MoveTo(OtherHand(loc));
 
 	if (rgn) {
-		Print("Inserting Ship(%s) into Region(%s) (%s)\n", ship->Name(), rgn->Name(), FormatGameTime());
+		Print("Inserting Ship(%s) into Region(%s) (%s)\n", ship->Name(), rgn->GetName(), FormatGameTime());
 		rgn->InsertObject(ship);
 
 		if (ship->IsAirborne() && ship->AltitudeAGL() > 25)
@@ -1420,6 +1424,11 @@ Sim::FindRegion(OrbitalRegion* orgn)
 	return 0;
 }
 
+SimRegion* Sim::FindNearestSpaceOrbital(Orbital* body)
+{
+	return nullptr;
+}
+
 // +--------------------------------------------------------------------+
 
 SimRegion*
@@ -1448,7 +1457,7 @@ Sim::FindNearestRegion(SimObject* object, int type)
 
 	ListIter<SimRegion> rgn = regions;
 	while (++rgn) {
-		if (rgn->Type() == type) {
+		if (rgn->GetType() == type) {
 			OrbitalRegion* orgn = rgn->GetOrbitalRegion();
 			if (orgn) {
 				const double test = FMath::Abs(VecLen(OtherHand(orgn->Location()) - objloc));
@@ -1463,30 +1472,7 @@ Sim::FindNearestRegion(SimObject* object, int type)
 	return result;
 }
 
-SimRegion*
-Sim::FindNearestSpaceRegion(Orbital* body)
-{
-	SimRegion* result = 0;
 
-	if (!body)
-		return result;
-
-	ListIter<SimRegion> rgn = regions;
-	while (++rgn && !result) {
-		if (rgn->IsOrbital()) {
-			OrbitalRegion* orgn = rgn->GetOrbitalRegion();
-			if (orgn) {
-				ListIter<OrbitalRegion> iter = body->Regions();
-				while (++iter) {
-					if (iter.value() == orgn)
-						result = rgn.value();
-				}
-			}
-		}
-	}
-
-	return result;
-}
 
 // +--------------------------------------------------------------------+
 
@@ -1497,20 +1483,20 @@ Sim::ActivateRegion(SimRegion* rgn)
 		if (active_region)
 			active_region->Deactivate();
 
-		if (!active_region || active_region->System() != rgn->System()) {
+		if (!active_region || active_region->GetSystem() != rgn->GetSystem()) {
 			if (active_region)
-				active_region->System()->Deactivate();
-			rgn->System()->Activate(scene);
+				active_region->GetSystem()->Deactivate();
+			rgn->GetSystem()->Activate(scene);
 		}
 
 		active_region = rgn;
-		star_system = active_region->System();
+		star_system = active_region->GetSystem();
 
 		if (star_system) {
 			star_system->SetActiveRegion(active_region->orbital_region);
 		}
 		else {
-			Print("WARNING: Sim::ActivateRegion() No star system found for rgn '%s'", rgn->Name());
+			Print("WARNING: Sim::ActivateRegion() No star system found for rgn '%s'", rgn->GetName());
 		}
 
 		active_region->Activate();
@@ -1562,14 +1548,14 @@ Sim::ExecFrame(double seconds)
 
 	ListIter<SimRegion> rgn = regions;
 	while (++rgn)
-		if (rgn.value() != active_region && rgn->NumShips() && !rgn_queue.contains(rgn.value()))
+		if (rgn.value() != active_region && rgn->GetNumShips() && !rgn_queue.contains(rgn.value()))
 			rgn_queue.append(rgn.value());
 
 	// execframe for one inactive sim region:
 	if (rgn_queue.size()) {
 		SimRegion* exec_rgn = rgn_queue.removeIndex(0);
 
-		while (exec_rgn && (exec_rgn->NumShips() == 0 || exec_rgn == active_region))
+		while (exec_rgn && (exec_rgn->GetNumShips() == 0 || exec_rgn == active_region))
 			if (rgn_queue.size())
 				exec_rgn = rgn_queue.removeIndex(0);
 			else
@@ -1600,7 +1586,7 @@ Sim::ExecFrame(double seconds)
 	}
 
 	// setup music
-	if (!MusicDirector::IsNoMusic()) {
+	if (!MusicManager::IsNoMusic()) {
 		Starshatter* stars = Starshatter::GetInstance();
 		if (stars && stars->GetGameMode() == Starshatter::PLAY_MODE) {
 			Ship* player_ship = GetPlayerShip();
@@ -1608,20 +1594,20 @@ Sim::ExecFrame(double seconds)
 				int phase = player_ship->GetFlightPhase();
 
 				if (phase < Ship::ACTIVE) {
-					MusicDirector::SetMode(MusicDirector::LAUNCH);
+					MusicManager::SetMode(MusicManager::LAUNCH);
 				}
 
 				else if (phase > Ship::ACTIVE) {
-					MusicDirector::SetMode(MusicDirector::RECOVERY);
+					MusicManager::SetMode(MusicManager::RECOVERY);
 				}
 
 				else {
 					if (player_ship->IsInCombat()) {
-						MusicDirector::SetMode(MusicDirector::COMBAT);
+						MusicManager::SetMode(MusicManager::COMBAT);
 					}
 
 					else {
-						MusicDirector::SetMode(MusicDirector::FLIGHT);
+						MusicManager::SetMode(MusicManager::FLIGHT);
 					}
 				}
 			}
@@ -1679,7 +1665,7 @@ Sim::ResolveHyperList()
 
 						// part one: gather the ships that will be jumping:
 						List<Ship> riders;
-						ListIter<Ship> neighbor = jumpship->GetRegion()->Ships();
+						ListIter<Ship> neighbor = jumpship->GetRegion()->GetShips();
 						while (++neighbor) {
 							if (neighbor->IsDropship()) {
 								Ship* s = neighbor.value();
@@ -1725,7 +1711,7 @@ Sim::ResolveHyperList()
 
 					// if using farcaster:
 					if (jump->fc_src) {
-						Print("Ship '%s' farcast to '%s'\n", jumpship->Name(), dest->Name());
+						Print("Ship '%s' farcast to '%s'\n", jumpship->Name(), dest->GetName());
 						CreateExplosion(jumpship->Location(), FVector::ZeroVector, Explosion::QUANTUM_FLASH, 1.0f, 0.0f, dest);
 
 						if (jump->fc_dst) {
@@ -1743,21 +1729,21 @@ Sim::ResolveHyperList()
 
 					// break orbit:
 					else if (jump->type == Ship::TRANSITION_DROP_ORBIT) {
-						Print("Ship '%s' broke orbit to '%s'\n", jumpship->Name(), dest->Name());
+						Print("Ship '%s' broke orbit to '%s'\n", jumpship->Name(), dest->GetName());
 						jumpship->SetAbsoluteOrientation(0, PI / 4, 0);
 						jumpship->SetVelocity(jumpship->Heading() * 1.0e3);
 					}
 
 					// make orbit:
 					else if (jump->type == Ship::TRANSITION_MAKE_ORBIT) {
-						Print("Ship '%s' achieved orbit '%s'\n", jumpship->Name(), dest->Name());
+						Print("Ship '%s' achieved orbit '%s'\n", jumpship->Name(), dest->GetName());
 						jumpship->LookAt(FVector::ZeroVector);
 						jumpship->SetVelocity(jumpship->Heading() * 500.0);
 					}
 
 					// hyper jump:
 					else {
-						Print("Ship '%s' quantum to '%s'\n", jumpship->Name(), dest->Name());
+						Print("Ship '%s' quantum to '%s'\n", jumpship->Name(), dest->GetName());
 
 						if (jump->hyperdrive)
 							CreateExplosion(jumpship->Location(), FVector::ZeroVector, Explosion::HYPER_FLASH, 1.0f, 1.0f, dest);
@@ -1804,7 +1790,7 @@ Sim::ResolveSplashList()
 				continue;
 
 			// damage ships:
-			ListIter<Ship> s_iter = splash->rgn->Ships();
+			ListIter<Ship> s_iter = splash->rgn->GetShips();
 			while (++s_iter) {
 				Ship* ship = s_iter.value();
 
@@ -1832,7 +1818,7 @@ Sim::ResolveSplashList()
 								killer->AddEvent(SimEvent::GUNS_KILL, ship->Name());
 						}
 
-						Ship* owner = FindShip(splash->owner_name, splash->rgn->Name());
+						Ship* owner = FindShip(splash->owner_name, splash->rgn->GetName());
 						if (owner && owner->GetIFF() != ship->GetIFF()) {
 							if (ship->GetIFF() > 0 || owner->GetIFF() > 1) {
 								killer->AddPoints(ship->Value());
@@ -1875,7 +1861,7 @@ Sim::ResolveSplashList()
 			}
 
 			// damage drones:
-			ListIter<Drone> drone_iter = splash->rgn->Drones();
+			ListIter<Drone> drone_iter = splash->rgn->GetDrones();
 			while (++drone_iter) {
 				Drone* drone = drone_iter.value();
 
@@ -2037,7 +2023,7 @@ Sim::ResolveTimeSkip(double seconds)
 	}
 
 	Game::SkipGameTime(skipped);
-	CameraDirector::SetCameraMode(CameraDirector::MODE_COCKPIT);
+	CameraManager::SetCameraMode(CameraManager::MODE_COCKPIT);
 }
 
 // +--------------------------------------------------------------------+
@@ -2096,7 +2082,7 @@ Sim::CreateMissionElement(SimElement* elem)
 			msn_elem->SetLocation(OtherHand(carrier->Location()));
 
 			if (carrier->GetRegion())
-				msn_elem->SetRegion(carrier->GetRegion()->Name());
+				msn_elem->SetRegion(carrier->GetRegion()->GetName());
 
 			int     squadron_index = 0;
 			Hangar* hangar = FindSquadron(elem->Name(), squadron_index);
@@ -2131,7 +2117,7 @@ Sim::CreateMissionElement(SimElement* elem)
 		Ship* ship = elem->GetShip(1);
 		if (ship) {
 			if (ship->GetRegion())
-				msn_elem->SetRegion(ship->GetRegion()->Name());
+				msn_elem->SetRegion(ship->GetRegion()->GetName());
 
 			msn_elem->SetLocation(OtherHand(ship->Location()));
 			msn_elem->SetDesign(ship->Design());
@@ -2197,7 +2183,7 @@ Sim::CreateMissionElement(SimElement* elem)
 
 				s->SetName(ship->Name());
 				s->SetRegNum(ship->Registry());
-				s->SetRegion(ship->GetRegion()->Name());
+				s->SetRegion(ship->GetRegion()->GetName());
 				s->SetLocation(OtherHand(ship->Location()));
 				s->SetVelocity(OtherHand(ship->Velocity()));
 
@@ -2251,7 +2237,7 @@ Sim::FindSquadron(const char* name, int& index)
 	while (++iter && !hangar) {
 		SimRegion* rgn = iter.value();
 
-		ListIter<Ship> s_iter = rgn->Carriers();
+		ListIter<Ship> s_iter = rgn->GetCarriers();
 		while (++s_iter && !hangar) {
 			Ship* carrier = s_iter.value();
 			Hangar* h = carrier->GetHangar();
@@ -2310,7 +2296,9 @@ SimRegion::SimRegion(Sim* s, OrbitalRegion* r)
 					(float)((rand() - 16384.0f) * 30.0f)
 				);
 
-				sim->CreateAsteroid(init_loc, i, Random(1e7, 1e8), this);
+				FRandomStream Stream(SeedValue); // store SeedValue somewhere stable
+				const double Mass = 1.0e7 + (static_cast<double>(Stream.FRand()) * (1.0e8 - 1.0e7));
+				sim->CreateAsteroid(init_loc, i, Mass, this);
 			}
 		}
 	}

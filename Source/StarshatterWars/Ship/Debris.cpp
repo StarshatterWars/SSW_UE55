@@ -200,7 +200,7 @@ Debris::HitBy(SimShot* shot, FVector& impact)
 void
 Debris::ExecFrame(double seconds)
 {
-	if (GetRegion()->Type() == SimRegion::AIR_SPACE) {
+	if (GetRegion()->GetType() == SimRegion::AIR_SPACE) {
 		if (AltitudeAGL() < Radius()) {
 			velocity = FVector::ZeroVector;
 			arcade_velocity = FVector::ZeroVector;

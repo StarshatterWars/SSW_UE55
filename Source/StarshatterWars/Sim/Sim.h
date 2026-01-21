@@ -24,8 +24,9 @@
 #include "List.h"
 #include "Text.h"
 
-// Unreal
-#include "Math/Vector.h"   // FVector
+// Minimal Unreal includes required for FVector / FColor:
+#include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -225,7 +226,7 @@ protected:
 
     bool        test_mode;
     bool        grid_shown;
-    Mission* mission;
+    Mission*    mission;
     uint32      start_time;
 };
 
@@ -244,96 +245,103 @@ public:
     SimRegion(Sim* sim, OrbitalRegion* rgn);
     virtual ~SimRegion();
 
-    int operator==(const SimRegion& r) const { return sim == r.sim && name == r.name; }
-    int operator<(const SimRegion& r) const;
-    int operator<=(const SimRegion& r) const;
+    int operator == (const SimRegion& r) const { return (sim == r.sim) && (name == r.name); }
+    int operator <  (const SimRegion& r) const;
+    int operator <= (const SimRegion& r) const;
 
-    virtual void Activate();
-    virtual void Deactivate();
-    virtual void ExecFrame(double seconds);
+    virtual void         Activate();
+    virtual void         Deactivate();
+    virtual void         ExecFrame(double seconds);
+    void                 ShowGrid(int show = true);
+    void                NextView();
+    Ship*               FindShip(const char* name);
+    Ship*               GetPlayerShip() { return player_ship; }
+    void                SetPlayerShip(Ship* ship);
+    OrbitalRegion*      GetOrbitalRegion() { return orbital_region; }
+    Terrain*            GetTerrain() { return terrain; }
+    bool                 IsActive()   const { return active; }
+    bool                 IsAirSpace() const { return type == AIR_SPACE; }
+    bool                 IsOrbital()  const { return type == REAL_SPACE; }
+    bool                 CanTimeSkip()const;
 
-    void ShowGrid(int show = true);
-    void NextView();
+    virtual Ship*          FindShipByObjID(DWORD objid);
+    virtual SimShot*       FindShotByObjID(DWORD objid);
 
-    Ship* FindShip(const char* name);
-    Ship* GetPlayerShip() { return player_ship; }
-    void  SetPlayerShip(Ship* ship);
+    virtual void         InsertObject(Ship* ship);
+    virtual void         InsertObject(SimShot* shot);
+    virtual void         InsertObject(Explosion* explosion);
+    virtual void         InsertObject(Debris* debris);
+    virtual void         InsertObject(Asteroid* asteroid);
 
-    List<Ship>& GetShips() { return ships; }
-    const List<Ship>& GetShips() const { return ships; }
+    const char*             GetName() const { return name; }
+    int                     GetType() const { return type; }
+    int                     GetNumShips() { return ships.size(); }
+    List<Ship>&             GetShips() { return ships; }
+    List<Ship>&             GetCarriers() { return carriers; }
+    List<SimShot>&          GetShots() { return shots; }
+    List<Drone>&            GetDrones() { return drones; }
+    List<Debris>&           GetRocks() { return debris; }
+    List<Asteroid>&         GetRoids() { return asteroids; }
+    List<Explosion>&        GetExplosions() { return explosions; }
+    List<SimRegion>&        GetLinks() { return links; }
+    StarSystem*             GetSystem() { return star_system; }
 
-    List<Drone>& GetDrones() { return drones; }
-    const List<Drone>& GetDrones() const { return drones; }
+    Point                Location() const { return location; }
 
-    List<SimShot>& GetShots() { return shots; }
-    const List<SimShot>& GetShots() const { return shots; }
+    void                 SetSelection(Ship* s);
+    bool                 IsSelected(Ship* s);
+    ListIter<Ship>       GetSelection();
+    void                 ClearSelection();
+    void                 AddSelection(Ship* s);
 
-    List<Explosion>& GetExplosions() { return explosions; }
-    const List<Explosion>& GetExplosions() const { return explosions; }
+    List<SimContact>& TrackList(int iff);
 
-    List<Debris>& GetDebrisField() { return debris; }
-    const List<Debris>& GetDebrisField() const { return debris; }
-
-    List<Asteroid>& GetAsteroids() { return asteroids; }
-    const List<Asteroid>& GetAsteroids() const { return asteroids; }
-
-    OrbitalRegion* GetOrbitalRegion() { return orbital_region; }
-    Terrain* GetTerrain() { return terrain; }
-
-    bool IsActive()   const { return active; }
-    bool IsAirSpace() const { return type == AIR_SPACE; }
-    bool IsOrbital()  const { return type == REAL_SPACE; }
-    bool CanTimeSkip() const;
-
-    virtual Ship* FindShipByObjID(uint32 objid);
-    virtual SimShot* FindShotByObjID(uint32 objid);
-
-    List<SimContact>& TrackList(int iff)
-    {
-        iff = iff < 0 ? 0 : iff;
-        iff = iff > 4 ? 4 : iff;
-        return track_database[iff];
-    }
-
-    const List<SimContact>& TrackList(int iff) const
-    {
-        iff = iff < 0 ? 0 : iff;
-        iff = iff > 4 ? 4 : iff;
-        return track_database[iff];
-    }
-
-    const char* Name() const { return name; }
-    int Type() const { return type; }
-
-    FVector Location() const { return location; }
+    void                 ResolveTimeSkip(double seconds);
 
 protected:
+    void                 CommitMission();
+    void                 TranslateObject(SimObject* object);
+
+    void                 AttachPlayerShip(int index);
+    void                 DestroyShips();
+    void                 DestroyShip(Ship* ship);
+    void                 NetDockShip(Ship* ship, Ship* carrier, FlightDeck* deck);
+
+    void                 UpdateSky(double seconds, const Point& ref);
+    void                 UpdateShips(double seconds);
+    void                 UpdateShots(double seconds);
+    void                 UpdateExplosions(double seconds);
+    void                 UpdateTracks(double seconds);
+
+    void                 DamageShips();
+    void                 CollideShips();
+    void                 CrashShips();
+    void                 DockShips();
+
     Sim* sim;
-    Text            name;
-    int             type;
-    StarSystem*     star_system;
-    OrbitalRegion*  orbital_region;
-    FVector         location;
+    Text                 name;
+    int                  type;
+    StarSystem* star_system;
+    OrbitalRegion* orbital_region;
+    Point                location;
+    Grid* grid;
+    Terrain* terrain;
+    bool                 active;
 
-    Grid*           grid;
-    Terrain*        terrain;
-    bool            active;
+    Ship* player_ship;
+    int                  current_view;
+    List<Ship>           ships;
+    List<Ship>           carriers;
+    List<Ship>           selection;
+    List<Ship>           dead_ships;
+    List<SimShot>        shots;
+    List<Drone>          drones;
+    List<Explosion>      explosions;
+    List<Debris>         debris;
+    List<Asteroid>       asteroids;
+    List<SimContact>     track_database[5];
+    List<SimRegion>      links;
 
-    Ship*           player_ship;
-    int             current_view;
-
-    List<Ship>      ships;
-    List<Ship>      carriers;
-    List<Ship>      selection;
-    List<Ship>      dead_ships;
-    List<SimShot>      shots;
-    List<Drone>     drones;
-    List<Explosion> explosions;
-    List<Debris>    debris;
-    List<Asteroid>  asteroids;
-    List<SimContact>   track_database[5];
-    List<SimRegion> links;
-
-    uint32          sim_time;
-    int             ai_index;
+    DWORD                sim_time;
+    int                  ai_index;
 };

@@ -15,6 +15,7 @@
 	View class for Heads Up Display
 */
 
+#pragma once
 #include "HUDView.h"
 #include "HUDSounds.h"
 #include "Ship.h"
@@ -3109,7 +3110,7 @@ HUDView::DrawILS()
 		}
 
 		if (!hoops_drawn) {
-			ListIter<Ship> iter = ship->GetRegion()->Carriers();
+			ListIter<Ship> iter = ship->GetRegion()->GetCarriers();
 			while (++iter) {
 				Ship* carrier = iter.value();
 

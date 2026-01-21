@@ -70,7 +70,7 @@ DropShipAI::FindObjective()
 		return;
 
 	// If making orbit, go up:
-	if (self_rgn->Type() == Sim::AIR_SPACE) {
+	if (self_rgn->GetType() == Sim::AIR_SPACE) {
 		obj_w = self->Location() + FVector(0.0f, 1.0e3f, 0.0f);
 	}
 
@@ -80,8 +80,11 @@ DropShipAI::FindObjective()
 		if (!dst_rgn)
 			return;
 
-		SimRegion* dst_orb = dst_rgn->GetOrbitalRegion();
-		SimRegion* self_orb = self_rgn->GetOrbitalRegion();
+		OrbitalRegion* dst_orb = dst_rgn->GetOrbitalRegion();
+		OrbitalRegion* self_orb = self_rgn->GetOrbitalRegion();
+
+		SimRegion* dst_orb_rgn = sim->FindRegion(dst_orb);
+		SimRegion* self_orb_rgn = sim->FindRegion(self_orb);
 
 		// Guard against null orbital regions:
 		const FVector DstOrbLoc = dst_orb ? dst_orb->Location() : FVector::ZeroVector;

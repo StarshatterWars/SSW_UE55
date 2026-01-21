@@ -1120,7 +1120,7 @@ ShipAI::AvoidCollision()
 
 		// also avoid large pieces of debris:
 		if (!found) {
-			ListIter<Debris> iter = ship->GetRegion()->Rocks();
+			ListIter<Debris> iter = ship->GetRegion()->GetRocks();
 			while (++iter && !found) {
 				Debris* debris = iter.value();
 
@@ -1134,7 +1134,7 @@ ShipAI::AvoidCollision()
 			// give asteroids a wider berth -
 			avoid_dist *= 8;
 
-			ListIter<Asteroid> iter = ship->GetRegion()->Roids();
+			ListIter<Asteroid> iter = ship->GetRegion()->GetRoids();
 			while (++iter && !found) {
 				Asteroid* roid = iter.value();
 				found = AvoidTestSingleObject(roid, bearing, avoid_dist, avoid_time, avoid);

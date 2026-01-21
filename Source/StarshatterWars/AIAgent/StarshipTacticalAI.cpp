@@ -284,7 +284,7 @@ StarshipTacticalAI::CheckBugOut(Ship* c_ship, double rng)
         if (escort) {
             RadioMessage* msg = new RadioMessage(escort, ship, RadioMessage::QUANTUM_TO);
             if (msg) {
-                msg->SetInfo(dst->Name());
+                msg->SetInfo(dst->GetName());
                 RadioTraffic::Transmit(msg);
             }
         }

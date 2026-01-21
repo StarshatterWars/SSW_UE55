@@ -79,7 +79,7 @@ Instruction::Instruction(SimRegion* rgn, FVector loc, int act)
 	farcast(0),
 	hold_time(0)
 {
-	rgn_name = region->Name();
+	rgn_name = region->GetName();
 	rloc.SetBaseLocation(loc);
 	rloc.SetDistance(0);
 }

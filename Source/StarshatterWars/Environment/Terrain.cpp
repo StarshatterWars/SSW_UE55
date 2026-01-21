@@ -341,7 +341,7 @@ Terrain::BuildNormals()
 
 	for (int y = 1; y < h - 1; y++) {
 		for (int x = 1; x < w - 1; x++) {
-			alt[y * w + x] = (BYTE)pix[y * w + x].Red();
+			alt[y * w + x] = (BYTE)pix[y * w + x].R;
 		}
 	}
 

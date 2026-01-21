@@ -410,7 +410,7 @@ RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 
 		else if (!same_rgn) {
 			char info[256];
-			sprintf_s(info, Game::GetText("RadioHandler.too-far-away").data(), ship->GetRegion()->Name());
+			sprintf_s(info, Game::GetText("RadioHandler.too-far-away").data(), ship->GetRegion()->GetName());
 			wave_off->SetInfo(info);
 		}
 

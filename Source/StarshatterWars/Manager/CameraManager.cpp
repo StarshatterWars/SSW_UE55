@@ -343,7 +343,7 @@ CameraManager::SetViewOrbital(Orbital* orb)
 		external_ship = nullptr;
 
 		if (sim) {
-			region = sim->FindNearestSpaceRegion(orb);
+			region = sim->FindNearestSpaceOrbital(orb);
 			if (region)
 				sim->ActivateRegion(region);
 		}

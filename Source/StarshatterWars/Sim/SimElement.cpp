@@ -400,10 +400,6 @@ SimElement::AddNavPoint(Instruction* pt, Instruction* afterPoint, bool send)
 		else {
 			flight_plan.append(pt);
 		}
-
-		if (send) {
-			NetUtil::SendNavData(true, this, index, pt);
-		}
 	}
 }
 
