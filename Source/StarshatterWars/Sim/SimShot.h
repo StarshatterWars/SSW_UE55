@@ -22,6 +22,7 @@
 
 // Minimal Unreal include for FVector (replaces Point/Vec3):
 #include "Math/Vector.h"
+#include "Math/Color.h"    // FColor
 
 // +--------------------------------------------------------------------+
 
@@ -75,7 +76,7 @@ public:
 	virtual double     PCS()          const { return 0; }
 	virtual double     ACS()          const { return 0; }
 	virtual int        GetIFF()       const;
-	virtual Color      MarkerColor()  const;
+	virtual FColor	   MarkerColor()  const;
 
 	const FVector& Origin()       const { return origin; }
 	float              Charge()       const { return charge; }

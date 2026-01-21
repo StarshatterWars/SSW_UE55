@@ -1,12 +1,14 @@
 /*  Project Starshatter Wars
 	Fractal Dev Studios
-	Copyright 2025-2026. All Rights Reserved.
+	Copyright (c) 2025-2026. All Rights Reserved.
 
-	Original Author and Studio: John DiCamillo, Destroyer Studios LLC
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
+
 	SUBSYSTEM:    Stars.exe
 	FILE:         MFD.h
 	AUTHOR:       Carlos Bott
-
 
 	OVERVIEW
 	========
@@ -17,21 +19,20 @@
 
 #include "Types.h"
 #include "Geometry.h"
-#include "Color.h"
 #include "HUDView.h"
 
-// Minimal Unreal include (requested):
-#include "Math/Vector.h"
+// Minimal Unreal includes (kept tight):
+#include "Math/Vector.h"   // FVector
+#include "Math/Color.h"    // FColor
 
 // +--------------------------------------------------------------------+
 
+class Bitmap;
+class CameraView;
 class SimContact;
 class Ship;
 class Sprite;
 class Window;
-class CameraView;
-class Bitmap;
-class UTexture2D;
 
 // +--------------------------------------------------------------------+
 
@@ -42,8 +43,7 @@ public:
 		MFD_MODE_OFF,
 		MFD_MODE_GAME,
 		MFD_MODE_SHIP,
-		MFD_MODE_FOV,
-		/*MFD_MODE_FWD,  MFD_MODE_MAP,*/
+		MFD_MODE_FOV,  /*MFD_MODE_FWD,  MFD_MODE_MAP,*/
 		MFD_MODE_HSD,
 		MFD_MODE_3D
 	};
@@ -55,7 +55,7 @@ public:
 
 	static void          Initialize();
 	static void          Close();
-	static void          SetColor(Color c);
+	static void          SetColor(FColor c);
 
 	// Operations:
 	virtual void         Draw();
@@ -70,46 +70,42 @@ public:
 	virtual void         SetStatusColor(int status);
 
 	virtual void         SetWindow(Window* w) { window = w; }
-	virtual Window* GetWindow() { return window; }
+	virtual Window*		 GetWindow() { return window; }
 	virtual void         SetRect(const Rect& r);
-	virtual const Rect& GetRect() const { return rect; }
+	virtual const	     Rect& GetRect() const { return rect; }
 	virtual void         SetMode(int m);
 	virtual int          GetMode() const { return mode; }
-	virtual Sprite* GetSprite() { return sprite; }
+	virtual Sprite*		 GetSprite() { return sprite; }
 
 	virtual void         SetShip(Ship* s) { ship = s; }
-	virtual Ship* GetShip() { return ship; }
+	virtual Ship*		 GetShip() { return ship; }
 
 	virtual void         Show();
 	virtual void         Hide();
 
 	virtual void         UseCameraView(CameraView* v);
-	void                 DrawMFDText(int idx, const char* txt, Rect& r, int align, int status = -1);
-	void                 HideMFDText(int idx);
-	void                 SetText3DColor(Color c);
-
-	// Starshatter render assets -> Unreal texture pointer:
-	// Keep API name for call-site compatibility, but type is now UTexture2D*.
-	void                 SetCockpitHUDTexture(UTexture2D* tex) { cockpit_hud_texture = tex; }
+	void                 DrawMFDText(int index, const char* txt, Rect& r, int align, int status = -1);
+	void                 HideMFDText(int index);
+	void                 SetText3DColor(FColor c);
+	void                 SetCockpitHUDTexture(Bitmap* bmp) { cockpit_hud_texture = bmp; }
 
 	bool                 IsMouseLatched() const;
 
 protected:
 	enum { TXT_LAST = 20 };
 
-	Window* window = nullptr;
+	Window* window;
 	Rect        rect;
-	int         index = 0;
-	int         mode = MFD_MODE_OFF;
-	int         lines = 0;
-	Sprite* sprite = nullptr;
-	bool        hidden = false;
-	Ship* ship = nullptr;
+	int         index;
+	int         mode;
+	int         lines;
+	Sprite*		sprite;
+	bool        hidden;
+	Ship*		ship;
 	HUDText     mfd_text[TXT_LAST];
-	CameraView* camview = nullptr;
+	CameraView* camview;
+	Bitmap*		cockpit_hud_texture;
 
-	UTexture2D* cockpit_hud_texture = nullptr;
-
-	int         mouse_latch = 0;
-	bool        mouse_in = false;
+	int         mouse_latch;
+	bool        mouse_in;
 };

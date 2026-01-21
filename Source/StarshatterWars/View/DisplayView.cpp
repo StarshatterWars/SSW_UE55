@@ -16,7 +16,6 @@
 
 #include "DisplayView.h"
 
-#include "Color.h"
 #include "Window.h"
 #include "Game.h"
 #include "SystemFont.h"

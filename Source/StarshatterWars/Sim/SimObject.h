@@ -48,7 +48,7 @@ public:
 	SimObject(const char* n, int t = 0) : Physical(n, t), region(0), objid(0), active(0), notifying(0) {}
 	virtual ~SimObject();
 
-	virtual SimRegion* GetRegion()                 const { return region; }
+	virtual SimRegion*	 GetRegion()                 const { return region; }
 	virtual void         SetRegion(SimRegion* rgn) { region = rgn; }
 
 	virtual void         Notify();

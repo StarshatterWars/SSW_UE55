@@ -45,26 +45,13 @@ static SimScene  emergency_scene;
 // +--------------------------------------------------------------------+
 
 CameraView::CameraView(Window* c, Camera* cam, SimScene* s)
-	: View(c)
-	, camera(cam)
-	, scene(s)
-	, video(0)
-	, camera_loc(FVector::ZeroVector)
-	, cvrt(FVector::ZeroVector)
-	, cvup(FVector::ZeroVector)
-	, cvpn(FVector::ZeroVector)
-	, projector(c, cam)
-	, infinite(0)
-	, width(0)
-	, height(0)
-	, projection_type(Video::PROJECTION_PERSPECTIVE)
-	, lens_flare_enable(0)
-	, lens_flare_dim(0)
-	, halo_texture(0)
+	: View(c), video(0), camera(cam), projector(c, cam), scene(s),
+	lens_flare_enable(0), halo_bitmap(0), infinite(0),
+	projection_type(Video::PROJECTION_PERSPECTIVE)
 {
-	elem_texture[0] = 0;
-	elem_texture[1] = 0;
-	elem_texture[2] = 0;
+	elem_bitmap[0] = 0;
+	elem_bitmap[1] = 0;
+	elem_bitmap[2] = 0;
 
 	if (!camera)
 		camera = &emergency_cam;
@@ -72,12 +59,11 @@ CameraView::CameraView(Window* c, Camera* cam, SimScene* s)
 	if (!scene)
 		scene = &emergency_scene;
 
-	if (window) {
-		Rect r = window->GetRect();
-		width = r.w;
-		height = r.h;
-	}
+	Rect r = window->GetRect();
+	width = r.w;
+	height = r.h;
 }
+
 
 CameraView::~CameraView()
 {
@@ -155,30 +141,19 @@ CameraView::LensFlare(int on, double dim)
 }
 
 void
-CameraView::LensFlareElements(UTexture2D* halo, UTexture2D* e1, UTexture2D* e2, UTexture2D* e3)
+CameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap* e3)
 {
 	if (halo)
-		halo_texture = halo;
+	halo_bitmap = halo;
 
 	if (e1)
-		elem_texture[0] = e1;
+	elem_bitmap[0] = e1;
 
 	if (e2)
-		elem_texture[1] = e2;
+	elem_bitmap[1] = e2;
 
 	if (e3)
-		elem_texture[2] = e3;
-}
-
-// +--------------------------------------------------------------------+
-
-int
-CameraView::SetInfinite(int i)
-{
-	int old = infinite;
-	infinite = i;
-	projector.SetInfinite(i);
-	return old;
+	elem_bitmap[2] = e3;
 }
 
 // +--------------------------------------------------------------------+
@@ -729,81 +704,110 @@ CameraView::RenderLensFlare()
 	if (!lens_flare_enable || lens_flare_dim < 0.01)
 		return;
 
-	if (!halo_texture)
+	if (!halo_bitmap || !video || !scene || !camera)
 		return;
 
-	video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
-	video->SetRenderState(Video::Z_ENABLE, FALSE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
+	video->SetRenderState(Video::STENCIL_ENABLE, false);
+	video->SetRenderState(Video::Z_ENABLE, false);
+	video->SetRenderState(Video::Z_WRITE_ENABLE, false);
 
-	const FVector center((float)width / 2.0f, (float)height / 2.0f, 1.0f);
+	const FVector ScreenCenter(
+		(float)width * 0.5f,
+		(float)height * 0.5f,
+		1.0f
+	);
 
 	ListIter<SimLight> light_iter = scene->Lights();
 	while (++light_iter) {
 		SimLight* light = light_iter.value();
-
 		if (!light || !light->IsActive())
 			continue;
 
 		if (light->Type() == SimLight::LIGHT_DIRECTIONAL && light->Intensity() < 1)
 			continue;
 
-		const double distance = (light->Location() - camera->Pos()).Length();
+		const double distance =
+			(light->Location() - camera->Pos()).Length();
 
-		// only do lens flare for the sun:
-		if (distance > 1e9) {
-			if (projector.IsVisible(light->Location(), 1.0f)) {
-				FVector sun_pos = light->Location();
+		// Only process the "sun"
+		if (distance <= 1e9)
+			continue;
 
-				if (light->CastsShadow() && scene->IsLightObscured(camera->Pos(), sun_pos, -1))
-					continue;
+		// World-space sun position
+		FVector SunPosWS = light->Location();
 
-				projector.Transform(sun_pos);
-				if (sun_pos.Z < 100)
-					continue;
+		if (!projector.IsVisible(SunPosWS, 1.0f))
+			continue;
 
-				projector.Project(sun_pos, false);
+		if (light->CastsShadow() &&
+			scene->IsLightObscured(camera->Pos(), SunPosWS, -1))
+			continue;
 
-				int x = (int)(sun_pos.X);
-				int y = (int)(sun_pos.Y);
-				int w = (int)(window->Width() / 4.0);
-				int h = w;
+		// Transform -> Project to screen space
+		FVector SunPosSS = SunPosWS;
+		projector.Transform(SunPosSS);
 
-				// HALO:
-				window->DrawTexture(x - w, y - h, x + w, y + h, halo_texture, Video::BLEND_ADDITIVE);
+		if (SunPosSS.Z < 100.0f)
+			continue;
 
-				// lens elements:
-				if (elem_texture[0]) {
-					const FVector sun((float)sun_pos.X, (float)sun_pos.Y, (float)sun_pos.Z);
+		projector.Project(SunPosSS, false);
 
-					FVector vector = center - sun;
-					const float vlen = vector.Size();
-					vector.Normalize();
+		const int sx = (int)SunPosSS.X;
+		const int sy = (int)SunPosSS.Y;
 
-					static int   nelem = 12;
-					static int   elem_indx[] = { 0, 1, 1, 1, 0, 0, 0, 0, 2, 0, 0, 2 };
-					static float elem_dist[] = { -0.2f, 0.5f, 0.55f, 0.62f, 1.23f, 1.33f, 1.35f, 0.8f, 0.9f, 1.4f, 1.7f, 1.8f };
-					static float elem_size[] = { 0.3f, 0.2f, 0.4f,  0.3f,  0.4f,  0.2f,  0.6f,  0.1f, 0.1f, 1.6f, 1.0f, 0.2f };
+		int halo_w = (int)(window->Width() * 0.25f);
+		int halo_h = halo_w;
 
-					for (int elem = 0; elem < nelem; elem++) {
-						UTexture2D* tex = elem_texture[elem_indx[elem]];
-						if (!tex)
-							tex = elem_texture[0];
+		// Draw halo
+		window->DrawBitmap(
+			sx - halo_w,
+			sy - halo_h,
+			sx + halo_w,
+			sy + halo_h,
+			halo_bitmap,
+			Video::BLEND_ADDITIVE
+		);
 
-						const FVector flare_pos = sun + (vector * elem_dist[elem] * vlen);
+		// Lens flare elements
+		if (elem_bitmap[0]) {
+			FVector Ray = (ScreenCenter - SunPosSS);
+			const float RayLen = Ray.Size();
+			Ray = Ray.GetSafeNormal();
 
-						x = (int)flare_pos.X;
-						y = (int)flare_pos.Y;
-						w = (int)(window->Width() / 8.0 * elem_size[elem]);
-						h = w;
+			static const int   nelem = 12;
+			static const int   elem_indx[nelem] =
+			{ 0,1,1,1,0,0,0,0,2,0,0,2 };
+			static const float elem_dist[nelem] =
+			{ -0.2f,0.5f,0.55f,0.62f,1.23f,1.33f,1.35f,0.8f,0.9f,1.4f,1.7f,1.8f };
+			static const float elem_size[nelem] =
+			{ 0.3f,0.2f,0.4f,0.3f,0.4f,0.2f,0.6f,0.1f,0.1f,1.6f,1.0f,0.2f };
 
-						window->DrawTexture(x - w, y - h, x + w, y + h, tex, Video::BLEND_ADDITIVE);
-					}
-				}
+			for (int i = 0; i < nelem; i++) {
+				Bitmap* img = elem_bitmap[elem_indx[i]];
+				if (!img)
+					img = elem_bitmap[0];
+
+				FVector FlarePos =
+					SunPosSS + Ray * (elem_dist[i] * RayLen);
+
+				const int fx = (int)FlarePos.X;
+				const int fy = (int)FlarePos.Y;
+				const int fw = (int)(window->Width() * 0.125f * elem_size[i]);
+				const int fh = fw;
+
+				window->DrawBitmap(
+					fx - fw,
+					fy - fh,
+					fx + fw,
+					fy + fh,
+					img,
+					Video::BLEND_ADDITIVE
+				);
 			}
 		}
 	}
 }
+
 
 // +--------------------------------------------------------------------+
 // Rotate and translate a plane in world space to view space.

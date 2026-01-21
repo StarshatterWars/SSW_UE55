@@ -21,13 +21,14 @@
 #include "List.h"
 #include "Text.h"
 #include "term.h"
+#include "Bitmap.h"
 
-// Minimal Unreal includes only where required:
-#include "Math/Vector.h" // FVector
+// Minimal Unreal includes (kept tight):
+#include "Math/Vector.h"   // FVector
+#include "Math/Color.h"    // FColor
 
 // +----------------------------------------------------------------------+
 
-class UTexture2D; // Unreal render asset (replaces Bitmap)
 class ShipDesign;
 class Model;
 class Skin;
@@ -45,7 +46,7 @@ class NavSystem;
 class Shield;
 class FlightDeck;
 class LandingGear;
-class System;
+class SimSystem;
 class Sound;
 
 // +====================================================================+
@@ -129,13 +130,13 @@ public:
 	static void          Initialize();
 	static void          Close();
 	static bool          CheckName(const char* name);
-	static ShipDesign* Get(const char* design_name, const char* design_path = 0);
-	static ShipDesign* FindModDesign(const char* design_name, const char* design_path = 0);
+	static ShipDesign*	 Get(const char* design_name, const char* design_path = 0);
+	static ShipDesign*	 FindModDesign(const char* design_name, const char* design_path = 0);
 	static void          ClearModCatalog();
 	static int           GetDesignList(int type, List<Text>& designs); // never destroy the design list!
 
 	static int           ClassForName(const char* name);
-	static const char* ClassName(int type);
+	static const char*	 ClassName(int type);
 
 	static int           LoadCatalog(const char* path, const char* file, bool mod = false);
 	static void          LoadSkins(const char* path, const char* archive = 0);
@@ -286,11 +287,10 @@ public:
 	List<ShipLoad>     loadouts;
 
 	// Map sprites and icons: Bitmap -> UTexture2D*
-	List<UTexture2D*>  map_sprites;
+	List<Bitmap>      map_sprites;
 
 	List<ShipSquadron> squadrons;
 
-	// Render assets: Bitmap -> UTexture2D*
-	UTexture2D* beauty;
-	UTexture2D* hud_icon;
+	Bitmap             beauty;
+	Bitmap             hud_icon;
 };

@@ -22,8 +22,8 @@
 #include "SimProjector.h"
 #include "Video.h"
 #include "List.h"
+#include "Bitmap.h"
 
-// Minimal Unreal includes (required by API surface):
 #include "Math/Vector.h" // FVector
 
 // +--------------------------------------------------------------------+
@@ -46,22 +46,22 @@ public:
 	virtual ~CameraView();
 
 	// Operations:
-	virtual void   Refresh();
-	virtual void   OnWindowMove();
-	virtual void   UseCamera(Camera* cam);
-	virtual void   UseScene(SimScene* scene);
-	virtual void   LensFlareElements(UTexture2D* halo, UTexture2D* e1 = 0, UTexture2D* e2 = 0, UTexture2D* e3 = 0);
-	virtual void   LensFlare(int on, double dim = 1);
-	virtual void   SetDepthScale(float scale);
+	virtual void	Refresh();
+	virtual void	OnWindowMove();
+	virtual void	UseCamera(Camera* cam);
+	virtual void	UseScene(SimScene* scene);
+	virtual void	LensFlare(int on, double dim = 1);
+	virtual void	LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap* e3);
+	virtual void	SetDepthScale(float scale);
 
 	// accessors:
-	Camera* GetCamera()                         const { return camera; }
-	SimProjector* GetProjector() { return &projector; }
-	SimScene* GetScene()                          const { return scene; }
-	virtual void   SetFieldOfView(double fov);
-	virtual double GetFieldOfView()                    const;
-	virtual void   SetProjectionType(DWORD pt);
-	virtual DWORD  GetProjectionType()                 const;
+	Camera*			GetCamera()                         const { return camera; }
+	SimProjector*	GetProjector() { return &projector; }
+	SimScene*		GetScene()                          const { return scene; }
+	virtual void	SetFieldOfView(double fov);
+	virtual double	GetFieldOfView()                    const;
+	virtual void	SetProjectionType(DWORD pt);
+	virtual DWORD	GetProjectionType()                 const;
 
 	FVector        Pos()                               const { return (FVector)camera->Pos(); }
 	FVector        vrt() { return (FVector)camera->vrt(); }
@@ -89,9 +89,9 @@ public:
 	virtual int    SetInfinite(int i);
 
 protected:
-	Camera* camera;
-	SimScene* scene;
-	Video* video;
+	Camera*			camera;
+	SimScene*		scene;
+	Video*			video;
 
 	virtual void   WorldPlaneToView(Plane& plane);
 
@@ -100,7 +100,7 @@ protected:
 	FVector        cvup;
 	FVector        cvpn;
 
-	SimProjector      projector;
+	SimProjector   projector;
 	int            infinite;
 	int            width;
 	int            height;
@@ -109,8 +109,8 @@ protected:
 	// lens flare:
 	int            lens_flare_enable;
 	double         lens_flare_dim;
-	UTexture2D* halo_texture;
-	UTexture2D* elem_texture[3];
+	Bitmap*		    halo_bitmap;
+	Bitmap*		    elem_bitmap[3];
 
 	List<Graphic>  graphics;
 };

@@ -19,6 +19,11 @@
 #include "Types.h"
 #include "Solid.h"
 
+
+// Minimal Unreal includes required for FVector / FColor:
+#include "Math/Vector.h"
+#include "Math/Color.h"
+
 // Forward declarations to keep the header light:
 class UTexture2D;
 class Material;
@@ -30,7 +35,7 @@ public:
 	virtual ~Hoop();
 
 	virtual void      Update();
-	static  void      SetColor(Color c);
+	static  void      SetColor(FColor c);
 
 protected:
 	virtual void      CreatePolys();

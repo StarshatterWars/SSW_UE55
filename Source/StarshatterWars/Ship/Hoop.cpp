@@ -60,7 +60,7 @@ Hoop::~Hoop()
 // +--------------------------------------------------------------------+
 
 void
-Hoop::SetColor(Color c)
+Hoop::SetColor(FColor c)
 {
 	ils_color = c;
 }

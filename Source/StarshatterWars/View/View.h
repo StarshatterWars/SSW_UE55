@@ -1,21 +1,36 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    nGenEx.lib
+	FILE:         View.h
+	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	Abstract View class
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Types.h"
 
-/**
- * 
- */
+// Minimal Unreal include required for UE_LOG:
+#include "Logging/LogMacros.h"
+#include "Math/Vector.h"   // FVector
+#include "Math/Color.h"    // FColor
 
- // +--------------------------------------------------------------------+
+// +--------------------------------------------------------------------+
 
 class Window;
 
 // +--------------------------------------------------------------------+
 
-class STARSHATTERWARS_API View
+class View
 {
 	friend class Window;
 
@@ -25,16 +40,16 @@ public:
 	View(Window* c) : window(c) {}
 	virtual ~View() {}
 
-	int operator == (const View& that) const { return this == &that; }
+	int operator==(const View& that) const { return this == &that; }
 
 	// Operations:
-	virtual void      Refresh() {}
-	virtual void      OnWindowMove() {}
-	virtual void      OnShow() {}
-	virtual void      OnHide() {}
+	virtual void		Refresh() {}
+	virtual void		OnWindowMove() {}
+	virtual void		OnShow() {}
+	virtual void		OnHide() {}
 
-	virtual void      SetWindow(Window* w) { window = w; OnWindowMove(); }
-	virtual Window*   GetWindow() { return window; }
+	virtual void		SetWindow(Window* w) { window = w; OnWindowMove(); }
+	virtual Window*		GetWindow() { return window; }
 
 protected:
 	Window* window;

@@ -48,8 +48,7 @@ class SimRegion;
 
 // +--------------------------------------------------------------------+
 
-class HUDView : public View,
-    public SimObserver
+class HUDView : public View, public SimObserver
 {
 public:
     HUDView(Window* c);
@@ -63,11 +62,11 @@ public:
     virtual void       ExecFrame();
     virtual void       UseCameraView(CameraView* v);
 
-    virtual Ship* GetShip()   const { return ship; }
+    virtual Ship*      GetShip()   const { return ship; }
     virtual SimObject* GetTarget() const { return target; }
     virtual void       SetShip(Ship* s);
     virtual void       SetTarget(SimObject* t);
-    virtual MFD* GetMFD(int n) const;
+    virtual MFD*        GetMFD(int n) const;
 
     virtual void       HideAll();
     virtual void       DrawBars();
@@ -149,8 +148,8 @@ public:
     virtual const char* GetObserverName() const;
 
 protected:
-    const char* FormatInstruction(Text instr);
-    void              SetStatusColor(SimSystem::STATUS status);
+    const char*         FormatInstruction(Text instr);
+    void                SetStatusColor(SimSystem::STATUS status);
 
     enum HUD_CASE { HUD_MIXED_CASE, HUD_UPPER_CASE };
 

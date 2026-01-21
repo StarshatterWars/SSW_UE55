@@ -1,13 +1,14 @@
 /*  Project Starshatter Wars
 	Fractal Dev Studios
-	Copyright © 2025-2026. All Rights Reserved.
+	Copyright (c) 2025-2026. All Rights Reserved.
 
-	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
 
 	SUBSYSTEM:    nGenEx.lib
 	FILE:         Sprite.cpp
 	AUTHOR:       Carlos Bott
-
 
 	OVERVIEW
 	========
@@ -16,41 +17,60 @@
 
 #include "Sprite.h"
 
-#include "Math/Vector.h"
-#include "Math/UnrealMathUtility.h"
-#include "Logging/LogMacros.h"
-
-#include <cstring>
-
+#include "Bitmap.h"
 #include "Camera.h"
-#include "Polygon.h"
 #include "Video.h"
 #include "Game.h"
 
-#ifndef STARSHATTERWARS_LOG_DEFINED
-#define STARSHATTERWARS_LOG_DEFINED
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-#endif
+// Minimal Unreal includes:
+#include "Logging/LogMacros.h"
+#include "Math/Vector.h"
+#include "Math/Color.h"
+#include "Math/Matrix.h"
+#include "Math/Quat.h"
+
+#include <cmath>
+#include <cstring>
+
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
+
+// +--------------------------------------------------------------------+
+
+static uint8 ClampColorByte(double v01)
+{
+	if (v01 <= 0.0) return 0;
+	if (v01 >= 1.0) return 255;
+	return (uint8)(v01 * 255.0 + 0.5);
+}
+
+// Convert Starshatter Matrix -> Unreal FMatrix (row-major in this usage).
+// This keeps Sprite.cpp using Unreal math operations (FMatrix/FVector/FQuat),
+// without requiring global type changes to Camera/Matrix yet.
+static FMatrix ToFMatrix(const Matrix& M)
+{
+	FMatrix Out = FMatrix::Identity;
+
+	// Starshatter Matrix is accessed as M(r,c) in existing code.
+	// Unreal FMatrix is indexed as M[row][col].
+	Out.M[0][0] = (float)M(0, 0);  Out.M[0][1] = (float)M(0, 1);  Out.M[0][2] = (float)M(0, 2);  Out.M[0][3] = 0.0f;
+	Out.M[1][0] = (float)M(1, 0);  Out.M[1][1] = (float)M(1, 1);  Out.M[1][2] = (float)M(1, 2);  Out.M[1][3] = 0.0f;
+	Out.M[2][0] = (float)M(2, 0);  Out.M[2][1] = (float)M(2, 1);  Out.M[2][2] = (float)M(2, 2);  Out.M[2][3] = 0.0f;
+	Out.M[3][0] = 0.0f;            Out.M[3][1] = 0.0f;            Out.M[3][2] = 0.0f;            Out.M[3][3] = 1.0f;
+
+	return Out;
+}
+
+static FVector RowAsVector(const FMatrix& M, int Row)
+{
+	return FVector(M.M[Row][0], M.M[Row][1], M.M[Row][2]);
+}
 
 // +--------------------------------------------------------------------+
 
 Sprite::Sprite()
-	: w(0)
-	, h(0)
-	, loop(0)
-	, nframes(0)
-	, own_frames(0)
-	, frames(nullptr)
-	, frame_index(0)
-	, frame_time(100)
-	, last_time(0)
-	, shade(1.0)
-	, angle(0.0)
-	, blend_mode(4)
-	, filter(1)
-	, poly(0)
-	, mtl()
-	, vset(4)
+	: w(0), h(0), nframes(0), own_frames(0),
+	frames(0), frame_index(0), frame_time(100), loop(0), shade(1.0),
+	angle(0.0), blend_mode(4), filter(1), vset(4), poly(0)
 {
 	trans = true;
 
@@ -59,10 +79,14 @@ Sprite::Sprite()
 		vset.diffuse[i] = Color::White.Value();
 	}
 
-	vset.tu[0] = 0.0f;  vset.tv[0] = 0.0f;
-	vset.tu[1] = 1.0f;  vset.tv[1] = 0.0f;
-	vset.tu[2] = 1.0f;  vset.tv[2] = 1.0f;
-	vset.tu[3] = 0.0f;  vset.tv[3] = 1.0f;
+	vset.tu[0] = 0.0f;
+	vset.tv[0] = 0.0f;
+	vset.tu[1] = 1.0f;
+	vset.tv[1] = 0.0f;
+	vset.tu[2] = 1.0f;
+	vset.tv[2] = 1.0f;
+	vset.tu[3] = 0.0f;
+	vset.tv[3] = 1.0f;
 
 	poly.nverts = 4;
 	poly.vertex_set = &vset;
@@ -75,23 +99,10 @@ Sprite::Sprite()
 
 // +--------------------------------------------------------------------+
 
-Sprite::Sprite(UTexture2D* animation, int length, int repeat, int share)
-	: w(0)
-	, h(0)
-	, loop(0)
-	, nframes(0)
-	, own_frames(0)
-	, frames(nullptr)
-	, frame_index(0)
-	, frame_time(67)
-	, last_time(0)
-	, shade(1.0)
-	, angle(0.0)
-	, blend_mode(4)
-	, filter(1)
-	, poly(0)
-	, mtl()
-	, vset(4)
+Sprite::Sprite(Bitmap* animation, int length, int repeat, int share)
+	: w(0), h(0), nframes(0), own_frames(0),
+	frames(0), frame_index(0), frame_time(67), loop(0), shade(1.0),
+	angle(0.0), blend_mode(4), filter(1), vset(4), poly(0)
 {
 	trans = true;
 	SetAnimation(animation, length, repeat, share);
@@ -101,10 +112,14 @@ Sprite::Sprite(UTexture2D* animation, int length, int repeat, int share)
 		vset.diffuse[i] = Color::White.Value();
 	}
 
-	vset.tu[0] = 0.0f;  vset.tv[0] = 0.0f;
-	vset.tu[1] = 1.0f;  vset.tv[1] = 0.0f;
-	vset.tu[2] = 1.0f;  vset.tv[2] = 1.0f;
-	vset.tu[3] = 0.0f;  vset.tv[3] = 1.0f;
+	vset.tu[0] = 0.0f;
+	vset.tv[0] = 0.0f;
+	vset.tu[1] = 1.0f;
+	vset.tv[1] = 0.0f;
+	vset.tu[2] = 1.0f;
+	vset.tv[2] = 1.0f;
+	vset.tu[3] = 0.0f;
+	vset.tv[3] = 1.0f;
 
 	poly.nverts = 4;
 	poly.vertex_set = &vset;
@@ -119,12 +134,11 @@ Sprite::Sprite(UTexture2D* animation, int length, int repeat, int share)
 
 Sprite::~Sprite()
 {
-	// In Unreal, UObjects (UTexture2D) are not deleted manually.
-	// Preserve legacy semantics by simply clearing any owned references.
 	if (own_frames) {
-		frames = nullptr;
-		nframes = 0;
-		own_frames = 0;
+		if (nframes == 1)
+			delete frames;
+		else
+			delete[] frames;
 	}
 }
 
@@ -170,18 +184,17 @@ Sprite::Reshape(int w1, int h1)
 // +--------------------------------------------------------------------+
 
 void
-Sprite::SetAnimation(UTexture2D* animation, int length, int repeat, int share)
+Sprite::SetAnimation(Bitmap* animation, int length, int repeat, int share)
 {
 	if (animation) {
-		// No filename on UTexture2D; preserve name as-is if caller manages it.
-		// Keep legacy safety:
-		name[0] = 0;
+		strncpy_s(name, animation->GetFilename(), 31);
+		name[31] = 0;
 
-		// In Unreal, do not delete UObjects. Clear owned refs instead.
 		if (own_frames) {
-			frames = nullptr;
-			nframes = 0;
-			own_frames = 0;
+			if (nframes == 1)
+				delete frames;
+			else
+				delete[] frames;
 		}
 
 		w = animation->Width();
@@ -205,6 +218,9 @@ Sprite::SetAnimation(UTexture2D* animation, int length, int repeat, int share)
 
 		last_time = Game::RealTime() - frame_time;
 	}
+	else {
+		UE_LOG(LogStarshatterWars, Warning, TEXT("Sprite::SetAnimation called with null animation"));
+	}
 }
 
 // +--------------------------------------------------------------------+
@@ -223,10 +239,14 @@ Sprite::SetTexCoords(const double* uv_interleaved)
 		vset.tv[3] = (float)uv_interleaved[7];
 	}
 	else {
-		vset.tu[0] = 0.0f;  vset.tv[0] = 0.0f;
-		vset.tu[1] = 1.0f;  vset.tv[1] = 0.0f;
-		vset.tu[2] = 1.0f;  vset.tv[2] = 1.0f;
-		vset.tu[3] = 0.0f;  vset.tv[3] = 1.0f;
+		vset.tu[0] = 0.0f;
+		vset.tv[0] = 0.0f;
+		vset.tu[1] = 1.0f;
+		vset.tv[1] = 0.0f;
+		vset.tu[2] = 1.0f;
+		vset.tv[2] = 1.0f;
+		vset.tu[3] = 0.0f;
+		vset.tv[3] = 1.0f;
 	}
 }
 
@@ -257,13 +277,10 @@ Sprite::SetFrameIndex(int n)
 
 // +--------------------------------------------------------------------+
 
-UTexture2D*
+Bitmap*
 Sprite::Frame() const
 {
-	// NOTE: Legacy code treated frames as a contiguous array.
-	// In the Unreal port, frames is expected to be resolved by the content system.
-	// For now, preserve original behavior for single-frame sprites.
-	return frames;
+	return frames + frame_index;
 }
 
 // +--------------------------------------------------------------------+
@@ -282,36 +299,52 @@ Sprite::Render(Video* video, DWORD flags)
 
 	if (life > 0 || loop) {
 		const Camera* camera = video->GetCamera();
-		Matrix        orient(camera->Orientation());
-		FVector       nrm(camera->vpn() * -1);
 
-		ColorValue    white((float)shade, (float)shade, (float)shade, (float)shade);
-		DWORD         diff = white.ToColor().Value();
+		// Convert Starshatter orientation matrix to Unreal FMatrix:
+		const FMatrix CamM = ToFMatrix(camera->Orientation());
 
-		orient.Roll(angle);
+		// Camera basis (matches original usage of orient(0,*) and orient(1,*)):
+		FVector Right = RowAsVector(CamM, 0);
+		FVector Up = RowAsVector(CamM, 1);
 
-		FVector vx =
-			FVector((float)orient(0, 0), (float)orient(0, 1), (float)orient(0, 2)) *
-			(float)(w / 2.0f);
+		// Camera normal: original code used nrm = camera->vpn() * -1
+		const Vec3 vpn_ss = camera->vpn();
+		const FVector Nrm = FVector((float)vpn_ss.x, (float)vpn_ss.y, (float)vpn_ss.z) * -1.0f;
 
-		FVector vy =
-			FVector((float)orient(1, 0), (float)orient(1, 1), (float)orient(1, 2)) *
-			(float)(h / 2.0f);
+		// Apply roll (angle is assumed radians, matching Render2D's cos/sin usage):
+		if (FMath::Abs((float)angle) > KINDA_SMALL_NUMBER) {
+			const FQuat RollQ(Nrm.GetSafeNormal(), (float)angle);
+			Right = RollQ.RotateVector(Right);
+			Up = RollQ.RotateVector(Up);
+		}
 
+		// Vertex diffuse as packed ARGB using FColor:
+		const uint8  c = ClampColorByte(shade);
+		const FColor White(c, c, c, c);
+		const DWORD  diff = (DWORD)White.ToPackedARGB();
+
+		// Material still uses Starshatter ColorValue/Color types:
+		const ColorValue white((float)shade, (float)shade, (float)shade, (float)shade);
+
+		// Scale axes to sprite half extents:
+		const FVector vx = Right * (float)(w / 2.0f);
+		const FVector vy = Up * (float)(h / 2.0f);
+
+		// loc assumed FVector in the UE port:
 		vset.loc[0] = loc - vx + vy;
-		vset.nrm[0] = nrm;
+		vset.nrm[0] = Nrm;
 		vset.diffuse[0] = diff;
 
 		vset.loc[1] = loc + vx + vy;
-		vset.nrm[1] = nrm;
+		vset.nrm[1] = Nrm;
 		vset.diffuse[1] = diff;
 
 		vset.loc[2] = loc + vx - vy;
-		vset.nrm[2] = nrm;
+		vset.nrm[2] = Nrm;
 		vset.diffuse[2] = diff;
 
 		vset.loc[3] = loc - vx - vy;
-		vset.nrm[3] = nrm;
+		vset.nrm[3] = Nrm;
 		vset.diffuse[3] = diff;
 
 		if (luminous) {
@@ -349,15 +382,19 @@ Sprite::Render2D(Video* video)
 	if (shade < 0.001 || hidden || !visible || !video)
 		return;
 
-	ColorValue white((float)shade, (float)shade, (float)shade, (float)shade);
-	DWORD      diff = white.ToColor().Value();
+	const uint8  c = ClampColorByte(shade);
+	const FColor White(c, c, c, c);
+	const DWORD  diff = (DWORD)White.ToPackedARGB();
 
-	double ca = FMath::Cos(Angle());
-	double sa = FMath::Sin(Angle());
+	const ColorValue white((float)shade, (float)shade, (float)shade, (float)shade);
 
-	double w2 = Width() / 2.0;
-	double h2 = Height() / 2.0;
+	const double ca = std::cos(Angle());
+	const double sa = std::sin(Angle());
 
+	const double w2 = Width() / 2.0;
+	const double h2 = Height() / 2.0;
+
+	// loc assumed FVector:
 	vset.s_loc[0].x = (float)(loc.X + (-w2 * ca - -h2 * sa) - 0.5);
 	vset.s_loc[0].y = (float)(loc.Y + (-w2 * sa + -h2 * ca) - 0.5);
 	vset.s_loc[0].z = 0.0f;

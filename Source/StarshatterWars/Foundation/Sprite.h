@@ -1,13 +1,14 @@
 /*  Project Starshatter Wars
 	Fractal Dev Studios
-	Copyright © 2025-2026. All Rights Reserved.
+	Copyright (c) 2025-2026. All Rights Reserved.
 
-	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
 
 	SUBSYSTEM:    nGenEx.lib
 	FILE:         Sprite.h
 	AUTHOR:       Carlos Bott
-
 
 	OVERVIEW
 	========
@@ -20,7 +21,16 @@
 #include "Graphic.h"
 #include "Polygon.h"
 
-class UTexture2D;
+// Minimal Unreal includes required for FVector / FColor:
+#include "Math/Vector.h"
+#include "Math/Color.h"
+
+// +--------------------------------------------------------------------+
+
+class Bitmap;
+class Video;
+
+// +--------------------------------------------------------------------+
 
 class Sprite : public Graphic
 {
@@ -28,7 +38,7 @@ public:
 	static const char* TYPENAME() { return "Sprite"; }
 
 	Sprite();
-	Sprite(UTexture2D* animation, int length = 1, int repeat = 1, int share = 1);
+	Sprite(Bitmap* animation, int length = 1, int repeat = 1, int share = 1);
 	virtual ~Sprite();
 
 	// operations
@@ -55,10 +65,10 @@ public:
 	void           SetBlendMode(int a) { blend_mode = a; }
 	int            Filter()    const { return filter; }
 	void           SetFilter(int f) { filter = f; }
-	virtual void   SetAnimation(UTexture2D* animation, int length = 1, int repeat = 1, int share = 1);
+	virtual void   SetAnimation(Bitmap* animation, int length = 1, int repeat = 1, int share = 1);
 	virtual void   SetTexCoords(const double* uv_interleaved);
 
-	UTexture2D* Frame()     const;
+	Bitmap* Frame()     const;
 	void           SetFrameIndex(int n);
 
 	virtual bool   IsSprite()  const { return true; }
@@ -69,7 +79,7 @@ protected:
 
 	int            nframes;
 	int            own_frames;
-	UTexture2D* frames;
+	Bitmap* frames;
 	int            frame_index;
 	DWORD          frame_time;
 	DWORD          last_time;

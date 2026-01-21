@@ -361,12 +361,11 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		}
 	}
 
-	// Bitmap -> UTexture2D*
-	if (!beauty && loader->FindFile("beauty.pcx"))
-		loader->LoadTexture("beauty.pcx", beauty);
+	if (beauty.Width() < 1 && loader->FindFile("beauty.pcx"))
+		loader->LoadBitmap("beauty.pcx", beauty);
 
-	if (!hud_icon && loader->FindFile("hud_icon.pcx"))
-		loader->LoadTexture("hud_icon.pcx", hud_icon);
+	if (hud_icon.Width() < 1 && loader->FindFile("hud_icon.pcx"))
+		loader->LoadBitmap("hud_icon.pcx", hud_icon);
 
 	loader->ReleaseBuffer(block);
 	loader->SetDataPath("");
@@ -1174,26 +1173,23 @@ ShipDesign::ParseShip(TermDef* def)
 				beauty_cam.Y *= (float) DEGREES;
 			}
 		}
-
 		else {
 			char beauty_name[64];
-			if (!GetDefText(beauty_name, def, filename)) {
-				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing beauty in '%s'"), ANSI_TO_TCHAR(filename));
-			}
+			if (!GetDefText(beauty_name, def, filename))
+				Print("WARNING: invalid or missing beauty in '%s'\n", filename);
 
 			DataLoader* loader = DataLoader::GetLoader();
-			loader->LoadTexture(beauty_name, beauty); // Bitmap -> UTexture2D*
+			loader->LoadBitmap(beauty_name, beauty);
 		}
 	}
 
 	else if (defname == "hud_icon") {
 		char hud_icon_name[64];
-		if (!GetDefText(hud_icon_name, def, filename)) {
-			UE_LOG(LogShipDesign, Warning, TEXT("WARNING: invalid or missing hud_icon in '%s'"), ANSI_TO_TCHAR(filename));
-		}
+		if (!GetDefText(hud_icon_name, def, filename))
+			Print("WARNING: invalid or missing hud_icon in '%s'\n", filename);
 
 		DataLoader* loader = DataLoader::GetLoader();
-		loader->LoadTexture(hud_icon_name, hud_icon); // Bitmap -> UTexture2D*
+		loader->LoadBitmap(hud_icon_name, hud_icon);
 	}
 
 	else if (defname == "feature_0") {

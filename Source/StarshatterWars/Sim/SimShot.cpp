@@ -604,7 +604,7 @@ SimShot::Activate(SimScene& scene)
 // +--------------------------------------------------------------------+
 
 void
-SimShot::Deactivate(Scene& scene)
+SimShot::Deactivate(SimScene& scene)
 {
 	SimObject::Deactivate(scene);
 
@@ -628,7 +628,7 @@ SimShot::GetIFF() const
 
 // +--------------------------------------------------------------------+
 
-Color
+FColor
 SimShot::MarkerColor() const
 {
 	return Ship::IFFColor(GetIFF());

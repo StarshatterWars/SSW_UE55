@@ -1,14 +1,14 @@
 /*  Project Starshatter Wars
 	Fractal Dev Studios
-	Copyright (C) 2025-2026. All Rights Reserved.
+	Copyright (c) 2025-2026. All Rights Reserved.
 
-	Original Author and Studio:
-	John DiCamillo, Destroyer Studios LLC
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
 
 	SUBSYSTEM:    Stars.exe
 	FILE:         MFD.cpp
 	AUTHOR:       Carlos Bott
-
 
 	OVERVIEW
 	========
@@ -16,10 +16,10 @@
 */
 
 #include "MFD.h"
+
 #include "HUDView.h"
 #include "Ship.h"
 #include "NavSystem.h"
-#include "Power.h"
 #include "Shield.h"
 #include "Sensor.h"
 #include "SimContact.h"
@@ -32,61 +32,79 @@
 #include "Starshatter.h"
 #include "Drive.h"
 #include "QuantumDrive.h"
+#include "Power.h"
 #include "Instruction.h"
+#include "NetGame.h"
 
 #include "CameraView.h"
-#include "Color.h"
-#include "SystemFont.h"
-#include "FontManager.h"
+#include "Font.h"
+#include "FontMgr.h"
 #include "Window.h"
 #include "Video.h"
 #include "Screen.h"
 #include "DataLoader.h"
-#include "SimScene.h"
+#include "Scene.h"
 #include "Graphic.h"
 #include "Sprite.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Game.h"
+#include "Bitmap.h"
 
-#include "Engine/Texture2D.h"
-#include "Math/Vector.h"
-#include "Math/UnrealMathUtility.h"
+// Minimal Unreal includes:
 #include "Logging/LogMacros.h"
+#include "Math/Vector.h"
+#include "Math/Color.h"
+#include "Math/UnrealMathUtility.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogMFD, Log, All);
+#include <cctype>
+#include <cstring>
 
-static UTexture2D* sensor_fov = nullptr;
-static UTexture2D* sensor_fwd = nullptr;
-static UTexture2D* sensor_hsd = nullptr;
-static UTexture2D* sensor_3d = nullptr;
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsMFD, Log, All);
+
+// +--------------------------------------------------------------------+
+
+static Bitmap sensor_fov;
+static Bitmap sensor_fwd;
+static Bitmap sensor_hsd;
+static Bitmap sensor_3d;
 
 static BYTE* sensor_fov_shade = nullptr;
 static BYTE* sensor_fwd_shade = nullptr;
 static BYTE* sensor_hsd_shade = nullptr;
 static BYTE* sensor_3d_shade = nullptr;
 
-static Color hud_color = Color::Black;
-static Color txt_color = Color::Black;
+// Unreal colors (HUDView/Window drawing expects FColor in the UE port):
+static FColor hud_color = FColor::Black;
+static FColor txt_color = FColor::Black;
 
 // +--------------------------------------------------------------------+
 
 MFD::MFD(Window* c, int n)
-	: window(c), rect(0, 0, 0, 0), index(n), mode(MFD_MODE_OFF), sprite(0),
-	ship(0), hidden(true), camview(0), lines(0), mouse_latch(0), mouse_in(false),
-	cockpit_hud_texture(0)
+	: window(c)
+	, rect(0, 0, 0, 0)
+	, index(n)
+	, mode(MFD_MODE_OFF)
+	, lines(0)
+	, sprite(nullptr)
+	, hidden(true)
+	, ship(nullptr)
+	, camview(nullptr)
+	, cockpit_hud_texture(nullptr)
+	, mouse_latch(0)
+	, mouse_in(false)
 {
-	sprite = new Sprite(sensor_fov);
+	sprite = new Sprite(&sensor_fov);
 
 	sprite->SetBlendMode(2);
 	sprite->SetFilter(0);
 	sprite->Hide();
 
-	SystemFont* font = FontManager::Find("HUD");
+	Font* font = FontMgr::Find("HUD");
 
 	for (int i = 0; i < TXT_LAST; i++) {
 		mfd_text[i].font = font;
-		mfd_text[i].color = Color::White;
+		mfd_text[i].color = FColor::White;
 		mfd_text[i].hidden = true;
 	}
 }
@@ -104,13 +122,15 @@ MFD::Initialize()
 	static int initialized = 0;
 	if (initialized) return;
 
-	// NOTE: Expected Unreal-port signatures:
-	//   PrepareTexture(const char* name, UTexture2D*& out_tex, BYTE*& out_shade)
-	//   ColorizeTexture(UTexture2D* tex, BYTE* shade, Color c)
-	HUDView::PrepareTexture("sensor_fov.pcx", sensor_fov, sensor_fov_shade);
-	HUDView::PrepareTexture("sensor_fwd.pcx", sensor_fwd, sensor_fwd_shade);
-	HUDView::PrepareTexture("sensor_hsd.pcx", sensor_hsd, sensor_hsd_shade);
-	HUDView::PrepareTexture("sensor_3d.pcx", sensor_3d, sensor_3d_shade);
+	HUDView::PrepareBitmap("sensor_fov.pcx", sensor_fov, sensor_fov_shade);
+	HUDView::PrepareBitmap("sensor_fwd.pcx", sensor_fwd, sensor_fwd_shade);
+	HUDView::PrepareBitmap("sensor_hsd.pcx", sensor_hsd, sensor_hsd_shade);
+	HUDView::PrepareBitmap("sensor_3d.pcx", sensor_3d, sensor_3d_shade);
+
+	sensor_fov.SetType(Bitmap::BMP_TRANSLUCENT);
+	sensor_fwd.SetType(Bitmap::BMP_TRANSLUCENT);
+	sensor_hsd.SetType(Bitmap::BMP_TRANSLUCENT);
+	sensor_3d.SetType(Bitmap::BMP_TRANSLUCENT);
 
 	initialized = 1;
 }
@@ -118,10 +138,10 @@ MFD::Initialize()
 void
 MFD::Close()
 {
-	sensor_fov = nullptr;
-	sensor_fwd = nullptr;
-	sensor_hsd = nullptr;
-	sensor_3d = nullptr;
+	sensor_fov.ClearImage();
+	sensor_fwd.ClearImage();
+	sensor_hsd.ClearImage();
+	sensor_3d.ClearImage();
 
 	delete[] sensor_fov_shade; sensor_fov_shade = nullptr;
 	delete[] sensor_fwd_shade; sensor_fwd_shade = nullptr;
@@ -140,7 +160,7 @@ MFD::UseCameraView(CameraView* v)
 }
 
 void
-MFD::SetColor(Color c)
+MFD::SetColor(FColor c)
 {
 	HUDView* hud = HUDView::GetInstance();
 
@@ -149,21 +169,24 @@ MFD::SetColor(Color c)
 		txt_color = hud->GetTextColor();
 	}
 	else {
-		hud_color = c;
-		txt_color = c;
+		// Legacy fallback: convert Starshatter Color -> FColor
+		hud_color = FColor((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), 255);
+		txt_color = hud_color;
 	}
 
-	HUDView::ColorizeTexture(sensor_fov, sensor_fov_shade, c);
-	HUDView::ColorizeTexture(sensor_fwd, sensor_fwd_shade, c);
-	HUDView::ColorizeTexture(sensor_hsd, sensor_hsd_shade, c);
-	HUDView::ColorizeTexture(sensor_3d, sensor_3d_shade, c);
+	// HUDView::ColorizeBitmap expects FColor in UE port:
+	HUDView::ColorizeBitmap(sensor_fov, sensor_fov_shade, hud_color, true);
+	HUDView::ColorizeBitmap(sensor_fwd, sensor_fwd_shade, hud_color, true);
+	HUDView::ColorizeBitmap(sensor_hsd, sensor_hsd_shade, hud_color, true);
+	HUDView::ColorizeBitmap(sensor_3d, sensor_3d_shade, hud_color, true);
 }
 
 void
 MFD::SetText3DColor(Color c)
 {
+	const FColor fc((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), 255);
 	for (int i = 0; i < TXT_LAST; i++)
-		mfd_text[i].color = c;
+		mfd_text[i].color = fc;
 }
 
 // +--------------------------------------------------------------------+
@@ -203,13 +226,9 @@ MFD::SetRect(const Rect& r)
 	rect = r;
 
 	if (sprite) {
-		// Point -> FVector (Z used as depth in legacy UI)
-		const FVector NewPos(
-			(float)(rect.x + sprite->Width() / 2),
-			(float)(rect.y + sprite->Height() / 2),
-			1.0f
-		);
-		sprite->MoveTo(NewPos);
+		const float X = (float)(rect.x + sprite->Width() / 2);
+		const float Y = (float)(rect.y + sprite->Height() / 2);
+		sprite->MoveTo(FVector(X, Y, 1.0f));
 	}
 }
 
@@ -223,7 +242,8 @@ MFD::SetMode(int m)
 	else
 		mode = m;
 
-	sprite->Hide();
+	if (sprite)
+		sprite->Hide();
 
 	for (int i = 0; i < TXT_LAST; i++)
 		HideMFDText(i);
@@ -235,21 +255,21 @@ MFD::SetMode(int m)
 		break;
 
 	case MFD_MODE_FOV:
-		sprite->SetAnimation(sensor_fov);
+		sprite->SetAnimation(&sensor_fov);
 		sprite->Show();
-		sprite->Reshape(HUDView::TextureWidth(sensor_fov) - 8, 16);
+		sprite->Reshape(sensor_fov.Width() - 8, 16);
 		break;
 
 	case MFD_MODE_HSD:
-		sprite->SetAnimation(sensor_hsd);
+		sprite->SetAnimation(&sensor_hsd);
 		sprite->Show();
-		sprite->Reshape(HUDView::TextureWidth(sensor_hsd) - 8, 16);
+		sprite->Reshape(sensor_hsd.Width() - 8, 16);
 		break;
 
 	case MFD_MODE_3D:
-		sprite->SetAnimation(sensor_3d);
+		sprite->SetAnimation(&sensor_3d);
 		sprite->Show();
-		sprite->Reshape(HUDView::TextureWidth(sensor_3d) - 8, 16);
+		sprite->Reshape(sensor_3d.Width() - 8, 16);
 		break;
 	}
 }
@@ -282,12 +302,12 @@ MFD::Draw()
 
 	if (hidden || mode < MFD_MODE_FOV) {
 		if (cockpit_hud_texture) {
-			int x1 = index * 128;
-			int y1 = 256;
-			int x2 = x1 + 128;
-			int y2 = y1 + 128;
+			const int x1 = index * 128;
+			const int y1 = 256;
+			const int x2 = x1 + 128;
+			const int y2 = y1 + 128;
 
-			cockpit_hud_texture->FillRect(x1, y1, x2, y2, Color::Black);
+			cockpit_hud_texture->FillRect(x1, y1, x2, y2, FColor::Black);
 		}
 
 		if (hidden)
@@ -296,20 +316,20 @@ MFD::Draw()
 
 	if (sprite && !sprite->Hidden()) {
 		if (cockpit_hud_texture) {
-			int x1 = index * 128;
-			int y1 = 256;
-			int w = sprite->Width();
-			int h = sprite->Height();
+			const int x1 = index * 128;
+			const int y1 = 256;
+			const int w = sprite->Width();
+			const int h = sprite->Height();
 
-			cockpit_hud_texture->BitBlt(x1, y1, sprite->Frame(), 0, 0, w, h);
+			cockpit_hud_texture->BitBlt(x1, y1, *sprite->Frame(), 0, 0, w, h);
 		}
 		else {
-			int cx = rect.x + rect.w / 2;
-			int cy = rect.y + rect.h / 2;
-			int w2 = sprite->Width() / 2;
-			int h2 = sprite->Height() / 2;
+			const int cx = rect.x + rect.w / 2;
+			const int cy = rect.y + rect.h / 2;
+			const int w2 = sprite->Width() / 2;
+			const int h2 = sprite->Height() / 2;
 
-			window->DrawTexture(cx - w2, cy - h2, cx + w2, cy + h2, sprite->Frame(), Video::BLEND_ALPHA);
+			window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, sprite->Frame(), Video::BLEND_ALPHA);
 		}
 	}
 
@@ -338,13 +358,13 @@ MFD::DrawSensorLabels(const char* mfd_mode)
 	int     scan_y = rect.y;
 
 	switch (sensor->GetMode()) {
-	case Sensor::PAS: strcpy_s(mode_buf, Game::GetText("MFD.mode.passive").data());      break;
-	case Sensor::STD: strcpy_s(mode_buf, Game::GetText("MFD.mode.standard").data());     break;
-	case Sensor::ACM: strcpy_s(mode_buf, Game::GetText("MFD.mode.auto-combat").data());  break;
-	case Sensor::GM:  strcpy_s(mode_buf, Game::GetText("MFD.mode.ground").data());       break;
-	case Sensor::PST: strcpy_s(mode_buf, Game::GetText("MFD.mode.passive").data());      break;
-	case Sensor::CST: strcpy_s(mode_buf, Game::GetText("MFD.mode.combined").data());     break;
-	default:          break;
+	case Sensor::PAS: strcpy_s(mode_buf, Game::GetText("MFD.mode.passive").data());       break;
+	case Sensor::STD: strcpy_s(mode_buf, Game::GetText("MFD.mode.standard").data());      break;
+	case Sensor::ACM: strcpy_s(mode_buf, Game::GetText("MFD.mode.auto-combat").data());   break;
+	case Sensor::GM:  strcpy_s(mode_buf, Game::GetText("MFD.mode.ground").data());        break;
+	case Sensor::PST: strcpy_s(mode_buf, Game::GetText("MFD.mode.passive").data());       break;
+	case Sensor::CST: strcpy_s(mode_buf, Game::GetText("MFD.mode.combined").data());      break;
+	default: break;
 	}
 
 	Rect mode_rect(scan_x + 2, scan_y + 2, 40, 12);
@@ -352,7 +372,6 @@ MFD::DrawSensorLabels(const char* mfd_mode)
 
 	char   range_txt[12];
 	double beam_range = sensor->GetBeamRange() + 1;
-
 	if (beam_range >= 1e6)
 		sprintf_s(range_txt, "-%dM+", (int)(beam_range / 1e6));
 	else
@@ -387,23 +406,936 @@ MFD::DrawSensorLabels(const char* mfd_mode)
 				sensor->SetMode((Sensor::Mode)sensor_mode);
 			}
 		}
-
 		else if (range_rect.Contains(Mouse::X(), Mouse::Y())) {
 			if (Mouse::X() > range_rect.x + range_rect.w / 2)
 				sensor->IncreaseRange();
 			else
 				sensor->DecreaseRange();
 		}
-
 		else if (disp_rect.Contains(Mouse::X(), Mouse::Y())) {
 			HUDView* hud = HUDView::GetInstance();
 			if (hud)
 				hud->CycleMFDMode(index);
 		}
-
 		else if (probe_rect.Contains(Mouse::X(), Mouse::Y())) {
 			ship->LaunchProbe();
 		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+// AZIMUTH-ELEVATION ANGULAR SCANNER
+
+void
+MFD::DrawSensorMFD()
+{
+	const int scan_r = rect.w;
+	const int scan_x = cockpit_hud_texture ? (index * 128) : rect.x;
+	const int scan_y = cockpit_hud_texture ? 256 : rect.y;
+	const int r = scan_r / 2;
+
+	const double xctr = (scan_r / 2.0) - 0.5;
+	const double yctr = (scan_r / 2.0) + 0.5;
+
+	Sensor* sensor = ship ? ship->GetSensor() : nullptr;
+	if (!sensor) {
+		DrawMFDText(0, Game::GetText("MFD.inactive").data(), rect, DT_CENTER);
+		return;
+	}
+
+	int w = sprite->Width();
+	int h = sprite->Height();
+
+	if (w < sprite->Frame()->Width())
+		w += 2;
+
+	if (h < sprite->Frame()->Height())
+		h += 16;
+
+	sprite->Reshape(w, h);
+	sprite->Show();
+
+	if (h < sprite->Frame()->Height())
+		return;
+
+	double sweep_scale = r / (PI / 2);
+
+	if (sensor->GetBeamLimit() > 90 * DEGREES)
+		sweep_scale = (double)r / (90 * DEGREES);
+
+	const int az = (int)(sensor->GetBeamLimit() * sweep_scale);
+	const int el = az;
+	const int xc = (int)(scan_x + xctr);
+	const int yc = (int)(scan_y + yctr);
+
+	if (mode == MFD_MODE_FOV) {
+		if (sensor->GetMode() < Sensor::GM) {
+			if (cockpit_hud_texture)
+				cockpit_hud_texture->DrawEllipse(xc - az, yc - el, xc + az, yc + el, hud_color);
+			else
+				window->DrawEllipse(xc - az, yc - el, xc + az, yc + el, hud_color);
+		}
+	}
+	else {
+		char az_txt[8];
+		sprintf_s(az_txt, "%d", (int)(sensor->GetBeamLimit() / DEGREES));
+
+		Rect az_rect(scan_x + 2, scan_y + scan_r - 12, 32, 12);
+		DrawMFDText(1, az_txt, az_rect, DT_LEFT);
+
+		az_rect.x = scan_x + (scan_r / 2) - (az_rect.w / 2);
+		DrawMFDText(2, "0", az_rect, DT_CENTER);
+
+		az_rect.x = scan_x + scan_r - az_rect.w - 2;
+		DrawMFDText(3, az_txt, az_rect, DT_RIGHT);
+	}
+
+	// draw next nav point:
+	Instruction* navpt = ship ? ship->GetNextNavPoint() : nullptr;
+	if (navpt && navpt->Region() == ship->GetRegion()) {
+		const Camera* cam = &ship->Cam();
+
+		// translate:
+		const FVector pt = navpt->Location().OtherHand() - ship->Location();
+
+		// rotate (camera basis projection):
+		const double tx = FVector::DotProduct(pt, cam->vrt());
+		const double ty = FVector::DotProduct(pt, cam->vup());
+		const double tz = FVector::DotProduct(pt, cam->vpn());
+
+		if (tz > 1.0) {
+			// convert to spherical coords:
+			const double rng = pt.Length();
+			if (rng > 1e-6) {
+				double azp = asin(FMath::Abs(tx) / rng);
+				double elp = asin(FMath::Abs(ty) / rng);
+
+				if (tx < 0) azp = -azp;
+				if (ty < 0) elp = -elp;
+
+				if (FMath::Abs(azp) < 90 * DEGREES) {
+					azp *= sweep_scale;
+					elp *= sweep_scale;
+
+					const int x = (int)(r + azp);
+					const int y = (int)(r - elp);
+
+					// clip again:
+					if (x > 0 && x < scan_r && y > 0 && y < scan_r) {
+						const int xcp = scan_x + x;
+						const int ycp = scan_y + y;
+
+						if (cockpit_hud_texture) {
+							cockpit_hud_texture->DrawLine(xcp - 2, ycp - 2, xcp + 2, ycp + 2, FColor::White);
+							cockpit_hud_texture->DrawLine(xcp - 2, ycp + 2, xcp + 2, ycp - 2, FColor::White);
+						}
+						else {
+							window->DrawLine(xcp - 2, ycp - 2, xcp + 2, ycp + 2, FColor::White);
+							window->DrawLine(xcp - 2, ycp + 2, xcp + 2, ycp - 2, FColor::White);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	int num_contacts = ship->NumContacts();
+	ListIter<Contact> iter = ship->ContactList();
+
+	while (++iter) {
+		Contact* contact = iter.value();
+		Ship* c_ship = contact->GetShip();
+		double   azc, elc, rng;
+		bool     aft = false;
+
+		if (c_ship == ship) continue;
+
+		contact->GetBearing(ship, azc, elc, rng);
+
+		// clip (is in-front):
+		if (FMath::Abs(azc) < 90 * DEGREES) {
+			azc *= sweep_scale;
+			elc *= sweep_scale;
+		}
+
+		// rear anulus:
+		else {
+			const double len = sqrt(azc * azc + elc * elc);
+
+			if (len > 1e-6) {
+				azc = r * azc / len;
+				elc = r * elc / len;
+			}
+			else {
+				azc = -r;
+				elc = 0;
+			}
+
+			aft = true;
+		}
+
+		const int x = (int)(r + azc);
+		const int y = (int)(r - elc);
+
+		// clip again:
+		if (x < 0 || x > scan_r) continue;
+		if (y < 0 || y > scan_r) continue;
+
+		// draw:
+		FColor mark = HUDView::MarkerColor(contact);
+
+		if (aft) {
+			const FLinearColor lm = FLinearColor(mark) * 0.75f;
+			mark = lm.ToFColor(true);
+		}
+
+		const int xcp = scan_x + x;
+		const int ycp = scan_y + y;
+		int       size = 1;
+
+		if (c_ship && c_ship == ship->GetTarget())
+			size = 2;
+
+		if (cockpit_hud_texture)
+			cockpit_hud_texture->FillRect(xcp - size, ycp - size, xcp + size, ycp + size, mark);
+		else
+			window->FillRect(xcp - size, ycp - size, xcp + size, ycp + size, mark);
+
+		if (contact->Threat(ship)) {
+			if (c_ship) {
+				if (cockpit_hud_texture)
+					cockpit_hud_texture->DrawEllipse(xcp - 4, ycp - 4, xcp + 3, ycp + 3, mark);
+				else
+					window->DrawEllipse(xcp - 4, ycp - 4, xcp + 3, ycp + 3, mark);
+			}
+			else {
+				if (cockpit_hud_texture) {
+					cockpit_hud_texture->DrawLine(xcp, ycp - 5, xcp + 5, ycp, mark);
+					cockpit_hud_texture->DrawLine(xcp + 5, ycp, xcp, ycp + 5, mark);
+					cockpit_hud_texture->DrawLine(xcp, ycp + 5, xcp - 5, ycp, mark);
+					cockpit_hud_texture->DrawLine(xcp - 5, ycp, xcp, ycp - 5, mark);
+				}
+				else {
+					window->DrawLine(xcp, ycp - 5, xcp + 5, ycp, mark);
+					window->DrawLine(xcp + 5, ycp, xcp, ycp + 5, mark);
+					window->DrawLine(xcp, ycp + 5, xcp - 5, ycp, mark);
+					window->DrawLine(xcp - 5, ycp, xcp, ycp - 5, mark);
+				}
+			}
+		}
+	}
+
+	DrawSensorLabels(Game::GetText("MFD.mode.field-of-view").data());
+}
+
+// +--------------------------------------------------------------------+
+
+// HORIZONTAL SITUATION DISPLAY
+
+void
+MFD::DrawHSD()
+{
+	const int scan_r = rect.w;
+	const int scan_x = cockpit_hud_texture ? (index * 128) : rect.x;
+	const int scan_y = cockpit_hud_texture ? 256 : rect.y;
+	const int r = scan_r / 2 - 4;
+
+	const double xctr = (scan_r / 2.0) - 0.5;
+	const double yctr = (scan_r / 2.0) + 0.5;
+
+	const int xc = (int)xctr + scan_x;
+	const int yc = (int)yctr + scan_y;
+
+	Sensor* sensor = ship ? ship->GetSensor() : nullptr;
+	if (!sensor) {
+		DrawMFDText(0, Game::GetText("MFD.inactive").data(), rect, DT_CENTER);
+		return;
+	}
+
+	int w = sprite->Width();
+	int h = sprite->Height();
+
+	if (w < sprite->Frame()->Width())
+		w += 2;
+
+	if (h < sprite->Frame()->Height())
+		h += 16;
+
+	sprite->Reshape(w, h);
+	sprite->Show();
+
+	if (h < sprite->Frame()->Height())
+		return;
+
+	if (sensor->GetMode() < Sensor::PST) {
+		const double s = sin(sensor->GetBeamLimit());
+		const double c = cos(sensor->GetBeamLimit());
+
+		const int x0 = (int)(0.1 * r * s);
+		const int y0 = (int)(0.1 * r * c);
+		const int x1 = (int)(1.0 * r * s);
+		const int y1 = (int)(1.0 * r * c);
+
+		if (cockpit_hud_texture) {
+			cockpit_hud_texture->DrawLine(xc - x0, yc - y0, xc - x1, yc - y1, hud_color);
+			cockpit_hud_texture->DrawLine(xc + x0, yc - y0, xc + x1, yc - y1, hud_color);
+		}
+		else {
+			window->DrawLine(xc - x0, yc - y0, xc - x1, yc - y1, hud_color);
+			window->DrawLine(xc + x0, yc - y0, xc + x1, yc - y1, hud_color);
+		}
+	}
+
+	const double rscale = (double)r / (sensor->GetBeamRange());
+
+	Camera hsd_cam = ship->Cam();
+
+	// Look-at point in world space, flattened on Y (original behavior):
+	FVector look = ship->Location() + ship->Heading() * 1000.0f;
+	look.Y = ship->Location().Y;
+
+	hsd_cam.LookAt(look);
+
+	// draw tick marks on range rings:
+	for (int dir = 0; dir < 4; dir++) {
+		FVector tick;
+
+		switch (dir) {
+		case 0:  tick = FVector(0.0f, 0.0f, 1000.0f); break;
+		case 1:  tick = FVector(1000.0f, 0.0f, 0.0f); break;
+		case 2:  tick = FVector(0.0f, 0.0f, -1000.0f); break;
+		case 3:  tick = FVector(-1000.0f, 0.0f, 0.0f); break;
+		}
+
+		const double tx = FVector::DotProduct(tick, hsd_cam.vrt());
+		const double tz = FVector::DotProduct(tick, hsd_cam.vpn());
+		double az = asin(FMath::Abs(tx) / 1000.0);
+
+		if (tx < 0) az = -az;
+
+		if (tz < 0) {
+			if (az < 0) az = -PI - az;
+			else        az = PI - az;
+		}
+
+		for (double range = 0.3; range < 1; range += 0.3) {
+			const int x0 = (int)(sin(az) * r * range);
+			const int y0 = (int)(cos(az) * r * range);
+			const int x1 = (int)(sin(az) * r * (range + 0.1));
+			const int y1 = (int)(cos(az) * r * (range + 0.1));
+
+			if (cockpit_hud_texture)
+				cockpit_hud_texture->DrawLine(xc + x0, yc - y0, xc + x1, yc - y1, hud_color);
+			else
+				window->DrawLine(xc + x0, yc - y0, xc + x1, yc - y1, hud_color);
+		}
+	}
+
+	// draw next nav point:
+	Instruction* navpt = ship->GetNextNavPoint();
+	if (navpt && navpt->Region() == ship->GetRegion()) {
+		const Camera* cam = &hsd_cam;
+
+		const FVector pt = navpt->Location().OtherHand() - ship->Location();
+
+		const double tx = FVector::DotProduct(pt, cam->vrt());
+		const double tz = FVector::DotProduct(pt, cam->vpn());
+
+		double rng = pt.Length();
+		if (rng < 1e-6)
+			rng = 1e-6;
+
+		double az = asin(FMath::Abs(tx) / rng);
+
+		if (rng > sensor->GetBeamRange())
+			rng = sensor->GetBeamRange();
+
+		if (tx < 0)
+			az = -az;
+
+		if (tz < 0) {
+			if (az < 0) az = -PI - az;
+			else        az = PI - az;
+		}
+
+		const int x = (int)(xc + sin(az) * rng * rscale);
+		const int y = (int)(yc - cos(az) * rng * rscale);
+
+		if (cockpit_hud_texture) {
+			cockpit_hud_texture->DrawLine(x - 2, y - 2, x + 2, y + 2, FColor::White);
+			cockpit_hud_texture->DrawLine(x - 2, y + 2, x + 2, y - 2, FColor::White);
+		}
+		else {
+			window->DrawLine(x - 2, y - 2, x + 2, y + 2, FColor::White);
+			window->DrawLine(x - 2, y + 2, x + 2, y - 2, FColor::White);
+		}
+	}
+
+	// draw contact markers:
+	const double limit = sensor->GetBeamRange();
+	ListIter<Contact> contact = ship->ContactList();
+
+	while (++contact) {
+		Ship* c_ship = contact->GetShip();
+		if (c_ship == ship) continue;
+
+		const FVector targ_pt = contact->Location() - hsd_cam.Pos();
+
+		const double tx = FVector::DotProduct(targ_pt, hsd_cam.vrt());
+		const double rg = contact->Range(ship, limit);
+
+		double true_range = targ_pt.Length();
+		if (true_range < 1e-6)
+			true_range = 1e-6;
+
+		double az = asin(FMath::Abs(tx) / true_range);
+
+		if (rg > limit || rg <= 0)
+			continue;
+
+		if (tx < 0)
+			az = -az;
+
+		if (!contact->InFront(ship)) {
+			if (az < 0) az = -PI - az;
+			else        az = PI - az;
+		}
+
+		const int x = (int)(xc + sin(az) * rg * rscale);
+		const int y = (int)(yc - cos(az) * rg * rscale);
+		int size = 2;
+
+		if (x < scan_x || y < scan_y)
+			continue;
+
+		if (c_ship && c_ship == ship->GetTarget())
+			size = 3;
+
+		FColor mark = HUDView::MarkerColor(contact.value());
+
+		if (cockpit_hud_texture)
+			cockpit_hud_texture->FillRect(x - size, y - size, x + size, y + size, mark);
+		else
+			window->FillRect(x - size, y - size, x + size, y + size, mark);
+
+		if (contact->Threat(ship)) {
+			if (c_ship) {
+				if (cockpit_hud_texture)
+					cockpit_hud_texture->DrawEllipse(x - 4, y - 4, x + 3, y + 3, mark);
+				else
+					window->DrawEllipse(x - 4, y - 4, x + 3, y + 3, mark);
+			}
+			else {
+				if (cockpit_hud_texture) {
+					cockpit_hud_texture->DrawLine(x, y - 5, x + 5, y, mark);
+					cockpit_hud_texture->DrawLine(x + 5, y, x, y + 5, mark);
+					cockpit_hud_texture->DrawLine(x, y + 5, x - 5, y, mark);
+					cockpit_hud_texture->DrawLine(x - 5, y, x, y - 5, mark);
+				}
+				else {
+					window->DrawLine(x, y - 5, x + 5, y, mark);
+					window->DrawLine(x + 5, y, x, y + 5, mark);
+					window->DrawLine(x, y + 5, x - 5, y, mark);
+					window->DrawLine(x - 5, y, x, y - 5, mark);
+				}
+			}
+		}
+	}
+
+	DrawSensorLabels(Game::GetText("MFD.mode.horizontal").data());
+}
+
+// +--------------------------------------------------------------------+
+
+// ELITE-STYLE 3D RADAR
+
+void
+MFD::Draw3D()
+{
+	const int scan_r = rect.w;
+	const int scan_x = cockpit_hud_texture ? (index * 128) : rect.x;
+	const int scan_y = cockpit_hud_texture ? 256 : rect.y;
+	const int r = scan_r / 2 - 4;
+
+	const double xctr = (scan_r / 2.0) - 0.5;
+	const double yctr = (scan_r / 2.0) + 0.5;
+
+	const int xc = (int)xctr + scan_x;
+	const int yc = (int)yctr + scan_y;
+
+	Sensor* sensor = ship ? ship->GetSensor() : nullptr;
+	if (!sensor) {
+		DrawMFDText(0, Game::GetText("MFD.inactive").data(), rect, DT_CENTER);
+		return;
+	}
+
+	int w = sprite->Width();
+	int h = sprite->Height();
+
+	if (w < sprite->Frame()->Width())
+		w += 2;
+
+	if (h < sprite->Frame()->Height())
+		h += 16;
+
+	sprite->Reshape(w, h);
+	sprite->Show();
+
+	if (h < sprite->Frame()->Height())
+		return;
+
+	const double rscale = (double)r / (sensor->GetBeamRange());
+
+	Camera hsd_cam = ship->Cam();
+
+	if (ship->IsStarship()) {
+		FVector look = ship->Location() + ship->Heading() * 1000.0f;
+		look.Y = ship->Location().Y;
+		hsd_cam.LookAt(look);
+	}
+
+	// draw next nav point:
+	Instruction* navpt = ship->GetNextNavPoint();
+	if (navpt && navpt->Region() == ship->GetRegion()) {
+		const Camera* cam = &hsd_cam;
+
+		const FVector pt = navpt->Location().OtherHand() - ship->Location();
+
+		const double tx = FVector::DotProduct(pt, cam->vrt());
+		double ty = FVector::DotProduct(pt, cam->vup());
+		const double tz = FVector::DotProduct(pt, cam->vpn());
+
+		double rng = pt.Length();
+		if (rng < 1e-6)
+			rng = 1e-6;
+
+		double az = asin(FMath::Abs(tx) / rng);
+
+		if (rng > sensor->GetBeamRange())
+			rng = sensor->GetBeamRange();
+
+		if (tx < 0)
+			az = -az;
+
+		if (tz < 0) {
+			if (az < 0) az = -PI - az;
+			else        az = PI - az;
+		}
+
+		// accentuate vertical:
+		if (ty > 10)
+			ty = log10(ty - 9) * r / 8;
+		else if (ty < -10)
+			ty = -log10(9 - ty) * r / 8;
+		else
+			ty = 0;
+
+		const int x = (int)(sin(az) * rng * rscale);
+		const int y = (int)(cos(az) * rng * rscale / 2);
+		const int z = (int)(ty);
+
+		const int x0 = xc + x;
+		const int y0 = yc - y - z;
+
+		if (cockpit_hud_texture) {
+			cockpit_hud_texture->DrawLine(x0 - 2, y0 - 2, x0 + 2, y0 + 2, FColor::White);
+			cockpit_hud_texture->DrawLine(x0 - 2, y0 + 2, x0 + 2, y0 - 2, FColor::White);
+		}
+		else {
+			window->DrawLine(x0 - 2, y0 - 2, x0 + 2, y0 + 2, FColor::White);
+			window->DrawLine(x0 - 2, y0 + 2, x0 + 2, y0 - 2, FColor::White);
+		}
+
+		if (cockpit_hud_texture) {
+			if (z > 0)
+				cockpit_hud_texture->DrawLine(x0, y0 + 1, x0, y0 + z, FColor::White);
+			else if (z < 0)
+				cockpit_hud_texture->DrawLine(x0, y0 + z, x0, y0 - 1, FColor::White);
+		}
+		else {
+			if (z > 0)
+				window->DrawLine(x0, y0 + 1, x0, y0 + z, FColor::White);
+			else if (z < 0)
+				window->DrawLine(x0, y0 + z, x0, y0 - 1, FColor::White);
+		}
+	}
+
+	// draw contact markers:
+	const double limit = sensor->GetBeamRange();
+	ListIter<Contact> contact = ship->ContactList();
+
+	while (++contact) {
+		Ship* c_ship = contact->GetShip();
+		if (c_ship == ship) continue;
+
+		const FVector targ_pt = contact->Location() - hsd_cam.Pos();
+
+		const double tx = FVector::DotProduct(targ_pt, hsd_cam.vrt());
+		double ty = FVector::DotProduct(targ_pt, hsd_cam.vup());
+		const double rg = contact->Range(ship, limit);
+
+		double true_range = targ_pt.Length();
+		if (true_range < 1e-6)
+			true_range = 1e-6;
+
+		double az = asin(FMath::Abs(tx) / true_range);
+
+		if (rg > limit || rg <= 0)
+			continue;
+
+		if (tx < 0)
+			az = -az;
+
+		if (!contact->InFront(ship)) {
+			if (az < 0) az = -PI - az;
+			else        az = PI - az;
+		}
+
+		// accentuate vertical:
+		ty *= 4;
+
+		const int x = (int)(sin(az) * rg * rscale);
+		const int y = (int)(cos(az) * rg * rscale / 2);
+		const int z = (int)(ty * rscale / 2);
+		int size = 1;
+
+		const int x0 = xc + x;
+		const int y0 = yc - y - z;
+
+		if (c_ship && c_ship == ship->GetTarget())
+			size = 2;
+
+		FColor mark = HUDView::MarkerColor(contact.value());
+
+		if (cockpit_hud_texture) {
+			cockpit_hud_texture->FillRect(x0 - size, y0 - size, x0 + size, y0 + size, mark);
+
+			if (contact->Threat(ship)) {
+				if (c_ship) {
+					cockpit_hud_texture->DrawEllipse(x0 - 4, y0 - 4, x0 + 3, y0 + 3, mark);
+				}
+				else {
+					cockpit_hud_texture->DrawLine(x0, y0 - 5, x0 + 5, y0, mark);
+					cockpit_hud_texture->DrawLine(x0 + 5, y0, x0, y0 + 5, mark);
+					cockpit_hud_texture->DrawLine(x0, y0 + 5, x0 - 5, y0, mark);
+					cockpit_hud_texture->DrawLine(x0 - 5, y0, x0, y0 - 5, mark);
+				}
+			}
+
+			if (z > 0)
+				cockpit_hud_texture->FillRect(x0 - 1, y0 + size, x0, y0 + z, mark);
+			else if (z < 0)
+				cockpit_hud_texture->FillRect(x0 - 1, y0 + z, x0, y0 - size, mark);
+		}
+		else {
+			window->FillRect(x0 - size, y0 - size, x0 + size, y0 + size, mark);
+
+			if (contact->Threat(ship)) {
+				if (c_ship) {
+					window->DrawEllipse(x0 - 4, y0 - 4, x0 + 3, y0 + 3, mark);
+				}
+				else {
+					window->DrawLine(x0, y0 - 5, x0 + 5, y0, mark);
+					window->DrawLine(x0 + 5, y0, x0, y0 + 5, mark);
+					window->DrawLine(x0, y0 + 5, x0 - 5, y0, mark);
+					window->DrawLine(x0 - 5, y0, x0, y0 - 5, mark);
+				}
+			}
+
+			if (z > 0)
+				window->FillRect(x0 - 1, y0 + size, x0, y0 + z, mark);
+			else if (z < 0)
+				window->FillRect(x0 - 1, y0 + z, x0, y0 - size, mark);
+		}
+	}
+
+	DrawSensorLabels(Game::GetText("MFD.mode.3D").data());
+}
+
+// +--------------------------------------------------------------------+
+
+// GROUND MAP
+
+void
+MFD::DrawMap()
+{
+	DrawMFDText(0, Game::GetText("MFD.mode.ground").data(), Rect(rect.x, rect.y, rect.w, 12), DT_CENTER);
+}
+
+// +--------------------------------------------------------------------+
+
+void
+MFD::DrawGauge(int x, int y, int percent)
+{
+	if (cockpit_hud_texture) {
+		x += this->index * 128 - this->rect.x;
+		y += 256 - this->rect.y;
+		cockpit_hud_texture->DrawRect(x, y, x + 53, y + 8, FColor::DarkGray);
+	}
+	else {
+		window->DrawRect(x, y, x + 53, y + 8, FColor::DarkGray);
+	}
+
+	if (percent < 3) return;
+	if (percent > 100) percent = 100;
+
+	percent /= 2;
+
+	if (cockpit_hud_texture)
+		cockpit_hud_texture->FillRect(x + 2, y + 2, x + 2 + percent, y + 7, FColor::Gray);
+	else
+		window->FillRect(x + 2, y + 2, x + 2 + percent, y + 7, FColor::Gray);
+}
+
+void
+MFD::DrawGameMFD()
+{
+	if (lines < 10) lines++;
+
+	char txt[64];
+	Rect txt_rect(rect.x, rect.y, rect.w, 12);
+
+	int t = 0;
+
+	if (!HUDView::IsArcade() && HUDView::ShowFPS()) {
+		sprintf_s(txt, "FPS: %6.2f", Game::FrameRate());
+		DrawMFDText(t++, txt, txt_rect, DT_LEFT);
+		txt_rect.y += 10;
+
+		if (lines <= 1) return;
+
+		Starshatter* game = Starshatter::GetInstance();
+		sprintf_s(txt, "Polys: %d", game->GetPolyStats().npolys);
+		DrawMFDText(t++, txt, txt_rect, DT_LEFT);
+		txt_rect.y += 10;
+	}
+
+	if (ship) {
+		DrawMFDText(t++, ship->Name(), txt_rect, DT_LEFT);
+		txt_rect.y += 10;
+	}
+
+	if (lines <= 2) return;
+
+	int hours = (Game::GameTime() / 3600000);
+	int minutes = (Game::GameTime() / 60000) % 60;
+	int seconds = (Game::GameTime() / 1000) % 60;
+
+	if (ship) {
+		DWORD clock = ship->MissionClock();
+
+		hours = (clock / 3600000);
+		minutes = (clock / 60000) % 60;
+		seconds = (clock / 1000) % 60;
+	}
+
+	if (Game::TimeCompression() > 1)
+		sprintf_s(txt, "%02d:%02d:%02d x%d", hours, minutes, seconds, Game::TimeCompression());
+	else
+		sprintf_s(txt, "%02d:%02d:%02d", hours, minutes, seconds);
+
+	DrawMFDText(t++, txt, txt_rect, DT_LEFT);
+	txt_rect.y += 10;
+
+	if (HUDView::IsArcade() || lines <= 3) return;
+
+	DrawMFDText(t++, ship->GetRegion()->Name(), txt_rect, DT_LEFT);
+	txt_rect.y += 10;
+
+	if (lines <= 4) return;
+
+	if (ship) {
+		switch (ship->GetFlightPhase()) {
+		case Ship::DOCKED:   DrawMFDText(t++, Game::GetText("MFD.phase.DOCKED").data(), txt_rect, DT_LEFT); break;
+		case Ship::ALERT:    DrawMFDText(t++, Game::GetText("MFD.phase.ALERT").data(), txt_rect, DT_LEFT); break;
+		case Ship::LOCKED:   DrawMFDText(t++, Game::GetText("MFD.phase.LOCKED").data(), txt_rect, DT_LEFT); break;
+		case Ship::LAUNCH:   DrawMFDText(t++, Game::GetText("MFD.phase.LAUNCH").data(), txt_rect, DT_LEFT); break;
+		case Ship::TAKEOFF:  DrawMFDText(t++, Game::GetText("MFD.phase.TAKEOFF").data(), txt_rect, DT_LEFT); break;
+		case Ship::ACTIVE:   DrawMFDText(t++, Game::GetText("MFD.phase.ACTIVE").data(), txt_rect, DT_LEFT); break;
+		case Ship::APPROACH: DrawMFDText(t++, Game::GetText("MFD.phase.APPROACH").data(), txt_rect, DT_LEFT); break;
+		case Ship::RECOVERY: DrawMFDText(t++, Game::GetText("MFD.phase.RECOVERY").data(), txt_rect, DT_LEFT); break;
+		case Ship::DOCKING:  DrawMFDText(t++, Game::GetText("MFD.phase.DOCKING").data(), txt_rect, DT_LEFT); break;
+		}
+	}
+}
+
+void
+MFD::DrawStatusMFD()
+{
+	if (lines < 10) lines++;
+
+	Rect  status_rect(rect.x, rect.y, rect.w, 12);
+	int   row = 0;
+	char  txt[32];
+
+	if (ship) {
+		if (status_rect.y > 320 && !ship->IsStarship())
+			status_rect.y += 32;
+
+		Drive* drive = ship->GetDrive();
+		if (drive) {
+			DrawMFDText(row++, Game::GetText("MFD.status.THRUST").data(), status_rect, DT_LEFT);
+			DrawGauge(status_rect.x + 70, status_rect.y, (int)ship->Throttle());
+			status_rect.y += 10;
+		}
+
+		if (lines <= 1) return;
+
+		if (ship->Reactors().size() > 0) {
+			PowerSource* reactor = ship->Reactors()[0];
+			if (reactor) {
+				DrawMFDText(row++, Game::GetText("MFD.status.FUEL").data(), status_rect, DT_LEFT);
+				DrawGauge(status_rect.x + 70, status_rect.y, reactor->Charge());
+				status_rect.y += 10;
+			}
+		}
+
+		if (lines <= 2) return;
+
+		QuantumDrive* quantum_drive = ship->GetQuantumDrive();
+		if (quantum_drive) {
+			DrawMFDText(row++, Game::GetText("MFD.status.QUANTUM").data(), status_rect, DT_LEFT);
+			DrawGauge(status_rect.x + 70, status_rect.y, (int)quantum_drive->Charge());
+			status_rect.y += 10;
+		}
+
+		if (lines <= 3) return;
+
+		double hull = ship->Integrity() / ship->Design()->integrity * 100;
+		int    hull_status = System::CRITICAL;
+
+		if (hull > 66)
+			hull_status = System::NOMINAL;
+		else if (hull > 33)
+			hull_status = System::DEGRADED;
+
+		DrawMFDText(row++, Game::GetText("MFD.status.HULL").data(), status_rect, DT_LEFT);
+		DrawGauge(status_rect.x + 70, status_rect.y, (int)hull);
+		status_rect.y += 10;
+
+		if (lines <= 4) return;
+
+		Shield* shield = ship->GetShield();
+		if (shield) {
+			DrawMFDText(row++, Game::GetText("MFD.status.SHIELD").data(), status_rect, DT_LEFT);
+			DrawGauge(status_rect.x + 70, status_rect.y, ship->ShieldStrength());
+			status_rect.y += 10;
+		}
+
+		if (lines <= 5) return;
+
+		Weapon* primary = ship->GetPrimary();
+		if (primary) {
+			DrawMFDText(row++, Game::GetText("MFD.status.GUNS").data(), status_rect, DT_LEFT);
+			DrawGauge(status_rect.x + 70, status_rect.y, primary->Charge());
+			status_rect.y += 10;
+		}
+
+		if (lines <= 6) return;
+
+		if (HUDView::IsArcade()) {
+			for (int i = 0; i < ship->Weapons().size() && i < 4; i++) {
+				WeaponGroup* w = ship->Weapons().at(i);
+
+				if (w->IsMissile()) {
+					char ammo[8];
+
+					if (ship->GetSecondaryGroup() == w)
+						sprintf_s(ammo, "%d *", w->Ammo());
+					else
+						sprintf_s(ammo, "%d", w->Ammo());
+
+					DrawMFDText(row++, (const char*)w->GetDesign()->name, status_rect, DT_LEFT);
+					status_rect.x += 70;
+					DrawMFDText(row++, ammo, status_rect, DT_LEFT);
+					status_rect.x -= 70;
+					status_rect.y += 10;
+				}
+			}
+
+			if (ship->GetDecoy()) {
+				char ammo[8];
+				sprintf_s(ammo, "%d", ship->GetDecoy()->Ammo());
+				DrawMFDText(row++, Game::GetText("MFD.status.DECOY").data(), status_rect, DT_LEFT);
+				status_rect.x += 70;
+				DrawMFDText(row++, ammo, status_rect, DT_LEFT);
+				status_rect.x -= 70;
+				status_rect.y += 10;
+			}
+
+			if (NetGame::GetInstance()) {
+				char lives[8];
+				sprintf_s(lives, "%d", ship->RespawnCount() + 1);
+				DrawMFDText(row++, Game::GetText("MFD.status.LIVES").data(), status_rect, DT_LEFT);
+				status_rect.x += 70;
+				DrawMFDText(row++, lives, status_rect, DT_LEFT);
+				status_rect.x -= 70;
+				status_rect.y += 10;
+			}
+
+			return;
+		}
+
+		Sensor* sensor = ship->GetSensor();
+		if (sensor) {
+			if (ship->GetFlightPhase() != Ship::ACTIVE) {
+				DrawMFDText(row++, Game::GetText("MFD.status.SENSOR").data(), status_rect, DT_LEFT);
+				status_rect.x += 70;
+				DrawMFDText(row++, Game::GetText("MFD.status.OFFLINE").data(), status_rect, DT_LEFT);
+				status_rect.x -= 70;
+				status_rect.y += 10;
+			}
+			else {
+				DrawMFDText(row++, Game::GetText("MFD.status.EMCON").data(), status_rect, DT_LEFT);
+				status_rect.x += 70;
+
+				sprintf_s(txt, "%s %d", Game::GetText("MFD.status.MODE").data(), ship->GetEMCON());
+
+				if (!sensor->IsPowerOn() || sensor->GetEnergy() == 0) {
+					if (!Game::Paused() && (Game::RealTime() / 1000) & 2)
+						strcpy_s(txt, Game::GetText("MFD.status.SENSOR-OFF").data());
+				}
+
+				DrawMFDText(row++, txt, status_rect, DT_LEFT);
+				status_rect.x -= 70;
+				status_rect.y += 10;
+			}
+		}
+
+		if (lines <= 7) return;
+
+		DrawMFDText(row++, Game::GetText("MFD.status.SYSTEMS").data(), status_rect, DT_LEFT);
+		status_rect.x += 70;
+		DrawMFDText(row++, ship->GetDirectorInfo(), status_rect, DT_LEFT);
+
+		if (NetGame::GetInstance()) {
+			char lives[8];
+			sprintf_s(lives, "%d", ship->RespawnCount() + 1);
+			status_rect.x -= 70;
+			status_rect.y += 10;
+			DrawMFDText(row++, Game::GetText("MFD.status.LIVES").data(), status_rect, DT_LEFT);
+			status_rect.x += 70;
+			DrawMFDText(row++, lives, status_rect, DT_LEFT);
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void
+MFD::SetStatusColor(int status)
+{
+	// Legacy helper: original code computed a Color but never used it.
+	// Kept for compatibility; if you need it, return status_color or apply to text.
+	FColor status_color;
+
+	switch (status) {
+	default:
+	case System::NOMINAL:     status_color = txt_color;                     break;
+	case System::DEGRADED:    status_color = FColor(255, 255, 0, 255);       break;
+	case System::CRITICAL:    status_color = FColor(255, 0, 0, 255);       break;
+	case System::DESTROYED:   status_color = FColor(0, 0, 0, 255);       break;
 	}
 }
 
@@ -418,37 +1350,36 @@ MFD::IsMouseLatched() const
 // +--------------------------------------------------------------------+
 
 void
-MFD::DrawMFDText(int InIndex, const char* txt, Rect& txt_rect, int align, int status)
+MFD::DrawMFDText(int index, const char* txt, Rect& txt_rect, int align, int status)
 {
-	if (InIndex >= MFD::TXT_LAST) {
-		UE_LOG(LogMFD, Warning, TEXT("MFD DrawMFDText() invalid mfd_text index %d"), InIndex);
+	if (index >= MFD::TXT_LAST) {
+		UE_LOG(LogTemp, Warning, TEXT("MFD DrawMFDText() invalid mfd_text index %d '%hs'"), index, txt ? txt : "");
 		return;
 	}
 
-	HUDText& mt = mfd_text[InIndex];
-	Color    mc = mt.color;
+	HUDText& mt = mfd_text[index];
+	FColor   mc = mt.color;
 
 	switch (status) {
 	default:
-	case SimSystem::NOMINAL:   mc = txt_color;          break;
-	case SimSystem::DEGRADED:  mc = Color(255, 255, 0); break;
-	case SimSystem::CRITICAL:  mc = Color(255, 0, 0); break;
-	case SimSystem::DESTROYED: mc = Color(0, 0, 0); break;
+	case System::NOMINAL:     mc = txt_color;                      break;
+	case System::DEGRADED:    mc = FColor(255, 255, 0, 255);        break;
+	case System::CRITICAL:    mc = FColor(255, 0, 0, 255);        break;
+	case System::DESTROYED:   mc = FColor(0, 0, 0, 255);        break;
 	}
 
 	char txt_buf[256];
-	int  n = (int)strlen(txt);
+	int  n = txt ? (int)strlen(txt) : 0;
 
 	if (n > 250) n = 250;
 
 	int i = 0;
-	for (i = 0; i < n; i++) {
+	for (; i < n; i++) {
 		if (islower((unsigned char)txt[i]))
 			txt_buf[i] = (char)toupper((unsigned char)txt[i]);
 		else
 			txt_buf[i] = txt[i];
 	}
-
 	txt_buf[i] = 0;
 
 	if (cockpit_hud_texture) {
@@ -464,7 +1395,7 @@ MFD::DrawMFDText(int InIndex, const char* txt, Rect& txt_rect, int align, int st
 	}
 	else {
 		if (txt_rect.Contains(Mouse::X(), Mouse::Y()))
-			mc = Color::White;
+			mc = FColor::White;
 
 		mt.font->SetColor(mc);
 		mt.font->DrawText(txt_buf, 0, txt_rect, align | DT_SINGLELINE);
@@ -474,12 +1405,12 @@ MFD::DrawMFDText(int InIndex, const char* txt, Rect& txt_rect, int align, int st
 }
 
 void
-MFD::HideMFDText(int InIndex)
+MFD::HideMFDText(int index)
 {
-	if (InIndex >= MFD::TXT_LAST) {
-		UE_LOG(LogMFD, Warning, TEXT("MFD HideMFDText() invalid mfd_text index %d"), InIndex);
+	if (index >= MFD::TXT_LAST) {
+		UE_LOG(LogTemp, Warning, TEXT("MFD HideMFDText() invalid mfd_text index %d"), index);
 		return;
 	}
 
-	mfd_text[InIndex].hidden = true;
+	mfd_text[index].hidden = true;
 }

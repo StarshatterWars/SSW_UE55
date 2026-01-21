@@ -19,6 +19,7 @@
 #include "HUDSounds.h"
 #include "Ship.h"
 #include "SimElement.h"
+#include "SimSystem.h"
 #include "Computer.h"
 #include "Drive.h"
 #include "Instruction.h"
@@ -48,7 +49,6 @@
 #include "AudioConfig.h"
 #include "PlayerCharacter.h"
 
-#include "Color.h"
 #include "CameraView.h"
 #include "Screen.h"
 #include "DataLoader.h"
@@ -185,25 +185,25 @@ static Sound* missile_lock_sound;
 
 const int NUM_HUD_COLORS = 4;
 
-Color standard_hud_colors[NUM_HUD_COLORS] = {
-	Color(130,190,140),  // green
-	Color(130,200,220),  // cyan
-	Color(250,170, 80),  // orange
-	Color(16, 16, 16)   // dark gray
+FColor standard_hud_colors[NUM_HUD_COLORS] = {
+	FColor(130,190,140),  // green
+	FColor(130,200,220),  // cyan
+	FColor(250,170, 80),  // orange
+	FColor(16, 16, 16)   // dark gray
 };
 
-Color standard_txt_colors[NUM_HUD_COLORS] = {
-	Color(150,200,170),  // green w/ green gray
-	Color(220,220,180),  // cyan  w/ light yellow
-	Color(220,220, 80),  // orange w/ yellow
-	Color(32, 32, 32)   // dark gray
+FColor standard_txt_colors[NUM_HUD_COLORS] = {
+	FColor(150,200,170),  // green w/ green gray
+	FColor(220,220,180),  // cyan  w/ light yellow
+	FColor(220,220, 80),  // orange w/ yellow
+	FColor(32, 32, 32)   // dark gray
 };
 
-Color night_vision_colors[NUM_HUD_COLORS] = {
-	Color(20, 80, 20),  // green
-	Color(30, 80, 80),  // cyan
-	Color(80, 80, 20),  // yellow
-	Color(0,  0,  0)   // no night vision
+FColor night_vision_colors[NUM_HUD_COLORS] = {
+	FColor(20, 80, 20),  // green
+	FColor(30, 80, 80),  // cyan
+	FColor(80, 80, 20),  // yellow
+	FColor(0,  0,  0)   // no night vision
 };
 
 static SystemFont* hud_font = 0;
@@ -1235,7 +1235,7 @@ HUDView::DrawContact(SimContact* contact, int index)
 // +--------------------------------------------------------------------+
 
 void
-HUDView::DrawTrackSegment(FVector& t1, FVector& t2, Color c)
+HUDView::DrawTrackSegment(FVector& t1, FVector& t2, FColor c)
 {
 	int x1, y1, x2, y2;
 
@@ -1244,8 +1244,9 @@ HUDView::DrawTrackSegment(FVector& t1, FVector& t2, Color c)
 
 	const double CLIP_Z = 0.1;
 
-	if (t1.Z < CLIP_Z && t2.Z < CLIP_Z)
+	if (t1.Z < CLIP_Z && t2.Z < CLIP_Z) {
 		return;
+	}
 
 	if (t1.Z < CLIP_Z && t2.Z >= CLIP_Z) {
 		double dx = t2.X - t1.X;
@@ -2212,12 +2213,12 @@ HUDView::DrawTarget()
 					sprintf_s(txt, "%s %03d", sys->Abbreviation(), (int)sys->Availability());
 
 					switch (sys->Status()) {
-					case SimSystem::DEGRADED:  stat = Color(255, 255, 0); break;
+					case SimSystem::DEGRADED:  stat = FColor(255, 255, 0); break;
 					case SimSystem::CRITICAL:
-					case SimSystem::DESTROYED: stat = Color(255, 0, 0);   break;
+					case SimSystem::DESTROYED: stat = FColor(255, 0, 0);   break;
 					case SimSystem::MAINT:
 						if (blink_delta < 250)
-							stat = Color(8, 8, 8);
+							stat = FColor(8, 8, 8);
 						break;
 					}
 
@@ -2783,13 +2784,7 @@ HUDView::DrawWarningPanel()
 				const int y2 = warn_rect.y + warn_rect.h - 1;  // inclusive pixel
 
 				// Convert Starshatter Color -> UE FColor
-				const FColor DarkGray(
-					(uint8)Color::DarkGray.Red(),
-					(uint8)Color::DarkGray.Green(),
-					(uint8)Color::DarkGray.Blue(),
-					255
-				);
-
+				const FColor DarkGray = FColor(64, 64, 64, 255);
 				cockpit_hud_texture->DrawRect(x1, y1, x2, y2, DarkGray);
 			}
 
@@ -2807,7 +2802,15 @@ HUDView::DrawWarningPanel()
 					if (tc != txt_color) {
 						Rect r2 = warn_rect;
 						r2.Inset(1, 1, 1, 1);
-						cockpit_hud_texture->FillRect(r2, tc);
+
+						const FIntRect r2i(
+							r2.x,
+							r2.y,
+							r2.x + r2.w,
+							r2.y + r2.h
+						);
+
+						cockpit_hud_texture->FillRect(r2i, tc);
 						tc = FColor::Black;
 					}
 
@@ -2820,14 +2823,6 @@ HUDView::DrawWarningPanel()
 						cockpit_hud_texture);
 
 					warn_rect.y -= 4;
-				}
-				else {
-					DrawHUDText(TXT_CAUTION_TXT + index,
-						abrv,
-						warn_rect,
-						DT_CENTER);
-
-					hud_text[TXT_CAUTION_TXT + index].color = tc;
 				}
 			}
 
@@ -3255,7 +3250,7 @@ HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 		{
 			FColor c = FColor::White;
 			if (navpt.Status() > Instruction::ACTIVE && navpt.HoldTime() <= 0)
-				c = Color::DarkGray;
+				c = FColor(64, 64, 64, 255);
 
 			// draw:
 			if (next) {
@@ -3409,11 +3404,11 @@ HUDView::SetShip(Ship* s)
 
 	else if (ship && ship->Design()->hud_icon.Width()) {
 		bool           update = false;
-		System::STATUS s = System::NOMINAL;
+		SimSystem::STATUS s = SimSystem::NOMINAL;
 		int            integrity = (int)(ship->Integrity() / ship->Design()->integrity * 100);
 
-		if (integrity < 30)        s = System::CRITICAL;
-		else if (integrity < 60)   s = System::DEGRADED;
+		if (integrity < 30)        s = SimSystem::CRITICAL;
+		else if (integrity < 60)   s = SimSystem::DEGRADED;
 
 		if (s != ship_status) {
 			ship_status = s;
@@ -3421,7 +3416,7 @@ HUDView::SetShip(Ship* s)
 		}
 
 		if (update) {
-			SetStatusColor((System::STATUS)ship_status);
+			SetStatusColor((SimSystem::STATUS)ship_status);
 			ColorizeBitmap(icon_ship, icon_ship_shade, status_color);
 		}
 	}
@@ -3474,12 +3469,12 @@ HUDView::SetTarget(SimObject* t)
 	}
 
 	if (target && target->Type() == SimObject::SIM_SHIP) {
-		System::STATUS s = System::NOMINAL;
+		SimSystem::STATUS s = SimSystem::NOMINAL;
 		Ship* tship = (Ship*)target;
 		int            integrity = (int)(tship->Integrity() / tship->Design()->integrity * 100);
 
-		if (integrity < 30)        s = System::CRITICAL;
-		else if (integrity < 60)   s = System::DEGRADED;
+		if (integrity < 30)        s = SimSystem::CRITICAL;
+		else if (integrity < 60)   s = SimSystem::DEGRADED;
 
 		if (s != tgt_status) {
 			tgt_status = s;
@@ -3496,7 +3491,7 @@ HUDView::SetTarget(SimObject* t)
 			PrepareBitmap("hud_icon.pcx", icon_target, icon_target_shade);
 		}
 
-		SetStatusColor((System::STATUS)tgt_status);
+		SetStatusColor((SimSystem::STATUS)tgt_status);
 		ColorizeBitmap(icon_target, icon_target_shade, status_color);
 	}
 }
@@ -3535,7 +3530,7 @@ HUDView::Refresh()
 
 	if (mode == HUD_MODE_OFF) {
 		if (cockpit_hud_texture) {
-			cockpit_hud_texture->FillRect(0, 0, 512, 256, Color::Black);
+			cockpit_hud_texture->FillRect(0, 0, 512, 256, FColor::Black);
 		}
 
 		sim->ShowGrid(false);
@@ -3563,7 +3558,7 @@ HUDView::Refresh()
 
 		if (hud_sprite[6]) {
 			if (hud_sprite[6]->Hidden()) {
-				cockpit_hud_texture->FillRect(0, 384, 128, 512, Color::Black);
+				cockpit_hud_texture->FillRect(0, 384, 128, 512, FColor::Black);
 			}
 			else {
 				hud_bmp = hud_sprite[6]->Frame();
@@ -3576,7 +3571,7 @@ HUDView::Refresh()
 
 		if (hud_sprite[7]) {
 			if (hud_sprite[7]->Hidden()) {
-				cockpit_hud_texture->FillRect(128, 384, 256, 512, Color::Black);
+				cockpit_hud_texture->FillRect(128, 384, 256, 512, FColor::Black);
 			}
 			else {
 				hud_bmp = hud_sprite[7]->Frame();
@@ -3591,8 +3586,8 @@ HUDView::Refresh()
 			if (hud_sprite[i] && !hud_sprite[i]->Hidden()) {
 				Sprite* s = hud_sprite[i];
 
-				int cx = (int)s->Location().x;
-				int cy = (int)s->Location().y;
+				int cx = (int)s->Location().X;
+				int cy = (int)s->Location().Y;
 				int w2 = s->Width() / 2;
 				int h2 = s->Height() / 2;
 
@@ -3605,8 +3600,8 @@ HUDView::Refresh()
 			if (hud_sprite[i] && !hud_sprite[i]->Hidden()) {
 				Sprite* s = hud_sprite[i];
 
-				int cx = (int)s->Location().x;
-				int cy = (int)s->Location().y;
+				int cx = (int)s->Location().X;
+				int cy = (int)s->Location().Y;
 				int w2 = s->Width() / 2;
 				int h2 = s->Height() / 2;
 
@@ -3641,10 +3636,10 @@ HUDView::Refresh()
 			RestoreHUD();
 		}
 
-		CameraDirector* cam_dir = CameraDirector::GetInstance();
+		CameraManager* cam_dir = CameraManager::GetInstance();
 
 		// everything is off during docking, except the final message:
-		if (cam_dir && cam_dir->GetMode() == CameraDirector::MODE_DOCKING) {
+		if (cam_dir && cam_dir->GetMode() == CameraManager::MODE_DOCKING) {
 			docking = true;
 			HideAll();
 
@@ -3670,7 +3665,7 @@ HUDView::Refresh()
 		SetTarget(ship->GetTarget());
 
 		// internal view of HUD reticule
-		if (CameraDirector::GetCameraMode() <= CameraDirector::MODE_CHASE)
+		if (CameraManager::GetCameraMode() <= CameraManager::MODE_CHASE)
 			SetTacticalMode(0);
 
 		// external view
@@ -3679,7 +3674,7 @@ HUDView::Refresh()
 
 		sim->ShowGrid(tactical &&
 			!ship->IsAirborne() &&
-			CameraDirector::GetCameraMode() != CameraDirector::MODE_VIRTUAL);
+			CameraManager::GetCameraMode() != CameraManager::MODE_VIRTUAL);
 
 		// draw HUD bars:
 		DrawBars();
@@ -3714,7 +3709,7 @@ HUDView::Refresh()
 				DrawHUDText(TXT_CAM_ANGLE, Game::GetText("HUDView.Wide-Angle"), fov_rect, DT_CENTER);
 
 			fov_rect.y = 20;
-			DrawHUDText(TXT_CAM_MODE, CameraDirector::GetModeName(), fov_rect, DT_CENTER);
+			DrawHUDText(TXT_CAM_MODE, CameraManager::GetModeName(), fov_rect, DT_CENTER);
 		}
 
 		DrawMFDs();
@@ -3725,7 +3720,7 @@ HUDView::Refresh()
 		warn_right_sprite->Hide();
 
 		if (cockpit_hud_texture)
-			cockpit_hud_texture->FillRect(256, 384, 512, 512, Color::Black);
+			cockpit_hud_texture->FillRect(256, 384, 512, 512, FColor::Black);
 
 		if (show_inst) {
 			DrawInstructions();
@@ -3807,12 +3802,16 @@ HUDView::DrawOrbitalBody(OrbitalBody* body)
 			r = projector->ProjectRadius(p, r);
 			projector->Project(p, false);
 
-			window->DrawEllipse((int)(p.X - r),
+			window->DrawEllipse(
+				(int)(p.X - r),
 				(int)(p.Y - r),
 				(int)(p.X + r),
 				(int)(p.Y + r),
-				Color::Cyan);
+				FColor::Cyan
+			);
 		}
+
+		
 
 		ListIter<OrbitalBody> iter = body->Satellites();
 		while (++iter) {
@@ -3832,7 +3831,7 @@ HUDView::ExecFrame()
 	HideCompass();
 
 	if (ship && !transition && !docking && mode != HUD_MODE_OFF) {
-		Player* p = Player::GetCurrentPlayer();
+		PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 		gunsight = p->Gunsight();
 
 		if (ship->IsStarship()) {
@@ -4130,27 +4129,27 @@ HUDView::HideAll()
 
 // +--------------------------------------------------------------------+
 
-Color
+FColor
 HUDView::Ambient() const
 {
 	if (!sim || !ship || mode == HUD_MODE_OFF)
-		return Color::Black;
+		return FColor::Black;
 
 	SimRegion* rgn = sim->GetActiveRegion();
 
 	if (!rgn || !rgn->IsAirSpace())
-		return Color::Black;
+		return FColor::Black;
 
-	Color c = sim->GetStarSystem()->Ambient();
+	FColor c = sim->GetStarSystem()->Ambient();
 
-	if (c.Red() > 32 || c.Green() > 32 || c.Blue() > 32)
-		return Color::Black;
+	if (c.R > 32 || c.G > 32 || c.B > 32)
+		return FColor::Black;
 
 	// if we get this far, the night-vision aid is on
 	return night_vision_colors[color];
 }
 
-Color
+FColor
 HUDView::CycleHUDColor()
 {
 	HUDSounds::PlaySound(HUDSounds::SND_HUD_MODE);
@@ -4162,13 +4161,22 @@ void
 HUDView::SetHUDColorSet(int c)
 {
 	color = c;
-	if (color > NUM_HUD_COLORS - 1) color = 0;
+	if (color > NUM_HUD_COLORS - 1) {
+		color = 0;
+	}
+
 	hud_color = standard_hud_colors[color];
 	txt_color = standard_txt_colors[color];
 
 	ColorizeBitmap(fpm, fpm_shade, hud_color, true);
 	ColorizeBitmap(hpm, hpm_shade, hud_color, true);
-	ColorizeBitmap(lead, lead_shade, txt_color * 1.25, true);
+	ColorizeBitmap(
+		lead,
+		lead_shade,
+		(FLinearColor(txt_color) * 1.25f).ToFColor(true),
+		true
+	);
+
 	ColorizeBitmap(cross, cross_shade, hud_color, true);
 	ColorizeBitmap(cross1, cross1_shade, hud_color, true);
 	ColorizeBitmap(cross2, cross2_shade, hud_color, true);
@@ -4206,7 +4214,7 @@ HUDView::SetHUDColorSet(int c)
 	for (int i = 0; i < 3; i++)
 		mfd[i]->SetText3DColor(txt_color);
 
-	Font* font = FontMgr::Find("HUD");
+	SystemFont* font = FontManager::Find("HUD");
 	if (font)
 		font->SetColor(txt_color);
 
@@ -4280,7 +4288,7 @@ HUDView::PrepareBitmap(const char* name, Bitmap& img, BYTE*& shades)
 
 	loader->SetDataPath("HUD/");
 	int loaded = loader->LoadBitmap(name, img, Bitmap::BMP_TRANSPARENT);
-	loader->SetDataPath(0);
+	loader->SetDataPath("");
 
 	if (!loaded)
 		return;
@@ -4292,7 +4300,7 @@ HUDView::PrepareBitmap(const char* name, Bitmap& img, BYTE*& shades)
 
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
-			shades[y * w + x] = (BYTE)(img.GetColor(x, y).Red() * 0.66);
+			shades[y * w + x] = (BYTE)(img.GetColor(x, y).R * 0.66);
 }
 
 void
@@ -4314,11 +4322,11 @@ HUDView::TransferBitmap(const Bitmap& src, Bitmap& img, BYTE*& shades)
 
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
-			shades[y * w + x] = (BYTE)(img.GetColor(x, y).Red() * 0.5);
+			shades[y * w + x] = (BYTE)(img.GetColor(x, y).R * 0.5);
 }
 
 void
-HUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, Color color, bool force_alpha)
+HUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool force_alpha)
 {
 	if (!shades) return;
 
@@ -4328,21 +4336,30 @@ HUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, Color color, bool force_alpha
 		Game::SetMaxTexSize(128);
 
 	if (hud_view && hud_view->cockpit_hud_texture && !force_alpha) {
-		img.FillColor(Color::Black);
-		Color* dst = img.HiPixels();
+		img.FillColor(FColor::Black);
+		FColor* dst = img.HiPixels();
 		BYTE* src = shades;
 
 		for (int y = 0; y < img.Height(); y++) {
 			for (int x = 0; x < img.Width(); x++) {
-				if (*src)
-					*dst = color.dim(*src / 200.0);
-				else
-					*dst = Color::Black;
 
-				dst++;
-				src++;
+				if (*src) {
+					const float Intensity = FMath::Clamp(*src / 200.0f, 0.0f, 1.0f);
+
+					const FLinearColor Pixel =
+						FLinearColor(color) * Intensity;
+
+					*dst = Pixel.ToFColor(true);
+				}
+				else {
+					*dst = FColor::Black;
+				}
+
+				++dst;
+				++src;
 			}
 		}
+
 		img.MakeTexture();
 	}
 	else {
@@ -4487,21 +4504,14 @@ HUDView::IsNameCrowded(int x, int y)
 }
 
 void
-HUDView::DrawDiamond(int x, int y, int r, Color c)
+HUDView::DrawDiamond(int x, int y, int r, FColor c)
 {
-	POINT diamond[4];
+	FVector diamond[4];
 
-	diamond[0].x = x;
-	diamond[0].y = y - r;
-
-	diamond[1].x = x + r;
-	diamond[1].y = y;
-
-	diamond[2].x = x;
-	diamond[2].y = y + r;
-
-	diamond[3].x = x - r;
-	diamond[3].y = y;
+	diamond[0] = FVector((float)x, (float)(y - r), 0.0f);
+	diamond[1] = FVector((float)(x + r), (float)y, 0.0f);
+	diamond[2] = FVector((float)x, (float)(y + r), 0.0f);
+	diamond[3] = FVector((float)(x - r), (float)y, 0.0f);
 
 	window->DrawPoly(4, diamond, c);
 }

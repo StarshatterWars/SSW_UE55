@@ -57,10 +57,7 @@ static inline void sort_d(double& a, double& b) { if (a > b) swap_d(a, b); }
 
 static int FindBestTexSize(int n, int max_size);
 
-static FORCEINLINE uint8 ColorIndexToByte(const ColorIndex& c)
-{
-    return (uint8)c.Index(); // Index() returns BYTE
-}
+
 
 // +--------------------------------------------------------------------+
 // Bitmap
