@@ -313,7 +313,7 @@ Terrain::BuildNormals()
 	const int w = terrain_patch.Width();
 	const int h = terrain_patch.Height();
 
-	Color* pix = terrain_patch.HiPixels();
+	FColor* pix = terrain_patch.HiPixels();
 
 	BYTE* alt = new BYTE[h * w];
 	const int nverts = w * h;

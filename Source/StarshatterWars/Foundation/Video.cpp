@@ -9,7 +9,6 @@
     ORIGINAL AUTHOR AND STUDIO:
     John DiCamillo, Destroyer Studios LLC
 
-
     OVERVIEW
     ========
     Abstract Video Interface (singleton definition)

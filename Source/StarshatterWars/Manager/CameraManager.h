@@ -24,6 +24,7 @@
 
 // Minimal Unreal include required for FVector
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 

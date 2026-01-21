@@ -235,7 +235,7 @@ void TerrainApron::Update()
 
 // +--------------------------------------------------------------------+
 
-void TerrainApron::Illuminate(Color ambient, List<SimLight>& lights)
+void TerrainApron::Illuminate(FColor ambient, List<SimLight>& lights)
 {
 	if (!model || model->NumVerts() < 1)
 		return;
@@ -246,44 +246,91 @@ void TerrainApron::Illuminate(Color ambient, List<SimLight>& lights)
 
 	// clear the solid lights to ambient:
 	VertexSet* vset = s->GetVertexSet();
-	int        nverts = vset->nverts;
-	DWORD      aval = ambient.Value();
+	if (!vset || vset->nverts < 1)
+		return;
+
+	const int    nverts = vset->nverts;
+
+	// FColor has no Value(); store packed ARGB (0xAARRGGBB):
+	const uint32 aval = ambient.ToPackedARGB();
 
 	for (int i = 0; i < nverts; i++) {
-		vset->diffuse[i] = aval;
+		vset->diffuse[i] = (DWORD)aval;
 	}
 
 	bool eclipsed = false;
+
+	// Helpers for packed diffuse accumulation (assumes 0xAARRGGBB):
+	auto UnpackARGB = [](uint32 Packed) -> FColor
+		{
+			return FColor(
+				(uint8)((Packed >> 16) & 0xFF), // R
+				(uint8)((Packed >> 8) & 0xFF), // G
+				(uint8)((Packed >> 0) & 0xFF), // B
+				(uint8)((Packed >> 24) & 0xFF)  // A
+			);
+		};
+
+	auto PackARGB = [](const FColor& C) -> uint32
+		{
+			return (uint32(C.A) << 24) | (uint32(C.R) << 16) | (uint32(C.G) << 8) | uint32(C.B);
+		};
+
+	auto ScaleRGB = [](const FColor& C, float S) -> FColor
+		{
+			return FColor(
+				(uint8)FMath::Clamp(int32(C.R * S), 0, 255),
+				(uint8)FMath::Clamp(int32(C.G * S), 0, 255),
+				(uint8)FMath::Clamp(int32(C.B * S), 0, 255),
+				0 // do not add alpha during lighting
+			);
+		};
+
+	auto AddClampRGB = [](const FColor& A, const FColor& B) -> FColor
+		{
+			return FColor(
+				(uint8)FMath::Clamp(int32(A.R) + int32(B.R), 0, 255),
+				(uint8)FMath::Clamp(int32(A.G) + int32(B.G), 0, 255),
+				(uint8)FMath::Clamp(int32(A.B) + int32(B.B), 0, 255),
+				A.A
+			);
+		};
 
 	// for each light:
 	ListIter<SimLight> iter = lights;
 	while (++iter) {
 		SimLight* light = iter.value();
+		if (!light)
+			continue;
 
 		if (light->CastsShadow())
-			eclipsed = light->Location().Y < -100;
+			eclipsed = light->Location().Y < -100.0f;
 
 		if (!light->CastsShadow() || !eclipsed) {
-			FVector vl = light->Location();
-			vl.Normalize();
+			FVector vl = light->Location().GetSafeNormal();
 
 			for (int i = 0; i < nverts; i++) {
-				FVector& nrm = vset->nrm[i];
-				double   val = 0;
+				const FVector& nrm = vset->nrm[i];
+
+				double val = 0.0;
 
 				if (light->IsDirectional()) {
-					const double gain = FVector::DotProduct(vl, nrm);
+					const double gain = (double)FVector::DotProduct(vl, nrm);
 
-					if (gain > 0) {
+					if (gain > 0.0) {
 						val = light->Intensity() * (0.85 * gain);
-
-						if (val > 1)
-							val = 1;
+						if (val > 1.0) val = 1.0;
 					}
 				}
 
-				if (val > 0.01)
-					vset->diffuse[i] = ((light->GetColor().dim(val)) + vset->diffuse[i]).Value();
+				if (val > 0.01) {
+					const FColor Base = UnpackARGB((uint32)vset->diffuse[i]);
+
+					const FColor Add = ScaleRGB(light->GetColor(), (float)val);
+					const FColor Out = AddClampRGB(Base, Add);
+
+					vset->diffuse[i] = (DWORD)PackARGB(Out);
+				}
 			}
 		}
 	}
@@ -311,7 +358,16 @@ void TerrainApron::Render(Video* video, DWORD flags)
 	video->SetRenderState(Video::LIGHTING_ENABLE, false);
 	video->SetRenderState(Video::SPECULAR_ENABLE, false);
 	video->SetRenderState(Video::FOG_ENABLE, true);
-	video->SetRenderState(Video::FOG_COLOR, terrain->GetRegion()->FogColor().Value());
+
+	const FColor Fog = terrain->GetRegion()->FogColor();
+
+	const DWORD FogPacked =
+		(DWORD(Fog.A) << 24) |
+		(DWORD(Fog.R) << 16) |
+		(DWORD(Fog.G) << 8) |
+		(DWORD(Fog.B));
+
+	video->SetRenderState(Video::FOG_COLOR, FogPacked);
 	video->SetRenderState(Video::FOG_DENSITY, *((DWORD*)&fog_density));
 
 	Solid::Render(video, flags);

@@ -169,7 +169,7 @@ CombatUnit::CanLaunch() const
 
 // +----------------------------------------------------------------------+
 
-Color
+FColor
 CombatUnit::MarkerColor() const
 {
     return Ship::IFFColor(iff);

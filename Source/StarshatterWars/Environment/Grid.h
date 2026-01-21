@@ -23,6 +23,7 @@
 #include "Geometry.h"
 
 #include "Math/Vector.h" // FVector
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -42,7 +43,7 @@ public:
 	virtual int       CollidesWith(Graphic& o) override;
 
 protected:
-	virtual void      DrawLine(Video* video, FVector& p1, FVector& p2, Color c);
+	virtual void      DrawLine(Video* video, FVector& p1, FVector& p2, FColor c);
 
 	int               size;
 	int               step;

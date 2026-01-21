@@ -44,20 +44,20 @@ public:
 	virtual void      ClearDisplay();
 
 	virtual void      AddText(const char* txt,
-		SystemFont* font,
-		Color        color,
-		const Rect& rect,
-		double       hold = 1e9,
-		double       fade_in = 0,
-		double       fade_out = 0);
+		SystemFont*		font,
+		FColor			color,
+		const Rect&		rect,
+		double			hold = 1e9,
+		double			fade_in = 0,
+		double			fade_out = 0);
 
 	virtual void      AddImage(UTexture2D* texture,
-		Color        color,
-		int          blend,
-		const Rect& rect,
-		double       hold = 1e9,
-		double       fade_in = 0,
-		double       fade_out = 0);
+		FColor			color,
+		int				blend,
+		const Rect&		rect,
+		double			hold = 1e9,
+		double			fade_in = 0,
+		double			fade_out = 0);
 
 	static DisplayView* GetInstance();
 

@@ -39,7 +39,7 @@ public:
 	Text        text;
 	UTexture2D* image;
 	SystemFont* font;
-	Color       color;
+	FColor      color;
 	Rect        rect;
 	int         blend;
 	double      hold;
@@ -50,6 +50,22 @@ public:
 // +====================================================================+
 
 static DisplayView* display_view = 0;
+
+static FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
+{
+	const int32 Scaled = FMath::RoundToInt((float)Value * Scale);
+	return (uint8)FMath::Clamp(Scaled, 0, 255);
+}
+
+static FORCEINLINE FColor ScaleColor(const FColor& In, float Scale)
+{
+	return FColor(
+		ScaleByte(In.R, Scale),
+		ScaleByte(In.G, Scale),
+		ScaleByte(In.B, Scale),
+		ScaleByte(In.A, Scale)   // scale alpha too for fade
+	);
+}
 
 DisplayView::DisplayView(Window* c)
 	: View(c), width(0), height(0), xcenter(0), ycenter(0)
@@ -133,17 +149,18 @@ DisplayView::Refresh()
 
 		// draw image:
 		else if (elem->image) {
-			// NOTE: Original code used Window::FadeBitmap with Bitmap*.
-			// In Starshatter Wars, Bitmap has been replaced by UTexture2D*.
-			// Provide/implement a Window::FadeTexture overload (or equivalent)
-			// that can render UTexture2D* with tint and blend mode.
-			window->FadeTexture(elem_rect.x,
+
+			const float FadeF = (float)fade;
+
+			window->FadeTexture(
+				elem_rect.x,
 				elem_rect.y,
 				elem_rect.x + elem_rect.w,
 				elem_rect.y + elem_rect.h,
 				elem->image,
-				elem->color * fade,
-				elem->blend);
+				ScaleColor(elem->color, FadeF),
+				elem->blend
+			);
 		}
 	}
 }
@@ -186,7 +203,7 @@ DisplayView::ClearDisplay()
 void
 DisplayView::AddText(const char* text,
 	SystemFont* font,
-	Color        color,
+	FColor        color,
 	const Rect& rect,
 	double       hold,
 	double       fade_in,
@@ -210,7 +227,7 @@ DisplayView::AddText(const char* text,
 
 void
 DisplayView::AddImage(UTexture2D* texture,
-	Color        color,
+	FColor        color,
 	int          blend,
 	const Rect& rect,
 	double       hold,

@@ -20,9 +20,12 @@
 #include "Types.h"
 #include "Color.h"
 #include "Geometry.h"
+#include "Bitmap.h"
+#include "Polygon.h"
 
 // Minimal Unreal include required for UTexture2D declaration usage:
 #include "UObject/WeakObjectPtr.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -81,19 +84,15 @@ public:
     int      SpaceWidth() const;
     int      KernWidth(char left, char right) const;
     int      StringWidth(const char* str, int len = 0) const;
-
-    void     DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags, UTexture2D* tgt_texture = 0);
-   
-    
-
-    int      DrawString(const char* txt, int len, int x1, int y1, const Rect& clip, UTexture2D* tgt_texture = 0);
+    void     DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags, Bitmap* tgt_bitmap = 0);
+    int      DrawString(const char* txt, int len, int x1, int y1, const Rect& clip, Bitmap* tgt_bitmap = 0);
 
     int      Height()                   const { return height; }
     int      Baseline()                 const { return baseline; }
     WORD     GetFlags()                 const { return flags; }
     void     SetFlags(WORD s) { flags = s; }
-    Color    GetColor()                 const { return color; }
-    void     SetColor(const Color& c) { color = c; }
+    FColor    GetColor()                 const { return color; }
+    void     SetColor(const FColor& c) { color = c; }
     double   GetExpansion()             const { return expansion; }
     void     SetExpansion(double e) { expansion = (float)e; }
     double   GetAlpha()                 const { return alpha; }
@@ -136,20 +135,18 @@ private:
     int         caret_y;
 
     int         imagewidth;
-    BYTE* image;
+    BYTE*       image;
 
-    // Starshatter Wars (UE): replace Bitmap render assets with UE texture handle:
-    // Forward declared above; keep header light.
-    TWeakObjectPtr<UTexture2D> texture;
-    UTexture2D* tgt_texture;
+    Bitmap      bitmap;
+    Bitmap*     tgt_bitmap;
 
-    Material* material;
-    VertexSet* vset;
-    Poly* polys;
+    Material*   material;
+    VertexSet*  vset;
+    Poly*       polys;
     int         npolys;
 
     FontChar    glyph[256];
-    Color       color;
+    FColor      color;
 
     char        kern[256][256];
 };

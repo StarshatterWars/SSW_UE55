@@ -41,6 +41,16 @@ static double base_time = 0;
 static inline void FPU2Extended() { /* No-op in Unreal builds */ }
 static inline void FPURestore() { /* No-op in Unreal builds */ }
 
+static FORCEINLINE FColor ScaleColor(const FColor& In, float Scale)
+{
+	return FColor(
+		(uint8)FMath::Clamp(int32(In.R * Scale), 0, 255),
+		(uint8)FMath::Clamp(int32(In.G * Scale), 0, 255),
+		(uint8)FMath::Clamp(int32(In.B * Scale), 0, 255),
+		(uint8)FMath::Clamp(int32(In.A * Scale), 0, 255)
+	);
+}
+
 void StarSystem::SetBaseTime(double t, bool absolute)
 {
 	FPU2Extended();
@@ -262,7 +272,10 @@ void StarSystem::Load()
 					FVector a(0, 0, 0);
 					GetDefVec(a, def, filename);
 
-					ambient = Color((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z) * 2.5;
+					ambient = ScaleColor(
+						FColor((uint8)a.X, (uint8)a.Y, (uint8)a.Z),
+						2.5f
+					);
 				}
 
 				else if (def->name()->value() == "dust") {
@@ -1213,7 +1226,7 @@ void StarSystem::Activate(SimScene& scene)
 			star->back_light->SetColor(star->back);
 		}
 		else {
-			Color c = Color(60, 60, 65);
+			FColor c = FColor(60, 60, 65);
 			star->back_light->SetColor(c);
 		}
 
@@ -1223,8 +1236,8 @@ void StarSystem::Activate(SimScene& scene)
 			scene.SetAmbient(ambient);
 		}
 		else {
-			Color c = ambient;
-			int n = (c.Red() + c.Green() + c.Blue()) / 3;
+			FColor c = ambient;
+			int n = (c.R + c.G + c.B) / 3;
 
 			c = Color(n, n, n);
 			scene.SetAmbient(c);
@@ -1409,7 +1422,7 @@ void StarSystem::ExecFrame()
 
 		if (terrain) {
 			trgn = (TerrainRegion*)active_region;
-			Color tmp = trgn->SkyColor();
+			FColor tmp = trgn->SkyColor();
 			Game::SetScreenColor(tmp);
 
 			tvpn = (active_region->Location() - active_region->Primary()->Location());
@@ -1440,10 +1453,10 @@ void StarSystem::ExecFrame()
 			if (point_stars) {
 				point_stars->SetOrientation(terrain_transformation);
 
-				Color sky_color = trgn->SkyColor();
-				BYTE  sky_red = (BYTE)sky_color.Red();
-				BYTE  sky_green = (BYTE)sky_color.Green();
-				BYTE  sky_blue = (BYTE)sky_color.Blue();
+				FColor sky_color = trgn->SkyColor();
+				BYTE  sky_red = (BYTE)sky_color.R;
+				BYTE  sky_green = (BYTE)sky_color.G;
+				BYTE  sky_blue = (BYTE)sky_color.B;
 
 				BYTE Max = max3(sky_red, sky_green, sky_blue);
 				BYTE Min = min3(sky_red, sky_green, sky_blue);
@@ -1472,7 +1485,7 @@ void StarSystem::ExecFrame()
 			}
 		}
 		else {
-			Game::SetScreenColor(Color::Black);
+			Game::SetScreenColor(FColor::Black);
 		}
 
 		double star_alt = 0;
@@ -1694,23 +1707,24 @@ FVector StarSystem::TerrainTransform(const FVector& in_loc)
 	return result;
 }
 
-Color StarSystem::Ambient() const
+FColor StarSystem::Ambient() const
 {
-	Color result = ambient;
+	FColor result = ambient;
 	const bool terrain = (active_region && active_region->Type() == Orbital::TERRAIN);
 
 	if (terrain) {
-		TerrainRegion* trgn = (TerrainRegion*)active_region;
+		TerrainRegion* trgn = static_cast<TerrainRegion*>(active_region);
 		result = trgn->Ambient();
 
-		if (trgn->IsEclipsed())
-			result = result * 0.3;
+		if (trgn->IsEclipsed()) {
+			result = ScaleColor(result, 0.3f);
+		}
 	}
 
 	return result;
 }
 
-void StarSystem::SetSunlight(Color color, double brightness)
+void StarSystem::SetSunlight(FColor color, double brightness)
 {
 	sun_color = color;
 	sun_scale = brightness;
@@ -1729,7 +1743,7 @@ void StarSystem::SetSunlight(Color color, double brightness)
 	}
 }
 
-void StarSystem::SetBacklight(Color color, double brightness)
+void StarSystem::SetBacklight(FColor color, double brightness)
 {
 	ListIter<SimLight> back_iter = back_lights;
 	while (++back_iter) {
@@ -1761,7 +1775,7 @@ void StarSystem::RestoreTrueSunColor()
 
 // +====================================================================+
 
-Color Star::GetColor() const
+FColor Star::GetColor() const
 {
 	return GetColor(seq);
 }
@@ -1771,23 +1785,23 @@ int Star::GetSize() const
 	return GetSize(seq);
 }
 
-Color Star::GetColor(int s)
+FColor Star::GetColor(int s)
 {
 	switch (s) {
-	case O:           return Color(128, 128, 255);
-	case B:           return Color(192, 192, 255);
-	case A:           return Color(220, 220, 255);
-	case F:           return Color(255, 255, 255);
-	case G:           return Color(255, 255, 128);
-	case K:           return Color(255, 192, 100);
-	case M:           return Color(255, 100, 100);
+	case O:           return FColor(128, 128, 255);
+	case B:           return FColor(192, 192, 255);
+	case A:           return FColor(220, 220, 255);
+	case F:           return FColor(255, 255, 255);
+	case G:           return FColor(255, 255, 128);
+	case K:           return FColor(255, 192, 100);
+	case M:           return FColor(255, 100, 100);
 
-	case RED_GIANT:   return Color(255, 80, 80);
-	case WHITE_DWARF: return Color(255, 255, 255);
-	case BLACK_HOLE:  return Color(0, 0, 0);
+	case RED_GIANT:   return FColor(255, 80, 80);
+	case WHITE_DWARF: return FColor(255, 255, 255);
+	case BLACK_HOLE:  return FColor(0, 0, 0);
 	}
 
-	return Color::White;
+	return FColor::White;
 }
 
 int Star::GetSize(int s)
@@ -1911,9 +1925,9 @@ OrbitalBody::OrbitalBody(StarSystem* s, const char* n, OrbitalType t, double m, 
 	, tilt(0)
 	, light_rep(0)
 	, back_light(0)
-	, color(Color::White)
-	, back(Color::Black)
-	, atmosphere(Color::Black)
+	, color(FColor::White)
+	, back(FColor::Black)
+	, atmosphere(FColor::Black)
 	, luminous(false)
 	, satellites()
 {

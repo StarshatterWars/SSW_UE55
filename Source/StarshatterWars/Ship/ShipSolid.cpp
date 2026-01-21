@@ -80,15 +80,22 @@ ShipSolid::Render(Video* video, DWORD flags)
         TerrainRegion* rgn = (TerrainRegion*)ship->GetRegion()->GetOrbitalRegion();
         const double   visibility = rgn->GetWeather().Visibility();
         const float    fogDensity = (float)(rgn->FogDensity() * 2.5e-5 * (1.0 / visibility));
-        Color          fogColor = rgn->FogColor();
+        FColor         fogColor = rgn->FogColor();
 
         // Use BLACK fog on secondary lighting pass.
         // This effectively "filters out" highlights with distance.
         if (flags & Graphic::RENDER_ADD_LIGHT)
-            fogColor = Color::Black;
+            fogColor = FColor::Black;
 
         video->SetRenderState(Video::FOG_ENABLE, true);
-        video->SetRenderState(Video::FOG_COLOR, fogColor.Value());
+       
+       const DWORD FogColorValue =
+            (DWORD(fogColor.A) << 24) |
+            (DWORD(fogColor.R) << 16) |
+            (DWORD(fogColor.G) << 8) |
+            (DWORD(fogColor.B));
+
+        video->SetRenderState(Video::FOG_COLOR, FogColorValue);
 
         // Preserve legacy expectation: engine takes raw bits for density.
         const DWORD fogBits = *reinterpret_cast<const DWORD*>(&fogDensity);

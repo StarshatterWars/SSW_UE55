@@ -30,7 +30,7 @@ struct FontItem
 
     Text  name;
     int   size = 0;
-    Font* font = nullptr;
+    SystemFont* font = nullptr;
 };
 
 // +--------------------------------------------------------------------+

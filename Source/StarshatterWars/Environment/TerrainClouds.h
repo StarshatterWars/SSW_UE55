@@ -23,6 +23,7 @@
 
 // Minimal Unreal include for FVector:
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -49,7 +50,7 @@ public:
 	virtual bool      Luminous() const override { return true; }
 	virtual bool      Translucent() const override { return true; }
 
-	void              Illuminate(Color ambient, List<SimLight>& lights);
+	void              Illuminate(FColor ambient, List<SimLight>& lights);
 
 protected:
 	void              BuildClouds();

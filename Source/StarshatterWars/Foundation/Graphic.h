@@ -139,6 +139,6 @@ protected:
 	bool              luminous;
 
 	Rect              screen_rect;
-	SimScene* scene;
+	SimScene*		  scene;
 	char              name[32];
 };

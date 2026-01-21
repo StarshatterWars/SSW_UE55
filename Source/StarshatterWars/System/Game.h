@@ -15,6 +15,8 @@
 #include "Text.h"
 #include "SSWGameInstance.h"
 
+#include "Math/Color.h"
+
 //#include "Screen.h"
 //#include "Video.h"
 
@@ -91,7 +93,7 @@ public:
 	static Game* GetInstance();
 	
 	static Color      GetScreenColor();
-	static void       SetScreenColor(Color c);
+	static void       SetScreenColor(FColor c);
 	static int        GetScreenWidth();
 	static int        GetScreenHeight();
 

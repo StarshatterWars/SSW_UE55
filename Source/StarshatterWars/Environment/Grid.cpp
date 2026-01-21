@@ -27,8 +27,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
 DEFINE_LOG_CATEGORY(LogStarshatterWars);
 
-static const Color DARK_LINE(8, 8, 8);
-static const Color LITE_LINE(16, 16, 16);
+static const FColor DARK_LINE(8, 8, 8);
+static const FColor LITE_LINE(16, 16, 16);
 
 // +--------------------------------------------------------------------+
 
@@ -56,7 +56,7 @@ void Grid::Render(Video* video, DWORD flags)
 	if (!video || hidden) return;
 
 	int   c = 0;
-	Color line;
+	FColor line;
 
 	for (int i = 0; i <= size; i += step) {
 		FVector p1((double)i, 0.0, (double)-size); p1 += Location();
@@ -91,7 +91,7 @@ void Grid::Render(Video* video, DWORD flags)
 	}
 }
 
-void Grid::DrawLine(Video* video, FVector& p1, FVector& p2, Color grid_color)
+void Grid::DrawLine(Video* video, FVector& p1, FVector& p2, FColor grid_color)
 {
 	// Starshatter render API expects a Vec3 array; FVector is UE-native.
 	// If your engine-side Vec3 is now typedef'd/aliased to FVector, this compiles as-is.

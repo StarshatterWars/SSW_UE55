@@ -23,6 +23,7 @@
 
 // Minimal UE include needed for FVector:
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -73,7 +74,7 @@ public:
 	double            Height(double x, double y) const;
 	DWORD             BlendValue(double y);
 	int               CalcLayer(Poly* p);
-	void              Illuminate(Color ambient, List<SimLight>& lights);
+	void              Illuminate(FColor ambient, List<SimLight>& lights);
 
 protected:
 	virtual bool      BuildDetailLevel(int level);

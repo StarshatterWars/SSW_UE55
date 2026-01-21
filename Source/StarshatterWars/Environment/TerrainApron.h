@@ -21,6 +21,7 @@
 
 // Minimal Unreal include needed for FVector:
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -51,7 +52,7 @@ public:
 	double            SeaLevel()      const { return base; }
 	void              SetScales(double scale, double mtnscale, double base);
 
-	void              Illuminate(Color ambient, List<SimLight>& lights);
+	void              Illuminate(FColor ambient, List<SimLight>& lights);
 	virtual int       CheckRayIntersection(FVector pt, FVector vpn, double len, FVector& ipt,
 		bool treat_translucent_polys_as_solid = true);
 

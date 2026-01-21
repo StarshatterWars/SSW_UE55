@@ -55,6 +55,14 @@ static inline void ZeroMem(void* Ptr, size_t SizeBytes)
 
 static inline double AbsD(double v) { return v < 0 ? -v : v; }
 
+FORCEINLINE uint32 PackColor(const FColor& C)
+{
+	return (uint32(C.A) << 24) |
+		(uint32(C.R) << 16) |
+		(uint32(C.G) << 8) |
+		(uint32(C.B));
+}
+
 // +--------------------------------------------------------------------+
 
 TerrainPatch::TerrainPatch(Terrain* terr, const UTexture2D* patch, const Rect& r,
@@ -794,7 +802,7 @@ TerrainPatch::SetDetailLevel(int nd)
 
 // +--------------------------------------------------------------------+
 
-void TerrainPatch::Illuminate(Color ambient, List<SimLight>& lights)
+void TerrainPatch::Illuminate(FColor ambient, List<SimLight>& lights)
 {
 	if (!model || model->NumVerts() < 1)
 		return;
@@ -812,10 +820,12 @@ void TerrainPatch::Illuminate(Color ambient, List<SimLight>& lights)
 	}
 
 	const int   nverts = vset->nverts;
-	const DWORD aval = ambient.Value();
+
+	// FColor has no Value(); store packed ARGB (0xAARRGGBB):
+	const uint32 aval = ambient.ToPackedARGB();
 
 	for (int i = 0; i < nverts; i++) {
-		vset->diffuse[i] = aval;
+		vset->diffuse[i] = (DWORD)aval;
 	}
 
 	TerrainRegion* trgn = terrain ? terrain->GetRegion() : nullptr;
@@ -825,6 +835,42 @@ void TerrainPatch::Illuminate(Color ambient, List<SimLight>& lights)
 	if (trgn && !first) {
 		eclipsed = trgn->IsEclipsed();
 	}
+
+	// Helpers for packed vertex diffuse accumulation (assumes 0xAARRGGBB):
+	auto UnpackARGB = [](uint32 Packed) -> FColor
+		{
+			return FColor(
+				(uint8)((Packed >> 16) & 0xFF), // R
+				(uint8)((Packed >> 8) & 0xFF), // G
+				(uint8)((Packed >> 0) & 0xFF), // B
+				(uint8)((Packed >> 24) & 0xFF)  // A
+			);
+		};
+
+	auto PackARGB = [](const FColor& C) -> uint32
+		{
+			return (uint32(C.A) << 24) | (uint32(C.R) << 16) | (uint32(C.G) << 8) | uint32(C.B);
+		};
+
+	auto ScaleRGB = [](const FColor& C, float S) -> FColor
+		{
+			return FColor(
+				(uint8)FMath::Clamp(int32(C.R * S), 0, 255),
+				(uint8)FMath::Clamp(int32(C.G * S), 0, 255),
+				(uint8)FMath::Clamp(int32(C.B * S), 0, 255),
+				0
+			);
+		};
+
+	auto AddClampRGB = [](const FColor& A, const FColor& B) -> FColor
+		{
+			return FColor(
+				(uint8)FMath::Clamp(int32(A.R) + int32(B.R), 0, 255),
+				(uint8)FMath::Clamp(int32(A.G) + int32(B.G), 0, 255),
+				(uint8)FMath::Clamp(int32(A.B) + int32(B.B), 0, 255),
+				A.A
+			);
+		};
 
 	ListIter<SimLight> iter = lights;
 	while (++iter) {
@@ -837,17 +883,9 @@ void TerrainPatch::Illuminate(Color ambient, List<SimLight>& lights)
 
 		// Shadow / eclipse test:
 		if (light->CastsShadow() && first && scene) {
-			const FVector LightPos(
-				(float)light->Location().x,
-				(float)light->Location().y,
-				(float)light->Location().z
-			);
-
-			const FVector V0(
-				(float)vset->loc[0].x,
-				(float)vset->loc[0].y,
-				(float)vset->loc[0].z
-			);
+			// If vset->loc is already FVector (as per your port), use it directly:
+			const FVector LightPos = light->Location();
+			const FVector V0 = vset->loc[0];
 
 			eclipsed = (LightPos.Y < -100.0f) ||
 				scene->IsLightObscured(V0, LightPos, radius);
@@ -855,34 +893,28 @@ void TerrainPatch::Illuminate(Color ambient, List<SimLight>& lights)
 
 		if (!light->CastsShadow() || !eclipsed) {
 			// Directional light vector (treat light "location" as a direction, per original code):
-			FVector L(
-				(float)light->Location().x,
-				(float)light->Location().y,
-				(float)light->Location().z
-			);
-			L = L.GetSafeNormal();
+			FVector L = light->Location().GetSafeNormal();
 
 			for (int i = 0; i < nverts; i++) {
-				// Convert stored normal to FVector for UE math:
-				const FVector N(
-					(float)vset->nrm[i].x,
-					(float)vset->nrm[i].y,
-					(float)vset->nrm[i].z
-				);
-
-				const double gain = (double)(L | N);  // UE dot product
+				const FVector& N = vset->nrm[i];
 
 				double val = 0.0;
+				const double gain = (double)FVector::DotProduct(L, N);
+
 				if (gain > 0.0) {
 					val = light->Intensity() * (0.85 * gain);
-					if (val > 1.0)
-						val = 1.0;
+					if (val > 1.0) val = 1.0;
 				}
 
 				if (val > 0.01) {
-					// Maintain original Color accumulation semantics:
-					vset->diffuse[i] =
-						((light->GetColor().dim(val)) + vset->diffuse[i]).Value();
+					const uint32 PackedBase = (uint32)vset->diffuse[i];
+					const FColor Base = UnpackARGB(PackedBase);
+
+					const FColor LightC = light->GetColor();
+					const FColor Add = ScaleRGB(LightC, (float)val);
+
+					const FColor Out = AddClampRGB(Base, Add);
+					vset->diffuse[i] = (DWORD)PackARGB(Out);
 				}
 			}
 		}
@@ -955,7 +987,11 @@ TerrainPatch::Render(Video* video, DWORD flags)
 	video->SetRenderState(Video::LIGHTING_ENABLE, false);
 	video->SetRenderState(Video::SPECULAR_ENABLE, false); // water != 0);
 	video->SetRenderState(Video::FOG_ENABLE, true);
-	video->SetRenderState(Video::FOG_COLOR, terrain->GetRegion()->FogColor().Value());
+
+	video->SetRenderState(
+		Video::FOG_COLOR,
+		PackColor(terrain->GetRegion()->FogColor())
+	);
 	video->SetRenderState(Video::FOG_DENSITY, *((DWORD*)&fog_density));
 
 	Solid::Render(video, flags);

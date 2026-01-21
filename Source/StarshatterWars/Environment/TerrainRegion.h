@@ -21,6 +21,8 @@
 #include "StarSystem.h"
 #include "Weather.h"
 
+#include "Math/Color.h"
+
 // +--------------------------------------------------------------------+
 
 const double TERRAIN_ALTITUDE_LIMIT = 35e3;
@@ -55,13 +57,13 @@ public:
 	const Text& ShadesLow()       const { return shades_low; }
 	const Text& EnvironmentTexture(int n) const;
 
-	Color             SunColor()        const { return sun_color[24]; }
-	Color             SkyColor()        const { return sky_color[24]; }
-	Color             FogColor()        const { return fog_color[24]; }
-	Color             Ambient()         const { return ambient[24]; }
-	Color             Overcast()        const { return overcast[24]; }
-	Color             CloudColor()      const { return cloud_color[24]; }
-	Color             ShadeColor()      const { return shade_color[24]; }
+	FColor            SunColor()        const { return sun_color[24]; }
+	FColor            SkyColor()        const { return sky_color[24]; }
+	FColor            FogColor()        const { return fog_color[24]; }
+	FColor            Ambient()         const { return ambient[24]; }
+	FColor            Overcast()        const { return overcast[24]; }
+	FColor            CloudColor()      const { return cloud_color[24]; }
+	FColor            ShadeColor()      const { return shade_color[24]; }
 
 	double            LateralScale()    const { return scale; }
 	double            MountainScale()   const { return mtnscale; }
@@ -100,13 +102,13 @@ protected:
 	Text              shades_high;
 	Text              shades_low;
 
-	Color             sun_color[25];
-	Color             sky_color[25];
-	Color             fog_color[25];
-	Color             ambient[25];
-	Color             overcast[25];
-	Color             cloud_color[25];
-	Color             shade_color[25];
+	FColor            sun_color[25];
+	FColor            sky_color[25];
+	FColor            fog_color[25];
+	FColor            ambient[25];
+	FColor            overcast[25];
+	FColor            cloud_color[25];
+	FColor            shade_color[25];
 
 	double            scale;
 	double            mtnscale;

@@ -13,10 +13,10 @@
 */
 #pragma once
 #include "Geometry.h"
-#include "Color.h"
 
 // Minimal Unreal include (required by request: convert Point/Vec3 to FVector):
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -58,8 +58,8 @@ public:
 	void              SetType(DWORD t) { type = t; }
 	float             Intensity()       const { return light; }
 	void              SetIntensity(float f) { light = f; }
-	Color             GetColor()        const { return color; }
-	void              SetColor(Color c) { color = c; }
+	FColor            GetColor()        const { return color; }
+	void              SetColor(FColor c) { color = c; }
 	bool              IsActive()        const { return active; }
 	void              SetActive(bool a) { active = a; }
 	bool              CastsShadow()     const { return shadow; }
@@ -86,7 +86,7 @@ protected:
 	int               life;
 	float             light;
 	float             dldt;
-	Color             color;
+	FColor            color;
 	bool              active;
 	bool              shadow;
 	SimScene* scene;

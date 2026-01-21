@@ -2,21 +2,23 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026. All Rights Reserved.
 
-    Original Author and Studio: John DiCamillo, Destroyer Studios LLC
-    AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    Stars.exe
     FILE:         Bitmap.h
+    AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    Bitmap Resource class
+    Bitmap Resource class (GPU-first Unreal implementation)
 
-    NOTES (UNREAL PORT)
-    ==================
-    - Plain C++ class (not a UObject).
-    - Keep Starshatter core types (Color, Rect, etc.).
-    - Unreal render integration is via UTexture2D* (forward-declared).
+    NOTES
+    =====
+    - Maintains Starshatter call structure.
+    - Uses Unreal primitives: FColor, FIntRect, UTexture2D/UTextureRenderTarget2D.
+    - Palette/indexed mode is best-effort for legacy compatibility; GPU path is RGBA8.
 */
 
 #pragma once
@@ -24,11 +26,16 @@
 #include "Res.h"
 #include "Types.h"
 #include "Geometry.h"
-#include "Color.h"
 
-// +--------------------------------------------------------------------+
+// Unreal minimal includes for public API primitives:
+#include "Math/Color.h"
+#include "Math/IntRect.h"
+
+#include "COlor.h"
 
 class UTexture2D;
+class UTextureRenderTarget2D;
+class FCanvas;
 
 // +--------------------------------------------------------------------+
 
@@ -41,74 +48,92 @@ public:
 
     Bitmap();
     Bitmap(int w, int h, ColorIndex* p = 0, int t = BMP_SOLID);
-    Bitmap(int w, int h, Color* p, int t = BMP_SOLID);
+    Bitmap(int w, int h, FColor* p, int t = BMP_SOLID);
     virtual ~Bitmap();
 
-    int            IsIndexed()       const { return pix != 0; }
-    int            IsHighColor()     const { return hipix != 0; }
-    int            IsDual()          const { return IsIndexed() && IsHighColor(); }
+    // Legacy format flags:
+    int         IsIndexed()   const { return pix != 0; }
+    int         IsHighColor() const { return hipix != 0; }
+    int         IsDual()      const { return IsIndexed() && IsHighColor(); }
 
-    void           SetType(int t) { type = t; }
-    int            Type()            const { return type; }
-    bool           IsSolid()         const { return type == BMP_SOLID; }
-    bool           IsTransparent()   const { return type == BMP_TRANSPARENT; }
-    bool           IsTranslucent()   const { return type == BMP_TRANSLUCENT; }
+    void        SetType(int t) { type = t; }
+    int         Type()         const { return type; }
+    bool        IsSolid()      const { return type == BMP_SOLID; }
+    bool        IsTransparent()const { return type == BMP_TRANSPARENT; }
+    bool        IsTranslucent()const { return type == BMP_TRANSLUCENT; }
 
-    int            Width()           const { return width; }
-    int            Height()          const { return height; }
-    ColorIndex* Pixels()          const { return pix; }
-    Color* HiPixels()        const { return hipix; }
-    int            BmpSize()         const;
-    int            RowSize()         const;
+    // Dimensions:
+    int         Width()        const { return width; }
+    int         Height()       const { return height; }
 
-    ColorIndex     GetIndex(int x, int y) const;
-    Color          GetColor(int x, int y) const;
-    void           SetIndex(int x, int y, ColorIndex c);
-    void           SetColor(int x, int y, Color      c);
+    // Legacy CPU buffers (may be null in GPU-first mode):
+    ColorIndex* Pixels()       const { return pix; }
+    FColor* HiPixels()     const { return hipix; }
 
-    void           FillColor(Color c);
+    // Legacy sizing helpers:
+    int         BmpSize()      const;
+    int         RowSize()      const;
 
-    void           ClearImage();
-    void           BitBlt(int x, int y, const Bitmap& srcImage, int sx, int sy, int w, int h, bool blend = false);
-    void           CopyBitmap(const Bitmap& rhs);
-    void           CopyImage(int w, int h, BYTE* p, int t = BMP_SOLID);
-    void           CopyHighColorImage(int w, int h, DWORD* p, int t = BMP_SOLID);
-    void           CopyAlphaImage(int w, int h, BYTE* p);
-    void           CopyAlphaRedChannel(int w, int h, DWORD* p);
-    void           AutoMask(DWORD mask = 0);
+    // Pixel access (legacy call structure):
+    ColorIndex  GetIndex(int x, int y) const;
+    FColor      GetColor(int x, int y) const;
+    void        SetIndex(int x, int y, ColorIndex c);
+    void        SetColor(int x, int y, FColor c);
 
+    // Legacy linear-index helpers (to match older call sites):
+    void        SetColor(int i, FColor c);
+    void        SetIndex(int i, ColorIndex c);
+
+    // Fill/clear:
+    void        FillColor(FColor c);
+    void        ClearImage();
+
+    // Copy/blit:
+    void        BitBlt(int x, int y, const Bitmap& srcImage, int sx, int sy, int w, int h, bool blend = false);
+    void        CopyBitmap(const Bitmap& rhs);
+    void        CopyImage(int w, int h, BYTE* p, int t = BMP_SOLID);
+    void        CopyImage(int w, int h, ColorIndex* p, int t = BMP_SOLID); // convenience overload
+    void        CopyHighColorImage(int w, int h, DWORD* p, int t = BMP_SOLID);
+    void        CopyAlphaImage(int w, int h, BYTE* p);
+    void        CopyAlphaRedChannel(int w, int h, DWORD* p);
+    void        AutoMask(DWORD mask = 0);
+
+    // CPU surface API (legacy; may be null in GPU-first mode):
     virtual BYTE* GetSurface();
-    virtual int    Pitch() const;
-    virtual int    PixSize() const;
+    virtual int   Pitch() const;
+    virtual int   PixSize() const;
 
-    bool           ClipLine(int& x1, int& y1, int& x2, int& y2);
-    bool           ClipLine(double& x1, double& y1, double& x2, double& y2);
-    void           DrawLine(int x1, int y1, int x2, int y2, Color color);
-    void           DrawRect(int x1, int y1, int x2, int y2, Color color);
-    void           DrawRect(const Rect& r, Color color);
-    void           FillRect(int x1, int y1, int x2, int y2, Color color);
-    void           FillRect(const Rect& r, Color color);
-    void           DrawEllipse(int x1, int y1, int x2, int y2, Color color, BYTE quad = 0x0f);
-    void           DrawEllipsePoints(int x0, int y0, int x, int y, Color c, BYTE quad);
+    // Clipping:
+    bool        ClipLine(int& x1, int& y1, int& x2, int& y2);
+    bool        ClipLine(double& x1, double& y1, double& x2, double& y2);
 
-    void           ScaleTo(int w, int h);
-    void           MakeIndexed();
-    void           MakeHighColor();
+    // Drawing API (Unreal primitives):
+    void        DrawLine(int x1, int y1, int x2, int y2, FColor color);
+    void        DrawRect(int x1, int y1, int x2, int y2, FColor color);
+    void        DrawRect(const FIntRect& r, FColor color);
+    void        FillRect(int x1, int y1, int x2, int y2, FColor color);
+    void        FillRect(const FIntRect& r, FColor color);
+    void        DrawEllipse(int x1, int y1, int x2, int y2, FColor color, BYTE quad = 0x0f);
+    void        DrawEllipsePoints(int x0, int y0, int x, int y, FColor c, BYTE quad);
 
-    // Unreal: convert to / maintain a texture handle for rendering pipelines:
-    void           MakeTexture();
-    bool           IsTexture() const { return texture; }
-    void           TakeOwnership() { ownpix = true; }
+    // Resampling/format:
+    void        ScaleTo(int w, int h);
+    void        MakeIndexed();
+    void        MakeHighColor();
+    void        MakeTexture();
 
-    // Unreal texture accessor (optional usage by renderer / UI):
-    UTexture2D* GetTexture() const { return texture_object; }
-    void           SetTexture(UTexture2D* InTexture) { texture_object = InTexture; texture = (InTexture != nullptr); }
+    // Texture state:
+    bool        IsTexture() const { return texture; }
+    void        TakeOwnership() { ownpix = true; }
 
+    // Name:
     const char* GetFilename() const { return filename; }
-    void           SetFilename(const char* s);
+    void        SetFilename(const char* s);
 
-    DWORD          LastModified() const { return last_modified; }
+    // Timestamp:
+    DWORD       LastModified() const { return last_modified; }
 
+    // Cache/utility:
     static Bitmap* Default();
 
     static Bitmap* GetBitmapByID(HANDLE bmp_id);
@@ -118,21 +143,45 @@ public:
     static void    ClearCache();
     static DWORD   CacheMemoryFootprint();
 
+    // GPU-first accessors (optional for callers):
+    UTexture2D* GetTexture()     const { return Texture; }
+    UTextureRenderTarget2D* GetRenderTarget()const { return RenderTarget; }
+
 protected:
-    int            type;
-    int            width;
-    int            height;
-    int            mapsize;
+    // GPU backing:
+    void        EnsureRenderTarget();
+    void        DrawBegin(FCanvas*& OutCanvas);
+    void        DrawEnd(FCanvas*& InOutCanvas);
+    void        ClearToTransparent();
+    void        UploadBGRA(const void* SrcBGRA8, int SrcW, int SrcH, bool bHasAlpha, bool bSRGB);
 
-    bool           ownpix;
-    bool           alpha_loaded;
-    bool           texture;
+    // CPU staging for texture upload (optional path):
+    void        EnsureHiPixels();
+    void        MarkDirty();
 
-    ColorIndex* pix;
-    Color* hipix;
-    DWORD          last_modified;
-    char           filename[64];
+protected:
+    int         type = BMP_SOLID;
+    int         width = 0;
+    int         height = 0;
+    int         mapsize = 0;
 
-    // Unreal render asset (forward-declared in header; no heavy include required here):
-    UTexture2D* texture_object = nullptr;
+    bool        ownpix = false;
+    bool        alpha_loaded = false;
+    bool        texture = false;
+
+    // Legacy CPU buffers (prefer to phase out; keep for compatibility):
+    ColorIndex* pix = nullptr;
+    FColor* hipix = nullptr;
+
+    // CPU staging buffer for GPU upload (BGRA8):
+    TArray<FColor> HiPixelsCPU;
+    bool           bDirtyCPU = false;
+
+    // Unreal GPU backing:
+    UTexture2D* Texture = nullptr;
+    UTextureRenderTarget2D* RenderTarget = nullptr;
+
+    // Metadata:
+    DWORD       last_modified = 0;
+    char        filename[64] = {};
 };

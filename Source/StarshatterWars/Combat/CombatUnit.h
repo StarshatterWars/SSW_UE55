@@ -15,11 +15,13 @@
 
 #include "Types.h"
 #include "Geometry.h"
-#include "Color.h"
 #include "Text.h"
 #include "List.h"
 #include "GameStructs.h"
+
 #include "Math/Vector.h"   // FVector
+#include "Math/Color.h"
+
 
 // +--------------------------------------------------------------------+
 
@@ -84,7 +86,7 @@ public:
     CombatGroup* GetCombatGroup()              const { return group; }
     void           SetCombatGroup(CombatGroup* g) { group = g; }
 
-    Color          MarkerColor()                 const;
+    FColor         MarkerColor()                 const;
     bool           IsGroundUnit()                const;
     bool           IsStarship()                  const;
     bool           IsDropship()                  const;

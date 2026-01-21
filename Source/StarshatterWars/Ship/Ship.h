@@ -24,10 +24,10 @@
 #include "Types.h"
 #include "SimObject.h"
 #include "List.h"
-#include "Color.h"
 #include "DetailSet.h"
 
 #include "Math/Vector.h" // FVector
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -327,8 +327,8 @@ public:
     virtual int       GetContactID() const { return contact_id; }
     virtual int       GetIFF() const { return IFF_code; }
     virtual void      SetIFF(int iff);
-    virtual Color     MarkerColor() const;
-    static Color      IFFColor(int iff);
+    virtual FColor    MarkerColor() const;
+    static FColor     IFFColor(int iff);
     virtual void      DoEMCON();
     virtual double    PCS() const;
     virtual double    ACS() const;

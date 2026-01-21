@@ -36,21 +36,20 @@ SystemFont::SystemFont()
     baseline(0),
     interspace(0),
     spacewidth(0),
-    expansion(0),
-    alpha(1),
+    expansion(0.0f),
+    alpha(1.0f),
     blend(Video::BLEND_ALPHA),
     scale(1),
     caret_index(-1),
     caret_x(0),
     caret_y(0),
     imagewidth(0),
-    image(nullptr),
-    texture(nullptr),
-    tgt_texture(nullptr),
-    material(nullptr),
-    vset(nullptr),
-    polys(nullptr),
-    npolys(0)
+    image(0),
+    material(0),
+    vset(0),
+    polys(0),
+    npolys(0),
+    tgt_bitmap(0)
 {
     FMemory::Memzero(name, sizeof(name));
     FMemory::Memzero(glyph, sizeof(glyph));
@@ -63,29 +62,26 @@ SystemFont::SystemFont(const char* n)
     baseline(0),
     interspace(0),
     spacewidth(4),
-    expansion(0),
-    alpha(1),
+    expansion(0.0f),
+    alpha(1.0f),
     blend(Video::BLEND_ALPHA),
     scale(1),
     caret_index(-1),
     caret_x(0),
     caret_y(0),
     imagewidth(0),
-    image(nullptr),
-    texture(nullptr),
-    tgt_texture(nullptr),
-    material(nullptr),
-    vset(nullptr),
-    polys(nullptr),
-    npolys(0)
+    image(0),
+    material(0),
+    vset(0),
+    polys(0),
+    npolys(0),
+    tgt_bitmap(0)
 {
-
-    // ZeroMemory replacements
     FMemory::Memzero(glyph, sizeof(glyph));
     FMemory::Memzero(kern, sizeof(kern));
 
-    // CopyMemory replacement
-    FMemory::Memcpy(name, n, sizeof(name));
+    // Safe bounded copy:
+    FCStringAnsi::Strncpy(name, n ? n : "", (int32)UE_ARRAY_COUNT(name));
 
     if (!Load(name)) {
         flags = 0;
@@ -94,30 +90,42 @@ SystemFont::SystemFont(const char* n)
         interspace = 0;
         spacewidth = 0;
         imagewidth = 0;
-        image = nullptr;
+        image = 0;
 
-        texture = nullptr;
-        
         FMemory::Memzero(glyph, sizeof(glyph));
         FMemory::Memzero(kern, sizeof(kern));
     }
 }
 
+
 // +--------------------------------------------------------------------+
 
 SystemFont::~SystemFont()
 {
-    if (image)    delete[] image;
-    if (vset)     delete vset;
-    if (polys)    delete[] polys;
-    if (material) delete material;
+    // Starshatter-owned allocations:
+    if (image) {
+        delete[] image;
+        image = 0;
+    }
 
-    image = nullptr;
-    vset = nullptr;
-    polys = nullptr;
-    material = nullptr;
-    texture = nullptr;
-    tgt_texture = nullptr;
+    if (vset) {
+        delete vset;
+        vset = 0;
+    }
+
+    if (polys) {
+        delete[] polys;
+        polys = 0;
+    }
+
+    if (material) {
+        delete material;
+        material = 0;
+    }
+
+    // NOTE:
+    // Do NOT delete tgt_bitmap here unless this class clearly owns it.
+    // (In Starshatter it is typically an external render target / shared scratch bitmap.)
 }
 
 // +--------------------------------------------------------------------+
@@ -146,67 +154,70 @@ SystemFont::Load(const char* loadname)
         glyph[i].width = 0;
     }
 
-    // NOTE: This keeps the original Starshatter DataLoader/Bitmap path for now,
-    // but stores the render asset handle as UTexture2D* (not Bitmap) per UE port rules.
-    // The CPU alpha mask is still extracted into `image[]` for width/kerning logic.
+    // --------------------------------------------------
+    // LOAD FONT ATLAS (CPU MASK) + OPTIONAL UE TEXTURE HANDLE
+    // --------------------------------------------------
+    // Keep the original DataLoader/Bitmap path for pixel extraction, but do NOT retain
+    // Bitmap* as a render dependency in SystemFont (UE port rule).
     Bitmap bmp;
-    if (loader->LoadBitmap(imgname, bmp)) {
-        if (!bmp.Pixels() && !bmp.HiPixels())
-            return false;
+    if (!loader->LoadBitmap(imgname, bmp))
+        return false;
 
-        scale = bmp.Width() / 256;
-        imagewidth = bmp.Width();
+    if (!bmp.Pixels() && !bmp.HiPixels())
+        return false;
 
-        if (height > bmp.Height())
-            height = (BYTE)bmp.Height();
+    scale = bmp.Width() / 256;
+    imagewidth = bmp.Width();
 
-        const int imgsize = bmp.Width() * bmp.Height();
+    if (height > bmp.Height())
+        height = (BYTE)bmp.Height();
 
-        if (image) {
-            delete[] image;
-            image = nullptr;
-        }
+    const int imgsize = bmp.Width() * bmp.Height();
 
-        image = new BYTE[imgsize];
+    if (image) {
+        delete[] image;
+        image = 0;
+    }
 
-        if (image) {
-            if (bmp.Pixels()) {
-                FMemory::Memcpy(image, bmp.Pixels(), imgsize);
-            }
-            else {
-                for (int i = 0; i < imgsize; i++)
-                    image[i] = (BYTE)bmp.HiPixels()[i].Alpha();
-            }
-        }
+    image = new BYTE[imgsize];
+    if (!image)
+        return false;
 
-        if (material)
-            delete material;
-
-        material = new Material;
-
-        // UE PORT: do not keep a Bitmap* render dependency here.
-        // If Material still expects `tex_diffuse` as a Bitmap*, remove/port that field
-        // and bind `texture` via your UE render backend instead.
-        //
-        // material->tex_diffuse = &bmp; // ORIGINAL (removed)
-
-        // If your loader can provide/resolve a UTexture2D*, assign it here.
-        // texture = loader->LoadTexture2D(imgname); // example (implement in DataLoader)
-
-        texture = nullptr;
-
-        // Optional: warn once if texture binding is not implemented yet.
-        UE_LOG(LogTemp, Warning, TEXT("SystemFont::Load('%hs'): Bitmap loaded; UE texture binding not implemented (texture=null)."), loadname);
+    // Store an 8-bit alpha/intensity mask in image[]
+    if (bmp.Pixels()) {
+        FMemory::Memcpy(image, bmp.Pixels(), imgsize);
     }
     else {
-        return false;
+        for (int i = 0; i < imgsize; i++) {
+            // HiPixels() is typically Color*; take alpha channel as mask:
+            image[i] = (BYTE)bmp.HiPixels()[i].A;
+        }
     }
 
+    // --------------------------------------------------
+    // RENDER BACKEND HOOK (UE)
+    // --------------------------------------------------
+    // Material may be used by your renderer, but it must not depend on Bitmap*.
+    // If Material previously referenced Bitmap (e.g., tex_diffuse), port that field
+    // to UTexture2D* (or a renderer-specific handle) and bind here.
+    if (material) {
+        delete material;
+        material = 0;
+    }
+    material = new Material;
+
+    UE_LOG(LogTemp, Verbose,
+        TEXT("SystemFont::Load('%hs'): loaded PCX for CPU mask (%d x %d); UE texture binding currently not configured."),
+        loadname, bmp.Width(), bmp.Height());
+
+    // --------------------------------------------------
+    // WIDTH + KERNING
+    // --------------------------------------------------
     for (int i = 0; i < 256; i++) {
         glyph[i].width = CalcWidth((BYTE)i);
     }
 
-    color = Color::White;
+    color = FColor::White;
 
     if (!(flags & (FONT_FIXED_PITCH | FONT_NO_KERN)))
         AutoKern();
@@ -672,26 +683,26 @@ SystemFont::StringWidth(const char* str, int len) const
 // +--------------------------------------------------------------------+
 
 void
-SystemFont::DrawText(const char* text, int count, Rect& text_rect, DWORD textflags, UTexture2D* tgt)
+SystemFont::DrawText(const char* text, int count, Rect& text_rect, DWORD draw_flags, Bitmap* tgt)
 {
     Rect clip_rect = text_rect;
 
     if (clip_rect.w < 1 || clip_rect.h < 1)
         return;
 
-    tgt_texture = tgt;
+    tgt_bitmap = tgt;
 
     if (text && text[0]) {
         if (count < 1)
-            count = (int)strlen(text);
+            count = strlen(text);
 
         // single line:
-        if (flags & DT_SINGLELINE) {
+        if (draw_flags & DT_SINGLELINE) {
             DrawTextSingle(text, count, text_rect, clip_rect);
         }
 
         // multi-line with word wrap:
-        else if (flags & DT_WORDBREAK) {
+        else if (draw_flags & DT_WORDBREAK) {
             DrawTextWrap(text, count, text_rect, clip_rect);
         }
 
@@ -706,13 +717,16 @@ SystemFont::DrawText(const char* text, int count, Rect& text_rect, DWORD textfla
     }
 
     // if calc only, update the rectangle:
-    if (flags & DT_CALCRECT) {
+    if (draw_flags & DT_CALCRECT) {
         text_rect.h = clip_rect.h;
         text_rect.w = clip_rect.w;
     }
 
     // otherwise, draw caret if requested:
-    else if (caret_index >= 0 && caret_y >= text_rect.y && caret_y <= text_rect.y + text_rect.h) {
+    else if (caret_index >= 0 &&
+        caret_y >= text_rect.y &&
+        caret_y <= text_rect.y + text_rect.h) {
+
         Video* video = Video::GetInstance();
 
         if (video && (GetRealTime() / 500) & 1) {
@@ -728,7 +742,7 @@ SystemFont::DrawText(const char* text, int count, Rect& text_rect, DWORD textfla
         caret_index = -1;
     }
 
-    tgt_texture = nullptr;
+    tgt_bitmap = 0;
 }
 
 // +--------------------------------------------------------------------+
@@ -736,7 +750,7 @@ SystemFont::DrawText(const char* text, int count, Rect& text_rect, DWORD textfla
 static int find_next_word_start(const char* text, int index)
 {
     // step through intra-word space:
-    while (text[index] && isspace((unsigned char)text[index]) && text[index] != '\n')
+    while (text[index] && isspace(text[index]) && text[index] != '\n')
         index++;
 
     return index;
@@ -752,11 +766,11 @@ static int find_next_word_end(const char* text, int index)
         return index;
 
     // step through intra-word space:
-    while (text[index] && isspace((unsigned char)text[index]))
+    while (text[index] && isspace(text[index]))
         index++;
 
     // step through word:
-    while (text[index] && !isspace((unsigned char)text[index]))
+    while (text[index] && !isspace(text[index]))
         index++;
 
     return index - 1;
@@ -1107,11 +1121,12 @@ SystemFont::DrawTextMulti(const char* text, int count, const Rect& text_rect, Re
 // +--------------------------------------------------------------------+
 
 int
-SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& clip, UTexture2D* tgt)
+SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& clip, Bitmap* tgt)
 {
     Video* video = Video::GetInstance();
     int    count = 0;
     int    maxw = clip.w;
+    int    maxh = clip.h;
 
     if (len < 1 || !video)
         return count;
@@ -1120,15 +1135,118 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
     if ((y1 < clip.y) || (y1 > clip.y + clip.h))
         return count;
 
-    // Starshatter Wars UE port:
-    // The original code could render into a CPU Bitmap (BitBlt / alpha copy).
-    // UE does not support direct software writes to UTexture2D without an explicit update pipeline.
-    // For now, we only support the Video path; if a target texture is provided, we log once and ignore it.
-    if (tgt) {
-        UE_LOG(LogTemp, Warning, TEXT("SystemFont::DrawString: CPU render-to-texture path is not implemented; rendering via Video instead."));
+    // RENDER TO BITMAP
+    if (!tgt)
+        tgt = tgt_bitmap;
+
+    if (tgt)
+    {
+        const FColor FontColor(color);
+
+        for (int i = 0; i < len; i++)
+        {
+            char c = str[i];
+
+            if ((flags & FONT_ALL_CAPS) && islower((unsigned char)c))
+                c = (char)toupper((unsigned char)c);
+
+            const int cw = glyph[(uint8)c].width + interspace;
+            const int ch = height;
+
+            int k = 0;
+            if (i < len - 1)
+                k = kern[(uint8)c][(uint8)str[i + 1]];
+
+            // horizontal clip:
+            if (x1 < clip.x)
+            {
+                if (isspace((unsigned char)c) && (c < PIPE_NBSP || c > ARROW_RIGHT))
+                {
+                    x1 += spacewidth;
+                    maxw -= spacewidth;
+                }
+                else
+                {
+                    x1 += cw + k;
+                    maxw -= cw + k;
+                }
+            }
+            else if (x1 + cw > clip.x + clip.w)
+            {
+                return count;
+            }
+            else
+            {
+                if (isspace((unsigned char)c) && (c < PIPE_NBSP || c > ARROW_RIGHT))
+                {
+                    x1 += spacewidth;
+                    maxw -= spacewidth;
+                }
+                else
+                {
+                    const int sx = GlyphLocationX(c);
+                    const int sy = GlyphLocationY(c);
+
+                    // UE path: treat pixels as FColor
+                    FColor* srcpix = bitmap.HiPixels(); // font atlas pixels
+                    FColor* dstpix = tgt->HiPixels();   // target pixels
+
+                    if (srcpix && dstpix)
+                    {
+                        const int spitch = bitmap.Width();
+                        const int dpitch = tgt->Width();
+
+                        FColor* dst = dstpix + (y1 * dpitch) + x1;
+                        FColor* src = srcpix + (sy * spitch) + sx;
+
+                        for (int row = 0; row < ch; row++)
+                        {
+                            FColor* ps = src;
+                            FColor* pd = dst;
+
+                            for (int col = 0; col < cw; col++)
+                            {
+                                const uint8 A = ps->A; // glyph alpha
+                                if (A)
+                                {
+                                    // Match legacy behavior: color.dim(alpha/240.0)
+                                    const float Scale = (float)A / 240.0f;
+
+                                    const uint8 R = (uint8)FMath::Clamp((int)(FontColor.R * Scale), 0, 255);
+                                    const uint8 G = (uint8)FMath::Clamp((int)(FontColor.G * Scale), 0, 255);
+                                    const uint8 B = (uint8)FMath::Clamp((int)(FontColor.B * Scale), 0, 255);
+
+                                    *pd = FColor(R, G, B, 255);
+                                }
+
+                                ps++;
+                                pd++;
+                            }
+
+                            dst += dpitch;
+                            src += spitch;
+                        }
+                    }
+                    else
+                    {
+                        // fallback (kept): if your BitBlt is UE-safe, this works:
+                        tgt->BitBlt(x1, y1, bitmap, sx, sy, cw, ch, true);
+                    }
+
+                    x1 += cw + k;
+                    maxw -= cw + k;
+                }
+
+                count++;
+            }
+        }
+
+        return count;
     }
 
-    // RENDER TO VIDEO
+    // ------------------------------------------------------------------
+    // RENDER TO VIDEO (leave as-is; uses DWORD diffuse pipeline)
+    // ------------------------------------------------------------------
 
     // allocate verts, if necessary
     int nverts = 4 * len;
@@ -1136,7 +1254,7 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
         vset = new VertexSet(nverts);
 
         if (!vset)
-            return count;
+            return false;
 
         vset->space = VertexSet::SCREEN_SPACE;
 
@@ -1158,25 +1276,25 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
         return count;
 
     if (alpha < 1)
-        color.SetAlpha((BYTE)(alpha * 255.0f));
+        color.A = alpha * 255.0f;
     else
-        color.SetAlpha(255);
+        color.A = 255;
 
     for (int i = 0; i < len; i++) {
         char c = str[i];
 
-        if ((flags & FONT_ALL_CAPS) && islower((unsigned char)c))
-            c = (char)toupper((unsigned char)c);
+        if ((flags & FONT_ALL_CAPS) && islower(c))
+            c = toupper(c);
 
-        int cw = glyph[(BYTE)c].width + interspace;
+        int cw = glyph[c].width + interspace;
         int k = 0;
 
         if (i < len - 1)
-            k = kern[(BYTE)c][(BYTE)str[i + 1]];
+            k = kern[c][str[i + 1]];
 
         // horizontal clip:
         if (x1 < clip.x) {
-            if (isspace((unsigned char)c) && ((unsigned char)c < PIPE_NBSP || (unsigned char)c > ARROW_RIGHT)) {
+            if (isspace(c) && (c < PIPE_NBSP || c > ARROW_RIGHT)) {
                 x1 += spacewidth;
                 maxw -= spacewidth;
             }
@@ -1189,45 +1307,45 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
             break;
         }
         else {
-            if (isspace((unsigned char)c) && ((unsigned char)c < PIPE_NBSP || (unsigned char)c > ARROW_RIGHT)) {
+            if (isspace(c) && (c < PIPE_NBSP || c > ARROW_RIGHT)) {
                 x1 += spacewidth;
                 maxw -= spacewidth;
             }
             else {
                 // create four verts for this character:
                 int    v = count * 4;
-                double char_x = (double)GlyphLocationX((BYTE)c);
-                double char_y = (double)GlyphLocationY((BYTE)c);
-                double char_w = (double)glyph[(BYTE)c].width;
-                double char_h = (double)height;
+                double char_x = GlyphLocationX(c);
+                double char_y = GlyphLocationY(c);
+                double char_w = glyph[c].width;
+                double char_h = height;
 
-                if (y1 + (int)char_h > clip.y + clip.h) {
-                    char_h = (double)(clip.y + clip.h - y1);
+                if (y1 + char_h > clip.y + clip.h) {
+                    char_h = clip.y + clip.h - y1;
                 }
 
                 vset->s_loc[v + 0].X = (float)(x1 - 0.5);
                 vset->s_loc[v + 0].Y = (float)(y1 - 0.5);
-                vset->tu[v + 0] = (float)(char_x / 256.0);
-                vset->tv[v + 0] = (float)(char_y / 256.0);
-                vset->diffuse[v + 0] = color.Value();
+                vset->tu[v + 0] = (float)(char_x / 256);
+                vset->tv[v + 0] = (float)(char_y / 256);
+                vset->diffuse[v + 0] = color.ToPackedARGB();
 
                 vset->s_loc[v + 1].X = (float)(x1 + char_w - 0.5);
                 vset->s_loc[v + 1].Y = (float)(y1 - 0.5);
-                vset->tu[v + 1] = (float)(char_x / 256.0 + char_w / 256.0);
-                vset->tv[v + 1] = (float)(char_y / 256.0);
-                vset->diffuse[v + 1] = color.Value();
+                vset->tu[v + 1] = (float)(char_x / 256 + char_w / 256);
+                vset->tv[v + 1] = (float)(char_y / 256);
+                vset->diffuse[v + 1] = color.ToPackedARGB();
 
                 vset->s_loc[v + 2].X = (float)(x1 + char_w - 0.5);
                 vset->s_loc[v + 2].Y = (float)(y1 + char_h - 0.5);
-                vset->tu[v + 2] = (float)(char_x / 256.0 + char_w / 256.0);
-                vset->tv[v + 2] = (float)(char_y / 256.0 + char_h / 256.0);
-                vset->diffuse[v + 2] = color.Value();
+                vset->tu[v + 2] = (float)(char_x / 256 + char_w / 256);
+                vset->tv[v + 2] = (float)(char_y / 256 + char_h / 256);
+                vset->diffuse[v + 2] = color.ToPackedARGB();
 
                 vset->s_loc[v + 3].X = (float)(x1 - 0.5);
                 vset->s_loc[v + 3].Y = (float)(y1 + char_h - 0.5);
-                vset->tu[v + 3] = (float)(char_x / 256.0);
-                vset->tv[v + 3] = (float)(char_y / 256.0 + char_h / 256.0);
-                vset->diffuse[v + 3] = color.Value();
+                vset->tu[v + 3] = (float)(char_x / 256);
+                vset->tv[v + 3] = (float)(char_y / 256 + char_h / 256);
+                vset->diffuse[v + 3] = color.ToPackedARGB();
 
                 x1 += cw + k;
                 maxw -= cw + k;
@@ -1238,12 +1356,9 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
     }
 
     if (count) {
-        // this small hack is an optimization to reduce the
-        // size of vertex buffer needed for font rendering:
         int old_nverts = vset->nverts;
         vset->nverts = 4 * count;
 
-        // create a larger poly array, if necessary:
         if (count > npolys) {
             if (polys)
                 delete[] polys;
@@ -1251,7 +1366,7 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
             npolys = count;
             polys = new Poly[npolys];
             Poly* p = polys;
-            int   index = 0;
+            int    index = 0;
 
             for (int i = 0; i < npolys; i++) {
                 p->nverts = 4;
@@ -1267,8 +1382,6 @@ SystemFont::DrawString(const char* str, int len, int x1, int y1, const Rect& cli
         }
 
         video->DrawScreenPolys(count, polys, blend);
-
-        // remember to restore the proper size of the vertex set:
         vset->nverts = old_nverts;
     }
 

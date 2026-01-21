@@ -132,15 +132,28 @@ TerrainRegion::Update()
 	if (base_hour < 0)  base_hour = 0;
 	if (base_hour > 23) base_hour = 23;
 
-	const double fraction = day_phase - base_hour;
+	const float fraction = (float)(day_phase - base_hour);
 
-	sky_color[24] = Color::Scale(sky_color[base_hour], sky_color[base_hour + 1], fraction);
-	sun_color[24] = Color::Scale(sun_color[base_hour], sun_color[base_hour + 1], fraction);
-	fog_color[24] = Color::Scale(fog_color[base_hour], fog_color[base_hour + 1], fraction);
-	ambient[24] = Color::Scale(ambient[base_hour], ambient[base_hour + 1], fraction);
-	overcast[24] = Color::Scale(overcast[base_hour], overcast[base_hour + 1], fraction);
-	cloud_color[24] = Color::Scale(cloud_color[base_hour], cloud_color[base_hour + 1], fraction);
-	shade_color[24] = Color::Scale(shade_color[base_hour], shade_color[base_hour + 1], fraction);
+	// Lerp in linear space, then return to 8-bit color:
+	auto LerpFColor = [](const FColor& A, const FColor& B, float T) -> FColor
+		{
+			// Clamp to be safe:
+			T = FMath::Clamp(T, 0.0f, 1.0f);
+
+			const FLinearColor LA(A);
+			const FLinearColor LB(B);
+
+			// Use sRGB output for typical sky/art colors:
+			return (LA + (LB - LA) * T).ToFColor(/*bSRGB=*/true);
+		};
+
+	sky_color[24] = LerpFColor(sky_color[base_hour], sky_color[base_hour + 1], fraction);
+	sun_color[24] = LerpFColor(sun_color[base_hour], sun_color[base_hour + 1], fraction);
+	fog_color[24] = LerpFColor(fog_color[base_hour], fog_color[base_hour + 1], fraction);
+	ambient[24] = LerpFColor(ambient[base_hour], ambient[base_hour + 1], fraction);
+	overcast[24] = LerpFColor(overcast[base_hour], overcast[base_hour + 1], fraction);
+	cloud_color[24] = LerpFColor(cloud_color[base_hour], cloud_color[base_hour + 1], fraction);
+	shade_color[24] = LerpFColor(shade_color[base_hour], shade_color[base_hour + 1], fraction);
 
 	CameraManager* cam_dir = CameraManager::GetInstance();
 
@@ -158,11 +171,22 @@ TerrainRegion::Update()
 				dim = 0.125;
 			}
 			else {
-				sky_color[24] = sky_color[24] * (1.0 - alt / TERRAIN_ALTITUDE_LIMIT);
+				// Scale factor (0..1)
+				const float Scale =
+					FMath::Clamp(1.0f - float(alt) / float(TERRAIN_ALTITUDE_LIMIT), 0.0f, 1.0f);
+
+				const FColor Base = sky_color[24];
+
+				sky_color[24] = FColor(
+					(uint8)FMath::Clamp(int32(Base.R * Scale), 0, 255),
+					(uint8)FMath::Clamp(int32(Base.G * Scale), 0, 255),
+					(uint8)FMath::Clamp(int32(Base.B * Scale), 0, 255),
+					Base.A
+				);
 			}
 		}
 		else {
-			sky_color[24] = Color::Black;
+			sky_color[24] = FColor::Black;
 		}
 	}
 
@@ -171,8 +195,25 @@ TerrainRegion::Update()
 
 	HUDView* hud = HUDView::GetInstance();
 	if (hud) {
-		Color night_vision = hud->Ambient();
-		sky_color[24] += night_vision * 0.15;
+		const FColor Night = hud->Ambient();
+
+		const float Scale = 0.15f;
+
+		const FColor Add(
+			(uint8)FMath::Clamp(int32(Night.R * Scale), 0, 255),
+			(uint8)FMath::Clamp(int32(Night.G * Scale), 0, 255),
+			(uint8)FMath::Clamp(int32(Night.B * Scale), 0, 255),
+			0
+		);
+
+		const FColor Base = sky_color[24];
+
+		sky_color[24] = FColor(
+			(uint8)FMath::Clamp(int32(Base.R) + int32(Add.R), 0, 255),
+			(uint8)FMath::Clamp(int32(Base.G) + int32(Add.G), 0, 255),
+			(uint8)FMath::Clamp(int32(Base.B) + int32(Add.B), 0, 255),
+			Base.A
+		);
 	}
 }
 
@@ -192,21 +233,22 @@ TerrainRegion::LoadSkyColors(const char* bmp_name)
 		max_color = 24;
 
 	for (int i = 0; i < 25; i++) {
-		sun_color[i] = Color::White;
-		sky_color[i] = Color::Black;
-		fog_color[i] = Color::White;
-		ambient[i] = Color::DarkGray;
-		cloud_color[i] = Color::White;
-		shade_color[i] = Color::Gray;
-		overcast[i] = Color::Black;
+		sun_color[i] = FColor::White;
+		sky_color[i] = FColor::Black;
+		fog_color[i] = FColor::White;
+		ambient[i] = FColor(64, 64, 64);
+		cloud_color[i] = FColor::White;
+		shade_color[i] = FColor(128, 128, 128);
+		overcast[i] = FColor::Black;
 	}
 
 	for (int i = 0; i < max_color; i++)
 		sky_color[i] = sky_colors_bmp.GetColor(i, 0);
 
 	if (sky_colors_bmp.Height() > 1) {
-		for (int i = 0; i < max_color; i++)
-			fog_color[i].Set(sky_colors_bmp.GetColor(i, 1).Value() | Color(0, 0, 0, 255).Value());
+		for (int i = 0; i < max_color; i++) {
+			fog_color[i] = sky_colors_bmp.GetColor(i, 1);
+		}
 	}
 
 	if (sky_colors_bmp.Height() > 2) {

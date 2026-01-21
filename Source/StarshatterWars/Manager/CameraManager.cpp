@@ -539,7 +539,7 @@ CameraManager::ExecFrame(double seconds)
 		}
 	}
 
-	if (hud && hud->Ambient() != Color::Black)
+	if (hud && hud->Ambient() != FColor::Black)
 		sim->GetScene()->SetAmbient(hud->Ambient());
 	else
 		sim->GetScene()->SetAmbient(sim->GetStarSystem()->Ambient());
@@ -893,7 +893,7 @@ CameraManager::Docking(double seconds)
 	// If you still have legacy sim/scene/color plumbing, keep it.
 	// Otherwise, replace with your UE scene/PPV/lighting pipeline later.
 	if (ship && !ship->IsAirborne() && sim && sim->GetScene()) {
-		sim->GetScene()->SetAmbient(Color(120, 130, 140));
+		sim->GetScene()->SetAmbient(FColor(120, 130, 140));
 	}
 
 	const int32 flight_phase = ship ? ship->GetFlightPhase() : 0;

@@ -55,8 +55,8 @@ public:
 	List<Graphic>& Graphics() { return graphics; }
 	List<Graphic>& Sprites() { return sprites; }
 	List<SimLight>& Lights() { return lights; }
-	Color             Ambient() { return ambient; }
-	void              SetAmbient(Color a) { ambient = a; }
+	FColor          Ambient() { return ambient; }
+	void            SetAmbient(FColor a) { ambient = a; }
 
 	virtual void      Collect();
 
@@ -71,7 +71,7 @@ protected:
 	List<Graphic>     graphics;
 	List<Graphic>     sprites;
 	List<SimLight>    lights;
-	Color             ambient;
+	FColor            ambient;
 };
 
 

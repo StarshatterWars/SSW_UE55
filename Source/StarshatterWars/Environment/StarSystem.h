@@ -20,9 +20,9 @@
 #include "Text.h"
 #include "Term.h"
 #include "List.h"
-#include "Color.h"
 
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -70,7 +70,7 @@ public:
 	FVector           Location()     const { return loc; }
 	int               NumStars()     const { return sky_stars; }
 	int               NumDust()      const { return sky_dust; }
-	Color             Ambient()      const;
+	FColor            Ambient()      const;
 
 	List<OrbitalBody>& Bodies() { return bodies; }
 	List<OrbitalRegion>& Regions() { return regions; }
@@ -88,8 +88,8 @@ public:
 	static void       CalcStardate();
 	double            Radius()       const { return radius; }
 
-	void              SetSunlight(Color color, double brightness = 1);
-	void              SetBacklight(Color color, double brightness = 1);
+	void              SetSunlight(FColor color, double brightness = 1);
+	void              SetBacklight(FColor color, double brightness = 1);
 	void              RestoreTrueSunColor();
 	bool              HasLinkTo(StarSystem* s) const;
 	const Text& GetDataPath() const { return datapath; }
@@ -124,8 +124,8 @@ protected:
 	Text              sky_haze;
 	double            sky_uscale;
 	double            sky_vscale;
-	Color             ambient;
-	Color             sun_color;
+	FColor            ambient;
+	FColor            sun_color;
 	double            sun_brightness;
 	double            sun_scale;
 	List<SimLight>       sun_lights;
@@ -167,10 +167,10 @@ public:
 	const char* Name()         const { return name; }
 	const FVector& Location()     const { return loc; }
 	int               Sequence()     const { return seq; }
-	Color             GetColor()     const;
+	FColor            GetColor()     const;
 	int               GetSize()      const;
 
-	static Color      GetColor(int spectral_class);
+	static FColor     GetColor(int spectral_class);
 	static int        GetSize(int spectral_class);
 
 protected:
@@ -273,7 +273,7 @@ public:
 	double                  RingMax()  const { return ring_max; }
 
 	double                  LightIntensity() const { return light; }
-	Color                   LightColor()     const { return color; }
+	FColor                  LightColor()     const { return color; }
 	bool                    Luminous()       const { return luminous; }
 
 protected:
@@ -292,9 +292,9 @@ protected:
 	double            tilt;
 	SimLight*		  light_rep;
 	SimLight*	      back_light;
-	Color             color;
-	Color             back;
-	Color             atmosphere;
+	FColor            color;
+	FColor            back;
+	FColor            atmosphere;
 	bool              luminous;
 
 	List<OrbitalBody> satellites;

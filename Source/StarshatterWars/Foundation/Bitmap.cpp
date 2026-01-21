@@ -2,136 +2,117 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026. All Rights Reserved.
 
-    Original Author and Studio: John DiCamillo, Destroyer Studios LLC
-    AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    Stars.exe
     FILE:         Bitmap.cpp
+    AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    Bitmap Resource class (implementation)
+    Bitmap Resource class (GPU-first Unreal implementation)
 
-    NOTES (UNREAL PORT)
-    ==================
-    - Plain C++ class (not a UObject).
-    - Keep Starshatter core types (Color, Rect, List, etc.).
-    - MemDebug removed (unsupported).
-    - Print-style debugging converted to UE_LOG (none in this excerpt required changes).
-    - Render asset integration via UTexture2D* is handled as a lightweight pointer member on Bitmap;
-      this file does not include heavy Unreal headers.
+    NOTES
+    =====
+    - Maintains Starshatter call structure.
+    - Internals are implemented using Unreal primitives (FColor, FIntRect) and GPU-backed UTextureRenderTarget2D.
+    - CPU pixel buffers (pix/hipix) are not retained by default (GPU-first). Functions that depended on CPU readback
+      will warn and return defaults unless a CPU shadow buffer exists.
 */
 
 #include "Bitmap.h"
 
-#include <cmath>
-#include <cstring>
+#include "CoreMinimal.h"
 
-#include "Video.h"
-#include "Color.h"
-#include "Game.h"
+#include "Engine/Engine.h"
+#include "Engine/Texture.h"
+#include "Engine/Texture2D.h"
+#include "Engine/TextureRenderTarget2D.h"
 
-#include "Logging/LogMacros.h"
+#include "Engine/Canvas.h"
+#include "CanvasTypes.h"
+#include "CanvasItem.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-DEFINE_LOG_CATEGORY(LogStarshatterWars);
+#include "Templates/EnableIf.h"
+#include "Templates/IsIntegral.h"
+
+#include "List.h"       // Starshatter core
+#include "Color.h"      // Starshatter core (if still needed elsewhere)
 
 // +--------------------------------------------------------------------+
 
 DWORD GetRealTime();
 
-static inline void swap(int& a, int& b) { int tmp = a; a = b; b = tmp; }
-static inline void sort(int& a, int& b) { if (a > b) swap(a, b); }
-static inline void swap(double& a, double& b) { double tmp = a; a = b; b = tmp; }
-static inline void sort(double& a, double& b) { if (a > b) swap(a, b); }
-static void draw_strip(BYTE* dst, int pitch, int pixsize, int x, int y, int len, Color color);
-static void draw_vline(BYTE* dst, int pitch, int pixsize, int x, int y, int len, Color color);
-
+// +--------------------------------------------------------------------+
+// Local helpers (match original structure)
 // +--------------------------------------------------------------------+
 
-class WinPlot
-{
-public:
-    explicit WinPlot(Bitmap* bmp);
-    void plot(int x, int y, DWORD val, int exch = 0);
+static inline void swap_i(int& a, int& b) { int tmp = a; a = b; b = tmp; }
+static inline void sort_i(int& a, int& b) { if (a > b) swap_i(a, b); }
 
-private:
-    BYTE* s;
-    int   pitch;
-    int   pixsize;
-};
+static inline void swap_d(double& a, double& b) { double tmp = a; a = b; b = tmp; }
+static inline void sort_d(double& a, double& b) { if (a > b) swap_d(a, b); }
 
-WinPlot::WinPlot(Bitmap* bmp)
+static int FindBestTexSize(int n, int max_size);
+
+static FORCEINLINE uint8 ColorIndexToByte(const ColorIndex& c)
 {
-    s = bmp->GetSurface();
-    pitch = bmp->Pitch();
-    pixsize = bmp->PixSize();
+    return (uint8)c.Index(); // Index() returns BYTE
 }
 
-void WinPlot::plot(int x, int y, DWORD val, int exch)
-{
-    if (exch) swap(x, y);
-    BYTE* dst = s + y * pitch + x * pixsize;
-
-    switch (pixsize) {
-    case 1: *dst = (BYTE)val; break;
-    case 2: { WORD* dst2 = (WORD*)dst;  *dst2 = (WORD)val; } break;
-    case 4: { DWORD* dst4 = (DWORD*)dst; *dst4 = (DWORD)val; } break;
-    default: break;
-    }
-}
-
+// +--------------------------------------------------------------------+
+// Bitmap
 // +--------------------------------------------------------------------+
 
 Bitmap::Bitmap()
-    : type(BMP_SOLID),
-    width(0),
-    height(0),
-    mapsize(0),
-    ownpix(false),
-    alpha_loaded(false),
-    texture(false),
-    pix(0),
-    hipix(0),
-    last_modified(0)
+    : type(BMP_SOLID)
+    , width(0)
+    , height(0)
+    , mapsize(0)
+    , ownpix(false)
+    , alpha_loaded(false)
+    , texture(false)
+    , pix(nullptr)
+    , hipix(nullptr)
+    , last_modified(0)
 {
-    strcpy_s(filename, "Bitmap()");
-    texture_object = nullptr;
+    FMemory::Memzero(filename, sizeof(filename));
+    FCStringAnsi::Strcpy(filename, "Bitmap()");
 }
 
 Bitmap::Bitmap(int w, int h, ColorIndex* p, int t)
-    : type(t),
-    width(w),
-    height(h),
-    mapsize(w* h),
-    ownpix(false),
-    alpha_loaded(false),
-    texture(false),
-    pix(p),
-    hipix(0),
-    last_modified(GetRealTime())
+    : type(t)
+    , width(w)
+    , height(h)
+    , mapsize(w* h)
+    , ownpix(false)
+    , alpha_loaded(false)
+    , texture(false)
+    , pix(p)
+    , hipix(nullptr)
+    , last_modified(GetRealTime())
 {
-    sprintf_s(filename, "Bitmap(%d, %d, index, type=%d)", w, h, (int)t);
-    texture_object = nullptr;
+    FMemory::Memzero(filename, sizeof(filename));
+    FCStringAnsi::Snprintf(filename, sizeof(filename), "Bitmap(%d,%d,index,type=%d)", w, h, (int)t);
 }
 
-Bitmap::Bitmap(int w, int h, Color* p, int t)
-    : type(t),
-    width(w),
-    height(h),
-    mapsize(w* h),
-    ownpix(false),
-    alpha_loaded(false),
-    texture(false),
-    pix(0),
-    hipix(p),
-    last_modified(GetRealTime())
+Bitmap::Bitmap(int w, int h, FColor* p, int t)
+    : type(t)
+    , width(w)
+    , height(h)
+    , mapsize(w* h)
+    , ownpix(false)
+    , alpha_loaded(false)
+    , texture(false)
+    , pix(nullptr)
+    , hipix(p)
+    , last_modified(GetRealTime())
 {
-    sprintf_s(filename, "Bitmap(%d, %d, hicolor, type=%d)", w, h, (int)t);
-    texture_object = nullptr;
+    FMemory::Memzero(filename, sizeof(filename));
+    FCStringAnsi::Snprintf(filename, sizeof(filename), "Bitmap(%d,%d,hicolor,type=%d)", w, h, (int)t);
 }
-
-// +--------------------------------------------------------------------+
 
 Bitmap::~Bitmap()
 {
@@ -140,10 +121,14 @@ Bitmap::~Bitmap()
         delete[] hipix;
     }
 
-    // Bitmap does not own Unreal UTexture2D*
-    texture_object = nullptr;
+    pix = nullptr;
+    hipix = nullptr;
+    Texture = nullptr;
+    RenderTarget = nullptr;
 }
 
+// +--------------------------------------------------------------------+
+// Legacy sizing/surface
 // +--------------------------------------------------------------------+
 
 int Bitmap::BmpSize() const
@@ -163,797 +148,678 @@ int Bitmap::Pitch() const
 
 int Bitmap::PixSize() const
 {
-    if (hipix)
-        return (int)sizeof(Color);
-    else if (pix)
-        return (int)sizeof(ColorIndex);
+    if (hipix) return (int)sizeof(FColor);
+    if (pix)   return (int)sizeof(ColorIndex);
     return 0;
 }
 
 BYTE* Bitmap::GetSurface()
 {
+    // GPU-first: only returns CPU surface if we still own CPU buffers.
     if (ownpix) {
-        if (hipix)
-            return (BYTE*)hipix;
-        return (BYTE*)pix;
+        if (hipix) return (BYTE*)hipix;
+        if (pix)   return (BYTE*)pix;
     }
-
-    return 0;
+    return nullptr;
 }
 
 // +--------------------------------------------------------------------+
+// GPU backing helpers
+// +--------------------------------------------------------------------+
 
-void Bitmap::BitBlt(int x, int y, const Bitmap& srcBmp, int sx, int sy, int w, int h, bool blend)
+void Bitmap::EnsureRenderTarget()
 {
-    if (!ownpix || x < 0 || y < 0 || x >= width || y >= height)
+    if (width < 1 || height < 1)
         return;
 
-    if (sx < 0 || sy < 0 || sx >= srcBmp.Width() || sy >= srcBmp.Height())
+    if (RenderTarget && RenderTarget->SizeX == width && RenderTarget->SizeY == height)
         return;
 
-    if (hipix) {
-        if (srcBmp.HiPixels()) {
-            int    dpitch = width;
-            int    spitch = srcBmp.Width();
-            int    rowlen = w * (int)sizeof(Color);
-            Color* dst = hipix + (y * dpitch) + x;
-            Color* src = srcBmp.HiPixels() + (sy * spitch) + sx;
-
-            if (!blend) {
-                for (int i = 0; i < h; i++) {
-                    memcpy(dst, src, rowlen);
-                    dst += dpitch;
-                    src += spitch;
-                }
-            }
-            else {
-                for (int i = 0; i < h; i++) {
-                    Color* ps = src;
-                    Color* pd = dst;
-
-                    for (int n = 0; n < w; n++) {
-                        if (ps->Value())
-                            pd->Set(Color::FormattedBlend(ps->Value(), pd->Value()));
-                        ps++;
-                        pd++;
-                    }
-
-                    dst += dpitch;
-                    src += spitch;
-                }
-            }
-        }
-        else {
-            int        dpitch = width;
-            int        spitch = srcBmp.Width();
-            Color* dst = hipix + (y * dpitch) + x;
-            ColorIndex* src = srcBmp.Pixels() + (sy * spitch) + sx;
-
-            if (!blend) {
-                for (int j = 0; j < h; j++) {
-                    for (int i = 0; i < w; i++) {
-                        dst[i].Set(src[i].Formatted());
-                    }
-
-                    dst += dpitch;
-                    src += spitch;
-                }
-            }
-            else {
-                for (int i = 0; i < h; i++) {
-                    ColorIndex* ps = src;
-                    Color* pd = dst;
-
-                    for (int n = 0; n < w; n++) {
-                        if (ps->Index())
-                            pd->Set(Color::FormattedBlend(ps->Formatted(), pd->Value()));
-                        ps++;
-                        pd++;
-                    }
-                }
-
-                dst += dpitch;
-                src += spitch;
-            }
-        }
-    }
-    else if (pix) {
-        if (srcBmp.Pixels()) {
-            int         dpitch = width;
-            int         spitch = srcBmp.Width();
-            int         rowlen = w;
-            ColorIndex* dst = pix + (y * dpitch) + x;
-            ColorIndex* src = srcBmp.Pixels() + (sy * spitch) + sx;
-
-            for (int i = 0; i < h; i++) {
-#pragma warning(suppress : 28183)
-                memcpy(dst, src, rowlen);
-                dst += dpitch;
-                src += spitch;
-            }
-        }
+    RenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage(), NAME_None, RF_Transient);
+    if (!RenderTarget) {
+        UE_LOG(LogTemp, Error, TEXT("Bitmap::EnsureRenderTarget failed (null RenderTarget) for %hs"), filename);
+        return;
     }
 
-    alpha_loaded = srcBmp.alpha_loaded;
+    RenderTarget->RenderTargetFormat = RTF_RGBA8;
+    RenderTarget->bAutoGenerateMips = false;
+    RenderTarget->ClearColor = FLinearColor(0, 0, 0, 0);
+    RenderTarget->InitAutoFormat(width, height);
+    RenderTarget->UpdateResourceImmediate(true);
+}
+
+void Bitmap::DrawBegin(FCanvas*& OutCanvas)
+{
+    OutCanvas = nullptr;
+
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
+
+    FTextureRenderTargetResource* RTRes = RenderTarget->GameThread_GetRenderTargetResource();
+    if (!RTRes) return;
+
+    OutCanvas = new FCanvas(RTRes, nullptr, 0.f, 0.f, 0.f, GMaxRHIFeatureLevel);
+}
+
+void Bitmap::DrawEnd(FCanvas*& InOutCanvas)
+{
+    if (!InOutCanvas) return;
+
+    InOutCanvas->Flush_GameThread();
+    delete InOutCanvas;
+    InOutCanvas = nullptr;
+}
+
+void Bitmap::ClearToTransparent()
+{
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
+
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
+
+    FCanvasTileItem ClearTile(FVector2D(0.f, 0.f), FVector2D((float)width, (float)height), FColor::Transparent);
+    ClearTile.BlendMode = SE_BLEND_Opaque;
+    Canvas->DrawItem(ClearTile);
+
+    DrawEnd(Canvas);
     last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::CopyBitmap(const Bitmap& rhs)
+void Bitmap::UploadBGRA(const void* SrcBGRA8, int SrcW, int SrcH, bool bHasAlpha, bool bSRGB)
 {
-    if (ownpix) {
-        delete[] pix;
-        delete[] hipix;
-        pix = 0;
-        hipix = 0;
-    }
+    if (!SrcBGRA8 || SrcW < 1 || SrcH < 1)
+        return;
 
-    type = rhs.type;
-    width = rhs.width;
-    height = rhs.height;
-    alpha_loaded = rhs.alpha_loaded;
-    texture = rhs.texture;
-    ownpix = true;
-
+    width = SrcW;
+    height = SrcH;
     mapsize = width * height;
 
-    if (rhs.pix) {
-        pix = new ColorIndex[mapsize];
+    EnsureRenderTarget();
+    if (!RenderTarget)
+        return;
 
-        if (!pix) {
-            width = 0;
-            height = 0;
-            mapsize = 0;
-        }
-        else {
-            memcpy(pix, rhs.pix, mapsize * sizeof(ColorIndex));
-        }
+    UTexture2D* TempTex = UTexture2D::CreateTransient(SrcW, SrcH, PF_B8G8R8A8);
+    if (!TempTex)
+        return;
+
+    TempTex->SRGB = bSRGB;
+    TempTex->NeverStream = true;
+    TempTex->MipGenSettings = TMGS_NoMipmaps;
+
+    if (!TempTex->GetPlatformData() || TempTex->GetPlatformData()->Mips.Num() < 1)
+        return;
+
+    FTexture2DMipMap& Mip = TempTex->GetPlatformData()->Mips[0];
+    void* Data = Mip.BulkData.Lock(LOCK_READ_WRITE);
+    {
+        const int32 NumBytes = SrcW * SrcH * 4;
+        FMemory::Memcpy(Data, SrcBGRA8, NumBytes);
+    }
+    Mip.BulkData.Unlock();
+
+    #define UpdateResource UpdateResource
+    TempTex->UpdateResource();
+
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas)
+        return;
+
+    // Clear RT:
+    {
+        FCanvasTileItem ClearTile(FVector2D(0.f, 0.f), FVector2D((float)SrcW, (float)SrcH), FColor::Transparent);
+        ClearTile.BlendMode = SE_BLEND_Opaque;
+        Canvas->DrawItem(ClearTile);
     }
 
-    if (rhs.hipix) {
-        hipix = new Color[mapsize];
-
-        if (!hipix && !pix) {
-            width = 0;
-            height = 0;
-            mapsize = 0;
-        }
-        else {
-            memcpy(hipix, rhs.hipix, mapsize * sizeof(Color));
-        }
+    // Draw temp texture into RT:
+    if (TempTex->GetResource()) {
+        FCanvasTileItem Tile(
+            FVector2D(0.f, 0.f),
+            TempTex->GetResource(),
+            FVector2D((float)SrcW, (float)SrcH),
+            FLinearColor::White
+        );
+        Tile.BlendMode = bHasAlpha ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+        Canvas->DrawItem(Tile);
     }
 
-    // preserve Unreal texture pointer (non-owning):
-    texture_object = rhs.texture_object;
+    DrawEnd(Canvas);
 
+    // GPU-first: drop CPU buffers by default
+    if (ownpix) {
+        delete[] pix;   pix = nullptr;
+        delete[] hipix; hipix = nullptr;
+    }
+    ownpix = false;
+
+    alpha_loaded = bHasAlpha;
     last_modified = GetRealTime();
 }
 
+// +--------------------------------------------------------------------+
+// Non-drawing internals (GPU-first)
 // +--------------------------------------------------------------------+
 
 void Bitmap::ClearImage()
 {
     if (ownpix) {
-        delete[] pix;
-        delete[] hipix;
-        pix = 0;
-        hipix = 0;
+        delete[] pix;   pix = nullptr;
+        delete[] hipix; hipix = nullptr;
     }
 
     type = BMP_SOLID;
     width = 0;
     height = 0;
     mapsize = 0;
+
     ownpix = false;
+    alpha_loaded = false;
     texture = false;
 
-    texture_object = nullptr;
+    Texture = nullptr;
+    RenderTarget = nullptr;
 
     last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
+void Bitmap::CopyBitmap(const Bitmap& rhs)
+{
+    type = rhs.type;
+    width = rhs.width;
+    height = rhs.height;
+    mapsize = rhs.mapsize;
+    alpha_loaded = rhs.alpha_loaded;
+    texture = rhs.texture;
+
+    // GPU-first: copy rhs RT by blitting
+    RenderTarget = nullptr;
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
+
+    ClearToTransparent();
+    BitBlt(0, 0, rhs, 0, 0, width, height, true);
+
+    // Drop CPU buffers
+    if (ownpix) {
+        delete[] pix;   pix = nullptr;
+        delete[] hipix; hipix = nullptr;
+    }
+    ownpix = false;
+
+    last_modified = GetRealTime();
+}
 
 void Bitmap::CopyImage(int w, int h, BYTE* p, int t)
 {
-    if (ownpix) {
-        delete[] pix;
-        pix = 0;
-    }
-    else {
-        hipix = 0;
-    }
-
     type = t;
-    width = w;
-    height = h;
-    ownpix = true;
-    texture = false;
-    mapsize = w * h;
 
-    pix = new ColorIndex[mapsize];
-
-    if (!pix) {
-        width = 0;
-        height = 0;
-        mapsize = 0;
-    }
-    else {
-        memcpy(pix, p, mapsize);
+    if (!p || w < 1 || h < 1) {
+        ClearImage();
+        return;
     }
 
-    texture_object = nullptr;
-    last_modified = GetRealTime();
+    // Expand 8-bit indices to grayscale BGRA (palette support can be added later).
+    TArray<uint8> BGRA;
+    BGRA.SetNumUninitialized(w * h * 4);
+
+    const bool bHasAlpha = (t == BMP_TRANSLUCENT);
+
+    for (int i = 0; i < w * h; ++i) {
+        const uint8 idx = p[i];
+        BGRA[i * 4 + 0] = idx;                      // B
+        BGRA[i * 4 + 1] = idx;                      // G
+        BGRA[i * 4 + 2] = idx;                      // R
+        BGRA[i * 4 + 3] = bHasAlpha ? idx : 255;    // A (best-effort)
+    }
+
+    UploadBGRA(BGRA.GetData(), w, h, bHasAlpha, true);
 }
 
-// +--------------------------------------------------------------------+
+void Bitmap::CopyImage(int w, int h, ColorIndex* p, int t)
+{
+    // Convenience overload to fix “cannot convert ColorIndex* to BYTE*”
+    CopyImage(w, h, (BYTE*)p, t);
+}
 
 void Bitmap::CopyHighColorImage(int w, int h, DWORD* p, int t)
 {
-    if (ownpix) {
-        delete[] hipix;
-        hipix = 0;
-    }
-    else {
-        pix = 0;
-    }
-
     type = t;
-    width = w;
-    height = h;
-    ownpix = true;
-    texture = false;
-    mapsize = w * h;
 
-    hipix = new Color[mapsize];
-
-    if (!hipix) {
-        width = 0;
-        height = 0;
-        mapsize = 0;
-    }
-    else {
-        memcpy(hipix, p, mapsize * sizeof(DWORD));
+    if (!p || w < 1 || h < 1) {
+        ClearImage();
+        return;
     }
 
-    texture_object = nullptr;
-    last_modified = GetRealTime();
+    // Assumption: p is packed BGRA8 (PF_B8G8R8A8).
+    // If your source is actually ARGB/RGBA, add a swizzle here.
+    const bool bHasAlpha = (t == BMP_TRANSLUCENT) || (t == BMP_TRANSPARENT);
+    UploadBGRA((const void*)p, w, h, bHasAlpha, true);
 }
-
-// +--------------------------------------------------------------------+
 
 void Bitmap::CopyAlphaImage(int w, int h, BYTE* a)
 {
-    if (!hipix || width != w || height != h)
+    if (!a || w < 1 || h < 1)
         return;
 
-    type = BMP_TRANSLUCENT;
-    alpha_loaded = true;
+    // Best-effort only if we still have CPU hi buffer:
+    if (hipix && ownpix && width == w && height == h) {
+        type = BMP_TRANSLUCENT;
+        alpha_loaded = true;
 
-    Color* p = hipix;
+        for (int i = 0; i < mapsize; ++i) {
+            hipix[i].A = a[i];
+        }
 
-    for (int i = 0; i < mapsize; i++) {
-        p->SetAlpha(*a);
-        p++;
-        a++;
+        UploadBGRA(hipix, w, h, true, true);
+        last_modified = GetRealTime();
+        return;
     }
 
-    last_modified = GetRealTime();
+    UE_LOG(LogTemp, Warning, TEXT("Bitmap::CopyAlphaImage: no CPU hi buffer (GPU-first). No-op for %hs"), filename);
 }
 
-void Bitmap::CopyAlphaRedChannel(int w, int h, DWORD* a)
+void Bitmap::CopyAlphaRedChannel(int w, int h, DWORD* p)
 {
-    if (!hipix || width != w || height != h)
+    if (!p || w < 1 || h < 1)
         return;
 
-    type = BMP_TRANSLUCENT;
-    alpha_loaded = true;
+    if (hipix && ownpix && width == w && height == h) {
+        type = BMP_TRANSLUCENT;
+        alpha_loaded = true;
 
-    Color* p = hipix;
+        const uint8* Bytes = reinterpret_cast<const uint8*>(p); // BGRA bytes
+        for (int i = 0; i < mapsize; ++i) {
+            const uint8 R = Bytes[i * 4 + 2]; // BGRA => R at +2
+            hipix[i].A = R;
+        }
 
-    for (int i = 0; i < mapsize; i++) {
-        p->SetAlpha((BYTE)((*a & Color::RMask) >> Color::RShift));
-        p++;
-        a++;
+        UploadBGRA(hipix, w, h, true, true);
+        last_modified = GetRealTime();
+        return;
     }
 
-    last_modified = GetRealTime();
+    UE_LOG(LogTemp, Warning, TEXT("Bitmap::CopyAlphaRedChannel: no CPU hi buffer (GPU-first). No-op for %hs"), filename);
 }
-
-// +--------------------------------------------------------------------+
 
 void Bitmap::AutoMask(DWORD mask)
 {
-    if (!hipix || !mapsize || alpha_loaded)
+    // Best-effort only if we still have CPU hi buffer:
+    if (!(hipix && ownpix) || mapsize < 1) {
+        UE_LOG(LogTemp, Warning, TEXT("Bitmap::AutoMask: no CPU hi buffer (GPU-first). No-op for %hs"), filename);
         return;
+    }
 
     type = BMP_TRANSLUCENT;
     alpha_loaded = true;
 
-    Color* p = hipix;
-    DWORD  m = mask & Color::RGBMask;
+    const uint8 MaskB = (uint8)((mask >> 0) & 0xff);
+    const uint8 MaskG = (uint8)((mask >> 8) & 0xff);
+    const uint8 MaskR = (uint8)((mask >> 16) & 0xff);
 
-    for (int i = 0; i < mapsize; i++) {
-        if ((p->Value() & Color::RGBMask) == m)
-            p->SetAlpha(0);
-        else
-            p->SetAlpha(255);
-
-        p++;
+    for (int i = 0; i < mapsize; ++i) {
+        const FColor& C = hipix[i];
+        hipix[i].A = (C.R == MaskR && C.G == MaskG && C.B == MaskB) ? 0 : 255;
     }
 
+    UploadBGRA(hipix, width, height, true, true);
     last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::FillColor(Color c)
+void Bitmap::FillColor(FColor c)
 {
-    if (!width || !height)
+    if (width < 1 || height < 1)
         return;
 
-    if (pix) {
-        ColorIndex* p = pix;
-        BYTE        index = c.Index();
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
 
-        for (int i = 0; i < mapsize; i++)
-            *p++ = index;
-    }
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
 
-    if (hipix) {
-        Color* p = hipix;
-        DWORD  value = c.Value();
+    FCanvasTileItem Tile(FVector2D(0.f, 0.f), FVector2D((float)width, (float)height), c);
+    Tile.BlendMode = SE_BLEND_Opaque;
+    Canvas->DrawItem(Tile);
 
-        for (int i = 0; i < mapsize; i++) {
-            p->Set(value);
-            p++;
-        }
-    }
+    DrawEnd(Canvas);
 
+    alpha_loaded = (c.A < 255) || (type == BMP_TRANSLUCENT);
     last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::ScaleTo(int w, int h)
+void Bitmap::ScaleTo(int NewW, int NewH)
 {
-    if (w < 1 || h < 1)
+    if (NewW < 1 || NewH < 1)
         return;
 
-    double dx = (double)width / (double)w;
-    double dy = (double)height / (double)h;
-
-    bool mem_ok = true;
-
-    if (hipix) {
-        Color* buf = new Color[w * h];
-        Color* dst = buf;
-
-        if (!buf) {
-            mem_ok = false;
-        }
-        else {
-            for (int y = 0; y < h; y++) {
-                int y_offset = (int)(y * dy);
-                for (int x = 0; x < w; x++) {
-                    int x_offset = (int)(x * dx);
-                    Color* src = hipix + (y_offset * width) + x_offset;
-                    *dst++ = *src;
-                }
-            }
-
-            if (ownpix)
-                delete[] hipix;
-
-            hipix = buf;
-            ownpix = true;
-        }
-    }
-
-    if (pix) {
-        ColorIndex* buf = new ColorIndex[w * h];
-        ColorIndex* dst = buf;
-
-        if (!buf) {
-            mem_ok = false;
-        }
-        else {
-            for (int y = 0; y < h; y++) {
-                int y_offset = (int)(y * dy);
-                for (int x = 0; x < w; x++) {
-                    int x_offset = (int)(x * dx);
-                    ColorIndex* src = pix + (y_offset * width) + x_offset;
-                    *dst++ = *src;
-                }
-            }
-
-            if (ownpix)
-                delete[] pix;
-
-            pix = buf;
-            ownpix = true;
-        }
-    }
-
-    if (mem_ok) {
-        width = w;
-        height = h;
+    if (width < 1 || height < 1) {
+        width = NewW;
+        height = NewH;
         mapsize = width * height;
+        EnsureRenderTarget();
+        last_modified = GetRealTime();
+        return;
     }
-}
 
-// +--------------------------------------------------------------------+
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
+
+    UTextureRenderTarget2D* OldRT = RenderTarget;
+    const int OldW = width;
+    const int OldH = height;
+
+    // Create new RT
+    RenderTarget = nullptr;
+    width = NewW;
+    height = NewH;
+    mapsize = width * height;
+
+    EnsureRenderTarget();
+    if (!RenderTarget) {
+        RenderTarget = OldRT;
+        width = OldW;
+        height = OldH;
+        mapsize = width * height;
+        return;
+    }
+
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) {
+        RenderTarget = OldRT;
+        width = OldW;
+        height = OldH;
+        mapsize = width * height;
+        return;
+    }
+
+    // Clear new:
+    FCanvasTileItem ClearTile(FVector2D(0.f, 0.f), FVector2D((float)NewW, (float)NewH), FColor::Transparent);
+    ClearTile.BlendMode = SE_BLEND_Opaque;
+    Canvas->DrawItem(ClearTile);
+
+    // Draw old into new scaled:
+    UTexture* SrcTex = OldRT;
+    if (SrcTex && SrcTex->GetResource()) {
+        FCanvasTileItem Tile(FVector2D(0.f, 0.f), SrcTex->GetResource(), FVector2D((float)NewW, (float)NewH), FLinearColor::White);
+        Tile.BlendMode = alpha_loaded ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+        Canvas->DrawItem(Tile);
+    }
+
+    DrawEnd(Canvas);
+
+    last_modified = GetRealTime();
+}
 
 void Bitmap::MakeIndexed()
 {
-    if (hipix) {
-        if (pix && ownpix)
-            delete[] pix;
-
-        pix = new ColorIndex[mapsize];
-
-        if (pix) {
-            Color* src = hipix;
-            ColorIndex* dst = pix;
-
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    *dst++ = src->Index();
-                    src++;
-                }
-            }
-
-            if (!ownpix)
-                hipix = 0;
-
-            ownpix = true;
-        }
-    }
+    UE_LOG(LogTemp, Warning, TEXT("Bitmap::MakeIndexed: palette/indexed not supported in GPU-first Bitmap (%hs)."), filename);
 }
-
-// +--------------------------------------------------------------------+
 
 void Bitmap::MakeHighColor()
 {
-    if (pix) {
-        if (hipix && ownpix)
-            delete[] hipix;
-
-        hipix = new Color[mapsize];
-
-        if (hipix) {
-            ColorIndex* src = pix;
-            Color* dst = hipix;
-
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    *dst++ = src->Index();
-                    src++;
-                }
-            }
-
-            if (!ownpix)
-                pix = 0;
-
-            ownpix = true;
-        }
+    // Already hi-color on GPU. If we only have CPU pix and no RT, expand/upload.
+    if (!RenderTarget && pix && width > 0 && height > 0) {
+        CopyImage(width, height, pix, type);
     }
-}
-
-// +--------------------------------------------------------------------+
-
-static int FindBestTexSize(int n, int max_size)
-{
-    int delta = 100000;
-    int best = 1;
-
-    for (int i = 0; i < 12; i++) {
-        int size = 1 << i;
-
-        if (size > max_size)
-            break;
-
-        int dx = abs(n - size);
-
-        if (size < n)
-            dx *= 4;
-
-        if (dx < delta) {
-            delta = dx;
-            best = size;
-        }
-    }
-
-    return best;
 }
 
 void Bitmap::MakeTexture()
 {
-    if (width < 1 || height < 1 || (!pix && !hipix)) {
-        if (ownpix) {
-            delete[] pix;
-            delete[] hipix;
-        }
-
-        width = 0;
-        height = 0;
-        pix = 0;
-        hipix = 0;
-        texture = false;
-
-        texture_object = nullptr;
+    if (width < 1 || height < 1) {
+        ClearImage();
         return;
     }
 
-    // texture surface format is 32-bit RGBA:
-    if (pix && !hipix) {
-        MakeHighColor();
-    }
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
 
-    // check size and aspect ratio:
-    int max_tex_size = Game::MaxTexSize();
-    int max_tex_aspect = Game::MaxTexAspect();
+    // Starshatter used Game::MaxTexSize/Aspect. Unreal varies per platform;
+    // keep conservative defaults (or wire to your project settings).
+    const int MaxTexSize = 4096;
+    const int MaxAspect = 8;
 
-    int best_width = FindBestTexSize(width, max_tex_size);
-    int best_height = FindBestTexSize(height, max_tex_size);
+    int bestW = FindBestTexSize(width, MaxTexSize);
+    int bestH = FindBestTexSize(height, MaxTexSize);
+
     int aspect = 1;
-
-    // correct sizes for aspect if necessary:
-    if (best_width > best_height) {
-        aspect = best_width / best_height;
-
-        if (aspect > max_tex_aspect)
-            best_height = best_width / max_tex_aspect;
+    if (bestW > bestH) {
+        aspect = bestW / bestH;
+        if (aspect > MaxAspect)
+            bestH = bestW / MaxAspect;
     }
     else {
-        aspect = best_height / best_width;
-
-        if (aspect > max_tex_aspect)
-            best_width = best_height / max_tex_aspect;
+        aspect = bestH / bestW;
+        if (aspect > MaxAspect)
+            bestW = bestH / MaxAspect;
     }
 
-    // rescale if necessary:
-    if (width != best_width || height != best_height)
-        ScaleTo(best_width, best_width);
+    if (bestW != width || bestH != height) {
+        ScaleTo(bestW, bestH);
+    }
 
     texture = true;
+    last_modified = GetRealTime();
 }
 
+// +--------------------------------------------------------------------+
+// Sampling / per-pixel set (best-effort GPU-first)
 // +--------------------------------------------------------------------+
 
 ColorIndex Bitmap::GetIndex(int x, int y) const
 {
-    ColorIndex result(0);
+    if (x < 0 || y < 0 || x >= width || y >= height)
+        return (ColorIndex)0;
 
-    if (x < 0 || y < 0 || x > width - 1 || y > height - 1)
-        return result;
+    if (pix)
+        return *(pix + y * width + x);
 
-    if (pix) {
-        result = *(pix + y * width + x);
-    }
-    else if (hipix) {
-        result = (hipix + y * width + x)->Index();
-    }
-
-    return result;
+    UE_LOG(LogTemp, Warning, TEXT("Bitmap::GetIndex: GPU readback not enabled; returning 0 for %hs"), filename);
+    return (ColorIndex)0;
 }
 
-// +--------------------------------------------------------------------+
-
-Color Bitmap::GetColor(int x, int y) const
+FColor Bitmap::GetColor(int x, int y) const
 {
-    Color result = Color::Black;
+    if (x < 0 || y < 0 || x >= width || y >= height)
+        return FColor::Black;
 
-    if (x < 0 || y < 0 || x > width - 1 || y > height - 1)
-        return result;
+    if (hipix)
+        return *(hipix + y * width + x);
 
-    if (pix) {
-        result = (pix + y * width + x)->Index();
-    }
-    else if (hipix) {
-        result = *(hipix + y * width + x);
-    }
-
-    return result;
+    UE_LOG(LogTemp, Warning, TEXT("Bitmap::GetColor: GPU readback not enabled; returning Black for %hs"), filename);
+    return FColor::Black;
 }
-
-// +--------------------------------------------------------------------+
 
 void Bitmap::SetIndex(int x, int y, ColorIndex c)
 {
-    if (x < 0 || y < 0 || x > width || y > height)
+    if (x < 0 || y < 0 || x >= width || y >= height)
         return;
 
     if (pix) {
         *(pix + y * width + x) = c;
-    }
-    else if (hipix) {
-        *(hipix + y * width + x) = c.Index();
+        last_modified = GetRealTime();
+        return;
     }
 
-    last_modified = GetRealTime();
+    // GPU-first fallback: index -> grayscale
+    const uint8 v = ColorIndexToByte(c);
+    SetColor(x, y, FColor(v, v, v, 255));
 }
 
-// +--------------------------------------------------------------------+
 
-void Bitmap::SetColor(int x, int y, Color c)
+void Bitmap::SetColor(int x, int y, FColor c)
 {
-    if (x < 0 || y < 0 || x > width || y > height)
+    if (x < 0 || y < 0 || x >= width || y >= height)
         return;
 
-    if (pix) {
-        *(pix + y * width + x) = c.Index();
-    }
-    else if (hipix) {
+    if (hipix) {
         *(hipix + y * width + x) = c;
+        last_modified = GetRealTime();
+        return;
     }
 
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
+
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
+
+    FCanvasTileItem Tile(FVector2D((float)x, (float)y), FVector2D(1.f, 1.f), c);
+    Tile.BlendMode = (c.A < 255) ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+    Canvas->DrawItem(Tile);
+
+    DrawEnd(Canvas);
+
+    alpha_loaded = alpha_loaded || (c.A < 255);
+    last_modified = GetRealTime();
+}
+
+// Linear-index helpers (fix “SetColor does not take 2 arguments” call sites)
+void Bitmap::SetColor(int i, FColor c)
+{
+    if (width < 1 || height < 1) return;
+    if (i < 0 || i >= mapsize) return;
+
+    const int x = i % width;
+    const int y = i / width;
+    SetColor(x, y, c);
+}
+
+void Bitmap::SetIndex(int i, ColorIndex c)
+{
+    if (width < 1 || height < 1) return;
+    if (i < 0 || i >= mapsize) return;
+
+    const int x = i % width;
+    const int y = i / width;
+    SetIndex(x, y, c);
+}
+
+// +--------------------------------------------------------------------+
+// BitBlt (GPU-first)
+// +--------------------------------------------------------------------+
+
+void Bitmap::BitBlt(int x, int y, const Bitmap& srcBmp, int sx, int sy, int w, int h, bool blend)
+{
+    if (w < 1 || h < 1)
+        return;
+
+    if (x >= width || y >= height)
+        return;
+
+    if (sx >= srcBmp.Width() || sy >= srcBmp.Height())
+        return;
+
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
+
+    // Prefer GPU path: src must have RT
+    if (!srcBmp.RenderTarget) {
+        UE_LOG(LogTemp, Warning, TEXT("Bitmap::BitBlt: src has no RenderTarget (GPU-first). dst=%hs"), filename);
+        return;
+    }
+
+    // Compute clipped regions
+    int dstX = x;
+    int dstY = y;
+    int srcX = sx;
+    int srcY = sy;
+    int bltW = w;
+    int bltH = h;
+
+    // Clip left/top
+    if (dstX < 0) { srcX += -dstX; bltW -= -dstX; dstX = 0; }
+    if (dstY < 0) { srcY += -dstY; bltH -= -dstY; dstY = 0; }
+
+    // Clip right/bottom against dst
+    bltW = FMath::Min(bltW, width - dstX);
+    bltH = FMath::Min(bltH, height - dstY);
+
+    // Clip right/bottom against src
+    bltW = FMath::Min(bltW, srcBmp.Width() - srcX);
+    bltH = FMath::Min(bltH, srcBmp.Height() - srcY);
+
+    if (bltW < 1 || bltH < 1)
+        return;
+
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
+
+    UTexture* SrcTex = srcBmp.RenderTarget;
+    FTexture* SrcRes = (SrcTex ? SrcTex->GetResource() : nullptr);
+    if (!SrcRes) {
+        DrawEnd(Canvas);
+        return;
+    }
+
+    const float U0 = (float)srcX / (float)srcBmp.Width();
+    const float V0 = (float)srcY / (float)srcBmp.Height();
+    const float U1 = (float)(srcX + bltW) / (float)srcBmp.Width();
+    const float V1 = (float)(srcY + bltH) / (float)srcBmp.Height();
+
+    FCanvasTileItem Tile(FVector2D((float)dstX, (float)dstY), SrcRes, FVector2D((float)bltW, (float)bltH), FLinearColor::White);
+    Tile.UV0 = FVector2D(U0, V0);
+    Tile.UV1 = FVector2D(U1, V1);
+
+    const bool bSrcHasAlpha = srcBmp.alpha_loaded || srcBmp.type == BMP_TRANSLUCENT || srcBmp.type == BMP_TRANSPARENT;
+    const bool bDoAlpha = blend || bSrcHasAlpha;
+    Tile.BlendMode = bDoAlpha ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+
+    Canvas->DrawItem(Tile);
+    DrawEnd(Canvas);
+
+    alpha_loaded = alpha_loaded || bDoAlpha;
     last_modified = GetRealTime();
 }
 
 // +--------------------------------------------------------------------+
-
-void Bitmap::SetFilename(const char* s)
-{
-    if (s) {
-        int n = (int)strlen(s);
-
-        if (n >= 60) {
-            ZeroMemory(filename, sizeof(filename));
-            strcpy_s(filename, "...");
-            strcat_s(filename, s + n - 59);
-            filename[63] = 0;
-        }
-        else {
-            strcpy_s(filename, s);
-        }
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-Bitmap* Bitmap::Default()
-{
-    static Bitmap def;
-
-    if (!def.width) {
-        def.width = 64;
-        def.height = 64;
-        def.mapsize = 64 * 64;
-        def.ownpix = true;
-        def.pix = new ColorIndex[def.mapsize];
-
-        // 8-bit palette mode
-        if (def.pix) {
-            ColorIndex* p = def.pix;
-
-            for (int y = 0; y < 64; y++) {
-                for (int x = 0; x < 64; x++) {
-                    double distance = sqrt((x - 32.0) * (x - 32.0) + (y - 32.0) * (y - 32.0));
-                    if (distance > 31.0) distance = 31.0;
-                    BYTE color = 24 + (BYTE)distance;
-
-                    if (x == 0 || y == 0) color = 255;
-                    else if (x == 32 || y == 32) color = 251;
-
-                    *p++ = color;
-                }
-            }
-        }
-    }
-
-    return &def;
-}
-
-// +--------------------------------------------------------------------+
-
-static List<Bitmap> bitmap_cache;
-
-Bitmap* Bitmap::GetBitmapByID(HANDLE bmp_id)
-{
-    for (int i = 0; i < bitmap_cache.size(); i++) {
-        if (bitmap_cache[i]->Handle() == bmp_id) {
-            return bitmap_cache[i];
-        }
-    }
-
-    return 0;
-}
-
-Bitmap* Bitmap::CheckCache(const char* InFilename)
-{
-    for (int i = 0; i < bitmap_cache.size(); i++) {
-        if (!_stricmp(bitmap_cache[i]->GetFilename(), InFilename)) {
-            return bitmap_cache[i];
-        }
-    }
-
-    return 0;
-}
-
-void Bitmap::AddToCache(Bitmap* bmp)
-{
-    bitmap_cache.append(bmp);
-}
-
-void Bitmap::CacheUpdate()
-{
-    for (int i = 0; i < bitmap_cache.size(); i++) {
-        Bitmap* bmp = bitmap_cache[i];
-
-        if (bmp->IsTexture())
-            bmp->MakeTexture();
-    }
-}
-
-void Bitmap::ClearCache()
-{
-    bitmap_cache.destroy();
-}
-
-DWORD Bitmap::CacheMemoryFootprint()
-{
-    DWORD result = (DWORD)sizeof(bitmap_cache);
-    result += (DWORD)bitmap_cache.size() * (DWORD)sizeof(Bitmap*);
-
-    for (int i = 0; i < bitmap_cache.size(); i++) {
-        Bitmap* bmp = bitmap_cache[i];
-
-        if (bmp->pix)
-            result += (DWORD)bmp->mapsize * (DWORD)sizeof(ColorIndex);
-
-        if (bmp->hipix)
-            result += (DWORD)bmp->mapsize * (DWORD)sizeof(Color);
-    }
-
-    return result;
-}
-
+// ClipLine (unchanged from original logic; uses UE math only)
 // +--------------------------------------------------------------------+
 
 bool Bitmap::ClipLine(int& x1, int& y1, int& x2, int& y2)
 {
-    // vertical lines:
     if (x1 == x2) {
     clip_vertical:
-        sort(y1, y2);
+        sort_i(y1, y2);
         if (x1 < 0 || x1 >= width) return false;
         if (y1 < 0) y1 = 0;
         if (y2 >= height) y2 = height;
         return true;
     }
 
-    // horizontal lines:
     if (y1 == y2) {
     clip_horizontal:
-        sort(x1, x2);
+        sort_i(x1, x2);
         if (y1 < 0 || y1 >= height) return false;
         if (x1 < 0) x1 = 0;
         if (x2 > width) x2 = width;
         return true;
     }
 
-    // general lines:
     if (x1 > x2) {
-        swap(x1, x2);
-        swap(y1, y2);
+        swap_i(x1, x2);
+        swap_i(y1, y2);
     }
 
     double m = (double)(y2 - y1) / (double)(x2 - x1);
     double b = (double)y1 - (m * x1);
 
-    if (x1 < 0) { x1 = 0;        y1 = (int)b; }
+    if (x1 < 0) { x1 = 0; y1 = (int)b; }
     if (x1 >= width)  return false;
     if (x2 < 0)       return false;
-    if (x2 > width - 1) { x2 = width - 1;  y2 = (int)(m * x2 + b); }
+    if (x2 > width - 1) { x2 = width - 1; y2 = (int)(m * x2 + b); }
 
-    if (y1 < 0 && y2 < 0)             return false;
+    if (y1 < 0 && y2 < 0) return false;
     if (y1 >= height && y2 >= height) return false;
 
-    if (y1 < 0) { y1 = 0;        x1 = (int)(-b / m); }
+    if (y1 < 0) { y1 = 0; x1 = (int)(-b / m); }
     if (y1 >= height) { y1 = height - 1; x1 = (int)((y1 - b) / m); }
-    if (y2 < 0) { y2 = 0;        x2 = (int)(-b / m); }
+    if (y2 < 0) { y2 = 0; x2 = (int)(-b / m); }
     if (y2 >= height) { y2 = height - 1; x2 = (int)((y2 - b) / m); }
 
     if (x1 == x2) goto clip_vertical;
@@ -962,13 +828,11 @@ bool Bitmap::ClipLine(int& x1, int& y1, int& x2, int& y2)
     return true;
 }
 
-// +--------------------------------------------------------------------+
-
 bool Bitmap::ClipLine(double& x1, double& y1, double& x2, double& y2)
 {
     if (x1 == x2) {
     clip_vertical:
-        sort(y1, y2);
+        sort_d(y1, y2);
         if (x1 < 0 || x1 >= width) return false;
         if (y1 < 0) y1 = 0;
         if (y2 >= height) y2 = height;
@@ -977,7 +841,7 @@ bool Bitmap::ClipLine(double& x1, double& y1, double& x2, double& y2)
 
     if (y1 == y2) {
     clip_horizontal:
-        sort(x1, x2);
+        sort_d(x1, x2);
         if (y1 < 0 || y1 >= height) return false;
         if (x1 < 0) x1 = 0;
         if (x2 > width) x2 = width;
@@ -985,24 +849,24 @@ bool Bitmap::ClipLine(double& x1, double& y1, double& x2, double& y2)
     }
 
     if (x1 > x2) {
-        swap(x1, x2);
-        swap(y1, y2);
+        swap_d(x1, x2);
+        swap_d(y1, y2);
     }
 
     double m = (double)(y2 - y1) / (double)(x2 - x1);
     double b = (double)y1 - (m * x1);
 
-    if (x1 < 0) { x1 = 0;        y1 = b; }
+    if (x1 < 0) { x1 = 0; y1 = b; }
     if (x1 >= width)  return false;
     if (x2 < 0)       return false;
-    if (x2 > width - 1) { x2 = width - 1;  y2 = (m * x2 + b); }
+    if (x2 > width - 1) { x2 = width - 1; y2 = (m * x2 + b); }
 
-    if (y1 < 0 && y2 < 0)             return false;
+    if (y1 < 0 && y2 < 0) return false;
     if (y1 >= height && y2 >= height) return false;
 
-    if (y1 < 0) { y1 = 0;        x1 = (-b / m); }
+    if (y1 < 0) { y1 = 0; x1 = (-b / m); }
     if (y1 >= height) { y1 = height - 1; x1 = ((y1 - b) / m); }
-    if (y2 < 0) { y2 = 0;        x2 = (-b / m); }
+    if (y2 < 0) { y2 = 0; x2 = (-b / m); }
     if (y2 >= height) { y2 = height - 1; x2 = ((y2 - b) / m); }
 
     if (x1 == x2) goto clip_vertical;
@@ -1012,378 +876,186 @@ bool Bitmap::ClipLine(double& x1, double& y1, double& x2, double& y2)
 }
 
 // +--------------------------------------------------------------------+
+// Drawing API (UE primitives; regenerated)
+// +--------------------------------------------------------------------+
 
-void Bitmap::DrawLine(int x1, int y1, int x2, int y2, Color color)
+void Bitmap::DrawLine(int x1, int y1, int x2, int y2, FColor color)
 {
-    BYTE* s = GetSurface();
-    if (!s) return;
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
 
-    last_modified = GetRealTime();
-
-    if (x1 == x2) {
-    draw_vertical:
-        sort(y1, y2);
-        int fh = y2 - y1;
-        if (x1 < 0 || x1 >= width) return;
-        if (y1 < 0) y1 = 0;
-        if (y2 >= height) y2 = height;
-        fh = y2 - y1;
-        draw_vline(s, Pitch(), PixSize(), x1, y1, fh, color);
+    // Clip for safety (retain original semantics)
+    int cx1 = x1, cy1 = y1, cx2 = x2, cy2 = y2;
+    if (!ClipLine(cx1, cy1, cx2, cy2))
         return;
-    }
 
-    if (y1 == y2) {
-    draw_horizontal:
-        sort(x1, x2);
-        int fw = x2 - x1;
-        if (y1 < 0 || y1 >= height) return;
-        if (x1 < 0) x1 = 0;
-        if (x2 > width) x2 = width;
-        fw = x2 - x1;
-        draw_strip(s, Pitch(), PixSize(), x1, y1, fw, color);
-        return;
-    }
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
 
-    if (x1 > x2) {
-        swap(x1, x2);
-        swap(y1, y2);
-    }
+    FCanvasLineItem Line(FVector2D((float)cx1, (float)cy1), FVector2D((float)cx2, (float)cy2));
+    Line.SetColor(FLinearColor(color));
+    Canvas->DrawItem(Line);
 
-    double m = (double)(y2 - y1) / (double)(x2 - x1);
-    double b = (double)y1 - (m * x1);
+    DrawEnd(Canvas);
 
-    if (x1 < 0) { x1 = 0;        y1 = (int)b; }
-    if (x1 >= width)  return;
-    if (x2 < 0)       return;
-    if (x2 > width - 1) { x2 = width - 1;  y2 = (int)(m * x2 + b); }
-
-    if (y1 < 0 && y2 < 0)             return;
-    if (y1 >= height && y2 >= height) return;
-
-    if (y1 < 0) { y1 = 0;        x1 = (int)(-b / m); }
-    if (y1 >= height) { y1 = height - 1; x1 = (int)((y1 - b) / m); }
-    if (y2 < 0) { y2 = 0;        x2 = (int)(-b / m); }
-    if (y2 >= height) { y2 = height - 1; x2 = (int)((y2 - b) / m); }
-
-    if (x1 > x2) return;
-    if (x1 == x2) goto draw_vertical;
-    if (y1 == y2) goto draw_horizontal;
-
-    // Symmetric Double Step Line Algorithm (Graphics Gems, 1990)
-    WinPlot plotter(this);
-
-    DWORD pixv = color.Value();
-    int   sign_x = 1, sign_y = 1, step, reflect;
-    int   i, inc1, inc2, c, D, x_end, pixleft;
-    int   dx = x2 - x1;
-    int   dy = y2 - y1;
-
-    if (dx < 0) { sign_x = -1; dx *= -1; }
-    if (dy < 0) { sign_y = -1; dy *= -1; }
-
-    step = (sign_x == sign_y) ? 1 : -1;
-
-    if (dy > dx) {
-        swap(x1, y1);
-        swap(x2, y2);
-        swap(dx, dy);
-        reflect = 1;
-    }
-    else {
-        reflect = 0;
-    }
-
-    if (x1 > x2) {
-        swap(x1, x2);
-        swap(y1, y2);
-    }
-
-    x_end = (dx - 1) / 4;
-    pixleft = (dx - 1) % 4;
-
-    plotter.plot(x1, y1, pixv, reflect);
-    plotter.plot(x2, y2, pixv, reflect);
-
-    inc2 = 4 * dy - 2 * dx;
-    if (inc2 < 0) {
-        c = 2 * dy;
-        inc1 = 2 * c;
-        D = inc1 - dx;
-
-        for (i = 0; i < x_end; i++) {
-            ++x1;
-            --x2;
-            if (D < 0) {
-                plotter.plot(x1, y1, pixv, reflect);
-                plotter.plot(++x1, y1, pixv, reflect);
-
-                plotter.plot(x2, y2, pixv, reflect);
-                plotter.plot(--x2, y2, pixv, reflect);
-                D += inc1;
-            }
-            else {
-                if (D < c) {
-                    plotter.plot(x1, y1, pixv, reflect);
-                    plotter.plot(++x1, y1 += step, pixv, reflect);
-
-                    plotter.plot(x2, y2, pixv, reflect);
-                    plotter.plot(--x2, y2 -= step, pixv, reflect);
-                }
-                else {
-                    plotter.plot(x1, y1 += step, pixv, reflect);
-                    plotter.plot(++x1, y1, pixv, reflect);
-
-                    plotter.plot(x2, y2 -= step, pixv, reflect);
-                    plotter.plot(--x2, y2, pixv, reflect);
-                }
-                D += inc2;
-            }
-        }
-
-        if (pixleft) {
-            if (D < 0) {
-                plotter.plot(++x1, y1, pixv, reflect);
-                if (pixleft > 1) plotter.plot(++x1, y1, pixv, reflect);
-                if (pixleft > 2) plotter.plot(--x2, y2, pixv, reflect);
-            }
-            else {
-                if (D < c) {
-                    plotter.plot(++x1, y1, pixv, reflect);
-                    if (pixleft > 1) plotter.plot(++x1, y1 += step, pixv, reflect);
-                    if (pixleft > 2) plotter.plot(--x2, y2, pixv, reflect);
-                }
-                else {
-                    plotter.plot(++x1, y1 += step, pixv, reflect);
-                    if (pixleft > 1) plotter.plot(++x1, y1, pixv, reflect);
-                    if (pixleft > 2) plotter.plot(--x2, y2 -= step, pixv, reflect);
-                }
-            }
-        }
-    }
-    else {
-        c = 2 * (dy - dx);
-        inc1 = 2 * c;
-        D = inc1 + dx;
-
-        for (i = 0; i < x_end; i++) {
-            ++x1;
-            --x2;
-            if (D > 0) {
-                plotter.plot(x1, y1 += step, pixv, reflect);
-                plotter.plot(++x1, y1 += step, pixv, reflect);
-
-                plotter.plot(x2, y2 -= step, pixv, reflect);
-                plotter.plot(--x2, y2 -= step, pixv, reflect);
-                D += inc1;
-            }
-            else {
-                if (D < c) {
-                    plotter.plot(x1, y1, pixv, reflect);
-                    plotter.plot(++x1, y1 += step, pixv, reflect);
-
-                    plotter.plot(x2, y2, pixv, reflect);
-                    plotter.plot(--x2, y2 -= step, pixv, reflect);
-                }
-                else {
-                    plotter.plot(x1, y1 += step, pixv, reflect);
-                    plotter.plot(++x1, y1, pixv, reflect);
-
-                    plotter.plot(x2, y2 -= step, pixv, reflect);
-                    plotter.plot(--x2, y2, pixv, reflect);
-                }
-                D += inc2;
-            }
-        }
-
-        if (pixleft) {
-            if (D > 0) {
-                plotter.plot(++x1, y1 += step, pixv, reflect);
-                if (pixleft > 1) plotter.plot(++x1, y1 += step, pixv, reflect);
-                if (pixleft > 2) plotter.plot(--x2, y2 -= step, pixv, reflect);
-            }
-            else {
-                if (D < c) {
-                    plotter.plot(++x1, y1, pixv, reflect);
-                    if (pixleft > 1) plotter.plot(++x1, y1 += step, pixv, reflect);
-                    if (pixleft > 2) plotter.plot(--x2, y2, pixv, reflect);
-                }
-                else {
-                    plotter.plot(++x1, y1 += step, pixv, reflect);
-                    if (pixleft > 1) plotter.plot(++x1, y1, pixv, reflect);
-                    if (pixleft > 2) {
-                        if (D > c) plotter.plot(--x2, y2 -= step, pixv, reflect);
-                        else       plotter.plot(--x2, y2, pixv, reflect);
-                    }
-                }
-            }
-        }
-    }
+    alpha_loaded = alpha_loaded || (color.A < 255);
+    last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::DrawRect(int x1, int y1, int x2, int y2, Color color)
+void Bitmap::DrawRect(int x1, int y1, int x2, int y2, FColor color)
 {
-    sort(x1, x2);
-    sort(y1, y2);
+    sort_i(x1, x2);
+    sort_i(y1, y2);
 
     int fw = x2 - x1;
     int fh = y2 - y1;
-
     if (fw == 0 || fh == 0) return;
 
-    int left = (x1 >= 0);
-    int right = (x2 <= width);
-    int top = (y1 >= 0);
-    int bottom = (y2 <= height);
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
 
-    BYTE* s = GetSurface();
-    if (!s) return;
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
 
-    int pitch = Pitch();
-    int pixsize = PixSize();
+    const int left = x1;
+    const int right = x2;
+    const int top = y1;
+    const int bottom = y2;
 
-    if (left)   draw_vline(s, pitch, pixsize, x1, y1, fh, color);
-    if (right)  draw_vline(s, pitch, pixsize, x2, y1, fh, color);
-    if (top)    draw_strip(s, pitch, pixsize, x1, y1, fw, color);
-    if (bottom) draw_strip(s, pitch, pixsize, x1, y2, fw, color);
+    auto DrawH = [&](int px, int py, int w)
+        {
+            if (w <= 0) return;
+            FCanvasTileItem T(FVector2D((float)px, (float)py), FVector2D((float)w, 1.f), color);
+            T.BlendMode = (color.A < 255) ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+            Canvas->DrawItem(T);
+        };
 
+    auto DrawV = [&](int px, int py, int h)
+        {
+            if (h <= 0) return;
+            FCanvasTileItem T(FVector2D((float)px, (float)py), FVector2D(1.f, (float)h), color);
+            T.BlendMode = (color.A < 255) ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+            Canvas->DrawItem(T);
+        };
+
+    // Top
+    if (top >= 0 && top < height) {
+        const int sx = FMath::Max(0, left);
+        const int ex = FMath::Min(width, right);
+        DrawH(sx, top, ex - sx);
+    }
+
+    // Bottom
+    if (bottom >= 0 && bottom < height) {
+        const int sx = FMath::Max(0, left);
+        const int ex = FMath::Min(width, right);
+        DrawH(sx, bottom, ex - sx);
+    }
+
+    // Left
+    if (left >= 0 && left < width) {
+        const int sy = FMath::Max(0, top);
+        const int ey = FMath::Min(height, bottom);
+        DrawV(left, sy, ey - sy);
+    }
+
+    // Right
+    if (right >= 0 && right < width) {
+        const int sy = FMath::Max(0, top);
+        const int ey = FMath::Min(height, bottom);
+        DrawV(right, sy, ey - sy);
+    }
+
+    DrawEnd(Canvas);
+
+    alpha_loaded = alpha_loaded || (color.A < 255);
     last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::DrawRect(const Rect& r, Color color)
+void Bitmap::DrawRect(const FIntRect& r, FColor color)
 {
-    if (r.w == 0 || r.h == 0) return;
+    if (r.Width() == 0 || r.Height() == 0) return;
+    DrawRect(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, color);
+}
 
-    int x1 = r.x;
-    int y1 = r.y;
-    int x2 = r.x + r.w;
-    int y2 = r.y + r.h;
+void Bitmap::FillRect(int x1, int y1, int x2, int y2, FColor color)
+{
+    if (width < 1 || height < 1) return;
 
-    int left = (x1 >= 0);
-    int right = (x2 <= width);
-    int top = (y1 >= 0);
-    int bottom = (y2 <= height);
+    // Clip
+    if (x1 < 0) x1 = 0;
+    if (y1 < 0) y1 = 0;
+    if (x2 > width)  x2 = width;
+    if (y2 > height) y2 = height;
 
-    BYTE* s = GetSurface();
-    if (!s) return;
+    const int fw = x2 - x1;
+    const int fh = y2 - y1;
+    if (fw <= 0 || fh <= 0) return;
 
-    int pitch = Pitch();
-    int pixsize = PixSize();
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
 
-    if (left)   draw_vline(s, pitch, pixsize, x1, y1, r.h, color);
-    if (right)  draw_vline(s, pitch, pixsize, x2, y1, r.h, color);
-    if (top)    draw_strip(s, pitch, pixsize, x1, y1, r.w, color);
-    if (bottom) draw_strip(s, pitch, pixsize, x1, y2, r.w, color);
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
 
+    FCanvasTileItem Tile(FVector2D((float)x1, (float)y1), FVector2D((float)fw, (float)fh), color);
+    Tile.BlendMode = (color.A < 255) ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+    Canvas->DrawItem(Tile);
+
+    DrawEnd(Canvas);
+
+    alpha_loaded = alpha_loaded || (color.A < 255);
     last_modified = GetRealTime();
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::FillRect(int x1, int y1, int x2, int y2, Color color)
+void Bitmap::FillRect(const FIntRect& r, FColor color)
 {
-    if (x1 < 0)       x1 = 0;
-    if (x2 > width - 1) x2 = width - 1;
-    if (y1 < 0)       y1 = 0;
-    if (y2 > height)  y2 = height;
-
-    int fw = x2 - x1;
-    int fh = y2 - y1;
-
-    if (fw == 0 || fh == 0) return;
-
-    BYTE* s = GetSurface();
-    if (!s) return;
-
-    int pitch = Pitch();
-    int pixsize = PixSize();
-
-    for (int i = 0; i < fh; i++)
-        draw_strip(s, pitch, pixsize, x1, y1 + i, fw, color);
-
-    last_modified = GetRealTime();
+    FillRect(r.Min.X, r.Min.Y, r.Max.X, r.Max.Y, color);
 }
 
-// +--------------------------------------------------------------------+
-
-void Bitmap::FillRect(const Rect& r, Color color)
+void Bitmap::DrawEllipse(int x1, int y1, int x2, int y2, FColor color, BYTE quad)
 {
-    int x1 = r.x;
-    int y1 = r.y;
-    int x2 = r.x + r.w;
-    int y2 = r.y + r.h;
+    // Preserve original midpoint algorithm, but draw points using UE tiles.
+    sort_i(x1, x2);
+    sort_i(y1, y2);
 
-    if (x1 < 0)       x1 = 0;
-    if (x2 > width - 1) x2 = width - 1;
-    if (y1 < 0)       y1 = 0;
-    if (y2 > height)  y2 = height;
-
-    int fw = x2 - x1;
-    int fh = y2 - y1;
-
-    if (fw == 0 || fh == 0) return;
-
-    BYTE* s = GetSurface();
-    if (!s) return;
-
-    int pitch = Pitch();
-    int pixsize = PixSize();
-
-    for (int i = 0; i < fh; i++)
-        draw_strip(s, pitch, pixsize, x1, y1 + i, fw, color);
-
-    last_modified = GetRealTime();
-}
-
-// +--------------------------------------------------------------------+
-
-void Bitmap::DrawEllipse(int x1, int y1, int x2, int y2, Color color, BYTE quad)
-{
-    BYTE* s = GetSurface();
-    if (!s) return;
-
-    sort(x1, x2);
-    sort(y1, y2);
-
-    int fw = x2 - x1;
-    int fh = y2 - y1;
-
+    const int fw = x2 - x1;
+    const int fh = y2 - y1;
     if (fw < 1 || fh < 1) return;
 
     if (x1 >= width || x2 < 0) return;
     if (y1 >= height || y2 < 0) return;
 
     double a = fw / 2.0;
-    double bb = fh / 2.0;
+    double b = fh / 2.0;
     double a2 = a * a;
-    double b2 = bb * bb;
+    double b2 = b * b;
 
     int x = 0;
-    int y = (int)bb;
+    int y = (int)b;
     int x0 = (x1 + x2) / 2;
     int y0 = (y1 + y2) / 2;
 
+    // Clip super-giant ellipses (retain original)
     if (x1 < 0 && y1 < 0 && x2 > width && y2 > height) {
         double r2 = (a2 < b2) ? a2 : b2;
-
-        if (r2 > 32 * height)
-            return;
+        if (r2 > 32 * height) return;
 
         double ul = (x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0);
         double ur = (x2 - x0) * (x2 - x0) + (y1 - y0) * (y1 - y0);
         double ll = (x1 - x0) * (x1 - x0) + (y2 - y0) * (y2 - y0);
         double lr = (x2 - x0) * (x2 - x0) + (y2 - y0) * (y2 - y0);
 
-        if (ul > r2 && ur > r2 && ll > r2 && lr > r2)
-            return;
+        if (ul > r2 && ur > r2 && ll > r2 && lr > r2) return;
     }
 
     DrawEllipsePoints(x0, y0, x, y, color, quad);
 
-    double d1 = (b2)-(a2 * bb) + (0.25 * a2);
+    // region 1
+    double d1 = (b2)-(a2 * b) + (0.25 * a2);
     while ((a2) * (y - 0.5) > (b2) * (x + 1)) {
         if (d1 < 0)
             d1 += b2 * (2 * x + 3);
@@ -1395,126 +1067,180 @@ void Bitmap::DrawEllipse(int x1, int y1, int x2, int y2, Color color, BYTE quad)
         DrawEllipsePoints(x0, y0, x, y, color, quad);
     }
 
+    // region 2
     double d2 = b2 * (x + 0.5) * (x + 0.5) + a2 * (y - 1) * (y - 1) - a2 * b2;
     while (y > 0) {
         if (d2 < 0) {
             d2 += b2 * (2 * x + 2) + a2 * (-2 * y + 3);
             x++;
         }
-        else {
+        else
             d2 += a2 * (-2 * y + 3);
-        }
         y--;
         DrawEllipsePoints(x0, y0, x, y, color, quad);
     }
 
+    alpha_loaded = alpha_loaded || (color.A < 255);
     last_modified = GetRealTime();
 }
 
-void Bitmap::DrawEllipsePoints(int x0, int y0, int x, int y, Color c, BYTE quad)
+void Bitmap::DrawEllipsePoints(int x0, int y0, int x, int y, FColor c, BYTE quad)
 {
-    BYTE* s = GetSurface();
-    if (!s) return;
+    EnsureRenderTarget();
+    if (!RenderTarget) return;
 
-    int pitch = Pitch();
-    int pixsize = PixSize();
-
-    int left = x0 - x;
-    int right = x0 + x + 1;
-    int top = y0 - y;
-    int bottom = y0 + y + 1;
+    const int left = x0 - x;
+    const int right = x0 + x + 1;
+    const int top = y0 - y;
+    const int bottom = y0 + y + 1;
 
     if (left >= width || right < 0) return;
     if (top >= height || bottom < 0) return;
 
-    BYTE* dst = 0;
-    DWORD cf = c.Value();
+    FCanvas* Canvas = nullptr;
+    DrawBegin(Canvas);
+    if (!Canvas) return;
 
-    auto WritePixel = [&](int px, int py)
+    auto DrawPoint = [&](int px, int py)
         {
-            BYTE* p = s + py * pitch + px * pixsize;
-            switch (pixsize) {
-            case 1: *p = (BYTE)cf; break;
-            case 2: { WORD* sw = (WORD*)p;  *sw = (WORD)cf; } break;
-            case 4: { DWORD* sd = (DWORD*)p; *sd = (DWORD)cf; } break;
-            default: break;
-            }
+            if (px < 0 || py < 0 || px >= width || py >= height) return;
+            FCanvasTileItem P(FVector2D((float)px, (float)py), FVector2D(1.f, 1.f), c);
+            P.BlendMode = (c.A < 255) ? SE_BLEND_Translucent : SE_BLEND_Opaque;
+            Canvas->DrawItem(P);
         };
 
-    if (left >= 0 && top >= 0 && (quad & 1))        WritePixel(left, top);
-    if (right < width && top >= 0 && (quad & 2))    WritePixel(right, top);
-    if (left >= 0 && bottom < height && (quad & 4)) WritePixel(left, bottom);
-    if (right < width && bottom < height && (quad & 4)) WritePixel(right, bottom);
+    if ((quad & 1) && left >= 0 && top >= 0)            DrawPoint(left, top);
+    if ((quad & 2) && right < width && top >= 0)        DrawPoint(right, top);
+    if ((quad & 4) && left >= 0 && bottom < height)     DrawPoint(left, bottom);
+    if ((quad & 8) && right < width && bottom < height) DrawPoint(right, bottom);
+
+    DrawEnd(Canvas);
 }
 
 // +--------------------------------------------------------------------+
+// Default bitmap + cache (kept structurally; GPU-first adjustments)
+// +--------------------------------------------------------------------+
 
-static void draw_strip(BYTE* s, int pitch, int pixsize, int x, int y, int len, Color color)
+Bitmap* Bitmap::Default()
 {
-    if (!s) return;
-    s += y * pitch + x * pixsize;
+    static Bitmap def;
 
-    DWORD value = color.Formatted();
+    if (!def.width) {
+        def.width = def.height = 64;
+        def.mapsize = 64 * 64;
+        def.type = BMP_SOLID;
 
-    switch (pixsize) {
-    case 1:
-        if (len > 1)
-            memset(s, (BYTE)value, len);
-        break;
+        // Procedural grayscale like original default, but upload as BGRA.
+        TArray<uint8> BGRA;
+        BGRA.SetNumUninitialized(64 * 64 * 4);
 
-    case 2: {
-        WORD* sw = (WORD*)s;
-        for (int i = 0; i < len; i++)
-            *sw++ = (WORD)value;
-    } break;
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                const double dx = (x - 32.0);
+                const double dy = (y - 32.0);
+                double distance = FMath::Sqrt(dx * dx + dy * dy);
+                if (distance > 31.0) distance = 31.0;
 
-    case 4: {
-        Color* sd = (Color*)s;
-        for (int i = 0; i < len; i++)
-            *sd++ = color;
-    } break;
+                uint8 v = (uint8)(24 + (uint8)distance);
+                if (x == 0 || y == 0) v = 255;
+                else if (x == 32 || y == 32) v = 251;
 
-    default:
-        break;
+                const int i = (y * 64 + x) * 4;
+                BGRA[i + 0] = v;
+                BGRA[i + 1] = v;
+                BGRA[i + 2] = v;
+                BGRA[i + 3] = 255;
+            }
+        }
+
+        def.UploadBGRA(BGRA.GetData(), 64, 64, false, true);
+    }
+
+    return &def;
+}
+
+// Use global namespace to avoid any UE name collisions:
+static ::List<Bitmap> bitmap_cache;
+
+Bitmap* Bitmap::GetBitmapByID(HANDLE bmp_id)
+{
+    for (int i = 0; i < bitmap_cache.size(); i++) {
+        if (bitmap_cache[i]->Handle() == bmp_id)
+            return bitmap_cache[i];
+    }
+    return nullptr;
+}
+
+Bitmap* Bitmap::CheckCache(const char* in_filename)
+{
+    if (!in_filename) return nullptr;
+
+    for (int i = 0; i < bitmap_cache.size(); i++) {
+        if (!FCStringAnsi::Stricmp(bitmap_cache[i]->GetFilename(), in_filename))
+            return bitmap_cache[i];
+    }
+    return nullptr;
+}
+
+void Bitmap::AddToCache(Bitmap* bmp)
+{
+    bitmap_cache.append(bmp);
+}
+
+void Bitmap::CacheUpdate()
+{
+    for (int i = 0; i < bitmap_cache.size(); i++) {
+        Bitmap* bmp = bitmap_cache[i];
+        if (bmp && bmp->IsTexture())
+            bmp->MakeTexture();
     }
 }
 
+void Bitmap::ClearCache()
+{
+    bitmap_cache.destroy();
+}
+
+DWORD Bitmap::CacheMemoryFootprint()
+{
+    DWORD result = sizeof(bitmap_cache);
+    result += bitmap_cache.size() * sizeof(Bitmap*);
+
+    for (int i = 0; i < bitmap_cache.size(); i++) {
+        Bitmap* bmp = bitmap_cache[i];
+        if (!bmp) continue;
+
+        if (bmp->pix)
+            result += bmp->mapsize * (DWORD)sizeof(ColorIndex);
+
+        if (bmp->hipix)
+            result += bmp->mapsize * (DWORD)sizeof(FColor);
+    }
+
+    return result;
+}
+
+// +--------------------------------------------------------------------+
+// FindBestTexSize (unchanged logic)
 // +--------------------------------------------------------------------+
 
-static void draw_vline(BYTE* s, int pitch, int pixsize, int x, int y, int len, Color color)
+static int FindBestTexSize(int n, int max_size)
 {
-    if (!s) return;
-    s += y * pitch + x * pixsize;
+    int delta = 100000;
+    int best = 1;
 
-    DWORD value = color.Formatted();
+    for (int i = 0; i < 12; i++) {
+        int size = 1 << i;
+        if (size > max_size) break;
 
-    switch (pixsize) {
-    case 1:
-        for (int i = 0; i < len; i++) {
-            *s = (BYTE)value;
-            s += pitch;
+        int dx = FMath::Abs(n - size);
+        if (size < n) dx *= 4;
+
+        if (dx < delta) {
+            delta = dx;
+            best = size;
         }
-        break;
-
-    case 2: {
-        WORD* sw = (WORD*)s;
-        int p2 = pitch / 2;
-        for (int i = 0; i < len; i++) {
-            *sw = (WORD)value;
-            sw += p2;
-        }
-    } break;
-
-    case 4: {
-        Color* sd = (Color*)s;
-        int p4 = pitch / 4;
-        for (int i = 0; i < len; i++) {
-            *sd = color;
-            sd += p4;
-        }
-    } break;
-
-    default:
-        break;
     }
+
+    return best;
 }

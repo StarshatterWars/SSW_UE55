@@ -479,7 +479,7 @@ CameraView::RenderForeground()
 			Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
 		}
 
-		video->SetAmbient(Color::Black);
+		video->SetAmbient(FColor::Black);
 		video->SetRenderState(Video::LIGHTING_PASS, 2);
 
 		// solid items, shadow lights:
@@ -651,7 +651,7 @@ CameraView::RenderSceneObjects(bool distant)
 			}
 		}
 
-		video->SetAmbient(Color::Black);
+		video->SetAmbient(FColor::Black);
 		video->SetRenderState(Video::LIGHTING_PASS, 2);
 		video->SetRenderState(Video::STENCIL_ENABLE, TRUE);
 

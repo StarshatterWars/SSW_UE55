@@ -26,6 +26,14 @@
 // require a texture reference, so it has been removed.
 // +====================================================================+
 
+FORCEINLINE uint32 PackColor(const FColor& C)
+{
+	return (uint32(C.A) << 24) |
+		(uint32(C.R) << 16) |
+		(uint32(C.G) << 8) |
+		(uint32(C.B));
+}
+
 TerrainHaze::TerrainHaze()
 	: tregion(nullptr)
 {
@@ -57,8 +65,8 @@ TerrainHaze::Render(Video* video, DWORD flags)
 	uint32 Fog = 0;
 
 	if (tregion) {
-		Sky = tregion->SkyColor().Value();
-		Fog = tregion->FogColor().Value();
+		Sky = PackColor(tregion->SkyColor());
+		Fog = PackColor(tregion->FogColor());
 	}
 
 	// Clear the solid lights to ambient:

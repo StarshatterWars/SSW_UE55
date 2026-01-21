@@ -216,7 +216,7 @@ Color Game::GetScreenColor()
 	return Color();
 }
 
-void Game::SetScreenColor(Color c)
+void Game::SetScreenColor(FColor c)
 {
 }
 

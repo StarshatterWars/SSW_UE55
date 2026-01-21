@@ -3146,7 +3146,7 @@ Ship::StatFrame(double seconds)
 			hangar->ExecFrame(seconds);
 
 		if (flight_decks.size() > 0) {
-			Camera* global_cam = CameraDirector::GetInstance()->GetCamera();
+			Camera* global_cam = CameraManager::GetInstance()->GetCamera();
 			FVector global_cam_loc = global_cam->Pos();
 			bool disable_shadows = false;
 
@@ -5103,38 +5103,38 @@ Ship::SetControls(MotionController* m)
 
 // +--------------------------------------------------------------------+
 
-Color
+FColor
 Ship::IFFColor(int iff)
 {
-	Color c;
+	FColor c;
 
 	switch (iff) {
 	case 0:  // NEUTRAL, NON-COMBAT
-		c = Color(192, 192, 192);
+		c = FColor(192, 192, 192);
 		break;
 
 	case 1:  // TERELLIAN ALLIANCE
-		c = Color(70, 70, 220);
+		c = FColor(70, 70, 220);
 		break;
 
 	case 2:  // MARAKAN HEGEMONY
-		c = Color(220, 20, 20);
+		c = FColor(220, 20, 20);
 		break;
 
 	case 3:  // BROTHERHOOD OF IRON
-		c = Color(200, 180, 20);
+		c = FColor(200, 180, 20);
 		break;
 
 	case 4:  // ZOLON EMPIRE
-		c = Color(20, 200, 20);
+		c = FColor(20, 200, 20);
 		break;
 
 	case 5:
-		c = Color(128, 0, 128);
+		c = FColor(128, 0, 128);
 		break;
 
 	case 6:
-		c = Color(40, 192, 192);
+		c = FColor(40, 192, 192);
 		break;
 
 	default:
@@ -5145,7 +5145,7 @@ Ship::IFFColor(int iff)
 	return c;
 }
 
-Color
+FColor
 Ship::MarkerColor() const
 {
 	return IFFColor(IFF_code);

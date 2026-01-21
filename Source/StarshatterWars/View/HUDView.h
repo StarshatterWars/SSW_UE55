@@ -1,17 +1,18 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         HUDView.h
-	AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+    SUBSYSTEM:    Stars.exe
+    FILE:         HUDView.h
+    AUTHOR:       Carlos Bott
 
-	OVERVIEW
-	========
-	View class for Heads Up Display
+    OVERVIEW
+    ========
+    View class for Heads Up Display
 */
 
 #pragma once
@@ -23,12 +24,11 @@
 #include "SimObject.h"
 #include "Text.h"
 
-// Minimal Unreal includes (required by API surface):
-#include "Math/Vector.h" // FVector
+// Minimal Unreal includes required for FVector / FColor:
+#include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
-
-class UTexture2D;
 
 class Bitmap;
 class Graphic;
@@ -45,182 +45,179 @@ class SimProjector;
 class MFD;
 class Sim;
 class SimRegion;
-class Window;
 
 // +--------------------------------------------------------------------+
 
-class HUDView : public View, public SimObserver
+class HUDView : public View,
+    public SimObserver
 {
 public:
-	HUDView(Window* c);
-	virtual ~HUDView();
+    HUDView(Window* c);
+    virtual ~HUDView();
 
-	enum HUDModes { HUD_MODE_OFF, HUD_MODE_TAC, HUD_MODE_NAV, HUD_MODE_ILS };
+    enum HUDModes { HUD_MODE_OFF, HUD_MODE_TAC, HUD_MODE_NAV, HUD_MODE_ILS };
 
-	// Operations:
-	virtual void       Refresh();
-	virtual void       OnWindowMove();
-	virtual void       ExecFrame();
-	virtual void       UseCameraView(CameraView* v);
+    // Operations:
+    virtual void       Refresh();
+    virtual void       OnWindowMove();
+    virtual void       ExecFrame();
+    virtual void       UseCameraView(CameraView* v);
 
-	virtual Ship*	   GetShip()       const { return ship; }
-	virtual SimObject* GetTarget()     const { return target; }
-	virtual void       SetShip(Ship* s);
-	virtual void       SetTarget(SimObject* t);
-	virtual MFD*	   GetMFD(int n)   const;
+    virtual Ship* GetShip()   const { return ship; }
+    virtual SimObject* GetTarget() const { return target; }
+    virtual void       SetShip(Ship* s);
+    virtual void       SetTarget(SimObject* t);
+    virtual MFD* GetMFD(int n) const;
 
-	virtual void       HideAll();
-	virtual void       DrawBars();
-	virtual void       DrawNav();
-	virtual void       DrawILS();
-	virtual void       DrawObjective();
-	virtual void       DrawNavInfo();
-	virtual void       DrawNavPoint(Instruction& navpt, int index, int next);
-	virtual void       DrawContactMarkers();
-	virtual void       DrawContact(SimContact* c, int index);
-	virtual void       DrawTrack(SimContact* c);
-	virtual void       DrawTrackSegment(FVector& t1, FVector& t2, Color c);
-	virtual void       DrawRect(SimObject* targ);
-	virtual void       DrawTarget();
-	virtual void       DrawSight();
-	virtual void       DrawLCOS(SimObject* targ, double dist);
-	virtual void       DrawDesignators();
-	virtual void       DrawFPM();
-	virtual void       DrawHPM();
-	virtual void       DrawCompass();
-	virtual void       HideCompass();
-	virtual void       DrawPitchLadder();
-	virtual void       DrawStarSystem();
+    virtual void       HideAll();
+    virtual void       DrawBars();
+    virtual void       DrawNav();
+    virtual void       DrawILS();
+    virtual void       DrawObjective();
+    virtual void       DrawNavInfo();
+    virtual void       DrawNavPoint(Instruction& navpt, int index, int next);
+    virtual void       DrawContactMarkers();
+    virtual void       DrawContact(SimContact* c, int index);
+    virtual void       DrawTrack(SimContact* c);
+    virtual void       DrawTrackSegment(FVector& t1, FVector& t2, FColor c);
+    virtual void       DrawRect(SimObject* targ);
+    virtual void       DrawTarget();
+    virtual void       DrawSight();
+    virtual void       DrawLCOS(SimObject* targ, double dist);
+    virtual void       DrawDesignators();
+    virtual void       DrawFPM();
+    virtual void       DrawHPM();
+    virtual void       DrawCompass();
+    virtual void       HideCompass();
+    virtual void       DrawPitchLadder();
+    virtual void       DrawStarSystem();
 
-	virtual void       DrawMFDs();
-	virtual void       DrawWarningPanel();
-	virtual void       DrawInstructions();
-	virtual void       DrawMessages();
+    virtual void       DrawMFDs();
+    virtual void       DrawWarningPanel();
+    virtual void       DrawInstructions();
+    virtual void       DrawMessages();
 
-	virtual void       MouseFrame();
+    virtual void       MouseFrame();
 
-	virtual int        GetHUDMode()      const { return mode; }
-	virtual int        GetTacticalMode() const { return tactical; }
-	virtual void       SetTacticalMode(int mode = 1);
-	virtual int        GetOverlayMode()  const { return overlay; }
-	virtual void       SetOverlayMode(int mode = 1);
+    virtual int        GetHUDMode()      const { return mode; }
+    virtual int        GetTacticalMode() const { return tactical; }
+    virtual void       SetTacticalMode(int inMode = 1);
+    virtual int        GetOverlayMode()  const { return overlay; }
+    virtual void       SetOverlayMode(int inMode = 1);
 
-	virtual void       SetHUDMode(int mode);
-	virtual void       CycleHUDMode();
-	virtual Color      CycleHUDColor();
-	virtual void       SetHUDColorSet(int c);
-	virtual int        GetHUDColorSet()  const { return color; }
-	virtual Color      GetHUDColor()     const { return hud_color; }
-	virtual Color      GetTextColor()    const { return txt_color; }
-	virtual Color      Ambient()         const;
-	virtual void       ShowHUDWarn();
-	virtual void       ShowHUDInst();
-	virtual void       HideHUDWarn();
-	virtual void       HideHUDInst();
-	virtual void       CycleHUDWarn();
-	virtual void       CycleHUDInst();
-	virtual void       CycleMFDMode(int mfd);
-	virtual void       CycleInstructions(int direction);
-	virtual void       RestoreHUD();
+    virtual void       SetHUDMode(int inMode);
+    virtual void       CycleHUDMode();
+    virtual FColor     CycleHUDColor();
+    virtual void       SetHUDColorSet(int c);
+    virtual int        GetHUDColorSet()  const { return color; }
+    virtual FColor     GetHUDColor()     const { return hud_color; }
+    virtual FColor     GetTextColor()    const { return txt_color; }
+    virtual FColor     Ambient()         const;
+    virtual void       ShowHUDWarn();
+    virtual void       ShowHUDInst();
+    virtual void       HideHUDWarn();
+    virtual void       HideHUDInst();
+    virtual void       CycleHUDWarn();
+    virtual void       CycleHUDInst();
+    virtual void       CycleMFDMode(int mfd);
+    virtual void       CycleInstructions(int direction);
+    virtual void       RestoreHUD();
 
-	virtual void       TargetOff() { target = 0; }
-	static  Color      MarkerColor(SimContact* targ);
+    virtual void       TargetOff() { target = 0; }
+    static  FColor     MarkerColor(SimContact* targ);
 
-	static bool        IsNameCrowded(int x, int y);
-	static bool        IsMouseLatched();
-	static HUDView* GetInstance() { return hud_view; }
-	static void        Message(const char* fmt, ...);
-	static void        ClearMessages();
+    static bool        IsNameCrowded(int x, int y);
+    static bool        IsMouseLatched();
+    static HUDView*    GetInstance() { return hud_view; }
+    static void        Message(const char* fmt, ...);
+    static void        ClearMessages();
+    static void        PrepareBitmap(const char* name, Bitmap& img, BYTE*& shades);
+    static void        TransferBitmap(const Bitmap& src, Bitmap& img, BYTE*& shades);
+    static void        ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool force_alpha = false);
 
-	// Bitmap processing is retained (core asset pipeline), but HUD render textures are Unreal-native.
-	static void        PrepareBitmap(const char* name, Bitmap& img, BYTE*& shades);
-	static void        TransferBitmap(const Bitmap& src, Bitmap& img, BYTE*& shades);
-	static void        ColorizeBitmap(Bitmap& img, BYTE* shades, Color color, bool force_alpha = false);
+    static int         GetGunsight() { return gunsight; }
+    static void        SetGunsight(int s) { gunsight = s; }
+    static bool        IsArcade() { return arcade; }
+    static void        SetArcade(bool a) { arcade = a; }
+    static int         DefaultColorSet() { return def_color_set; }
+    static void        SetDefaultColorSet(int c) { def_color_set = c; }
+    static FColor      GetStatusColor(SimSystem::STATUS status);
+    static bool        ShowFPS() { return show_fps; }
+    static void        ShowFPS(bool f) { show_fps = f; }
 
-	static int         GetGunsight() { return gunsight; }
-	static void        SetGunsight(int s) { gunsight = s; }
-	static bool        IsArcade() { return arcade; }
-	static void        SetArcade(bool a) { arcade = a; }
-	static int         DefaultColorSet() { return def_color_set; }
-	static void        SetDefaultColorSet(int c) { def_color_set = c; }
-	static Color       GetStatusColor(SimSystem::STATUS status);
-	static bool        ShowFPS() { return show_fps; }
-	static void        ShowFPS(bool f) { show_fps = f; }
-
-	virtual bool        Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+    virtual bool         Update(SimObject* obj);
+    virtual const char* GetObserverName() const;
 
 protected:
-	const char*			FormatInstruction(Text instr);
-	void                SetStatusColor(SimSystem::STATUS status);
+    const char* FormatInstruction(Text instr);
+    void              SetStatusColor(SimSystem::STATUS status);
 
-	enum HUD_CASE { HUD_MIXED_CASE, HUD_UPPER_CASE };
+    enum HUD_CASE { HUD_MIXED_CASE, HUD_UPPER_CASE };
 
-	void               DrawDiamond(int x, int y, int r, Color c);
-	void               DrawHUDText(int index, const char* txt, Rect& rect, int align, int upcase = HUD_UPPER_CASE, bool box = false);
-	void               HideHUDText(int index);
+    void              DrawDiamond(int x, int y, int r, FColor c);
+    void              DrawHUDText(int index, const char* txt, Rect& rect, int align, int upcase = HUD_UPPER_CASE, bool box = false);
+    void              HideHUDText(int index);
 
-	void               DrawOrbitalBody(OrbitalBody* body);
+    void              DrawOrbitalBody(OrbitalBody* body);
 
-	SimProjector* projector;
-	CameraView* camview;
+    SimProjector* projector;
+    CameraView* camview;
 
-	int          width, height, aw, ah;
-	double       xcenter, ycenter;
+    int               width, height, aw, ah;
+    double            xcenter, ycenter;
 
-	Sim* sim;
-	Ship* ship;
-	SimObject* target;
+    Sim* sim;
+    Ship* ship;
+    SimObject* target;
 
-	SimRegion* active_region;
+    SimRegion* active_region;
 
-	// Replaces Bitmap* cockpit_hud_texture:
-	UTexture2D* cockpit_hud_texture;
+    Bitmap* cockpit_hud_texture;
 
-	Color        hud_color;
-	Color        txt_color;
-	Color        status_color;
+    FColor            hud_color;
+    FColor            txt_color;
+    FColor            status_color;
 
-	bool         show_warn;
-	bool         show_inst;
-	int          inst_page;
-	int          threat;
+    bool              show_warn;
+    bool              show_inst;
+    int               inst_page;
+    int               threat;
 
-	int          mode;
-	int          color;
-	int          tactical;
-	int          overlay;
-	int          transition;
-	int          docking;
+    int               mode;
+    int               color;
+    int               tactical;
+    int               overlay;
+    int               transition;
+    int               docking;
 
-	MFD* mfd[3];
+    MFD* mfd[3];
 
-	Sprite* pitch_ladder[31];
-	Sprite* hud_sprite[32];
+    Sprite* pitch_ladder[31];
+    Sprite* hud_sprite[32];
 
-	Solid* az_ring;
-	Solid* az_pointer;
-	Solid* el_ring;
-	Solid* el_pointer;
-	double       compass_scale;
+    Solid* az_ring;
+    Solid* az_pointer;
+    Solid* el_ring;
+    Solid* el_pointer;
+    double            compass_scale;
 
-	enum { MAX_MSG = 6 };
-	Text         msg_text[MAX_MSG];
-	double       msg_time[MAX_MSG];
+    enum { MAX_MSG = 6 };
+    Text              msg_text[MAX_MSG];
+    double            msg_time[MAX_MSG];
 
-	static HUDView* hud_view;
-	static bool        arcade;
-	static bool        show_fps;
-	static int         gunsight;
-	static int         def_color_set;
+    static HUDView* hud_view;
+    static bool       arcade;
+    static bool       show_fps;
+    static int        gunsight;
+    static int        def_color_set;
 };
 
 // +--------------------------------------------------------------------+
 
 struct HUDText
 {
-	SystemFont* font;
-	Color  color;
-	Rect   rect;
-	bool   hidden;
+    SystemFont* font;
+    FColor      color;
+    Rect        rect;
+    bool        hidden;
 };
