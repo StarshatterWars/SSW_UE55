@@ -83,7 +83,7 @@ RadioTraffic::SendQuickMessage(Ship* ship, int action)
 			}
 		}
 		else if (action >= RadioMessage::SPLASH_1 && action <= RadioMessage::DISTRESS) {
-			RadioMessage* msg = new RadioMessage((Element*)0, ship, action);
+			RadioMessage* msg = new RadioMessage((SimElement*)0, ship, action);
 			Transmit(msg);
 		}
 		else {
@@ -314,7 +314,7 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 	}
 
 	else if (target && dst_ship && msg->Sender()) {
-		Contact* c = msg->Sender()->FindContact(target);
+		SimContact* c = msg->Sender()->FindContact(target);
 
 		if (c && c->GetIFF(msg->Sender()) > 10) {
 			sprintf_s(msg_buf, "%s %s.", TranslateVox(act_buf).data(), TranslateVox("unknown contact").data());

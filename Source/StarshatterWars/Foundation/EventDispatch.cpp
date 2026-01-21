@@ -47,7 +47,6 @@ EventDispatch::~EventDispatch()
 void
 EventDispatch::Create()
 {
-	// UE: no placement new with __FILE__/__LINE__ (MemDebug removed)
 	dispatcher = new EventDispatch;
 }
 

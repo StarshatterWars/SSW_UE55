@@ -39,11 +39,6 @@
 #include "Math/UnrealMathUtility.h"   // FMath
 #include "Math/Vector.h"              // FVector
 
-// NOTE:
-// - Removed MemDebug.h (not supported in UE builds).
-// - Replaced legacy NaN/random usage with engine-safe checks and FMath where applicable.
-// - This remains a plain C++ class (not a UObject) and keeps Starshatter core types intact.
-
 static const double STARSHIP_TACTICAL_DROP_TIME = 15.0;
 
 // +----------------------------------------------------------------------+

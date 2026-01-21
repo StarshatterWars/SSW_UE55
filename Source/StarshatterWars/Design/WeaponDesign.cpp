@@ -33,10 +33,6 @@
 
 // +--------------------------------------------------------------------+
 
-static List<WeaponDesign> catalog;
-static List<WeaponDesign> mod_catalog;
-static bool               degrees;
-
 #define GET_DEF_BOOL(x) if(defname==(#x))GetDefBool(design->x,pdef,filename)
 #define GET_DEF_TEXT(x) if(defname==(#x))GetDefText(design->x,pdef,filename)
 #define GET_DEF_NUM(x)  if(defname==(#x))GetDefNumber(design->x,pdef,filename)

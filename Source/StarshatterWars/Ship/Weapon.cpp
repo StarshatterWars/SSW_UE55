@@ -412,9 +412,9 @@ bool Weapon::Update(SimObject* obj)
 
 const char* Weapon::GetObserverName() const
 {
-    static char name[256];
-    sprintf_s(name, "Weapon %s", design->name.data());
-    return name;
+    static char iname[256];
+    sprintf_s(iname, "Weapon %s", design->name.data());
+    return iname;
 }
 
 // +--------------------------------------------------------------------+
@@ -602,38 +602,38 @@ SimShot* Weapon::Fire()
     {
         refire = design->refire_delay;
 
-        /*NetGame* net_game = NetGame::GetInstance();
-        bool     net_client = net_game ? net_game->IsClient() : false;
+        //NetGame* net_game = NetGame::GetInstance();
+        //bool     net_client = net_game ? net_game->IsClient() : false;
 
         // all barrels
         if (active_barrel < 0) {
-            if (net_client || IsPrimary())
+            //if (net_client || IsPrimary())
                 //NetUtil::SendWepTrigger(this, nbarrels);
 
-            if (!net_game || IsPrimary()) {
+            if (IsPrimary()) {
                 for (int i = 0; i < nbarrels; i++)
                     shot = FireBarrel(i);
             }
-            else if (net_game && net_game->IsServer() && IsMissile()) {
-                for (int i = 0; i < nbarrels; i++) {
-                    shot = FireBarrel(i);
-                    //NetUtil::SendWepRelease(this, shot);
-                }
-            }
+            //else if (net_game && net_game->IsServer() && IsMissile()) {
+             //   for (int i = 0; i < nbarrels; i++) {
+             //      shot = FireBarrel(i);
+             //      NetUtil::SendWepRelease(this, shot);
+             // }
+            //}
         }
 
         // single barrel
         else {
-            if (net_client || IsPrimary())
-                NetUtil::SendWepTrigger(this, nbarrels);
+            //if (net_client || IsPrimary())
+             //   NetUtil::SendWepTrigger(this, nbarrels);
 
-            if (!net_game || IsPrimary()) {
+            if (IsPrimary()) {
                 shot = FireBarrel(active_barrel++);
             }
-            else if (net_game && net_game->IsServer() && IsMissile()) {
-                shot = FireBarrel(active_barrel++);
-                NetUtil::SendWepRelease(this, shot);
-            }
+            //else if (net_game && net_game->IsServer() && IsMissile()) {
+            //    shot = FireBarrel(active_barrel++);
+                //NetUtil::SendWepRelease(this, shot);
+            //}
 
             if (active_barrel >= nbarrels) {
                 active_barrel = 0;
@@ -646,7 +646,7 @@ SimShot* Weapon::Fire()
 
         if (status != NOMINAL)
             refire *= 2;
-    }*/
+    }
 
     return shot;
 }
@@ -747,16 +747,52 @@ SimShot* Weapon::FireBarrel(int n)
         // unless they are on a mobile launcher
         if (turret && design->self_aiming) {
             shot = CreateShot(shotpos, aim_cam, design, ship);
-            shot->SetVelocity(base_vel);
+            if (shot)
+                shot->SetVelocity(base_vel);
         }
         else {
             shot = CreateShot(shotpos, rail_cam, design, ship);
-            if (shot /* && !turret */) {
-                Matrix orient = ship->Cam().Orientation();
-                if (aim_azimuth != 0)   orient.Yaw(aim_azimuth);
-                if (aim_elevation != 0) orient.Pitch(aim_elevation);
+            if (shot) {
 
-                FVector eject = design->eject * orient;
+                // UE FIX: build an orientation from ship camera basis (no legacy Matrix),
+                // then apply local yaw/pitch offsets (aim_azimuth / aim_elevation assumed radians).
+                FVector XAxis = ship->Cam().vrt(); // right
+                FVector YAxis = ship->Cam().vup(); // up
+                FVector ZAxis = ship->Cam().vpn(); // forward
+
+                XAxis = XAxis.GetSafeNormal();
+                YAxis = YAxis.GetSafeNormal();
+                ZAxis = ZAxis.GetSafeNormal();
+
+                // Defensive orthonormalization:
+                ZAxis = (ZAxis - FVector::DotProduct(ZAxis, XAxis) * XAxis).GetSafeNormal();
+                YAxis = FVector::CrossProduct(XAxis, ZAxis).GetSafeNormal();
+
+                const FMatrix BaseM(
+                    FPlane(XAxis.X, XAxis.Y, XAxis.Z, 0.0f),
+                    FPlane(YAxis.X, YAxis.Y, YAxis.Z, 0.0f),
+                    FPlane(ZAxis.X, ZAxis.Y, ZAxis.Z, 0.0f),
+                    FPlane(0.0f, 0.0f, 0.0f, 1.0f)
+                );
+
+                const FQuat BaseQ(BaseM);
+
+                // Apply slewing in the ship's local frame:
+                FQuat AdjustQ = FQuat::Identity;
+
+                if (aim_azimuth != 0.0)
+                    AdjustQ = AdjustQ * FQuat(YAxis, (float)aim_azimuth);
+
+                if (aim_elevation != 0.0)
+                    AdjustQ = AdjustQ * FQuat(XAxis, (float)aim_elevation);
+
+                const FQuat FinalQ = BaseQ * AdjustQ;
+
+                // UE FIX: FRotationMatrix does NOT construct from FQuat in your build settings.
+                // Build the rotation matrix from the quat explicitly:
+                FMatrix OrientM = FQuatRotationMatrix(FinalQ);
+
+                const FVector eject = OrientM.TransformVector(design->eject);
                 shot->SetVelocity(base_vel + eject);
             }
         }
@@ -784,7 +820,7 @@ SimShot* Weapon::FireBarrel(int n)
 
         if (target && design->flak && !design->guided) {
             double speed = shot->Velocity().Length();
-            double range = FVector(target->Location() - shot->Location()).Length();
+            double range = (target->Location() - shot->Location()).Length();
 
             if (range > design->min_range && range < design->max_range) {
                 shot->SetFuse(range / speed);
@@ -828,50 +864,117 @@ void Weapon::Orient(const Physical* rep)
 {
     SimSystem::Orient(rep);
 
-    const Matrix& orientation = rep->Cam().Orientation();
-    FVector       loc = rep->Location();
+    if (!rep)
+        return;
 
-    // align graphics with camera:
-    if (turret) {
+    const FVector ShipLoc = rep->Location();
+
+    // Build ship orientation from camera basis (vrt/right, vup/up, vpn/forward):
+    FVector XAxis = rep->Cam().vrt(); // right
+    FVector YAxis = rep->Cam().vup(); // up
+    FVector ZAxis = rep->Cam().vpn(); // forward
+
+    XAxis = XAxis.GetSafeNormal();
+    YAxis = YAxis.GetSafeNormal();
+    ZAxis = ZAxis.GetSafeNormal();
+
+    // Defensive orthonormalization:
+    ZAxis = (ZAxis - FVector::DotProduct(ZAxis, XAxis) * XAxis).GetSafeNormal();
+    YAxis = FVector::CrossProduct(XAxis, ZAxis).GetSafeNormal();
+
+    // UE orientation matrix (rotation only):
+    const FMatrix ShipRotM(
+        FPlane(XAxis.X, XAxis.Y, XAxis.Z, 0.0f),
+        FPlane(YAxis.X, YAxis.Y, YAxis.Z, 0.0f),
+        FPlane(ZAxis.X, ZAxis.Y, ZAxis.Z, 0.0f),
+        FPlane(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+
+    // Full transform with translation:
+    const FMatrix ShipM(
+        FPlane(XAxis.X, XAxis.Y, XAxis.Z, 0.0f),
+        FPlane(YAxis.X, YAxis.Y, YAxis.Z, 0.0f),
+        FPlane(ZAxis.X, ZAxis.Y, ZAxis.Z, 0.0f),
+        FPlane(ShipLoc.X, ShipLoc.Y, ShipLoc.Z, 1.0f)
+    );
+
+    const FTransform ShipXform(ShipM);
+
+    // Align graphics with camera:
+    if (turret)
+    {
         if (!design->self_aiming)
             ZeroAim();
 
-        const Matrix& aim = aim_cam.Orientation();
+        // Aim orientation from aim_cam basis:
+        FVector AimX = aim_cam.vrt();
+        FVector AimY = aim_cam.vup();
+        FVector AimZ = aim_cam.vpn();
 
+        AimX = AimX.GetSafeNormal();
+        AimY = AimY.GetSafeNormal();
+        AimZ = AimZ.GetSafeNormal();
+
+        AimZ = (AimZ - FVector::DotProduct(AimZ, AimX) * AimX).GetSafeNormal();
+        AimY = FVector::CrossProduct(AimX, AimZ).GetSafeNormal();
+
+        const FMatrix AimRotM(
+            FPlane(AimX.X, AimX.Y, AimX.Z, 0.0f),
+            FPlane(AimY.X, AimY.Y, AimY.Z, 0.0f),
+            FPlane(AimZ.X, AimZ.Y, AimZ.Z, 0.0f),
+            FPlane(0.0f, 0.0f, 0.0f, 1.0f)
+        );
+
+        // Turret itself uses aim orientation:
         turret->MoveTo(mount_loc);
-        turret->SetOrientation(aim);
+        turret->SetOrientation(AimRotM);
 
-        if (turret_base) {
-            Matrix base = orientation;
+        // Turret base uses ship orientation with one-axis adjustment:
+        if (turret_base)
+        {
+            FMatrix BaseRotM = ShipRotM;
 
-            if (design->turret_axis == 1) {
-                base.Pitch(aim_elevation);
-                base.Pitch(old_elevation);
+            // Apply axis-specific rotation in local space:
+            // NOTE: aim_azimuth/aim_elevation are assumed radians (as in legacy).
+            if (design->turret_axis == 1)
+            {
+                // Pitch about ship "right" axis
+                const FQuat PitchQ(XAxis, (float)(aim_elevation + old_elevation));
+                BaseRotM = BaseRotM * FQuatRotationMatrix(PitchQ);
             }
-            else {
-                base.Yaw(aim_azimuth);
-                base.Yaw(old_azimuth);
+            else
+            {
+                // Yaw about ship "up" axis
+                const FQuat YawQ(YAxis, (float)(aim_azimuth + old_azimuth));
+                BaseRotM = BaseRotM * FQuatRotationMatrix(YawQ);
             }
 
             turret_base->MoveTo(mount_loc);
-            turret_base->SetOrientation(base);
+            turret_base->SetOrientation(BaseRotM);
         }
 
-        for (int i = 0; i < nbarrels; i++) {
-            muzzle_pts[i] = (rel_pts[i] * aim) + mount_loc;
+        for (int i = 0; i < nbarrels; i++)
+        {
+            // muzzle_pts = mount_loc + (AimRot * rel_pt)
+            muzzle_pts[i] = mount_loc + AimRotM.TransformVector(rel_pts[i]);
 
-            if (visible_stores[i]) {
-                visible_stores[i]->SetOrientation(aim);
+            if (visible_stores[i])
+            {
+                visible_stores[i]->SetOrientation(AimRotM);
                 visible_stores[i]->MoveTo(muzzle_pts[i]);
             }
         }
     }
-    else {
-        for (int i = 0; i < nbarrels; i++) {
-            muzzle_pts[i] = (rel_pts[i] * orientation) + loc;
+    else
+    {
+        for (int i = 0; i < nbarrels; i++)
+        {
+            // muzzle_pts = ShipLoc + (ShipRot * rel_pt)
+            muzzle_pts[i] = ShipLoc + ShipRotM.TransformVector(rel_pts[i]);
 
-            if (visible_stores[i]) {
-                visible_stores[i]->SetOrientation(orientation);
+            if (visible_stores[i])
+            {
+                visible_stores[i]->SetOrientation(ShipRotM);
                 visible_stores[i]->MoveTo(muzzle_pts[i]);
             }
         }
@@ -1050,14 +1153,18 @@ void Weapon::FindObjective()
 
 FVector Weapon::Transform(const FVector& pt)
 {
-    FVector result;
+    // Transform world-space point into aim_cam local camera space:
+    //   X = dot(delta, right)
+    //   Y = dot(delta, up)
+    //   Z = dot(delta, forward)
 
-    FVector obj_t = pt - aim_cam.Pos();
-    result.X = obj_t * aim_cam.vrt();
-    result.Y = obj_t * aim_cam.vup();
-    result.Z = obj_t * aim_cam.vpn();
+    const FVector Delta = pt - aim_cam.Pos();
 
-    return result;
+    return FVector(
+        FVector::DotProduct(Delta, aim_cam.vrt()),
+        FVector::DotProduct(Delta, aim_cam.vup()),
+        FVector::DotProduct(Delta, aim_cam.vpn())
+    );
 }
 
 bool Weapon::CanLockPoint(const FVector& test, double& az, double& el, FVector* obj)

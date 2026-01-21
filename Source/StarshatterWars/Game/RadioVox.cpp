@@ -202,7 +202,7 @@ RadioVox::AddPhrase(const char* key)
 		loader->UseFileSystem(true);
 		loader->SetDataPath(datapath);
 		loader->LoadSound(filename, sound, Sound::LOCALIZED, true); // optional sound
-		loader->SetDataPath(0);
+		loader->SetDataPath("");
 		loader->UseFileSystem(use_fs);
 
 		if (sound) {

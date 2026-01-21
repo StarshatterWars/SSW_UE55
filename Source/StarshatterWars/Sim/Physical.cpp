@@ -179,7 +179,8 @@ Physical::~Physical()
 
 // +--------------------------------------------------------------------+
 
-void Physical::ExecFrame(double s)
+void
+Physical::ExecFrame(double s)
 {
 	const FVector OrigVelocity = Velocity();
 	arcade_velocity = FVector::ZeroVector;
@@ -230,11 +231,24 @@ void Physical::ExecFrame(double s)
 
 	alpha = 0.0f;
 
-	// now update the graphic rep and light sources:
+	// --------------------------------------------------
+	// UPDATE GRAPHIC REPRESENTATION (UE-SAFE)
+	// --------------------------------------------------
 	if (rep)
 	{
 		rep->MoveTo(cam.Pos());
-		rep->SetOrientation(cam.Orientation());
+
+		// Convert Starshatter Matrix -> UE FMatrix
+		const Matrix& M = cam.Orientation();
+
+		const FMatrix UEOrientation(
+			FPlane((float)M(0, 0), (float)M(0, 1), (float)M(0, 2), 0.0f),
+			FPlane((float)M(1, 0), (float)M(1, 1), (float)M(1, 2), 0.0f),
+			FPlane((float)M(2, 0), (float)M(2, 1), (float)M(2, 2), 0.0f),
+			FPlane(0.f, 0.f, 0.f, 1.f)
+		);
+
+		rep->SetOrientation(UEOrientation);
 	}
 
 	if (light)
@@ -253,7 +267,8 @@ void Physical::ExecFrame(double s)
 
 // +--------------------------------------------------------------------+
 
-void Physical::AeroFrame(double s)
+void
+Physical::AeroFrame(double s)
 {
 	arcade_velocity = FVector::ZeroVector;
 
@@ -374,7 +389,18 @@ void Physical::AeroFrame(double s)
 	if (rep)
 	{
 		rep->MoveTo(cam.Pos());
-		rep->SetOrientation(cam.Orientation());
+
+		// Starshatter Matrix -> UE FMatrix (Graphic/Solid now expects FMatrix)
+		const Matrix& M = cam.Orientation();
+
+		const FMatrix UEOrientation(
+			FPlane((float)M(0, 0), (float)M(0, 1), (float)M(0, 2), 0.0f),
+			FPlane((float)M(1, 0), (float)M(1, 1), (float)M(1, 2), 0.0f),
+			FPlane((float)M(2, 0), (float)M(2, 1), (float)M(2, 2), 0.0f),
+			FPlane(0.f, 0.f, 0.f, 1.f)
+		);
+
+		rep->SetOrientation(UEOrientation);
 	}
 
 	if (light)
@@ -382,6 +408,7 @@ void Physical::AeroFrame(double s)
 		light->MoveTo(cam.Pos());
 	}
 }
+
 
 double Physical::GetDensity() const
 {
@@ -392,7 +419,8 @@ double Physical::GetDensity() const
 
 // +--------------------------------------------------------------------+
 
-void Physical::ArcadeFrame(double s)
+void
+Physical::ArcadeFrame(double s)
 {
 	// if this object is under direction,
 	// but doesn't need subframe accuracy,
@@ -455,7 +483,18 @@ void Physical::ArcadeFrame(double s)
 	if (rep)
 	{
 		rep->MoveTo(cam.Pos());
-		rep->SetOrientation(cam.Orientation());
+
+		// Starshatter Matrix -> UE FMatrix (Graphic/Solid now expects FMatrix)
+		const Matrix& M = cam.Orientation();
+
+		const FMatrix UEOrientation(
+			FPlane((float)M(0, 0), (float)M(0, 1), (float)M(0, 2), 0.0f),
+			FPlane((float)M(1, 0), (float)M(1, 1), (float)M(1, 2), 0.0f),
+			FPlane((float)M(2, 0), (float)M(2, 1), (float)M(2, 2), 0.0f),
+			FPlane(0.f, 0.f, 0.f, 1.f)
+		);
+
+		rep->SetOrientation(UEOrientation);
 	}
 
 	if (light)

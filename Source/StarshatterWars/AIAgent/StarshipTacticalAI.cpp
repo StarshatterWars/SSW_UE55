@@ -38,11 +38,6 @@
 #include "CoreMinimal.h"   // UE_LOG, FMath
 #include "Math/UnrealMathUtility.h"
 
-// NOTE:
-// - Removed MemDebug.h (not supported in UE builds).
-// - Replaced legacy Random()/RandomIndex() usage with UE FMath equivalents.
-// - This remains a plain C++ class (not a UObject) and keeps Starshatter core types intact.
-
 const double STARSHIP_TACTICAL_DROP_TIME = 15;
 
 // +----------------------------------------------------------------------+

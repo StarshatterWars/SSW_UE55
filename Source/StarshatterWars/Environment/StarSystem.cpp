@@ -1125,10 +1125,12 @@ void StarSystem::CreateBody(OrbitalBody& body)
 
 		rep->SetStarSystem(this);
 
+		// UE FIX (new Solid): Solid/Graphic orientation is now FMatrix.
+		// Starshatter "tilt" is typically stored in radians; convert to degrees for FRotator.
 		if (body.tilt != 0) {
-			Matrix m;
-			m.Pitch(body.tilt);
-			rep->SetOrientation(m);
+			const float PitchDeg = FMath::RadiansToDegrees((float)body.tilt);
+			const FMatrix TiltM = FRotationMatrix(FRotator(PitchDeg, 0.0f, 0.0f));
+			rep->SetOrientation(TiltM);
 		}
 
 		body.rep = rep;
@@ -1399,9 +1401,11 @@ void StarSystem::ExecFrame()
 
 		SimScene* scene = 0;
 		TerrainRegion* trgn = 0;
-		const bool     terrain = (active_region->Type() == Orbital::TERRAIN);
-		Matrix         terrain_orientation;
-		Matrix         terrain_transformation;
+		const bool      terrain = (active_region->Type() == Orbital::TERRAIN);
+
+		// UE FIX: Solid/Graphic orientation is now FMatrix (not legacy Matrix):
+		FMatrix         terrain_orientation = FMatrix::Identity;
+		FMatrix         terrain_transformation = FMatrix::Identity;
 
 		if (terrain) {
 			trgn = (TerrainRegion*)active_region;
@@ -1410,12 +1414,28 @@ void StarSystem::ExecFrame()
 
 			tvpn = (active_region->Location() - active_region->Primary()->Location());
 			tvpn.Normalize();
+
 			tvup = FVector(0, 0, -1);
+
 			tvrt = FVector::CrossProduct(tvpn, tvup);
 			tvrt.Normalize();
 
-			terrain_orientation.Rotate(0, PI / 2, 0);
-			terrain_transformation = Matrix(tvrt, tvup, tvpn);
+			// Original: terrain_orientation.Rotate(0, PI/2, 0);
+			// Assuming Starshatter uses radians: PI/2 -> 90 degrees.
+			terrain_orientation = FRotationMatrix(FRotator(0.0f, 90.0f, 0.0f));
+
+			// Original: terrain_transformation = Matrix(tvrt, tvup, tvpn);
+			// Build an Unreal FMatrix from basis vectors (rotation only):
+			const FVector XAxis = tvrt.GetSafeNormal(); // right
+			const FVector YAxis = tvup.GetSafeNormal(); // up
+			const FVector ZAxis = tvpn.GetSafeNormal(); // forward
+
+			terrain_transformation = FMatrix(
+				FPlane(XAxis.X, XAxis.Y, XAxis.Z, 0.0f),
+				FPlane(YAxis.X, YAxis.Y, YAxis.Z, 0.0f),
+				FPlane(ZAxis.X, ZAxis.Y, ZAxis.Z, 0.0f),
+				FPlane(0.0f, 0.0f, 0.0f, 1.0f)
+			);
 
 			if (point_stars) {
 				point_stars->SetOrientation(terrain_transformation);

@@ -59,6 +59,14 @@ public:
 	static void            ClearModCatalog();
 	static int             GetDesignList(List<Text>& designs);
 
+	// IMPORTANT:
+	// This must be declared here (class static), and defined once in WeaponDesign.cpp as:
+	//   List<WeaponDesign> WeaponDesign::catalog;
+	// Do NOT define a file-scope `static List<WeaponDesign> catalog;` anywhere.
+	static List<WeaponDesign> catalog;
+	static List<WeaponDesign> mod_catalog;
+	static bool               degrees;
+
 	// identification:
 	int               type;             // unique id
 	Text              name;
