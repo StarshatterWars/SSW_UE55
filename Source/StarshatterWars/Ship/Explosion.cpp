@@ -19,7 +19,7 @@
 #include "Particles.h"
 #include "Ship.h"
 #include "Sim.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "AudioConfig.h"
 
 #include "SimLight.h"
@@ -522,7 +522,7 @@ Explosion::ExecFrame(double seconds)
 
         if (source == Sim::GetSim()->GetPlayerShip()) {
             Ship* ship = (Ship*)source;
-            if (CameraDirector::GetCameraMode() == CameraDirector::MODE_COCKPIT &&
+            if (CameraManager::GetCameraMode() == CameraManager::MODE_COCKPIT &&
                 !ship->IsDying()) {
                 if (rep)       rep->Hide();
                 if (particles) particles->Hide();
@@ -571,7 +571,7 @@ Explosion::Activate(SimScene& scene)
 {
     bool filter = false;
 
-    CameraDirector* cam_dir = CameraDirector::GetInstance();
+    CameraManager* cam_dir = CameraManager::GetInstance();
     if (cam_dir && cam_dir->GetCamera()) {
         if (FVector(cam_dir->GetCamera()->Pos() - Location()).Length() < 100.0)
             filter = true;

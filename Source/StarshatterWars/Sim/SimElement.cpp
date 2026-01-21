@@ -18,7 +18,6 @@
 #include "RadioHandler.h"
 #include "Sim.h"
 #include "Ship.h"
-//#include "NetUtil.h"
 
 #include "Game.h"
 
@@ -421,9 +420,9 @@ SimElement::DelNavPoint(Instruction* pt, bool send)
 		int index = flight_plan.index(pt);
 		flight_plan.remove(pt);
 
-		if (send) {
-			NetUtil::SendNavDelete(this, index);
-		}
+		//if (send) {
+		//	NetUtil::SendNavDelete(this, index);
+		//}
 	}
 }
 
@@ -437,9 +436,9 @@ SimElement::ClearFlightPlan(bool send)
 	objectives.destroy();
 	instructions.destroy();
 
-	if (send) {
-		NetUtil::SendNavDelete(this, -1);
-	}
+	//if (send) {
+	//	NetUtil::SendNavDelete(this, -1);
+	//}
 }
 
 // +----------------------------------------------------------------------+

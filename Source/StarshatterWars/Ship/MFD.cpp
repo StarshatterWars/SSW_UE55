@@ -34,8 +34,6 @@
 #include "QuantumDrive.h"
 #include "Instruction.h"
 
-#include "NetGame.h"
-
 #include "CameraView.h"
 #include "Color.h"
 #include "SystemFont.h"

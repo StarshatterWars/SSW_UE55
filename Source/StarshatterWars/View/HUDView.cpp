@@ -40,7 +40,7 @@
 #include "Sim.h"
 #include "StarSystem.h"
 #include "Starshatter.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "MFD.h"
 #include "RadioView.h"
 #include "FormatUtil.h"
@@ -50,15 +50,12 @@
 #include "AudioConfig.h"
 #include "PlayerCharacter.h"
 
-#include "NetGame.h"
-#include "NetPlayer.h"
-
 #include "Color.h"
 #include "CameraView.h"
 #include "Screen.h"
 #include "DataLoader.h"
 #include "SimScene.h"
-#include "FontMgr.h"
+#include "FontManager.h"
 #include "Graphic.h"
 #include "Sprite.h"
 #include "Keyboard.h"
@@ -309,8 +306,8 @@ HUDView::DrawHUDText(int index, const char* txt, Rect& rect, int align, int upca
 
 		Sprite* s = hud_sprite[0];
 
-		int cx = (int)s->Location().x;
-		int cy = (int)s->Location().y;
+		int cx = (int)s->Location().X;
+		int cy = (int)s->Location().Y;
 		int w2 = s->Width() / 2;
 		int h2 = s->Height() / 2;
 
@@ -579,8 +576,8 @@ HUDView::HUDView(Window* c)
 	mfd[1]->SetMode(MFD::MFD_MODE_FOV);
 	mfd[2]->SetMode(MFD::MFD_MODE_GAME);
 
-	hud_font = FontMgr::Find("HUD");
-	big_font = FontMgr::Find("GUI");
+	hud_font = FontManager::Find("HUD");
+	big_font = FontManager::Find("GUI");
 
 	for (i = 0; i < TXT_LAST; i++) {
 		hud_text[i].font = hud_font;
@@ -874,7 +871,7 @@ HUDView::DrawContactMarkers()
 	Color c = ship->MarkerColor();
 
 	// draw own ship track ladder:
-	if (CameraDirector::GetCameraMode() == CameraDirector::MODE_ORBIT && ship->TrackLength() > 0) {
+	if (CameraManager::GetCameraMode() == CameraManager::MODE_ORBIT && ship->TrackLength() > 0) {
 		int ctl = ship->TrackLength();
 
 		FVector t1 = ship->Location();
@@ -897,7 +894,7 @@ HUDView::DrawContactMarkers()
 	projector->Transform(mark_pt);
 
 	// clip:
-	if (CameraDirector::GetCameraMode() == CameraDirector::MODE_ORBIT && mark_pt.Z > 1.0) {
+	if (CameraManager::GetCameraMode() == CameraManager::MODE_ORBIT && mark_pt.Z > 1.0) {
 		projector->Project(mark_pt);
 
 		int x = (int)mark_pt.X;
@@ -912,13 +909,13 @@ HUDView::DrawContactMarkers()
 				Rect self_rect(x + 8, y - 4, 200, 12);
 				DrawHUDText(TXT_SELF, ship->Name(), self_rect, DT_LEFT, HUD_MIXED_CASE);
 
-				if (NetGame::GetInstance()) {
+				/*if (NetGame::GetInstance()) {
 					PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 					if (p) {
 						Rect net_name_rect(x + 8, y + 6, 120, 12);
 						DrawHUDText(TXT_SELF_NAME, p->Name(), net_name_rect, DT_LEFT, HUD_MIXED_CASE);
 					}
-				}
+				}*/
 			}
 		}
 	}
@@ -1109,14 +1106,14 @@ HUDView::DrawContact(SimContact* contact, int index)
 			}
 
 			bool name_drawn = false;
-			if (NetGame::GetInstance() && c_ship) {
+			/*if (NetGame::GetInstance() && c_ship) {
 				NetPlayer* netp = NetGame::GetInstance()->FindPlayerByObjID(c_ship->GetObjID());
 				if (netp && strcmp(netp->Name(), "Server A.I. Ship")) {
 					Rect contact_rect(x + 8, y + 6, 120, 12);
 					DrawHUDText(TXT_CONTACT_NAME + index, netp->Name(), contact_rect, DT_LEFT, HUD_MIXED_CASE);
 					name_drawn = true;
 				}
-			}
+			}*/
 
 			if (!name_drawn && !name_crowded && c_ship && c_iff < 10 && !arcade) {
 				Rect contact_rect(x + 8, y + 6, 120, 12);
@@ -1184,7 +1181,7 @@ HUDView::DrawTrackSegment(FVector& t1, FVector& t2, Color c)
 }
 
 void
-HUDView::DrawTrack(Contact* contact)
+HUDView::DrawTrack(SimContact* contact)
 {
 	Ship* c_ship = contact->GetShip();
 

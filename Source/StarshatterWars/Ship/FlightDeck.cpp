@@ -40,9 +40,6 @@
 #include "CombatGroup.h"
 #include "CombatUnit.h"
 
-#include "NetData.h"
-#include "NetUtil.h"
-
 #include "Game.h"
 #include "Solid.h"
 #include "SimLight.h"
@@ -95,32 +92,37 @@ InboundSlot::InboundSlot(Ship* s, FlightDeck* d, int squad, int index)
 
 int InboundSlot::operator < (const InboundSlot& that) const
 {
-	double dthis = 0;
-	double dthat = 0;
+	double dthis = 0.0;
+	double dthat = 0.0;
 
-	if (ship == that.ship) {
-		return false;
+	if (ship == that.ship)
+		return 0;
+
+	// Cleared slots sort ahead of non-cleared slots:
+	if (cleared && !that.cleared)
+		return 1;
+
+	if (!cleared && that.cleared)
+		return 0;
+
+	// Distance-to-deck sort as secondary key:
+	if (ship && deck && that.ship)
+	{
+		const FVector DeckLoc = deck->MountLocation();
+		dthis = (ship->Location() - DeckLoc).Size();
+		dthat = (that.ship->Location() - DeckLoc).Size();
 	}
 
-	if (cleared && !that.cleared) {
-		return true;
+	// Tie-breaker: stable ordering without 32-bit pointer truncation
+	if (FMath::IsNearlyEqual(dthis, dthat))
+	{
+		// Note: std::less is the canonical way to order pointers in C++
+		return std::less<const InboundSlot*>()(this, &that) ? 1 : 0;
 	}
 
-	if (!cleared && that.cleared) {
-		return false;
-	}
-
-	if (ship && deck && that.ship) {
-		dthis = (ship->Location() - deck->MountLocation()).Size();
-		dthat = (that.ship->Location() - deck->MountLocation()).Size();
-	}
-
-	if (dthis == dthat) {
-		return (DWORD)this < (DWORD)&that;
-	}
-
-	return dthis < dthat;
+	return (dthis < dthat) ? 1 : 0;
 }
+
 
 int InboundSlot::operator <= (const InboundSlot& that) const
 {
@@ -248,7 +250,7 @@ FlightDeck::~FlightDeck()
 	if (hoops && num_hoops) {
 		for (int i = 0; i < num_hoops; i++) {
 			Hoop* h = &hoops[i];
-			Scene* scene = h->GetScene();
+			SimScene* scene = h->GetScene();
 			if (scene)
 				scene->DelGraphic(h);
 		}
@@ -278,7 +280,7 @@ FlightDeck::Initialize()
 
 	loader->LoadSound("Tires.wav", tire_sound, SOUND_FLAGS);
 	loader->LoadSound("Catapult.wav", catapult_sound, SOUND_FLAGS);
-	loader->SetDataPath(0);
+	loader->SetDataPath("");
 
 	if (tire_sound)
 		tire_sound->SetMaxDistance(2.5e3f);
@@ -304,217 +306,271 @@ FlightDeck::Close()
 // +--------------------------------------------------------------------+
 
 void
-FlightDeck::ExecFrame(double seconds)
+FlightDeck::ExecFrame(double Seconds)
 {
-	SimSystem::ExecFrame(seconds);
+	SimSystem::ExecFrame(Seconds);
 
-	bool advance_queue = false;
-	long max_vol = AudioConfig::EfxVolume();
-	long volume = -1000;
-	Sim* sim = Sim::GetSim();
+	bool bAdvanceQueue = false;
 
-	if (volume > max_vol)
-		volume = max_vol;
+	const long MaxVol = AudioConfig::EfxVolume();
+	long Volume = -1000; // keep original behavior
+
+	Sim* SimInst = Sim::GetSim();
+
+	if (Volume > MaxVol)
+		Volume = MaxVol;
 
 	// update ship status:
-	for (int i = 0; i < num_slots; i++) {
-		FlightDeckSlot* slot = &slots[i];
-		Ship* slot_ship = 0;
+	for (int SlotIndex = 0; SlotIndex < num_slots; SlotIndex++)
+	{
+		FlightDeckSlot* Slot = &slots[SlotIndex];
+		Ship* SlotShip = nullptr;
 
-		if (slot->ship == 0) {
-			slot->state = CLEAR;
+		if (Slot->ship == nullptr)
+		{
+			Slot->state = CLEAR;
 		}
-		else {
-			slot_ship = slot->ship;
-			slot_ship->SetThrottle(0);
+		else
+		{
+			SlotShip = Slot->ship;
+			SlotShip->SetThrottle(0);
 		}
 
-		switch (slot->state) {
+		switch (Slot->state)
+		{
 		case CLEAR:
-			if (slot->time > 0) {
-				slot->time -= seconds;
+			if (Slot->time > 0)
+			{
+				Slot->time -= Seconds;
 			}
-			else if (IsRecoveryDeck()) {
+			else if (IsRecoveryDeck())
+			{
 				GrantClearance();
 			}
 			break;
 
-		case READY: {
-			Camera c;
-			c.Clone(carrier->Cam());
-			c.Yaw(azimuth);
+		case READY:
+		{
+			Camera C;
+			C.Clone(carrier->Cam());
+			C.Yaw(azimuth);
 
-			if (slot_ship) {
-				slot_ship->CloneCam(c);
-				slot_ship->MoveTo(slot->spot_loc);
-				slot_ship->TranslateBy(carrier->Cam().vup() * slot->clearance);
-				slot_ship->SetVelocity(carrier->Velocity());
+			if (SlotShip)
+			{
+				SlotShip->CloneCam(C);
+				SlotShip->MoveTo(Slot->spot_loc);
+				SlotShip->TranslateBy(carrier->Cam().vup() * Slot->clearance);
+				SlotShip->SetVelocity(carrier->Velocity());
 			}
-			slot->time = 0;
+
+			Slot->time = 0;
 		}
-				  break;
+		break;
 
 		case QUEUED:
-			if (slot->time > 0) {
-				Camera c;
-				c.Clone(carrier->Cam());
-				c.Yaw(azimuth);
+			if (Slot->time > 0)
+			{
+				Camera C;
+				C.Clone(carrier->Cam());
+				C.Yaw(azimuth);
 
-				slot->time -= seconds;
-				if (slot_ship) {
-					slot_ship->CloneCam(c);
-					slot_ship->MoveTo(slot->spot_loc);
-					slot_ship->TranslateBy(carrier->Cam().vup() * slot->clearance);
-					slot_ship->SetFlightPhase(Ship::ALERT);
+				Slot->time -= Seconds;
+
+				if (SlotShip)
+				{
+					SlotShip->CloneCam(C);
+					SlotShip->MoveTo(Slot->spot_loc);
+					SlotShip->TranslateBy(carrier->Cam().vup() * Slot->clearance);
+					SlotShip->SetFlightPhase(Ship::ALERT);
 				}
 			}
 
-			if (slot->sequence == 1 && slot->time <= 0) {
-				bool clear_for_launch = true;
-				for (int i = 0; i < num_slots; i++)
-					if (slots[i].state == LOCKED)
-						clear_for_launch = false;
+			if (Slot->sequence == 1 && Slot->time <= 0)
+			{
+				bool bClearForLaunch = true;
+				for (int j = 0; j < num_slots; j++)
+				{
+					if (slots[j].state == LOCKED)
+					{
+						bClearForLaunch = false;
+						break;
+					}
+				}
 
-				if (clear_for_launch) {
-					slot->sequence = 0;
-					slot->state = LOCKED;
-					slot->time = cycle_time;
-					if (slot_ship)
-						slot_ship->SetFlightPhase(Ship::LOCKED);
+				if (bClearForLaunch)
+				{
+					Slot->sequence = 0;
+					Slot->state = LOCKED;
+					Slot->time = cycle_time;
+
+					if (SlotShip)
+						SlotShip->SetFlightPhase(Ship::LOCKED);
+
 					num_catsounds = 0;
-
-					advance_queue = true;
+					bAdvanceQueue = true;
 				}
 			}
 			break;
 
 		case LOCKED:
-			if (slot->time > 0) {
-				slot->time -= seconds;
+			if (Slot->time > 0)
+			{
+				Slot->time -= Seconds;
 
-				if (slot_ship) {
-					const double ct4 = cycle_time / 4.0;
+				if (SlotShip)
+				{
+					const double Ct4 = cycle_time / 4.0;
 
-					const double dx = start_rel.X - slot->spot_rel.X;
-					const double dy = start_rel.Z - slot->spot_rel.Z;
-					const double dyaw = atan2(dx, dy) - azimuth;
+					// UE-friendly (but still uses your legacy Matrix/Camera types):
+					const double Dx = start_rel.X - Slot->spot_rel.X;
+					const double Dy = start_rel.Z - Slot->spot_rel.Z;
+					const double Dyaw = atan2(Dx, Dy) - azimuth;
 
-					Camera c;
-					c.Clone(carrier->Cam());
-					c.Yaw(azimuth);
+					Camera C;
+					C.Clone(carrier->Cam());
+					C.Yaw(azimuth);
 
 					// rotate:
-					if (slot->time > 3 * ct4) {
-						const double step = 1 - (slot->time - 3 * ct4) / ct4;
-						c.Yaw(dyaw * step);
-						slot_ship->CloneCam(c);
-						slot_ship->MoveTo(slot->spot_loc);
-						slot_ship->TranslateBy(carrier->Cam().vup() * slot->clearance);
+					if (Slot->time > 3 * Ct4)
+					{
+						const double Step = 1.0 - (Slot->time - 3 * Ct4) / Ct4;
 
-						if (carrier->IsGroundUnit()) {
-							slot_ship->SetThrottle(25);
+						C.Yaw(Dyaw * Step);
+						SlotShip->CloneCam(C);
+						SlotShip->MoveTo(Slot->spot_loc);
+						SlotShip->TranslateBy(carrier->Cam().vup() * Slot->clearance);
+
+						if (carrier->IsGroundUnit())
+						{
+							SlotShip->SetThrottle(25);
 						}
-						else if (num_catsounds < 1) {
-							if (catapult_sound) {
-								Sound* sound = catapult_sound->Duplicate();
-								sound->SetLocation(slot_ship->Location());
-								sound->SetVolume(volume);
-								sound->Play();
+						else if (num_catsounds < 1)
+						{
+							if (catapult_sound)
+							{
+								Sound* Snd = catapult_sound->Duplicate();
+								if (Snd)
+								{
+									Snd->SetLocation(SlotShip->Location());
+									Snd->SetVolume(Volume);
+									Snd->Play();
+								}
 							}
 							num_catsounds = 1;
 						}
 					}
 
 					// translate:
-					else if (slot->time > 2 * ct4) {
-						const double step = (slot->time - 2 * ct4) / ct4;
+					else if (Slot->time > 2 * Ct4)
+					{
+						const double Step = (Slot->time - 2 * Ct4) / Ct4;
 
-						const FVector loc = start_point +
-							(slot->spot_loc - start_point) * (float)step;
+						const FVector Loc =
+							start_point + (Slot->spot_loc - start_point) * (float)Step;
 
-						c.Yaw(dyaw);
-						slot_ship->CloneCam(c);
-						slot_ship->MoveTo(loc);
-						slot_ship->TranslateBy(carrier->Cam().vup() * slot->clearance);
+						C.Yaw(Dyaw);
+						SlotShip->CloneCam(C);
+						SlotShip->MoveTo(Loc);
+						SlotShip->TranslateBy(carrier->Cam().vup() * Slot->clearance);
 
-						if (carrier->IsGroundUnit()) {
-							slot_ship->SetThrottle(25);
+						if (carrier->IsGroundUnit())
+						{
+							SlotShip->SetThrottle(25);
 						}
-						else if (num_catsounds < 2) {
-							if (catapult_sound) {
-								Sound* sound = catapult_sound->Duplicate();
-								sound->SetLocation(slot_ship->Location());
-								sound->SetVolume(volume);
-								sound->Play();
+						else if (num_catsounds < 2)
+						{
+							if (catapult_sound)
+							{
+								Sound* Snd = catapult_sound->Duplicate();
+								if (Snd)
+								{
+									Snd->SetLocation(SlotShip->Location());
+									Snd->SetVolume(Volume);
+									Snd->Play();
+								}
 							}
 							num_catsounds = 2;
 						}
 					}
 
 					// rotate:
-					else if (slot->time > ct4) {
-						const double step = (slot->time - ct4) / ct4;
-						c.Yaw(dyaw * step);
-						slot_ship->CloneCam(c);
-						slot_ship->MoveTo(start_point);
-						slot_ship->TranslateBy(carrier->Cam().vup() * slot->clearance);
+					else if (Slot->time > Ct4)
+					{
+						const double Step = (Slot->time - Ct4) / Ct4;
 
-						if (carrier->IsGroundUnit()) {
-							slot_ship->SetThrottle(25);
+						C.Yaw(Dyaw * Step);
+						SlotShip->CloneCam(C);
+						SlotShip->MoveTo(start_point);
+						SlotShip->TranslateBy(carrier->Cam().vup() * Slot->clearance);
+
+						if (carrier->IsGroundUnit())
+						{
+							SlotShip->SetThrottle(25);
 						}
-						else if (num_catsounds < 3) {
-							if (catapult_sound) {
-								Sound* sound = catapult_sound->Duplicate();
-								sound->SetLocation(slot_ship->Location());
-								sound->SetVolume(volume);
-								sound->Play();
+						else if (num_catsounds < 3)
+						{
+							if (catapult_sound)
+							{
+								Sound* Snd = catapult_sound->Duplicate();
+								if (Snd)
+								{
+									Snd->SetLocation(SlotShip->Location());
+									Snd->SetVolume(Volume);
+									Snd->Play();
+								}
 							}
 							num_catsounds = 3;
 						}
 					}
 
 					// wait:
-					else {
-						slot_ship->SetThrottle(100);
-						slot_ship->CloneCam(c);
-						slot_ship->MoveTo(start_point);
-						slot_ship->TranslateBy(carrier->Cam().vup() * slot->clearance);
+					else
+					{
+						SlotShip->SetThrottle(100);
+						SlotShip->CloneCam(C);
+						SlotShip->MoveTo(start_point);
+						SlotShip->TranslateBy(carrier->Cam().vup() * Slot->clearance);
 					}
 
-					slot_ship->SetFlightPhase(Ship::LOCKED);
+					SlotShip->SetFlightPhase(Ship::LOCKED);
 				}
 			}
-			else {
-				slot->state = LAUNCH;
-				slot->time = 0;
+			else
+			{
+				Slot->state = LAUNCH;
+				Slot->time = 0;
 			}
 			break;
 
 		case LAUNCH:
-			LaunchShip(slot_ship);
+			LaunchShip(SlotShip);
 			break;
 
 		case DOCKING:
-			if (slot_ship && !slot_ship->IsAirborne()) {
+			if (SlotShip && !SlotShip->IsAirborne())
+			{
 				// do arresting gear stuff:
-				if (slot_ship->GetFlightModel() == Ship::FM_ARCADE)
-					slot_ship->ArcadeStop();
+				if (SlotShip->GetFlightModel() == Ship::FM_ARCADE)
+					SlotShip->ArcadeStop();
 
-				slot_ship->SetVelocity(carrier->Velocity());
+				SlotShip->SetVelocity(carrier->Velocity());
 			}
 
-			if (slot->time > 0) {
-				slot->time -= seconds;
+			if (Slot->time > 0)
+			{
+				Slot->time -= Seconds;
 			}
-			else {
-				if (slot_ship) {
-					slot_ship->SetFlightPhase(Ship::DOCKED);
-					slot_ship->Stow();
+			else
+			{
+				if (SlotShip)
+				{
+					SlotShip->SetFlightPhase(Ship::DOCKED);
+					SlotShip->Stow();
 
-					NetUtil::SendObjKill(slot_ship, carrier, NetObjKill::KILL_DOCK, index);
+					// NetUtil::SendObjKill(SlotShip, carrier, NetObjKill::KILL_DOCK, SlotIndex);
 				}
 
-				Clear(i);
+				Clear(SlotIndex);
 			}
 			break;
 
@@ -523,11 +579,13 @@ FlightDeck::ExecFrame(double seconds)
 		}
 	}
 
-	if (advance_queue) {
-		for (int i = 0; i < num_slots; i++) {
-			FlightDeckSlot* slot = &slots[i];
-			if (slot->state == QUEUED && slot->sequence > 1)
-				slot->sequence--;
+	if (bAdvanceQueue)
+	{
+		for (int i = 0; i < num_slots; i++)
+		{
+			FlightDeckSlot* Slot = &slots[i];
+			if (Slot->state == QUEUED && Slot->sequence > 1)
+				Slot->sequence--;
 		}
 	}
 }
@@ -691,44 +749,108 @@ FlightDeck::SetCycleTime(double t)
 void
 FlightDeck::Orient(const Physical* rep)
 {
-	System::Orient(rep);
+	// Base orientation logic:
+	SimSystem::Orient(rep);
 
-	Matrix  orientation = rep->Cam().Orientation();
-	FVector loc = rep->Location();
+	if (!rep)
+		return;
 
-	start_point = (start_rel * orientation) + loc;
-	end_point = (end_rel * orientation) + loc;
-	cam_loc = (cam_rel * orientation) + loc;
+	/*
+		Starshatter camera basis:
+			vrt = right
+			vup = up
+			vpn = forward (view-plane normal)
+	*/
+
+	const FVector RepLoc = rep->Location();
+
+	// Extract and normalize camera basis:
+	FVector XAxis = rep->Cam().vrt(); // right
+	FVector YAxis = rep->Cam().vup(); // up
+	FVector ZAxis = rep->Cam().vpn(); // forward
+
+	XAxis = XAxis.GetSafeNormal();
+	YAxis = YAxis.GetSafeNormal();
+	ZAxis = ZAxis.GetSafeNormal();
+
+	// Defensive orthonormalization:
+	ZAxis = (ZAxis - (ZAxis | XAxis) * XAxis).GetSafeNormal();
+	YAxis = (XAxis ^ ZAxis).GetSafeNormal();
+
+	// Build world transform from camera frame:
+	const FMatrix CamM(
+		FPlane(XAxis.X, XAxis.Y, XAxis.Z, 0.0f),
+		FPlane(YAxis.X, YAxis.Y, YAxis.Z, 0.0f),
+		FPlane(ZAxis.X, ZAxis.Y, ZAxis.Z, 0.0f),
+		FPlane(RepLoc.X, RepLoc.Y, RepLoc.Z, 1.0f)
+	);
+
+	const FTransform RepXform(CamM);
+
+	// Transform deck-relative points into world space:
+	start_point = RepXform.TransformPosition(start_rel);
+	end_point = RepXform.TransformPosition(end_rel);
+	cam_loc = RepXform.TransformPosition(cam_rel);
 
 	for (int i = 0; i < num_approach_pts; i++)
-		approach_point[i] = (approach_rel[i] * orientation) + loc;
+		approach_point[i] = RepXform.TransformPosition(approach_rel[i]);
 
 	for (int i = 0; i < num_slots; i++)
-		slots[i].spot_loc = (slots[i].spot_rel * orientation) + loc;
+		slots[i].spot_loc = RepXform.TransformPosition(slots[i].spot_rel);
 
-	if (IsRecoveryDeck()) {
-		if (carrier->IsAirborne()) {
-			runway_point[0] = (runway_rel[0] * orientation) + loc;
-			runway_point[1] = (runway_rel[1] * orientation) + loc;
+	// ------------------------------------------------------------------
+	// Recovery deck logic:
+	// ------------------------------------------------------------------
+
+	if (IsRecoveryDeck())
+	{
+		if (carrier && carrier->IsAirborne())
+		{
+			runway_point[0] = RepXform.TransformPosition(runway_rel[0]);
+			runway_point[1] = RepXform.TransformPosition(runway_rel[1]);
 		}
 
-		if (num_hoops < 1) {
+		if (num_hoops < 1)
+		{
 			num_hoops = 4;
 			hoops = new Hoop[num_hoops];
 		}
 
-		const FVector hoop_vec_raw = start_point - end_point;
-		const float   hoop_len = hoop_vec_raw.Size();
-		const FVector hoop_vec_dir = (num_hoops > 0) ? hoop_vec_raw.GetSafeNormal() : FVector::ZeroVector;
-		const double  hoop_d = (num_hoops > 0) ? (double)(hoop_len / (float)num_hoops) : 0.0;
+		const FVector HoopVecRaw = start_point - end_point;
+		const float   HoopLen = HoopVecRaw.Size();
+		const FVector HoopDir =
+			(HoopLen > KINDA_SMALL_NUMBER) ? (HoopVecRaw / HoopLen) : FVector::ZeroVector;
 
-		orientation.Yaw(azimuth);
+		const float HoopStep =
+			(num_hoops > 0) ? (HoopLen / (float)num_hoops) : 0.0f;
 
-		for (int i = 0; i < num_hoops; i++) {
-			hoops[i].MoveTo(end_point + hoop_vec_dir * (float)((i + 1) * hoop_d));
-			hoops[i].SetOrientation(orientation);
+		// Base rotation from the deck:
+		const FQuat RepQ = RepXform.GetRotation();
+
+		// Apply azimuth (legacy value is radians) around deck UP axis:
+		const FQuat AzQ(YAxis, (float)azimuth);
+
+		// World-space azimuth:
+		const FQuat HoopQ = AzQ * RepQ;
+
+		// Solid expects FMatrix:
+		const FMatrix HoopM = FQuatRotationMatrix(HoopQ);
+
+		for (int i = 0; i < num_hoops; i++)
+		{
+			const FVector HoopPos =
+				end_point + HoopDir * (HoopStep * (float)(i + 1));
+
+			hoops[i].MoveTo(HoopPos);
+			hoops[i].SetOrientation(HoopM);
 		}
 	}
+
+	// ------------------------------------------------------------------
+	// Mount + light:
+	// ------------------------------------------------------------------
+
+	mount_loc = RepXform.TransformPosition(mount_rel);
 
 	if (light)
 		light->MoveTo(mount_loc);
@@ -737,245 +859,328 @@ FlightDeck::Orient(const Physical* rep)
 // +----------------------------------------------------------------------+
 
 int
-FlightDeck::SpaceLeft(int type) const
+FlightDeck::SpaceLeft(int Type) const
 {
-	int space_left = 0;
+	int SpaceLeftCount = 0;
 
-	for (int i = 0; i < num_slots; i++)
-		if (slots[i].ship == 0 && (slots[i].filter & type))
-			space_left++;
+	for (int i = 0; i < num_slots; ++i)
+	{
+		if (slots[i].ship == nullptr && (slots[i].filter & Type))
+		{
+			++SpaceLeftCount;
+		}
+	}
 
-	return space_left;
+	return SpaceLeftCount;
 }
 
 // +----------------------------------------------------------------------+
 
 bool
-FlightDeck::Spot(Ship* s, int& index)
+FlightDeck::Spot(Ship* s, int& outIndex)
 {
 	if (!s)
 		return false;
 
-	if (index < 0) {
-		for (int i = 0; i < num_slots; i++) {
-			if (slots[i].ship == 0 && (slots[i].filter & s->Class())) {
-				index = i;
+	// Find first available compatible slot if caller didn't specify one:
+	if (outIndex < 0)
+	{
+		outIndex = -1;
+
+		for (int i = 0; i < num_slots; i++)
+		{
+			if (slots[i].ship == nullptr && (slots[i].filter & s->Class()))
+			{
+				outIndex = i;
 				break;
 			}
 		}
 	}
 
-	if (index >= 0 && index < num_slots && slots[index].ship == 0) {
-		slots[index].state = READY;
-		slots[index].ship = s;
-		slots[index].clearance = 0;
+	// Validate slot:
+	if (outIndex < 0 || outIndex >= num_slots)
+		return false;
 
-		if (s->GetGear())
-			slots[index].clearance = s->GetGear()->GetClearance();
+	if (slots[outIndex].ship != nullptr)
+		return false;
 
-		if (IsRecoveryDeck() && !s->IsAirborne()) {
-			s->SetVelocity(s->Velocity() * 0.01f);   // hit the brakes!
-		}
+	// Assign:
+	slots[outIndex].state = READY;
+	slots[outIndex].ship = s;
+	slots[outIndex].clearance = 0.0f;
 
-		if (!IsRecoveryDeck()) {
-			Camera work;
-			work.Clone(carrier->Cam());
-			work.Yaw(azimuth);
+	if (LandingGear* Gear = s->GetGear())
+		slots[outIndex].clearance = Gear->GetClearance();
 
-			s->CloneCam(work);
-			s->MoveTo(slots[index].spot_loc);
-
-			LandingGear* g = s->GetGear();
-			if (g) {
-				g->SetState(LandingGear::GEAR_DOWN);
-				g->ExecFrame(0);
-				s->TranslateBy(carrier->Cam().vup() * slots[index].clearance);
-			}
-
-			s->SetFlightPhase(Ship::ALERT);
-		}
-
-		s->SetCarrier(carrier, this);
-		Observe(s);
-
-		return true;
+	// Recovery deck: if ship is already landed, bleed velocity hard:
+	if (IsRecoveryDeck() && !s->IsAirborne())
+	{
+		s->SetVelocity(s->Velocity() * 0.01);
 	}
 
-	return false;
+	// Non-recovery deck:
+	if (!IsRecoveryDeck())
+	{
+		Camera WorkCam;
+		WorkCam.Clone(carrier->Cam());
+		WorkCam.Yaw(azimuth);
+
+		s->CloneCam(WorkCam);
+		s->MoveTo(slots[outIndex].spot_loc);
+
+		if (LandingGear* Gear = s->GetGear())
+		{
+			Gear->SetState(LandingGear::GEAR_DOWN);
+			Gear->ExecFrame(0);
+
+			const FVector Up = carrier->Cam().vup();
+			s->TranslateBy(Up * slots[outIndex].clearance);
+		}
+
+		s->SetFlightPhase(Ship::ALERT);
+	}
+
+	s->SetCarrier(carrier, this);
+	Observe(s);
+
+	return true;
 }
+
 
 bool
-FlightDeck::Clear(int index)
+FlightDeck::Clear(int slotIndex)
 {
-	if (index >= 0 && index < num_slots && slots[index].ship != 0) {
-		Ship* s = slots[index].ship;
+	if (slotIndex < 0 || slotIndex >= num_slots)
+		return false;
 
-		slots[index].ship = 0;
-		slots[index].time = cycle_time;
-		slots[index].state = CLEAR;
+	if (slots[slotIndex].ship == nullptr)
+		return false;
 
-		ListIter<InboundSlot> iter = recovery_queue;
-		while (++iter) {
-			if (iter->GetShip() == s) {
-				delete iter.removeItem(); // NOTE: legacy behavior preserved
-				break;
-			}
+	Ship* s = slots[slotIndex].ship;
+
+	slots[slotIndex].ship = nullptr;
+	slots[slotIndex].time = cycle_time;
+	slots[slotIndex].state = CLEAR;
+
+	// Remove ship from recovery queue (legacy: delete removed item):
+	ListIter<InboundSlot> iter = recovery_queue;
+	while (++iter)
+	{
+		if (iter->GetShip() == s)
+		{
+			delete iter.removeItem(); // legacy ownership model
+			break;
 		}
-
-		return true;
 	}
 
-	return false;
+	return true;
 }
+
 
 // +----------------------------------------------------------------------+
 
 bool
-FlightDeck::Launch(int index)
+FlightDeck::Launch(int slotIndex)
 {
-	if (subtype == FLIGHT_DECK_LAUNCH && index >= 0 && index < num_slots) {
-		FlightDeckSlot* slot = &slots[index];
+	// Avoid C4458 if FlightDeck has a member named "index"
+	if (subtype != FLIGHT_DECK_LAUNCH)
+		return false;
 
-		if (slot->ship && slot->state == READY) {
-			int last = 0;
-			FlightDeckSlot* last_slot = 0;
-			FlightDeckSlot* lock_slot = 0;
+	if (slotIndex < 0 || slotIndex >= num_slots)
+		return false;
 
-			for (int i = 0; i < num_slots; i++) {
-				FlightDeckSlot* s = &slots[i];
+	FlightDeckSlot* slot = &slots[slotIndex];
 
-				if (s->state == QUEUED && s->sequence > last) {
-					last = s->sequence;
-					last_slot = s;
-				}
-				else if (s->state == LOCKED) {
-					lock_slot = s;
-				}
-			}
+	if (slot->ship == nullptr || slot->state != READY)
+		return false;
 
-			// queue the slot for launch:
-			slot->state = QUEUED;
-			slot->sequence = last + 1;
-			slot->time = 0;
+	int lastSeq = 0;
+	FlightDeckSlot* lastQueuedSlot = nullptr;
+	FlightDeckSlot* lockedSlot = nullptr;
 
-			if (last_slot)
-				slot->time = last_slot->time + cycle_time;
-			else if (lock_slot)
-				slot->time = lock_slot->time;
+	for (int i = 0; i < num_slots; i++)
+	{
+		FlightDeckSlot* s = &slots[i];
 
-			return true;
+		if (s->state == QUEUED && s->sequence > lastSeq)
+		{
+			lastSeq = s->sequence;
+			lastQueuedSlot = s;
+		}
+		else if (s->state == LOCKED)
+		{
+			lockedSlot = s;
 		}
 	}
 
-	return false;
+	// Queue the slot for launch:
+	slot->state = QUEUED;
+	slot->sequence = lastSeq + 1;
+	slot->time = 0;
+
+	if (lastQueuedSlot)
+	{
+		slot->time = lastQueuedSlot->time + cycle_time;
+	}
+	else if (lockedSlot)
+	{
+		slot->time = lockedSlot->time;
+	}
+
+	return true;
 }
+
 
 // +----------------------------------------------------------------------+
 
 bool
 FlightDeck::Recover(Ship* s)
 {
-	if (s && subtype == FLIGHT_DECK_RECOVERY) {
-		if (OverThreshold(s)) {
-			if (s->GetFlightPhase() < Ship::RECOVERY) {
-				s->SetFlightPhase(Ship::RECOVERY);
-				s->SetCarrier(carrier, this); // needed for dock cam
+	if (!s)
+		return false;
+
+	if (subtype != FLIGHT_DECK_RECOVERY)
+		return false;
+
+	if (!OverThreshold(s))
+	{
+		// If the ship fell back under the approach threshold, revert RECOVERY -> ACTIVE:
+		if (s->GetFlightPhase() == Ship::RECOVERY)
+			s->SetFlightPhase(Ship::ACTIVE);
+
+		return false;
+	}
+
+	// Ensure ship is in RECOVERY phase and bound to this carrier/deck for dock camera logic:
+	if (s->GetFlightPhase() < Ship::RECOVERY)
+	{
+		s->SetFlightPhase(Ship::RECOVERY);
+		s->SetCarrier(carrier, this);
+	}
+
+	// "Are we there yet?" Docking gate:
+	if (s->GetFlightPhase() >= Ship::ACTIVE && s->GetFlightPhase() < Ship::DOCKING)
+	{
+		// UE FIX: nullptr instead of 0
+		// Legacy behavior: only check docking clearance if slot 0 is empty (approach gate)
+		if (slots[0].ship == nullptr)
+		{
+			const FVector DeckMountLoc = MountLocation();
+			const FVector ShipLoc = s->Location();
+
+			const double DockDistance = (ShipLoc - DeckMountLoc).Size();
+
+			if (s->IsAirborne())
+			{
+				// UE FIX: FVector uses Z as "up" in Unreal. Starshatter often used Y as up.
+				// If your port standardizes to Unreal coordinates, use Z; if not, keep Y.
+				// Pick ONE and keep it consistent engine-wide.
+				const double Altitude =
+#if 1   // set to 0 if your world-up is Y
+					ShipLoc.Z - DeckMountLoc.Z;
+#else
+					ShipLoc.Y - DeckMountLoc.Y;
+#endif
+
+				if (DockDistance < Radius() * 3.0 && Altitude < s->Radius())
+					Dock(s);
 			}
-
-			// are we there yet?
-			if (s->GetFlightPhase() >= Ship::ACTIVE && s->GetFlightPhase() < Ship::DOCKING) {
-				if (slots[0].ship == 0) { // only need to ask this on approach
-					const double dock_distance = (s->Location() - MountLocation()).Size();
-
-					if (s->IsAirborne()) {
-						const double altitude = s->Location().Y - MountLocation().Y;
-						if (dock_distance < Radius() * 3 && altitude < s->Radius())
-							Dock(s);
-					}
-					else {
-						if (dock_distance < s->Radius())
-							Dock(s);
-					}
-				}
+			else
+			{
+				if (DockDistance < s->Radius())
+					Dock(s);
 			}
-
-			return true;
-		}
-		else {
-			if (s->GetFlightPhase() == Ship::RECOVERY)
-				s->SetFlightPhase(Ship::ACTIVE);
 		}
 	}
 
-	return false;
+	return true;
 }
+
 
 bool
 FlightDeck::Dock(Ship* s)
 {
-	if (s && subtype == FLIGHT_DECK_RECOVERY && slots[0].time <= 0) {
-		int index = 0;
-		if (Spot(s, index)) {
-			s->SetFlightPhase(Ship::DOCKING);
-			s->SetCarrier(carrier, this);
+	if (!s)
+		return false;
 
-			// hard landings?
-			if (Ship::GetLandingModel() == 0) {
-				const double base_damage = s->Design()->integrity;
+	if (subtype != FLIGHT_DECK_RECOVERY)
+		return false;
 
-				// did player do something stupid?
-				if (s->GetGear() && !s->IsGearDown()) {
-					UE_LOG(LogTemp, Warning, TEXT("FlightDeck::Dock(%s) Belly landing!"), ANSI_TO_TCHAR(s->Name()));
-					s->InflictDamage(0.5 * base_damage);
-				}
+	if (slots[0].time > 0)
+		return false;
 
-				const double docking_deflection = fabs(carrier->Cam().vup().Y - s->Cam().vup().Y);
+	int slotIndex = 0;
+	if (!Spot(s, slotIndex))
+		return false;
 
-				if (docking_deflection > 0.35) {
-					UE_LOG(LogTemp, Warning, TEXT("Landing upside down? y = %.3f"), docking_deflection);
-					s->InflictDamage(0.8 * base_damage);
-				}
+	s->SetFlightPhase(Ship::DOCKING);
+	s->SetCarrier(carrier, this);
 
-				// did incoming ship exceed safe landing parameters?
-				if (s->IsAirborne()) {
-					if (s->Velocity().Y < -20) {
-						UE_LOG(LogTemp, Warning, TEXT("FlightDeck::Dock(%s) Slammed it!"), ANSI_TO_TCHAR(s->Name()));
-						s->InflictDamage(0.1 * base_damage);
-					}
-				}
+	// hard landings?
+	if (Ship::GetLandingModel() == 0)
+	{
+		const double base_damage = s->Design()->integrity;
 
-				// did incoming ship exceed safe docking speed?
-				else {
-					const FVector delta_v = s->Velocity() - carrier->Velocity();
-					const double  excess = (delta_v.Size() - 100.0);
+		// did player do something stupid?
+		if (s->GetGear() && !s->IsGearDown())
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("FlightDeck::Dock(%s) Belly landing!"),
+				ANSI_TO_TCHAR(s->Name()));
+			s->InflictDamage(0.5 * base_damage);
+		}
 
-					if (excess > 0)
-						s->InflictDamage(excess);
-				}
+		const double docking_deflection =
+			FMath::Abs(carrier->Cam().vup().Y - s->Cam().vup().Y);
+
+		if (docking_deflection > 0.35)
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("Landing upside down? y = %.3f"),
+				docking_deflection);
+			s->InflictDamage(0.8 * base_damage);
+		}
+
+		// did incoming ship exceed safe landing parameters?
+		if (s->IsAirborne())
+		{
+			if (s->Velocity().Y < -20.0)
+			{
+				UE_LOG(LogTemp, Warning,
+					TEXT("FlightDeck::Dock(%s) Slammed it!"),
+					ANSI_TO_TCHAR(s->Name()));
+				s->InflictDamage(0.1 * base_damage);
 			}
+		}
+		// did incoming ship exceed safe docking speed?
+		else
+		{
+			const FVector DeltaV = s->Velocity() - carrier->Velocity();
+			const double  Excess = DeltaV.Size() - 100.0;
 
-			if (s->IsAirborne()) {
-				if (s == Sim::GetSim()->GetPlayerShip() && tire_sound) {
-					Sound* sound = tire_sound->Duplicate();
-					sound->Play();
-				}
-			}
-
-			if (s->GetDrive())
-				s->GetDrive()->PowerOff();
-
-			slots[index].state = DOCKING;
-			slots[index].time = 5;
-
-			if (s->IsAirborne())
-				slots[index].time = 7.5;
-
-			return true;
+			if (Excess > 0.0)
+				s->InflictDamage(Excess);
 		}
 	}
 
-	return false;
+	if (s->IsAirborne())
+	{
+		if (s == Sim::GetSim()->GetPlayerShip() && tire_sound)
+		{
+			Sound* sound = tire_sound->Duplicate();
+			sound->Play();
+		}
+	}
+
+	if (s->GetDrive())
+		s->GetDrive()->PowerOff();
+
+	slots[slotIndex].state = DOCKING;
+	slots[slotIndex].time = s->IsAirborne() ? 7.5 : 5.0;
+
+	return true;
 }
+
 
 int
 FlightDeck::Inbound(InboundSlot*& s)
@@ -1092,37 +1297,37 @@ FlightDeck::PrintQueue()
 // +----------------------------------------------------------------------+
 
 Ship*
-FlightDeck::GetShip(int index) const
+FlightDeck::GetShip(int slotIndex) const
 {
-	if (index >= 0 && index < num_slots)
-		return slots[index].ship;
+	if (slotIndex >= 0 && slotIndex < num_slots)
+		return slots[slotIndex].ship;
 
-	return 0;
+	return nullptr;
 }
 
 double
-FlightDeck::TimeRemaining(int index) const
+FlightDeck::TimeRemaining(int slotIndex) const
 {
-	if (index >= 0 && index < num_slots)
-		return slots[index].time;
+	if (slotIndex >= 0 && slotIndex < num_slots)
+		return slots[slotIndex].time;
+
+	return 0.0;
+}
+
+int
+FlightDeck::State(int slotIndex) const
+{
+	if (slotIndex >= 0 && slotIndex < num_slots)
+		return slots[slotIndex].state;
 
 	return 0;
 }
 
 int
-FlightDeck::State(int index) const
+FlightDeck::Sequence(int slotIndex) const
 {
-	if (index >= 0 && index < num_slots)
-		return slots[index].state;
-
-	return 0;
-}
-
-int
-FlightDeck::Sequence(int index) const
-{
-	if (index >= 0 && index < num_slots)
-		return slots[index].sequence;
+	if (slotIndex >= 0 && slotIndex < num_slots)
+		return slots[slotIndex].sequence;
 
 	return 0;
 }

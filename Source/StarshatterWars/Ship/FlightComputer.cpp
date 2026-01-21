@@ -104,83 +104,94 @@ FlightComputer::ExecThrottle()
 void
 FlightComputer::ExecTrans()
 {
-	double tx = ship->TransX();
-	double ty = ship->TransY();
-	double tz = ship->TransZ();
+	double Tx = ship->TransX();
+	double Ty = ship->TransY();
+	double Tz = ship->TransZ();
 
-	double trans_x = tx;
-	double trans_y = ty;
-	double trans_z = tz;
+	double TransX = Tx;
+	double TransY = Ty;
+	double TransZ = Tz;
 
-	bool flcs_operative = false;
+	bool bFlcsOperative = false;
 
 	if (IsPowerOn())
-		flcs_operative = Status() == SimSystem::NOMINAL ||
-		Status() == SimSystem::DEGRADED;
+	{
+		bFlcsOperative =
+			Status() == SimSystem::NOMINAL ||
+			Status() == SimSystem::DEGRADED;
+	}
+
+	// Convenience: Starshatter-style "*" was effectively dot-product.
+	const FVector Vel = ship->Velocity();
+	const FVector Beam = ship->BeamLine();
+	const FVector Lift = ship->LiftLine();
+	const FVector Head = ship->Heading();
 
 	// ----------------------------------------------------------
 	// FIGHTER FLCS AUTO MODE
 	// ----------------------------------------------------------
-
-	if (mode == Ship::FLCS_AUTO) {
+	if (mode == Ship::FLCS_AUTO)
+	{
 		// auto thrust to align flight path with orientation:
-		if (tx == 0) {
-			if (flcs_operative)
-				trans_x = (ship->Velocity() * ship->BeamLine() * -200);
-
+		if (FMath::IsNearlyZero(Tx))
+		{
+			if (bFlcsOperative)
+				TransX = FVector::DotProduct(Vel, Beam) * -200.0;
 			else
-				trans_x = 0;
+				TransX = 0.0;
 		}
 
-		// manual thrust up to vlimit/2:
-		else {
-			double vfwd = ship->BeamLine() * ship->Velocity();
+		// manual thrust up to vlimit:
+		else
+		{
+			const double Vfwd = FVector::DotProduct(Beam, Vel);
 
-			if (FMath::Abs(vfwd) >= vlimit) {
-				if (trans_x > 0 && vfwd > 0)
-					trans_x = 0;
-
-				else if (trans_x < 0 && vfwd < 0)
-					trans_x = 0;
+			if (FMath::Abs(Vfwd) >= vlimit)
+			{
+				if (TransX > 0.0 && Vfwd > 0.0)
+					TransX = 0.0;
+				else if (TransX < 0.0 && Vfwd < 0.0)
+					TransX = 0.0;
 			}
 		}
 
-		if (halt && flcs_operative) {
-			if (ty == 0) {
-				double vfwd = ship->Heading() * ship->Velocity();
-				double vmag = FMath::Abs(vfwd);
+		if (halt && bFlcsOperative)
+		{
+			if (FMath::IsNearlyZero(Ty))
+			{
+				const double Vfwd = FVector::DotProduct(Head, Vel);
+				const double Vmag = FMath::Abs(Vfwd);
 
-				if (vmag > 0) {
-					if (vfwd > 0)
-						trans_y = -trans_y_limit;
-					else
-						trans_y = trans_y_limit;
+				if (Vmag > 0.0)
+				{
+					TransY = (Vfwd > 0.0) ? -trans_y_limit : trans_y_limit;
 
-					if (vfwd < vlimit / 2)
-						trans_y *= (vmag / (vlimit / 2));
+					if (Vfwd < vlimit / 2.0)
+						TransY *= (Vmag / (vlimit / 2.0));
 				}
 			}
 		}
 
 		// auto thrust to align flight path with orientation:
-		if (tz == 0) {
-			if (flcs_operative)
-				trans_z = (ship->Velocity() * ship->LiftLine() * -200);
-
+		if (FMath::IsNearlyZero(Tz))
+		{
+			if (bFlcsOperative)
+				TransZ = FVector::DotProduct(Vel, Lift) * -200.0;
 			else
-				trans_z = 0;
+				TransZ = 0.0;
 		}
 
-		// manual thrust up to vlimit/2:
-		else {
-			double vfwd = ship->LiftLine() * ship->Velocity();
+		// manual thrust up to vlimit:
+		else
+		{
+			const double Vfwd = FVector::DotProduct(Lift, Vel);
 
-			if (FMath::Abs(vfwd) >= vlimit) {
-				if (trans_z > 0 && vfwd > 0)
-					trans_z = 0;
-
-				else if (trans_z < 0 && vfwd < 0)
-					trans_z = 0;
+			if (FMath::Abs(Vfwd) >= vlimit)
+			{
+				if (TransZ > 0.0 && Vfwd > 0.0)
+					TransZ = 0.0;
+				else if (TransZ < 0.0 && Vfwd < 0.0)
+					TransZ = 0.0;
 			}
 		}
 	}
@@ -188,142 +199,159 @@ FlightComputer::ExecTrans()
 	// ----------------------------------------------------------
 	// STARSHIP HELM MODE
 	// ----------------------------------------------------------
-
-	else if (mode == Ship::FLCS_HELM) {
-		if (flcs_operative) {
-			double compass_heading = ship->CompassHeading();
-			double compass_pitch = ship->CompassPitch();
+	else if (mode == Ship::FLCS_HELM)
+	{
+		if (bFlcsOperative)
+		{
+			const double CompassHeading = ship->CompassHeading();
+			const double CompassPitch = ship->CompassPitch();
 
 			// rotate helm into compass orientation:
-			double helm = ship->GetHelmHeading() - compass_heading;
+			double Helm = ship->GetHelmHeading() - CompassHeading;
 
-			if (helm > PI)
-				helm -= 2 * PI;
-			else if (helm < -PI)
-				helm += 2 * PI;
+			if (Helm > UE_PI)
+				Helm -= 2.0 * UE_PI;
+			else if (Helm < -UE_PI)
+				Helm += 2.0 * UE_PI;
 
 			// turn to align with helm heading:
-			if (helm != 0)
-				ship->ApplyYaw(helm);
+			if (!FMath::IsNearlyZero(Helm))
+				ship->ApplyYaw(Helm);
 
 			// pitch to align with helm pitch:
-			if (compass_pitch != ship->GetHelmPitch())
-				ship->ApplyPitch(compass_pitch - ship->GetHelmPitch());
+			if (!FMath::IsNearlyEqual(CompassPitch, ship->GetHelmPitch()))
+				ship->ApplyPitch(CompassPitch - ship->GetHelmPitch());
 
 			// roll to align with world coordinates:
-			if (ship->Design()->auto_roll > 0) {
+			if (ship->Design()->auto_roll > 0)
+			{
+				// Ensure ship->Cam().vrt() is already an FVector (preferred).
+				// If it's a legacy Vec3, add a conversion helper and use it here.
 				const FVector Vrt = ship->Cam().vrt();
-				double deflection = Vrt.Y;
 
-				if (FMath::Abs(helm) < PI / 16 || ship->Design()->turn_bank < 0.01) {
-					if (ship->Design()->auto_roll > 1) {
+				// Starshatter used Y as "deflection" here; keep as-is:
+				const double Deflection = Vrt.Y;
+
+				if (FMath::Abs(Helm) < UE_PI / 16.0 || ship->Design()->turn_bank < 0.01)
+				{
+					if (ship->Design()->auto_roll > 1)
+					{
 						ship->ApplyRoll(0.5);
 					}
-					else if (deflection != 0) {
-						double theta = FMath::Asin(deflection);
-						ship->ApplyRoll(-theta);
+					else if (!FMath::IsNearlyZero(Deflection))
+					{
+						const double Theta = FMath::Asin(Deflection);
+						ship->ApplyRoll(-Theta);
 					}
 				}
 
 				// else roll through turn maneuvers:
-				else {
-					double desired_bank = ship->Design()->turn_bank;
+				else
+				{
+					double DesiredBank = ship->Design()->turn_bank;
+					if (Helm >= 0.0)
+						DesiredBank = -DesiredBank;
 
-					if (helm >= 0)
-						desired_bank = -desired_bank;
-
-					double current_bank = FMath::Asin(deflection);
-					double theta = desired_bank - current_bank;
-					ship->ApplyRoll(theta);
+					const double CurrentBank = FMath::Asin(Deflection);
+					const double Theta = DesiredBank - CurrentBank;
+					ship->ApplyRoll(Theta);
 
 					// coordinate the turn:
-					if ((current_bank < 0 && desired_bank < 0) ||
-						(current_bank > 0 && desired_bank > 0)) {
-
-						double coord_pitch =
-							compass_pitch
+					if ((CurrentBank < 0.0 && DesiredBank < 0.0) ||
+						(CurrentBank > 0.0 && DesiredBank > 0.0))
+					{
+						const double CoordPitch =
+							CompassPitch
 							- ship->GetHelmPitch()
-							- FMath::Abs(helm) * FMath::Abs(current_bank);
+							- FMath::Abs(Helm) * FMath::Abs(CurrentBank);
 
-						ship->ApplyPitch(coord_pitch);
+						ship->ApplyPitch(CoordPitch);
 					}
 				}
 			}
 		}
 
 		// flcs inoperative, set helm heading based on actual compass heading:
-		else {
+		else
+		{
 			ship->SetHelmHeading(ship->CompassHeading());
 			ship->SetHelmPitch(ship->CompassPitch());
 		}
 
 		// auto thrust to align flight path with helm order:
-		if (tx == 0) {
-			if (flcs_operative)
-				trans_x = (ship->Velocity() * ship->BeamLine() * ship->Mass() * -1);
-
+		if (FMath::IsNearlyZero(Tx))
+		{
+			if (bFlcsOperative)
+				TransX = FVector::DotProduct(Vel, Beam) * ship->Mass() * -1.0;
 			else
-				trans_x = 0;
+				TransX = 0.0;
 		}
 
 		// manual thrust up to vlimit/2:
-		else {
-			double vfwd = ship->BeamLine() * ship->Velocity();
+		else
+		{
+			const double Vfwd = FVector::DotProduct(Beam, Vel);
 
-			if (FMath::Abs(vfwd) >= vlimit / 2) {
-				if (trans_x > 0 && vfwd > 0)
-					trans_x = 0;
-
-				else if (trans_x < 0 && vfwd < 0)
-					trans_x = 0;
+			if (FMath::Abs(Vfwd) >= vlimit / 2.0)
+			{
+				if (TransX > 0.0 && Vfwd > 0.0)
+					TransX = 0.0;
+				else if (TransX < 0.0 && Vfwd < 0.0)
+					TransX = 0.0;
 			}
 		}
 
-		if (trans_y == 0 && halt) {
-			double vfwd = ship->Heading() * ship->Velocity();
-			double vdesired = 0;
+		if (FMath::IsNearlyZero(TransY) && halt)
+		{
+			const double Vfwd = FVector::DotProduct(Head, Vel);
+			const double Vdesired = 0.0;
 
-			if (vfwd > vdesired) {
-				trans_y = -trans_y_limit;
+			if (Vfwd > Vdesired)
+			{
+				TransY = -trans_y_limit;
 
-				if (!flcs_operative)
-					trans_y = 0;
+				if (!bFlcsOperative)
+					TransY = 0.0;
 
-				double vdelta = vfwd - vdesired;
-				if (vdelta < vlimit / 2)
-					trans_y *= (vdelta / (vlimit / 2));
+				const double Vdelta = Vfwd - Vdesired;
+				if (Vdelta < vlimit / 2.0)
+					TransY *= (Vdelta / (vlimit / 2.0));
 			}
 		}
 
 		// auto thrust to align flight path with helm order:
-		if (tz == 0) {
-			if (flcs_operative)
-				trans_z = (ship->Velocity() * ship->LiftLine() * ship->Mass() * -1);
-
+		if (FMath::IsNearlyZero(Tz))
+		{
+			if (bFlcsOperative)
+				TransZ = FVector::DotProduct(Vel, Lift) * ship->Mass() * -1.0;
 			else
-				trans_z = 0;
+				TransZ = 0.0;
 		}
 
 		// manual thrust up to vlimit/2:
-		else {
-			double vfwd = ship->LiftLine() * ship->Velocity();
+		else
+		{
+			const double Vfwd = FVector::DotProduct(Lift, Vel);
 
-			if (FMath::Abs(vfwd) > vlimit / 2) {
-				if (trans_z > 0 && vfwd > 0)
-					trans_z = 0;
-
-				else if (trans_z < 0 && vfwd < 0)
-					trans_z = 0;
+			if (FMath::Abs(Vfwd) > vlimit / 2.0)
+			{
+				if (TransZ > 0.0 && Vfwd > 0.0)
+					TransZ = 0.0;
+				else if (TransZ < 0.0 && Vfwd < 0.0)
+					TransZ = 0.0;
 			}
 		}
 	}
 
-	if (ship->GetThruster()) {
-		ship->GetThruster()->ExecTrans(trans_x, trans_y, trans_z);
+	// Apply translation either through thruster subsystem or directly to ship:
+	if (ship->GetThruster())
+	{
+		ship->GetThruster()->ExecTrans(TransX, TransY, TransZ);
 	}
-	else {
-		ship->SetTransX(trans_x);
-		ship->SetTransY(trans_y);
-		ship->SetTransZ(trans_z);
+	else
+	{
+		ship->SetTransX(TransX);
+		ship->SetTransY(TransY);
+		ship->SetTransZ(TransZ);
 	}
 }

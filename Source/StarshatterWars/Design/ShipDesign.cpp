@@ -1670,8 +1670,8 @@ ShipDesign::ParseDrive(TermStruct* val)
 	bool   trail = true;
 	Drive* drive = 0;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
+	for (int elemIdx = 0; elemIdx < val->elements()->size(); elemIdx++) {
+		TermDef* pdef = val->elements()->at(elemIdx)->isDef();
 		if (pdef) {
 			Text defname = pdef->name()->value();
 			defname.setSensitive(false);
@@ -1683,7 +1683,7 @@ ShipDesign::ParseDrive(TermStruct* val)
 					Text tval = tname->value();
 					tval.setSensitive(false);
 
-					if (tval == "Plasma")       dtype = Drive::PLASMA;
+					if (tval == "Plasma")            dtype = Drive::PLASMA;
 					else if (tval == "Fusion")       dtype = Drive::FUSION;
 					else if (tval == "Alien")        dtype = Drive::GREEN;
 					else if (tval == "Green")        dtype = Drive::GREEN;
@@ -1752,17 +1752,20 @@ ShipDesign::ParseDrive(TermStruct* val)
 				}
 
 				else if (pdef->term()->isStruct()) {
-					TermStruct* val = pdef->term()->isStruct();
+					TermStruct* portStruct = pdef->term()->isStruct();
 
-					for (int i = 0; i < val->elements()->size(); i++) {
-						TermDef* pdef2 = val->elements()->at(i)->isDef();
+					for (int portElemIdx = 0; portElemIdx < portStruct->elements()->size(); portElemIdx++) {
+						TermDef* pdef2 = portStruct->elements()->at(portElemIdx)->isDef();
 						if (pdef2) {
-							if (pdef2->name()->value() == "loc") {
+							Text portDefName = pdef2->name()->value();
+							portDefName.setSensitive(false);
+
+							if (portDefName == "loc") {
 								GetDefVec(port, pdef2, filename);
 								port *= scale;
 							}
 
-							else if (pdef2->name()->value() == "scale") {
+							else if (portDefName == "scale") {
 								GetDefNumber(flare_scale, pdef2, filename);
 							}
 						}
@@ -1773,7 +1776,7 @@ ShipDesign::ParseDrive(TermStruct* val)
 				}
 
 				if (!drive)
-					drive = new  Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
+					drive = new Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
 
 				drive->AddPort(port, flare_scale);
 			}
@@ -1827,7 +1830,7 @@ ShipDesign::ParseDrive(TermStruct* val)
 	}
 
 	if (!drive)
-		drive = new  Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
+		drive = new Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
 
 	drive->SetSourceIndex(reactors.size() - 1);
 	drive->Mount(loc, size, hull);
@@ -1853,6 +1856,7 @@ ShipDesign::ParseDrive(TermStruct* val)
 	main_drive = drives.size();
 	drives.append(drive);
 }
+
 
 // +--------------------------------------------------------------------+
 

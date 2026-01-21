@@ -85,89 +85,108 @@ DriveSprite::SetBias(DWORD b)
 void
 DriveSprite::Render(Video* video, DWORD flags)
 {
-	if (!video || ((flags & RENDER_ADDITIVE) == 0))
-		return;
+    if (!video || ((flags & RENDER_ADDITIVE) == 0))
+        return;
 
-	if (shade > 0 && !hidden && (life > 0 || loop)) {
-		const Camera* cam = video->GetCamera();
-		bool          z_disable = false;
+    if (shade <= 0 || hidden || (life <= 0 && !loop))
+        return;
 
-		if (bias)
-			video->SetRenderState(Video::Z_BIAS, bias);
+    const Camera* cam = video->GetCamera();
+    bool z_disabled = false;
 
-		if (!front.IsNearlyZero()) {
-			FVector test = loc;
+    // Logical depth bias (renderer-specific handling inside Video)
+    if (bias)
+        video->SetDepthBias(bias);
 
-			if (scene && cam) {
-				FVector dir = front;
+    // ----------------------------
+    // Forward-facing glow test
+    // ----------------------------
+    if (!front.IsNearlyZero() && cam && scene) {
+        FVector test = loc;
+        FVector dir = front;
 
-				double intensity = cam->vpn() * dir * -1;
-				double distance = FVector(cam->Pos() - test).Length();
+        double intensity =
+            FVector::DotProduct(cam->vpn(), dir) * -1.0;
 
-				if (intensity > 0.05) {
-					if (!scene->IsLightObscured(cam->Pos(), test, 8)) {
-						video->SetRenderState(Video::Z_ENABLE, false);
-						z_disable = true;
+        double distance =
+            FVector(cam->Pos() - test).Length();
 
-						if (glow) {
-							intensity = FMath::Pow(intensity, 3.0);
+        if (intensity > 0.05) {
+            if (!scene->IsLightObscured(cam->Pos(), test, 8)) {
 
-							if (distance > 5e3)
-								intensity *= (1 - (distance - 5e3) / 45e3);
+                video->DisableDepthTest();
+                z_disabled = true;
 
-							if (intensity > 0) {
-								UTexture2D* tmp_frame = frames;
-								double      tmp_shade = shade;
-								int         tmp_w = w;
-								int         tmp_h = h;
+                if (glow) {
+                    intensity = FMath::Pow(intensity, 3.0);
 
-								if (glow->Width() != frames->Width()) {
-									double wscale = (double)glow->Width() / (double)frames->Width();
-									double hscale = (double)glow->Height() / (double)frames->Height();
+                    if (distance > 5000.0)
+                        intensity *= (1.0 - (distance - 5000.0) / 45000.0);
 
-									w = (int)(w * wscale);
-									h = (int)(h * hscale);
-								}
+                    if (intensity > 0) {
+                        // Preserve original state
+                        UTexture2D* saved_frames = frames;
+                        double      saved_shade = shade;
+                        int         saved_w = w;
+                        int         saved_h = h;
 
-								shade = intensity;
-								frames = glow;
+                        // Scale sprite to glow texture
+                        if (glow->GetSizeX() != frames->GetSizeX()) {
+                            double wscale =
+                                (double)glow->GetSizeX() /
+                                (double)frames->GetSizeX();
 
-								Sprite::Render(video, flags);
+                            double hscale =
+                                (double)glow->GetSizeY() /
+                                (double)frames->GetSizeY();
 
-								frames = tmp_frame;
-								shade = tmp_shade;
-								w = tmp_w;
-								h = tmp_h;
-							}
-						}
-					}
-				}
-			}
-		}
+                            w = (int)(w * wscale);
+                            h = (int)(h * hscale);
+                        }
 
-		if (effective_radius - radius > 0.1) {
-			double scale_up = effective_radius / radius;
-			int    tmp_w = w;
-			int    tmp_h = h;
+                        shade = intensity;
+                        frames = glow;
 
-			w = (int)(w * scale_up);
-			h = (int)(h * scale_up);
+                        Sprite::Render(video, flags);
 
-			Sprite::Render(video, flags);
+                        // Restore state
+                        frames = saved_frames;
+                        shade = saved_shade;
+                        w = saved_w;
+                        h = saved_h;
+                    }
+                }
+            }
+        }
+    }
 
-			w = tmp_w;
-			h = tmp_h;
-		}
+    // ----------------------------
+    // Radius scaling (engine plume)
+    // ----------------------------
+    if (effective_radius - radius > 0.1) {
+        double scale = effective_radius / radius;
 
-		else {
-			Sprite::Render(video, flags);
-		}
+        int saved_w = w;
+        int saved_h = h;
 
-		if (bias)
-			video->SetRenderState(Video::Z_BIAS, 0);
+        w = (int)(w * scale);
+        h = (int)(h * scale);
 
-		if (z_disable)
-			video->SetRenderState(Video::Z_ENABLE, true);
-	}
+        Sprite::Render(video, flags);
+
+        w = saved_w;
+        h = saved_h;
+    }
+    else {
+        Sprite::Render(video, flags);
+    }
+
+    // Restore render state
+    if (bias)
+        video->SetDepthBias(0);
+
+    if (z_disabled)
+        video->EnableDepthTest();
 }
+
 

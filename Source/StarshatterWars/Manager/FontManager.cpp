@@ -34,7 +34,7 @@ FontManager::Close()
 // +--------------------------------------------------------------------+
 
 void
-FontManager::Register(const char* name, Font* font)
+FontManager::Register(const char* name, SystemFont* font)
 {
     if (!name || !*name || !font) {
         UE_LOG(LogFontManager, Warning, TEXT("FontManager::Register called with invalid parameters."));
@@ -57,7 +57,7 @@ FontManager::Register(const char* name, Font* font)
 
 // +--------------------------------------------------------------------+
 
-Font*
+SystemFont*
 FontManager::Find(const char* name)
 {
     if (!name || !*name)

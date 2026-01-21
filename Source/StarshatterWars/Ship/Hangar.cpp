@@ -547,8 +547,8 @@ Hangar::Stow(Ship* incoming)
 
 		// quicker turnaround during network play:
 		Sim* sim = Sim::GetSim();
-		if (sim && sim->IsNetGame())
-			s->time /= 40;
+		//if (sim && sim->IsNetGame())
+		//	s->time /= 40;
 
 		return true;
 	}

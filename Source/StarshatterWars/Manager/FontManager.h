@@ -20,7 +20,7 @@
 #include "Text.h"
 
 // Forward declarations (keep header light)
-class Font;
+class SystemFont;
 
 // +--------------------------------------------------------------------+
 
@@ -41,8 +41,8 @@ public:
     static const char* TYPENAME() { return "FontManager"; }
 
     static void   Close();
-    static void   Register(const char* name, Font* font);
-    static Font* Find(const char* name);
+    static void   Register(const char* name, SystemFont* font);
+    static SystemFont* Find(const char* name);
 
 private:
     static List<FontItem> fonts;

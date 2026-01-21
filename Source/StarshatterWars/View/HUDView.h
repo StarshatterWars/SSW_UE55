@@ -41,7 +41,7 @@ class OrbitalBody;
 class OrbitalRegion;
 class Instruction;
 class CameraView;
-class Projector;
+class SimProjector;
 class MFD;
 class Sim;
 class SimRegion;
@@ -162,7 +162,7 @@ protected:
 
 	void               DrawOrbitalBody(OrbitalBody* body);
 
-	Projector* projector;
+	SimProjector* projector;
 	CameraView* camview;
 
 	int          width, height, aw, ah;

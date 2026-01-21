@@ -1,18 +1,18 @@
 /*  Starshatter Wars
-Fractal Dev Studios
-Copyright(C) 2025 - 2026. All Rights Reserved.
+	Fractal Dev Studios
+	Copyright(C) 2025 - 2026. All Rights Reserved.
 
-ORIGINAL AUTHOR AND STUDIO :
-John DiCamillo, Destroyer Studios LLC
+	ORIGINAL AUTHOR AND STUDIO :
+	John DiCamillo, Destroyer Studios LLC
 
-SUBSYSTEM : nGenEx.lib
-FILE : Solid.h
-AUTHOR : Carlos Bott
+	SUBSYSTEM : nGenEx.lib
+	FILE : Solid.h
+	AUTHOR : Carlos Bott
 
 
-OVERVIEW
-========
-Classes for rendering solid meshes of polygons
+	OVERVIEW
+	========
+	Classes for rendering solid meshes of polygons
 */
 
 #pragma once
@@ -22,8 +22,9 @@ Classes for rendering solid meshes of polygons
 #include "Video.h"
 #include "List.h"
 
-// Minimal Unreal include for FVector conversions:
+// Minimal Unreal includes for FVector/FMatrix:
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 
 // +--------------------------------------------------------------------+
 
@@ -34,6 +35,7 @@ class Surface;
 class Segment;
 class Shadow;
 class SimLight;
+class SimProjector;
 
 class OPCODE_data;   // for collision detection
 
@@ -44,7 +46,8 @@ class UTexture2D;
 // Legacy type mapping notes (Starshatter -> Unreal):
 //   Vec3  -> FVector
 //   Point -> FVector
-// Keep Starshatter core types (Text, List, Color, Matrix, etc.)
+//   Matrix (orientation) -> FMatrix
+// Keep Starshatter core types (Text, List, Color, etc.) where still used.
 // +--------------------------------------------------------------------+
 
 class Solid : public Graphic
@@ -67,23 +70,27 @@ public:
 	virtual void   Update();
 
 	// accessors / mutators
-	Model* GetModel()     const { return model; }
+	Model* GetModel() const { return model; }
 
 	// NOTE: Bitmap is a render asset in the legacy pipeline. In UE, surface textures should
-	// ultimately be represented as UTexture2D*. This function is left as a stub-compatible
-	// signature change point for your ongoing port.
+	// ultimately be represented as UTexture2D*.
 	void           GetAllTextures(List<UTexture2D*>& textures);
 
-	virtual bool   IsDynamic()    const;
+	virtual bool   IsDynamic() const;
 	virtual void   SetDynamic(bool d);
 	virtual void   SetLuminous(bool l);
-	virtual void   SetOrientation(const Matrix& o);
+
+	// UE: orientation is stored as FMatrix:
+	virtual void   SetOrientation(const FMatrix& o);
 	virtual void   SetOrientation(const Solid& match);
-	const Matrix& Orientation()  const { return orientation; }
-	float          Roll()         const { return roll; }
-	float          Pitch()        const { return pitch; }
-	float          Yaw()          const { return yaw; }
-	virtual bool   IsSolid()      const { return true; }
+
+	const FMatrix& Orientation() const { return OrientationMatrix; }
+
+	float          Roll()  const { return roll; }
+	float          Pitch() const { return pitch; }
+	float          Yaw()   const { return yaw; }
+
+	virtual bool   IsSolid() const { return true; }
 
 	// stencil shadows
 	virtual void   CreateShadows(int nlights = 1);
@@ -112,7 +119,10 @@ protected:
 	bool           own_model;
 
 	float          roll, pitch, yaw;
-	Matrix         orientation;
+
+	// UE: store orientation in Unreal-native matrix:
+	FMatrix        OrientationMatrix;
+
 	Poly* intersection_poly;
 
 	List<Shadow>   shadows;
@@ -135,7 +145,7 @@ public:
 	~Model();
 
 	Model& operator = (const Model& m);
-	int operator == (const Model& that) const { return this == &that; }
+	int    operator == (const Model& that) const { return this == &that; }
 
 	bool           Load(const char* mag_file, double scale = 1.0);
 	bool           Load(ModelFile* loader, double scale = 1.0);
@@ -158,7 +168,7 @@ public:
 	const Material* ReplaceMaterial(const Material* mtl);
 
 	// NOTE: Bitmap -> UTexture2D* in UE render pipeline.
-	void              GetAllTextures(List<UTexture2D*>& textures);
+	void           GetAllTextures(List<UTexture2D*>& textures);
 
 	Poly* AddPolys(int nsurf, int npolys, int nverts);
 	void           ExplodeMesh();
@@ -206,28 +216,30 @@ public:
 	Surface();
 	~Surface();
 
-	int operator == (const Surface& s) const { return this == &s; }
+	int            operator == (const Surface& s) const { return this == &s; }
 
-	const char* Name()            const { return name; }
-	int            NumVerts()        const { return vertex_set ? vertex_set->nverts : 0; }
-	int            NumSegments()     const { return segments.size(); }
-	int            NumPolys()        const { return npolys; }
-	int            NumIndices()      const { return nindices; }
-	bool           IsHidden()        const { return state & HIDDEN ? true : false; }
-	bool           IsLocked()        const { return state & LOCKED ? true : false; }
-	bool           IsSimplified()    const { return state & SIMPLE ? true : false; }
+	const char* Name()         const { return name; }
+	int            NumVerts()     const { return vertex_set ? vertex_set->nverts : 0; }
+	int            NumSegments()  const { return segments.size(); }
+	int            NumPolys()     const { return npolys; }
+	int            NumIndices()   const { return nindices; }
+	bool           IsHidden()     const { return (state & HIDDEN) ? true : false; }
+	bool           IsLocked()     const { return (state & LOCKED) ? true : false; }
+	bool           IsSimplified() const { return (state & SIMPLE) ? true : false; }
 
-	Model* GetModel()        const { return model; }
+	Model* GetModel() const { return model; }
 	List<Segment>& GetSegments() { return segments; }
 
 	// Vec3/Point -> FVector:
-	const FVector& GetOffset()       const { return offset; }
-	const Matrix& GetOrientation()  const { return orientation; }
+	const FVector& GetOffset() const { return offset; }
 
-	double         Radius()          const { return radius; }
-	VertexSet* GetVertexSet()    const { return vertex_set; }
-	FVector* GetVLoc()         const { return vloc; }
-	Poly* GetPolys()        const { return polys; }
+	// UE: orientation stored as FMatrix:
+	const FMatrix& GetOrientation() const { return OrientationMatrix; }
+
+	double         Radius() const { return radius; }
+	VertexSet* GetVertexSet() const { return vertex_set; }
+	FVector* GetVLoc() const { return vloc; }
+	Poly* GetPolys() const { return polys; }
 
 	void           SetName(const char* n);
 	void           SetHidden(bool b);
@@ -239,11 +251,8 @@ public:
 	void           AddIndices(int n) { nindices += n; }
 	Poly* AddPolys(int npolys, int nverts);
 
-	VideoPrivateData* GetVideoPrivateData()   const { return video_data; }
-	void              SetVideoPrivateData(VideoPrivateData* vpd)
-	{
-		video_data = vpd;
-	}
+	VideoPrivateData* GetVideoPrivateData() const { return video_data; }
+	void              SetVideoPrivateData(VideoPrivateData* vpd) { video_data = vpd; }
 
 	void           ScaleBy(double factor);
 
@@ -262,20 +271,22 @@ public:
 
 private:
 	char           name[Solid::NAMELEN];
-	Model*		   model;
-	VertexSet*	   vertex_set; // for rendering
-	FVector*	   vloc;       // for shadow hull
+	Model* model;
+	VertexSet* vertex_set; // for rendering
+	FVector* vloc;       // for shadow hull
 	float          radius;
 	int            nhull;
 	int            npolys;
 	int            nindices;
 	int            state;
-	Poly*		   polys;
+	Poly* polys;
 	List<Segment>  segments;
 
 	// Point -> FVector:
 	FVector        offset;
-	Matrix         orientation;
+
+	// UE: store orientation in Unreal-native matrix:
+	FMatrix        OrientationMatrix;
 
 public:
 	OPCODE_data* opcode;
@@ -292,24 +303,21 @@ public:
 	static const char* TYPENAME() { return "Segment"; }
 
 	Segment();
-	Segment(int n, Poly* p, Material* mtl, Model* mod = 0);
+	Segment(int n, Poly* p, Material* mtl, Model* mod = nullptr);
 	~Segment();
 
-	bool        IsSolid()         const { return material ? material->IsSolid() : true; }
-	bool        IsTranslucent()   const { return material ? material->IsTranslucent() : false; }
-	bool        IsGlowing()       const { return material ? material->IsGlowing() : false; }
+	bool             IsSolid()       const { return material ? material->IsSolid() : true; }
+	bool             IsTranslucent() const { return material ? material->IsTranslucent() : false; }
+	bool             IsGlowing()     const { return material ? material->IsGlowing() : false; }
 
-	VideoPrivateData* GetVideoPrivateData()   const { return video_data; }
-	void              SetVideoPrivateData(VideoPrivateData* vpd)
-	{
-		video_data = vpd;
-	}
+	VideoPrivateData* GetVideoPrivateData() const { return video_data; }
+	void              SetVideoPrivateData(VideoPrivateData* vpd) { video_data = vpd; }
 
-	int					npolys;
-	Poly*				polys;
-	Material*			material;
-	Model*				model;
-	VideoPrivateData*	video_data;
+	int              npolys;
+	Poly* polys;
+	Material* material;
+	Model* model;
+	VideoPrivateData* video_data;
 };
 
 // +--------------------------------------------------------------------+
@@ -324,13 +332,12 @@ public:
 	virtual bool   Save(Model* m);
 
 protected:
-	char        filename[256];
-	Model*		model;
+	char           filename[256];
+	Model* model;
 
 	// internal accessors:
-	char*		pname;
-	int*		pnverts;
-	int*		pnpolys;
-	float*		pradius;
+	char* pname;
+	int* pnverts;
+	int* pnpolys;
+	float* pradius;
 };
-

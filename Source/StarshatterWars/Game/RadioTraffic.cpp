@@ -23,8 +23,6 @@
 #include "SimContact.h"
 #include "SimElement.h"
 #include "Sim.h"
-#include "NetGame.h"
-#include "NetData.h"
 #include "Game.h"
 #include "Text.h"
 
@@ -105,12 +103,12 @@ void
 RadioTraffic::Transmit(RadioMessage* msg)
 {
 	if (msg && radio_traffic) {
-		NetGame* net_game = NetGame::GetInstance();
+		/*NetGame* net_game = NetGame::GetInstance();
 		if (net_game) {
 			NetCommMsg net_msg;
 			net_msg.SetRadioMessage(msg);
 			net_game->SendData(&net_msg);
-		}
+		}*/
 
 		radio_traffic->SendMessage(msg);
 	}
@@ -136,8 +134,7 @@ RadioTraffic::SendMessage(RadioMessage* msg)
 		if (msg->Channel() == 0 || msg->Channel() == iff)
 			DisplayMessage(msg);
 
-		if (!NetGame::IsNetGameClient())
-			msg->DestinationShip()->HandleRadioMessage(msg);
+		msg->DestinationShip()->HandleRadioMessage(msg);
 	}
 
 	else if (msg->DestinationElem()) {
@@ -146,8 +143,7 @@ RadioTraffic::SendMessage(RadioMessage* msg)
 		if (msg->Channel() == 0 || msg->Channel() == iff)
 			DisplayMessage(msg);
 
-		if (!NetGame::IsNetGameClient())
-			msg->DestinationElem()->HandleRadioMessage(msg);
+		msg->DestinationElem()->HandleRadioMessage(msg);
 	}
 
 	else {

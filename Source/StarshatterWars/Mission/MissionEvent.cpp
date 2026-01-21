@@ -32,7 +32,7 @@
 #include "QuantumDrive.h"
 #include "Sim.h"
 #include "AudioConfig.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "RadioMessage.h"
 #include "RadioTraffic.h"
 #include "Weapon.h"
@@ -41,13 +41,10 @@
 #include "Campaign.h"
 #include "CombatGroup.h"
 
-#include "NetData.h"
-#include "NetUtil.h"
-
 #include "Game.h"
 #include "DataLoader.h"
-#include "Font.h"
-#include "FontMgr.h"
+#include "SystemFont.h"
+#include "FontManager.h"
 #include "Sound.h"
 #include "ParseUtil.h"
 #include "FormatUtil.h"
@@ -406,7 +403,7 @@ MissionEvent::Execute(bool silent)
 			ship->InflictDamage(event_param[0]);
 
 			if (ship->Integrity() < 1) {
-				NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
+				//NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
 				ship->DeathSpiral();
 
 				UE_LOG(LogStarshatterWarsMissionEvent, Log,
@@ -488,30 +485,30 @@ MissionEvent::Execute(bool silent)
 
 	case CAMERA:
 		if (stars->InCutscene()) {
-			CameraDirector* cam_dir = CameraDirector::GetInstance();
+			CameraManager* cam_dir = CameraManager::GetInstance();
 
 			if (!cam_dir->GetShip())
 				cam_dir->SetShip(player);
 
 			switch (event_param[0]) {
 			case 1:
-				if (cam_dir->GetMode() != CameraDirector::MODE_COCKPIT)
-					cam_dir->SetMode(CameraDirector::MODE_COCKPIT, event_rect.x);
+				if (cam_dir->GetMode() != CameraManager::MODE_COCKPIT)
+					cam_dir->SetMode(CameraManager::MODE_COCKPIT, event_rect.x);
 				break;
 
 			case 2:
-				if (cam_dir->GetMode() != CameraDirector::MODE_CHASE)
-					cam_dir->SetMode(CameraDirector::MODE_CHASE, event_rect.x);
+				if (cam_dir->GetMode() != CameraManager::MODE_CHASE)
+					cam_dir->SetMode(CameraManager::MODE_CHASE, event_rect.x);
 				break;
 
 			case 3:
-				if (cam_dir->GetMode() != CameraDirector::MODE_ORBIT)
-					cam_dir->SetMode(CameraDirector::MODE_ORBIT, event_rect.x);
+				if (cam_dir->GetMode() != CameraManager::MODE_ORBIT)
+					cam_dir->SetMode(CameraManager::MODE_ORBIT, event_rect.x);
 				break;
 
 			case 4:
-				if (cam_dir->GetMode() != CameraDirector::MODE_TARGET)
-					cam_dir->SetMode(CameraDirector::MODE_TARGET, event_rect.x);
+				if (cam_dir->GetMode() != CameraManager::MODE_TARGET)
+					cam_dir->SetMode(CameraManager::MODE_TARGET, event_rect.x);
 				break;
 			}
 
@@ -536,7 +533,7 @@ MissionEvent::Execute(bool silent)
 						if (event_param[0] == 6) {
 							s_tgt->DropCam(event_param[1], event_param[2]);
 							cam_dir->SetShip(s_tgt);
-							cam_dir->SetMode(CameraDirector::MODE_DROP, 0);
+							cam_dir->SetMode(CameraManager::MODE_DROP, 0);
 						}
 						else {
 							Ship* cam_ship = cam_dir->GetShip();

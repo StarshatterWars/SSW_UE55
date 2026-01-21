@@ -197,7 +197,7 @@ NavLight::SetOffset(DWORD o)
 void
 NavLight::Orient(const Physical* rep)
 {
-	System::Orient(rep);
+	SimSystem::Orient(rep);
 
 	const Matrix& orientation = rep->Cam().Orientation();
 	const FVector ship_loc = rep->Location();

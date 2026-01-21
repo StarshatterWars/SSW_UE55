@@ -17,7 +17,6 @@
 #include "SimSystem.h"
 #include "SystemDesign.h"
 #include "SimComponent.h"
-#include "NetUtil.h"
 #include "Game.h"
 
 // Unreal logging (replaces Print):
@@ -172,7 +171,7 @@ SimSystem::SetPowerLevel(double level)
 
 		power_level = (float)level;
 
-		NetUtil::SendSysStatus(ship, this);
+		//NetUtil::SendSysStatus(ship, this);
 	}
 }
 
@@ -191,8 +190,9 @@ SimSystem::SetOverride(bool over)
 		changed = true;
 	}
 
-	if (changed)
-		NetUtil::SendSysStatus(ship, this);
+	if (changed) {
+		//NetUtil::SendSysStatus(ship, this);
+	}	
 }
 
 void
@@ -269,7 +269,7 @@ SimSystem::ExecFrame(double seconds)
 	else {
 		if (status != s) {
 			status = s;
-			NetUtil::SendSysStatus(ship, this);
+			//NetUtil::SendSysStatus(ship, this);
 		}
 
 		// collateral damage due to unsafe operation:
@@ -285,7 +285,7 @@ SimSystem::ExecFrame(double seconds)
 				safety_overload -= Delta;
 				ApplyDamage(15);
 
-				NetUtil::SendSysStatus(ship, this);
+				//NetUtil::SendSysStatus(ship, this);
 			}
 		}
 
@@ -302,7 +302,7 @@ SimSystem::Repair()
 		status = MAINT;
 		safety_overload = 0.0f;
 
-		NetUtil::SendSysStatus(ship, this);
+		//NetUtil::SendSysStatus(ship, this);
 	}
 }
 

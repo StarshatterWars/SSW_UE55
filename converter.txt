@@ -36,7 +36,9 @@ System* should be SimSystem*
 Scene* should be SimScene*
 Projector* should be SimProjector*
 Light* should be SimLight*
+Shot* should remain SimShot*
 StarSystem* should remain StarSystem*
+
 
 
 Remove any (__FILE__, __LINE__) as not supported in Unreal

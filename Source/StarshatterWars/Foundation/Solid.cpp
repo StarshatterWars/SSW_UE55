@@ -23,13 +23,12 @@
 #include "SimProjector.h"
 #include "OPCODE.h"
 
-// Unreal logging + minimal core types:
+// Unreal core (FVector/FMatrix/FMath/UE_LOG):
 #include "CoreMinimal.h"
 
-// +--------------------------------------------------------------------+
-// Remove MemDebug.h (unsupported in UE). Also remove legacy Print().
-// Replace with UE_LOG.
-// +--------------------------------------------------------------------
+// C runtime:
+#include <cstring>
+#include <cstdlib>
 
 #ifdef for
 #undef for
@@ -46,7 +45,7 @@ void  Solid::EnableCollision(bool e) { use_collision_detection = e; }
 
 // +--------------------------------------------------------------------+
 
-Opcode::AABBTreeCollider   opcode_collider;
+Opcode::AABBTreeCollider opcode_collider;
 
 class OPCODE_data
 {
@@ -72,7 +71,7 @@ public:
 				for (i = 0; i < nverts; i++) {
 					IcePoint* p = locs + i;
 
-					// Vec3 -> FVector (Surface::GetVertexSet()->loc is assumed converted elsewhere)
+					// Surface VertexSet loc is assumed UE-converted (FVector*):
 					const FVector* v = s->GetVertexSet()->loc + i;
 					p->Set(v->X, v->Y, v->Z);
 				}
@@ -115,8 +114,8 @@ public:
 			}
 		}
 		else {
-			tris = 0;
-			locs = 0;
+			tris = nullptr;
+			locs = nullptr;
 			npolys = 0;
 			nverts = 0;
 			ntris = 0;
@@ -129,13 +128,13 @@ public:
 		delete[] locs;
 	}
 
-	Opcode::Model           model;
-	Opcode::MeshInterface   mesh;
+	Opcode::Model         model;
+	Opcode::MeshInterface mesh;
 	IndexedTriangle* tris;
 	IcePoint* locs;
-	int                     npolys;
-	int                     nverts;
-	int                     ntris;
+	int                   npolys;
+	int                   nverts;
+	int                   ntris;
 };
 
 // +--------------------------------------------------------------------+
@@ -143,14 +142,16 @@ public:
 // +--------------------------------------------------------------------+
 
 Solid::Solid()
-	: model(0), own_model(1),
-	roll(0.0f), pitch(0.0f), yaw(0.0f), intersection_poly(0)
+	: model(nullptr),
+	own_model(true),
+	roll(0.0f),
+	pitch(0.0f),
+	yaw(0.0f),
+	intersection_poly(nullptr)
 {
 	shadow = true;
-	sprintf_s(name, "Solid %d", id);
+	sprintf_s(name, sizeof(name), "Solid %d", id);
 }
-
-// +--------------------------------------------------------------------+
 
 Solid::~Solid()
 {
@@ -170,9 +171,9 @@ Solid::Update()
 // +--------------------------------------------------------------------+
 
 void
-Solid::SetOrientation(const Matrix& o)
+Solid::SetOrientation(const FMatrix& o)
 {
-	orientation = o;
+	OrientationMatrix = o;
 }
 
 void
@@ -218,8 +219,7 @@ Solid::SetOrientation(const Solid& match)
 	if (!model || infinite)
 		return;
 
-	// copy the orientation matrix from the solid we are matching:
-	orientation = match.Orientation();
+	OrientationMatrix = match.Orientation();
 }
 
 // +--------------------------------------------------------------------+
@@ -272,7 +272,8 @@ Solid::ProjectScreenRect(SimProjector* p)
 				else
 					extent.Z = model->extents[i];
 
-				extent = extent * orientation + loc;
+				// UE: transform by orientation matrix then offset by world location:
+				extent = OrientationMatrix.TransformVector(extent) + loc;
 
 				p->Transform(extent);
 				p->Project(extent);
@@ -303,10 +304,10 @@ Solid::ProjectScreenRect(SimProjector* p)
 int
 Solid::CollidesWith(Graphic& o)
 {
-	FVector delta_loc = Location() - o.Location();
+	const FVector DeltaLoc = Location() - o.Location();
 
 	// bounding spheres test:
-	if (delta_loc.Length() > Radius() + o.Radius())
+	if (DeltaLoc.Size() > Radius() + o.Radius())
 		return 0;
 
 	// possible collision, but no further refinement can be done:
@@ -321,26 +322,26 @@ Solid::CollidesWith(Graphic& o)
 
 		bool contact = false;
 
-		// first, reverse the orientation matrices for OPCODE:
-		Matrix m1 = orientation;
-		Matrix m2 = s.orientation;
+		const FMatrix& M1 = OrientationMatrix;
+		const FMatrix& M2 = s.OrientationMatrix;
 
-		Matrix4x4   world0;
-		Matrix4x4   world1;
+		Matrix4x4 world0;
+		Matrix4x4 world1;
 
-		world0.m[0][0] = (float)m1.elem[0][0];
-		world0.m[0][1] = (float)m1.elem[0][1];
-		world0.m[0][2] = (float)m1.elem[0][2];
+		// Preserve legacy row/column layout intent as closely as possible:
+		world0.m[0][0] = (float)M1.M[0][0];
+		world0.m[0][1] = (float)M1.M[0][1];
+		world0.m[0][2] = (float)M1.M[0][2];
 		world0.m[0][3] = 0.0f;
 
-		world0.m[1][0] = (float)m1.elem[1][0];
-		world0.m[1][1] = (float)m1.elem[1][1];
-		world0.m[1][2] = (float)m1.elem[1][2];
+		world0.m[1][0] = (float)M1.M[1][0];
+		world0.m[1][1] = (float)M1.M[1][1];
+		world0.m[1][2] = (float)M1.M[1][2];
 		world0.m[1][3] = 0.0f;
 
-		world0.m[2][0] = (float)m1.elem[2][0];
-		world0.m[2][1] = (float)m1.elem[2][1];
-		world0.m[2][2] = (float)m1.elem[2][2];
+		world0.m[2][0] = (float)M1.M[2][0];
+		world0.m[2][1] = (float)M1.M[2][1];
+		world0.m[2][2] = (float)M1.M[2][2];
 		world0.m[2][3] = 0.0f;
 
 		world0.m[3][0] = (float)Location().X;
@@ -348,19 +349,20 @@ Solid::CollidesWith(Graphic& o)
 		world0.m[3][2] = (float)Location().Z;
 		world0.m[3][3] = 1.0f;
 
-		world1.m[0][0] = (float)m2.elem[0][0];
-		world1.m[0][1] = (float)m2.elem[1][0];
-		world1.m[0][2] = (float)m2.elem[2][0];
+		// Legacy code used a different indexing for world1; preserve behavior:
+		world1.m[0][0] = (float)M2.M[0][0];
+		world1.m[0][1] = (float)M2.M[1][0];
+		world1.m[0][2] = (float)M2.M[2][0];
 		world1.m[0][3] = 0.0f;
 
-		world1.m[1][0] = (float)m2.elem[0][1];
-		world1.m[1][1] = (float)m2.elem[1][1];
-		world1.m[1][2] = (float)m2.elem[2][1];
+		world1.m[1][0] = (float)M2.M[0][1];
+		world1.m[1][1] = (float)M2.M[1][1];
+		world1.m[1][2] = (float)M2.M[2][1];
 		world1.m[1][3] = 0.0f;
 
-		world1.m[2][0] = (float)m2.elem[0][2];
-		world1.m[2][1] = (float)m2.elem[1][2];
-		world1.m[2][2] = (float)m2.elem[2][2];
+		world1.m[2][0] = (float)M2.M[0][2];
+		world1.m[2][1] = (float)M2.M[1][2];
+		world1.m[2][2] = (float)M2.M[2][2];
 		world1.m[2][3] = 0.0f;
 
 		world1.m[3][0] = (float)s.Location().X;
@@ -388,7 +390,7 @@ Solid::CollidesWith(Graphic& o)
 			}
 		}
 
-		return contact;
+		return contact ? 1 : 0;
 	}
 
 	return 1;
@@ -409,81 +411,81 @@ Solid::CheckRayIntersection(FVector Q, FVector w, double len, FVector& ipt,
 		return impact;
 
 	// check right angle spherical distance:
-	FVector d0 = loc - Q;
-	FVector d1 = FVector::CrossProduct(d0, w);
-	double  dlen = d1.Length();          // distance of point from line
+	const FVector d0 = loc - Q;
+	const FVector d1 = FVector::CrossProduct(d0, w);
+	const double  dlen = (double)d1.Size();    // distance of point from line
 
-	if (dlen > radius)                  // clean miss
-		return 0;                        // (no impact)
+	if (dlen > radius)                         // clean miss
+		return 0;                               // (no impact)
 
 	// find the point on the ray that is closest to the solid's location:
-	FVector closest = Q + w * (float)(FVector::DotProduct(d0, w));
+	const float tClosest = FVector::DotProduct(d0, w);
+	const FVector closest = Q + w * tClosest;
 
-	// find the leading edge, and it's distance from the location:
-	FVector leading_edge = Q + w * (float)len;
-	FVector leading_delta = leading_edge - loc;
-	double  leading_dist = leading_delta.Length();
+	// find the leading edge, and its distance from the location:
+	const FVector leading_edge = Q + w * (float)len;
+	const FVector leading_delta = leading_edge - loc;
+	const double  leading_dist = (double)leading_delta.Size();
 
 	// if the leading edge is not within the bounding sphere,
 	if (leading_dist > radius) {
 		// check to see if the closest point is between the ray's endpoints:
-		FVector delta1 = closest - Q;
-		FVector delta2 = leading_edge - Q; // this is w*len
+		const FVector delta1 = closest - Q;
+		const FVector delta2 = leading_edge - Q; // this is w*len
 
 		// if the closest point is not between the leading edge and the origin, no intersect:
-		if (FVector::DotProduct(delta1, delta2) < 0 || delta1.Length() > len) {
+		if (FVector::DotProduct(delta1, delta2) < 0.0f || (double)delta1.Size() > len) {
 			return 0;
 		}
 	}
 
 	// if not active, that's good enough:
-	if (GetScene() == 0) {
+	if (GetScene() == nullptr) {
 		ipt = closest;
 		return 1;
 	}
 
-	// transform ray into object space:
-	Matrix xform(Orientation());
+	// transform ray into object space (legacy behavior preserved):
+	const FMatrix& Xform = OrientationMatrix;
 
 	FVector tmp = w;
 
-	// NOTE: This assumes Matrix supports () accessor as in the legacy code.
-	w.X = (float)(tmp * FVector((float)xform(0, 0), (float)xform(0, 1), (float)xform(0, 2)));
-	w.Y = (float)(tmp * FVector((float)xform(1, 0), (float)xform(1, 1), (float)xform(1, 2)));
-	w.Z = (float)(tmp * FVector((float)xform(2, 0), (float)xform(2, 1), (float)xform(2, 2)));
+	w.X = FVector::DotProduct(tmp, FVector((float)Xform.M[0][0], (float)Xform.M[0][1], (float)Xform.M[0][2]));
+	w.Y = FVector::DotProduct(tmp, FVector((float)Xform.M[1][0], (float)Xform.M[1][1], (float)Xform.M[1][2]));
+	w.Z = FVector::DotProduct(tmp, FVector((float)Xform.M[2][0], (float)Xform.M[2][1], (float)Xform.M[2][2]));
 
 	tmp = Q - loc;
 
-	Q.X = (float)(tmp * FVector((float)xform(0, 0), (float)xform(0, 1), (float)xform(0, 2)));
-	Q.Y = (float)(tmp * FVector((float)xform(1, 0), (float)xform(1, 1), (float)xform(1, 2)));
-	Q.Z = (float)(tmp * FVector((float)xform(2, 0), (float)xform(2, 1), (float)xform(2, 2)));
+	Q.X = FVector::DotProduct(tmp, FVector((float)Xform.M[0][0], (float)Xform.M[0][1], (float)Xform.M[0][2]));
+	Q.Y = FVector::DotProduct(tmp, FVector((float)Xform.M[1][0], (float)Xform.M[1][1], (float)Xform.M[1][2]));
+	Q.Z = FVector::DotProduct(tmp, FVector((float)Xform.M[2][0], (float)Xform.M[2][1], (float)Xform.M[2][2]));
 
 	double min = len;
-	intersection_poly = 0;
+	intersection_poly = nullptr;
 
 	// check each polygon:
 	ListIter<Surface> iter = model->surfaces;
 	while (++iter) {
-		Surface* s = iter.value();
-		Poly* p = s->GetPolys();
+		Surface* srf = iter.value();
+		Poly* p = srf->GetPolys();
 
-		for (int i = 0; i < s->NumPolys(); i++) {
+		for (int i = 0; i < srf->NumPolys(); i++) {
 			if (!treat_translucent_polys_as_solid && p->material && !p->material->IsSolid()) {
-				p++;
+				++p;
 				continue;
 			}
 
-			FVector v = p->plane.normal;
-			double  d = p->plane.distance;
+			const FVector v = p->plane.normal;
+			const double  d = p->plane.distance;
 
-			double denom = FVector::DotProduct(w, v);
+			const double denom = (double)FVector::DotProduct(w, v);
 
 			if (denom < -1.0e-5) {
-				FVector P = v * (float)d;
-				double  ilen = FVector::DotProduct((P - Q), v) / denom;
+				const FVector P = v * (float)d;
+				const double  ilen = (double)FVector::DotProduct((P - Q), v) / denom;
 
-				if (ilen > 0 && ilen < min) {
-					FVector intersect = Q + w * (float)ilen;
+				if (ilen > 0.0 && ilen < min) {
+					const FVector intersect = Q + w * (float)ilen;
 
 					if (p->Contains(intersect)) {
 						intersection_poly = p;
@@ -494,13 +496,13 @@ Solid::CheckRayIntersection(FVector Q, FVector w, double len, FVector& ipt,
 				}
 			}
 
-			p++;
+			++p;
 		}
 	}
 
 	// xform impact point back into world coordinates:
 	if (impact) {
-		ipt = (ipt * Orientation()) + loc;
+		ipt = OrientationMatrix.TransformVector(ipt) + loc;
 	}
 
 	return impact;
@@ -513,7 +515,7 @@ Solid::ClearModel()
 {
 	if (own_model && model) {
 		delete model;
-		model = 0;
+		model = nullptr;
 	}
 
 	radius = 0.0f;
@@ -524,13 +526,11 @@ Solid::ClearModel()
 void
 Solid::UseModel(Model* m)
 {
-	// get rid of the existing model:
 	ClearModel();
 
-	// point to the new model:
-	own_model = 0;
+	own_model = false;
 	model = m;
-	radius = m->radius;
+	radius = m ? m->radius : 0.0f;
 }
 
 // +--------------------------------------------------------------------+
@@ -538,21 +538,17 @@ Solid::UseModel(Model* m)
 bool
 Solid::Load(const char* mag_file, double scale)
 {
-	// get ready to load, delete existing model:
 	ClearModel();
 
-	// loading our own copy, so we own the model:
 	model = new Model;
-	own_model = 1;
+	own_model = true;
 
-	// now load the model:
 	if (model->Load(mag_file, scale)) {
 		radius = model->radius;
-		strncpy_s(name, model->name, sizeof(name));
+		strncpy_s(name, sizeof(name), model->name, sizeof(name) - 1);
 		return true;
 	}
 
-	// load failed:
 	ClearModel();
 	return false;
 }
@@ -560,23 +556,21 @@ Solid::Load(const char* mag_file, double scale)
 bool
 Solid::Load(ModelFile* mod_file, double scale)
 {
-	// get ready to load, delete existing model:
 	ClearModel();
 
-	// loading our own copy, so we own the model:
 	model = new Model;
-	own_model = 1;
+	own_model = true;
 
-	// now load the model:
 	if (model->Load(mod_file, scale)) {
 		radius = model->radius;
 		return true;
 	}
 
-	// load failed:
 	ClearModel();
 	return false;
 }
+
+// +--------------------------------------------------------------------+
 
 bool
 Solid::Rescale(double scale)
@@ -584,7 +578,7 @@ Solid::Rescale(double scale)
 	if (!own_model || !model)
 		return false;
 
-	radius = 0;
+	radius = 0.0f;
 
 	ListIter<Surface> iter = model->GetSurfaces();
 	while (++iter) {
@@ -594,7 +588,7 @@ Solid::Rescale(double scale)
 			s->vertex_set->loc[v] *= (float)scale;
 			s->vloc[v] *= (float)scale;
 
-			float lvi = s->vloc[v].Length();
+			const float lvi = s->vloc[v].Size();
 			if (lvi > radius)
 				radius = lvi;
 		}
@@ -607,6 +601,8 @@ Solid::Rescale(double scale)
 	return true;
 }
 
+// +--------------------------------------------------------------------+
+
 void
 Solid::CreateShadows(int nlights)
 {
@@ -618,21 +614,20 @@ Solid::CreateShadows(int nlights)
 void
 Solid::UpdateShadows(List<SimLight>& lights)
 {
-	List<SimLight>       active_lights;
-	ListIter<SimLight>   iter = lights;
+	List<SimLight>     active_lights;
+	ListIter<SimLight> iter = lights;
 
 	while (++iter) {
 		SimLight* light = iter.value();
 
 		if (light->IsActive() && light->CastsShadow()) {
-			double distance = FVector(Location() - light->Location()).Length();
-			double intensity = light->Intensity();
+			const double distance = (double)(Location() - light->Location()).Size();
+			const double intensity = light->Intensity();
 
 			if (light->Type() == SimLight::LIGHT_POINT) {
-				if (intensity / distance > 1)
+				if (distance > KINDA_SMALL_NUMBER && intensity / distance > 1.0)
 					active_lights.append(light);
 			}
-
 			else if (light->Type() == SimLight::LIGHT_DIRECTIONAL) {
 				if (intensity > 0.65)
 					active_lights.insert(light);
@@ -643,11 +638,11 @@ Solid::UpdateShadows(List<SimLight>& lights)
 	iter.attach(active_lights);
 
 	while (++iter) {
-		Light* light = iter.value();
-		int    index = iter.index();
+		SimLight* light = iter.value();
+		const int idx = iter.index();
 
-		if (index < shadows.size()) {
-			shadows[index]->Update(light);
+		if (idx < shadows.size()) {
+			shadows[idx]->Update(light);
 		}
 	}
 }
@@ -669,7 +664,7 @@ Solid::InvalidateSurfaceData()
 	if (!model)
 		return;
 
-	bool invalidate = model->IsDynamic();
+	const bool invalidate = model->IsDynamic();
 
 	ListIter<Surface> iter = model->GetSurfaces();
 	while (++iter) {
@@ -682,7 +677,7 @@ Solid::InvalidateSurfaceData()
 			}
 			else {
 				delete vpd;
-				s->SetVideoPrivateData(0);
+				s->SetVideoPrivateData(nullptr);
 			}
 		}
 	}
@@ -694,7 +689,7 @@ Solid::InvalidateSegmentData()
 	if (!model)
 		return;
 
-	bool invalidate = model->IsDynamic();
+	const bool invalidate = model->IsDynamic();
 
 	ListIter<Surface> iter = model->GetSurfaces();
 	while (++iter) {
@@ -711,7 +706,7 @@ Solid::InvalidateSegmentData()
 				}
 				else {
 					delete vpd;
-					segment->SetVideoPrivateData(0);
+					segment->SetVideoPrivateData(nullptr);
 				}
 			}
 		}
@@ -723,10 +718,7 @@ Solid::InvalidateSegmentData()
 bool
 Solid::IsDynamic() const
 {
-	if (model)
-		return model->IsDynamic();
-
-	return false;
+	return model ? model->IsDynamic() : false;
 }
 
 void
@@ -737,10 +729,7 @@ Solid::SetDynamic(bool d)
 }
 
 // +--------------------------------------------------------------------+
-// Bitmap -> UTexture2D*: in UE the texture collection should be driven by
-// the ported Material texture fields. These methods are left as compile-safe
-// stubs until Material is fully migrated.
-// +--------------------------------------------------------------------+
+// Bitmap -> UTexture2D*: compile-safe stubs (Material must be UE-migrated)
 
 void
 Solid::GetAllTextures(List<UTexture2D*>& textures)
@@ -752,28 +741,15 @@ Solid::GetAllTextures(List<UTexture2D*>& textures)
 void
 Model::GetAllTextures(List<UTexture2D*>& textures)
 {
-	// NOTE:
-	//   Legacy Material used Bitmap* tex_* members. In UE you should convert those
-	//   to UTexture2D* (or an intermediate wrapper) and then populate this list.
-	//   Keeping this method in place to preserve call sites.
 	ListIter<Material> m_iter = materials;
 	while (++m_iter) {
 		Material* m = m_iter.value();
 
-		if (m->tex_diffuse && !textures.contains(m->tex_diffuse))
-			textures.append(m->tex_diffuse);
-
-		if (m->tex_specular && !textures.contains(m->tex_specular))
-			textures.append(m->tex_specular);
-
-		if (m->tex_emissive && !textures.contains(m->tex_emissive))
-			textures.append(m->tex_emissive);
-
-		if (m->tex_bumpmap && !textures.contains(m->tex_bumpmap))
-			textures.append(m->tex_bumpmap);
-
-		if (m->tex_detail && !textures.contains(m->tex_detail))
-			textures.append(m->tex_detail);
+		if (m->tex_diffuse && !textures.contains(m->tex_diffuse))  textures.append(m->tex_diffuse);
+		if (m->tex_specular && !textures.contains(m->tex_specular)) textures.append(m->tex_specular);
+		if (m->tex_emissive && !textures.contains(m->tex_emissive)) textures.append(m->tex_emissive);
+		if (m->tex_bumpmap && !textures.contains(m->tex_bumpmap))  textures.append(m->tex_bumpmap);
+		if (m->tex_detail && !textures.contains(m->tex_detail))   textures.append(m->tex_detail);
 	}
 }
 
@@ -782,18 +758,24 @@ Model::GetAllTextures(List<UTexture2D*>& textures)
 // +--------------------------------------------------------------------+
 
 Model::Model()
-	: nverts(0), npolys(0), radius(0), luminous(false), dynamic(false)
+	: nverts(0),
+	npolys(0),
+	radius(0.0f),
+	luminous(false),
+	dynamic(false)
 {
 	memset(name, 0, sizeof(name));
 }
 
 Model::Model(const Model& m)
-	: nverts(0), npolys(0), radius(0), luminous(false), dynamic(false)
+	: nverts(0),
+	npolys(0),
+	radius(0.0f),
+	luminous(false),
+	dynamic(false)
 {
 	operator=(m);
 }
-
-// +--------------------------------------------------------------------+
 
 Model::~Model()
 {
@@ -824,7 +806,7 @@ Model::operator = (const Model& m)
 			Material* matl2 = new Material;
 
 			memcpy(matl2, matl1, sizeof(Material));
-			matl2->thumbnail = 0;
+			matl2->thumbnail = nullptr;
 
 			materials.append(matl2);
 		}
@@ -861,11 +843,12 @@ Model::NumSegments() const
 
 inline bool Collinear(const double* a, const double* b, const double* c)
 {
-	FVector ab((float)(b[0] - a[0]), (float)(b[1] - a[1]), (float)(b[2] - a[2]));
-	FVector ac((float)(c[0] - a[0]), (float)(c[1] - a[1]), (float)(c[2] - a[2]));
-	FVector cross = FVector::CrossProduct(ab, ac);
-	return (cross.Length() == 0);
+	const FVector ab((float)(b[0] - a[0]), (float)(b[1] - a[1]), (float)(b[2] - a[2]));
+	const FVector ac((float)(c[0] - a[0]), (float)(c[1] - a[1]), (float)(c[2] - a[2]));
+	const FVector cross = FVector::CrossProduct(ab, ac);
+	return cross.IsNearlyZero();
 }
+
 struct HomogenousPlane
 {
 	double distance;
@@ -880,8 +863,6 @@ static void LoadPlane(Plane& p, DataLoader* l, BYTE*& fp)
 	HomogenousPlane tmp{};
 	l->fread(&tmp, sizeof(HomogenousPlane), 1, fp);
 
-	// Populate the Plane from the serialized MAG data:
-	// NOTE: MAG stores a homogenous plane; Starshatter Plane is (normal, distance).
 	p.normal.x = tmp.normal_x;
 	p.normal.y = tmp.normal_y;
 	p.normal.z = tmp.normal_z;
@@ -892,17 +873,6 @@ static void LoadFlags(DWORD* out_flags, DataLoader* l, BYTE*& fp)
 {
 	DWORD magic_flags = 0;
 	l->fread(&magic_flags, sizeof(DWORD), 1, fp);
-
-	/** OLD MAGIC FLAGS
-	enum { FLAT_SHADED =   1,
-		   LUMINOUS    =   2,
-		   TRANSLUCENT =   4,  \\ must swap
-		   CHROMAKEY   =   8,  // these two
-		   FOREGROUND  =  16,  -- not used
-		   WIREFRAME   =  32,  -- not used
-		   SPECULAR1   =  64,
-		   SPECULAR2   = 128  };
-	***/
 
 	const DWORD magic_mask = 0x0fc3;
 	*out_flags = magic_flags & magic_mask;
@@ -918,12 +888,7 @@ Model::Load(const char* mag_file, double scale)
 	bool        result = false;
 
 	radius = 0.0f;
-	extents[0] = 0.0f;
-	extents[1] = 0.0f;
-	extents[2] = 0.0f;
-	extents[3] = 0.0f;
-	extents[4] = 0.0f;
-	extents[5] = 0.0f;
+	extents[0] = extents[1] = extents[2] = extents[3] = extents[4] = extents[5] = 0.0f;
 
 	if (!loader) {
 		UE_LOG(LogTemp, Warning, TEXT("MAG Open Failed: no data loader for file '%hs'"), mag_file ? mag_file : "");
@@ -933,13 +898,12 @@ Model::Load(const char* mag_file, double scale)
 	const int size = loader->LoadBuffer(mag_file, block);
 	BYTE* fp = block;
 
-	// check MAG file:
 	if (!size || !block) {
 		UE_LOG(LogTemp, Warning, TEXT("MAG Open Failed: could not open file '%hs'"), mag_file ? mag_file : "");
 		return result;
 	}
 
-	strncpy_s(name, mag_file, 31);
+	strncpy_s(name, sizeof(name), mag_file ? mag_file : "", 31);
 	name[31] = 0;
 
 	char file_id[5]{};
@@ -958,18 +922,17 @@ Model::Load(const char* mag_file, double scale)
 		version = 4;
 	}
 	else {
-		UE_LOG(LogTemp, Warning, TEXT("MAG Open Failed: File '%hs' invalid file type '%hs'"), mag_file ? mag_file : "", file_id);
+		UE_LOG(LogTemp, Warning, TEXT("MAG Open Failed: File '%hs' invalid file type '%hs'"),
+			mag_file ? mag_file : "", file_id);
 		loader->ReleaseBuffer(block);
 		return result;
 	}
 
-	// get ready to load, delete existing model:
 	surfaces.destroy();
 	materials.destroy();
 	nverts = 0;
 	npolys = 0;
 
-	// now load the model:
 	switch (version) {
 	case 4:
 	case 5:
@@ -993,11 +956,7 @@ Model::Load(const char* mag_file, double scale)
 bool
 Model::Load(ModelFile* mod_file, double scale)
 {
-	if (mod_file) {
-		return mod_file->Load(this, scale);
-	}
-
-	return false;
+	return mod_file ? mod_file->Load(this, scale) : false;
 }
 
 // +--------------------------------------------------------------------+
@@ -1019,12 +978,12 @@ static int mcomp(const void* a, const void* b)
 bool
 Model::LoadMag5(BYTE* block, int len, double scale)
 {
-	bool        result = false;
+	bool result = false;
 
 	DataLoader* loader = DataLoader::GetLoader();
 	BYTE* fp = block + 4;
-	int         ntex = 0;
-	int         nsurfs = 0;
+	int   ntex = 0;
+	int   nsurfs = 0;
 
 	loader->fread(&ntex, sizeof(ntex), 1, fp);
 	loader->fread(&nsurfs, sizeof(nsurfs), 1, fp);
@@ -1069,9 +1028,8 @@ Model::LoadMag5(BYTE* block, int len, double scale)
 
 			loader->fread(tname, 32, 1, fp);
 
-			// NOTE: Legacy loader signature kept; your UE texture migration will
-			// adapt LoadTexture to produce UTexture2D* (or a wrapper) later.
-			loader->LoadTexture(tname, mtl->tex_diffuse, Bitmap::BMP_SOLID, true);
+			// Bitmap -> UTexture2D* (tex_diffuse must be UTexture2D* in Material):
+			loader->LoadTexture(tname, mtl->tex_diffuse, /*type*/0, /*mipmaps*/true);
 
 			strcpy_s(mtl->name, tname);
 
@@ -1095,23 +1053,24 @@ Model::LoadMag5(BYTE* block, int len, double scale)
 	nverts = npolys * 4;
 
 	Surface* s = new Surface;
-	VertexSet* vset = 0;
+	VertexSet* vset = nullptr;
 
 	if (s) {
 		strcpy_s(s->name, "default");
 
 		s->model = this;
 		s->vertex_set = new VertexSet(nverts);
-		s->vloc = new Vec3[nverts];
+		s->vloc = new FVector[nverts];
 
-		// UE-safe replacements:
-		memset(s->vertex_set->loc, 0, nverts * sizeof(Vec3));
+		// UE-safe init (VertexSet loc/nrm are assumed FVector*):
+		memset(s->vertex_set->loc, 0, nverts * sizeof(FVector));
+		memset(s->vertex_set->nrm, 0, nverts * sizeof(FVector));
 		memset(s->vertex_set->diffuse, 0, nverts * sizeof(DWORD));
 		memset(s->vertex_set->specular, 0, nverts * sizeof(DWORD));
 		memset(s->vertex_set->tu, 0, nverts * sizeof(float));
 		memset(s->vertex_set->tv, 0, nverts * sizeof(float));
 		memset(s->vertex_set->rw, 0, nverts * sizeof(float));
-		memset(s->vloc, 0, nverts * sizeof(Vec3));
+		memset(s->vloc, 0, nverts * sizeof(FVector));
 
 		s->npolys = npolys;
 		s->polys = new Poly[npolys];
@@ -1122,52 +1081,55 @@ Model::LoadMag5(BYTE* block, int len, double scale)
 		vset = s->vertex_set;
 
 		int v = 0;
+
 		// read vertex set:
 		for (v = 0; v < mag_nverts; v++) {
-			Vec3  vert, norm;
-			DWORD vstate = 0;
+			FVector vert(0, 0, 0);
+			FVector norm(0, 0, 0);
+			DWORD   vstate = 0;
 
-			loader->fread(&vert, sizeof(Vec3), 1, fp);
-			loader->fread(&norm, sizeof(Vec3), 1, fp);
+			loader->fread(&vert, sizeof(FVector), 1, fp);
+			loader->fread(&norm, sizeof(FVector), 1, fp);
 			loader->fread(&vstate, sizeof(DWORD), 1, fp);
 
-			vert.SwapYZ();
+			// legacy SwapYZ + scale:
+			Swap(vert.Y, vert.Z);
 			vert *= (float)scale;
 
 			vset->loc[v] = vert;
 			vset->nrm[v] = norm;
 
-			double d = vert.length();
+			const double d = (double)vert.Size();
 			if (d > radius)
 				radius = (float)d;
 
-			if (vert.x > extents[0]) extents[0] = vert.x;
-			if (vert.x < extents[1]) extents[1] = vert.x;
-			if (vert.y > extents[2]) extents[2] = vert.y;
-			if (vert.y < extents[3]) extents[3] = vert.y;
-			if (vert.z > extents[4]) extents[4] = vert.z;
-			if (vert.z < extents[5]) extents[5] = vert.z;
+			if (vert.X > extents[0]) extents[0] = vert.X;
+			if (vert.X < extents[1]) extents[1] = vert.X;
+			if (vert.Y > extents[2]) extents[2] = vert.Y;
+			if (vert.Y < extents[3]) extents[3] = vert.Y;
+			if (vert.Z > extents[4]) extents[4] = vert.Z;
+			if (vert.Z < extents[5]) extents[5] = vert.Z;
 		}
 
 		while (v < nverts)
-			vset->nrm[v++] = Vec3(1, 0, 0);
+			vset->nrm[v++] = FVector(1, 0, 0);
 
 		// read polys:
-		Vec3  dummy_center;
-		DWORD dummy_flags = 0;
-		DWORD dummy_color = 0;
-		Plane dummy_plane;
-		int   texture_num = 0;
-		int   poly_nverts = 0;
-		int   vert_index_buffer[32]{};
-		float texture_index_buffer[32]{};
+		FVector dummy_center(0, 0, 0);
+		DWORD   dummy_flags = 0;
+		DWORD   dummy_color = 0;
+		Plane   dummy_plane;
+		int     texture_num = 0;
+		int     poly_nverts = 0;
+		int     vert_index_buffer[32]{};
+		float   texture_index_buffer[32]{};
 
 		for (int n = 0; n < npolys; n++) {
 			Poly& poly = s->polys[n];
 			poly.vertex_set = vset;
 
 			loader->fread(&dummy_flags, sizeof(DWORD), 1, fp);
-			loader->fread(&dummy_center, sizeof(Vec3), 1, fp);
+			loader->fread(&dummy_center, sizeof(FVector), 1, fp);
 
 			LoadPlane(dummy_plane, loader, fp);
 
@@ -1252,9 +1214,12 @@ Model::LoadMag5(BYTE* block, int len, double scale)
 		// pass 2 (adjust vertex normals for flat polys):
 		for (int n = 0; n < npolys; n++) {
 			Poly& poly = s->polys[n];
-			poly.plane = Plane(vset->loc[poly.verts[0]],
+
+			poly.plane = Plane(
+				vset->loc[poly.verts[0]],
 				vset->loc[poly.verts[2]],
-				vset->loc[poly.verts[1]]);
+				vset->loc[poly.verts[1]]
+			);
 
 			// hack: retrieve flat shaded flag from unused visible byte
 			if (poly.visible) {
@@ -1271,14 +1236,14 @@ Model::LoadMag5(BYTE* block, int len, double scale)
 		qsort((void*)s->polys, s->npolys, sizeof(Poly), mcomp);
 
 		// then assign them to cohesive segments:
-		Segment* segment = 0;
+		Segment* segment = nullptr;
 
 		for (int n = 0; n < npolys; n++) {
 			if (segment && segment->material == s->polys[n].material) {
 				segment->npolys++;
 			}
 			else {
-				segment = 0;
+				segment = nullptr;
 			}
 
 			if (!segment) {
@@ -1294,7 +1259,7 @@ Model::LoadMag5(BYTE* block, int len, double scale)
 		}
 
 		s->BuildHull();
-		result = nverts && npolys;
+		result = (nverts != 0) && (npolys != 0);
 	}
 
 	return result;
@@ -1334,15 +1299,16 @@ struct MaterialMag6
 bool
 Model::LoadMag6(BYTE* block, int len, double scale)
 {
-	bool        result = false;
+	bool result = false;
 
 	DataLoader* loader = DataLoader::GetLoader();
 	BYTE* fp = block + 4;
-	int         ntex = 0;
-	int         nmtls = 0;
-	int         nsurfs = 0;
+	int   ntex = 0;
+	int   nmtls = 0;
+	int   nsurfs = 0;
 
-	List<Bitmap> textures;
+	// Bitmap -> UTexture2D*
+	List<UTexture2D*> textures;
 
 	loader->fread(&ntex, sizeof(ntex), 1, fp); // size of texture block
 	loader->fread(&nmtls, sizeof(nmtls), 1, fp); // number of materials
@@ -1352,13 +1318,13 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 	if (ntex) {
 		char* buffer = new char[ntex];
 		char* p = buffer;
-		Bitmap* bmp = 0;
 
 		loader->fread(buffer, ntex, 1, fp);
 
 		while (p < buffer + ntex) {
-			loader->LoadTexture(p, bmp, Bitmap::BMP_SOLID, true);
-			textures.append(bmp);
+			UTexture2D* tex = nullptr;
+			loader->LoadTexture(p, tex, /*type*/0, /*mipmaps*/true);
+			textures.append(tex);
 
 			p += strlen(p) + 1;
 		}
@@ -1414,13 +1380,13 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 	}
 
 	for (int i = 0; i < nsurfs; i++) {
-		int  nverts = 0;
-		int  npolys = 0;
+		int  nverts_local = 0;
+		int  npolys_local = 0;
 		BYTE namelen = 0;
 		char surf_name[128]{};
 
-		loader->fread(&nverts, 4, 1, fp);
-		loader->fread(&npolys, 4, 1, fp);
+		loader->fread(&nverts_local, 4, 1, fp);
+		loader->fread(&npolys_local, 4, 1, fp);
 		loader->fread(&namelen, 1, 1, fp);
 
 		// Ensure a valid, null-terminated surface name:
@@ -1429,7 +1395,6 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 			loader->fread(surf_name, 1, safe_len, fp);
 			surf_name[safe_len] = 0;
 
-			// If namelen exceeded our buffer, advance fp to skip remaining bytes:
 			if (safe_len < namelen)
 				fp += (namelen - safe_len);
 		}
@@ -1440,16 +1405,16 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 		Surface* surface = new Surface;
 		surface->model = this;
 		surface->SetName(surf_name);
-		surface->CreateVerts(nverts);
-		surface->CreatePolys(npolys);
+		surface->CreateVerts(nverts_local);
+		surface->CreatePolys(npolys_local);
 
 		VertexSet* vset = surface->GetVertexSet();
 		Poly* polys = surface->GetPolys();
 
-		memset(polys, 0, sizeof(Poly) * npolys);
+		memset(polys, 0, sizeof(Poly) * npolys_local);
 
 		// read vertex set:
-		for (int v = 0; v < nverts; v++) {
+		for (int v = 0; v < nverts_local; v++) {
 			loader->fread(&vset->loc[v], sizeof(float), 3, fp);
 			loader->fread(&vset->nrm[v], sizeof(float), 3, fp);
 			loader->fread(&vset->tu[v], sizeof(float), 1, fp);
@@ -1457,22 +1422,22 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 
 			vset->loc[v] *= (float)scale;
 
-			Vec3 vert = vset->loc[v];
+			const FVector vert = vset->loc[v];
 
-			const double d = vert.length();
+			const double d = (double)vert.Size();
 			if (d > radius)
 				radius = (float)d;
 
-			if (vert.x > extents[0]) extents[0] = vert.x;
-			if (vert.x < extents[1]) extents[1] = vert.x;
-			if (vert.y > extents[2]) extents[2] = vert.y;
-			if (vert.y < extents[3]) extents[3] = vert.y;
-			if (vert.z > extents[4]) extents[4] = vert.z;
-			if (vert.z < extents[5]) extents[5] = vert.z;
+			if (vert.X > extents[0]) extents[0] = vert.X;
+			if (vert.X < extents[1]) extents[1] = vert.X;
+			if (vert.Y > extents[2]) extents[2] = vert.Y;
+			if (vert.Y < extents[3]) extents[3] = vert.Y;
+			if (vert.Z > extents[4]) extents[4] = vert.Z;
+			if (vert.Z < extents[5]) extents[5] = vert.Z;
 		}
 
 		// read polys:
-		for (int n = 0; n < npolys; n++) {
+		for (int n = 0; n < npolys_local; n++) {
 			Poly& poly = polys[n];
 
 			BYTE poly_nverts = 0;
@@ -1486,9 +1451,8 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 			if (poly_nverts >= 3) {
 				poly.nverts = poly_nverts;
 
-				for (int vi = 0; vi < poly_nverts; vi++) {
+				for (int vi = 0; vi < poly_nverts; vi++)
 					poly.verts[vi] = poly_verts[vi];
-				}
 			}
 			else {
 				poly.sortval = 666;
@@ -1513,26 +1477,27 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 
 			poly.vertex_set = vset;
 
-			// Only build a plane for valid polys:
 			if (poly.nverts >= 3) {
-				poly.plane = Plane(vset->loc[poly.verts[0]],
+				poly.plane = Plane(
+					vset->loc[poly.verts[0]],
 					vset->loc[poly.verts[2]],
-					vset->loc[poly.verts[1]]);
+					vset->loc[poly.verts[1]]
+				);
 			}
 		}
 
 		// sort the polys by material index:
-		qsort((void*)polys, npolys, sizeof(Poly), mcomp);
+		qsort((void*)polys, npolys_local, sizeof(Poly), mcomp);
 
 		// then assign them to cohesive segments:
-		Segment* segment = 0;
+		Segment* segment = nullptr;
 
-		for (int n = 0; n < npolys; n++) {
+		for (int n = 0; n < npolys_local; n++) {
 			if (segment && segment->material == polys[n].material) {
 				segment->npolys++;
 			}
 			else {
-				segment = 0;
+				segment = nullptr;
 			}
 
 			if (!segment) {
@@ -1550,280 +1515,13 @@ Model::LoadMag6(BYTE* block, int len, double scale)
 		surface->BuildHull();
 		surfaces.append(surface);
 
-		this->nverts += nverts;
-		this->npolys += npolys;
+		this->nverts += nverts_local;
+		this->npolys += npolys_local;
 	}
 
-	result = nverts && npolys;
+	result = (nverts != 0) && (npolys != 0);
 	return result;
 }
-
-void
-Model::AddSurface(Surface* surface)
-{
-	if (surface) {
-		surface->model = this;
-
-		ListIter<Segment> iter = surface->segments;
-		while (++iter) {
-			Segment* segment = iter.value();
-			segment->model = this;
-		}
-
-		surface->BuildHull();
-		surfaces.append(surface);
-
-		nverts += surface->NumVerts();
-		npolys += surface->NumPolys();
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-const Material*
-Model::FindMaterial(const char* mtl_name) const
-{
-	if (mtl_name && *mtl_name) {
-		Model* pThis = (Model*)this;
-
-		ListIter<Material> iter = pThis->materials;
-		while (++iter) {
-			Material* mtl = iter.value();
-
-			if (!strcmp(mtl->name, mtl_name))
-				return mtl;
-		}
-	}
-
-	return 0;
-}
-
-const Material*
-Model::ReplaceMaterial(const Material* mtl)
-{
-	const Material* mtl_orig = 0;
-
-	if (mtl) {
-		mtl_orig = FindMaterial(mtl->name);
-
-		if (mtl_orig) {
-			const int n = materials.index(mtl_orig);
-			materials[n] = (Material*)mtl;
-
-			ListIter<Surface> surf_iter = surfaces;
-			while (++surf_iter) {
-				Surface* surf = surf_iter.value();
-
-				ListIter<Segment> seg_iter = surf->GetSegments();
-				while (++seg_iter) {
-					Segment* segment = seg_iter.value();
-
-					if (segment->material == mtl_orig)
-						segment->material = (Material*)mtl;
-				}
-			}
-		}
-	}
-
-	return mtl_orig;
-}
-
-// +--------------------------------------------------------------------+
-
-Poly*
-Model::AddPolys(int nsurf, int np, int nv)
-{
-	if (nsurf >= 0 && nsurf < surfaces.size())
-		return surfaces[nsurf]->AddPolys(np, nv);
-
-	UE_LOG(LogTemp, Warning, TEXT("WARNING: AddPolys(%d,%d,%d) invalid surface"), nsurf, np, nv);
-	return 0;
-}
-
-// +--------------------------------------------------------------------+
-
-void
-Model::ExplodeMesh()
-{
-	ListIter<Surface> iter = surfaces;
-
-	int nv = 0;
-	int np = 0;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->ExplodeMesh();
-
-		nv += s->NumVerts();
-		np += s->NumPolys();
-	}
-
-	nverts = nv;
-	npolys = np;
-}
-
-// +--------------------------------------------------------------------+
-
-void
-Model::OptimizeMesh()
-{
-	ListIter<Surface> iter = surfaces;
-
-	int nv = 0;
-	int np = 0;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->OptimizeMesh();
-
-		nv += s->NumVerts();
-		np += s->NumPolys();
-	}
-
-	nverts = nv;
-	npolys = np;
-}
-
-// +--------------------------------------------------------------------+
-
-void
-Model::OptimizeMaterials()
-{
-	for (int i = 0; i < materials.size(); i++) {
-		Material* m1 = materials[i];
-
-		for (int n = i; n < materials.size(); n++) {
-			Material* m2 = materials[n];
-
-			// if they match, merge them:
-			if (*m1 == *m2) {
-				List<Poly> polys;
-				SelectPolys(polys, m2);
-
-				ListIter<Poly> iter = polys;
-				while (++iter) {
-					Poly* p = iter.value();
-					p->material = m1;
-				}
-
-				// and discard the duplicate:
-				materials.remove(m2);
-				delete m2;
-			}
-		}
-	}
-}
-
-void
-Model::ScaleBy(double factor)
-{
-	ListIter<Surface> iter = surfaces;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->ScaleBy(factor);
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-Model::Normalize()
-{
-	ListIter<Surface> iter = surfaces;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->Normalize();
-	}
-}
-
-void
-Model::SelectPolys(List<Poly>& polys, Vec3 loc)
-{
-	ListIter<Surface> iter = surfaces;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->SelectPolys(polys, loc);
-	}
-}
-
-void
-Model::SelectPolys(List<Poly>& polys, Material* m)
-{
-	ListIter<Surface> iter = surfaces;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->SelectPolys(polys, m);
-	}
-}
-
-void
-Model::ComputeTangents()
-{
-	ListIter<Surface> iter = surfaces;
-
-	while (++iter) {
-		Surface* s = iter.value();
-		s->ComputeTangents();
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-Model::DeletePrivateData()
-{
-	ListIter<Surface> iter = surfaces;
-	while (++iter) {
-		Surface* s = iter.value();
-		VideoPrivateData* vpd = s->GetVideoPrivateData();
-
-		if (vpd) {
-			delete vpd;
-			s->SetVideoPrivateData(0);
-		}
-
-		ListIter<Segment> seg_iter = s->GetSegments();
-		while (++seg_iter) {
-			Segment* segment = seg_iter.value();
-			VideoPrivateData* vpdp = segment->video_data;
-
-			if (vpdp) {
-				delete vpdp;
-				segment->video_data = 0;
-			}
-		}
-	}
-}
-
-// +--------------------------------------------------------------------+
-// +--------------------------------------------------------------------+
-// +--------------------------------------------------------------------+
-
-Surface::Surface()
-	: model(0), vertex_set(0), vloc(0), nhull(0), npolys(0), nindices(0),
-	polys(0), state(0), video_data(0), opcode(0)
-{
-	memset(name, 0, sizeof(name));
-}
-
-Surface::~Surface()
-{
-	segments.destroy();
-
-	delete    opcode;
-	delete    vertex_set;
-	delete[] vloc;
-	delete[] polys;
-	delete    video_data;
-
-	model = 0;
-}
-
-// +--------------------------------------------------------------------+
 
 void
 Surface::Copy(Surface& s, Model* m)
@@ -1849,11 +1547,11 @@ Surface::Copy(Surface& s, Model* m)
 	opcode = 0;
 	video_data = 0;
 
-	vertex_set = s.vertex_set->Clone();
+	vertex_set = s.vertex_set ? s.vertex_set->Clone() : 0;
 
 	if (nhull > 0) {
-		vloc = new Vec3[nhull];
-		memcpy(vloc, s.vloc, nhull * sizeof(Vec3));
+		vloc = new FVector[nhull];
+		memcpy(vloc, s.vloc, nhull * sizeof(FVector));
 	}
 	else {
 		vloc = 0;
@@ -1895,7 +1593,7 @@ Surface::SetName(const char* n)
 	const int len = (int)sizeof(name);
 
 	memset(name, 0, len);
-	strncpy_s(name, n, len - 1);
+	strncpy_s(name, n ? n : "", len - 1);
 }
 
 void
@@ -1924,7 +1622,7 @@ Surface::CreateVerts(int nverts)
 {
 	if (!vertex_set && !vloc) {
 		vertex_set = new VertexSet(nverts);
-		vloc = new Vec3[nverts];
+		vloc = new FVector[nverts];
 	}
 }
 
@@ -1971,7 +1669,6 @@ Surface::AddPolys(int np, int nv)
 			seg->npolys += np;
 		}
 
-		// IMPORTANT: the original code leaked pset and never installed it.
 		// Adopt the new poly array and release the old one:
 		delete[] polys;
 		polys = pset;
@@ -1991,25 +1688,24 @@ Surface::ExplodeMesh()
 	if (!vertex_set || vertex_set->nverts < 3)
 		return;
 
-	int i, j, v;
 	int nverts = 0;
 
 	// count max verts:
-	for (i = 0; i < npolys; i++) {
+	for (int i = 0; i < npolys; i++) {
 		Poly* p = polys + i;
 		nverts += p->nverts;
 	}
 
 	// create target vertex set:
 	VertexSet* vset = new VertexSet(nverts);
-	v = 0;
+	int v = 0;
 
 	// explode verts:
-	for (i = 0; i < npolys; i++) {
+	for (int i = 0; i < npolys; i++) {
 		Poly* p = polys + i;
 		p->vertex_set = vset;
 
-		for (j = 0; j < p->nverts; j++) {
+		for (int j = 0; j < p->nverts; j++) {
 			const int vsrc = p->verts[j];
 
 			vset->loc[v] = vertex_set->loc[vsrc];
@@ -2029,7 +1725,7 @@ Surface::ExplodeMesh()
 	vertex_set = vset;
 
 	delete[] vloc;
-	vloc = new Vec3[nverts];
+	vloc = new FVector[nverts];
 
 	ComputeTangents();
 	BuildHull();
@@ -2042,32 +1738,32 @@ const double SELECT_TEXTURE = 0.0001;
 
 static bool MatchVerts(VertexSet* vset, int i, int j)
 {
-	double      d = 0;
-	const Vec3& vl1 = vset->loc[i];
-	const Vec3& vn1 = vset->nrm[i];
-	float       tu1 = vset->tu[i];
-	float       tv1 = vset->tv[i];
-	const Vec3& vl2 = vset->loc[j];
-	const Vec3& vn2 = vset->nrm[j];
-	float       tu2 = vset->tu[j];
-	float       tv2 = vset->tv[j];
+	double         d = 0;
+	const FVector& vl1 = vset->loc[i];
+	const FVector& vn1 = vset->nrm[i];
+	float          tu1 = vset->tu[i];
+	float          tv1 = vset->tv[i];
+	const FVector& vl2 = vset->loc[j];
+	const FVector& vn2 = vset->nrm[j];
+	float          tu2 = vset->tu[j];
+	float          tv2 = vset->tv[j];
 
-	d = fabs(vl1.x - vl2.x);
+	d = fabs(vl1.X - vl2.X);
 	if (d > SELECT_EPSILON) return false;
 
-	d = fabs(vl1.y - vl2.y);
+	d = fabs(vl1.Y - vl2.Y);
 	if (d > SELECT_EPSILON) return false;
 
-	d = fabs(vl1.z - vl2.z);
+	d = fabs(vl1.Z - vl2.Z);
 	if (d > SELECT_EPSILON) return false;
 
-	d = fabs(vn1.x - vn2.x);
+	d = fabs(vn1.X - vn2.X);
 	if (d > SELECT_EPSILON) return false;
 
-	d = fabs(vn1.y - vn2.y);
+	d = fabs(vn1.Y - vn2.Y);
 	if (d > SELECT_EPSILON) return false;
 
-	d = fabs(vn1.z - vn2.z);
+	d = fabs(vn1.Z - vn2.Z);
 	if (d > SELECT_EPSILON) return false;
 
 	d = fabs(tu1 - tu2);
@@ -2172,7 +1868,7 @@ Surface::OptimizeMesh()
 	delete[] vert_dst;
 
 	delete[] vloc;
-	vloc = new Vec3[nverts];
+	vloc = new FVector[nverts];
 
 	ComputeTangents();
 	BuildHull();
@@ -2210,16 +1906,16 @@ Surface::BuildHull()
 			WORD h;
 
 			for (h = 0; h < nhull; h++) {
-				Vec3& vl = vertex_set->loc[v];
-				Vec3& loc = vloc[h];
+				FVector& vl = vertex_set->loc[v];
+				FVector& loc = vloc[h];
 
-				double d = vl.x - loc.x;
+				double d = vl.X - loc.X;
 				if (d < -SELECT_EPSILON || d > SELECT_EPSILON) continue;
 
-				d = vl.y - loc.y;
+				d = vl.Y - loc.Y;
 				if (d < -SELECT_EPSILON || d > SELECT_EPSILON) continue;
 
-				d = vl.z - loc.z;
+				d = vl.Z - loc.Z;
 				if (d < -SELECT_EPSILON || d > SELECT_EPSILON) continue;
 
 				// found a match:
@@ -2266,7 +1962,7 @@ Surface::Normalize()
 		SelectPolys(faces, vertex_set->loc[v]);
 
 		if (faces.size()) {
-			vertex_set->nrm[v] = Vec3(0.0f, 0.0f, 0.0f);
+			vertex_set->nrm[v] = FVector(0.0f, 0.0f, 0.0f);
 
 			for (int i = 0; i < faces.size(); i++) {
 				vertex_set->nrm[v] += faces[i]->plane.normal;
@@ -2274,12 +1970,12 @@ Surface::Normalize()
 
 			vertex_set->nrm[v].Normalize();
 		}
-		else if (vertex_set->loc[v].length() > 0) {
+		else if (vertex_set->loc[v].Size() > 0) {
 			vertex_set->nrm[v] = vertex_set->loc[v];
 			vertex_set->nrm[v].Normalize();
 		}
 		else {
-			vertex_set->nrm[v] = Vec3(0.0f, 1.0f, 0.0f);
+			vertex_set->nrm[v] = FVector(0.0f, 1.0f, 0.0f);
 		}
 	}
 
@@ -2298,23 +1994,22 @@ Surface::Normalize()
 }
 
 void
-Surface::SelectPolys(List<Poly>& selection, Vec3 loc)
+Surface::SelectPolys(List<Poly>& selection, FVector loc)
 {
-	// NOTE: do NOT redeclare SELECT_EPSILON here; use the file-scope constant.
 	for (int i = 0; i < npolys; i++) {
 		Poly* p = polys + i;
 
 		for (int n = 0; n < p->nverts; n++) {
-			int   v = p->verts[n];
-			Vec3& vl = vertex_set->loc[v];
+			int     v = p->verts[n];
+			FVector& vl = vertex_set->loc[v];
 
-			double d = vl.x - loc.x;
+			double d = vl.X - loc.X;
 			if (d < -SELECT_EPSILON || d > SELECT_EPSILON) continue;
 
-			d = vl.y - loc.y;
+			d = vl.Y - loc.Y;
 			if (d < -SELECT_EPSILON || d > SELECT_EPSILON) continue;
 
-			d = vl.z - loc.z;
+			d = vl.Z - loc.Z;
 			if (d < -SELECT_EPSILON || d > SELECT_EPSILON) continue;
 
 			selection.append(p);
@@ -2334,13 +2029,11 @@ Surface::SelectPolys(List<Poly>& selection, Material* m)
 	}
 }
 
-// +--------------------------------------------------------------------+
-
 void
 Surface::ComputeTangents()
 {
-	Vec3 tangent;
-	Vec3 binormal;
+	FVector tangent(0.0f, 0.0f, 0.0f);
+	FVector binormal(0.0f, 0.0f, 0.0f);
 
 	if (!vertex_set || !vertex_set->nverts)
 		return;
@@ -2363,34 +2056,36 @@ Surface::ComputeTangents()
 }
 
 void
-Surface::CalcGradients(Poly& p, Vec3& tangent, Vec3& binormal)
+Surface::CalcGradients(Poly& p, FVector& tangent, FVector& binormal)
 {
 	// Using Eric Lengyel's approach with minor adaptations.
 
 	VertexSet* vset = p.vertex_set;
+	if (!vset || p.nverts < 3)
+		return;
 
-	Vec3 P = vset->loc[p.verts[1]] - vset->loc[p.verts[0]];
-	Vec3 Q = vset->loc[p.verts[2]] - vset->loc[p.verts[0]];
+	const FVector P = vset->loc[p.verts[1]] - vset->loc[p.verts[0]];
+	const FVector Q = vset->loc[p.verts[2]] - vset->loc[p.verts[0]];
 
-	float s1 = vset->tu[p.verts[1]] - vset->tu[p.verts[0]];
-	float t1 = vset->tv[p.verts[1]] - vset->tv[p.verts[0]];
-	float s2 = vset->tu[p.verts[2]] - vset->tu[p.verts[0]];
-	float t2 = vset->tv[p.verts[2]] - vset->tv[p.verts[0]];
+	const float s1 = vset->tu[p.verts[1]] - vset->tu[p.verts[0]];
+	const float t1 = vset->tv[p.verts[1]] - vset->tv[p.verts[0]];
+	const float s2 = vset->tu[p.verts[2]] - vset->tu[p.verts[0]];
+	const float t2 = vset->tv[p.verts[2]] - vset->tv[p.verts[0]];
 
 	float tmp = 1.0f;
-	float denom = s1 * t2 - s2 * t1;
+	const float denom = s1 * t2 - s2 * t1;
 
 	if (fabsf(denom) > 0.0001f)
 		tmp = 1.0f / denom;
 
-	tangent.x = (t2 * P.x - t1 * Q.x) * tmp;
-	tangent.y = (t2 * P.y - t1 * Q.y) * tmp;
-	tangent.z = (t2 * P.z - t1 * Q.z) * tmp;
+	tangent.X = (t2 * P.X - t1 * Q.X) * tmp;
+	tangent.Y = (t2 * P.Y - t1 * Q.Y) * tmp;
+	tangent.Z = (t2 * P.Z - t1 * Q.Z) * tmp;
 	tangent.Normalize();
 
-	binormal.x = (s1 * Q.x - s2 * P.x) * tmp;
-	binormal.y = (s1 * Q.y - s2 * P.y) * tmp;
-	binormal.z = (s1 * Q.z - s2 * P.z) * tmp;
+	binormal.X = (s1 * Q.X - s2 * P.X) * tmp;
+	binormal.Y = (s1 * Q.Y - s2 * P.Y) * tmp;
+	binormal.Z = (s1 * Q.Z - s2 * P.Z) * tmp;
 	binormal.Normalize();
 }
 
@@ -2433,7 +2128,7 @@ ModelFile::ModelFile(const char* fname)
 	const int len = (int)sizeof(filename);
 
 	memset(filename, 0, len);
-	strncpy_s(filename, fname, len - 1);
+	strncpy_s(filename, fname ? fname : "", len - 1);
 	filename[len - 1] = 0;
 }
 

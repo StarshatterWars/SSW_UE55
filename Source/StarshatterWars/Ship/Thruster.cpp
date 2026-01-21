@@ -49,7 +49,7 @@ extern UTexture2D* drive_trail_bitmap[8];
 
 // +----------------------------------------------------------------------+
 
-ThrusterPort::ThrusterPort(int t, const FVector& l, uint32 f, float s)
+ThrusterPort::ThrusterPort(int t, const FVector& l, DWORD f, float s)
 	: type(t), loc(l), flare(nullptr), trail(nullptr), fire(f), burn(0.0f), scale(s)
 {
 }
@@ -140,7 +140,7 @@ Thruster::Initialize()
 
 	loader->SetDataPath("Sounds/");
 	loader->LoadSound("thruster.wav", thruster_resource, SOUND_FLAGS);
-	loader->SetDataPath(nullptr);
+	loader->SetDataPath("");
 
 	if (thruster_resource)
 		thruster_resource->SetMaxDistance(15.0e3f);
@@ -169,6 +169,7 @@ Thruster::Orient(const Physical* rep)
 	SimSystem::Orient(rep);
 
 	bool hide_all = false;
+
 	if (!ship || (ship->IsAirborne() && ship->Class() != Ship::LCA)) {
 		hide_all = true;
 	}
@@ -181,14 +182,24 @@ Thruster::Orient(const Physical* rep)
 		hide_all = true;
 	}
 
+	// UE-compatible math:
 	const Matrix& orientation = rep->Cam().Orientation();
-	const Point   ship_loc = rep->Location();
+	const FVector ship_loc = rep->Location();
 
 	for (int i = 0; i < ports.size(); i++) {
 		ThrusterPort* p = ports[i];
+		if (!p) continue;
 
-		const Point loc_ss(p->loc.X, p->loc.Y, p->loc.Z);
-		const Point projector = (loc_ss * orientation) + ship_loc;
+		const FVector loc_ss(p->loc.X, p->loc.Y, p->loc.Z);
+
+		// Replace (Point * Matrix) with an explicit helper multiply to avoid FVector operator* errors.
+		// Assumes Matrix supports element access xform(r,c) like in other converted files.
+		const FVector projector =
+			FVector(
+				(float)(loc_ss.X * orientation(0, 0) + loc_ss.Y * orientation(1, 0) + loc_ss.Z * orientation(2, 0)),
+				(float)(loc_ss.X * orientation(0, 1) + loc_ss.Y * orientation(1, 1) + loc_ss.Z * orientation(2, 1)),
+				(float)(loc_ss.X * orientation(0, 2) + loc_ss.Y * orientation(1, 2) + loc_ss.Z * orientation(2, 2))
+			) + ship_loc;
 
 		if (p->flare)
 			p->flare->MoveTo(projector);
@@ -198,17 +209,22 @@ Thruster::Orient(const Physical* rep)
 
 			if (intensity > 0.5 && !hide_all) {
 				Bolt* t = (Bolt*)p->trail;
-				double  len = -50 * p->scale * intensity;
+				const float len = (float)(-50.0 * p->scale * intensity);
 
 				t->Show();
 
+				// Convert Starshatter camera basis vectors to FVector explicitly:
+				const FVector Vrt((float)rep->Cam().vrt().X, (float)rep->Cam().vrt().Y, (float)rep->Cam().vrt().Z);
+				const FVector Vup((float)rep->Cam().vup().X, (float)rep->Cam().vup().Y, (float)rep->Cam().vup().Z);
+				const FVector Vpn((float)rep->Cam().vpn().X, (float)rep->Cam().vpn().Y, (float)rep->Cam().vpn().Z);
+
 				switch (p->type) {
-				case LEFT:     t->SetEndPoints(projector, projector + rep->Cam().vrt() * len); break;
-				case RIGHT:    t->SetEndPoints(projector, projector - rep->Cam().vrt() * len); break;
-				case AFT:      t->SetEndPoints(projector, projector + rep->Cam().vpn() * len); break;
-				case FORE:     t->SetEndPoints(projector, projector - rep->Cam().vpn() * len); break;
-				case BOTTOM:   t->SetEndPoints(projector, projector + rep->Cam().vup() * len); break;
-				case TOP:      t->SetEndPoints(projector, projector - rep->Cam().vup() * len); break;
+				case LEFT:     t->SetEndPoints(projector, projector + Vrt * len); break;
+				case RIGHT:    t->SetEndPoints(projector, projector - Vrt * len); break;
+				case AFT:      t->SetEndPoints(projector, projector + Vpn * len); break;
+				case FORE:     t->SetEndPoints(projector, projector - Vpn * len); break;
+				case BOTTOM:   t->SetEndPoints(projector, projector + Vup * len); break;
+				case TOP:      t->SetEndPoints(projector, projector - Vup * len); break;
 				default:       t->Hide(); break;
 				}
 			}
@@ -228,62 +244,75 @@ Thruster::ExecFrame(double seconds)
 {
 	SimSystem::ExecFrame(seconds);
 
-	if (ship) {
-		double rr = 0, pr = 0, yr = 0;
-		double rd = 0, pd = 0, yd = 0;
-
-		double agility = 1;
-		double stability = 1;
-
-		FlightComp* flcs = ship->GetFLCS();
-
-		if (flcs) {
-			if (!flcs->IsPowerOn() || flcs->Status() < DEGRADED) {
-				agility = 0.3;
-				stability = 0.0;
-			}
-		}
-
-		// check for thruster damage here:
-		if (components.size() >= 3) {
-			int stat = components[0]->Status();
-			if (stat == Component::NOMINAL)      avail_x = 1.0f;
-			else if (stat == Component::DEGRADED) avail_x = 0.5f;
-			else                                  avail_x = 0.0f;
-
-			stat = components[1]->Status();
-			if (stat == Component::NOMINAL)      avail_z = 1.0f;
-			else if (stat == Component::DEGRADED) avail_z = 0.5f;
-			else                                  avail_z = 0.0f;
-
-			stat = components[2]->Status();
-			if (stat == Component::NOMINAL)      avail_y = 1.0f;
-			else if (stat == Component::DEGRADED) avail_y = 0.5f;
-			else                                  avail_y = 0.0f;
-		}
-
-		// thrust limited by power distribution:
-		thrust = energy / capacity;
-		energy = 0.0f;
-
-		if (thrust < 0)
-			thrust = 0.0f;
-
-		agility *= thrust;
-		stability *= thrust;
-
-		rr = roll_rate * agility * avail_y;
-		pr = pitch_rate * agility * avail_y;
-		yr = yaw_rate * agility * avail_x;
-
-		rd = roll_drag * stability * avail_y;
-		pd = pitch_drag * stability * avail_y;
-		yd = yaw_drag * stability * avail_x;
-
-		ship->SetAngularRates(rr, pr, yr);
-		ship->SetAngularDrag(rd, pd, yd);
+	if (!ship) {
+		return;
 	}
+
+	double rr = 0.0;
+	double pr = 0.0;
+	double yr = 0.0;
+	double rd = 0.0;
+	double pd = 0.0;
+	double yd = 0.0;
+
+	double agility = 1.0;
+	double stability = 1.0;
+
+	FlightComputer* flcs = ship->GetFLCS();
+	if (flcs) {
+		if (!flcs->IsPowerOn() || flcs->Status() < DEGRADED) {
+			agility = 0.3;
+			stability = 0.0;
+		}
+	}
+
+	// check for thruster damage here:
+	if (components.size() >= 3) {
+		const int stat0 = components[0] ? components[0]->Status() : SimComponent::DESTROYED;
+		if (stat0 == SimComponent::NOMINAL)        avail_x = 1.0f;
+		else if (stat0 == SimComponent::DEGRADED)  avail_x = 0.5f;
+		else                                       avail_x = 0.0f;
+
+		const int stat1 = components[1] ? components[1]->Status() : SimComponent::DESTROYED;
+		if (stat1 == SimComponent::NOMINAL)        avail_z = 1.0f;
+		else if (stat1 == SimComponent::DEGRADED)  avail_z = 0.5f;
+		else                                       avail_z = 0.0f;
+
+		const int stat2 = components[2] ? components[2]->Status() : SimComponent::DESTROYED;
+		if (stat2 == SimComponent::NOMINAL)        avail_y = 1.0f;
+		else if (stat2 == SimComponent::DEGRADED)  avail_y = 0.5f;
+		else                                       avail_y = 0.0f;
+	}
+
+	// thrust limited by power distribution:
+	if (capacity > 0.0f) {
+		thrust = energy / capacity;
+	}
+	else {
+		thrust = 0.0f;
+	}
+
+	energy = 0.0f;
+
+	if (thrust < 0.0f) {
+		thrust = 0.0f;
+	}
+
+	agility *= thrust;
+	stability *= thrust;
+
+	rr = roll_rate * agility * avail_y;
+	pr = pitch_rate * agility * avail_y;
+	yr = yaw_rate * agility * avail_x;
+
+	rd = roll_drag * stability * avail_y;
+	pd = pitch_drag * stability * avail_y;
+	yd = yaw_drag * stability * avail_x;
+
+	ship->SetAngularRates(rr, pr, yr);
+	ship->SetAngularDrag(rd, pd, yd);
 }
+
 
 // +--------------------------------------------------------------------+
 

@@ -32,7 +32,6 @@
 #include "Sim.h"
 #include "StarSystem.h"
 #include "Callsign.h"
-#include "NetUtil.h"
 
 #include "Game.h"
 #include "Random.h"
@@ -212,7 +211,7 @@ CarrierAI::CheckHostileElements()
 }
 
 bool
-CarrierAI::CreateStrike(Element* elem)
+CarrierAI::CreateStrike(SimElement* elem)
 {
 	SimElement* strike = 0;
 	Ship* target = elem->GetShip(1);
@@ -372,8 +371,6 @@ CarrierAI::CreatePackage(int squadron, int size, int code, const char* target, c
 		}
 	}
 
-	NetUtil::SendElemCreate(elem, squadron, slots, code <= Mission::SWEEP);
-
 	return elem;
 }
 
@@ -395,7 +392,6 @@ CarrierAI::LaunchElement(SimElement* elem)
 				hangar->GetPackageElement(s) == elem) {
 
 				hangar->Launch(squadron, slot);
-				NetUtil::SendShipLaunch(ship, squadron, slot);
 
 				result = true;
 			}

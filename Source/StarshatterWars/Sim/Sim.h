@@ -46,8 +46,7 @@ class Orbital;
 class OrbitalRegion;
 class Asteroid;
 
-class NetGame;
-class CameraDirector;
+class CameraManager;
 
 class Ship;
 class ShipDesign;
@@ -179,13 +178,13 @@ public:
     void SetTestMode(bool t = true);
 
     bool IsTestMode() const { return test_mode; }
-    bool IsNetGame()  const { return netgame != nullptr; }
     bool IsActive()   const;
     bool IsComplete() const;
 
     MotionController* GetControls() const { return ctrl; }
 
     SimElement* FindElement(const char* name);
+    int GetAssignedElements(SimElement* elem, List<SimElement>& assigned);
     List<SimElement>& GetElements() { return elements; }
 
     void SkipCutscene();
@@ -211,7 +210,7 @@ protected:
     StarSystem* star_system;
     SimScene*   scene;
     Dust* dust;
-    CameraDirector* cam_dir;
+    CameraManager* cam_dir;
 
     List<SimRegion>      regions;
     List<SimRegion>      rgn_queue;
@@ -227,7 +226,6 @@ protected:
     bool        test_mode;
     bool        grid_shown;
     Mission* mission;
-    NetGame* netgame;
     uint32      start_time;
 };
 

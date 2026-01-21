@@ -320,7 +320,7 @@ void ShipKiller::ExecFrame(double seconds)
 						debris_vel = RandomVector(1);
 
 						if (design->debris[i].speed > 0)
-							debris_vel *= design->debris[i].speed * Random(0.8, 1.2);
+							debris_vel *= static_cast<float>(design->debris[i].speed) * FMath::FRandRange(0.8f, 1.2f);
 						else
 							debris_vel *= (300.0 + rand() / 50.0);
 					}

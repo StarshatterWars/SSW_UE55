@@ -56,13 +56,7 @@
 #include "GameScreen.h"
 #include "Terrain.h"
 #include "TerrainPatch.h"
-
-#include "NetGame.h"
-#include "NetClientConfig.h"
-#include "NetServerConfig.h"
-#include "NetPlayer.h"
-#include "NetUtil.h"
-#include "NetData.h"
+#include "SimScene.h"
 
 #include "Game.h"
 #include "Sound.h"
@@ -341,7 +335,7 @@ Sim::UnloadMission()
 	if (stars)
 		stars->InvalidateTextureCache();
 
-	cam_dir = CameraDirector::GetInstance();
+	cam_dir = CameraManager::GetInstance();
 	if (cam_dir)
 		cam_dir->SetShip(0);
 
@@ -365,7 +359,7 @@ Sim::IsComplete() const
 void
 Sim::LoadMission(Mission* m, bool preload_textures)
 {
-	cam_dir = CameraDirector::GetInstance();
+	cam_dir = CameraManager::GetInstance();
 
 	if (!mission) {
 		mission = m;
@@ -408,7 +402,7 @@ Sim::LoadMission(Mission* m, bool preload_textures)
 void
 Sim::ExecMission()
 {
-	cam_dir = CameraDirector::GetInstance();
+	cam_dir = CameraManager::GetInstance();
 
 	if (!mission) {
 		Print("Sim::ExecMission() - No mission to execute.\n");
@@ -1547,11 +1541,11 @@ Sim::ExecFrame(double seconds)
 {
 	if (first_frame) {
 		first_frame = false;
-		netgame = NetGame::Create();
+		//netgame = NetGame::Create();
 	}
 
-	if (netgame)
-		netgame->ExecFrame();
+	//if (netgame)
+	//	netgame->ExecFrame();
 
 	if (regions.isEmpty()) {
 		active_region = 0;
@@ -1561,7 +1555,7 @@ Sim::ExecFrame(double seconds)
 		return;
 	}
 
-	ListIter<Element> elem = elements;
+	ListIter<SimElement> elem = elements;
 	while (++elem)
 		if (!elem->IsSquadron())
 			elem->ExecFrame(seconds);
@@ -1727,7 +1721,7 @@ Sim::ResolveHyperList()
 					jumpship->ClearTrack();
 
 					ProcessEventTrigger(MissionEvent::TRIGGER_JUMP, 0, jumpship->Name());
-					NetUtil::SendObjHyper(jumpship, dest->Name(), jump->loc, jump->fc_src, jump->fc_dst, jump->type);
+					//NetUtil::SendObjHyper(jumpship, dest->Name(), jump->loc, jump->fc_src, jump->fc_dst, jump->type);
 
 					// if using farcaster:
 					if (jump->fc_src) {
@@ -1818,15 +1812,15 @@ Sim::ResolveSplashList()
 
 				if (distance > 1 && distance < splash->range) {
 					const double damage = splash->damage * (1 - distance / splash->range);
-					if (!NetGame::IsNetGameClient()) {
+					//if (!NetGame::IsNetGameClient()) {
 						ship->InflictDamage(damage);
-					}
+					//}
 
 					const int ship_destroyed = (!ship->InTransition() && ship->Integrity() < 1.0f);
 
 					// then delete the ship:
 					if (ship_destroyed) {
-						NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
+						//NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
 						Print("    %s Killed %s (%s)\n", (const char*)splash->owner_name, ship->Name(), FormatGameTime());
 
 						// record the kill
@@ -1895,7 +1889,7 @@ Sim::ResolveSplashList()
 
 					// then mark the drone for deletion:
 					if (destroyed) {
-						NetUtil::SendWepDestroy(drone);
+						//NetUtil::SendWepDestroy(drone);
 						sim->CreateExplosion(drone->Location(), drone->Velocity(), 21 /* was LARGE_EXP */, 1.0f, 1.0f, splash->rgn);
 						drone->SetLife(0);
 					}

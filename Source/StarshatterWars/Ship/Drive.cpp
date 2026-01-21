@@ -19,7 +19,7 @@
 #include "Ship.h"
 #include "Sim.h"
 #include "DriveSprite.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "AudioConfig.h"
 
 #include "SimLight.h"
@@ -197,7 +197,7 @@ Drive::Initialize()
 	loader->LoadSound("engine.wav", sound_resource[0], SOUND_FLAGS);
 	loader->LoadSound("burner2.wav", sound_resource[1], SOUND_FLAGS);
 	loader->LoadSound("rumble.wav", sound_resource[2], SOUND_FLAGS);
-	loader->SetDataPath(nullptr);
+	loader->SetDataPath("");
 
 	if (sound_resource[0])
 		sound_resource[0]->SetMaxDistance(30.0e3f);
@@ -282,28 +282,48 @@ Drive::Orient(const Physical* rep)
 {
 	SimSystem::Orient(rep);
 
-	const Matrix& orientation = rep->Cam().Orientation();
-	const FVector  ship_loc = rep->Location();
+	if (!rep)
+		return;
+
+	// Convert legacy Matrix orientation -> UE rotation:
+	// You must implement Matrix::ToQuat() (or equivalent) in your core type.
+	const FQuat      RepQ = rep->Cam().Orientation().ToQuat();
+	const FVector    ShipLoc = rep->Location();
+	const FTransform RepXform(RepQ, ShipLoc);
+
+	// Camera forward (vpn) converted to UE vector:
+	// If rep->Cam().vpn() already returns FVector, keep it.
+	// If it returns a legacy Vec3, convert it once at the source.
+	const FVector CamFwd = rep->Cam().vpn();
 
 	for (int i = 0; i < ports.size(); i++) {
 		DrivePort* p = ports[i];
+		if (!p)
+			continue;
 
-		const FVector projector = (p->loc * orientation) + ship_loc;
+		// Legacy: (p->loc * orientation) + ship_loc
+		// UE: transform local port location by RepXform:
+		const FVector Projector = RepXform.TransformPosition(p->loc);
 
 		if (p->flare) {
-			p->flare->MoveTo(projector);
-			p->flare->SetFront(rep->Cam().vpn() * -10 * p->scale);
+			p->flare->MoveTo(Projector);
+
+			// Legacy: SetFront(rep->Cam().vpn() * -10 * p->scale);
+			// UE: keep as FVector math:
+			p->flare->SetFront(CamFwd * (-10.0f * (float)p->scale));
 		}
 
 		if (p->trail) {
 			if (intensity > 0.5f) {
-				double len = -60 * p->scale * intensity;
+				double Len = -60.0 * p->scale * intensity;
 
 				if (augmenter > 0 && augmenter_throttle > 0)
-					len += len * augmenter_throttle;
+					Len += Len * augmenter_throttle;
 
 				p->trail->Show();
-				p->trail->SetEndPoints(projector, projector + rep->Cam().vpn() * len);
+
+				// Legacy: projector + rep->Cam().vpn() * len
+				p->trail->SetEndPoints(Projector, Projector + CamFwd * (float)Len);
 			}
 			else {
 				p->trail->Hide();
@@ -312,48 +332,30 @@ Drive::Orient(const Physical* rep)
 	}
 }
 
+
 // +--------------------------------------------------------------------+
 
 static double drive_seconds = 0;
 
 void
-Drive::SetThrottle(double InThrottle, bool aug)
+Drive::SetThrottle(double InThrottle, bool bAugRequest)
 {
-	const double spool = 1.2 * drive_seconds;
-	const double throttle_request = InThrottle / 100;
+	// UE-style clamp and math helpers:
+	const float Spool = (float)(1.2 * drive_seconds);
+	const float ThrottleRequest = FMath::Clamp((float)(InThrottle / 100.0), 0.0f, 1.0f);
 
-	if (throttle < throttle_request) {
-		if (throttle_request - throttle < spool) {
-			throttle = (float)throttle_request;
-		}
-		else {
-			throttle += (float)spool;
-		}
-	}
-	else if (throttle > throttle_request) {
-		if (throttle - throttle_request < spool) {
-			throttle = (float)throttle_request;
-		}
-		else {
-			throttle -= (float)spool;
-		}
-	}
+	// Smoothly move throttle toward request (spool is effectively "max delta per tick"):
+	throttle = FMath::FInterpConstantTo(throttle, ThrottleRequest, 1.0f, Spool);
 
+	// Enforce no-augmenter under 50% throttle:
 	if (throttle < 0.5f)
-		aug = false;
+		bAugRequest = false;
 
-	if (aug && augmenter_throttle < 1) {
-		augmenter_throttle += (float)spool;
+	// Smoothly move augmenter throttle toward 0..1:
+	const float AugTarget = bAugRequest ? 1.0f : 0.0f;
+	augmenter_throttle = FMath::FInterpConstantTo(augmenter_throttle, AugTarget, 1.0f, Spool);
 
-		if (augmenter_throttle > 1)
-			augmenter_throttle = 1.0f;
-	}
-	else if (!aug && augmenter_throttle > 0) {
-		augmenter_throttle -= (float)spool;
-
-		if (augmenter_throttle < 0)
-			augmenter_throttle = 0.0f;
-	}
+	augmenter_throttle = FMath::Clamp(augmenter_throttle, 0.0f, 1.0f);
 }
 
 // +----------------------------------------------------------------------+
@@ -464,7 +466,7 @@ Drive::Thrust(double seconds)
 		}
 	}
 
-	CameraDirector* cam_dir = CameraDirector::GetInstance();
+	CameraManager* cam_dir = CameraManager::GetInstance();
 
 	// no sound when paused!
 	if (!Game::Paused() && subtype != STEALTH && cam_dir && cam_dir->GetCamera()) {

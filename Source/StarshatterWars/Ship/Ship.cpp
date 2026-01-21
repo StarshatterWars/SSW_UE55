@@ -74,9 +74,6 @@
 #include "Random.h"
 #include "RadioVox.h"
 
-#include "NetGame.h"
-#include "NetUtil.h"
-
 #include "MotionController.h"
 #include "Keyboard.h"
 #include "Joystick.h"
@@ -1698,8 +1695,6 @@ Ship::HitBy(SimShot* shot, FVector& impact)
 		if (effective_damage > 0) {
 			if (!shot->IsBeam() && shot->Design()->damage_type == WeaponDesign::DMG_NORMAL)
 				ApplyTorque(shot->Velocity() * (float)effective_damage * 1e-6f);
-
-			if (!NetGame::IsNetGameClient()) {
 				InflictDamage(effective_damage, shot, hit_type, HullImpact);
 			}
 		}
@@ -2255,8 +2250,9 @@ Ship::SetNavptStatus(Instruction* navpt, int status)
 		if (element) {
 			const int index = element->GetNavIndex(navpt);
 
-			if (index >= 0)
-				NetUtil::SendNavData(false, element, index - 1, navpt);
+			if (index >= 0) {
+				//NetUtil::SendNavData(false, element, index - 1, navpt);
+			}
 		}
 	}
 }
@@ -2329,13 +2325,13 @@ Ship::SetTarget(SimObject* targ, SimSystem* sub, bool from_net)
 		}
 	}
 
-	if (!from_net && NetGame::GetInstance())
-		NetUtil::SendObjTarget(this);
+	//if (!from_net && NetGame::GetInstance())
+	//	NetUtil::SendObjTarget(this);
 
 	// track engagement:
 	if (target && target->Type() == SimObject::SIM_SHIP) {
-		Element* elem = GetElement();
-		Element* tgt_elem = ((Ship*)target)->GetElement();
+		SimElement* elem = GetElement();
+		SimElement* tgt_elem = ((Ship*)target)->GetElement();
 
 		if (elem)
 			elem->SetAssignment(tgt_elem);
@@ -3610,26 +3606,45 @@ Ship::IsInCombat()
 bool
 Ship::CanTimeSkip()
 {
-	bool go = false;
-	Instruction* navpt = GetNextNavPoint();
+	Instruction* NavPt = GetNextNavPoint();
 
-	if (MissionClock() < 10000 || NetGame::IsNetGame())
-		return go;
-
-	if (navpt) {
-		go = true;
-
-		if (navpt->Region() != GetRegion())
-			go = false;
-
-		else if ((navpt->Location().OtherHand() - Location()).Length() < 30e3)
-			go = false;
+	// Preserve original early-out logic
+	if (MissionClock() < 10000 /* || NetGame::IsNetGame() */)
+	{
+		return false;
 	}
 
-	if (go)
-		go = !IsInCombat();
+	bool bCanSkip = false;
 
-	return go;
+	if (NavPt)
+	{
+		bCanSkip = true;
+
+		// Must be in the same region
+		if (NavPt->Region() != GetRegion())
+		{
+			bCanSkip = false;
+		}
+		else
+		{
+			// UE-style vector math (FVector::Dist or Size)
+			const FVector TargetLoc = NavPt->Location().OtherHand();
+			const float Distance = FVector::Dist(TargetLoc, Location());
+
+			if (Distance < 30000.0f)
+			{
+				bCanSkip = false;
+			}
+		}
+	}
+
+	// Cannot time skip during combat
+	if (bCanSkip)
+	{
+		bCanSkip = !IsInCombat();
+	}
+
+	return bCanSkip;
 }
 
 void
@@ -4344,11 +4359,12 @@ Ship::FireDecoy()
 	}
 
 	if (sim->GetPlayerShip() == this) {
-		if (NetGame::IsNetGame()) {
-			if (decoy && decoy->Ammo() < 1)
-				Button::PlaySound(Button::SND_REJECT);
-		}
-		else if (!drone) {
+		//if (NetGame::IsNetGame()) {
+		//	if (decoy && decoy->Ammo() < 1)
+		//		Button::PlaySound(Button::SND_REJECT);
+		//}
+		//else 
+		if (!drone) {
 			Button::PlaySound(Button::SND_REJECT);
 		}
 	}
@@ -4605,7 +4621,7 @@ Ship::InflictDamage(double damage, SimShot* shot, int hit_type, FVector impact)
 		if (damage_type == WeaponDesign::DMG_NORMAL) {
 			damage_applied = hull_damage;
 			Physical::InflictDamage(damage_applied, 0);
-			NetUtil::SendObjDamage(this, damage_applied, shot);
+			//NetUtil::SendObjDamage(this, damage_applied, shot);
 		}
 	}
 	else if (hit_turret) {
@@ -4619,7 +4635,7 @@ Ship::InflictDamage(double damage, SimShot* shot, int hit_type, FVector impact)
 		if (damage_type == WeaponDesign::DMG_NORMAL) {
 			damage_applied = hull_damage;
 			Physical::InflictDamage(damage_applied, 0);
-			NetUtil::SendObjDamage(this, damage_applied, shot);
+			//NetUtil::SendObjDamage(this, damage_applied, shot);
 		}
 	}
 
@@ -4719,7 +4735,7 @@ Ship::InflictSystemDamage(double damage, SimShot* shot, FVector impact)
 
 			if (dmg_normal || (system->IsPowerCritical() && dmg_emp)) {
 				system->ApplyDamage(sys_damage);
-				NetUtil::SendSysDamage(this, system, sys_damage);
+				//NetUtil::SendSysDamage(this, system, sys_damage);
 
 				master_caution = true;
 
@@ -4756,7 +4772,7 @@ Ship::InflictSystemDamage(double damage, SimShot* shot, FVector impact)
 				const double base_damage = 33.0 + rand() / 1000.0;
 				const double sys_damage = base_damage * (1.0 - sys->HullProtection());
 				sys->ApplyDamage(sys_damage);
-				NetUtil::SendSysDamage(this, sys, sys_damage);
+				//NetUtil::SendSysDamage(this, sys, sys_damage);
 				damage -= sys_damage;
 
 				master_caution = true;
@@ -5208,8 +5224,8 @@ Ship::SetEMCON(int e, bool from_net)
 	else if (e > 3)   emcon = 3;
 	else              emcon = (BYTE)e;
 
-	if (emcon != old_emcon && !from_net && NetGame::GetInstance())
-		NetUtil::SendObjEmcon(this);
+	//if (emcon != old_emcon && !from_net && NetGame::GetInstance())
+	//	NetUtil::SendObjEmcon(this);
 }
 
 double

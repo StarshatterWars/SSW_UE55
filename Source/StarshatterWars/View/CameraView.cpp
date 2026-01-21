@@ -759,8 +759,7 @@ CameraView::RenderLensFlare()
 					continue;
 
 				projector.Transform(sun_pos);
-
-				if (sun_pos.z < 100)
+				if (sun_pos.Z < 100)
 					continue;
 
 				projector.Project(sun_pos, false);

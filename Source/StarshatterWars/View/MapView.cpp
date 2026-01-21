@@ -39,16 +39,13 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 #include "SimContact.h"
 #include "MenuView.h"
 
-#include "NetLobby.h"
-#include "NetUtil.h"
-
 #include "Game.h"
 #include "DataLoader.h"
 #include "EventDispatch.h"
 #include "Video.h"
 #include "Button.h"
-#include "Font.h"
-#include "FontMgr.h"
+#include "SystemFont.h"
+#include "FontManager.h"
 #include "Mouse.h"
 #include "FormatUtil.h"
 #include "Menu.h"

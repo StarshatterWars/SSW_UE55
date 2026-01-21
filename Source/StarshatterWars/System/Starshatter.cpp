@@ -21,18 +21,18 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 #include "CmpnScreen.h"
 
 #include "AudioConfig.h"
-#include "MusicDirector.h"
+#include "MusicManager.h"
 #include "HUDSounds.h"
-#include "Player.h"
+#include "PlayerCharacter.h"
 
-#include "Shot.h"
+#include "SimShot.h"
 #include "Drive.h"
 #include "LandingGear.h"
 #include "Explosion.h"
 #include "FlightDeck.h"
 #include "NavLight.h"
 #include "Debris.h"
-#include "Contact.h"
+#include "SimContact.h"
 #include "QuantumDrive.h"
 #include "Sensor.h"
 #include "Power.h"
@@ -50,16 +50,16 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 #include "Mission.h"
 #include "Sim.h"
 #include "SimEvent.h"
-#include "Element.h"
+#include "SimElement.h"
 #include "Ship.h"
-#include "ShipCtrl.h"
+#include "ShipManager.h"
 #include "ShipDesign.h"
 #include "HUDView.h"
 #include "MFD.h"
 #include "RadioMessage.h"
 #include "RadioTraffic.h"
 #include "RadioVox.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "ModConfig.h"
 #include "KeyMap.h"
 
@@ -75,18 +75,9 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 #include "CmpLoadDlg.h"
 #include "Terrain.h"
 
-#include "NetClientConfig.h"
-#include "NetServerConfig.h"
-#include "NetLayer.h"
-#include "NetLobbyClient.h"
-#include "NetLobbyServer.h"
-#include "NetGame.h"
-#include "NetUtil.h"
-
 #include "ParseUtil.h"
 #include "Token.h"
 
-#include "MachineInfo.h"
 #include "Game.h"
 #include "VideoFactory.h"
 #include "Screen.h"
@@ -98,8 +89,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 #include "FadeView.h"
 #include "Color.h"
 #include "Bitmap.h"
-#include "Font.h"
-#include "FontMgr.h"
+#include "SystemFont.h"
+#include "FontManager.h"
 #include "Keyboard.h"
 #include "Joystick.h"
 #include "MouseController.h"
@@ -642,7 +633,7 @@ Starshatter::SetGameMode(int m)
 			if (soundcard)
 				soundcard->StopSoundEffects();
 
-			StopNetGame();
+			//StopNetGame();
 			Pause(true);
 			UE_LOG(LogStarshatterWars, Log, TEXT("Stardate: %.1f"), StarSystem::GetBaseTime());
 		}
@@ -655,7 +646,7 @@ Starshatter::SetGameMode(int m)
 			if (soundcard)
 				soundcard->StopSoundEffects();
 
-			StopNetGame();
+			//StopNetGame();
 		}
 
 		paused = true;
@@ -668,7 +659,7 @@ Starshatter::SetGameMode(int m)
 			if (soundcard)
 				soundcard->StopSoundEffects();
 
-			StopNetGame();
+			//StopNetGame();
 		}
 
 		UE_LOG(LogStarshatterWars, Log, TEXT("Stardate: %.1f"), StarSystem::GetBaseTime());
@@ -1653,25 +1644,18 @@ Starshatter::DoGameKeys()
 
 		else if (KeyDown(KEY_TIME_COMPRESS)) {
 			time_til_change = 0.5;
-			if (NetGame::IsNetGame())
-				SetTimeCompression(1);
-			else
-				switch (TimeCompression()) {
-				case 1:  SetTimeCompression(2); break;
-				default: SetTimeCompression(4); break;
-				}
+
+			switch (TimeCompression()) {
+			case 1:  SetTimeCompression(2); break;
+			default: SetTimeCompression(4); break;
 		}
 
 		else if (KeyDown(KEY_TIME_EXPAND)) {
 			time_til_change = 0.5;
 
-			if (NetGame::IsNetGame())
-				SetTimeCompression(1);
-			else
-				switch (TimeCompression()) {
-				case  4: SetTimeCompression(2); break;
-				default: SetTimeCompression(1); break;
-				}
+			switch (TimeCompression()) {
+			case  4: SetTimeCompression(2); break;
+			default: SetTimeCompression(1); break;
 		}
 
 		else if (KeyDown(KEY_TIME_SKIP)) {
@@ -1778,14 +1762,14 @@ Starshatter::DoGameKeys()
 			if (player_ship && !player_ship->InTransition()) {
 				const double damage = player_ship->Design()->scuttle;
 
-				if (NetGame::IsNetGameClient()) {
+				/*if (NetGame::IsNetGameClient()) {
 					NetUtil::SendSelfDestruct(player_ship, damage);
 				}
 				else {
 					// Converted Point -> FVector:
 					const FVector scuttle_loc = player_ship->Location() + RandomDirection() * player_ship->Radius();
 					player_ship->InflictDamage(damage, 0, 1, scuttle_loc);
-				}
+				}*/
 
 				if (player_ship->Integrity() < 1) {
 					// Converted Print -> UE_LOG (avoid MemDebug/Print):
@@ -2011,7 +1995,7 @@ Starshatter::DoGameKeys()
 void
 Starshatter::DoChatMode()
 {
-	Player* p = Player::GetCurrentPlayer();
+	PlayeCharacter* p = Player::GetCurrentPlayer();
 	bool     send_chat = false;
 	Text     name = "Player";
 
@@ -2039,12 +2023,12 @@ Starshatter::DoChatMode()
 		switch (chat_mode) {
 		default:
 		case CHAT_BROADCAST:
-			NetUtil::SendChat(0, name, chat_text);
+			//NetUtil::SendChat(0, name, chat_text);
 			break;
 
 		case CHAT_TEAM:
 			if (player_ship) {
-				NetUtil::SendChat(player_ship->GetIFF() + 1, name, chat_text);
+				//NetUtil::SendChat(player_ship->GetIFF() + 1, name, chat_text);
 			}
 			break;
 
@@ -2698,7 +2682,7 @@ Starshatter::BeginCutscene()
 {
 	Sim* sim = Sim::GetSim();
 
-	if (cutscene == 0 && !sim->IsNetGame()) {
+	if (cutscene == 0) {
 		HUDView* hud_view = HUDView::GetInstance();
 		if (hud_view)
 			hud_view->SetHUDMode(HUDView::HUD_MODE_OFF);
@@ -2859,27 +2843,7 @@ Starshatter::StopLobby()
 void
 Starshatter::StopNetGame()
 {
-	// local server:
-	NetLobby* lobby = NetLobby::GetInstance();
 
-	if (lobby && lobby->IsServer()) {
-		lobby->GameStop();
-	}
-
-	// client connected to remote server:
-	else {
-		NetClientConfig* config = NetClientConfig::GetInstance();
-		if (config && config->GetHostRequest()) {
-			config->Login();
-
-			NetLobbyClient* conn = config->GetConnection();
-
-			if (conn) {
-				conn->GameStop();
-				conn->SelectMission(0);
-			}
-		}
-	}
 }
 
 

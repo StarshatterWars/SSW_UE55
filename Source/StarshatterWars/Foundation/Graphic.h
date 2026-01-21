@@ -11,17 +11,20 @@
 	========
 	Abstract 3D Graphic Object
 */
+
 #pragma once
+
 #include "Geometry.h"
 #include "Color.h"
 #include "List.h"
 
-// Minimal Unreal include (required by request: convert Point/Vec3 to FVector):
+// Minimal Unreal includes:
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 
 // +--------------------------------------------------------------------+
 
-#define GRAPHIC_DESTROY(x) if (x) { x->Destroy(); x = 0; } //-V571
+#define GRAPHIC_DESTROY(x) if (x) { x->Destroy(); x = nullptr; } //-V571
 
 // +--------------------------------------------------------------------+
 // Forward declarations (keep header light)
@@ -42,7 +45,8 @@ public:
 
 	enum TYPE { OTHER, SOLID, SPRITE, BOLT, QUAD };
 
-	enum RENDER_FLAGS {
+	enum RENDER_FLAGS
+	{
 		RENDER_SOLID = 0x0001,
 		RENDER_ALPHA = 0x0002,
 		RENDER_ADDITIVE = 0x0004,
@@ -60,19 +64,22 @@ public:
 	// operations
 	virtual void      Render(Video* video, DWORD flags) {}
 	virtual void      Update() {}
-	virtual void      SetOrientation(const Matrix& o) {}
+	virtual void      SetOrientation(const FMatrix& o) {}
 
 	virtual int       CollidesWith(Graphic& o);
 
 	// accessors / mutators
 	int               Identity()     const { return id; }
-	const char* Name()         const { return name; }
+	const char*		   Name()         const { return name; }
 	bool              IsVisible()    const { return visible; }
 	void              SetVisible(bool v) { visible = v; }
 	float             Radius()       const { return radius; }
 
 	FVector           Location()     const { return loc; }
 	virtual void      MoveTo(const FVector& p) { loc = p; }
+
+	// NOTE: Legacy Starshatter semantics: TranslateBy(ref) subtracts ref from loc.
+	// Keep behavior unchanged:
 	virtual void      TranslateBy(const FVector& ref) { loc = loc - ref; }
 
 	virtual float     Depth()        const { return depth; }
@@ -132,7 +139,6 @@ protected:
 	bool              luminous;
 
 	Rect              screen_rect;
-	SimScene*		  scene;
+	SimScene* scene;
 	char              name[32];
 };
-

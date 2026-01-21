@@ -17,7 +17,6 @@
 
 #include "Power.h"
 #include "Ship.h"
-#include "NetUtil.h"
 #include "Game.h"
 
 // +----------------------------------------------------------------------+
@@ -75,9 +74,6 @@ PowerSource::AddClient(SimSystem* client)
 		client->SetSourceIndex(GetID());
 		clients.append(client);
 		route_changed = true;
-
-		if (ship && old_src_index != GetID())
-			NetUtil::SendSysStatus(ship, client);
 	}
 }
 
@@ -288,8 +284,9 @@ PowerSource::SetOverride(bool over)
 		changed = true;
 	}
 
-	if (changed)
-		NetUtil::SendSysStatus(ship, this);
+	if (changed) {
+		//NetUtil::SendSysStatus(ship, this);
+	}
 }
 
 void

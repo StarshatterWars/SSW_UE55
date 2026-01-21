@@ -234,36 +234,57 @@ void LandingGear::ExecFrame(double seconds)
 
 // +--------------------------------------------------------------------+
 
-void LandingGear::Orient(const Physical* rep)
+void
+LandingGear::Orient(const Physical* rep)
 {
     SimSystem::Orient(rep);
 
-    const Matrix& Orientation = rep->Cam().Orientation(); // your Starshatter Matrix type
+    if (!rep)
+        return;
+
     const FVector ShipLoc = rep->Location();
 
-    for (int i = 0; i < ngear; i++) {
+    // Build a UE transform from the ship camera basis (same convention as FlightDeck):
+    FVector XAxis = rep->Cam().vrt(); // right
+    FVector YAxis = rep->Cam().vup(); // up
+    FVector ZAxis = rep->Cam().vpn(); // forward
+
+    XAxis = XAxis.GetSafeNormal();
+    YAxis = YAxis.GetSafeNormal();
+    ZAxis = ZAxis.GetSafeNormal();
+
+    // Defensive orthonormalization:
+    ZAxis = (ZAxis - (ZAxis | XAxis) * XAxis).GetSafeNormal();
+    YAxis = (XAxis ^ ZAxis).GetSafeNormal();
+
+    const FMatrix ShipM(
+        FPlane(XAxis.X, XAxis.Y, XAxis.Z, 0.0f),
+        FPlane(YAxis.X, YAxis.Y, YAxis.Z, 0.0f),
+        FPlane(ZAxis.X, ZAxis.Y, ZAxis.Z, 0.0f),
+        FPlane(ShipLoc.X, ShipLoc.Y, ShipLoc.Z, 1.0f)
+    );
+
+    const FTransform ShipXform(ShipM);
+
+    // If your gear solids need the same ship orientation each frame:
+    const FMatrix GearOrientationM = ShipM;
+
+    for (int i = 0; i < ngear; i++)
+    {
         FVector Gloc = FVector::ZeroVector;
 
-        if (transit < 1)
+        if (transit < 1.0)
             Gloc = start[i] + (end[i] - start[i]) * (float)transit;
         else
             Gloc = end[i];
 
-        // Convert your Starshatter Matrix -> UE FMatrix (rotation only)
-        const FMatrix R =
-            FMatrix(
-                FPlane((float)Orientation(0, 0), (float)Orientation(0, 1), (float)Orientation(0, 2), 0.0f),
-                FPlane((float)Orientation(1, 0), (float)Orientation(1, 1), (float)Orientation(1, 2), 0.0f),
-                FPlane((float)Orientation(2, 0), (float)Orientation(2, 1), (float)Orientation(2, 2), 0.0f),
-                FPlane(0.f, 0.f, 0.f, 1.f)
-            );
+        // Transform gear-relative location into world space:
+        const FVector GearWorldLoc = ShipXform.TransformPosition(Gloc);
 
-        // Rotate vector (no translation), then add world position:
-        const FVector Projector = R.TransformVector(Gloc) + ShipLoc;
-
-        if (gear[i]) {
-            gear[i]->MoveTo(Projector);
-            gear[i]->SetOrientation(Orientation); // still your Starshatter type
+        if (gear[i])
+        {
+            gear[i]->MoveTo(GearWorldLoc);
+            gear[i]->SetOrientation(GearOrientationM);
         }
     }
 }

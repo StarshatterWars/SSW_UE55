@@ -24,10 +24,6 @@
 #include "Sim.h"
 #include "SimEvent.h"
 
-// Networking:
-#include "NetGame.h"
-#include "NetUtil.h"
-
 // Game systems:
 #include "Game.h"
 
@@ -606,13 +602,13 @@ SimShot* Weapon::Fire()
     {
         refire = design->refire_delay;
 
-        NetGame* net_game = NetGame::GetInstance();
+        /*NetGame* net_game = NetGame::GetInstance();
         bool     net_client = net_game ? net_game->IsClient() : false;
 
         // all barrels
         if (active_barrel < 0) {
             if (net_client || IsPrimary())
-                NetUtil::SendWepTrigger(this, nbarrels);
+                //NetUtil::SendWepTrigger(this, nbarrels);
 
             if (!net_game || IsPrimary()) {
                 for (int i = 0; i < nbarrels; i++)
@@ -621,7 +617,7 @@ SimShot* Weapon::Fire()
             else if (net_game && net_game->IsServer() && IsMissile()) {
                 for (int i = 0; i < nbarrels; i++) {
                     shot = FireBarrel(i);
-                    NetUtil::SendWepRelease(this, shot);
+                    //NetUtil::SendWepRelease(this, shot);
                 }
             }
         }
@@ -650,7 +646,7 @@ SimShot* Weapon::Fire()
 
         if (status != NOMINAL)
             refire *= 2;
-    }
+    }*/
 
     return shot;
 }
