@@ -55,15 +55,28 @@ FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
     return (uint8)FMath::Clamp(Scaled, 0, 255);
 }
 
-static FORCEINLINE FColor ScaleColor(const FColor& In, float Scale)
+
+static inline FColor ScaleColor(const FColor& In, float Scale)
 {
+    // Defensive: handle negative/NaN
+    if (!FMath::IsFinite(Scale))
+        Scale = 1.0f;
+
+    Scale = FMath::Max(0.0f, Scale);
+
+    const auto ClampU8 = [](float V) -> uint8
+        {
+            return (uint8)FMath::Clamp(FMath::RoundToInt(V), 0, 255);
+        };
+
     return FColor(
-        ScaleByte(In.R, Scale),
-        ScaleByte(In.G, Scale),
-        ScaleByte(In.B, Scale),
+        ClampU8(In.R * Scale),
+        ClampU8(In.G * Scale),
+        ClampU8(In.B * Scale),
         In.A
     );
 }
+// +
 
 class HUDView : public View, public SimObserver
 {

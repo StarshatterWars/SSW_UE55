@@ -594,12 +594,12 @@ MissionEvent::Execute(bool silent)
 
 					if (event_message.contains('$')) {
 						Campaign* campaign = Campaign::GetCampaign();
-						Player* user = Player::GetCurrentPlayer();
+						PlayerCharacter* user = PlayerCharacter::GetCurrentPlayer();
 						CombatGroup* group = campaign->GetPlayerGroup();
 
 						if (user) {
 							event_message = FormatTextReplace(event_message, "$NAME", user->Name().data());
-							event_message = FormatTextReplace(event_message, "$RANK", Player::RankName(user->Rank()));
+							event_message = FormatTextReplace(event_message, "$RANK", PlayerCharacter::RankName(user->Rank()));
 						}
 
 						if (group) {

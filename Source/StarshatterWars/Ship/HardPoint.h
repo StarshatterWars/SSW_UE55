@@ -42,9 +42,9 @@ public:
 	int operator==(const HardPoint& w) const { return this == &w; }
 
 	virtual void        AddDesign(WeaponDesign* dsn);
-	virtual Weapon* CreateWeapon(int type_index = 0);
+	virtual Weapon*     CreateWeapon(int type_index = 0);
 	virtual double      GetCarryMass(int type_index = 0);
-	WeaponDesign* GetWeaponDesign(int n) { return designs[n]; }
+	WeaponDesign*	    GetWeaponDesign(int n) { return designs[n]; }
 
 	virtual void        Mount(FVector loc, float rad, float hull = 0.5f);
 	FVector             MountLocation()               const { return mount_rel; }

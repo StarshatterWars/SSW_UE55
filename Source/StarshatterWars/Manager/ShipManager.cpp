@@ -22,7 +22,7 @@
 #include "Shield.h"
 #include "Sensor.h"
 #include "NavSystem.h"
-#include "FlightComp.h"
+#include "FlightComputer.h"
 #include "LandingGear.h"
 #include "Sim.h"
 #include "StarSystem.h"

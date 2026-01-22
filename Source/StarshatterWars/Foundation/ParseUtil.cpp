@@ -40,6 +40,11 @@ bool GetDefVec(Vec3& dst, TermDef* def, const char* file)
 	return false;
 }
 
+bool GetDefFColor(FColor& out, TermDef* def, const char* filename)
+{
+	return false;
+}
+
 bool GetDefRect(Rect& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
@@ -136,6 +141,69 @@ bool GetDefColor(Color& dst, TermDef* def, const char* file)
 	else {
 		Print("WARNING: color expected in '%s'\n", file);
 	}
+
+	return false;
+}
+
+bool
+GetDefColor(FColor& dst, TermDef* def, const char* file)
+{
+	if (!def || !def->term()) {
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing COLOR TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
+		return false;
+	}
+
+	TermArray* val = def->term()->isArray();
+	if (val) {
+		if (val->elements()->size() != 3) {
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: malformed color in '%s'"),
+				ANSI_TO_TCHAR(file));
+			return false;
+		}
+
+		const Term* e0 = val->elements()->at(0);
+		const Term* e1 = val->elements()->at(1);
+		const Term* e2 = val->elements()->at(2);
+
+		if (!e0 || !e1 || !e2 ||
+			!e0->isNumber() || !e1->isNumber() || !e2->isNumber()) {
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: invalid color values in '%s'"),
+				ANSI_TO_TCHAR(file));
+			return false;
+		}
+
+		double v0 = e0->isNumber()->value();
+		double v1 = e1->isNumber()->value();
+		double v2 = e2->isNumber()->value();
+
+		uint8 r, g, b;
+
+		// Normalize [0..1] or accept [0..255]
+		if (v0 >= 0.0 && v0 <= 1.0 &&
+			v1 >= 0.0 && v1 <= 1.0 &&
+			v2 >= 0.0 && v2 <= 1.0) {
+
+			r = (uint8)(v0 * 255.0);
+			g = (uint8)(v1 * 255.0);
+			b = (uint8)(v2 * 255.0);
+		}
+		else {
+			r = (uint8)FMath::Clamp(v0, 0.0, 255.0);
+			g = (uint8)FMath::Clamp(v1, 0.0, 255.0);
+			b = (uint8)FMath::Clamp(v2, 0.0, 255.0);
+		}
+
+		dst = FColor(r, g, b, 255);
+		return true;
+	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: color expected in '%s'"),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }

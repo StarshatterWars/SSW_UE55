@@ -66,6 +66,7 @@
 #include "Window.h"
 #include "Bitmap.h"
 #include "SystemFont.h"
+#include "GameStructs.h"
 
 // Minimal Unreal includes (logging + FVector + memory helpers):
 #include "Math/Vector.h"
@@ -91,9 +92,7 @@ static inline double length(const Point& v) { return (double)v.Size(); }
 // Starshatter used OtherHand() to swap handedness; implement as a Z flip.
 // If your UE world conversion differs, adjust here.
 static inline Point OtherHand(const Point& v) { return Point(v.X, v.Y, -v.Z); }
-
-
-// +--------------------------------------------------------------------+
+//--------------------------------------------------------------------+
 
 static Bitmap hud_left_air;
 static Bitmap hud_right_air;

@@ -186,7 +186,7 @@ Sim* Sim::sim = 0;
 
 Sim::Sim(MotionController* c)
 	: ctrl(c), test_mode(false), grid_shown(false), dust(0),
-	star_system(0), active_region(0), mission(0), netgame(0),
+	star_system(0), active_region(0), mission(0),
 	start_time(0)
 {
 	Drive::Initialize();
@@ -259,7 +259,7 @@ Sim::CommitMission()
 				Combatant* c = group->GetCombatant();
 
 				if (c)
-					c->GetScore(s->GetPoints());
+					c->AddScore(s->GetPoints());
 
 				if (s->GetElementIndex() == 1)
 					group->SetSorties(group->Sorties() + 1);
@@ -292,11 +292,6 @@ Sim::CommitMission()
 void
 Sim::UnloadMission()
 {
-	if (netgame) {
-		delete netgame;
-		netgame = 0;
-	}
-
 	HUDView* hud = HUDView::GetInstance();
 	if (hud)
 		hud->HideAll();
@@ -440,11 +435,6 @@ Sim::ExecMission()
 	BuildLinks();
 	CreateElements();
 	CopyEvents();
-
-	if (netgame) {
-		delete netgame;
-		netgame = 0;
-	}
 
 	first_frame = true;
 	start_time = Game::GameTime();
@@ -791,8 +781,13 @@ Sim::CreateElements()
 						l2 = OtherHand(msn_ship->Location());
 					}
 					else if (i) {
-						FVector offset = OtherHand(RandomPoint());
-						offset.Z = Random(-1e3, 1e3);
+						FVector offset = OtherHand(FVector(
+							FMath::FRandRange(-1.f, 1.f),
+							FMath::FRandRange(-1.f, 1.f),
+							0.f
+						));
+
+						offset.Z = FMath::FRandRange(-1000.f, 1000.f);
 
 						if (msn_elem->Count() < 5)
 							offset *= 0.3;
@@ -844,8 +839,8 @@ Sim::CreateElements()
 						ship->SetRespawnCount(respawns);
 						ship->UseSkin(skin);
 
-						if (!netgame)
-							ship->SetRespawnLoc(OtherHand(RandomPoint()) * 2);
+						FRandomStream Stream(SeedValue); // stable per mission/campaign
+						ship->SetRespawnLoc(OtherHand(Stream.VRand()) * 2.f);
 
 						if (ship->IsStarship())
 							ship->SetHelmHeading(heading);
@@ -863,8 +858,8 @@ Sim::CreateElements()
 							ship->GetRegion()->SetPlayerShip(ship);
 
 						if (ship->NumFlightDecks()) {
-							for (int i = 0; i < ship->NumFlightDecks(); i++) {
-								FlightDeck* deck = ship->GetFlightDeck(i);
+							for (int ifd = 0; ifd < ship->NumFlightDecks(); ifd++) {
+								FlightDeck* deck = ship->GetFlightDeck(ifd);
 								if (deck)
 									deck->Orient(ship);
 							}

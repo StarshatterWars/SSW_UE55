@@ -20,8 +20,6 @@
 #include "Math/Vector.h"        // FVector
 #include "Logging/LogMacros.h"  // UE_LOG
 
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
-
 #include "Galaxy.h"
 #include "StarSystem.h"
 #include "Ship.h"

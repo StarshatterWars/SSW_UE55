@@ -16,15 +16,13 @@
 
 #include "PlayerCharacter.h"
 
-//#include "NetLobbyServer.h"
-//#include "NetLayer.h"
 #include "Ship.h"
 #include "SimEvent.h"
 #include "Campaign.h"
 #include "CampaignSaveGame.h"
 #include "Random.h"
-//#include "HUDView.h"
-//#include "MFD.h"
+#include "HUDView.h"
+#include "MFD.h"
 
 #include "DataLoader.h"
 //#include "Encrypt.h"
