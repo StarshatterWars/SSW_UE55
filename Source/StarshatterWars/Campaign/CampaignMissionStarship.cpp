@@ -1,14 +1,20 @@
-/*  Project Starshatter 4.5
+/*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright © 2025. All Rights Reserved.
+    Copyright (c) 2025-2026. All Rights Reserved.
 
     SUBSYSTEM:    Stars.exe
     FILE:         CampaignMissionStarship.cpp
     AUTHOR:       Carlos Bott
 
-    UNREAL PORT:
-    - Maintains all variables and methods (names, signatures, members).
-    - Uses UE-compatible shims (List/Text/Geometry).
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    CampaignMissionStarship generates missions and mission
+    info for the player's STARSHIP GROUP as part of a
+    dynamic campaign.
 */
 
 #include "CampaignMissionStarship.h"
@@ -26,11 +32,15 @@
 #include "Instruction.h"
 #include "Ship.h"
 #include "ShipDesign.h"
-//#include "Starshatter.h"
+#include "Starshatter.h"
 #include "StarSystem.h"
-//#include "Player.h"
-#include "Random.h"
+#include "PlayerCharacter.h"
 #include "GameStructs.h"
+
+// Unreal:
+#include "Math/Vector.h"               // FVector
+#include "Math/UnrealMathUtility.h"    // FMath
+#include "Logging/LogMacros.h"         // UE_LOG
 
 static int pkg_id = 1000;
 extern int dump_missions;
@@ -38,25 +48,25 @@ extern int dump_missions;
 // +--------------------------------------------------------------------+
 
 CampaignMissionStarship::CampaignMissionStarship(Campaign* c)
-    : campaign(c)
-    , request(nullptr)
-    , mission_info(nullptr)
-    , player_unit(nullptr)
-    , player_group(nullptr)
-    , strike_group(nullptr)
-    , strike_target(nullptr)
-    , mission(nullptr)
-    , player(nullptr)
-    , ward(nullptr)
-    , prime_target(nullptr)
-    , escort(nullptr)
-    , ownside(0)
-    , enemy(-1)
-    , mission_type(0)
+    : campaign(c),
+    player_group(0),
+    player_unit(0),
+    mission(0),
+    player(0),
+    strike_group(0),
+    strike_target(0),
+    prime_target(0),
+    ward(0),
+    escort(0),
+    ownside(0),
+    enemy(-1),
+    mission_type(0)
 {
     if (!campaign || !campaign->GetPlayerGroup()) {
-        ::Print("ERROR - CMS campaign=0x%p player_group=0x%p\n",
-            campaign, campaign ? campaign->GetPlayerGroup() : nullptr);
+        UE_LOG(LogStarshatterWars, Error,
+            TEXT("ERROR - CMS campaign=%p player_group=%p"),
+            campaign,
+            campaign ? campaign->GetPlayerGroup() : nullptr);
         return;
     }
 
@@ -68,37 +78,59 @@ CampaignMissionStarship::~CampaignMissionStarship() {}
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
+void
+CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
 {
     if (!campaign || !req)
         return;
+    UE_LOG(LogStarshatterWars, Log, TEXT("-----------------------------------------------"));
 
-    ::Print("\n-----------------------------------------------\n");
+    const TCHAR* RoleT = ANSI_TO_TCHAR(Mission::RoleName(req->Type()));
 
-    if (req->Script().Len())
-        ::Print("CMS CreateMission() request: %s '%s'\n",
-            Mission::RoleName(req->Type()),
-            (const char*)req->Script());
+    if (req->Script().Len() > 0)
+    {
+        // req->Script() is an FString:
+        UE_LOG(LogStarshatterWars, Log, TEXT("CMS CreateMission() request: %s '%s'"),
+            RoleT,
+            *req->Script());
+    }
     else
-        ::Print("CMS CreateMission() request: %s %s\n",
-            Mission::RoleName(req->Type()),
-            req->GetObjective() ? req->GetObjective()->GetName() : "(no target)");
+    {
+        // ObjName is a Starshatter Text/C-string:
+        const char* ObjNameA = "(no target)";
+        if (req->GetObjective())
+            ObjNameA = req->GetObjective()->Name().data();
+
+        UE_LOG(LogStarshatterWars, Log, TEXT("CMS CreateMission() request: %s %s"),
+            RoleT,
+            ANSI_TO_TCHAR(ObjNameA));
+    }
 
     request = req;
 
-    if (!player_group)
-        return;
-
-    if (request->GetPrimaryGroup() != player_group) {
-        player_group = request->GetPrimaryGroup();
+    // Resolve player group/unit from request:
+    CombatGroup* Primary = request->GetPrimaryGroup();
+    if (Primary && Primary != player_group) {
+        player_group = Primary;
         player_unit = nullptr;
+    }
+
+    if (!player_group) {
+        UE_LOG(LogStarshatterWars, Warning, TEXT("CMS CreateMission(): no player_group (null primary group)."));
+        return;
     }
 
     ownside = player_group->GetIFF();
     mission_info = nullptr;
 
+    // Recompute enemy each time:
+    enemy = -1;
     for (int i = 0; i < campaign->GetCombatants().size(); i++) {
-        int iff = campaign->GetCombatants().at(i)->GetIFF();
+        Combatant* c = campaign->GetCombatants().at(i);
+        if (!c)
+            continue;
+
+        const int iff = c->GetIFF();
         if (iff > 0 && iff != ownside) {
             enemy = iff;
             break;
@@ -106,7 +138,16 @@ void CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
     }
 
     static int id_key = 1;
-    GenerateMission(id_key++);
+
+    mission = GenerateMission(id_key++);
+    if (!mission) {
+        UE_LOG(LogStarshatterWars, Warning, TEXT("CMS CreateMission(): GenerateMission failed."));
+        return;
+    }
+
+    // Safe to call; sets player if it can locate player element:
+    CreatePlayer();
+
     DefineMissionObjectives();
 
     MissionInfo* info = DescribeMission();
@@ -114,16 +155,17 @@ void CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
     if (info) {
         campaign->GetMissionList().append(info);
 
-        ::Print("CMS Created %03d '%s' %s\n\n",
+        UE_LOG(LogStarshatterWars, Log, TEXT("CMS Created %03d '%s' %s"),
             info->id,
-            (const char*)info->name,
-            Mission::RoleName(mission->GetType()));
+            *info->name,
+            ANSI_TO_TCHAR(Mission::RoleName(mission->Type())));
 
         if (dump_missions) {
             Text script = mission->Serialize();
-            char fname[32];
+            char fname[32] = { 0 };
 
-            sprintf_s(fname, "msn%03d.def", info->id);
+            sprintf_s(fname, sizeof(fname), "msn%03d.def", info->id);
+
             FILE* f = nullptr;
             fopen_s(&f, fname, "w");
             if (f) {
@@ -133,31 +175,43 @@ void CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
         }
     }
     else {
-        ::Print("CMS failed to create mission.\n");
+        UE_LOG(LogStarshatterWars, Warning, TEXT("CMS failed to create mission."));
     }
 }
 
 // +--------------------------------------------------------------------+
 
-Mission* CampaignMissionStarship::GenerateMission(int id)
+Mission*
+CampaignMissionStarship::GenerateMission(int id)
 {
     bool found = false;
 
     SelectType();
 
     if (request && request->Script().Len()) {
-        MissionTemplate* mt = new MissionTemplate(id, request->Script(), campaign->Path());
+        MissionTemplate* mt = new MissionTemplate(
+            id,
+            TCHAR_TO_ANSI(*request->Script()),
+            TCHAR_TO_ANSI(*campaign->Path())
+        );
+
         if (mt)
             mt->SetPlayerSquadron(player_group);
+
         mission = mt;
         found = true;
     }
     else {
         mission_info = campaign->FindMissionTemplate(mission_type, player_group);
-        found = mission_info != nullptr;
+        found = mission_info != 0;
 
         if (found) {
-            MissionTemplate* mt = new MissionTemplate(id, mission_info->script, campaign->Path());
+            MissionTemplate* mt = new MissionTemplate(
+                id,
+                TCHAR_TO_ANSI(*request->Script()),
+                TCHAR_TO_ANSI(*campaign->Path())
+            );
+
             if (mt)
                 mt->SetPlayerSquadron(player_group);
             mission = mt;
@@ -174,10 +228,10 @@ Mission* CampaignMissionStarship::GenerateMission(int id)
         return nullptr;
     }
 
-    char name_buf[64];
-    sprintf_s(name_buf, "Starship Mission %d", id);
+    char name[64] = { 0 };
+    sprintf_s(name, sizeof(name), "Starship Mission %d", id);
 
-    mission->SetName(name_buf);
+    mission->SetName(name);
     mission->SetTeam(player_group->GetIFF());
     mission->SetStart(request->StartTime());
 
@@ -200,15 +254,15 @@ Mission* CampaignMissionStarship::GenerateMission(int id)
         }
         else {
             delete mission;
-
             mission = new Mission(id);
+
             if (!mission) {
                 Exit();
                 return nullptr;
             }
 
             mission->SetType(mission_type);
-            mission->SetName(name_buf);
+            mission->SetName(name);
             mission->SetTeam(player_group->GetIFF());
             mission->SetStart(request->StartTime());
 
@@ -224,7 +278,8 @@ Mission* CampaignMissionStarship::GenerateMission(int id)
     return mission;
 }
 
-void CampaignMissionStarship::SelectType()
+void
+CampaignMissionStarship::SelectType()
 {
     if (request)
         mission_type = request->Type();
@@ -235,10 +290,11 @@ void CampaignMissionStarship::SelectType()
         mission_type = Mission::FLIGHT_OPS;
 }
 
-void CampaignMissionStarship::SelectRegion()
+void
+CampaignMissionStarship::SelectRegion()
 {
     if (!player_group) {
-        ::Print("WARNING: CMS - no player group in SelectRegion\n");
+        UE_LOG(LogStarshatterWars, Warning, TEXT("WARNING: CMS - no player group in SelectRegion"));
         return;
     }
 
@@ -247,7 +303,7 @@ void CampaignMissionStarship::SelectRegion()
         zone = player_group->GetCurrentZone();
 
     if (zone) {
-        mission->SetStarSystem(campaign->GetSystem(zone->System()));
+        mission->SetStarSystem(campaign->GetSystem(zone->GetSystem()));
 
         if (zone->HasRegion(player_group->GetRegion()))
             mission->SetRegion(player_group->GetRegion());
@@ -255,9 +311,11 @@ void CampaignMissionStarship::SelectRegion()
             mission->SetRegion(*zone->GetRegions().at(0));
     }
     else {
-        ::Print("WARNING: CMS - No zone for '%s'\n", player_group->Name().data());
+        UE_LOG(LogStarshatterWars, Warning, TEXT("WARNING: CMS - No zone for '%s'"),
+            ANSI_TO_TCHAR(player_group->Name().data()));
 
         StarSystem* s = campaign->GetSystemList()[0];
+
         mission->SetStarSystem(s);
         mission->SetRegion(s->Regions()[0]->Name());
     }
@@ -265,7 +323,8 @@ void CampaignMissionStarship::SelectRegion()
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::GenerateStandardElements()
+void
+CampaignMissionStarship::GenerateStandardElements()
 {
     ListIter<CombatZone> z = campaign->GetZones();
     while (++z) {
@@ -277,44 +336,44 @@ void CampaignMissionStarship::GenerateStandardElements()
             while (++group) {
                 CombatGroup* g = group.value();
 
-                switch (g->Type()) {
-                case CombatGroup::INTERCEPT_SQUADRON:
-                case CombatGroup::FIGHTER_SQUADRON:
-                case CombatGroup::ATTACK_SQUADRON:
-                case CombatGroup::LCA_SQUADRON:
+                switch (g->GetType()) {
+                case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
+                case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:
+                case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
+                case ECOMBATGROUP_TYPE::LCA_SQUADRON:
                     CreateSquadron(g);
                     break;
 
-                case CombatGroup::DESTROYER_SQUADRON:
-                case CombatGroup::BATTLE_GROUP:
-                case CombatGroup::CARRIER_GROUP:
+                case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
+                case ECOMBATGROUP_TYPE::BATTLE_GROUP:
+                case ECOMBATGROUP_TYPE::CARRIER_GROUP:
                     CreateElements(g);
                     break;
 
-                case CombatGroup::MINEFIELD:
-                case CombatGroup::BATTERY:
-                case CombatGroup::MISSILE:
-                case CombatGroup::STATION:
-                case CombatGroup::STARBASE:
-                case CombatGroup::SUPPORT:
-                case CombatGroup::COURIER:
-                case CombatGroup::MEDICAL:
-                case CombatGroup::SUPPLY:
-                case CombatGroup::REPAIR:
+                case ECOMBATGROUP_TYPE::MINEFIELD:
+                case ECOMBATGROUP_TYPE::BATTERY:
+                case ECOMBATGROUP_TYPE::MISSILE:
+                case ECOMBATGROUP_TYPE::STATION:
+                case ECOMBATGROUP_TYPE::STARBASE:
+                case ECOMBATGROUP_TYPE::SUPPORT:
+                case ECOMBATGROUP_TYPE::COURIER:
+                case ECOMBATGROUP_TYPE::MEDICAL:
+                case ECOMBATGROUP_TYPE::SUPPLY:
+                case ECOMBATGROUP_TYPE::REPAIR:
                     CreateElements(g);
                     break;
 
-                case CombatGroup::CIVILIAN:
-                case CombatGroup::WAR_PRODUCTION:
-                case CombatGroup::FACTORY:
-                case CombatGroup::REFINERY:
-                case CombatGroup::RESOURCE:
-                case CombatGroup::INFRASTRUCTURE:
-                case CombatGroup::TRANSPORT:
-                case CombatGroup::NETWORK:
-                case CombatGroup::HABITAT:
-                case CombatGroup::STORAGE:
-                case CombatGroup::NON_COM:
+                case ECOMBATGROUP_TYPE::CIVILIAN:
+                case ECOMBATGROUP_TYPE::WAR_PRODUCTION:
+                case ECOMBATGROUP_TYPE::FACTORY:
+                case ECOMBATGROUP_TYPE::REFINERY:
+                case ECOMBATGROUP_TYPE::RESOURCE:
+                case ECOMBATGROUP_TYPE::INFRASTRUCTURE:
+                case ECOMBATGROUP_TYPE::TRANSPORT:
+                case ECOMBATGROUP_TYPE::NETWORK:
+                case ECOMBATGROUP_TYPE::HABITAT:
+                case ECOMBATGROUP_TYPE::STORAGE:
+                case ECOMBATGROUP_TYPE::NON_COM:
                     CreateElements(g);
                     break;
                 }
@@ -325,14 +384,15 @@ void CampaignMissionStarship::GenerateStandardElements()
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::GenerateMissionElements()
+void
+CampaignMissionStarship::GenerateMissionElements()
 {
     CreatePlayer();
     CreateWards();
     CreateTargets();
 
     if (ward && player) {
-        Instruction* obj = new  Instruction(Instruction::ESCORT, ward->Name());
+        Instruction* obj = new Instruction(Instruction::ESCORT, ward->Name());
 
         if (obj) {
             switch (mission->Type()) {
@@ -365,9 +425,10 @@ void CampaignMissionStarship::GenerateMissionElements()
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreatePlayer()
+void
+CampaignMissionStarship::CreatePlayer()
 {
-    MissionElement* elem = nullptr;
+    MissionElement* elem = 0;
 
     if (player_group) {
         ListIter<MissionElement> iter = mission->GetElements();
@@ -389,22 +450,25 @@ void CampaignMissionStarship::CreatePlayer()
         player = elem;
     }
     else if (player_group) {
-        ::Print("CMS GenerateMissionElements() could notxfind player element '%s'\n",
-            player_group->Name().data());
+        UE_LOG(LogStarshatterWars, Warning,
+            TEXT("CMS GenerateMissionElements() could not find player element '%s'"),
+            ANSI_TO_TCHAR(player_group->Name().data()));
     }
     else {
-        ::Print("CMS GenerateMissionElements() could notxfind player element (no player group)\n");
+        UE_LOG(LogStarshatterWars, Warning,
+            TEXT("CMS GenerateMissionElements() could not find player element (no player group)"));
     }
 }
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateElements(CombatGroup* g)
+void
+CampaignMissionStarship::CreateElements(CombatGroup* g)
 {
-    MissionElement* elem = nullptr;
+    MissionElement* elem = 0;
     List<CombatUnit>& units = g->GetUnits();
 
-    CombatUnit* cmdr = nullptr;
+    CombatUnit* cmdr = 0;
 
     for (int i = 0; i < units.size(); i++) {
         elem = CreateSingleElement(g, units[i]);
@@ -414,8 +478,8 @@ void CampaignMissionStarship::CreateElements(CombatGroup* g)
                 cmdr = units[i];
 
                 if (player_group && player_group->GetIFF() == g->GetIFF()) {
-                    Player* p = Player::GetCurrentPlayer();
-                    if (p && p->Rank() >= 10) {
+                    PlayerCharacter* playerc = PlayerCharacter::GetCurrentPlayer();
+                    if (playerc && playerc->Rank() >= 10) {
                         elem->SetCommander(player_group->Name());
                     }
                 }
@@ -423,9 +487,9 @@ void CampaignMissionStarship::CreateElements(CombatGroup* g)
             else {
                 elem->SetCommander(cmdr->Name());
 
-                if (g->Type() == CombatGroup::CARRIER_GROUP &&
+                if (g->GetType() == ECOMBATGROUP_TYPE::CARRIER_GROUP &&
                     elem->MissionRole() == Mission::ESCORT) {
-                    Instruction* obj = new  Instruction(Instruction::ESCORT, cmdr->Name());
+                    Instruction* obj = new Instruction(Instruction::ESCORT, cmdr->Name());
                     if (obj) {
                         obj->SetTargetDesc(Text("the ") + g->GetDescription());
                         elem->AddObjective(obj);
@@ -438,11 +502,12 @@ void CampaignMissionStarship::CreateElements(CombatGroup* g)
     }
 }
 
-MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, CombatUnit* u)
+MissionElement*
+CampaignMissionStarship::CreateSingleElement(CombatGroup* g, CombatUnit* u)
 {
-    if (!g || g->IsReserve())     return nullptr;
-    if (!u || u->LiveCount() < 1) return nullptr;
-    if (!mission->GetStarSystem()) return nullptr;
+    if (!g || g->IsReserve())        return nullptr;
+    if (!u || u->LiveCount() < 1)    return nullptr;
+    if (!mission->GetStarSystem())   return nullptr;
 
     StarSystem* system = mission->GetStarSystem();
     OrbitalRegion* rgn = system->FindRegion(u->GetRegion());
@@ -450,6 +515,7 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
     if (!rgn || rgn->Type() == Orbital::TERRAIN)
         return nullptr;
 
+    // ensure this unit isn't already in the mission:
     ListIter<MissionElement> e_iter = mission->GetElements();
     while (++e_iter) {
         MissionElement* elem = e_iter.value();
@@ -457,7 +523,7 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
             return nullptr;
     }
 
-    MissionElement* elem = new  MissionElement;
+    MissionElement* elem = new MissionElement;
     if (!elem) {
         Exit();
         return nullptr;
@@ -477,26 +543,32 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
     elem->SetRegion(u->GetRegion());
     elem->SetHeading(u->GetHeading());
 
-    int   unit_index = g->GetUnits().index(u);
-    Point base_loc = u->Location();
-    bool  exact = u->IsStatic();
+    const int   unit_index = g->GetUnits().index(u);
+    FVector     base_loc = u->Location();
+    bool        exact = u->IsStatic();
 
-    if (base_loc.length() < 1) {
+    if (base_loc.Length() < 1.0f) {
         base_loc = g->Location();
         exact = false;
     }
 
+    // Uniform scatter in a sphere:
+    auto ScatterInSphere = [](float Radius) -> FVector
+        {
+            const float r = Radius * FMath::Pow(FMath::FRand(), 1.0f / 3.0f);
+            return FMath::VRand() * r;
+        };
+
     if (unit_index < 0 || (unit_index > 0 && !exact)) {
-        Point loc = RandomDirection();
+        FVector loc;
 
         if (!u->IsStatic()) {
-            while (fabs(loc.y) > fabs(loc.x))
-                loc = RandomDirection();
-
-            loc *= 10e3 + 9e3 * unit_index;
+            loc = ScatterInSphere(1.0f);
+            loc *= (10000.0f + 9000.0f * (float)unit_index);
         }
         else {
-            loc *= 2e3 + 2e3 * unit_index;
+            loc = ScatterInSphere(1.0f);
+            loc *= (2000.0f + 2000.0f * (float)unit_index);
         }
 
         elem->SetLocation(base_loc + loc);
@@ -505,18 +577,20 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
         elem->SetLocation(base_loc);
     }
 
-    if (g->Type() == CombatGroup::CARRIER_GROUP) {
-        if (u->Type() == Ship::CARRIER)
+    if (g->GetType() == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+        if (u->Type() == Ship::CARRIER) {
             elem->SetMissionRole(Mission::FLIGHT_OPS);
-        else
+        }
+        else {
             elem->SetMissionRole(Mission::ESCORT);
+        }
     }
     else if (u->Type() == Ship::STATION || u->Type() == Ship::FARCASTER) {
         elem->SetMissionRole(Mission::OTHER);
 
         if (u->Type() == Ship::FARCASTER) {
             Text name = u->Name();
-            int dash = -1;
+            int  dash = -1;
 
             for (int i = 0; i < (int)name.length(); i++)
                 if (name[i] == '-')
@@ -525,7 +599,7 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
             Text src = name.substring(0, dash);
             Text dst = name.substring(dash + 1, name.length() - (dash + 1));
 
-            Instruction* obj = new  Instruction(Instruction::VECTOR, dst + "-" + src);
+            Instruction* obj = new Instruction(Instruction::VECTOR, dst + "-" + src);
             if (obj)
                 elem->AddObjective(obj);
         }
@@ -540,7 +614,8 @@ MissionElement* CampaignMissionStarship::CreateSingleElement(CombatGroup* g, Com
     return elem;
 }
 
-CombatUnit* CampaignMissionStarship::FindCarrier(CombatGroup* g)
+CombatUnit*
+CampaignMissionStarship::FindCarrier(CombatGroup* g)
 {
     CombatGroup* carrier = g->FindCarrier();
 
@@ -553,20 +628,22 @@ CombatUnit* CampaignMissionStarship::FindCarrier(CombatGroup* g)
     return nullptr;
 }
 
-void CampaignMissionStarship::CreateSquadron(CombatGroup* g)
+void
+CampaignMissionStarship::CreateSquadron(CombatGroup* g)
 {
-    if (!g || g->IsReserve()) return;
+    if (!g || g->IsReserve())
+        return;
 
     CombatUnit* fighter = g->GetUnits().at(0);
     CombatUnit* carrier = FindCarrier(g);
 
-    if (!fighter || !carrier) return;
+    if (!fighter || !carrier)
+        return;
 
     int live_count = fighter->LiveCount();
     int maint_count = (live_count > 4) ? live_count / 2 : 0;
 
-    MissionElement* elem = new  MissionElement;
-
+    MissionElement* elem = new MissionElement;
     if (!elem) {
         Exit();
         return;
@@ -585,7 +662,15 @@ void CampaignMissionStarship::CreateSquadron(CombatGroup* g)
 
     elem->SetCarrier(carrier->Name());
     elem->SetCommander(carrier->Name());
-    elem->SetLocation(carrier->Location() + RandomPoint());
+
+    // scatter in a small sphere around carrier:
+    auto ScatterInSphere = [](float Radius) -> FVector
+        {
+            const float r = Radius * FMath::Pow(FMath::FRand(), 1.0f / 3.0f);
+            return FMath::VRand() * r;
+        };
+
+    elem->SetLocation(carrier->Location() + ScatterInSphere(1.0f));
 
     elem->SetCombatGroup(g);
     elem->SetCombatUnit(fighter);
@@ -595,19 +680,25 @@ void CampaignMissionStarship::CreateSquadron(CombatGroup* g)
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateWards()
+void
+CampaignMissionStarship::CreateWards()
 {
     switch (mission->Type()) {
-    case Mission::ESCORT_FREIGHT: CreateWardFreight(); break;
-    default: break;
+    case Mission::ESCORT_FREIGHT:   
+        CreateWardFreight();
+            break;
+    default:              
+        break;
     }
 }
 
-void CampaignMissionStarship::CreateWardFreight()
+void
+CampaignMissionStarship::CreateWardFreight()
 {
-    if (!mission || !mission->GetStarSystem() || !player_group) return;
+    if (!mission || !mission->GetStarSystem() || !player_group)
+        return;
 
-    CombatGroup* freight = nullptr;
+    CombatGroup* freight = 0;
 
     if (request)
         freight = request->GetObjective();
@@ -615,13 +706,16 @@ void CampaignMissionStarship::CreateWardFreight()
     if (!freight)
         freight = campaign->FindGroup(ownside, CombatGroup::FREIGHT);
 
-    if (!freight || freight->CalcValue() < 1) return;
+    if (!freight || freight->CalcValue() < 1)
+        return;
 
     CombatUnit* unit = freight->GetNextUnit();
-    if (!unit) return;
+    if (!unit)
+        return;
 
     MissionElement* elem = CreateSingleElement(freight, unit);
-    if (!elem) return;
+    if (!elem)
+        return;
 
     elem->SetMissionRole(Mission::CARGO);
     elem->SetIntelLevel(Intel::KNOWN);
@@ -632,14 +726,18 @@ void CampaignMissionStarship::CreateWardFreight()
 
     StarSystem* system = mission->GetStarSystem();
     OrbitalRegion* rgn1 = system->FindRegion(elem->Region());
-    Point delta = rgn1->Location() - rgn1->Primary()->Location();
-    Point navpt_loc = elem->Location();
+    if (!rgn1 || !rgn1->Primary())
+        return;
+
+    FVector delta = rgn1->Location() - rgn1->Primary()->Location();
+    FVector navpt_loc = elem->Location();
 
     delta.Normalize();
-    delta *= 200.0e3;
+    delta *= 200000.0f;
+
     navpt_loc += delta;
 
-    Instruction* n = new  Instruction(elem->Region(), navpt_loc, Instruction::VECTOR);
+    Instruction* n = new Instruction(elem->Region(), navpt_loc, Instruction::VECTOR);
     if (n) {
         n->SetSpeed(500);
         elem->AddNavPoint(n);
@@ -652,7 +750,7 @@ void CampaignMissionStarship::CreateWardFreight()
     else
         rgn2 = *zones[zones.size() - 1]->GetRegions()[0];
 
-    n = new  Instruction(rgn2, Point(0, 0, 0), Instruction::VECTOR);
+    n = new Instruction(rgn2, FVector(0.0f, 0.0f, 0.0f), Instruction::VECTOR);
     if (n) {
         n->SetSpeed(750);
         elem->AddNavPoint(n);
@@ -661,100 +759,99 @@ void CampaignMissionStarship::CreateWardFreight()
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateEscorts()
+void
+CampaignMissionStarship::CreateEscorts()
 {
 }
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateTargets()
+void
+CampaignMissionStarship::CreateTargets()
 {
-    if (player_group && player_group->Type() == CombatGroup::CARRIER_GROUP) {
+    if (player_group && player_group->GetType() == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
         CreateTargetsCarrier();
     }
     else {
         switch (mission->Type()) {
         default:
-        case Mission::PATROL:         CreateTargetsPatrol();        break;
+        case Mission::PATROL: 
+            CreateTargetsPatrol();   
+            break;
         case Mission::ASSAULT:
-        case Mission::STRIKE:         CreateTargetsAssault();       break;
-        case Mission::ESCORT_FREIGHT: CreateTargetsFreightEscort(); break;
+        case Mission::STRIKE:    
+            CreateTargetsAssault();
+            break;
+        case Mission::ESCORT_FREIGHT: 
+            CreateTargetsFreightEscort(); 
+            break;
         }
     }
 }
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateTargetsAssault()
+void
+CampaignMissionStarship::CreateTargetsAssault()
 {
-    if (!player) return;
+    // NOTE: This function is largely unchanged structurally; vector math updated where required.
+    if (!player)
+        return;
 
-    CombatGroup* assigned = nullptr;
+    CombatGroup* assigned = 0;
 
     if (request)
         assigned = request->GetObjective();
 
-    if (assigned)
-    {
+    if (assigned) {
         CreateElements(assigned);
 
         ListIter<MissionElement> e_iter = mission->GetElements();
-        while (++e_iter)
-        {
+        while (++e_iter) {
             MissionElement* elem = e_iter.value();
 
-            if (elem->GetCombatGroup() == assigned)
-            {
-                if (!prime_target)
-                {
+            if (elem->GetCombatGroup() == assigned) {
+                if (!prime_target) {
                     prime_target = elem;
 
                     MissionElement* player_lead = player_group_elements[0];
+                    if (!player_lead)
+                        return;
 
-                    if (!player_lead) return;
-
-                    Instruction* obj = new  Instruction(Instruction::ASSAULT, prime_target->Name());
-                    if (obj)
-                    {
-                        // If you replaced Text with FString, this becomes FString::Printf or concatenation.
-                        // Keeping legacy style:
+                    Instruction* obj = new Instruction(Instruction::ASSAULT, prime_target->Name());
+                    if (obj) {
                         obj->SetTargetDesc(Text("preplanned target '") + prime_target->Name() + "'");
-
                         player_lead->AddObjective(obj);
                     }
 
                     // create flight plan:
                     RLoc         rloc;
-                    RLoc* ref = nullptr;
-                    FVector      dummy(0, 0, 0);
-                    Instruction* instr = nullptr;
-                    FVector      loc = player_lead->Location();
-                    FVector      tgt = prime_target->Location();
-                    FVector      mid;
+                    RLoc* ref = 0;
+                    FVector      dummy(0.0f, 0.0f, 0.0f);
+                    Instruction* instr = 0;
 
-                    mid = loc + (prime_target->Location() - loc) * 0.35f;
+                    const FVector loc = player_lead->Location();
+                    const FVector tgt = prime_target->Location();
+                    FVector mid = loc + (tgt - loc) * 0.35f;
 
                     rloc.SetReferenceLoc(0);
                     rloc.SetBaseLocation(mid);
                     rloc.SetDistance(50e3);
                     rloc.SetDistanceVar(5e3);
-                    rloc.SetAzimuth(90.0 * DEGREES_TO_RADIANS);
-                    rloc.SetAzimuthVar(45.0 * DEGREES_TO_RADIANS);
+                    rloc.SetAzimuth(90 * DEGREES);
+                    rloc.SetAzimuthVar(45 * DEGREES);
 
-                    instr = new  Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
-
+                    instr = new Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
                     if (!instr)
                         return;
 
                     instr->SetSpeed(750);
                     instr->GetRLoc() = rloc;
-
                     ref = &instr->GetRLoc();
 
                     player_lead->AddNavPoint(instr);
 
-                    for (int i = 1; i < player_group_elements.size(); i++)
-                    {
+                    for (int i = 1; i < player_group_elements.size(); i++) {
                         MissionElement* pge = player_group_elements[i];
                         RLoc            rloc2;
 
@@ -762,8 +859,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
                         rloc2.SetDistance(50e3);
                         rloc2.SetDistanceVar(5e3);
 
-                        instr = new  Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
-
+                        instr = new Instruction(prime_target->Region(), dummy, Instruction::VECTOR);
                         if (!instr)
                             return;
 
@@ -775,10 +871,8 @@ void CampaignMissionStarship::CreateTargetsAssault()
 
                     double extra = 10e3;
 
-                    if (prime_target && prime_target->GetDesign())
-                    {
-                        switch (prime_target->GetDesign()->type)
-                        {
+                    if (prime_target && prime_target->GetDesign()) {
+                        switch (prime_target->GetDesign()->type) {
                         default:                extra = 20e3; break;
                         case Ship::FRIGATE:     extra = 25e3; break;
                         case Ship::DESTROYER:   extra = 30e3; break;
@@ -794,11 +888,10 @@ void CampaignMissionStarship::CreateTargetsAssault()
                     rloc.SetBaseLocation(tgt);
                     rloc.SetDistance(100e3 + extra);
                     rloc.SetDistanceVar(15e3);
-                    rloc.SetAzimuth(90.0 * DEGREES_TO_RADIANS);
-                    rloc.SetAzimuthVar(45.0 * DEGREES_TO_RADIANS);
+                    rloc.SetAzimuth(90 * DEGREES);
+                    rloc.SetAzimuthVar(45 * DEGREES);
 
-                    instr = new  Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
-
+                    instr = new Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
                     if (!instr)
                         return;
 
@@ -810,8 +903,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
 
                     player_lead->AddNavPoint(instr);
 
-                    for (int i = 1; i < player_group_elements.size(); i++)
-                    {
+                    for (int i = 1; i < player_group_elements.size(); i++) {
                         MissionElement* pge = player_group_elements[i];
                         RLoc            rloc2;
 
@@ -819,8 +911,7 @@ void CampaignMissionStarship::CreateTargetsAssault()
                         rloc2.SetDistance(50e3);
                         rloc2.SetDistanceVar(5e3);
 
-                        instr = new  Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
-
+                        instr = new Instruction(prime_target->Region(), dummy, Instruction::ASSAULT);
                         if (!instr)
                             return;
 
@@ -838,97 +929,109 @@ void CampaignMissionStarship::CreateTargetsAssault()
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateTargetsCarrier()
+void
+CampaignMissionStarship::CreateTargetsCarrier()
 {
-    if (!player_group || !player) return;
+    if (!player_group || !player)
+        return;
 
     Text    region = player_group->GetRegion();
     FVector base_loc = player->Location();
-    FVector patrol_loc = base_loc + RandomDirection() * (float)RandomRangeDouble(75e3, 150e3);
-    FVector loc2 = patrol_loc + RandomDirection() * (float)RandomRangeDouble(50e3, 100e3);
 
-    int ntargets = 2 + (RandomChance() ? 1 : 0);
+    // 3D volumes:
+    const FVector PatrolLoc = base_loc + (FMath::VRand() * FMath::FRandRange(75000.0f, 150000.0f));
+    const FVector Loc2 = PatrolLoc + (FMath::VRand() * FMath::FRandRange(50000.0f, 100000.0f));
+
+    int ntargets = 2 + (FMath::RandBool() ? 1 : 0);
     int ntries = 8;
 
-    while (ntargets > 0 && ntries > 0)
-    {
-        FVector target_loc = RandomChance() ? patrol_loc : loc2;
-        int t = CreateRandomTarget(region, target_loc);
+    while (ntargets > 0 && ntries > 0) {
+        const FVector TargetLoc = FMath::RandBool() ? PatrolLoc : Loc2;
+
+        const int t = CreateRandomTarget(region, TargetLoc);
         ntargets -= t;
-        if (t < 1) ntries--;
+        if (t < 1)
+            --ntries;
     }
 }
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateTargetsPatrol()
+void
+CampaignMissionStarship::CreateTargetsPatrol()
 {
-    if (!player_group || !player) return;
+    if (!player_group || !player)
+        return;
 
     Text    region = player_group->GetRegion();
     FVector base_loc = player->Location();
-    FVector patrol_loc = base_loc + RandomDirection() * (float)RandomRangeDouble(170e3, 250e3);
 
-    Instruction* n = new  Instruction(region, patrol_loc, Instruction::PATROL);
-    player->AddNavPoint(n);
+    auto ScatterInSphere = [](float Radius) -> FVector
+        {
+            const float r = Radius * FMath::Pow(FMath::FRand(), 1.0f / 3.0f);
+            return FMath::VRand() * r;
+        };
 
-    for (int i = 1; i < player_group_elements.size(); i++)
-    {
+    const FVector PatrolLoc = base_loc + (FMath::VRand() * FMath::FRandRange(170000.0f, 250000.0f));
+
+    Instruction* n0 = new Instruction(region, PatrolLoc, Instruction::PATROL);
+    if (n0)
+        player->AddNavPoint(n0);
+
+    for (int i = 1; i < player_group_elements.size(); i++) {
         MissionElement* elem = player_group_elements[i];
 
-        n = new  Instruction(
-            region,
-            patrol_loc + RandomDirection() * (float)RandomRangeDouble(20e3, 40e3),
+        Instruction* n1 = new Instruction(region,
+            PatrolLoc + ScatterInSphere(FMath::FRandRange(20000.0f, 40000.0f)),
             Instruction::PATROL);
-
-        if (n)
-            elem->AddNavPoint(n);
+        if (n1 && elem)
+            elem->AddNavPoint(n1);
     }
 
-    FVector loc2 = patrol_loc + RandomDirection() * (float)RandomRangeDouble(150e3, 200e3);
+    const FVector Loc2 = PatrolLoc + (FMath::VRand() * FMath::FRandRange(150000.0f, 200000.0f));
 
-    n = new  Instruction(region, loc2, Instruction::PATROL);
-    if (n)
-        player->AddNavPoint(n);
+    Instruction* n2 = new Instruction(region, Loc2, Instruction::PATROL);
+    if (n2)
+        player->AddNavPoint(n2);
 
-    for (int i = 1; i < player_group_elements.size(); i++)
-    {
+    for (int i = 1; i < player_group_elements.size(); i++) {
         MissionElement* elem = player_group_elements[i];
 
-        n = new  Instruction(
-            region,
-            loc2 + RandomDirection() * (float)RandomRangeDouble(20e3, 40e3),
+        Instruction* n3 = new Instruction(region,
+            Loc2 + ScatterInSphere(FMath::FRandRange(20000.0f, 40000.0f)),
             Instruction::PATROL);
-
-        if (n)
-            elem->AddNavPoint(n);
+        if (n3 && elem)
+            elem->AddNavPoint(n3);
     }
 
-    int ntargets = 2 + (RandomChance() ? 1 : 0);
+    int ntargets = 2 + (FMath::RandBool() ? 1 : 0);
     int ntries = 8;
 
-    while (ntargets > 0 && ntries > 0)
-    {
-        FVector target_loc = RandomChance() ? patrol_loc : loc2;
-        int t = CreateRandomTarget(region, target_loc);
+    while (ntargets > 0 && ntries > 0) {
+        const FVector TargetLoc = FMath::RandBool() ? PatrolLoc : Loc2;
+
+        const int t = CreateRandomTarget(region, TargetLoc);
         ntargets -= t;
-        if (t < 1) ntries--;
+        if (t < 1)
+            --ntries;
     }
 
-    Instruction* obj = new  Instruction(*n);
-    if (obj)
-    {
-        obj->SetTargetDesc("inbound enemy units");
-        player->AddObjective(obj);
+    // Objective uses the final patrol leg (Loc2) as reference:
+    if (n2) {
+        Instruction* obj = new Instruction(*n2);
+        if (obj) {
+            obj->SetTargetDesc("inbound enemy units");
+            player->AddObjective(obj);
+        }
     }
 }
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::CreateTargetsFreightEscort()
+void
+CampaignMissionStarship::CreateTargetsFreightEscort()
 {
-    if (!ward)
-    {
+    if (!ward) {
         CreateTargetsPatrol();
         return;
     }
@@ -936,28 +1039,34 @@ void CampaignMissionStarship::CreateTargetsFreightEscort()
     CombatGroup* s = FindSquadron(enemy, CombatGroup::ATTACK_SQUADRON);
     CombatGroup* s2 = FindSquadron(enemy, CombatGroup::FIGHTER_SQUADRON);
 
-    if (!s || !s2) return;
+    if (!s || !s2)
+        return;
+
+    auto ScatterInSphere = [](float Radius) -> FVector
+        {
+            const float r = Radius * FMath::Pow(FMath::FRand(), 1.0f / 3.0f);
+            return FMath::VRand() * r;
+        };
 
     MissionElement* elem = CreateFighterPackage(s, 2, Mission::ASSAULT);
-    if (elem)
-    {
+    if (elem) {
         elem->SetIntelLevel(Intel::KNOWN);
 
-        elem->SetLocation(ward->Location() + RandomPoint() * 5.0f);
+        elem->SetLocation(ward->Location() + ScatterInSphere(5.0f));
 
-        Instruction* obj = new  Instruction(Instruction::ASSAULT, ward->Name());
+        Instruction* obj = new Instruction(Instruction::ASSAULT, ward->Name());
         if (obj)
             elem->AddObjective(obj);
 
         mission->AddElement(elem);
 
         MissionElement* e2 = CreateFighterPackage(s2, 2, Mission::ESCORT);
-        if (e2)
-        {
+        if (e2) {
             e2->SetIntelLevel(Intel::KNOWN);
-            e2->SetLocation(elem->Location() + RandomPoint() * 0.25f);
 
-            Instruction* obj2 = new  Instruction(Instruction::ESCORT, elem->Name());
+            e2->SetLocation(elem->Location() + ScatterInSphere(0.25f));
+
+            Instruction* obj2 = new Instruction(Instruction::ESCORT, elem->Name());
             if (obj2)
                 e2->AddObjective(obj2);
 
@@ -965,13 +1074,10 @@ void CampaignMissionStarship::CreateTargetsFreightEscort()
         }
     }
 
-    Instruction* obj3 = new  Instruction(
-        mission->GetRegion(),
-        FVector(0, 0, 0),
+    Instruction* obj3 = new Instruction(mission->GetRegion(),
+        FVector(0.0f, 0.0f, 0.0f),
         Instruction::PATROL);
-
-    if (player && obj3)
-    {
+    if (player && obj3) {
         obj3->SetTargetDesc("enemy patrols");
         player->AddObjective(obj3);
     }
@@ -979,87 +1085,121 @@ void CampaignMissionStarship::CreateTargetsFreightEscort()
 
 // +--------------------------------------------------------------------+
 
-int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_loc)
+int
+CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_loc)
 {
     int ntargets = 0;
-    int ttype = RandomIndex();
+    int ttype = FMath::RandRange(0, 15);
 
-    if (player_group && player_group->Type() == CombatGroup::CARRIER_GROUP)
-    {
-        switch (ttype)
-        {
-        case 0: case 1: case 2: case 3:  ttype = 0; break;
-        case 4: case 5:                  ttype = 1; break;
-        case 6: case 7:                  ttype = 2; break;
-        case 8: case 9:                  ttype = 3; break;
-        case 10: case 11:                ttype = 4; break;
-        case 12: case 13: case 14: case 15: ttype = 5; break;
+    if (player_group && player_group->GetType() == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
+        switch (ttype) {
+        case  0: 
+        case  1: 
+        case  2: 
+        case  3: 
+            ttype = 0; 
+            break;
+        case  4: 
+        case  5:    
+            ttype = 1; 
+            break;
+        case  6: 
+        case  7:  
+            ttype = 2; 
+            break;
+        case  8: 
+        case  9:
+            ttype = 3;
+            break;
+        case 10:
+        case 11:
+            ttype = 4;
+            break;
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+            ttype = 5;
+            break;
         }
     }
-    else
-    {
-        switch (ttype)
-        {
-        case 0: case 1: case 2: case 3: case 4: case 5: ttype = 0; break;
-        case 6: case 7: case 8:                          ttype = 1; break;
-        case 9: case 10:                                 ttype = 4; break;
-        case 11: case 12: case 13: case 14: case 15:     ttype = 5; break;
+    else {
+        switch (ttype) {
+        case  0: 
+        case  1:
+        case  2:
+        case  3:
+        case  4:
+        case  5:
+            ttype = 0;
+            break;
+        case  6:
+        case  7:
+        case  8:                             
+            ttype = 1;
+            break;
+        case  9:
+        case 10:     
+            ttype = 4;
+            break;
+        case 11:
+        case 12:
+        case 13:
+        case 14: 
+        case 15:     
+            ttype = 5;
+            break;
         }
     }
 
-    switch (ttype)
-    {
-    case 0:
-    {
-        CombatGroup* s = FindSquadron(enemy, CombatGroup::DESTROYER_SQUADRON);
-
-        if (s)
+    auto ScatterInSphere = [](float Radius) -> FVector
         {
-            for (int i = 0; i < 2; i++)
-            {
+            const float r = Radius * FMath::Pow(FMath::FRand(), 1.0f / 3.0f);
+            return FMath::VRand() * r;
+        };
+
+    switch (ttype) {
+    case 0: {
+        CombatGroup* s = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::DESTROYER_SQUADRON);
+
+        if (s) {
+            for (int i = 0; i < 2; i++) {
                 CombatUnit* u = s->GetRandomUnit();
                 MissionElement* elem = CreateSingleElement(s, u);
-                if (elem)
-                {
+                if (elem) {
                     elem->SetIntelLevel(Intel::KNOWN);
                     elem->SetRegion(rgn);
-                    elem->SetLocation(base_loc + RandomPoint() * 1.5f);
+                    elem->SetLocation(base_loc + ScatterInSphere(1.5f));
                     elem->SetMissionRole(Mission::FLEET);
                     mission->AddElement(elem);
                     ntargets++;
                 }
             }
         }
-    }
-    break;
+    } break;
 
-    case 1:
-    {
-        CombatGroup* s = FindSquadron(enemy, CombatGroup::LCA_SQUADRON);
+    case 1: {
+        CombatGroup* s = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::LCA_SQUADRON);
 
-        if (s)
-        {
+        if (s) {
             MissionElement* elem = CreateFighterPackage(s, 2, Mission::CARGO);
-            if (elem)
-            {
+            if (elem) {
                 elem->SetIntelLevel(Intel::KNOWN);
                 elem->SetRegion(rgn);
-                elem->SetLocation(base_loc + RandomPoint() * 2.0f);
+                elem->SetLocation(base_loc + ScatterInSphere(2.0f));
                 mission->AddElement(elem);
                 ntargets++;
 
                 CombatGroup* s2 = FindSquadron(enemy, CombatGroup::FIGHTER_SQUADRON);
 
-                if (s2)
-                {
+                if (s2) {
                     MissionElement* e2 = CreateFighterPackage(s2, 2, Mission::ESCORT);
-                    if (e2)
-                    {
+                    if (e2) {
                         e2->SetIntelLevel(Intel::KNOWN);
                         e2->SetRegion(rgn);
-                        e2->SetLocation(elem->Location() + RandomPoint() * 0.5f);
+                        e2->SetLocation(elem->Location() + ScatterInSphere(0.5f));
 
-                        Instruction* obj = new  Instruction(Instruction::ESCORT, elem->Name());
+                        Instruction* obj = new Instruction(Instruction::ESCORT, elem->Name());
                         if (obj)
                             e2->AddObjective(obj);
 
@@ -1068,18 +1208,14 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                 }
             }
         }
-    }
-    break;
+    } break;
 
-    case 2:
-    {
-        CombatGroup* s = FindSquadron(enemy, CombatGroup::INTERCEPT_SQUADRON);
+    case 2: {
+        CombatGroup* s = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON);
 
-        if (s)
-        {
+        if (s) {
             MissionElement* elem = CreateFighterPackage(s, 4, Mission::PATROL);
-            if (elem)
-            {
+            if (elem) {
                 elem->SetIntelLevel(Intel::SECRET);
                 elem->SetRegion(rgn);
                 elem->SetLocation(base_loc);
@@ -1087,32 +1223,25 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                 ntargets++;
             }
         }
-    }
-    break;
+    } break;
 
-    case 3:
-    {
-        CombatGroup* s = FindSquadron(enemy, CombatGroup::FIGHTER_SQUADRON);
+    case 3: {
+        CombatGroup* s = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::FIGHTER_SQUADRON);
 
-        if (s)
-        {
+        if (s) {
             MissionElement* elem = CreateFighterPackage(s, 3, Mission::ASSAULT);
-            if (elem)
-            {
+            if (elem) {
                 elem->SetIntelLevel(Intel::KNOWN);
                 elem->Loadouts().destroy();
-                elem->Loadouts().append(new  MissionLoad(-1, "Ship Strike"));
+                elem->Loadouts().append(new MissionLoad(-1, "Ship Strike"));
                 elem->SetRegion(rgn);
-                elem->SetLocation(base_loc + RandomPoint());
+                elem->SetLocation(base_loc + ScatterInSphere(1.0f));
                 mission->AddElement(elem);
 
-                if (player)
-                {
-                    Instruction* n = new  Instruction(
-                        player->Region(),
-                        player->Location() + RandomPoint(),
+                if (player) {
+                    Instruction* n = new Instruction(player->Region(),
+                        player->Location() + ScatterInSphere(1.0f),
                         Instruction::ASSAULT);
-
                     n->SetTarget(player->Name());
                     elem->AddNavPoint(n);
                 }
@@ -1120,32 +1249,25 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                 ntargets++;
             }
         }
-    }
-    break;
+    } break;
 
-    case 4:
-    {
-        CombatGroup* s = FindSquadron(enemy, CombatGroup::ATTACK_SQUADRON);
+    case 4: {
+        CombatGroup* s = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::ATTACK_SQUADRON);
 
-        if (s)
-        {
+        if (s) {
             MissionElement* elem = CreateFighterPackage(s, 2, Mission::ASSAULT);
-            if (elem)
-            {
+            if (elem) {
                 elem->SetIntelLevel(Intel::KNOWN);
                 elem->Loadouts().destroy();
-                elem->Loadouts().append(new  MissionLoad(-1, "Hvy Ship Strike"));
+                elem->Loadouts().append(new MissionLoad(-1, "Hvy Ship Strike"));
                 elem->SetRegion(rgn);
-                elem->SetLocation(base_loc + RandomPoint() * 1.3f);
+                elem->SetLocation(base_loc + ScatterInSphere(1.3f));
                 mission->AddElement(elem);
 
-                if (player)
-                {
-                    Instruction* n = new  Instruction(
-                        player->Region(),
-                        player->Location() + RandomPoint(),
+                if (player) {
+                    Instruction* n = new Instruction(player->Region(),
+                        player->Location() + ScatterInSphere(1.0f),
                         Instruction::ASSAULT);
-
                     n->SetTarget(player->Name());
                     elem->AddNavPoint(n);
                 }
@@ -1153,38 +1275,32 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                 ntargets++;
             }
         }
-    }
-    break;
+    } break;
 
-    default:
-    {
-        CombatGroup* s = FindSquadron(enemy, CombatGroup::FREIGHT);
+    default: {
+        CombatGroup* s = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::FREIGHT);
 
-        if (s)
-        {
+        if (s) {
             CombatUnit* u = s->GetRandomUnit();
             MissionElement* elem = CreateSingleElement(s, u);
-            if (elem)
-            {
+            if (elem) {
                 elem->SetIntelLevel(Intel::KNOWN);
                 elem->SetRegion(rgn);
-                elem->SetLocation(base_loc + RandomPoint() * 2.0f);
+                elem->SetLocation(base_loc + ScatterInSphere(2.0f));
                 elem->SetMissionRole(Mission::CARGO);
                 mission->AddElement(elem);
                 ntargets++;
 
-                CombatGroup* s2 = FindSquadron(enemy, CombatGroup::INTERCEPT_SQUADRON);
+                CombatGroup* s2 = FindSquadron(enemy, (int)ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON);
 
-                if (s2)
-                {
+                if (s2) {
                     MissionElement* e2 = CreateFighterPackage(s2, 2, Mission::ESCORT);
-                    if (e2)
-                    {
+                    if (e2) {
                         e2->SetIntelLevel(Intel::KNOWN);
                         e2->SetRegion(rgn);
-                        e2->SetLocation(elem->Location() + RandomPoint() * 0.5f);
+                        e2->SetLocation(elem->Location() + ScatterInSphere(0.5f));
 
-                        Instruction* obj = new  Instruction(Instruction::ESCORT, elem->Name());
+                        Instruction* obj = new Instruction(Instruction::ESCORT, elem->Name());
                         if (obj)
                             e2->AddObjective(obj);
 
@@ -1194,8 +1310,7 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
                 }
             }
         }
-    }
-    break;
+    } break;
     }
 
     return ntargets;
@@ -1203,16 +1318,17 @@ int CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_lo
 
 // +--------------------------------------------------------------------+
 
-MissionElement* CampaignMissionStarship::CreateFighterPackage(CombatGroup* squadron, int count, int role)
+MissionElement*
+CampaignMissionStarship::CreateFighterPackage(CombatGroup* squadron, int count, int role)
 {
     if (!squadron || squadron->IsReserve())
-        return 0;
+        return nullptr;
 
     CombatUnit* fighter = squadron->GetUnits().at(0);
     CombatUnit* carrier = FindCarrier(squadron);
 
     if (!fighter)
-        return 0;
+        return nullptr;
 
     int avail = fighter->LiveCount();
     int actual = count;
@@ -1220,31 +1336,29 @@ MissionElement* CampaignMissionStarship::CreateFighterPackage(CombatGroup* squad
     if (avail < actual)
         actual = avail;
 
-    if (avail < 1)
-    {
-        ::Print("CMS - Insufficient fighters in squadron '%s' - %d required, %d available\n",
-            squadron->Name().data(), count, avail);
-        return 0;
+    if (avail < 1) {
+        UE_LOG(LogStarshatterWars, Warning,
+            TEXT("CMS - Insufficient fighters in squadron '%s' - %d required, %d available"),
+            ANSI_TO_TCHAR(squadron->Name().data()),
+            count,
+            avail);
+        return nullptr;
     }
 
-    MissionElement* elem = new  MissionElement;
-
-    if (!elem)
-    {
+    MissionElement* elem = new MissionElement;
+    if (!elem) {
         Exit();
-        return 0;
+        return nullptr;
     }
 
     elem->SetName(Callsign::GetCallsign(fighter->GetIFF()));
     elem->SetElementID(pkg_id++);
 
-    if (carrier)
-    {
+    if (carrier) {
         elem->SetCommander(carrier->Name());
         elem->SetHeading(carrier->GetHeading());
     }
-    else
-    {
+    else {
         elem->SetHeading(fighter->GetHeading());
     }
 
@@ -1255,12 +1369,22 @@ MissionElement* CampaignMissionStarship::CreateFighterPackage(CombatGroup* squad
     elem->SetRegion(fighter->GetRegion());
     elem->SetSquadron(fighter->Name());
     elem->SetMissionRole(role);
-    elem->Loadouts().append(new  MissionLoad(-1, "ACM Medium Range"));
 
-    if (carrier)
-        elem->SetLocation(carrier->Location() + RandomPoint() * 0.3f);
-    else
-        elem->SetLocation(fighter->Location() + RandomPoint());
+    elem->Loadouts().append(new MissionLoad(-1, "ACM Medium Range"));
+
+    // Uniform random scatter inside a sphere:
+    auto ScatterInSphere = [](float Radius) -> FVector
+        {
+            const float r = Radius * FMath::Pow(FMath::FRand(), 1.0f / 3.0f);
+            return FMath::VRand() * r;
+        };
+
+    if (carrier) {
+        elem->SetLocation(carrier->Location() + ScatterInSphere(0.3f));
+    }
+    else {
+        elem->SetLocation(fighter->Location() + ScatterInSphere(1.0f));
+    }
 
     elem->SetCombatGroup(squadron);
     elem->SetCombatUnit(fighter);
@@ -1270,41 +1394,40 @@ MissionElement* CampaignMissionStarship::CreateFighterPackage(CombatGroup* squad
 
 // +--------------------------------------------------------------------+
 
-CombatGroup* CampaignMissionStarship::FindSquadron(int iff, int type)
+CombatGroup*
+CampaignMissionStarship::FindSquadron(int iff, int type)
 {
-    if (!player_group) return 0;
+    if (!player_group)
+        return nullptr;
 
     CombatGroup* result = 0;
-    CombatZone* zone = player_group->GetAssignedZone();
-    if (!zone) zone = player_group->GetCurrentZone();
 
+    CombatZone* zone = player_group->GetAssignedZone();
     if (!zone)
-    {
-        ::Print("CMS Warning: no zone for %s\n", player_group->Name().data());
+        zone = player_group->GetCurrentZone();
+
+    if (!zone) {
+        UE_LOG(LogStarshatterWars, Warning, TEXT("CMS Warning: no zone for %s"),
+            ANSI_TO_TCHAR(player_group->Name().data()));
         return result;
     }
 
     ZoneForce* force = zone->FindForce(iff);
 
-    if (force)
-    {
+    if (force) {
         List<CombatGroup> groups;
         ListIter<CombatGroup> group = force->GetGroups();
-        while (++group)
-        {
+        while (++group) {
             CombatGroup* g = group.value();
 
-            if (g->Type() == type && g->CountUnits() > 0)
-            {
+            if ((int)g->GetType() == type && g->CountUnits() > 0) {
                 result = g;
                 groups.append(g);
             }
         }
 
-        if (groups.size() > 1)
-        {
-            int index = (int)RandomRangeDouble(0, groups.size());
-            if (index >= groups.size()) index = groups.size() - 1;
+        if (groups.size() > 1) {
+            const int index = FMath::RandRange(0, groups.size() - 1);
             result = groups[index];
         }
     }
@@ -1314,27 +1437,26 @@ CombatGroup* CampaignMissionStarship::FindSquadron(int iff, int type)
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::DefineMissionObjectives()
+void
+CampaignMissionStarship::DefineMissionObjectives()
 {
-    if (!mission || !player) return;
+    if (!mission || !player)
+        return;
 
     if (prime_target) mission->SetTarget(prime_target);
     if (ward)         mission->SetWard(ward);
 
     Text objectives;
 
-    if (player->Objectives().size() > 0)
-    {
-        for (int i = 0; i < player->Objectives().size(); i++)
-        {
+    if (player->Objectives().size() > 0) {
+        for (int i = 0; i < player->Objectives().size(); i++) {
             Instruction* obj = player->Objectives().at(i);
             objectives += "* ";
             objectives += obj->GetDescription();
             objectives += ".\n";
         }
     }
-    else
-    {
+    else {
         objectives += "* Perform standard fleet operations in the ";
         objectives += mission->GetRegion();
         objectives += " sector.\n";
@@ -1345,49 +1467,75 @@ void CampaignMissionStarship::DefineMissionObjectives()
 
 // +--------------------------------------------------------------------+
 
-MissionInfo* CampaignMissionStarship::DescribeMission()
+MissionInfo*
+CampaignMissionStarship::DescribeMission()
 {
-    if (!mission || !player) return 0;
+    if (!mission || !player)
+        return nullptr;
 
-    char name[256];
-    char player_info[256];
+    char name[256] = { 0 };
 
-    if (mission_info && mission_info->name.length())
-        sprintf_s(name, "MSN-%03d %s", mission->Identity(), mission_info->name.data());
-    else if (ward)
-        sprintf_s(name, "MSN-%03d %s %s", mission->Identity(),
+    if (mission_info && mission_info->name.Len() > 0)
+    {
+        FString NameStr = FString::Printf(
+            TEXT("MSN-%03d %s"),
+            mission->Identity(),
+            *mission_info->name
+        );
+
+        mission->SetName(TCHAR_TO_ANSI(*NameStr));
+    }
+    else if (ward) {
+        sprintf_s(name, sizeof(name), "MSN-%03d %s %s",
+            mission->Identity(),
             Game::GetText(mission->TypeName()).data(),
             ward->Name().data());
-    else if (prime_target)
-        sprintf_s(name, "MSN-%03d %s %s %s", mission->Identity(),
+    }
+    else if (prime_target) {
+        const char* ClassName = "(unknown)";
+        if (prime_target->GetDesign())
+            ClassName = Ship::ClassName(prime_target->GetDesign()->type);
+
+        sprintf_s(name, sizeof(name), "MSN-%03d %s %s %s",
+            mission->Identity(),
             Game::GetText(mission->TypeName()).data(),
-            Ship::ClassName(prime_target->GetDesign()->type),
+            ClassName,
             prime_target->Name().data());
-    else
-        sprintf_s(name, "MSN-%03d %s", mission->Identity(), Game::GetText(mission->TypeName()).data());
-
-    if (player)
-    {
-        strcpy_s(player_info, player->GetCombatGroup()->GetDescription());
+    }
+    else {
+        sprintf_s(name, sizeof(name), "MSN-%03d %s",
+            mission->Identity(),
+            Game::GetText(mission->TypeName()).data());
     }
 
-    MissionInfo* info = new  MissionInfo;
-
-    if (info)
-    {
-        info->id = mission->Identity();
-        info->mission = mission;
-        info->name = name;
-        info->type = mission->Type();
-        info->player_info = player_info;
-        info->description = mission->Objective();
-        info->start = mission->Start();
-
-        if (mission->GetStarSystem())
-            info->system = mission->GetStarSystem()->Name();
-
-        info->region = mission->GetRegion();
+    char player_info[256] = { 0 };
+    if (player && player->GetCombatGroup()) {
+        const Text desc = player->GetCombatGroup()->GetDescription();
+        strcpy_s(player_info, sizeof(player_info), desc.data());
     }
+    else {
+        strcpy_s(player_info, sizeof(player_info), "(unknown)");
+    }
+
+    MissionInfo* info = new MissionInfo;
+    if (!info)
+        return nullptr;
+
+    info->id = mission->Identity();
+    info->mission = mission;
+
+    // Copy content (not pointers to stack buffers):
+    info->name = name;
+    info->type = mission->Type();
+    info->player_info = player_info;
+
+    info->description = mission->Objective();
+    info->start = mission->Start();
+
+    if (mission->GetStarSystem())
+        info->system = mission->GetStarSystem()->Name();
+
+    info->region = mission->GetRegion();
 
     mission->SetName(name);
 
@@ -1396,7 +1544,8 @@ MissionInfo* CampaignMissionStarship::DescribeMission()
 
 // +--------------------------------------------------------------------+
 
-void CampaignMissionStarship::Exit()
+void
+CampaignMissionStarship::Exit()
 {
     Starshatter* stars = Starshatter::GetInstance();
     if (stars)

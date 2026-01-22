@@ -27,6 +27,7 @@
 // Minimal Unreal includes required for FVector / FColor:
 #include "Math/Vector.h"
 #include "Math/Color.h"
+#include "Math/UnrealMathUtility.h"
 
 // +--------------------------------------------------------------------+
 
@@ -47,6 +48,22 @@ class Sim;
 class SimRegion;
 
 // +--------------------------------------------------------------------+
+
+FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
+{
+    const int32 Scaled = FMath::RoundToInt((float)Value * Scale);
+    return (uint8)FMath::Clamp(Scaled, 0, 255);
+}
+
+static FORCEINLINE FColor ScaleColor(const FColor& In, float Scale)
+{
+    return FColor(
+        ScaleByte(In.R, Scale),
+        ScaleByte(In.G, Scale),
+        ScaleByte(In.B, Scale),
+        In.A
+    );
+}
 
 class HUDView : public View, public SimObserver
 {

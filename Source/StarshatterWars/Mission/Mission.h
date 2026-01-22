@@ -229,7 +229,7 @@ public:
 	int               MissionRole()  const { return mission_role; }
 	int               Player()       const { return player; }
 	Text              RoleName()     const;
-	Color             MarkerColor()  const;
+	FColor             MarkerColor()  const;
 	bool              IsStarship()   const;
 	bool              IsDropship()   const;
 	bool              IsStatic()     const;
@@ -264,7 +264,7 @@ public:
 	void              SetCommander(const char* c) { commander = c; }
 	void              SetSquadron(const char* s) { squadron = s; }
 	void              SetPath(const char* p) { path = p; }
-	void              SetElementID(int id) { elem_id = id; }
+	void              SetElementID(int elementID) { elem_id = elementID; }
 	void              SetDesign(const ShipDesign* d) { design = d; }
 	void              SetSkin(const Skin* s) { skin = s; }
 	void              SetCount(int n) { count = n; }

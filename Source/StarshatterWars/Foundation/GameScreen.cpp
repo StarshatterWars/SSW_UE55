@@ -19,9 +19,6 @@
 // UE logging (minimal, no heavy engine headers required):
 #include "Logging/LogMacros.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-DEFINE_LOG_CATEGORY(LogStarshatterWars);
-
 #include "Sim.h"
 #include "Ship.h"
 #include "DisplayView.h"

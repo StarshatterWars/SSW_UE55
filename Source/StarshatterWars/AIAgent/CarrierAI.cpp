@@ -285,93 +285,109 @@ CarrierAI::CreateStrike(SimElement* elem)
 // +--------------------------------------------------------------------+
 
 SimElement*
-CarrierAI::CreatePackage(int squadron, int size, int code, const char* target, const char* loadname)
+CarrierAI::CreatePackage(int SquadronIndex, int PackageSize, int MissionCode, const char* Target, const char* LoadoutName)
 {
-	if (squadron < 0 || size < 1 || code < Mission::PATROL || hangar->NumShipsReady(squadron) < size)
-		return 0;
+	if (SquadronIndex < 0 ||
+		PackageSize < 1 ||
+		MissionCode < Mission::PATROL ||
+		hangar->NumShipsReady(SquadronIndex) < PackageSize)
+	{
+		return nullptr;
+	}
 
-	Sim* sim = Sim::GetSim();
-	const char* call = sim->FindAvailCallsign(ship->GetIFF());
-	SimElement* elem = sim->CreateElement(call, ship->GetIFF(), code);
-	FlightDeck* deck = 0;
-	int               queue = 1000;
-	int* load = 0;
-	const ShipDesign* design = hangar->SquadronDesign(squadron);
+	// Fix C4458: avoid shadowing CarrierAI::sim (class member) by using a different local name.
+	Sim* SimContext = Sim::GetSim();
 
-	elem->SetSquadron(hangar->SquadronName(squadron));
-	elem->SetCarrier(ship);
+	const char* Callsign = SimContext->FindAvailCallsign(ship->GetIFF());
+	SimElement* Element = SimContext->CreateElement(Callsign, ship->GetIFF(), MissionCode);
 
-	if (target) {
-		int i_code = 0;
+	FlightDeck* SelectedDeck = nullptr;
+	int QueueScore = 1000;
 
-		switch (code) {
-		case Mission::ASSAULT:     i_code = Instruction::ASSAULT;   break;
-		case Mission::STRIKE:      i_code = Instruction::STRIKE;    break;
+	int* Loadout = nullptr;
+	const ShipDesign* SquadronDesign = hangar->SquadronDesign(SquadronIndex);
+
+	Element->SetSquadron(hangar->SquadronName(SquadronIndex));
+	Element->SetCarrier(ship);
+
+	if (Target) {
+		int InstructionCode = 0;
+
+		switch (MissionCode) {
+		case Mission::ASSAULT:     InstructionCode = Instruction::ASSAULT;   break;
+		case Mission::STRIKE:      InstructionCode = Instruction::STRIKE;    break;
 
 		case Mission::AIR_INTERCEPT:
-		case Mission::INTERCEPT:   i_code = Instruction::INTERCEPT; break;
+		case Mission::INTERCEPT:   InstructionCode = Instruction::INTERCEPT; break;
 
 		case Mission::ESCORT:
 		case Mission::ESCORT_STRIKE:
 		case Mission::ESCORT_FREIGHT:
-			i_code = Instruction::ESCORT;    break;
+			InstructionCode = Instruction::ESCORT; break;
 
-		case Mission::DEFEND:      i_code = Instruction::DEFEND;    break;
+		case Mission::DEFEND:      InstructionCode = Instruction::DEFEND;    break;
+
+		default:
+			break;
 		}
 
-		Instruction* objective = new Instruction(i_code, target);
-		if (objective)
-			elem->AddObjective(objective);
+		Instruction* Objective = new Instruction(InstructionCode, Target);
+		if (Objective) {
+			Element->AddObjective(Objective);
+		}
 	}
 
-	if (design && loadname) {
-		Text name = loadname;
-		name.setSensitive(false);
+	if (SquadronDesign && LoadoutName) {
+		Text Name = LoadoutName;
+		Name.setSensitive(false);
 
-		ListIter<ShipLoad> sl = (List<ShipLoad>&) design->loadouts;
-		while (++sl) {
-			if (name == sl->name) {
-				load = sl->load;
-				elem->SetLoadout(load);
+		ListIter<ShipLoad> ShipLoads = (List<ShipLoad>&)SquadronDesign->loadouts;
+		while (++ShipLoads) {
+			if (Name == ShipLoads->name) {
+				Loadout = ShipLoads->load;
+				Element->SetLoadout(Loadout);
 			}
 		}
 	}
 
-	for (int i = 0; i < ship->NumFlightDecks(); i++) {
-		FlightDeck* d = ship->GetFlightDeck(i);
+	for (int DeckIndex = 0; DeckIndex < ship->NumFlightDecks(); DeckIndex++) {
+		FlightDeck* Deck = ship->GetFlightDeck(DeckIndex);
 
-		if (d && d->IsLaunchDeck()) {
-			int dq = hangar->PreflightQueue(d);
+		if (Deck && Deck->IsLaunchDeck()) {
+			const int DeckQueue = hangar->PreflightQueue(Deck);
 
-			if (dq < queue) {
-				queue = dq;
-				deck = d;
+			if (DeckQueue < QueueScore) {
+				QueueScore = DeckQueue;
+				SelectedDeck = Deck;
 			}
 		}
 	}
 
-	int npackage = 0;
-	int slots[4];
+	int NumInPackage = 0;
+	int Slots[4];
 
-	for (int i = 0; i < 4; i++)
-		slots[i] = -1;
+	for (int i = 0; i < 4; i++) {
+		Slots[i] = -1;
+	}
 
-	for (int slot = 0; slot < hangar->SquadronSize(squadron); slot++) {
-		const HangarSlot* s = hangar->GetSlot(squadron, slot);
+	for (int SlotIndex = 0; SlotIndex < hangar->SquadronSize(SquadronIndex); SlotIndex++) {
+		const HangarSlot* Slot = hangar->GetSlot(SquadronIndex, SlotIndex);
 
-		if (hangar->GetState(s) == Hangar::STORAGE) {
-			if (npackage < 4)
-				slots[npackage] = slot;
+		if (hangar->GetState(Slot) == Hangar::STORAGE) {
+			if (NumInPackage < 4) {
+				Slots[NumInPackage] = SlotIndex;
+			}
 
-			hangar->GotoAlert(squadron, slot, deck, elem, load, code > Mission::SWEEP);
-			npackage++;
+			hangar->GotoAlert(SquadronIndex, SlotIndex, SelectedDeck, Element, Loadout, MissionCode > Mission::SWEEP);
+			NumInPackage++;
 
-			if (npackage >= size)
+			if (NumInPackage >= PackageSize) {
 				break;
+			}
 		}
 	}
 
-	return elem;
+	return Element;
 }
 
 // +--------------------------------------------------------------------+

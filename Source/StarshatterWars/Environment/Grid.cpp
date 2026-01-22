@@ -24,9 +24,6 @@
 
 #include "Math/Vector.h" // FVector
 
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-DEFINE_LOG_CATEGORY(LogStarshatterWars);
-
 static const FColor DARK_LINE(8, 8, 8);
 static const FColor LITE_LINE(16, 16, 16);
 

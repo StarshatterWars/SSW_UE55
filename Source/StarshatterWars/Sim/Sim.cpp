@@ -1,6 +1,3 @@
-#include "Sim.h"
-#include "Sim.h"
-#include "Sim.h"
 /*  Project Starshatter Wars
 	Fractal Dev Studios
 	Copyright (C) 2025-2026. All Rights Reserved.
@@ -790,7 +787,7 @@ Sim::CreateElements()
 
 					FVector l2 = OtherHand(msn_elem->Location());
 
-					if (msn_ship && fabs(msn_ship->Location().x) < 1e9) {
+					if (msn_ship && fabs(msn_ship->Location().X) < 1e9) {
 						l2 = OtherHand(msn_ship->Location());
 					}
 					else if (i) {
@@ -1422,11 +1419,6 @@ Sim::FindRegion(OrbitalRegion* orgn)
 			return rgn.value();
 
 	return 0;
-}
-
-SimRegion* Sim::FindNearestSpaceOrbital(Orbital* body)
-{
-	return nullptr;
 }
 
 // +--------------------------------------------------------------------+

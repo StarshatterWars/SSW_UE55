@@ -30,11 +30,6 @@
 #include "DataLoader.h"
 #include "Game.h"
 
-#ifndef STARSHATTERWARS_LOG_DEFINED
-#define STARSHATTERWARS_LOG_DEFINED
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-#endif
-
 // +--------------------------------------------------------------------+
 
 Debris::Debris(Model* model, const FVector& pos, const FVector& vel, double m)

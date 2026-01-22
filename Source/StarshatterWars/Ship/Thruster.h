@@ -1,15 +1,14 @@
-/*  Game:        Starshatter Wars
-    Project:     Starshatter 4.5 (Unreal Port)
-    Studio:      Fractal Dev Studios
-    Copyright:   2025-2026
-
-    Original Author and Studio:
-    John DiCamillo / Destroyer Studios LLC
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (C) 2025-2026. All Rights Reserved.
 
     SUBSYSTEM:    Stars.exe
     FILE:         Thruster.h
     AUTHOR:       Carlos Bott
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
     OVERVIEW
     ========
@@ -19,16 +18,18 @@
 #pragma once
 
 #include "Types.h"
+#include "SimSystem.h"
+
+// Minimal Unreal include required for FVector:
 #include "Math/Vector.h"
 
-#include "SimSystem.h"   // Base class (was System)
-#include "Geometry.h"    // For Physical (Starshatter core type)
-
+// +--------------------------------------------------------------------+
+// Forward Declarations
 // +--------------------------------------------------------------------+
 
 class Ship;
+class Graphic;
 class Physical;
-class UTexture2D;
 
 // +--------------------------------------------------------------------+
 
@@ -39,14 +40,15 @@ struct ThrusterPort
     ThrusterPort(int t, const FVector& l, DWORD f, float s);
     ~ThrusterPort();
 
-    int         type;
-    DWORD       fire;
-    float       burn;
-    float       scale;
-    FVector     loc;
+    int      type = 0;
+    DWORD    fire = 0;
+    float    burn = 0.0f;
+    float    scale = 0.0f;
 
-    UTexture2D* flare;
-    UTexture2D* trail;
+    FVector  loc = FVector::ZeroVector;
+
+    Graphic* flare = nullptr;
+    Graphic* trail = nullptr;
 };
 
 // +--------------------------------------------------------------------+
@@ -56,7 +58,8 @@ class Thruster : public SimSystem
 public:
     static const char* TYPENAME() { return "Thruster"; }
 
-    enum Constants {
+    enum Constants
+    {
         LEFT, RIGHT, FORE, AFT, TOP, BOTTOM,
         YAW_L, YAW_R, PITCH_D, PITCH_U, ROLL_L, ROLL_R
     };
@@ -65,40 +68,52 @@ public:
     Thruster(const Thruster& rhs);
     virtual ~Thruster();
 
-    static void       Initialize();
-    static void       Close();
+    static void    Initialize();
+    static void    Close();
 
-    virtual void      ExecFrame(double seconds);
-    virtual void      ExecTrans(double x, double y, double z);
-    virtual void      SetShip(Ship* s);
+    virtual void   ExecFrame(double seconds);
+    virtual void   ExecTrans(double x, double y, double z);
+    virtual void   SetShip(Ship* s);
 
-    virtual double    TransXLimit();
-    virtual double    TransYLimit();
-    virtual double    TransZLimit();
+    virtual double TransXLimit();
+    virtual double TransYLimit();
+    virtual double TransZLimit();
 
-    virtual void      AddPort(int type, const FVector& loc, DWORD fire, float flare_scale = 0);
-    virtual void      CreatePort(int type, const FVector& loc, DWORD fire, float flare_scale);
+    virtual void   AddPort(int type, const FVector& loc, DWORD fire, float flare_scale = 0);
+    virtual void   CreatePort(int type, const FVector& loc, DWORD fire, float flare_scale);
 
-    int               NumThrusters()       const;
-    UTexture2D* Flare(int engine)    const;
-    UTexture2D* Trail(int engine)    const;
+    int            NumThrusters() const;
+    Graphic* Flare(int engine) const;
+    Graphic* Trail(int engine) const;
 
-    virtual void      Orient(const Physical* rep);
-    virtual double    GetRequest(double seconds) const;
+    virtual void   Orient(const Physical* rep);
+    virtual double GetRequest(double seconds) const;
 
 protected:
-    void              IncBurn(int inc, int dec);
-    void              DecBurn(int a, int b);
+    void           IncBurn(int inc, int dec);
+    void           DecBurn(int a, int b);
 
-    Ship* ship;
-    float             thrust;
-    float             scale;
-    float             burn[12];
+    Ship* ship = nullptr;
 
-    float             avail_x, avail_y, avail_z;
-    float             trans_x, trans_y, trans_z;
-    float             roll_rate, pitch_rate, yaw_rate;
-    float             roll_drag, pitch_drag, yaw_drag;
+    float          thrust = 0.0f;
+    float          scale = 0.0f;
+    float          burn[12] = { 0 };
+
+    float          avail_x = 0.0f;
+    float          avail_y = 0.0f;
+    float          avail_z = 0.0f;
+
+    float          trans_x = 0.0f;
+    float          trans_y = 0.0f;
+    float          trans_z = 0.0f;
+
+    float          roll_rate = 0.0f;
+    float          pitch_rate = 0.0f;
+    float          yaw_rate = 0.0f;
+
+    float          roll_drag = 0.0f;
+    float          pitch_drag = 0.0f;
+    float          yaw_drag = 0.0f;
 
     List<ThrusterPort> ports;
 };

@@ -187,9 +187,11 @@ public:
     SimElement* FindElement(const char* name);
     int GetAssignedElements(SimElement* elem, List<SimElement>& assigned);
     List<SimElement>& GetElements() { return elements; }
+    ListIter<MissionElement> GetMissionElements();
 
     void SkipCutscene();
     void ResolveTimeSkip(double seconds);
+  
     void ResolveHyperList();
     void ResolveSplashList();
 

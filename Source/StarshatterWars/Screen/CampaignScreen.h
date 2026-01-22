@@ -15,7 +15,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "SSWGameInstance.h"
 #include "TimerSubsystem.h"
-#include "CampaignSubsystem.h"
 #include "CampaignScreen.generated.h"
 
 /**

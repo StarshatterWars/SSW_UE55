@@ -1,39 +1,37 @@
-/*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+/*  Project nGenEx
+	Destroyer Studios LLC
+	Copyright © 1997-2004. All Rights Reserved.
 
-	SUBSYSTEM:    Foundation
+	SUBSYSTEM:    nGenEx.lib
 	FILE:         DataLoader.cpp
-	AUTHOR:       Carlos Bott
+	AUTHOR:       John DiCamillo
+
 */
 
-
 #include "DataLoader.h"
-//#include "Color.h"
-//#include "D3DXImage.h"
-//#include "Bitmap.h"
-//#include "Bmp.h"
-//#include "PCX.h"
-//#include "Sound.h"
-//#include "Resource.h"
-//#include "Video.h"
-//#include "Wave.h"
+#include "Archiver.h"
+#include "Color.h"
+#include "D3DXImage.h"
+#include "Bitmap.h"
+#include "Bmp.h"
+#include "PCX.h"
+#include "Sound.h"
+#include "Resource.h"
+#include "Video.h"
+#include "Wave.h"
 
 // +------------------------------------------------------------------+
 
 static DataLoader* def_loader = 0;
-DataLoader* DataLoader::loader = nullptr;
+DataLoader* DataLoader::loader = 0;
 
-//static List<DataArchive>   archives;
+static List<Archiver>   archives;
 
 // +--------------------------------------------------------------------+
 
-DataLoader::DataLoader()	
+DataLoader::DataLoader()
+	: datapath(""), video(0), use_file_system(true), enable_media(true)
 {
-	datapath = "";
-	video = 0;
-	use_file_system = true;
-	enable_media = true;
 }
 
 // +--------------------------------------------------------------------+
@@ -49,18 +47,17 @@ DataLoader::UseVideo(Video* v)
 void
 DataLoader::Initialize()
 {
-	UE_LOG(LogTemp, Log, TEXT("DataLoader::Initialize()"));
 	def_loader = new DataLoader;
 	loader = def_loader;
 
-	//archives.destroy();
+	archives.destroy();
 }
 
 void
 DataLoader::Close()
 {
-	//archives.destroy();
-	//Bitmap::ClearCache();
+	archives.destroy();
+	Bitmap::ClearCache();
 
 	delete def_loader;
 	def_loader = 0;
@@ -89,17 +86,7 @@ DataLoader::EnableMedia(bool enable)
 
 // +--------------------------------------------------------------------+
 
-void DataLoader::SetDataPath(FString Path)
-{
-	if (Path.IsEmpty())
-		DataPath = "";
-	else
-		DataPath = Path;
-}
-
-// +--------------------------------------------------------------------+
-
-/*int
+int
 DataLoader::EnableDatafile(const char* name)
 {
 	int status = DATAFILE_NOTEXIST;
@@ -110,15 +97,15 @@ DataLoader::EnableDatafile(const char* name)
 	if (f) {
 		::fclose(f);
 
-		DataArchive* a = new DataArchive(name);
+		Archiver* a = new Archiver(name);
 
 		if (a && a->NumFiles() >= 1) {
 			status = DATAFILE_OK;
 
 			bool found = false;
-			ListIter<DataArchive> iter = archives;
+			ListIter<Archiver> iter = archives;
 			while (++iter && !found) {
-				DataArchive* archive = iter.value();
+				Archiver* archive = iter.value();
 				if (!strcmp(archive->Name(), name)) {
 					found = true;
 				}
@@ -137,7 +124,7 @@ DataLoader::EnableDatafile(const char* name)
 		loader = this;
 	}
 	else {
-		Print("   WARNING: could notxopen datafile '%s'\n", name);
+		Print("   WARNING: could not open datafile '%s'\n", name);
 		status = DATAFILE_NOTEXIST;
 	}
 
@@ -147,9 +134,9 @@ DataLoader::EnableDatafile(const char* name)
 int
 DataLoader::DisableDatafile(const char* name)
 {
-	ListIter<DataArchive> iter = archives;
+	ListIter<Archiver> iter = archives;
 	while (++iter) {
-		DataArchive* a = iter.value();
+		Archiver* a = iter.value();
 		if (!strcmp(a->Name(), name)) {
 			delete iter.removeItem();
 			return DATAFILE_OK;
@@ -157,9 +144,18 @@ DataLoader::DisableDatafile(const char* name)
 	}
 
 	return DATAFILE_NOTEXIST;
-}*/
+}
 
+// +--------------------------------------------------------------------+
 
+void
+DataLoader::SetDataPath(const char* path)
+{
+	if (path)
+		datapath = path;
+	else
+		datapath = "";
+}
 
 // +--------------------------------------------------------------------+
 
@@ -178,30 +174,46 @@ DataLoader::FindFile(const char* name)
 
 		if (f) {
 			::fclose(f);
-			UE_LOG(LogTemp, Log, TEXT("%s Found"), *FString(name));
 			return true;
 		}
 	}
 
 	// then check datafiles, from last to first:
-	/*int narchives = archives.size();
+	int narchives = archives.size();
 	for (int i = 0; i < narchives; i++) {
-		DataArchive* a = archives[narchives - 1 - i];
+		Archiver* a = archives[narchives - 1 - i];
 		if (a->FindEntry(filename) > -1) {
 			return true;
 		}
-	}*/
+	}
 
 	return false;
 }
 
 // +--------------------------------------------------------------------+
 
-/*int
+int
+DataLoader::ListFiles(const char* filter, List<Text>& list, bool recurse)
+{
+	list.destroy();
+
+	ListFileSystem(filter, list, datapath, recurse);
+
+	// then check datafile(s):
+	int narchives = archives.size();
+	for (int i = 0; i < narchives; i++) {
+		Archiver* a = archives[narchives - 1 - i];
+		ListArchiveFiles(a->Name(), filter, list);
+	}
+
+	return list.size();
+}
+
+int
 DataLoader::ListArchiveFiles(const char* archive_name, const char* filter, List<Text>& list)
 {
 	int            pathlen = datapath.length();
-	DataArchive* a = 0;
+	Archiver* a = 0;
 
 	if (archive_name) {
 		int narchives = archives.size();
@@ -262,24 +274,16 @@ DataLoader::ListArchiveFiles(const char* archive_name, const char* filter, List<
 	}
 
 	return list.size();
-}*/
+}
 
 // +--------------------------------------------------------------------+
-
-const wchar_t* GetWC(const char* c)
-{
-	const size_t cSize = strlen(c) + 1;
-	wchar_t* wc = new wchar_t[cSize];
-	mbstowcs(wc, c, cSize);
-
-	return wc;
-}
 
 void
 DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path, bool recurse)
 {
 	if (use_file_system) {
 		char data_filter[256];
+		ZeroMemory(data_filter, 256);
 
 		const char* pf = filter;
 		char* pdf = data_filter;
@@ -296,16 +300,14 @@ DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path,
 		char win32_filter[1024];
 		strcpy_s(win32_filter, datapath);
 
-		
-
 		if (recurse)
 			strcat_s(win32_filter, "*.*");
 		else
 			strcat_s(win32_filter, filter);
 
 		// first check current directory:
-		WIN32_FIND_DATAA data;
-		HANDLE hFind = FindFirstFileA(win32_filter, &data);
+		WIN32_FIND_DATA data;
+		HANDLE hFind = FindFirstFile(win32_filter, &data);
 
 		if (hFind != INVALID_HANDLE_VALUE) {
 			do {
@@ -331,19 +333,83 @@ DataLoader::ListFileSystem(const char* filter, List<Text>& list, Text base_path,
 						list.append(new Text(full_name(pathlen, 1000)));
 					}
 				}
-			} while (FindNextFileA(hFind, &data));
+			} while (FindNextFile(hFind, &data));
 		}
 	}
 }
 
 // +--------------------------------------------------------------------+
 
+int
+DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bool optional)
+{
+	buf = 0;
 
+	// assemble file name:
+	char filename[1024];
+	strcpy_s(filename, datapath);
+	strcat_s(filename, name);
 
+	if (use_file_system) {
+		// first check current directory:
+		FILE* f;
+		::fopen_s(&f, filename, "rb");
+
+		if (f) {
+			::fseek(f, 0, SEEK_END);
+			int len = ftell(f);
+			::fseek(f, 0, SEEK_SET);
+
+			if (null_terminate) {
+				buf = new BYTE[len + 1];
+				if (buf)
+					buf[len] = 0;
+			}
+
+			else {
+				buf = new BYTE[len];
+			}
+
+			if (buf)
+				::fread(buf, len, 1, f);
+
+			::fclose(f);
+
+			return len;
+		}
+	}
+
+	// then check datafile(s):
+	int narchives = archives.size();
+
+	// vox files are usually in their own archive,
+	// so check there first
+	if (narchives > 1 && strstr(filename, "Vox")) {
+		for (int i = 0; i < narchives; i++) {
+			Archiver* a = archives[narchives - 1 - i];
+			if (strstr(a->Name(), "vox")) {
+				int index = a->FindEntry(filename);
+				if (index > -1)
+					return a->ExpandEntry(index, buf, null_terminate);
+			}
+		}
+	}
+
+	for (int i = 0; i < narchives; i++) {
+		Archiver* a = archives[narchives - 1 - i];
+		int index = a->FindEntry(filename);
+		if (index > -1)
+			return a->ExpandEntry(index, buf, null_terminate);
+	}
+
+	if (!optional)
+		Print("WARNING - DataLoader could not load buffer '%s'\n", filename);
+	return 0;
+}
 
 // +--------------------------------------------------------------------+
 
-/*int
+int
 DataLoader::LoadPartialFile(const char* name, BYTE*& buf, int max_load, bool optional)
 {
 	buf = 0;
@@ -366,7 +432,7 @@ DataLoader::LoadPartialFile(const char* name, BYTE*& buf, int max_load, bool opt
 			len = max_load;
 		}
 
-		buf = new  BYTE[len];
+		buf = new BYTE[len];
 
 		if (buf)
 			::fread(buf, len, 1, f);
@@ -377,7 +443,7 @@ DataLoader::LoadPartialFile(const char* name, BYTE*& buf, int max_load, bool opt
 	}
 
 	if (!optional)
-		Print("WARNING - DataLoader could notxload partial file '%s'\n", filename);
+		Print("WARNING - DataLoader could not load partial file '%s'\n", filename);
 	return 0;
 }
 
@@ -388,7 +454,7 @@ DataLoader::fread(void* buffer, size_t size, size_t count, BYTE*& stream)
 	stream += size * count;
 
 	return size * count;
-}*/
+}
 
 // +--------------------------------------------------------------------+
 
@@ -400,7 +466,7 @@ DataLoader::ReleaseBuffer(BYTE*& buf)
 }
 
 // +--------------------------------------------------------------------+
-/*
+
 int
 DataLoader::CacheBitmap(const char* name, Bitmap*& bitmap, int type, bool optional)
 {
@@ -410,8 +476,8 @@ DataLoader::CacheBitmap(const char* name, Bitmap*& bitmap, int type, bool option
 	bitmap = Bitmap::CheckCache(name);
 	if (bitmap) return 1;
 
-	// notxin cache yet:
-	bitmap = new  Bitmap;
+	// not in cache yet:
+	bitmap = new Bitmap;
 
 	if (bitmap)
 		result = LoadBitmap(name, *bitmap, type, optional);
@@ -443,7 +509,7 @@ DataLoader::LoadBitmap(const char* name, Bitmap& bitmap, int type, bool optional
 	bitmap.SetFilename(name);
 
 	if (!result && !optional)
-		Print("WARNING - DataLoader could notxload bitmap '%s%s'\n", datapath.data(), name);
+		Print("WARNING - DataLoader could not load bitmap '%s%s'\n", datapath.data(), name);
 
 	return result;
 }
@@ -467,8 +533,8 @@ DataLoader::LoadTexture(const char* name, Bitmap*& bitmap, int type, bool preloa
 	bitmap = Bitmap::CheckCache(filename);
 	if (bitmap) return 1;
 
-	// notxin cache yet:
-	bitmap = new  Bitmap;
+	// not in cache yet:
+	bitmap = new Bitmap;
 
 	if (bitmap) {
 		result = LoadHiColor(name, *bitmap, type);
@@ -488,11 +554,11 @@ DataLoader::LoadTexture(const char* name, Bitmap*& bitmap, int type, bool preloa
 			bitmap = 0;
 
 			if (!optional)
-				Print("WARNING - DataLoader could notxload texture '%s%s'\n", datapath.data(), name);
+				Print("WARNING - DataLoader could not load texture '%s%s'\n", datapath.data(), name);
 		}
 	}
 	else if (!optional) {
-		Print("WARNING - DataLoader could notxallocate texture '%s%s'\n", datapath.data(), name);
+		Print("WARNING - DataLoader could not allocate texture '%s%s'\n", datapath.data(), name);
 	}
 
 	return result;
@@ -534,7 +600,7 @@ DataLoader::LoadIndexed(const char* name, Bitmap& bitmap, int type)
 
 		int narchives = archives.size();
 		for (int i = 0; i < narchives; i++) {
-			DataArchive* a = archives[narchives - 1 - i];
+			Archiver* a = archives[narchives - 1 - i];
 			int index = a->FindEntry(filename);
 			if (index > -1) {
 				len = a->ExpandEntry(index, tmp_buf);
@@ -580,9 +646,8 @@ DataLoader::LoadIndexed(const char* name, Bitmap& bitmap, int type)
 
 	return result;
 }
-*/
 
-/*int
+int
 DataLoader::LoadHiColor(const char* name, Bitmap& bitmap, int type)
 {
 	if (!enable_media)
@@ -631,7 +696,7 @@ DataLoader::LoadHiColor(const char* name, Bitmap& bitmap, int type)
 
 		int narchives = archives.size();
 		for (int i = 0; i < narchives; i++) {
-			DataArchive* a = archives[narchives - 1 - i];
+			Archiver* a = archives[narchives - 1 - i];
 			int index = a->FindEntry(filename);
 			if (index > -1) {
 				len = a->ExpandEntry(index, tmp_buf);
@@ -714,7 +779,7 @@ DataLoader::LoadAlpha(const char* name, Bitmap& bitmap, int type)
 
 		int narchives = archives.size();
 		for (int i = 0; i < narchives; i++) {
-			DataArchive* a = archives[narchives - 1 - i];
+			Archiver* a = archives[narchives - 1 - i];
 			int index = a->FindEntry(filename);
 			if (index > -1) {
 				len = a->ExpandEntry(index, tmp_buf);
@@ -832,9 +897,8 @@ DataLoader::LoadSound(const char* name, Sound*& snd, DWORD flags, bool optional)
 	ReleaseBuffer(buf);
 	return result;
 }
-*/
 
-/*int
+int
 DataLoader::LoadStream(const char* name, Sound*& snd, bool optional)
 {
 	if (!enable_media)
@@ -938,9 +1002,8 @@ DataLoader::LoadStream(const char* name, Sound*& snd, bool optional)
 	ReleaseBuffer(buf);
 	return result;
 }
-*/
 
-/*int
+int
 DataLoader::LoadOggStream(const char* name, Sound*& snd)
 {
 	if (!enable_media)
@@ -949,65 +1012,4 @@ DataLoader::LoadOggStream(const char* name, Sound*& snd)
 	snd = Sound::CreateOggStream(name);
 
 	return snd != 0;
-}*/
-
-/*int DataLoader::ListFiles(const char* filter, List<Text>& list, bool recurse)
-{
-	//list.destroy();
-
-	ListFileSystem(filter, list, datapath, recurse);
-
-	// then check datafile(s):
-	int narchives = archives.size();
-	for (int i = 0; i < narchives; i++) {
-		DataArchive* a = archives[narchives - 1 - i];
-		ListArchiveFiles(a->Name(), filter, list);
-	}
-
-	//return list.size(); 
-}*/
-
-int DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bool optional)
-{
-	buf = 0;
-
-	// assemble file name:
-	char filename[1024];
-	strcpy_s(filename, name);
-	//strcat_s(filename, name);
-
-	if (use_file_system) {
-		// first check current directory:
-		FILE* f;
-		::fopen_s(&f, filename, "rb");
-
-		if (f) {
-			::fseek(f, 0, SEEK_END);
-			int len = ftell(f);
-			::fseek(f, 0, SEEK_SET);
-
-			if (null_terminate) {
-				buf = new BYTE[len + 1];
-				if (buf)
-					buf[len] = 0;
-			}
-
-			else {
-				buf = new BYTE[len];
-			}
-
-			if (buf)
-				::fread(buf, len, 1, f);
-
-			::fclose(f);
-
-			return len;
-		}
-	}
-
-	if (!optional)
-		Print("WARNING - DataLoader could notxload buffer '%s'\n", filename); 
-	return 0;
 }
-
-

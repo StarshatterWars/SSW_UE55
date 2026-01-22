@@ -538,9 +538,9 @@ void AGameDataLoader::LoadCampaignData(const char* FileName, bool full)
 							else if (pdef->name()->value() == "location" ||
 								pdef->name()->value() == "loc") {
 								GetDefVec(ActionLocation, pdef, filename);
-								NewCampaignAction.Location.X = ActionLocation.x;
-								NewCampaignAction.Location.Y = ActionLocation.y;
-								NewCampaignAction.Location.Z = ActionLocation.z;
+								NewCampaignAction.Location.X = ActionLocation.X;
+								NewCampaignAction.Location.Y = ActionLocation.Y;
+								NewCampaignAction.Location.Z = ActionLocation.Z;
 
 							}
 							else if (pdef->name()->value() == "system" ||
@@ -1455,9 +1455,9 @@ AGameDataLoader::ParseNavpoint(TermStruct* val, const char* fn)
 
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(loc, pdef, fn);
-				NewMissionInstruction.Location.X = loc.x;
-				NewMissionInstruction.Location.Y = loc.y;
-				NewMissionInstruction.Location.Z = loc.z;
+				NewMissionInstruction.Location.X = loc.X;
+				NewMissionInstruction.Location.Y = loc.Y;
+				NewMissionInstruction.Location.Z = loc.Z;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
@@ -1559,9 +1559,9 @@ AGameDataLoader::ParseObjective(TermStruct* val, const char* fn)
 
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(loc, pdef, fn);
-				NewMissionObjective.Location.X = loc.x;
-				NewMissionObjective.Location.Y = loc.y;
-				NewMissionObjective.Location.Z = loc.z;
+				NewMissionObjective.Location.X = loc.X;
+				NewMissionObjective.Location.Y = loc.Y;
+				NewMissionObjective.Location.Z = loc.Z;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
@@ -1663,9 +1663,9 @@ AGameDataLoader::ParseInstruction(TermStruct* val, const char* fn)
 
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(loc, pdef, fn);
-				NewMissionInstruction.Location.X = loc.x;
-				NewMissionInstruction.Location.Y = loc.y;
-				NewMissionInstruction.Location.Z = loc.z;
+				NewMissionInstruction.Location.X = loc.X;
+				NewMissionInstruction.Location.Y = loc.Y;
+				NewMissionInstruction.Location.Z = loc.Z;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
@@ -1779,16 +1779,16 @@ AGameDataLoader::ParseShip(TermStruct* val, const char* fn)
 			}
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(Location, pdef, fn);
-				NewMissionShip.Location.X = Location.x;
-				NewMissionShip.Location.Y = Location.y;
-				NewMissionShip.Location.Z = Location.z;
+				NewMissionShip.Location.X = Location.X;
+				NewMissionShip.Location.Y = Location.Y;
+				NewMissionShip.Location.Z = Location.Z;
 			
 			}
 			else if (pdef->name()->value() == "velocity") {
 				GetDefVec(Velocity, pdef, fn);
-				NewMissionShip.Velocity.X = Velocity.x;
-				NewMissionShip.Velocity.Y = Velocity.y;
-				NewMissionShip.Velocity.Z = Velocity.z;
+				NewMissionShip.Velocity.X = Velocity.X;
+				NewMissionShip.Velocity.Y = Velocity.Y;
+				NewMissionShip.Velocity.Z = Velocity.Z;
 			}
 
 			else if (pdef->name()->value() == "respawns") {
@@ -1998,9 +1998,9 @@ AGameDataLoader::ParseEvent(TermStruct* val, const char* fn)
 
 			else if (pdef->name()->value() == "loc" || pdef->name()->value() == "vec" || pdef->name()->value() == "fade") {
 				GetDefVec(EventPoint, pdef, fn);
-				NewMissionEvent.EventPoint.X = EventPoint.x;
-				NewMissionEvent.EventPoint.Y = EventPoint.y;
-				NewMissionEvent.EventPoint.Z = EventPoint.z;
+				NewMissionEvent.EventPoint.X = EventPoint.X;
+				NewMissionEvent.EventPoint.Y = EventPoint.Y;
+				NewMissionEvent.EventPoint.Z = EventPoint.Z;
 			}
 
 			else if (pdef->name()->value() == "rect") {
@@ -2112,9 +2112,9 @@ AGameDataLoader::ParseElement(TermStruct* eval, const char* fn)
 
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(ElementLoc, pdef, fn);
-				NewMissionElement.Location.X = ElementLoc.x;
-				NewMissionElement.Location.Y = ElementLoc.y;
-				NewMissionElement.Location.Z = ElementLoc.z;
+				NewMissionElement.Location.X = ElementLoc.X;
+				NewMissionElement.Location.Y = ElementLoc.Y;
+				NewMissionElement.Location.Z = ElementLoc.Z;
 			}
 
 			else if (pdef->name()->value() == "rloc") {
@@ -2647,9 +2647,9 @@ AGameDataLoader::ParseAlias(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "loc") {
 				GetDefVec(Location, pdef, fn);
 				UseLocation = true;
-				NewMissionAlias.Location.X = Location.x;
-				NewMissionAlias.Location.Y = Location.y;
-				NewMissionAlias.Location.Z = Location.z;
+				NewMissionAlias.Location.X = Location.X;
+				NewMissionAlias.Location.Y = Location.Y;
+				NewMissionAlias.Location.Z = Location.Z;
 				NewMissionAlias.UseLocation = UseLocation;
 			}
 
@@ -2736,9 +2736,9 @@ AGameDataLoader::ParseRLoc(TermStruct* rval, const char* fn)
 			}
 			else if (rdef->name()->value() == "loc") {
 				GetDefVec(BaseLocation, rdef, fn);
-				NewRLocElement.BaseLocation.X = BaseLocation.x;
-				NewRLocElement.BaseLocation.Y = BaseLocation.y;
-				NewRLocElement.BaseLocation.Z = BaseLocation.z;
+				NewRLocElement.BaseLocation.X = BaseLocation.X;
+				NewRLocElement.BaseLocation.Y = BaseLocation.Y;
+				NewRLocElement.BaseLocation.Z = BaseLocation.Z;
 			}
 
 			else if (rdef->name()->value() == "ref") {
@@ -2902,7 +2902,7 @@ AGameDataLoader::LoadGalaxyMap()
 								else if (pdef->name()->value() == "loc") {
 
 									GetDefVec(SystemLocation, pdef, fn);
-									fv = FVector(SystemLocation.x, SystemLocation.y, SystemLocation.z);
+									fv = FVector(SystemLocation.X, SystemLocation.Y, SystemLocation.Z);
 									NewGalaxyData.Location = fv;
 								}
 								else if (pdef->name()->value() == "iff") {
@@ -3117,13 +3117,13 @@ AGameDataLoader::ParseStar(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "color") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				NewStarData.Color = FColor(a.x, a.y, a.z, 1);
+				NewStarData.Color = FColor(a.X, a.Y, a.Z, 1);
 			}
 
 			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				NewStarData.Back = FColor(a.x, a.y, a.z, 1);
+				NewStarData.Back = FColor(a.X, a.Y, a.Z, 1);
 			}
 			else if (pdef->name()->value() == "planet") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
@@ -3247,7 +3247,7 @@ void AGameDataLoader::ParsePlanet(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "atmosphere") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				AtmosColor = FColor(a.X, a.Y, a.Z, 1);
 				NewPlanetData.Atmos = AtmosColor;
 			}
 			else if (pdef->name()->value() == "moon") {
@@ -3351,7 +3351,7 @@ void AGameDataLoader::ParseMoon(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "atmosphere") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				AtmosColor = FColor(a.X, a.Y, a.Z, 1);
 				NewMoonData.Atmos = AtmosColor;
 			}
 		}
@@ -3584,7 +3584,7 @@ void AGameDataLoader::ParseMoonMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "atmosphere") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				AtmosColor = FColor(a.X, a.Y, a.Z, 1);
 				NewMoonMap.Atmos = AtmosColor;
 			}
 			else if (pdef->name()->value() == "region") {
@@ -3673,13 +3673,13 @@ AGameDataLoader::ParseStarMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "color") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				NewStarMap.Color = FColor(a.x, a.y, a.z, 1);
+				NewStarMap.Color = FColor(a.X, a.Y, a.Z, 1);
 			}
 
 			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				NewStarMap.Back = FColor(a.x, a.y, a.z, 1);
+				NewStarMap.Back = FColor(a.X, a.Y, a.Z, 1);
 			}
 			else if (pdef->name()->value() == "class") {
 				GetDefText(ClassName, pdef, fn);
@@ -3852,7 +3852,7 @@ void AGameDataLoader::ParsePlanetMap(TermStruct* val, const char* fn)
 			else if (pdef->name()->value() == "atmosphere") {
 				Vec3 a;
 				GetDefVec(a, pdef, fn);
-				AtmosColor = FColor(a.x, a.y, a.z, 1);
+				AtmosColor = FColor(a.X, a.Y, a.Z, 1);
 				NewPlanetMap.Atmos = AtmosColor;
 			}
 	
@@ -4171,7 +4171,7 @@ void AGameDataLoader::ParseStarSystem(const char* fn)
 				else if (def->name()->value() == "ambient") {
 					Vec3 a;
 					GetDefVec(a, def, fn);
-					AmbientColor = FColor((BYTE)a.x, (BYTE)a.y, (BYTE)a.z, 1);
+					AmbientColor = FColor((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z, 1);
 					NewStarSystem.AmbientColor = AmbientColor;
 				}
 
@@ -4416,9 +4416,9 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							{
 								GetDefVec(Loc, pdef, fn);
 
-								NewCombatGroup.Location.X = Loc.x;
-								NewCombatGroup.Location.Y = Loc.y;
-								NewCombatGroup.Location.Z = Loc.z;
+								NewCombatGroup.Location.X = Loc.X;
+								NewCombatGroup.Location.Y = Loc.Y;
+								NewCombatGroup.Location.Z = Loc.Z;
 							}
 							else if (pdef->name()->value() == ("parent_type"))
 							{
@@ -4544,9 +4544,9 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 										}
 										NewCombatGroupUnit.UnitRegnum = FString(UnitRegnum);
 										NewCombatGroupUnit.UnitRegion = FString(UnitRegion);
-										NewCombatGroupUnit.UnitLoc.X = UnitLoc.x;
-										NewCombatGroupUnit.UnitLoc.Y = UnitLoc.y;
-										NewCombatGroupUnit.UnitLoc.Z = UnitLoc.z;
+										NewCombatGroupUnit.UnitLoc.X = UnitLoc.X;
+										NewCombatGroupUnit.UnitLoc.Y = UnitLoc.Y;
+										NewCombatGroupUnit.UnitLoc.Z = UnitLoc.Z;
 										NewCombatGroupUnit.UnitClass = FString(UnitClass);
 										NewCombatGroupUnit.UnitDesign = FString(UnitDesign);
 										NewCombatGroupUnit.UnitSkin = FString(UnitSkin);
@@ -4892,31 +4892,31 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 				else if (def->name()->value() == "spin") {
 					GetDefVec(spin, def, fn);
-					NewShipDesign.Spin= FVector(spin.x, spin.y, spin.z);
+					NewShipDesign.Spin= FVector(spin.X, spin.Y, spin.Z);
 					//spin_rates.append(new Point(spin));
 				}
 
 				else if (def->name()->value() == "offset_0") {
 					GetDefVec(off_loc, def, fn);	
-					NewShipDesign.Offset[0] = FVector(off_loc.x, off_loc.y, off_loc.z);
+					NewShipDesign.Offset[0] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
 					//offset[0].append(new Point(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_1") {
 					GetDefVec(off_loc, def, fn);
-					NewShipDesign.Offset[1] = FVector(off_loc.x, off_loc.y, off_loc.z);
+					NewShipDesign.Offset[1] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
 					//offset[1].append(new Point(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_2") {
 					GetDefVec(off_loc, def, fn);
-					NewShipDesign.Offset[2] = FVector(off_loc.x, off_loc.y, off_loc.z);
+					NewShipDesign.Offset[2] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
 					//offset[2].append(new Point(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_3") {
 					GetDefVec(off_loc, def, fn);
-					NewShipDesign.Offset[3] = FVector(off_loc.x, off_loc.y, off_loc.z);
+					NewShipDesign.Offset[3] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
 					//offset[3].append(new Point(off_loc));
 				}
 
@@ -4925,11 +4925,11 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 						GetDefVec(BeautyCam, def, fn);
 
 						if (degrees) {
-							BeautyCam.x *= (float)DEGREES;
-							BeautyCam.y *= (float)DEGREES;
+							BeautyCam.X *= (float)DEGREES;
+							BeautyCam.Y *= (float)DEGREES;
 						}
 
-						NewShipDesign.BeautyCam = FVector(BeautyCam.x, BeautyCam.y, BeautyCam.z);
+						NewShipDesign.BeautyCam = FVector(BeautyCam.X, BeautyCam.Y, BeautyCam.Z);
 					}
 
 					else {
@@ -5006,14 +5006,14 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 				else if (def->name()->value() == "chase") {
 					GetDefVec(chase_vec, def, fn);
 					chase_vec *= (float)scale;
-					NewShipDesign.ChaseVec = FVector(chase_vec.x, chase_vec.y, chase_vec.z);
+					NewShipDesign.ChaseVec = FVector(chase_vec.X, chase_vec.Y, chase_vec.Z);
 				}
 
 				else if (def->name()->value() == "bridge") {
 					GetDefVec(bridge_vec, def, fn);
 
 					bridge_vec *= (float)scale;
-					NewShipDesign.BridgeVec = FVector(bridge_vec.x, bridge_vec.y, bridge_vec.z);
+					NewShipDesign.BridgeVec = FVector(bridge_vec.X, bridge_vec.Y, bridge_vec.Z);
 				}
 
 				else if (def->name()->value() == "power") {
@@ -7624,7 +7624,7 @@ AGameDataLoader::Unload()
 	SetStatus(CAMPAIGN_INIT);
 
 	Game::ResetGameTime();
-	AStarSystem::SetBaseTime(0);
+	StarSystem::SetBaseTime(0);
 
 	startTime = Stardate();
 	loadTime = startTime;
@@ -7654,25 +7654,25 @@ AGameDataLoader::SetStatus(int s)
 	}
 
 	if (status > CAMPAIGN_ACTIVE) {
-		::Print("Campaign::SetStatus() destroying mission list at campaign end\n");
-		//missions.destroy();
+		UE_LOG(LogTemp, Log, TEXT("Campaign::SetStatus() destroying mission list at campaign end"));
+		missions.destroy();
 	}
 }
 
 double
 AGameDataLoader::Stardate()
 {
-	return AStarSystem::GetStardate();
+	return StarSystem::Stardate();
 }
 
 void
 AGameDataLoader::Clear()
 {
-	//missions.destroy();
+	missions.destroy();
 	//planners.destroy();
-	//combatants.destroy();
-	//events.destroy();
-	//actions.destroy();
+	combatants.destroy();
+	events.destroy();
+	actions.destroy();
 
 	player_group = 0;
 	player_unit = 0;
@@ -8265,19 +8265,19 @@ AGameDataLoader::LoadForm(const char* fn)
 								else if (pdef->name()->value() == "back_color") {
 									Vec3 c;
 									GetDefVec(c, pdef, fn);
-									NewForm.BackColor = FColor(c.x, c.y, c.z, 1);
+									NewForm.BackColor = FColor(c.X, c.Y, c.Z, 1);
 								}
 
 								else if (pdef->name()->value() == "base_color") {
 									Vec3 c;
 									GetDefVec(c, pdef, fn);
-									NewForm.BaseColor = FColor(c.x, c.y, c.z, 1);
+									NewForm.BaseColor = FColor(c.X, c.Y, c.Z, 1);
 								}
 
 								else if (pdef->name()->value() == "fore_color") {
 									Vec3 c;
 									GetDefVec(c, pdef, fn);
-									NewForm.ForeColor = FColor(c.x, c.y, c.z, 1);
+									NewForm.ForeColor = FColor(c.X, c.Y, c.Z, 1);
 								}
 
 								else if (pdef->name()->value() == "margins") {
@@ -8422,7 +8422,7 @@ AGameDataLoader::LoadAwardTables()
 	FileName.Append("awards.def");
 
 	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(FileName);
+	SSWInstance->loader->SetDataPath(TCHAR_TO_ANSI(*FileName));
 
 	//if (!SSWInstance->loader) return;
 

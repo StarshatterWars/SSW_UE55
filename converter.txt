@@ -4,8 +4,6 @@ Plain C++ class (not a UObject)
 
 Keep Starshatter core types (Text, List, Color, etc.)
 
-Replace render assets like Bitmap with UTexture2D* (forward-declared in the header)
-
 Use forward declarations aggressively to keep the header light
 
 Add minimal Unreal includes only where necessary (e.g., FVector)
@@ -38,8 +36,17 @@ Projector* should be SimProjector*
 Light* should be SimLight*
 Shot* should remain SimShot*
 StarSystem* should remain StarSystem*
+Contact* should be SimCo0ntact*
+CameraDirector* should be CameraManager*
+MusicDiredctor* should be MusicManager*
+Font* should be SystemFont*
 
+add to .h files #1include "Math/Vector.h"   // FVector
+add to .h files #include "Math/Color.h"    // FColor
+add to .h files#include "Math/UnrealMathUtility.h" //Math
 
+Use Unreal FColor in place of the current Color
+Format all components correctly use .X, .Y and .Z for FVector
 
 Remove any (__FILE__, __LINE__) as not supported in Unreal
 

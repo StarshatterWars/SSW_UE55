@@ -766,93 +766,97 @@ ShipAI::SetFormationDelta(const FVector& point)
 void
 ShipAI::FindObjectiveFormation()
 {
-	const double prediction = 5;
+	const double Prediction = 5.0;
 
 	// find the base position:
-	SimElement* elem = ship->GetElement();
-	Ship* lead = elem->GetShip(1);
-	Ship* ward = ship->GetWard();
+	SimElement* Element = ship->GetElement();
+	Ship* LeadShip = Element ? Element->GetShip(1) : nullptr;
+	Ship* WardShip = ship->GetWard();
 
-	if (!lead || lead == ship) {
-		lead = ward;
+	if (!LeadShip || LeadShip == ship) {
+		LeadShip = WardShip;
 
-		distance = ((FVector)(lead->Location() - self->Location())).Size();
-		if (distance < 30e3 && lead->Velocity().Size() < 50) {
-			obj_w = self->Location() + lead->Heading() * 1e6f;
+		distance = (LeadShip->Location() - self->Location()).Size();
+		if (distance < 30e3 && LeadShip->Velocity().Size() < 50) {
+			obj_w = self->Location() + LeadShip->Heading() * 1e6f;
 			distance = -1;
 			return;
 		}
 	}
 
-	obj_w = lead->Location() + lead->Velocity() * (float)prediction;
+	obj_w = LeadShip->Location() + LeadShip->Velocity() * (float)Prediction;
 
-	Matrix m;
-	m.Rotate(0, 0, lead->CompassHeading() - PI);
-	FVector fd = formation_delta * m;
+	// --- FIX: rotate formation delta using Unreal rotation (yaw about Z) ---
+	const float YawRadians = (float)(LeadShip->CompassHeading() - PI);
+	const float YawDegrees = FMath::RadiansToDegrees(YawRadians);
 
-	obj_w += fd;
+	const FRotator YawRot(0.0f, YawDegrees, 0.0f);
+	const FVector FormationOffsetWorld = YawRot.RotateVector(formation_delta);
+
+	obj_w += FormationOffsetWorld;
+	// --- end fix ---
 
 	// try to avoid smacking into the ground...
 	if (ship->IsAirborne()) {
-		if (ship->AltitudeAGL() < 3000 || lead->AltitudeAGL() < 3000) {
+		if (ship->AltitudeAGL() < 3000 || LeadShip->AltitudeAGL() < 3000) {
 			obj_w.Y += 500.0f;
 		}
 	}
 
-	FVector dst_w = self->Location() + self->Velocity() * (float)prediction;
-	FVector dlt_w = obj_w - dst_w;
+	const FVector PredictedSelf = self->Location() + self->Velocity() * (float)Prediction;
+	const FVector DeltaWorld = obj_w - PredictedSelf;
 
-	distance = dlt_w.Size();
+	distance = DeltaWorld.Size();
 
 	// get slot z distance:
-	dlt_w += ship->Location();
-	slot_dist = Transform(dlt_w).Z;
+	FVector SlotProbe = DeltaWorld + ship->Location();
+	slot_dist = Transform(SlotProbe).Z;
 
-	SimDirector* lead_dir = lead->GetDirector();
-	if (lead_dir && (lead_dir->Type() == FIGHTER || lead_dir->Type() == STARSHIP)) {
-		ShipAI* lead_ai = (ShipAI*)lead_dir;
-		farcaster = lead_ai->GetFarcaster();
+	SimDirector* LeadDirector = LeadShip->GetDirector();
+	if (LeadDirector && (LeadDirector->Type() == FIGHTER || LeadDirector->Type() == STARSHIP)) {
+		ShipAI* LeadAI = (ShipAI*)LeadDirector;
+		farcaster = LeadAI->GetFarcaster();
 	}
 	else {
-		Instruction* navpt_local = elem->GetNextNavPoint();
-		if (!navpt_local) {
+		Instruction* NavPointLocal = Element ? Element->GetNextNavPoint() : nullptr;
+		if (!NavPointLocal) {
 			farcaster = 0;
 			return;
 		}
 
-		SimRegion* self_rgn = ship->GetRegion();
-		SimRegion* nav_rgn = navpt_local->Region();
-		QuantumDrive* qdrive = ship->GetQuantumDrive();
+		SimRegion* SelfRegion = ship->GetRegion();
+		SimRegion* NavRegion = NavPointLocal->Region();
+		QuantumDrive* QDrive = ship->GetQuantumDrive();
 
-		if (self_rgn && !nav_rgn) {
-			nav_rgn = self_rgn;
-			navpt_local->SetRegion(nav_rgn);
+		if (SelfRegion && !NavRegion) {
+			NavRegion = SelfRegion;
+			NavPointLocal->SetRegion(NavRegion);
 		}
 
-		bool use_farcaster =
-			self_rgn != nav_rgn &&
-			(navpt_local->Farcast() ||
-				!qdrive ||
-				!qdrive->IsPowerOn() ||
-				qdrive->Status() < SimSystem::DEGRADED);
+		const bool bUseFarcaster =
+			SelfRegion != NavRegion &&
+			(NavPointLocal->Farcast() ||
+				!QDrive ||
+				!QDrive->IsPowerOn() ||
+				QDrive->Status() < SimSystem::DEGRADED);
 
-		if (use_farcaster) {
-			ListIter<Ship> s = self_rgn->GetShips();
-			while (++s && !farcaster) {
-				if (s->GetFarcaster()) {
-					const Ship* dest = s->GetFarcaster()->GetDest();
-					if (dest && dest->GetRegion() == nav_rgn) {
-						farcaster = s->GetFarcaster();
+		if (bUseFarcaster) {
+			ListIter<Ship> ShipIter = SelfRegion->GetShips();
+			while (++ShipIter && !farcaster) {
+				if (ShipIter->GetFarcaster()) {
+					const Ship* Dest = ShipIter->GetFarcaster()->GetDest();
+					if (Dest && Dest->GetRegion() == NavRegion) {
+						farcaster = ShipIter->GetFarcaster();
 					}
 				}
 			}
 		}
 		else if (farcaster) {
-			if (farcaster->GetShip()->GetRegion() != self_rgn)
+			if (farcaster->GetShip()->GetRegion() != SelfRegion)
 				farcaster = farcaster->GetDest()->GetFarcaster();
 
 			obj_w = farcaster->EndPoint();
-			distance = ((FVector)(obj_w - ship->Location())).Size();
+			distance = (obj_w - ship->Location()).Size();
 
 			if (distance < 1000)
 				farcaster = 0;

@@ -1,64 +1,62 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright © 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (C) 2025-2026. All Rights Reserved.
 
-	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+    SUBSYSTEM:    Stars.exe
+    FILE:         DriveSprite.cpp
+    AUTHOR:       Carlos Bott
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         DriveSprite.cpp
-	AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-
-	OVERVIEW
-	========
-	Sprite for rendering drive flares.  Remains visible at extreme ranges.
+    OVERVIEW
+    ========
+    Sprite for rendering drive flares. Remains visible at extreme ranges.
 */
 
 #include "DriveSprite.h"
 
-#include "Math/Vector.h"
-#include "Math/UnrealMathUtility.h"
-#include "Logging/LogMacros.h"
-
+#include "Bitmap.h"
 #include "Camera.h"
 #include "SimScene.h"
 #include "Video.h"
 
-#ifndef STARSHATTERWARS_LOG_DEFINED
-#define STARSHATTERWARS_LOG_DEFINED
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-#endif
+// Minimal Unreal includes (safe even if unused here; aligns with project convention):
+#include "Logging/LogMacros.h"
+#include "Math/Vector.h"   // FVector
+#include "Math/Color.h"    // FColor
 
 // +--------------------------------------------------------------------+
 
 DriveSprite::DriveSprite()
-	: Sprite()
-	, glow(nullptr)
-	, effective_radius(0)
-	, front(FVector::ZeroVector)
-	, bias(0)
+    : Sprite(),
+    effective_radius(0.0),
+    front(FVector::ZeroVector),
+    glow(nullptr),
+    bias(0)
 {
-	luminous = true;
+    luminous = true;
 }
 
-DriveSprite::DriveSprite(UTexture2D* animation, UTexture2D* g)
-	: Sprite(animation)
-	, glow(g)
-	, effective_radius(0)
-	, front(FVector::ZeroVector)
-	, bias(0)
+DriveSprite::DriveSprite(Bitmap* animation, Bitmap* g)
+    : Sprite(animation),
+    effective_radius(0.0),
+    front(FVector::ZeroVector),
+    glow(g),
+    bias(0)
 {
-	luminous = true;
+    luminous = true;
 }
 
-DriveSprite::DriveSprite(UTexture2D* animation, int length, int repeat, int share)
-	: Sprite(animation, length, repeat, share)
-	, glow(nullptr)
-	, effective_radius(0)
-	, front(FVector::ZeroVector)
-	, bias(0)
+DriveSprite::DriveSprite(Bitmap* animation, int length, int repeat, int share)
+    : Sprite(animation, length, repeat, share),
+    effective_radius(0.0),
+    front(FVector::ZeroVector),
+    glow(nullptr),
+    bias(0)
 {
-	luminous = true;
+    luminous = true;
 }
 
 DriveSprite::~DriveSprite()
@@ -70,14 +68,14 @@ DriveSprite::~DriveSprite()
 void
 DriveSprite::SetFront(const FVector& f)
 {
-	front = f;
-	front.Normalize();
+    front = f;
+    front.Normalize();
 }
 
 void
 DriveSprite::SetBias(DWORD b)
 {
-	bias = b;
+    bias = b;
 }
 
 // +--------------------------------------------------------------------+
@@ -88,105 +86,85 @@ DriveSprite::Render(Video* video, DWORD flags)
     if (!video || ((flags & RENDER_ADDITIVE) == 0))
         return;
 
-    if (shade <= 0 || hidden || (life <= 0 && !loop))
-        return;
+    if (shade > 0 && !hidden && (life > 0 || loop)) {
+        const Camera* cam = video->GetCamera();
+        bool z_disable = false;
 
-    const Camera* cam = video->GetCamera();
-    bool z_disabled = false;
+        if (bias)
+            video->SetRenderState(Video::Z_BIAS, bias);
 
-    // Logical depth bias (renderer-specific handling inside Video)
-    if (bias)
-        video->SetDepthBias(bias);
+        if (!front.IsNearlyZero()) {
+            const FVector Test = loc;
 
-    // ----------------------------
-    // Forward-facing glow test
-    // ----------------------------
-    if (!front.IsNearlyZero() && cam && scene) {
-        FVector test = loc;
-        FVector dir = front;
+            if (scene && cam) {
+                const FVector Dir = front;
 
-        double intensity =
-            FVector::DotProduct(cam->vpn(), dir) * -1.0;
+                // Equivalent of: intensity = cam->vpn() * dir * -1
+                const double Intensity = FVector::DotProduct(cam->vpn(), Dir) * -1.0;
+                const double Distance = (cam->Pos() - Test).Size();
 
-        double distance =
-            FVector(cam->Pos() - test).Length();
+                if (Intensity > 0.05) {
+                    if (!scene->IsLightObscured(cam->Pos(), Test, 8)) {
+                        video->SetRenderState(Video::Z_ENABLE, false);
+                        z_disable = true;
 
-        if (intensity > 0.05) {
-            if (!scene->IsLightObscured(cam->Pos(), test, 8)) {
+                        if (glow) {
+                            double GlowIntensity = pow(Intensity, 3.0);
 
-                video->DisableDepthTest();
-                z_disabled = true;
+                            if (Distance > 5e3)
+                                GlowIntensity *= (1.0 - (Distance - 5e3) / 45e3);
 
-                if (glow) {
-                    intensity = FMath::Pow(intensity, 3.0);
+                            if (GlowIntensity > 0.0) {
+                                Bitmap* TmpFrame = frames;
+                                double  TmpShade = shade;
+                                int     TmpW = w;
+                                int     TmpH = h;
 
-                    if (distance > 5000.0)
-                        intensity *= (1.0 - (distance - 5000.0) / 45000.0);
+                                if (glow->Width() != frames->Width()) {
+                                    const double WScale = (double)glow->Width() / (double)frames->Width();
+                                    const double HScale = (double)glow->Height() / (double)frames->Height();
 
-                    if (intensity > 0) {
-                        // Preserve original state
-                        UTexture2D* saved_frames = frames;
-                        double      saved_shade = shade;
-                        int         saved_w = w;
-                        int         saved_h = h;
+                                    w = (int)(w * WScale);
+                                    h = (int)(h * HScale);
+                                }
 
-                        // Scale sprite to glow texture
-                        if (glow->GetSizeX() != frames->GetSizeX()) {
-                            double wscale =
-                                (double)glow->GetSizeX() /
-                                (double)frames->GetSizeX();
+                                shade = GlowIntensity;
+                                frames = glow;
 
-                            double hscale =
-                                (double)glow->GetSizeY() /
-                                (double)frames->GetSizeY();
+                                Sprite::Render(video, flags);
 
-                            w = (int)(w * wscale);
-                            h = (int)(h * hscale);
+                                frames = TmpFrame;
+                                shade = TmpShade;
+                                w = TmpW;
+                                h = TmpH;
+                            }
                         }
-
-                        shade = intensity;
-                        frames = glow;
-
-                        Sprite::Render(video, flags);
-
-                        // Restore state
-                        frames = saved_frames;
-                        shade = saved_shade;
-                        w = saved_w;
-                        h = saved_h;
                     }
                 }
             }
         }
+
+        if (effective_radius - radius > 0.1) {
+            const double ScaleUp = effective_radius / radius;
+            const int TmpW = w;
+            const int TmpH = h;
+
+            w = (int)(w * ScaleUp);
+            h = (int)(h * ScaleUp);
+
+            Sprite::Render(video, flags);
+
+            w = TmpW;
+            h = TmpH;
+        }
+        else {
+            Sprite::Render(video, flags);
+        }
+
+        if (bias)
+            video->SetRenderState(Video::Z_BIAS, 0);
+
+        if (z_disable)
+            video->SetRenderState(Video::Z_ENABLE, true);
     }
-
-    // ----------------------------
-    // Radius scaling (engine plume)
-    // ----------------------------
-    if (effective_radius - radius > 0.1) {
-        double scale = effective_radius / radius;
-
-        int saved_w = w;
-        int saved_h = h;
-
-        w = (int)(w * scale);
-        h = (int)(h * scale);
-
-        Sprite::Render(video, flags);
-
-        w = saved_w;
-        h = saved_h;
-    }
-    else {
-        Sprite::Render(video, flags);
-    }
-
-    // Restore render state
-    if (bias)
-        video->SetDepthBias(0);
-
-    if (z_disabled)
-        video->EnableDepthTest();
 }
-
-

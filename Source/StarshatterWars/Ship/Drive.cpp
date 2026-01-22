@@ -1,20 +1,22 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         Drive.cpp
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    Stars.exe
+    FILE:         Drive.cpp
+    AUTHOR:       Carlos Bott
 
-	ORIGINAL AUTHOR AND STUDIO:
-	John DiCamillo / Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	OVERVIEW
-	========
-	Conventional Drive (system) class
+    OVERVIEW
+    ========
+    Conventional Drive (system) class
 */
 
 #include "Drive.h"
+
 #include "Power.h"
 #include "Ship.h"
 #include "Sim.h"
@@ -23,38 +25,32 @@
 #include "AudioConfig.h"
 
 #include "SimLight.h"
+#include "Bitmap.h"
 #include "Sound.h"
 #include "DataLoader.h"
 #include "Bolt.h"
 #include "Solid.h"
 #include "Game.h"
 
-// Unreal replacements / minimal includes where required:
+// Minimal Unreal includes:
 #include "Math/Vector.h"
 #include "Logging/LogMacros.h"
 
-// NOTE: Replace any legacy Print(...) debugging with UE_LOG.
-// No Print usage in this file, but keep log category usage consistent.
-#ifndef LOG_STARSHATTER
-#define LOG_STARSHATTER LogTemp
-#endif
-
 // +--------------------------------------------------------------------+
 
-static int drive_value[] = {
-	1, 1, 1, 1, 1, 1, 1, 1
+static int drive_value[] =
+{
+    1, 1, 1, 1, 1, 1, 1, 1
 };
 
-static float drive_light[] = {
-	10.0f, 100.0f, 5.0f, 1.0e3f, 100.0f, 10.0f, 0.0f, 0.0f
+static float drive_light[] =
+{
+    10.0f, 100.0f, 5.0f, 1.0e3f, 100.0f, 10.0f, 0.0f, 0.0f
 };
 
-// Render-asset migration: Bitmap* -> UTexture2D*
-class UTexture2D;
-
-UTexture2D* drive_flare_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-UTexture2D* drive_trail_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-UTexture2D* drive_glow_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+Bitmap* drive_flare_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+Bitmap* drive_trail_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+Bitmap* drive_glow_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
 static Sound* sound_resource[3] = { nullptr, nullptr, nullptr };
 
@@ -63,94 +59,97 @@ static Sound* sound_resource[3] = { nullptr, nullptr, nullptr };
 // +----------------------------------------------------------------------+
 
 DrivePort::DrivePort(const FVector& InLoc, float InScale)
-	: loc(InLoc), scale(InScale), flare(nullptr), trail(nullptr)
+    : loc(InLoc),
+    scale(InScale),
+    flare(nullptr),
+    trail(nullptr)
 {
 }
 
 DrivePort::~DrivePort()
 {
-	GRAPHIC_DESTROY(flare);
-	GRAPHIC_DESTROY(trail);
+    GRAPHIC_DESTROY(flare);
+    GRAPHIC_DESTROY(trail);
 }
 
 // +----------------------------------------------------------------------+
 
-Drive::Drive(SUBTYPE drive_type, float max_thrust, float max_aug, bool show)
-	: SimSystem(DRIVE, drive_type, "Drive", drive_value[drive_type],
-		max_thrust * 2, max_thrust * 2, max_thrust * 2),
-	thrust(max_thrust),
-	augmenter(max_aug),
-	scale(0.0f),
-	throttle(0.0f),
-	augmenter_throttle(0.0f),
-	intensity(0.0f),
-	sound(nullptr),
-	burner_sound(nullptr),
-	show_trail(show)
+Drive::Drive(SUBTYPE InSubtype, float MaxThrust, float MaxAug, bool bShow)
+    : SimSystem(DRIVE, InSubtype, "Drive", drive_value[InSubtype],
+        MaxThrust * 2.0f, MaxThrust * 2.0f, MaxThrust * 2.0f),
+    thrust(MaxThrust),
+    augmenter(MaxAug),
+    scale(0.0f),
+    throttle(0.0f),
+    augmenter_throttle(0.0f),
+    intensity(0.0f),
+    sound(nullptr),
+    burner_sound(nullptr),
+    show_trail(bShow)
 {
-	power_flags = POWER_WATTS;
+    power_flags = POWER_WATTS;
 
-	switch (drive_type) {
-	default:
-	case PLASMA:   name = Game::GetText("sys.drive.plasma");  break;
-	case FUSION:   name = Game::GetText("sys.drive.fusion");  break;
-	case GREEN:    name = Game::GetText("sys.drive.green");   break;
-	case RED:      name = Game::GetText("sys.drive.red");     break;
-	case BLUE:     name = Game::GetText("sys.drive.blue");    break;
-	case YELLOW:   name = Game::GetText("sys.drive.yellow");  break;
-	case STEALTH:  name = Game::GetText("sys.drive.stealth"); break;
-	}
+    switch (InSubtype) {
+    default:
+    case PLASMA:  name = Game::GetText("sys.drive.plasma");  break;
+    case FUSION:  name = Game::GetText("sys.drive.fusion");  break;
+    case GREEN:   name = Game::GetText("sys.drive.green");   break;
+    case RED:     name = Game::GetText("sys.drive.red");     break;
+    case BLUE:    name = Game::GetText("sys.drive.blue");    break;
+    case YELLOW:  name = Game::GetText("sys.drive.yellow");  break;
+    case STEALTH: name = Game::GetText("sys.drive.stealth"); break;
+    }
 
-	abrv = Game::GetText("sys.drive.abrv");
+    abrv = Game::GetText("sys.drive.abrv");
 
-	emcon_power[0] = 0;
-	emcon_power[1] = 50;
-	emcon_power[2] = 100;
+    emcon_power[0] = 0;
+    emcon_power[1] = 50;
+    emcon_power[2] = 100;
 }
 
 // +----------------------------------------------------------------------+
 
 Drive::Drive(const Drive& d)
-	: SimSystem(d),
-	thrust(d.thrust),
-	augmenter(d.augmenter),
-	scale(d.scale),
-	throttle(0.0f),
-	augmenter_throttle(0.0f),
-	intensity(0.0f),
-	sound(nullptr),
-	burner_sound(nullptr),
-	show_trail(d.show_trail)
+    : SimSystem(d),
+    thrust(d.thrust),
+    augmenter(d.augmenter),
+    scale(d.scale),
+    throttle(0.0f),
+    augmenter_throttle(0.0f),
+    intensity(0.0f),
+    sound(nullptr),
+    burner_sound(nullptr),
+    show_trail(d.show_trail)
 {
-	power_flags = POWER_WATTS;
+    power_flags = POWER_WATTS;
 
-	Mount(d);
+    Mount(d);
 
-	if (subtype != Drive::STEALTH) {
-		for (int i = 0; i < d.ports.size(); i++) {
-			DrivePort* p = d.ports[i];
-			CreatePort(p->loc, p->scale);
-		}
-	}
+    if (subtype != Drive::STEALTH) {
+        for (int i = 0; i < d.ports.size(); i++) {
+            DrivePort* p = d.ports[i];
+            CreatePort(p->loc, p->scale);
+        }
+    }
 }
 
 // +--------------------------------------------------------------------+
 
 Drive::~Drive()
 {
-	if (sound) {
-		sound->Stop();
-		sound->Release();
-		sound = nullptr;
-	}
+    if (sound) {
+        sound->Stop();
+        sound->Release();
+        sound = nullptr;
+    }
 
-	if (burner_sound) {
-		burner_sound->Stop();
-		burner_sound->Release();
-		burner_sound = nullptr;
-	}
+    if (burner_sound) {
+        burner_sound->Stop();
+        burner_sound->Release();
+        burner_sound = nullptr;
+    }
 
-	ports.destroy();
+    ports.destroy();
 }
 
 // +--------------------------------------------------------------------+
@@ -158,57 +157,54 @@ Drive::~Drive()
 void
 Drive::Initialize()
 {
-	static int initialized = 0;
-	if (initialized) return;
+    static int initialized = 0;
+    if (initialized) return;
 
-	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath("Drive/");
+    DataLoader* loader = DataLoader::GetLoader();
+    loader->SetDataPath("Drive/");
 
-	// Texture loading: Bitmap->UTexture2D*. Assumes DataLoader overloads exist in your Unreal port.
-	// If not, implement DataLoader::LoadTexture to populate UTexture2D*.
-	loader->LoadTexture("Drive0.pcx", drive_flare_bitmap[0], 0);
-	loader->LoadTexture("Drive1.pcx", drive_flare_bitmap[1], 0);
-	loader->LoadTexture("Drive2.pcx", drive_flare_bitmap[2], 0);
-	loader->LoadTexture("Drive3.pcx", drive_flare_bitmap[3], 0);
-	loader->LoadTexture("Drive4.pcx", drive_flare_bitmap[4], 0);
-	loader->LoadTexture("Drive5.pcx", drive_flare_bitmap[5], 0);
+    loader->LoadTexture("Drive0.pcx", drive_flare_bitmap[0], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Drive1.pcx", drive_flare_bitmap[1], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Drive2.pcx", drive_flare_bitmap[2], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Drive3.pcx", drive_flare_bitmap[3], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Drive4.pcx", drive_flare_bitmap[4], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Drive5.pcx", drive_flare_bitmap[5], Bitmap::BMP_TRANSLUCENT);
 
-	loader->LoadTexture("Trail0.pcx", drive_trail_bitmap[0], 0);
-	loader->LoadTexture("Trail1.pcx", drive_trail_bitmap[1], 0);
-	loader->LoadTexture("Trail2.pcx", drive_trail_bitmap[2], 0);
-	loader->LoadTexture("Trail3.pcx", drive_trail_bitmap[3], 0);
-	loader->LoadTexture("Trail4.pcx", drive_trail_bitmap[4], 0);
-	loader->LoadTexture("Trail5.pcx", drive_trail_bitmap[5], 0);
+    loader->LoadTexture("Trail0.pcx", drive_trail_bitmap[0], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Trail1.pcx", drive_trail_bitmap[1], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Trail2.pcx", drive_trail_bitmap[2], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Trail3.pcx", drive_trail_bitmap[3], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Trail4.pcx", drive_trail_bitmap[4], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Trail5.pcx", drive_trail_bitmap[5], Bitmap::BMP_TRANSLUCENT);
 
-	loader->LoadTexture("Glow0.pcx", drive_glow_bitmap[0], 0);
-	loader->LoadTexture("Glow1.pcx", drive_glow_bitmap[1], 0);
-	loader->LoadTexture("Glow2.pcx", drive_glow_bitmap[2], 0);
-	loader->LoadTexture("Glow3.pcx", drive_glow_bitmap[3], 0);
-	loader->LoadTexture("Glow4.pcx", drive_glow_bitmap[4], 0);
-	loader->LoadTexture("Glow5.pcx", drive_glow_bitmap[5], 0);
+    loader->LoadTexture("Glow0.pcx", drive_glow_bitmap[0], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Glow1.pcx", drive_glow_bitmap[1], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Glow2.pcx", drive_glow_bitmap[2], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Glow3.pcx", drive_glow_bitmap[3], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Glow4.pcx", drive_glow_bitmap[4], Bitmap::BMP_TRANSLUCENT);
+    loader->LoadTexture("Glow5.pcx", drive_glow_bitmap[5], Bitmap::BMP_TRANSLUCENT);
 
-	const int SOUND_FLAGS =
-		Sound::LOCALIZED |
-		Sound::LOC_3D |
-		Sound::LOOP |
-		Sound::LOCKED;
+    const int SOUND_FLAGS = Sound::LOCALIZED |
+        Sound::LOC_3D |
+        Sound::LOOP |
+        Sound::LOCKED;
 
-	loader->SetDataPath("Sounds/");
-	loader->LoadSound("engine.wav", sound_resource[0], SOUND_FLAGS);
-	loader->LoadSound("burner2.wav", sound_resource[1], SOUND_FLAGS);
-	loader->LoadSound("rumble.wav", sound_resource[2], SOUND_FLAGS);
-	loader->SetDataPath("");
+    loader->SetDataPath("Sounds/");
+    loader->LoadSound("engine.wav", sound_resource[0], SOUND_FLAGS);
+    loader->LoadSound("burner2.wav", sound_resource[1], SOUND_FLAGS);
+    loader->LoadSound("rumble.wav", sound_resource[2], SOUND_FLAGS);
+    loader->SetDataPath("");
 
-	if (sound_resource[0])
-		sound_resource[0]->SetMaxDistance(30.0e3f);
+    if (sound_resource[0])
+        sound_resource[0]->SetMaxDistance(30.0e3f);
 
-	if (sound_resource[1])
-		sound_resource[1]->SetMaxDistance(30.0e3f);
+    if (sound_resource[1])
+        sound_resource[1]->SetMaxDistance(30.0e3f);
 
-	if (sound_resource[2])
-		sound_resource[2]->SetMaxDistance(50.0e3f);
+    if (sound_resource[2])
+        sound_resource[2]->SetMaxDistance(50.0e3f);
 
-	initialized = 1;
+    initialized = 1;
 }
 
 // +--------------------------------------------------------------------+
@@ -216,10 +212,10 @@ Drive::Initialize()
 void
 Drive::Close()
 {
-	for (int i = 0; i < 3; i++) {
-		delete sound_resource[i];
-		sound_resource[i] = nullptr;
-	}
+    for (int i = 0; i < 3; i++) {
+        delete sound_resource[i];
+        sound_resource[i] = nullptr;
+    }
 }
 
 // +--------------------------------------------------------------------+
@@ -232,47 +228,47 @@ Drive::StartFrame()
 // +--------------------------------------------------------------------+
 
 void
-Drive::AddPort(const FVector& InLoc, float flare_scale)
+Drive::AddPort(const FVector& InLoc, float FlareScale)
 {
-	if (flare_scale == 0)
-		flare_scale = scale;
+    if (FlareScale == 0)
+        FlareScale = scale;
 
-	DrivePort* port = new DrivePort(InLoc, flare_scale);
-	ports.append(port);
+    DrivePort* Port = new DrivePort(InLoc, FlareScale);
+    ports.append(Port);
 }
 
 // +--------------------------------------------------------------------+
 
 void
-Drive::CreatePort(const FVector& InLoc, float flare_scale)
+Drive::CreatePort(const FVector& InLoc, float FlareScale)
 {
-	UTexture2D* flare_bmp = drive_flare_bitmap[subtype];
-	UTexture2D* trail_bmp = drive_trail_bitmap[subtype];
-	UTexture2D* glow_bmp = nullptr;
+    Bitmap* FlareBmp = drive_flare_bitmap[subtype];
+    Bitmap* TrailBmp = drive_trail_bitmap[subtype];
+    Bitmap* GlowBmp = nullptr;
 
-	if (flare_scale <= 0)
-		flare_scale = scale;
+    if (FlareScale <= 0)
+        FlareScale = scale;
 
-	if (augmenter <= 0)
-		glow_bmp = drive_glow_bitmap[subtype];
+    if (augmenter <= 0)
+        GlowBmp = drive_glow_bitmap[subtype];
 
-	if (subtype != Drive::STEALTH && flare_scale > 0) {
-		DrivePort* port = new DrivePort(InLoc, flare_scale);
+    if (subtype != Drive::STEALTH && FlareScale > 0) {
+        DrivePort* Port = new DrivePort(InLoc, FlareScale);
 
-		if (flare_bmp) {
-			DriveSprite* flare_rep = new DriveSprite(flare_bmp, glow_bmp);
-			flare_rep->Scale(flare_scale * 1.5);
-			flare_rep->SetShade(0);
-			port->flare = flare_rep;
-		}
+        if (FlareBmp) {
+            DriveSprite* FlareRep = new DriveSprite(FlareBmp, GlowBmp);
+            FlareRep->Scale(FlareScale * 1.5f);
+            FlareRep->SetShade(0);
+            Port->flare = FlareRep;
+        }
 
-		if (trail_bmp && show_trail) {
-			Bolt* trail_rep = new Bolt(flare_scale * 30, flare_scale * 8, trail_bmp, true);
-			port->trail = trail_rep;
-		}
+        if (TrailBmp && show_trail) {
+            Bolt* TrailRep = new Bolt(FlareScale * 30.0f, FlareScale * 8.0f, TrailBmp, true);
+            Port->trail = TrailRep;
+        }
 
-		ports.append(port);
-	}
+        ports.append(Port);
+    }
 }
 
 // +--------------------------------------------------------------------+
@@ -280,82 +276,92 @@ Drive::CreatePort(const FVector& InLoc, float flare_scale)
 void
 Drive::Orient(const Physical* rep)
 {
-	SimSystem::Orient(rep);
+    SimSystem::Orient(rep);
 
-	if (!rep)
-		return;
+    const FVector ShipLoc = rep->Location();
 
-	// Convert legacy Matrix orientation -> UE rotation:
-	// You must implement Matrix::ToQuat() (or equivalent) in your core type.
-	const FQuat      RepQ = rep->Cam().Orientation().ToQuat();
-	const FVector    ShipLoc = rep->Location();
-	const FTransform RepXform(RepQ, ShipLoc);
+    // Use explicit basis-vector transform (avoids Matrix layout/handedness bugs):
+    const FVector Vrt = rep->Cam().vrt();
+    const FVector Vup = rep->Cam().vup();
+    const FVector Vpn = rep->Cam().vpn();
 
-	// Camera forward (vpn) converted to UE vector:
-	// If rep->Cam().vpn() already returns FVector, keep it.
-	// If it returns a legacy Vec3, convert it once at the source.
-	const FVector CamFwd = rep->Cam().vpn();
+    for (int i = 0; i < ports.size(); i++) {
+        DrivePort* p = ports[i];
 
-	for (int i = 0; i < ports.size(); i++) {
-		DrivePort* p = ports[i];
-		if (!p)
-			continue;
+        const FVector Local = p->loc;
 
-		// Legacy: (p->loc * orientation) + ship_loc
-		// UE: transform local port location by RepXform:
-		const FVector Projector = RepXform.TransformPosition(p->loc);
+        const FVector Projector =
+            ShipLoc +
+            (Vrt * Local.X) +
+            (Vup * Local.Y) +
+            (Vpn * Local.Z);
 
-		if (p->flare) {
-			p->flare->MoveTo(Projector);
+        if (p->flare) {
+            p->flare->MoveTo(Projector);
+            p->flare->SetFront(Vpn * (-10.0f * p->scale));
+        }
 
-			// Legacy: SetFront(rep->Cam().vpn() * -10 * p->scale);
-			// UE: keep as FVector math:
-			p->flare->SetFront(CamFwd * (-10.0f * (float)p->scale));
-		}
+        if (p->trail) {
+            if (intensity > 0.5f) {
+                double Len = -60.0 * p->scale * intensity;
 
-		if (p->trail) {
-			if (intensity > 0.5f) {
-				double Len = -60.0 * p->scale * intensity;
+                if (augmenter > 0 && augmenter_throttle > 0)
+                    Len += Len * augmenter_throttle;
 
-				if (augmenter > 0 && augmenter_throttle > 0)
-					Len += Len * augmenter_throttle;
-
-				p->trail->Show();
-
-				// Legacy: projector + rep->Cam().vpn() * len
-				p->trail->SetEndPoints(Projector, Projector + CamFwd * (float)Len);
-			}
-			else {
-				p->trail->Hide();
-			}
-		}
-	}
+                p->trail->Show();
+                p->trail->SetEndPoints(Projector, Projector + (Vpn * (float)Len));
+            }
+            else {
+                p->trail->Hide();
+            }
+        }
+    }
 }
-
 
 // +--------------------------------------------------------------------+
 
 static double drive_seconds = 0;
 
+// +--------------------------------------------------------------------+
+
 void
-Drive::SetThrottle(double InThrottle, bool bAugRequest)
+Drive::SetThrottle(double t, bool aug)
 {
-	// UE-style clamp and math helpers:
-	const float Spool = (float)(1.2 * drive_seconds);
-	const float ThrottleRequest = FMath::Clamp((float)(InThrottle / 100.0), 0.0f, 1.0f);
+    const double Spool = 1.2 * drive_seconds;
+    const double ThrottleRequest = t / 100.0;
 
-	// Smoothly move throttle toward request (spool is effectively "max delta per tick"):
-	throttle = FMath::FInterpConstantTo(throttle, ThrottleRequest, 1.0f, Spool);
+    if (throttle < ThrottleRequest) {
+        if (ThrottleRequest - throttle < Spool) {
+            throttle = (float)ThrottleRequest;
+        }
+        else {
+            throttle += (float)Spool;
+        }
+    }
+    else if (throttle > ThrottleRequest) {
+        if (throttle - ThrottleRequest < Spool) {
+            throttle = (float)ThrottleRequest;
+        }
+        else {
+            throttle -= (float)Spool;
+        }
+    }
 
-	// Enforce no-augmenter under 50% throttle:
-	if (throttle < 0.5f)
-		bAugRequest = false;
+    if (throttle < 0.5f)
+        aug = false;
 
-	// Smoothly move augmenter throttle toward 0..1:
-	const float AugTarget = bAugRequest ? 1.0f : 0.0f;
-	augmenter_throttle = FMath::FInterpConstantTo(augmenter_throttle, AugTarget, 1.0f, Spool);
+    if (aug && augmenter_throttle < 1.0f) {
+        augmenter_throttle += (float)Spool;
 
-	augmenter_throttle = FMath::Clamp(augmenter_throttle, 0.0f, 1.0f);
+        if (augmenter_throttle > 1.0f)
+            augmenter_throttle = 1.0f;
+    }
+    else if (!aug && augmenter_throttle > 0.0f) {
+        augmenter_throttle -= (float)Spool;
+
+        if (augmenter_throttle < 0.0f)
+            augmenter_throttle = 0.0f;
+    }
 }
 
 // +----------------------------------------------------------------------+
@@ -363,21 +369,20 @@ Drive::SetThrottle(double InThrottle, bool bAugRequest)
 double
 Drive::GetRequest(double seconds) const
 {
-	if (!power_on) return 0;
+    if (!power_on) return 0;
 
-	// Preserve original behavior; keep use of max(...) as in the legacy codebase.
-	double t_factor = max(throttle + 0.5 * augmenter_throttle, 0.3);
+    const double TFactor = FMath::Max(throttle + (0.5 * augmenter_throttle), 0.3);
 
-	return t_factor * power_level * sink_rate * seconds;
+    return TFactor * power_level * sink_rate * seconds;
 }
 
 bool
 Drive::IsAugmenterOn() const
 {
-	return augmenter > 0 &&
-		augmenter_throttle > 0.05f &&
-		IsPowerOn() &&
-		status > CRITICAL;
+    return augmenter > 0 &&
+        augmenter_throttle > 0.05f &&
+        IsPowerOn() &&
+        status > CRITICAL;
 }
 
 // +--------------------------------------------------------------------+
@@ -385,25 +390,27 @@ Drive::IsAugmenterOn() const
 int
 Drive::NumEngines() const
 {
-	return ports.size();
+    return ports.size();
 }
 
 DriveSprite*
 Drive::GetFlare(int port) const
 {
-	if (port >= 0 && port < ports.size())
-		return ports[port]->flare;
+    if (port >= 0 && port < ports.size()) {
+        return ports[port]->flare;
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 Bolt*
 Drive::GetTrail(int port) const
 {
-	if (port >= 0 && port < ports.size())
-		return ports[port]->trail;
+    if (port >= 0 && port < ports.size()) {
+        return ports[port]->trail;
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 // +--------------------------------------------------------------------+
@@ -411,120 +418,120 @@ Drive::GetTrail(int port) const
 float
 Drive::Thrust(double seconds)
 {
-	drive_seconds = seconds;
+    drive_seconds = seconds;
 
-	const float eff = (energy / capacity) * availability * 100.0f;
-	float       output = throttle * thrust * eff;
-	const bool  aug_on = IsAugmenterOn();
+    const float Denom = (capacity > 0.0f) ? capacity : 1.0f;
+    float eff = (energy / Denom) * availability * 100.0f;
 
-	if (aug_on) {
-		output += augmenter * augmenter_throttle * eff;
+    float output = throttle * thrust * eff;
+    bool  aug_on = IsAugmenterOn();
 
-		// augmenter burns extra fuel:
-		PowerSource* reac = ship->Reactors()[source_index];
-		reac->SetCapacity(reac->GetCapacity() - (0.1 * drive_seconds));
-	}
+    if (aug_on) {
+        output += augmenter * augmenter_throttle * eff;
 
-	energy = 0.0f;
+        // augmenter burns extra fuel:
+        PowerSource* reac = ship->Reactors()[source_index];
+        reac->SetCapacity(reac->GetCapacity() - (0.1 * drive_seconds));
+    }
 
-	if (output < 0 || GetPowerLevel() < 0.01f)
-		output = 0.0f;
+    energy = 0.0f;
 
-	int    vol = -10000;
-	int    vol_aug = -10000;
-	double fraction = output / thrust;
+    if (output < 0 || GetPowerLevel() < 0.01)
+        output = 0.0f;
 
-	for (int i = 0; i < ports.size(); i++) {
-		DrivePort* p = ports[i];
+    int    vol = -10000;
+    int    vol_aug = -10000;
+    double fraction = (thrust != 0.0f) ? (output / thrust) : 0.0;
 
-		if (p->flare) {
-			if (i == 0) {
-				if (fraction > 0)
-					intensity += (float)seconds;
-				else
-					intensity -= (float)seconds;
+    for (int i = 0; i < ports.size(); i++) {
+        DrivePort* p = ports[i];
 
-				// capture volume based on actual output:
-				CLAMP(intensity, 0.0f, 1.0f);
+        if (p->flare) {
+            if (i == 0) {
+                if (fraction > 0)
+                    intensity += (float)seconds;
+                else
+                    intensity -= (float)seconds;
 
-				if (intensity > 0.25f) {
-					vol = (int)((intensity - 1.0f) * 10000.0f);
-					CLAMP(vol, -10000, -1500);
+                // capture volume based on actual output:
+                CLAMP(intensity, 0.0f, 1.0f);
 
-					if (aug_on && intensity > 0.5f) {
-						vol_aug = (int)((5 * augmenter_throttle - 1.0f) * 10000.0f);
-						CLAMP(vol_aug, -10000, -1000);
-					}
-				}
-			}
+                if (intensity > 0.25f) {
+                    vol = (int)((intensity - 1.0f) * 10000.0f);
+                    CLAMP(vol, -10000, -1500);
 
-			p->flare->SetShade(intensity);
-		}
+                    if (aug_on && intensity > 0.5f) {
+                        vol_aug = (int)((5.0f * augmenter_throttle - 1.0f) * 10000.0f);
+                        CLAMP(vol_aug, -10000, -1000);
+                    }
+                }
+            }
 
-		if (p->trail) {
-			p->trail->SetShade(intensity);
-		}
-	}
+            p->flare->SetShade(intensity);
+        }
 
-	CameraManager* cam_dir = CameraManager::GetInstance();
+        if (p->trail) {
+            p->trail->SetShade(intensity);
+        }
+    }
 
-	// no sound when paused!
-	if (!Game::Paused() && subtype != STEALTH && cam_dir && cam_dir->GetCamera()) {
-		if (ship && ship->GetRegion() == Sim::GetSim()->GetActiveRegion()) {
-			if (!sound) {
-				int sound_index = 0;
-				if (thrust > 100)
-					sound_index = 2;
+    CameraManager* cam_dir = CameraManager::GetInstance();
 
-				if (sound_resource[sound_index])
-					sound = sound_resource[sound_index]->Duplicate();
-			}
+    // no sound when paused!
+    if (!Game::Paused() && subtype != STEALTH && cam_dir && cam_dir->GetCamera()) {
+        if (ship && ship->GetRegion() == Sim::GetSim()->GetActiveRegion()) {
+            if (!sound) {
+                int sound_index = 0;
+                if (thrust > 100)
+                    sound_index = 2;
 
-			if (aug_on && !burner_sound) {
-				if (sound_resource[1])
-					burner_sound = sound_resource[1]->Duplicate();
-			}
+                if (sound_resource[sound_index])
+                    sound = sound_resource[sound_index]->Duplicate();
+            }
 
-			const FVector cam_loc = cam_dir->GetCamera()->Pos();
-			const double  dist = (ship->Location() - cam_loc).Size();
+            if (aug_on && !burner_sound) {
+                if (sound_resource[1])
+                    burner_sound = sound_resource[1]->Duplicate();
+            }
 
-			if (sound && dist < sound->GetMaxDistance()) {
-				const long max_vol = AudioConfig::EfxVolume();
+            const FVector CamLoc = cam_dir->GetCamera()->Pos();
+            const double Dist = (ship->Location() - CamLoc).Size();
 
-				if (vol > max_vol)
-					vol = (int)max_vol;
+            if (sound && Dist < sound->GetMaxDistance()) {
+                long max_vol = AudioConfig::EfxVolume();
 
-				if (sound) {
-					sound->SetLocation(ship->Location());
-					sound->SetVolume(vol);
-					sound->Play();
-				}
+                if (vol > max_vol)
+                    vol = max_vol;
 
-				if (burner_sound) {
-					if (vol_aug > max_vol)
-						vol_aug = (int)max_vol;
+                sound->SetLocation(ship->Location());
+                sound->SetVolume(vol);
+                sound->Play();
 
-					burner_sound->SetLocation(ship->Location());
-					burner_sound->SetVolume(vol_aug);
-					burner_sound->Play();
-				}
-			}
-			else {
-				if (sound && sound->IsPlaying())
-					sound->Stop();
+                if (burner_sound) {
+                    if (vol_aug > max_vol)
+                        vol_aug = max_vol;
 
-				if (burner_sound && burner_sound->IsPlaying())
-					burner_sound->Stop();
-			}
-		}
-		else {
-			if (sound && sound->IsPlaying())
-				sound->Stop();
+                    burner_sound->SetLocation(ship->Location());
+                    burner_sound->SetVolume(vol_aug);
+                    burner_sound->Play();
+                }
+            }
+            else {
+                if (sound && sound->IsPlaying())
+                    sound->Stop();
 
-			if (burner_sound && burner_sound->IsPlaying())
-				burner_sound->Stop();
-		}
-	}
+                if (burner_sound && burner_sound->IsPlaying())
+                    burner_sound->Stop();
+            }
+        }
+        else {
+            if (sound && sound->IsPlaying())
+                sound->Stop();
 
-	return output;
+            if (burner_sound && burner_sound->IsPlaying())
+                burner_sound->Stop();
+        }
+    }
+
+    return output;
 }

@@ -116,7 +116,7 @@ CombatEvent::Load()
     if (!campaign || !loader)
         return;
 
-    loader->SetDataPath(campaign->Path());
+    loader->SetDataPath(TCHAR_TO_ANSI(*campaign->Path()));
 
     if (file.length() > 0) {
         const char* filename = file.data();

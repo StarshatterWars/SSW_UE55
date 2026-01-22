@@ -219,9 +219,9 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	repair_screen = true;
 	wep_screen = true;
 
-	chase_vec = FVector(0, -100, 20);
-	bridge_vec = FVector(0, 0, 0);
-	beauty_cam = FVector(0, 0, 0);
+	chase_vec = FVector(0.f, -100.f, 20.f);
+	bridge_vec = FVector(0.f, 0.f, 0.f);
+	beauty_cam = FVector(0.f, 0.f, 0.f);
 	cockpit_scale = 1.0f;
 
 	radius = 1.0f;
@@ -241,8 +241,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	explosion_scale = 0.0f;
 	death_spiral_time = 3.0f;
 
-	if (!secret)
-	{
+	if (!secret) {
 		UE_LOG(LogShipDesign, Log, TEXT("Loading ShipDesign '%s'"), ANSI_TO_TCHAR(name));
 	}
 
@@ -251,31 +250,35 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		strcat_s(path_name, "/");
 
 	// Load Design File:
-	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(path_name);
+	DataLoader* Loader = DataLoader::GetLoader();
+	Loader->SetDataPath(path_name);
 
-	BYTE* block;
-	int blocklen = loader->LoadBuffer(filename, block, true);
+	BYTE* Block = 0;
+	int BlockLen = Loader->LoadBuffer(filename, Block, true);
 
-	// file notxfound:
-	if (blocklen <= 4) {
+	// file not found:
+	if (BlockLen <= 4) {
 		valid = false;
+		if (Block) Loader->ReleaseBuffer(Block);
 		return;
 	}
 
-	Parser parser(new  BlockReader((const char*)block, blocklen));
-	Term* term = parser.ParseTerm();
+	Parser ParserInst(new BlockReader((const char*)Block, BlockLen));
+	Term* TermInst = ParserInst.ParseTerm();
 
-	if (!term) {
-		UE_LOG(LogShipDesign, Error, TEXT("ERROR: could notxparse '%s'"), ANSI_TO_TCHAR(filename));
+	if (!TermInst) {
+		UE_LOG(LogShipDesign, Error, TEXT("ERROR: could not parse '%s'"), ANSI_TO_TCHAR(filename));
 		valid = false;
+		Loader->ReleaseBuffer(Block);
 		return;
 	}
 	else {
-		TermText* file_type = term->isText();
-		if (!file_type || file_type->value() != "SHIP") {
+		TermText* FileType = TermInst->isText();
+		if (!FileType || FileType->value() != "SHIP") {
 			UE_LOG(LogShipDesign, Error, TEXT("ERROR: invalid ship design file '%s'"), ANSI_TO_TCHAR(filename));
 			valid = false;
+			delete TermInst;
+			Loader->ReleaseBuffer(Block);
 			return;
 		}
 	}
@@ -285,90 +288,100 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	degrees = false;
 
 	do {
-		delete term;
+		delete TermInst;
+		TermInst = ParserInst.ParseTerm();
 
-		term = parser.ParseTerm();
-
-		if (term) {
-			TermDef* def = term->isDef();
-			if (def) {
-				ParseShip(def);
+		if (TermInst) {
+			TermDef* Def = TermInst->isDef();
+			if (Def) {
+				ParseShip(Def);
 			}
 			else {
 				UE_LOG(LogShipDesign, Warning, TEXT("WARNING: term ignored in '%s'"), ANSI_TO_TCHAR(filename));
-				term->print();
+				TermInst->print();
 			}
 		}
-	} while (term);
+	} while (TermInst);
 
-	for (int i = 0; i < 4; i++) {
-		int n = 0;
-		ListIter<Text> iter = detail[i];
-		while (++iter) {
-			const char* model_name = iter.value()->data();
+	// -----------------------------------------------------------------
+	// LOD / OFFSETS (FIXED FOR List<FVector>::append)
+	// -----------------------------------------------------------------
 
-			Model* model = new  Model;
-			if (!model->Load(model_name, scale)) {
-				UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could notxload detail %d, model '%s'"), i, ANSI_TO_TCHAR(model_name));
-				delete model;
-				model = 0;
+	for (int LodIndex = 0; LodIndex < 4; LodIndex++) {
+		int OffsetIndex = 0;
+
+		ListIter<Text> ModelIter = detail[LodIndex];
+		while (++ModelIter) {
+			const char* ModelName = ModelIter.value()->data();
+
+			Model* ModelInst = new Model;
+			if (!ModelInst->Load(ModelName, scale)) {
+				UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could not load detail %d, model '%s'"), LodIndex, ANSI_TO_TCHAR(ModelName));
+				delete ModelInst;
+				ModelInst = 0;
 				valid = false;
 			}
-
 			else {
-				lod_levels = i + 1;
+				lod_levels = LodIndex + 1;
 
-				if (model->Radius() > radius)
-					radius = (float)model->Radius();
+				if (ModelInst->Radius() > radius)
+					radius = (float)ModelInst->Radius();
 
-				models[i].append(model);
-				PrepareModel(*model);
+				models[LodIndex].append(ModelInst);
+				PrepareModel(*ModelInst);
 
-				if (offset[i].size()) {
-					*offset[i].at(n) *= scale;
-					offsets[i].append(offset[i].at(n)); // transfer ownership
+				// IMPORTANT:
+				// offsets[] must store FVector* (pointer ownership), not FVector values and not FVector::FReal.
+				if (offset[LodIndex].size()) {
+					FVector* OffsetPtr = offset[LodIndex].at(OffsetIndex);
+					if (OffsetPtr) {
+						*OffsetPtr *= scale;
+						offsets[LodIndex].append(OffsetPtr); // transfer ownership
+					}
+					else {
+						offsets[LodIndex].append(new FVector(0.f, 0.f, 0.f));
+					}
 				}
-				else
-					offsets[i].append(new  FVector::FReal(0)); // placeholder if your List expects ptrs; update to your container semantics
+				else {
+					offsets[LodIndex].append(new FVector(0.f, 0.f, 0.f));
+				}
 
-				n++;
+				OffsetIndex++;
 			}
 		}
 
-		detail[i].destroy();
+		detail[LodIndex].destroy();
 	}
 
-	if (!secret)
-	{
+	if (!secret) {
 		UE_LOG(LogShipDesign, Log, TEXT("   Ship Design Radius = %f"), radius);
 	}
 
 	if (cockpit_name[0]) {
-		const char* model_name = cockpit_name;
+		const char* CockpitModelName = cockpit_name;
 
-		cockpit_model = new  Model;
-		if (!cockpit_model->Load(model_name, cockpit_scale)) {
-			UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could notxload cockpit model '%s'"), ANSI_TO_TCHAR(model_name));
+		cockpit_model = new Model;
+		if (!cockpit_model->Load(CockpitModelName, cockpit_scale)) {
+			UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could not load cockpit model '%s'"), ANSI_TO_TCHAR(CockpitModelName));
 			delete cockpit_model;
 			cockpit_model = 0;
 		}
 		else {
-			if (!secret)
-			{
-				UE_LOG(LogShipDesign, Log, TEXT("   Loaded cockpit model '%s', preparing tangents"), ANSI_TO_TCHAR(model_name));
+			if (!secret) {
+				UE_LOG(LogShipDesign, Log, TEXT("   Loaded cockpit model '%s', preparing tangents"), ANSI_TO_TCHAR(CockpitModelName));
 			}
 			PrepareModel(*cockpit_model);
 		}
 	}
 
-	if (beauty.Width() < 1 && loader->FindFile("beauty.pcx"))
-		loader->LoadBitmap("beauty.pcx", beauty);
+	if (beauty.Width() < 1 && Loader->FindFile("beauty.pcx"))
+		Loader->LoadBitmap("beauty.pcx", beauty);
 
-	if (hud_icon.Width() < 1 && loader->FindFile("hud_icon.pcx"))
-		loader->LoadBitmap("hud_icon.pcx", hud_icon);
+	if (hud_icon.Width() < 1 && Loader->FindFile("hud_icon.pcx"))
+		Loader->LoadBitmap("hud_icon.pcx", hud_icon);
 
-	loader->ReleaseBuffer(block);
-	loader->SetDataPath("");
+	Loader->ReleaseBuffer(Block);
+	Loader->SetDataPath("");
 
 	if (abrv[0] == 0) {
 		switch (type) {
@@ -400,7 +413,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	if (splash_radius < 0)
 		splash_radius = radius * 12.0f;
 
-	if (repair_speed <= 1e-6)
+	if (repair_speed <= 1e-6f)
 		repair_speed = 1.0e-6f;
 
 	if (commit_range <= 0) {
@@ -411,11 +424,11 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	}
 
 	// calc standard loadout weights:
-	ListIter<ShipLoad> sl = loadouts;
-	while (++sl) {
-		for (int i = 0; i < hard_points.size(); i++) {
-			HardPoint* hp = hard_points[i];
-			sl->mass += hp->GetCarryMass(sl->load[i]);
+	ListIter<ShipLoad> LoadIter = loadouts;
+	while (++LoadIter) {
+		for (int HpIndex = 0; HpIndex < hard_points.size(); HpIndex++) {
+			HardPoint* Hp = hard_points[HpIndex];
+			LoadIter->mass += Hp->GetCarryMass(LoadIter->load[HpIndex]);
 		}
 	}
 }
@@ -519,7 +532,7 @@ void AddModCatalogEntry(const char* design_name, const char* design_path)
 	path += "/";
 
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(FString(path.data()));
+	loader->SetDataPath(TCHAR_TO_ANSI(*path));
 
 	BYTE* block;
 	int blocklen = loader->LoadBuffer(file, block, true);
@@ -959,7 +972,7 @@ ShipDesign::FindModDesign(const char* design_name, const char* design_path)
 		path += design_name;
 
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(FString(path.data()));
+	loader->SetDataPath(path.data());
 
 	ShipDesign* design = new  ShipDesign(design_name, path, file);
 
@@ -1859,100 +1872,105 @@ ShipDesign::ParseDrive(TermStruct* val)
 void
 ShipDesign::ParseQuantumDrive(TermStruct* val)
 {
-	double  capacity = 250e3;
-	double  consumption = 1e3;
-	FVector loc(0.0f, 0.0f, 0.0f);
-	float   size = 0.0f;
-	float   hull = 0.5f;
-	float   countdown = 5.0f;
-	Text    design_name;
-	Text    type_name;
-	Text    abrv;
-	int     subtype = QuantumDrive::QUANTUM;
-	int     emcon_1 = -1;
-	int     emcon_2 = -1;
-	int     emcon_3 = -1;
+	// UE-style local naming to avoid member hiding and match your convention:
+	double Capacity = 250e3;
+	double Consumption = 1e3;
+	FVector Loc(0.0f, 0.0f, 0.0f);
+	float   Size = 0.0f;
+	float   HullFactor = 0.5f;
+	float   Countdown = 5.0f;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+	Text    DesignName;
+	Text    TypeName;
+	Text    Abrv;
 
-			if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-			else if (defname == "abrv") {
-				GetDefText(abrv, pdef, filename);
-			}
-			else if (defname == "type") {
-				GetDefText(type_name, pdef, filename);
-				type_name.setSensitive(false);
+	int     Subtype = QuantumDrive::QUANTUM;
+	int     Emcon1 = -1;
+	int     Emcon2 = -1;
+	int     Emcon3 = -1;
 
-				if (type_name.contains("hyper")) {
-					subtype = QuantumDrive::HYPER;
-				}
+	for (int32 ElemIndex = 0; ElemIndex < val->elements()->size(); ElemIndex++) {
+		TermDef* Def = val->elements()->at(ElemIndex)->isDef();
+		if (!Def)
+			continue;
+
+		Text DefName = Def->name()->value();
+		DefName.setSensitive(false);
+
+		if (DefName == "design") {
+			GetDefText(DesignName, Def, filename);
+		}
+		else if (DefName == "abrv") {
+			GetDefText(Abrv, Def, filename);
+		}
+		else if (DefName == "type") {
+			GetDefText(TypeName, Def, filename);
+			TypeName.setSensitive(false);
+
+			if (TypeName.contains("hyper")) {
+				Subtype = QuantumDrive::HYPER;
 			}
-			else if (defname == "capacity") {
-				GetDefNumber(capacity, pdef, filename);
-			}
-			else if (defname == "consumption") {
-				GetDefNumber(consumption, pdef, filename);
-			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "jump_time") {
-				GetDefNumber(countdown, pdef, filename);
-			}
-			else if (defname == "countdown") {
-				GetDefNumber(countdown, pdef, filename);
-			}
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
+		}
+		else if (DefName == "capacity") {
+			GetDefNumber(Capacity, Def, filename);
+		}
+		else if (DefName == "consumption") {
+			GetDefNumber(Consumption, Def, filename);
+		}
+		else if (DefName == "loc") {
+			GetDefVec(Loc, Def, filename);
+			Loc *= (float)scale;
+		}
+		else if (DefName == "size") {
+			GetDefNumber(Size, Def, filename);
+			Size *= (float)scale;
+		}
+		else if (DefName == "hull_factor") {
+			GetDefNumber(HullFactor, Def, filename);
+		}
+		else if (DefName == "jump_time") {
+			GetDefNumber(Countdown, Def, filename);
+		}
+		else if (DefName == "countdown") {
+			GetDefNumber(Countdown, Def, filename);
+		}
+		else if (DefName == "emcon_1") {
+			GetDefNumber(Emcon1, Def, filename);
+		}
+		else if (DefName == "emcon_2") {
+			GetDefNumber(Emcon2, Def, filename);
+		}
+		else if (DefName == "emcon_3") {
+			GetDefNumber(Emcon3, Def, filename);
 		}
 	}
 
-	QuantumDrive* drive = new  QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
-	drive->SetSourceIndex(reactors.size() - 1);
-	drive->Mount(loc, size, hull);
-	drive->SetCountdown(countdown);
+	QuantumDrive* Drive = new QuantumDrive((QuantumDrive::SUBTYPE)Subtype, Capacity, Consumption);
+	Drive->SetSourceIndex(reactors.size() - 1);
+	Drive->Mount(Loc, Size, HullFactor);
+	Drive->SetCountdown(Countdown);
 
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			drive->SetDesign(sd);
+	if (DesignName.length()) {
+		SystemDesign* SysDesign = SystemDesign::Find(DesignName);
+		if (SysDesign)
+			Drive->SetDesign(SysDesign);
 	}
 
-	if (abrv.length())
-		drive->SetAbbreviation(abrv);
+	if (Abrv.length())
+		Drive->SetAbbreviation(Abrv);
 
-	if (emcon_1 >= 0 && emcon_1 <= 100)
-		drive->SetEMCONPower(1, emcon_1);
+	if (Emcon1 >= 0 && Emcon1 <= 100)
+		Drive->SetEMCONPower(1, Emcon1);
 
-	if (emcon_2 >= 0 && emcon_2 <= 100)
-		drive->SetEMCONPower(2, emcon_2);
+	if (Emcon2 >= 0 && Emcon2 <= 100)
+		Drive->SetEMCONPower(2, Emcon2);
 
-	if (emcon_3 >= 0 && emcon_3 <= 100)
-		drive->SetEMCONPower(3, emcon_3);
+	if (Emcon3 >= 0 && Emcon3 <= 100)
+		Drive->SetEMCONPower(3, Emcon3);
 
-	quantum_drive = drive;
+	quantum_drive = Drive;
 }
+
 
 // +--------------------------------------------------------------------+
 

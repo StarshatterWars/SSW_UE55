@@ -670,7 +670,7 @@ Mission::ParseElement(TermStruct* val)
 			else if (defname == "loc") {
 				Vec3 loc;
 				GetDefVec(loc, pdef, filename);
-				element->SetLocation(FVector((float)loc.x, (float)loc.y, (float)loc.z));
+				element->SetLocation(FVector((float)loc.X, (float)loc.Y, (float)loc.Z));
 			}
 
 			else if (defname == "rloc") {
@@ -685,8 +685,8 @@ Mission::ParseElement(TermStruct* val)
 				if (pdef->term()->isArray()) {
 					Vec3 head;
 					GetDefVec(head, pdef, filename);
-					if (degrees) head.z *= (float)DEGREES;
-					element->heading = head.z;
+					if (degrees) head.Z *= (float)DEGREES;
+					element->heading = head.Z;
 				}
 				else if (pdef->term()->isNumber()) {
 					double heading = 0;
@@ -934,121 +934,148 @@ Mission::ParseEvent(TermStruct* val)
 }
 
 MissionShip*
-Mission::ParseShip(TermStruct* val, MissionElement* element)
+Mission::ParseShip(TermStruct* Val, MissionElement* Element)
 {
-	MissionShip* msn_ship = new MissionShip;
+	MissionShip* MissionShipObj = new MissionShip;
 
-	Text     name;
-	Text     skin_name;
-	Text     regnum;
-	Text     region;
-	char     err[256];
-	Vec3     loc(-1.0e9f, -1.0e9f, -1.0e9f);
-	Vec3     vel(-1.0e9f, -1.0e9f, -1.0e9f);
-	int      respawns = -1;
-	double   heading = -1e9;
-	double   integrity = -1;
-	int      ammo[16];
-	int      fuel[4];
-	int      i;
+	Text Name;
+	Text SkinName;
+	Text RegNum;
+	Text Region;
+	char ErrorText[256];
 
-	for (i = 0; i < 16; i++)
-		ammo[i] = -10;
+	Vec3 Location(-1.0e9f, -1.0e9f, -1.0e9f);
+	Vec3 Velocity(-1.0e9f, -1.0e9f, -1.0e9f);
 
-	for (i = 0; i < 4; i++)
-		fuel[i] = -10;
+	int Respawns = -1;
+	double Heading = -1e9;
+	double Integrity = -1;
 
-	for (i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+	int Ammo[16];
+	int Fuel[4];
 
-			if (defname == "name")
-				GetDefText(name, pdef, filename);
+	for (int32 AmmoIndex = 0; AmmoIndex < 16; ++AmmoIndex) {
+		Ammo[AmmoIndex] = -10;
+	}
 
-			else if (defname == "skin") {
-				if (!element || !element->design) {
-					sprintf_s(err, Game::GetText("Mission.error.out-of-order").data(), filename);
-					AddError(err);
+	for (int32 FuelIndex = 0; FuelIndex < 4; ++FuelIndex) {
+		Fuel[FuelIndex] = -10;
+	}
+
+	for (int32 ElementIndex = 0; ElementIndex < (int32)Val->elements()->size(); ++ElementIndex) {
+		TermDef* Def = Val->elements()->at(ElementIndex)->isDef();
+		if (Def) {
+			Text DefName = Def->name()->value();
+			DefName.setSensitive(false);
+
+			if (DefName == "name") {
+				GetDefText(Name, Def, filename);
+			}
+
+			else if (DefName == "skin") {
+				if (!Element || !Element->design) {
+					sprintf_s(ErrorText, Game::GetText("Mission.error.out-of-order").data(), filename);
+					AddError(ErrorText);
 				}
 
-				else if (pdef->term()->isText()) {
-					GetDefText(skin_name, pdef, filename);
-					msn_ship->skin = element->design->FindSkin(skin_name);
+				else if (Def->term()->isText()) {
+					GetDefText(SkinName, Def, filename);
+					MissionShipObj->skin = Element->design->FindSkin(SkinName);
 				}
 
-				else if (pdef->term()->isStruct()) {
-					sprintf_s(err, Game::GetText("Mission.error.bad-skin").data(), filename);
-					AddError(err);
+				else if (Def->term()->isStruct()) {
+					sprintf_s(ErrorText, Game::GetText("Mission.error.bad-skin").data(), filename);
+					AddError(ErrorText);
 				}
 			}
 
-			else if (defname == "regnum")
-				GetDefText(regnum, pdef, filename);
+			else if (DefName == "regnum") {
+				GetDefText(RegNum, Def, filename);
+			}
 
-			else if (defname == "region")
-				GetDefText(region, pdef, filename);
+			else if (DefName == "region") {
+				GetDefText(Region, Def, filename);
+			}
 
-			else if (defname == "loc")
-				GetDefVec(loc, pdef, filename);
+			else if (DefName == "loc") {
+				GetDefVec(Location, Def, filename);
+			}
 
-			else if (defname == "velocity")
-				GetDefVec(vel, pdef, filename);
+			else if (DefName == "velocity") {
+				GetDefVec(Velocity, Def, filename);
+			}
 
-			else if (defname == "respawns")
-				GetDefNumber(respawns, pdef, filename);
+			else if (DefName == "respawns") {
+				GetDefNumber(Respawns, Def, filename);
+			}
 
-			else if (defname == "heading") {
-				if (pdef->term()->isArray()) {
-					Vec3 h;
-					GetDefVec(h, pdef, filename);
-					if (degrees) h.z *= (float)DEGREES;
-					heading = h.z;
+			else if (DefName == "heading") {
+				if (Def->term()->isArray()) {
+					Vec3 HeadingVec;
+					GetDefVec(HeadingVec, Def, filename);
+
+					if (degrees) {
+						HeadingVec.Z *= (float)DEGREES;
+					}
+
+					Heading = HeadingVec.Z;
 				}
-				else if (pdef->term()->isNumber()) {
-					double h = 0;
-					GetDefNumber(h, pdef, filename);
-					if (degrees) h *= DEGREES;
-					heading = h;
+				else if (Def->term()->isNumber()) {
+					double HeadingValue = 0.0;
+					GetDefNumber(HeadingValue, Def, filename);
+
+					if (degrees) {
+						HeadingValue *= DEGREES;
+					}
+
+					Heading = HeadingValue;
 				}
 			}
 
-			else if (defname == "integrity")
-				GetDefNumber(integrity, pdef, filename);
+			else if (DefName == "integrity") {
+				GetDefNumber(Integrity, Def, filename);
+			}
 
-			else if (defname == "ammo")
-				GetDefArray(ammo, 16, pdef, filename);
+			else if (DefName == "ammo") {
+				GetDefArray(Ammo, 16, Def, filename);
+			}
 
-			else if (defname == "fuel")
-				GetDefArray(fuel, 4, pdef, filename);
+			else if (DefName == "fuel") {
+				GetDefArray(Fuel, 4, Def, filename);
+			}
 		}
 	}
 
-	msn_ship->SetName(name);
-	msn_ship->SetRegNum(regnum);
-	msn_ship->SetRegion(region);
-	msn_ship->SetIntegrity(integrity);
+	MissionShipObj->SetName(Name);
+	MissionShipObj->SetRegNum(RegNum);
+	MissionShipObj->SetRegion(Region);
+	MissionShipObj->SetIntegrity(Integrity);
 
-	if (loc.x > -1e9)
-		msn_ship->SetLocation(FVector((float)loc.x, (float)loc.y, (float)loc.z));
+	if (Location.X > -1e9f) {
+		MissionShipObj->SetLocation(FVector((float)Location.X, (float)Location.Y, (float)Location.Z));
+	}
 
-	if (vel.x > -1e9)
-		msn_ship->SetVelocity(FVector((float)vel.x, (float)vel.y, (float)vel.z));
+	if (Velocity.X > -1e9f) {
+		MissionShipObj->SetVelocity(FVector((float)Velocity.X, (float)Velocity.Y, (float)Velocity.Z));
+	}
 
-	if (respawns > -1)
-		msn_ship->SetRespawns(respawns);
+	if (Respawns > -1) {
+		MissionShipObj->SetRespawns(Respawns);
+	}
 
-	if (heading > -1e9)
-		msn_ship->SetHeading(heading);
+	if (Heading > -1e9) {
+		MissionShipObj->SetHeading(Heading);
+	}
 
-	if (ammo[0] > -10)
-		msn_ship->SetAmmo(ammo);
+	if (Ammo[0] > -10) {
+		MissionShipObj->SetAmmo(Ammo);
+	}
 
-	if (fuel[0] > -10)
-		msn_ship->SetFuel(fuel);
+	if (Fuel[0] > -10) {
+		MissionShipObj->SetFuel(Fuel);
+	}
 
-	return msn_ship;
+	return MissionShipObj;
 }
 
 Instruction*
@@ -1152,7 +1179,7 @@ Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 	if (tgt_desc.length() && tgt_name.length())
 		tgt_desc = tgt_desc + " " + tgt_name;
 
-	Instruction* instr = new Instruction(rgn, FVector((float)loc.x, (float)loc.y, (float)loc.z), order);
+	Instruction* instr = new Instruction(rgn, FVector((float)loc.X, (float)loc.Y, (float)loc.Z), order);
 
 	instr->SetStatus(status);
 	instr->SetEMCON(emcon);
@@ -1173,42 +1200,45 @@ Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 }
 
 void
-Mission::ParseLoadout(TermStruct* val, MissionElement* element)
+Mission::ParseLoadout(TermStruct* Val, MissionElement* Element)
 {
-	int  ship = -1;
-	int  stations[16];
-	Text name;
+	int ShipIndex = -1;
+	int Stations[16];
+	Text LoadoutName;
 
-	ZeroMemory(stations, sizeof(stations));
+	ZeroMemory(Stations, sizeof(Stations));
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+	for (int32 ElementIndex = 0; ElementIndex < (int32)Val->elements()->size(); ++ElementIndex) {
+		TermDef* Def = Val->elements()->at(ElementIndex)->isDef();
+		if (Def) {
+			Text DefName = Def->name()->value();
+			DefName.setSensitive(false);
 
-			if (defname == "ship") {
-				GetDefNumber(ship, pdef, filename);
+			if (DefName == "ship") {
+				GetDefNumber(ShipIndex, Def, filename);
 			}
-			else if (defname == "name") {
-				GetDefText(name, pdef, filename);
+			else if (DefName == "name") {
+				GetDefText(LoadoutName, Def, filename);
 			}
-			else if (defname == "stations") {
-				GetDefArray(stations, 16, pdef, filename);
+			else if (DefName == "stations") {
+				GetDefArray(Stations, 16, Def, filename);
 			}
 		}
 	}
 
-	MissionLoad* load = new MissionLoad(ship);
+	MissionLoad* Load = new MissionLoad(ShipIndex);
 
-	if (name.length())
-		load->SetName(name);
+	if (LoadoutName.length()) {
+		Load->SetName(LoadoutName);
+	}
 
-	for (int i = 0; i < 16; i++)
-		load->SetStation(i, stations[i]);
+	for (int32 StationIndex = 0; StationIndex < 16; ++StationIndex) {
+		Load->SetStation(StationIndex, Stations[StationIndex]);
+	}
 
-	element->loadouts.append(load);
+	Element->loadouts.append(Load);
 }
+
 
 RLoc*
 Mission::ParseRLoc(TermStruct* val)
@@ -1260,7 +1290,7 @@ Mission::ParseRLoc(TermStruct* val)
 			}
 			else if (defname == "loc") {
 				GetDefVec(base_loc, pdef, filename);
-				rloc->SetBaseLocation(FVector((float)base_loc.x, (float)base_loc.y, (float)base_loc.z));
+				rloc->SetBaseLocation(FVector((float)base_loc.X, (float)base_loc.Y, (float)base_loc.Z));
 			}
 
 			else if (defname == "ref") {
@@ -1957,7 +1987,7 @@ MissionElement::RoleName() const
 	return Mission::RoleName(mission_role);
 }
 
-Color
+FColor
 MissionElement::MarkerColor() const
 {
 	return Ship::IFFColor(IFF_code);

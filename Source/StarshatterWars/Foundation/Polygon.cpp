@@ -509,10 +509,10 @@ Material::operator == (const Material& m) const
 void
 Material::Clear()
 {
-	Ka = ColorValue();
-	Kd = ColorValue();
-	Ks = ColorValue();
-	Ke = ColorValue();
+	Ka = FColor();
+	Kd = FColor();
+	Ks = FColor();
+	Ke = FColor();
 
 	power = 1.0f;
 	bump = 0.0f;
@@ -584,82 +584,94 @@ Material::CreateThumbnail(int size)
 DWORD
 Material::GetThumbColor(int i, int j, int size)
 {
-	// Preserve the analytic lighting behavior, but do notxsample textures here.
-	// Texture sampling would require explicit engine helpers (bulk data read, SRGB, etc.).
-	Color result = Color::LightGray;
+	// Default background: light gray (same spirit as Starshatter LightGray)
+	FColor Result(211, 211, 211, 255);
 
-	const double x = i - size / 2;
-	const double y = j - size / 2;
-	const double r = 0.9 * size / 2;
-	const double d = sqrt(x * x + y * y);
+	const double X = double(i) - double(size) * 0.5;
+	const double Y = double(j) - double(size) * 0.5;
+	const double R = 0.9 * double(size) * 0.5;
+	const double D = sqrt(X * X + Y * Y);
 
-	if (d <= r) {
-		const double z = sqrt(r * r - x * x - y * y);
+	if (D <= R) {
+		const double Z = sqrt(FMath::Max(0.0, R * R - X * X - Y * Y));
 
-		FVector loc((float)x, (float)y, (float)z);
-		FVector nrm = loc;
-		nrm.Normalize();
+		FVector Nrm((float)X, (float)Y, (float)Z);
+		Nrm.Normalize();
 
-		FVector light(1.f, -1.f, 1.f);
-		light.Normalize();
+		FVector Light(1.0f, -1.0f, 1.0f);
+		Light.Normalize();
 
-		const FVector eye(0.f, 0.f, 1.f);
+		const FVector Eye(0.0f, 0.0f, 1.0f);
 
-		ColorValue c = Ka * ColorValue(0.25f, 0.25f, 0.25f); // ambient light
-		const ColorValue white(1, 1, 1);
+		// Convert Ka/Kd/Ks/Ke to float [0..1]
+		const FVector Ka01(Ka.R / 255.0f, Ka.G / 255.0f, Ka.B / 255.0f);
+		const FVector Kd01(Kd.R / 255.0f, Kd.G / 255.0f, Kd.B / 255.0f);
+		const FVector Ks01(Ks.R / 255.0f, Ks.G / 255.0f, Ks.B / 255.0f);
+		const FVector Ke01(Ke.R / 255.0f, Ke.G / 255.0f, Ke.B / 255.0f);
 
-		double diffuse = (double)FVector::DotProduct(nrm, light);
+		// Ambient: Ka * 0.25
+		FVector C = Ka01 * 0.25f;
 
-		ColorValue cd = Kd;
-		ColorValue cs = Ks;
-		ColorValue ce = Ke;
+		double Diffuse = (double)FVector::DotProduct(Nrm, Light);
 
-		// anisotropic diffuse lighting
+		// anisotropic diffuse lighting (legacy brilliance)
 		if (brilliance >= 0) {
-			diffuse = pow(diffuse, (double)brilliance);
+			Diffuse = pow(Diffuse, (double)brilliance);
 		}
 
 		// forward lighting
-		if (diffuse > 0) {
-			// diffuse
-			c += cd * (white * (float)diffuse);
+		if (Diffuse > 0.0) {
+			// diffuse: C += Kd * Diffuse
+			C += Kd01 * (float)Diffuse;
 
 			// specular
 			if (power > 0) {
-				const double nl = (double)FVector::DotProduct(nrm, light);
-				const FVector rvec = (nrm * (float)(2.0 * nl)) - light;
-				double spec = (double)FVector::DotProduct(rvec, eye);
+				const double NL = (double)FVector::DotProduct(Nrm, Light);
+				const FVector Reflect = (Nrm * (float)(2.0 * NL)) - Light;
 
-				if (spec > 0.01) {
-					spec = pow(spec, (double)power);
-					c += cs * (white * (float)spec);
+				double Spec = (double)FVector::DotProduct(Reflect, Eye);
+				if (Spec > 0.01) {
+					Spec = pow(Spec, (double)power);
+					C += Ks01 * (float)Spec;
 				}
 			}
 		}
 
 		// back lighting
 		else {
-			diffuse *= -0.5;
-			c += cd * (white * (float)diffuse);
+			Diffuse *= -0.5;
+			C += Kd01 * (float)Diffuse;
 
-			// specular
 			if (power > 0) {
-				FVector l2 = -light;
+				const FVector BackLight = -Light;
 
-				const double nl = (double)FVector::DotProduct(nrm, l2);
-				const FVector rvec = (nrm * (float)(2.0 * nl)) - l2;
-				double spec = (double)FVector::DotProduct(rvec, eye);
+				const double NL = (double)FVector::DotProduct(Nrm, BackLight);
+				const FVector Reflect = (Nrm * (float)(2.0 * NL)) - BackLight;
 
-				if (spec > 0.01) {
-					spec = pow(spec, (double)power);
-					c += cs * (white * (float)spec) * 0.7f;
+				double Spec = (double)FVector::DotProduct(Reflect, Eye);
+				if (Spec > 0.01) {
+					Spec = pow(Spec, (double)power);
+					C += (Ks01 * (float)Spec) * 0.7f;
 				}
 			}
 		}
 
-		c += ce;
-		result = c.ToColor();
+		// emissive add
+		C += Ke01;
+
+		// Clamp to [0..1]
+		C.X = FMath::Clamp((float)C.X, 0.0f, 1.0f);
+		C.Y = FMath::Clamp((float)C.Y, 0.0f, 1.0f);
+		C.Z = FMath::Clamp((float)C.Z, 0.0f, 1.0f);
+
+		// Convert to FColor
+		const int32 R8 = FMath::Clamp(FMath::RoundToInt((float)C.X * 255.0f), 0, 255);
+		const int32 G8 = FMath::Clamp(FMath::RoundToInt((float)C.Y * 255.0f), 0, 255);
+		const int32 B8 = FMath::Clamp(FMath::RoundToInt((float)C.Z * 255.0f), 0, 255);
+
+		Result = FColor((uint8)R8, (uint8)G8, (uint8)B8, 255);
 	}
 
-	return result.Value();
+	// Return packed ARGB DWORD (Unreal-friendly)
+	return (DWORD)((uint32(Result.A) << 24) | (uint32(Result.R) << 16) | (uint32(Result.G) << 8) | uint32(Result.B));
 }

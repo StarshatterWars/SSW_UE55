@@ -5,7 +5,6 @@
 
 #include "CampaignScreen.h"
 
-#include "CampaignSubsystem.h"
 #include "TimerSubsystem.h"
 #include "SSWGameInstance.h"
 #include "CampaignSave.h"
@@ -188,16 +187,6 @@ void UCampaignScreen::OnPlayButtonClicked()
 		}
 	}
 
-	// Start campaign runtime
-	if (UCampaignSubsystem* Campaign = GetGameInstance()->GetSubsystem<UCampaignSubsystem>())
-	{
-		Campaign->SetCampaignDataTable(GI->CampaignDataTable);
-
-		// IMPORTANT:
-		// If StartCampaign expects 0-based, change the next line to: (GI->SelectedCampaignIndex - 1)
-		Campaign->StartCampaign(GI->SelectedCampaignIndex);
-	}
-
 	GI->ShowCampaignLoading();
 }
 
@@ -240,14 +229,6 @@ void UCampaignScreen::OnRestartButtonClicked()
 	}
 
 	// Restart campaign runtime
-	if (UCampaignSubsystem* Campaign = GetGameInstance()->GetSubsystem<UCampaignSubsystem>())
-	{
-		Campaign->SetCampaignDataTable(GI->CampaignDataTable);
-
-		// IMPORTANT:
-		// If StartCampaign expects 0-based, change the next line to: (GI->SelectedCampaignIndex - 1)
-		Campaign->StartCampaign(GI->SelectedCampaignIndex);
-	}
 
 	GI->ShowCampaignLoading();
 }

@@ -82,8 +82,8 @@ MissionInfo::MissionInfo()
 
 MissionInfo::~MissionInfo()
 {
-    delete mission;
-    mission = nullptr;
+    //delete mission;
+    //mission = nullptr;
 }
 
 bool MissionInfo::IsAvailable()
@@ -104,14 +104,18 @@ bool MissionInfo::IsAvailable()
     if (campaign->GetTime() > start_before)
         return false;
 
-    if (!region.IsEmpty() && player_group->GetRegion() != region)
+    if (!region.IsEmpty() && FString(ANSI_TO_TCHAR(player_group->GetRegion().data())) != region)
+    {
         return false;
+    }
 
-    if (min_rank && player->Rank() < min_rank)
+    if (min_rank && player->Rank() < min_rank) {
         return false;
-
-    if (max_rank && player->Rank() > max_rank)
+    }
+       
+    if (max_rank && player->Rank() > max_rank) {
         return false;
+    }
 
     if (exec_once < 0)
         return false;
@@ -397,16 +401,20 @@ void Campaign::Load()
         zones.append(CombatZone::Load("zones.def"));
 
     for (int i = 0; i < zones.size(); i++) {
-        FString SysName = zones[i]->System();
+        FString SysName = ANSI_TO_TCHAR(zones[i]->GetSystem().data());
         bool found = false;
 
         for (int n = 0; !found && n < systems.size(); n++) {
-            if (SysName == systems[n]->Name())
+            if (SysName.Equals(systems[n]->Name(), ESearchCase::IgnoreCase)) {
                 found = true;
+            }
         }
 
-        if (!found)
-            systems.append(Galaxy::GetInstance()->GetSystem(TCHAR_TO_ANSI(*SysName)));
+        if (!found) {
+            systems.append(
+                Galaxy::GetInstance()->GetSystem(TCHAR_TO_ANSI(*SysName))
+            );
+        }
     }
 
     loader->UseFileSystem(Starshatter::UseFileSystem());
@@ -567,7 +575,7 @@ void Campaign::ParseGroup(TermStruct* val, CombatGroup* force, CombatGroup* clon
     if (!val || !force || !clone)
         return;
 
-    int type = 0;
+    ECOMBATGROUP_TYPE type = ECOMBATGROUP_TYPE::NONE;
     int id = 0;
 
     for (int i = 0; i < val->elements()->size(); i++) {
@@ -586,7 +594,7 @@ void Campaign::ParseGroup(TermStruct* val, CombatGroup* force, CombatGroup* clon
         }
     }
 
-    if (type && id) {
+    if ((int) type && id) {
         CombatGroup* g = force->FindGroup(type, id);
 
         if (g && g->GetParent()) {
@@ -710,7 +718,7 @@ void Campaign::ParseAction(TermStruct* val, const char* filename)
             else {
                 char rank_name[64];
                 GetDefText(rank_name, pdef, filename);
-                min_rank = Player::RankFromName(rank_name);
+                min_rank = PlayerCharacter::RankFromName(rank_name);
             }
         }
         else if (PName == "max_rank") {
@@ -720,7 +728,7 @@ void Campaign::ParseAction(TermStruct* val, const char* filename)
             else {
                 char rank_name[64];
                 GetDefText(rank_name, pdef, filename);
-                max_rank = Player::RankFromName(rank_name);
+                max_rank = PlayerCharacter::RankFromName(rank_name);
             }
         }
         else if (PName == "delay") {
@@ -732,12 +740,12 @@ void Campaign::ParseAction(TermStruct* val, const char* filename)
         else if (PName == "asset_type") {
             char type_name[64];
             GetDefText(type_name, pdef, filename);
-            asset_type = CombatGroup::TypeFromName(type_name);
+            asset_type = (int) CombatGroup::TypeFromName(type_name);
         }
         else if (PName == "target_type") {
             char type_name[64];
             GetDefText(type_name, pdef, filename);
-            target_type = CombatGroup::TypeFromName(type_name);
+            target_type = (int) CombatGroup::TypeFromName(type_name);
         }
         else if (PName == "location" || PName == "loc") {
             GetDefVec(loc, pdef, filename);
@@ -884,11 +892,13 @@ void Campaign::ParseAction(TermStruct* val, const char* filename)
         action->SetSource(source);
         action->SetOpposingType(opp_type);
         action->SetLocation(loc);
-        action->SetSystem(system);
-        action->SetRegion(region);
-        action->SetFilename(file);
-        action->SetImageFile(image);
-        action->SetSceneFile(scene);
+
+        action->SetSystem(Text(TCHAR_TO_ANSI(*system)));
+        action->SetRegion(Text(TCHAR_TO_ANSI(*region)));
+        action->SetFilename(Text(TCHAR_TO_ANSI(*file)));
+        action->SetImageFile(Text(TCHAR_TO_ANSI(*image)));
+        action->SetSceneFile(Text(TCHAR_TO_ANSI(*scene)));
+
         action->SetCount(count);
         action->SetStartAfter(start_after);
         action->SetStartBefore(start_before);
@@ -902,10 +912,12 @@ void Campaign::ParseAction(TermStruct* val, const char* filename)
         action->SetTargetId(target_id);
         action->SetTargetIFF(target_iff);
         action->SetTargetType(target_type);
-        action->SetText(text);
+
+        action->SetText(Text(TCHAR_TO_ANSI(*text)));
 
         actions.append(action);
     }
+
 }
 
 CombatGroup* Campaign::CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group)
@@ -916,12 +928,12 @@ CombatGroup* Campaign::CloneOver(CombatGroup* force, CombatGroup* clone, CombatG
     CombatGroup* orig_parent = group->GetParent();
 
     if (orig_parent) {
-        CombatGroup* clone_parent = clone->FindGroup(orig_parent->Type(), orig_parent->GetID());
+        CombatGroup* clone_parent = clone->FindGroup(orig_parent->GetType(), orig_parent->GetID());
 
         if (!clone_parent)
             clone_parent = CloneOver(force, clone, orig_parent);
 
-        CombatGroup* new_clone = clone->FindGroup(group->Type(), group->GetID());
+        CombatGroup* new_clone = clone->FindGroup(group->GetType(), group->GetID());
 
         if (!new_clone) {
             new_clone = group->Clone(false);
@@ -1175,10 +1187,10 @@ void Campaign::LoadCustomMissions(DataLoader* loader)
 void Campaign::LoadTemplateList(DataLoader* loader)
 {
     BYTE* block = nullptr;
-    const char* filename = "Templates.def";
+    const char* templateFile = "Templates.def";
 
     loader->UseFileSystem(true);
-    loader->LoadBuffer(filename, block, true);
+    loader->LoadBuffer(templateFile, block, true);
     loader->UseFileSystem(Starshatter::UseFileSystem());
 
     Parser parser(new BlockReader((const char*)block));
@@ -1204,14 +1216,13 @@ void Campaign::LoadTemplateList(DataLoader* loader)
                 if (def->term() && def->term()->isStruct()) {
                     TermStruct* val = def->term()->isStruct();
 
-                    char nameBuf[256];
-                    char script[256];
-                    char region[256];
+                    char nameBuf[256] = {};
+                    char script[256] = {};
+                    char region[256] = {};
 
                     int id = 0;
                     int msn_type = 0;
                     int grp_type = 0;
-
                     int min_rank = 0;
                     int max_rank = 0;
                     int action_id = 0;
@@ -1220,42 +1231,48 @@ void Campaign::LoadTemplateList(DataLoader* loader)
                     int start_before = TIME_NEVER;
                     int start_after = 0;
 
-                    nameBuf[0] = 0;
-                    script[0] = 0;
-                    region[0] = 0;
-
                     for (int i = 0; i < val->elements()->size(); i++) {
                         TermDef* pdef = val->elements()->at(i)->isDef();
                         if (!pdef) continue;
 
                         const FString PName = pdef->name()->value().data();
 
-                        if (PName == "id") GetDefNumber(id, pdef, filename);
-                        else if (PName == "name") GetDefText(nameBuf, pdef, filename);
-                        else if (PName == "script") GetDefText(script, pdef, filename);
-                        else if (PName == "rgn" || PName == "region") GetDefText(region, pdef, filename);
+                        if (PName == "id")          GetDefNumber(id, pdef, templateFile);
+                        else if (PName == "name")        GetDefText(nameBuf, pdef, templateFile);
+                        else if (PName == "script")      GetDefText(script, pdef, templateFile);
+                        else if (PName == "rgn" || PName == "region")
+                            GetDefText(region, pdef, templateFile);
                         else if (PName == "type") {
                             char typestr[64];
-                            GetDefText(typestr, pdef, filename);
+                            GetDefText(typestr, pdef, templateFile);
                             msn_type = Mission::TypeFromName(typestr);
                         }
                         else if (PName == "group") {
                             char typestr[64];
-                            GetDefText(typestr, pdef, filename);
-                            grp_type = CombatGroup::TypeFromName(typestr);
+                            GetDefText(typestr, pdef, templateFile);
+                            grp_type = (int)CombatGroup::TypeFromName(typestr);
                         }
-                        else if (PName == "min_rank") GetDefNumber(min_rank, pdef, filename);
-                        else if (PName == "max_rank") GetDefNumber(max_rank, pdef, filename);
-                        else if (PName == "action_id") GetDefNumber(action_id, pdef, filename);
-                        else if (PName == "action_status") GetDefNumber(action_status, pdef, filename);
-                        else if (PName == "exec_once") GetDefNumber(exec_once, pdef, filename);
+                        else if (PName == "min_rank")    GetDefNumber(min_rank, pdef, templateFile);
+                        else if (PName == "max_rank")    GetDefNumber(max_rank, pdef, templateFile);
+                        else if (PName == "action_id")   GetDefNumber(action_id, pdef, templateFile);
+                        else if (PName == "action_status")
+                            GetDefNumber(action_status, pdef, templateFile);
+                        else if (PName == "exec_once")   GetDefNumber(exec_once, pdef, templateFile);
                         else if (PName.Contains("before")) {
-                            if (pdef->term()->isNumber()) GetDefNumber(start_before, pdef, filename);
-                            else { GetDefTime(start_before, pdef, filename); start_before -= ONE_DAY; }
+                            if (pdef->term()->isNumber())
+                                GetDefNumber(start_before, pdef, templateFile);
+                            else {
+                                GetDefTime(start_before, pdef, templateFile);
+                                start_before -= ONE_DAY;
+                            }
                         }
                         else if (PName.Contains("after")) {
-                            if (pdef->term()->isNumber()) GetDefNumber(start_after, pdef, filename);
-                            else { GetDefTime(start_after, pdef, filename); start_after -= ONE_DAY; }
+                            if (pdef->term()->isNumber())
+                                GetDefNumber(start_after, pdef, templateFile);
+                            else {
+                                GetDefTime(start_after, pdef, templateFile);
+                                start_after -= ONE_DAY;
+                            }
                         }
                     }
 
@@ -1290,36 +1307,6 @@ void Campaign::LoadTemplateList(DataLoader* loader)
     } while (term);
 
     loader->ReleaseBuffer(block);
-}
-
-void Campaign::CreatePlanners()
-{
-    if (planners.size() > 0)
-        planners.destroy();
-
-    CampaignPlan* p = nullptr;
-
-    // PLAN EVENT MUST BE FIRST PLANNER:
-    p = new CampaignPlanEvent(this);
-    if (p) planners.append(p);
-
-    p = new CampaignPlanStrategic(this);
-    if (p) planners.append(p);
-
-    p = new CampaignPlanAssignment(this);
-    if (p) planners.append(p);
-
-    p = new CampaignPlanMovement(this);
-    if (p) planners.append(p);
-
-    p = new CampaignPlanMission(this);
-    if (p) planners.append(p);
-
-    if (lockout > 0 && planners.size()) {
-        ListIter<CampaignPlan> plan = planners;
-        while (++plan)
-            plan->SetLockout(lockout);
-    }
 }
 
 int Campaign::GetPlayerIFF()
@@ -1374,7 +1361,7 @@ Combatant* Campaign::GetCombatant(const char* cname)
     ListIter<Combatant> iter = combatants;
     while (++iter) {
         Combatant* c = iter.value();
-        if (!strcmp(c->Name(), cname))
+        if (!strcmp(c->GetName(), cname))
             return c;
     }
     return nullptr;
@@ -1458,10 +1445,12 @@ Mission* Campaign::GetMissionByFile(const char* filename)
         info = new MissionInfo;
         if (info) {
             info->id = maxid + 1;
-            info->name = TEXT("New Custom Mission");
-            info->script = FString(filename);
+
+            info->name = TEXT("New Custom Mission");   // FString (as per your struct)
+            info->script = filename;                     // FString
+
             info->mission = new Mission(info->id, TCHAR_TO_ANSI(*info->script), "Mods/Missions/");
-            info->mission->SetName(info->name);
+            info->mission->SetName(TCHAR_TO_ANSI(*info->name));
 
             missions.append(info);
         }
@@ -1488,10 +1477,16 @@ MissionInfo* Campaign::CreateNewMission()
     MissionInfo* info = new MissionInfo;
     if (info) {
         info->id = maxid + 1;
-        info->name = TEXT("New Custom Mission");
-        info->script = FString(filename);
-        info->mission = new Mission(info->id, filename, TCHAR_TO_ANSI(*path));
-        info->mission->SetName(info->name);
+        info->name = FString(TEXT("New Custom Mission"));
+        info->script = FString(ANSI_TO_TCHAR(filename));   // convert char[] -> FString
+
+        info->mission = new Mission(
+            info->id,
+            TCHAR_TO_ANSI(*info->script),   // Mission expects const char*
+            TCHAR_TO_ANSI(*path)            // path is FString
+        );
+
+        info->mission->SetName(TCHAR_TO_ANSI(*info->name)); // Mission expects const char*
 
         missions.append(info);
     }
@@ -1592,7 +1587,7 @@ MissionInfo* Campaign::FindMissionTemplate(int mission_type, CombatGroup* in_pla
     if (!in_player_group)
         return nullptr;
 
-    TemplateList* templ = GetTemplateList(mission_type, in_player_group->Type());
+    TemplateList* templ = GetTemplateList(mission_type, (int)in_player_group->GetType());
     if (!templ || !templ->missions.size())
         return nullptr;
 
@@ -1647,7 +1642,7 @@ void Campaign::SelectDefaultPlayerGroup(CombatGroup* g, int type)
 {
     if (player_group || !g) return;
 
-    if (g->Type() == type && !g->IsReserve() && g->Value() > 0) {
+    if ((int) g->GetType() == type && !g->IsReserve() && g->Value() > 0) {
         player_group = g;
         player_unit = nullptr;
         return;
@@ -1917,7 +1912,7 @@ static CombatGroup* FindGroup_Recurse(CombatGroup* g, int type, int id)
     if (!g)
         return nullptr;
 
-    if (g->Type() == type && g->GetID() == id)
+    if ((int) g->GetType() == type && g->GetID() == id)
         return g;
 
     CombatGroup* result = nullptr;
@@ -1952,7 +1947,7 @@ static void FindGroups_Recurse(CombatGroup* g, int type, CombatGroup* near_group
     if (!g)
         return;
 
-    if (g->GetType() == type && g->IntelLevel() > Intel::RESERVE) {
+    if ((int)g->GetType() == type && g->IntelLevel() > Intel::RESERVE) {
         if (!near_group || g->GetAssignedZone() == near_group->GetAssignedZone())
             groups.append(g);
     }
@@ -2060,15 +2055,15 @@ Campaign::GetPlayerTeamScore()
 
             if (iff <= 1) {
                 if (c->GetIFF() <= 1)
-                    score_us += c->Score();
+                    score_us += c->GetScore();
                 else
-                    score_them += c->Score();
+                    score_them += c->GetScore();
             }
             else {
                 if (c->GetIFF() <= 1)
-                    score_them += c->Score();
+                    score_them += c->GetScore();
                 else
-                    score_us += c->Score();
+                    score_us += c->GetScore();
             }
         }
     }
@@ -2085,7 +2080,7 @@ Campaign::SetStatus(int s)
 
     // record the win in player profile:
     if (status == CAMPAIGN_SUCCESS) {
-        Player* player = Player::GetCurrentPlayer();
+        PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
         if (player)
             player->SetCampaignComplete(campaign_id);
     }

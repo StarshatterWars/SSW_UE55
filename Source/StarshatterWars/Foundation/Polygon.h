@@ -78,10 +78,11 @@ struct Material
     char        name[NAMELEN];
     char        shader[NAMELEN];
 
-    ColorValue  Ka;         // ambient color
-    ColorValue  Kd;         // diffuse color
-    ColorValue  Ks;         // specular color
-    ColorValue  Ke;         // emissive color
+    FColor  Ka;         // ambient color was ColorValue)
+    FColor  Kd;         // diffuse color
+    FColor  Ks;         // specular color
+    FColor  Ke;         // emissive color
+
     float       power;      // highlight sharpness (big=shiny)
     float       brilliance; // diffuse power function
     float       bump;       // bump level (0=none)

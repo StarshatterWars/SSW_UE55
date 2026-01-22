@@ -28,10 +28,6 @@
 
 static Color ils_color;
 
-#ifndef STARSHATTERWARS_LOG_DEFINED
-#define STARSHATTERWARS_LOG_DEFINED
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-#endif
 
 // +--------------------------------------------------------------------+
 

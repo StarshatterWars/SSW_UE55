@@ -1,12 +1,13 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (C) 2025-2026. All Rights Reserved.
 
     SUBSYSTEM:    nGenEx.lib
     FILE:         Bolt.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO:
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
     John DiCamillo / Destroyer Studios LLC
 
     OVERVIEW
@@ -16,28 +17,32 @@
 
 #include "Bolt.h"
 
+#include "Bitmap.h"
 #include "Camera.h"
 #include "Video.h"
 
+// Minimal Unreal includes:
 #include "Logging/LogMacros.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogBolt, Log, All);
+#include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
-Bolt::Bolt(double len, double wid, UTexture2D* tex, int share)
+Bolt::Bolt(double len, double wid, Bitmap* tex, int share)
     : vset(4),
     poly(0),
     texture(tex),
+    shared(share),
     length(len),
     width(wid),
     shade(1.0),
-    vpn(0.0f, 1.0f, 0.0f),
-    shared(share)
+    vpn(FVector(0.0f, 1.0f, 0.0f)),
+    origin(FVector::ZeroVector)
 {
     trans = true;
 
-    // Vec3/Point -> FVector
+    // "loc" is a Starshatter core member (Vec3/Point originally).
+    // In the Unreal port, the owning base types should have been migrated to FVector.
     loc = FVector(0.0f, 0.0f, 1000.0f);
 
     vset.nverts = 4;
@@ -62,15 +67,13 @@ Bolt::Bolt(double len, double wid, UTexture2D* tex, int share)
         vset.nrm[i] = plane.normal;
     }
 
-    mtl.Ka = Color::White;
-    mtl.Kd = Color::White;
-    mtl.Ks = Color::Black;
-    mtl.Ke = Color::White;
+    mtl.Ka = FColor::White;
+    mtl.Kd = FColor::White;
+    mtl.Ks = FColor::Black;
+    mtl.Ke = FColor::White;
 
-    // Bitmap -> UTexture2D*
     mtl.tex_diffuse = texture;
     mtl.tex_emissive = texture;
-
     mtl.blend = Video::BLEND_ADDITIVE;
 
     poly.nverts = 4;
@@ -83,11 +86,9 @@ Bolt::Bolt(double len, double wid, UTexture2D* tex, int share)
 
     radius = (float)((length > width) ? (length) : (width * 2));
 
-    // Original: copied texture filename into name[] from Bitmap.
-    // With UTexture2D*, we cannot assume a filename accessor exists here.
-    // Leave name unchanged and log at verbose level if a texture is provided.
     if (texture) {
-        UE_LOG(LogBolt, VeryVerbose, TEXT("Bolt created with UTexture2D* texture (name[] not auto-derived)."));
+        strncpy_s(name, texture->GetFilename(), 31);
+        name[31] = 0;
     }
 }
 
@@ -108,33 +109,45 @@ Bolt::Render(Video* video, DWORD flags)
     if (visible && !hidden && video && life) {
         const Camera* camera = video->GetCamera();
 
-        const FVector head = loc;
-        const FVector tail = origin;
-        const FVector vtail = tail - head;
-        const FVector vcam = camera->Pos() - loc;
+        const FVector Head = loc;
+        const FVector Tail = origin;
 
-        // Build lateral vector perpendicular to camera->bolt plane:
-        FVector vtmp = FVector::CrossProduct(vcam, vtail);
-        vtmp.Normalize();
+        const FVector VTail = Tail - Head;
+        const FVector VCam = camera->Pos() - loc;
 
-        const FVector vlat = vtmp * (float)(-width);
-        const FVector vnrm = camera->vpn() * -1.0f;
+        // Equivalent of Point::cross + Normalize:
+        FVector VTmp = FVector::CrossProduct(VCam, VTail);
+        VTmp.Normalize();
 
-        vset.loc[0] = head + vlat;
-        vset.loc[1] = tail + vlat;
-        vset.loc[2] = tail - vlat;
-        vset.loc[3] = head - vlat;
+        const FVector VLat = VTmp * (float)(-width);
 
-        vset.nrm[0] = vnrm;
-        vset.nrm[1] = vnrm;
-        vset.nrm[2] = vnrm;
-        vset.nrm[3] = vnrm;
+        // Camera normal:
+        const FVector Vnrm = camera->vpn() * -1.0f;
 
-        ColorValue white((float)shade, (float)shade, (float)shade);
-        mtl.Ka = white;
-        mtl.Kd = white;
-        mtl.Ks = Color::Black;
-        mtl.Ke = white;
+        vset.loc[0] = Head + VLat;
+        vset.loc[1] = Tail + VLat;
+        vset.loc[2] = Tail - VLat;
+        vset.loc[3] = Head - VLat;
+
+        vset.nrm[0] = Vnrm;
+        vset.nrm[1] = Vnrm;
+        vset.nrm[2] = Vnrm;
+        vset.nrm[3] = Vnrm;
+
+        // Starshatter ColorValue -> use Unreal FColor (grayscale shade).
+        // Clamp shade to [0..1], then map to [0..255].
+        double ShadeClamped = shade;
+        if (ShadeClamped < 0.0) ShadeClamped = 0.0;
+        if (ShadeClamped > 1.0) ShadeClamped = 1.0;
+
+        const uint8 ShadeByte = (uint8)(ShadeClamped * 255.0);
+
+        const FColor White(ShadeByte, ShadeByte, ShadeByte, 255);
+
+        mtl.Ka = White;
+        mtl.Kd = White;
+        mtl.Ks = FColor::Black;
+        mtl.Ke = White;
 
         video->DrawPolys(1, &poly);
     }
@@ -150,10 +163,10 @@ Bolt::Update()
 // +--------------------------------------------------------------------+
 
 void
-Bolt::TranslateBy(const FVector& ref)
+Bolt::TranslateBy(const FVector& Ref)
 {
-    loc = loc - ref;
-    origin = origin - ref;
+    loc = loc - Ref;
+    origin = origin - Ref;
 }
 
 // +--------------------------------------------------------------------+
@@ -161,33 +174,32 @@ Bolt::TranslateBy(const FVector& ref)
 void
 Bolt::SetOrientation(const Matrix& o)
 {
+    // Matrix accessor o(r,c) expected to remain Starshatter-style.
     vpn = FVector((float)o(2, 0), (float)o(2, 1), (float)o(2, 2));
-    origin = loc + (vpn * (float)(-length));
+    origin = loc + (vpn * (float)-length);
 }
 
 void
 Bolt::SetDirection(const FVector& v)
 {
     vpn = v;
-    origin = loc + (vpn * (float)(-length));
+    origin = loc + (vpn * (float)-length);
 }
 
 void
-Bolt::SetEndPoints(const FVector& from, const FVector& to)
+Bolt::SetEndPoints(const FVector& From, const FVector& To)
 {
-    loc = to;
-    origin = from;
+    loc = To;
+    origin = From;
 
-    vpn = to - from;
+    vpn = To - From;
 
-    // Original code relied on Point::Normalize() returning the original vector length.
-    const float Len = vpn.Length();
-    if (Len > 0.0f) {
-        vpn /= Len;
-    }
+    // Starshatter Normalize() returned length; emulate that:
+    length = (double)vpn.Size();
+    if (length > 0.0)
+        vpn /= (float)length;
 
-    length = (double)Len;
-    radius = Len;
+    radius = (float)length;
 }
 
 void

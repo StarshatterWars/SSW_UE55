@@ -92,21 +92,6 @@ static inline double length(const Point& v) { return (double)v.Size(); }
 // If your UE world conversion differs, adjust here.
 static inline Point OtherHand(const Point& v) { return Point(v.X, v.Y, -v.Z); }
 
-static FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
-{
-	const int32 Scaled = FMath::RoundToInt((float)Value * Scale);
-	return (uint8)FMath::Clamp(Scaled, 0, 255);
-}
-
-static FORCEINLINE FColor ScaleColor(const FColor& In, float Scale)
-{
-	return FColor(
-		ScaleByte(In.R, Scale),
-		ScaleByte(In.G, Scale),
-		ScaleByte(In.B, Scale),
-		In.A
-	);
-}
 
 // +--------------------------------------------------------------------+
 

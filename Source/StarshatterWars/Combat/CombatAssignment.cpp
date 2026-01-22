@@ -63,10 +63,13 @@ CombatAssignment::GetDescription() const
 
     // Mission::RoleName(type) in your port should return something convertible to const TCHAR*
     // If it returns const char*, this still works; if it returns FString/TCHAR*, adapt that function.
-    const TCHAR* RoleT = Mission::RoleName(type);
+    const TCHAR* RoleT = ANSI_TO_TCHAR(Mission::RoleName(type));
 
-    const TCHAR* ObjNameT = objective ? *objective->GetName() : TEXT("(null)");
-    const TCHAR* ResNameT = resource ? *resource->GetName() : TEXT("");
+    const TCHAR* ObjNameT =
+        objective ? ANSI_TO_TCHAR(objective->Name().data()) : TEXT("(null)");
+
+    const TCHAR* ResNameT =
+        resource ? ANSI_TO_TCHAR(resource->Name().data()) : TEXT("");
 
     if (!resource)
     {

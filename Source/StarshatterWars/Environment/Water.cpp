@@ -27,11 +27,6 @@
 #include <cstring>                   // std::strncpy
 #include <algorithm>                 // std::max
 
-// NOTE: If you already have a project log category, use it instead:
-#ifndef LogStarshatterWars
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-#endif
-
 // +--------------------------------------------------------------------+
 
 struct WATER_REFRACT

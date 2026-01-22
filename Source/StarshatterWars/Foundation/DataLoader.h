@@ -1,87 +1,86 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Foundation
-	FILE:         DataLoader.h
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    nGenEx.lib
+    FILE:         DataLoader.h
+    AUTHOR:       Carlos Bott
+
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 */
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Types.h"
 #include "List.h"
 #include "Text.h"
 
-/**
- * 
- */
-
+// +--------------------------------------------------------------------+
+// Forward Declarations
 // +--------------------------------------------------------------------+
 
 class Bitmap;
 class Sound;
 class Video;
+class Archiver; // renamed from DataArchive (Archive.h) for Unreal compliance
 
 // +--------------------------------------------------------------------+
 
-class STARSHATTERWARS_API DataLoader
+class DataLoader
 {
 public:
-	static const char* TYPENAME() { return "DataLoader"; }
+    static const char* TYPENAME() { return "DataLoader"; }
 
-	enum { DATAFILE_OK, DATAFILE_INVALID, DATAFILE_NOTEXIST };
+    enum { DATAFILE_OK, DATAFILE_INVALID, DATAFILE_NOTEXIST };
 
-	DataLoader();
+    DataLoader();
 
-	static DataLoader*		GetLoader() { return loader; }
-	static void				Initialize();
-	static void				Close();
+    static DataLoader* GetLoader() { return loader; }
+    static void        Initialize();
+    static void        Close();
 
-	void        Reset();
-	void        UseFileSystem(bool use = true);
-	void        UseVideo(Video* v);
-	void        EnableMedia(bool enable = true);
+    void        Reset();
+    void        UseFileSystem(bool use = true);
+    void        UseVideo(Video* v);
+    void        EnableMedia(bool enable = true);
 
-	int         EnableDatafile(const char* name);
-	int         DisableDatafile(const char* name);
+    int         EnableDatafile(const char* name);
+    int         DisableDatafile(const char* name);
 
-	void        SetDataPath(FString path);
-	FString		GetDataPath() const { return DataPath; }
+    void        SetDataPath(const char* path);
+    const char* GetDataPath() const { return datapath; }
 
-	bool  IsFileSystemEnabled() const { return use_file_system; }
-	bool  IsMediaLoadEnabled()  const { return enable_media; }
+    bool        IsFileSystemEnabled() const { return use_file_system; }
+    bool        IsMediaLoadEnabled()  const { return enable_media; }
 
-	bool  FindFile(const char* fname);
-	//int   ListFiles(const char* filter, List<Text>& list, bool recurse = false);
-	int   ListArchiveFiles(const char* archive, const char* filter, List<Text>& list);
-	int   LoadBuffer(const char* name, BYTE*& buf, bool null_terminate = false, bool optional = false);
-	int   LoadBitmap(const char* name, Bitmap& bmp, int type = 0, bool optional = false);
-	int   CacheBitmap(const char* name, Bitmap*& bmp, int type = 0, bool optional = false);
-	int   LoadTexture(const char* name, Bitmap*& bmp, int type = 0, bool preload_cache = false, bool optional = false);
-	int   LoadSound(const char* fname, Sound*& snd, DWORD flags = 0, bool optional = false);
-	int   LoadStream(const char* fname, Sound*& snd, bool optional = false);
+    bool        FindFile(const char* fname);
+    int         ListFiles(const char* filter, List<Text>& list, bool recurse = false);
+    int         ListArchiveFiles(const char* archive, const char* filter, List<Text>& list);
+    int         LoadBuffer(const char* name, BYTE*& buf, bool null_terminate = false, bool optional = false);
+    int         LoadBitmap(const char* name, Bitmap& bmp, int type = 0, bool optional = false);
+    int         CacheBitmap(const char* name, Bitmap*& bmp, int type = 0, bool optional = false);
+    int         LoadTexture(const char* name, Bitmap*& bmp, int type = 0, bool preload_cache = false, bool optional = false);
+    int         LoadSound(const char* fname, Sound*& snd, DWORD flags = 0, bool optional = false);
+    int         LoadStream(const char* fname, Sound*& snd, bool optional = false);
 
-	void  ReleaseBuffer(BYTE*& buf);
-	int   fread(void* buffer, size_t size, size_t count, BYTE*& stream);
-
-	UPROPERTY();
-	FString  DataPath;
+    void        ReleaseBuffer(BYTE*& buf);
+    int         fread(void* buffer, size_t size, size_t count, BYTE*& stream);
 
 private:
-	int   LoadIndexed(const char* name, Bitmap& bmp, int type);
-	int   LoadHiColor(const char* name, Bitmap& bmp, int type);
-	int   LoadAlpha(const char* name, Bitmap& bmp, int type);
+    int         LoadIndexed(const char* name, Bitmap& bmp, int type);
+    int         LoadHiColor(const char* name, Bitmap& bmp, int type);
+    int         LoadAlpha(const char* name, Bitmap& bmp, int type);
 
-	void  ListFileSystem(const char* filter, List<Text>& list, Text base_path, bool recurse);
-	int   LoadPartialFile(const char* fname, BYTE*& buf, int max_load, bool optional = false);
-	int   LoadOggStream(const char* fname, Sound*& snd);
+    void        ListFileSystem(const char* filter, List<Text>& list, Text base_path, bool recurse);
+    int         LoadPartialFile(const char* fname, BYTE*& buf, int max_load, bool optional = false);
+    int         LoadOggStream(const char* fname, Sound*& snd);
 
-	
-	Video* video;
-	Text        datapath;
-	bool        use_file_system;
-	bool        enable_media;
+    Text        datapath;
+    Video* video;
+    bool        use_file_system;
+    bool        enable_media;
 
-	static DataLoader* loader;
+    static DataLoader* loader;
 };

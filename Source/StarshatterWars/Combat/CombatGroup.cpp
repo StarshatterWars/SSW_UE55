@@ -1126,7 +1126,7 @@ else GET_DEF_NUM(id);
 												else if (pdefx->name()->value() == "loc") {
 													Vec3 temp; 
 													GetDefVec(temp, pdefx, filename);
-													unit_loc = FVector(temp.x, temp.y, temp.z); 
+													unit_loc = FVector(temp.X, temp.Y, temp.Z); 
 												}
 												else if (pdefx->name()->value() == "type") {
 													char typestr[32];
@@ -1186,14 +1186,14 @@ else GET_DEF_NUM(id);
 							g->combatant = combatant;
 							g->unit_index = unit_index;
 
-							if (loc.x >= 1e9) {
+							if (loc.X >= 1e9) {
 								if (parent_group)
 									g->location = parent_group->location;
 								else
 									g->location = FVector::Zero();
 							}
 							else {
-								g->location = FVector(loc.x, loc.y, loc.z);
+								g->location = FVector(loc.X, loc.Y, loc.Z);
 							}
 
 							if (unit_list.size()) {
@@ -1374,7 +1374,7 @@ else GET_DEF_NUM(id);
 												else if (pdefu->name()->value() == "loc") {
 													Vec3 temp;
 													GetDefVec(temp, pdefu, filename);
-													unit_loc = FVector(temp.x, temp.y, temp.z);
+													unit_loc = FVector(temp.X, temp.Y, temp.Z);
 												}
 												else if (pdefu->name()->value() == "type") {
 													char typestr[32];
@@ -1422,9 +1422,10 @@ else GET_DEF_NUM(id);
 							// have we found the force group we are looking for yet ?
 							if (!force)
 							{
-								const FString NameStr = FString(ANSI_TO_TCHAR(name));
-
-								if (combatant && combatant->GetName().Equals(NameStr, ESearchCase::IgnoreCase))
+								if (combatant &&
+									FCString::Strcmp(
+										ANSI_TO_TCHAR(combatant->GetName()),
+										ANSI_TO_TCHAR(name)) == 0)
 								{
 									force = combatant->GetForce();
 								}
@@ -1449,7 +1450,7 @@ else GET_DEF_NUM(id);
 
 							g->region = region;
 							g->combatant = combatant;
-							g->location = FVector(loc.x, loc.y, loc.z);
+							g->location = FVector(loc.X, loc.Y, loc.Z);
 							g->enemy_intel = Intel::IntelFromName(intel);
 							g->unit_index = unit_index;
 
