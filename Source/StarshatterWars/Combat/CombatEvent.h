@@ -50,7 +50,7 @@ public:
     int                  Type()         const { return type; }
     int                  Time()         const { return time; }
     int                  GetIFF()       const { return team; }
-    const FVector& Points()       const { return points; }
+    const FVector&       GetPoints()    const { return points; }
     int                  Source()       const { return source; }
     FVector              Location()     const { return loc; }
     const char* Region()       const { return region; }

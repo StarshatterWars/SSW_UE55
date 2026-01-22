@@ -73,11 +73,11 @@ void
 CampaignSituationReport::GlobalSituation()
 {
 	if (campaign->GetTime() < 40 * 3600)
-		sitrep = Text(TCHAR_TO_ANSI(*campaign->Name()))
+		sitrep = Text(campaign->Name())
 		+ Text(" is still in its early stages and the situation is ");
 	else
 		sitrep = Text("The overall outlook for ")
-		+ Text(TCHAR_TO_ANSI(*campaign->Name()))
+		+ Text(campaign->Name())
 		+ Text(" is ");
 
 	int score = campaign->GetPlayerTeamScore();
@@ -103,8 +103,9 @@ CampaignSituationReport::GlobalSituation()
 	if (strat_dir.length())
 		sitrep += strat_dir;
 	else
-		sitrep += Text("Establishing and maintaining military control of the ") +
-		mission->GetStarSystem()->Name() + " System remains a key priority.";
+		sitrep += Text("Establishing and maintaining military control of the ")
+		+ mission->GetStarSystem()->Name()
+		+ Text(" System remains a key priority.");
 }
 
 // +--------------------------------------------------------------------+

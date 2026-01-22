@@ -188,32 +188,54 @@ CampaignMissionStarship::GenerateMission(int id)
 
     SelectType();
 
-    if (request && request->Script().Len()) {
+    const bool bHasRequest = (request != nullptr);
+
+    // ------------------------------------------------------------
+    // CASE 1: Explicit scripted request (request provides script)
+    // ------------------------------------------------------------
+    if (bHasRequest && request->Script().Len() > 0) {
         MissionTemplate* mt = new MissionTemplate(
             id,
-            TCHAR_TO_ANSI(*request->Script()),
-            TCHAR_TO_ANSI(*campaign->Path())
+            TCHAR_TO_ANSI(*request->Script()),  
+            campaign->Path()                    
         );
 
         if (mt)
             mt->SetPlayerSquadron(player_group);
 
         mission = mt;
-        found = true;
+        found = (mission != nullptr);
     }
+
+    // ------------------------------------------------------------
+    // CASE 2: Use a campaign mission template (campaign provides script)
+    // ------------------------------------------------------------
     else {
         mission_info = campaign->FindMissionTemplate(mission_type, player_group);
-        found = mission_info != 0;
+        found = (mission_info != nullptr);
 
         if (found) {
+            // IMPORTANT:
+            // Build the MissionTemplate from mission_info->script (NOT request->Script()).
+            // Adjust field access to match your MissionInfo definition.
+            //
+            // If MissionInfo::script is Text:
+            //   const char* ScriptCStr = mission_info->script.data();
+            //
+            // If MissionInfo::script is FString:
+            //   const char* ScriptCStr = TCHAR_TO_ANSI(*mission_info->script);
+
+            const char* ScriptCStr = mission_info->script.data(); // assuming Text
+
             MissionTemplate* mt = new MissionTemplate(
                 id,
-                TCHAR_TO_ANSI(*request->Script()),
-                TCHAR_TO_ANSI(*campaign->Path())
+                ScriptCStr,          // already const char*
+                campaign->Path()     // already const char*
             );
 
             if (mt)
                 mt->SetPlayerSquadron(player_group);
+
             mission = mt;
         }
         else {
@@ -223,7 +245,8 @@ CampaignMissionStarship::GenerateMission(int id)
         }
     }
 
-    if (!mission || !player_group) {
+    // If request is required for timing, enforce it here:
+    if (!mission || !player_group || !bHasRequest) {
         Exit();
         return nullptr;
     }
@@ -277,6 +300,7 @@ CampaignMissionStarship::GenerateMission(int id)
 
     return mission;
 }
+
 
 void
 CampaignMissionStarship::SelectType()
@@ -1475,15 +1499,11 @@ CampaignMissionStarship::DescribeMission()
 
     char name[256] = { 0 };
 
-    if (mission_info && mission_info->name.Len() > 0)
-    {
-        FString NameStr = FString::Printf(
-            TEXT("MSN-%03d %s"),
+    if (mission_info && mission_info->name.length() > 0) {
+        // mission_info->name is Text (ANSI), so format into char buffer:
+        sprintf_s(name, sizeof(name), "MSN-%03d %s",
             mission->Identity(),
-            *mission_info->name
-        );
-
-        mission->SetName(TCHAR_TO_ANSI(*NameStr));
+            mission_info->name.data());
     }
     else if (ward) {
         sprintf_s(name, sizeof(name), "MSN-%03d %s %s",
@@ -1524,7 +1544,6 @@ CampaignMissionStarship::DescribeMission()
     info->id = mission->Identity();
     info->mission = mission;
 
-    // Copy content (not pointers to stack buffers):
     info->name = name;
     info->type = mission->Type();
     info->player_info = player_info;
@@ -1537,6 +1556,7 @@ CampaignMissionStarship::DescribeMission()
 
     info->region = mission->GetRegion();
 
+    // Apply the computed name once:
     mission->SetName(name);
 
     return info;
