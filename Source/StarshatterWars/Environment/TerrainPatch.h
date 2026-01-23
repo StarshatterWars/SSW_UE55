@@ -40,7 +40,7 @@ class TerrainPatch : public Solid
 {
 public:
 	TerrainPatch(Terrain* terrain,
-		const UTexture2D* patch, const Rect& rect,
+		const Bitmap* patch, const Rect& rect,
 		const FVector& p1, const FVector& p2);
 
 	TerrainPatch(Terrain* terrain,

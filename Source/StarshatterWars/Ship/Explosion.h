@@ -26,7 +26,7 @@
 // +--------------------------------------------------------------------+
 
 class Solid;
-class Particles;
+class ParticleManager;
 class SimSystem;
 class SimRegion;
 
@@ -72,7 +72,7 @@ public:
 
     virtual void      ExecFrame(double seconds);
 
-    Particles* GetParticles() { return particles; }
+    ParticleManager*  GetParticles() { return particles; }
 
     virtual void      Activate(SimScene& scene);
     virtual void      Deactivate(SimScene& scene);
@@ -83,7 +83,7 @@ public:
 
 protected:
     int               type;
-    Particles* particles;
+    ParticleManager*  particles;
 
     float             scale;
     float             scale1;

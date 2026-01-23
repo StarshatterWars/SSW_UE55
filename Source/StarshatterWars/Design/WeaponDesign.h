@@ -18,9 +18,9 @@
 #pragma once
 
 #include "Types.h"
-#include "Color.h"
 #include "List.h"
 #include "Text.h"
+#include "Bitmap.h"
 
 // Minimal Unreal include required for FVector:
 #include "Math/Vector.h"
@@ -84,7 +84,7 @@ public:
 	int               value;            // AI importance of system
 	int               decoy_type;       // Ship Classifcation of decoy signature
 	bool              probe;            // is sensor probe?
-	uint32            target_type;      // bitmask of acceptable target classes
+	int            target_type;      // bitmask of acceptable target classes
 
 	// for turrets:
 	FVector           muzzle_pts[MAX_STORES];    // default turret muzzle points
@@ -156,7 +156,7 @@ public:
 	float             scale;            // sprite scale
 	float             explosion_scale;  // scale factor for damage to this drone
 	float             light;            // light emitted by shot
-	Color             light_color;      // color of light emitted by shot
+	FColor            light_color;      // color of light emitted by shot
 	float             flash_scale;      // size of muzzle flash sprite
 	float             flare_scale;      // size of drive flare sprite
 
@@ -175,12 +175,12 @@ public:
 	Text              flare;
 	Text              sound;
 
-	UTexture2D* beauty_img;
-	UTexture2D* animation;
-	UTexture2D* shot_img;
-	UTexture2D* trail_img;
-	UTexture2D* flash_img;
-	UTexture2D* flare_img;
+	Bitmap* beauty_img;
+	Bitmap* animation;
+	Bitmap* shot_img;
+	Bitmap* trail_img;
+	Bitmap* flash_img;
+	Bitmap* flare_img;
 
 	Model* shot_model;
 	Model* turret_model;

@@ -20,6 +20,7 @@
 #include "List.h"
 #include "Text.h"
 #include "Geometry.h"
+#include "Bitmap.h"
 
 // Minimal Unreal include for FVector:
 #include "Math/Vector.h"
@@ -167,7 +168,6 @@ protected:
 	int                  trigger_nparams = 0;
 
 	// Starshatter core Bitmap -> Unreal render asset pointer:
-	UTexture2D* image = nullptr;
-
+	Bitmap* image = nullptr;
 	Sound* sound = nullptr;
 };

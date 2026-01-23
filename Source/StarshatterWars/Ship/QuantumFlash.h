@@ -19,12 +19,12 @@
 // --------------------------------------------------------------------
 
 class Video;
-class Material;
-class VertexSet;
-class Poly;
+struct Material;
+struct VertexSet;
+struct Poly;
 class Bitmap;
 class SimObject;
-class Matrix;
+struct Matrix;
 class SystemFont;
 
 // --------------------------------------------------------------------

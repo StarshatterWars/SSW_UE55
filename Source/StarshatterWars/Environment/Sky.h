@@ -19,7 +19,7 @@
 #include "Types.h"
 #include "Solid.h"
 #include "Geometry.h"
-#include "Color.h"
+#include "Bitmap.h"
 
 // Forward declarations to keep headers light:
 class UTexture2D;
@@ -27,8 +27,8 @@ class UTexture2D;
 class StarSystem;
 
 class Video;
-class Material;
-class VertexSet;
+struct Material;
+struct VertexSet;
 
 // +--------------------------------------------------------------------+
 
@@ -43,7 +43,7 @@ public:
 
 protected:
 	VertexSet* vset;
-	Color* colors;
+	FColor* colors;
 };
 
 // +--------------------------------------------------------------------+
@@ -80,13 +80,13 @@ public:
 		const char* rngname = 0,
 		double minrad = 0,
 		double maxrad = 0,
-		Color atmos = Color::Black,
+		FColor atmos = FColor::Black,
 		const char* img_gloss = 0);
 
 	virtual ~PlanetRep();
 
-	virtual Color Atmosphere() const { return atmosphere; }
-	virtual void  SetAtmosphere(Color a) { atmosphere = a; }
+	virtual FColor Atmosphere() const { return atmosphere; }
+	virtual void  SetAtmosphere(FColor a) { atmosphere = a; }
 	virtual void  SetDaytime(bool d);
 	virtual void  SetStarSystem(StarSystem* system);
 
@@ -117,7 +117,7 @@ protected:
 	double ring_rad;
 	double body_rad;
 
-	Color atmosphere;
+	FColor atmosphere;
 	bool  daytime;
 
 	StarSystem* star_system;

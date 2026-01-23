@@ -326,30 +326,30 @@ Window::FillRect(int x1, int y1, int x2, int y2, const FColor& color, int blend)
         vset4.diffuse[i] = packed;
     }
 
-    vset4.s_loc[0].x = (float)(rect.x + x1) - 0.5f;
-    vset4.s_loc[0].y = (float)(rect.y + y1) - 0.5f;
-    vset4.s_loc[0].z = 0.0f;
+    vset4.s_loc[0].X = (float)(rect.x + x1) - 0.5f;
+    vset4.s_loc[0].Y = (float)(rect.y + y1) - 0.5f;
+    vset4.s_loc[0].Z = 0.0f;
     vset4.rw[0] = 1.0f;
     vset4.tu[0] = 0.0f;
     vset4.tv[0] = 0.0f;
 
-    vset4.s_loc[1].x = (float)(rect.x + x2) - 0.5f;
-    vset4.s_loc[1].y = (float)(rect.y + y1) - 0.5f;
-    vset4.s_loc[1].z = 0.0f;
+    vset4.s_loc[1].X = (float)(rect.x + x2) - 0.5f;
+    vset4.s_loc[1].Y = (float)(rect.y + y1) - 0.5f;
+    vset4.s_loc[1].Z = 0.0f;
     vset4.rw[1] = 1.0f;
     vset4.tu[1] = 1.0f;
     vset4.tv[1] = 0.0f;
 
-    vset4.s_loc[2].x = (float)(rect.x + x2) - 0.5f;
-    vset4.s_loc[2].y = (float)(rect.y + y2) - 0.5f;
-    vset4.s_loc[2].z = 0.0f;
+    vset4.s_loc[2].X = (float)(rect.x + x2) - 0.5f;
+    vset4.s_loc[2].Y = (float)(rect.y + y2) - 0.5f;
+    vset4.s_loc[2].Z = 0.0f;
     vset4.rw[2] = 1.0f;
     vset4.tu[2] = 1.0f;
     vset4.tv[2] = 1.0f;
 
-    vset4.s_loc[3].x = (float)(rect.x + x1) - 0.5f;
-    vset4.s_loc[3].y = (float)(rect.y + y2) - 0.5f;
-    vset4.s_loc[3].z = 0.0f;
+    vset4.s_loc[3].X = (float)(rect.x + x1) - 0.5f;
+    vset4.s_loc[3].Y = (float)(rect.y + y2) - 0.5f;
+    vset4.s_loc[3].Z = 0.0f;
     vset4.rw[3] = 1.0f;
     vset4.tu[3] = 0.0f;
     vset4.tv[3] = 1.0f;
@@ -439,9 +439,9 @@ Window::FillPoly(int nPts, const FVector* pts, const FColor& color, int blend)
 
     for (int i = 0; i < nPts; i++) {
         vset4.diffuse[i] = packed;
-        vset4.s_loc[i].x = (float)(rect.x + (int)pts[i].X) - 0.5f;
-        vset4.s_loc[i].y = (float)(rect.y + (int)pts[i].Y) - 0.5f;
-        vset4.s_loc[i].z = 0.0f;
+        vset4.s_loc[i].X = (float)(rect.x + (int)pts[i].X) - 0.5f;
+        vset4.s_loc[i].Y = (float)(rect.y + (int)pts[i].Y) - 0.5f;
+        vset4.s_loc[i].Z = 0.0f;
         vset4.rw[i] = 1.0f;
         vset4.tu[i] = 0.0f;
         vset4.tv[i] = 0.0f;
@@ -549,30 +549,30 @@ Window::ClipBitmap(int x1, int y1, int x2, int y2, Bitmap* img, const FColor& c,
         y2 = y3;
     }
 
-    vset4.s_loc[0].x = (float)(rect.x + x1) - 0.5f;
-    vset4.s_loc[0].y = (float)(rect.y + y1) - 0.5f;
-    vset4.s_loc[0].z = 0.0f;
+    vset4.s_loc[0].X = (float)(rect.x + x1) - 0.5f;
+    vset4.s_loc[0].Y = (float)(rect.y + y1) - 0.5f;
+    vset4.s_loc[0].Z = 0.0f;
     vset4.rw[0] = 1.0f;
     vset4.tu[0] = u1;
     vset4.tv[0] = v1;
 
-    vset4.s_loc[1].x = (float)(rect.x + x2) - 0.5f;
-    vset4.s_loc[1].y = (float)(rect.y + y1) - 0.5f;
-    vset4.s_loc[1].z = 0.0f;
+    vset4.s_loc[1].X = (float)(rect.x + x2) - 0.5f;
+    vset4.s_loc[1].Y = (float)(rect.y + y1) - 0.5f;
+    vset4.s_loc[1].Z = 0.0f;
     vset4.rw[1] = 1.0f;
     vset4.tu[1] = u2;
     vset4.tv[1] = v1;
 
-    vset4.s_loc[2].x = (float)(rect.x + x2) - 0.5f;
-    vset4.s_loc[2].y = (float)(rect.y + y2) - 0.5f;
-    vset4.s_loc[2].z = 0.0f;
+    vset4.s_loc[2].X = (float)(rect.x + x2) - 0.5f;
+    vset4.s_loc[2].Y = (float)(rect.y + y2) - 0.5f;
+    vset4.s_loc[2].Z = 0.0f;
     vset4.rw[2] = 1.0f;
     vset4.tu[2] = u2;
     vset4.tv[2] = v2;
 
-    vset4.s_loc[3].x = (float)(rect.x + x1) - 0.5f;
-    vset4.s_loc[3].y = (float)(rect.y + y2) - 0.5f;
-    vset4.s_loc[3].z = 0.0f;
+    vset4.s_loc[3].X = (float)(rect.x + x1) - 0.5f;
+    vset4.s_loc[3].Y = (float)(rect.y + y2) - 0.5f;
+    vset4.s_loc[3].Z = 0.0f;
     vset4.rw[3] = 1.0f;
     vset4.tu[3] = u1;
     vset4.tv[3] = v2;
@@ -614,30 +614,30 @@ Window::TileBitmap(int x1, int y1, int x2, int y2, Bitmap* img, int blend)
     float xscale = (float)rect.w / (float)img->Width();
     float yscale = (float)rect.h / (float)img->Height();
 
-    vset4.s_loc[0].x = (float)(rect.x + x1) - 0.5f;
-    vset4.s_loc[0].y = (float)(rect.y + y1) - 0.5f;
-    vset4.s_loc[0].z = 0.0f;
+    vset4.s_loc[0].X = (float)(rect.x + x1) - 0.5f;
+    vset4.s_loc[0].Y = (float)(rect.y + y1) - 0.5f;
+    vset4.s_loc[0].Z = 0.0f;
     vset4.rw[0] = 1.0f;
     vset4.tu[0] = 0.0f;
     vset4.tv[0] = 0.0f;
 
-    vset4.s_loc[1].x = (float)(rect.x + x2) - 0.5f;
-    vset4.s_loc[1].y = (float)(rect.y + y1) - 0.5f;
-    vset4.s_loc[1].z = 0.0f;
+    vset4.s_loc[1].X = (float)(rect.x + x2) - 0.5f;
+    vset4.s_loc[1].Y = (float)(rect.y + y1) - 0.5f;
+    vset4.s_loc[1].Z = 0.0f;
     vset4.rw[1] = 1.0f;
     vset4.tu[1] = xscale;
     vset4.tv[1] = 0.0f;
 
-    vset4.s_loc[2].x = (float)(rect.x + x2) - 0.5f;
-    vset4.s_loc[2].y = (float)(rect.y + y2) - 0.5f;
-    vset4.s_loc[2].z = 0.0f;
+    vset4.s_loc[2].X = (float)(rect.x + x2) - 0.5f;
+    vset4.s_loc[2].Y = (float)(rect.y + y2) - 0.5f;
+    vset4.s_loc[2].Z = 0.0f;
     vset4.rw[2] = 1.0f;
     vset4.tu[2] = xscale;
     vset4.tv[2] = yscale;
 
-    vset4.s_loc[3].x = (float)(rect.x + x1) - 0.5f;
-    vset4.s_loc[3].y = (float)(rect.y + y2) - 0.5f;
-    vset4.s_loc[3].z = 0.0f;
+    vset4.s_loc[3].X = (float)(rect.x + x1) - 0.5f;
+    vset4.s_loc[3].Y = (float)(rect.y + y2) - 0.5f;
+    vset4.s_loc[3].Z = 0.0f;
     vset4.rw[3] = 1.0f;
     vset4.tu[3] = 0.0f;
     vset4.tv[3] = yscale;

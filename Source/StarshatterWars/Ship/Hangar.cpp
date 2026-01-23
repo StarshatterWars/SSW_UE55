@@ -36,16 +36,6 @@
 #include "Game.h"
 
 // +======================================================================+
-// NOTE:
-// - MemDebug.h removed (Unreal incompatible)
-// - Print(...) converted to UE_LOG
-// - ZeroMemory/CopyMemory replaced with FMemory helpers
-// - rand()/Random.h usage replaced with FMath random helpers
-// +======================================================================+
-
-static DEFINE_LOG_CATEGORY_STATIC(LogStarshatterHangar, Log, All);
-
-// +======================================================================+
 
 class HangarSlot
 {
@@ -215,7 +205,7 @@ bool
 Hangar::FinishPrep(HangarSlot* slot)
 {
 	if (!slot || !slot->deck || !slot->design || !ship) {
-		UE_LOG(LogStarshatterHangar, Warning, TEXT("Hangar::FinishPrep - invalid slot/deck/design/ship"));
+		UE_LOG(LogStarshatterWars, Warning, TEXT("Hangar::FinishPrep - invalid slot/deck/design/ship"));
 		return false;
 	}
 
@@ -226,7 +216,7 @@ Hangar::FinishPrep(HangarSlot* slot)
 
 		slot->ship = sim->CreateShip(ship_name, "",
 			(ShipDesign*)slot->design,
-			ship->GetRegion()->Name(),
+			ship->GetRegion()->GetName(),
 			Point(0, 0, 0),
 			slot->iff,
 			ship->GetCommandAILevel(),
@@ -256,7 +246,7 @@ Hangar::FinishPrep(HangarSlot* slot)
 			return true;
 		}
 
-		UE_LOG(LogStarshatterHangar, Warning,
+		UE_LOG(LogStarshatterWars, Warning,
 			TEXT("Could not spot alert ship - carrier: '%hs' ship '%hs'"),
 			ship->Name(), slot->ship ? slot->ship->Name() : "NULL");
 	}
@@ -377,7 +367,7 @@ Hangar::GotoActiveFlight(int squadron, int slot_index, SimElement* elem, int* lo
 
 			slot->ship = sim->CreateShip(ship_name, "",
 				(ShipDesign*)slot->design,
-				ship->GetRegion()->Name(),
+				ship->GetRegion()->GetName(),
 				spawn,
 				slot->iff,
 				ship->GetCommandAILevel(),

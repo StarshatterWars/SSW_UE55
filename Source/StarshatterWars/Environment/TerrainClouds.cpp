@@ -80,20 +80,19 @@ TerrainClouds::BuildClouds()
 	Bitmap* shade_texture = terrain ? terrain->ShadeTexture(type) : nullptr;
 
 	strcpy_s(mtl_cloud.name, "cloud");
-	mtl_cloud.Ka = Color::White;
-	mtl_cloud.Kd = Color::White;
+	mtl_cloud.Ka = FColor::White;
+	mtl_cloud.Kd = FColor::White;
 	mtl_cloud.luminous = true;
 	mtl_cloud.blend = Material::MTL_TRANSLUCENT;
 	mtl_cloud.tex_diffuse = cloud_texture;
 
 	strcpy_s(mtl_shade.name, "shade");
-	mtl_shade.Ka = Color::White;
-	mtl_shade.Kd = Color::White;
+	mtl_shade.Ka = FColor::White;
+	mtl_shade.Kd = FColor::White;
 	mtl_shade.luminous = true;
 	mtl_shade.blend = Material::MTL_TRANSLUCENT;
 	mtl_shade.tex_diffuse = shade_texture;
 
-	// No (__FILE__, __LINE__) in Unreal build:
 	verts = new VertexSet(nverts);
 	mverts = new FVector[nverts];
 	polys = new Poly[npolys];
@@ -236,27 +235,34 @@ TerrainClouds::Update()
 // +--------------------------------------------------------------------+
 
 void
-TerrainClouds::Illuminate(Color ambient, List<SimLight>& lights)
+TerrainClouds::Illuminate(FColor Ambient, List<SimLight>& Lights)
 {
-	int i = 0, n = 0;
+	if (!terrain || !verts)
+		return;
 
-	if (terrain) {
-		DWORD cloud_color = terrain->GetRegion()->CloudColor().Value() | Color(0, 0, 0, 255).Value();
-		DWORD shade_color = terrain->GetRegion()->ShadeColor().Value() | Color(0, 0, 0, 255).Value();
+	const DWORD CloudColor =
+		terrain->GetRegion()->CloudColor().WithAlpha(255).DWColor();
 
-		int stride = (type > 0) ? 8 : 4;
+	const DWORD ShadeColor =
+		terrain->GetRegion()->ShadeColor().WithAlpha(255).DWColor();
 
-		for (i = 0; i < nbanks; i++) {
-			for (n = 0; n < 4; n++) {
-				verts->diffuse[stride * i + n] = cloud_color;
-				verts->specular[stride * i + n] = 0xff000000;
-			}
+	const int Stride = (type > 0) ? 8 : 4;
 
-			if (type > 0) {
-				for (; n < 8; n++) {
-					verts->diffuse[stride * i + n] = shade_color;
-					verts->specular[stride * i + n] = 0xff000000;
-				}
+	for (int i = 0; i < nbanks; ++i) {
+
+		// Primary cloud layer
+		for (int n = 0; n < 4; ++n) {
+			const int Index = Stride * i + n;
+			verts->diffuse[Index] = CloudColor;
+			verts->specular[Index] = 0xFF000000; // opaque black specular
+		}
+
+		// Secondary shade layer (only for layered clouds)
+		if (type > 0) {
+			for (int n = 4; n < 8; ++n) {
+				const int Index = Stride * i + n;
+				verts->diffuse[Index] = ShadeColor;
+				verts->specular[Index] = 0xFF000000;
 			}
 		}
 	}

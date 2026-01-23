@@ -21,7 +21,7 @@
 
 // +-------------------------------------------------------------------+
 
-class UTexture2D;
+class Bitmap;
 class ShipStats;
 class AwardInfo;
 class Sound;
@@ -69,7 +69,7 @@ public:
     bool           ShowAward()       const { return award != 0; }
     Text           AwardName()       const;
     Text           AwardDesc()       const;
-    UTexture2D*    AwardImage()      const;
+    Bitmap*    AwardImage()      const;
     Sound*         AwardSound()      const;
 
     bool           CanCommand(int ship_class);
@@ -122,11 +122,11 @@ public:
 
     static const char* RankName(int rank);
     static const char* RankAbrv(int rank);
-    static int           RankFromName(const char* name);
-    static UTexture2D* RankInsignia(int rank, int size);
+    static int         RankFromName(const char* name);
+    static Bitmap*     RankInsignia(int rank, int size);
     static const char* RankDescription(int rank);
     static const char* MedalName(int medal);
-    static UTexture2D* MedalInsignia(int medal, int size);
+    static Bitmap*     MedalInsignia(int medal, int size);
     static const char* MedalDescription(int medal);
     static int           CommandRankRequired(int ship_class);
 

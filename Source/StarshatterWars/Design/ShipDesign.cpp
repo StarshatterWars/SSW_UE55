@@ -50,6 +50,7 @@
 #include "ParseUtil.h"
 #include "List.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogShipDesign, Log, All);
 
@@ -81,7 +82,6 @@ const char* ship_design_class_name[32] = {
 
 // +--------------------------------------------------------------------+
 
-static const int     NAMELEN = 64;
 static bool          degrees = false;
 
 struct ShipCatalogEntry {

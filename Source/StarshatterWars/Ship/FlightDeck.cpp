@@ -645,7 +645,7 @@ FlightDeck::LaunchShip(Ship* slot_ship)
 
 		ShipStats* stats = ShipStats::Find(slot_ship->Name());
 		if (stats) {
-			stats->SetRegion(carrier->GetRegion()->Name());
+			stats->SetRegion(carrier->GetRegion()->GetName());
 			stats->SetType(slot_ship->Design()->name);
 
 			if (slot_ship->GetElement()) {

@@ -39,8 +39,6 @@
 #include "Math/UnrealMathUtility.h"   // FMath
 #include "Math/Vector.h"              // FVector
 
-static const double STARSHIP_TACTICAL_DROP_TIME = 15.0;
-
 // +----------------------------------------------------------------------+
 
 NavAI::NavAI(Ship* s)
@@ -258,7 +256,7 @@ void NavAI::FindObjective()
 
         if (SelfOrb && NavOrb && NavOrb->Primary() == SelfOrb->Primary()) {
 
-            const FVector npt_rel = nav_rgn->Location() - self_rgn->Location();
+            const FVector npt_rel = nav_rgn->GetLocation() - self_rgn->GetLocation();
             obj_w = npt_rel; // UE: no OtherHand()
 
             distance = FVector::Dist(obj_w, ship->Location());
@@ -321,8 +319,8 @@ void NavAI::FindObjective()
 
         // UE: FVector supports + and -=. navpt->Location() is already a world-space point in most ports.
         // Original code mixed region offsets; keep the intent but remove OtherHand().
-        FVector npt_rel = nav_rgn->Location() + navpt->Location();
-        npt_rel -= self_rgn->Location();
+        FVector npt_rel = nav_rgn->GetLocation() + navpt->Location();
+        npt_rel -= self_rgn->GetLocation();
 
         obj_w = npt_rel;
 

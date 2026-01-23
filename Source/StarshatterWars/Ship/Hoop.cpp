@@ -26,7 +26,7 @@
 #include "DataLoader.h"
 #include "Window.h"
 
-static Color ils_color;
+static FColor ils_color;
 
 
 // +--------------------------------------------------------------------+
@@ -159,8 +159,8 @@ Hoop::Update()
 			Surface* surface = s_iter.value();
 			VertexSet* vset = surface->GetVertexSet();
 
-			for (int i = 0; i < vset->nverts; i++) {
-				vset->diffuse[i] = ils_color.Value();
+			for (int32 VertexIndex = 0; VertexIndex < vset->nverts; ++VertexIndex) {
+				vset->diffuse[VertexIndex] = ils_color.ToPackedARGB();
 			}
 		}
 

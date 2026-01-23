@@ -1,35 +1,34 @@
 /*  Project Starshatter Wars
 	Fractal Dev Studios
-	Copyright © 2025-2026. All Rights Reserved.
+	Copyright (C) 2025-2026. All Rights Reserved.
 
 	SUBSYSTEM:    Stars.exe
 	FILE:         TerrainApron.cpp
 	AUTHOR:       Carlos Bott
 
-	ORIGINAL AUTHOR AND STUDIO:
-	John DiCamillo, Destroyer Studios LLC
+	ORIGINAL AUTHOR AND STUDIO
+	==========================
+	John DiCamillo / Destroyer Studios LLC
 
 	OVERVIEW
 	========
-	A Single Edge Section of a Terrain Object
 */
 
-#include "TerrainApron.h"
+#include "GameStructs.h"
 
 #include "Terrain.h"
+#include "TerrainApron.h"
 #include "TerrainRegion.h"
 
+#include "CameraView.h"
+#include "Bitmap.h"
+#include "DataLoader.h"
+#include "Game.h"
 #include "SimLight.h"
 #include "SimScene.h"
 
-// NOTE:
-// Starshatter core render types remain (Model/Surface/VertexSet/Material/etc).
-// Render assets previously referenced as Bitmap are now UE textures.
-#include "Engine/Texture2D.h"
-
-// Minimal Unreal includes:
-#include "Math/UnrealMathUtility.h"
-#include "Logging/LogMacros.h"
+#include "Math/UnrealMathUtility.h" // FMath
+#include "HAL/UnrealMemory.h" 
 
 // +====================================================================+
 
@@ -40,8 +39,13 @@ const int NUM_INDICES_TRI = 3;
 
 // +--------------------------------------------------------------------+
 
-TerrainApron::TerrainApron(Terrain* terr, const UTexture2D* patch, const Rect& r,
-	const FVector& p1, const FVector& p2)
+TerrainApron::TerrainApron(
+	Terrain* terr,
+	const Bitmap* patch,
+	const Rect& r,
+	const FVector& p1,
+	const FVector& p2
+)
 	: terrain(terr), rect(r)
 {
 	size = FMath::Abs(p2.X - p1.X);
@@ -49,43 +53,55 @@ TerrainApron::TerrainApron(Terrain* terr, const UTexture2D* patch, const Rect& r
 	mtnscale = 1.3 * (p2.Y - p1.Y);
 	base = p1.Y;
 
-	// NOTE: We cannot read pixel data from UTexture2D without an explicit CPU-read path.
-	// The apron heightfield was built from a CPU bitmap; if you still have that bitmap
-	// pipeline in Starshatter core, keep using it there. For now, preserve behavior by
-	// allocating heights and initializing to zero (flat apron).
-	if (!patch) {
-		UE_LOG(LogTemp, Warning, TEXT("TerrainApron: null patch texture; apron heights will be flat."));
-		terrain_width = 0;
-	}
-	else {
-		terrain_width = patch->GetSizeX();
-	}
+	terrain_width = patch->Width();
 
-	loc = (p1 + p2) * 0.5;
-	loc.Y = base;
+	loc = (p1 + p2) * 0.5f;
+	loc.Y = (float)base;
 
 	radius = (float)(size * 0.75);
-	heights = new float[MAX_VERTS];
+	heights = (float*)FMemory::Malloc(sizeof(float) * MAX_VERTS);
 
-	// Flat fallback (0 height) unless you implement a CPU sampling path:
-	for (int i = 0; i < MAX_VERTS; ++i)
-		heights[i] = 0.0f;
+	float* pHeight = heights;
 
-	// If you later re-introduce CPU sampling, this is where the original loop would
-	// populate heights[i*PATCH_SIZE + j] from patch pixel luminance (Red channel).
+	int i, j;
+
+	for (i = 0; i < PATCH_SIZE; i++) {
+		int ty = rect.y + i;
+
+		if (ty < 0)
+			ty = 0;
+
+		if (ty > patch->Height() - 1)
+			ty = patch->Height() - 1;
+
+		for (j = 0; j < PATCH_SIZE; j++) {
+			int tx = rect.x + (PATCH_SIZE - 1 - j);
+
+			if (tx < 0)
+				tx = 0;
+
+			if (tx > patch->Width() - 1)
+				tx = patch->Width() - 1;
+
+			*pHeight++ = (float)(patch->GetColor(tx, ty).R * mtnscale);
+		}
+	}
 }
 
 // +--------------------------------------------------------------------+
 
 TerrainApron::~TerrainApron()
 {
-	delete[] heights;
-	heights = nullptr;
+	if (heights) {
+		FMemory::Free(heights);
+		heights = nullptr;
+	}
 }
 
 // +--------------------------------------------------------------------+
 
-void TerrainApron::SetScales(double s, double m, double b)
+void
+TerrainApron::SetScales(double s, double m, double b)
 {
 	scale = s;
 	mtnscale = m;
@@ -94,26 +110,41 @@ void TerrainApron::SetScales(double s, double m, double b)
 
 // +--------------------------------------------------------------------+
 
-bool TerrainApron::BuildApron()
+bool
+TerrainApron::BuildApron()
 {
-	int detail_size = PATCH_SIZE - 1;
-	int ds1 = PATCH_SIZE;
-	int nverts = MAX_VERTS;
-	int npolys = detail_size * detail_size * 2;
+	// UE-style internal variable types:
+	int32 i = 0;
+	int32 j = 0;
+
+	const int32 DetailSize = PATCH_SIZE - 1;
+	const int32 Ds1 = PATCH_SIZE;
+	const int32 NumVerts = MAX_VERTS;
+	const int32 NumPolys = DetailSize * DetailSize * 2;
 
 	model = new Model;
 	model->SetLuminous(true);
 	model->SetDynamic(true);
 
 	Material* mtl = new Material;
-	mtl->Ka = ColorValue(0.5f, 0.5f, 0.5f);
-	mtl->Kd = ColorValue(0.3f, 0.6f, 0.2f);
-	mtl->Ks = Color::Black;
 
-	// Terrain::ApronTexture() should now return UTexture2D* (or be adapted accordingly).
-	// Material expects "tex_diffuse" to be the Starshatter core type; keep the hook here
-	// consistent with your engine-side bridge.
-	mtl->tex_diffuse = terrain ? terrain->ApronTexture() : nullptr;
+	mtl->Ka = FColor(
+		(uint8)(0.5f * 255.0f),
+		(uint8)(0.5f * 255.0f),
+		(uint8)(0.5f * 255.0f),
+		255
+	);
+
+	mtl->Kd = FColor(
+		(uint8)(0.3f * 255.0f),
+		(uint8)(0.6f * 255.0f),
+		(uint8)(0.2f * 255.0f),
+		255
+	);
+
+	mtl->Ks = FColor::Black;
+
+	mtl->tex_diffuse = terrain->ApronTexture();
 	strcpy_s(mtl->name, "Terrain Apron");
 
 	model->GetMaterials().append(mtl);
@@ -123,44 +154,43 @@ bool TerrainApron::BuildApron()
 
 	if (s) {
 		s->SetName("default");
-		s->CreateVerts(nverts);
-		s->CreatePolys(npolys);
-		s->AddIndices(npolys * NUM_INDICES_TRI);
+		s->CreateVerts(NumVerts);
+		s->CreatePolys(NumPolys);
+		s->AddIndices(NumPolys * NUM_INDICES_TRI);
 
 		vset = s->GetVertexSet();
 
-		// VertexSet uses Starshatter core vectors; convert Point/Vec3 usage to FVector per project rule.
-		// These arrays are still plain POD buffers; preserve ZeroMemory behavior via memset.
-		memset(vset->loc, 0, nverts * sizeof(FVector));
-		memset(vset->diffuse, 0, nverts * sizeof(DWORD));
-		memset(vset->specular, 0, nverts * sizeof(DWORD));
-		memset(vset->tu, 0, nverts * sizeof(float));
-		memset(vset->tv, 0, nverts * sizeof(float));
-		memset(vset->rw, 0, nverts * sizeof(float));
+		FMemory::Memzero(vset->loc, NumVerts * sizeof(FVector));
+		FMemory::Memzero(vset->diffuse, NumVerts * sizeof(DWORD));
+		FMemory::Memzero(vset->specular, NumVerts * sizeof(DWORD));
+		FMemory::Memzero(vset->tu, NumVerts * sizeof(float));
+		FMemory::Memzero(vset->tv, NumVerts * sizeof(float));
+		FMemory::Memzero(vset->rw, NumVerts * sizeof(float));
 
 		// initialize vertices
 		FVector* pVert = vset->loc;
 		float* pTu = vset->tu;
 		float* pTv = vset->tv;
 
-		const double dt = (1.0 / 3.0) / (double)detail_size;
-		const double tu0 = (double)rect.x / rect.w / 3.0 + (1.0 / 3.0);
-		const double tv0 = (double)rect.y / rect.h / 3.0;
+		const double Dt = (1.0 / 3.0) / (double)DetailSize;
+		const double Tu0 = (double)rect.x / rect.w / 3.0 + (1.0 / 3.0);
+		const double Tv0 = (double)rect.y / rect.h / 3.0;
 
-		for (int i = 0; i < ds1; i++) {
-			for (int j = 0; j < ds1; j++) {
+		for (i = 0; i < Ds1; i++) {
+			for (j = 0; j < Ds1; j++) {
 				*pVert++ = FVector(
 					(float)(j * scale - (HALF_PATCH_SIZE * scale)),
 					(float)(heights[i * PATCH_SIZE + j]),
-					(float)(i * scale - (HALF_PATCH_SIZE * scale)));
+					(float)(i * scale - (HALF_PATCH_SIZE * scale))
+				);
 
-				*pTu++ = (float)(tu0 - j * dt);
-				*pTv++ = (float)(tv0 + i * dt);
+				*pTu++ = (float)(Tu0 - j * Dt);
+				*pTv++ = (float)(Tv0 + i * Dt);
 			}
 		}
 
 		// create the polys
-		for (int i = 0; i < npolys; i++) {
+		for (i = 0; i < NumPolys; i++) {
 			Poly* p = s->GetPolys() + i;
 			p->nverts = 3;
 			p->vertex_set = vset;
@@ -169,50 +199,52 @@ bool TerrainApron::BuildApron()
 			p->sortval = 0;
 		}
 
-		int index = 0;
+		int32 Index = 0;
 
 		// build main patch polys:
-		for (int i = 0; i < detail_size; i++) {
-			for (int j = 0; j < detail_size; j++) {
+		for (i = 0; i < DetailSize; i++) {
+			for (j = 0; j < DetailSize; j++) {
 				// first triangle
-				Poly* p = s->GetPolys() + index++;
-				p->verts[0] = (ds1 * (i)+(j));
-				p->verts[1] = (ds1 * (i)+(j + 1));
-				p->verts[2] = (ds1 * (i + 1) + (j + 1));
+				Poly* p = s->GetPolys() + Index++;
+				p->verts[0] = (Ds1 * (i)+(j));
+				p->verts[1] = (Ds1 * (i)+(j + 1));
+				p->verts[2] = (Ds1 * (i + 1) + (j + 1));
 
 				// second triangle
-				p = s->GetPolys() + index++;
-				p->verts[0] = (ds1 * (i)+(j));
-				p->verts[1] = (ds1 * (i + 1) + (j + 1));
-				p->verts[2] = (ds1 * (i + 1) + (j));
+				p = s->GetPolys() + Index++;
+				p->verts[0] = (Ds1 * (i)+(j));
+				p->verts[1] = (Ds1 * (i + 1) + (j + 1));
+				p->verts[2] = (Ds1 * (i + 1) + (j));
 			}
 		}
 
 		// update the verts and colors of each poly:
-		for (int i = 0; i < npolys; i++) {
+		for (i = 0; i < NumPolys; i++) {
 			Poly* p = s->GetPolys() + i;
 			Plane& plane = p->plane;
 			WORD* v = p->verts;
 
-			plane = Plane(vset->loc[v[0]] + loc,
+			plane = Plane(
+				vset->loc[v[0]] + loc,
 				vset->loc[v[1]] + loc,
-				vset->loc[v[2]] + loc);
+				vset->loc[v[2]] + loc
+			);
 		}
 
 		// create contiguous segments for each material:
 		s->Normalize();
 
-		Segment* segment = new Segment(npolys, s->GetPolys(), mtl, model);
+		Segment* segment = new Segment(NumPolys, s->GetPolys(), mtl, model);
 		s->GetSegments().append(segment);
 
 		model->AddSurface(s);
 
 		// copy vertex normals:
-		const FVector normal(0.f, 1.f, 0.f);
+		const FVector Normal(0.0f, 1.0f, 0.0f);
 
-		for (int i = 0; i < ds1; i++) {
-			for (int j = 0; j < ds1; j++) {
-				vset->nrm[i * ds1 + j] = normal;
+		for (i = 0; i < Ds1; i++) {
+			for (j = 0; j < Ds1; j++) {
+				vset->nrm[i * Ds1 + j] = Normal;
 			}
 		}
 	}
@@ -222,114 +254,96 @@ bool TerrainApron::BuildApron()
 
 // +--------------------------------------------------------------------+
 
-int TerrainApron::CollidesWith(Graphic& o)
+int
+TerrainApron::CollidesWith(Graphic& o)
 {
 	return 0;
 }
 
 // +--------------------------------------------------------------------+
 
-void TerrainApron::Update()
+void
+TerrainApron::Update()
 {
 }
 
 // +--------------------------------------------------------------------+
 
-void TerrainApron::Illuminate(FColor ambient, List<SimLight>& lights)
+void
+TerrainApron::Illuminate(FColor Ambient, List<SimLight>& Lights)
 {
 	if (!model || model->NumVerts() < 1)
 		return;
 
-	Surface* s = model->GetSurfaces().first();
-	if (!s)
+	Surface* SurfacePtr = model->GetSurfaces().first();
+	if (!SurfacePtr)
 		return;
 
 	// clear the solid lights to ambient:
-	VertexSet* vset = s->GetVertexSet();
-	if (!vset || vset->nverts < 1)
-		return;
+	VertexSet* VSet = SurfacePtr->GetVertexSet();
+	const int32 NumVerts = VSet->nverts;
+	const DWORD AmbientValue = Ambient.DWColor();
 
-	const int    nverts = vset->nverts;
-
-	// FColor has no Value(); store packed ARGB (0xAARRGGBB):
-	const uint32 aval = ambient.ToPackedARGB();
-
-	for (int i = 0; i < nverts; i++) {
-		vset->diffuse[i] = (DWORD)aval;
+	for (int32 i = 0; i < NumVerts; i++) {
+		VSet->diffuse[i] = AmbientValue;
 	}
 
-	bool eclipsed = false;
-
-	// Helpers for packed diffuse accumulation (assumes 0xAARRGGBB):
-	auto UnpackARGB = [](uint32 Packed) -> FColor
-		{
-			return FColor(
-				(uint8)((Packed >> 16) & 0xFF), // R
-				(uint8)((Packed >> 8) & 0xFF), // G
-				(uint8)((Packed >> 0) & 0xFF), // B
-				(uint8)((Packed >> 24) & 0xFF)  // A
-			);
-		};
-
-	auto PackARGB = [](const FColor& C) -> uint32
-		{
-			return (uint32(C.A) << 24) | (uint32(C.R) << 16) | (uint32(C.G) << 8) | uint32(C.B);
-		};
-
-	auto ScaleRGB = [](const FColor& C, float S) -> FColor
-		{
-			return FColor(
-				(uint8)FMath::Clamp(int32(C.R * S), 0, 255),
-				(uint8)FMath::Clamp(int32(C.G * S), 0, 255),
-				(uint8)FMath::Clamp(int32(C.B * S), 0, 255),
-				0 // do not add alpha during lighting
-			);
-		};
-
-	auto AddClampRGB = [](const FColor& A, const FColor& B) -> FColor
-		{
-			return FColor(
-				(uint8)FMath::Clamp(int32(A.R) + int32(B.R), 0, 255),
-				(uint8)FMath::Clamp(int32(A.G) + int32(B.G), 0, 255),
-				(uint8)FMath::Clamp(int32(A.B) + int32(B.B), 0, 255),
-				A.A
-			);
-		};
+	TerrainRegion* Region = terrain->GetRegion();
+	bool bEclipsed = false;
 
 	// for each light:
-	ListIter<SimLight> iter = lights;
-	while (++iter) {
-		SimLight* light = iter.value();
-		if (!light)
-			continue;
+	ListIter<SimLight> Iter = Lights;
+	while (++Iter) {
+		SimLight* Light = Iter.value();
 
-		if (light->CastsShadow())
-			eclipsed = light->Location().Y < -100.0f;
+		if (Light->CastsShadow()) {
+			bEclipsed = Light->Location().Y < -100.0f;
+		}
 
-		if (!light->CastsShadow() || !eclipsed) {
-			FVector vl = light->Location().GetSafeNormal();
+		if (!Light->CastsShadow() || !bEclipsed) {
+			FVector LightVec = Light->Location();
+			LightVec.Normalize();
 
-			for (int i = 0; i < nverts; i++) {
-				const FVector& nrm = vset->nrm[i];
+			for (int32 i = 0; i < NumVerts; i++) {
+				const FVector& Normal = VSet->nrm[i];
+				double Value = 0.0;
 
-				double val = 0.0;
+				if (Light->IsDirectional()) {
+					const double Gain = FVector::DotProduct(LightVec, Normal);
 
-				if (light->IsDirectional()) {
-					const double gain = (double)FVector::DotProduct(vl, nrm);
-
-					if (gain > 0.0) {
-						val = light->Intensity() * (0.85 * gain);
-						if (val > 1.0) val = 1.0;
+					if (Gain > 0.0) {
+						Value = Light->Intensity() * (0.85 * Gain);
+						Value = FMath::Min(Value, 1.0);
 					}
 				}
 
-				if (val > 0.01) {
-					const FColor Base = UnpackARGB((uint32)vset->diffuse[i]);
+				if (Value > 0.01) {
+					const FColor LightColor = Light->GetColor();
+					const float  Scale = (float)FMath::Clamp(Value, 0.0, 1.0);
 
-					const FColor Add = ScaleRGB(light->GetColor(), (float)val);
-					const FColor Out = AddClampRGB(Base, Add);
+					const uint8 R = (uint8)FMath::Min(255, (int)(LightColor.R * Scale));
+					const uint8 G = (uint8)FMath::Min(255, (int)(LightColor.G * Scale));
+					const uint8 B = (uint8)FMath::Min(255, (int)(LightColor.B * Scale));
 
-					vset->diffuse[i] = (DWORD)PackARGB(Out);
+					const FColor AddColor(R, G, B, 255);
+
+					// unpack current diffuse (ARGB)
+					const DWORD Packed = VSet->diffuse[i];
+					const FColor Current(
+						(uint8)((Packed >> 16) & 0xFF),
+						(uint8)((Packed >> 8) & 0xFF),
+						(uint8)((Packed >> 0) & 0xFF),
+						(uint8)((Packed >> 24) & 0xFF)
+					);
+
+					const FColor Result(
+						(uint8)FMath::Min(255, (int)Current.R + (int)AddColor.R),
+						(uint8)FMath::Min(255, (int)Current.G + (int)AddColor.G),
+						(uint8)FMath::Min(255, (int)Current.B + (int)AddColor.B),
+						Current.A
+					);
+
+					VSet->diffuse[i] = Result.DWColor();
 				}
 			}
 		}
@@ -340,10 +354,10 @@ void TerrainApron::Illuminate(FColor ambient, List<SimLight>& lights)
 
 // +--------------------------------------------------------------------+
 
-void TerrainApron::Render(Video* video, DWORD flags)
+void
+TerrainApron::Render(Video* video, DWORD flags)
 {
-	if (!video || (flags & RENDER_ADDITIVE) || (flags & RENDER_ADD_LIGHT))
-		return;
+	if (!video || (flags & RENDER_ADDITIVE) || (flags & RENDER_ADD_LIGHT)) return;
 
 	if (!model)
 		BuildApron();
@@ -352,22 +366,15 @@ void TerrainApron::Render(Video* video, DWORD flags)
 		Illuminate(scene->Ambient(), scene->Lights());
 	}
 
-	const double visibility = terrain->GetRegion()->GetWeather().Visibility();
-	const float  fog_density = (float)(terrain->GetRegion()->FogDensity() * 2.5e-5 * 1.0 / visibility);
+	double visibility = terrain->GetRegion()->GetWeather().Visibility();
+	FLOAT  fog_density = (FLOAT)(terrain->GetRegion()->FogDensity() * 2.5e-5 * 1 / visibility);
 
 	video->SetRenderState(Video::LIGHTING_ENABLE, false);
 	video->SetRenderState(Video::SPECULAR_ENABLE, false);
 	video->SetRenderState(Video::FOG_ENABLE, true);
-
-	const FColor Fog = terrain->GetRegion()->FogColor();
-
-	const DWORD FogPacked =
-		(DWORD(Fog.A) << 24) |
-		(DWORD(Fog.R) << 16) |
-		(DWORD(Fog.G) << 8) |
-		(DWORD(Fog.B));
-
-	video->SetRenderState(Video::FOG_COLOR, FogPacked);
+	
+	const FColor FogColor = terrain->GetRegion()->FogColor();
+	video->SetRenderState(Video::FOG_COLOR, FogColor.DWColor());
 	video->SetRenderState(Video::FOG_DENSITY, *((DWORD*)&fog_density));
 
 	Solid::Render(video, flags);
@@ -379,7 +386,8 @@ void TerrainApron::Render(Video* video, DWORD flags)
 
 // +--------------------------------------------------------------------+
 
-int TerrainApron::CheckRayIntersection(FVector Q, FVector w, double len, FVector& ipt, bool ttpas)
+int
+TerrainApron::CheckRayIntersection(FVector Q, FVector w, double len, FVector& ipt, bool ttpas)
 {
 	// compute leading edge of ray:
 	FVector sun = Q + w * (float)len;
@@ -389,4 +397,3 @@ int TerrainApron::CheckRayIntersection(FVector Q, FVector w, double len, FVector
 
 	return 0;
 }
-

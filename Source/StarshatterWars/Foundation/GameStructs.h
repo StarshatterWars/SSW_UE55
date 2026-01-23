@@ -1,5 +1,16 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    GAME
+	FILE:         GameStructs.h
+	AUTHOR:       Carlos Bott
+	ORIGINAL:     John DiCamillo / Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	Game Structs and Enums
+*/
 
 #pragma once
 
@@ -14,6 +25,10 @@
 #define STARSHATTERWARS_LOG_DEFINED
 DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
 #endif
+
+const double STARSHIP_TACTICAL_DROP_TIME = 15;
+static const double GRAV = 6.673e-11;
+static const int    NAMELEN = 64;
 
 /************************************************************************/
 /* ENUMS                                                                */

@@ -26,7 +26,7 @@
 #include "DataLoader.h"
 #include "Game.h"
 #include "Random.h"
-#include "Scene.h"
+#include "SimScene.h"
 #include "Video.h"
 #include "Camera.h"
 
@@ -37,6 +37,7 @@
 #include "Math/Vector.h"
 #include "Math/Color.h"
 #include "Math/UnrealMathUtility.h"
+#include "Math/RandomStream.h"
 #include "Logging/LogMacros.h"
 
 // --------------------------------------------------------------------
@@ -69,6 +70,9 @@ QuantumFlash::QuantumFlash()
 {
 	trans = true;
 	luminous = true;
+
+	FRandomStream RandomStream;
+	
 
 	if (!texture || texture->Width() < 1) {
 		DataLoader* loader = DataLoader::GetLoader();
@@ -106,9 +110,13 @@ QuantumFlash::QuantumFlash()
 			verts->tv[4 * i + n] = (n > 0 && n < 3) ? 1.0f : 0.0f;
 		}
 
-		beams[i].Roll(Random(-2 * PI, 2 * PI));
-		beams[i].Pitch(Random(-2 * PI, 2 * PI));
-		beams[i].Yaw(Random(-2 * PI, 2 * PI));
+		const int32 SeedValue = i;   
+		FRandomStream RandomStream(SeedValue);
+		RandomStream.Initialize(SeedValue);
+
+		beams[i].Roll(RandomStream.FRandRange(-2.0 * PI, 2.0 * PI));
+		beams[i].Pitch(RandomStream.FRandRange(-2.0 * PI, 2.0 * PI));
+		beams[i].Yaw(RandomStream.FRandRange(-2.0 * PI, 2.0 * PI));
 
 		polys[i].nverts = 4;
 		polys[i].visible = 1;

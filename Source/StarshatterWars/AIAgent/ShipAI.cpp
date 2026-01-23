@@ -612,11 +612,11 @@ ShipAI::FindObjectiveNavPoint()
 		// UE port assumption:
 		// - Region::Location() returns FVector (world/region origin)
 		// - NavPoint::Location() returns FVector (local within region)
-		FVector Npt = navpt->Region()->Location() + navpt->Location();
+		FVector Npt = navpt->Region()->GetLocation() + navpt->Location();
 
 		SimRegion* ActiveRegion = ship->GetRegion();
 		if (ActiveRegion)
-			Npt -= ActiveRegion->Location();
+			Npt -= ActiveRegion->GetLocation();
 
 		// If your UE port removed handedness conversions, delete this line.
 		// Keep it ONLY if you still maintain a legacy "OtherHand()" helper on FVector/Point.
@@ -680,11 +680,11 @@ ShipAI::FindObjectiveQuantum()
 
 	if (!farcaster) {
 		// Transform from StarSystem space to active region space:
-		FVector Npt = Orders->Region()->Location() + Orders->Location();
+		FVector Npt = Orders->Region()->GetLocation() + Orders->Location();
 
 		SimRegion* ActiveRegion = ship->GetRegion();
 		if (ActiveRegion)
-			Npt -= ActiveRegion->Location();
+			Npt -= ActiveRegion->GetLocation();
 
 		// If you kept a legacy handedness helper, apply it here; otherwise omit.
 		// Npt = Npt.OtherHand();

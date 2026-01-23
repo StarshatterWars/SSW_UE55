@@ -55,8 +55,8 @@ public:
 	// accessors:
 	const char* GetTileName()      const { return tile_name; }
 	const char* GetDetailName()    const { return detail_name; }
-	UTexture2D* GetTileTexture()   const { return tile_texture; }
-	UTexture2D* GetDetailTexture() const { return detail_texture; }
+	Bitmap* GetTileTexture()   const { return tile_texture; }
+	Bitmap* GetDetailTexture() const { return detail_texture; }
 	double        GetMinHeight()     const { return min_height; }
 	double        GetMaxHeight()     const { return max_height; }
 
@@ -64,9 +64,8 @@ private:
 	Text          tile_name;
 	Text          detail_name;
 
-	// UE render assets (loaded/owned elsewhere, typically via DataLoader or an asset registry):
-	UTexture2D* tile_texture;
-	UTexture2D* detail_texture;
+	Bitmap* tile_texture;
+	Bitmap* detail_texture;
 
 	double        min_height;
 	double        max_height;

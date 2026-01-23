@@ -19,8 +19,8 @@
 #include "Types.h"
 #include "View.h"
 #include "SimObject.h"
-#include "Color.h"
 #include "Text.h"
+#include "Bitmap.h"
 
 // +--------------------------------------------------------------------+
 
@@ -51,7 +51,7 @@ public:
 		double			fade_in = 0,
 		double			fade_out = 0);
 
-	virtual void      AddImage(UTexture2D* texture,
+	virtual void      AddImage(Bitmap* texture,
 		FColor			color,
 		int				blend,
 		const Rect&		rect,

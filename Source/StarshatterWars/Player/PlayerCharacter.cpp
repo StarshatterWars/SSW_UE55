@@ -25,7 +25,7 @@
 #include "MFD.h"
 
 #include "DataLoader.h"
-//#include "Encrypt.h"
+#include "Encrypt.h"
 #include "ParseUtil.h"
 #include "FormatUtil.h"
 #include "Engine/Texture2D.h"
@@ -75,8 +75,8 @@ public:
     Text     grant;
     Text     desc_sound;
     Text     grant_sound;
-    UTexture2D* large_insignia;
-    UTexture2D* small_insignia;
+    Bitmap* large_insignia;
+    Bitmap* small_insignia;
     int      granted_ship_classes;
 
     int      total_points;
@@ -465,7 +465,7 @@ PlayerCharacter::RankAbrv(int rank)
     return "";
 }
 
-UTexture2D*
+Bitmap*
 PlayerCharacter::RankInsignia(int rank, int size)
 {
     ListIter<AwardInfo> iter = rank_table;
@@ -509,26 +509,34 @@ PlayerCharacter::RankFromName(const char* name)
     return 0;
 }
 
-int
+int32
 PlayerCharacter::Rank() const
 {
-    for (int i = rank_table.size() - 1; i >= 0; i--) {
-        AwardInfo* award = rank_table[i];
-        if (points >= award->total_points)
-            return award->id;
+    const int32 RankCount = rank_table.size();
+
+    for (int32 Index = RankCount - 1; Index >= 0; --Index) {
+        const AwardInfo* Award = rank_table[Index];
+
+        if (points >= Award->total_points) {
+            return Award->id;
+        }
     }
 
     return 0;
 }
 
 void
-PlayerCharacter::SetRank(int r)
+PlayerCharacter::SetRank(int32 RankId)
 {
-    ListIter<AwardInfo> iter = rank_table;
-    while (++iter) {
-        AwardInfo* award = iter.value();
-        if (r == award->id)
-            points = award->total_points;
+    ListIter<AwardInfo> RankIter = rank_table;
+
+    while (++RankIter) {
+        AwardInfo* Award = RankIter.value();
+
+        if (Award && RankId == Award->id) {
+            points = Award->total_points;
+            return;
+        }
     }
 }
 
@@ -571,7 +579,7 @@ PlayerCharacter::MedalName(int medal)
     return "";
 }
 
-UTexture2D*
+Bitmap*
 PlayerCharacter::MedalInsignia(int medal, int size)
 {
     ListIter<AwardInfo> iter = medal_table;
@@ -610,10 +618,10 @@ PlayerCharacter::CanCommand(int ship_class)
     if (ship_class <= Ship::ATTACK)
         return true;
 
-    for (int i = rank_table.size() - 1; i >= 0; i--) {
-        AwardInfo* award = rank_table[i];
-        if (points > award->total_points) {
-            return (ship_class & award->granted_ship_classes) != 0;
+    for (int32 RankIndex = rank_table.size() - 1; RankIndex >= 0; --RankIndex) {
+        AwardInfo* RankAward = rank_table[RankIndex];
+        if (points > RankAward->total_points) {
+            return (ship_class & RankAward->granted_ship_classes) != 0;
         }
     }
 
@@ -636,35 +644,35 @@ PlayerCharacter::CommandRankRequired(int ship_class)
 // +-------------------------------------------------------------------+
 
 int
-PlayerCharacter::GetMissionPoints(ShipStats* s, DWORD start_time)
+PlayerCharacter::GetMissionPoints(ShipStats* ShipStatsPtr, DWORD StartTime)
 {
-    int result = 0;
+    int MissionPoints = 0;
 
-    if (s) {
-        result = s->GetPoints();
+    if (ShipStatsPtr) {
+        MissionPoints = ShipStatsPtr->GetPoints();
 
-        int flight_time = (Game::GameTime() - start_time) / 1000;
+        const int FlightTimeSeconds = (Game::GameTime() - StartTime) / 1000;
 
-        // if player survived mission, award one experience point
-        // for each minute of action, in ten point blocks:
-        if (!s->GetDeaths() && !s->GetColls()) {
-            int minutes = flight_time / 60;
-            minutes /= 10;
-            minutes *= 10;
-            result += minutes;
+        // If player survived the mission, award experience based on time in action
+        if (!ShipStatsPtr->GetDeaths() && !ShipStatsPtr->GetColls()) {
+            int MinutesInAction = FlightTimeSeconds / 60;
+            MinutesInAction /= 10;
+            MinutesInAction *= 10;
 
-            if (s->HasEvent(SimEvent::DOCK))
-                result += 100;
+            MissionPoints += MinutesInAction;
+
+            if (ShipStatsPtr->HasEvent(SimEvent::DOCK))
+                MissionPoints += 100;
         }
         else {
-            result -= (int)(2.5 * Ship::Value(s->GetShipClass()));
+            MissionPoints -= static_cast<int>(2.5 * Ship::Value(ShipStatsPtr->GetShipClass()));
         }
 
-        if (result < 0)
-            result = 0;
+        if (MissionPoints < 0)
+            MissionPoints = 0;
     }
 
-    return result;
+    return MissionPoints;
 }
 
 // +-------------------------------------------------------------------+
@@ -860,8 +868,6 @@ PlayerCharacter::Create(const char* name)
             return 0;
 
         PlayerCharacter* newbie = new PlayerCharacter(name);
-        newbie->SetCreateDate(NetLayer::GetUTC());
-
         player_roster.append(newbie);
         newbie->CreateUniqueID();
         return newbie;
@@ -1251,7 +1257,6 @@ PlayerCharacter::DecodeStats(const char* stats)
 
     if (!stats || !*stats) {
         Print("PlayerCharacter::DecodeStats() invalid or missing stats\n");
-        create_date = NetLayer::GetUTC();
         return;
     }
 
@@ -1271,7 +1276,6 @@ PlayerCharacter::DecodeStats(const char* stats)
 
     else {
         Print("PlayerCharacter::DecodeStats() invalid plain text length %d\n", plain.length());
-        create_date = NetLayer::GetUTC();
         return;
     }
 
@@ -1324,7 +1328,6 @@ PlayerCharacter::DecodeStats(const char* stats)
 
     if (create_date == 0) {
         ::Print("WARNING - loaded player with zero stats '%s'\n", name.data());
-        create_date = NetLayer::GetUTC();
     }
 }
 

@@ -122,7 +122,7 @@ void LandingGear::Initialize()
         // Unreal conversion note:
         // DataLoader::SetDataPath expects FString in your UE port.
         // Keep call site valid by using TEXT("") literal (FString-compatible).
-        loader->SetDataPath(TEXT("Sounds/"));
+        loader->SetDataPath("Sounds/");
         loader->LoadSound("GearTransit.wav", gear_transit_sound);
     }
 }

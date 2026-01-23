@@ -20,7 +20,7 @@
 
 // Forward declarations (keep header light)
 class Model;
-class Material;
+struct Material;
 
 // +--------------------------------------------------------------------+
 

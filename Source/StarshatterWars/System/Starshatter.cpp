@@ -13,8 +13,6 @@
 #include "CoreMinimal.h"
 #include "Math/UnrealMathUtility.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
-
 #include "MenuScreen.h"
 #include "LoadScreen.h"
 #include "PlanScreen.h"

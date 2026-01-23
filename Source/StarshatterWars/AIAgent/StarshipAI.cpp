@@ -35,6 +35,7 @@
 
 #include "Game.h"
 #include "Random.h"
+#include "Solid.h"
 
 #include "CoreMinimal.h" // UE_LOG
 #include "Math/Vector.h" // FVector

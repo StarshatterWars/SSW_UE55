@@ -576,131 +576,146 @@ bool TacticalAI::CanTarget(Ship* tgt)
 
 // +--------------------------------------------------------------------+
 
-void TacticalAI::SelectTargetOpportunity()
+void
+TacticalAI::SelectTargetOpportunity()
 {
 	// NON-COMBATANTS do not pick targets of opportunity:
 	if (ship->GetIFF() == 0)
 		return;
 
-	SimObject* potential_target = 0;
+	SimObject* PotentialTarget = nullptr;
 
 	// pick the closest combatant ship with a different IFF code:
-	double target_dist = ship->Design()->commit_range;
+	double TargetDist = ship->Design()->commit_range;
 
-	SimObject* ward = ship_ai->GetWard();
+	SimObject* WardObj = ship_ai->GetWard();
 
 	// FRIGATES are primarily anti-air platforms, but may
 	// also attack smaller starships:
+
 	if (ship->Class() == Ship::CORVETTE || ship->Class() == Ship::FRIGATE) {
-		Ship* current_ship_target = 0;
-		SimShot* current_shot_target = 0;
+		Ship* CurrentShipTarget = nullptr;
+		SimShot* CurrentShotTarget = nullptr;
 
 		// if we are escorting a larger warship, it is good to attack
 		// the same target as our ward:
-		if (ward) {
-			Ship* s = (Ship*)ward;
 
-			if (s->Class() > ship->Class()) {
-				SimObject* obj = s->GetTarget();
+		if (WardObj) {
+			Ship* WardShip = (Ship*)WardObj;
 
-				if (obj && obj->Type() == SimObject::SIM_SHIP) {
-					current_ship_target = (Ship*)obj;
-					target_dist = (ship->Location() - obj->Location()).Length();
+			if (WardShip->Class() > ship->Class()) {
+				SimObject* WardTarget = WardShip->GetTarget();
+
+				if (WardTarget && WardTarget->Type() == SimObject::SIM_SHIP) {
+					CurrentShipTarget = (Ship*)WardTarget;
+					TargetDist = (ship->Location() - WardTarget->Location()).Length();
 				}
 			}
 		}
 
-		ListIter<SimContact> contact = ship->ContactList();
-		while (++contact) {
-			Ship* c_ship = contact->GetShip();
-			SimShot* c_shot = contact->GetShot();
+		ListIter<SimContact> ContactIter = ship->ContactList();
+		while (++ContactIter) {
+			Ship* ContactShip = ContactIter->GetShip();
+			SimShot* ContactShot = ContactIter->GetShot();
 
-			if (!c_ship && !c_shot)
+			if (!ContactShip && !ContactShot)
 				continue;
 
-			int  c_iff = contact->GetIFF(ship);
-			bool rogue = c_ship && c_ship->IsRogue();
-			bool tgt_ok = c_iff > 0 &&
-				c_iff != ship->GetIFF() &&
-				c_iff < 1000;
+			const int32 ContactIFF = ContactIter->GetIFF(ship);
+			const bool bRogue = ContactShip && ContactShip->IsRogue();
+			const bool bTargetOk = ContactIFF > 0 &&
+				ContactIFF != ship->GetIFF() &&
+				ContactIFF < 1000;
 
-			if (rogue || tgt_ok) {
-				if (c_ship && c_ship != ship && !c_ship->InTransition()) {
-					if (c_ship->Class() < Ship::DESTROYER ||
-						(c_ship->Class() >= Ship::MINE && c_ship->Class() <= Ship::DEFSAT)) {
-						double dist = (ship->Location() - c_ship->Location()).Length();
+			if (bRogue || bTargetOk) {
+				if (ContactShip && ContactShip != ship && !ContactShip->InTransition()) {
+					if (ContactShip->Class() < Ship::DESTROYER ||
+						(ContactShip->Class() >= Ship::MINE && ContactShip->Class() <= Ship::DEFSAT)) {
+						// found an enemy, check distance:
+						const double Dist = (ship->Location() - ContactShip->Location()).Length();
 
-						if (dist < 0.75 * target_dist &&
-							(!current_ship_target || c_ship->Class() <= current_ship_target->Class())) {
-							current_ship_target = c_ship;
-							target_dist = dist;
+						if (Dist < 0.75 * TargetDist &&
+							(!CurrentShipTarget || ContactShip->Class() <= CurrentShipTarget->Class())) {
+							CurrentShipTarget = ContactShip;
+							TargetDist = Dist;
 						}
 					}
 				}
-				else if (c_shot) {
-					if (c_shot->GetEta() < 3)
+
+				else if (ContactShot) {
+					// found an enemy shot, is there enough time to engage?
+					if (ContactShot->GetEta() < 3)
 						continue;
 
-					double dist = (ship->Location() - c_shot->Location()).Length();
+					// found an enemy shot, check distance:
+					const double Dist = (ship->Location() - ContactShot->Location()).Length();
 
-					if (!current_shot_target) {
-						current_shot_target = c_shot;
-						target_dist = dist;
+					if (!CurrentShotTarget) {
+						CurrentShotTarget = ContactShot;
+						TargetDist = Dist;
 					}
-					else {
-						SimObject* w = ship_ai->GetWard();
 
-						if ((c_shot->IsTracking(w) || c_shot->IsTracking(ship)) &&
-							(!current_shot_target->IsTracking(w) ||
-								!current_shot_target->IsTracking(ship))) {
-							current_shot_target = c_shot;
-							target_dist = dist;
+					// is this shot a better target than the one we've found?
+					else {
+						// IMPORTANT: SimShot::IsTracking expects Ship*, not SimObject*
+						Ship* WardShip = nullptr;
+						if (WardObj && WardObj->Type() == SimObject::SIM_SHIP)
+							WardShip = (Ship*)WardObj;
+
+						if ((ContactShot->IsTracking(WardShip) || ContactShot->IsTracking(ship)) &&
+							(!CurrentShotTarget->IsTracking(WardShip) ||
+								!CurrentShotTarget->IsTracking(ship))) {
+							CurrentShotTarget = ContactShot;
+							TargetDist = Dist;
 						}
-						else if (dist < target_dist) {
-							current_shot_target = c_shot;
-							target_dist = dist;
+						else if (Dist < TargetDist) {
+							CurrentShotTarget = ContactShot;
+							TargetDist = Dist;
 						}
 					}
 				}
 			}
 		}
 
-		if (current_shot_target)
-			potential_target = current_shot_target;
+		if (CurrentShotTarget)
+			PotentialTarget = CurrentShotTarget;
 		else
-			potential_target = current_ship_target;
+			PotentialTarget = CurrentShipTarget;
 	}
 
 	// ALL OTHER SHIP CLASSES ignore fighters and only engage
 	// other starships:
+
 	else {
-		List<Ship> ward_threats;
+		List<Ship> WardThreats;
 
-		ListIter<SimContact> contact = ship->ContactList();
-		while (++contact) {
-			Ship* c_ship = contact->GetShip();
+		ListIter<SimContact> ContactIter = ship->ContactList();
+		while (++ContactIter) {
+			Ship* ContactShip = ContactIter->GetShip();
 
-			if (!c_ship)
+			if (!ContactShip)
 				continue;
 
-			int  c_iff = contact->GetIFF(ship);
-			bool rogue = c_ship->IsRogue();
-			bool tgt_ok = c_ship != ship &&
-				c_iff > 0 &&
-				c_iff != ship->GetIFF() &&
-				!c_ship->InTransition();
+			const int32 ContactIFF = ContactIter->GetIFF(ship);
+			const bool bRogue = ContactShip->IsRogue();
+			const bool bTargetOk = ContactShip != ship &&
+				ContactIFF > 0 &&
+				ContactIFF != ship->GetIFF() &&
+				!ContactShip->InTransition();
 
-			if (rogue || tgt_ok) {
-				if (c_ship->IsStarship() || c_ship->IsStatic()) {
-					double dist = (ship->Location() - c_ship->Location()).Length();
+			if (bRogue || bTargetOk) {
+				if (ContactShip->IsStarship() || ContactShip->IsStatic()) {
+					// found an enemy, check distance:
+					const double Dist = (ship->Location() - ContactShip->Location()).Length();
 
-					if (dist < 0.75 * target_dist) {
-						potential_target = c_ship;
-						target_dist = dist;
+					if (Dist < 0.75 * TargetDist) {
+						PotentialTarget = ContactShip;
+						TargetDist = Dist;
 					}
 
-					if (ward && c_ship->IsTracking(ward)) {
-						ward_threats.append(c_ship);
+					// WardObj is SimObject*, Ship::IsTracking expects SimObject* in your codebase here:
+					if (WardObj && ContactShip->IsTracking(WardObj)) {
+						WardThreats.append(ContactShip);
 					}
 				}
 			}
@@ -708,27 +723,27 @@ void TacticalAI::SelectTargetOpportunity()
 
 		// if this ship is protecting a ward,
 		// prefer targets that are threatening that ward:
-		if (potential_target && ward_threats.size() && !ward_threats.contains((Ship*)potential_target)) {
-			target_dist *= 2;
+		if (PotentialTarget && WardThreats.size() && !WardThreats.contains((Ship*)PotentialTarget)) {
+			TargetDist *= 2;
 
-			ListIter<Ship> iter = ward_threats;
-			while (++iter) {
-				Ship* threat = iter.value();
+			ListIter<Ship> ThreatIter = WardThreats;
+			while (++ThreatIter) {
+				Ship* ThreatShip = ThreatIter.value();
 
-				double dist = (ward->Location() - threat->Location()).Length();
+				const double Dist = (WardObj->Location() - ThreatShip->Location()).Length();
 
-				if (dist < target_dist) {
-					potential_target = threat;
-					target_dist = dist;
+				if (Dist < TargetDist) {
+					PotentialTarget = ThreatShip;
+					TargetDist = Dist;
 				}
 			}
 		}
 	}
 
-	// Preserve original logic (even though the condition is always true):
 	if (ship->Class() != Ship::CARRIER || ship->Class() != Ship::SWACS)
-		ship_ai->SetTarget(potential_target);
+		ship_ai->SetTarget(PotentialTarget);
 }
+
 
 // +--------------------------------------------------------------------+
 

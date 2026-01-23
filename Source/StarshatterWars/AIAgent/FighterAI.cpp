@@ -357,7 +357,7 @@ FighterAI::ReturnToBase(Ship* controller)
             if (rtb_rgn->GetOrbitalRegion()->Primary() ==
                 self_rgn->GetOrbitalRegion()->Primary()) {
 
-                FVector npt = rtb_rgn->Location() - self_rgn->Location();
+                FVector npt = rtb_rgn->GetLocation() - self_rgn->GetLocation();
                 obj_w = npt; // NOTE: Original used OtherHand().
 
                 // distance from self to navpt:
@@ -475,7 +475,7 @@ FighterAI::FindObjectiveNavPoint()
         if (nav_rgn->GetOrbitalRegion()->Primary() ==
             self_rgn->GetOrbitalRegion()->Primary()) {
 
-            FVector npt = nav_rgn->Location() - self_rgn->Location();
+            FVector npt = nav_rgn->GetLocation() - self_rgn->GetLocation();
             obj_w = npt; // NOTE: Original used OtherHand().
 
             // distance from self to navpt:

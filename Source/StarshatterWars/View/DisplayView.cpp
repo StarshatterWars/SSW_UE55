@@ -18,6 +18,7 @@
 
 #include "Window.h"
 #include "Game.h"
+#include "Bitmap.h"
 #include "SystemFont.h"
 
 // Render asset replacement:
@@ -36,7 +37,7 @@ public:
 	}
 
 	Text        text;
-	UTexture2D* image;
+	Bitmap*		image;
 	SystemFont* font;
 	FColor      color;
 	Rect        rect;
@@ -225,7 +226,7 @@ DisplayView::AddText(const char* text,
 }
 
 void
-DisplayView::AddImage(UTexture2D* texture,
+DisplayView::AddImage(Bitmap* texture,
 	FColor        color,
 	int          blend,
 	const Rect& rect,

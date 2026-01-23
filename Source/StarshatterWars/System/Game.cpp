@@ -298,3 +298,12 @@ Game::GetGameVersion()
 {
 	return "5.1.87 EX";
 }
+
+Video*
+Game::GetVideo()
+{
+	if (game)
+		return game->video;
+
+	return 0;
+}

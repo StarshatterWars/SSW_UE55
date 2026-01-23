@@ -93,9 +93,6 @@ void StarSystem::CalcStardate()
 	FPURestore();
 }
 
-static const double GRAV = 6.673e-11;
-static const int    NAMELEN = 64;
-
 // +====================================================================+
 
 static inline FVector OtherHand(const FVector& V)
@@ -178,7 +175,8 @@ void StarSystem::Load()
 
 	BYTE* block = 0;
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(FString(datapath.data()));
+	const FString DataPathString(datapath.data());
+	loader->SetDataPath(TCHAR_TO_ANSI(*DataPathString));
 
 	sprintf_s(filename, "%s/%s.def", (const char*)name, (const char*)name);
 
@@ -353,8 +351,8 @@ void StarSystem::ParseStar(TermStruct* val)
 	double orbit = 0.0;
 	double tscale = 1.0;
 	bool   retro = false;
-	Color  color;
-	Color  back;
+	FColor  color;
+	FColor  back;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -392,13 +390,13 @@ void StarSystem::ParseStar(TermStruct* val)
 			else if (pdef->name()->value() == "color") {
 				FVector a(0, 0, 0);
 				GetDefVec(a, pdef, filename);
-				color = Color((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
+				color = FColor((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
 			}
 
 			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
 				FVector a(0, 0, 0);
 				GetDefVec(a, pdef, filename);
-				back = Color((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
+				back = FColor((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
 			}
 		}
 	}
@@ -451,7 +449,7 @@ void StarSystem::ParsePlanet(TermStruct* val)
 	double tilt = 0.0;
 	bool   retro = false;
 	bool   lumin = false;
-	Color  atmos = Color::Black;
+	FColor  atmos = FColor::Black;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -525,7 +523,7 @@ void StarSystem::ParsePlanet(TermStruct* val)
 			else if (pdef->name()->value() == "atmosphere") {
 				FVector a(0, 0, 0);
 				GetDefVec(a, pdef, filename);
-				atmos = Color((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
+				atmos = FColor((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
 			}
 		}
 	}
@@ -583,7 +581,7 @@ void StarSystem::ParseMoon(TermStruct* val)
 	double tscale = 1.0;
 	double tilt = 0.0;
 	bool   retro = false;
-	Color  atmos = Color::Black;
+	FColor  atmos = FColor::Black;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -633,7 +631,7 @@ void StarSystem::ParseMoon(TermStruct* val)
 			else if (pdef->name()->value() == "atmosphere") {
 				FVector a(0, 0, 0);
 				GetDefVec(a, pdef, filename);
-				atmos = Color((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
+				atmos = FColor((BYTE)a.X, (BYTE)a.Y, (BYTE)a.Z);
 			}
 		}
 	}
@@ -992,7 +990,8 @@ void StarSystem::Create()
 		UE_LOG(LogTemp, Log, TEXT("Creating Star System %s"), ANSI_TO_TCHAR((const char*)name));
 
 		DataLoader* loader = DataLoader::GetLoader();
-		loader->SetDataPath(FString(datapath.data()));
+		const FString DataPathString(datapath.data());
+		loader->SetDataPath(TCHAR_TO_ANSI(*DataPathString));
 
 		// poly star shell:
 		if (sky_poly_stars.length()) {
@@ -1010,7 +1009,8 @@ void StarSystem::Create()
 			point_stars = new Stars(sky_stars);
 		}
 
-		loader->SetDataPath(FString(datapath.data()));
+		const FString SSDataPathString(datapath.data());
+		loader->SetDataPath(TCHAR_TO_ANSI(*SSDataPathString));
 
 		// nebula:
 		if (sky_nebula.length()) {
@@ -1025,7 +1025,8 @@ void StarSystem::Create()
 
 		// atmospheric haze:
 		if (sky_haze.length()) {
-			loader->SetDataPath(FString(datapath.data()));
+			const FString SHDataPathString(datapath.data());
+			loader->SetDataPath(TCHAR_TO_ANSI(*SHDataPathString));
 			haze = new TerrainHaze();
 			haze->Load(sky_haze, 120);
 			haze->SetInfinite(true);
@@ -1062,7 +1063,8 @@ void StarSystem::Create()
 void StarSystem::CreateBody(OrbitalBody& body)
 {
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(FString(datapath.data()));
+	const FString DataPathString(datapath.data());
+	loader->SetDataPath(TCHAR_TO_ANSI(*DataPathString));
 
 	// stars:
 	if (body.type == Orbital::STAR) {
@@ -1090,7 +1092,7 @@ void StarSystem::CreateBody(OrbitalBody& body)
 		sun_lights.append(sun_light);
 		body.light_rep = sun_light;
 
-		if (body.back != Color::Black) {
+		if (body.back != FColor::Black) {
 			SimLight* back_light = new SimLight(0.6f);
 			back_light->SetColor(body.back);
 			back_light->SetShadow(false);
@@ -1239,7 +1241,7 @@ void StarSystem::Activate(SimScene& scene)
 			FColor c = ambient;
 			int n = (c.R + c.G + c.B) / 3;
 
-			c = Color(n, n, n);
+			c = FColor(n, n, n);
 			scene.SetAmbient(c);
 		}
 
@@ -1947,26 +1949,28 @@ void OrbitalBody::Update()
 {
 	Orbital::Update();
 
-	theta = 0;
+	theta = 0.0;
 
-	if (rotation > 0)
-		theta = -2 * PI * StarSystem::Stardate() / rotation;
+	if (rotation > 0.0)
+		theta = -2.0 * PI * StarSystem::Stardate() / rotation;
 
-	ListIter<OrbitalBody> body = satellites;
-	while (++body)
-		body->Update();
+	ListIter<OrbitalBody> BodyIter = satellites;
+	while (++BodyIter)
+		BodyIter->Update();
 
-	if (rep && theta != 0) {
-		Matrix m;
-		m.Pitch(tilt);
-		m.Roll(tilt / 2);
-		m.Yaw(theta);
-		rep->SetOrientation(m);
+	if (rep && theta != 0.0) {
+		// Unreal uses degrees, Starshatter math is radians
+		const float PitchDeg = FMath::RadiansToDegrees(tilt);
+		const float RollDeg = FMath::RadiansToDegrees(tilt * 0.5);
+		const float YawDeg = FMath::RadiansToDegrees(theta);
+
+		const FRotator OrientationRotator(PitchDeg, YawDeg, RollDeg);
+		rep->SetOrientation(FRotationMatrix(OrientationRotator));
 	}
 
 	if (light_rep) {
-		const FVector bodyloc = OtherHand(loc);
-		light_rep->MoveTo(bodyloc);
+		const FVector BodyLocation = OtherHand(loc);
+		light_rep->MoveTo(BodyLocation);
 	}
 }
 

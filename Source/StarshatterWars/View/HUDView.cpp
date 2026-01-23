@@ -75,6 +75,7 @@
 
 #include "Math/UnrealMathUtility.h"
 #include "Math/Rotator.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterHUDView, Log, All);
 
 // ---------------------------------------------------------------------
@@ -913,23 +914,22 @@ HUDView::MarkerColor(SimContact* contact)
 		if (ship) {
 			int c_iff = contact->GetIFF(ship);
 
-			// Ship::IFFColor should already return FColor
-			c = ScaleColor(
+			// Ship::IFFColor already returns FColor
+			c = ScaleHUDColor(
 				Ship::IFFColor(c_iff),
-				(float)contact->Age()
+				static_cast<float>(contact->Age())
 			);
 
 			// Threat blink (classic Starshatter behavior)
 			if (contact->GetShot() && contact->Threat(ship)) {
 				const bool blink = ((Game::RealTime() / 500) & 1) != 0;
-				c = ScaleColor(c, blink ? 2.0f : 0.5f);
+				c = ScaleHUDColor(c, blink ? 2.0f : 0.5f);
 			}
 		}
 	}
 
 	return c;
 }
-
 // +--------------------------------------------------------------------+
 
 void
@@ -978,7 +978,7 @@ HUDView::DrawContactMarkers()
 
 			if (t1 != t2) {
 				const float TrackFade = (float)((double)(ctl - i) / (double)ctl);
-				DrawTrackSegment(t1, t2, ScaleColor(c, TrackFade));
+				DrawTrackSegment(t1, t2, ScaleHUDColor(c, TrackFade));
 			}
 		}
 	}
@@ -1290,7 +1290,7 @@ HUDView::DrawTrack(SimContact* contact)
 		if (t1 != t2)
 		{
 			const float Fade = float(ctl - i) / float(ctl);
-			DrawTrackSegment(t1, t2, ScaleColor(c, Fade));
+			DrawTrackSegment(t1, t2, ScaleHUDColor(c, Fade));
 		}
 	}
 }
@@ -3210,10 +3210,10 @@ HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 		};
 
 	// transform from starsystem to world coordinates:
-	FVector npt = navpt.Region()->Location() + navpt.Location();
+	FVector npt = navpt.Region()->GetLocation() + navpt.Location();
 
 	if (active_region)
-		npt -= active_region->Location();
+		npt -= active_region->GetLocation();
 
 	npt = ToOtherHand(npt);
 

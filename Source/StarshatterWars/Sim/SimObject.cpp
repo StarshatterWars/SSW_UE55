@@ -23,29 +23,6 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSimObject, Log, All);
 
-// Route legacy Print-style debugging through UE_LOG:
-static void SSLogf(const char* Fmt, ...)
-{
-	if (!Fmt || !*Fmt)
-		return;
-
-	char Buffer[4096];
-
-	va_list Args;
-	va_start(Args, Fmt);
-#if defined(_MSC_VER)
-	vsnprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, Fmt, Args);
-#else
-	vsnprintf(Buffer, sizeof(Buffer), Fmt, Args);
-#endif
-	va_end(Args);
-
-	UE_LOG(LogStarshatterSimObject, Warning, TEXT("%s"), ANSI_TO_TCHAR(Buffer));
-}
-
-#ifndef Print
-#define Print SSLogf
-#endif
 
 // +--------------------------------------------------------------------+
 

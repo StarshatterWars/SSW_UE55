@@ -17,16 +17,14 @@
 
 #include "Math/Color.h"
 
-//#include "Screen.h"
-//#include "Video.h"
+#include "Screen.h"
+#include "Video.h"
 
 /**
  * 
  */
 
  // +--------------------------------------------------------------------+
-
-void Print(const char* fmt, ...);
 
 class AGameDataLoader;
 class Locale;
@@ -90,7 +88,7 @@ public:
 	static int        MaxTexSize();
 	static int        MaxTexAspect();
 
-	static Game* GetInstance();
+	static Game*	  GetInstance();
 	
 	static Color      GetScreenColor();
 	static void       SetScreenColor(FColor c);
@@ -107,6 +105,8 @@ public:
 	static Text       GetText(const char* key);
 
 	static FString	  GetGameVersion();
+
+	static Video*	  GetVideo();
 
 	static const char* GetPanicMessage() { return panicbuf; }
 

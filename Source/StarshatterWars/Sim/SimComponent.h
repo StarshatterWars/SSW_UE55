@@ -47,7 +47,7 @@ public:
 	float  repair_time;
 	float  replace_time;
 	int    spares;
-	uint32 affects;
+	int    affects;
 };
 
 // +--------------------------------------------------------------------+

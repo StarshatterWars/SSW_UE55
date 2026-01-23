@@ -38,7 +38,7 @@
 #include "CoreMinimal.h"   // UE_LOG, FMath
 #include "Math/UnrealMathUtility.h"
 
-const double STARSHIP_TACTICAL_DROP_TIME = 15;
+
 
 // +----------------------------------------------------------------------+
 

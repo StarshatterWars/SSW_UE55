@@ -16,6 +16,7 @@
 #include "Graphic.h"
 #include "SimLight.h"
 #include "SimDirector.h"
+#include "GameStructs.h"
 
 // Unreal (minimal):
 #include "Math/Vector.h"
@@ -29,8 +30,6 @@
 
 int    Physical::id_key = 1;
 double Physical::sub_frame = 1.0 / 60.0;
-
-static const double GRAV = 6.673e-11;
 
 // Local helpers to preserve Starshatter-style semantics while using FVector:
 

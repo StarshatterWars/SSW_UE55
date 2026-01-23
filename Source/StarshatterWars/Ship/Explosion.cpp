@@ -16,7 +16,7 @@
 
 #include "Explosion.h"
 #include "QuantumFlash.h"
-#include "Particles.h"
+#include "ParticleManager.h"
 #include "Ship.h"
 #include "Sim.h"
 #include "CameraManager.h"
@@ -57,15 +57,14 @@ const int MAX_EXPLOSION_TYPES = 32;
 static float      lifetimes[MAX_EXPLOSION_TYPES];
 static float      scales[MAX_EXPLOSION_TYPES];
 
-// Formerly: Bitmap* bitmaps[] / particle_bitmaps[]
-static UTexture2D* bitmaps[MAX_EXPLOSION_TYPES];
-static UTexture2D* particle_bitmaps[MAX_EXPLOSION_TYPES];
+static Bitmap* bitmaps[MAX_EXPLOSION_TYPES];
+static Bitmap* particle_bitmaps[MAX_EXPLOSION_TYPES];
 
 static int        part_frames[MAX_EXPLOSION_TYPES];
 static int        lengths[MAX_EXPLOSION_TYPES];
 static float      light_levels[MAX_EXPLOSION_TYPES];
 static float      light_decays[MAX_EXPLOSION_TYPES];
-static Color      light_colors[MAX_EXPLOSION_TYPES];
+static FColor     light_colors[MAX_EXPLOSION_TYPES];
 static int        num_parts[MAX_EXPLOSION_TYPES];
 static int        part_types[MAX_EXPLOSION_TYPES];
 static float      part_speeds[MAX_EXPLOSION_TYPES];
@@ -76,87 +75,109 @@ static float      part_rates[MAX_EXPLOSION_TYPES];
 static float      part_decays[MAX_EXPLOSION_TYPES];
 static bool       part_trails[MAX_EXPLOSION_TYPES];
 static int        part_alphas[MAX_EXPLOSION_TYPES];
-static Sound* sounds[MAX_EXPLOSION_TYPES];
+static Sound*     sounds[MAX_EXPLOSION_TYPES];
 static bool       recycles[MAX_EXPLOSION_TYPES];
 
 // +--------------------------------------------------------------------+
 
-Explosion::Explosion(int t, const FVector& pos, const FVector& vel,
-    float exp_scale, float part_scale,
-    SimRegion* rgn, SimObject* src)
-    : SimObject("Explosion", t), type(t), particles(0), source(src)
+Explosion::Explosion(int InType, const FVector& InPos, const FVector& InVel,
+    float InExplosionScale, float InParticleScale,
+    SimRegion* InRegion, SimObject* InSource)
+    : SimObject("Explosion", InType)
+    , type(InType)
+    , particles(nullptr)
+    , source(InSource)
 {
     Observe(source);
 
-    MoveTo(pos);
-    velocity = vel;
+    MoveTo(InPos);
+    velocity = InVel;
     drag = 0.3f;
-    rep = 0;
-    light = 0;
-    life = 0;
+    rep = nullptr;
+    light = nullptr;
+    life = 0.0;
+
+    // Default relative mount offset:
+    mount_rel = FVector::ZeroVector;
 
     if (type == QUANTUM_FLASH) {
         life = 1.1;
 
-        QuantumFlash* q = new QuantumFlash();
-        rep = q;
+        QuantumFlash* Flash = new QuantumFlash();
+        rep = Flash;
 
-        light = new Light(1e9, 0.66f);
-        light->SetColor(Color(180, 200, 255));
+        light = new SimLight(1e9, 0.66f);
+        light->SetColor(FColor(180, 200, 255, 255));
     }
-
     else if (type >= 0 && type < MAX_EXPLOSION_TYPES) {
         life = lifetimes[type];
 
+        // ------------------------------------------------------------
+        // Compute mount_rel in SOURCE-LOCAL space (UE-safe math)
+        // Old code: mount_rel = (pos - source->Location()) * src_orient;
+        // where src_orient was transposed so it behaved like an inverse basis.
+        //
+        // UE fix: project delta onto camera basis vectors with dot products.
         if (source) {
-            Matrix src_orient = source->Cam().Orientation();
-            src_orient.Transpose();
-            mount_rel = (pos - source->Location()) * src_orient;
+            const Camera& SrcCam = source->Cam();
+            const FVector Delta = InPos - source->Location();
+
+            mount_rel.X = FVector::DotProduct(Delta, SrcCam.vrt());
+            mount_rel.Y = FVector::DotProduct(Delta, SrcCam.vup());
+            mount_rel.Z = FVector::DotProduct(Delta, SrcCam.vpn());
         }
 
+        // ------------------------------------------------------------
+        // Optional sprite rep
         if (lengths[type] > 0) {
-            int repeat = (lengths[type] == 1);
+            const bool bRepeat = (lengths[type] == 1);
 
-            // Sprite API in this port is assumed to accept UTexture2D*.
-            // If your Sprite expects a Starshatter Bitmap* wrapper, adapt Sprite/Loader accordingly.
-            Sprite* s = new Sprite(bitmaps[type], lengths[type], repeat);
-            s->Scale(exp_scale * scales[type]);
-            s->SetAngle(PI * rand() / 16384.0);
-            s->SetLuminous(true);
-            rep = s;
+            Sprite* SpriteRep = new Sprite(bitmaps[type], lengths[type], bRepeat);
+            SpriteRep->Scale(InExplosionScale * scales[type]);
+            SpriteRep->SetAngle(PI * (double)rand() / 16384.0);
+            SpriteRep->SetLuminous(true);
+            rep = SpriteRep;
         }
 
+        // ------------------------------------------------------------
+        // Optional light rep
         if (light_levels[type] > 0) {
             light = new SimLight(light_levels[type], light_decays[type]);
-            light->SetColor(light_colors[type]);
+            light->SetColor(light_colors[type]); // ensure this is FColor
         }
 
+        // ------------------------------------------------------------
+        // Optional particle burst
         if (num_parts[type] > 0) {
-            // Particles API in this port is assumed to accept UTexture2D*.
-            particles = new Particles(particle_bitmaps[type],
+            particles = new ParticleManager(
+                particle_bitmaps[type],
                 num_parts[type],
-                pos,
-                FVector(0.0f, 0.0f, 0.0f),
-                part_speeds[type] * part_scale,
+                InPos,
+                FVector::ZeroVector,
+                part_speeds[type] * InParticleScale,
                 part_drags[type],
-                part_scales[type] * part_scale,
-                part_blooms[type] * part_scale,
+                part_scales[type] * InParticleScale,
+                part_blooms[type] * InParticleScale,
                 part_decays[type],
                 part_rates[type],
                 recycles[type],
                 part_trails[type],
-                (rgn && rgn->IsAirSpace()),
+                (InRegion && InRegion->IsAirSpace()),
                 part_alphas[type],
-                part_frames[type]);
+                part_frames[type]
+            );
         }
     }
 
-    if (rep)
-        rep->MoveTo(pos);
+    if (rep) {
+        rep->MoveTo(InPos);
+    }
 
-    if (light)
-        light->MoveTo(pos);
+    if (light) {
+        light->MoveTo(InPos);
+    }
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -186,15 +207,20 @@ Explosion::Update(SimObject* obj)
 const char*
 Explosion::GetObserverName() const
 {
-    static char name[128];
+    static char NameBuffer[128];
 
-    if (source)
-        sprintf_s(name, "Explosion(%s)", source->Name());
-    else
-        sprintf_s(name, "Explosion");
+    if (source && source->Name()) {
+        // UE-safe formatting, no __FILE__/__LINE__, no wide chars
+        snprintf(NameBuffer, sizeof(NameBuffer),
+            "Explosion(%s)", source->Name());
+    }
+    else {
+        snprintf(NameBuffer, sizeof(NameBuffer), "Explosion");
+    }
 
-    return name;
+    return NameBuffer;
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -277,7 +303,7 @@ Explosion::Initialize()
                         int         length = 0;
                         float       light_level = 0.0f;
                         float       light_decay = 1.0f;
-                        Color       light_color;
+                        FColor      light_color;
                         int         num_part = 0;
                         int         part_type = 0;
                         float       part_speed = 0.0f;
@@ -370,7 +396,7 @@ Explosion::Initialize()
                                     GetDefNumber(light_decay, pdef, filename);
 
                                 else if (pdef->name()->value() == "light_color")
-                                    GetDefColor(light_color, pdef, filename);
+                                    GetDefFColor(light_color, pdef, filename);
 
                                 else if (pdef->name()->value() == "num_parts")
                                     GetDefNumber(num_part, pdef, filename);
@@ -511,58 +537,85 @@ Explosion::Close()
 // +--------------------------------------------------------------------+
 
 void
-Explosion::ExecFrame(double seconds)
+Explosion::ExecFrame(double DeltaSeconds)
 {
+    // Follow the source attachment (UE-friendly vector math: no Matrix * Vector operator assumptions)
     if (source) {
-        const Matrix& orientation = source->Cam().Orientation();
-        MoveTo((mount_rel * orientation) + source->Location());
+        const Camera& SrcCam = source->Cam();
+
+        // Build a rotation matrix from the camera basis vectors.
+        // Assumes Cam.vrt/vup/vpn return normalized world-space basis vectors as FVector.
+        const FMatrix Basis(
+            FPlane(SrcCam.vrt(), 0.0f),
+            FPlane(SrcCam.vup(), 0.0f),
+            FPlane(SrcCam.vpn(), 0.0f),
+            FPlane(0.0f, 0.0f, 0.0f, 1.0f)
+        );
+
+        // Transform mount_rel from source-local into world using the basis:
+        const FVector WorldOffset = Basis.TransformVector(mount_rel);
+
+        MoveTo(WorldOffset + source->Location());
 
         if (rep)       rep->Show();
         if (particles) particles->Show();
 
-        if (source == Sim::GetSim()->GetPlayerShip()) {
-            Ship* ship = (Ship*)source;
+        // Hide in cockpit view when attached to player and not dying:
+        Sim* SimInst = Sim::GetSim();
+        Ship* PlayerShip = SimInst ? SimInst->GetPlayerShip() : nullptr;
+
+        if (PlayerShip && source == PlayerShip) {
             if (CameraManager::GetCameraMode() == CameraManager::MODE_COCKPIT &&
-                !ship->IsDying()) {
+                !PlayerShip->IsDying()) {
                 if (rep)       rep->Hide();
                 if (particles) particles->Hide();
             }
         }
     }
 
-    life -= seconds;
+    life -= DeltaSeconds;
 
+    // ------------------------------------------------------------
+    // Visual rep updates
     if (rep) {
         rep->MoveTo(Location());
 
         if (rep->Life() == 0) {
-            rep = 0; // about to be GC'd
+            rep = nullptr; // about to be GC'd / owned elsewhere
         }
         else if (rep->IsSprite()) {
-            Sprite* s = (Sprite*)rep;
-            s->SetAngle(s->Angle() + seconds * 0.5);
+            Sprite* SpriteRep = (Sprite*)rep;
+            SpriteRep->SetAngle(SpriteRep->Angle() + DeltaSeconds * 0.5);
         }
         else if (type == QUANTUM_FLASH) {
-            QuantumFlash* q = (QuantumFlash*)rep;
-            q->SetShade(q->Shade() - seconds);
+            QuantumFlash* FlashRep = (QuantumFlash*)rep;
+            FlashRep->SetShade(FlashRep->Shade() - DeltaSeconds);
         }
     }
 
+    // ------------------------------------------------------------
+    // Light updates
     if (light) {
         light->Update();
 
-        if (light->Life() == 0)
-            light = 0; // about to be GC'd
+        if (light->Life() == 0) {
+            light = nullptr; // about to be GC'd / owned elsewhere
+        }
     }
 
+    // ------------------------------------------------------------
+    // Particle updates
     if (particles) {
         particles->MoveTo(Location());
-        particles->ExecFrame(seconds);
+        particles->ExecFrame(DeltaSeconds);
     }
 
-    if (source && source->Life() == 0)
+    // If source died, end this explosion immediately
+    if (source && source->Life() == 0) {
         life = 0;
+    }
 }
+
 
 // +--------------------------------------------------------------------+
 

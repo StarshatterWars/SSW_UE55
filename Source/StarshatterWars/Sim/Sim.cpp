@@ -315,7 +315,7 @@ Sim::UnloadMission()
 	}
 
 	regions.destroy();
-	scene.Collect();
+	scene->Collect();
 
 	GRAPHIC_DESTROY(dust);
 
@@ -419,7 +419,7 @@ Sim::ExecMission()
 		StarSystem::SetBaseTime(mission->Stardate(), true);
 
 	star_system = mission->GetStarSystem();
-	star_system->Activate(scene);
+	star_system->Activate(*scene);
 
 	int dust_factor = 0;
 
@@ -428,7 +428,7 @@ Sim::ExecMission()
 
 	if (star_system->NumDust() * dust_factor) {
 		dust = new Dust(star_system->NumDust() * 2 * (dust_factor + 1), dust_factor > 1);
-		scene.AddGraphic(dust);
+		scene->AddGraphic(dust);
 	}
 
 	CreateRegions();
@@ -523,109 +523,109 @@ Sim::BuildLinks()
 void
 Sim::CreateElements()
 {
-	ListIter<MissionElement> e_iter = mission->GetElements();
-	while (++e_iter) {
-		MissionElement* msn_elem = e_iter.value();
+	ListIter<MissionElement> ElementIter = mission->GetElements();
+	while (++ElementIter) {
+		MissionElement* MissionElem = ElementIter.value();
 
 		// add element to a carrier?
-		if (msn_elem->IsSquadron()) {
-			Ship* carrier = FindShip(msn_elem->Carrier());
-			if (carrier) {
-				Hangar* hangar = carrier->GetHangar();
+		if (MissionElem->IsSquadron()) {
+			Ship* Carrier = FindShip(MissionElem->Carrier());
+			if (Carrier) {
+				Hangar* HangarPtr = Carrier->GetHangar();
 
-				if (hangar) {
-					int* def_load = 0;
+				if (HangarPtr) {
+					int32* DefaultLoadout = nullptr;
 
-					if (msn_elem->Loadouts().size()) {
-						MissionLoad* m = msn_elem->Loadouts().at(0);
+					if (MissionElem->Loadouts().size()) {
+						MissionLoad* MissionLoadPtr = MissionElem->Loadouts().at(0);
 
-						if (m->GetName().length()) {
-							ShipDesign* dsn = (ShipDesign*)msn_elem->GetDesign();
-							ListIter<ShipLoad> sl_iter = dsn->loadouts;
-							while (++sl_iter) {
-								ShipLoad* sl = sl_iter.value();
+						if (MissionLoadPtr->GetName().length()) {
+							ShipDesign* ShipDesignPtr = (ShipDesign*)MissionElem->GetDesign();
+							ListIter<ShipLoad> ShipLoadIter = ShipDesignPtr->loadouts;
+							while (++ShipLoadIter) {
+								ShipLoad* ShipLoadPtr = ShipLoadIter.value();
 
-								if (m->GetName() == sl->name)
-									def_load = sl->load;
+								if (MissionLoadPtr->GetName() == ShipLoadPtr->name)
+									DefaultLoadout = ShipLoadPtr->load;
 							}
 						}
 
-						if (!def_load) {
-							def_load = m->GetStations();
+						if (!DefaultLoadout) {
+							DefaultLoadout = MissionLoadPtr->GetStations();
 						}
 					}
 
-					hangar->CreateSquadron(msn_elem->Name(), msn_elem->GetCombatGroup(),
-						msn_elem->GetDesign(), msn_elem->Count(),
-						msn_elem->GetIFF(),
-						def_load, msn_elem->MaintCount(), msn_elem->DeadCount());
+					HangarPtr->CreateSquadron(MissionElem->Name(), MissionElem->GetCombatGroup(),
+						MissionElem->GetDesign(), MissionElem->Count(),
+						MissionElem->GetIFF(),
+						DefaultLoadout, MissionElem->MaintCount(), MissionElem->DeadCount());
 
-					SimElement* element = CreateElement(msn_elem->Name(),
-						msn_elem->GetIFF(),
-						msn_elem->MissionRole());
+					SimElement* Element = CreateElement(MissionElem->Name(),
+						MissionElem->GetIFF(),
+						MissionElem->MissionRole());
 
-					element->SetCarrier(carrier);
-					element->SetCombatGroup(msn_elem->GetCombatGroup());
-					element->SetCombatUnit(msn_elem->GetCombatUnit());
-					element->SetCount(msn_elem->Count());
-					element->SetRogue(false);
-					element->SetPlayable(false);
-					element->SetLoadout(def_load);
+					Element->SetCarrier(Carrier);
+					Element->SetCombatGroup(MissionElem->GetCombatGroup());
+					Element->SetCombatUnit(MissionElem->GetCombatUnit());
+					Element->SetCount(MissionElem->Count());
+					Element->SetRogue(false);
+					Element->SetPlayable(false);
+					Element->SetLoadout(DefaultLoadout);
 				}
 			}
 		}
 
 		// create the element in space:
 		else {
-			Ship* carrier = 0;
-			Hangar* hangar = 0;
-			int         squadron = -1;
-			int         slot = 0;
+			Ship* Carrier = nullptr;
+			Hangar* HangarPtr = nullptr;
+			int32 SquadronIndex = -1;
+			int32 SlotIndex = 0;
 
 			// first create the package element:
-			SimElement* element = CreateElement(msn_elem->Name(),
-				msn_elem->GetIFF(),
-				msn_elem->MissionRole());
+			SimElement* Element = CreateElement(MissionElem->Name(),
+				MissionElem->GetIFF(),
+				MissionElem->MissionRole());
 
-			element->SetPlayer(msn_elem->Player());
-			element->SetCombatGroup(msn_elem->GetCombatGroup());
-			element->SetCombatUnit(msn_elem->GetCombatUnit());
-			element->SetCommandAILevel(msn_elem->CommandAI());
-			element->SetHoldTime(msn_elem->HoldTime());
-			element->SetZoneLock(msn_elem->ZoneLock() ? true : false);
-			element->SetRogue(msn_elem->IsRogue());
-			element->SetPlayable(msn_elem->IsPlayable());
-			element->SetIntelLevel(msn_elem->IntelLevel());
+			Element->SetPlayer(MissionElem->Player());
+			Element->SetCombatGroup(MissionElem->GetCombatGroup());
+			Element->SetCombatUnit(MissionElem->GetCombatUnit());
+			Element->SetCommandAILevel(MissionElem->CommandAI());
+			Element->SetHoldTime(MissionElem->HoldTime());
+			Element->SetZoneLock(MissionElem->ZoneLock() ? true : false);
+			Element->SetRogue(MissionElem->IsRogue());
+			Element->SetPlayable(MissionElem->IsPlayable());
+			Element->SetIntelLevel(MissionElem->IntelLevel());
 
 			// if this is the player's element, make sure to activate the region:
-			if (msn_elem->Player()) {
-				SimRegion* rgn = FindRegion(msn_elem->Region());
+			if (MissionElem->Player()) {
+				SimRegion* Region = FindRegion(MissionElem->Region());
 
-				if (rgn && rgn != active_region)
-					ActivateRegion(rgn);
+				if (Region && Region != active_region)
+					ActivateRegion(Region);
 			}
 
 			// if element belongs to a squadron,
 			// find the carrier, squadron, flight deck, etc.:
-			if (msn_elem->Squadron().length() > 0) {
-				MissionElement* squadron_elem = mission->FindElement(msn_elem->Squadron());
+			if (MissionElem->Squadron().length() > 0) {
+				MissionElement* SquadronElem = mission->FindElement(MissionElem->Squadron());
 
-				if (squadron_elem) {
-					element->SetSquadron(msn_elem->Squadron());
+				if (SquadronElem) {
+					Element->SetSquadron(MissionElem->Squadron());
 
-					SimElement* cmdr = FindElement(squadron_elem->Carrier());
+					SimElement* Commander = FindElement(SquadronElem->Carrier());
 
-					if (cmdr) {
-						element->SetCommander(cmdr);
-						carrier = cmdr->GetShip(1);
+					if (Commander) {
+						Element->SetCommander(Commander);
+						Carrier = Commander->GetShip(1);
 
-						if (carrier) {
-							element->SetCarrier(carrier);
-							hangar = carrier->GetHangar();
+						if (Carrier) {
+							Element->SetCarrier(Carrier);
+							HangarPtr = Carrier->GetHangar();
 
-							for (int s = 0; s < hangar->NumSquadrons(); s++) {
-								if (hangar->SquadronName(s) == msn_elem->Squadron()) {
-									squadron = s;
+							for (int32 s = 0; s < HangarPtr->NumSquadrons(); s++) {
+								if (HangarPtr->SquadronName(s) == MissionElem->Squadron()) {
+									SquadronIndex = s;
 									break;
 								}
 							}
@@ -634,124 +634,124 @@ Sim::CreateElements()
 				}
 			}
 
-			else if (msn_elem->Commander().length() > 0) {
-				SimElement* cmdr = FindElement(msn_elem->Commander());
+			else if (MissionElem->Commander().length() > 0) {
+				SimElement* Commander = FindElement(MissionElem->Commander());
 
-				if (cmdr) {
-					element->SetCommander(cmdr);
+				if (Commander) {
+					Element->SetCommander(Commander);
 				}
 			}
 
-			ListIter<Instruction> obj = msn_elem->Objectives();
-			while (++obj) {
-				Instruction* o = obj.value();
-				Instruction* instr = 0;
+			ListIter<Instruction> ObjectiveIter = MissionElem->Objectives();
+			while (++ObjectiveIter) {
+				Instruction* Objective = ObjectiveIter.value();
+				Instruction* NewInstruction = nullptr;
 
-				instr = new Instruction(*o);
+				NewInstruction = new Instruction(*Objective);
 
-				element->AddObjective(instr);
+				Element->AddObjective(NewInstruction);
 			}
 
-			if (msn_elem->Instructions().size() > 0) {
-				ListIter<Text> instr = msn_elem->Instructions();
-				while (++instr) {
-					element->AddInstruction(*instr);
+			if (MissionElem->Instructions().size() > 0) {
+				ListIter<Text> InstructionIter = MissionElem->Instructions();
+				while (++InstructionIter) {
+					Element->AddInstruction(*InstructionIter);
 				}
 			}
 
-			ListIter<Instruction> nav = msn_elem->NavList();
-			while (++nav) {
-				SimRegion* rgn = FindRegion(nav->RegionName());
+			ListIter<Instruction> NavIter = MissionElem->NavList();
+			while (++NavIter) {
+				SimRegion* Region = FindRegion(NavIter->RegionName());
 
-				if (!rgn)
-					rgn = FindRegion(msn_elem->Region());
+				if (!Region)
+					Region = FindRegion(MissionElem->Region());
 
-				if (rgn) {
-					Instruction* npt = new
-						Instruction(rgn, OtherHand(nav->Location()), nav->Action());
+				if (Region) {
+					Instruction* NavPoint = new
+						Instruction(Region, OtherHand(NavIter->Location()), NavIter->Action());
 
-					npt->SetStatus(nav->Status());
-					npt->SetEMCON(nav->EMCON());
-					npt->SetFormation(nav->Formation());
-					npt->SetSpeed(nav->Speed());
-					npt->SetTarget(nav->TargetName());
-					npt->SetHoldTime(nav->HoldTime());
-					npt->SetFarcast(nav->Farcast());
+					NavPoint->SetStatus(NavIter->Status());
+					NavPoint->SetEMCON(NavIter->EMCON());
+					NavPoint->SetFormation(NavIter->Formation());
+					NavPoint->SetSpeed(NavIter->Speed());
+					NavPoint->SetTarget(NavIter->TargetName());
+					NavPoint->SetHoldTime(NavIter->HoldTime());
+					NavPoint->SetFarcast(NavIter->Farcast());
 
-					element->AddNavPoint(npt);
+					Element->AddNavPoint(NavPoint);
 				}
 			}
 
-			bool  alertPrep = false;
-			int* loadout = 0;
-			int   respawns = msn_elem->RespawnCount();
+			bool bAlertPrep = false;
+			int32* Loadout = nullptr;
+			int32 Respawns = MissionElem->RespawnCount();
 
 			// if ships are to start on alert,
 			// spot them onto the appropriate launch deck:
-			if (hangar && element && msn_elem->Count() > 0 && msn_elem->IsAlert()) {
-				FlightDeck* deck = 0;
-				int               queue = 1000;
-				const ShipDesign* dsn = msn_elem->GetDesign();
+			if (HangarPtr && Element && MissionElem->Count() > 0 && MissionElem->IsAlert()) {
+				FlightDeck* Deck = nullptr;
+				int32 Queue = 1000;
+				const ShipDesign* ShipDesignPtr = MissionElem->GetDesign();
 
-				if (dsn) {
-					for (int i = 0; i < carrier->NumFlightDecks(); i++) {
-						FlightDeck* d = carrier->GetFlightDeck(i);
-						int         dq = hangar->PreflightQueue(d);
+				if (ShipDesignPtr) {
+					for (int32 i = 0; i < Carrier->NumFlightDecks(); i++) {
+						FlightDeck* FlightDeckPtr = Carrier->GetFlightDeck(i);
+						int32 DeckQueue = HangarPtr->PreflightQueue(FlightDeckPtr);
 
-						if (d && d->IsLaunchDeck() && d->SpaceLeft(dsn->type) && dq < queue) {
-							queue = dq;
-							deck = d;
+						if (FlightDeckPtr && FlightDeckPtr->IsLaunchDeck() && FlightDeckPtr->SpaceLeft(ShipDesignPtr->type) && DeckQueue < Queue) {
+							Queue = DeckQueue;
+							Deck = FlightDeckPtr;
 						}
 					}
 				}
 
-				if (deck) {
-					alertPrep = true;
+				if (Deck) {
+					bAlertPrep = true;
 
 					// choose best loadout:
-					if (msn_elem->Loadouts().size()) {
-						MissionLoad* l = msn_elem->Loadouts().at(0);
-						if (l->GetName().length()) {
-							ListIter<ShipLoad> sl = ((ShipDesign*)dsn)->loadouts;
-							while (++sl) {
-								if (!_stricmp(sl->name, l->GetName()))
-									loadout = sl->load;
+					if (MissionElem->Loadouts().size()) {
+						MissionLoad* MissionLoadPtr = MissionElem->Loadouts().at(0);
+						if (MissionLoadPtr->GetName().length()) {
+							ListIter<ShipLoad> ShipLoadIter = ((ShipDesign*)ShipDesignPtr)->loadouts;
+							while (++ShipLoadIter) {
+								if (!_stricmp(ShipLoadIter->name, MissionLoadPtr->GetName()))
+									Loadout = ShipLoadIter->load;
 							}
 						}
 
 						else {
-							loadout = l->GetStations();
+							Loadout = MissionLoadPtr->GetStations();
 						}
 					}
 
-					element->SetLoadout(loadout);
+					Element->SetLoadout(Loadout);
 
-					for (int i = 0; i < msn_elem->Count(); i++) {
-						int   squadron = -1;
-						int   slot = -1;
+					for (int32 i = 0; i < MissionElem->Count(); i++) {
+						int32 SquadronLocal = -1;
+						int32 SlotLocal = -1;
 
-						if (hangar->FindAvailSlot(msn_elem->GetDesign(), squadron, slot)) {
-							alertPrep = alertPrep &&
-								hangar->GotoAlert(squadron,
-									slot,
-									deck,
-									element,
-									loadout,
+						if (HangarPtr->FindAvailSlot(MissionElem->GetDesign(), SquadronLocal, SlotLocal)) {
+							bAlertPrep = bAlertPrep &&
+								HangarPtr->GotoAlert(SquadronLocal,
+									SlotLocal,
+									Deck,
+									Element,
+									Loadout,
 									true,    // package for launch
 									true);   // expedite
 
-							HangarSlot* s = (HangarSlot*)hangar->GetSlot(squadron, slot);
-							Ship* alertShip = hangar->GetShip(s);
+							HangarSlot* HangarSlotPtr = (HangarSlot*)HangarPtr->GetSlot(SquadronLocal, SlotLocal);
+							Ship* AlertShip = HangarPtr->GetShip(HangarSlotPtr);
 
-							if (alertShip) {
-								alertShip->SetRespawnCount(respawns);
+							if (AlertShip) {
+								AlertShip->SetRespawnCount(Respawns);
 
-								if (msn_elem->Player() == i + 1) {
-									if (alertShip->GetRegion()) {
-										alertShip->GetRegion()->SetPlayerShip(alertShip);
+								if (MissionElem->Player() == i + 1) {
+									if (AlertShip->GetRegion()) {
+										AlertShip->GetRegion()->SetPlayerShip(AlertShip);
 									}
 									else {
-										Print("WARNING: alert ship '%s' region is null\n", alertShip->Name());
+										Print("WARNING: alert ship '%s' region is null\n", AlertShip->Name());
 									}
 								}
 							}
@@ -760,183 +760,184 @@ Sim::CreateElements()
 				}
 			}
 
-			if (!alertPrep) {
+			if (!bAlertPrep) {
 				// then, create the ships:
-				for (int i = 0; i < msn_elem->Count(); i++) {
-					MissionShip* msn_ship = 0;
-					Text           sname = msn_elem->GetShipName(i);
-					Text           rnum = msn_elem->GetRegistry(i);
-					Text           rgn_name = msn_elem->Region();
+				for (int32 i = 0; i < MissionElem->Count(); i++) {
+					MissionShip* MissionShipPtr = nullptr;
+					Text ShipName = MissionElem->GetShipName(i);
+					Text RegistryNum = MissionElem->GetRegistry(i);
+					Text RegionName = MissionElem->Region();
 
-					if (msn_elem->Ships().size() > i) {
-						msn_ship = msn_elem->Ships()[i];
-						sname = msn_ship->Name();
-						rnum = msn_ship->RegNum();
-						rgn_name = msn_ship->Region();
+					if (MissionElem->Ships().size() > i) {
+						MissionShipPtr = MissionElem->Ships()[i];
+						ShipName = MissionShipPtr->Name();
+						RegistryNum = MissionShipPtr->RegNum();
+						RegionName = MissionShipPtr->Region();
 					}
 
-					FVector l2 = OtherHand(msn_elem->Location());
+					FVector SpawnLocation = OtherHand(MissionElem->Location());
 
-					if (msn_ship && fabs(msn_ship->Location().X) < 1e9) {
-						l2 = OtherHand(msn_ship->Location());
+					if (MissionShipPtr && fabs(MissionShipPtr->Location().X) < 1e9) {
+						SpawnLocation = OtherHand(MissionShipPtr->Location());
 					}
 					else if (i) {
-						FVector offset = OtherHand(FVector(
+						FVector Offset = OtherHand(FVector(
 							FMath::FRandRange(-1.f, 1.f),
 							FMath::FRandRange(-1.f, 1.f),
 							0.f
 						));
 
-						offset.Z = FMath::FRandRange(-1000.f, 1000.f);
+						Offset.Z = FMath::FRandRange(-1000.f, 1000.f);
 
-						if (msn_elem->Count() < 5)
-							offset *= 0.3;
+						if (MissionElem->Count() < 5)
+							Offset *= 0.3;
 
-						l2 += offset;
+						SpawnLocation += Offset;
 					}
 
 					// choose best loadout:
-					ListIter<MissionLoad> l = msn_elem->Loadouts();
-					while (++l) {
-						if ((l->GetShip() == i) || (l->GetShip() < 0 && loadout == 0)) {
-							if (l->GetName().length()) {
-								ListIter<ShipLoad> sl = ((ShipDesign*)msn_elem->GetDesign())->loadouts;
-								while (++sl) {
-									if (!_stricmp(sl->name, l->GetName()))
-										loadout = sl->load;
+					ListIter<MissionLoad> LoadIter = MissionElem->Loadouts();
+					while (++LoadIter) {
+						if ((LoadIter->GetShip() == i) || (LoadIter->GetShip() < 0 && Loadout == nullptr)) {
+							if (LoadIter->GetName().length()) {
+								ListIter<ShipLoad> ShipLoadIter = ((ShipDesign*)MissionElem->GetDesign())->loadouts;
+								while (++ShipLoadIter) {
+									if (!_stricmp(ShipLoadIter->name, LoadIter->GetName()))
+										Loadout = ShipLoadIter->load;
 								}
 							}
 
 							else {
-								loadout = l->GetStations();
+								Loadout = LoadIter->GetStations();
 							}
 						}
 					}
 
-					element->SetLoadout(loadout);
+					Element->SetLoadout(Loadout);
 
-					Ship* ship = CreateShip(sname, rnum,
-						(ShipDesign*)msn_elem->GetDesign(),
-						rgn_name, l2,
-						msn_elem->GetIFF(),
-						msn_elem->CommandAI(),
-						loadout);
+					Ship* NewShip = CreateShip(ShipName, RegistryNum,
+						(ShipDesign*)MissionElem->GetDesign(),
+						RegionName, SpawnLocation,
+						MissionElem->GetIFF(),
+						MissionElem->CommandAI(),
+						Loadout);
 
-					if (ship) {
-						double      heading = msn_elem->Heading();
-						const Skin* skin = msn_elem->GetSkin();
+					if (NewShip) {
+						double Heading = MissionElem->Heading();
+						const Skin* SkinPtr = MissionElem->GetSkin();
 
-						if (msn_ship) {
-							heading = msn_ship->Heading();
+						if (MissionShipPtr) {
+							Heading = MissionShipPtr->Heading();
 
-							if (msn_ship->GetSkin())
-								skin = msn_ship->GetSkin();
+							if (MissionShipPtr->GetSkin())
+								SkinPtr = MissionShipPtr->GetSkin();
 						}
 
-						ship->SetRogue(msn_elem->IsRogue());
-						ship->SetInvulnerable(msn_elem->IsInvulnerable());
-						ship->SetHeading(0, 0, heading + PI);
-						ship->SetRespawnCount(respawns);
-						ship->UseSkin(skin);
+						NewShip->SetRogue(MissionElem->IsRogue());
+						NewShip->SetInvulnerable(MissionElem->IsInvulnerable());
+						NewShip->SetHeading(0, 0, Heading + PI);
+						NewShip->SetRespawnCount(Respawns);
+						NewShip->UseSkin(SkinPtr);
 
-						FRandomStream Stream(SeedValue); // stable per mission/campaign
-						ship->SetRespawnLoc(OtherHand(Stream.VRand()) * 2.f);
+						const int32 SeedValue = 123456;
+						FRandomStream RandomStream(SeedValue);
+						NewShip->SetRespawnLoc(OtherHand(RandomStream.VRand()) * 2.f);
 
-						if (ship->IsStarship())
-							ship->SetHelmHeading(heading);
+						if (NewShip->IsStarship())
+							NewShip->SetHelmHeading(Heading);
 
-						else if (ship->IsAirborne() && ship->AltitudeAGL() > 25)
-							ship->SetVelocity(OtherHand(ship->Heading()) * 250);
+						else if (NewShip->IsAirborne() && NewShip->AltitudeAGL() > 25)
+							NewShip->SetVelocity(OtherHand(NewShip->Heading()) * 250);
 
-						if (element)
-							element->AddShip(ship);
+						if (Element)
+							Element->AddShip(NewShip);
 
-						if (hangar)
-							hangar->FindSlot(ship, squadron, slot, Hangar::ACTIVE);
+						if (HangarPtr)
+							HangarPtr->FindSlot(NewShip, SquadronIndex, SlotIndex, Hangar::ACTIVE);
 
-						if (ship->GetRegion() && msn_elem->Player() == i + 1)
-							ship->GetRegion()->SetPlayerShip(ship);
+						if (NewShip->GetRegion() && MissionElem->Player() == i + 1)
+							NewShip->GetRegion()->SetPlayerShip(NewShip);
 
-						if (ship->NumFlightDecks()) {
-							for (int ifd = 0; ifd < ship->NumFlightDecks(); ifd++) {
-								FlightDeck* deck = ship->GetFlightDeck(ifd);
-								if (deck)
-									deck->Orient(ship);
+						if (NewShip->NumFlightDecks()) {
+							for (int32 FlightDeckIndex = 0; FlightDeckIndex < NewShip->NumFlightDecks(); FlightDeckIndex++) {
+								FlightDeck* ShipDeck = NewShip->GetFlightDeck(FlightDeckIndex);
+								if (ShipDeck)
+									ShipDeck->Orient(NewShip);
 							}
 						}
 
-						if (msn_ship) {
-							ship->SetVelocity(OtherHand(msn_ship->Velocity()));
-							ship->SetIntegrity((float)msn_ship->Integrity());
-							ship->SetRespawnCount(msn_ship->Respawns());
+						if (MissionShipPtr) {
+							NewShip->SetVelocity(OtherHand(MissionShipPtr->Velocity()));
+							NewShip->SetIntegrity((float)MissionShipPtr->Integrity());
+							NewShip->SetRespawnCount(MissionShipPtr->Respawns());
 
-							if (msn_ship->Ammo()[0] > -10) {
-								for (int i = 0; i < 64; i++) {
-									Weapon* w = ship->GetWeaponByIndex(i + 1);
-									if (w)
-										w->SetAmmo(msn_ship->Ammo()[i]);
+							if (MissionShipPtr->Ammo()[0] > -10) {
+								for (int32 AmmoIndex = 0; AmmoIndex < 64; AmmoIndex++) {
+									Weapon* WeaponPtr = NewShip->GetWeaponByIndex(AmmoIndex + 1);
+									if (WeaponPtr)
+										WeaponPtr->SetAmmo(MissionShipPtr->Ammo()[AmmoIndex]);
 									else
 										break;
 								}
 							}
 
-							if (msn_ship->Fuel()[0] > -10) {
-								for (int i = 0; i < 4; i++) {
-									if (ship->Reactors().size() > i) {
-										PowerSource* p = ship->Reactors()[i];
-										p->SetCapacity(msn_ship->Fuel()[i]);
+							if (MissionShipPtr->Fuel()[0] > -10) {
+								for (int32 ReactorIndex = 0; ReactorIndex < 4; ReactorIndex++) {
+									if (NewShip->Reactors().size() > ReactorIndex) {
+										PowerSource* PowerSourcePtr = NewShip->Reactors()[ReactorIndex];
+										PowerSourcePtr->SetCapacity(MissionShipPtr->Fuel()[ReactorIndex]);
 									}
 								}
 							}
 
-							if (msn_ship->Decoys() > -10) {
-								Weapon* w = ship->GetDecoy();
-								if (w)
-									w->SetAmmo(msn_ship->Decoys());
+							if (MissionShipPtr->Decoys() > -10) {
+								Weapon* DecoyWeapon = NewShip->GetDecoy();
+								if (DecoyWeapon)
+									DecoyWeapon->SetAmmo(MissionShipPtr->Decoys());
 							}
 
-							if (msn_ship->Probes() > -10) {
-								Weapon* w = ship->GetProbeLauncher();
-								if (w)
-									w->SetAmmo(msn_ship->Probes());
+							if (MissionShipPtr->Probes() > -10) {
+								Weapon* ProbeWeapon = NewShip->GetProbeLauncher();
+								if (ProbeWeapon)
+									ProbeWeapon->SetAmmo(MissionShipPtr->Probes());
 							}
 						}
 
-						Shield* shield = ship->GetShield();
+						Shield* ShieldPtr = NewShip->GetShield();
 
-						if (shield) {
-							shield->SetPowerLevel(50);
+						if (ShieldPtr) {
+							ShieldPtr->SetPowerLevel(50);
 						}
 
-						if (ship->Class() > Ship::FRIGATE) {
-							ListIter<WeaponGroup> iter = ship->Weapons();
-							while (++iter) {
-								WeaponGroup* weapon = iter.value();
+						if (NewShip->Class() > Ship::FRIGATE) {
+							ListIter<WeaponGroup> WeaponGroupIter = NewShip->Weapons();
+							while (++WeaponGroupIter) {
+								WeaponGroup* WeaponGroupPtr = WeaponGroupIter.value();
 
 								// anti-air weapon?
-								if (weapon->GetDesign()->target_type & Ship::DRONE) {
-									weapon->SetFiringOrders(Weapon::POINT_DEFENSE);
+								if (WeaponGroupPtr->GetDesign()->target_type & Ship::DRONE) {
+									WeaponGroupPtr->SetFiringOrders(Weapon::POINT_DEFENSE);
 								}
 								else {
-									weapon->SetFiringOrders(Weapon::MANUAL);
+									WeaponGroupPtr->SetFiringOrders(Weapon::MANUAL);
 								}
 							}
 						}
 
-						if (ship->Class() > Ship::DRONE && ship->Class() < Ship::STATION) {
-							ShipStats* stats = ShipStats::Find(sname);
-							if (stats) {
-								char design[64];
-								sprintf_s(design, "%s %s", ship->Abbreviation(), ship->Design()->display_name);
-								stats->SetType(design);
-								stats->SetShipClass(ship->Class());
-								stats->SetRole(Mission::RoleName(msn_elem->MissionRole()));
-								stats->SetIFF(ship->GetIFF());
-								stats->SetRegion(msn_elem->Region());
-								stats->SetCombatGroup(msn_elem->GetCombatGroup());
-								stats->SetCombatUnit(msn_elem->GetCombatUnit());
-								stats->SetPlayer(msn_elem->Player() == i + 1);
-								stats->SetElementIndex(ship->GetElementIndex());
+						if (NewShip->Class() > Ship::DRONE && NewShip->Class() < Ship::STATION) {
+							ShipStats* Stats = ShipStats::Find(ShipName);
+							if (Stats) {
+								char DesignName[64];
+								sprintf_s(DesignName, "%s %s", NewShip->Abbreviation(), NewShip->Design()->display_name);
+								Stats->SetType(DesignName);
+								Stats->SetShipClass(NewShip->Class());
+								Stats->SetRole(Mission::RoleName(MissionElem->MissionRole()));
+								Stats->SetIFF(NewShip->GetIFF());
+								Stats->SetRegion(MissionElem->Region());
+								Stats->SetCombatGroup(MissionElem->GetCombatGroup());
+								Stats->SetCombatUnit(MissionElem->GetCombatUnit());
+								Stats->SetPlayer(MissionElem->Player() == i + 1);
+								Stats->SetElementIndex(NewShip->GetElementIndex());
 							}
 						}
 					}  // ship
@@ -1096,7 +1097,7 @@ Sim::NetDockShip(Ship* ship, Ship* carrier, FlightDeck* deck)
 }
 
 Ship*
-Sim::FindShipByObjID(DWORD objid)
+Sim::FindShipByObjID(uint32 objid)
 {
 	Ship* ship = 0;
 
@@ -1108,7 +1109,7 @@ Sim::FindShipByObjID(DWORD objid)
 }
 
 SimShot*
-Sim::FindShotByObjID(DWORD objid)
+Sim::FindShotByObjID(uint32 objid)
 {
 	SimShot* shot = 0;
 
@@ -1440,7 +1441,7 @@ Sim::FindNearestRegion(SimObject* object, int type)
 	FVector     objloc = OtherHand(object->Location());
 
 	if (object->GetRegion())
-		objloc += OtherHand(object->GetRegion()->Location());
+		objloc += OtherHand(object->GetRegion()->GetLocation());
 
 	ListIter<SimRegion> rgn = regions;
 	while (++rgn) {
@@ -1473,7 +1474,7 @@ Sim::ActivateRegion(SimRegion* rgn)
 		if (!active_region || active_region->GetSystem() != rgn->GetSystem()) {
 			if (active_region)
 				active_region->GetSystem()->Deactivate();
-			rgn->GetSystem()->Activate(scene);
+			rgn->GetSystem()->Activate(*scene);
 		}
 
 		active_region = rgn;
@@ -1510,7 +1511,7 @@ Sim::RequestHyperJump(Ship* obj, SimRegion* rgn, const FVector& loc,
 // +--------------------------------------------------------------------+
 
 void
-Sim::ExecFrame(double seconds)
+Sim::ExecFrame(double DeltaSeconds)
 {
 	if (first_frame) {
 		first_frame = false;
@@ -1521,75 +1522,75 @@ Sim::ExecFrame(double seconds)
 	//	netgame->ExecFrame();
 
 	if (regions.isEmpty()) {
-		active_region = 0;
+		active_region = nullptr;
 		rgn_queue.clear();
 		jumplist.destroy();
-		scene.Collect();
+		scene->Collect();
 		return;
 	}
 
-	ListIter<SimElement> elem = elements;
-	while (++elem)
-		if (!elem->IsSquadron())
-			elem->ExecFrame(seconds);
+	ListIter<SimElement> ElementIter = elements;
+	while (++ElementIter)
+		if (!ElementIter->IsSquadron())
+			ElementIter->ExecFrame(DeltaSeconds);
 
-	ListIter<SimRegion> rgn = regions;
-	while (++rgn)
-		if (rgn.value() != active_region && rgn->GetNumShips() && !rgn_queue.contains(rgn.value()))
-			rgn_queue.append(rgn.value());
+	ListIter<SimRegion> RegionIter = regions;
+	while (++RegionIter)
+		if (RegionIter.value() != active_region && RegionIter->GetNumShips() && !rgn_queue.contains(RegionIter.value()))
+			rgn_queue.append(RegionIter.value());
 
 	// execframe for one inactive sim region:
 	if (rgn_queue.size()) {
-		SimRegion* exec_rgn = rgn_queue.removeIndex(0);
+		SimRegion* ExecRegion = rgn_queue.removeIndex(0);
 
-		while (exec_rgn && (exec_rgn->GetNumShips() == 0 || exec_rgn == active_region))
+		while (ExecRegion && (ExecRegion->GetNumShips() == 0 || ExecRegion == active_region))
 			if (rgn_queue.size())
-				exec_rgn = rgn_queue.removeIndex(0);
+				ExecRegion = rgn_queue.removeIndex(0);
 			else
-				exec_rgn = 0;
+				ExecRegion = nullptr;
 
-		if (exec_rgn)
-			exec_rgn->ExecFrame(seconds);
+		if (ExecRegion)
+			ExecRegion->ExecFrame(DeltaSeconds);
 	}
 
 	if (active_region)
-		active_region->ExecFrame(seconds);
+		active_region->ExecFrame(DeltaSeconds);
 
-	ExecEvents(seconds);
+	ExecEvents(DeltaSeconds);
 	ResolveHyperList();
 	ResolveSplashList();
 
 	// GC all the dead objects:
-	scene.Collect();
+	scene->Collect();
 
 	if (!IsTestMode()) {
-		ListIter<SimElement> e_iter = elements;
-		while (++e_iter) {
-			SimElement* elem = e_iter.value();
-			if (!elem->IsSquadron() && elem->IsFinished()) {
-				finished.append(e_iter.removeItem());
+		ListIter<SimElement> FinishedIter = elements;
+		while (++FinishedIter) {
+			SimElement* Element = FinishedIter.value();
+			if (!Element->IsSquadron() && Element->IsFinished()) {
+				finished.append(FinishedIter.removeItem());
 			}
 		}
 	}
 
 	// setup music
 	if (!MusicManager::IsNoMusic()) {
-		Starshatter* stars = Starshatter::GetInstance();
-		if (stars && stars->GetGameMode() == Starshatter::PLAY_MODE) {
-			Ship* player_ship = GetPlayerShip();
-			if (player_ship) {
-				int phase = player_ship->GetFlightPhase();
+		Starshatter* Stars = Starshatter::GetInstance();
+		if (Stars && Stars->GetGameMode() == Starshatter::PLAY_MODE) {
+			Ship* PlayerShip = GetPlayerShip();
+			if (PlayerShip) {
+				const int32 Phase = PlayerShip->GetFlightPhase();
 
-				if (phase < Ship::ACTIVE) {
+				if (Phase < Ship::ACTIVE) {
 					MusicManager::SetMode(MusicManager::LAUNCH);
 				}
 
-				else if (phase > Ship::ACTIVE) {
+				else if (Phase > Ship::ACTIVE) {
 					MusicManager::SetMode(MusicManager::RECOVERY);
 				}
 
 				else {
-					if (player_ship->IsInCombat()) {
+					if (PlayerShip->IsInCombat()) {
 						MusicManager::SetMode(MusicManager::COMBAT);
 					}
 
@@ -1601,6 +1602,7 @@ Sim::ExecFrame(double seconds)
 		}
 	}
 }
+
 
 void
 Sim::ExecEvents(double seconds)
@@ -1968,7 +1970,7 @@ Sim::ResolveTimeSkip(double seconds)
 	double skipped = 0;
 
 	// allow elements to process hold time, and release as needed:
-	ListIter<Element> elem = elements;
+	ListIter<SimElement> elem = elements;
 	while (++elem)
 		elem->ExecFrame(seconds);
 
@@ -2253,39 +2255,55 @@ SimRegion::SimRegion(Sim* s, const char* n, int t)
 	}
 }
 
-SimRegion::SimRegion(Sim* s, OrbitalRegion* r)
-	: sim(s), orbital_region(r), type(REAL_SPACE), star_system(0)
-	, player_ship(0), grid(0), active(false), current_view(0), sim_time(0)
-	, ai_index(0), terrain(0)
+SimRegion::SimRegion(Sim* SimPtr, OrbitalRegion* OrbitalRegionPtr)
+	: sim(SimPtr)
+	, orbital_region(OrbitalRegionPtr)
+	, type(REAL_SPACE)
+	, star_system(nullptr)
+	, player_ship(nullptr)
+	, grid(nullptr)
+	, active(false)
+	, current_view(0)
+	, sim_time(0)
+	, ai_index(0)
+	, terrain(nullptr)
 {
-	if (r) {
-		star_system = r->System();
+	if (OrbitalRegionPtr) {
+		star_system = OrbitalRegionPtr->System();
 	}
 
 	if (orbital_region) {
 		name = orbital_region->Name();
-		grid = new Grid((int)orbital_region->Radius(),
-			(int)orbital_region->GridSpace());
+		grid = new Grid(
+			(int32)orbital_region->Radius(),
+			(int32)orbital_region->GridSpace()
+		);
 
 		if (orbital_region->Type() == Orbital::TERRAIN) {
-			TerrainRegion* trgn = (TerrainRegion*)orbital_region;
-			terrain = new Terrain(trgn);
+			TerrainRegion* TerrainRegionPtr = (TerrainRegion*)orbital_region;
+			terrain = new Terrain(TerrainRegionPtr);
 			type = AIR_SPACE;
 		}
 
 		else if (orbital_region->Asteroids() > 0) {
-			const int asteroids = orbital_region->Asteroids();
+			const int32 NumAsteroids = (int32)orbital_region->Asteroids();
 
-			for (int i = 0; i < asteroids; i++) {
-				const FVector init_loc(
-					(float)((rand() - 16384.0f) * 30.0f),
-					(float)((rand() - 16384.0f) * 3.0f),
-					(float)((rand() - 16384.0f) * 30.0f)
+			// Stable stream for this region instance (no per-asteroid reseeding):
+			const int32 SeedValue = (int32)((uintptr_t)this);
+			FRandomStream RandomStream(SeedValue);
+
+			for (int32 AsteroidIndex = 0; AsteroidIndex < NumAsteroids; AsteroidIndex++) {
+				const FVector InitialLocation(
+					(RandomStream.FRand() - 0.5f) * 983040.0f,   // approx (rand()-16384)*30
+					(RandomStream.FRand() - 0.5f) * 98304.0f,    // approx (rand()-16384)*3
+					(RandomStream.FRand() - 0.5f) * 983040.0f    // approx (rand()-16384)*30
 				);
 
-				FRandomStream Stream(SeedValue); // store SeedValue somewhere stable
-				const double Mass = 1.0e7 + (static_cast<double>(Stream.FRand()) * (1.0e8 - 1.0e7));
-				sim->CreateAsteroid(init_loc, i, Mass, this);
+				const double MassMin = 1.0e7;
+				const double MassMax = 1.0e8;
+				const double Mass = MassMin + (static_cast<double>(RandomStream.FRand()) * (MassMax - MassMin));
+
+				sim->CreateAsteroid(InitialLocation, AsteroidIndex, Mass, this);
 			}
 		}
 	}
@@ -2296,19 +2314,20 @@ SimRegion::SimRegion(Sim* s, OrbitalRegion* r)
 
 const char* FormatGameTime()
 {
-	static char txt[64];
+	static char TextBuffer[64];
 
-	int t = Game::GameTime();
+	const int32 TimeMs = Game::GameTime();
 
-	int h = (t / 3600000);
-	int m = ((t - h * 3600000) / 60000);
-	int s = ((t - h * 3600000 - m * 60000) / 1000);
-	int e = (t - h * 3600000 - m * 60000 - s * 1000);
+	const int32 Hours = (TimeMs / 3600000);
+	const int32 Minutes = ((TimeMs - Hours * 3600000) / 60000);
+	const int32 Seconds = ((TimeMs - Hours * 3600000 - Minutes * 60000) / 1000);
+	const int32 Milliseconds = (TimeMs - Hours * 3600000 - Minutes * 60000 - Seconds * 1000);
 
-	if (h > 0)
-		sprintf_s(txt, "%02d:%02d:%02d.%03d", h, m, s, e);
+	if (Hours > 0)
+		sprintf_s(TextBuffer, "%02d:%02d:%02d.%03d", Hours, Minutes, Seconds, Milliseconds);
 	else
-		sprintf_s(txt, "%02d:%02d.%03d", m, s, e);
+		sprintf_s(TextBuffer, "%02d:%02d.%03d", Minutes, Seconds, Milliseconds);
 
-	return txt;
+	return TextBuffer;
 }
+

@@ -32,7 +32,7 @@ class CombatGroup;
 class MissionElement;
 class MissionEvent;
 class ShipDesign;
-struct TermStruct;
+class TermStruct;
 
 // +--------------------------------------------------------------------+
 

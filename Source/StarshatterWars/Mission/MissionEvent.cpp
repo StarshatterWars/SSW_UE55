@@ -49,6 +49,7 @@
 #include "ParseUtil.h"
 #include "FormatUtil.h"
 #include "Random.h"
+#include "Video.h"
 
 // Minimal Unreal logging support:
 #include "Logging/LogMacros.h"
@@ -185,7 +186,7 @@ MissionEvent::CheckTrigger()
 		Ship* tgt = sim->FindShip(trigger_target);
 
 		if (ship && tgt) {
-			double range = (ship->Location() - tgt->Location()).length();
+			double range = (ship->Location() - tgt->Location()).Length();
 			double min_range = 0;
 			double max_range = 1e12;
 
@@ -216,7 +217,7 @@ MissionEvent::CheckTrigger()
 		while (++iter) {
 			SimRegion* rgn = iter.value();
 
-			ListIter<Ship> s_iter = rgn->Ships();
+			ListIter<Ship> s_iter = rgn->GetShips();
 			while (++s_iter) {
 				Ship* ship = s_iter.value();
 
@@ -587,8 +588,10 @@ MissionEvent::Execute(bool silent)
 			DisplayView* disp_view = DisplayView::GetInstance();
 
 			if (disp_view) {
-				Color color;
-				color.Set(event_param[0]);
+				FColor color;
+				if (disp_view) {
+					color = FColor(event_param[0]);
+				}
 
 				if (event_message.length() && event_source.length()) {
 
@@ -614,7 +617,7 @@ MissionEvent::Execute(bool silent)
 					}
 
 					disp_view->AddText(event_message,
-						FontMgr::Find(event_source),
+						FontManager::Find(event_source),
 						color,
 						event_rect,
 						event_point.Y,

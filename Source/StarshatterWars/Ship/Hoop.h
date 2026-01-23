@@ -26,7 +26,7 @@
 
 // Forward declarations to keep the header light:
 class UTexture2D;
-class Material;
+struct Material;
 
 class Hoop : public Solid
 {
@@ -40,7 +40,7 @@ public:
 protected:
 	virtual void      CreatePolys();
 
-	UTexture2D*		  hoop_texture;
+	Bitmap*			  hoop_texture;
 	Material*		  mtl;
 	int               width;
 	int               height;

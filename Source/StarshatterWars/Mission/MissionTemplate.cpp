@@ -34,6 +34,7 @@
 #include "Game.h"
 #include "DataLoader.h"
 #include "ParseUtil.h"
+#include "GameStructs.h"
 
 // Unreal:
 #include "Math/Vector.h"               // FVector
@@ -131,27 +132,27 @@ MissionTemplate::MapElement(MissionElement* elem)
 }
 
 Text
-MissionTemplate::MapShip(Text name)
+MissionTemplate::MapShip(Text inName)
 {
-	Text result = name;
-	int  len = name.length();
+	Text result = inName;
+	const int len = inName.length();
 
 	if (len) {
 		MissionElement* elem = nullptr;
 
 		// single ship from an element (e.g. "Alpha 1")?
-		if (isdigit(name[len - 1]) && isspace(name[len - 2])) {
-			Text elem_name = name.substring(0, len - 2);
+		if (len >= 2 && isdigit(inName[len - 1]) && isspace(inName[len - 2])) {
+			Text elem_name = inName.substring(0, len - 2);
 
 			elem = FindElement(elem_name);
 			if (elem)
-				result = elem->Name() + name.substring(len - 2, 2);
+				result = elem->Name() + inName.substring(len - 2, 2);
 		}
 
 		// full element name
 		// (also used to try again if single-ship search fails)
 		if (!elem) {
-			elem = FindElement(name);
+			elem = FindElement(inName);
 
 			if (elem)
 				result = elem->Name();
@@ -184,22 +185,22 @@ MissionTemplate::MapEvent(MissionEvent* event)
 // +--------------------------------------------------------------------+
 
 Text
-MissionTemplate::MapCallsign(const char* name, int iff)
+MissionTemplate::MapCallsign(const char* InName, int iff)
 {
 	for (int i = 0; i < callsigns.size(); i++) {
-		if (callsigns[i]->Name() == name)
+		if (callsigns[i]->Name() == InName)
 			return callsigns[i]->Callsign();
 	}
 
 	if (iff >= 0) {
 		const char* callsign = Callsign::GetCallsign(iff);
-		MissionCallsign* mc = new MissionCallsign(callsign, name);
+		MissionCallsign* mc = new MissionCallsign(callsign, InName);
 		callsigns.append(mc);
 
 		return mc->Callsign();
 	}
 
-	return name;
+	return InName;
 }
 
 // +--------------------------------------------------------------------+
@@ -250,15 +251,15 @@ MissionTemplate::FindCombatGroup(int iff, const ShipDesign* d)
 // +--------------------------------------------------------------------+
 
 MissionElement*
-MissionTemplate::FindElement(const char* n)
+MissionTemplate::FindElement(const char* InName)
 {
-	Text name = n;
+	Text element_name = InName;
 
 	ListIter<MissionCallsign> c_iter = callsigns;
 	while (++c_iter) {
 		MissionCallsign* c = c_iter.value();
-		if (c->Name() == name) {
-			name = c->Callsign();
+		if (c->Name() == element_name) {
+			element_name = c->Callsign();
 			break;
 		}
 	}
@@ -266,14 +267,14 @@ MissionTemplate::FindElement(const char* n)
 	ListIter<MissionAlias> a_iter = aliases;
 	while (++a_iter) {
 		MissionAlias* a = a_iter.value();
-		if (a->Name() == name)
+		if (a->Name() == element_name)
 			return a->Element();
 	}
 
 	ListIter<MissionElement> e_iter = elements;
 	while (++e_iter) {
 		MissionElement* elem = e_iter.value();
-		if (elem->Name() == name)
+		if (elem->Name() == element_name)
 			return elem;
 	}
 
@@ -493,7 +494,7 @@ MissionTemplate::Load(const char* fname, const char* pname)
 void
 MissionTemplate::ParseAlias(TermStruct* val)
 {
-	Text    name;
+	Text    alias_name;
 	Text    design;
 	Text    code;
 	Text    elem_name;
@@ -510,7 +511,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 			defname.setSensitive(false);
 
 			if (defname == "name")
-				GetDefText(name, pdef, filename);
+				GetDefText(alias_name, pdef, filename);
 
 			else if (defname == "elem")
 				GetDefText(elem_name, pdef, filename);
@@ -530,7 +531,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 			}
 
 			else if (defname == "rloc") {
-				if (pdef->term()->isStruct()) {
+				if (pdef->term() && pdef->term()->isStruct()) {
 					rloc = ParseRLoc(pdef->term()->isStruct());
 				}
 			}
@@ -547,9 +548,9 @@ MissionTemplate::ParseAlias(TermStruct* val)
 	MissionElement* elem = nullptr;
 
 	// now find element and create alias:
-	if (name.length()) {
+	if (alias_name.length()) {
 		for (int i = 0; i < aliases.size(); i++)
-			if (aliases[i]->Name() == name)
+			if (aliases[i]->Name() == alias_name)
 				return;
 
 		// by element name?
@@ -590,9 +591,9 @@ MissionTemplate::ParseAlias(TermStruct* val)
 					player_group = campaign->GetPlayerGroup();
 
 				if (player_group &&
-					(player_group->Type() == CombatGroup::INTERCEPT_SQUADRON ||
-						player_group->Type() == CombatGroup::FIGHTER_SQUADRON ||
-						player_group->Type() == CombatGroup::ATTACK_SQUADRON)) {
+					(player_group->GetType() == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON ||
+						player_group->GetType() == ECOMBATGROUP_TYPE::FIGHTER_SQUADRON ||
+						player_group->GetType() == ECOMBATGROUP_TYPE::ATTACK_SQUADRON)) {
 					elem = FindElement(player_group->Name());
 				}
 			}
@@ -639,12 +640,13 @@ MissionTemplate::ParseAlias(TermStruct* val)
 			else if (use_loc) elem->SetLocation(loc);
 
 			delete rloc;
+			rloc = nullptr;
 
-			aliases.append(new MissionAlias(name, elem));
+			aliases.append(new MissionAlias(alias_name, elem));
 		}
 		else {
-			UE_LOG(LOG_STARSHATTER, Warning, TEXT("WARNING: Could not resolve mission alias '%s'"),
-				ANSI_TO_TCHAR(name.data()));
+			UE_LOG(LogStarshatterWars, Warning, TEXT("WARNING: Could not resolve mission alias '%s'"),
+				ANSI_TO_TCHAR(alias_name.data()));
 			ok = false;
 		}
 	}
@@ -662,7 +664,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 
 			if (defname == "objective") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LOG_STARSHATTER, Warning,
+					UE_LOG(LogStarshatterWars, Warning,
 						TEXT("WARNING: order struct missing for element '%s' in '%s'"),
 						ANSI_TO_TCHAR(elem->Name().data()),
 						ANSI_TO_TCHAR(filename));
@@ -685,7 +687,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 
 			else if (defname == "order" || defname == "navpt") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LOG_STARSHATTER, Warning,
+					UE_LOG(LogStarshatterWars, Warning,
 						TEXT("WARNING: order struct missing for element '%s' in '%s'"),
 						ANSI_TO_TCHAR(elem->Name().data()),
 						ANSI_TO_TCHAR(filename));
@@ -720,7 +722,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 void
 MissionTemplate::ParseCallsign(TermStruct* val)
 {
-	Text name;
+	Text callsign_name;
 	int  iff = -1;
 
 	for (int i = 0; i < val->elements()->size(); i++) {
@@ -730,15 +732,15 @@ MissionTemplate::ParseCallsign(TermStruct* val)
 			defname.setSensitive(false);
 
 			if (defname == "name")
-				GetDefText(name, pdef, filename);
+				GetDefText(callsign_name, pdef, filename);
 
 			else if (defname == "iff")
 				GetDefNumber(iff, pdef, filename);
 		}
 	}
 
-	if (name.length() > 0 && iff >= 0)
-		MapCallsign(name, iff);
+	if (callsign_name.length() > 0 && iff >= 0)
+		MapCallsign(callsign_name, iff);
 }
 
 // +--------------------------------------------------------------------+

@@ -56,7 +56,7 @@ FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
 }
 
 
-static inline FColor ScaleColor(const FColor& In, float Scale)
+static inline FColor ScaleHUDColor(const FColor& In, float Scale)
 {
     // Defensive: handle negative/NaN
     if (!FMath::IsFinite(Scale))

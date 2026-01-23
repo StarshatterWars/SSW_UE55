@@ -211,7 +211,6 @@ Debris::ExecFrame(double seconds)
 			if (mass > 100.0f) {
 				Orbital* primary = GetRegion()->GetOrbitalRegion()->Primary();
 
-				const double GRAV = 6.673e-11;
 				const double m0 = primary ? primary->Mass() : 0.0;
 				const double r = primary ? primary->Radius() : 1.0;
 

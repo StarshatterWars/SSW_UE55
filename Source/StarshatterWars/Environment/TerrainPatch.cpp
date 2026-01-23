@@ -21,6 +21,7 @@
 #include "TerrainRegion.h"
 #include "Sim.h"
 #include "SimLight.h"
+#include "Bitmap.h"
 
 #include "Water.h"
 
@@ -65,7 +66,7 @@ FORCEINLINE uint32 PackColor(const FColor& C)
 
 // +--------------------------------------------------------------------+
 
-TerrainPatch::TerrainPatch(Terrain* terr, const UTexture2D* patch, const Rect& r,
+TerrainPatch::TerrainPatch(Terrain* terr, const Bitmap* patch, const Rect& r,
 	const FVector& p1, const FVector& p2)
 	: ndetail(0)
 	, terrain(terr)
@@ -84,18 +85,6 @@ TerrainPatch::TerrainPatch(Terrain* terr, const UTexture2D* patch, const Rect& r
 	size = p2.X - p1.X;
 
 	ZeroMem(detail_levels, sizeof(detail_levels));
-
-	// NOTE:
-	// The original Starshatter code sampled a CPU bitmap heightmap here.
-	// In UE, UTexture2D is GPU-resident; without an explicit CPU copy path,
-	// we cannot legally/portably read per-pixel data here.
-	//
-	// Therefore, this conversion keeps the structure but initializes a flat patch
-	// (all heights = 0, clamped to sea level logic below if water texture exists).
-	//
-	// If you have a CPU height source (e.g., imported height array, cooked bulk data,
-	// or a custom UTexture2D CPU readback pipeline), replace the loop below with
-	// your height sampling implementation.
 
 	terrain_width = 0;
 
@@ -120,9 +109,9 @@ TerrainPatch::TerrainPatch(Terrain* terr, const UTexture2D* patch, const Rect& r
 	}
 
 	Material* mtl = new Material;
-	mtl->Ka = ColorValue(0.5f, 0.5f, 0.5f);
-	mtl->Kd = ColorValue(0.3f, 0.6f, 0.2f);
-	mtl->Ks = Color::Black;
+	mtl->Ka = FColor(128, 128, 128, 255);
+	mtl->Kd = FColor(77, 153, 51, 255);
+	mtl->Ks = FColor::Black;
 
 	// Terrain now returns UTexture2D* (per your conversion rules):
 	mtl->tex_diffuse = terrain ? terrain->Texture() : nullptr;
@@ -131,9 +120,9 @@ TerrainPatch::TerrainPatch(Terrain* terr, const UTexture2D* patch, const Rect& r
 
 	List<TerrainLayer>& layers = terrain->GetLayers();
 	for (int i = 0; i < layers.size(); i++) {
-		UTexture2D* tex0 = layers.at(i)->GetTileTexture();
-		UTexture2D* tex1 = nullptr;
-		UTexture2D* texd = layers.at(i)->GetDetailTexture();
+		Bitmap* tex0 = layers.at(i)->GetTileTexture();
+		Bitmap* tex1 = nullptr;
+		Bitmap* texd = layers.at(i)->GetDetailTexture();
 
 		if (i < layers.size() - 1)
 			tex1 = layers.at(i + 1)->GetTileTexture();
@@ -142,9 +131,9 @@ TerrainPatch::TerrainPatch(Terrain* terr, const UTexture2D* patch, const Rect& r
 			texd = terrain->DetailTexture(0);
 
 		mtl = new Material;
-		mtl->Ka = ColorValue(0.5f, 0.5f, 0.5f);
-		mtl->Kd = ColorValue(0.3f, 0.6f, 0.2f);
-		mtl->Ks = Color::Black;
+		mtl->Ka = FColor(128, 128, 128, 255);
+		mtl->Kd = FColor(77, 153, 51, 255);
+		mtl->Ks = FColor::Black;
 
 		if ((i & 1) != 0) {
 			mtl->tex_diffuse = tex1;
@@ -203,9 +192,9 @@ TerrainPatch::TerrainPatch(Terrain* terr,
 		heights[i] = (float)sea_level;
 
 	Material* mtl = new Material;
-	mtl->Ka = Color::Gray;
-	mtl->Kd = Color::White;
-	mtl->Ks = Color::White;
+	mtl->Ka = FColor(128, 128, 128, 255);
+	mtl->Kd = FColor::White;
+	mtl->Ks = FColor::White;
 	mtl->power = 30.0f;
 	mtl->shadow = false;
 	mtl->tex_diffuse = terrain ? terrain->WaterTexture() : nullptr;
@@ -967,7 +956,7 @@ TerrainPatch::Render(Video* video, DWORD flags)
 	}
 
 	// Temporarily disable detail textures on low-detail LODs (original behavior):
-	UTexture2D* details[16];
+	Bitmap* details[16];
 	ZeroMem(details, sizeof(details));
 
 	if (ndetail < 3) {

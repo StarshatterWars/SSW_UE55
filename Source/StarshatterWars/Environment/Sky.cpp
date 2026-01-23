@@ -27,8 +27,6 @@
 
 #include "Math/UnrealMathUtility.h"
 
-void Print(const char* ftm, ...);
-
 // +====================================================================+
 
 Stars::Stars(int nstars)
@@ -38,23 +36,21 @@ Stars::Stars(int nstars)
 	shadow = false;
 
 	vset = new VertexSet(nstars);
-	colors = new Color[nstars];
+	colors = new FColor[nstars];
 
-	for (int i = 0; i < nstars; i++) {
-		vset->loc[i] = RandomVector(1000);
+	for (int32 StarIndex = 0; StarIndex < nstars; ++StarIndex) {
+		vset->loc[StarIndex] = RandomVector(1000);
 
-		// Three independent uniform draws in [0.7, 0.8]
-		ColorValue val = ColorValue(
-			(float)FMath::FRandRange(0.7f, 0.8f),
-			(float)FMath::FRandRange(0.7f, 0.8f),
-			(float)FMath::FRandRange(0.7f, 0.8f)
-		);
+		// Three independent uniform draws in [0.7, 0.8], converted to 0–255
+		const uint8 GrayR = static_cast<uint8>(FMath::FRandRange(0.7f, 0.8f) * 255.0f);
+		const uint8 GrayG = static_cast<uint8>(FMath::FRandRange(0.7f, 0.8f) * 255.0f);
+		const uint8 GrayB = static_cast<uint8>(FMath::FRandRange(0.7f, 0.8f) * 255.0f);
 
-		Color c = val.ToColor();
+		const FColor StarColor(GrayR, GrayG, GrayB, 255);
 
-		colors[i] = c;
-		vset->diffuse[i] = c.Value();
-		vset->specular[i] = 0;
+		colors[StarIndex] = StarColor;
+		vset->diffuse[StarIndex] = StarColor.ToPackedRGBA();
+		vset->specular[StarIndex] = 0;
 	}
 
 	strcpy_s(name, "Stars");
@@ -69,14 +65,21 @@ Stars::~Stars()
 // +--------------------------------------------------------------------+
 
 void
-Stars::Illuminate(double scale)
+Stars::Illuminate(double Scale)
 {
 	if (!vset)
 		return;
 
-	for (int i = 0; i < vset->nverts; i++) {
-		Color c = colors[i] * scale;
-		vset->diffuse[i] = c.Value();
+	for (int32 VertexIndex = 0; VertexIndex < vset->nverts; ++VertexIndex) {
+		const FColor BaseColor = colors[VertexIndex];
+
+		const uint8 R = static_cast<uint8>(FMath::Clamp(BaseColor.R * Scale, 0.0, 255.0));
+		const uint8 G = static_cast<uint8>(FMath::Clamp(BaseColor.G * Scale, 0.0, 255.0));
+		const uint8 B = static_cast<uint8>(FMath::Clamp(BaseColor.B * Scale, 0.0, 255.0));
+
+		const FColor ScaledColor(R, G, B, BaseColor.A);
+
+		vset->diffuse[VertexIndex] = ScaledColor.ToPackedRGBA();
 	}
 }
 
@@ -118,34 +121,31 @@ Dust::~Dust()
 // +--------------------------------------------------------------------+
 
 void
-Dust::Reset(const FVector& ref)
+Dust::Reset(const FVector& RefLocation)
 {
-	(void)ref;
+	(void)RefLocation;
 
-	BYTE c = 0;
-
-	for (int i = 0; i < vset->nverts; i++) {
-		vset->loc[i] = FVector(
+	for (int32 VertexIndex = 0; VertexIndex < vset->nverts; ++VertexIndex) {
+		vset->loc[VertexIndex] = FVector(
 			FMath::FRandRange(-BOUNDARY, BOUNDARY),
 			FMath::FRandRange(-BOUNDARY, BOUNDARY),
 			FMath::FRandRange(-BOUNDARY, BOUNDARY)
 		);
 
-		uint8 c;
+		uint8 GrayValue = 0;
 
-		if (bright)
-		{
-			c = static_cast<uint8>(FMath::RandRange(96, 200));
+		if (bright) {
+			GrayValue = static_cast<uint8>(FMath::RandRange(96, 200));
 		}
-		else
-		{
-			c = static_cast<uint8>(FMath::RandRange(64, 156));
+		else {
+			GrayValue = static_cast<uint8>(FMath::RandRange(64, 156));
 		}
 
-		vset->diffuse[i] = Color(c, c, c).Value();
-		vset->specular[i] = 0;
+		vset->diffuse[VertexIndex] = FColor(GrayValue, GrayValue, GrayValue, 255).ToPackedRGBA();
+		vset->specular[VertexIndex] = 0;
 	}
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -238,7 +238,7 @@ PlanetRep::PlanetRep(const char* surface_name,
 	const char* rngname,
 	double minrad,
 	double maxrad,
-	Color atmos,
+	FColor atmos,
 	const char* gloss_name)
 	: mtl_surf(0),
 	mtl_limb(0),
@@ -266,11 +266,11 @@ PlanetRep::PlanetRep(const char* surface_name,
 	strncpy(name, surface_name, 31);
 	name[31] = 0;
 
-	UTexture2D* bmp_surf = 0;
-	UTexture2D* bmp_spec = 0;
-	UTexture2D* bmp_glow = 0;
-	UTexture2D* bmp_ring = 0;
-	UTexture2D* bmp_limb = 0;
+	Bitmap* bmp_surf = 0;
+	Bitmap* bmp_spec = 0;
+	Bitmap* bmp_glow = 0;
+	Bitmap* bmp_ring = 0;
+	Bitmap* bmp_limb = 0;
 
 	DataLoader* loader = DataLoader::GetLoader();
 	loader->LoadTexture(surface_name, bmp_surf, Bitmap::BMP_SOLID, true);
@@ -287,10 +287,10 @@ PlanetRep::PlanetRep(const char* surface_name,
 
 	mtl_surf = new Material;
 
-	mtl_surf->Ka = Color::LightGray;
-	mtl_surf->Kd = Color::White;
-	mtl_surf->Ke = bmp_glow ? Color::White : Color::Black;
-	mtl_surf->Ks = bmp_spec ? Color::LightGray : Color::Black;
+	mtl_surf->Ka = FColor(192, 192, 192, 255);   // LightGray
+	mtl_surf->Kd = FColor::White;
+	mtl_surf->Ke = bmp_glow ? FColor::White : FColor::Black;
+	mtl_surf->Ks = bmp_spec ? FColor(192, 192, 192, 255) : FColor::Black;
 	mtl_surf->power = 25.0f;
 	mtl_surf->tex_diffuse = bmp_surf;
 	mtl_surf->tex_specular = bmp_spec;
@@ -304,7 +304,7 @@ PlanetRep::PlanetRep(const char* surface_name,
 			strcpy_s(mtl_surf->shader, "SimplePix/PlanetSurf");
 	}
 
-	if (atmosphere != Color::Black) {
+	if (atmosphere != FColor::Black) {
 		mtl_limb = new Material;
 
 		mtl_limb->Ka = atmosphere;
@@ -313,6 +313,7 @@ PlanetRep::PlanetRep(const char* surface_name,
 
 		UE_LOG(LogTemp, Log, TEXT("PlanetRep: loading atmospheric limb texture 'PlanetLimb.pcx'"));
 		loader->LoadTexture("PlanetLimb.pcx", bmp_limb, Bitmap::BMP_TRANSLUCENT, true);
+
 		mtl_limb->tex_diffuse = bmp_limb;
 		mtl_limb->blend = Material::MTL_TRANSLUCENT;
 	}
@@ -326,10 +327,10 @@ PlanetRep::PlanetRep(const char* surface_name,
 
 		mtl_ring = new Material;
 
-		mtl_ring->Ka = Color::LightGray;
-		mtl_ring->Kd = Color::White;
-		mtl_ring->Ks = Color::Gray;
-		mtl_ring->Ke = Color::Black;
+		mtl_ring->Ka = FColor(192, 192, 192, 255);   // LightGray
+		mtl_ring->Kd = FColor::White;
+		mtl_ring->Ks = FColor(128, 128, 128, 255);   // Gray
+		mtl_ring->Ke = FColor::Black;
 		mtl_ring->power = 30.0f;
 		mtl_ring->tex_diffuse = bmp_ring;
 		mtl_ring->blend = Material::MTL_TRANSLUCENT;
@@ -378,7 +379,7 @@ PlanetRep::CreateSphere(double InRadius,
 	int apolys = 0;
 	int averts = 0;
 
-	if (atmosphere != Color::Black) {
+	if (atmosphere != FColor::Black) {
 		apolys = npolys;
 		averts = nverts;
 

@@ -111,13 +111,6 @@ public:
 	void              SetChatMode(int c);
 	const char* GetChatText() const { return chat_text.data(); }
 
-	void              StopNetGame();
-
-	int               GetLobbyMode();
-	void              SetLobbyMode(int mode = NET_LOBBY_CLIENT);
-	void              StartLobby();
-	void              StopLobby();
-
 	void              ExecCutscene(const char* msn_file, const char* path);
 	void              BeginCutscene();
 	void              EndCutscene();

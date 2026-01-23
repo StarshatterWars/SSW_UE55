@@ -34,16 +34,15 @@
 #include "QuantumDrive.h"
 #include "Power.h"
 #include "Instruction.h"
-#include "NetGame.h"
 
 #include "CameraView.h"
-#include "Font.h"
-#include "FontMgr.h"
+#include "SystemFont.h"
+#include "FontManager.h"
 #include "Window.h"
 #include "Video.h"
 #include "Screen.h"
 #include "DataLoader.h"
-#include "Scene.h"
+#include "SimScene.h"
 #include "Graphic.h"
 #include "Sprite.h"
 #include "Keyboard.h"
@@ -100,7 +99,7 @@ MFD::MFD(Window* c, int n)
 	sprite->SetFilter(0);
 	sprite->Hide();
 
-	Font* font = FontMgr::Find("HUD");
+	SystemFont* font = FontManager::Find("HUD");
 
 	for (int i = 0; i < TXT_LAST; i++) {
 		mfd_text[i].font = font;
@@ -170,7 +169,7 @@ MFD::SetColor(FColor c)
 	}
 	else {
 		// Legacy fallback: convert Starshatter Color -> FColor
-		hud_color = FColor((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), 255);
+		hud_color = FColor(c.R, c.G, c.B, 255);
 		txt_color = hud_color;
 	}
 
@@ -182,9 +181,9 @@ MFD::SetColor(FColor c)
 }
 
 void
-MFD::SetText3DColor(Color c)
+MFD::SetText3DColor(FColor c)
 {
-	const FColor fc((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), 255);
+	const FColor fc(c.R, c.G, c.B, 255);
 	for (int i = 0; i < TXT_LAST; i++)
 		mfd_text[i].color = fc;
 }
@@ -496,17 +495,16 @@ MFD::DrawSensorMFD()
 	if (navpt && navpt->Region() == ship->GetRegion()) {
 		const Camera* cam = &ship->Cam();
 
-		// translate:
-		const FVector pt = navpt->Location().OtherHand() - ship->Location();
+		const FVector Pt = navpt->Location() - ship->Location();
 
 		// rotate (camera basis projection):
-		const double tx = FVector::DotProduct(pt, cam->vrt());
-		const double ty = FVector::DotProduct(pt, cam->vup());
-		const double tz = FVector::DotProduct(pt, cam->vpn());
+		const double tx = FVector::DotProduct(Pt, cam->vrt());
+		const double ty = FVector::DotProduct(Pt, cam->vup());
+		const double tz = FVector::DotProduct(Pt, cam->vpn());
 
 		if (tz > 1.0) {
 			// convert to spherical coords:
-			const double rng = pt.Length();
+			const double rng = Pt.Length();
 			if (rng > 1e-6) {
 				double azp = asin(FMath::Abs(tx) / rng);
 				double elp = asin(FMath::Abs(ty) / rng);
@@ -541,10 +539,10 @@ MFD::DrawSensorMFD()
 	}
 
 	int num_contacts = ship->NumContacts();
-	ListIter<Contact> iter = ship->ContactList();
+	ListIter<SimContact> iter = ship->ContactList();
 
 	while (++iter) {
-		Contact* contact = iter.value();
+		SimContact* contact = iter.value();
 		Ship* c_ship = contact->GetShip();
 		double   azc, elc, rng;
 		bool     aft = false;
@@ -737,7 +735,7 @@ MFD::DrawHSD()
 	if (navpt && navpt->Region() == ship->GetRegion()) {
 		const Camera* cam = &hsd_cam;
 
-		const FVector pt = navpt->Location().OtherHand() - ship->Location();
+		const FVector pt = navpt->Location() - ship->Location();
 
 		const double tx = FVector::DotProduct(pt, cam->vrt());
 		const double tz = FVector::DotProduct(pt, cam->vpn());
@@ -774,7 +772,7 @@ MFD::DrawHSD()
 
 	// draw contact markers:
 	const double limit = sensor->GetBeamRange();
-	ListIter<Contact> contact = ship->ContactList();
+	ListIter<SimContact> contact = ship->ContactList();
 
 	while (++contact) {
 		Ship* c_ship = contact->GetShip();
@@ -900,7 +898,7 @@ MFD::Draw3D()
 	if (navpt && navpt->Region() == ship->GetRegion()) {
 		const Camera* cam = &hsd_cam;
 
-		const FVector pt = navpt->Location().OtherHand() - ship->Location();
+		const FVector pt = navpt->Location() - ship->Location();
 
 		const double tx = FVector::DotProduct(pt, cam->vrt());
 		double ty = FVector::DotProduct(pt, cam->vup());
@@ -963,7 +961,7 @@ MFD::Draw3D()
 
 	// draw contact markers:
 	const double limit = sensor->GetBeamRange();
-	ListIter<Contact> contact = ship->ContactList();
+	ListIter<SimContact> contact = ship->ContactList();
 
 	while (++contact) {
 		Ship* c_ship = contact->GetShip();
@@ -1060,7 +1058,13 @@ MFD::Draw3D()
 void
 MFD::DrawMap()
 {
-	DrawMFDText(0, Game::GetText("MFD.mode.ground").data(), Rect(rect.x, rect.y, rect.w, 12), DT_CENTER);
+	Rect TextRect(rect.x, rect.y, rect.w, 12);
+	DrawMFDText(
+		0,
+		Game::GetText("MFD.mode.ground").data(),
+		TextRect,
+		DT_CENTER
+	);
 }
 
 // +--------------------------------------------------------------------+
@@ -1071,10 +1075,10 @@ MFD::DrawGauge(int x, int y, int percent)
 	if (cockpit_hud_texture) {
 		x += this->index * 128 - this->rect.x;
 		y += 256 - this->rect.y;
-		cockpit_hud_texture->DrawRect(x, y, x + 53, y + 8, FColor::DarkGray);
+		cockpit_hud_texture->DrawRect(x, y, x + 53, y + 8, FColor(64, 64, 64, 255));
 	}
 	else {
-		window->DrawRect(x, y, x + 53, y + 8, FColor::DarkGray);
+		window->DrawRect(x, y, x + 53, y + 8, FColor(64, 64, 64, 255));
 	}
 
 	if (percent < 3) return;
@@ -1083,9 +1087,9 @@ MFD::DrawGauge(int x, int y, int percent)
 	percent /= 2;
 
 	if (cockpit_hud_texture)
-		cockpit_hud_texture->FillRect(x + 2, y + 2, x + 2 + percent, y + 7, FColor::Gray);
+		cockpit_hud_texture->FillRect(x + 2, y + 2, x + 2 + percent, y + 7, FColor(64, 64, 64, 255));
 	else
-		window->FillRect(x + 2, y + 2, x + 2 + percent, y + 7, FColor::Gray);
+		window->FillRect(x + 2, y + 2, x + 2 + percent, y + 7, FColor(128, 128, 128, 255));
 }
 
 void
@@ -1104,11 +1108,6 @@ MFD::DrawGameMFD()
 		txt_rect.y += 10;
 
 		if (lines <= 1) return;
-
-		Starshatter* game = Starshatter::GetInstance();
-		sprintf_s(txt, "Polys: %d", game->GetPolyStats().npolys);
-		DrawMFDText(t++, txt, txt_rect, DT_LEFT);
-		txt_rect.y += 10;
 	}
 
 	if (ship) {
@@ -1130,17 +1129,32 @@ MFD::DrawGameMFD()
 		seconds = (clock / 1000) % 60;
 	}
 
-	if (Game::TimeCompression() > 1)
-		sprintf_s(txt, "%02d:%02d:%02d x%d", hours, minutes, seconds, Game::TimeCompression());
-	else
-		sprintf_s(txt, "%02d:%02d:%02d", hours, minutes, seconds);
+	FString TimeText;
+
+	if (Game::TimeCompression() > 1) {
+		TimeText = FString::Printf(
+			TEXT("%02d:%02d:%02d x%d"),
+			hours,
+			minutes,
+			seconds,
+			Game::TimeCompression()
+		);
+	}
+	else {
+		TimeText = FString::Printf(
+			TEXT("%02d:%02d:%02d"),
+			hours,
+			minutes,
+			seconds
+		);
+	}
 
 	DrawMFDText(t++, txt, txt_rect, DT_LEFT);
 	txt_rect.y += 10;
 
 	if (HUDView::IsArcade() || lines <= 3) return;
 
-	DrawMFDText(t++, ship->GetRegion()->Name(), txt_rect, DT_LEFT);
+	DrawMFDText(t++, ship->GetRegion()->GetName(), txt_rect, DT_LEFT);
 	txt_rect.y += 10;
 
 	if (lines <= 4) return;
@@ -1160,182 +1174,29 @@ MFD::DrawGameMFD()
 	}
 }
 
-void
-MFD::DrawStatusMFD()
-{
-	if (lines < 10) lines++;
 
-	Rect  status_rect(rect.x, rect.y, rect.w, 12);
-	int   row = 0;
-	char  txt[32];
-
-	if (ship) {
-		if (status_rect.y > 320 && !ship->IsStarship())
-			status_rect.y += 32;
-
-		Drive* drive = ship->GetDrive();
-		if (drive) {
-			DrawMFDText(row++, Game::GetText("MFD.status.THRUST").data(), status_rect, DT_LEFT);
-			DrawGauge(status_rect.x + 70, status_rect.y, (int)ship->Throttle());
-			status_rect.y += 10;
-		}
-
-		if (lines <= 1) return;
-
-		if (ship->Reactors().size() > 0) {
-			PowerSource* reactor = ship->Reactors()[0];
-			if (reactor) {
-				DrawMFDText(row++, Game::GetText("MFD.status.FUEL").data(), status_rect, DT_LEFT);
-				DrawGauge(status_rect.x + 70, status_rect.y, reactor->Charge());
-				status_rect.y += 10;
-			}
-		}
-
-		if (lines <= 2) return;
-
-		QuantumDrive* quantum_drive = ship->GetQuantumDrive();
-		if (quantum_drive) {
-			DrawMFDText(row++, Game::GetText("MFD.status.QUANTUM").data(), status_rect, DT_LEFT);
-			DrawGauge(status_rect.x + 70, status_rect.y, (int)quantum_drive->Charge());
-			status_rect.y += 10;
-		}
-
-		if (lines <= 3) return;
-
-		double hull = ship->Integrity() / ship->Design()->integrity * 100;
-		int    hull_status = System::CRITICAL;
-
-		if (hull > 66)
-			hull_status = System::NOMINAL;
-		else if (hull > 33)
-			hull_status = System::DEGRADED;
-
-		DrawMFDText(row++, Game::GetText("MFD.status.HULL").data(), status_rect, DT_LEFT);
-		DrawGauge(status_rect.x + 70, status_rect.y, (int)hull);
-		status_rect.y += 10;
-
-		if (lines <= 4) return;
-
-		Shield* shield = ship->GetShield();
-		if (shield) {
-			DrawMFDText(row++, Game::GetText("MFD.status.SHIELD").data(), status_rect, DT_LEFT);
-			DrawGauge(status_rect.x + 70, status_rect.y, ship->ShieldStrength());
-			status_rect.y += 10;
-		}
-
-		if (lines <= 5) return;
-
-		Weapon* primary = ship->GetPrimary();
-		if (primary) {
-			DrawMFDText(row++, Game::GetText("MFD.status.GUNS").data(), status_rect, DT_LEFT);
-			DrawGauge(status_rect.x + 70, status_rect.y, primary->Charge());
-			status_rect.y += 10;
-		}
-
-		if (lines <= 6) return;
-
-		if (HUDView::IsArcade()) {
-			for (int i = 0; i < ship->Weapons().size() && i < 4; i++) {
-				WeaponGroup* w = ship->Weapons().at(i);
-
-				if (w->IsMissile()) {
-					char ammo[8];
-
-					if (ship->GetSecondaryGroup() == w)
-						sprintf_s(ammo, "%d *", w->Ammo());
-					else
-						sprintf_s(ammo, "%d", w->Ammo());
-
-					DrawMFDText(row++, (const char*)w->GetDesign()->name, status_rect, DT_LEFT);
-					status_rect.x += 70;
-					DrawMFDText(row++, ammo, status_rect, DT_LEFT);
-					status_rect.x -= 70;
-					status_rect.y += 10;
-				}
-			}
-
-			if (ship->GetDecoy()) {
-				char ammo[8];
-				sprintf_s(ammo, "%d", ship->GetDecoy()->Ammo());
-				DrawMFDText(row++, Game::GetText("MFD.status.DECOY").data(), status_rect, DT_LEFT);
-				status_rect.x += 70;
-				DrawMFDText(row++, ammo, status_rect, DT_LEFT);
-				status_rect.x -= 70;
-				status_rect.y += 10;
-			}
-
-			if (NetGame::GetInstance()) {
-				char lives[8];
-				sprintf_s(lives, "%d", ship->RespawnCount() + 1);
-				DrawMFDText(row++, Game::GetText("MFD.status.LIVES").data(), status_rect, DT_LEFT);
-				status_rect.x += 70;
-				DrawMFDText(row++, lives, status_rect, DT_LEFT);
-				status_rect.x -= 70;
-				status_rect.y += 10;
-			}
-
-			return;
-		}
-
-		Sensor* sensor = ship->GetSensor();
-		if (sensor) {
-			if (ship->GetFlightPhase() != Ship::ACTIVE) {
-				DrawMFDText(row++, Game::GetText("MFD.status.SENSOR").data(), status_rect, DT_LEFT);
-				status_rect.x += 70;
-				DrawMFDText(row++, Game::GetText("MFD.status.OFFLINE").data(), status_rect, DT_LEFT);
-				status_rect.x -= 70;
-				status_rect.y += 10;
-			}
-			else {
-				DrawMFDText(row++, Game::GetText("MFD.status.EMCON").data(), status_rect, DT_LEFT);
-				status_rect.x += 70;
-
-				sprintf_s(txt, "%s %d", Game::GetText("MFD.status.MODE").data(), ship->GetEMCON());
-
-				if (!sensor->IsPowerOn() || sensor->GetEnergy() == 0) {
-					if (!Game::Paused() && (Game::RealTime() / 1000) & 2)
-						strcpy_s(txt, Game::GetText("MFD.status.SENSOR-OFF").data());
-				}
-
-				DrawMFDText(row++, txt, status_rect, DT_LEFT);
-				status_rect.x -= 70;
-				status_rect.y += 10;
-			}
-		}
-
-		if (lines <= 7) return;
-
-		DrawMFDText(row++, Game::GetText("MFD.status.SYSTEMS").data(), status_rect, DT_LEFT);
-		status_rect.x += 70;
-		DrawMFDText(row++, ship->GetDirectorInfo(), status_rect, DT_LEFT);
-
-		if (NetGame::GetInstance()) {
-			char lives[8];
-			sprintf_s(lives, "%d", ship->RespawnCount() + 1);
-			status_rect.x -= 70;
-			status_rect.y += 10;
-			DrawMFDText(row++, Game::GetText("MFD.status.LIVES").data(), status_rect, DT_LEFT);
-			status_rect.x += 70;
-			DrawMFDText(row++, lives, status_rect, DT_LEFT);
-		}
-	}
-}
 
 // +--------------------------------------------------------------------+
 
 void
 MFD::SetStatusColor(int status)
 {
-	// Legacy helper: original code computed a Color but never used it.
-	// Kept for compatibility; if you need it, return status_color or apply to text.
 	FColor status_color;
 
 	switch (status) {
 	default:
-	case System::NOMINAL:     status_color = txt_color;                     break;
-	case System::DEGRADED:    status_color = FColor(255, 255, 0, 255);       break;
-	case System::CRITICAL:    status_color = FColor(255, 0, 0, 255);       break;
-	case System::DESTROYED:   status_color = FColor(0, 0, 0, 255);       break;
+	case SimSystem::NOMINAL:    
+		status_color = txt_color;
+		break;
+	case SimSystem::DEGRADED: 
+		status_color = FColor(255, 255, 0, 255);
+		break;
+	case SimSystem::CRITICAL:
+		status_color = FColor(255, 0, 0, 255);
+		break;
+	case SimSystem::DESTROYED:
+		status_color = FColor(0, 0, 0, 255);
+		break;
 	}
 }
 
@@ -1350,67 +1211,90 @@ MFD::IsMouseLatched() const
 // +--------------------------------------------------------------------+
 
 void
-MFD::DrawMFDText(int index, const char* txt, Rect& txt_rect, int align, int status)
+MFD::DrawMFDText(int32 InTextIndex, const char* InText, Rect& InTextRect, int32 InAlign, int32 InStatus)
 {
-	if (index >= MFD::TXT_LAST) {
-		UE_LOG(LogTemp, Warning, TEXT("MFD DrawMFDText() invalid mfd_text index %d '%hs'"), index, txt ? txt : "");
+	if (InTextIndex < 0 || InTextIndex >= MFD::TXT_LAST) {
+		UE_LOG(LogTemp, Warning,
+			TEXT("MFD::DrawMFDText() invalid mfd_text index %d '%hs'"),
+			InTextIndex,
+			InText ? InText : "");
 		return;
 	}
 
-	HUDText& mt = mfd_text[index];
-	FColor   mc = mt.color;
+	HUDText& TextSlot = mfd_text[InTextIndex];
+	FColor   DrawColor = TextSlot.color;
 
-	switch (status) {
+	switch (InStatus) {
 	default:
-	case System::NOMINAL:     mc = txt_color;                      break;
-	case System::DEGRADED:    mc = FColor(255, 255, 0, 255);        break;
-	case System::CRITICAL:    mc = FColor(255, 0, 0, 255);        break;
-	case System::DESTROYED:   mc = FColor(0, 0, 0, 255);        break;
+	case SimSystem::NOMINAL:
+		DrawColor = txt_color;
+		break;
+
+	case SimSystem::DEGRADED:
+		DrawColor = FColor(255, 255, 0, 255);
+		break;
+
+	case SimSystem::CRITICAL:
+		DrawColor = FColor(255, 0, 0, 255);
+		break;
+
+	case SimSystem::DESTROYED:
+		DrawColor = FColor(0, 0, 0, 255);
+		break;
 	}
 
-	char txt_buf[256];
-	int  n = txt ? (int)strlen(txt) : 0;
-
-	if (n > 250) n = 250;
-
-	int i = 0;
-	for (; i < n; i++) {
-		if (islower((unsigned char)txt[i]))
-			txt_buf[i] = (char)toupper((unsigned char)txt[i]);
-		else
-			txt_buf[i] = txt[i];
+	char UpperText[256] = { 0 };
+	int32 TextLen = InText ? (int32)strlen(InText) : 0;
+	if (TextLen > 250) {
+		TextLen = 250;
 	}
-	txt_buf[i] = 0;
+
+	for (int32 CharIndex = 0; CharIndex < TextLen; ++CharIndex) {
+		const unsigned char Ch = (unsigned char)InText[CharIndex];
+		UpperText[CharIndex] = islower(Ch) ? (char)toupper(Ch) : (char)Ch;
+	}
+	UpperText[TextLen] = 0;
 
 	if (cockpit_hud_texture) {
-		Rect hud_rect(txt_rect);
+		Rect HudRect(InTextRect);
 
-		hud_rect.x = txt_rect.x + this->index * 128 - this->rect.x;
-		hud_rect.y = txt_rect.y + 256 - this->rect.y;
+		HudRect.x = InTextRect.x + this->index * 128 - this->rect.x;
+		HudRect.y = InTextRect.y + 256 - this->rect.y;
 
-		mt.font->SetColor(mc);
-		mt.font->DrawText(txt_buf, 0, hud_rect, align | DT_SINGLELINE, cockpit_hud_texture);
-		mt.rect = rect;
-		mt.hidden = false;
+		if (TextSlot.font) {
+			TextSlot.font->SetColor(DrawColor);
+			TextSlot.font->DrawText(UpperText, 0, HudRect, InAlign | DT_SINGLELINE, cockpit_hud_texture);
+		}
+
+		TextSlot.rect = rect;
+		TextSlot.hidden = false;
 	}
 	else {
-		if (txt_rect.Contains(Mouse::X(), Mouse::Y()))
-			mc = FColor::White;
+		// Legacy Mouse interface retained; only variable names + types updated.
+		if (InTextRect.Contains(Mouse::X(), Mouse::Y())) {
+			DrawColor = FColor::White;
+		}
 
-		mt.font->SetColor(mc);
-		mt.font->DrawText(txt_buf, 0, txt_rect, align | DT_SINGLELINE);
-		mt.rect = rect;
-		mt.hidden = false;
+		if (TextSlot.font) {
+			TextSlot.font->SetColor(DrawColor);
+			TextSlot.font->DrawText(UpperText, 0, InTextRect, InAlign | DT_SINGLELINE);
+		}
+
+		TextSlot.rect = rect;
+		TextSlot.hidden = false;
 	}
 }
 
+
 void
-MFD::HideMFDText(int index)
+MFD::HideMFDText(int32 InTextIndex)
 {
-	if (index >= MFD::TXT_LAST) {
-		UE_LOG(LogTemp, Warning, TEXT("MFD HideMFDText() invalid mfd_text index %d"), index);
+	if (InTextIndex < 0 || InTextIndex >= MFD::TXT_LAST) {
+		UE_LOG(LogTemp, Warning,
+			TEXT("MFD::HideMFDText() invalid mfd_text index %d"),
+			InTextIndex);
 		return;
 	}
 
-	mfd_text[index].hidden = true;
+	mfd_text[InTextIndex].hidden = true;
 }

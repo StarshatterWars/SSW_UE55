@@ -95,6 +95,8 @@ public:
     void ShowGrid(int show = true);
     bool GridShown() const;
 
+    List<StarSystem>& GetSystemList();
+
     const char* FindAvailCallsign(int IFF);
     SimElement* CreateElement(const char* callsign, int IFF, int type = 0);
     void DestroyElement(SimElement* elem);
@@ -188,6 +190,10 @@ public:
     int GetAssignedElements(SimElement* elem, List<SimElement>& assigned);
     List<SimElement>& GetElements() { return elements; }
     ListIter<MissionElement> GetMissionElements();
+
+    MissionElement* CreateMissionElement(SimElement* elem);
+
+    Hangar* FindSquadron(const char* name, int& index);
 
     void SkipCutscene();
     void ResolveTimeSkip(double seconds);
@@ -288,7 +294,7 @@ public:
     List<SimRegion>&        GetLinks() { return links; }
     StarSystem*             GetSystem() { return star_system; }
 
-    Point                Location() const { return location; }
+    FVector                 GetLocation() const { return location; }
 
     void                 SetSelection(Ship* s);
     bool                 IsSelected(Ship* s);

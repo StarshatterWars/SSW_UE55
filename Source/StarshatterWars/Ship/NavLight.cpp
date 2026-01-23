@@ -23,12 +23,13 @@
 #include <cstring>
 
 #include "Game.h"
+#include "Bitmap.h"
 #include "DataLoader.h"
 #include "SimSystem.h"
 
 // +----------------------------------------------------------------------+
 
-static class UTexture2D* images[4];
+static class Bitmap* images[4];
 
 // +----------------------------------------------------------------------+
 
@@ -190,15 +191,31 @@ NavLight::SetOffset(DWORD o)
 // +--------------------------------------------------------------------+
 
 void
-NavLight::Orient(const Physical* rep)
+NavLight::Orient(const Physical* Rep)
 {
-	SimSystem::Orient(rep);
+	SimSystem::Orient(Rep);
 
-	const Matrix& orientation = rep->Cam().Orientation();
-	const FVector ship_loc = rep->Location();
+	if (!Rep)
+		return;
 
-	for (int i = 0; i < nlights; i++) {
-		const FVector projector = (loc[i] * orientation) + ship_loc;
-		if (beacon[i]) beacon[i]->MoveTo(projector);
+	const Camera& RepCam = Rep->Cam();
+	const FVector ShipLoc = Rep->Location();
+
+	// Build a UE matrix from the Starshatter camera basis vectors.
+	// Assumes Cam.vrt/vup/vpn are FVector basis vectors in world space.
+	const FMatrix Basis(
+		FPlane(RepCam.vrt(), 0.0f),
+		FPlane(RepCam.vup(), 0.0f),
+		FPlane(RepCam.vpn(), 0.0f),
+		FPlane(0.0f, 0.0f, 0.0f, 1.0f)
+	);
+
+	for (int32 LightIndex = 0; LightIndex < nlights; ++LightIndex) {
+		// Transform local light offset into world space, then add ship location:
+		const FVector Projector = Basis.TransformVector(loc[LightIndex]) + ShipLoc;
+
+		if (beacon[LightIndex]) {
+			beacon[LightIndex]->MoveTo(Projector);
+		}
 	}
 }
