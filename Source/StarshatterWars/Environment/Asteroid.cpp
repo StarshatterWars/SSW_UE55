@@ -54,37 +54,37 @@ Asteroid::Initialize()
 
 	int n = 0;
 
-	Model* a = newModel;
+	Model* a = new Model;
 	if (a) {
 		a->Load("a1.mag", 100);
 		asteroid_model[n++] = a;
 	}
 
-	a = newModel;
+	a = new Model;
 	if (a) {
 		a->Load("a2.mag", 50);
 		asteroid_model[n++] = a;
 	}
 
-	a = newModel;
+	a = new Model;
 	if (a) {
 		a->Load("a1.mag", 8);
 		asteroid_model[n++] = a;
 	}
 
-	a = newModel;
+	a = new Model;
 	if (a) {
 		a->Load("a2.mag", 10);
 		asteroid_model[n++] = a;
 	}
 
-	a = newModel;
+	a = new Model;
 	if (a) {
 		a->Load("a3.mag", 30);
 		asteroid_model[n++] = a;
 	}
 
-	a = newModel;
+	a = new Model;
 	if (a) {
 		a->Load("a4.mag", 20);
 		asteroid_model[n++] = a;
@@ -96,7 +96,7 @@ Asteroid::Initialize()
 
 	ListIter<Text> iter = mod_asteroids;
 	while (++iter && n < 32) {
-		a = newModel;
+		a = new Model;
 		if (a) {
 			a->Load(*iter.value(), 50);
 			asteroid_model[n++] = a;

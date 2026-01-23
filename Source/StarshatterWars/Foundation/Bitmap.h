@@ -77,7 +77,7 @@ public:
     // Pixel access (legacy call structure):
     ColorIndex  GetIndex(int x, int y) const;
     FColor      GetColor(int x, int y) const;
-    void        SetIndex(int x, int y, ColorIndex c);
+    void        SetIndex(int x, int y, uint8 value);
     void        SetColor(int x, int y, FColor c);
 
     // Legacy linear-index helpers (to match older call sites):

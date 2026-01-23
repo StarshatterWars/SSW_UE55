@@ -24,6 +24,9 @@
 #include "Math/Vector.h"   // FVector
 #include "Math/Color.h"    // FColor
 
+static FColor hud_color = FColor::Black;
+static FColor txt_color = FColor::Black;
+
 // +--------------------------------------------------------------------+
 
 class Window;

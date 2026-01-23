@@ -58,7 +58,6 @@ static inline void sort_d(double& a, double& b) { if (a > b) swap_d(a, b); }
 static int FindBestTexSize(int n, int max_size);
 
 
-
 // +--------------------------------------------------------------------+
 // Bitmap
 // +--------------------------------------------------------------------+
@@ -630,22 +629,21 @@ FColor Bitmap::GetColor(int x, int y) const
     return FColor::Black;
 }
 
-void Bitmap::SetIndex(int x, int y, ColorIndex c)
+void Bitmap::SetIndex(int x, int y, uint8 value)
 {
     if (x < 0 || y < 0 || x >= width || y >= height)
         return;
 
+    // Legacy CPU bitmap path (optional)
     if (pix) {
-        *(pix + y * width + x) = c;
+        pix[y * width + x] = value;
         last_modified = GetRealTime();
         return;
     }
 
-    // GPU-first fallback: index -> grayscale
-    const uint8 v = ColorIndexToByte(c);
-    SetColor(x, y, FColor(v, v, v, 255));
+    // GPU-first path: write grayscale color
+    SetColor(x, y, FColor(value, value, value, 255));
 }
-
 
 void Bitmap::SetColor(int x, int y, FColor c)
 {
@@ -684,16 +682,6 @@ void Bitmap::SetColor(int i, FColor c)
     const int x = i % width;
     const int y = i / width;
     SetColor(x, y, c);
-}
-
-void Bitmap::SetIndex(int i, ColorIndex c)
-{
-    if (width < 1 || height < 1) return;
-    if (i < 0 || i >= mapsize) return;
-
-    const int x = i % width;
-    const int y = i / width;
-    SetIndex(x, y, c);
 }
 
 // +--------------------------------------------------------------------+

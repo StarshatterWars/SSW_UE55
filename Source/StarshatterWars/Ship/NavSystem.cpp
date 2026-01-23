@@ -18,7 +18,7 @@
 #include "Ship.h"
 #include "Sim.h"
 #include "HUDSounds.h"
-#include "Button.h"
+#include "UIButton.h"
 #include "Game.h"
 
 #include "Logging/LogMacros.h"
@@ -83,7 +83,7 @@ void NavSystem::EngageAutoNav()
 	}
 
 	if (!ship->GetNextNavPoint()) {
-		Button::PlaySound(Button::SND_REJECT);
+		UIButton::PlaySound(UIButton::SND_REJECT);
 	}
 	else {
 		HUDSounds::PlaySound(HUDSounds::SND_NAV_MODE);

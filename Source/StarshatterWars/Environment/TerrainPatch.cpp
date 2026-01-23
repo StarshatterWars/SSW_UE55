@@ -22,6 +22,7 @@
 #include "Sim.h"
 #include "SimLight.h"
 #include "Bitmap.h"
+#include "GameStructs.h"
 
 #include "Water.h"
 
@@ -36,11 +37,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogTerrainPatch, Log, All);
 // #define DEBUG_DETAIL 1
 
 // +====================================================================+
-
-const int MAX_DETAIL = 4;
-const int PATCH_SIZE = 17;
-const int HALF_PATCH_SIZE = 8;
-const int MAX_VERTS = PATCH_SIZE * PATCH_SIZE;
 
 static bool illuminating = false;
 
@@ -283,7 +279,6 @@ TerrainPatch::BuildDetailLevel(int level)
 	localModel->SetDynamic(true);
 
 	const int NUM_STRIPS = 4;
-	const int NUM_INDICES_TRI = 3;
 	const int NUM_INDICES_QUAD = 6;
 
 	int nverts = ds1 * ds1 + ds1 * 2 * NUM_STRIPS;

@@ -153,6 +153,9 @@ public:
     SimRegion* FindNearestSpaceRegion(SimObject* object);
     SimRegion* FindNearestTerrainRegion(SimObject* object);
     SimRegion* FindNearestRegion(SimObject* object, int type);
+    SimRegion* FindNearestSpaceRegion(const Orbital* orb);
+    SimRegion* FindNearestSpaceRegionAt(const FVector& loc);
+
     bool ActivateRegion(SimRegion* rgn);
 
     void RequestHyperJump(

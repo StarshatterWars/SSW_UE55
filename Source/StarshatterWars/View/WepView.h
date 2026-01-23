@@ -56,7 +56,7 @@ public:
     virtual const char*     GetObserverName() const;
 
     static WepView*         GetInstance() { return wep_view; }
-    static void             SetColor(Color c);
+    static void             SetColor(FColor c);
 
     static bool             IsMouseLatched();
 

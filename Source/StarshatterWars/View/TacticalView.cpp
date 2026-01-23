@@ -25,14 +25,14 @@
 #include "HUDSounds.h"
 #include "HUDView.h"
 #include "WepView.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "Ship.h"
-#include "ShipCtrl.h"
+#include "ShipManager.h"
 #include "ShipDesign.h"
 #include "QuantumDrive.h"
 #include "Farcaster.h"
 #include "Instruction.h"
-#include "Element.h"
+#include "SimElement.h"
 #include "SimContact.h"
 #include "Sim.h"
 #include "Starshatter.h"
@@ -45,16 +45,13 @@
 #include "Video.h"
 #include "DataLoader.h"
 #include "SimScene.h"
-#include "FontMgr.h"
+#include "FontManager.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "MouseController.h"
 #include "Menu.h"
 #include "Game.h"
 #include "FormatUtil.h"
-
-static Color hud_color = Color::Black;
-static Color txt_color = Color::Black;
 
 // +--------------------------------------------------------------------+
 
@@ -86,14 +83,14 @@ TacticalView::TacticalView(Window* c, GameScreen* parent)
     height = window->Height();
     xcenter = (width / 2.0) - 0.5;
     ycenter = (height / 2.0) + 0.5;
-    font = FontMgr::Find("HUD");
+    font = FontManager::Find("HUD");
 
-    SetColor(Color::White);
+    SetColor(FColor::White);
 
-    mouse_start.x = 0;
-    mouse_start.y = 0;
-    mouse_action.x = 0;
-    mouse_action.y = 0;
+    mouse_start.X = 0;
+    mouse_start.Y = 0;
+    mouse_action.X = 0;
+    mouse_action.Y = 0;
 
     menu_view = new MenuView(window);
 }
@@ -135,7 +132,7 @@ const char* TacticalView::GetObserverName() const
     return "TacticalView";
 }
 
-void TacticalView::UseProjector(Projector* p)
+void TacticalView::UseProjector(SimProjector* p)
 {
     projector = p;
 }
@@ -165,12 +162,12 @@ void TacticalView::Refresh()
         }
 
         if (ship) {
-            if (current_sector != ship->GetRegion()->Name())
+            if (current_sector != ship->GetRegion()->GetName())
                 rebuild = true;
 
             if (rebuild) {
                 BuildMenu();
-                current_sector = ship->GetRegion()->Name();
+                current_sector = ship->GetRegion()->GetName();
             }
         }
     }
@@ -235,7 +232,7 @@ void TacticalView::ExecFrame()
 
 // +--------------------------------------------------------------------+
 
-void TacticalView::SetColor(Color c)
+void TacticalView::SetColor(FColor c)
 {
     HUDView* hud = HUDView::GetInstance();
 
@@ -254,10 +251,16 @@ void TacticalView::SetColor(Color c)
 void TacticalView::DrawMouseRect()
 {
     if (mouse_rect.w > 0 && mouse_rect.h > 0) {
-        Color c = hud_color * 0.66;
+       
+       FColor c(
+            FMath::Clamp(int(hud_color.R * 0.66f), 0, 255),
+            FMath::Clamp(int(hud_color.G * 0.66f), 0, 255),
+            FMath::Clamp(int(hud_color.B * 0.66f), 0, 255),
+            hud_color.A
+        );
 
         if (shift_down)
-            c = Color::Orange;
+            c = FColor::Orange;
 
         window->DrawRect(mouse_rect, c);
     }
@@ -312,8 +315,8 @@ void TacticalView::DrawSelection(Ship* seln)
             else if (hull_strength < 0.60)
                 s = SimSystem::DEGRADED;
 
-            Color hc = HUDView::GetStatusColor(s);
-            Color sc = hud_color;
+            FColor hc = HUDView::GetStatusColor(s);
+            FColor sc = hud_color;
 
             window->FillRect(sx, sy, sx + hw, sy + 1, hc);
             window->FillRect(sx, sy + 3, sx + sw, sy + 4, sc);
@@ -578,7 +581,7 @@ void TacticalView::DoMouseFrame()
 
             else if (ship && seln == ship &&
                 (!ship->GetDirector() ||
-                    ship->GetDirector()->Type() != ShipCtrl::DIR_TYPE)) {
+                    ship->GetDirector()->Type() != ShipManager::DIR_TYPE)) {
 
                 msg_ship = seln;
             }
@@ -599,29 +602,29 @@ void TacticalView::DoMouseFrame()
     if (!mouse_con || !mouse_con->Active()) {
         if (Mouse::LButton()) {
             if (!mouse_down) {
-                mouse_start.x = Mouse::X();
-                mouse_start.y = Mouse::Y();
+                mouse_start.X = Mouse::X();
+                mouse_start.Y = Mouse::Y();
 
                 shift_down = Keyboard::KeyDown(VK_SHIFT);
             }
 
             else {
-                if (Mouse::X() < mouse_start.x) {
+                if (Mouse::X() < mouse_start.X) {
                     mouse_rect.x = Mouse::X();
-                    mouse_rect.w = mouse_start.x - Mouse::X();
+                    mouse_rect.w = mouse_start.X - Mouse::X();
                 }
                 else {
-                    mouse_rect.x = mouse_start.x;
-                    mouse_rect.w = Mouse::X() - mouse_start.x;
+                    mouse_rect.x = mouse_start.X;
+                    mouse_rect.w = Mouse::X() - mouse_start.X;
                 }
 
-                if (Mouse::Y() < mouse_start.y) {
+                if (Mouse::Y() < mouse_start.Y) {
                     mouse_rect.y = Mouse::Y();
-                    mouse_rect.h = mouse_start.y - Mouse::Y();
+                    mouse_rect.h = mouse_start.Y - Mouse::Y();
                 }
                 else {
-                    mouse_rect.y = mouse_start.y;
-                    mouse_rect.h = Mouse::Y() - mouse_start.y;
+                    mouse_rect.y = mouse_start.Y;
+                    mouse_rect.h = Mouse::Y() - mouse_start.Y;
                 }
 
                 // don't draw seln rectangle while zooming:
@@ -658,8 +661,8 @@ void TacticalView::DoMouseFrame()
                 }
                 else {
                     if (!HUDView::IsMouseLatched() && !WepView::IsMouseLatched()) {
-                        int dx = (int)fabs((double)(mouse_x - mouse_start.x));
-                        int dy = (int)fabs((double)(mouse_y - mouse_start.y));
+                        int dx = (int)fabs((double)(mouse_x - mouse_start.X));
+                        int dy = (int)fabs((double)(mouse_y - mouse_start.Y));
 
                         static DWORD click_time = 0;
 
@@ -681,8 +684,8 @@ void TacticalView::DoMouseFrame()
     }
 
     if (show_action && !mouse_down && !right_down) {
-        mouse_action.x = Mouse::X();
-        mouse_action.y = Mouse::Y();
+        mouse_action.X = Mouse::X();
+        mouse_action.Y = Mouse::Y();
     }
 }
 
@@ -749,7 +752,7 @@ bool TacticalView::SelectRect(const Rect& rect)
     }
 
     // select self only in orbit cam
-    if (!shift_down && CameraDirector::GetCameraMode() == CameraDirector::MODE_ORBIT) {
+    if (!shift_down && CameraManager::GetCameraMode() == CameraManager::MODE_ORBIT) {
         FVector test_loc = ship->Location(); // was: Point
         projector->Transform(test_loc);
 
@@ -826,7 +829,7 @@ Ship* TacticalView::WillSelectAt(int x, int y)
         }
     }
 
-    if (selection == ship && CameraDirector::GetCameraMode() != CameraDirector::MODE_ORBIT)
+    if (selection == ship && CameraManager::GetCameraMode() != CameraManager::MODE_ORBIT)
         selection = 0;
 
     return selection;
@@ -902,7 +905,7 @@ static Menu* sensors_menu = 0;
 static Menu* quantum_menu = 0;
 static Menu* farcast_menu = 0;
 
-static Element* dst_elem = 0;
+static SimElement* dst_elem = 0;
 
 enum VIEW_MENU {
     VIEW_FORWARD = 1000,
@@ -1048,10 +1051,10 @@ void TacticalView::ProcessMenuItem(int action)
         }
         break;
 
-    case VIEW_FORWARD: stars->PlayerCam(CameraDirector::MODE_COCKPIT); break;
-    case VIEW_CHASE:   stars->PlayerCam(CameraDirector::MODE_CHASE);   break;
-    case VIEW_PADLOCK: stars->PlayerCam(CameraDirector::MODE_TARGET);  break;
-    case VIEW_ORBIT:   stars->PlayerCam(CameraDirector::MODE_ORBIT);   break;
+    case VIEW_FORWARD: stars->PlayerCam(CameraManager::MODE_COCKPIT); break;
+    case VIEW_CHASE:   stars->PlayerCam(CameraManager::MODE_CHASE);   break;
+    case VIEW_PADLOCK: stars->PlayerCam(CameraManager::MODE_TARGET);  break;
+    case VIEW_ORBIT:   stars->PlayerCam(CameraManager::MODE_ORBIT);   break;
 
     case VIEW_NAV: gamescreen->ShowNavDlg(); break;
     case VIEW_WEP: gamescreen->ShowWeaponsOverlay(); break;
@@ -1085,7 +1088,7 @@ void TacticalView::ProcessMenuItem(int action)
                             quantum->Engage();
                         }
                         else {
-                            Element* elem = msg_ship->GetElement();
+                            SimElement* elem = msg_ship->GetElement();
                             RadioMessage* msg = new RadioMessage(elem, ship, RadioMessage::QUANTUM_TO);
                             if (msg) {
                                 msg->SetInfo(rgn_name);
@@ -1105,7 +1108,7 @@ void TacticalView::ProcessMenuItem(int action)
             SimRegion* rgn = sim->FindRegion(rgn_name);
 
             if (rgn) {
-                Element* elem = msg_ship->GetElement();
+                SimElement* elem = msg_ship->GetElement();
                 RadioMessage* msg = new RadioMessage(elem, ship, RadioMessage::FARCAST_TO);
                 if (msg) {
                     msg->SetInfo(rgn_name);
@@ -1124,59 +1127,79 @@ void TacticalView::ProcessMenuItem(int action)
 
 void TacticalView::BuildMenu()
 {
-    main_menu->ClearItems();
-    quantum_menu->ClearItems();
-    farcast_menu->ClearItems();
-    emcon_menu->ClearItems();
+    if (main_menu)    main_menu->ClearItems();
+    if (quantum_menu) quantum_menu->ClearItems();
+    if (farcast_menu) farcast_menu->ClearItems();
+    if (emcon_menu)   emcon_menu->ClearItems();
 
-    if (!ship)
+    if (!ship || !sim || !main_menu || !quantum_menu || !farcast_menu || !emcon_menu)
         return;
 
-    // prepare quantum and farcast menus:
-    ListIter<SimRegion> iter = sim->GetRegions();
-    while (++iter) {
-        SimRegion* rgn = iter.value();
-        if (rgn != ship->GetRegion() && rgn->Type() != SimRegion::AIR_SPACE)
-            quantum_menu->AddItem(rgn->Name(), QUANTUM);
+    // ----------------------------------------------------------
+    // PREPARE QUANTUM MENU (regions other than current, non-airspace)
+    // ----------------------------------------------------------
+    ListIter<SimRegion> rgn_iter = sim->GetRegions();
+    while (++rgn_iter) {
+        SimRegion* rgn = rgn_iter.value();
+
+        if (rgn && rgn != ship->GetRegion() && rgn->GetType() != SimRegion::AIR_SPACE) {
+            quantum_menu->AddItem(rgn->GetName(), QUANTUM);
+        }
     }
 
-    if (ship->GetRegion()) {
-        ListIter<Ship> iter = ship->GetRegion()->Ships();
-        while (++iter) {
-            Ship* s = iter.value();
+    // ----------------------------------------------------------
+    // PREPARE FARCAST MENU (connected farcaster destinations)
+    // ----------------------------------------------------------
+    SimRegion* ship_rgn = ship->GetRegion();
 
-            if (s && s->GetFarcaster()) {
-                Farcaster* farcaster = s->GetFarcaster();
+    if (ship_rgn) {
+        ListIter<Ship> ship_iter = ship_rgn->GetShips();
+        while (++ship_iter) {
+            Ship* s = ship_iter.value();
+            if (!s)
+                continue;
 
-                // ensure that the farcaster is connected:
-                farcaster->ExecFrame(0);
+            Farcaster* farcaster = s->GetFarcaster();
+            if (!farcaster)
+                continue;
 
-                // now find the destination
-                const Ship* dest = farcaster->GetDest();
+            // ensure that the farcaster is connected:
+            farcaster->ExecFrame(0);
 
-                if (dest && dest->GetRegion()) {
-                    SimRegion* rgn = dest->GetRegion();
-                    farcast_menu->AddItem(rgn->Name(), FARCAST);
-                }
+            // now find the destination:
+            const Ship* dest = farcaster->GetDest();
+            SimRegion* dest_rgn = (dest && dest->GetRegion()) ? dest->GetRegion() : nullptr;
+
+            if (dest_rgn) {
+                farcast_menu->AddItem(dest_rgn->GetName(), FARCAST);
             }
         }
     }
 
-    // build the main menu:
+    // ----------------------------------------------------------
+    // BUILD MAIN MENU
+    // ----------------------------------------------------------
     main_menu->AddMenu(Game::GetText("TacView.item.camera"), view_menu);
     main_menu->AddItem("", 0);
+
     main_menu->AddItem(Game::GetText("TacView.item.instructions"), VIEW_INS);
     main_menu->AddItem(Game::GetText("TacView.item.navigation"), VIEW_NAV);
 
-    if (ship->Design()->repair_screen)
-        main_menu->AddItem(Game::GetText("TacView.item.engineering"), VIEW_ENG);
+    const ShipDesign* design = ship->Design();
+    if (design) {
+        if (design->repair_screen)
+            main_menu->AddItem(Game::GetText("TacView.item.engineering"), VIEW_ENG);
 
-    if (ship->Design()->wep_screen)
-        main_menu->AddItem(Game::GetText("TacView.item.weapons"), VIEW_WEP);
+        if (design->wep_screen)
+            main_menu->AddItem(Game::GetText("TacView.item.weapons"), VIEW_WEP);
+    }
 
     if (ship->NumFlightDecks() > 0)
         main_menu->AddItem(Game::GetText("TacView.item.flight"), VIEW_FLT);
 
+    // ----------------------------------------------------------
+    // SENSOR / EMCON MENU
+    // ----------------------------------------------------------
     emcon_menu->AddItem(Game::GetText("TacView.item.emcon-1"), RadioMessage::GO_EMCON1);
     emcon_menu->AddItem(Game::GetText("TacView.item.emcon-2"), RadioMessage::GO_EMCON2);
     emcon_menu->AddItem(Game::GetText("TacView.item.emcon-3"), RadioMessage::GO_EMCON3);
@@ -1187,11 +1210,18 @@ void TacticalView::BuildMenu()
     main_menu->AddItem("", 0);
     main_menu->AddMenu(Game::GetText("TacView.item.sensors"), emcon_menu);
 
-    if (sim && ship->GetQuantumDrive()) {
+    // ----------------------------------------------------------
+    // QUANTUM MENU (only if quantum drive exists)
+    // ----------------------------------------------------------
+    QuantumDrive* qdrive = ship->GetQuantumDrive();
+    if (qdrive) {
         main_menu->AddItem("", 0);
         main_menu->AddMenu(Game::GetText("TacView.item.quantum"), quantum_menu);
     }
 
+    // ----------------------------------------------------------
+    // COMMAND MENU (starships only)
+    // ----------------------------------------------------------
     if (ship->IsStarship()) {
         main_menu->AddItem("", 0);
         main_menu->AddItem(Game::GetText("TacView.item.command"), VIEW_CMD);
@@ -1329,8 +1359,8 @@ void TacticalView::DrawMove()
         int x = (int)dest.X;
         int y = (int)dest.Y;
 
-        window->DrawEllipse(x - 10, y - 10, x + 10, y + 10, Color::White);
-        window->DrawLine(x0, y0, x, y, Color::White);
+        window->DrawEllipse(x - 10, y - 10, x + 10, y + 10, FColor::White);
+        window->DrawLine(x0, y0, x, y, FColor::White);
 
         char range[32];
         Rect range_rect(x + 12, y - 8, 120, 20);
@@ -1346,16 +1376,16 @@ void TacticalView::DrawMove()
             int x1 = (int)dest.X;
             int y1 = (int)dest.Y;
 
-            window->DrawEllipse(x1 - 10, y1 - 10, x1 + 10, y1 + 10, Color::White);
-            window->DrawLine(x0, y0, x1, y1, Color::White);
-            window->DrawLine(x1, y1, x, y, Color::White);
+            window->DrawEllipse(x1 - 10, y1 - 10, x1 + 10, y1 + 10, FColor::White);
+            window->DrawLine(x0, y0, x1, y1, FColor::White);
+            window->DrawLine(x1, y1, x, y, FColor::White);
 
             range_rect.x = x1 + 12;
             range_rect.y = y1 - 8;
         }
 
         FormatNumber(range, distance);
-        font->SetColor(Color::White);
+        font->SetColor(FColor::White);
         font->DrawText(range, 0, range_rect, DT_LEFT | DT_SINGLELINE);
         font->SetColor(txt_color);
     }
@@ -1367,7 +1397,7 @@ void TacticalView::SendMove()
         return;
 
     if (GetMouseLoc3D()) {
-        Element* elem = msg_ship->GetElement();
+        SimElement* elem = msg_ship->GetElement();
         RadioMessage* msg = new RadioMessage(elem, ship, RadioMessage::MOVE_PATROL);
 
         FVector dest = move_loc;
@@ -1398,8 +1428,8 @@ void TacticalView::DrawAction()
     int x0 = (int)origin.X;
     int y0 = (int)origin.Y;
 
-    int mx = mouse_action.x;
-    int my = mouse_action.y;
+    int mx = mouse_action.X;
+    int my = mouse_action.Y;
     int r = 10;
 
     int enemy = 2;
@@ -1412,7 +1442,7 @@ void TacticalView::DrawAction()
     if (tgt)
         tgt_iff = tgt->GetIFF();
 
-    Color c = Color::White;
+    FColor c = FColor::White;
 
     switch (show_action) {
     case RadioMessage::ATTACK:
@@ -1472,13 +1502,13 @@ void TacticalView::SendAction()
         return;
     }
 
-    int mx = mouse_action.x;
-    int my = mouse_action.y;
+    int mx = mouse_action.X;
+    int my = mouse_action.Y;
 
     Ship* tgt = WillSelectAt(mx, my);
 
     if (tgt) {
-        Element* elem = msg_ship->GetElement();
+        SimElement* elem = msg_ship->GetElement();
         RadioMessage* msg = new RadioMessage(elem, ship, show_action);
 
         msg->AddTarget(tgt);

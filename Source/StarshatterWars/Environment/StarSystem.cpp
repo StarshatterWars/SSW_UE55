@@ -110,9 +110,32 @@ static inline UTexture2D* LoadMapIconTexture(const char* IconName)
 	if (!Loader)
 		return nullptr;
 
-	// NOTE: DataLoader is expected to provide a texture-loading path in the Unreal port.
-	// If your DataLoader method name differs, update it here.
-	return Loader->LoadTexture(IconName, true);
+	Bitmap* bmp = nullptr;
+
+	// flags = 0 (or your texture flags)
+	// use_alpha = true
+	// mipmaps = true (or false, depending on HUD usage)
+	int result = Loader->LoadTexture(
+		IconName,
+		bmp,
+		0,
+		true,
+		true
+	);
+
+	if (result < 0 || !bmp)
+		return nullptr;
+
+	// ----------------------------------------------------------------
+	// TEMPORARY: bitmap-to-texture bridge
+	// ----------------------------------------------------------------
+	// If you already have a Bitmap -> UTexture2D wrapper, call it here.
+	// Otherwise return nullptr for now and keep bitmap alive.
+	//
+	// Example (if implemented):
+	// return BitmapUtils::CreateTextureFromBitmap(bmp);
+
+	return nullptr;
 }
 
 // +====================================================================+

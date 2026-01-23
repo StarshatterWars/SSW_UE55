@@ -20,9 +20,11 @@
 #include "Game.h"
 
 // +----------------------------------------------------------------------+
-
-static char* source_type[] = {
-	"sys.power.battery", "sys.power.auxilliary", "sys.power.fusion"
+ 
+ static const char* source_type[] = {
+	"sys.power.battery",
+	"sys.power.auxilliary",
+	"sys.power.fusion"
 };
 
 static int source_value[] = {

@@ -21,6 +21,8 @@
 #include "SystemFont.h"
 #include "Text.h"
 
+#include "Math/Color.h"
+
 // Replace Bitmap with Unreal texture pointer (forward declared to keep header light):
 class UTexture2D;
 
@@ -52,10 +54,10 @@ public:
     virtual void      SetMenu(Menu* m) { menu = m; }
     virtual MenuItem* GetMenuItem() { return menu_item; }
 
-    virtual Color     GetBackColor() { return back_color; }
-    virtual void      SetBackColor(Color c) { back_color = c; }
-    virtual Color     GetTextColor() { return text_color; }
-    virtual void      SetTextColor(Color c) { text_color = c; }
+    virtual FColor     GetBackColor() { return back_color; }
+    virtual void      SetBackColor(FColor c) { back_color = c; }
+    virtual FColor     GetTextColor() { return text_color; }
+    virtual void      SetTextColor(FColor c) { text_color = c; }
 
 protected:
     int         width, height;
@@ -76,7 +78,7 @@ protected:
     // Kept as a forward-declared type to avoid heavy includes:
     UTexture2D* menu_tex = nullptr;
 
-    Color       back_color;
-    Color       text_color;
+    FColor       back_color;
+    FColor       text_color;
 };
 

@@ -30,6 +30,12 @@ const double STARSHIP_TACTICAL_DROP_TIME = 15;
 static const double GRAV = 6.673e-11;
 static const int    NAMELEN = 64;
 
+const int MAX_DETAIL = 4;
+const int PATCH_SIZE = 17;
+const int HALF_PATCH_SIZE = 8;
+const int MAX_VERTS = PATCH_SIZE * PATCH_SIZE;
+const int NUM_INDICES_TRI = 3;
+
 /************************************************************************/
 /* ENUMS                                                                */
 /************************************************************************/

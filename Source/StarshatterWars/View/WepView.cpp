@@ -70,9 +70,6 @@ static BYTE* tac_man_shade = nullptr;
 static BYTE* tac_aut_shade = nullptr;
 static BYTE* tac_def_shade = nullptr;
 
-static Color  hud_color = Color::Black;
-static Color  txt_color = Color::Black;
-
 static bool   mouse_in = false;
 
 static SystemFont* hud_font = nullptr;
@@ -304,7 +301,7 @@ WepView::RestoreOverlay()
 // +--------------------------------------------------------------------+
 
 void
-WepView::SetColor(Color c)
+WepView::SetColor(FColor c)
 {
     HUDView* hud = HUDView::GetInstance();
 
@@ -349,7 +346,7 @@ WepView::DrawOverlay()
     tgt_rect.h = 15;
 
     Text           subtxt;
-    Color          stat = hud_color;
+    FColor         stat = hud_color;
     static DWORD   blink = Game::RealTime();
 
     if (ship->GetTarget()) {
@@ -359,12 +356,12 @@ WepView::DrawOverlay()
             SimSystem* sys = ship->GetSubTarget();
             subtxt = sys->Abbreviation();
             switch (sys->Status()) {
-            case SimSystem::DEGRADED:   stat = Color(255, 255, 0);  break;
-            case SimSystem::CRITICAL:
-            case SimSystem::DESTROYED:  stat = Color(255, 0, 0);  break;
+            case SimSystem::DEGRADED:   stat = FColor(255, 255, 0);  break;
+            case SimSystem::CRITICAL:   stat = FColor(255, 180, 0);  break;
+            case SimSystem::DESTROYED:  stat = FColor(255, 0, 0);  break;
             case SimSystem::MAINT:
                 if (blink_delta < 250)
-                    stat = Color(8, 8, 8);
+                    stat = FColor(8, 8, 8);
                 break;
             }
 

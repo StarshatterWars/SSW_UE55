@@ -7,7 +7,7 @@
 // +--------------------------------------------------------------------+
 
 void
-Menu::AddItem(Text label, DWORD value, bool enabled)
+Menu::AddItem(Text label, uintptr_t value, bool enabled)
 {
 	MenuItem* item = new MenuItem(label, value, enabled);
 

@@ -26,18 +26,14 @@
 #include "Game.h"
 #include "SimLight.h"
 #include "SimScene.h"
+#include "GameStructs.h"
 
 #include "Math/UnrealMathUtility.h" // FMath
 #include "HAL/UnrealMemory.h" 
 
 // +====================================================================+
 
-const int PATCH_SIZE = 17;
-const int HALF_PATCH_SIZE = 8;
-const int MAX_VERTS = PATCH_SIZE * PATCH_SIZE;
-const int NUM_INDICES_TRI = 3;
 
-// +--------------------------------------------------------------------+
 
 TerrainApron::TerrainApron(
 	Terrain* terr,

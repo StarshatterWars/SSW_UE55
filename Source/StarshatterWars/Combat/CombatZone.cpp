@@ -184,7 +184,7 @@ CombatZone::Load(const char* filename)
 							LogStarshatterCombatZone,
 							Warning,
 							TEXT("Zone struct missing in '%s%s'"),
-							*loader->GetDataPath(),
+							ANSI_TO_TCHAR(loader->GetDataPath()),
 							ANSI_TO_TCHAR(filename)
 						);
 					}

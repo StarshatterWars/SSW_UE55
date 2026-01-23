@@ -21,10 +21,10 @@
 #include "EventTarget.h"
 #include "List.h"
 #include "Text.h"
-#include "Color.h"
 
 // Minimal Unreal include for FVector:
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -37,12 +37,12 @@ class Instruction;
 class Mission;
 class MissionElement;
 class Campaign;
-class SimCombatant;
+class Combatant;
 class CombatGroup;
 class Menu;
 class MenuItem;
 class MenuView;
-class Font;
+class SystemFont;
 
 // Unreal render asset (forward declared to keep header light):
 class UTexture2D;
@@ -76,11 +76,11 @@ public:
 	virtual void      DrawElem(MissionElement& elem, bool current = false, int rep = 3);
 	virtual void      DrawNavRoute(OrbitalRegion* rgn,
 		List<Instruction>& route,
-		Color                smarker,
+		FColor                smarker,
 		Ship* ship = 0,
 		MissionElement* elem = 0);
 
-	virtual void      DrawCombatantSystem(SimCombatant* c, Orbital* rgn, int x, int y, int r);
+	virtual void      DrawCombatantSystem(Combatant* c, Orbital* rgn, int x, int y, int r);
 	virtual void      DrawCombatGroupSystem(CombatGroup* g, Orbital* rgn, int x1, int x2, int& y, int a);
 	virtual void      DrawCombatGroup(CombatGroup* g, int rep = 3);
 
@@ -144,7 +144,7 @@ protected:
 	virtual bool      SetCapture();
 	virtual bool      ReleaseCapture();
 
-	virtual void      DrawTabbedText(Font* font, const char* text);
+	virtual void      DrawTabbedText(SystemFont* font, const char* text);
 
 	bool              IsClutter(Ship& s);
 	bool              IsCrowded(Ship& s);
@@ -207,8 +207,8 @@ protected:
 	double            click_x;
 	double            click_y;
 
-	Font* font;
-	Font* title_font;
+	SystemFont* font;
+	SystemFont* title_font;
 
 	ActiveWindow* active_window;
 	Menu* active_menu;

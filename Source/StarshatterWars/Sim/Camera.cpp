@@ -213,3 +213,4 @@ Camera::Padlock(const FVector& target, double alimit, double e_lo, double e_hi)
 
     return locked;
 }
+

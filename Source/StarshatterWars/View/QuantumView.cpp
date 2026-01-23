@@ -28,9 +28,9 @@
 #include "Video.h"
 #include "Screen.h"
 #include "DataLoader.h"
-#include "Scene.h"
-#include "Font.h"
-#include "FontMgr.h"
+#include "SimScene.h"
+#include "SystemFont.h"
+#include "FontManager.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Game.h"
@@ -41,8 +41,6 @@
 #include "Logging/LogMacros.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsQuantumView, Log, All);
-
-static Color  hud_color = Color::Black;
 
 // +====================================================================+
 //
@@ -84,7 +82,7 @@ QuantumView::QuantumView(Window* c)
 	height = window->Height();
 	xcenter = (width / 2.0) - 0.5;
 	ycenter = (height / 2.0) + 0.5;
-	font = FontMgr::Find("HUD");
+	font = FontManager::Find("HUD");
 
 	HUDView* hud = HUDView::GetInstance();
 	if (hud)
@@ -224,7 +222,7 @@ QuantumView::ExecFrame()
 // +--------------------------------------------------------------------+
 
 void
-QuantumView::SetColor(Color c)
+QuantumView::SetColor(FColor c)
 {
 	hud_color = c;
 }
@@ -278,14 +276,14 @@ QuantumView::GetQuantumMenu(Ship* s)
 			if (!current_region)
 				return 0;
 
-			StarSystem* current_system = current_region->System();
+			StarSystem* current_system = current_region->GetSystem();
 
 			List<SimRegion> rgn_list;
 
 			ListIter<SimRegion> iter = sim->GetRegions();
 			while (++iter) {
 				SimRegion* rgn = iter.value();
-				StarSystem* rgn_system = rgn->System();
+				StarSystem* rgn_system = rgn->GetSystem();
 
 				if (rgn != ship->GetRegion() && !rgn->IsAirSpace() &&
 					rgn_system == current_system) {
@@ -300,10 +298,10 @@ QuantumView::GetQuantumMenu(Ship* s)
 			iter.reset();
 			while (++iter) {
 				SimRegion* rgn = iter.value();
-				StarSystem* rgn_system = rgn->System();
+				StarSystem* rgn_system = rgn->GetSystem();
 
-				if (rgn != ship->GetRegion() && rgn->Type() != SimRegion::AIR_SPACE &&
-					rgn_system != current_system && current_region->Links().contains(rgn)) {
+				if (rgn != ship->GetRegion() && rgn->GetType() != SimRegion::AIR_SPACE &&
+					rgn_system != current_system && current_region->GetLinks().contains(rgn)) {
 					rgn_list.append(rgn);
 				}
 			}
@@ -312,15 +310,15 @@ QuantumView::GetQuantumMenu(Ship* s)
 			iter.attach(rgn_list);
 			while (++iter) {
 				SimRegion* rgn = iter.value();
-				StarSystem* rgn_system = rgn->System();
+				StarSystem* rgn_system = rgn->GetSystem();
 				char text[64];
 
 				if (rgn_system != current_system)
-					sprintf_s(text, "%d. %s/%s", n++, rgn_system->Name(), rgn->Name());
+					sprintf_s(text, "%d. %s/%s", n++, rgn_system->Name(), rgn->GetName());
 				else
-					sprintf_s(text, "%d. %s", n++, rgn->Name());
+					sprintf_s(text, "%d. %s", n++, rgn->GetName());
 
-				quantum_menu->AddItem(text, (DWORD)rgn);
+				quantum_menu->AddItem(text, (intptr_t)rgn);
 			}
 
 			return quantum_menu;

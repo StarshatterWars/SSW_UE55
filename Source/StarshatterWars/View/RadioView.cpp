@@ -30,8 +30,8 @@
 #include "Video.h"
 #include "Screen.h"
 #include "DataLoader.h"
-#include "Scene.h"
-#include "FontMgr.h"
+#include "SimScene.h"
+#include "FontManager.h"
 #include "FormatUtil.h"
 #include "Keyboard.h"
 #include "Mouse.h"
@@ -40,11 +40,9 @@
 
 // Minimal Unreal logging support:
 #include "Logging/LogMacros.h"
+#include "Math/Color.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsRadioView, Log, All);
-
-static Color  hud_color = Color::Black;
-static Color  txt_color = Color::White;
 
 // +====================================================================+
 //
@@ -169,7 +167,7 @@ static bool TargetRequired(const MenuItem* item)
 			return true;
 
 		default:
-			if (item->GetData() == (DWORD)target_menu)
+			if (item->GetData() == (uintptr_t)target_menu)
 				return true;
 		}
 	}
@@ -192,7 +190,7 @@ RadioView::RadioView(Window* c)
 	height = window->Height();
 	xcenter = (width / 2.0) - 0.5;
 	ycenter = (height / 2.0) + 0.5;
-	font = FontMgr::Find("HUD");
+	font = FontManager::Find("HUD");
 
 	HUDView* hud = HUDView::GetInstance();
 	if (hud)
@@ -370,64 +368,94 @@ RadioView::Refresh()
 // +--------------------------------------------------------------------+
 
 void
-RadioView::SendRadioMessage(Ship* ship, MenuItem* item)
+RadioView::SendRadioMessage(Ship* in_ship, MenuItem* item)
 {
-	if (!ship || !item) return;
-	Element* elem = ship->GetElement();
-	if (!elem) return;
+	if (!in_ship || !item)
+		return;
 
-	// check destination:
+	SimElement* elem = in_ship->GetElement();
+	if (!elem)
+		return;
+
+	const int msg_code = item->GetData();
+	Ship* self = in_ship;
+
+	// RadioMessage::AddTarget expects SimObject*
+	SimObject* target = self->GetTarget(); // may be null, only used if required
+
+	// ----------------------------------------------------------------
+	// Explicit destination selected (dst_elem)
+	// ----------------------------------------------------------------
 	if (dst_elem) {
-		RadioMessage* msg = new RadioMessage(dst_elem, ship, item->GetData());
+		RadioMessage* msg = new RadioMessage(dst_elem, self, msg_code);
 
-		if (TargetRequired(item))
-			msg->AddTarget(ship->GetTarget());
+		if (TargetRequired(item) && target)
+			msg->AddTarget(target);
 
 		RadioTraffic::Transmit(msg);
 		dst_elem = 0;
+		return;
 	}
 
-	else if (history.Find(Game::GetText("RadioView.menu.WINGMAN"))) { // wingman menu
-		int      index = ship->GetElementIndex();
-		int      wing = 0;
+	// Cache menu keys once
+	const char* wingman_key = Game::GetText("RadioView.menu.WINGMAN");
+	const char* element_key = Game::GetText("RadioView.menu.ELEMENT");
+	const char* control_key = Game::GetText("RadioView.menu.CONTROL");
 
+	// ----------------------------------------------------------------
+	// Wingman menu
+	// ----------------------------------------------------------------
+	if (history.Find(wingman_key)) {
+		const int index = self->GetElementIndex();
+
+		int wing = 0;
 		switch (index) {
-		case 1:  wing = 2; break;
-		case 2:  wing = 1; break;
-		case 3:  wing = 4; break;
-		case 4:  wing = 3; break;
+		case 1: wing = 2; break;
+		case 2: wing = 1; break;
+		case 3: wing = 4; break;
+		case 4: wing = 3; break;
+		default: break;
 		}
 
 		if (wing) {
 			Ship* dst = elem->GetShip(wing);
 			if (dst) {
-				RadioMessage* msg = new RadioMessage(dst, ship, item->GetData());
+				RadioMessage* msg = new RadioMessage(dst, self, msg_code);
 
-				if (TargetRequired(item))
-					msg->AddTarget(ship->GetTarget());
+				if (TargetRequired(item) && target)
+					msg->AddTarget(target);
 
 				RadioTraffic::Transmit(msg);
 			}
 		}
+
+		return;
 	}
 
-	else if (history.Find(Game::GetText("RadioView.menu.ELEMENT"))) { // element menu
-		RadioMessage* msg = new RadioMessage(elem, ship, item->GetData());
+	// ----------------------------------------------------------------
+	// Element menu
+	// ----------------------------------------------------------------
+	if (history.Find(element_key)) {
+		RadioMessage* msg = new RadioMessage(elem, self, msg_code);
 
-		if (TargetRequired(item))
-			msg->AddTarget(ship->GetTarget());
+		if (TargetRequired(item) && target)
+			msg->AddTarget(target);
 
 		RadioTraffic::Transmit(msg);
+		return;
 	}
 
-	else if (history.Find(Game::GetText("RadioView.menu.CONTROL"))) { // control menu
-		RadioMessage* msg = 0;
-		Ship* controller_ship = ship->GetController();
-
+	// ----------------------------------------------------------------
+	// Control menu
+	// ----------------------------------------------------------------
+	if (history.Find(control_key)) {
+		Ship* controller_ship = self->GetController();
 		if (controller_ship) {
-			msg = new RadioMessage(controller_ship, ship, item->GetData());
+			RadioMessage* msg = new RadioMessage(controller_ship, self, msg_code);
 			RadioTraffic::Transmit(msg);
 		}
+
+		return;
 	}
 }
 
@@ -473,7 +501,7 @@ RadioView::ExecFrame()
 					if (item && item->GetEnabled()) {
 						if (item->GetSubmenu()) {
 							if (history.GetCurrent() == starship_menu)
-								dst_elem = (Element*)item->GetData();
+								dst_elem = (SimElement*)item->GetData();
 
 							history.Push(item->GetSubmenu());
 						}
@@ -496,7 +524,7 @@ RadioView::ExecFrame()
 // +--------------------------------------------------------------------+
 
 void
-RadioView::SetColor(Color c)
+RadioView::SetColor(FColor c)
 {
 	HUDView* hud = HUDView::GetInstance();
 
@@ -559,7 +587,7 @@ RadioView::GetRadioMenu(Ship* s)
 			int n = 0;
 			int page_offset = starship_page * PAGE_SIZE;
 
-			ListIter<Element> elem = sim->GetElements();
+			ListIter<SimElement> elem = sim->GetElements();
 
 			if (num_pages == 0) {
 				while (++elem) {
@@ -585,7 +613,7 @@ RadioView::GetRadioMenu(Ship* s)
 						sprintf_s(text, "%d. %s", n + 1 - page_offset, (const char*)elem->Name());
 
 						if (elem->IsActive()) {
-							starship_menu->AddMenu(text, elem_menu, (DWORD)elem.value());
+							starship_menu->AddMenu(text, elem_menu, (uintptr_t)elem.value());
 						}
 						else {
 							strcat_s(text, " ");

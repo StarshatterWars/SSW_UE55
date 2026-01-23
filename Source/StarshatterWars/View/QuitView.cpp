@@ -35,7 +35,7 @@
 #include "DataLoader.h"
 #include "SimScene.h"
 #include "FontManager.h"
-#include "Button.h"
+#include "UIButton.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "MouseController.h"
@@ -124,7 +124,7 @@ QuitView::Refresh()
 			xcenter - w2 + menu_bmp->Width(),
 			ycenter - h2 + menu_bmp->Height(),
 			menu_bmp,
-			Color::White,
+			FColor::White,
 			Video::BLEND_SOLID,
 			clip_rect);
 	}
@@ -163,7 +163,7 @@ QuitView::ExecFrame()
 
 		// was mission long enough to accept?
 		if (action == 1 && !CanAccept()) {
-			Button::PlaySound(Button::SND_REJECT);
+			UIButton::PlaySound(UIButton::SND_REJECT);
 			action = 3;
 		}
 
@@ -229,9 +229,6 @@ QuitView::CanAccept()
 {
 	sim = Sim::GetSim();
 
-	if (!sim || sim->IsNetGame())
-		return true;
-
 	Ship* player_ship = sim->GetPlayerShip();
 
 	if (player_ship->MissionClock() < 60000) {
@@ -287,7 +284,7 @@ QuitView::ShowMenu()
 			}
 		}
 
-		Button::PlaySound(Button::SND_CONFIRM);
+		UIButton::PlaySound(UIButton::SND_CONFIRM);
 		Starshatter::GetInstance()->Pause(true);
 
 		if (mouse_con) {

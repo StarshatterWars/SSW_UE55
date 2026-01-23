@@ -85,18 +85,13 @@
 #include "Sprite.h"
 #include "SimLight.h"
 #include "Bitmap.h"
-#include "Button.h"
+#include "UIButton.h"
 #include "Sound.h"
 #include "DataLoader.h"
 
 #include "Parser.h"
 #include "Reader.h"
 
-// ---------------------------------------------------------------------
-// UE logging
-// ---------------------------------------------------------------------
-
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
 
 // ---------------------------------------------------------------------
 // NOTE ON POINT/VEC3 CONVERSION
@@ -125,6 +120,26 @@ const int HIT_HULL = 1;
 const int HIT_SHIELD = 2;
 const int HIT_BOTH = 3;
 const int HIT_TURRET = 4;
+
+
+static FORCEINLINE FMatrix ToFMatrix(const Matrix& InM)
+{
+	FMatrix Out = FMatrix::Identity;
+
+	Out.M[0][0] = (float)InM(0, 0);
+	Out.M[0][1] = (float)InM(0, 1);
+	Out.M[0][2] = (float)InM(0, 2);
+
+	Out.M[1][0] = (float)InM(1, 0);
+	Out.M[1][1] = (float)InM(1, 1);
+	Out.M[1][2] = (float)InM(1, 2);
+
+	Out.M[2][0] = (float)InM(2, 0);
+	Out.M[2][1] = (float)InM(2, 1);
+	Out.M[2][2] = (float)InM(2, 2);
+
+	return Out;
+}
 
 // +----------------------------------------------------------------------+
 
@@ -425,7 +440,7 @@ Ship::Ship(const char* ship_name, const char* reg_num, ShipDesign* ship_dsn, int
 		NavLight* navlight = new NavLight(*design->navlights[i]);
 		navlight->SetShip(this);
 		navlight->SetID(sys_id++);
-		navlight->SetOffset(((DWORD)this) << 2);
+		navlight->SetOffset(static_cast<uint32>(reinterpret_cast<UPTRINT>(this) << 2));
 		navlights.append(navlight);
 		systems.append(navlight);
 	}
@@ -745,7 +760,7 @@ Ship::SetupAgility()
 				yaw_air_factor = 0.3f;
 
 			double rho = GetDensity();
-			double speed = Velocity().length();
+			double speed = Velocity().Length();
 
 			agility = design->air_factor * rho * speed - wep_resist;
 
@@ -799,8 +814,6 @@ void
 Ship::SetRegion(SimRegion* rgn)
 {
 	SimObject::SetRegion(rgn);
-
-	const double GRAV = 6.673e-11;
 
 	if (IsGroundUnit()) {
 		// glue buildings to the terrain:
@@ -866,197 +879,192 @@ Ship::GetTextureList(List<UTexture2D*>& Textures)
 // +--------------------------------------------------------------------+
 
 void
-Ship::Activate(SimScene& scene)
+Ship::Activate(SimScene& Scene)
 {
-	int i = 0;
-	SimObject::Activate(scene);
+	SimObject::Activate(Scene);
 
-	for (i = 0; i < detail.NumModels(detail_level); i++) {
-		Graphic* g = detail.GetRep(detail_level, i);
-		scene.AddGraphic(g);
+	for (int ModelIndex = 0; ModelIndex < detail.NumModels(detail_level); ModelIndex++) {
+		Graphic* ModelRep = detail.GetRep(detail_level, ModelIndex);
+		Scene.AddGraphic(ModelRep);
 	}
 
-	for (i = 0; i < flight_decks.size(); i++)
-		scene.AddLight(flight_decks[i]->GetLight());
+	for (int DeckIndex = 0; DeckIndex < flight_decks.size(); DeckIndex++) {
+		Scene.AddLight(flight_decks[DeckIndex]->GetLight());
+	}
 
 	if (shieldRep)
-		scene.AddGraphic(shieldRep);
+		Scene.AddGraphic(shieldRep);
 
 	if (cockpit) {
-		scene.AddForeground(cockpit);
+		Scene.AddForeground(cockpit);
 		cockpit->Hide();
 	}
 
-	Drive* drive = GetDrive();
-	if (drive) {
-		for (i = 0; i < drive->NumEngines(); i++) {
-			Graphic* flare = drive->GetFlare(i);
-			if (flare) {
-				scene.AddGraphic(flare);
-			}
+	Drive* DriveComp = GetDrive();
+	if (DriveComp) {
+		for (int EngineIndex = 0; EngineIndex < DriveComp->NumEngines(); EngineIndex++) {
+			Graphic* Flare = DriveComp->GetFlare(EngineIndex);
+			if (Flare)
+				Scene.AddGraphic(Flare);
 
-			Graphic* trail = drive->GetTrail(i);
-			if (trail) {
-				scene.AddGraphic(trail);
-			}
+			Graphic* Trail = DriveComp->GetTrail(EngineIndex);
+			if (Trail)
+				Scene.AddGraphic(Trail);
 		}
 	}
 
-	Thruster* thruster = GetThruster();
-	if (thruster) {
-		for (i = 0; i < thruster->NumThrusters(); i++) {
-			Graphic* flare = thruster->Flare(i);
-			if (flare) {
-				scene.AddGraphic(flare);
-			}
+	Thruster* ThrusterComp = GetThruster();
+	if (ThrusterComp) {
+		for (int ThrusterIndex = 0; ThrusterIndex < ThrusterComp->NumThrusters(); ThrusterIndex++) {
+			Graphic* Flare = ThrusterComp->Flare(ThrusterIndex);
+			if (Flare)
+				Scene.AddGraphic(Flare);
 
-			Graphic* trail = thruster->Trail(i);
-			if (trail) {
-				scene.AddGraphic(trail);
-			}
+			Graphic* Trail = ThrusterComp->Trail(ThrusterIndex);
+			if (Trail)
+				Scene.AddGraphic(Trail);
 		}
 	}
 
-	for (int n = 0; n < navlights.size(); n++) {
-		NavLight* navlight = navlights[n];
-		for (i = 0; i < navlight->NumBeacons(); i++) {
-			Graphic* beacon = navlight->Beacon(i);
-			if (beacon)
-				scene.AddGraphic(beacon);
+	for (int LightIndex = 0; LightIndex < navlights.size(); LightIndex++) {
+		NavLight* NavLightComp = navlights[LightIndex];
+		for (int BeaconIndex = 0; BeaconIndex < NavLightComp->NumBeacons(); BeaconIndex++) {
+			Graphic* Beacon = NavLightComp->Beacon(BeaconIndex);
+			if (Beacon)
+				Scene.AddGraphic(Beacon);
 		}
 	}
 
-	ListIter<WeaponGroup> g = weapons;
-	while (++g) {
-		ListIter<Weapon> w = g->GetWeapons();
-		while (++w) {
-			Solid* turret = w->GetTurret();
-			if (turret) {
-				scene.AddGraphic(turret);
+	ListIter<WeaponGroup> GroupIter = weapons;
+	while (++GroupIter) {
+		ListIter<Weapon> WeaponIter = GroupIter->GetWeapons();
+		while (++WeaponIter) {
+			Solid* Turret = WeaponIter->GetTurret();
+			if (Turret) {
+				Scene.AddGraphic(Turret);
 
-				Solid* turret_base = w->GetTurretBase();
-				if (turret_base)
-					scene.AddGraphic(turret_base);
+				Solid* TurretBase = WeaponIter->GetTurretBase();
+				if (TurretBase)
+					Scene.AddGraphic(TurretBase);
 			}
-			if (w->IsMissile()) {
-				for (i = 0; i < w->Ammo(); i++) {
-					Solid* store = w->GetVisibleStore(i);
-					if (store)
-						scene.AddGraphic(store);
+
+			if (WeaponIter->IsMissile()) {
+				for (int AmmoIndex = 0; AmmoIndex < WeaponIter->Ammo(); AmmoIndex++) {
+					Solid* VisibleStore = WeaponIter->GetVisibleStore(AmmoIndex);
+					if (VisibleStore)
+						Scene.AddGraphic(VisibleStore);
 				}
 			}
 		}
 	}
 
 	if (gear && gear->GetState() != LandingGear::GEAR_UP) {
-		for (int iGear = 0; iGear < gear->NumGear(); iGear++) {
-			scene.AddGraphic(gear->GetGear(iGear));
+		for (int GearIndex = 0; GearIndex < gear->NumGear(); GearIndex++) {
+			Scene.AddGraphic(gear->GetGear(GearIndex));
 		}
 	}
 }
 
 void
-Ship::Deactivate(SimScene& scene)
+Ship::Deactivate(SimScene& Scene)
 {
-	int i = 0;
-	SimObject::Deactivate(scene);
+	SimObject::Deactivate(Scene);
 
-	for (i = 0; i < detail.NumModels(detail_level); i++) {
-		Graphic* g = detail.GetRep(detail_level, i);
-		scene.DelGraphic(g);
+	for (int ModelIndex = 0; ModelIndex < detail.NumModels(detail_level); ModelIndex++) {
+		Graphic* ModelRep = detail.GetRep(detail_level, ModelIndex);
+		Scene.DelGraphic(ModelRep);
 	}
 
-	for (i = 0; i < flight_decks.size(); i++)
-		scene.DelLight(flight_decks[i]->GetLight());
+	for (int DeckIndex = 0; DeckIndex < flight_decks.size(); DeckIndex++) {
+		Scene.DelLight(flight_decks[DeckIndex]->GetLight());
+	}
 
 	if (shieldRep)
-		scene.DelGraphic(shieldRep);
+		Scene.DelGraphic(shieldRep);
 
 	if (cockpit)
-		scene.DelForeground(cockpit);
+		Scene.DelForeground(cockpit);
 
-	Drive* drive = GetDrive();
-	if (drive) {
-		for (i = 0; i < drive->NumEngines(); i++) {
-			Graphic* flare = drive->GetFlare(i);
-			if (flare) {
-				scene.DelGraphic(flare);
-			}
+	Drive* DriveComp = GetDrive();
+	if (DriveComp) {
+		for (int EngineIndex = 0; EngineIndex < DriveComp->NumEngines(); EngineIndex++) {
+			Graphic* Flare = DriveComp->GetFlare(EngineIndex);
+			if (Flare)
+				Scene.DelGraphic(Flare);
 
-			Graphic* trail = drive->GetTrail(i);
-			if (trail) {
-				scene.DelGraphic(trail);
-			}
+			Graphic* Trail = DriveComp->GetTrail(EngineIndex);
+			if (Trail)
+				Scene.DelGraphic(Trail);
 		}
 	}
 
-	Thruster* thruster = GetThruster();
-	if (thruster) {
-		for (i = 0; i < thruster->NumThrusters(); i++) {
-			Graphic* flare = thruster->Flare(i);
-			if (flare) {
-				scene.DelGraphic(flare);
-			}
+	Thruster* ThrusterComp = GetThruster();
+	if (ThrusterComp) {
+		for (int ThrusterIndex = 0; ThrusterIndex < ThrusterComp->NumThrusters(); ThrusterIndex++) {
+			Graphic* Flare = ThrusterComp->Flare(ThrusterIndex);
+			if (Flare)
+				Scene.DelGraphic(Flare);
 
-			Graphic* trail = thruster->Trail(i);
-			if (trail) {
-				scene.DelGraphic(trail);
-			}
+			Graphic* Trail = ThrusterComp->Trail(ThrusterIndex);
+			if (Trail)
+				Scene.DelGraphic(Trail);
 		}
 	}
 
-	for (int n = 0; n < navlights.size(); n++) {
-		NavLight* navlight = navlights[n];
-		for (i = 0; i < navlight->NumBeacons(); i++) {
-			Graphic* beacon = navlight->Beacon(i);
-			if (beacon)
-				scene.DelGraphic(beacon);
+	for (int LightIndex = 0; LightIndex < navlights.size(); LightIndex++) {
+		NavLight* NavLightComp = navlights[LightIndex];
+		for (int BeaconIndex = 0; BeaconIndex < NavLightComp->NumBeacons(); BeaconIndex++) {
+			Graphic* Beacon = NavLightComp->Beacon(BeaconIndex);
+			if (Beacon)
+				Scene.DelGraphic(Beacon);
 		}
 	}
 
-	ListIter<WeaponGroup> g = weapons;
-	while (++g) {
-		ListIter<Weapon> w = g->GetWeapons();
-		while (++w) {
-			Solid* turret = w->GetTurret();
-			if (turret) {
-				scene.DelGraphic(turret);
+	ListIter<WeaponGroup> GroupIter = weapons;
+	while (++GroupIter) {
+		ListIter<Weapon> WeaponIter = GroupIter->GetWeapons();
+		while (++WeaponIter) {
+			Solid* Turret = WeaponIter->GetTurret();
+			if (Turret) {
+				Scene.DelGraphic(Turret);
 
-				Solid* turret_base = w->GetTurretBase();
-				if (turret_base)
-					scene.DelGraphic(turret_base);
+				Solid* TurretBase = WeaponIter->GetTurretBase();
+				if (TurretBase)
+					Scene.DelGraphic(TurretBase);
 			}
-			if (w->IsMissile()) {
-				for (i = 0; i < w->Ammo(); i++) {
-					Solid* store = w->GetVisibleStore(i);
-					if (store)
-						scene.DelGraphic(store);
+
+			if (WeaponIter->IsMissile()) {
+				for (int AmmoIndex = 0; AmmoIndex < WeaponIter->Ammo(); AmmoIndex++) {
+					Solid* VisibleStore = WeaponIter->GetVisibleStore(AmmoIndex);
+					if (VisibleStore)
+						Scene.DelGraphic(VisibleStore);
 				}
 			}
 		}
 	}
 
 	if (gear) {
-		for (int iGear = 0; iGear < gear->NumGear(); iGear++) {
-			scene.DelGraphic(gear->GetGear(iGear));
+		for (int GearIndex = 0; GearIndex < gear->NumGear(); GearIndex++) {
+			Scene.DelGraphic(gear->GetGear(GearIndex));
 		}
 	}
 }
 
-// +--------------------------------------------------------------------+
-
 void
-Ship::MatchOrientation(const Ship& s)
+Ship::MatchOrientation(const Ship& OtherShip)
 {
-	FVector Pos = cam.Pos();
-	cam.Clone(s.cam);
-	cam.MoveTo(Pos);
+	const FVector SavedPos = cam.Pos();
+
+	cam.Clone(OtherShip.cam);
+	cam.MoveTo(SavedPos);
+
+	const FMatrix NewOrient = ToFMatrix(cam.Orientation());
 
 	if (rep)
-		rep->SetOrientation(cam.Orientation());
+		rep->SetOrientation(NewOrient);
 
 	if (cockpit)
-		cockpit->SetOrientation(cam.Orientation());
+		cockpit->SetOrientation(NewOrient);
 }
 
 // +--------------------------------------------------------------------+
@@ -1212,7 +1220,7 @@ Ship::IsHostileTo(const SimObject* o) const
 		}
 
 		else if (o->Type() == SIM_SHOT || o->Type() == SIM_DRONE) {
-			Shot* s = (Shot*)o;
+			SimShot* s = (SimShot*)o;
 
 			if (GetIFF() == 0) {
 				if (s->GetIFF() > 1)
@@ -1297,7 +1305,7 @@ Ship::GetController() const
 		else {
 			double distance = 10e6;
 
-			ListIter<Ship> iter = GetRegion()->Carriers();
+			ListIter<Ship> iter = GetRegion()->GetCarriers();
 			while (++iter) {
 				Ship* test = iter.value();
 				if (test->GetIFF() == GetIFF()) {
@@ -1413,7 +1421,7 @@ Ship::LowerGear()
 {
 	if (gear && gear->GetState() != LandingGear::GEAR_DOWN) {
 		gear->SetState(LandingGear::GEAR_LOWER);
-		Scene* scene = 0;
+		SimScene* scene = 0;
 
 		if (rep)
 			scene = rep->GetScene();
@@ -1511,95 +1519,101 @@ Ship::CollidesWith(Physical& o)
 static DWORD ff_warn_time = 0;
 
 int
-Ship::HitBy(SimShot* shot, FVector& impact)
+Ship::HitBy(SimShot* Shot, FVector& Impact)
 {
-	if (shot->Owner() == this || IsNetObserver())
+	if (!Shot)
 		return HIT_NOTHING;
 
-	if (shot->IsFlak())
+	if (Shot->Owner() == this || IsNetObserver())
+		return HIT_NOTHING;
+
+	if (Shot->IsFlak())
 		return HIT_NOTHING;
 
 	if (InTransition())
 		return HIT_NOTHING;
 
-	const FVector ShotLoc = shot->Location();
+	const FVector ShotLoc = Shot->Location();
 	FVector Delta = ShotLoc - Location();
-	const double dlen = Delta.Length();
+	const double DistLen = (double)Delta.Size();
 
-	FVector HullImpact;
-	int hit_type = HIT_NOTHING;
-	double dscale = 1;
-	float scale = design->explosion_scale;
-	Weapon* wep = 0;
+	FVector HullImpact(0, 0, 0);
+	int HitType = HIT_NOTHING;
+	double DamageScale = 1.0;
 
-	if (!shot->IsMissile() && !shot->IsBeam()) {
-		if (dlen > Radius() * 2)
+	float Scale = design ? design->explosion_scale : 0.0f;
+	Weapon* HitWeapon = 0;
+
+	if (!Shot->IsMissile() && !Shot->IsBeam()) {
+		if (DistLen > Radius() * 2.0)
 			return HIT_NOTHING;
 	}
 
-	if (scale <= 0)
-		scale = design->scale;
+	if (Scale <= 0.0f && design)
+		Scale = (float)design->scale;
 
-	if (shot->Owner()) {
-		const ShipDesign* owner_design = shot->Owner()->Design();
-		if (owner_design && owner_design->scale < scale)
-			scale = (float)owner_design->scale;
+	if (Shot->Owner()) {
+		const ShipDesign* OwnerDesign = Shot->Owner()->Design();
+		if (OwnerDesign && OwnerDesign->scale < Scale)
+			Scale = (float)OwnerDesign->scale;
 	}
 
 	// MISSILE PROCESSING ------------------------------------------------
+	if (Shot->IsMissile() && rep) {
+		if (DistLen < rep->Radius()) {
+			HullImpact = Impact = ShotLoc;
 
-	if (shot->IsMissile() && rep) {
-		if (dlen < rep->Radius()) {
-			HullImpact = impact = ShotLoc;
+			HitType = CheckShotIntersection(Shot, Impact, HullImpact, &HitWeapon);
 
-			hit_type = CheckShotIntersection(shot, impact, HullImpact, &wep);
+			if (HitType) {
+				if (Shot->Damage() > 0) {
+					DWORD Flash = Explosion::HULL_FLASH;
 
-			if (hit_type) {
-				if (shot->Damage() > 0) {
-					DWORD flash = Explosion::HULL_FLASH;
+					if ((HitType & HIT_SHIELD) != 0)
+						Flash = Explosion::SHIELD_FLASH;
 
-					if ((hit_type & HIT_SHIELD) != 0)
-						flash = Explosion::SHIELD_FLASH;
-
-					sim->CreateExplosion(impact, Velocity(), flash, 0.3f * scale, scale, region);
-					sim->CreateExplosion(impact, FVector::ZeroVector, Explosion::SHOT_BLAST, 2.0f, scale, region);
+					sim->CreateExplosion(Impact, Velocity(), Flash, 0.30f * Scale, Scale, region);
+					sim->CreateExplosion(Impact, FVector::ZeroVector, Explosion::SHOT_BLAST, 2.0f, Scale, region);
 				}
 			}
 		}
 
-		if (hit_type == HIT_NOTHING && shot->IsArmed()) {
-			SeekerAI* seeker = (SeekerAI*)shot->GetDirector();
+		if (HitType == HIT_NOTHING && Shot->IsArmed()) {
+			SeekerAI* Seeker = (SeekerAI*)Shot->GetDirector();
 
 			// if the missile overshot us, take damage proportional to distance
-			const double damage_radius = shot->Design()->lethal_radius;
-			if (dlen < (damage_radius + Radius())) {
-				if (seeker && seeker->Overshot()) {
-					dscale = 1.0 - (dlen / (damage_radius + Radius()));
+			const double DamageRadius = Shot->Design()->lethal_radius;
+			if (DistLen < (DamageRadius + Radius())) {
+				if (Seeker && Seeker->Overshot()) {
+					DamageScale = 1.0 - (DistLen / (DamageRadius + Radius()));
 
-					if (dscale > 1)
-						dscale = 1;
+					if (DamageScale > 1.0)
+						DamageScale = 1.0;
+					if (DamageScale < 0.0)
+						DamageScale = 0.0;
 
 					if (ShieldStrength() > 5) {
-						HullImpact = impact = ShotLoc;
+						HullImpact = Impact = ShotLoc;
 
-						if (shot->Damage() > 0) {
+						if (Shot->Damage() > 0) {
 							if (shieldRep)
-								shieldRep->Hit(impact, shot, shot->Damage() * dscale);
-							sim->CreateExplosion(impact, Velocity(), Explosion::SHIELD_FLASH, 0.20f * scale, scale, region);
-							sim->CreateExplosion(impact, FVector::ZeroVector, Explosion::SHOT_BLAST, 20.0f * scale, scale, region);
+								shieldRep->Hit(Impact, Shot, Shot->Damage() * DamageScale);
+
+							sim->CreateExplosion(Impact, Velocity(), Explosion::SHIELD_FLASH, 0.20f * Scale, Scale, region);
+							sim->CreateExplosion(Impact, FVector::ZeroVector, Explosion::SHOT_BLAST, 20.0f * Scale, Scale, region);
 						}
 
-						hit_type = HIT_BOTH;
+						HitType = HIT_BOTH;
 					}
 					else {
-						HullImpact = impact = ShotLoc;
+						HullImpact = Impact = ShotLoc;
 
-						if (shot->Damage() > 0) {
-							sim->CreateExplosion(impact, Velocity(), Explosion::HULL_FLASH, 0.30f * scale, scale, region);
-							sim->CreateExplosion(impact, FVector::ZeroVector, Explosion::SHOT_BLAST, 20.0f * scale, scale, region);
+						if (Shot->Damage() > 0) {
+							sim->CreateExplosion(Impact, Velocity(), Explosion::HULL_FLASH, 0.30f * Scale, Scale, region);
+							sim->CreateExplosion(Impact, FVector::ZeroVector, Explosion::SHOT_BLAST, 20.0f * Scale, Scale, region);
 						}
 
-						hit_type = HIT_HULL;
+						HitType = HIT_HULL;
 					}
 				}
 			}
@@ -1607,24 +1621,23 @@ Ship::HitBy(SimShot* shot, FVector& impact)
 	}
 
 	// ENERGY WEP PROCESSING ---------------------------------------------
-
 	else {
-		hit_type = CheckShotIntersection(shot, impact, HullImpact, &wep);
+		HitType = CheckShotIntersection(Shot, Impact, HullImpact, &HitWeapon);
 
 		// impact:
-		if (hit_type) {
+		if (HitType) {
 
-			if (hit_type & HIT_SHIELD) {
+			if (HitType & HIT_SHIELD) {
 				if (shieldRep)
-					shieldRep->Hit(impact, shot, shot->Damage());
-				sim->CreateExplosion(impact, Velocity(), Explosion::SHIELD_FLASH, 0.20f * scale, scale, region);
-			}
+					shieldRep->Hit(Impact, Shot, Shot->Damage());
 
+				sim->CreateExplosion(Impact, Velocity(), Explosion::SHIELD_FLASH, 0.20f * Scale, Scale, region);
+			}
 			else {
-				if (shot->IsBeam())
-					sim->CreateExplosion(impact, Velocity(), Explosion::BEAM_FLASH, 0.30f * scale, scale, region);
+				if (Shot->IsBeam())
+					sim->CreateExplosion(Impact, Velocity(), Explosion::BEAM_FLASH, 0.30f * Scale, Scale, region);
 				else
-					sim->CreateExplosion(impact, Velocity(), Explosion::HULL_FLASH, 0.30f * scale, scale, region);
+					sim->CreateExplosion(Impact, Velocity(), Explosion::HULL_FLASH, 0.30f * Scale, Scale, region);
 
 				if (IsStarship()) {
 					FVector BurstVel = HullImpact - Location();
@@ -1632,76 +1645,75 @@ Ship::HitBy(SimShot* shot, FVector& impact)
 					BurstVel *= Radius() * 0.5f;
 					BurstVel += Velocity();
 
-					sim->CreateExplosion(HullImpact, BurstVel, Explosion::HULL_BURST, 0.50f * scale, scale, region, this);
+					sim->CreateExplosion(HullImpact, BurstVel, Explosion::HULL_BURST, 0.50f * Scale, Scale, region, this);
 				}
 			}
 		}
 	}
 
 	// DAMAGE RESOLUTION -------------------------------------------------
+	if (HitType != HIT_NOTHING && Shot->IsArmed()) {
 
-	if (hit_type != HIT_NOTHING && shot->IsArmed()) {
-		const double effective_damage = shot->Damage() * dscale;
+		double EffectiveDamage = Shot->Damage() * DamageScale;
 
 		// FRIENDLY FIRE --------------------------------------------------
+		if (Shot->Owner()) {
+			Ship* OwnerShip = (Ship*)Shot->Owner();
 
-		if (shot->Owner()) {
-			Ship* s = (Ship*)shot->Owner();
+			if (!IsRogue() &&
+				OwnerShip &&
+				OwnerShip->GetIFF() == GetIFF() &&
+				OwnerShip->GetDirector() &&
+				OwnerShip->GetDirector()->Type() < 1000) {
 
-			if (!IsRogue() && s->GetIFF() == GetIFF() &&
-				s->GetDirector() && s->GetDirector()->Type() < 1000) {
-				const bool was_rogue = s->IsRogue();
+				const bool WasRogue = OwnerShip->IsRogue();
 
 				// only count beam hits once
-				if (shot->Damage() && !shot->HitTarget() && GetFriendlyFireLevel() > 0) {
-					int penalty = 1;
+				if (Shot->Damage() && !Shot->HitTarget() && GetFriendlyFireLevel() > 0) {
+					int Penalty = 1;
 
-					if (shot->IsBeam())           penalty = 5;
-					else if (shot->IsDrone())     penalty = 7;
+					if (Shot->IsBeam())       Penalty = 5;
+					else if (Shot->IsDrone()) Penalty = 7;
 
-					if (s->GetTarget() == this)   penalty *= 3;
+					if (OwnerShip->GetTarget() == this)
+						Penalty *= 3;
 
-					s->IncFriendlyFire(penalty);
+					OwnerShip->IncFriendlyFire(Penalty);
 				}
 
-				const double scaled_damage = effective_damage * GetFriendlyFireLevel();
+				EffectiveDamage *= GetFriendlyFireLevel();
 
-				if (Class() > DRONE && s->Class() > DRONE) {
-					if (s->IsRogue() && !was_rogue) {
-						RadioMessage* warn = new RadioMessage(s, this, RadioMessage::DECLARE_ROGUE);
-						RadioTraffic::Transmit(warn);
+				if (Class() > DRONE && OwnerShip->Class() > DRONE) {
+					if (OwnerShip->IsRogue() && !WasRogue) {
+						RadioMessage* Warn = new RadioMessage(OwnerShip, this, RadioMessage::DECLARE_ROGUE);
+						RadioTraffic::Transmit(Warn);
 					}
-					else if (!s->IsRogue() && (Game::GameTime() - ff_warn_time) > 5000) {
+					else if (!OwnerShip->IsRogue() && (Game::GameTime() - ff_warn_time) > 5000) {
 						ff_warn_time = Game::GameTime();
 
-						RadioMessage* warn = 0;
-						if (s->GetTarget() == this)
-							warn = new RadioMessage(s, this, RadioMessage::WARN_TARGETED);
+						RadioMessage* Warn = 0;
+						if (OwnerShip->GetTarget() == this)
+							Warn = new RadioMessage(OwnerShip, this, RadioMessage::WARN_TARGETED);
 						else
-							warn = new RadioMessage(s, this, RadioMessage::WARN_ACCIDENT);
+							Warn = new RadioMessage(OwnerShip, this, RadioMessage::WARN_ACCIDENT);
 
-						RadioTraffic::Transmit(warn);
+						RadioTraffic::Transmit(Warn);
 					}
-				}
-
-				// overwrite effective_damage after FF scaling (kept structurally identical)
-				if (scaled_damage != effective_damage) {
-					// preserve original behavior while keeping const correctness above
-					// (effective_damage is const; use a new variable below)
 				}
 			}
 		}
 
-		if (effective_damage > 0) {
-			if (!shot->IsBeam() && shot->Design()->damage_type == WeaponDesign::DMG_NORMAL)
-				ApplyTorque(shot->Velocity() * (float)effective_damage * 1e-6f);
-				InflictDamage(effective_damage, shot, hit_type, HullImpact);
-			}
+		if (EffectiveDamage > 0.0) {
+			if (!Shot->IsBeam() && Shot->Design()->damage_type == WeaponDesign::DMG_NORMAL)
+				ApplyTorque(Shot->Velocity() * (float)EffectiveDamage * 1e-6f);
+
+			InflictDamage(EffectiveDamage, Shot, HitType, HullImpact);
 		}
 	}
 
-	return hit_type;
+	return HitType;
 }
+
 
 static bool CheckRaySphereIntersection(const FVector& loc, double radius, const FVector& Q, const FVector& w, double len)
 {
@@ -1740,7 +1752,7 @@ static bool CheckRaySphereIntersection(const FVector& loc, double radius, const 
 }
 
 int
-Ship::CheckShotIntersection(Shot* shot, FVector& ipt, FVector& hpt, Weapon** wep)
+Ship::CheckShotIntersection(SimShot* shot, FVector& ipt, FVector& hpt, Weapon** wep)
 {
 	int      hit_type = HIT_NOTHING;
 	const FVector shot_loc = shot->Location();
@@ -1860,9 +1872,9 @@ Ship::CheckShotIntersection(Shot* shot, FVector& ipt, FVector& hpt, Weapon** wep
 // +--------------------------------------------------------------------+
 
 void
-Ship::InflictNetDamage(double damage, Shot* shot)
+Ship::InflictNetDamage(double damage, SimShot* shot)
 {
-	if (damage > 0 && !IsNetObserver()) {
+	if (damage > 0) {
 		Physical::InflictDamage(damage, 0);
 
 		// shake by percentage of maximum damage
@@ -1924,11 +1936,11 @@ Ship::SetNetSystemStatus(SimSystem* system, int status, int power, int reactor, 
 
 		if (system->Status() != status) {
 			if (status == SimSystem::MAINT) {
-				ListIter<Component> comp = system->GetComponents();
+				ListIter<SimComponent> comp = system->GetComponents();
 				while (++comp) {
-					Component* c = comp.value();
+					SimComponent* c = comp.value();
 
-					if (c->Status() < Component::NOMINAL && c->Availability() < 75) {
+					if (c->Status() < SimComponent::NOMINAL && c->Availability() < 75) {
 						if (c->SpareCount() &&
 							c->ReplaceTime() <= 300 &&
 							(c->Availability() < 50 ||
@@ -2017,7 +2029,7 @@ Ship::CheckFriendlyFire()
 	while (++c_iter) {
 		SimContact* c = c_iter.value();
 		Ship* cship = c->GetShip();
-		Shot* cshot = c->GetShot();
+		SimShot* cshot = c->GetShot();
 
 		if (cship && cship != this && (cship->GetIFF() == 0 || cship->GetIFF() == GetIFF())) {
 			const double range = (cship->Location() - Location()).Length();
@@ -2052,7 +2064,7 @@ Ship::CheckFriendlyFire()
 		}
 	}
 
-	friendly_fire_time = Game::GameTime() + (DWORD)Random(0, 500);
+	friendly_fire_time = Game::GameTime() + static_cast<uint32>(FMath::RandRange(0, 500));
 }
 
 // +----------------------------------------------------------------------+
@@ -2082,7 +2094,7 @@ Ship::GetOrigElementIndex() const
 }
 
 void
-Ship::SetElement(Element* e)
+Ship::SetElement(SimElement* e)
 {
 	element = e;
 
@@ -2214,19 +2226,18 @@ Ship::GetNavIndex(const Instruction* n)
 }
 
 double
-Ship::RangeToNavPoint(const Instruction* n)
+Ship::RangeToNavPoint(const Instruction* NavPoint)
 {
-	double distance = 0;
+	double Distance = 0.0;
 
-	if (n && n->Region()) {
-		FVector npt = n->Region()->Location() + n->Location();
-		npt -= GetRegion()->Location();
-		npt = npt.OtherHand(); // convert from map to sim coords
+	if (NavPoint && NavPoint->Region() && GetRegion()) {
+		FVector NavLoc = NavPoint->Region()->GetLocation() + NavPoint->Location();
+		NavLoc -= GetRegion()->GetLocation();
 
-		distance = (npt - Location()).Length();
+		Distance = (NavLoc - Location()).Size();
 	}
 
-	return distance;
+	return Distance;
 }
 
 void
@@ -2350,59 +2361,67 @@ Ship::DropTarget()
 // +--------------------------------------------------------------------+
 
 void
-Ship::CycleSubTarget(int dir)
+Ship::CycleSubTarget(int Dir)
 {
 	if (!target || target->Type() != SimObject::SIM_SHIP)
 		return;
 
-	Ship* tgt = (Ship*)target;
-
-	if (tgt->IsDropship())
+	Ship* TargetShip = (Ship*)target;
+	if (!TargetShip || TargetShip->IsDropship())
 		return;
 
-	SimSystem* subtgt = 0;
+	SimSystem* SubTarget = 0;
 
-	ListIter<SimSystem> sys = tgt->Systems();
+	ListIter<SimSystem> SysIter = TargetShip->Systems();
 
-	if (dir > 0) {
-		int latch = (subtarget == 0);
-		while (++sys) {
-			if (sys->Type() == SimSystem::COMPUTER || // computers are notxtargetable
-				sys->Type() == SimSystem::SENSOR)     // sensors   are notxtargetable
+	if (Dir > 0) {
+		int Latch = (subtarget == 0);
+
+		while (++SysIter) {
+			SimSystem* Sys = SysIter.value();
+
+			if (!Sys)
 				continue;
 
-			if (sys.value() == subtarget) {
-				latch = 1;
-			}
+			// computers and sensors are not targetable
+			if (Sys->Type() == SimSystem::COMPUTER || Sys->Type() == SimSystem::SENSOR)
+				continue;
 
-			else if (latch) {
-				subtgt = sys.value();
+			if (Sys == subtarget) {
+				Latch = 1;
+			}
+			else if (Latch) {
+				SubTarget = Sys;
 				break;
 			}
 		}
 	}
-
 	else {
-		SimSystem* prev = 0;
+		SimSystem* Prev = 0;
 
-		while (++sys) {
-			if (sys->Type() == SimSystem::COMPUTER || // computers are notxtargetable
-				sys->Type() == SimSystem::SENSOR)     // sensors   are notxtargetable
+		while (++SysIter) {
+			SimSystem* Sys = SysIter.value();
+
+			if (!Sys)
 				continue;
 
-			if (sys.value() == subtarget) {
-				subtgt = prev;
+			// computers and sensors are not targetable
+			if (Sys->Type() == SimSystem::COMPUTER || Sys->Type() == SimSystem::SENSOR)
+				continue;
+
+			if (Sys == subtarget) {
+				SubTarget = Prev;
 				break;
 			}
 
-			prev = sys.value();
+			Prev = Sys;
 		}
 
 		if (!subtarget)
-			subtgt = prev;
+			SubTarget = Prev;
 	}
 
-	SetTarget(tgt, subtgt);
+	SetTarget(TargetShip, SubTarget);
 }
 
 // +--------------------------------------------------------------------+
@@ -2477,7 +2496,7 @@ Ship::ExecFrame(double seconds)
 
 	// are we docking?
 	if (IsDropship()) {
-		ListIter<Ship> iter = GetRegion()->Carriers();
+		ListIter<Ship> iter = GetRegion()->GetCarriers();
 
 		while (++iter) {
 			Ship* carrier_target = iter.value();
@@ -2499,7 +2518,7 @@ Ship::ExecFrame(double seconds)
 	ExecMaintFrame(seconds);
 
 	if (flight_decks.size() > 0) {
-		Camera* global_cam = CameraManager:GetInstance()->GetCamera();
+		Camera* global_cam = CameraManager::GetInstance()->GetCamera();
 		FVector global_cam_loc = global_cam->Pos();
 		bool disable_shadows = false;
 
@@ -2538,7 +2557,7 @@ Ship::LaunchProbe()
 			Observe(sensor_drone);
 
 		else if (sim->GetPlayerShip() == this)
-			Button::PlaySound(Button::SND_REJECT);
+			UIButton::PlaySound(UIButton::SND_REJECT);
 	}
 }
 
@@ -2588,55 +2607,51 @@ Ship::ExecSensors(double seconds)
 // +--------------------------------------------------------------------+
 
 void
-Ship::ExecNavFrame(double seconds)
+Ship::ExecNavFrame(double Seconds)
 {
-	bool auto_pilot = false;
+	bool AutoPilot = false;
 
 	// update director info string:
 	SetFLCSMode(flcs_mode);
 
 	if (navsys) {
-		navsys->ExecFrame(seconds);
+		navsys->ExecFrame(Seconds);
 
 		if (navsys->AutoNavEngaged()) {
 			if (dir && dir->Type() == NavAI::DIR_TYPE) {
-				NavAI* navai = (NavAI*)dir;
+				NavAI* NavAIComp = (NavAI*)dir;
 
-				if (navai->Complete()) {
+				if (NavAIComp->Complete()) {
 					navsys->DisengageAutoNav();
 					SetControls(sim->GetControls());
 				}
 				else {
-					auto_pilot = true;
+					AutoPilot = true;
 				}
 			}
 		}
 	}
 
-	// even if we are notxon auto pilot,
+	// even if we are not on auto pilot,
 	// have we completed the next navpoint?
 
-	Instruction* navpt = GetNextNavPoint();
-	if (navpt && !auto_pilot) {
-		if (navpt->Region() == GetRegion()) {
-			double distance = 0;
+	Instruction* NavPt = GetNextNavPoint();
+	if (NavPt && !AutoPilot) {
+		if (NavPt->Region() == GetRegion()) {
+			FVector NavLoc = NavPt->Location();
 
-			FVector npt = navpt->Location();
+			if (NavPt->Region())
+				NavLoc += NavPt->Region()->GetLocation();
 
-			if (navpt->Region())
-				npt += navpt->Region()->Location();
-
-			Sim* sim = Sim::GetSim();
-			if (sim->GetActiveRegion())
-				npt -= sim->GetActiveRegion()->Location();
-
-			npt = npt.OtherHand();
+			Sim* SimInst = Sim::GetSim();
+			if (SimInst && SimInst->GetActiveRegion())
+				NavLoc -= SimInst->GetActiveRegion()->GetLocation();
 
 			// distance from self to navpt:
-			distance = (npt - Location()).Length();
+			const double Distance = (NavLoc - Location()).Size();
 
-			if (distance < 10 * Radius())
-				SetNavptStatus(navpt, Instruction::COMPLETE);
+			if (Distance < 10.0 * Radius())
+				SetNavptStatus(NavPt, Instruction::COMPLETE);
 		}
 	}
 }
@@ -2986,11 +3001,11 @@ Ship::LinearFrame(double seconds)
 // +--------------------------------------------------------------------+
 
 void
-Ship::DockFrame(double seconds)
+Ship::DockFrame(double Seconds)
 {
-	SelectDetail(seconds);
+	SelectDetail(Seconds);
 
-	if (sim->GetPlayerShip() == this) {
+	if (sim && sim->GetPlayerShip() == this) {
 		// Make sure the thruster sound is disabled
 		// when the player is on the runway or catapult
 		if (thruster) {
@@ -3004,71 +3019,69 @@ Ship::DockFrame(double seconds)
 		// but when the ship is in dock, we skip the
 		// standard physics processing):
 		rep->MoveTo(cam.Pos());
-		rep->SetOrientation(cam.Orientation());
+		rep->SetOrientation(ToFMatrix(cam.Orientation()));
 
 		if (light)
 			light->MoveTo(cam.Pos());
 
-		ListIter<System> iter = systems;
-		while (++iter)
-			iter->Orient(this);
+		ListIter<SimSystem> Iter = systems;
+		while (++Iter)
+			Iter->Orient(this);
 
-		const double spool = 75 * seconds;
+		const double Spool = 75.0 * Seconds;
 
 		if (flight_phase == DOCKING) {
 			throttle_request = 0;
 			throttle = 0;
 		}
-
 		else if (throttle < throttle_request) {
-			if (throttle_request - throttle < spool)
+			if ((throttle_request - throttle) < Spool)
 				throttle = throttle_request;
 			else
-				throttle += spool;
+				throttle += Spool;
 		}
-
 		else if (throttle > throttle_request) {
-			if (throttle - throttle_request < spool)
+			if ((throttle - throttle_request) < Spool)
 				throttle = throttle_request;
 			else
-				throttle -= spool;
+				throttle -= Spool;
 		}
 
 		// make sure there is power to run the drive:
-		for (int i = 0; i < reactors.size(); i++)
-			reactors[i]->ExecFrame(seconds);
+		for (int ReactorIndex = 0; ReactorIndex < reactors.size(); ReactorIndex++)
+			reactors[ReactorIndex]->ExecFrame(Seconds);
 
 		// count up weapon ammo for status mfd:
-		for (int i = 0; i < weapons.size(); i++)
-			weapons[i]->ExecFrame(seconds);
+		for (int WeaponIndex = 0; WeaponIndex < weapons.size(); WeaponIndex++)
+			weapons[WeaponIndex]->ExecFrame(Seconds);
 
 		// show drive flare while on catapult:
 		if (main_drive) {
 			main_drive->SetThrottle(throttle);
 
 			if (throttle > 0)
-				main_drive->Thrust(seconds);  // show drive flare
+				main_drive->Thrust(Seconds);  // show drive flare
 		}
 	}
 
-	if (cockpit && !cockpit->Hidden()) {
-		Solid* solid = (Solid*)rep;
+	if (cockpit && !cockpit->Hidden() && rep) {
+		Solid* SolidRep = (Solid*)rep;
 
-		const FVector cpos =
+		const FVector CockpitPos =
 			cam.Pos() +
 			cam.vrt() * (float)bridge_vec.X +
 			cam.vpn() * (float)bridge_vec.Y +
 			cam.vup() * (float)bridge_vec.Z;
 
-		cockpit->MoveTo(cpos);
-		cockpit->SetOrientation(solid->Orientation());
+		cockpit->MoveTo(CockpitPos);
+		cockpit->SetOrientation(SolidRep->Orientation());
 	}
 }
 
 // +--------------------------------------------------------------------+
 
 void
-Ship::StatFrame(double seconds)
+Ship::StatFrame(double Seconds)
 {
 	if (flight_phase != ACTIVE) {
 		flight_phase = ACTIVE;
@@ -3080,52 +3093,51 @@ Ship::StatFrame(double seconds)
 
 	if (IsGroundUnit()) {
 		// glue buildings to the terrain:
-		FVector loc = Location();
-		Terrain* terrain = region->GetTerrain();
+		FVector Loc = Location();
+		Terrain* TerrainObj = region ? region->GetTerrain() : 0;
 
-		if (terrain) {
-			loc.Y = terrain->Height(loc.X, loc.Z);
-			MoveTo(loc);
+		if (TerrainObj) {
+			Loc.Y = TerrainObj->Height(Loc.X, Loc.Z);
+			MoveTo(Loc);
 		}
 	}
 
 	if (rep) {
 		rep->MoveTo(cam.Pos());
-		rep->SetOrientation(cam.Orientation());
+		rep->SetOrientation(ToFMatrix(cam.Orientation()));
 	}
 
 	if (light) {
 		light->MoveTo(cam.Pos());
 	}
 
-	ExecSensors(seconds);
+	ExecSensors(Seconds);
 
 	if (target && target->Life() == 0) {
 		DropTarget();
 	}
 
-	if (dir) dir->ExecFrame(seconds);
+	if (dir)
+		dir->ExecFrame(Seconds);
 
-	SelectDetail(seconds);
-
-	int i = 0;
+	SelectDetail(Seconds);
 
 	if (rep) {
-		ListIter<System> iter = systems;
-		while (++iter)
-			iter->Orient(this);
+		ListIter<SimSystem> Iter = systems;
+		while (++Iter)
+			Iter->Orient(this);
 
-		for (i = 0; i < reactors.size(); i++)
-			reactors[i]->ExecFrame(seconds);
+		for (int ReactorIndex = 0; ReactorIndex < reactors.size(); ReactorIndex++)
+			reactors[ReactorIndex]->ExecFrame(Seconds);
 
-		for (i = 0; i < navlights.size(); i++)
-			navlights[i]->ExecFrame(seconds);
+		for (int NavLightIndex = 0; NavLightIndex < navlights.size(); NavLightIndex++)
+			navlights[NavLightIndex]->ExecFrame(Seconds);
 
-		for (i = 0; i < weapons.size(); i++)
-			weapons[i]->ExecFrame(seconds);
+		for (int WeaponIndex = 0; WeaponIndex < weapons.size(); WeaponIndex++)
+			weapons[WeaponIndex]->ExecFrame(Seconds);
 
 		if (farcaster) {
-			farcaster->ExecFrame(seconds);
+			farcaster->ExecFrame(Seconds);
 
 			if (navlights.size() == 2) {
 				if (farcaster->Charge() > 99) {
@@ -3140,38 +3152,43 @@ Ship::StatFrame(double seconds)
 		}
 
 		if (shield)
-			shield->ExecFrame(seconds);
+			shield->ExecFrame(Seconds);
 
 		if (hangar)
-			hangar->ExecFrame(seconds);
+			hangar->ExecFrame(Seconds);
 
 		if (flight_decks.size() > 0) {
-			Camera* global_cam = CameraManager::GetInstance()->GetCamera();
-			FVector global_cam_loc = global_cam->Pos();
-			bool disable_shadows = false;
+			Camera* GlobalCam = CameraManager::GetInstance()->GetCamera();
+			const FVector GlobalCamLoc = GlobalCam ? GlobalCam->Pos() : FVector::ZeroVector;
 
-			for (i = 0; i < flight_decks.size(); i++) {
-				flight_decks[i]->ExecFrame(seconds);
+			bool bDisableShadows = false;
 
-				if (flight_decks[i]->ContainsPoint(global_cam_loc))
-					disable_shadows = true;
+			for (int DeckIndex = 0; DeckIndex < flight_decks.size(); DeckIndex++) {
+				if (!flight_decks[DeckIndex])
+					continue;
+
+				flight_decks[DeckIndex]->ExecFrame(Seconds);
+
+				if (GlobalCam && flight_decks[DeckIndex]->ContainsPoint(GlobalCamLoc))
+					bDisableShadows = true;
 			}
 
-			EnableShadows(!disable_shadows);
+			EnableShadows(!bDisableShadows);
 		}
 	}
 
-	if (shieldRep) {
-		Solid* solid = (Solid*)rep;
-		shieldRep->MoveTo(solid->Location());
-		shieldRep->SetOrientation(solid->Orientation());
+	if (shieldRep && rep) {
+		Solid* SolidRep = (Solid*)rep;
 
-		bool bubble = false;
+		shieldRep->MoveTo(SolidRep->Location());
+		shieldRep->SetOrientation(SolidRep->Orientation());
+
+		bool bBubble = false;
 		if (shield)
-			bubble = shield->ShieldBubble();
+			bBubble = shield->ShieldBubble();
 
 		if (shieldRep->ActiveHits()) {
-			shieldRep->Energize(seconds, bubble);
+			shieldRep->Energize(Seconds, bBubble);
 			shieldRep->Show();
 		}
 		else {
@@ -3234,89 +3251,92 @@ Ship::HideCockpit()
 // +--------------------------------------------------------------------+
 
 void
-Ship::SelectDetail(double seconds)
+Ship::SelectDetail(double Seconds)
 {
-	detail.ExecFrame(seconds);
+	detail.ExecFrame(Seconds);
 	detail.SetLocation(GetRegion(), Location());
 
-	const int new_level = detail.GetDetailLevel();
+	const int NewLevel = detail.GetDetailLevel();
 
-	if (detail_level != new_level) {
-		Scene* scene = 0;
+	if (detail_level != NewLevel) {
+		SimScene* Scene = 0;
 
 		// remove current rep from scene (if necessary):
-		for (int i = 0; i < detail.NumModels(detail_level); i++) {
-			Graphic* g = detail.GetRep(detail_level, i);
-			if (g) {
-				scene = g->GetScene();
-				if (scene)
-					scene->DelGraphic(g);
+		for (int ModelIndex = 0; ModelIndex < detail.NumModels(detail_level); ModelIndex++) {
+			Graphic* Gfx = detail.GetRep(detail_level, ModelIndex);
+			if (Gfx) {
+				Scene = Gfx->GetScene();
+				if (Scene)
+					Scene->DelGraphic(Gfx);
 			}
 		}
 
 		// switch to new rep:
-		detail_level = new_level;
+		detail_level = NewLevel;
 		rep = detail.GetRep(detail_level);
 
 		// add new rep to scene (if necessary):
-		if (scene) {
-			for (int i = 0; i < detail.NumModels(detail_level); i++) {
-				Graphic* g = detail.GetRep(detail_level, i);
-				const FVector s = detail.GetSpin(detail_level, i);
-				Matrix m = cam.Orientation();
+		if (Scene) {
+			for (int ModelIndex = 0; ModelIndex < detail.NumModels(detail_level); ModelIndex++) {
+				Graphic* Gfx = detail.GetRep(detail_level, ModelIndex);
+				if (!Gfx)
+					continue;
 
-				m.Pitch(s.X);
-				m.Yaw(s.Z);
-				m.Roll(s.Y);
+				const FVector Spin = detail.GetSpin(detail_level, ModelIndex);
 
-				scene->AddGraphic(g);
-				g->MoveTo(cam.Pos() + detail.GetOffset(detail_level, i));
-				g->SetOrientation(m);
+				Matrix StarOrient = cam.Orientation();
+				StarOrient.Pitch(Spin.X);
+				StarOrient.Yaw(Spin.Z);
+				StarOrient.Roll(Spin.Y);
+
+				Scene->AddGraphic(Gfx);
+
+				Gfx->MoveTo(cam.Pos() + detail.GetOffset(detail_level, ModelIndex));
+				Gfx->SetOrientation(ToFMatrix(StarOrient));
 			}
 
 			// show/hide external stores and landing gear...
 			if (detail.NumLevels() > 0) {
 				if (gear && (gear->GetState() != LandingGear::GEAR_UP)) {
-					for (int i = 0; i < gear->NumGear(); i++) {
-						Solid* g = gear->GetGear(i);
-
-						if (g) {
+					for (int GearIndex = 0; GearIndex < gear->NumGear(); GearIndex++) {
+						Solid* GearGfx = gear->GetGear(GearIndex);
+						if (GearGfx) {
 							if (detail_level == 0)
-								scene->DelGraphic(g);
+								Scene->DelGraphic(GearGfx);
 							else
-								scene->AddGraphic(g);
+								Scene->AddGraphic(GearGfx);
 						}
 					}
 				}
 
-				ListIter<WeaponGroup> g = weapons;
-				while (++g) {
-					ListIter<Weapon> w = g->GetWeapons();
-					while (++w) {
-						Solid* turret = w->GetTurret();
-						if (turret) {
+				ListIter<WeaponGroup> GroupIter = weapons;
+				while (++GroupIter) {
+					ListIter<Weapon> WeaponIter = GroupIter->GetWeapons();
+					while (++WeaponIter) {
+						Solid* Turret = WeaponIter->GetTurret();
+						if (Turret) {
 							if (detail_level == 0)
-								scene->DelGraphic(turret);
+								Scene->DelGraphic(Turret);
 							else
-								scene->AddGraphic(turret);
+								Scene->AddGraphic(Turret);
 
-							Solid* turret_base = w->GetTurretBase();
-							if (turret_base) {
+							Solid* TurretBase = WeaponIter->GetTurretBase();
+							if (TurretBase) {
 								if (detail_level == 0)
-									scene->DelGraphic(turret_base);
+									Scene->DelGraphic(TurretBase);
 								else
-									scene->AddGraphic(turret_base);
+									Scene->AddGraphic(TurretBase);
 							}
 						}
 
-						if (w->IsMissile()) {
-							for (int i = 0; i < w->Ammo(); i++) {
-								Solid* store = w->GetVisibleStore(i);
-								if (store) {
+						if (WeaponIter->IsMissile()) {
+							for (int AmmoIndex = 0; AmmoIndex < WeaponIter->Ammo(); AmmoIndex++) {
+								Solid* Store = WeaponIter->GetVisibleStore(AmmoIndex);
+								if (Store) {
 									if (detail_level == 0)
-										scene->DelGraphic(store);
+										Scene->DelGraphic(Store);
 									else
-										scene->AddGraphic(store);
+										Scene->AddGraphic(Store);
 								}
 							}
 						}
@@ -3325,22 +3345,24 @@ Ship::SelectDetail(double seconds)
 			}
 		}
 	}
-
 	else {
-		const int nmodels = detail.NumModels(detail_level);
+		const int NumModels = detail.NumModels(detail_level);
 
-		if (nmodels > 1) {
-			for (int i = 0; i < nmodels; i++) {
-				Graphic* g = detail.GetRep(detail_level, i);
-				const FVector s = detail.GetSpin(detail_level, i);
-				Matrix m = cam.Orientation();
+		if (NumModels > 1) {
+			for (int ModelIndex = 0; ModelIndex < NumModels; ModelIndex++) {
+				Graphic* Gfx = detail.GetRep(detail_level, ModelIndex);
+				if (!Gfx)
+					continue;
 
-				m.Pitch(s.X);
-				m.Yaw(s.Z);
-				m.Roll(s.Y);
+				const FVector Spin = detail.GetSpin(detail_level, ModelIndex);
 
-				g->MoveTo(cam.Pos() + detail.GetOffset(detail_level, i));
-				g->SetOrientation(m);
+				Matrix StarOrient = cam.Orientation();
+				StarOrient.Pitch(Spin.X);
+				StarOrient.Yaw(Spin.Z);
+				StarOrient.Roll(Spin.Y);
+
+				Gfx->MoveTo(cam.Pos() + detail.GetOffset(detail_level, ModelIndex));
+				Gfx->SetOrientation(ToFMatrix(StarOrient));
 			}
 		}
 	}
@@ -3467,7 +3489,7 @@ Ship::Update(SimObject* obj)
 
 	if (obj->Type() == SimObject::SIM_SHOT ||
 		obj->Type() == SimObject::SIM_DRONE) {
-		Shot* s = (Shot*)obj;
+		SimShot* s = (SimShot*)obj;
 
 		if (sensor_drone == s)
 			sensor_drone = 0;
@@ -3609,43 +3631,39 @@ Ship::CanTimeSkip()
 	Instruction* NavPt = GetNextNavPoint();
 
 	// Preserve original early-out logic
-	if (MissionClock() < 10000 /* || NetGame::IsNetGame() */)
-	{
+	if (MissionClock() < 10000 /* || NetGame::IsNetGame() */) {
 		return false;
 	}
 
 	bool bCanSkip = false;
 
-	if (NavPt)
-	{
+	if (NavPt) {
 		bCanSkip = true;
 
 		// Must be in the same region
-		if (NavPt->Region() != GetRegion())
-		{
+		if (NavPt->Region() != GetRegion()) {
 			bCanSkip = false;
 		}
-		else
-		{
-			// UE-style vector math (FVector::Dist or Size)
-			const FVector TargetLoc = NavPt->Location().OtherHand();
-			const float Distance = FVector::Dist(TargetLoc, Location());
+		else {
+			// Removed OtherHand(); unified coordinate system
+			const FVector TargetLoc = NavPt->Location();
 
-			if (Distance < 30000.0f)
-			{
+			// Use UE vector API
+			const double Distance = FVector::Dist(TargetLoc, Location());
+
+			if (Distance < 30000.0)
 				bCanSkip = false;
-			}
 		}
 	}
 
 	// Cannot time skip during combat
-	if (bCanSkip)
-	{
+	if (bCanSkip) {
 		bCanSkip = !IsInCombat();
 	}
 
 	return bCanSkip;
 }
+
 
 void
 Ship::TimeSkip()
@@ -3719,7 +3737,7 @@ Ship::DeathSpiral()
 	if (!killer)
 		killer = new  ShipKiller(this);
 
-	ListIter<System> iter = systems;
+	ListIter<SimSystem> iter = systems;
 	while (++iter)
 		iter->PowerOff();
 
@@ -3745,71 +3763,87 @@ Ship::DeathSpiral()
 void
 Ship::CompleteTransition()
 {
-	const int old_type = transition_type;
+	const int OldType = transition_type;
 	transition_time = 0.0f;
 	transition_type = TRANSITION_NONE;
 
-	switch (old_type) {
+	switch (OldType) {
 	case TRANSITION_NONE:
 	case TRANSITION_DROP_CAM:
 	default:
 		return;
 
-	case TRANSITION_DROP_ORBIT: {
+	case TRANSITION_DROP_ORBIT:
+	{
 		SetControls(0);
-		SimRegion* dst_rgn = sim->FindNearestTerrainRegion(this);
 
-		FVector dst_loc = Location().OtherHand() * 0.20f;
-		dst_loc.X += 6000.0f * (float)GetElementIndex();
-		dst_loc.Z = (float)(TERRAIN_ALTITUDE_LIMIT * 0.95);
-		dst_loc += RandomDirection() * 2000.0f;
+		SimRegion* DstRegion = sim ? sim->FindNearestTerrainRegion(this) : 0;
+		if (!DstRegion || !sim)
+			return;
 
-		sim->RequestHyperJump(this, dst_rgn, dst_loc, TRANSITION_DROP_ORBIT);
+		FVector DstLoc = Location() * 0.20f; // removed OtherHand()
+		DstLoc.X += 6000.0f * (float)GetElementIndex();
+		DstLoc.Z = (float)(TERRAIN_ALTITUDE_LIMIT * 0.95);
+		DstLoc += RandomDirection() * 2000.0f;
 
-		ShipStats* stats = ShipStats::Find(Name());
-		stats->AddEvent(SimEvent::BREAK_ORBIT, dst_rgn->Name());
-	} break;
+		sim->RequestHyperJump(this, DstRegion, DstLoc, TRANSITION_DROP_ORBIT);
 
-	case TRANSITION_MAKE_ORBIT: {
+		ShipStats* Stats = ShipStats::Find(Name());
+		if (Stats)
+			Stats->AddEvent(SimEvent::BREAK_ORBIT, DstRegion->GetName());
+	}
+	break;
+
+	case TRANSITION_MAKE_ORBIT:
+	{
 		SetControls(0);
-		SimRegion* dst_rgn = sim->FindNearestSpaceRegion(this);
-		const double dist = 200.0e3 + 10.0e3 * GetElementIndex();
 
-		FVector esc_vec =
-			dst_rgn->GetOrbitalRegion()->Location() -
-			dst_rgn->GetOrbitalRegion()->Primary()->Location();
+		SimRegion* DstRegion = sim ? sim->FindNearestSpaceRegion(this) : 0;
+		if (!DstRegion || !sim)
+			return;
 
-		esc_vec.Z = -100.0f * (float)GetElementIndex();
-		esc_vec.Normalize();
-		esc_vec *= (float)(-dist);
-		esc_vec += RandomDirection() * 2000.0f;
+		const double Dist = 200.0e3 + 10.0e3 * GetElementIndex();
 
-		sim->RequestHyperJump(this, dst_rgn, esc_vec, TRANSITION_MAKE_ORBIT);
+		FVector EscVec =
+			DstRegion->GetOrbitalRegion()->Location() -
+			DstRegion->GetOrbitalRegion()->Primary()->Location();
 
-		ShipStats* stats = ShipStats::Find(Name());
-		stats->AddEvent(SimEvent::MAKE_ORBIT, dst_rgn->Name());
-	} break;
+		EscVec.Z = -100.0f * (float)GetElementIndex();
+		EscVec.Normalize();
+		EscVec *= (float)(-Dist);
+		EscVec += RandomDirection() * 2000.0f;
 
-	case TRANSITION_TIME_SKIP: {
-		Instruction* navpt = GetNextNavPoint();
+		sim->RequestHyperJump(this, DstRegion, EscVec, TRANSITION_MAKE_ORBIT);
 
-		if (navpt) {
-			const FVector delta = navpt->Location().OtherHand() - Location();
+		ShipStats* Stats = ShipStats::Find(Name());
+		if (Stats)
+			Stats->AddEvent(SimEvent::MAKE_ORBIT, DstRegion->GetName());
+	}
+	break;
 
-			FVector unit = delta;
-			unit.Normalize();
+	case TRANSITION_TIME_SKIP:
+	{
+		Instruction* NavPt = GetNextNavPoint();
 
-			const FVector trans = delta + unit * -20000.0f;
-			const double dist = trans.Length();
+		if (NavPt && sim) {
+			const FVector Delta = NavPt->Location() - Location(); // removed OtherHand()
 
-			double speed = navpt->Speed();
-			if (speed < 50) speed = 500;
+			FVector Unit = Delta;
+			Unit.Normalize();
 
-			const double etr = dist / speed;
+			const FVector Trans = Delta + Unit * -20000.0f;
+			const double Dist = Trans.Size();
 
-			sim->ResolveTimeSkip(etr);
+			double Speed = NavPt->Speed();
+			if (Speed < 50.0)
+				Speed = 500.0;
+
+			const double ETR = Dist / Speed;
+
+			sim->ResolveTimeSkip(ETR);
 		}
-	} break;
+	}
+	break;
 
 	case TRANSITION_DEATH_SPIRAL:
 		SetControls(0);
@@ -3818,11 +3852,12 @@ Ship::CompleteTransition()
 	}
 }
 
+
 bool
 Ship::IsAirborne() const
 {
 	if (region)
-		return region->Type() == SimRegion::AIR_SPACE;
+		return region->GetType() == SimRegion::AIR_SPACE;
 
 	return false;
 }
@@ -3889,23 +3924,28 @@ Ship::GForce() const
 // +--------------------------------------------------------------------+
 
 WeaponGroup*
-Ship::FindWeaponGroup(const char* name)
+Ship::FindWeaponGroup(const char* InName)
 {
-	WeaponGroup* group = 0;
+	if (!InName || !*InName)
+		return nullptr;
 
-	ListIter<WeaponGroup> iter = weapons;
-	while (!group && ++iter) {
-		if (!_stricmp(iter->Name(), name)) {
-			group = iter.value();
+	WeaponGroup* FoundGroup = nullptr;
+
+	ListIter<WeaponGroup> GroupIter = weapons;
+	while (++GroupIter) {
+		if (GroupIter->Name() && _stricmp(GroupIter->Name(), InName) == 0) {
+			FoundGroup = GroupIter.value();
+			break;
 		}
 	}
 
-	if (!group) {
-		group = new  WeaponGroup(name);
-		weapons.append(group);
+	// Create group if not found (original Starshatter behavior)
+	if (!FoundGroup) {
+		FoundGroup = new WeaponGroup(InName);
+		weapons.append(FoundGroup);
 	}
 
-	return group;
+	return FoundGroup;
 }
 
 void
@@ -3980,41 +4020,47 @@ Ship::CycleSecondary()
 }
 
 int
-Ship::GetMissileEta(int index) const
+Ship::GetMissileEta(int Index) const
 {
-	if (index >= 0 && index < 4)
-		return missile_eta[index];
-
-	return 0;
+	return (Index >= 0 && Index < UE_ARRAY_COUNT(missile_eta))
+		? missile_eta[Index]
+		: 0;
 }
 
 void
-Ship::SetMissileEta(int id, int eta)
+Ship::SetMissileEta(int Id, int Eta)
 {
-	int index = -1;
+	int Index = INDEX_NONE;
 
-	// are we tracking this missile's eta?
-	for (int i = 0; i < 4; i++) {
-		if (id == missile_id[i])
-			index = i;
+	// Are we already tracking this missile?
+	for (int i = 0; i < UE_ARRAY_COUNT(missile_id); ++i)
+	{
+		if (missile_id[i] == Id)
+		{
+			Index = i;
+			break;
+		}
 	}
 
-	// if not, can we find an open slot to track it in?
-	if (index < 0) {
-		for (int i = 0; i < 4 && index < 0; i++) {
-			if (missile_eta[i] == 0) {
-				index = i;
-				missile_id[i] = id;
+	// If not, find an open slot
+	if (Index == INDEX_NONE)
+	{
+		for (int i = 0; i < UE_ARRAY_COUNT(missile_eta); ++i)
+		{
+			if (missile_eta[i] == 0)
+			{
+				Index = i;
+				missile_id[i] = Id;
+				break;
 			}
 		}
 	}
 
-	// track the eta:
-	if (index >= 0 && index < 4) {
-		if (eta > 3599)
-			eta = 3599;
-
-		missile_eta[index] = (BYTE)eta;
+	// Track the ETA (clamped to original max)
+	if (Index != INDEX_NONE)
+	{
+		Eta = FMath::Clamp(Eta, 0, 3599);
+		missile_eta[Index] = static_cast<uint8>(Eta);
 	}
 }
 
@@ -4037,51 +4083,50 @@ Ship::DoEMCON()
 double
 Ship::Thrust(double seconds) const
 {
-	double total_thrust = 0;
+	double total_thrust = 0.0;
 
 	if (main_drive) {
-		// velocity limiter:
 		const FVector H = Heading();
 		FVector       V = Velocity();
 
-		const double vmag = V.Normalize(); // returns length, V becomes unit (Starshatter style)
+		const double vmag = V.Normalize();
 		double eff_throttle = throttle;
 		double thrust_factor = 1.0;
 
-		double vfwd = H * V; // dot
-		const bool aug_on = main_drive->IsAugmenterOn();
+		double Vfwd = FVector::DotProduct(H, V);
+		const bool bAugOn = main_drive->IsAugmenterOn();
 
-		if (vmag > vlimit && vfwd > 0) {
-			double vmax = vlimit;
-			if (aug_on)
-				vmax *= 1.5;
+		if (vmag > vlimit && Vfwd > 0.0) {
+			double Vmax = vlimit;
+			if (bAugOn)
+				Vmax *= 1.5;
 
-			vfwd = 0.5 * vfwd + 0.5;
+			Vfwd = 0.5 * Vfwd + 0.5;
 
-			// reduce drive efficiency at high fwd speed:
-			thrust_factor = (vfwd * pow(vmax, 3) / pow(vmag, 3)) + (1 - vfwd);
+			thrust_factor =
+				(Vfwd * FMath::Pow(Vmax, 3.0) / FMath::Pow(vmag, 3.0)) +
+				(1.0 - Vfwd);
 		}
 
 		if (flcs)
 			eff_throttle = flcs->Throttle();
 
-		// square-law throttle curve to increase sensitivity
-		// at lower throttle settings:
 		if (flight_model > 1) {
-			eff_throttle /= 100;
+			eff_throttle /= 100.0;
 			eff_throttle *= eff_throttle;
-			eff_throttle *= 100;
+			eff_throttle *= 100.0;
 		}
 
 		main_drive->SetThrottle(eff_throttle, augmenter);
 		total_thrust += thrust_factor * main_drive->Thrust(seconds);
 
-		if (aug_on && shake < 1.5f)
+		if (bAugOn && shake < 1.5f)
 			((Ship*)this)->shake = 1.5f;
 	}
 
 	return total_thrust;
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -4163,7 +4208,7 @@ Ship::SetTransX(double t)
 			trans_x = -limit;
 
 		// reduce thruster efficiency at high fwd speed:
-		const double vfwd = cam.vrt() * Velocity();
+		const double vfwd = FVector::DotProduct(cam.vrt(), Velocity());
 		const double vmag = fabs(vfwd);
 		if (vmag > vlimit) {
 			if ((trans_x > 0 && vfwd > 0) || (trans_x < 0 && vfwd < 0))
@@ -4192,7 +4237,7 @@ Ship::SetTransY(double t)
 
 		// reduce thruster efficiency at high fwd speed:
 		if (vmag > vlimit) {
-			const double vfwd = cam.vpn() * Velocity();
+			const double vfwd = FVector::DotProduct(cam.vpn(), Velocity());
 
 			if ((trans_y > 0 && vfwd > 0) || (trans_y < 0 && vfwd < 0))
 				trans_y *= (float)(pow(vlimit, 4) / pow(vmag, 4));
@@ -4217,7 +4262,7 @@ Ship::SetTransZ(double t)
 			trans_z = -limit;
 
 		// reduce thruster efficiency at high fwd speed:
-		const double vfwd = cam.vup() * Velocity();
+		const double vfwd = FVector::DotProduct(cam.vup(), Velocity());
 		const double vmag = fabs(vfwd);
 		if (vmag > vlimit) {
 			if ((trans_z > 0 && vfwd > 0) || (trans_z < 0 && vfwd < 0))
@@ -4339,7 +4384,7 @@ Ship::FireWeapon(int n)
 	}
 
 	if (!fired && sim->GetPlayerShip() == this)
-		Button::PlaySound(Button::SND_REJECT);
+		UIButton::PlaySound(UIButton::SND_REJECT);
 
 	return fired;
 }
@@ -4347,7 +4392,7 @@ Ship::FireWeapon(int n)
 bool
 Ship::FireDecoy()
 {
-	Shot* drone = 0;
+	SimShot* drone = 0;
 
 	if (decoy && !CheckFire()) {
 		drone = decoy->Fire();
@@ -4365,7 +4410,7 @@ Ship::FireDecoy()
 		//}
 		//else 
 		if (!drone) {
-			Button::PlaySound(Button::SND_REJECT);
+			UIButton::PlaySound(UIButton::SND_REJECT);
 		}
 	}
 
@@ -4454,13 +4499,13 @@ Ship::GetDecoy() const
 	return decoy;
 }
 
-List<Shot>&
+List<SimShot>&
 Ship::GetActiveDecoys()
 {
 	return decoy_list;
 }
 
-List<Shot>&
+List<SimShot>&
 Ship::GetThreatList()
 {
 	return threat_list;
@@ -4920,11 +4965,11 @@ Ship::ExecMaintFrame(double seconds)
 					}
 				}
 
-				ListIter<Component> comp = sys->GetComponents();
+				ListIter<SimComponent> comp = sys->GetComponents();
 				while (++comp) {
-					Component* c = comp.value();
+					SimComponent* c = comp.value();
 
-					if (c->Status() < Component::NOMINAL && c->Availability() < 75) {
+					if (c->Status() < SimComponent::NOMINAL && c->Availability() < 75) {
 						if (c->SpareCount() &&
 							c->ReplaceTime() <= 300 &&
 							(c->Availability() < 50 ||
@@ -5043,7 +5088,12 @@ Ship::SetControls(MotionController* m)
 
 	else if (life == 0) {
 		if (dir || navsys) {
-			UE_LOG(LogTemp, Warning, TEXT("Warning: dying ship '%s' still has notxbeen destroyed!"), *FString(name.data()));
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Warning: dying ship '%s' still has not been destroyed!"),
+				ANSI_TO_TCHAR(name)
+			);
 			delete dir;
 			dir = 0;
 
@@ -5138,7 +5188,7 @@ Ship::IFFColor(int iff)
 		break;
 
 	default:
-		c = Color(128, 128, 128);
+		c = FColor(128, 128, 128);
 		break;
 	}
 

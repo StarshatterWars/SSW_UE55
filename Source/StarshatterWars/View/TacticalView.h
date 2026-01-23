@@ -18,16 +18,16 @@
 
 #include "Types.h"
 #include "View.h"
-#include "Color.h"
 #include "SimObject.h"
 #include "Text.h"
 
 // Minimal Unreal include for FVector conversion (replaces Point/Vec3 usage in this header):
 #include "Math/Vector.h" // FVector
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
-class Font;
+class SystemFont;
 class Ship;
 class RadioMessage;
 class CameraView;
@@ -57,7 +57,7 @@ public:
     virtual bool        Update(SimObject* obj);
     virtual const char* GetObserverName() const;
 
-    static void         SetColor(Color c);
+    static void         SetColor(FColor c);
 
     static void         Initialize();
     static void         Close();
@@ -107,7 +107,7 @@ protected:
     FVector             mouse_start;
     Rect                mouse_rect;
 
-    Font*               font;
+    SystemFont*         font;
     Sim*                sim;
     Ship*               ship;
     Ship*               msg_ship;

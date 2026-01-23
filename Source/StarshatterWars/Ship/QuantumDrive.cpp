@@ -30,7 +30,7 @@
 
 // +----------------------------------------------------------------------+
 
-static int drive_value = 3;
+static int qdrive_value = 3;
 
 // +----------------------------------------------------------------------+
 // Local UE-friendly random helpers (no global rand()).
@@ -56,7 +56,7 @@ static inline FVector RandomDirectionPoint()
 // +----------------------------------------------------------------------+
 
 QuantumDrive::QuantumDrive(SUBTYPE s, double cap, double rate)
-	: SimSystem(DRIVE, s, "Quantum", drive_value, (float)cap, (float)cap, (float)rate),
+	: SimSystem(DRIVE, s, "Quantum", qdrive_value, (float)cap, (float)cap, (float)rate),
 	dst_rgn(0),
 	active_state(ACTIVE_READY),
 	warp_fov(1),
@@ -273,7 +273,7 @@ QuantumDrive::Jump()
 
 		ShipStats* stats = ShipStats::Find(ship->Name());
 		if (stats)
-			stats->AddEvent(SimEvent::QUANTUM_JUMP, dst_rgn->Name());
+			stats->AddEvent(SimEvent::QUANTUM_JUMP, dst_rgn->GetName());
 	}
 
 	dst_rgn = 0;

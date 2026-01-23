@@ -81,7 +81,7 @@
 #include "Screen.h"
 #include "Window.h"
 #include "ActiveWindow.h"
-#include "Button.h"
+#include "UIButton.h"
 #include "CameraView.h"
 #include "ImgView.h"
 #include "FadeView.h"

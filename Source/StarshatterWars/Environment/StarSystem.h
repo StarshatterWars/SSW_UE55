@@ -181,7 +181,7 @@ protected:
 
 // +--------------------------------------------------------------------+
 
-class Orbital
+class Orbital 
 {
 	friend class StarSystem;
 

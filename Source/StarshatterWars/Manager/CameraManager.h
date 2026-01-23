@@ -95,8 +95,8 @@ public:
 
 	virtual void       CycleViewObject();
 
-	virtual Orbital* GetViewOrbital() const { return external_body; }
-	virtual Ship* GetViewObject()  const { return external_ship; }
+	virtual Orbital*   GetViewOrbital() const { return external_body; }
+	virtual Ship*	   GetViewObject()  const { return external_ship; }
 
 	virtual void       SetViewOrbital(Orbital* orb);
 	virtual void       SetViewObject(Ship* obj, bool quick = false);

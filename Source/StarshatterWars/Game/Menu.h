@@ -7,6 +7,8 @@
 #include "List.h"
 #include "Text.h"
 
+#include <cstdint>
+
 // +-------------------------------------------------------------------+
 
 class Menu;
@@ -32,7 +34,8 @@ public:
 	virtual Menu*	  GetParent()    const { return parent; }
 	virtual void      SetParent(Menu* p) { parent = p; }
 
-	virtual void      AddItem(Text label, DWORD value = 0, bool enabled = true);
+	
+	virtual void	  AddItem(Text label, uintptr_t value = 0, bool enabled = true);
 	virtual void      AddItem(MenuItem* item);
 	virtual void      AddMenu(Text label, Menu* menu, DWORD value = 0);
 	virtual MenuItem* GetItem(int index);
@@ -63,8 +66,12 @@ public:
 	virtual Text      GetText()      const { return text; }
 	virtual void      SetText(Text t) { text = t; }
 
-	virtual DWORD     GetData()      const { return data; }
-	virtual void      SetData(DWORD d) { data = d; }
+	
+	//virtual DWORD     GetData()      const { return data; }
+	//virtual void      SetData(DWORD d) { data = d; }
+
+	virtual uintptr_t  GetData() const { return data; }
+	virtual void	   SetData(uintptr_t v) { data = v; }
 
 	virtual int       GetEnabled()   const { return enabled; }
 	virtual void      SetEnabled(int  e) { enabled = e; }
@@ -72,15 +79,17 @@ public:
 	virtual int       GetSelected()  const { return selected; }
 	virtual void      SetSelected(int  s) { selected = s; }
 
-	virtual Menu* GetMenu()      const { return menu; }
+	virtual Menu*	  GetMenu()      const { return menu; }
 	virtual void      SetMenu(Menu* m) { menu = m; }
 
-	virtual Menu* GetSubmenu()   const { return submenu; }
+	virtual Menu*	  GetSubmenu()   const { return submenu; }
 	virtual void      SetSubmenu(Menu* s) { submenu = s; }
 
 protected:
 	Text           text;
-	DWORD          data;
+	//DWORD          data;
+	// was: DWORD data;
+	uintptr_t      data = 0;
 	int            enabled;
 	int            selected;
 

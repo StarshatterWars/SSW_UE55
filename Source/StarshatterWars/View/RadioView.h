@@ -18,20 +18,22 @@
 
 #include "Types.h"
 #include "View.h"
-#include "Color.h"
 #include "SimObject.h"
 #include "Text.h"
 
+#include "Math/Color.h"
+
 // +--------------------------------------------------------------------+
 
-class Font;
-class Element;
+class SystemFont;
+class SimElement;
 class Ship;
 class RadioMessage;
 class CameraView;
 class HUDView;
 class Menu;
 class MenuItem;
+class SimElement;
 
 class Sim;
 class ThreadSync;
@@ -50,7 +52,7 @@ public:
 	virtual void      OnWindowMove();
 	virtual void      ExecFrame();
 
-	virtual Menu* GetRadioMenu(Ship* ship);
+	virtual Menu*	  GetRadioMenu(Ship* ship);
 	virtual bool      IsMenuShown();
 	virtual void      ShowMenu();
 	virtual void      CloseMenu();
@@ -61,7 +63,7 @@ public:
 	virtual bool         Update(SimObject* obj);
 	virtual const char* GetObserverName() const;
 
-	static void       SetColor(Color c);
+	static void       SetColor(FColor c);
 
 	static void       Initialize();
 	static void       Close();
@@ -74,10 +76,10 @@ protected:
 	int         width, height;
 	double      xcenter, ycenter;
 
-	Font* font;
+	SystemFont* font;
 	Sim* sim;
 	Ship* ship;
-	Element* dst_elem;
+	SimElement* dst_elem;
 
 	enum { MAX_MSG = 6 };
 	Text        msg_text[MAX_MSG];

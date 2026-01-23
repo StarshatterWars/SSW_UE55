@@ -18,7 +18,7 @@
 
 #include "DataLoader.h"
 #include "ParseUtil.h"
-#include "Button.h"
+#include "UIButton.h"
 #include "Game.h"
 
 // Minimal Unreal logging support:
@@ -203,7 +203,7 @@ AudioConfig::SetGuiVolume(int v)
 	else if (v > 100) v = 100;
 
 	gui_volume = v;
-	Button::SetVolume(-50 * (100 - gui_volume));
+	UIButton::SetVolume(-50 * (100 - gui_volume));
 }
 
 void
@@ -213,7 +213,7 @@ AudioConfig::SetWrnVolume(int v)
 	else if (v > 100) v = 100;
 
 	wrn_volume = v;
-	Button::SetVolume(-50 * (100 - wrn_volume));
+	UIButton::SetVolume(-50 * (100 - wrn_volume));
 }
 
 void
@@ -329,7 +329,7 @@ AudioConfig::Load()
 					}
 					else {
 						gui_volume = v;
-						Button::SetVolume(-50 * (100 - gui_volume));
+						UIButton::SetVolume(-50 * (100 - gui_volume));
 					}
 				}
 

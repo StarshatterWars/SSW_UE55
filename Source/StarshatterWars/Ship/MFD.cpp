@@ -73,10 +73,6 @@ static BYTE* sensor_fwd_shade = nullptr;
 static BYTE* sensor_hsd_shade = nullptr;
 static BYTE* sensor_3d_shade = nullptr;
 
-// Unreal colors (HUDView/Window drawing expects FColor in the UE port):
-static FColor hud_color = FColor::Black;
-static FColor txt_color = FColor::Black;
-
 // +--------------------------------------------------------------------+
 
 MFD::MFD(Window* c, int n)

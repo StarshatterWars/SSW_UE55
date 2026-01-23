@@ -27,7 +27,7 @@
 #include "Mouse.h"
 #include "MouseController.h"
 #include "Menu.h"
-#include "Button.h"
+#include "UIButton.h"
 #include "Game.h"
 #include "FormatUtil.h"
 
@@ -43,8 +43,8 @@ MenuView::MenuView(Window* c)
     menu(0),
     menu_item(0),
     selected(0),
-    text_color(Color::White),
-    back_color(Color::Black)
+    text_color(FColor::White),
+    back_color(FColor::Black)
 {
     right_start.x = 0;
     right_start.y = 0;
@@ -95,7 +95,7 @@ void MenuView::DoMouseFrame()
             right_start.x = Mouse::X() - offset.x;
             right_start.y = Mouse::Y() - offset.y;
             show_menu = true;
-            Button::PlaySound(Button::SND_MENU_OPEN);
+            UIButton::PlaySound(UIButton::SND_MENU_OPEN);
         }
 
         right_down = false;
@@ -146,12 +146,12 @@ int MenuView::ProcessMenuItem()
             else
                 item->SetSelected(0);
 
-        Button::PlaySound(Button::SND_MENU_OPEN);
+        UIButton::PlaySound(UIButton::SND_MENU_OPEN);
         return true; // keep menu showing
     }
 
     action = menu_item->GetData();
-    Button::PlaySound(Button::SND_MENU_SELECT);
+    UIButton::PlaySound(UIButton::SND_MENU_SELECT);
     return false;
 }
 
@@ -176,7 +176,7 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
         Menu* submenu = 0;
         int       subx = 0;
         int       suby = 0;
-        SystemFont* font = FontMgr::Find("HUD");
+        SystemFont* font = FontManager::Find("HUD");
 
         Rect menu_rect(mx, my, 100, m->NumItems() * 10 + 6);
 
@@ -215,7 +215,11 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
         if (menu_rect.y + menu_rect.h >= height)
             menu_rect.y = height - menu_rect.h - 2;
 
-        window->FillRect(menu_rect, back_color * 0.2);
+        window->FillRect(
+            menu_rect,
+            (FLinearColor(back_color) * 0.2f).ToFColor(true)
+        );
+
         window->DrawRect(menu_rect, back_color);
 
         Rect item_rect = menu_rect;
@@ -254,7 +258,7 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
 
                         if (menu_item && menu_item != selected) {
                             selected = menu_item;
-                            Button::PlaySound(Button::SND_MENU_HILITE);
+                            UIButton::PlaySound(UIButton::SND_MENU_HILITE);
                         }
                     }
                     else if (item.value() != locked_item) {
@@ -263,8 +267,19 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
                 }
 
                 if (item->GetSelected()) {
-                    window->FillRect(fill_rect, back_color * 0.35);
-                    window->DrawRect(fill_rect, back_color * 0.75);
+                    
+                    auto ScaleColor = [](const FColor& C, float S) -> FColor
+                        {
+                            return FColor(
+                                uint8(FMath::Clamp(C.R * S, 0.0f, 255.0f)),
+                                uint8(FMath::Clamp(C.G * S, 0.0f, 255.0f)),
+                                uint8(FMath::Clamp(C.B * S, 0.0f, 255.0f)),
+                                C.A
+                            );
+                        };
+
+                    window->FillRect(fill_rect, ScaleColor(back_color, 0.35f));
+                    window->DrawRect(fill_rect, ScaleColor(back_color, 0.75f));
 
                     if (item->GetSubmenu()) {
                         submenu = item->GetSubmenu();
@@ -272,11 +287,17 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
                         suby = fill_rect.y - 3;
                     }
                 }
-
                 if (item->GetEnabled())
+                {
                     font->SetColor(text_color);
+                }
                 else
-                    font->SetColor(text_color * 0.33);
+                {
+                    const FColor DimColor =
+                        (FLinearColor(text_color) * 0.33f).ToFColor(true);
+
+                    font->SetColor(DimColor);
+                }
 
                 window->SetFont(font);
                 window->DrawText(item->GetText(), 0, item_rect, DT_LEFT | DT_SINGLELINE);
@@ -296,14 +317,14 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
                 int top = item_rect.y + 1;
 
                 // draw the arrow:
-                POINT arrow[3];
+                FVector arrow[3];
 
-                arrow[0].x = left;
-                arrow[0].y = top;
-                arrow[1].x = left + 8;
-                arrow[1].y = top + 4;
-                arrow[2].x = left;
-                arrow[2].y = top + 8;
+                arrow[0].X = left;
+                arrow[0].Y = top;
+                arrow[1].X = left + 8;
+                arrow[1].Y = top + 4;
+                arrow[2].X = left;
+                arrow[2].Y = top + 8;
 
                 window->FillPoly(3, arrow, back_color);
             }
@@ -322,14 +343,19 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
 
 // +--------------------------------------------------------------------+
 
-void MenuView::ClearMenuSelection(Menu* menu)
+void
+MenuView::ClearMenuSelection(Menu* InMenu)
 {
-    if (menu) {
-        ListIter<MenuItem> item = menu->GetItems();
-        while (++item) {
-            item->SetSelected(0);
-            if (item->GetSubmenu())
-                ClearMenuSelection(item->GetSubmenu());
+    if (!InMenu)
+        return;
+
+    ListIter<MenuItem> ItemIter = InMenu->GetItems();
+    while (++ItemIter) {
+        ItemIter->SetSelected(false);
+
+        Menu* SubMenu = ItemIter->GetSubmenu();
+        if (SubMenu) {
+            ClearMenuSelection(SubMenu);
         }
     }
 }

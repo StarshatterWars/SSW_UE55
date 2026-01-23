@@ -19,12 +19,12 @@
 #include "Types.h"
 #include "View.h"
 #include "SimObject.h"
-#include "Color.h"
 #include "Text.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
-class Font;
+class SystemFont;
 class HUDView;
 class Menu;
 class RadioMessage;
@@ -54,7 +54,7 @@ public:
 	virtual bool         Update(SimObject* obj);
 	virtual const char* GetObserverName() const;
 
-	static void       SetColor(Color c);
+	static void       SetColor(FColor c);
 
 	static void       Initialize();
 	static void       Close();
@@ -65,7 +65,7 @@ protected:
 	int         width, height;
 	double      xcenter, ycenter;
 
-	Font* font;
+	SystemFont* font;
 	Sim* sim;
 	Ship* ship;
 
