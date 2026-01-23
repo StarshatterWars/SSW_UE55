@@ -82,7 +82,7 @@
 #include "ActiveWindow.h"
 #include "UIButton.h"
 #include "CameraView.h"
-#include "ImgView.h"
+#include "ImageView.h"
 #include "FadeView.h"
 #include "Color.h"
 #include "Bitmap.h"
@@ -95,7 +95,7 @@
 #include "TrackIR.h"
 #include "EventDispatch.h"
 #include "MultiController.h"
-#include "Archive.h"
+#include "Archiver.h"
 #include "DataLoader.h"
 #include "Resource.h"
 #include "Universe.h"
@@ -138,7 +138,7 @@ Starshatter::Starshatter()
 	cmpnscreen(0), gamescreen(0), splash(0), splash_index(0),
 	input(0), loader(0), cam_dir(0), music_dir(0),
 	field_of_view(2), time_mark(0), minutes(0),
-	player_ship(0), net_lobby(0),
+	player_ship(0),
 	spinning(false), tactical(false), mouse_x(0), mouse_y(0),
 	game_mode(MENU_MODE), mouse_input(0), head_tracker(0),
 	terminal(0), verdana(0), limerick18(0), limerick12(0),
@@ -152,7 +152,7 @@ Starshatter::Starshatter()
 		instance = this;
 
 	app_name = "Starshatter Wars";
-	title_text = "STARSHATTER WARS";
+	title_text = "Starshatter Wars";
 	palette_name = "alpha";
 
 	gamma = 128; // default - flat gamma ramp
@@ -167,8 +167,6 @@ Starshatter::Starshatter()
 		const char* err_msg = loadstat == DataLoader::DATAFILE_INVALID ?
 			"The file 'shatter.dat' appears to have been damaged.  Please re-install Starshatter Wars." :
 			"Starshatter Wars cannotxopen the file 'shatter.dat'.  Please re-install Starshatter Wars.";
-
-		::MessageBox(hwnd, err_msg, "Starshatter Wars - Error", MB_OK);
 
 		UE_LOG(LogStarshatterWars, Error, TEXT("%s"), UTF8_TO_TCHAR(err_msg));
 		UE_LOG(LogStarshatterWars, Error, TEXT("FATAL ERROR: EXIT."));
@@ -189,26 +187,26 @@ Starshatter::Starshatter()
 	// create the fonts
 	loader->SetDataPath("Fonts/");
 
-	HUDfont = new  Font("HUDfont");
-	FontMgr::Register("HUD", HUDfont);
+	HUDfont = new  SystemFont("HUDfont");
+	FontManager::Register("HUD", HUDfont);
 
-	GUIfont = new  Font("GUIfont");
-	FontMgr::Register("GUI", GUIfont);
+	GUIfont = new  SystemFont("GUIfont");
+	FontManager::Register("GUI", GUIfont);
 
-	GUI_small_font = new  Font("GUIsmall");
-	FontMgr::Register("GUIsmall", GUI_small_font);
+	GUI_small_font = new  SystemFont("GUIsmall");
+	FontManager::Register("GUIsmall", GUI_small_font);
 
-	limerick12 = new  Font("Limerick12");
-	limerick18 = new  Font("Limerick18");
-	terminal = new  Font("Terminal");
-	verdana = new  Font("Verdana");
-	ocrb = new  Font("OCRB");
+	limerick12 = new  SystemFont("Limerick12");
+	limerick18 = new  SystemFont("Limerick18");
+	terminal = new  SystemFont("Terminal");
+	verdana = new  SystemFont("Verdana");
+	ocrb = new  SystemFont("OCRB");
 
-	FontMgr::Register("Limerick12", limerick12);
-	FontMgr::Register("Limerick18", limerick18);
-	FontMgr::Register("Terminal", terminal);
-	FontMgr::Register("Verdana", verdana);
-	FontMgr::Register("OCRB", ocrb);
+	FontManager::Register("Limerick12", limerick12);
+	FontManager::Register("Limerick18", limerick18);
+	FontManager::Register("Terminal", terminal);
+	FontManager::Register("Verdana", verdana);
+	FontManager::Register("OCRB", ocrb);
 
 	loader->SetDataPath(0);
 
@@ -296,7 +294,7 @@ Starshatter::~Starshatter()
 void
 Starshatter::Exit()
 {
-	MusicDirector::SetMode(MusicDirector::NONE);
+	MusicManager::SetMode(MusicManager::NONE);
 	SetGameMode(EXIT_MODE);
 }
 

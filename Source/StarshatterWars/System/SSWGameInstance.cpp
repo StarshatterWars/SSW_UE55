@@ -81,11 +81,6 @@ FString USSWGameInstance::GetProjectPath()
 	return ProjectPath;
 }
 
-void USSWGameInstance::Print(FString Msg, FString File)
-{
-	UE_LOG(LogTemp, Log, TEXT("%s :%s"), *Msg, *File);
-}
-
 void USSWGameInstance::SpawnGalaxy()
 {
 	/*UWorld* World = GetWorld();
