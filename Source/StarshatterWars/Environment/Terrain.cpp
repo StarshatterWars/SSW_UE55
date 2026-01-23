@@ -580,10 +580,11 @@ Terrain::Height(double x, double y) const
 // +--------------------------------------------------------------------+
 
 void
-Terrain::SetDetailLevel(int detail)
+Terrain::SetDetailLevel(int32 DetailLevel)
 {
-	if (detail >= 1 && detail <= 4) {
-		detail_level = detail;
+	const bool bValidDetailLevel = (DetailLevel >= 1) && (DetailLevel <= 4);
+	if (bValidDetailLevel) {
+		detail_level = DetailLevel;
 	}
 }
 

@@ -56,7 +56,7 @@ static inline void ZeroMem(void* Ptr, size_t SizeBytes)
 
 static inline double AbsD(double v) { return v < 0 ? -v : v; }
 
-FORCEINLINE uint32 PackColor(const FColor& C)
+FORCEINLINE uint32 TPPackColor(const FColor& C)
 {
 	return (uint32(C.A) << 24) |
 		(uint32(C.R) << 16) |
@@ -979,7 +979,7 @@ TerrainPatch::Render(Video* video, DWORD flags)
 
 	video->SetRenderState(
 		Video::FOG_COLOR,
-		PackColor(terrain->GetRegion()->FogColor())
+		TPPackColor(terrain->GetRegion()->FogColor())
 	);
 	video->SetRenderState(Video::FOG_DENSITY, *((DWORD*)&fog_density));
 

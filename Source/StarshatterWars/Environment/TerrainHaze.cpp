@@ -26,14 +26,6 @@
 // require a texture reference, so it has been removed.
 // +====================================================================+
 
-FORCEINLINE uint32 PackColor(const FColor& C)
-{
-	return (uint32(C.A) << 24) |
-		(uint32(C.R) << 16) |
-		(uint32(C.G) << 8) |
-		(uint32(C.B));
-}
-
 TerrainHaze::TerrainHaze()
 	: tregion(nullptr)
 {

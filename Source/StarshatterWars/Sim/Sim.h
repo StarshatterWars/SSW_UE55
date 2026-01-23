@@ -272,14 +272,14 @@ public:
     bool                 IsOrbital()  const { return type == REAL_SPACE; }
     bool                 CanTimeSkip()const;
 
-    virtual Ship*          FindShipByObjID(DWORD objid);
-    virtual SimShot*       FindShotByObjID(DWORD objid);
-
     virtual void         InsertObject(Ship* ship);
     virtual void         InsertObject(SimShot* shot);
     virtual void         InsertObject(Explosion* explosion);
     virtual void         InsertObject(Debris* debris);
     virtual void         InsertObject(Asteroid* asteroid);
+
+    virtual Ship* FindShipByObjID(uint32 objid);
+    virtual SimShot* FindShotByObjID(uint32 objid);
 
     const char*             GetName() const { return name; }
     int                     GetType() const { return type; }

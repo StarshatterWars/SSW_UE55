@@ -155,10 +155,14 @@ CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
     if (info) {
         campaign->GetMissionList().append(info);
 
-        UE_LOG(LogStarshatterWars, Log, TEXT("CMS Created %03d '%s' %s"),
+        UE_LOG(
+            LogStarshatterWars,
+            Log,
+            TEXT("CMS Created %03d '%s' %s"),
             info->id,
-            *info->name,
-            ANSI_TO_TCHAR(Mission::RoleName(mission->Type())));
+            ANSI_TO_TCHAR(info->name),
+            ANSI_TO_TCHAR(Mission::RoleName(mission->Type()))
+        );
 
         if (dump_missions) {
             Text script = mission->Serialize();

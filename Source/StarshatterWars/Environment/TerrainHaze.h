@@ -26,6 +26,14 @@ class TerrainRegion;
 
 // +--------------------------------------------------------------------+
 
+FORCEINLINE uint32 PackColor(const FColor& C)
+{
+	return (uint32(C.A) << 24) |
+		(uint32(C.R) << 16) |
+		(uint32(C.G) << 8) |
+		(uint32(C.B));
+}
+
 class TerrainHaze : public Solid
 {
 public:

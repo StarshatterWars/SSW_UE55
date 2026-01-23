@@ -280,17 +280,21 @@ TerrainRegion::LoadSkyColors(const char* bmp_name)
 // +--------------------------------------------------------------------+
 
 void
-TerrainRegion::AddLayer(double h, const char* tile, const char* detail)
+TerrainRegion::AddLayer(double Height, const char* Tile, const char* Detail)
 {
-	TerrainLayer* layer = new TerrainLayer;
+	TerrainLayer* Layer = new TerrainLayer;
+	if (!Layer)
+		return;
 
-	layer->min_height = h;
-	layer->tile_name = tile;
+	Layer->min_height = Height;
+	Layer->tile_name = Tile;
 
-	if (detail && *detail)
-		layer->detail_name = detail;
+	const bool bHasDetail = (Detail != nullptr) && (*Detail != '\0');
+	if (bHasDetail) {
+		Layer->detail_name = Detail;
+	}
 
-	layers.append(layer);
+	layers.append(Layer);
 }
 
 const Text&

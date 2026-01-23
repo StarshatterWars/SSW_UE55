@@ -49,7 +49,7 @@ class SimRegion;
 
 // +--------------------------------------------------------------------+
 
-FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
+FORCEINLINE uint8 ScaleHUDByte(uint8 Value, float Scale)
 {
     const int32 Scaled = FMath::RoundToInt((float)Value * Scale);
     return (uint8)FMath::Clamp(Scaled, 0, 255);

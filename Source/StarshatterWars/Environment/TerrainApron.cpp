@@ -14,10 +14,10 @@
 	========
 */
 
+#include "TerrainApron.h"
 #include "GameStructs.h"
 
 #include "Terrain.h"
-#include "TerrainApron.h"
 #include "TerrainRegion.h"
 
 #include "CameraView.h"
