@@ -47,7 +47,6 @@
 
 // +====================================================================+
 
-static bool             show_menu = false;
 static Bitmap*			menu_bmp = 0;
 static MouseController* mouse_con = 0;
 static bool             mouse_active = false;

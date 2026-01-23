@@ -237,32 +237,33 @@ TerrainClouds::Update()
 void
 TerrainClouds::Illuminate(FColor Ambient, List<SimLight>& Lights)
 {
-	if (!terrain || !verts)
+	(void)Ambient;
+	(void)Lights;
+
+	if (!terrain || !verts || !terrain->GetRegion() || !verts->diffuse || !verts->specular)
 		return;
 
-	const DWORD CloudColor =
-		terrain->GetRegion()->CloudColor().WithAlpha(255).DWColor();
+	const FColor CloudColor = terrain->GetRegion()->CloudColor().WithAlpha(255);
+	const FColor ShadeColor = terrain->GetRegion()->ShadeColor().WithAlpha(255);
 
-	const DWORD ShadeColor =
-		terrain->GetRegion()->ShadeColor().WithAlpha(255).DWColor();
+	const int32 Stride = (type > 0) ? 8 : 4;
 
-	const int Stride = (type > 0) ? 8 : 4;
-
-	for (int i = 0; i < nbanks; ++i) {
+	// Starshatter behavior: clouds are pre-colored per bank, not dynamically lit.
+	for (int32 BankIndex = 0; BankIndex < nbanks; ++BankIndex) {
 
 		// Primary cloud layer
-		for (int n = 0; n < 4; ++n) {
-			const int Index = Stride * i + n;
+		for (int32 VertexInBank = 0; VertexInBank < 4; ++VertexInBank) {
+			const int32 Index = Stride * BankIndex + VertexInBank;
 			verts->diffuse[Index] = CloudColor;
-			verts->specular[Index] = 0xFF000000; // opaque black specular
+			verts->specular[Index] = FColor(0, 0, 0, 255); // opaque black specular
 		}
 
 		// Secondary shade layer (only for layered clouds)
 		if (type > 0) {
-			for (int n = 4; n < 8; ++n) {
-				const int Index = Stride * i + n;
+			for (int32 VertexInBank = 4; VertexInBank < 8; ++VertexInBank) {
+				const int32 Index = Stride * BankIndex + VertexInBank;
 				verts->diffuse[Index] = ShadeColor;
-				verts->specular[Index] = 0xFF000000;
+				verts->specular[Index] = FColor(0, 0, 0, 255);
 			}
 		}
 	}

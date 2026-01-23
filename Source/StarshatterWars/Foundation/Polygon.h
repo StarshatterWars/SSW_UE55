@@ -154,8 +154,8 @@ struct VertexSet
     float* tv;
     float* tu1;
     float* tv1;
-    DWORD* diffuse;
-    DWORD* specular;
+    FColor* diffuse;
+    FColor* specular;
     FVector* tangent;
     FVector* binormal;
 };

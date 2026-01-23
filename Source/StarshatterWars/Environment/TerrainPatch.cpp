@@ -261,81 +261,86 @@ static void bisect(VertexSet* vset, int v[4])
 	}
 }
 
-bool
-TerrainPatch::BuildDetailLevel(int level)
+bool TerrainPatch::BuildDetailLevel(int level)
 {
 	int i, j;
 
-	int detail_size = 1 << level;
-	int ds1 = detail_size + 1;
+	const int DetailSize = 1 << level;
+	const int Ds1 = DetailSize + 1;
 
-	if (detail_size > PATCH_SIZE)
+	if (DetailSize > PATCH_SIZE)
 		return false;
 
-	Model* localModel = new Model;
-	detail_levels[level] = localModel;
+	Model* LocalModel = new Model;
+	detail_levels[level] = LocalModel;
 
-	localModel->SetLuminous(luminous);
-	localModel->SetDynamic(true);
+	LocalModel->SetLuminous(luminous);
+	LocalModel->SetDynamic(true);
 
 	const int NUM_STRIPS = 4;
 	const int NUM_INDICES_QUAD = 6;
 
-	int nverts = ds1 * ds1 + ds1 * 2 * NUM_STRIPS;
-	int npolys = detail_size * detail_size * 2;
-	int strip_len = detail_size;
+	int nverts = Ds1 * Ds1 + Ds1 * 2 * NUM_STRIPS;
+	int npolys = DetailSize * DetailSize * 2;
+	int strip_len = DetailSize;
 	int total = npolys + strip_len * NUM_STRIPS;
 
 	if (water) {
-		nverts = ds1 * ds1;
+		nverts = Ds1 * Ds1;
 		strip_len = 0;
 		total = npolys;
 	}
 
-	Surface* s = new Surface;
+	Surface* SurfacePtr = new Surface;
 	VertexSet* vset = nullptr;
 
-	if (s) {
-		s->SetName("default");
-		s->CreateVerts(nverts);
-		s->CreatePolys(total);
-		s->AddIndices(npolys * NUM_INDICES_TRI + strip_len * NUM_STRIPS * NUM_INDICES_QUAD);
+	if (SurfacePtr) {
+		SurfacePtr->SetName("default");
+		SurfacePtr->CreateVerts(nverts);
+		SurfacePtr->CreatePolys(total);
+		SurfacePtr->AddIndices(npolys * NUM_INDICES_TRI + strip_len * NUM_STRIPS * NUM_INDICES_QUAD);
 
-		vset = s->GetVertexSet();
+		vset = SurfacePtr->GetVertexSet();
 		if (!water)
 			vset->CreateAdditionalTexCoords();
 
-		ZeroMem(vset->loc, nverts * sizeof(Vec3));
-		ZeroMem(vset->diffuse, nverts * sizeof(DWORD));
-		ZeroMem(vset->specular, nverts * sizeof(DWORD));
-		ZeroMem(vset->tu, nverts * sizeof(float));
-		ZeroMem(vset->tv, nverts * sizeof(float));
+		// NOTE:
+		// - vset->loc / vset->nrm / vset->s_loc are FVector*
+		// - vset->diffuse is DWORD* (packed)
+		// - vset->specular is FColor* (your current VertexSet definition)
+		FMemory::Memzero(vset->loc, nverts * sizeof(FVector));
+		FMemory::Memzero(vset->diffuse, nverts * sizeof(DWORD));
+		FMemory::Memzero(vset->specular, nverts * sizeof(FColor));
+		FMemory::Memzero(vset->tu, nverts * sizeof(float));
+		FMemory::Memzero(vset->tv, nverts * sizeof(float));
 		if (!water) {
-			ZeroMem(vset->tu1, nverts * sizeof(float));
-			ZeroMem(vset->tv1, nverts * sizeof(float));
+			FMemory::Memzero(vset->tu1, nverts * sizeof(float));
+			FMemory::Memzero(vset->tv1, nverts * sizeof(float));
 		}
-		ZeroMem(vset->rw, nverts * sizeof(float));
+		FMemory::Memzero(vset->rw, nverts * sizeof(float));
 
 		// initialize vertices
-		Vec3* pVert = vset->loc;
+		FVector* pVert = vset->loc;
 		float* pTu = vset->tu;
 		float* pTv = vset->tv;
 		float* pTu1 = vset->tu1;
 		float* pTv1 = vset->tv1;
-		DWORD* pSpec = vset->specular;
+		FColor* pSpec = vset->specular;
 
-		int    dscale = (PATCH_SIZE - 1) / detail_size;
-		double dt = 0.0625 / (ds1 - 1); // terrain texture scale
-		double dtt = 2.0000 / (ds1 - 1); // tile texture scale
-		double tu0 = (double)rect.x / rect.w / 16.0 + 1.0 / 16.0;
-		double tv0 = (double)rect.y / rect.h / 16.0;
+		const int    dscale = (PATCH_SIZE - 1) / DetailSize;
+		const double dt = 0.0625 / (Ds1 - 1);  // terrain texture scale
+		const double dtt = 2.0000 / (Ds1 - 1);  // tile texture scale
+		const double tu0 = (double)rect.x / rect.w / 16.0 + 1.0 / 16.0;
+		const double tv0 = (double)rect.y / rect.h / 16.0;
 
 		// surface verts
-		for (i = 0; i < ds1; i++) {
-			for (j = 0; j < ds1; j++) {
-				*pVert = Vec3((float)(j * scale * dscale - (HALF_PATCH_SIZE * scale)),
+		for (i = 0; i < Ds1; i++) {
+			for (j = 0; j < Ds1; j++) {
+				*pVert = FVector(
+					(float)(j * scale * dscale - (HALF_PATCH_SIZE * scale)),
 					(float)(heights[i * dscale * PATCH_SIZE + j * dscale]),
-					(float)(i * scale * dscale - (HALF_PATCH_SIZE * scale)));
+					(float)(i * scale * dscale - (HALF_PATCH_SIZE * scale))
+				);
 
 				if (level >= 2) {
 					*pTu++ = (float)(-j * dtt);
@@ -346,7 +351,16 @@ TerrainPatch::BuildDetailLevel(int level)
 						*pTv1++ = (float)(i * dtt * 3);
 					}
 
-					*pSpec++ = BlendValue(pVert->Y);
+					// BlendValue returns packed DWORD (assumed 0xAARRGGBB); store into FColor
+					{
+						const DWORD Packed = BlendValue(pVert->Y);
+						*pSpec++ = FColor(
+							(uint8)((Packed >> 16) & 0xFF), // R
+							(uint8)((Packed >> 8) & 0xFF), // G
+							(uint8)((Packed >> 0) & 0xFF), // B
+							(uint8)((Packed >> 24) & 0xFF)  // A
+						);
+					}
 				}
 				else {
 					*pTu++ = (float)(tu0 - j * dt);
@@ -359,20 +373,28 @@ TerrainPatch::BuildDetailLevel(int level)
 
 		if (!water) {
 			// strip 1 & 2 verts
-			for (i = 0; i < ds1; i += detail_size) {
-				for (j = 0; j < ds1; j++) {
-					Vec3 vl = Vec3((float)(j * scale * dscale - (HALF_PATCH_SIZE * scale)),
+			for (i = 0; i < Ds1; i += DetailSize) {
+				for (j = 0; j < Ds1; j++) {
+					FVector vl(
+						(float)(j * scale * dscale - (HALF_PATCH_SIZE * scale)),
 						(float)(heights[i * dscale * PATCH_SIZE + j * dscale]),
-						(float)(i * scale * dscale - (HALF_PATCH_SIZE * scale)));
+						(float)(i * scale * dscale - (HALF_PATCH_SIZE * scale))
+					);
 
 					*pVert++ = vl;
 
-					DWORD blend = 0;
+					DWORD BlendPacked = 0;
 
 					if (level >= 2) {
-						blend = BlendValue(vl.Y);
+						BlendPacked = BlendValue(vl.Y);
 
-						*pSpec++ = blend;
+						*pSpec++ = FColor(
+							(uint8)((BlendPacked >> 16) & 0xFF),
+							(uint8)((BlendPacked >> 8) & 0xFF),
+							(uint8)((BlendPacked >> 0) & 0xFF),
+							(uint8)((BlendPacked >> 24) & 0xFF)
+						);
+
 						*pTu++ = (float)(-j * dtt);
 						*pTv++ = (float)(i * dtt);
 					}
@@ -382,11 +404,16 @@ TerrainPatch::BuildDetailLevel(int level)
 					}
 
 					vl.Y = -5000.0f;
-
 					*pVert++ = vl;
 
 					if (level >= 2) {
-						*pSpec++ = blend;
+						*pSpec++ = FColor(
+							(uint8)((BlendPacked >> 16) & 0xFF),
+							(uint8)((BlendPacked >> 8) & 0xFF),
+							(uint8)((BlendPacked >> 0) & 0xFF),
+							(uint8)((BlendPacked >> 24) & 0xFF)
+						);
+
 						*pTu++ = (float)(-j * dtt);
 						*pTv++ = (float)(i * dtt);
 					}
@@ -398,20 +425,28 @@ TerrainPatch::BuildDetailLevel(int level)
 			}
 
 			// strip 3 & 4 verts
-			for (j = 0; j < ds1; j += detail_size) {
-				for (i = 0; i < ds1; i++) {
-					Vec3 vl = Vec3((float)(j * scale * dscale - (HALF_PATCH_SIZE * scale)),
+			for (j = 0; j < Ds1; j += DetailSize) {
+				for (i = 0; i < Ds1; i++) {
+					FVector vl(
+						(float)(j * scale * dscale - (HALF_PATCH_SIZE * scale)),
 						(float)(heights[i * dscale * PATCH_SIZE + j * dscale]),
-						(float)(i * scale * dscale - (HALF_PATCH_SIZE * scale)));
+						(float)(i * scale * dscale - (HALF_PATCH_SIZE * scale))
+					);
 
 					*pVert++ = vl;
 
-					DWORD blend = 0;
+					DWORD BlendPacked = 0;
 
 					if (level >= 2) {
-						blend = BlendValue(vl.Y);
+						BlendPacked = BlendValue(vl.Y);
 
-						*pSpec++ = blend;
+						*pSpec++ = FColor(
+							(uint8)((BlendPacked >> 16) & 0xFF),
+							(uint8)((BlendPacked >> 8) & 0xFF),
+							(uint8)((BlendPacked >> 0) & 0xFF),
+							(uint8)((BlendPacked >> 24) & 0xFF)
+						);
+
 						*pTu++ = (float)(-j * dtt);
 						*pTv++ = (float)(i * dtt);
 					}
@@ -421,11 +456,16 @@ TerrainPatch::BuildDetailLevel(int level)
 					}
 
 					vl.Y = -5000.0f;
-
 					*pVert++ = vl;
 
 					if (level >= 2) {
-						*pSpec++ = blend;
+						*pSpec++ = FColor(
+							(uint8)((BlendPacked >> 16) & 0xFF),
+							(uint8)((BlendPacked >> 8) & 0xFF),
+							(uint8)((BlendPacked >> 0) & 0xFF),
+							(uint8)((BlendPacked >> 24) & 0xFF)
+						);
+
 						*pTu++ = (float)(-j * dtt);
 						*pTv++ = (float)(i * dtt);
 					}
@@ -441,7 +481,7 @@ TerrainPatch::BuildDetailLevel(int level)
 
 		// initialize the polys
 		for (i = 0; i < npolys; i++) {
-			Poly* p = s->GetPolys() + i;
+			Poly* p = SurfacePtr->GetPolys() + i;
 			p->nverts = 3;
 			p->vertex_set = vset;
 			p->visible = 1;
@@ -455,7 +495,7 @@ TerrainPatch::BuildDetailLevel(int level)
 		}
 
 		for (i = npolys; i < total; i++) {
-			Poly* p = s->GetPolys() + i;
+			Poly* p = SurfacePtr->GetPolys() + i;
 			p->nverts = 4;
 			p->vertex_set = vset;
 			p->visible = 1;
@@ -466,18 +506,19 @@ TerrainPatch::BuildDetailLevel(int level)
 		int index = 0;
 
 		// build main patch polys:
-		for (i = 0; i < detail_size; i++) {
-			for (j = 0; j < detail_size; j++) {
+		for (i = 0; i < DetailSize; i++) {
+			for (j = 0; j < DetailSize; j++) {
 				int v[4] = {
-					(ds1 * (i)+(j)),
-					(ds1 * (i)+(j + 1)),
-					(ds1 * (i + 1) + (j)),
-					(ds1 * (i + 1) + (j + 1)) };
+					(Ds1 * (i)+(j)),
+					(Ds1 * (i)+(j + 1)),
+					(Ds1 * (i + 1) + (j)),
+					(Ds1 * (i + 1) + (j + 1))
+				};
 
 				bisect(vset, v);
 
 				// first triangle
-				Poly* p = s->GetPolys() + index++;
+				Poly* p = SurfacePtr->GetPolys() + index++;
 				p->verts[0] = v[0];
 				p->verts[1] = v[1];
 				p->verts[2] = v[3];
@@ -489,7 +530,7 @@ TerrainPatch::BuildDetailLevel(int level)
 				}
 
 				// second triangle
-				p = s->GetPolys() + index++;
+				p = SurfacePtr->GetPolys() + index++;
 				p->verts[0] = v[0];
 				p->verts[1] = v[3];
 				p->verts[2] = v[2];
@@ -505,11 +546,11 @@ TerrainPatch::BuildDetailLevel(int level)
 		// build vertical edge strip polys:
 		if (!water) {
 			for (i = 0; i < NUM_STRIPS; i++) {
-				Poly* p = s->GetPolys() + npolys + i * strip_len;
-				int   base_index = ds1 * ds1 + ds1 * 2 * i;
+				Poly* p = SurfacePtr->GetPolys() + npolys + i * strip_len;
+				const int base_index = Ds1 * Ds1 + Ds1 * 2 * i;
 
 				for (j = 0; j < strip_len; j++) {
-					int v = base_index + j * 2;
+					const int v = base_index + j * 2;
 					p->nverts = 4;
 
 					if (i == 1 || i == 2) {
@@ -538,23 +579,25 @@ TerrainPatch::BuildDetailLevel(int level)
 
 		// update the poly planes:
 		for (i = 0; i < total; i++) {
-			Poly* p = s->GetPolys() + i;
+			Poly* p = SurfacePtr->GetPolys() + i;
 			WORD* v = p->verts;
 
-			p->plane = Plane(vset->loc[v[0]] + loc,
+			p->plane = Plane(
+				vset->loc[v[0]] + loc,
 				vset->loc[v[1]] + loc,
-				vset->loc[v[2]] + loc);
+				vset->loc[v[2]] + loc
+			);
 		}
 
-		s->Normalize();
+		SurfacePtr->Normalize();
 
 		// create contiguous segments for each material:
-		qsort((void*)s->GetPolys(), s->NumPolys(), sizeof(Poly), mcomp);
+		qsort((void*)SurfacePtr->GetPolys(), SurfacePtr->NumPolys(), sizeof(Poly), mcomp);
 
 		Segment* segment = nullptr;
-		Poly* spolys = s->GetPolys();
+		Poly* spolys = SurfacePtr->GetPolys();
 
-		for (int n = 0; n < s->NumPolys(); n++) {
+		for (int n = 0; n < SurfacePtr->NumPolys(); n++) {
 			if (segment && segment->material == spolys[n].material) {
 				segment->npolys++;
 			}
@@ -568,86 +611,87 @@ TerrainPatch::BuildDetailLevel(int level)
 				segment->npolys = 1;
 				segment->polys = &spolys[n];
 				segment->material = segment->polys->material;
-				segment->model = localModel;
+				segment->model = LocalModel;
 
-				s->GetSegments().append(segment);
+				SurfacePtr->GetSegments().append(segment);
 			}
 		}
 
 		Solid::EnableCollision(false);
-		localModel->AddSurface(s);
+		LocalModel->AddSurface(SurfacePtr);
 		Solid::EnableCollision(true);
 
 		// copy vertex normals:
 		const Vec3B* tnorms = terrain ? terrain->Normals() : nullptr;
 
-		for (i = 0; i < ds1; i++) {
-			for (j = 0; j < ds1; j++) {
+		for (i = 0; i < Ds1; i++) {
+			for (j = 0; j < Ds1; j++) {
 
 				if (water) {
-					vset->nrm[i * ds1 + j] = FVector(0, 1, 0);
+					vset->nrm[i * Ds1 + j] = FVector(0, 1, 0);
 				}
 				else if (tnorms && dscale > 1) {
 					FVector normal(0, 0, 0);
 
-					// but don't blend more than 16 normals per vertex:
 					int step = 1;
 					if (dscale > 4)
 						step = dscale / 4;
 
 					for (int dy = -dscale / 2; dy < dscale / 2; dy += step) {
 						for (int dx = -dscale / 2; dx < dscale / 2; dx += step) {
-							int ix = rect.x + (ds1 - 1 - j) * dscale + dx;
+							int ix = rect.x + (Ds1 - 1 - j) * dscale + dx;
 							int iy = rect.y + i * dscale + dy;
 
-							if (ix < 0)               ix = 0;
-							if (iy < 0)               iy = 0;
+							if (ix < 0) ix = 0;
+							if (iy < 0) iy = 0;
 
-							// NOTE: terrain_width is 0 in the UE-placeholder path.
-							// If you wire CPU height sampling, also set terrain_width accordingly.
 							if (terrain_width > 0) {
 								if (ix > terrain_width - 1) ix = terrain_width - 1;
 								if (iy > terrain_width - 1) iy = terrain_width - 1;
 
-								Vec3B vbn = tnorms[iy * terrain_width + ix];
-								normal += FVector((128 - vbn.x) / 127.0, (vbn.z - 128) / 127.0, (vbn.y - 128) / 127.0);
+								const Vec3B vbn = tnorms[iy * terrain_width + ix];
+								normal += FVector(
+									(128 - vbn.x) / 127.0,
+									(vbn.z - 128) / 127.0,
+									(vbn.y - 128) / 127.0
+								);
 							}
 						}
 					}
 
 					normal.Normalize();
-					vset->nrm[i * ds1 + j] = normal;
+					vset->nrm[i * Ds1 + j] = normal;
 				}
 				else if (tnorms && terrain_width > 0) {
-					Vec3B vbn = tnorms[(rect.y + i * dscale) * terrain_width + (rect.x + (ds1 - 1 - j) * dscale)];
-					FVector normal((128 - vbn.x) / 127.0, (vbn.z - 128) / 127.0, (vbn.y - 128) / 127.0);
-					vset->nrm[i * ds1 + j] = normal;
+					const Vec3B vbn = tnorms[(rect.y + i * dscale) * terrain_width + (rect.x + (Ds1 - 1 - j) * dscale)];
+					vset->nrm[i * Ds1 + j] = FVector(
+						(128 - vbn.x) / 127.0,
+						(vbn.z - 128) / 127.0,
+						(vbn.y - 128) / 127.0
+					);
 				}
 				else {
-					// Safe fallback when normals are unavailable in the interim UE port:
-					vset->nrm[i * ds1 + j] = FVector(0, 1, 0);
+					vset->nrm[i * Ds1 + j] = FVector(0, 1, 0);
 				}
 			}
 		}
 
 		if (!water) {
-			Vec3* pNrm = &vset->nrm[ds1 * ds1];
+			FVector* pNrm = &vset->nrm[Ds1 * Ds1];
 
 			// strip 1 & 2 verts
-			for (i = 0; i < ds1; i += detail_size) {
-				for (j = 0; j < ds1; j++) {
-					Vec3 vn = vset->nrm[i * ds1 + j];
-
+			for (i = 0; i < Ds1; i += DetailSize) {
+				for (j = 0; j < Ds1; j++) {
+					const FVector vn = vset->nrm[i * Ds1 + j];
 					*pNrm++ = vn;
 					*pNrm++ = vn;
 				}
 			}
 
 			// strip 3 & 4 verts
-			for (j = 0; j < ds1; j += detail_size) {
-				for (i = 0; i < ds1; i++) {
-					Vec3 vn = vset->nrm[i * ds1 + j];
-
+			for (j = 0; j < Ds1; j += DetailSize) {
+				for (i = 0; i < Ds1; i++) {
+					const FVector vn = vset->nrm[i * Ds1 + j];
 					*pNrm++ = vn;
 					*pNrm++ = vn;
 				}
@@ -786,132 +830,113 @@ TerrainPatch::SetDetailLevel(int nd)
 
 // +--------------------------------------------------------------------+
 
-void TerrainPatch::Illuminate(FColor ambient, List<SimLight>& lights)
+void TerrainPatch::Illuminate(FColor Ambient, List<SimLight>& Lights)
 {
 	if (!model || model->NumVerts() < 1)
 		return;
 
-	Surface* s = model->GetSurfaces().first();
-	if (!s)
+	Surface* SurfacePtr = model->GetSurfaces().first();
+	if (!SurfacePtr)
 		return;
 
 	illuminating = true;
 
-	VertexSet* vset = s->GetVertexSet();
-	if (!vset || vset->nverts < 1) {
+	VertexSet* VSet = SurfacePtr->GetVertexSet();
+	if (!VSet || VSet->nverts < 1 || !VSet->diffuse || !VSet->nrm || !VSet->loc) {
 		illuminating = false;
 		return;
 	}
 
-	const int   nverts = vset->nverts;
+	const int32 NumVerts = VSet->nverts;
 
-	// FColor has no Value(); store packed ARGB (0xAARRGGBB):
-	const uint32 aval = ambient.ToPackedARGB();
-
-	for (int i = 0; i < nverts; i++) {
-		vset->diffuse[i] = (DWORD)aval;
+	// Clear to ambient (opaque)
+	const FColor AmbientColor = Ambient.WithAlpha(255);
+	for (int32 i = 0; i < NumVerts; ++i) {
+		VSet->diffuse[i] = AmbientColor;
 	}
 
-	TerrainRegion* trgn = terrain ? terrain->GetRegion() : nullptr;
-	bool eclipsed = false;
-	const bool first = terrain ? terrain->IsFirstPatch(this) : false;
+	TerrainRegion* Region = terrain ? terrain->GetRegion() : nullptr;
+	bool bEclipsed = false;
+	const bool bFirstPatch = terrain ? terrain->IsFirstPatch(this) : false;
 
-	if (trgn && !first) {
-		eclipsed = trgn->IsEclipsed();
+	if (Region && !bFirstPatch) {
+		bEclipsed = Region->IsEclipsed();
 	}
-
-	// Helpers for packed vertex diffuse accumulation (assumes 0xAARRGGBB):
-	auto UnpackARGB = [](uint32 Packed) -> FColor
-		{
-			return FColor(
-				(uint8)((Packed >> 16) & 0xFF), // R
-				(uint8)((Packed >> 8) & 0xFF), // G
-				(uint8)((Packed >> 0) & 0xFF), // B
-				(uint8)((Packed >> 24) & 0xFF)  // A
-			);
-		};
-
-	auto PackARGB = [](const FColor& C) -> uint32
-		{
-			return (uint32(C.A) << 24) | (uint32(C.R) << 16) | (uint32(C.G) << 8) | uint32(C.B);
-		};
 
 	auto ScaleRGB = [](const FColor& C, float S) -> FColor
 		{
 			return FColor(
-				(uint8)FMath::Clamp(int32(C.R * S), 0, 255),
-				(uint8)FMath::Clamp(int32(C.G * S), 0, 255),
-				(uint8)FMath::Clamp(int32(C.B * S), 0, 255),
-				0
+				(uint8)FMath::Clamp(int32(float(C.R) * S), 0, 255),
+				(uint8)FMath::Clamp(int32(float(C.G) * S), 0, 255),
+				(uint8)FMath::Clamp(int32(float(C.B) * S), 0, 255),
+				255
 			);
 		};
 
-	auto AddClampRGB = [](const FColor& A, const FColor& B) -> FColor
+	auto AddClampRGB = [](const FColor& Base, const FColor& Add) -> FColor
 		{
 			return FColor(
-				(uint8)FMath::Clamp(int32(A.R) + int32(B.R), 0, 255),
-				(uint8)FMath::Clamp(int32(A.G) + int32(B.G), 0, 255),
-				(uint8)FMath::Clamp(int32(A.B) + int32(B.B), 0, 255),
-				A.A
+				(uint8)FMath::Clamp(int32(Base.R) + int32(Add.R), 0, 255),
+				(uint8)FMath::Clamp(int32(Base.G) + int32(Add.G), 0, 255),
+				(uint8)FMath::Clamp(int32(Base.B) + int32(Add.B), 0, 255),
+				Base.A
 			);
 		};
 
-	ListIter<SimLight> iter = lights;
-	while (++iter) {
-		SimLight* light = iter.value();
-		if (!light)
+	ListIter<SimLight> LightIter = Lights;
+	while (++LightIter) {
+		SimLight* Light = LightIter.value();
+		if (!Light)
 			continue;
 
-		if (!light->IsDirectional())
+		if (!Light->IsDirectional())
 			continue;
 
 		// Shadow / eclipse test:
-		if (light->CastsShadow() && first && scene) {
-			// If vset->loc is already FVector (as per your port), use it directly:
-			const FVector LightPos = light->Location();
-			const FVector V0 = vset->loc[0];
+		if (Light->CastsShadow() && bFirstPatch && scene) {
+			const FVector LightPos = Light->Location();
+			const FVector V0 = VSet->loc[0];
 
-			eclipsed = (LightPos.Y < -100.0f) ||
+			bEclipsed =
+				(LightPos.Y < -100.0f) ||
 				scene->IsLightObscured(V0, LightPos, radius);
 		}
 
-		if (!light->CastsShadow() || !eclipsed) {
-			// Directional light vector (treat light "location" as a direction, per original code):
-			FVector L = light->Location().GetSafeNormal();
+		if (!Light->CastsShadow() || !bEclipsed) {
+			// Treat "location" as the directional vector, per original behavior
+			const FVector LightDir = Light->Location().GetSafeNormal();
 
-			for (int i = 0; i < nverts; i++) {
-				const FVector& N = vset->nrm[i];
+			for (int32 i = 0; i < NumVerts; ++i) {
+				const FVector& Normal = VSet->nrm[i];
 
-				double val = 0.0;
-				const double gain = (double)FVector::DotProduct(L, N);
+				double Value = 0.0;
+				const double Gain = double(FVector::DotProduct(LightDir, Normal));
 
-				if (gain > 0.0) {
-					val = light->Intensity() * (0.85 * gain);
-					if (val > 1.0) val = 1.0;
+				if (Gain > 0.0) {
+					Value = Light->Intensity() * (0.85 * Gain);
+					if (Value > 1.0) Value = 1.0;
 				}
 
-				if (val > 0.01) {
-					const uint32 PackedBase = (uint32)vset->diffuse[i];
-					const FColor Base = UnpackARGB(PackedBase);
+				if (Value > 0.01) {
+					const FColor LightColor = Light->GetColor().WithAlpha(255);
+					const FColor AddColor = ScaleRGB(LightColor, (float)Value);
 
-					const FColor LightC = light->GetColor();
-					const FColor Add = ScaleRGB(LightC, (float)val);
-
-					const FColor Out = AddClampRGB(Base, Add);
-					vset->diffuse[i] = (DWORD)PackARGB(Out);
+					VSet->diffuse[i] = AddClampRGB(VSet->diffuse[i], AddColor);
 				}
 			}
 		}
 	}
 
-	if (ndetail >= 2) {
-		for (int i = 0; i < nverts; i++) {
-			vset->diffuse[i] = vset->specular[i] | (vset->diffuse[i] & 0x00ffffff);
+	// Legacy behavior: "merge" specular alpha into diffuse alpha (old packed OR trick).
+	// With FColor arrays, replicate the intent by copying specular A if specular exists.
+	if (ndetail >= 2 && VSet->specular) {
+		for (int32 i = 0; i < NumVerts; ++i) {
+			VSet->diffuse[i].A = VSet->specular[i].A;
 		}
 	}
 
-	if (trgn && first) {
-		trgn->SetEclipsed(eclipsed);
+	if (Region && bFirstPatch) {
+		Region->SetEclipsed(bEclipsed);
 	}
 
 	InvalidateSurfaceData();

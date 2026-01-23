@@ -551,18 +551,19 @@ void TacticalView::DrawSelectionList(ListIter<Ship> seln)
 
 // +--------------------------------------------------------------------+
 
-void TacticalView::DoMouseFrame()
+void
+TacticalView::DoMouseFrame()
 {
     static DWORD rbutton_latch = 0;
 
     Starshatter* stars = Starshatter::GetInstance();
-
     if (stars->InCutscene())
         return;
 
+    MouseController* LocalMouseController = MouseController::GetInstance();
+
     if (Mouse::RButton()) {
-        MouseController* mouse_con = MouseController::GetInstance();
-        if (!right_down && (!mouse_con || !mouse_con->Active())) {
+        if (!right_down && (!LocalMouseController || !LocalMouseController->Active())) {
             rbutton_latch = Game::RealTime();
             right_down = true;
         }
@@ -578,16 +579,14 @@ void TacticalView::DoMouseFrame()
                 msg_ship = seln;
                 Observe(msg_ship);
             }
-
             else if (ship && seln == ship &&
                 (!ship->GetDirector() ||
                     ship->GetDirector()->Type() != ShipManager::DIR_TYPE)) {
 
                 msg_ship = seln;
             }
-
             else {
-                msg_ship = 0;
+                msg_ship = nullptr;
             }
         }
 
@@ -597,17 +596,15 @@ void TacticalView::DoMouseFrame()
     if (menu_view)
         menu_view->DoMouseFrame();
 
-    MouseController* mouse_con = MouseController::GetInstance();
+    // Re-use the same local controller
+    if (!LocalMouseController || !LocalMouseController->Active()) {
 
-    if (!mouse_con || !mouse_con->Active()) {
         if (Mouse::LButton()) {
             if (!mouse_down) {
                 mouse_start.X = Mouse::X();
                 mouse_start.Y = Mouse::Y();
-
                 shift_down = Keyboard::KeyDown(VK_SHIFT);
             }
-
             else {
                 if (Mouse::X() < mouse_start.X) {
                     mouse_rect.x = Mouse::X();
@@ -627,7 +624,6 @@ void TacticalView::DoMouseFrame()
                     mouse_rect.h = Mouse::Y() - mouse_start.Y;
                 }
 
-                // don't draw seln rectangle while zooming:
                 if (Mouse::RButton() || show_move || show_action) {
                     mouse_rect.w = 0;
                     mouse_rect.h = 0;
@@ -639,11 +635,10 @@ void TacticalView::DoMouseFrame()
 
             mouse_down = true;
         }
-
         else {
             if (mouse_down) {
-                int mouse_x = Mouse::X();
-                int mouse_y = Mouse::Y();
+                const int mouse_x = Mouse::X();
+                const int mouse_y = Mouse::Y();
 
                 if (menu_view && menu_view->GetAction()) {
                     ProcessMenuItem(menu_view->GetAction());
@@ -659,21 +654,20 @@ void TacticalView::DoMouseFrame()
                     show_action = false;
                     Mouse::Show(true);
                 }
-                else {
-                    if (!HUDView::IsMouseLatched() && !WepView::IsMouseLatched()) {
-                        int dx = (int)fabs((double)(mouse_x - mouse_start.X));
-                        int dy = (int)fabs((double)(mouse_y - mouse_start.Y));
+                else if (!HUDView::IsMouseLatched() && !WepView::IsMouseLatched()) {
 
-                        static DWORD click_time = 0;
+                    const int dx = FMath::Abs(mouse_x - mouse_start.X);
+                    const int dy = FMath::Abs(mouse_y - mouse_start.Y);
 
-                        if (dx < 3 && dy < 3) {
-                            bool hit = SelectAt(mouse_x, mouse_y);
+                    static DWORD click_time = 0;
 
-                            if (ship->IsStarship() && Game::RealTime() - click_time < 350)
-                                SetHelm(hit);
+                    if (dx < 3 && dy < 3) {
+                        const bool hit = SelectAt(mouse_x, mouse_y);
 
-                            click_time = Game::RealTime();
-                        }
+                        if (ship->IsStarship() && Game::RealTime() - click_time < 350)
+                            SetHelm(hit);
+
+                        click_time = Game::RealTime();
                     }
                 }
 

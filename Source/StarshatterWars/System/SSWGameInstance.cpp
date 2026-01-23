@@ -3,12 +3,11 @@
 
 #include "SSWGameInstance.h"
 #include "GameFramework/Actor.h"
-#include "Universe.h"
+#include "SimUniverse.h"
 #include "Galaxy.h"
 #include "DataLoader.h"
 #include "Sim.h"
 #include "GameDataLoader.h"
-#include "AwardInfoLoader.h"
 
 #include "MenuDlg.h"
 #include "QuitDlg.h"
@@ -89,7 +88,7 @@ void USSWGameInstance::Print(FString Msg, FString File)
 
 void USSWGameInstance::SpawnGalaxy()
 {
-	UWorld* World = GetWorld();
+	/*UWorld* World = GetWorld();
 
 	FVector location = FVector::ZeroVector;
 	FRotator rotate = FRotator::ZeroRotator;
@@ -116,7 +115,7 @@ void USSWGameInstance::SpawnGalaxy()
 
 	//} else {
 	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
-	//}		
+	//}	*/	
 }
 
 void USSWGameInstance::GetGameData()
@@ -418,15 +417,16 @@ bool USSWGameInstance::InitContent()
 {
 	List<Text>  bundles;
 	
-	ProjectPath = FPaths::ProjectDir();
+	FString ContentProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Content/"));
 
-	loader->SetDataPath(ProjectPath);
+	loader->SetDataPath(TCHAR_TO_ANSI(*ContentProjectPath));
 	//loader->ListFiles("content*", bundles);
 
-	ProjectPath = FPaths::ProjectDir();
-	ProjectPath.Append(TEXT("GameData/"));
-	loader->SetDataPath(ProjectPath);
+	FString GameDataProjectPath = FPaths::ProjectDir(); 
+	GameDataProjectPath = FPaths::ProjectDir();
+	GameDataProjectPath.Append(TEXT("GameData/"));
+	loader->SetDataPath(TCHAR_TO_ANSI(*GameDataProjectPath));
 
 	/*if (!bUniverseLoaded) {
 		bUniverseLoaded = true;

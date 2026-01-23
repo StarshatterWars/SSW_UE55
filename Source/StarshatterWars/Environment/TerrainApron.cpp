@@ -275,73 +275,77 @@ TerrainApron::Illuminate(FColor Ambient, List<SimLight>& Lights)
 	if (!SurfacePtr)
 		return;
 
-	// clear the solid lights to ambient:
 	VertexSet* VSet = SurfacePtr->GetVertexSet();
-	const int32 NumVerts = VSet->nverts;
-	const DWORD AmbientValue = Ambient.DWColor();
+	if (!VSet || VSet->nverts < 1 || !VSet->diffuse || !VSet->nrm)
+		return;
 
-	for (int32 i = 0; i < NumVerts; i++) {
-		VSet->diffuse[i] = AmbientValue;
+	const int32 NumVerts = VSet->nverts;
+
+	// Clear to ambient:
+	for (int32 VertIndex = 0; VertIndex < NumVerts; ++VertIndex) {
+		VSet->diffuse[VertIndex] = Ambient;
 	}
 
-	TerrainRegion* Region = terrain->GetRegion();
+	TerrainRegion* Region = terrain ? terrain->GetRegion() : nullptr;
+	(void)Region;
+
 	bool bEclipsed = false;
 
-	// for each light:
-	ListIter<SimLight> Iter = Lights;
-	while (++Iter) {
-		SimLight* Light = Iter.value();
+	// For each light:
+	ListIter<SimLight> LightIter = Lights;
+	while (++LightIter) {
+		SimLight* Light = LightIter.value();
+		if (!Light)
+			continue;
 
 		if (Light->CastsShadow()) {
 			bEclipsed = Light->Location().Y < -100.0f;
 		}
 
-		if (!Light->CastsShadow() || !bEclipsed) {
-			FVector LightVec = Light->Location();
-			LightVec.Normalize();
+		if (Light->CastsShadow() && bEclipsed)
+			continue;
 
-			for (int32 i = 0; i < NumVerts; i++) {
-				const FVector& Normal = VSet->nrm[i];
-				double Value = 0.0;
+		FVector LightVec = Light->Location();
+		LightVec.Normalize();
 
-				if (Light->IsDirectional()) {
-					const double Gain = FVector::DotProduct(LightVec, Normal);
+		const FColor LightColor = Light->GetColor();
 
-					if (Gain > 0.0) {
-						Value = Light->Intensity() * (0.85 * Gain);
-						Value = FMath::Min(Value, 1.0);
-					}
-				}
+		for (int32 VertIndex = 0; VertIndex < NumVerts; ++VertIndex) {
+			const FVector& Normal = VSet->nrm[VertIndex];
 
-				if (Value > 0.01) {
-					const FColor LightColor = Light->GetColor();
-					const float  Scale = (float)FMath::Clamp(Value, 0.0, 1.0);
+			double Value = 0.0;
 
-					const uint8 R = (uint8)FMath::Min(255, (int)(LightColor.R * Scale));
-					const uint8 G = (uint8)FMath::Min(255, (int)(LightColor.G * Scale));
-					const uint8 B = (uint8)FMath::Min(255, (int)(LightColor.B * Scale));
+			if (Light->IsDirectional()) {
+				const double Gain = FVector::DotProduct(LightVec, Normal);
 
-					const FColor AddColor(R, G, B, 255);
-
-					// unpack current diffuse (ARGB)
-					const DWORD Packed = VSet->diffuse[i];
-					const FColor Current(
-						(uint8)((Packed >> 16) & 0xFF),
-						(uint8)((Packed >> 8) & 0xFF),
-						(uint8)((Packed >> 0) & 0xFF),
-						(uint8)((Packed >> 24) & 0xFF)
-					);
-
-					const FColor Result(
-						(uint8)FMath::Min(255, (int)Current.R + (int)AddColor.R),
-						(uint8)FMath::Min(255, (int)Current.G + (int)AddColor.G),
-						(uint8)FMath::Min(255, (int)Current.B + (int)AddColor.B),
-						Current.A
-					);
-
-					VSet->diffuse[i] = Result.DWColor();
+				if (Gain > 0.0) {
+					Value = Light->Intensity() * (0.85 * Gain);
+					Value = FMath::Min(Value, 1.0);
 				}
 			}
+
+			if (Value <= 0.01)
+				continue;
+
+			const float Scale = (float)FMath::Clamp(Value, 0.0, 1.0);
+
+			const uint8 AddR = (uint8)FMath::Clamp(
+				(int)FMath::RoundToInt((float)LightColor.R * Scale), 0, 255);
+
+			const uint8 AddG = (uint8)FMath::Clamp(
+				(int)FMath::RoundToInt((float)LightColor.G * Scale), 0, 255);
+
+			const uint8 AddB = (uint8)FMath::Clamp(
+				(int)FMath::RoundToInt((float)LightColor.B * Scale), 0, 255);
+
+			const FColor Current = VSet->diffuse[VertIndex];
+
+			VSet->diffuse[VertIndex] = FColor(
+				(uint8)FMath::Min(255, (int)Current.R + (int)AddR),
+				(uint8)FMath::Min(255, (int)Current.G + (int)AddG),
+				(uint8)FMath::Min(255, (int)Current.B + (int)AddB),
+				Current.A
+			);
 		}
 	}
 

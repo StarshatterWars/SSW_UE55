@@ -150,20 +150,26 @@ DisplayView::Refresh()
 		// draw image:
 		else if (elem->image) {
 
-			const float FadeF = (float)fade;
+			const FColor FadedColor(
+				(uint8)FMath::Clamp(int(elem->color.R * fade), 0, 255),
+				(uint8)FMath::Clamp(int(elem->color.G * fade), 0, 255),
+				(uint8)FMath::Clamp(int(elem->color.B * fade), 0, 255),
+				elem->color.A
+			);
 
-			window->FadeTexture(
+			window->FadeBitmap(
 				elem_rect.x,
 				elem_rect.y,
 				elem_rect.x + elem_rect.w,
 				elem_rect.y + elem_rect.h,
 				elem->image,
-				ScaleColor(elem->color, FadeF),
+				FadedColor,
 				elem->blend
 			);
 		}
 	}
 }
+
 
 // +--------------------------------------------------------------------+
 

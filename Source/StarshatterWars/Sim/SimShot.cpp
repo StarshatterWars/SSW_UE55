@@ -347,7 +347,7 @@ SimShot::ExecFrame(double seconds)
 
 				trail->AddPoint(Location() + Heading() * -100);
 
-				Scene* scene = 0;
+				SimScene* scene = 0;
 
 				if (rep)
 					scene = rep->GetScene();

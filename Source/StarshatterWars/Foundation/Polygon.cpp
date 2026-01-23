@@ -50,7 +50,7 @@ VertexSet::Resize(int m, bool preserve)
 {
 	// easy cases (no data will be preserved):
 	if (!m || !nverts || !preserve) {
-		const bool additional_tex_coords = (tu1 != 0);
+		const bool bHasAdditionalTexCoords = (tu1 != nullptr);
 
 		Delete();
 		nverts = m;
@@ -65,25 +65,26 @@ VertexSet::Resize(int m, bool preserve)
 			tu = new float[nverts];
 			tv = new float[nverts];
 			rw = new float[nverts];
-			diffuse = new DWORD[nverts];
-			specular = new DWORD[nverts];
+			diffuse = new FColor[nverts];
+			specular = new FColor[nverts];
 
-			if (additional_tex_coords)
+			if (bHasAdditionalTexCoords) {
 				CreateAdditionalTexCoords();
+			}
 
 			if (!loc || !nrm || !s_loc || !rw || !tu || !tv || !diffuse || !specular) {
 				nverts = 0;
 
-				delete[] loc;      loc = 0;
-				delete[] nrm;      nrm = 0;
-				delete[] s_loc;    s_loc = 0;
-				delete[] rw;       rw = 0;
-				delete[] tu;       tu = 0;
-				delete[] tv;       tv = 0;
-				delete[] tu1;      tu1 = 0;
-				delete[] tv1;      tv1 = 0;
-				delete[] diffuse;  diffuse = 0;
-				delete[] specular; specular = 0;
+				delete[] loc;      loc = nullptr;
+				delete[] nrm;      nrm = nullptr;
+				delete[] s_loc;    s_loc = nullptr;
+				delete[] rw;       rw = nullptr;
+				delete[] tu;       tu = nullptr;
+				delete[] tv;       tv = nullptr;
+				delete[] tu1;      tu1 = nullptr;
+				delete[] tv1;      tv1 = nullptr;
+				delete[] diffuse;  diffuse = nullptr;
+				delete[] specular; specular = nullptr;
 
 				FMemory::Memzero(this, sizeof(VertexSet));
 			}
@@ -98,79 +99,87 @@ VertexSet::Resize(int m, bool preserve)
 		if (nverts < np)
 			np = nverts;
 
-		FVector* new_loc = new FVector[nverts];
-		FVector* new_nrm = new FVector[nverts];
-		FVector* new_s_loc = new FVector[nverts];
-		float* new_rw = new float[nverts];
-		float* new_tu = new float[nverts];
-		float* new_tv = new float[nverts];
-		float* new_tu1 = 0;
-		float* new_tv1 = 0;
-		DWORD* new_diffuse = new DWORD[nverts];
-		DWORD* new_specular = new DWORD[nverts];
+		FVector* NewLoc = new FVector[nverts];
+		FVector* NewNrm = new FVector[nverts];
+		FVector* NewSLoc = new FVector[nverts];
+		float* NewRw = new float[nverts];
+		float* NewTu = new float[nverts];
+		float* NewTv = new float[nverts];
+		float* NewTu1 = nullptr;
+		float* NewTv1 = nullptr;
+		FColor* NewDiff = new FColor[nverts];
+		FColor* NewSpec = new FColor[nverts];
 
-		if (tu1) new_tu1 = new float[nverts];
-		if (tv1) new_tv1 = new float[nverts];
+		if (tu1) NewTu1 = new float[nverts];
+		if (tv1) NewTv1 = new float[nverts];
 
-		if (new_loc) {
-			FMemory::Memcpy(new_loc, loc, np * sizeof(FVector));
+		if (NewLoc) {
+			FMemory::Memcpy(NewLoc, loc, np * sizeof(FVector));
 			delete[] loc;
-			loc = new_loc;
+			loc = NewLoc;
 		}
 
-		if (new_nrm) {
-			FMemory::Memcpy(new_nrm, nrm, np * sizeof(FVector));
+		if (NewNrm) {
+			FMemory::Memcpy(NewNrm, nrm, np * sizeof(FVector));
 			delete[] nrm;
-			nrm = new_nrm;
+			nrm = NewNrm;
 		}
 
-		if (new_s_loc) {
-			FMemory::Memcpy(new_s_loc, s_loc, np * sizeof(FVector));
+		if (NewSLoc) {
+			FMemory::Memcpy(NewSLoc, s_loc, np * sizeof(FVector));
 			delete[] s_loc;
-			s_loc = new_s_loc;
+			s_loc = NewSLoc;
 		}
 
-		if (new_rw) {
-			FMemory::Memcpy(new_rw, rw, np * sizeof(float));
+		if (NewRw) {
+			FMemory::Memcpy(NewRw, rw, np * sizeof(float));
 			delete[] rw;
-			rw = new_rw;
+			rw = NewRw;
 		}
 
-		if (new_tu) {
-			FMemory::Memcpy(new_tu, tu, np * sizeof(float));
+		if (NewTu) {
+			FMemory::Memcpy(NewTu, tu, np * sizeof(float));
 			delete[] tu;
-			tu = new_tu;
+			tu = NewTu;
 		}
 
-		if (new_tv) {
-			FMemory::Memcpy(new_tv, tv, np * sizeof(float));
+		if (NewTv) {
+			FMemory::Memcpy(NewTv, tv, np * sizeof(float));
 			delete[] tv;
-			tv = new_tv;
+			tv = NewTv;
 		}
 
-		// NOTE: fixed legacy typos (tu/tv were incorrectly assigned):
-		if (new_tu1) {
-			FMemory::Memcpy(new_tu1, tu1, np * sizeof(float));
+		// additional tex coords:
+		if (NewTu1) {
+			FMemory::Memcpy(NewTu1, tu1, np * sizeof(float));
 			delete[] tu1;
-			tu1 = new_tu1;
+			tu1 = NewTu1;
+		}
+		else if (tu1) {
+			delete[] tu1;
+			tu1 = nullptr;
 		}
 
-		if (new_tv1) {
-			FMemory::Memcpy(new_tv1, tv1, np * sizeof(float));
+		if (NewTv1) {
+			FMemory::Memcpy(NewTv1, tv1, np * sizeof(float));
 			delete[] tv1;
-			tv1 = new_tv1;
+			tv1 = NewTv1;
+		}
+		else if (tv1) {
+			delete[] tv1;
+			tv1 = nullptr;
 		}
 
-		if (new_diffuse) {
-			FMemory::Memcpy(new_diffuse, diffuse, np * sizeof(DWORD));
+		if (NewDiff) {
+			FMemory::Memcpy(NewDiff, diffuse, np * sizeof(FColor));
 			delete[] diffuse;
-			diffuse = new_diffuse;
+			diffuse = NewDiff;
 		}
 
-		if (new_specular) {
-			FMemory::Memcpy(new_specular, specular, np * sizeof(DWORD));
+		if (NewSpec) {
+			FMemory::Memcpy(NewSpec, specular, np * sizeof(FColor));
 			delete[] specular;
-			specular = new_specular;
+			specular = NewSpec;
 		}
 
 		if (!loc || !nrm || !s_loc || !rw || !tu || !tv || !diffuse || !specular) {

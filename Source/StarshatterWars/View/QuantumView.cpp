@@ -48,7 +48,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsQuantumView, Log, All);
 //
 
 static Menu* quantum_menu = 0;
-static bool          show_menu = false;
 
 void
 QuantumView::Initialize()

@@ -70,10 +70,7 @@ static BYTE* tac_man_shade = nullptr;
 static BYTE* tac_aut_shade = nullptr;
 static BYTE* tac_def_shade = nullptr;
 
-static bool   mouse_in = false;
 
-static SystemFont* hud_font = nullptr;
-static SystemFont* big_font = nullptr;
 
 // +--------------------------------------------------------------------+
 

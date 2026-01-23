@@ -49,26 +49,25 @@ TerrainHaze::Render(Video* video, DWORD flags)
 		model->SetDynamic(true);
 	}
 
-	Surface* surface = model->GetSurfaces().first();
-	if (!surface)
+	Surface* SurfacePtr = model->GetSurfaces().first();
+	if (!SurfacePtr)
 		return;
 
-	uint32 Sky = 0;
-	uint32 Fog = 0;
+	FColor SkyColor(0, 0, 0, 255);
+	FColor FogColor(0, 0, 0, 255);
 
 	if (tregion) {
-		Sky = PackColor(tregion->SkyColor());
-		Fog = PackColor(tregion->FogColor());
+		SkyColor = tregion->SkyColor().WithAlpha(255);
+		FogColor = tregion->FogColor().WithAlpha(255);
 	}
 
-	// Clear the solid lights to ambient:
-	VertexSet* vset = surface->GetVertexSet();
-	if (!vset)
+	VertexSet* VSet = SurfacePtr->GetVertexSet();
+	if (!VSet || !VSet->diffuse || !VSet->loc)
 		return;
 
-	for (int i = 0; i < vset->nverts; i++) {
-		// vset->loc is now FVector (via Vec3/Point migration)
-		vset->diffuse[i] = (vset->loc[i].Y > 0.0f) ? Sky : Fog;
+	for (int32 i = 0; i < VSet->nverts; ++i) {
+		// vset->loc is FVector; Y > 0 chooses sky vs fog
+		VSet->diffuse[i] = (VSet->loc[i].Y > 0.0f) ? SkyColor : FogColor;
 	}
 
 	InvalidateSurfaceData();

@@ -13,10 +13,10 @@
 #include "CoreMinimal.h"
 #include "Math/UnrealMathUtility.h"
 
-#include "MenuScreen.h"
-#include "LoadScreen.h"
-#include "PlanScreen.h"
-#include "CmpnScreen.h"
+//#include "MenuScreen.h"
+//#include "LoadScreen.h"
+//#include "PlanScreen.h"
+//#include "CmpnScreen.h"
 
 #include "AudioConfig.h"
 #include "MusicManager.h"
@@ -58,7 +58,6 @@
 #include "RadioTraffic.h"
 #include "RadioVox.h"
 #include "CameraManager.h"
-#include "ModConfig.h"
 #include "KeyMap.h"
 
 #include "GameScreen.h"
@@ -68,9 +67,9 @@
 #include "TacticalView.h"
 #include "DisplayView.h"
 
-#include "LoadDlg.h"
-#include "TacRefDlg.h"
-#include "CmpLoadDlg.h"
+//#include "LoadDlg.h"
+//#include "TacRefDlg.h"
+//#include "CmpLoadDlg.h"
 #include "Terrain.h"
 
 #include "ParseUtil.h"
@@ -253,9 +252,9 @@ Starshatter::~Starshatter()
 
 	AudioConfig::Close();
 	HUDSounds::Close();
-	MusicDirector::Close();
+	MusicManager::Close();
 
-	Player::Close();
+	PlayerCharacter::Close();
 	Drive::Close();
 	LandingGear::Close();
 	MFD::Close();
@@ -269,18 +268,15 @@ Starshatter::~Starshatter()
 	Ship::Close();
 	WeaponDesign::Close();
 	SystemDesign::Close();
-	ModConfig::Close();
-	NetClientConfig::Close();
 	TacticalView::Close();
 	QuantumView::Close();
 	QuitView::Close();
 	RadioView::Close();
-	NetServerConfig::Close();
 
 	Mouse::Close();
 	EventDispatch::Close();
-	FontMgr::Close();
-	Button::Close();
+	FontManager::Close();
+	UIButton::Close();
 	DataLoader::Close();
 
 	delete ocrb;
@@ -387,15 +383,13 @@ Starshatter::InitGame()
 	// Seed Unreal's global RNG once (non-deterministic by design).
 	FMath::RandInit(static_cast<int32>(FPlatformTime::Cycles()));
 
-	AudioConfig::Initialize();
-	ModConfig::Initialize();
+	AudioConfig::Initialize();;
 
 	InitMouse();
 
-	Button::Initialize();
+	UIButton::Initialize();
 	EventDispatch::Create();
-	NetClientConfig::Initialize();
-	Player::Initialize();
+	PlayerCharacter::Initialize();
 	HUDSounds::Initialize();
 
 	int nkeys = keycfg.LoadKeyMap("key.cfg", 256);
@@ -424,7 +418,7 @@ Starshatter::InitGame()
 
 	SystemDesign::Initialize("sys.def");
 	WeaponDesign::Initialize("wep.def");
-	MusicDirector::Initialize();
+	MusicManager::Initialize();
 
 	// if no splashes, we need to initialize the campaign engine now
 	if (no_splash) {
@@ -496,7 +490,7 @@ Starshatter::StartOrResumeGame()
 	if (game_mode != MENU_MODE && game_mode != CMPN_MODE)
 		return;
 
-	Player* p = Player::GetCurrentPlayer();
+	PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 	if (!p)
 		return;
 
@@ -754,8 +748,6 @@ Starshatter::CreateWorld()
 void
 Starshatter::InstantiateMission()
 {
-	Memory::Check();
-
 	current_mission = 0;
 
 	if (Campaign::GetCampaign()) {
@@ -778,8 +770,6 @@ Starshatter::InstantiateMission()
 
 		UE_LOG(LogStarshatterWars, Log, TEXT("Mission Instantiated."));
 	}
-
-	Memory::Check();
 }
 
 // +--------------------------------------------------------------------+
@@ -798,7 +788,7 @@ Starshatter::KeyDown(int action) const
 bool
 Starshatter::GameLoop()
 {
-	cam_dir = CameraDirector::GetInstance();
+	cam_dir = CameraManager::GetInstance();
 
 	if (active && paused) {
 		// Route Events to EventTargets
@@ -959,9 +949,9 @@ Starshatter::GameState()
 				menuscreen->ShowCmpSelectDlg();
 		}
 
-		if (MusicDirector::GetInstance() &&
-			MusicDirector::GetInstance()->GetMode() != MusicDirector::CREDITS)
-			MusicDirector::SetMode(MusicDirector::MENU);
+		if (MusicManager::GetInstance() &&
+			MusicManager::GetInstance()->GetMode() != MusicManager::CREDITS)
+			MusicManager::SetMode(MusicManager::MENU);
 
 		DoMenuScreenFrame();
 	}
@@ -984,9 +974,9 @@ Starshatter::GameState()
 			loadscreen->Show();
 
 		if (game_mode == CLOD_MODE)
-			MusicDirector::SetMode(MusicDirector::MENU);
+			MusicManager::SetMode(MusicManager::MENU);
 		else
-			MusicDirector::SetMode(MusicDirector::BRIEFING);
+			MusicManager::SetMode(MusicManager::BRIEFING);
 
 		DoLoadScreenFrame();
 	}
@@ -1009,7 +999,7 @@ Starshatter::GameState()
 		else
 			planscreen->Show();
 
-		Player* p = Player::GetCurrentPlayer();
+		PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 		if (p && p->ShowAward()) {
 			if (!planscreen->IsAwardShown())
 				planscreen->ShowAwardDlg();
@@ -1027,7 +1017,7 @@ Starshatter::GameState()
 				planscreen->ShowMsnDlg();
 		}
 
-		MusicDirector::SetMode(MusicDirector::BRIEFING);
+		MusicManager::SetMode(MusicManager::BRIEFING);
 
 		DoPlanScreenFrame();
 	}
@@ -1081,13 +1071,8 @@ Starshatter::GameState()
 			Game::Exit();
 	}
 
-	if (net_lobby)
-		net_lobby->ExecFrame();
-
 	if (music_dir)
 		music_dir->ExecFrame();
-
-	Memory::Check();
 }
 
 // +--------------------------------------------------------------------+
@@ -1349,7 +1334,7 @@ Starshatter::DoLoadScreenFrame()
 
 		case 4:
 			Ship::Initialize();
-			Shot::Initialize();
+			SimShot::Initialize();
 			load_activity = Game::GetText("Starshatter.load.hud");
 			load_progress = 20;
 			break;
@@ -1379,7 +1364,7 @@ Starshatter::DoLoadScreenFrame()
 				SetGameMode(PLAN_MODE);
 				load_activity = Game::GetText("Starshatter.load.loaded");
 				load_progress = 100;
-				Button::PlaySound(4);
+				UIButton::PlaySound(4);
 			}
 			else {
 				CreateWorld();
@@ -1413,16 +1398,16 @@ Starshatter::PlayerCam(int mode)
 {
 	if (player_ship && !player_ship->InTransition() && player_ship->GetFlightPhase() >= Ship::LOCKED) {
 		gamescreen->CloseTopmost();
-		if (mode == CameraDirector::MODE_DROP) {
+		if (mode == CameraManager::MODE_DROP) {
 			player_ship->DropCam(15, 0);
 			cam_dir->SetShip(player_ship);
-			cam_dir->SetMode(CameraDirector::MODE_DROP, 0);
+			cam_dir->SetMode(CameraManager::MODE_DROP, 0);
 		}
 
 		else {
 			cam_dir->SetMode(mode);
 
-			if (mode == CameraDirector::MODE_ORBIT) {
+			if (mode == CameraManager::MODE_ORBIT) {
 				MouseController* mouse_con = MouseController::GetInstance();
 				if (mouse_con)
 					mouse_con->SetActive(false);
@@ -1538,7 +1523,7 @@ Starshatter::DoGameScreenFrame()
 
 		gamescreen->ShowExternal();
 
-		if (CameraDirector::GetCameraMode() >= CameraDirector::MODE_ORBIT && !player_ship->InTransition())
+		if (CameraManager::GetCameraMode() >= CameraManager::MODE_ORBIT && !player_ship->InTransition())
 			tactical = true;
 		else
 			tactical = false;
@@ -1576,32 +1561,32 @@ Starshatter::DoGameKeys()
 
 	if (time_til_change <= 0) {
 		if (KeyDown(KEY_CAM_BRIDGE)) {
-			PlayerCam(CameraDirector::MODE_COCKPIT);
+			PlayerCam(CameraManager::MODE_COCKPIT);
 			time_til_change = 0.5;
 		}
 
 		else if (KeyDown(KEY_CAM_VIRT)) {
-			PlayerCam(CameraDirector::MODE_VIRTUAL);
+			PlayerCam(CameraManager::MODE_VIRTUAL);
 			time_til_change = 0.5;
 		}
 
 		else if (KeyDown(KEY_CAM_CHASE)) {
-			PlayerCam(CameraDirector::MODE_CHASE);
+			PlayerCam(CameraManager::MODE_CHASE);
 			time_til_change = 0.5;
 		}
 
 		else if (KeyDown(KEY_CAM_DROP)) {
-			PlayerCam(CameraDirector::MODE_DROP);
+			PlayerCam(CameraManager::MODE_DROP);
 			time_til_change = 0.5;
 		}
 
 		else if (KeyDown(KEY_CAM_EXTERN)) {
-			PlayerCam(CameraDirector::MODE_ORBIT);
+			PlayerCam(CameraManager::MODE_ORBIT);
 			time_til_change = 0.5;
 		}
 
 		else if (KeyDown(KEY_TARGET_PADLOCK)) {
-			PlayerCam(CameraDirector::MODE_TARGET);
+			PlayerCam(CameraManager::MODE_TARGET);
 			time_til_change = 0.5;
 		}
 
@@ -1760,17 +1745,8 @@ Starshatter::DoGameKeys()
 			if (player_ship && !player_ship->InTransition()) {
 				const double damage = player_ship->Design()->scuttle;
 
-				/*if (NetGame::IsNetGameClient()) {
-					NetUtil::SendSelfDestruct(player_ship, damage);
-				}
-				else {
-					// Converted Point -> FVector:
-					const FVector scuttle_loc = player_ship->Location() + RandomDirection() * player_ship->Radius();
-					player_ship->InflictDamage(damage, 0, 1, scuttle_loc);
-				}*/
-
 				if (player_ship->Integrity() < 1) {
-					// Converted Print -> UE_LOG (avoid MemDebug/Print):
+
 					UE_LOG(LogTemp, Log, TEXT("  %s 0-0-0-Destruct-0"),
 						UTF8_TO_TCHAR(player_ship->Name()));
 

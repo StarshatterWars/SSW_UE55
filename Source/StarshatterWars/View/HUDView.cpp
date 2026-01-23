@@ -192,15 +192,6 @@ FColor night_vision_colors[NUM_HUD_COLORS] = {
 	FColor(0,  0,  0)   // no night vision
 };
 
-static SystemFont* hud_font = 0;
-static SystemFont* big_font = 0;
-
-static bool   mouse_in = false;
-static int    mouse_latch = 0;
-static int    mouse_index = -1;
-
-static int ship_status = SimSystem::NOMINAL;
-static int tgt_status = SimSystem::NOMINAL;
 
 // +--------------------------------------------------------------------+
 

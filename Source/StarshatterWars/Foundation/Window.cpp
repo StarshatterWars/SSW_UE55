@@ -311,7 +311,12 @@ Window::DrawRect(const Rect& r, const FColor& color, int blend)
 void
 Window::FillRect(int x1, int y1, int x2, int y2, const FColor& color, int blend)
 {
-    if (!screen || !screen->GetVideo()) return;
+    if (!screen)
+        return;
+
+    Video* video = screen->GetVideo();
+    if (!video)
+        return;
 
     sort(x1, x2);
     sort(y1, y2);
@@ -320,10 +325,14 @@ Window::FillRect(int x1, int y1, int x2, int y2, const FColor& color, int blend)
         return;
 
     vset4.space = VertexSet::SCREEN_SPACE;
-    const DWORD packed = ToStarColorARGB(color);
 
     for (int i = 0; i < 4; i++) {
-        vset4.diffuse[i] = packed;
+        // VertexSet::diffuse is FColor* in your UE port:
+        vset4.diffuse[i] = color;
+
+        // If specular is DWORD*, keep it DWORD:
+        // (If specular is also FColor*, change this to FColor::Black)
+        vset4.specular[i] = FColor::Black;
     }
 
     vset4.s_loc[0].X = (float)(rect.x + x1) - 0.5f;
@@ -362,7 +371,6 @@ Window::FillRect(int x1, int y1, int x2, int y2, const FColor& color, int blend)
     poly.verts[2] = 2;
     poly.verts[3] = 3;
 
-    Video* video = screen->GetVideo();
     video->DrawScreenPolys(1, &poly, blend);
 }
 
@@ -431,31 +439,41 @@ Window::FillPoly(int nPts, const FVector* pts, const FColor& color, int blend)
     if (nPts < 3 || nPts > 4)
         return;
 
-    if (!screen || !screen->GetVideo())
+    if (!screen)
+        return;
+
+    Video* video = screen->GetVideo();
+    if (!video)
         return;
 
     vset4.space = VertexSet::SCREEN_SPACE;
-    const DWORD packed = ToStarColorARGB(color);
 
     for (int i = 0; i < nPts; i++) {
-        vset4.diffuse[i] = packed;
+        // VertexSet::diffuse is FColor*
+        vset4.diffuse[i] = color;
+
+        // Screen-space vertex position
         vset4.s_loc[i].X = (float)(rect.x + (int)pts[i].X) - 0.5f;
         vset4.s_loc[i].Y = (float)(rect.y + (int)pts[i].Y) - 0.5f;
         vset4.s_loc[i].Z = 0.0f;
+
         vset4.rw[i] = 1.0f;
         vset4.tu[i] = 0.0f;
         vset4.tv[i] = 0.0f;
+
+        if (vset4.specular)
+            vset4.specular[i] = FColor::Black;
     }
 
     Poly poly(0);
     poly.nverts = nPts;
     poly.vertex_set = &vset4;
+
     poly.verts[0] = 0;
     poly.verts[1] = 1;
     poly.verts[2] = 2;
     poly.verts[3] = 3;
 
-    Video* video = screen->GetVideo();
     video->DrawScreenPolys(1, &poly, blend);
 }
 
@@ -484,7 +502,12 @@ Window::FadeBitmap(int x1, int y1, int x2, int y2, Bitmap* img, const FColor& c,
 void
 Window::ClipBitmap(int x1, int y1, int x2, int y2, Bitmap* img, const FColor& c, int blend, const Rect& clip_rect)
 {
-    if (!screen || !screen->GetVideo() || !img) return;
+    if (!screen || !img)
+        return;
+
+    Video* video = screen->GetVideo();
+    if (!video)
+        return;
 
     Rect clip = clip_rect;
 
@@ -515,19 +538,28 @@ Window::ClipBitmap(int x1, int y1, int x2, int y2, Bitmap* img, const FColor& c,
         return;
 
     vset4.space = VertexSet::SCREEN_SPACE;
-    const DWORD packed = ToStarColorARGB(c);
+
+    // VertexSet::diffuse is FColor* in your UE port:
     for (int i = 0; i < 4; i++) {
-        vset4.diffuse[i] = packed;
+        vset4.diffuse[i] = c;
+
+        if (vset4.specular)
+            vset4.specular[i] = FColor::Black;
     }
 
     float u1 = 0.0f;
     float u2 = 1.0f;
     float v1 = 0.0f;
     float v2 = 1.0f;
-    float iw = (float)(x2 - x1);
-    float ih = (float)(y2 - y1);
-    int   x3 = clip.x + clip.w;
-    int   y3 = clip.y + clip.h;
+
+    const float iw = (float)(x2 - x1);
+    const float ih = (float)(y2 - y1);
+
+    const int x3 = clip.x + clip.w;
+    const int y3 = clip.y + clip.h;
+
+    if (iw <= 0.0f || ih <= 0.0f)
+        return;
 
     if (x1 < clip.x) {
         u1 = (clip.x - x1) / iw;
@@ -589,8 +621,6 @@ Window::ClipBitmap(int x1, int y1, int x2, int y2, Bitmap* img, const FColor& c,
     poly.verts[2] = 2;
     poly.verts[3] = 3;
 
-    Video* video = screen->GetVideo();
-
     video->SetRenderState(Video::TEXTURE_WRAP, 0);
     video->DrawScreenPolys(1, &poly, blend);
     video->SetRenderState(Video::TEXTURE_WRAP, 1);
@@ -601,18 +631,29 @@ Window::ClipBitmap(int x1, int y1, int x2, int y2, Bitmap* img, const FColor& c,
 void
 Window::TileBitmap(int x1, int y1, int x2, int y2, Bitmap* img, int blend)
 {
-    if (!screen || !screen->GetVideo())             return;
-    if (!img || !img->Width() || !img->Height())    return;
+    if (!screen)
+        return;
+
+    Video* video = screen->GetVideo();
+    if (!video)
+        return;
+
+    if (!img || !img->Width() || !img->Height())
+        return;
 
     vset4.space = VertexSet::SCREEN_SPACE;
-    const DWORD packed = ToStarColorARGB(FColor::White);
 
+    // VertexSet::diffuse is FColor* in your UE port:
     for (int i = 0; i < 4; i++) {
-        vset4.diffuse[i] = packed;
+        vset4.diffuse[i] = FColor::White;
+
+        if (vset4.specular)
+            vset4.specular[i] = FColor::Black;
     }
 
-    float xscale = (float)rect.w / (float)img->Width();
-    float yscale = (float)rect.h / (float)img->Height();
+    // Tile scale based on window rect vs bitmap size (original intent):
+    const float xscale = (float)rect.w / (float)img->Width();
+    const float yscale = (float)rect.h / (float)img->Height();
 
     vset4.s_loc[0].X = (float)(rect.x + x1) - 0.5f;
     vset4.s_loc[0].Y = (float)(rect.y + y1) - 0.5f;
@@ -654,9 +695,9 @@ Window::TileBitmap(int x1, int y1, int x2, int y2, Bitmap* img, int blend)
     poly.verts[2] = 2;
     poly.verts[3] = 3;
 
-    Video* video = screen->GetVideo();
     video->DrawScreenPolys(1, &poly, blend);
 }
+
 
 // +--------------------------------------------------------------------+
 

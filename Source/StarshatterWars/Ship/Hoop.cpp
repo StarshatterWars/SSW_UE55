@@ -154,13 +154,19 @@ Hoop::Update()
 		mtl->Ke = ils_color;
 
 	if (model && luminous) {
-		ListIter<Surface> s_iter = model->GetSurfaces();
-		while (++s_iter) {
-			Surface* surface = s_iter.value();
-			VertexSet* vset = surface->GetVertexSet();
 
-			for (int32 VertexIndex = 0; VertexIndex < vset->nverts; ++VertexIndex) {
-				vset->diffuse[VertexIndex] = ils_color.ToPackedARGB();
+		ListIter<Surface> SurfaceIter = model->GetSurfaces();
+		while (++SurfaceIter) {
+			Surface* SurfacePtr = SurfaceIter.value();
+			if (!SurfacePtr)
+				continue;
+
+			VertexSet* VSet = SurfacePtr->GetVertexSet();
+			if (!VSet || !VSet->diffuse || VSet->nverts < 1)
+				continue;
+
+			for (int32 VertexIndex = 0; VertexIndex < VSet->nverts; ++VertexIndex) {
+				VSet->diffuse[VertexIndex] = ils_color; 
 			}
 		}
 

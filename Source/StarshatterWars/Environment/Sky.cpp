@@ -49,11 +49,12 @@ Stars::Stars(int nstars)
 		const FColor StarColor(GrayR, GrayG, GrayB, 255);
 
 		colors[StarIndex] = StarColor;
-		vset->diffuse[StarIndex] = StarColor.ToPackedRGBA();
-		vset->specular[StarIndex] = 0;
+		vset->diffuse[StarIndex] = StarColor;        // diffuse is FColor*
+		vset->specular[StarIndex] = FColor(0, 0, 0, 255);// specular is FColor* (or FColor::Black if you prefer)
 	}
 
-	strcpy_s(name, "Stars");
+	// If name is a fixed char[] buffer, use the safe form:
+	strcpy_s(name, sizeof(name), "Stars");
 }
 
 Stars::~Stars()
@@ -67,21 +68,31 @@ Stars::~Stars()
 void
 Stars::Illuminate(double Scale)
 {
-	if (!vset)
+	if (!vset || !colors)
 		return;
+
+	const float ScaleF = static_cast<float>(Scale);
 
 	for (int32 VertexIndex = 0; VertexIndex < vset->nverts; ++VertexIndex) {
 		const FColor BaseColor = colors[VertexIndex];
 
-		const uint8 R = static_cast<uint8>(FMath::Clamp(BaseColor.R * Scale, 0.0, 255.0));
-		const uint8 G = static_cast<uint8>(FMath::Clamp(BaseColor.G * Scale, 0.0, 255.0));
-		const uint8 B = static_cast<uint8>(FMath::Clamp(BaseColor.B * Scale, 0.0, 255.0));
+		const uint8 R = static_cast<uint8>(
+			FMath::Clamp(static_cast<float>(BaseColor.R) * ScaleF, 0.0f, 255.0f)
+			);
 
-		const FColor ScaledColor(R, G, B, BaseColor.A);
+		const uint8 G = static_cast<uint8>(
+			FMath::Clamp(static_cast<float>(BaseColor.G) * ScaleF, 0.0f, 255.0f)
+			);
 
-		vset->diffuse[VertexIndex] = ScaledColor.ToPackedRGBA();
+		const uint8 B = static_cast<uint8>(
+			FMath::Clamp(static_cast<float>(BaseColor.B) * ScaleF, 0.0f, 255.0f)
+			);
+
+		// Store directly as FColor (VertexSet now uses FColor*)
+		vset->diffuse[VertexIndex] = FColor(R, G, B, BaseColor.A);
 	}
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -141,11 +152,15 @@ Dust::Reset(const FVector& RefLocation)
 			GrayValue = static_cast<uint8>(FMath::RandRange(64, 156));
 		}
 
-		vset->diffuse[VertexIndex] = FColor(GrayValue, GrayValue, GrayValue, 255).ToPackedRGBA();
-		vset->specular[VertexIndex] = 0;
+		// VertexSet stores FColor directly now:
+		vset->diffuse[VertexIndex] = FColor(GrayValue, GrayValue, GrayValue, 255);
+
+		// If specular is also FColor* in your port:
+		vset->specular[VertexIndex] = FColor(0, 0, 0, 255);
+		// If specular is still DWORD* in your port, keep:
+		// vset->specular[VertexIndex] = 0;
 	}
 }
-
 
 // +--------------------------------------------------------------------+
 

@@ -406,14 +406,24 @@ SimSystem::Mount(const SimSystem& system)
 void
 SimSystem::Orient(const Physical* rep)
 {
-	// NOTE: Physical/Camera types are part of Starshatter core.
-	// This retains original behavior; only the stored vectors are now FVector.
-	const Matrix& orientation = rep->Cam().Orientation();
-	const FVector loc = rep->Location();
+	// Starshatter core types:
+	const Matrix& StarOrient = rep->Cam().Orientation();
+	const FVector Loc = rep->Location();
 
-	const FVector ss_mount = (Point(mount_rel.X, mount_rel.Y, mount_rel.Z) * orientation) + loc;
+	// Convert Starshatter Matrix -> Unreal FMatrix
+	FMatrix UEOrient = FMatrix::Identity;
+	UEOrient.M[0][0] = (float)StarOrient(0, 0);  UEOrient.M[0][1] = (float)StarOrient(0, 1);  UEOrient.M[0][2] = (float)StarOrient(0, 2);
+	UEOrient.M[1][0] = (float)StarOrient(1, 0);  UEOrient.M[1][1] = (float)StarOrient(1, 1);  UEOrient.M[1][2] = (float)StarOrient(1, 2);
+	UEOrient.M[2][0] = (float)StarOrient(2, 0);  UEOrient.M[2][1] = (float)StarOrient(2, 1);  UEOrient.M[2][2] = (float)StarOrient(2, 2);
 
-	mount_loc = FVector((float)ss_mount.x, (float)ss_mount.y, (float)ss_mount.z);
+	// Local mount offset (already in your struct, now treated as FVector)
+	const FVector MountRelUE(mount_rel.X, mount_rel.Y, mount_rel.Z);
+
+	// Rotate local offset, then translate into world space
+	const FVector SsMount = UEOrient.TransformVector(MountRelUE) + Loc;
+
+	// Store (mount_loc is FVector in your port)
+	mount_loc = SsMount;
 }
 
 // +----------------------------------------------------------------------+

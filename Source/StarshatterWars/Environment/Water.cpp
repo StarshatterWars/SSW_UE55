@@ -244,46 +244,53 @@ Water::CalcWaves(double seconds)
 // +--------------------------------------------------------------------+
 
 void
-Water::UpdateSurface(FVector& eyePos, VertexSet* vset)
+Water::UpdateSurface(FVector& EyePos, VertexSet* VSet)
 {
-	(void)eyePos;
+	(void)EyePos;
 
-	if (!surface || !vset || nVertices < 2 || (UINT)vset->nverts < (UINT)(nVertices * nVertices))
+	if (!surface || !VSet || nVertices < 2 || (UINT)VSet->nverts < (UINT)(nVertices * nVertices))
 		return;
 
-	const UINT SIZE = (UINT)nVertices;
+	const UINT Size = (UINT)nVertices;
 
-	WATER_SURFACE* pSurf = surface;
-	FVector* pLoc = (FVector*)vset->loc;
-	FVector* pNorm = (FVector*)vset->nrm;
-	DWORD* pDiff = vset->diffuse;
-	float* pTu = vset->tu;
-	float* pTv = vset->tv;
+	WATER_SURFACE* SurfPtr = surface;
 
-	const float fInc = 1.0f / (float)(SIZE - 1);
-	float fx = 0.0f;
-	float fz = 0.0f;
+	FVector* LocPtr = VSet->loc;
+	FVector* NormPtr = VSet->nrm;
 
-	for (UINT y = 0; y < SIZE; y++) {
-		for (UINT x = 0; x < SIZE; x++) {
+	// VertexSet::diffuse is now FColor* in your UE port:
+	FColor* DiffPtr = VSet->diffuse;
+
+	float* TuPtr = VSet->tu;
+	float* TvPtr = VSet->tv;
+
+	const float Inc = 1.0f / (float)(Size - 1);
+
+	float Fx = 0.0f;
+	float Fz = 0.0f;
+
+	for (UINT y = 0; y < Size; y++) {
+		for (UINT x = 0; x < Size; x++) {
+
 			// update vertex height and normal
-			pLoc->Y += pSurf->height;
-			*pNorm = pSurf->normal;
+			LocPtr->Y += SurfPtr->height;
+			*NormPtr = SurfPtr->normal;
 
 			// (Refraction/caustics block intentionally retained as comment from original)
 
-			fx += fInc;
+			Fx += Inc;
 
-			++pSurf;
-			++pLoc;
-			++pNorm;
+			++SurfPtr;
+			++LocPtr;
+			++NormPtr;
 
-			if (pDiff) ++pDiff;
-			if (pTu)   ++pTu;
-			if (pTv)   ++pTv;
+			// Maintain original pointer-walk behavior:
+			if (DiffPtr) ++DiffPtr;
+			if (TuPtr)   ++TuPtr;
+			if (TvPtr)   ++TvPtr;
 		}
 
-		fx = 0.0f;
-		fz += fInc;
+		Fx = 0.0f;
+		Fz += Inc;
 	}
 }

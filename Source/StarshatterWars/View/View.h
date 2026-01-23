@@ -18,6 +18,8 @@
 #pragma once
 
 #include "Types.h"
+#include "SystemFont.h"
+#include "SimSystem.h"
 
 // Minimal Unreal include required for UE_LOG:
 #include "Logging/LogMacros.h"
@@ -26,6 +28,18 @@
 
 static FColor hud_color = FColor::Black;
 static FColor txt_color = FColor::Black;
+static bool show_menu = false;
+
+SystemFont* hud_font = nullptr;
+SystemFont* big_font = nullptr;
+
+static bool   mouse_in = false;
+static int    mouse_latch = 0;
+static int    mouse_index = -1;
+
+static int ship_status = SimSystem::NOMINAL;
+static int tgt_status = SimSystem::NOMINAL;
+
 
 // +--------------------------------------------------------------------+
 
