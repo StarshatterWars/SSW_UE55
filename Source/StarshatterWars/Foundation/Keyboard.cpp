@@ -96,22 +96,23 @@ Keyboard::MapKeys(KeyMapEntry* mapping, int nkeys)
 		return;
 
 	for (int i = 0; i < nkeys; i++) {
-		KeyMapEntry k = mapping[i];
+		const KeyMapEntry& Entry = mapping[i];
 
-		if (k.act >= KEY_MAP_FIRST && k.act <= KEY_MAP_LAST) {
+		if (Entry.act >= KEY_MAP_FIRST && Entry.act <= KEY_MAP_LAST) {
 #if PLATFORM_WINDOWS
-			if (k.key == 0 || (k.key > VK_MBUTTON && k.key < KEY_JOY_1)) {
-				map[k.act] = k.key;
-				alt[k.act] = k.alt;
+			if (Entry.key == 0 || (Entry.key > VK_MBUTTON && Entry.key < KEY_JOY_1)) {
+				map[Entry.act] = Entry.key;
+				alt[Entry.act] = Entry.alt;
 			}
 #else
-			// Platform keycodes are not implemented outside Windows in this legacy path:
-			map[k.act] = k.key;
-			alt[k.act] = k.alt;
+			// Legacy non-Windows fallback
+			map[Entry.act] = Entry.key;
+			alt[Entry.act] = Entry.alt;
 #endif
 		}
 	}
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -119,8 +120,8 @@ bool Keyboard::KeyDown(int key)
 {
 #if PLATFORM_WINDOWS
 	if (key) {
-		const short k = GetAsyncKeyState(key);
-		return (k < 0) || (k & 1);
+		const short KeyState = GetAsyncKeyState(key);
+		return (KeyState < 0) || (KeyState & 1);
 	}
 	return false;
 #else
@@ -135,18 +136,19 @@ bool Keyboard::KeyDownMap(int key)
 {
 #if PLATFORM_WINDOWS
 	if (key >= KEY_MAP_FIRST && key <= KEY_MAP_LAST && map[key]) {
-		const short k = GetAsyncKeyState(map[key]);
-		short a = -1;
+		const short PrimaryState = GetAsyncKeyState(map[key]);
+		short AltState = -1;
 
 		if (alt[key] > 0 && alt[key] < KEY_JOY_1) {
-			a = GetAsyncKeyState(alt[key]);
+			AltState = GetAsyncKeyState(alt[key]);
 		}
 		else {
-			a = !GetAsyncKeyState(VK_SHIFT) &&
+			AltState = !GetAsyncKeyState(VK_SHIFT) &&
 				!GetAsyncKeyState(VK_MENU);
 		}
 
-		return ((k < 0) || (k & 1)) && ((a < 0) || (a & 1));
+		return ((PrimaryState < 0) || (PrimaryState & 1)) &&
+			((AltState < 0) || (AltState & 1));
 	}
 
 	return false;

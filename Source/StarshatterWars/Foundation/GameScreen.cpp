@@ -23,20 +23,20 @@
 #include "QuitView.h"
 #include "RadioView.h"
 #include "TacticalView.h"
+
 #include "NavDlg.h"
 #include "EngDlg.h"
 #include "FltDlg.h"
-#include "AudDlg.h"
+#include "AudioDlg.h"
 #include "VidDlg.h"
 #include "OptDlg.h"
 #include "CtlDlg.h"
 #include "KeyDlg.h"
 #include "JoyDlg.h"
-#include "ModDlg.h"
-#include "ModInfoDlg.h"
+
 #include "FormDef.h"
 #include "Starshatter.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 
 #include "Game.h"
 #include "Video.h"
@@ -49,8 +49,8 @@
 #include "CameraView.h"
 #include "FadeView.h"
 #include "Bitmap.h"
-#include "Font.h"
-#include "FontMgr.h"
+#include "SystemFont.h"
+#include "FontManager.h"
 #include "EventDispatch.h"
 #include "DataLoader.h"
 #include "Resource.h"
@@ -84,11 +84,9 @@ GameScreen::GameScreen()
     , ctldlg(0)
     , keydlg(0)
     , joydlg(0)
-    , auddlg(0)
+    , audiodlg(0)
     , viddlg(0)
     , optdlg(0)
-    , moddlg(0)
-    , modInfoDlg(0)
     , HUDfont(0)
     , GUIfont(0)
     , GUI_small_font(0)
@@ -110,15 +108,15 @@ GameScreen::GameScreen()
     , frame_rate(0)
     , isShown(false)
 {
-    cam_dir = new CameraDirector;
+    cam_dir = new CameraManager;
     sim = Sim::GetSim();
     loader = DataLoader::GetLoader();
 
     // find the fonts:
-    HUDfont = FontMgr::Find("HUD");
-    GUIfont = FontMgr::Find("GUI");
-    GUI_small_font = FontMgr::Find("GUIsmall");
-    title_font = FontMgr::Find("Title");
+    HUDfont = FontManager::Find("HUD");
+    GUIfont = FontManager::Find("GUI");
+    GUI_small_font = FontManager::Find("GUIsmall");
+    title_font = FontManager::Find("Title");
 
     loader->LoadTexture("flare0+.pcx", flare1, Bitmap::BMP_TRANSLUCENT);
     loader->LoadTexture("flare2.pcx", flare2, Bitmap::BMP_TRANSLUCENT);
@@ -155,7 +153,7 @@ GameScreen::Setup(Screen* s)
     gamewin->AddView(new FadeView(gamewin, 1, 0, 0));
 
     // camera:
-    cam_dir = CameraDirector::GetInstance();
+    cam_dir = CameraManager::GetInstance();
     cam_view = new CameraView(gamewin, cam_dir->GetCamera(), 0);
 
     if (cam_view)
@@ -200,9 +198,9 @@ GameScreen::Setup(Screen* s)
 
     screen->AddWindow(gamewin);
 
-    FormDef aud_def("AudDlg", 0);
-    aud_def.Load("AudDlg");
-    auddlg = new AudDlg(screen, aud_def, this);
+    FormDef aud_def("AudioDlg", 0);
+    aud_def.Load("AudioDlg");
+    audiodlg = new AudioDlg(screen, aud_def, this);
 
     FormDef ctl_def("CtlDlg", 0);
     ctl_def.Load("CtlDlg");
@@ -228,10 +226,6 @@ GameScreen::Setup(Screen* s)
     key_def.Load("KeyDlg");
     keydlg = new KeyDlg(screen, key_def, this);
 
-    FormDef mod_info_def("ModInfoDlg", 0);
-    mod_info_def.Load("ModInfoDlg");
-    modInfoDlg = new ModInfoDlg(screen, mod_info_def, this);
-
     FormDef nav_def("NavDlg", 0);
     nav_def.Load("NavDlg");
     navdlg = new NavDlg(screen, nav_def, this);
@@ -247,7 +241,7 @@ GameScreen::Setup(Screen* s)
     if (engdlg)     engdlg->Hide();
     if (fltdlg)     fltdlg->Hide();
     if (navdlg)     navdlg->Hide();
-    if (auddlg)     auddlg->Hide();
+    if (audiodlg)     audiodlg->Hide();
     if (viddlg)     viddlg->Hide();
     if (optdlg)     optdlg->Hide();
     if (ctldlg)     ctldlg->Hide();
@@ -277,8 +271,7 @@ GameScreen::TearDown()
         screen->DelWindow(engdlg);
         screen->DelWindow(fltdlg);
         screen->DelWindow(navdlg);
-        screen->DelWindow(modInfoDlg);
-        screen->DelWindow(auddlg);
+        screen->DelWindow(audiodlg);
         screen->DelWindow(viddlg);
         screen->DelWindow(optdlg);
         screen->DelWindow(moddlg);
@@ -291,11 +284,9 @@ GameScreen::TearDown()
     delete engdlg;
     delete fltdlg;
     delete navdlg;
-    delete modInfoDlg;
-    delete auddlg;
+    delete audiodlg;
     delete viddlg;
     delete optdlg;
-    delete moddlg;
     delete ctldlg;
     delete keydlg;
     delete joydlg;
@@ -305,11 +296,9 @@ GameScreen::TearDown()
     engdlg = 0;
     fltdlg = 0;
     navdlg = 0;
-    modInfoDlg = 0;
-    auddlg = 0;
+    audiodlg = 0;
     viddlg = 0;
     optdlg = 0;
-    moddlg = 0;
     ctldlg = 0;
     keydlg = 0;
     joydlg = 0;
@@ -370,7 +359,7 @@ GameScreen::ExecFrame()
 
     if (sim) {
         if (cam_view) {
-            cam_view->UseCamera(CameraDirector::GetInstance()->GetCamera());
+            cam_view->UseCamera(CameraManager::GetInstance()->GetCamera());
             cam_view->UseScene(sim->GetScene());
         }
 
@@ -407,8 +396,8 @@ GameScreen::ExecFrame()
                 dialog_showing = true;
             }
 
-            if (auddlg && auddlg->IsShown()) {
-                auddlg->ExecFrame();
+            if (auiodlg && audiodlg->IsShown()) {
+                audiodlg->ExecFrame();
                 dialog_showing = true;
             }
 
@@ -538,12 +527,6 @@ GameScreen::CloseTopmost()
     else if (fltdlg && fltdlg->IsShown()) {
         HideFltDlg();
         processed = true;
-    }
-
-    else if (modInfoDlg && modInfoDlg->IsShown()) {
-        HideModInfoDlg();
-        processed = true;
-    }
 
     else if (keydlg && keydlg->IsShown()) {
         ShowCtlDlg();
@@ -555,7 +538,7 @@ GameScreen::CloseTopmost()
         processed = true;
     }
 
-    else if (auddlg && auddlg->IsShown()) {
+    else if (audiodlg && audiodlg->IsShown()) {
         CancelOptions();
         processed = true;
     }
@@ -654,16 +637,13 @@ GameScreen::IsFormShown() const
     else if (fltdlg && fltdlg->IsShown())
         form_shown = true;
 
-    else if (auddlg && auddlg->IsShown())
+    else if (audiodlg && auddlg->IsShown())
         form_shown = true;
 
     else if (viddlg && viddlg->IsShown())
         form_shown = true;
 
     else if (optdlg && optdlg->IsShown())
-        form_shown = true;
-
-    else if (moddlg && moddlg->IsShown())
         form_shown = true;
 
     else if (ctldlg && ctldlg->IsShown())
@@ -689,10 +669,9 @@ GameScreen::ShowExternal()
     if ((navdlg && navdlg->IsShown()) ||
         (engdlg && engdlg->IsShown()) ||
         (fltdlg && fltdlg->IsShown()) ||
-        (auddlg && auddlg->IsShown()) ||
+        (audiodlg && audiodlg->IsShown()) ||
         (viddlg && viddlg->IsShown()) ||
         (optdlg && optdlg->IsShown()) ||
-        (moddlg && moddlg->IsShown()) ||
         (ctldlg && ctldlg->IsShown()) ||
         (keydlg && keydlg->IsShown()) ||
         (joydlg && joydlg->IsShown()))
@@ -867,7 +846,7 @@ GameScreen::IsFltShown()
 void
 GameScreen::ShowAudDlg()
 {
-    if (auddlg) {
+    if (audiodlg) {
         if (quit_view) {
             quit_view->CloseMenu();
             Starshatter::GetInstance()->Pause(true);
@@ -875,8 +854,8 @@ GameScreen::ShowAudDlg()
 
         HideAll();
 
-        auddlg->Show();
-        auddlg->SetTopMost(true);
+        audiodlg->Show();
+        audiodlg->SetTopMost(true);
 
         if (mouse_con) {
             mouse_active = mouse_con->Active();
@@ -892,8 +871,8 @@ GameScreen::ShowAudDlg()
 void
 GameScreen::HideAudDlg()
 {
-    if (auddlg && auddlg->IsShown()) {
-        auddlg->Hide();
+    if (audiodlg && audiodlg->IsShown()) {
+        audiodlg->Hide();
         Mouse::Show(false);
         screen->AddWindow(gamewin);
 
@@ -907,7 +886,7 @@ GameScreen::HideAudDlg()
 bool
 GameScreen::IsAudShown()
 {
-    return auddlg && auddlg->IsShown();
+    return audiodlg && audiodlg->IsShown();
 }
 
 // +--------------------------------------------------------------------+
@@ -1004,98 +983,6 @@ bool
 GameScreen::IsOptShown()
 {
     return optdlg && optdlg->IsShown();
-}
-
-// +--------------------------------------------------------------------+
-
-void
-GameScreen::ShowModDlg()
-{
-    if (moddlg) {
-        if (quit_view) {
-            quit_view->CloseMenu();
-            Starshatter::GetInstance()->Pause(true);
-        }
-
-        HideAll();
-
-        moddlg->Show();
-        moddlg->SetTopMost(true);
-
-        if (mouse_con) {
-            mouse_active = mouse_con->Active();
-            mouse_con->SetActive(false);
-        }
-
-        Mouse::Show(true);
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-void
-GameScreen::HideModDlg()
-{
-    if (moddlg && moddlg->IsShown()) {
-        moddlg->Hide();
-        Mouse::Show(false);
-        screen->AddWindow(gamewin);
-
-        if (quit_view)
-            quit_view->ShowMenu();
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-bool
-GameScreen::IsModShown()
-{
-    return moddlg && moddlg->IsShown();
-}
-
-// +--------------------------------------------------------------------+
-
-void
-GameScreen::ShowModInfoDlg()
-{
-    if (moddlg && modInfoDlg) {
-        if (quit_view) {
-            quit_view->CloseMenu();
-            Starshatter::GetInstance()->Pause(true);
-        }
-
-        HideAll();
-
-        moddlg->Show();
-        moddlg->SetTopMost(false);
-
-        modInfoDlg->Show();
-        modInfoDlg->SetTopMost(true);
-
-        if (mouse_con) {
-            mouse_active = mouse_con->Active();
-            mouse_con->SetActive(false);
-        }
-
-        Mouse::Show(true);
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-void
-GameScreen::HideModInfoDlg()
-{
-    ShowModDlg();
-}
-
-// +--------------------------------------------------------------------+
-
-bool
-GameScreen::IsModInfoShown()
-{
-    return modInfoDlg && modInfoDlg->IsShown();
 }
 
 // +--------------------------------------------------------------------+
@@ -1247,11 +1134,9 @@ GameScreen::HideAll()
     if (engdlg)       engdlg->Hide();
     if (fltdlg)       fltdlg->Hide();
     if (navdlg)       navdlg->Hide();
-    if (auddlg)       auddlg->Hide();
+    if (audiodlg)       audiodlg->Hide();
     if (viddlg)       viddlg->Hide();
     if (optdlg)       optdlg->Hide();
-    if (moddlg)       moddlg->Hide();
-    if (modInfoDlg)   modInfoDlg->Hide();
     if (ctldlg)       ctldlg->Hide();
     if (keydlg)       keydlg->Hide();
     if (joydlg)       joydlg->Hide();
@@ -1264,7 +1149,7 @@ GameScreen::ApplyOptions()
 {
     if (ctldlg)  ctldlg->Apply();
     if (optdlg)  optdlg->Apply();
-    if (auddlg)  auddlg->Apply();
+    if (audiodlg)  audiodlg->Apply();
     if (viddlg)  viddlg->Apply();
 
     if (engdlg)  engdlg->Hide();
@@ -1274,7 +1159,6 @@ GameScreen::ApplyOptions()
     if (auddlg)  auddlg->Hide();
     if (viddlg)  viddlg->Hide();
     if (optdlg)  optdlg->Hide();
-    if (moddlg)  moddlg->Hide();
     if (keydlg)  keydlg->Hide();
     if (joydlg)  joydlg->Hide();
 
@@ -1291,17 +1175,16 @@ GameScreen::CancelOptions()
 {
     if (ctldlg)  ctldlg->Cancel();
     if (optdlg)  optdlg->Cancel();
-    if (auddlg)  auddlg->Cancel();
+    if (audiodlg)  audiodlg->Cancel();
     if (viddlg)  viddlg->Cancel();
 
     if (engdlg)  engdlg->Hide();
     if (fltdlg)  fltdlg->Hide();
     if (navdlg)  navdlg->Hide();
     if (ctldlg)  ctldlg->Hide();
-    if (auddlg)  auddlg->Hide();
+    if (audiodlg)  audiodlg->Hide();
     if (viddlg)  viddlg->Hide();
     if (optdlg)  optdlg->Hide();
-    if (moddlg)  moddlg->Hide();
     if (keydlg)  keydlg->Hide();
     if (joydlg)  joydlg->Hide();
 

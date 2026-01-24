@@ -37,7 +37,7 @@ public:
     Screen(Video* v);
     virtual ~Screen();
 
-    virtual bool      SetBackgroundColor(Color c);
+    virtual bool      SetBackgroundColor(FColor c);
 
     virtual bool      Resize(int w, int h);
     virtual bool      Refresh();

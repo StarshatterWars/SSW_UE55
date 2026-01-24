@@ -36,6 +36,7 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "AIAgent"),
             Path.Combine(ModuleDirectory, "Game"),
             Path.Combine(ModuleDirectory, "View"),
+            Path.Combine(ModuleDirectory, "Display"),
             Path.Combine(ModuleDirectory, "Network"),
             Path.Combine(ModuleDirectory, "Manager"),
             Path.Combine(ModuleDirectory, "Design"),

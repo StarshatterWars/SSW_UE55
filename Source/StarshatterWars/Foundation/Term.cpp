@@ -16,101 +16,147 @@ void Print(const char* fmt, ...);
 Term*
 error(char* s1, char* s2)
 {
-   Print("ERROR: ");
-   if (s1) Print(s1);
-   if (s2) Print(s2);
-   Print("\n\n");
-   return 0;
+	Print("ERROR: ");
+	if (s1) Print(s1);
+	if (s2) Print(s2);
+	Print("\n\n");
+	return 0;
 }
 
 // +-------------------------------------------------------------------+
 
-void TermBool::print(int level)  { if (level > 0) Print(val? "true" : "false"); else Print("..."); }
-void TermNumber::print(int level){ if (level > 0) Print("%g", val);     else Print("..."); }
-void TermText::print(int level)  { if (level > 0) Print("\"%s\"", val.data()); else Print("..."); }
+void TermBool::print(int level)
+{
+	if (level > 0) Print(val ? "true" : "false");
+	else           Print("...");
+}
+
+void TermNumber::print(int level)
+{
+	if (level > 0) Print("%g", val);
+	else           Print("...");
+}
+
+void TermText::print(int level)
+{
+	if (level > 0) Print("\"%s\"", val.data());
+	else           Print("...");
+}
 
 // +-------------------------------------------------------------------+
 
 TermArray::TermArray(TermList* elist)
+	: elems(elist)
 {
-   elems = elist;
 }
 
 TermArray::~TermArray()
 {
-   if (elems) elems->destroy();
-   delete elems;
+	if (elems) elems->destroy();
+	delete elems;
+	elems = nullptr;
 }
 
 void
 TermArray::print(int level)
 {
-   if (level > 1) {
-      Print("(");
+	if (level > 1) {
+		Print("(");
 
-      if (elems) {
-         for (int i = 0; i < elems->size(); i++) {
-            elems->at(i)->print(level-1);
-            if (i < elems->size() -1)
-               Print(", ");
-         }
-      }
+		if (elems) {
+			const int32 Count = elems->size();
+			for (int32 Index = 0; Index < Count; Index++) {
+				Term* Elem = elems->at(Index);
+				if (Elem) {
+					Elem->print(level - 1);
+				}
+				else {
+					Print("null");
+				}
 
-      Print(") ");
-   }
-   else Print("(...) ");
+				if (Index < Count - 1) {
+					Print(", ");
+				}
+			}
+		}
+
+		Print(") ");
+	}
+	else {
+		Print("(...) ");
+	}
 }
 
 // +-------------------------------------------------------------------+
 
 TermStruct::TermStruct(TermList* elist)
+	: elems(elist)
 {
-   elems = elist;
 }
 
 TermStruct::~TermStruct()
 {
-   if (elems) elems->destroy();
-   delete elems;
+	if (elems) elems->destroy();
+	delete elems;
+	elems = nullptr;
 }
 
 void
 TermStruct::print(int level)
 {
-   if (level > 1) {
-      Print("{");
+	if (level > 1) {
+		Print("{");
 
-      if (elems) {
-         for (int i = 0; i < elems->size(); i++) {
-            elems->at(i)->print(level-1);
-            if (i < elems->size() -1)
-               Print(", ");
-         }
-      }
+		if (elems) {
+			const int32 Count = elems->size();
+			for (int32 Index = 0; Index < Count; Index++) {
+				Term* Elem = elems->at(Index);
+				if (Elem) {
+					Elem->print(level - 1);
+				}
+				else {
+					Print("null");
+				}
 
-      Print("} ");
-   }
-   else Print("{...} ");
+				if (Index < Count - 1) {
+					Print(", ");
+				}
+			}
+		}
+
+		Print("} ");
+	}
+	else {
+		Print("{...} ");
+	}
 }
 
 // +-------------------------------------------------------------------+
 
 TermDef::~TermDef()
 {
-   delete mname;
-   delete mval;
+	delete mname;
+	mname = nullptr;
+
+	delete mval;
+	mval = nullptr;
 }
 
 void
 TermDef::print(int level)
 {
-   if (level >= 0) {
-      mname->print(level);
-      Print(": ");
-      mval->print(level-1);
-   }
-   else Print("...");
+	if (level >= 0) {
+		if (mname) mname->print(level);
+		else       Print("null");
+
+		Print(": ");
+
+		if (mval)  mval->print(level - 1);
+		else       Print("null");
+	}
+	else {
+		Print("...");
+	}
 }
 
 // +-------------------------------------------------------------------+
-

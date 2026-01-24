@@ -37,7 +37,7 @@ class CtlDlg;
 class JoyDlg;
 class KeyDlg;
 
-class AudDlg;
+class AudioDlg;
 class VidDlg;
 class OptDlg;
 
@@ -104,13 +104,12 @@ public:
     virtual void         ShowKeyDlg();
     virtual bool         IsKeyShown();
 
-    virtual AudDlg* GetAudDlg() const { return auddlg; }
+    virtual AudioDlg* GetAudioDlg() const { return audiodlg; }
     virtual VidDlg* GetVidDlg() const { return viddlg; }
     virtual OptDlg* GetOptDlg() const { return optdlg; }
     virtual CtlDlg* GetCtlDlg() const { return ctldlg; }
     virtual JoyDlg* GetJoyDlg() const { return joydlg; }
     virtual KeyDlg* GetKeyDlg() const { return keydlg; }
-    virtual ModDlg* GetModDlg() const { return moddlg; }
 
     virtual void         ShowAudDlg();
     virtual void         HideAudDlg();
@@ -127,10 +126,6 @@ public:
     virtual void         ShowModDlg();
     virtual void         HideModDlg();
     virtual bool         IsModShown();
-
-    virtual void         ShowModInfoDlg();
-    virtual void         HideModInfoDlg();
-    virtual bool         IsModInfoShown();
 
     virtual void         ApplyOptions();
     virtual void         CancelOptions();
@@ -164,7 +159,7 @@ private:
     CtlDlg* ctldlg;
     KeyDlg* keydlg;
     JoyDlg* joydlg;
-    AudDlg* auddlg;
+    AudioDlg* audiodlg;
     VidDlg* viddlg;
     OptDlg* optdlg;
 

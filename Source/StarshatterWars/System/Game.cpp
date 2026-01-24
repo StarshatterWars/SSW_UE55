@@ -10,7 +10,7 @@
 
 
 #include "Game.h"
-//#include "Screen.h"
+#include "Screen.h"
 #include "Video.h"
 #include "GameDataLoader.h"	
 

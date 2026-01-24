@@ -22,18 +22,41 @@ struct KeyMapEntry
 {
 	static const char* TYPENAME() { return "KeyMapEntry"; }
 
-	KeyMapEntry() : act(0), key(0), alt(0), joy(0) {}
-	KeyMapEntry(int a, int k, int s = 0, int j = 0) : act(a), key(k), alt(s), joy(j) {}
+	KeyMapEntry()
+		: act(0)
+		, key(0)
+		, alt(0)
+		, joy(0)
+	{
+	}
 
-	int operator==(const KeyMapEntry& k) const { return act == k.act && key == k.key && alt == k.alt && joy == k.joy; }
-	int operator!=(const KeyMapEntry& k) const { return !(*this == k); }
+	KeyMapEntry(int32 InAct, int32 InKey, int32 InAlt = 0, int32 InJoy = 0)
+		: act(InAct)
+		, key(InKey)
+		, alt(InAlt)
+		, joy(InJoy)
+	{
+	}
 
-	int      act;
-	int      key;
-	int      alt;
-	int      joy;
+	bool operator==(const KeyMapEntry& Other) const
+	{
+		return act == Other.act &&
+			key == Other.key &&
+			alt == Other.alt &&
+			joy == Other.joy;
+	}
 
+	bool operator!=(const KeyMapEntry& Other) const
+	{
+		return !(*this == Other);
+	}
+
+	int32 act;
+	int32 key;
+	int32 alt;
+	int32 joy;
 };
+
 
 // +--------------------------------------------------------------------+
 

@@ -95,7 +95,7 @@ Screen::ClearNextFrames(int num_frames)
 // +--------------------------------------------------------------------+
 
 bool
-Screen::SetBackgroundColor(Color c)
+Screen::SetBackgroundColor(FColor c)
 {
 	if (video)
 		return video->SetBackgroundColor(c);

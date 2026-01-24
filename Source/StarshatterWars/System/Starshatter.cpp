@@ -147,7 +147,7 @@ Starshatter::Starshatter()
 	if (!instance)
 		instance = this;
 
-	app_name = "Starshatter Wars";f
+	app_name = "Starshatter Wars";
 	title_text = "Starshatter Wars";
 	palette_name = "alpha";
 
