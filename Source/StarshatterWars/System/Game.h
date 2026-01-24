@@ -28,7 +28,7 @@
 
 class AGameDataLoader;
 class Locale;
-class Universe;
+class SimUniverse;
 class Sound;
 class SoundCard;
 class Video;
@@ -134,7 +134,7 @@ protected:
 	friend  bool      ProfileGameLoop(void);
 	
 	AGameDataLoader* content;
-	Universe* world;
+	SimUniverse* world;
 	VideoFactory* video_factory;
 	Video* video;
 	VideoSettings* video_settings;
@@ -146,13 +146,10 @@ protected:
 	//RenderStats       stats;
 	DWORD             totaltime;
 
-	PALETTEENTRY      standard_palette[256];
-	BYTE              inverse_palette[32768];
-
 	DWORD             winstyle;
 
-	char* app_name;
-	char* title_text;
+	FString app_name;
+	FString title_text;
 	char* palette_name;
 
 

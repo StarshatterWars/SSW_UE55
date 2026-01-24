@@ -2923,32 +2923,40 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 
 // +--------------------------------------------------------------------+
 
-bool
-MapView::IsClutter(Ship& test)
+bool MapView::IsClutter(Ship& Test)
 {
-	// get leader:
-	Ship* lead = test.GetLeader();
+	// Get leader
+	Ship* Lead = Test.GetLeader();
 
-	if (lead == &test)   // this is the leader:
+	// This ship is the leader
+	if (Lead == &Test)
+	{
 		return false;
+	}
 
-	// too close?
-	if (lead) {
-		FVector testloc, leadloc;
+	// Too close to leader?
+	if (Lead)
+	{
+		FVector TestLoc;
+		FVector LeadLoc;
 
-		GetShipLoc(test, testloc);
-		GetShipLoc(*lead, leadloc);
+		GetShipLoc(Test, TestLoc);
+		GetShipLoc(*Lead, LeadLoc);
 
-		const double dx = (double)testloc.X - (double)leadloc.X;
-		const double dy = (double)testloc.Y - (double)leadloc.Y;
-		const double d = dx * dx + dy * dy;
+		const float Dx = TestLoc.X - LeadLoc.X;
+		const float Dy = TestLoc.Y - LeadLoc.Y;
+		const float DistSq = Dx * Dx + Dy * Dy;
 
-		if (d <= 64)
+		// 8 units squared = 64
+		if (DistSq <= 64.0f)
+		{
 			return true;
+		}
 	}
 
 	return false;
 }
+
 
 // +--------------------------------------------------------------------+
 

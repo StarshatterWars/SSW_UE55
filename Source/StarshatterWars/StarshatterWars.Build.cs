@@ -19,8 +19,6 @@ public class StarshatterWars : ModuleRules
             "Slate",
             "SlateCore",
             "UMG",
-            "RenderCore",
-            "RHI",
             "MediaAssets",
             "CommonUI"
         });
@@ -47,6 +45,13 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "Foundation"),
             Path.Combine(ModuleDirectory, "Combat"),
             Path.Combine(ModuleDirectory, "Mission"),
+        });
+        PrivateDependencyModuleNames.AddRange(new string[]
+        {
+            "Niagara",
+            "NiagaraCore",   // advanced parameter bindings
+            "RenderCore",    // GPU effects, custom render logic
+            "RHI"            // low-level rendering (rare)
         });
     }
 }

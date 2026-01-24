@@ -18,7 +18,7 @@
 #include "Text.h"
 
 // Forward declarations to keep header light:
-class UTexture2D;
+class Bitmap;
 
 class Campaign;
 class MenuScreen;
@@ -46,7 +46,7 @@ public:
 	Starshatter();
 	virtual ~Starshatter();
 
-	virtual bool Init(HINSTANCE hi, HINSTANCE hpi, LPSTR cmdline, int nCmdShow);
+	virtual bool Init();
 	virtual bool InitGame();
 	virtual bool ChangeVideo();
 	virtual void GameState();
@@ -152,7 +152,7 @@ protected:
 	int                 splash_index;
 
 	// Replaced Bitmap (render asset) with Unreal texture pointer:
-	UTexture2D* splash_image;
+	Bitmap* splash_image;
 
 	MultiController* input;
 	MouseController* mouse_input;

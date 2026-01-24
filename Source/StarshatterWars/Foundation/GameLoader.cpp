@@ -8,7 +8,7 @@
 */
 
 #include "GameLoader.h"
-#include "Universe.h"
+#include "SimUniverse.h"
 #include "Sim.h"
 #include "Campaign.h"
 #include "DataLoader.h"

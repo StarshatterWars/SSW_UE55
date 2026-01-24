@@ -102,15 +102,15 @@ DetailSet::DefineLevel(double r, Graphic* g, FVector* o, FVector* spin_rate)
 }
 
 void
-DetailSet::AddToLevel(int level, Graphic* g, FVector* offset, FVector* spin_rate)
+DetailSet::AddToLevel(int level, Graphic* g, FVector* Offset, FVector* spin_rate)
 {
 	if (g && level >= 0 && level < levels) {
 		rep[level].append(g);
 
-		if (!offset)
-			offset = new FVector(0, 0, 0);
+		if (!Offset)
+			Offset = new FVector(0, 0, 0);
 
-		off[level].append(offset);
+		off[level].append(Offset);
 
 		if (spin_rate) {
 			int nrep = rep[level].size();

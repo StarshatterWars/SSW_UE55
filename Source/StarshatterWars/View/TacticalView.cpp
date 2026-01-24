@@ -887,17 +887,17 @@ void TacticalView::SetHelm(bool approach)
 // TACTICAL COMMUNICATIONS MENU:
 //
 
-static Menu* main_menu = 0;
-static Menu* view_menu = 0;
-static Menu* emcon_menu = 0;
+Menu* MainMenu = nullptr;
+Menu* ViewMenu = nullptr;
+Menu* EmconMenu = nullptr;
 
-static Menu* fighter_menu = 0;
-static Menu* starship_menu = 0;
-static Menu* action_menu = 0;
-static Menu* formation_menu = 0;
-static Menu* sensors_menu = 0;
-static Menu* quantum_menu = 0;
-static Menu* farcast_menu = 0;
+Menu* FighterMenu = nullptr;
+Menu* StarshipMenu = nullptr;
+Menu* ActionMenu = nullptr;
+Menu* FormationMenu = nullptr;
+Menu* SensorsMenu = nullptr;
+Menu* QuantumMenu = nullptr;
+Menu* FarcastMenu = nullptr;
 
 static SimElement* dst_elem = 0;
 
@@ -923,73 +923,73 @@ void TacticalView::Initialize()
     if (initialized)
         return;
 
-    view_menu = new Menu(Game::GetText("TacView.menu.view"));
-    view_menu->AddItem(Game::GetText("TacView.item.forward"), VIEW_FORWARD);
-    view_menu->AddItem(Game::GetText("TacView.item.chase"), VIEW_CHASE);
-    view_menu->AddItem(Game::GetText("TacView.item.orbit"), VIEW_ORBIT);
-    view_menu->AddItem(Game::GetText("TacView.item.padlock"), VIEW_PADLOCK);
+    ViewMenu = new Menu(Game::GetText("TacView.menu.view"));
+    ViewMenu->AddItem(Game::GetText("TacView.item.forward"), VIEW_FORWARD);
+    ViewMenu->AddItem(Game::GetText("TacView.item.chase"), VIEW_CHASE);
+    ViewMenu->AddItem(Game::GetText("TacView.item.orbit"), VIEW_ORBIT);
+    ViewMenu->AddItem(Game::GetText("TacView.item.padlock"), VIEW_PADLOCK);
 
-    emcon_menu = new Menu(Game::GetText("TacView.menu.emcon"));
+    EmconMenu = new Menu(Game::GetText("TacView.menu.emcon"));
 
-    quantum_menu = new Menu(Game::GetText("TacView.menu.quantum"));
-    farcast_menu = new Menu(Game::GetText("TacView.menu.farcast"));
+    QuantumMenu = new Menu(Game::GetText("TacView.menu.quantum"));
+    FarcastMenu = new Menu(Game::GetText("TacView.menu.farcast"));
 
-    main_menu = new Menu(Game::GetText("TacView.menu.main"));
+    MainMenu = new Menu(Game::GetText("TacView.menu.main"));
 
-    action_menu = new Menu(Game::GetText("TacView.menu.action"));
-    action_menu->AddItem(Game::GetText("TacView.item.engage"), RadioMessage::ATTACK);
-    action_menu->AddItem(Game::GetText("TacView.item.bracket"), RadioMessage::BRACKET);
-    action_menu->AddItem(Game::GetText("TacView.item.escort"), RadioMessage::ESCORT);
-    action_menu->AddItem(Game::GetText("TacView.item.identify"), RadioMessage::IDENTIFY);
-    action_menu->AddItem(Game::GetText("TacView.item.hold"), RadioMessage::WEP_HOLD);
+    ActionMenu = new Menu(Game::GetText("TacView.menu.action"));
+    ActionMenu->AddItem(Game::GetText("TacView.item.engage"), RadioMessage::ATTACK);
+    ActionMenu->AddItem(Game::GetText("TacView.item.bracket"), RadioMessage::BRACKET);
+    ActionMenu->AddItem(Game::GetText("TacView.item.escort"), RadioMessage::ESCORT);
+    ActionMenu->AddItem(Game::GetText("TacView.item.identify"), RadioMessage::IDENTIFY);
+    ActionMenu->AddItem(Game::GetText("TacView.item.hold"), RadioMessage::WEP_HOLD);
 
-    formation_menu = new Menu(Game::GetText("TacView.menu.formation"));
-    formation_menu->AddItem(Game::GetText("TacView.item.diamond"), RadioMessage::GO_DIAMOND);
-    formation_menu->AddItem(Game::GetText("TacView.item.spread"), RadioMessage::GO_SPREAD);
-    formation_menu->AddItem(Game::GetText("TacView.item.box"), RadioMessage::GO_BOX);
-    formation_menu->AddItem(Game::GetText("TacView.item.trail"), RadioMessage::GO_TRAIL);
+    FormationMenu = new Menu(Game::GetText("TacView.menu.formation"));
+    FormationMenu->AddItem(Game::GetText("TacView.item.diamond"), RadioMessage::GO_DIAMOND);
+    FormationMenu->AddItem(Game::GetText("TacView.item.spread"), RadioMessage::GO_SPREAD);
+    FormationMenu->AddItem(Game::GetText("TacView.item.box"), RadioMessage::GO_BOX);
+    FormationMenu->AddItem(Game::GetText("TacView.item.trail"), RadioMessage::GO_TRAIL);
 
-    sensors_menu = new Menu(Game::GetText("TacView.menu.emcon"));
-    sensors_menu->AddItem(Game::GetText("TacView.item.emcon-1"), RadioMessage::GO_EMCON1);
-    sensors_menu->AddItem(Game::GetText("TacView.item.emcon-2"), RadioMessage::GO_EMCON2);
-    sensors_menu->AddItem(Game::GetText("TacView.item.emcon-3"), RadioMessage::GO_EMCON3);
-    sensors_menu->AddItem(Game::GetText("TacView.item.probe"), RadioMessage::LAUNCH_PROBE);
+    SensorsMenu = new Menu(Game::GetText("TacView.menu.emcon"));
+    SensorsMenu->AddItem(Game::GetText("TacView.item.emcon-1"), RadioMessage::GO_EMCON1);
+    SensorsMenu->AddItem(Game::GetText("TacView.item.emcon-2"), RadioMessage::GO_EMCON2);
+    SensorsMenu->AddItem(Game::GetText("TacView.item.emcon-3"), RadioMessage::GO_EMCON3);
+    SensorsMenu->AddItem(Game::GetText("TacView.item.probe"), RadioMessage::LAUNCH_PROBE);
 
-    fighter_menu = new Menu(Game::GetText("TacView.menu.context"));
-    fighter_menu->AddMenu(Game::GetText("TacView.item.action"), action_menu);
-    fighter_menu->AddMenu(Game::GetText("TacView.item.formation"), formation_menu);
-    fighter_menu->AddMenu(Game::GetText("TacView.item.sensors"), sensors_menu);
-    fighter_menu->AddItem(Game::GetText("TacView.item.patrol"), RadioMessage::MOVE_PATROL);
-    fighter_menu->AddItem(Game::GetText("TacView.item.cancel"), RadioMessage::RESUME_MISSION);
-    fighter_menu->AddItem("", 0);
-    fighter_menu->AddItem(Game::GetText("TacView.item.rtb"), RadioMessage::RTB);
-    fighter_menu->AddItem(Game::GetText("TacView.item.dock"), RadioMessage::DOCK_WITH);
-    fighter_menu->AddMenu(Game::GetText("TacView.item.farcast"), farcast_menu);
+    FighterMenu = new Menu(Game::GetText("TacView.menu.context"));
+    FighterMenu->AddMenu(Game::GetText("TacView.item.action"), ActionMenu);
+    FighterMenu->AddMenu(Game::GetText("TacView.item.formation"), FormationMenu);
+    FighterMenu->AddMenu(Game::GetText("TacView.item.sensors"), SensorsMenu);
+    FighterMenu->AddItem(Game::GetText("TacView.item.patrol"), RadioMessage::MOVE_PATROL);
+    FighterMenu->AddItem(Game::GetText("TacView.item.cancel"), RadioMessage::RESUME_MISSION);
+    FighterMenu->AddItem("", 0);
+    FighterMenu->AddItem(Game::GetText("TacView.item.rtb"), RadioMessage::RTB);
+    FighterMenu->AddItem(Game::GetText("TacView.item.dock"), RadioMessage::DOCK_WITH);
+    FighterMenu->AddMenu(Game::GetText("TacView.item.farcast"), FarcastMenu);
 
-    starship_menu = new Menu(Game::GetText("TacView.menu.context"));
-    starship_menu->AddMenu(Game::GetText("TacView.item.action"), action_menu);
-    starship_menu->AddMenu(Game::GetText("TacView.item.sensors"), sensors_menu);
-    starship_menu->AddItem(Game::GetText("TacView.item.patrol"), RadioMessage::MOVE_PATROL);
-    starship_menu->AddItem(Game::GetText("TacView.item.cancel"), RadioMessage::RESUME_MISSION);
-    starship_menu->AddItem("", 0);
-    starship_menu->AddMenu(Game::GetText("TacView.item.quantum"), quantum_menu);
-    starship_menu->AddMenu(Game::GetText("TacView.item.farcast"), farcast_menu);
+    StarshipMenu = new Menu(Game::GetText("TacView.menu.context"));
+    StarshipMenu->AddMenu(Game::GetText("TacView.item.action"), ActionMenu);
+    StarshipMenu->AddMenu(Game::GetText("TacView.item.sensors"), SensorsMenu);
+    StarshipMenu->AddItem(Game::GetText("TacView.item.patrol"), RadioMessage::MOVE_PATROL);
+    StarshipMenu->AddItem(Game::GetText("TacView.item.cancel"), RadioMessage::RESUME_MISSION);
+    StarshipMenu->AddItem("", 0);
+    StarshipMenu->AddMenu(Game::GetText("TacView.item.quantum"), QuantumMenu);
+    StarshipMenu->AddMenu(Game::GetText("TacView.item.farcast"), FarcastMenu);
 
     initialized = 1;
 }
 
 void TacticalView::Close()
 {
-    delete view_menu;
-    delete emcon_menu;
-    delete main_menu;
-    delete fighter_menu;
-    delete starship_menu;
-    delete action_menu;
-    delete formation_menu;
-    delete sensors_menu;
-    delete quantum_menu;
-    delete farcast_menu;
+    delete ViewMenu;
+    delete EmconMenu;
+    delete MainMenu;
+    delete FighterMenu;
+    delete StarshipMenu;
+    delete ActionMenu;
+    delete FormationMenu;
+    delete SensorsMenu;
+    delete QuantumMenu;
+    delete FarcastMenu;
 }
 
 // +--------------------------------------------------------------------+
@@ -1121,12 +1121,12 @@ void TacticalView::ProcessMenuItem(int action)
 
 void TacticalView::BuildMenu()
 {
-    if (main_menu)    main_menu->ClearItems();
-    if (quantum_menu) quantum_menu->ClearItems();
-    if (farcast_menu) farcast_menu->ClearItems();
-    if (emcon_menu)   emcon_menu->ClearItems();
+    if (MainMenu)    MainMenu->ClearItems();
+    if (QuantumMenu) QuantumMenu->ClearItems();
+    if (FarcastMenu) FarcastMenu->ClearItems();
+    if (EmconMenu)   EmconMenu->ClearItems();
 
-    if (!ship || !sim || !main_menu || !quantum_menu || !farcast_menu || !emcon_menu)
+    if (!ship || !sim || !MainMenu || !QuantumMenu || !FarcastMenu || !EmconMenu)
         return;
 
     // ----------------------------------------------------------
@@ -1137,7 +1137,7 @@ void TacticalView::BuildMenu()
         SimRegion* rgn = rgn_iter.value();
 
         if (rgn && rgn != ship->GetRegion() && rgn->GetType() != SimRegion::AIR_SPACE) {
-            quantum_menu->AddItem(rgn->GetName(), QUANTUM);
+            QuantumMenu->AddItem(rgn->GetName(), QUANTUM);
         }
     }
 
@@ -1165,7 +1165,7 @@ void TacticalView::BuildMenu()
             SimRegion* dest_rgn = (dest && dest->GetRegion()) ? dest->GetRegion() : nullptr;
 
             if (dest_rgn) {
-                farcast_menu->AddItem(dest_rgn->GetName(), FARCAST);
+                FarcastMenu->AddItem(dest_rgn->GetName(), FARCAST);
             }
         }
     }
@@ -1173,52 +1173,52 @@ void TacticalView::BuildMenu()
     // ----------------------------------------------------------
     // BUILD MAIN MENU
     // ----------------------------------------------------------
-    main_menu->AddMenu(Game::GetText("TacView.item.camera"), view_menu);
-    main_menu->AddItem("", 0);
+    MainMenu->AddMenu(Game::GetText("TacView.item.camera"), ViewMenu);
+    MainMenu->AddItem("", 0);
 
-    main_menu->AddItem(Game::GetText("TacView.item.instructions"), VIEW_INS);
-    main_menu->AddItem(Game::GetText("TacView.item.navigation"), VIEW_NAV);
+    MainMenu->AddItem(Game::GetText("TacView.item.instructions"), VIEW_INS);
+    MainMenu->AddItem(Game::GetText("TacView.item.navigation"), VIEW_NAV);
 
     const ShipDesign* design = ship->Design();
     if (design) {
         if (design->repair_screen)
-            main_menu->AddItem(Game::GetText("TacView.item.engineering"), VIEW_ENG);
+            MainMenu->AddItem(Game::GetText("TacView.item.engineering"), VIEW_ENG);
 
         if (design->wep_screen)
-            main_menu->AddItem(Game::GetText("TacView.item.weapons"), VIEW_WEP);
+            MainMenu->AddItem(Game::GetText("TacView.item.weapons"), VIEW_WEP);
     }
 
     if (ship->NumFlightDecks() > 0)
-        main_menu->AddItem(Game::GetText("TacView.item.flight"), VIEW_FLT);
+        MainMenu->AddItem(Game::GetText("TacView.item.flight"), VIEW_FLT);
 
     // ----------------------------------------------------------
     // SENSOR / EMCON MENU
     // ----------------------------------------------------------
-    emcon_menu->AddItem(Game::GetText("TacView.item.emcon-1"), RadioMessage::GO_EMCON1);
-    emcon_menu->AddItem(Game::GetText("TacView.item.emcon-2"), RadioMessage::GO_EMCON2);
-    emcon_menu->AddItem(Game::GetText("TacView.item.emcon-3"), RadioMessage::GO_EMCON3);
+    EmconMenu->AddItem(Game::GetText("TacView.item.emcon-1"), RadioMessage::GO_EMCON1);
+    EmconMenu->AddItem(Game::GetText("TacView.item.emcon-2"), RadioMessage::GO_EMCON2);
+    EmconMenu->AddItem(Game::GetText("TacView.item.emcon-3"), RadioMessage::GO_EMCON3);
 
     if (ship->GetProbeLauncher())
-        emcon_menu->AddItem(Game::GetText("TacView.item.probe"), RadioMessage::LAUNCH_PROBE);
+        EmconMenu->AddItem(Game::GetText("TacView.item.probe"), RadioMessage::LAUNCH_PROBE);
 
-    main_menu->AddItem("", 0);
-    main_menu->AddMenu(Game::GetText("TacView.item.sensors"), emcon_menu);
+    MainMenu->AddItem("", 0);
+    MainMenu->AddMenu(Game::GetText("TacView.item.sensors"), EmconMenu);
 
     // ----------------------------------------------------------
     // QUANTUM MENU (only if quantum drive exists)
     // ----------------------------------------------------------
     QuantumDrive* qdrive = ship->GetQuantumDrive();
     if (qdrive) {
-        main_menu->AddItem("", 0);
-        main_menu->AddMenu(Game::GetText("TacView.item.quantum"), quantum_menu);
+        MainMenu->AddItem("", 0);
+        MainMenu->AddMenu(Game::GetText("TacView.item.quantum"), QuantumMenu);
     }
 
     // ----------------------------------------------------------
     // COMMAND MENU (starships only)
     // ----------------------------------------------------------
     if (ship->IsStarship()) {
-        main_menu->AddItem("", 0);
-        main_menu->AddItem(Game::GetText("TacView.item.command"), VIEW_CMD);
+        MainMenu->AddItem("", 0);
+        MainMenu->AddItem(Game::GetText("TacView.item.command"), VIEW_CMD);
     }
 }
 
@@ -1229,13 +1229,13 @@ void TacticalView::DrawMenu()
     active_menu = 0;
 
     if (ship)
-        active_menu = main_menu;
+        active_menu = MainMenu;
 
     if (msg_ship) {
         if (msg_ship->IsStarship())
-            active_menu = starship_menu;
+            active_menu = StarshipMenu;
         else if (msg_ship->IsDropship())
-            active_menu = fighter_menu;
+            active_menu = FighterMenu;
     }
 
     if (menu_view) {

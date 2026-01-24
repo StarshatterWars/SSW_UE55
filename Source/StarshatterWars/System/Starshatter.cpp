@@ -13,10 +13,10 @@
 #include "CoreMinimal.h"
 #include "Math/UnrealMathUtility.h"
 
-//#include "MenuScreen.h"
-//#include "LoadScreen.h"
-//#include "PlanScreen.h"
-//#include "CmpnScreen.h"
+#include "MenuScreen.h"
+#include "LoadScreen.h"
+#include "PlanScreen.h"
+#include "CmpnScreen.h"
 
 #include "AudioConfig.h"
 #include "MusicManager.h"
@@ -67,9 +67,9 @@
 #include "TacticalView.h"
 #include "DisplayView.h"
 
-//#include "LoadDlg.h"
-//#include "TacRefDlg.h"
-//#include "CmpLoadDlg.h"
+#include "LoadDlg.h"
+#include "TacRefDlg.h"
+#include "CmpLoadDlg.h"
 #include "Terrain.h"
 
 #include "ParseUtil.h"
@@ -84,7 +84,6 @@
 #include "CameraView.h"
 #include "ImageView.h"
 #include "FadeView.h"
-#include "Color.h"
 #include "Bitmap.h"
 #include "SystemFont.h"
 #include "FontManager.h"
@@ -92,16 +91,13 @@
 #include "Joystick.h"
 #include "MouseController.h"
 #include "Mouse.h"
-#include "TrackIR.h"
 #include "EventDispatch.h"
 #include "MultiController.h"
-#include "Archiver.h"
 #include "DataLoader.h"
 #include "Resource.h"
-#include "Universe.h"
+#include "SimUniverse.h"
 #include "Video.h"
 #include "VideoSettings.h"
-#include "WebBrowser.h"
 
 // +--------------------------------------------------------------------+
 
@@ -151,7 +147,7 @@ Starshatter::Starshatter()
 	if (!instance)
 		instance = this;
 
-	app_name = "Starshatter Wars";
+	app_name = "Starshatter Wars";f
 	title_text = "Starshatter Wars";
 	palette_name = "alpha";
 
@@ -856,12 +852,6 @@ Starshatter::UpdateWorld()
 
 	if (game_mode == PLAY_MODE || InCutscene()) {
 		if (cam_dir) {
-			if (head_tracker && head_tracker->IsRunning() && !InCutscene()) {
-				head_tracker->ExecFrame();
-				cam_dir->VirtualHead(head_tracker->GetAzimuth(), head_tracker->GetElevation());
-				cam_dir->VirtualHeadOffset(head_tracker->GetX(), head_tracker->GetY(), head_tracker->GetZ());
-			}
-
 			cam_dir->ExecFrame(gui_seconds);
 		}
 
@@ -869,7 +859,7 @@ Starshatter::UpdateWorld()
 		SimRegion* rgn = sim ? sim->GetActiveRegion() : 0;
 
 		if (rgn) {
-			ListIter<Ship> iter = rgn->Ships();
+			ListIter<Ship> iter = rgn->GetShips();
 			while (++iter) {
 				Ship* s = iter.value();
 				s->SelectDetail(seconds);
@@ -1627,22 +1617,32 @@ Starshatter::DoGameKeys()
 			time_til_change = 0.5;
 
 			switch (TimeCompression()) {
-			case 1:  SetTimeCompression(2); break;
-			default: SetTimeCompression(4); break;
+			case 1:
+				SetTimeCompression(2); 
+				break;
+			default: 
+				SetTimeCompression(4); 
+				break;
+			}
 		}
 
 		else if (KeyDown(KEY_TIME_EXPAND)) {
 			time_til_change = 0.5;
 
 			switch (TimeCompression()) {
-			case  4: SetTimeCompression(2); break;
-			default: SetTimeCompression(1); break;
+			case  4:
+				SetTimeCompression(2); 
+				break;
+			default:
+				SetTimeCompression(1); 
+				break;
+			}
 		}
 
 		else if (KeyDown(KEY_TIME_SKIP)) {
 			time_til_change = 0.5;
 
-			if (player_ship && !NetGame::IsNetGame()) {
+			if (player_ship) {
 				player_ship->TimeSkip();
 			}
 		}
@@ -1859,7 +1859,7 @@ Starshatter::DoGameKeys()
 
 			else {
 				if (mouse_dx || mouse_dy) {
-					if (CameraDirector::GetCameraMode() == CameraDirector::MODE_VIRTUAL) {
+					if (CameraManager::GetCameraMode() == CameraManager::MODE_VIRTUAL) {
 						cam_dir->VirtualAzimuth(mouse_dx * 0.2 * DEGREES);
 						cam_dir->VirtualElevation(mouse_dy * 0.2 * DEGREES);
 					}
@@ -1967,7 +1967,7 @@ Starshatter::DoGameKeys()
 void
 Starshatter::DoChatMode()
 {
-	PlayeCharacter* p = Player::GetCurrentPlayer();
+	PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 	bool     send_chat = false;
 	Text     name = "Player";
 
@@ -2006,12 +2006,13 @@ Starshatter::DoChatMode()
 
 		case CHAT_WING:
 			if (player_ship) {
-				Element* elem = player_ship->GetElement();
+				SimElement* elem = player_ship->GetElement();
 				if (elem) {
 					for (int i = 1; i <= elem->NumShips(); i++) {
 						Ship* s = elem->GetShip(i);
-						if (s && s != player_ship)
-							NetUtil::SendChat(s->GetObjID(), name, chat_text);
+						if (s && s != player_ship) {
+							//NetUtil::SendChat(s->GetObjID(), name, chat_text);
+						}
 					}
 				}
 			}
@@ -2024,8 +2025,9 @@ Starshatter::DoChatMode()
 
 			while (++seln) {
 				Ship* s = seln.value();
-				if (s != player_ship)
-					NetUtil::SendChat(s->GetObjID(), name, chat_text);
+				if (s != player_ship) {
+					//NetUtil::SendChat(s->GetObjID(), name, chat_text);
+				}
 			}
 		}
 		break;
@@ -2090,23 +2092,17 @@ Starshatter::SetChatMode(int mode)
 {
 	if (mode >= 0 && mode <= 4 && mode != chat_mode) {
 		chat_text = "";
+		chat_mode = mode;
 
-		if (!NetGame::IsNetGame()) {
-			chat_mode = 0;
+		// flush input before reading chat message:
+		if (chat_mode) {
+			FlushKeys();
 		}
+
+		// flush input before sampling flight controls:
 		else {
-			chat_mode = mode;
-
-			// flush input before reading chat message:
-			if (chat_mode) {
-				FlushKeys();
-			}
-
-			// flush input before sampling flight controls:
-			else {
-				for (int i = 1; i < 255; i++) {
-					Keyboard::KeyDown(i);
-				}
+			for (int i = 1; i < 255; i++) {
+				Keyboard::KeyDown(i);
 			}
 		}
 	}
@@ -2206,7 +2202,6 @@ Starshatter::SetupSplash()
 
 	switch (splash_index) {
 	case 0:
-		splash_image.ClearImage();
 		loader->SetDataPath(0);
 		loader->LoadBitmap("matrix.pcx", splash_image);
 		break;
