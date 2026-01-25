@@ -18,6 +18,7 @@
 // If you have these, include them. Otherwise remove and wire Campaign via Manager.
 //#include "CampaignSubsystem.h"
 #include "Campaign.h"
+#include "CmpnScreen.h"
 
 UCmpCompleteDlg::UCmpCompleteDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -144,12 +145,9 @@ form: {
 
 void UCmpCompleteDlg::Show()
 {
-    // Legacy: FormWindow::Show(); in Unreal, you typically AddToViewport externally.
-    // This function focuses on the legacy behavior: load last-event banner into img_title.
-
     // Resolve Campaign if not already set:
     // If you do not have CampaignSubsystem/Campaign UObject types, route through Manager.
-    // Campaign = Campaign ? Campaign : (Manager ? Manager->GetCampaign() : nullptr);
+    Campaign = Campaign->GetCampaign();
 
     if (!TitleImage)
         return;
@@ -159,9 +157,9 @@ void UCmpCompleteDlg::Show()
         return;
 
     // PSEUDOCODE you will replace with your campaign API:
-    // CombatEvent* event = Campaign->GetLastEvent();
-    // if (!event) return;
-    // FString ImageName = UTF8_TO_TCHAR(event->ImageFile());
+    CombatEvent* event = Campaign->GetLastEvent();
+    if (!event) return;
+    //FString ImageName = UTF8_TO_TCHAR(event->ImageFile());
 
     // Since we cannot assume your exact UObject campaign API here, keep it as a clearly isolated step:
     FString ImageName;       // set from Campaign->GetLastEvent()->ImageFile()

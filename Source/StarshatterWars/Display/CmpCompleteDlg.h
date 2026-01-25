@@ -25,9 +25,9 @@ class UButton;
 class UTextBlock;
 class UTexture2D;
 
-class UCmpnScreen;            // Your Unreal manager equivalent, if you have one
-class UCampaignSubsystem;     // If you have a subsystem providing campaign access
-class UCampaign;              // If you have a UObject campaign type
+class UCmpnScreen;            
+class UCampaignSubsystem;     
+class Campaign;              
 
 UCLASS()
 class STARSHATTERWARS_API UCmpCompleteDlg : public UBaseScreen
@@ -108,7 +108,7 @@ protected:
     // State
     // ----------------------------------------------------------------
     UCmpnScreen* Manager = nullptr;
-    CampaignSubsystem* CampaignSubsystem = nullptr;
+    //CampaignSubsystem* CampaignSubsystem = nullptr;
     Campaign* Campaign = nullptr;
 
     float ShowTime = 0.0f;

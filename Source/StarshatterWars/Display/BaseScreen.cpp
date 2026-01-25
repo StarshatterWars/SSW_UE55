@@ -256,82 +256,109 @@ namespace
                 OutError = TEXT("Expected 'form'");
                 return false;
             }
-            if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after 'form'"))) return false;
-            if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' after 'form:'"))) return false;
 
-            // Current defctrl defaults:
+            if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after 'form'")))
+                return false;
+
+            if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' after 'form:'")))
+                return false;
+
+            // Current defctrl defaults
             FParsedCtrl CurrentDefaults;
             CurrentDefaults.Type = EFormCtrlType::None;
 
             while (!Is(ETok::RBrace) && !Is(ETok::End))
             {
+                // Form-level keys
+
                 if (IsIdent(TEXT("back_color")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after back_color"))) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after back_color")))
+                        return false;
                     Out.BackColor = ParseColor(OutError);
                     if (!OutError.IsEmpty()) return false;
                     EatOptionalComma();
                     continue;
                 }
+
                 if (IsIdent(TEXT("fore_color")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after fore_color"))) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after fore_color")))
+                        return false;
                     Out.ForeColor = ParseColor(OutError);
                     if (!OutError.IsEmpty()) return false;
                     EatOptionalComma();
                     continue;
                 }
+
                 if (IsIdent(TEXT("texture")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after texture"))) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after texture")))
+                        return false;
                     Out.Texture = ParseStringOrIdent(OutError);
                     if (!OutError.IsEmpty()) return false;
                     EatOptionalComma();
                     continue;
                 }
+
                 if (IsIdent(TEXT("margins")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after margins"))) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after margins")))
+                        return false;
                     Out.Margins = ParseRect(OutError);
                     if (!OutError.IsEmpty()) return false;
                     EatOptionalComma();
                     continue;
                 }
+
                 if (IsIdent(TEXT("layout")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after layout"))) return false;
-                    if (!ParseLayoutBlock(Out.Layout, OutError)) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after layout")))
+                        return false;
+                    if (!ParseLayoutBlock(Out.Layout, OutError))
+                        return false;
                     EatOptionalComma();
                     continue;
                 }
 
-                // defctrl:
+                // defctrl
+
                 if (IsIdent(TEXT("defctrl")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after defctrl"))) return false;
-                    if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' after defctrl:"))) return false;
-                    if (!ParseCtrlBody(CurrentDefaults, /*bIsDefctrl*/true, OutError)) return false;
-                    if (!Consume(ETok::RBrace, OutError, TEXT("Expected '}' after defctrl body"))) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after defctrl")))
+                        return false;
+                    if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' after defctrl")))
+                        return false;
+                    if (!ParseCtrlBody(CurrentDefaults, true, OutError))
+                        return false;
+                    if (!Consume(ETok::RBrace, OutError, TEXT("Expected '}' after defctrl")))
+                        return false;
                     EatOptionalComma();
                     continue;
                 }
 
-                // ctrl:
+                // ctrl
+
                 if (IsIdent(TEXT("ctrl")))
                 {
                     ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after ctrl"))) return false;
-                    if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' after ctrl:"))) return false;
+                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after ctrl")))
+                        return false;
+                    if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' after ctrl")))
+                        return false;
 
                     FParsedCtrl Ctrl;
-                    if (!ParseCtrlBody(Ctrl, /*bIsDefctrl*/false, OutError)) return false;
-                    if (!Consume(ETok::RBrace, OutError, TEXT("Expected '}' after ctrl body"))) return false;
+                    if (!ParseCtrlBody(Ctrl, false, OutError))
+                        return false;
+
+                    if (!Consume(ETok::RBrace, OutError, TEXT("Expected '}' after ctrl")))
+                        return false;
 
                     ApplyDefaults(Ctrl, CurrentDefaults);
                     Out.Controls.Add(Ctrl);
@@ -340,20 +367,26 @@ namespace
                     continue;
                 }
 
-                // Unknown top-level key: skip one token
+                // Unknown key, skip token
                 Tok = Lex.Next();
             }
 
-            if (!Consume(ETok::RBrace, OutError, TEXT("Expected closing '}' for form"))) return false;
+            if (!Consume(ETok::RBrace, OutError, TEXT("Expected closing '}' for form")))
+                return false;
+
             return true;
         }
 
     private:
-        bool Is(ETok T) const { return Tok.Type == T; }
+        bool Is(ETok T) const
+        {
+            return Tok.Type == T;
+        }
 
         bool IsIdent(const TCHAR* S) const
         {
-            return Tok.Type == ETok::Ident && Tok.Text.Equals(S, ESearchCase::IgnoreCase);
+            return Tok.Type == ETok::Ident &&
+                Tok.Text.Equals(S, ESearchCase::IgnoreCase);
         }
 
         bool MatchIdent(const TCHAR* S)
@@ -388,22 +421,23 @@ namespace
 
         static bool IsHexLiteral(const FString& S)
         {
-            return S.Len() > 2 && S[0] == TCHAR('0') && (S[1] == TCHAR('x') || S[1] == TCHAR('X'));
+            return S.Len() > 2 &&
+                S[0] == '0' &&
+                (S[1] == 'x' || S[1] == 'X');
         }
 
         int32 ParseIntFlexible(FString& OutError)
         {
             if (Tok.Type == ETok::Number)
             {
-                const int32 V = (int32)Tok.Number;
+                int32 V = (int32)Tok.Number;
                 Tok = Lex.Next();
                 return V;
             }
 
             if (Tok.Type == ETok::Ident && IsHexLiteral(Tok.Text))
             {
-                const FString HexDigits = Tok.Text.Mid(2);
-                const int32 V = FCString::Strtoi(*HexDigits, nullptr, 16);
+                int32 V = FCString::Strtoi(*Tok.Text.Mid(2), nullptr, 16);
                 Tok = Lex.Next();
                 return V;
             }
@@ -412,26 +446,15 @@ namespace
             return 0;
         }
 
-        float ParseFloat(FString& OutError)
-        {
-            if (Tok.Type != ETok::Number)
-            {
-                OutError = TEXT("Expected number");
-                return 0.0f;
-            }
-            const float V = (float)Tok.Number;
-            Tok = Lex.Next();
-            return V;
-        }
-
         FString ParseStringOrIdent(FString& OutError)
         {
             if (Tok.Type == ETok::String || Tok.Type == ETok::Ident)
             {
-                const FString S = Tok.Text;
+                FString S = Tok.Text;
                 Tok = Lex.Next();
                 return S;
             }
+
             OutError = TEXT("Expected string or identifier");
             return FString();
         }
@@ -440,27 +463,17 @@ namespace
         {
             if (Tok.Type == ETok::Ident)
             {
-                const bool bTrue =
+                bool b =
                     Tok.Text.Equals(TEXT("true"), ESearchCase::IgnoreCase) ||
-                    Tok.Text.Equals(TEXT("1"), ESearchCase::IgnoreCase);
-
-                const bool bFalse =
-                    Tok.Text.Equals(TEXT("false"), ESearchCase::IgnoreCase) ||
-                    Tok.Text.Equals(TEXT("0"), ESearchCase::IgnoreCase);
-
-                if (!bTrue && !bFalse)
-                {
-                    OutError = TEXT("Expected boolean");
-                    return false;
-                }
+                    Tok.Text.Equals(TEXT("1"));
 
                 Tok = Lex.Next();
-                return bTrue;
+                return b;
             }
 
             if (Tok.Type == ETok::Number)
             {
-                const bool b = Tok.Number != 0.0;
+                bool b = Tok.Number != 0.0;
                 Tok = Lex.Next();
                 return b;
             }
@@ -469,592 +482,61 @@ namespace
             return false;
         }
 
-        void SkipValueExpression()
-        {
-            // Consume one "value" expression:
-            // - scalar: ident/string/number
-            // - tuple: ( ... ) with nesting
-            // - block: { ... } with nesting
-
-            auto SkipBalanced = [&](ETok Open, ETok Close)
-                {
-                    int32 Depth = 0;
-                    if (Tok.Type == Open)
-                    {
-                        Depth = 1;
-                        Tok = Lex.Next();
-                    }
-
-                    while (Depth > 0 && Tok.Type != ETok::End)
-                    {
-                        if (Tok.Type == Open) { ++Depth; Tok = Lex.Next(); continue; }
-                        if (Tok.Type == Close) { --Depth; Tok = Lex.Next(); continue; }
-                        Tok = Lex.Next();
-                    }
-                };
-
-            if (Tok.Type == ETok::LParen) { SkipBalanced(ETok::LParen, ETok::RParen); return; }
-            if (Tok.Type == ETok::LBrace) { SkipBalanced(ETok::LBrace, ETok::RBrace); return; }
-
-            Tok = Lex.Next();
-        }
-
         FFormIntRect ParseRect(FString& OutError)
         {
-            // (a,b,c,d)
-            if (!Consume(ETok::LParen, OutError, TEXT("Expected '(' for rect"))) return {};
-            const int32 A = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return {};
-            if (!Consume(ETok::Comma, OutError, TEXT("Expected ',' in rect"))) return {};
-            const int32 B = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return {};
-            if (!Consume(ETok::Comma, OutError, TEXT("Expected ',' in rect"))) return {};
-            const int32 C = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return {};
-            if (!Consume(ETok::Comma, OutError, TEXT("Expected ',' in rect"))) return {};
-            const int32 D = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return {};
-            if (!Consume(ETok::RParen, OutError, TEXT("Expected ')' for rect"))) return {};
+            if (!Consume(ETok::LParen, OutError, TEXT("Expected '('")))
+                return {};
+
+            int32 A = ParseIntFlexible(OutError);
+            if (!Consume(ETok::Comma, OutError, TEXT("Expected ','")))
+                return {};
+
+            int32 B = ParseIntFlexible(OutError);
+            if (!Consume(ETok::Comma, OutError, TEXT("Expected ','")))
+                return {};
+
+            int32 C = ParseIntFlexible(OutError);
+            if (!Consume(ETok::Comma, OutError, TEXT("Expected ','")))
+                return {};
+
+            int32 D = ParseIntFlexible(OutError);
+            if (!Consume(ETok::RParen, OutError, TEXT("Expected ')'")))
+                return {};
+
             return FFormIntRect(A, B, C, D);
         }
 
         FLinearColor ParseColor(FString& OutError)
         {
-            // (r,g,b) or (r,g,b,a) with 0..255 channels
-            if (!Consume(ETok::LParen, OutError, TEXT("Expected '(' for color"))) return FLinearColor::Transparent;
-
-            const int32 R = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return FLinearColor::Transparent;
-            if (!Consume(ETok::Comma, OutError, TEXT("Expected ',' in color"))) return FLinearColor::Transparent;
-            const int32 G = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return FLinearColor::Transparent;
-            if (!Consume(ETok::Comma, OutError, TEXT("Expected ',' in color"))) return FLinearColor::Transparent;
-            const int32 B = ParseIntFlexible(OutError); if (!OutError.IsEmpty()) return FLinearColor::Transparent;
-
-            int32 A = 255;
-            if (Tok.Type == ETok::Comma)
-            {
-                Tok = Lex.Next();
-                A = ParseIntFlexible(OutError);
-                if (!OutError.IsEmpty()) return FLinearColor::Transparent;
-            }
-
-            if (!Consume(ETok::RParen, OutError, TEXT("Expected ')' for color"))) return FLinearColor::Transparent;
-
+            FFormIntRect R = ParseRect(OutError);
             return FLinearColor(
-                FMath::Clamp(R / 255.0f, 0.0f, 1.0f),
-                FMath::Clamp(G / 255.0f, 0.0f, 1.0f),
-                FMath::Clamp(B / 255.0f, 0.0f, 1.0f),
-                FMath::Clamp(A / 255.0f, 0.0f, 1.0f)
+                R.A / 255.0f,
+                R.B / 255.0f,
+                R.C / 255.0f,
+                R.D / 255.0f
             );
         }
 
-        EFormAlign ParseAlign(FString& OutError)
-        {
-            if (Tok.Type != ETok::Ident)
-            {
-                OutError = TEXT("Expected align identifier");
-                return EFormAlign::None;
-            }
-
-            const FString S = Tok.Text;
-            Tok = Lex.Next();
-
-            if (S.Equals(TEXT("left"), ESearchCase::IgnoreCase)) return EFormAlign::Left;
-            if (S.Equals(TEXT("center"), ESearchCase::IgnoreCase)) return EFormAlign::Center;
-            if (S.Equals(TEXT("right"), ESearchCase::IgnoreCase)) return EFormAlign::Right;
-
-            OutError = TEXT("Unknown align value");
-            return EFormAlign::None;
-        }
-
-        EFormCtrlType ParseCtrlType(FString& OutError)
-        {
-            if (Tok.Type != ETok::Ident)
-            {
-                OutError = TEXT("Expected ctrl type identifier");
-                return EFormCtrlType::None;
-            }
-
-            const FString S = Tok.Text;
-            Tok = Lex.Next();
-
-            if (S.Equals(TEXT("label"), ESearchCase::IgnoreCase)) return EFormCtrlType::Label;
-            if (S.Equals(TEXT("text"), ESearchCase::IgnoreCase)) return EFormCtrlType::Text; // <-- ADDED
-            if (S.Equals(TEXT("button"), ESearchCase::IgnoreCase)) return EFormCtrlType::Button;
-            if (S.Equals(TEXT("image"), ESearchCase::IgnoreCase)) return EFormCtrlType::Image;
-            if (S.Equals(TEXT("edit"), ESearchCase::IgnoreCase)) return EFormCtrlType::Edit;
-            if (S.Equals(TEXT("combo"), ESearchCase::IgnoreCase)) return EFormCtrlType::Combo;
-            if (S.Equals(TEXT("list"), ESearchCase::IgnoreCase)) return EFormCtrlType::List;
-            if (S.Equals(TEXT("slider"), ESearchCase::IgnoreCase)) return EFormCtrlType::Slider;
-            if (S.Equals(TEXT("panel"), ESearchCase::IgnoreCase)) return EFormCtrlType::Panel;
-            if (S.Equals(TEXT("background"), ESearchCase::IgnoreCase)) return EFormCtrlType::Background;
-
-            OutError = TEXT("Unknown ctrl type");
-            return EFormCtrlType::None;
-        }
-
-        TArray<int32> ParseIntArray(FString& OutError)
-        {
-            TArray<int32> Out;
-            if (!Consume(ETok::LParen, OutError, TEXT("Expected '(' for int array"))) return Out;
-
-            while (!Is(ETok::RParen) && !Is(ETok::End))
-            {
-                if (!(Tok.Type == ETok::Number || (Tok.Type == ETok::Ident && IsHexLiteral(Tok.Text))))
-                {
-                    OutError = TEXT("Expected number in int array");
-                    return Out;
-                }
-
-                Out.Add(ParseIntFlexible(OutError));
-                if (!OutError.IsEmpty()) return Out;
-
-                if (Tok.Type == ETok::Comma) { Tok = Lex.Next(); continue; }
-                break;
-            }
-
-            if (!Consume(ETok::RParen, OutError, TEXT("Expected ')' for int array"))) return Out;
-            return Out;
-        }
-
-        TArray<float> ParseFloatArray(FString& OutError)
-        {
-            TArray<float> Out;
-            if (!Consume(ETok::LParen, OutError, TEXT("Expected '(' for float array"))) return Out;
-
-            while (!Is(ETok::RParen) && !Is(ETok::End))
-            {
-                if (Tok.Type != ETok::Number)
-                {
-                    OutError = TEXT("Expected number in float array");
-                    return Out;
-                }
-
-                Out.Add(ParseFloat(OutError));
-                if (!OutError.IsEmpty()) return Out;
-
-                if (Tok.Type == ETok::Comma) { Tok = Lex.Next(); continue; }
-                break;
-            }
-
-            if (!Consume(ETok::RParen, OutError, TEXT("Expected ')' for float array"))) return Out;
-            return Out;
-        }
-
-        bool ParseLayoutBlock(FFormLayout& Out, FString& OutError)
-        {
-            if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' for layout block"))) return false;
-
-            while (!Is(ETok::RBrace) && !Is(ETok::End))
-            {
-                if (IsIdent(TEXT("x_mins")))
-                {
-                    ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after x_mins"))) return false;
-                    Out.XMins = ParseIntArray(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (IsIdent(TEXT("x_weights")))
-                {
-                    ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after x_weights"))) return false;
-                    Out.XWeights = ParseFloatArray(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (IsIdent(TEXT("y_mins")))
-                {
-                    ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after y_mins"))) return false;
-                    Out.YMins = ParseIntArray(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (IsIdent(TEXT("y_weights")))
-                {
-                    ConsumeIdent();
-                    if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' after y_weights"))) return false;
-                    Out.YWeights = ParseFloatArray(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // Unknown layout key: skip value
-                Tok = Lex.Next();
-            }
-
-            if (!Consume(ETok::RBrace, OutError, TEXT("Expected '}' closing layout block"))) return false;
-            return true;
-        }
-
-        bool ParseColumnBlock(FFormColumnDef& OutCol, FString& OutError)
-        {
-            if (!Consume(ETok::LBrace, OutError, TEXT("Expected '{' for column block"))) return false;
-
-            while (!Is(ETok::RBrace) && !Is(ETok::End))
-            {
-                if (Tok.Type != ETok::Ident)
-                {
-                    Tok = Lex.Next();
-                    continue;
-                }
-
-                const FString Key = Tok.Text;
-                Tok = Lex.Next();
-
-                if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' in column block"))) return false;
-
-                if (Key.Equals(TEXT("title"), ESearchCase::IgnoreCase))
-                {
-                    OutCol.Title = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("width"), ESearchCase::IgnoreCase))
-                {
-                    OutCol.Width = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("align"), ESearchCase::IgnoreCase))
-                {
-                    OutCol.Align = ParseAlign(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("sort"), ESearchCase::IgnoreCase))
-                {
-                    OutCol.Sort = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("color"), ESearchCase::IgnoreCase))
-                {
-                    OutCol.Color = ParseColor(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                SkipValueExpression();
-                EatOptionalComma();
-            }
-
-            if (!Consume(ETok::RBrace, OutError, TEXT("Expected '}' closing column block"))) return false;
-            return true;
-        }
-
-        bool ParseCtrlBody(FParsedCtrl& OutCtrl, bool bIsDefctrl, FString& OutError)
-        {
-            while (!Is(ETok::RBrace) && !Is(ETok::End))
-            {
-                if (Tok.Type != ETok::Ident)
-                {
-                    Tok = Lex.Next();
-                    continue;
-                }
-
-                const FString Key = Tok.Text;
-                Tok = Lex.Next();
-
-                if (!Consume(ETok::Colon, OutError, TEXT("Expected ':' in ctrl block"))) return false;
-
-                // identity:
-                if (Key.Equals(TEXT("id"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Id = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("pid"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.ParentId = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("type"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Type = ParseCtrlType(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // visuals:
-                if (Key.Equals(TEXT("text"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Text = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasText = !bIsDefctrl;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("texture"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Texture = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasTexture = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("font"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Font = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasFont = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("align"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Align = ParseAlign(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasAlign = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("back_color"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.BackColor = ParseColor(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasBackColor = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("fore_color"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.ForeColor = ParseColor(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasForeColor = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // bools:
-                if (Key.Equals(TEXT("transparent"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.bTransparent = ParseBool(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasTransparent = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("sticky"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.bSticky = ParseBool(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasSticky = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("border"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.bBorder = ParseBool(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasBorder = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("hide_partial"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.bHidePartial = ParseBool(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasHidePartial = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("show_headings"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.bShowHeadings = ParseBool(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasShowHeadings = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // images / bevel / border:
-                if (Key.Equals(TEXT("standard_image"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.StandardImage = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasStandardImage = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("activated_image"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.ActivatedImage = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasActivatedImage = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("transition_image"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.TransitionImage = ParseStringOrIdent(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasTransitionImage = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("bevel_width"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.BevelWidth = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasBevelWidth = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("bevel_depth"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.BevelDepth = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasBevelDepth = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("border_color"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.BorderColor = ParseColor(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasBorderColor = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // sizing:
-                if (Key.Equals(TEXT("fixed_width"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.FixedWidth = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasFixedWidth = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("fixed_height"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.FixedHeight = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasFixedHeight = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // placement:
-                if (Key.Equals(TEXT("cells"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Cells = ParseRect(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasCells = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("cell_insets"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.CellInsets = ParseRect(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasCellInsets = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("margins"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Margins = ParseRect(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasMargins = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // list:
-                if (Key.Equals(TEXT("scroll_bar"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.ScrollBar = ParseIntFlexible(OutError);
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasScrollBar = true;
-                    EatOptionalComma();
-                    continue;
-                }
-                if (Key.Equals(TEXT("style"), ESearchCase::IgnoreCase))
-                {
-                    OutCtrl.Style = ParseIntFlexible(OutError); // supports 0xNN
-                    if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasStyle = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // layout:
-                if (Key.Equals(TEXT("layout"), ESearchCase::IgnoreCase))
-                {
-                    if (!ParseLayoutBlock(OutCtrl.Layout, OutError)) return false;
-                    OutCtrl.bHasLayout = true;
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // list columns (repeatable):
-                if (Key.Equals(TEXT("column"), ESearchCase::IgnoreCase))
-                {
-                    FFormColumnDef Col;
-                    if (!ParseColumnBlock(Col, OutError)) return false;
-                    OutCtrl.Columns.Add(Col);
-                    EatOptionalComma();
-                    continue;
-                }
-
-                // Unknown ctrl key: skip whole expression
-                SkipValueExpression();
-                EatOptionalComma();
-            }
-
-            return true;
-        }
+        bool ParseLayoutBlock(FFormLayout& Out, FString& OutError);
+        bool ParseCtrlBody(FParsedCtrl& OutCtrl, bool bIsDefctrl, FString& OutError);
 
         static void ApplyDefaults(FParsedCtrl& Ctrl, const FParsedCtrl& Def)
         {
-            // Only apply defaults that exist in Def and are not explicitly set by Ctrl.
-            if (!Ctrl.bHasTexture && Def.bHasTexture)        Ctrl.Texture = Def.Texture;
-            if (!Ctrl.bHasFont && Def.bHasFont)             Ctrl.Font = Def.Font;
-            if (!Ctrl.bHasAlign && Def.bHasAlign)           Ctrl.Align = Def.Align;
-            if (!Ctrl.bHasBackColor && Def.bHasBackColor)   Ctrl.BackColor = Def.BackColor;
-            if (!Ctrl.bHasForeColor && Def.bHasForeColor)   Ctrl.ForeColor = Def.ForeColor;
-
-            if (!Ctrl.bHasTransparent && Def.bHasTransparent)    Ctrl.bTransparent = Def.bTransparent;
-            if (!Ctrl.bHasSticky && Def.bHasSticky)              Ctrl.bSticky = Def.bSticky;
-            if (!Ctrl.bHasBorder && Def.bHasBorder)              Ctrl.bBorder = Def.bBorder;
-            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial)    Ctrl.bHidePartial = Def.bHidePartial;
-            if (!Ctrl.bHasShowHeadings && Def.bHasShowHeadings)  Ctrl.bShowHeadings = Def.bShowHeadings;
-
-            if (!Ctrl.bHasStandardImage && Def.bHasStandardImage)     Ctrl.StandardImage = Def.StandardImage;
-            if (!Ctrl.bHasActivatedImage && Def.bHasActivatedImage)   Ctrl.ActivatedImage = Def.ActivatedImage;
-            if (!Ctrl.bHasTransitionImage && Def.bHasTransitionImage) Ctrl.TransitionImage = Def.TransitionImage;
-
-            if (!Ctrl.bHasBevelWidth && Def.bHasBevelWidth)     Ctrl.BevelWidth = Def.BevelWidth;
-            if (!Ctrl.bHasBevelDepth && Def.bHasBevelDepth)     Ctrl.BevelDepth = Def.BevelDepth;
-            if (!Ctrl.bHasBorderColor && Def.bHasBorderColor)   Ctrl.BorderColor = Def.BorderColor;
-
-            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth)     Ctrl.FixedWidth = Def.FixedWidth;
-            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight)   Ctrl.FixedHeight = Def.FixedHeight;
-
-            if (!Ctrl.bHasCells && Def.bHasCells)               Ctrl.Cells = Def.Cells;
-            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets)     Ctrl.CellInsets = Def.CellInsets;
-            if (!Ctrl.bHasMargins && Def.bHasMargins)           Ctrl.Margins = Def.Margins;
-
-            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar)       Ctrl.ScrollBar = Def.ScrollBar;
-            if (!Ctrl.bHasStyle && Def.bHasStyle)               Ctrl.Style = Def.Style;
-
-            if (!Ctrl.bHasLayout && Def.bHasLayout)             Ctrl.Layout = Def.Layout;
+            if (!Ctrl.bHasTexture && Def.bHasTexture)
+                Ctrl.Texture = Def.Texture;
+            if (!Ctrl.bHasFont && Def.bHasFont)
+                Ctrl.Font = Def.Font;
+            if (!Ctrl.bHasAlign && Def.bHasAlign)
+                Ctrl.Align = Def.Align;
+            if (!Ctrl.bHasBackColor && Def.bHasBackColor)
+                Ctrl.BackColor = Def.BackColor;
+            if (!Ctrl.bHasForeColor && Def.bHasForeColor)
+                Ctrl.ForeColor = Def.ForeColor;
         }
 
+    private:
         FFormLexer Lex;
-        FTok      Tok;
+        FTok       Tok;
     };
 } // namespace
 
@@ -1318,12 +800,69 @@ bool UBaseScreen::ParseLegacyForm(const FString& InText, FParsedForm& OutForm, F
     return Parser.ParseForm(OutForm, OutError);
 }
 
+static int32 ParseTrailingInt(const FString& S)
+{
+    // Extract trailing digits, e.g. "Limerick12" -> 12, "Verdana" -> 0
+    int32 i = S.Len() - 1;
+    while (i >= 0 && FChar::IsDigit(S[i]))
+        --i;
+
+    const int32 StartDigits = i + 1;
+    if (StartDigits < S.Len())
+    {
+        const FString Digits = S.Mid(StartDigits);
+        return FCString::Atoi(*Digits);
+    }
+
+    return 0;
+}
+
+static bool EqualsNoCase(const FString& A, const FString& B)
+{
+    return A.Equals(B, ESearchCase::IgnoreCase);
+}
+
 bool UBaseScreen::ResolveFont(const FString& InFontName, FSlateFontInfo& OutFont) const
 {
-    // Default behavior: no mapping. Override in derived screens to map:
-    // "Limerick12" / "Limerick18" / "Verdana" etc.
-    (void)InFontName;
-    (void)OutFont;
+    // 1) Try explicit mapping first
+    for (const FFormFontMapEntry& Entry : FontMappings)
+    {
+        if (!Entry.Font)
+            continue;
+
+        if (EqualsNoCase(Entry.LegacyName, InFontName))
+        {
+            int32 Size = DefaultFontSize;
+
+            if (Entry.bOverrideSize && Entry.Size > 0)
+            {
+                Size = Entry.Size;
+            }
+            else
+            {
+                const int32 Inferred = ParseTrailingInt(InFontName);
+                if (Inferred > 0)
+                    Size = Inferred;
+            }
+
+            OutFont = FSlateFontInfo(Entry.Font, Size);
+            return true;
+        }
+    }
+
+    // 2) Fallback: infer size from name and use DefaultFont if present
+    if (DefaultFont)
+    {
+        int32 Size = DefaultFontSize;
+        const int32 Inferred = ParseTrailingInt(InFontName);
+        if (Inferred > 0)
+            Size = Inferred;
+
+        OutFont = FSlateFontInfo(DefaultFont, Size);
+        return true;
+    }
+
+    // 3) No mapping and no default
     return false;
 }
 

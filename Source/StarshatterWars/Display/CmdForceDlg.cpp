@@ -176,7 +176,7 @@ void UCmdForceDlg::SetManager(UCmpnScreen* InManager)
 
 void UCmdForceDlg::ShowForceDlg()
 {
-    ECOMMAND_MODE Mode = ECOMMAND_MODE::MODE_FORCES;
+    Mode = ECOMMAND_MODE::MODE_FORCES;
     CampaignPtr = Campaign::GetCampaign();
 
     // Title/campaign name:
@@ -292,7 +292,7 @@ void UCmdForceDlg::ExecFrame()
 
 void UCmdForceDlg::SetModeAndHighlight(ECOMMAND_MODE InMode)
 {
-    ECOMMAND_MODE Mode = InMode;
+    Mode = InMode;
 
     if (!Manager)
     {

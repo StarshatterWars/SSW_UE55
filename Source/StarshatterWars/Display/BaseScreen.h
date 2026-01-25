@@ -37,11 +37,34 @@
 #include "Input/Reply.h"
 #include "InputCoreTypes.h"
 
+#include "Engine/Font.h"
+
 #include "BaseScreen.generated.h"
 
 // ====================================================================
 //  FORM PARSE TYPES
 // ====================================================================
+
+USTRUCT(BlueprintType)
+struct FFormFontMapEntry
+{
+    GENERATED_BODY()
+
+    // Legacy FORM font name, e.g. "Limerick12", "Verdana", "HUD", "GUI"
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString LegacyName;
+
+    // Unreal font asset (UFont). You can use a Font asset from your content.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TObjectPtr<UFont> Font = nullptr;
+
+    // If > 0 and bOverrideSize is true, force this size.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    int32 Size = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    bool bOverrideSize = false;
+};
 
 UENUM(BlueprintType)
 enum class EFormCtrlType : uint8
@@ -325,6 +348,18 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Dialog")
     void SetDialogInputEnabled(bool bEnabled) { bDialogInputEnabled = bEnabled; }
+
+    // Optional: fill this in Defaults to map FORM font names to assets.
+    UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
+    TArray<FFormFontMapEntry> FontMappings;
+
+    // Fallback if a FORM font name is not mapped.
+    UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
+    TObjectPtr<UFont> DefaultFont = nullptr;
+
+    // Fallback size if not inferable from name and not overridden.
+    UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
+    int32 DefaultFontSize = 12;
 
 protected:
     // ----------------------------------------------------------------

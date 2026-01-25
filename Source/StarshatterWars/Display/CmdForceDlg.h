@@ -187,6 +187,5 @@ private:
     FString PipeStack;
     bool bBlankLine = false;
 
-    // Current cmd mode (always MODE_FORCES for this screen)
-    ECOMMAND_MODE = ECOMMAND_MODE::MODE_FORCES;
+    ECOMMAND_MODE Mode = ECOMMAND_MODE::MODE_FORCES;
 };

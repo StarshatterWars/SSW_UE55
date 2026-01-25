@@ -1,305 +1,253 @@
 /*  Project STARSHATTER WARS
-	Fractal Dev Studios
-	Copyright © 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026. All Rights Reserved.
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios
+    ORIGINAL AUTHOR: John DiCamillo
+    ORIGINAL STUDIO: Destroyer Studios
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         QuitView.cpp
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    Stars.exe
+    FILE:         QuitView.cpp
+    AUTHOR:       Carlos Bott
 
-
-	OVERVIEW
-	========
-	View class for End Mission menu
+    OVERVIEW
+    ========
+    UQuitView
+    - Unreal (UMG) port of legacy QuitView (End Mission menu).
+    - UI uses UMG buttons (no manual mouse hit-testing).
+    - Keeps all legacy mission/campaign logic.
 */
 
 #include "QuitView.h"
 
-#include "HUDView.h"
-#include "RadioView.h"
+// UMG:
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+
+// Gameplay/legacy:
+#include "Sim.h"
 #include "Ship.h"
 #include "SimContact.h"
-#include "Sim.h"
-#include "SimEvent.h"
 #include "Campaign.h"
 #include "Starshatter.h"
+#include "Game.h"
+#include "RadioView.h"
 #include "GameScreen.h"
 
-#include "CameraView.h"
-#include "Color.h"
-#include "Window.h"
-#include "Video.h"
-#include "Screen.h"
-#include "DataLoader.h"
-#include "SimScene.h"
-#include "FontManager.h"
-#include "UIButton.h"
-#include "Keyboard.h"
-#include "Mouse.h"
-#include "MouseController.h"
-#include "Game.h"
-#include "Menu.h"
+// Unreal:
+#include "GameFramework/PlayerController.h"
 
-// Minimal Unreal include needed for FVector conversions:
-#include "Math/Vector.h"
-
-// +====================================================================+
-
-static Bitmap*			menu_bmp = 0;
-static MouseController* mouse_con = 0;
-static bool             mouse_active = false;
-static const int        w2 = 200;
-static const int        h2 = 128;
-
-void
-QuitView::Initialize()
+UQuitView::UQuitView(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-	if (!menu_bmp) {
-		menu_bmp = new Bitmap;
-
-		DataLoader* loader = DataLoader::GetLoader();
-		loader->SetDataPath("Screens/");
-		loader->LoadBitmap("QuitWin.pcx", *menu_bmp, Bitmap::BMP_TRANSPARENT);
-		loader->SetDataPath(0);
-	}
 }
 
-void
-QuitView::Close()
+void UQuitView::NativeOnInitialized()
 {
-	delete menu_bmp;
-	menu_bmp = 0;
+    Super::NativeOnInitialized();
+
+    // Bind buttons once:
+    if (BtnAccept)   BtnAccept->OnClicked.AddDynamic(this, &UQuitView::OnAcceptClicked);
+    if (BtnDiscard)  BtnDiscard->OnClicked.AddDynamic(this, &UQuitView::OnDiscardClicked);
+    if (BtnResume)   BtnResume->OnClicked.AddDynamic(this, &UQuitView::OnResumeClicked);
+    if (BtnControls) BtnControls->OnClicked.AddDynamic(this, &UQuitView::OnControlsClicked);
 }
 
-// +====================================================================+
-
-QuitView* QuitView::quit_view = 0;
-
-QuitView::QuitView(Window* c)
-	: View(c), mouse_latch(false)
+void UQuitView::NativeConstruct()
 {
-	quit_view = this;
-	sim = Sim::GetSim();
+    Super::NativeConstruct();
 
-	width = window->Width();
-	height = window->Height();
-	xcenter = width / 2;
-	ycenter = height / 2;
+    // Start hidden by default:
+    SetVisibility(ESlateVisibility::Hidden);
+    bMenuShown = false;
 
-	mouse_con = MouseController::GetInstance();
+    sim = Sim::GetSim();
+    SetMessageText(TEXT(""));
 }
 
-QuitView::~QuitView()
+bool UQuitView::IsMenuShown() const
 {
-	quit_view = 0;
+    return bMenuShown && GetVisibility() == ESlateVisibility::Visible;
 }
 
-void
-QuitView::OnWindowMove()
+void UQuitView::ShowMenu()
 {
-	width = window->Width();
-	height = window->Height();
-	xcenter = width / 2;
-	ycenter = height / 2;
+    if (IsMenuShown())
+        return;
+
+    bMenuShown = true;
+
+    // Pause like legacy:
+    Starshatter::GetInstance()->Pause(true);
+
+    // Show UI:
+    SetMessageText(TEXT(""));
+    SetVisibility(ESlateVisibility::Visible);
+    ApplyMenuInputMode(true);
 }
 
-// +--------------------------------------------------------------------+
-
-void
-QuitView::Refresh()
+void UQuitView::CloseMenu()
 {
-	if (show_menu && menu_bmp) {
-		Rect clip_rect;
+    if (!IsMenuShown())
+        return;
 
-		clip_rect.x = xcenter - w2;
-		clip_rect.y = ycenter - h2;
-		clip_rect.w = w2 * 2;
-		clip_rect.h = h2 * 2;
+    bMenuShown = false;
 
-		window->ClipBitmap(xcenter - w2,
-			ycenter - h2,
-			xcenter - w2 + menu_bmp->Width(),
-			ycenter - h2 + menu_bmp->Height(),
-			menu_bmp,
-			FColor::White,
-			Video::BLEND_SOLID,
-			clip_rect);
-	}
+    SetVisibility(ESlateVisibility::Hidden);
+    ApplyMenuInputMode(false);
+
+    Starshatter::GetInstance()->Pause(false);
 }
 
-// +--------------------------------------------------------------------+
-
-void
-QuitView::ExecFrame()
+void UQuitView::ApplyMenuInputMode(bool bEnableMenu)
 {
-	sim = Sim::GetSim();
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+        return;
 
-	if (show_menu) {
-		Color::SetFade(1, Color::Black, 0);
-		int action = 0;
+    if (bEnableMenu)
+    {
+        bPrevShowMouseCursor = PC->bShowMouseCursor;
+        PC->bShowMouseCursor = true;
 
-		if (Mouse::LButton()) {
-			mouse_latch = true;
-		}
-		else if (mouse_latch) {
-			mouse_latch = false;
+        FInputModeUIOnly Mode;
+        Mode.SetWidgetToFocus(TakeWidget());
+        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        PC->SetInputMode(Mode);
+    }
+    else
+    {
+        PC->bShowMouseCursor = bPrevShowMouseCursor;
 
-			if (Mouse::X() > xcenter - w2 && Mouse::X() < xcenter + w2) {
-				int y0 = ycenter - h2;
-
-				for (int i = 0; i < 4; i++)
-					if (Mouse::Y() >= y0 + 75 + i * 30 && Mouse::Y() <= y0 + 105 + i * 30)
-						action = i + 1;
-			}
-		}
-
-		for (int i = 1; i <= 4; i++) {
-			if (Keyboard::KeyDown('0' + i))
-				action = i;
-		}
-
-		// was mission long enough to accept?
-		if (action == 1 && !CanAccept()) {
-			UIButton::PlaySound(UIButton::SND_REJECT);
-			action = 3;
-		}
-
-		// exit and accept:
-		if (action == 1) {
-			CloseMenu();
-			Game::SetTimeCompression(1);
-
-			Starshatter* stars = Starshatter::GetInstance();
-			stars->SetGameMode(Starshatter::PLAN_MODE);
-		}
-
-		// quit and discard results:
-		else if (action == 2) {
-			CloseMenu();
-			Game::SetTimeCompression(1);
-
-			Starshatter* stars = Starshatter::GetInstance();
-			Campaign* campaign = Campaign::GetCampaign();
-
-			// discard mission and events:
-			if (sim) sim->UnloadMission();
-			else ShipStats::Initialize();
-
-			if (campaign && campaign->GetCampaignId() < Campaign::SINGLE_MISSIONS) {
-				campaign->RollbackMission();
-				stars->SetGameMode(Starshatter::CMPN_MODE);
-			}
-			else {
-				stars->SetGameMode(Starshatter::MENU_MODE);
-			}
-		}
-
-		// resume:
-		else if (action == 3) {
-			CloseMenu();
-		}
-
-		// controls:
-		else if (action == 4) {
-			GameScreen* game_screen = GameScreen::GetInstance();
-
-			if (game_screen)
-				game_screen->ShowCtlDlg();
-			else
-				CloseMenu();
-		}
-	}
+        FInputModeGameOnly Mode;
+        PC->SetInputMode(Mode);
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-bool
-QuitView::IsMenuShown()
+void UQuitView::SetMessageText(const FString& InText)
 {
-	return show_menu;
+    if (TxtMessage)
+    {
+        TxtMessage->SetText(FText::FromString(InText));
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-bool
-QuitView::CanAccept()
+bool UQuitView::CanAccept()
 {
-	sim = Sim::GetSim();
+    sim = Sim::GetSim();
+    if (!sim)
+        return false;
 
-	Ship* player_ship = sim->GetPlayerShip();
+    Ship* player_ship = sim->GetPlayerShip();
+    if (!player_ship)
+        return false;
 
-	if (player_ship->MissionClock() < 60000) {
-		RadioView::Message(Game::GetText("QuitView.too-soon"));
-		RadioView::Message(Game::GetText("QuitView.abort"));
-		return false;
-	}
+    // Legacy: must fly at least 60 seconds:
+    if (player_ship->MissionClock() < 60000)
+    {
+        RadioView::Message(Game::GetText("QuitView.too-soon"));
+        RadioView::Message(Game::GetText("QuitView.abort"));
+        SetMessageText(TEXT("TOO SOON TO ACCEPT RESULTS."));
+        return false;
+    }
 
-	ListIter<SimContact> iter = player_ship->ContactList();
-	while (++iter) {
-		SimContact* c = iter.value();
-		Ship* cship = c->GetShip();
-		int      ciff = c->GetIFF(player_ship);
+    ListIter<SimContact> iter = player_ship->ContactList();
+    while (++iter)
+    {
+        SimContact* c = iter.value();
+        if (!c) continue;
 
-		if (c->Threat(player_ship)) {
-			RadioView::Message(Game::GetText("QuitView.threats-present"));
-			RadioView::Message(Game::GetText("QuitView.abort"));
-			return false;
-		}
+        Ship* cship = c->GetShip();
+        int   ciff = c->GetIFF(player_ship);
 
-		else if (cship && ciff > 0 && ciff != player_ship->GetIFF()) {
-			const FVector delta = FVector(c->Location() - player_ship->Location());
-			const double  dist = delta.Length();
+        if (c->Threat(player_ship))
+        {
+            RadioView::Message(Game::GetText("QuitView.threats-present"));
+            RadioView::Message(Game::GetText("QuitView.abort"));
+            SetMessageText(TEXT("THREATS PRESENT. CANNOT ACCEPT RESULTS."));
+            return false;
+        }
+        else if (cship && ciff > 0 && ciff != player_ship->GetIFF())
+        {
+            const FVector Delta = FVector(c->Location() - player_ship->Location());
+            const double  Dist = Delta.Length();
 
-			if (cship->IsDropship() && dist < 50e3) {
-				RadioView::Message(Game::GetText("QuitView.threats-present"));
-				RadioView::Message(Game::GetText("QuitView.abort"));
-				return false;
-			}
+            if (cship->IsDropship() && Dist < 50e3)
+            {
+                RadioView::Message(Game::GetText("QuitView.threats-present"));
+                RadioView::Message(Game::GetText("QuitView.abort"));
+                SetMessageText(TEXT("DROPSHIP THREAT NEARBY. CANNOT ACCEPT RESULTS."));
+                return false;
+            }
+            else if (cship->IsStarship() && Dist < 100e3)
+            {
+                RadioView::Message(Game::GetText("QuitView.threats-present"));
+                RadioView::Message(Game::GetText("QuitView.abort"));
+                SetMessageText(TEXT("STARSHIP THREAT NEARBY. CANNOT ACCEPT RESULTS."));
+                return false;
+            }
+        }
+    }
 
-			else if (cship->IsStarship() && dist < 100e3) {
-				RadioView::Message(Game::GetText("QuitView.threats-present"));
-				RadioView::Message(Game::GetText("QuitView.abort"));
-				return false;
-			}
-		}
-	}
-
-	return true;
+    return true;
 }
 
-void
-QuitView::ShowMenu()
+// ------------------------------------------------------------
+// Button handlers (same legacy actions, just event-driven)
+// ------------------------------------------------------------
+
+void UQuitView::OnAcceptClicked()
 {
-	if (!show_menu) {
-		show_menu = true;
+    // Was mission long enough to accept?
+    if (!CanAccept())
+        return;
 
-		for (int i = 0; i < 10; i++) {
-			if (Keyboard::KeyDown('1' + i)) {
-				// just need to clear the key down flag
-				// so we don't process old keystrokes
-				// as valid menu picks...
-			}
-		}
+    CloseMenu();
+    Game::SetTimeCompression(1);
 
-		UIButton::PlaySound(UIButton::SND_CONFIRM);
-		Starshatter::GetInstance()->Pause(true);
-
-		if (mouse_con) {
-			mouse_active = mouse_con->Active();
-			mouse_con->SetActive(false);
-		}
-	}
+    Starshatter* stars = Starshatter::GetInstance();
+    if (stars)
+        stars->SetGameMode(Starshatter::PLAN_MODE);
 }
 
-void
-QuitView::CloseMenu()
+void UQuitView::OnDiscardClicked()
 {
-	show_menu = false;
-	Starshatter::GetInstance()->Pause(false);
+    CloseMenu();
+    Game::SetTimeCompression(1);
 
-	if (mouse_con)
-		mouse_con->SetActive(mouse_active);
+    Starshatter* stars = Starshatter::GetInstance();
+    Campaign* campaign = Campaign::GetCampaign();
+
+    // Discard mission and events:
+    sim = Sim::GetSim();
+    if (sim) sim->UnloadMission();
+    else ShipStats::Initialize();
+
+    if (campaign && campaign->GetCampaignId() < Campaign::SINGLE_MISSIONS)
+    {
+        campaign->RollbackMission();
+        if (stars) stars->SetGameMode(Starshatter::CMPN_MODE);
+    }
+    else
+    {
+        if (stars) stars->SetGameMode(Starshatter::MENU_MODE);
+    }
 }
 
+void UQuitView::OnResumeClicked()
+{
+    CloseMenu();
+}
+
+void UQuitView::OnControlsClicked()
+{
+    // Legacy behavior: open controls dialog from GameScreen:
+    if (GameScreen* game_screen = GameScreen::GetInstance())
+    {
+        CloseMenu();
+        game_screen->ShowCtlDlg();
+    }
+    else
+    {
+        CloseMenu();
+    }
+}
