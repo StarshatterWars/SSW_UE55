@@ -1,6 +1,6 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     ORIGINAL AUTHOR AND STUDIO
     ==========================
@@ -12,98 +12,88 @@
 
     OVERVIEW
     ========
-    General-purpose confirmation dialog (Unreal UUserWidget)
+    General-purpose confirmation dialog (Unreal port).
+
+    UNREAL PORT:
+    - Converted from FormWindow/AWEvent mapping to UBaseScreen (UUserWidget-derived).
+    - Keeps legacy API surface: SetTitle/SetMessage, parent_control callback concept.
+    - Replaces ClientEvent(EID_USER_1) with an explicit delegate/callback.
+    - Removes MemDebug and allocation tags.
 */
 
 #pragma once
 
-// Minimal Unreal includes required by project conventions:
-#include "Math/Vector.h"                // FVector
-#include "Math/Color.h"                 // FColor
-#include "Math/UnrealMathUtility.h"     // Math
+#include "CoreMinimal.h"
+#include "BaseScreen.h"
 
-#include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+
 #include "ConfirmDlg.generated.h"
 
-// Forward declarations (keep header light):
-class UButton;
-class UTextBlock;
-class UWidget;
-class UBaseScreen;
+class MenuScreen;
 
+/**
+ * Confirm dialog:
+ * - Two buttons (Apply/Cancel)
+ * - Title + message text blocks
+ * - Optional callback when Apply is pressed (legacy EID_USER_1 equivalent)
+ */
 UCLASS()
-class STARSHATTERWARS_API UConfirmDlg : public UUserWidget
+class STARSHATTERWARS_API UConfirmDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UConfirmDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Manager bridge (typically the Menu Screen widget/controller):
-    void SetManager(UBaseScreen* InManager) { manager = InManager; }
-    UBaseScreen* GetManager() const { return manager; }
-
-    // Parent control bridge (the widget that launched the confirm dialog):
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    UWidget* GetParentControl() const { return parent_control; }
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void SetParentControl(UWidget* p) { parent_control = p; }
-
-    // Title / message (mirrors legacy Text interface):
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    FText GetTitleText() const { return title_text; }
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void SetTitleText(const FText& t);
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    FText GetMessageText() const { return message_text; }
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void SetMessageText(const FText& m);
-
-    // UUserWidget overrides:
+    // ---- UBaseScreen -------------------------------------------------
+    virtual void BindFormWidgets() override;
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
+public:
+    // ---- Legacy-ish API ---------------------------------------------
+
+    // In classic: parent_control->ClientEvent(EID_USER_1) on Apply.
+    // In UE: store a lightweight callback to execute on Apply.
+    void SetOnApply(TFunction<void()> InOnApply);
+
+    FText GetTitle() const;
+    void  SetTitle(const FText& InTitle);
+
+    FText GetMessage() const;
+    void  SetMessage(const FText& InMessage);
+
+    void Show(); // Optional convenience; actual visibility is your manager's job.
 
 protected:
-    virtual bool IsFocusable() const override { return true; }
+    void RegisterControls();
+    void ExecFrame();
 
-    // Keyboard handling (Enter = Apply, Escape = Cancel):
-    virtual FReply NativeOnKeyDown(
-        const FGeometry& InGeometry,
-        const FKeyEvent& InKeyEvent) override;
+    UFUNCTION()
+    void OnApply();
 
-protected:
-    // Operations:
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Apply();
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Cancel();
+    UFUNCTION()
+    void OnCancel();
 
 protected:
-    // Button handlers:
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
-
-protected:
-    // External dialog manager (legacy bridge):
-    UPROPERTY() UBaseScreen* manager = nullptr;
-
-    // Legacy concept of parent control (any widget can be the source):
-    UPROPERTY() UWidget* parent_control = nullptr;
-
-    // Cached text values:
-    UPROPERTY() FText title_text;
-    UPROPERTY() FText message_text;
-
-    // Widgets (BindWidgetOptional keeps this header usable across WBP variants):
+    // UMG bindings (use BindWidgetOptional so you can evolve layouts safely):
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* lbl_title = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* lbl_message = nullptr;
 
-    // Buttons:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;   // legacy: btn_apply
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;  // legacy: btn_cancel
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_apply = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_cancel = nullptr;
+
+protected:
+    // Not a UObject (legacy screen manager):
+    MenuScreen* manager = nullptr;
+
+    // Apply callback:
+    TFunction<void()> OnApplyCallback;
+
+    // Simple latch so Enter/Escape don't double-fire in the same press frame:
+    bool bExitLatch = true;
 };

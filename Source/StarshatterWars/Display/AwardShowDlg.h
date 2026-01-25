@@ -1,29 +1,45 @@
-/*  Project Starshatter 4.5
-    Destroyer Studios LLC
-    Copyright © 1997-2004.
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026. All Rights Reserved.
+
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
     SUBSYSTEM:    Stars.exe
     FILE:         AwardShowDlg.h
-    AUTHOR:       John DiCamillo
+    AUTHOR:       Carlos Bott
 
-    UNREAL PORT:
-    - Converted from FormWindow to UBaseScreen (UUserWidget-derived).
-    - Preserves original member names and intent.
+    OVERVIEW
+    ========
+    Award / Rank display dialog Unreal UUserWidget implementation.
+    Port of Starshatter 4.5 AwardShowDlg (FormWindow) to UMG + UBaseScreen.
+
+    NOTES
+    =====
+    - Manager is MenuScreen (non-UObject). Forward-declared in header, fully included in .cpp.
+    - Uses UBaseScreen FORM-ID bindings for controls:
+        201 = lbl_info
+        202 = img_rank
+        203 = lbl_name
+        1   = btn_close
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
+// UMG:
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+#include "Components/Image.h"
+
 #include "AwardShowDlg.generated.h"
 
-class UButton;
-class UTextBlock;
-class UImage;
+// Forward declaration (MenuScreen is NOT a UObject here):
+class GameScreen;
 
-/**
- * Main Menu Dialog Active Window class (UE UBaseScreen port)
- */
 UCLASS()
 class STARSHATTERWARS_API UAwardShowDlg : public UBaseScreen
 {
@@ -32,51 +48,45 @@ class STARSHATTERWARS_API UAwardShowDlg : public UBaseScreen
 public:
     UAwardShowDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Original API surface (ported):
-    virtual void      RegisterControls();
-    virtual void      Show();
-    virtual void      ExecFrame();
+    /** Non-UObject manager setter */
+    void SetManager(GameScreen* InManager) { manager = InManager; }
 
-    // Operations:
-    UFUNCTION()
-    virtual void      OnClose();
+    // ---- UBaseScreen overrides --------------------------------------
+    virtual void BindFormWidgets() override;
 
-    virtual void      ShowAward();
-    virtual void      SetRank(int r);
-    virtual void      SetMedal(int r);
+    // Optional: provide raw legacy .frm text for parser (override if desired)
+    virtual FString GetLegacyFormText() const override { return FString(); }
 
-protected:
-    // UUserWidget lifecycle:
-    virtual void      NativeOnInitialized() override;
-    virtual void      NativeConstruct() override;
-    virtual void      NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    // ---- Operations --------------------------------------------------
+    void ShowAward();
+    void SetRank(int32 InRank);
+    void SetMedal(int32 InMedal);
 
 protected:
-    // Starshatter: MenuScreen* manager;
-    UPROPERTY(BlueprintReadWrite, Category = "AwardShowDlg")
-    UObject* manager = nullptr;
+    virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
-    // ActiveWindow* -> UTextBlock*
-    UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
-    UTextBlock* lbl_name = nullptr;
+protected:
+    // -----------------------------------------------------------------
+    // Manager (non-UObject)
+    // -----------------------------------------------------------------
+    GameScreen* manager = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
-    UTextBlock* lbl_info = nullptr;
+    // -----------------------------------------------------------------
+    // Widgets (BindWidgetOptional) – align these with your UMG names
+    // -----------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* lbl_info = nullptr;  // 201
+    UPROPERTY(meta = (BindWidgetOptional)) UImage* img_rank = nullptr;  // 202
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* lbl_name = nullptr;  // 203
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_close = nullptr; // 1
 
-    // ImageBox* -> UImage*
-    UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
-    UImage* img_rank = nullptr;
+protected:
+    // Legacy latches/state:
+    bool  exit_latch = true;
+    int32 rank = -1;
+    int32 medal = -1;
 
-    // Button* -> UButton*
-    UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
-    UButton* btn_close = nullptr;
-
-    UPROPERTY(BlueprintReadOnly, Category = "AwardShowDlg")
-    bool              exit_latch = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "AwardShowDlg")
-    int32             rank = 0;
-
-    UPROPERTY(BlueprintReadOnly, Category = "AwardShowDlg")
-    int32             medal = 0;
+protected:
+    UFUNCTION() void OnCloseClicked();
 };

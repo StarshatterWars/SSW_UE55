@@ -1,6 +1,6 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     ORIGINAL AUTHOR AND STUDIO
     ==========================
@@ -20,7 +20,7 @@
         * Supports hex ints like 0x02 (style fields).
         * Robustly skips unknown keys by consuming whole value expressions:
           scalar, (tuples), {blocks}, nested.
-    - Applies parsed defaults to bound widgets (labels: text/color/font/justification).
+    - Unified dialog key handling: Enter/Escape -> HandleAccept/HandleCancel.
 */
 
 #include "BaseScreen.h"
@@ -33,6 +33,9 @@
 #include "Components/ComboBoxString.h"
 #include "Components/ListView.h"
 #include "Components/Slider.h"
+
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Framework/Application/SlateApplication.h"
 
 namespace
 {
@@ -57,9 +60,9 @@ namespace
 
     struct FTok
     {
-        ETok Type = ETok::End;
+        ETok    Type = ETok::End;
         FString Text;
-        double Number = 0.0;
+        double  Number = 0.0;
     };
 
     static bool IsIdentStart(TCHAR C)
@@ -74,7 +77,7 @@ namespace
 
     static void StripLineComments(FString& S)
     {
-        // Remove // comments. Keep it simple (FORM files use //).
+        // Remove // comments (FORM files use //).
         TArray<FString> Lines;
         S.ParseIntoArrayLines(Lines, false);
 
@@ -131,6 +134,7 @@ namespace
                     if (D == '"') break;
                     Out.AppendChar(D);
                 }
+
                 FTok T;
                 T.Type = ETok::String;
                 T.Text = Out;
@@ -312,7 +316,7 @@ namespace
                     continue;
                 }
 
-                // Unknown top-level key: skip a token
+                // Unknown top-level key: skip one token
                 Tok = Lex.Next();
             }
 
@@ -465,17 +469,8 @@ namespace
                     }
                 };
 
-            if (Tok.Type == ETok::LParen)
-            {
-                SkipBalanced(ETok::LParen, ETok::RParen);
-                return;
-            }
-
-            if (Tok.Type == ETok::LBrace)
-            {
-                SkipBalanced(ETok::LBrace, ETok::RBrace);
-                return;
-            }
+            if (Tok.Type == ETok::LParen) { SkipBalanced(ETok::LParen, ETok::RParen); return; }
+            if (Tok.Type == ETok::LBrace) { SkipBalanced(ETok::LBrace, ETok::RBrace); return; }
 
             Tok = Lex.Next();
         }
@@ -531,12 +526,13 @@ namespace
                 OutError = TEXT("Expected align identifier");
                 return EFormAlign::None;
             }
+
             const FString S = Tok.Text;
             Tok = Lex.Next();
 
-            if (S.Equals(TEXT("left"), ESearchCase::IgnoreCase))   return EFormAlign::Left;
+            if (S.Equals(TEXT("left"), ESearchCase::IgnoreCase)) return EFormAlign::Left;
             if (S.Equals(TEXT("center"), ESearchCase::IgnoreCase)) return EFormAlign::Center;
-            if (S.Equals(TEXT("right"), ESearchCase::IgnoreCase))  return EFormAlign::Right;
+            if (S.Equals(TEXT("right"), ESearchCase::IgnoreCase)) return EFormAlign::Right;
 
             OutError = TEXT("Unknown align value");
             return EFormAlign::None;
@@ -549,17 +545,18 @@ namespace
                 OutError = TEXT("Expected ctrl type identifier");
                 return EFormCtrlType::None;
             }
+
             const FString S = Tok.Text;
             Tok = Lex.Next();
 
-            if (S.Equals(TEXT("label"), ESearchCase::IgnoreCase))      return EFormCtrlType::Label;
-            if (S.Equals(TEXT("button"), ESearchCase::IgnoreCase))     return EFormCtrlType::Button;
-            if (S.Equals(TEXT("image"), ESearchCase::IgnoreCase))      return EFormCtrlType::Image;
-            if (S.Equals(TEXT("edit"), ESearchCase::IgnoreCase))       return EFormCtrlType::Edit;
-            if (S.Equals(TEXT("combo"), ESearchCase::IgnoreCase))      return EFormCtrlType::Combo;
-            if (S.Equals(TEXT("list"), ESearchCase::IgnoreCase))       return EFormCtrlType::List;
-            if (S.Equals(TEXT("slider"), ESearchCase::IgnoreCase))     return EFormCtrlType::Slider;
-            if (S.Equals(TEXT("panel"), ESearchCase::IgnoreCase))      return EFormCtrlType::Panel;
+            if (S.Equals(TEXT("label"), ESearchCase::IgnoreCase)) return EFormCtrlType::Label;
+            if (S.Equals(TEXT("button"), ESearchCase::IgnoreCase)) return EFormCtrlType::Button;
+            if (S.Equals(TEXT("image"), ESearchCase::IgnoreCase)) return EFormCtrlType::Image;
+            if (S.Equals(TEXT("edit"), ESearchCase::IgnoreCase)) return EFormCtrlType::Edit;
+            if (S.Equals(TEXT("combo"), ESearchCase::IgnoreCase)) return EFormCtrlType::Combo;
+            if (S.Equals(TEXT("list"), ESearchCase::IgnoreCase)) return EFormCtrlType::List;
+            if (S.Equals(TEXT("slider"), ESearchCase::IgnoreCase)) return EFormCtrlType::Slider;
+            if (S.Equals(TEXT("panel"), ESearchCase::IgnoreCase)) return EFormCtrlType::Panel;
             if (S.Equals(TEXT("background"), ESearchCase::IgnoreCase)) return EFormCtrlType::Background;
 
             OutError = TEXT("Unknown ctrl type");
@@ -578,14 +575,11 @@ namespace
                     OutError = TEXT("Expected number in int array");
                     return Out;
                 }
+
                 Out.Add(ParseIntFlexible(OutError));
                 if (!OutError.IsEmpty()) return Out;
 
-                if (Tok.Type == ETok::Comma)
-                {
-                    Tok = Lex.Next();
-                    continue;
-                }
+                if (Tok.Type == ETok::Comma) { Tok = Lex.Next(); continue; }
                 break;
             }
 
@@ -605,14 +599,11 @@ namespace
                     OutError = TEXT("Expected number in float array");
                     return Out;
                 }
+
                 Out.Add(ParseFloat(OutError));
                 if (!OutError.IsEmpty()) return Out;
 
-                if (Tok.Type == ETok::Comma)
-                {
-                    Tok = Lex.Next();
-                    continue;
-                }
+                if (Tok.Type == ETok::Comma) { Tok = Lex.Next(); continue; }
                 break;
             }
 
@@ -663,7 +654,7 @@ namespace
                     continue;
                 }
 
-                // Unknown layout key -> skip value:
+                // Unknown layout key: skip value
                 Tok = Lex.Next();
             }
 
@@ -724,7 +715,6 @@ namespace
                     continue;
                 }
 
-                // Unknown column key: skip whole expression:
                 SkipValueExpression();
                 EatOptionalComma();
             }
@@ -776,7 +766,7 @@ namespace
                 {
                     OutCtrl.Text = ParseStringOrIdent(OutError);
                     if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasText = !bIsDefctrl;
+                    OutCtrl.bHasText = !bIsDefctrl; // only ctrl "text" should override content normally
                     EatOptionalComma();
                     continue;
                 }
@@ -968,7 +958,7 @@ namespace
                 }
                 if (Key.Equals(TEXT("style"), ESearchCase::IgnoreCase))
                 {
-                    OutCtrl.Style = ParseIntFlexible(OutError); // supports 0x02
+                    OutCtrl.Style = ParseIntFlexible(OutError); // supports 0xNN
                     if (!OutError.IsEmpty()) return false;
                     OutCtrl.bHasStyle = true;
                     EatOptionalComma();
@@ -994,7 +984,7 @@ namespace
                     continue;
                 }
 
-                // Unknown ctrl key: skip the whole value expression safely:
+                // Unknown ctrl key: skip whole expression
                 SkipValueExpression();
                 EatOptionalComma();
             }
@@ -1004,42 +994,42 @@ namespace
 
         static void ApplyDefaults(FParsedCtrl& Ctrl, const FParsedCtrl& Def)
         {
-            // Only apply default fields that Def has, and Ctrl did not explicitly set.
-            if (!Ctrl.bHasTexture && Def.bHasTexture) Ctrl.Texture = Def.Texture;
-            if (!Ctrl.bHasFont && Def.bHasFont) Ctrl.Font = Def.Font;
-            if (!Ctrl.bHasAlign && Def.bHasAlign) Ctrl.Align = Def.Align;
+            // Only apply defaults that exist in Def and are not explicitly set by Ctrl.
+            if (!Ctrl.bHasTexture && Def.bHasTexture)   Ctrl.Texture = Def.Texture;
+            if (!Ctrl.bHasFont && Def.bHasFont)      Ctrl.Font = Def.Font;
+            if (!Ctrl.bHasAlign && Def.bHasAlign)     Ctrl.Align = Def.Align;
             if (!Ctrl.bHasBackColor && Def.bHasBackColor) Ctrl.BackColor = Def.BackColor;
             if (!Ctrl.bHasForeColor && Def.bHasForeColor) Ctrl.ForeColor = Def.ForeColor;
 
-            if (!Ctrl.bHasTransparent && Def.bHasTransparent) Ctrl.bTransparent = Def.bTransparent;
-            if (!Ctrl.bHasSticky && Def.bHasSticky) Ctrl.bSticky = Def.bSticky;
-            if (!Ctrl.bHasBorder && Def.bHasBorder) Ctrl.bBorder = Def.bBorder;
-            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial) Ctrl.bHidePartial = Def.bHidePartial;
+            if (!Ctrl.bHasTransparent && Def.bHasTransparent)  Ctrl.bTransparent = Def.bTransparent;
+            if (!Ctrl.bHasSticky && Def.bHasSticky)       Ctrl.bSticky = Def.bSticky;
+            if (!Ctrl.bHasBorder && Def.bHasBorder)       Ctrl.bBorder = Def.bBorder;
+            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial)  Ctrl.bHidePartial = Def.bHidePartial;
             if (!Ctrl.bHasShowHeadings && Def.bHasShowHeadings) Ctrl.bShowHeadings = Def.bShowHeadings;
 
-            if (!Ctrl.bHasStandardImage && Def.bHasStandardImage) Ctrl.StandardImage = Def.StandardImage;
-            if (!Ctrl.bHasActivatedImage && Def.bHasActivatedImage) Ctrl.ActivatedImage = Def.ActivatedImage;
+            if (!Ctrl.bHasStandardImage && Def.bHasStandardImage)   Ctrl.StandardImage = Def.StandardImage;
+            if (!Ctrl.bHasActivatedImage && Def.bHasActivatedImage)  Ctrl.ActivatedImage = Def.ActivatedImage;
             if (!Ctrl.bHasTransitionImage && Def.bHasTransitionImage) Ctrl.TransitionImage = Def.TransitionImage;
 
-            if (!Ctrl.bHasBevelWidth && Def.bHasBevelWidth) Ctrl.BevelWidth = Def.BevelWidth;
-            if (!Ctrl.bHasBevelDepth && Def.bHasBevelDepth) Ctrl.BevelDepth = Def.BevelDepth;
-            if (!Ctrl.bHasBorderColor && Def.bHasBorderColor) Ctrl.BorderColor = Def.BorderColor;
+            if (!Ctrl.bHasBevelWidth && Def.bHasBevelWidth)   Ctrl.BevelWidth = Def.BevelWidth;
+            if (!Ctrl.bHasBevelDepth && Def.bHasBevelDepth)   Ctrl.BevelDepth = Def.BevelDepth;
+            if (!Ctrl.bHasBorderColor && Def.bHasBorderColor)  Ctrl.BorderColor = Def.BorderColor;
 
-            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth) Ctrl.FixedWidth = Def.FixedWidth;
-            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight) Ctrl.FixedHeight = Def.FixedHeight;
+            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth)   Ctrl.FixedWidth = Def.FixedWidth;
+            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight)  Ctrl.FixedHeight = Def.FixedHeight;
 
-            if (!Ctrl.bHasCells && Def.bHasCells) Ctrl.Cells = Def.Cells;
-            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets) Ctrl.CellInsets = Def.CellInsets;
-            if (!Ctrl.bHasMargins && Def.bHasMargins) Ctrl.Margins = Def.Margins;
+            if (!Ctrl.bHasCells && Def.bHasCells)        Ctrl.Cells = Def.Cells;
+            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets)   Ctrl.CellInsets = Def.CellInsets;
+            if (!Ctrl.bHasMargins && Def.bHasMargins)      Ctrl.Margins = Def.Margins;
 
-            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar) Ctrl.ScrollBar = Def.ScrollBar;
-            if (!Ctrl.bHasStyle && Def.bHasStyle) Ctrl.Style = Def.Style;
+            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar)    Ctrl.ScrollBar = Def.ScrollBar;
+            if (!Ctrl.bHasStyle && Def.bHasStyle)        Ctrl.Style = Def.Style;
 
-            if (!Ctrl.bHasLayout && Def.bHasLayout) Ctrl.Layout = Def.Layout;
+            if (!Ctrl.bHasLayout && Def.bHasLayout)       Ctrl.Layout = Def.Layout;
         }
 
         FFormLexer Lex;
-        FTok Tok;
+        FTok      Tok;
     };
 } // namespace
 
@@ -1054,10 +1044,10 @@ void UBaseScreen::NativeOnInitialized()
     FormMap.Reset();
     BindFormWidgets();
 
-    // Apply compiled defaults (optional bridge)
+    // Optional compiled defaults bridge:
     ApplyFormDefaults();
 
-    // Parse embedded .frm (if provided) and apply defaults
+    // Parse embedded .frm (if provided) and apply defaults:
     const FString Frm = GetLegacyFormText();
     if (!Frm.IsEmpty())
     {
@@ -1091,6 +1081,52 @@ void UBaseScreen::NativePreConstruct()
 void UBaseScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
+}
+
+// --------------------------------------------------------------------
+// Centralized dialog input (Enter/Escape)
+// --------------------------------------------------------------------
+
+FReply UBaseScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+    if (!bDialogInputEnabled)
+        return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+
+    const FKey Key = InKeyEvent.GetKey();
+
+    if (Key == EKeys::Enter || Key == EKeys::Virtual_Accept)
+    {
+        HandleAccept();
+        return FReply::Handled();
+    }
+
+    if (Key == EKeys::Escape || Key == EKeys::Virtual_Back)
+    {
+        HandleCancel();
+        return FReply::Handled();
+    }
+
+    return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+void UBaseScreen::HandleAccept()
+{
+    // Default: click ApplyButton if present/enabled, otherwise do nothing.
+    if (ApplyButton && ApplyButton->GetIsEnabled())
+    {
+        ApplyButton->OnClicked.Broadcast();
+        return;
+    }
+}
+
+void UBaseScreen::HandleCancel()
+{
+    // Default: click CancelButton if present/enabled, otherwise do nothing.
+    if (CancelButton && CancelButton->GetIsEnabled())
+    {
+        CancelButton->OnClicked.Broadcast();
+        return;
+    }
 }
 
 // --------------------------------------------------------------------
@@ -1205,41 +1241,32 @@ void UBaseScreen::SetVisible(int32 Id, bool bVisible)
 {
     const ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
 
-    if (UTextBlock* L = GetLabel(Id))               L->SetVisibility(Vis);
-    if (UButton* B = GetButton(Id))                 B->SetVisibility(Vis);
-    if (UImage* I = GetImage(Id))                   I->SetVisibility(Vis);
-    if (UEditableTextBox* E = GetEdit(Id))          E->SetVisibility(Vis);
-    if (UComboBoxString* C = GetCombo(Id))          C->SetVisibility(Vis);
-    if (UListView* LV = GetList(Id))                LV->SetVisibility(Vis);
-    if (USlider* S = GetSlider(Id))                 S->SetVisibility(Vis);
+    if (UTextBlock* L = GetLabel(Id))      L->SetVisibility(Vis);
+    if (UButton* B = GetButton(Id))       B->SetVisibility(Vis);
+    if (UImage* I = GetImage(Id))         I->SetVisibility(Vis);
+    if (UEditableTextBox* E = GetEdit(Id)) E->SetVisibility(Vis);
+    if (UComboBoxString* C = GetCombo(Id)) C->SetVisibility(Vis);
+    if (UListView* LV = GetList(Id))      LV->SetVisibility(Vis);
+    if (USlider* S = GetSlider(Id))       S->SetVisibility(Vis);
 }
 
 void UBaseScreen::SetEnabled(int32 Id, bool bEnabled)
 {
-    if (UButton* B = GetButton(Id))                 B->SetIsEnabled(bEnabled);
-    if (UEditableTextBox* E = GetEdit(Id))          E->SetIsEnabled(bEnabled);
-    if (UComboBoxString* C = GetCombo(Id))          C->SetIsEnabled(bEnabled);
-    if (UListView* LV = GetList(Id))                LV->SetIsEnabled(bEnabled);
-    if (USlider* S = GetSlider(Id))                 S->SetIsEnabled(bEnabled);
+    if (UButton* B = GetButton(Id))          B->SetIsEnabled(bEnabled);
+    if (UEditableTextBox* E = GetEdit(Id))   E->SetIsEnabled(bEnabled);
+    if (UComboBoxString* C = GetCombo(Id))   C->SetIsEnabled(bEnabled);
+    if (UListView* LV = GetList(Id))         LV->SetIsEnabled(bEnabled);
+    if (USlider* S = GetSlider(Id))          S->SetIsEnabled(bEnabled);
 }
 
 // --------------------------------------------------------------------
-// FORM defaults (compiled bridge)
+// Optional compiled defaults hook (no-op by default)
 // --------------------------------------------------------------------
 
 void UBaseScreen::ApplyFormDefaults()
 {
-    const FFormDef* Def = GetFormDef();
-    if (!Def)
-        return;
-
-    for (const FFormControlDef& C : Def->Controls)
-    {
-        if (C.Type == EFormCtrlType::Label && !C.Text.IsEmpty())
-        {
-            SetLabelText(C.Id, FText::FromString(C.Text));
-        }
-    }
+    // Intentionally empty in this version.
+    // If you later add compiled form defs, this is where you apply them.
 }
 
 // --------------------------------------------------------------------
@@ -1254,8 +1281,8 @@ bool UBaseScreen::ParseLegacyForm(const FString& InText, FParsedForm& OutForm, F
 
 bool UBaseScreen::ResolveFont(const FString& InFontName, FSlateFontInfo& OutFont) const
 {
-    // Default behavior: no mapping. Override to map:
-    // "Limerick12" / "Limerick18" / "Verdana" to Slate fonts.
+    // Default behavior: no mapping. Override in derived screens to map:
+    // "Limerick12" / "Limerick18" / "Verdana" etc.
     (void)InFontName;
     (void)OutFont;
     return false;
