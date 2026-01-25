@@ -7,21 +7,21 @@
     John DiCamillo / Destroyer Studios LLC
 
     SUBSYSTEM:    Stars.exe
-    FILE:         AwardShowDlg.h
+    FILE:         AwardDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    UAwardShowDlg
-    - Unreal port of Starshatter AwardShowDlg (rank/medal detail popup).
+    UAwardDlg
+    - Unreal port of Starshatter AwardDlg (award popup).
     - Uses UBaseScreen FORM-id binding and optional .frm parsing defaults.
     - Binds:
-        203 = Name/Title label
-        201 = Info/Description label
-        202 = Insignia image (rank/medal)
-        1   = Close button
-    - Enter/Escape: closes only after latch released (legacy behavior).
-    - Close returns to manager->ShowPlayerDlg() (MenuScreen equivalent).
+        203 = Award Name (Label)
+        201 = Award Description (Label)
+        202 = Award Insignia (Image)
+        1   = Close (Button)
+    - On open: ShowPlayer()
+    - Enter/Escape: closes (via UBaseScreen default dialog handling or local handler)
 */
 
 #pragma once
@@ -29,19 +29,19 @@
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 
-#include "AwardShowDlg.generated.h"
+#include "AwardDlg.generated.h"
 
 class UTextBlock;
 class UButton;
 class UImage;
 
 UCLASS()
-class STARSHATTERWARS_API UAwardShowDlg : public UBaseScreen
+class STARSHATTERWARS_API UAwardDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
-    UAwardShowDlg(const FObjectInitializer& ObjectInitializer);
+    UAwardDlg(const FObjectInitializer& ObjectInitializer);
 
     // ------------------------------------------------------------
     // UUserWidget lifecycle
@@ -61,42 +61,34 @@ public:
     // Starshatter behavior (ported API)
     // ------------------------------------------------------------
 public:
-    /** Show dialog (calls ShowAward and latches input) */
+    /** Called by manager when dialog is shown/opened */
     UFUNCTION(BlueprintCallable)
     void ShowDialog();
 
-    /** Equivalent to legacy SetRank(int r) */
+    /** Refreshes UI from current player award fields */
     UFUNCTION(BlueprintCallable)
-    void SetRank(int32 InRank);
-
-    /** Equivalent to legacy SetMedal(int m) */
-    UFUNCTION(BlueprintCallable)
-    void SetMedal(int32 InMedal);
-
-    /** Refreshes the dialog UI based on Rank/Medal selection */
-    UFUNCTION(BlueprintCallable)
-    void ShowAward();
-
-    /** Set the menu manager / owner (MenuScreen equivalent) */
-    UFUNCTION(BlueprintCallable)
-    void SetManager(UBaseScreen* InManager);
+    void ShowPlayer();
 
 protected:
+    /** Close button click / Enter / Escape */
     UFUNCTION()
     void OnCloseClicked();
 
 private:
+    /** Prevent immediate Enter/Escape close on first frame (matches exit_latch) */
     void UpdateExitLatchFromInput(const FKeyEvent& InKeyEvent, bool& bOutHandled);
 
 private:
     // ------------------------------------------------------------
-    // Manager / owner
+    // Manager / dependencies
     // ------------------------------------------------------------
+    // In the legacy code this is PlanScreen* manager.
+    // In Unreal, we keep a weak pointer to whatever screen owns it (often a plan/menu screen widget).
     UPROPERTY(Transient)
     TObjectPtr<UBaseScreen> Manager = nullptr;
 
     // ------------------------------------------------------------
-    // FORM bound widgets
+    // FORM bound widgets (by ID)
     // ------------------------------------------------------------
     // 203
     UPROPERTY(meta = (BindWidgetOptional), Transient)
@@ -113,13 +105,4 @@ private:
     // 1
     UPROPERTY(meta = (BindWidgetOptional), Transient)
     UButton* btn_close = nullptr;
-
-    // ------------------------------------------------------------
-    // State
-    // -----------------------------------------------------------
-    UPROPERTY(Transient)
-    int32 Rank = -1;
-
-    UPROPERTY(Transient)
-    int32 Medal = -1;
 };

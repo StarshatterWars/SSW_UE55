@@ -97,6 +97,29 @@ namespace
         S = FString::Join(Lines, TEXT("\n"));
     }
 
+    static void StripBlockComments(FString& S)
+    {
+        // Remove /* ... */ style blocks (your FORM uses /*** ... ***/).
+        // Simple non-nested removal.
+        while (true)
+        {
+            int32 Start = S.Find(TEXT("/*"));
+            if (Start == INDEX_NONE)
+                break;
+
+            int32 End = S.Find(TEXT("*/"), ESearchCase::IgnoreCase, ESearchDir::FromStart, Start + 2);
+            if (End == INDEX_NONE)
+            {
+                // If unclosed, drop remainder
+                S = S.Left(Start);
+                break;
+            }
+
+            const int32 RemoveLen = (End + 2) - Start;
+            S.RemoveAt(Start, RemoveLen, /*bAllowShrinking*/false);
+        }
+    }
+
     class FFormLexer
     {
     public:
@@ -1055,6 +1078,7 @@ void UBaseScreen::NativeOnInitialized()
     {
         FString Clean = Frm;
         StripLineComments(Clean);
+        StripBlockComments(Clean);
 
         FString Err;
         FParsedForm Parsed;

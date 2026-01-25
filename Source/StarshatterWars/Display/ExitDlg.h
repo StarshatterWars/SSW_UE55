@@ -2,22 +2,25 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
-    FILE:         ExitDlg.h
-    AUTHOR:       Carlos Bott
-
     ORIGINAL AUTHOR AND STUDIO
     ==========================
     John DiCamillo / Destroyer Studios LLC
 
+    SUBSYSTEM:    Stars.exe
+    FILE:         ExitDlg.h
+    AUTHOR:       Carlos Bott
+
     OVERVIEW
     ========
-    Exit confirm dialog + rolling credits (Unreal port).
-
-    UNREAL PORT:
-    - UBaseScreen-derived (UUserWidget).
-    - Uses centralized dialog input: HandleAccept/HandleCancel.
-    - Preserves exit_latch and credits smooth scrolling.
+    ExitDlg (Unreal)
+    - Direct Unreal replacement for legacy ExitDlg FormWindow
+    - Maintains original method names and semantics
+    - FORM IDs:
+        100 = title label
+        101 = prompt label
+        201 = credits text (RichText)
+        1   = Exit button
+        2   = Cancel button
 */
 
 #pragma once
@@ -25,13 +28,12 @@
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 
+#include "Components/ScrollBox.h"
+#include "Components/RichTextBlock.h"
+
 #include "ExitDlg.generated.h"
 
-class UButton;
-class URichTextBlock; // if you use UE's RichTextBlock; otherwise replace with your ported RichTextBox widget
-
-// Forward declarations for ported core:
-class MenuScreen;
+class UMenuScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UExitDlg : public UBaseScreen
@@ -39,50 +41,69 @@ class STARSHATTERWARS_API UExitDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UExitDlg(const FObjectInitializer& ObjectInitializer);
+    UExitDlg();
 
-    // UBaseScreen
-    virtual void BindFormWidgets() override;
+    // Legacy API (maintained names):
+    virtual void RegisterControls();
+    virtual void Show();
+    virtual void ExecFrame(float DeltaTime);
+
+    virtual void OnApply();
+    virtual void OnCancel();
+
+    void SetManager(UMenuScreen* InManager);
 
 protected:
-    virtual void NativeOnInitialized() override;
+    // ------------------------------------------------------------
+    // UBaseScreen overrides
+    // ------------------------------------------------------------
+    virtual void BindFormWidgets() override;
+    virtual FString GetLegacyFormText() const override;
+
+    virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-    // Centralized dialog actions (Enter/Escape):
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
-public:
-    // Legacy-style API surface (kept for parity with other ports):
-    void RegisterControls();
-    void Show();
-    void ExecFrame();
-
-    // Button handlers:
+protected:
+    // ------------------------------------------------------------
+    // Button click handlers (NO lambdas)
+    // ------------------------------------------------------------
     UFUNCTION()
-    void OnApply();
+    void HandleApplyClicked();
 
     UFUNCTION()
-    void OnCancel();
+    void HandleCancelClicked();
 
 protected:
-    // Widgets (bind in UMG or via BindFormWidgets IDs):
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_apply = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_cancel = nullptr;
+    // ------------------------------------------------------------
+    // Optional UMG bindings
+    // ------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional))
+    UScrollBox* CreditsScroll = nullptr;
 
-    // Credits control:
-    // Option A: if you have a ported RichTextBox widget type, use that here.
-    // Option B: if you are using UMG RichTextBlock, you'll need a different scrolling approach.
-    // This assumes you have a ported URichTextBox-like widget with the same methods used below.
-    UPROPERTY(meta = (BindWidgetOptional)) UObject* credits = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    URichTextBlock* CreditsText = nullptr;
 
-    // Manager (owner screen/controller in your port):
-    MenuScreen* manager = nullptr;
+protected:
+    // ------------------------------------------------------------
+    // State
+    // ------------------------------------------------------------
+    UPROPERTY(Transient)
+    TObjectPtr<UMenuScreen> Manager = nullptr;
 
-    // Classic state:
     bool bExitLatch = false;
 
-    // Original def rect is a layout hint in classic UI; in UE you likely ignore or use for sizing.
-    // Keeping for parity:
-    // Rect def_rect;  // if you have a Rect type in your port layer
+    float ScrollOffset = 0.0f;
+
+    UPROPERTY(EditAnywhere, Category = "ExitDlg")
+    float ScrollPixelsPerSecond = 22.0f;
+
+protected:
+    // ------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------
+    bool LoadCreditsFile(FString& OutText) const;
+    void ApplyCredits(const FString& Text);
 };

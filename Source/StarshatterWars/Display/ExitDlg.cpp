@@ -1,179 +1,188 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         ExitDlg.cpp
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Exit / Credits Dialog (Unreal UUserWidget)
-
-    FORM -> UMG mapping (recommended):
-    - Title (id 100): UTextBlock* Title
-    - Prompt (id 101): UTextBlock* Prompt
-    - Credits scroller (id 201): URichTextBlock or UTextBlock inside a ScrollBox
-      (this implementation uses UMultiLineEditableTextBox as a simple scroller)
-    - Exit button (id 1): ApplyBtn (text "Exit")
-    - Cancel button (id 2): CancelBtn
-*/
-
 #include "ExitDlg.h"
-#include "GameStructs.h"
 
-#include "Components/Button.h"
-#include "Components/TextBlock.h"
-#include "Components/MultiLineEditableTextBox.h"
-#include "Input/Reply.h"
-#include "InputCoreTypes.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Kismet/KismetSystemLibrary.h"
 
-// Starshatter core:
-#include "Starshatter.h"
-#include "Game.h"
-#include "DataLoader.h"
-#include "MusicManager.h"
+#include "MenuScreen.h"
 
-// +--------------------------------------------------------------------+
-
-static void CallManagerByName(UBaseScreen* manager, const TCHAR* fnName)
+UExitDlg::UExitDlg()
 {
-    if (!manager || !fnName) return;
-
-    const FName fname(fnName);
-    UFunction* fn = manager->FindFunction(fname);
-    if (fn)
-    {
-        manager->ProcessEvent(fn, nullptr);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ExitDlg: Manager does not implement '%s'."), fnName);
-    }
+    SetDialogInputEnabled(true);
 }
 
-// +--------------------------------------------------------------------+
-
-UExitDlg::UExitDlg(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+void UExitDlg::SetManager(UMenuScreen* InManager)
 {
+    Manager = InManager;
+}
+
+void UExitDlg::BindFormWidgets()
+{
+    if (ApplyButton)  BindButton(1, ApplyButton);
+    if (CancelButton) BindButton(2, CancelButton);
+
+    if (CreditsText)  BindText(201, CreditsText);
+}
+
+FString UExitDlg::GetLegacyFormText() const
+{
+    return FString(TEXT(R"FRM(
+form: {
+   rect:       (0,0,440,320)
+   back_color: (0,0,0)
+   fore_color: (255,255,255)
+   font:       Limerick12
+
+   texture:    "Message.pcx"
+   margins:    (50,40,48,40)
+
+   layout: {
+      x_mins:     (20, 40, 100, 100, 20)
+      x_weights:  ( 0,  0,   1,   1,  0)
+
+      y_mins:     (44,  30, 30, 80, 35)
+      y_weights:  ( 0,   0,  0,  1,  0)
+   }
+
+   ctrl: { id:100 type:label text:"Exit Starshatter?" align:center font:Limerick18 }
+   ctrl: { id:101 type:label text:"Are you sure you want to exit Starshatter and return to Windows?" }
+   ctrl: { id:201 type:text }
+
+   ctrl: { id:1 type:button text:"Exit" }
+   ctrl: { id:2 type:button text:"Cancel" }
+}
+)FRM"));
 }
 
 void UExitDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (ApplyBtn)
-    {
-        ApplyBtn->OnClicked.AddDynamic(this, &UExitDlg::OnApplyClicked);
-    }
+    RegisterControls();
 
-    if (CancelBtn)
-    {
-        CancelBtn->OnClicked.AddDynamic(this, &UExitDlg::OnCancelClicked);
-    }
+    bExitLatch = true;
+    ScrollOffset = 0.0f;
 
-    // Latch Escape for first tick after opening (matches legacy exit_latch behavior):
-    exit_latch = true;
-
-    // Enter credits mode (legacy: MusicDirector::CREDITS):
-    MusicManager::SetMode(MusicManager::CREDITS);
-
-    // Load credits text (legacy: credits.txt via DataLoader):
-    DataLoader* loader = DataLoader::GetLoader();
-    if (loader)
-    {
-        BYTE* block = nullptr;
-
-        loader->SetDataPath(nullptr);
-        loader->LoadBuffer("credits.txt", block, true);
-
-        if (block && credits)
-        {
-            const char* cstr = reinterpret_cast<const char*>(block);
-            credits->SetText(FText::FromString(UTF8_TO_TCHAR(cstr)));
-        }
-
-        loader->ReleaseBuffer(block);
-    }
-
-    // Ensure keyboard focus for Enter/Escape:
-    SetKeyboardFocus();
+    FString Credits;
+    if (LoadCreditsFile(Credits))
+        ApplyCredits(Credits);
 }
 
 void UExitDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-
-    // Smooth scrolling approximation:
-    // UMultiLineEditableTextBox doesn't expose a "top index" like RichTextBox.
-    // If you swap to ScrollBox + RichTextBlock, you can implement proper smooth scroll.
-    // Here we simply clear the latch after first frame so Escape works.
-    exit_latch = false;
+    ExecFrame(InDeltaTime);
 }
 
-FReply UExitDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+void UExitDlg::RegisterControls()
 {
-    const FKey key = InKeyEvent.GetKey();
-
-    if (key == EKeys::Enter || key == EKeys::Virtual_Accept)
+    if (ApplyButton)
     {
-        Apply();
-        return FReply::Handled();
+        ApplyButton->OnClicked.RemoveAll(this);
+        ApplyButton->OnClicked.AddDynamic(this, &UExitDlg::HandleApplyClicked);
     }
 
-    if (key == EKeys::Escape || key == EKeys::Virtual_Back)
+    if (CancelButton)
     {
-        if (!exit_latch)
+        CancelButton->OnClicked.RemoveAll(this);
+        CancelButton->OnClicked.AddDynamic(this, &UExitDlg::HandleCancelClicked);
+    }
+}
+
+void UExitDlg::Show()
+{
+    bExitLatch = true;
+    ScrollOffset = 0.0f;
+
+    SetVisibility(ESlateVisibility::Visible);
+
+    if (CreditsScroll)
+        CreditsScroll->SetScrollOffset(0.0f);
+}
+
+void UExitDlg::ExecFrame(float DeltaTime)
+{
+    if (!CreditsScroll)
+        return;
+
+    ScrollOffset += ScrollPixelsPerSecond * DeltaTime;
+    CreditsScroll->SetScrollOffset(ScrollOffset);
+
+#if ENGINE_MAJOR_VERSION >= 5
+    const float End = CreditsScroll->GetScrollOffsetOfEnd();
+    if (End > 0.0f && ScrollOffset >= End)
+    {
+        ScrollOffset = 0.0f;
+        CreditsScroll->SetScrollOffset(0.0f);
+    }
+#endif
+}
+
+void UExitDlg::HandleAccept()
+{
+    Super::HandleAccept();
+    OnApply();
+}
+
+void UExitDlg::HandleCancel()
+{
+    if (bExitLatch)
+    {
+        bExitLatch = false;
+        return;
+    }
+
+    Super::HandleCancel();
+    OnCancel();
+}
+
+void UExitDlg::HandleApplyClicked()
+{
+    OnApply();
+}
+
+void UExitDlg::HandleCancelClicked()
+{
+    OnCancel();
+}
+
+void UExitDlg::OnApply()
+{
+    UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, true);
+}
+
+void UExitDlg::OnCancel()
+{
+    if (Manager)
+        Manager->ShowMenuDlg();
+
+    SetVisibility(ESlateVisibility::Hidden);
+}
+
+bool UExitDlg::LoadCreditsFile(FString& OutText) const
+{
+    const TArray<FString> Paths =
+    {
+        FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data/credits.txt")),
+        FPaths::Combine(FPaths::ProjectDir(),        TEXT("Data/credits.txt"))
+    };
+
+    for (const FString& Path : Paths)
+    {
+        if (FPaths::FileExists(Path) &&
+            FFileHelper::LoadFileToString(OutText, *Path))
         {
-            Cancel();
-            return FReply::Handled();
+            return true;
         }
     }
 
-    return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+    return false;
 }
 
-// +--------------------------------------------------------------------+
-// Button handlers:
-
-void UExitDlg::OnApplyClicked()
+void UExitDlg::ApplyCredits(const FString& Text)
 {
-    Apply();
-}
-
-void UExitDlg::OnCancelClicked()
-{
-    Cancel();
-}
-
-// +--------------------------------------------------------------------+
-// Operations:
-
-void UExitDlg::Apply()
-{
-    Starshatter* stars = Starshatter::GetInstance();
-
-    if (stars)
+    if (URichTextBlock* T = GetText(201))
     {
-        UE_LOG(LogTemp, Log, TEXT("Exit Confirmed."));
-        stars->Exit();
+        T->SetText(FText::FromString(Text));
     }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ExitDlg: Starshatter instance not available; cannot exit."));
-    }
-}
-
-void UExitDlg::Cancel()
-{
-    // Return to menu (legacy: manager->ShowMenuDlg()):
-    CallManagerByName(manager, TEXT("ShowMenuDlg"));
-
-    // Return to menu music (legacy: MusicDirector::MENU):
-    MusicManager::SetMode(MusicManager::MENU);
 }
