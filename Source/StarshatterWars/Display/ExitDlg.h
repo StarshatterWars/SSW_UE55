@@ -7,12 +7,12 @@
     John DiCamillo / Destroyer Studios LLC
 
     SUBSYSTEM:    Stars.exe
-    FILE:         JoyDlg.h
+    FILE:         ExitDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    Joystick Options Dialog (Unreal UUserWidget)
+    Exit / Credits Dialog (Unreal UUserWidget)
 */
 
 #pragma once
@@ -23,23 +23,23 @@
 #include "Math/UnrealMathUtility.h"     // Math
 
 #include "Blueprint/UserWidget.h"
-#include "JoyDlg.generated.h"
+#include "ExitDlg.generated.h"
 
 // Forward declarations (keep header light):
 class UButton;
-class UCheckBox;
 class UTextBlock;
+class UMultiLineEditableTextBox;
 class UBaseScreen;
 
 UCLASS()
-class STARSHATTERWARS_API UJoyDlg : public UUserWidget
+class STARSHATTERWARS_API UExitDlg : public UUserWidget
 {
     GENERATED_BODY()
 
 public:
-    UJoyDlg(const FObjectInitializer& ObjectInitializer);
+    UExitDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Manager bridge (MenuScreen or other UBaseScreen-derived controller):
+    // Manager bridge (typically the Menu Screen widget/controller):
     void SetManager(UBaseScreen* InManager) { manager = InManager; }
     UBaseScreen* GetManager() const { return manager; }
 
@@ -50,7 +50,7 @@ public:
 protected:
     virtual bool IsFocusable() const override { return true; }
 
-    // Keyboard handling (Enter = Apply, Escape = Cancel):
+    // Keyboard handling (Enter = Apply/Exit, Escape = Cancel):
     virtual FReply NativeOnKeyDown(
         const FGeometry& InGeometry,
         const FKeyEvent& InKeyEvent) override;
@@ -68,39 +68,19 @@ protected:
     UFUNCTION() void OnApplyClicked();
     UFUNCTION() void OnCancelClicked();
 
-    UFUNCTION() void OnAxis0Clicked();
-    UFUNCTION() void OnAxis1Clicked();
-    UFUNCTION() void OnAxis2Clicked();
-    UFUNCTION() void OnAxis3Clicked();
-
-    UFUNCTION() void OnInvert0Changed(bool bIsChecked);
-    UFUNCTION() void OnInvert1Changed(bool bIsChecked);
-    UFUNCTION() void OnInvert2Changed(bool bIsChecked);
-    UFUNCTION() void OnInvert3Changed(bool bIsChecked);
-
 protected:
     // External dialog manager (legacy bridge):
     UPROPERTY() UBaseScreen* manager = nullptr;
 
-    // UI bindings (optionally authored in UMG):
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* message = nullptr;
-
-    // Axis selection buttons (4):
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_0 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_1 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_2 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_3 = nullptr;
-
-    // Invert checkboxes (4):
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_0 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_1 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_2 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_3 = nullptr;
+    // Credits text (RichTextBox -> UMG equivalent):
+    // If you want true rich text markup, switch this to URichTextBlock.
+    UPROPERTY(meta = (BindWidgetOptional)) UMultiLineEditableTextBox* credits = nullptr;
 
     // Action buttons:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
 
-    // Local UI state:
-    int32 selected_axis = 0;
+    // Legacy state:
+    bool exit_latch = false;
 };
+

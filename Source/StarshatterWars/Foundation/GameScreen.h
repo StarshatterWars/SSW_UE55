@@ -41,9 +41,6 @@ class AudioDlg;
 class VidDlg;
 class OptDlg;
 
-class ModDlg;
-class ModInfoDlg;
-
 class CameraManager;
 class DisplayView;
 class HUDView;

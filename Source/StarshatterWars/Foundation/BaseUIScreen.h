@@ -28,8 +28,6 @@ class NavDlg;
 class MsnElemDlg;
 class AudDlg;
 class VidDlg;
-class ModDlg;
-class ModInfoDlg;
 class OptDlg;
 class CtlDlg;
 class KeyDlg;
@@ -55,8 +53,6 @@ public:
 
 	virtual AudDlg*			GetAudDlg() const { return 0; }
 	virtual VidDlg*			GetVidDlg() const { return 0; }
-	virtual ModDlg*			GetModDlg() const { return 0; }
-	virtual ModInfoDlg*		GetModInfoDlg() const { return 0; }
 	virtual OptDlg*			GetOptDlg() const { return 0; }
 	virtual CtlDlg*			GetCtlDlg() const { return 0; }
 	virtual JoyDlg*			GetJoyDlg() const { return 0; }
@@ -64,8 +60,6 @@ public:
 
 	virtual void         ShowAudDlg() {}
 	virtual void         ShowVidDlg() {}
-	virtual void         ShowModDlg() {}
-	virtual void         ShowModInfoDlg() {}
 	virtual void         ShowOptDlg() {}
 	virtual void         ShowCtlDlg() {}
 	virtual void         ShowJoyDlg() {}
