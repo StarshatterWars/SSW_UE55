@@ -1,86 +1,88 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         ExitDlg.h
     AUTHOR:       Carlos Bott
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
     OVERVIEW
     ========
-    Exit / Credits Dialog (Unreal UUserWidget)
+    Exit confirm dialog + rolling credits (Unreal port).
+
+    UNREAL PORT:
+    - UBaseScreen-derived (UUserWidget).
+    - Uses centralized dialog input: HandleAccept/HandleCancel.
+    - Preserves exit_latch and credits smooth scrolling.
 */
 
 #pragma once
 
-// Minimal Unreal includes required by project conventions:
-#include "Math/Vector.h"                // FVector
-#include "Math/Color.h"                 // FColor
-#include "Math/UnrealMathUtility.h"     // Math
+#include "CoreMinimal.h"
+#include "BaseScreen.h"
 
-#include "Blueprint/UserWidget.h"
 #include "ExitDlg.generated.h"
 
-// Forward declarations (keep header light):
 class UButton;
-class UTextBlock;
-class UMultiLineEditableTextBox;
-class UBaseScreen;
+class URichTextBlock; // if you use UE's RichTextBlock; otherwise replace with your ported RichTextBox widget
+
+// Forward declarations for ported core:
+class MenuScreen;
 
 UCLASS()
-class STARSHATTERWARS_API UExitDlg : public UUserWidget
+class STARSHATTERWARS_API UExitDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UExitDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Manager bridge (typically the Menu Screen widget/controller):
-    void SetManager(UBaseScreen* InManager) { manager = InManager; }
-    UBaseScreen* GetManager() const { return manager; }
+    // UBaseScreen
+    virtual void BindFormWidgets() override;
 
-    // UUserWidget overrides:
-    virtual void NativeConstruct() override;
+protected:
+    virtual void NativeOnInitialized() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-protected:
-    virtual bool IsFocusable() const override { return true; }
+    // Centralized dialog actions (Enter/Escape):
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
 
-    // Keyboard handling (Enter = Apply/Exit, Escape = Cancel):
-    virtual FReply NativeOnKeyDown(
-        const FGeometry& InGeometry,
-        const FKeyEvent& InKeyEvent) override;
+public:
+    // Legacy-style API surface (kept for parity with other ports):
+    void RegisterControls();
+    void Show();
+    void ExecFrame();
 
-protected:
-    // Operations:
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Apply();
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Cancel();
-
-protected:
     // Button handlers:
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
+    UFUNCTION()
+    void OnApply();
+
+    UFUNCTION()
+    void OnCancel();
 
 protected:
-    // External dialog manager (legacy bridge):
-    UPROPERTY() UBaseScreen* manager = nullptr;
+    // Widgets (bind in UMG or via BindFormWidgets IDs):
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_apply = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* btn_cancel = nullptr;
 
-    // Credits text (RichTextBox -> UMG equivalent):
-    // If you want true rich text markup, switch this to URichTextBlock.
-    UPROPERTY(meta = (BindWidgetOptional)) UMultiLineEditableTextBox* credits = nullptr;
+    // Credits control:
+    // Option A: if you have a ported RichTextBox widget type, use that here.
+    // Option B: if you are using UMG RichTextBlock, you'll need a different scrolling approach.
+    // This assumes you have a ported URichTextBox-like widget with the same methods used below.
+    UPROPERTY(meta = (BindWidgetOptional)) UObject* credits = nullptr;
 
-    // Action buttons:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+    // Manager (owner screen/controller in your port):
+    MenuScreen* manager = nullptr;
 
-    // Legacy state:
-    bool exit_latch = false;
+    // Classic state:
+    bool bExitLatch = false;
+
+    // Original def rect is a layout hint in classic UI; in UE you likely ignore or use for sizing.
+    // Keeping for parity:
+    // Rect def_rect;  // if you have a Rect type in your port layer
 };
-

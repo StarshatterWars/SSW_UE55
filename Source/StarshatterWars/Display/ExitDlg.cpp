@@ -23,9 +23,8 @@
     - Cancel button (id 2): CancelBtn
 */
 
-#include "GameStructs.h"
-
 #include "ExitDlg.h"
+#include "GameStructs.h"
 
 #include "Components/Button.h"
 #include "Components/TextBlock.h"

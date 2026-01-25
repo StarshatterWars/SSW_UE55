@@ -13,7 +13,7 @@
     OVERVIEW
     ========
     UBaseScreen implementation.
-    - FORM-style ID binding helpers (Label/Button/Image/Edit/Combo/List/Slider).
+    - FORM-style ID binding helpers (Label/Button/Image/Edit/Combo/List/Slider/Text).
     - Legacy .frm parser:
         * Parses: form:{}, ctrl:{}, defctrl:{}, layout:{}, column:{}.
         * defctrl is treated as the "current defaults" applied to subsequent ctrl blocks.
@@ -27,6 +27,7 @@
 
 // UMG:
 #include "Components/TextBlock.h"
+#include "Components/RichTextBlock.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/EditableTextBox.h"
@@ -550,6 +551,7 @@ namespace
             Tok = Lex.Next();
 
             if (S.Equals(TEXT("label"), ESearchCase::IgnoreCase)) return EFormCtrlType::Label;
+            if (S.Equals(TEXT("text"), ESearchCase::IgnoreCase)) return EFormCtrlType::Text; // <-- ADDED
             if (S.Equals(TEXT("button"), ESearchCase::IgnoreCase)) return EFormCtrlType::Button;
             if (S.Equals(TEXT("image"), ESearchCase::IgnoreCase)) return EFormCtrlType::Image;
             if (S.Equals(TEXT("edit"), ESearchCase::IgnoreCase)) return EFormCtrlType::Edit;
@@ -766,7 +768,7 @@ namespace
                 {
                     OutCtrl.Text = ParseStringOrIdent(OutError);
                     if (!OutError.IsEmpty()) return false;
-                    OutCtrl.bHasText = !bIsDefctrl; // only ctrl "text" should override content normally
+                    OutCtrl.bHasText = !bIsDefctrl;
                     EatOptionalComma();
                     continue;
                 }
@@ -995,37 +997,37 @@ namespace
         static void ApplyDefaults(FParsedCtrl& Ctrl, const FParsedCtrl& Def)
         {
             // Only apply defaults that exist in Def and are not explicitly set by Ctrl.
-            if (!Ctrl.bHasTexture && Def.bHasTexture)   Ctrl.Texture = Def.Texture;
-            if (!Ctrl.bHasFont && Def.bHasFont)      Ctrl.Font = Def.Font;
-            if (!Ctrl.bHasAlign && Def.bHasAlign)     Ctrl.Align = Def.Align;
-            if (!Ctrl.bHasBackColor && Def.bHasBackColor) Ctrl.BackColor = Def.BackColor;
-            if (!Ctrl.bHasForeColor && Def.bHasForeColor) Ctrl.ForeColor = Def.ForeColor;
+            if (!Ctrl.bHasTexture && Def.bHasTexture)        Ctrl.Texture = Def.Texture;
+            if (!Ctrl.bHasFont && Def.bHasFont)             Ctrl.Font = Def.Font;
+            if (!Ctrl.bHasAlign && Def.bHasAlign)           Ctrl.Align = Def.Align;
+            if (!Ctrl.bHasBackColor && Def.bHasBackColor)   Ctrl.BackColor = Def.BackColor;
+            if (!Ctrl.bHasForeColor && Def.bHasForeColor)   Ctrl.ForeColor = Def.ForeColor;
 
-            if (!Ctrl.bHasTransparent && Def.bHasTransparent)  Ctrl.bTransparent = Def.bTransparent;
-            if (!Ctrl.bHasSticky && Def.bHasSticky)       Ctrl.bSticky = Def.bSticky;
-            if (!Ctrl.bHasBorder && Def.bHasBorder)       Ctrl.bBorder = Def.bBorder;
-            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial)  Ctrl.bHidePartial = Def.bHidePartial;
-            if (!Ctrl.bHasShowHeadings && Def.bHasShowHeadings) Ctrl.bShowHeadings = Def.bShowHeadings;
+            if (!Ctrl.bHasTransparent && Def.bHasTransparent)    Ctrl.bTransparent = Def.bTransparent;
+            if (!Ctrl.bHasSticky && Def.bHasSticky)              Ctrl.bSticky = Def.bSticky;
+            if (!Ctrl.bHasBorder && Def.bHasBorder)              Ctrl.bBorder = Def.bBorder;
+            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial)    Ctrl.bHidePartial = Def.bHidePartial;
+            if (!Ctrl.bHasShowHeadings && Def.bHasShowHeadings)  Ctrl.bShowHeadings = Def.bShowHeadings;
 
-            if (!Ctrl.bHasStandardImage && Def.bHasStandardImage)   Ctrl.StandardImage = Def.StandardImage;
-            if (!Ctrl.bHasActivatedImage && Def.bHasActivatedImage)  Ctrl.ActivatedImage = Def.ActivatedImage;
+            if (!Ctrl.bHasStandardImage && Def.bHasStandardImage)     Ctrl.StandardImage = Def.StandardImage;
+            if (!Ctrl.bHasActivatedImage && Def.bHasActivatedImage)   Ctrl.ActivatedImage = Def.ActivatedImage;
             if (!Ctrl.bHasTransitionImage && Def.bHasTransitionImage) Ctrl.TransitionImage = Def.TransitionImage;
 
-            if (!Ctrl.bHasBevelWidth && Def.bHasBevelWidth)   Ctrl.BevelWidth = Def.BevelWidth;
-            if (!Ctrl.bHasBevelDepth && Def.bHasBevelDepth)   Ctrl.BevelDepth = Def.BevelDepth;
-            if (!Ctrl.bHasBorderColor && Def.bHasBorderColor)  Ctrl.BorderColor = Def.BorderColor;
+            if (!Ctrl.bHasBevelWidth && Def.bHasBevelWidth)     Ctrl.BevelWidth = Def.BevelWidth;
+            if (!Ctrl.bHasBevelDepth && Def.bHasBevelDepth)     Ctrl.BevelDepth = Def.BevelDepth;
+            if (!Ctrl.bHasBorderColor && Def.bHasBorderColor)   Ctrl.BorderColor = Def.BorderColor;
 
-            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth)   Ctrl.FixedWidth = Def.FixedWidth;
-            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight)  Ctrl.FixedHeight = Def.FixedHeight;
+            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth)     Ctrl.FixedWidth = Def.FixedWidth;
+            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight)   Ctrl.FixedHeight = Def.FixedHeight;
 
-            if (!Ctrl.bHasCells && Def.bHasCells)        Ctrl.Cells = Def.Cells;
-            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets)   Ctrl.CellInsets = Def.CellInsets;
-            if (!Ctrl.bHasMargins && Def.bHasMargins)      Ctrl.Margins = Def.Margins;
+            if (!Ctrl.bHasCells && Def.bHasCells)               Ctrl.Cells = Def.Cells;
+            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets)     Ctrl.CellInsets = Def.CellInsets;
+            if (!Ctrl.bHasMargins && Def.bHasMargins)           Ctrl.Margins = Def.Margins;
 
-            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar)    Ctrl.ScrollBar = Def.ScrollBar;
-            if (!Ctrl.bHasStyle && Def.bHasStyle)        Ctrl.Style = Def.Style;
+            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar)       Ctrl.ScrollBar = Def.ScrollBar;
+            if (!Ctrl.bHasStyle && Def.bHasStyle)               Ctrl.Style = Def.Style;
 
-            if (!Ctrl.bHasLayout && Def.bHasLayout)       Ctrl.Layout = Def.Layout;
+            if (!Ctrl.bHasLayout && Def.bHasLayout)             Ctrl.Layout = Def.Layout;
         }
 
         FFormLexer Lex;
@@ -1138,6 +1140,11 @@ void UBaseScreen::BindLabel(int32 Id, UTextBlock* Widget)
     if (Widget) FormMap.Labels.Add(Id, Widget);
 }
 
+void UBaseScreen::BindText(int32 Id, URichTextBlock* Widget)
+{
+    if (Widget) FormMap.Texts.Add(Id, Widget);
+}
+
 void UBaseScreen::BindButton(int32 Id, UButton* Widget)
 {
     if (Widget) FormMap.Buttons.Add(Id, Widget);
@@ -1175,6 +1182,13 @@ void UBaseScreen::BindSlider(int32 Id, USlider* Widget)
 UTextBlock* UBaseScreen::GetLabel(int32 Id) const
 {
     if (const TObjectPtr<UTextBlock>* Found = FormMap.Labels.Find(Id))
+        return Found->Get();
+    return nullptr;
+}
+
+URichTextBlock* UBaseScreen::GetText(int32 Id) const
+{
+    if (const TObjectPtr<URichTextBlock>* Found = FormMap.Texts.Find(Id))
         return Found->Get();
     return nullptr;
 }
@@ -1241,22 +1255,23 @@ void UBaseScreen::SetVisible(int32 Id, bool bVisible)
 {
     const ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
 
-    if (UTextBlock* L = GetLabel(Id))      L->SetVisibility(Vis);
-    if (UButton* B = GetButton(Id))       B->SetVisibility(Vis);
-    if (UImage* I = GetImage(Id))         I->SetVisibility(Vis);
-    if (UEditableTextBox* E = GetEdit(Id)) E->SetVisibility(Vis);
-    if (UComboBoxString* C = GetCombo(Id)) C->SetVisibility(Vis);
-    if (UListView* LV = GetList(Id))      LV->SetVisibility(Vis);
-    if (USlider* S = GetSlider(Id))       S->SetVisibility(Vis);
+    if (UTextBlock* L = GetLabel(Id))        L->SetVisibility(Vis);
+    if (URichTextBlock* T = GetText(Id))    T->SetVisibility(Vis);
+    if (UButton* B = GetButton(Id))         B->SetVisibility(Vis);
+    if (UImage* I = GetImage(Id))           I->SetVisibility(Vis);
+    if (UEditableTextBox* E = GetEdit(Id))  E->SetVisibility(Vis);
+    if (UComboBoxString* C = GetCombo(Id))  C->SetVisibility(Vis);
+    if (UListView* LV = GetList(Id))        LV->SetVisibility(Vis);
+    if (USlider* S = GetSlider(Id))         S->SetVisibility(Vis);
 }
 
 void UBaseScreen::SetEnabled(int32 Id, bool bEnabled)
 {
-    if (UButton* B = GetButton(Id))          B->SetIsEnabled(bEnabled);
-    if (UEditableTextBox* E = GetEdit(Id))   E->SetIsEnabled(bEnabled);
-    if (UComboBoxString* C = GetCombo(Id))   C->SetIsEnabled(bEnabled);
-    if (UListView* LV = GetList(Id))         LV->SetIsEnabled(bEnabled);
-    if (USlider* S = GetSlider(Id))          S->SetIsEnabled(bEnabled);
+    if (UButton* B = GetButton(Id))         B->SetIsEnabled(bEnabled);
+    if (UEditableTextBox* E = GetEdit(Id))  E->SetIsEnabled(bEnabled);
+    if (UComboBoxString* C = GetCombo(Id))  C->SetIsEnabled(bEnabled);
+    if (UListView* LV = GetList(Id))        LV->SetIsEnabled(bEnabled);
+    if (USlider* S = GetSlider(Id))         S->SetIsEnabled(bEnabled);
 }
 
 // --------------------------------------------------------------------
@@ -1302,30 +1317,60 @@ bool UBaseScreen::ResolveTextJustification(EFormAlign InAlign, ETextJustify::Typ
 
 void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
 {
-    // Safe minimal application:
-    // - Labels: text, fore color, font, justification.
-
+    // Apply to Label (TextBlock) and Text (RichTextBlock).
     for (const FParsedCtrl& C : Parsed.Controls)
     {
-        if (C.Type != EFormCtrlType::Label)
+        // ---------------- LABEL ----------------
+        if (C.Type == EFormCtrlType::Label)
+        {
+            UTextBlock* L = GetLabel(C.Id);
+            if (!L) continue;
+
+            if (!C.Text.IsEmpty())
+                L->SetText(FText::FromString(C.Text));
+
+            if (C.ForeColor != FLinearColor::Transparent)
+                L->SetColorAndOpacity(FSlateColor(C.ForeColor));
+
+            ETextJustify::Type Just;
+            if (ResolveTextJustification(C.Align, Just))
+                L->SetJustification(Just);
+
+            FSlateFontInfo Font;
+            if (!C.Font.IsEmpty() && ResolveFont(C.Font, Font))
+                L->SetFont(Font);
+
             continue;
+        }
 
-        UTextBlock* L = GetLabel(C.Id);
-        if (!L)
+        // ---------------- TEXT (Rich) ----------------
+        if (C.Type == EFormCtrlType::Text)
+        {
+            URichTextBlock* T = GetText(C.Id);
+            if (!T) continue;
+
+            if (!C.Text.IsEmpty())
+                T->SetText(FText::FromString(C.Text));
+
+            if (C.ForeColor != FLinearColor::Transparent)
+                T->SetDefaultColorAndOpacity(C.ForeColor);
+
+            ETextJustify::Type Just;
+            if (ResolveTextJustification(C.Align, Just))
+                T->SetJustification(Just);
+
+            if (!C.Font.IsEmpty())
+            {
+                FSlateFontInfo Font;
+                if (ResolveFont(C.Font, Font))
+                {
+                    FTextBlockStyle Style = T->GetDefaultTextStyle();
+                    Style.SetFont(Font);
+                    T->SetDefaultTextStyle(Style);
+                }
+            }
+
             continue;
-
-        if (!C.Text.IsEmpty())
-            L->SetText(FText::FromString(C.Text));
-
-        if (C.ForeColor != FLinearColor::Transparent)
-            L->SetColorAndOpacity(FSlateColor(C.ForeColor));
-
-        ETextJustify::Type Just = ETextJustify::Left;
-        if (ResolveTextJustification(C.Align, Just))
-            L->SetJustification(Just);
-
-        FSlateFontInfo FontInfo;
-        if (!C.Font.IsEmpty() && ResolveFont(C.Font, FontInfo))
-            L->SetFont(FontInfo);
+        }
     }
 }
