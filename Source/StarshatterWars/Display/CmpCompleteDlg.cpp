@@ -16,8 +16,8 @@
 #include "Kismet/GameplayStatics.h"
 
 // If you have these, include them. Otherwise remove and wire Campaign via Manager.
-// #include "CampaignSubsystem.h"
-// #include "Campaign.h"
+//#include "CampaignSubsystem.h"
+#include "Campaign.h"
 
 UCmpCompleteDlg::UCmpCompleteDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)

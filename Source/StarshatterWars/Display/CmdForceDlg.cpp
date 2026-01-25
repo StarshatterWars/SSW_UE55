@@ -37,6 +37,7 @@
 #include "Mouse.h"
 #include "UIButton.h"
 #include "CmdMsgDlg.h"
+#include "GameStructs.h"
 
 // Your campaign screen:
 #include "CmpnScreen.h"
@@ -175,7 +176,7 @@ void UCmdForceDlg::SetManager(UCmpnScreen* InManager)
 
 void UCmdForceDlg::ShowForceDlg()
 {
-    Mode = UCmdDlg::ECmdMode::MODE_FORCES;
+    ECOMMAND_MODE Mode = ECOMMAND_MODE::MODE_FORCES;
     CampaignPtr = Campaign::GetCampaign();
 
     // Title/campaign name:
@@ -209,7 +210,7 @@ void UCmdForceDlg::ShowForceDlg()
             {
                 Combatant* C = Combatants[i];
                 if (IsVisibleCombatant(C))
-                    cmb_forces->AddOption(UTF8_TO_TCHAR(C->Name()));
+                    cmb_forces->AddOption(UTF8_TO_TCHAR(C->GetName()));
             }
 
             // Select first visible combatant:
@@ -225,7 +226,7 @@ void UCmdForceDlg::ShowForceDlg()
                 for (int i = 0; i < All.size(); ++i)
                 {
                     Combatant* C = All[i];
-                    if (C && Name.Equals(UTF8_TO_TCHAR(C->Name())))
+                    if (C && Name.Equals(UTF8_TO_TCHAR(C->GetName())))
                     {
                         Found = C;
                         break;
@@ -289,9 +290,9 @@ void UCmdForceDlg::ExecFrame()
 // Tab routing
 // --------------------------------------------------------------------
 
-void UCmdForceDlg::SetModeAndHighlight(UCmdDlg::ECmdMode InMode)
+void UCmdForceDlg::SetModeAndHighlight(ECOMMAND_MODE InMode)
 {
-    Mode = InMode;
+    ECOMMAND_MODE Mode = InMode;
 
     if (!Manager)
     {
@@ -301,20 +302,20 @@ void UCmdForceDlg::SetModeAndHighlight(UCmdDlg::ECmdMode InMode)
 
     switch (Mode)
     {
-    case UCmdDlg::ECmdMode::MODE_ORDERS:   Manager->ShowCmdOrdersDlg();   break;
-    case UCmdDlg::ECmdMode::MODE_THEATER:  Manager->ShowCmdTheaterDlg();  break;
-    case UCmdDlg::ECmdMode::MODE_FORCES:   Manager->ShowCmdForceDlg();    break;
-    case UCmdDlg::ECmdMode::MODE_INTEL:    Manager->ShowCmdIntelDlg();    break;
-    case UCmdDlg::ECmdMode::MODE_MISSIONS: Manager->ShowCmdMissionsDlg(); break;
+    case ECOMMAND_MODE::MODE_ORDERS:   Manager->ShowCmdOrdersDlg();   break;
+    case ECOMMAND_MODE::MODE_THEATER:  Manager->ShowCmdTheaterDlg();  break;
+    case ECOMMAND_MODE::MODE_FORCES:   Manager->ShowCmdForceDlg();    break;
+    case ECOMMAND_MODE::MODE_INTEL:    Manager->ShowCmdIntelDlg();    break;
+    case ECOMMAND_MODE::MODE_MISSIONS: Manager->ShowCmdMissionsDlg(); break;
     default:                               Manager->ShowCmdOrdersDlg();   break;
     }
 }
 
-void UCmdForceDlg::OnModeOrdersClicked() { SetModeAndHighlight(UCmdDlg::ECmdMode::MODE_ORDERS); }
-void UCmdForceDlg::OnModeTheaterClicked() { SetModeAndHighlight(UCmdDlg::ECmdMode::MODE_THEATER); }
-void UCmdForceDlg::OnModeForcesClicked() { SetModeAndHighlight(UCmdDlg::ECmdMode::MODE_FORCES); }
-void UCmdForceDlg::OnModeIntelClicked() { SetModeAndHighlight(UCmdDlg::ECmdMode::MODE_INTEL); }
-void UCmdForceDlg::OnModeMissionsClicked() { SetModeAndHighlight(UCmdDlg::ECmdMode::MODE_MISSIONS); }
+void UCmdForceDlg::OnModeOrdersClicked() { SetModeAndHighlight(ECOMMAND_MODE::MODE_ORDERS); }
+void UCmdForceDlg::OnModeTheaterClicked() { SetModeAndHighlight(ECOMMAND_MODE::MODE_THEATER); }
+void UCmdForceDlg::OnModeForcesClicked() { SetModeAndHighlight(ECOMMAND_MODE::MODE_FORCES); }
+void UCmdForceDlg::OnModeIntelClicked() { SetModeAndHighlight(ECOMMAND_MODE::MODE_INTEL); }
+void UCmdForceDlg::OnModeMissionsClicked() { SetModeAndHighlight(ECOMMAND_MODE::MODE_MISSIONS); }
 
 void UCmdForceDlg::OnSaveClicked()
 {
@@ -351,7 +352,7 @@ void UCmdForceDlg::OnForceSelectionChanged(FString SelectedItem, ESelectInfo::Ty
     while (++Iter)
     {
         Combatant* C = Iter.value();
-        if (C && SelectedItem.Equals(UTF8_TO_TCHAR(C->Name())))
+        if (C && SelectedItem.Equals(UTF8_TO_TCHAR(C->GetName())))
         {
             Found = C;
             break;
@@ -376,7 +377,7 @@ bool UCmdForceDlg::IsVisibleCombatant(Combatant* C) const
             {
                 CombatGroup* G = Groups[i];
                 if (G &&
-                    G->GetType() < CombatGroup::CIVILIAN &&
+                    G->GetType() < ECOMBATGROUP_TYPE::CIVILIAN &&
                     G->CountUnits() > 0 &&
                     G->IntelLevel() >= Intel::KNOWN)
                 {
@@ -609,7 +610,7 @@ void UCmdForceDlg::OnTransferClicked()
             CampaignPtr->SetPlayerUnit(CurrentUnit);
             TransferInfo = FString::Printf(
                 TEXT("Your transfer request has been approved, %s %s.  You are now assigned to the %s.  Good luck.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
-                UTF8_TO_TCHAR(Player::RankName(PlayerPtr->Rank())),
+                UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->Rank())),
                 UTF8_TO_TCHAR(PlayerPtr->Name().data()),
                 UTF8_TO_TCHAR(CurrentUnit->GetDescription()));
         }
@@ -618,7 +619,7 @@ void UCmdForceDlg::OnTransferClicked()
             CampaignPtr->SetPlayerGroup(CurrentGroup);
             TransferInfo = FString::Printf(
                 TEXT("Your transfer request has been approved, %s %s.  You are now assigned to the %s.  Good luck.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
-                UTF8_TO_TCHAR(Player::RankName(PlayerPtr->Rank())),
+                UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->Rank())),
                 UTF8_TO_TCHAR(PlayerPtr->Name().data()),
                 UTF8_TO_TCHAR(CurrentGroup->GetDescription()));
         }
@@ -636,7 +637,7 @@ void UCmdForceDlg::OnTransferClicked()
         const char* Required = PlayerCharacter::RankName(PlayerCharacter::CommandRankRequired(CmdClass));
         TransferInfo = FString::Printf(
             TEXT("Your transfer request has been denied, %s %s.  The %s requires a command rank of %s.  Please return to your unit and your duties.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
-            UTF8_TO_TCHAR(Player::RankName(PlayerPtr->Rank())),
+            UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->Rank())),
             UTF8_TO_TCHAR(PlayerPtr->Name().data()),
             UTF8_TO_TCHAR(CurrentGroup->GetDescription()),
             UTF8_TO_TCHAR(Required));

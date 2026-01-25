@@ -28,10 +28,11 @@
 #include "Campaign.h"
 #include "Mission.h"
 #include "PlayerCharacter.h"
-#include "Player.h"
 #include "Game.h"
 #include "Mouse.h"
 #include "FormatUtil.h"
+#include "CombatGroup.h"
+#include "GameSTructs.h"
 
 // Your campaign screen
 #include "CmpnScreen.h"
@@ -89,7 +90,7 @@ void UCmdMissionsDlg::BindFormWidgets()
 
 void UCmdMissionsDlg::ShowMissionsDlg()
 {
-    Mode = UCmdDlg::ECmdMode::MODE_MISSIONS;
+    Mode = ECOMMAND_MODE::MODE_MISSIONS;
 
     CampaignPtr = Campaign::GetCampaign();
     Stars = Starshatter::GetInstance();
@@ -166,7 +167,7 @@ void UCmdMissionsDlg::RebuildMissionList()
     SelectedMission = nullptr;
 
     PlayerCharacter* PlayerPtr = PlayerCharacter::GetCurrentPlayer();
-    Player* LegacyPlayer = Player::GetCurrentPlayer(); // if still available in your port
+    PlayerCharacter* LegacyPlayer = PlayerCharacter::GetCurrentPlayer(); // if still available in your port
 
     List<MissionInfo>& Missions = CampaignPtr->GetMissionList();
 
@@ -254,7 +255,7 @@ void UCmdMissionsDlg::AppendNewMissionsIfAny()
     }
 
     // Append new missions
-    Player* LegacyPlayer = Player::GetCurrentPlayer();
+    PlayerCharacter* LegacyPlayer = PlayerCharacter::GetCurrentPlayer();
     List<MissionInfo>& ListRef = CampaignPtr->GetMissionList();
 
     for (int32 i = Existing; i < Total; ++i)

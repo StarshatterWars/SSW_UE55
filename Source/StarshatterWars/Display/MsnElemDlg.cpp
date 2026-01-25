@@ -88,35 +88,35 @@ void UMsnElemDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 void UMsnElemDlg::BindFormWidgets()
 {
     // Optional: bind legacy FORM IDs to widgets if you want ID-based lookups.
-    // BindButton(1, BtnAccept);
-    // BindButton(2, BtnCancel);
+    BindButton(1, BtnAccept);
+    BindButton(2, BtnCancel);
     //
-    // BindEdit(201, EdtName);
-    // BindCombo(202, CmbClass);
-    // BindCombo(203, CmbDesign);
-    // BindCombo(213, CmbSkin);
-    // BindEdit(204, EdtSize);
-    // BindEdit(205, EdtIFF);
-    // BindCombo(206, CmbRole);
-    // BindCombo(207, CmbRegion);
-    // BindEdit(208, EdtLocX);
-    // BindEdit(209, EdtLocY);
-    // BindEdit(210, EdtLocZ);
-    // BindCombo(211, CmbHeading);
-    // BindEdit(212, EdtHoldTime);
+    BindEdit(201, EdtName);
+    BindCombo(202, CmbClass);
+    BindCombo(203, CmbDesign);
+    BindCombo(213, CmbSkin);
+    BindEdit(204, EdtSize);
+    BindEdit(205, EdtIFF);
+    BindCombo(206, CmbRole);
+    BindCombo(207, CmbRegion);
+    BindEdit(208, EdtLocX);
+    BindEdit(209, EdtLocY);
+    BindEdit(210, EdtLocZ);
+    BindCombo(211, CmbHeading);
+     BindEdit(212, EdtHoldTime);
     //
-    // BindButton(221, BtnPlayer);
-    // BindButton(222, BtnAlert);
-    // BindButton(223, BtnPlayable);
-    // BindButton(224, BtnCommandAI);
-    // BindEdit(225, EdtRespawns);
-    // BindCombo(226, CmbCommander);
-    // BindCombo(227, CmbCarrier);
-    // BindCombo(228, CmbSquadron);
-    // BindCombo(229, CmbIntel);
-    // BindCombo(230, CmbLoadout);
-    // BindCombo(231, CmbObjective);
-    // BindCombo(232, CmbTarget);
+    BindButton(221, BtnPlayer);
+    BindButton(222, BtnAlert);
+    BindButton(223, BtnPlayable);
+    BindButton(224, BtnCommandAI);
+    BindEdit(225, EdtRespawns);
+    BindCombo(226, CmbCommander);
+    BindCombo(227, CmbCarrier);
+    BindCombo(228, CmbSquadron);
+    BindCombo(229, CmbIntel);
+    BindCombo(230, CmbLoadout);
+    BindCombo(231, CmbObjective);
+    BindCombo(232, CmbTarget);
 }
 
 // +--------------------------------------------------------------------+
@@ -257,9 +257,9 @@ void UMsnElemDlg::Show()
 
     // Location (legacy was Point in meters; UI showed km):
     const FVector Loc = FVector(
-        (float)elem->Location().x,
-        (float)elem->Location().y,
-        (float)elem->Location().z
+        (float)elem->Location().X,
+        (float)elem->Location().Y,
+        (float)elem->Location().Z
     );
 
     if (EdtLocX) EdtLocX->SetText(FText::AsNumber((int32)(Loc.X / 1000.0f)));

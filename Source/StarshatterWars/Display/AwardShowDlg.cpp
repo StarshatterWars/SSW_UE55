@@ -149,8 +149,8 @@ void UAwardShowDlg::ShowAward()
     {
         if (lbl_name)
         {
-            const FString Title = FString(TEXT("Rank of ")) + PlayerCharacter::RankName(Rank);
-            lbl_name->SetText(FText::FromString(Title));
+            FString TitleText = FString(TEXT("Rank of ")) + PlayerCharacter::RankName(Rank);
+            lbl_name->SetText(FText::FromString(TitleText));
         }
 
         if (lbl_info)

@@ -212,7 +212,7 @@ void UCmdDlg::ExecFrame()
     // In UE, UButton itself has no SetText; you must set a nested UTextBlock.
 }
 
-void UCmdDlg::SetMode(ECmdMode InMode)
+void UCmdDlg::SetMode(ECOMMAND_MODE InMode)
 {
     RouteMode(InMode);
 }
@@ -230,11 +230,11 @@ void UCmdDlg::ShowMode()
     //
     // Here we keep it minimal: just ensure Mode is clamped.
     const uint8 M = (uint8)Mode;
-    if (M > (uint8)ECmdMode::MODE_MISSIONS)
-        Mode = ECmdMode::MODE_ORDERS;
+    if (M > (uint8)ECOMMAND_MODE::MODE_MISSIONS)
+        Mode = ECOMMAND_MODE::MODE_ORDERS;
 }
 
-void UCmdDlg::RouteMode(ECmdMode NewMode)
+void UCmdDlg::RouteMode(ECOMMAND_MODE NewMode)
 {
     Mode = NewMode;
     ShowMode();
@@ -247,12 +247,24 @@ void UCmdDlg::RouteMode(ECmdMode NewMode)
 
     switch (Mode)
     {
-    case ECmdMode::MODE_ORDERS:   CmpnScreen->ShowCmdOrdersDlg();   break;
-    case ECmdMode::MODE_THEATER:  CmpnScreen->ShowCmdTheaterDlg();  break;
-    case ECmdMode::MODE_FORCES:   CmpnScreen->ShowCmdForceDlg();    break;
-    case ECmdMode::MODE_INTEL:    CmpnScreen->ShowCmdIntelDlg();    break;
-    case ECmdMode::MODE_MISSIONS: CmpnScreen->ShowCmdMissionsDlg(); break;
-    default:                      CmpnScreen->ShowCmdOrdersDlg();   break;
+        case ECOMMAND_MODE::MODE_ORDERS: 
+            CmpnScreen->ShowCmdOrdersDlg();  
+            break;
+        case ECOMMAND_MODE::MODE_THEATER: 
+            CmpnScreen->ShowCmdTheaterDlg();
+            break;
+        case ECOMMAND_MODE::MODE_FORCES:   
+            CmpnScreen->ShowCmdForceDlg();
+            break;
+        case ECOMMAND_MODE::MODE_INTEL:  
+            CmpnScreen->ShowCmdIntelDlg();
+            break;
+        case ECOMMAND_MODE::MODE_MISSIONS:
+            CmpnScreen->ShowCmdMissionsDlg();
+            break;
+        default:        
+            CmpnScreen->ShowCmdOrdersDlg();
+            break;
     }
 }
 
@@ -260,11 +272,11 @@ void UCmdDlg::RouteMode(ECmdMode NewMode)
 // Button handlers
 // --------------------------------------------------------------------
 
-void UCmdDlg::OnModeOrdersClicked() { RouteMode(ECmdMode::MODE_ORDERS); }
-void UCmdDlg::OnModeTheaterClicked() { RouteMode(ECmdMode::MODE_THEATER); }
-void UCmdDlg::OnModeForcesClicked() { RouteMode(ECmdMode::MODE_FORCES); }
-void UCmdDlg::OnModeIntelClicked() { RouteMode(ECmdMode::MODE_INTEL); }
-void UCmdDlg::OnModeMissionsClicked() { RouteMode(ECmdMode::MODE_MISSIONS); }
+void UCmdDlg::OnModeOrdersClicked() { RouteMode(ECOMMAND_MODE::MODE_ORDERS); }
+void UCmdDlg::OnModeTheaterClicked() { RouteMode(ECOMMAND_MODE::MODE_THEATER); }
+void UCmdDlg::OnModeForcesClicked() { RouteMode(ECOMMAND_MODE::MODE_FORCES); }
+void UCmdDlg::OnModeIntelClicked() { RouteMode(ECOMMAND_MODE::MODE_INTEL); }
+void UCmdDlg::OnModeMissionsClicked() { RouteMode(ECOMMAND_MODE::MODE_MISSIONS); }
 
 void UCmdDlg::OnSaveClicked()
 {

@@ -130,7 +130,7 @@ private:
 
     Mission* SelectedMission = nullptr;
 
-    UCmdDlg::ECmdMode Mode = UCmdDlg::ECmdMode::MODE_MISSIONS;
+    ECOMMAND_MODE Mode = ECOMMAND_MODE::MODE_MISSIONS;
 
 private:
     // UFUNCTION handlers (must be UFUNCTION for AddDynamic)

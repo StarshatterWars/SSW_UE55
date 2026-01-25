@@ -16,9 +16,8 @@
     mission event editor screen.
 */
 
-#include "GameStructs.h"
-
 #include "MsnEventDlg.h"
+#include "GameStructs.h"
 
 // UMG:
 #include "Components/Button.h"

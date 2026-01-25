@@ -25,6 +25,7 @@
 // Starshatter core
 #include "Starshatter.h"
 #include "Campaign.h"
+#include "CombatGroup.h"
 #include "Game.h"
 #include "FormatUtil.h"
 #include "Mouse.h"

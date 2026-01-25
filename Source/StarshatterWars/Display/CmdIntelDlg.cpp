@@ -30,7 +30,7 @@
 #include "CombatEvent.h"
 #include "CombatGroup.h"
 #include "Sim.h"
-#include "CameraDirector.h"
+#include "CameraManager.h"
 #include "FormatUtil.h"
 #include "Mouse.h"
 
@@ -93,7 +93,7 @@ void UCmdIntelDlg::BindFormWidgets()
 
 void UCmdIntelDlg::ShowIntelDlg()
 {
-    Mode = UCmdDlg::ECmdMode::MODE_INTEL;
+    Mode = ECOMMAND_MODE::MODE_INTEL;
 
     // Mirror legacy: ShowCmdDlg header
     CampaignPtr = Campaign::GetCampaign();
@@ -464,7 +464,7 @@ void UCmdIntelDlg::HideMovie()
 // Routing
 // --------------------------------------------------------------------
 
-void UCmdIntelDlg::SetModeAndRoute(UCmdDlg::ECmdMode InMode)
+void UCmdIntelDlg::SetModeAndRoute(ECOMMAND_MODE InMode)
 {
     Mode = InMode;
 
@@ -476,20 +476,20 @@ void UCmdIntelDlg::SetModeAndRoute(UCmdDlg::ECmdMode InMode)
 
     switch (Mode)
     {
-    case UCmdDlg::ECmdMode::MODE_ORDERS:   Manager->ShowCmdOrdersDlg();   break;
-    case UCmdDlg::ECmdMode::MODE_THEATER:  Manager->ShowCmdTheaterDlg();  break;
-    case UCmdDlg::ECmdMode::MODE_FORCES:   Manager->ShowCmdForceDlg();    break;
-    case UCmdDlg::ECmdMode::MODE_INTEL:    Manager->ShowCmdIntelDlg();    break;
-    case UCmdDlg::ECmdMode::MODE_MISSIONS: Manager->ShowCmdMissionsDlg(); break;
+    case ECOMMAND_MODE::MODE_ORDERS:   Manager->ShowCmdOrdersDlg();   break;
+    case ECOMMAND_MODE::MODE_THEATER:  Manager->ShowCmdTheaterDlg();  break;
+    case ECOMMAND_MODE::MODE_FORCES:   Manager->ShowCmdForceDlg();    break;
+    case ECOMMAND_MODE::MODE_INTEL:    Manager->ShowCmdIntelDlg();    break;
+    case ECOMMAND_MODE::MODE_MISSIONS: Manager->ShowCmdMissionsDlg(); break;
     default:                               Manager->ShowCmdOrdersDlg();   break;
     }
 }
 
-void UCmdIntelDlg::OnModeOrdersClicked() { SetModeAndRoute(UCmdDlg::ECmdMode::MODE_ORDERS); }
-void UCmdIntelDlg::OnModeTheaterClicked() { SetModeAndRoute(UCmdDlg::ECmdMode::MODE_THEATER); }
-void UCmdIntelDlg::OnModeForcesClicked() { SetModeAndRoute(UCmdDlg::ECmdMode::MODE_FORCES); }
-void UCmdIntelDlg::OnModeIntelClicked() { SetModeAndRoute(UCmdDlg::ECmdMode::MODE_INTEL); }
-void UCmdIntelDlg::OnModeMissionsClicked() { SetModeAndRoute(UCmdDlg::ECmdMode::MODE_MISSIONS); }
+void UCmdIntelDlg::OnModeOrdersClicked() { SetModeAndRoute(ECOMMAND_MODE::MODE_ORDERS); }
+void UCmdIntelDlg::OnModeTheaterClicked() { SetModeAndRoute(ECOMMAND_MODE::MODE_THEATER); }
+void UCmdIntelDlg::OnModeForcesClicked() { SetModeAndRoute(ECOMMAND_MODE::MODE_FORCES); }
+void UCmdIntelDlg::OnModeIntelClicked() { SetModeAndRoute(ECOMMAND_MODE::MODE_INTEL); }
+void UCmdIntelDlg::OnModeMissionsClicked() { SetModeAndRoute(ECOMMAND_MODE::MODE_MISSIONS); }
 
 void UCmdIntelDlg::OnSaveClicked()
 {

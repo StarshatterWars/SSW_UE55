@@ -108,7 +108,7 @@ protected:
     // State
     // ----------------------------------------------------------------
     UCmpnScreen* Manager = nullptr;
-    UCampaignSubsystem* CampaignSubsystem = nullptr;
+    CampaignSubsystem* CampaignSubsystem = nullptr;
     Campaign* Campaign = nullptr;
 
     float ShowTime = 0.0f;

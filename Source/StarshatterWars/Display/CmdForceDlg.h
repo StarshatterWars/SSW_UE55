@@ -86,7 +86,7 @@ private:
     // ============================================================
     // Tab routing (Mode/Save/Exit)
     // ============================================================
-    void SetModeAndHighlight(UCmdDlg::ECmdMode InMode);
+    void SetModeAndHighlight(ECOMMAND_MODE InMode);
 
     UFUNCTION()
     void OnModeOrdersClicked();
@@ -188,5 +188,5 @@ private:
     bool bBlankLine = false;
 
     // Current cmd mode (always MODE_FORCES for this screen)
-    UCmdDlg::ECmdMode Mode = UCmdDlg::ECmdMode::MODE_FORCES;
+    ECOMMAND_MODE = ECOMMAND_MODE::MODE_FORCES;
 };

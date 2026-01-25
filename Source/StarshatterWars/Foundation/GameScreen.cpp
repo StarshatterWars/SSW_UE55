@@ -198,44 +198,40 @@ GameScreen::Setup(Screen* s)
 
     screen->AddWindow(gamewin);
 
-    FormDef aud_def("AudioDlg", 0);
-    aud_def.Load("AudioDlg");
+    //FormDef aud_def("AudioDlg", 0);
+    //aud_def.Load("AudioDlg");
     audiodlg = new AudioDlg(screen, aud_def, this);
 
-    FormDef ctl_def("CtlDlg", 0);
-    ctl_def.Load("CtlDlg");
+    //FormDef ctl_def("CtlDlg", 0);
+    //ctl_def.Load("CtlDlg");
     ctldlg = new CtlDlg(screen, ctl_def, this);
 
-    FormDef opt_def("OptDlg", 0);
-    opt_def.Load("OptDlg");
+    //FormDef opt_def("OptDlg", 0);
+    //opt_def.Load("OptDlg");
     optdlg = new OptDlg(screen, opt_def, this);
 
-    FormDef vid_def("VidDlg", 0);
-    vid_def.Load("VidDlg");
+    //FormDef vid_def("VidDlg", 0);
+    //vid_def.Load("VidDlg");
     viddlg = new VidDlg(screen, vid_def, this);
 
-    FormDef mod_def("ModDlg", 0);
-    mod_def.Load("ModDlg");
-    moddlg = new ModDlg(screen, mod_def, this);
-
-    FormDef joy_def("JoyDlg", 0);
-    joy_def.Load("JoyDlg");
+    //FormDef joy_def("JoyDlg", 0);
+    //joy_def.Load("JoyDlg");
     joydlg = new JoyDlg(screen, joy_def, this);
 
-    FormDef key_def("KeyDlg", 0);
-    key_def.Load("KeyDlg");
+    //FormDef key_def("KeyDlg", 0);
+    //key_def.Load("KeyDlg");
     keydlg = new KeyDlg(screen, key_def, this);
 
-    FormDef nav_def("NavDlg", 0);
-    nav_def.Load("NavDlg");
+    //FormDef nav_def("NavDlg", 0);
+    //nav_def.Load("NavDlg");
     navdlg = new NavDlg(screen, nav_def, this);
 
-    FormDef eng_def("EngDlg", 0);
-    eng_def.Load("EngDlg");
+    //FormDef eng_def("EngDlg", 0);
+    //eng_def.Load("EngDlg");
     engdlg = new EngDlg(screen, eng_def, this);
 
-    FormDef flt_def("FltDlg", 0);
-    flt_def.Load("FltDlg");
+    //FormDef flt_def("FltDlg", 0);
+    //flt_def.Load("FltDlg");
     fltdlg = new FltDlg(screen, flt_def, this);
 
     if (engdlg)     engdlg->Hide();
@@ -247,8 +243,6 @@ GameScreen::Setup(Screen* s)
     if (ctldlg)     ctldlg->Hide();
     if (keydlg)     keydlg->Hide();
     if (joydlg)     joydlg->Hide();
-    if (moddlg)     moddlg->Hide();
-    if (modInfoDlg) modInfoDlg->Hide();
 
     // Legacy Color -> UE FColor mapping:
     if (screen)
@@ -426,11 +420,6 @@ GameScreen::ExecFrame()
                 dialog_showing = true;
             }
 
-            if (moddlg && moddlg->IsShown()) {
-                moddlg->ExecFrame();
-                dialog_showing = true;
-            }
-
             if (quantum_view && !dialog_showing) {
                 quantum_view->ExecFrame();
             }
@@ -549,11 +538,6 @@ GameScreen::CloseTopmost()
     }
 
     else if (optdlg && optdlg->IsShown()) {
-        CancelOptions();
-        processed = true;
-    }
-
-    else if (moddlg && moddlg->IsShown()) {
         CancelOptions();
         processed = true;
     }

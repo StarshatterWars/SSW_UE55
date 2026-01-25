@@ -30,18 +30,8 @@
 #include "Campaign.h"
 #include "Starshatter.h"
 #include "CmpnScreen.h"
+#include "GameStructs.h"
 #include "CmdDlg.generated.h"
-
-UENUM(BlueprintType)
-enum class ECmdMode : uint8
-{
-    MODE_ORDERS   UMETA(DisplayName = "Orders"),
-    MODE_THEATER  UMETA(DisplayName = "Theater"),
-    MODE_FORCES   UMETA(DisplayName = "Forces"),
-    MODE_INTEL    UMETA(DisplayName = "Intel"),
-    MODE_MISSIONS UMETA(DisplayName = "Missions"),
-    NUM_MODES     UMETA(Hidden)
-};
 
 class UTextBlock;
 class UButton;
@@ -82,7 +72,7 @@ public:
     void SetManager(UCmpnScreen* InManager);
     void ShowCmdDlg();
     void ExecFrame();
-    void SetMode(ECmdMode InMode);
+    void SetMode(ECOMMAND_MODE InMode);
 
 protected:
     /** Equivalent to ShowMode() */
@@ -114,7 +104,7 @@ protected:
     void OnModeMissionsClicked();
 
 private:
-    void RouteMode(ECmdMode NewMode);
+    void RouteMode(ECOMMAND_MODE NewMode);
 
 private:
     // ============================================================
@@ -164,6 +154,5 @@ private:
     // ============================================================
     // State
     // ============================================================
-    UPROPERTY(Transient)
-    ECmdMode Mode = ECmdMode::MODE_ORDERS;
+    ECOMMAND_MODE Mode = ECOMMAND_MODE::MODE_ORDERS;
 };

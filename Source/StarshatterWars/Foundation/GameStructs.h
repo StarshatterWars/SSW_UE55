@@ -174,7 +174,7 @@ enum ECAMPAIGN_STATUS : uint8 {
 	CAMPAIGN_FAILED UMETA(DisplayName = "Campaign - Failed")
 };
 
-UENUM(BlueprintType)
+UENUM()
 enum ECOMMAND_MODE : uint8 {
 	MODE_ORDERS UMETA(DisplayName = "Command - Orders"),
 	MODE_THEATER UMETA(DisplayName = "Command - Theater"),
