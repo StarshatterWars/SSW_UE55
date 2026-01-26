@@ -251,7 +251,7 @@ CarrierAI::CreateStrike(SimElement* elem)
 
 				int count = 2;
 
-				if (target->Class() > Ship::FRIGATE) {
+				if (target->Class() > CLASSIFICATION::FRIGATE) {
 					count = 4;
 					strike = CreatePackage(squadron, count, Mission::ASSAULT, elem->Name(), "Hvy Ship Strike");
 				}

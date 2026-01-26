@@ -24,15 +24,15 @@
 
 // Dialog widget headers (your actual paths):
 #include "NavDlg.h"
-#include "EngDlg.h"
-#include "FltDlg.h"
-#include "CtlDlg.h"
+#include "EngineeringDlg.h"
+#include "FlightOpsDlg.h"
+#include "ControlOptionsDlg.h"
 #include "KeyDlg.h"
 #include "JoyDlg.h"
 #include "AudioDlg.h"
-#include "VidDlg.h"
+#include "VideoDlg.h"
 #include "OptDlg.h"
-#include "QuitViewWidget.h"   // <- make your UQuitView widget header name match
+#include "QuitView.h"   // <- make your UQuitView widget header name match
 
 // Legacy:
 #include "Sim.h"
@@ -66,6 +66,11 @@ void UGameScreen::NativeDestruct()
         GameScreenInstance = nullptr;
 
     Super::NativeDestruct();
+}
+
+void UGameScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    ExecFrame(InDeltaTime);
 }
 
 UUserWidget* UGameScreen::MakeDlg(TSubclassOf<UUserWidget> Class, int32 ZOrder)
@@ -112,13 +117,13 @@ void UGameScreen::Setup()
 
     // Create dialogs (ZOrder: keep Quit highest/top-most):
     NavDlg = Cast<UNavDlg>(MakeDlg(NavDlgClass, 40));
-    EngDlg = Cast<UEngDlg>(MakeDlg(EngDlgClass, 40));
-    FltDlg = Cast<UFltDlg>(MakeDlg(FltDlgClass, 40));
-    CtlDlg = Cast<UCtlDlg>(MakeDlg(CtlDlgClass, 50));
+    EngDlg = Cast<UEngineeringDlg>(MakeDlg(EngDlgClass, 40));
+    FltDlg = Cast<UFlightOpsDlg>(MakeDlg(FltDlgClass, 40));
+    CtlDlg = Cast<UControlOptionsDlg>(MakeDlg(CtlDlgClass, 50));
     KeyDlg = Cast<UKeyDlg>(MakeDlg(KeyDlgClass, 60));
     JoyDlg = Cast<UJoyDlg>(MakeDlg(JoyDlgClass, 60));
     AudioDlg = Cast<UAudioDlg>(MakeDlg(AudioDlgClass, 70));
-    VidDlg = Cast<UVidDlg>(MakeDlg(VidDlgClass, 70));
+    VidDlg = Cast<UVideoDlg>(MakeDlg(VidDlgClass, 70));
     OptDlg = Cast<UOptDlg>(MakeDlg(OptDlgClass, 70));
 
     // Quit menu should be "last in chain" => highest Z-order:
@@ -513,7 +518,7 @@ void UGameScreen::ApplyOptions()
     if (CtlDlg)   CtlDlg->Apply();
     if (OptDlg)   OptDlg->Apply();
     if (AudioDlg) AudioDlg->Apply();
-    if (VidDlg)   VidDlg->Apply();
+    if (VidDlg)   VidDlg->ApplySettings();
 
     HideAll();
     Starshatter::GetInstance()->Pause(false);
@@ -524,7 +529,7 @@ void UGameScreen::CancelOptions()
     if (CtlDlg)   CtlDlg->Cancel();
     if (OptDlg)   OptDlg->Cancel();
     if (AudioDlg) AudioDlg->Cancel();
-    if (VidDlg)   VidDlg->Cancel();
+    if (VidDlg)   VidDlg->CancelSettings();
 
     HideAll();
     Starshatter::GetInstance()->Pause(false);
@@ -576,7 +581,7 @@ void UGameScreen::CycleHUDWarn()
 // +--------------------------------------------------------------------+
 // ExecFrame: preserve your legacy logic (dialogs tick themselves; views tick when not blocked)
 
-void UGameScreen::ExecFrame()
+void UGameScreen::ExecFrame(float DeltaTime)
 {
     sim = Sim::GetSim();
     if (!sim)
@@ -594,13 +599,13 @@ void UGameScreen::ExecFrame()
     if (hud_view)
     {
         hud_view->UseCameraView(cam_view);
-        hud_view->ExecFrame();
+        hud_view->ExecFrame(DeltaTime);
     }
 
     // Quit menu:
     if (QuitView && QuitView->IsMenuShown())
     {
-        QuitView->ExecFrame();
+        QuitView->ExecFrame(DeltaTime);
         bDialogShowing = true;
     }
 
@@ -614,7 +619,7 @@ void UGameScreen::ExecFrame()
     if (EngDlg && IsDlgVisible(EngDlg))
     {
         EngDlg->SetShip(player);
-        EngDlg->ExecFrame();
+        EngDlg->ExecFrame(DeltaTime);
     }
 
     if (FltDlg && IsDlgVisible(FltDlg))
@@ -624,10 +629,10 @@ void UGameScreen::ExecFrame()
     }
 
     if (AudioDlg && IsDlgVisible(AudioDlg))
-        AudioDlg->ExecFrame();
+        AudioDlg->ExecFrame(DeltaTime);
 
     if (VidDlg && IsDlgVisible(VidDlg))
-        VidDlg->ExecFrame();
+        VidDlg->ExecFrame(DeltaTime);
 
     if (OptDlg && IsDlgVisible(OptDlg))
         OptDlg->ExecFrame();

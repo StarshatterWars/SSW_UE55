@@ -1,4 +1,5 @@
-/*  Project Starshatter Wars
+/*
+    Project Starshatter Wars
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
@@ -8,323 +9,265 @@
 
     OVERVIEW
     ========
-    UCmpSceneDlg implementation.
-    - Loads flare textures (legacy flare0+/flare2/flare3/flare4).
-    - Attaches/detaches cutscene view to the UMG host container.
-    - Advances subtitle lines using mission begin/end scene timing.
+    UCmpSceneDlg
+    - Campaign title card / load progress dialog
+    - Cutscene camera host + optional subtitles scroller
+    - UE version of legacy CmpSceneDlg (FormWindow) implemented as UBaseScreen
 */
+
 #include "CmpSceneDlg.h"
 
-#include "Components/Border.h"
-#include "Components/Overlay.h"
+#include "Components/CanvasPanel.h"
 #include "Components/RichTextBlock.h"
-#include "Engine/Texture2D.h"
+
+#include "Starshatter.h"
+#include "Sim.h"
+#include "CameraManager.h"
+#include "Mission.h"
+#include "MissionEvent.h"
+#include "Game.h"
+#include "GameStructs.h"
+
+// Your UE ports:
+#include "CameraView.h"
+#include "DisplayView.h"
+
+static UTexture2D* LoadPinnedTexture(const TCHAR* Path)
+{
+    UTexture2D* Tex = LoadObject<UTexture2D>(nullptr, Path);
+    if (Tex)
+    {
+        // Pin it since we are not using UPROPERTY:
+        Tex->AddToRoot();
+    }
+    return Tex;
+}
 
 UCmpSceneDlg::UCmpSceneDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    // Do not touch widgets here; constructor is defaults only.
 }
 
-void UCmpSceneDlg::NativeOnInitialized()
+void UCmpSceneDlg::BindFormWidgets()
 {
-    Super::NativeOnInitialized();
+    // IMPORTANT:
+    // Your BaseScreen binding model is ID-based, so you bind by hand here.
+    // If you are using a UMG widget tree, you should FindWidget by name and bind it.
 
-    // Make sure we can receive key input (Enter/Escape) if desired:
-    bIsFocusable = true;
-    SetDialogInputEnabled(true);
+    // Example (replace with your actual widget names):
+    // MovSceneHost = Cast<UCanvasPanel>(GetWidgetFromName(TEXT("MovSceneHost")));
+    // SubtitlesBox = Cast<URichTextBlock>(GetWidgetFromName(TEXT("SubtitlesBox")));
 
-    // Load flare textures once (legacy did this in constructor after Init(def)):
-    LoadFlareTextures();
+    // If you're doing FORM-id binding, wire it here using your own helper(s).
+    // (You already have BindText/BindLabel/etc. in BaseScreen.)
+    // Since id 101 is not a label in UE, we treat it as a host panel:
+    //
+    // MovSceneHost = ... (your lookup)
+    // SubtitlesBox = ... (your lookup)
+}
+
+void UCmpSceneDlg::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+    EnsureViewObjects();
+
+    // Load flare textures once (paths are examples; use your content paths):
+    if (!Flare1) Flare1 = LoadPinnedTexture(TEXT("/Game/UI/Textures/flare0_plus.flare0_plus"));
+    if (!Flare2) Flare2 = LoadPinnedTexture(TEXT("/Game/UI/Textures/flare2.flare2"));
+    if (!Flare3) Flare3 = LoadPinnedTexture(TEXT("/Game/UI/Textures/flare3.flare3"));
+    if (!Flare4) Flare4 = LoadPinnedTexture(TEXT("/Game/UI/Textures/flare4.flare4"));
+}
+
+void UCmpSceneDlg::NativeDestruct()
+{
+    DetachViews();
+
+    // Unpin textures:
+    if (Flare1) { Flare1->RemoveFromRoot(); Flare1 = nullptr; }
+    if (Flare2) { Flare2->RemoveFromRoot(); Flare2 = nullptr; }
+    if (Flare3) { Flare3->RemoveFromRoot(); Flare3 = nullptr; }
+    if (Flare4) { Flare4->RemoveFromRoot(); Flare4 = nullptr; }
+
+    Super::NativeDestruct();
+}
+
+void UCmpSceneDlg::ShowScreen()
+{
+    // Legacy Show() equivalent. Your Menu/Campaign screen manager should call this.
+    SetVisibility(ESlateVisibility::Visible);
+
+    AttachViewsForCutscene();
+
+    // Reset subtitles timing when shown:
+    SubtitlesDelay = 0.0;
+    SubtitlesNextTime = 0.0;
+
+    // Set subtitles text from Starshatter if available:
+    if (SubtitlesBox)
+    {
+        if (Starshatter* Stars = Starshatter::GetInstance())
+        {
+            SubtitlesBox->SetText(Stars->GetSubtitlesAsText());
+        }
+    }
+}
+
+void UCmpSceneDlg::HideScreen()
+{
+    DetachViews();
+    SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UCmpSceneDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
 
-    if (!bActiveCutscene)
+    Starshatter* Stars = Starshatter::GetInstance();
+    if (!Stars)
         return;
 
-    // Maintain a dialog-local time base:
-    ElapsedSeconds += InDeltaTime;
-
-    ExecFrame(InDeltaTime);
-}
-
-void UCmpSceneDlg::BindFormWidgets()
-{
-    // Legacy FORM had ctrl id 101 as a "label" acting as a host window.
-    // In Unreal we are not binding id->panel yet; BaseScreen doesn't include Panel binding.
-    // This dialog uses SceneHostBorder/SceneHostOverlay directly via BindWidgetOptional.
-}
-
-FString UCmpSceneDlg::GetLegacyFormText() const
-{
-    // Embedded legacy .frm (as provided). Note: it only defines ctrl 101.
-    return TEXT(R"FORM(
-form: {
-   back_color: (0,0,0)
-
-   layout: {
-      x_mins:     (0)
-      x_weights:  (1)
-
-      y_mins:     (0, 200, 0)
-      y_weights:  (1,   6, 1)
-   }
-
-   ctrl: {
-      id:            101
-      type:          label
-      cells:         (0,1,1,1)
-      hide_partial:  false
-      fore_color:       (0,0,0)
-      back_color:       (0,0,0)
-      cell_insets:      (0,0,0,0)
-   }
-}
-)FORM");
-}
-
-void UCmpSceneDlg::Show()
-{
-    bActiveCutscene = false;
-    ElapsedSeconds = 0.0;
-    SubtitlesDelay = 0.0;
-    SubtitlesTime = 0.0;
-    CurrentSubtitleLine = 0;
-    SubtitleLines.Reset();
-
-    if (!IsInCutscene())
+    Mission* CutsceneMission = Stars->GetCutsceneMission();
+    if (!CutsceneMission || !DispView)
     {
-        RequestShowCmdDlg();
+        // Legacy behavior: return to command dialog
+        // manager->ShowCmdDlg();
+        // In UE, your owning screen should do this; BaseScreen should not hard-reference manager objects.
         return;
     }
 
-    // Attach render view(s) to host:
-    AttachCutsceneViewToHost();
+    // Drive the display view (legacy disp_view->ExecFrame()):
+    DispView->ExecFrame(InDeltaTime);
 
-    // Initialize subtitles:
-    InitializeSubtitles();
-
-    bActiveCutscene = true;
+    const double NowSeconds = FPlatformTime::Seconds();
+    UpdateSubtitlesScroll(NowSeconds);
 }
 
-void UCmpSceneDlg::Hide()
+void UCmpSceneDlg::EnsureViewObjects()
 {
-    bActiveCutscene = false;
-
-    DetachCutsceneViewFromHost();
-
-    // Clear subtitles UI if you want:
-    if (SubtitlesText)
+    if (!CamView)
     {
-        SubtitlesText->SetText(FText::GetEmpty());
+        CamView = NewObject<UCameraView>(this);
     }
 
-    SubtitleLines.Reset();
-    CurrentSubtitleLine = 0;
+    if (!DispView)
+    {
+        DispView = DisplayView::GetInstance(); // or NewObject if you converted it that way
+    }
 }
 
-void UCmpSceneDlg::ExecFrame(float DeltaTime)
+void UCmpSceneDlg::AttachViewsForCutscene()
 {
-    (void)DeltaTime;
-
-    // Legacy:
-    // - disp_view->ExecFrame()
-    // - subtitle auto-scroll based on begin/end scene events
-
-    // If you have a UDisplayView equivalent, tick it here:
-    // if (DispView) { DispView->ExecFrame(); }
-
-    if (!SubtitlesText || SubtitleLines.Num() <= 0)
+    if (bWasAttached)
         return;
 
-    // On first frame, compute delay from mission timing:
-    if (SubtitlesDelay == 0.0)
+    Starshatter* Stars = Starshatter::GetInstance();
+    if (!Stars || !Stars->InCutscene())
+        return;
+
+    EnsureViewObjects();
+
+    Sim* Sim = Sim::GetSim();
+    if (Sim && CamView)
     {
-        const int32 NumLines = SubtitleLines.Num();
+        CameraManager* CamDir = CameraManager::GetInstance();
+        CamView->UseCamera(CamDir ? CamDir->GetCamera() : nullptr);
+        CamView->UseScene(Sim->GetScene());
+    }
 
-        double BeginT = 0.0;
-        double EndT = 0.0;
-
-        if (NumLines > 0 && GetCutsceneSceneTimeRange(BeginT, EndT))
+    // Lens flare / corona policy mirrors legacy:
+    if (CamView)
+    {
+        if (Stars->LensFlare())
         {
-            const double TotalTime = EndT - BeginT;
-            if (TotalTime > 0.0)
-            {
-                SubtitlesDelay = TotalTime / (double)NumLines;
-                SubtitlesTime = ElapsedSeconds + SubtitlesDelay;
-            }
-            else
-            {
-                SubtitlesDelay = -1.0;
-            }
+            CamView->LensFlareElements(Flare1, Flare4, Flare2, Flare3);
+            CamView->LensFlare(true);
+        }
+        else if (Stars->Corona())
+        {
+            CamView->LensFlareElements(Flare1, nullptr, nullptr, nullptr);
+            CamView->LensFlare(true);
         }
         else
         {
-            // Legacy: subtitles_delay = -1
+            CamView->LensFlare(false);
+        }
+    }
+
+    // Attach DisplayView to the host:
+    if (DispView && MovSceneHost)
+    {
+        // Replace these calls with your actual DisplayView host API:
+        OldDispHost = DispView->GetHost();
+        DispView->SetHost(MovSceneHost);
+        DispView->Attach();
+    }
+
+    bWasAttached = true;
+}
+
+void UCmpSceneDlg::DetachViews()
+{
+    if (!bWasAttached)
+        return;
+
+    if (DispView)
+    {
+        DispView->Detach();
+
+        if (OldDispHost)
+        {
+            DispView->SetHost(OldDispHost);
+            OldDispHost = nullptr;
+        }
+    }
+
+    bWasAttached = false;
+}
+
+void UCmpSceneDlg::UpdateSubtitlesScroll(double NowSeconds)
+{
+    if (!SubtitlesBox)
+        return;
+
+    // You’ll need equivalent “line count” and “scroll down” in UE.
+    // If your subtitles are lines separated by \n, a minimal approach is to
+    // progressively reveal lines instead of physically scrolling a RichTextBlock.
+    //
+    // If you already implemented a “RichTextBox” port with ScrollDown(), call that here.
+
+    UStarshatter* Stars = UStarshatter::Get();
+    UMission* CutsceneMission = Stars ? Stars->GetCutsceneMission() : nullptr;
+    if (!CutsceneMission)
+        return;
+
+    // Only compute delay once:
+    if (SubtitlesDelay == 0.0)
+    {
+        const int32 LineCount = 0; // TODO: provide your own line-counting method
+
+        UMissionEvent* BeginScene = CutsceneMission->FindEvent(EMissionEvent::BEGIN_SCENE);
+        UMissionEvent* EndScene = CutsceneMission->FindEvent(EMissionEvent::END_SCENE);
+
+        if (BeginScene && EndScene && LineCount > 0)
+        {
+            const double TotalTime = EndScene->Time() - BeginScene->Time();
+            SubtitlesDelay = TotalTime / (double)LineCount;
+            SubtitlesNextTime = NowSeconds + SubtitlesDelay;
+        }
+        else
+        {
             SubtitlesDelay = -1.0;
         }
     }
 
-    // Advance lines:
-    if (SubtitlesDelay > 0.0 && ElapsedSeconds >= SubtitlesTime)
+    if (SubtitlesDelay > 0.0 && SubtitlesNextTime <= NowSeconds)
     {
-        SubtitlesTime = ElapsedSeconds + SubtitlesDelay;
-        AdvanceSubtitleLine();
+        SubtitlesNextTime = NowSeconds + SubtitlesDelay;
+
+        // TODO:
+        // SubtitlesBox->ScrollDown();   // if you have your legacy port
+        // OR progressively reveal the next line in the text.
     }
-}
-
-void UCmpSceneDlg::InitializeSubtitles()
-{
-    const FString SubText = GetCutsceneSubtitles();
-    BuildSubtitleLines(SubText);
-
-    // Show initial text:
-    if (SubtitlesText)
-    {
-        SubtitlesText->SetText(FText::FromString(SubText));
-    }
-
-    SubtitlesDelay = 0.0;
-    SubtitlesTime = 0.0;
-    CurrentSubtitleLine = 0;
-}
-
-void UCmpSceneDlg::BuildSubtitleLines(const FString& InText)
-{
-    SubtitleLines.Reset();
-
-    // Keep it simple: split on \n; trim \r.
-    TArray<FString> Lines;
-    InText.ParseIntoArrayLines(Lines, /*CullEmpty*/ false);
-
-    for (FString& L : Lines)
-    {
-        L.ReplaceInline(TEXT("\r"), TEXT(""));
-        SubtitleLines.Add(L);
-    }
-}
-
-void UCmpSceneDlg::AdvanceSubtitleLine()
-{
-    // Legacy behavior: subtitles_box->Scroll(SCROLL_DOWN)
-    // In Unreal RichTextBlock has no line-scroll API, so we emulate by dropping the first line.
-
-    if (SubtitleLines.Num() <= 0)
-        return;
-
-    if (CurrentSubtitleLine < SubtitleLines.Num())
-    {
-        ++CurrentSubtitleLine;
-    }
-
-    if (CurrentSubtitleLine >= SubtitleLines.Num())
-        return;
-
-    // Display from current line to end:
-    FString Remaining;
-    for (int32 i = CurrentSubtitleLine; i < SubtitleLines.Num(); ++i)
-    {
-        Remaining += SubtitleLines[i];
-        if (i < SubtitleLines.Num() - 1)
-            Remaining += TEXT("\n");
-    }
-
-    if (SubtitlesText)
-    {
-        SubtitlesText->SetText(FText::FromString(Remaining));
-    }
-}
-
-void UCmpSceneDlg::RequestShowCmdDlg()
-{
-    // Legacy: manager->ShowCmdDlg();
-    // Here: call manager if you have it, otherwise raise BP event.
-    if (Manager)
-    {
-        // If UCmpnScreen exposes ShowCmdDlg() as UFUNCTION, call it here.
-        // Manager->ShowCmdDlg();
-        OnRequestShowCmdDlg();
-        return;
-    }
-
-    OnRequestShowCmdDlg();
-}
-
-// ---------------------------------------------------------------------
-// Default hook implementations (override in your project)
-// ---------------------------------------------------------------------
-
-bool UCmpSceneDlg::IsInCutscene() const
-{
-    // Wire to your Starshatter singleton / subsystem.
-    return false;
-}
-
-FString UCmpSceneDlg::GetCutsceneSubtitles() const
-{
-    // Wire to stars->GetSubtitles() equivalent.
-    return FString();
-}
-
-bool UCmpSceneDlg::IsLensFlareEnabled() const
-{
-    return false;
-}
-
-bool UCmpSceneDlg::IsCoronaEnabled() const
-{
-    return false;
-}
-
-bool UCmpSceneDlg::GetCutsceneSceneTimeRange(double& OutBeginSeconds, double& OutEndSeconds) const
-{
-    // Wire to mission event timings:
-    // begin_scene->Time(), end_scene->Time()
-    // Return false if either missing.
-    OutBeginSeconds = 0.0;
-    OutEndSeconds = 0.0;
-    return false;
-}
-
-void UCmpSceneDlg::AttachCutsceneViewToHost()
-{
-    // This is where you attach your 3D view to the host panel.
-    // Typical Unreal patterns:
-    // - Add a UViewport widget or CommonUI viewport
-    // - Use a SceneCapture2D into a render target and show in an Image
-    // - Or your existing DisplayView/CamView wrapper that renders into a widget
-
-    // If you already have a render widget, you would do:
-    // SceneHostOverlay->AddChild(RenderWidget);
-
-    // Lens flare settings can be applied to your camera system here, using Flare1..4.
-}
-
-void UCmpSceneDlg::DetachCutsceneViewFromHost()
-{
-    // Remove your view widget and restore previous output routing (legacy old_disp_win).
-}
-
-void UCmpSceneDlg::LoadFlareTextures()
-{
-    // Legacy loaded:
-    // flare0+.pcx, flare2.pcx, flare3.pcx, flare4.pcx
-    // Here we load textures by name via hook. Override to use your DataLoader/PCX bridge.
-
-    Flare1 = LoadFlareTextureByName(TEXT("flare0+"));
-    Flare2 = LoadFlareTextureByName(TEXT("flare2"));
-    Flare3 = LoadFlareTextureByName(TEXT("flare3"));
-    Flare4 = LoadFlareTextureByName(TEXT("flare4"));
-}
-
-UTexture2D* UCmpSceneDlg::LoadFlareTextureByName(const FString& Name) const
-{
-    // Default: expects cooked assets in /Game/Textures/ (change to your real content path).
-    // Example: /Game/Textures/flare2.flare2
-    // If you are still using PCX on disk, override and use your DataLoader -> UTexture2D path.
-
-    const FString AssetPath = FString::Printf(TEXT("/Game/Textures/%s.%s"), *Name, *Name);
-    return LoadObject<UTexture2D>(nullptr, *AssetPath);
 }

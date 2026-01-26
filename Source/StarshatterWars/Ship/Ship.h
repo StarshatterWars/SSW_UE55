@@ -28,6 +28,7 @@
 
 #include "Math/Vector.h" // FVector
 #include "Math/Color.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -81,43 +82,6 @@ class Ship : public SimObject, public SimObserver
 {
 public:
     static const char* TYPENAME() { return "Ship"; }
-
-    enum CLASSIFICATION {
-        DRONE = 0x0001,
-        FIGHTER = 0x0002,
-        ATTACK = 0x0004,
-        LCA = 0x0008,
-        COURIER = 0x0010,
-        CARGO = 0x0020,
-        CORVETTE = 0x0040,
-        FREIGHTER = 0x0080,
-        FRIGATE = 0x0100,
-        DESTROYER = 0x0200,
-        CRUISER = 0x0400,
-        BATTLESHIP = 0x0800,
-        CARRIER = 0x1000,
-        DREADNAUGHT = 0x2000,
-
-        STATION = 0x4000,
-        FARCASTER = 0x8000,
-
-        MINE = 0x00010000,
-        COMSAT = 0x00020000,
-        DEFSAT = 0x00040000,
-        SWACS = 0x00080000,
-
-        BUILDING = 0x00100000,
-        FACTORY = 0x00200000,
-        SAM = 0x00400000,
-        EWR = 0x00800000,
-        C3I = 0x01000000,
-        STARBASE = 0x02000000,
-
-        DROPSHIPS = 0x0000000f,
-        STARSHIPS = 0x0000fff0,
-        SPACE_UNITS = 0x000f0000,
-        GROUND_UNITS = 0xfff00000
-    };
 
     enum OP_MODE { DOCKED, ALERT, LOCKED, LAUNCH, TAKEOFF, ACTIVE, APPROACH, RECOVERY, DOCKING };
     enum FLCS_MODE { FLCS_MANUAL, FLCS_AUTO, FLCS_HELM };
@@ -355,6 +319,9 @@ public:
     static const char* ClassName(int c);
     static int        ClassForName(const char* name);
     const char*       ClassName() const;
+
+    // Add this:
+    static const char* GetShipClassName(CLASSIFICATION classification) { return ClassName(static_cast<int>(classification)); }
     CLASSIFICATION    Class() const;
     bool              IsGroundUnit() const;
     bool              IsStarship() const;

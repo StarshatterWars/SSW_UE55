@@ -4713,7 +4713,7 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 					ShipType = ClassForName(ShipClass);
 
-					if (ShipType <= (int)Ship::LCA) {
+					if (ShipType <= (int)CLASSIFICATION::LCA) {
 						repair_auto = false;
 						repair_screen = false;
 						wep_screen = false;
@@ -4976,7 +4976,7 @@ AGameDataLoader::LoadShipDesign(const char* fn)
 
 					ShipType = ClassForName(ShipClass);
 
-					if (ShipType <= (int) Ship::LCA) {
+					if (ShipType <= (int)CLASSIFICATION::LCA) {
 						repair_auto = false;
 						repair_screen = false;
 						wep_screen = false;

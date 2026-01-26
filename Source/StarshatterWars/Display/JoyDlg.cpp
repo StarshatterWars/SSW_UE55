@@ -1,50 +1,43 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         JoyDlg.cpp
     AUTHOR:       Carlos Bott
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
     OVERVIEW
     ========
-    Joystick Options Dialog (Unreal UUserWidget)
-
-    Notes (FORM -> UMG mapping):
-    - Title label (id 100): create a UTextBlock (optional) for "Joystick Axis Setup"
-    - Axis labels (ids 101-104): UTextBlocks for X Axis, Y Axis, Rudder, Throttle
-    - Message (id 11): BindWidgetOptional UTextBlock* message
-    - Axis select buttons (ids 201-204): BindWidgetOptional UButton* axis_button_0..3
-    - Invert "checkbox" buttons (ids 301-304): Prefer UCheckBox* invert_checkbox_0..3
-    - Apply/Cancel buttons (ids 1/2): BindWidgetOptional UButton* ApplyBtn / CancelBtn
+    Joystick Axis Setup dialog implementation.
 */
+
+#include "JoyDlg.h"
 
 #include "GameStructs.h"
 
-#include "JoyDlg.h"
-#include "BaseScreen.h"
+// Unreal
+#include "Logging/LogMacros.h"
 
+// UMG
 #include "Components/Button.h"
-#include "Components/CheckBox.h"
 #include "Components/TextBlock.h"
-#include "Input/Events.h"
-#include "Input/Reply.h"
-#include "InputCoreTypes.h"
 
-// Starshatter core:
-#include "Starshatter.h"
+// Starshatter
 #include "KeyMap.h"
+#include "MenuScreen.h"
+#include "Starshatter.h"
 #include "Game.h"
 #include "Joystick.h"
 
-// +--------------------------------------------------------------------+
+DEFINE_LOG_CATEGORY_STATIC(LogJoyDlg, Log, All);
 
-static const char* joy_axis_names[] =
-{
+// --------------------------------------------------------------------
+// Legacy text keys:
+static const char* JoyAxisNames[] = {
     "JoyDlg.axis.0",
     "JoyDlg.axis.1",
     "JoyDlg.axis.2",
@@ -55,79 +48,76 @@ static const char* joy_axis_names[] =
     "JoyDlg.axis.7"
 };
 
-// Keep legacy sampling state file-static (single-instance safe enough for menu UI):
-static int sample_axis = -1;
-static int samples[8] = { 10000000,10000000,10000000,10000000,10000000,10000000,10000000,10000000 };
-static int map_axis[4] = { -1,-1,-1,-1 };
-
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 UJoyDlg::UJoyDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
 }
 
+// --------------------------------------------------------------------
+
+void UJoyDlg::NativeOnInitialized()
+{
+    Super::NativeOnInitialized();
+
+    if (ApplyButton)
+        ApplyButton->OnClicked.AddDynamic(this, &UJoyDlg::OnApplyClicked);
+
+    if (CancelButton)
+        CancelButton->OnClicked.AddDynamic(this, &UJoyDlg::OnCancelClicked);
+
+    if (AxisButton0)
+        AxisButton0->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis0Clicked);
+
+    if (AxisButton1)
+        AxisButton1->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis1Clicked);
+
+    if (AxisButton2)
+        AxisButton2->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis2Clicked);
+
+    if (AxisButton3)
+        AxisButton3->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis3Clicked);
+}
+
+// --------------------------------------------------------------------
+
 void UJoyDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Apply / Cancel:
-    if (ApplyBtn)
-    {
-        ApplyBtn->OnClicked.AddDynamic(this, &UJoyDlg::OnApplyClicked);
-    }
+    // Mirror legacy Show() initialization behavior on construct:
+    RefreshAxisButtonsFromCurrentBindings();
 
-    if (CancelBtn)
-    {
-        CancelBtn->OnClicked.AddDynamic(this, &UJoyDlg::OnCancelClicked);
-    }
-
-    // Axis select buttons:
-    if (axis_button_0) axis_button_0->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis0Clicked);
-    if (axis_button_1) axis_button_1->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis1Clicked);
-    if (axis_button_2) axis_button_2->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis2Clicked);
-    if (axis_button_3) axis_button_3->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis3Clicked);
-
-    // Invert checkboxes:
-    if (invert_checkbox_0) invert_checkbox_0->OnCheckStateChanged.AddDynamic(this, &UJoyDlg::OnInvert0Changed);
-    if (invert_checkbox_1) invert_checkbox_1->OnCheckStateChanged.AddDynamic(this, &UJoyDlg::OnInvert1Changed);
-    if (invert_checkbox_2) invert_checkbox_2->OnCheckStateChanged.AddDynamic(this, &UJoyDlg::OnInvert2Changed);
-    if (invert_checkbox_3) invert_checkbox_3->OnCheckStateChanged.AddDynamic(this, &UJoyDlg::OnInvert3Changed);
-
-    // Initialize UI from current bindings:
-    for (int i = 0; i < 4; i++)
-    {
-        const int map = Joystick::GetAxisMap(i) - KEY_JOY_AXIS_X;
-        const int inv = Joystick::GetAxisInv(i);
-
-        map_axis[i] = (map >= 0 && map < 8) ? map : -1;
-
-        if (i == 0 && invert_checkbox_0) invert_checkbox_0->SetIsChecked(inv != 0);
-        if (i == 1 && invert_checkbox_1) invert_checkbox_1->SetIsChecked(inv != 0);
-        if (i == 2 && invert_checkbox_2) invert_checkbox_2->SetIsChecked(inv != 0);
-        if (i == 3 && invert_checkbox_3) invert_checkbox_3->SetIsChecked(inv != 0);
-    }
-
-    // Default state:
-    selected_axis = -1;
-    sample_axis = -1;
-
-    // Reset samples:
+    // Reset sampling state:
+    SelectedAxis = -1;
+    SampleAxis = -1;
     for (int i = 0; i < 8; i++)
-    {
-        samples[i] = 10000000;
-    }
-
-    // Focus so Enter/Escape works:
-    SetKeyboardFocus();
+        Samples[i] = 10000000;
 }
+
+// --------------------------------------------------------------------
 
 void UJoyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
+    ExecFrame();
+}
 
-    // Sample raw joystick input when an axis slot is active:
-    if (selected_axis >= 0 && selected_axis < 4)
+// --------------------------------------------------------------------
+
+void UJoyDlg::SetManager(UMenuScreen* InManager)
+{
+    Manager = InManager;
+}
+
+// --------------------------------------------------------------------
+// Legacy parity
+// --------------------------------------------------------------------
+
+void UJoyDlg::ExecFrame()
+{
+    if (SelectedAxis >= 0 && SelectedAxis < 4)
     {
         Joystick* joystick = Joystick::GetInstance();
         if (joystick)
@@ -140,143 +130,86 @@ void UJoyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
             {
                 const int a = Joystick::ReadRawAxis(i + KEY_JOY_AXIS_X);
 
-                int d = a - samples[i];
-                if (d < 0) d = -d;
+                int d = a - Samples[i];
+                if (d < 0)
+                    d = -d;
 
-                if (d > delta && samples[i] < 1000000)
+                if (d > delta && Samples[i] < 1000000)
                 {
                     delta = d;
-                    sample_axis = i;
+                    SampleAxis = i;
                 }
 
-                samples[i] = a;
+                Samples[i] = a;
             }
 
-            // If we found a moved axis, bind it immediately:
-            if (sample_axis >= 0)
+            if (SampleAxis >= 0)
             {
-                map_axis[selected_axis] = sample_axis;
-
-                // UMG text on buttons is typically separate (TextBlock in button),
-                // so we don't SetText() like legacy. Use the message field for feedback.
-                if (message)
-                {
-                    const Text axisText = Game::GetText(joy_axis_names[sample_axis]);
-                    message->SetText(FText::FromString(UTF8_TO_TCHAR(axisText.data())));
-                }
+                MapAxis[SelectedAxis] = SampleAxis;
+                UpdateAxisButtonText(SelectedAxis, JoyAxisNames[SampleAxis]);
             }
             else
             {
-                if (message)
-                {
-                    const Text selText = Game::GetText("JoyDlg.select");
-                    message->SetText(FText::FromString(UTF8_TO_TCHAR(selText.data())));
-                }
+                UpdateAxisButtonText(SelectedAxis, "JoyDlg.select");
             }
         }
     }
 }
 
-FReply UJoyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+// --------------------------------------------------------------------
+
+void UJoyDlg::OnAxis0Clicked() { HandleAxisClicked(0); }
+void UJoyDlg::OnAxis1Clicked() { HandleAxisClicked(1); }
+void UJoyDlg::OnAxis2Clicked() { HandleAxisClicked(2); }
+void UJoyDlg::OnAxis3Clicked() { HandleAxisClicked(3); }
+
+// --------------------------------------------------------------------
+
+void UJoyDlg::HandleAxisClicked(int AxisIndex)
 {
-    const FKey key = InKeyEvent.GetKey();
+    // Toggle selection like legacy OnAxis(AWEvent*)
+    if (AxisIndex < 0 || AxisIndex >= 4)
+        return;
 
-    if (key == EKeys::Enter || key == EKeys::Virtual_Accept)
+    if (SelectedAxis == AxisIndex)
     {
-        Apply();
-        return FReply::Handled();
+        // deselect, restore mapped/unmapped name
+        const int map = MapAxis[AxisIndex];
+        if (map >= 0 && map < 8)
+            UpdateAxisButtonText(AxisIndex, JoyAxisNames[map]);
+        else
+            UpdateAxisButtonText(AxisIndex, "JoyDlg.unmapped");
+
+        SelectedAxis = -1;
+    }
+    else
+    {
+        // select this one, restore others
+        for (int i = 0; i < 4; i++)
+        {
+            if (i == AxisIndex)
+                continue;
+
+            const int map = MapAxis[i];
+            if (map >= 0 && map < 8)
+                UpdateAxisButtonText(i, JoyAxisNames[map]);
+            else
+                UpdateAxisButtonText(i, "JoyDlg.unmapped");
+        }
+
+        UpdateAxisButtonText(AxisIndex, "JoyDlg.select");
+        SelectedAxis = AxisIndex;
+        SampleAxis = -1;
     }
 
-    if (key == EKeys::Escape || key == EKeys::Virtual_Back)
-    {
-        Cancel();
-        return FReply::Handled();
-    }
-
-    return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+    // reset samples
+    for (int i = 0; i < 8; i++)
+        Samples[i] = 10000000;
 }
 
-// +--------------------------------------------------------------------+
-// Button events:
+// --------------------------------------------------------------------
 
 void UJoyDlg::OnApplyClicked()
-{
-    Apply();
-}
-
-void UJoyDlg::OnCancelClicked()
-{
-    Cancel();
-}
-
-static void ToggleAxisSelection(UJoyDlg* dlg, int axisIndex)
-{
-    if (!dlg) return;
-
-    // Toggle selection:
-    if (dlg->selected_axis == axisIndex)
-    {
-        dlg->selected_axis = -1;
-        sample_axis = -1;
-
-        if (dlg->message)
-        {
-            // Show mapping summary for the axis we just toggled off:
-            const int map = map_axis[axisIndex];
-            Text name = Game::GetText("JoyDlg.unmapped");
-            if (map >= 0 && map < 8)
-                name = Game::GetText(joy_axis_names[map]);
-
-            dlg->message->SetText(FText::FromString(UTF8_TO_TCHAR(name.data())));
-        }
-    }
-    else
-    {
-        dlg->selected_axis = axisIndex;
-        sample_axis = -1;
-
-        if (dlg->message)
-        {
-            const Text selText = Game::GetText("JoyDlg.select");
-            dlg->message->SetText(FText::FromString(UTF8_TO_TCHAR(selText.data())));
-        }
-
-        // Reset samples so we detect the next motion cleanly:
-        for (int i = 0; i < 8; i++)
-            samples[i] = 10000000;
-    }
-}
-
-void UJoyDlg::OnAxis0Clicked() { ToggleAxisSelection(this, 0); }
-void UJoyDlg::OnAxis1Clicked() { ToggleAxisSelection(this, 1); }
-void UJoyDlg::OnAxis2Clicked() { ToggleAxisSelection(this, 2); }
-void UJoyDlg::OnAxis3Clicked() { ToggleAxisSelection(this, 3); }
-
-void UJoyDlg::OnInvert0Changed(bool bIsChecked) { /* Stored on Apply() */ }
-void UJoyDlg::OnInvert1Changed(bool bIsChecked) { /* Stored on Apply() */ }
-void UJoyDlg::OnInvert2Changed(bool bIsChecked) { /* Stored on Apply() */ }
-void UJoyDlg::OnInvert3Changed(bool bIsChecked) { /* Stored on Apply() */ }
-
-// +--------------------------------------------------------------------+
-// Apply / Cancel:
-
-static void CallManagerByName(UBaseScreen* manager, const TCHAR* fnName)
-{
-    if (!manager || !fnName) return;
-
-    const FName fname(fnName);
-    UFunction* fn = manager->FindFunction(fname);
-    if (fn)
-    {
-        manager->ProcessEvent(fn, nullptr);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("JoyDlg: Manager does not implement '%s'."), fnName);
-    }
-}
-
-void UJoyDlg::Apply()
 {
     Starshatter* stars = Starshatter::GetInstance();
 
@@ -284,35 +217,121 @@ void UJoyDlg::Apply()
     {
         KeyMap& keymap = stars->GetKeyMap();
 
-        keymap.Bind(KEY_AXIS_YAW, map_axis[0] + KEY_JOY_AXIS_X, 0);
-        keymap.Bind(KEY_AXIS_PITCH, map_axis[1] + KEY_JOY_AXIS_X, 0);
-        keymap.Bind(KEY_AXIS_ROLL, map_axis[2] + KEY_JOY_AXIS_X, 0);
-        keymap.Bind(KEY_AXIS_THROTTLE, map_axis[3] + KEY_JOY_AXIS_X, 0);
+        keymap.Bind(KEY_AXIS_YAW, MapAxis[0] + KEY_JOY_AXIS_X, 0);
+        keymap.Bind(KEY_AXIS_PITCH, MapAxis[1] + KEY_JOY_AXIS_X, 0);
+        keymap.Bind(KEY_AXIS_ROLL, MapAxis[2] + KEY_JOY_AXIS_X, 0);
+        keymap.Bind(KEY_AXIS_THROTTLE, MapAxis[3] + KEY_JOY_AXIS_X, 0);
 
-        const int inv0 = invert_checkbox_0 ? (invert_checkbox_0->IsChecked() ? 1 : 0) : 0;
-        const int inv1 = invert_checkbox_1 ? (invert_checkbox_1->IsChecked() ? 1 : 0) : 0;
-        const int inv2 = invert_checkbox_2 ? (invert_checkbox_2->IsChecked() ? 1 : 0) : 0;
-        const int inv3 = invert_checkbox_3 ? (invert_checkbox_3->IsChecked() ? 1 : 0) : 0;
-
-        keymap.Bind(KEY_AXIS_YAW_INVERT, inv0, 0);
-        keymap.Bind(KEY_AXIS_PITCH_INVERT, inv1, 0);
-        keymap.Bind(KEY_AXIS_ROLL_INVERT, inv2, 0);
-        keymap.Bind(KEY_AXIS_THROTTLE_INVERT, inv3, 0);
+        keymap.Bind(KEY_AXIS_YAW_INVERT, GetInvertButtonState(Invert0) ? 1 : 0, 0);
+        keymap.Bind(KEY_AXIS_PITCH_INVERT, GetInvertButtonState(Invert1) ? 1 : 0, 0);
+        keymap.Bind(KEY_AXIS_ROLL_INVERT, GetInvertButtonState(Invert2) ? 1 : 0, 0);
+        keymap.Bind(KEY_AXIS_THROTTLE_INVERT, GetInvertButtonState(Invert3) ? 1 : 0, 0);
 
         keymap.SaveKeyMap("key.cfg", 256);
         stars->MapKeys();
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("JoyDlg: Starshatter instance not available; cannot apply joystick bindings."));
+        UE_LOG(LogJoyDlg, Warning, TEXT("Starshatter instance not available."));
     }
 
-    // Return to Controls dialog (dynamic call avoids hard dependency on UBaseScreen API):
-    CallManagerByName(manager, TEXT("ShowCtlDlg"));
+    if (Manager)
+        Manager->ShowCtlDlg();
 }
 
-void UJoyDlg::Cancel()
+// --------------------------------------------------------------------
+
+void UJoyDlg::OnCancelClicked()
 {
-    // Return to Controls dialog:
-    CallManagerByName(manager, TEXT("ShowCtlDlg"));
+    if (Manager)
+        Manager->ShowCtlDlg();
+}
+
+// --------------------------------------------------------------------
+// Helpers
+// --------------------------------------------------------------------
+
+void UJoyDlg::RefreshAxisButtonsFromCurrentBindings()
+{
+    // Populate from current joystick settings:
+    for (int i = 0; i < 4; i++)
+    {
+        const int map = Joystick::GetAxisMap(i) - KEY_JOY_AXIS_X;
+        const int inv = Joystick::GetAxisInv(i);
+
+        if (map >= 0 && map < 8)
+        {
+            MapAxis[i] = map;
+            UpdateAxisButtonText(i, JoyAxisNames[map]);
+        }
+        else
+        {
+            MapAxis[i] = -1;
+            UpdateAxisButtonText(i, "JoyDlg.unmapped");
+        }
+
+        // Invert checkboxes:
+        if (i == 0) SetInvertButtonState(Invert0, inv != 0);
+        if (i == 1) SetInvertButtonState(Invert1, inv != 0);
+        if (i == 2) SetInvertButtonState(Invert2, inv != 0);
+        if (i == 3) SetInvertButtonState(Invert3, inv != 0);
+    }
+}
+
+// --------------------------------------------------------------------
+
+void UJoyDlg::UpdateAxisButtonText(int AxisIndex, const char* TextId)
+{
+    if (!TextId)
+        return;
+
+    UButton* Target = nullptr;
+
+    switch (AxisIndex)
+    {
+    case 0: Target = AxisButton0; break;
+    case 1: Target = AxisButton1; break;
+    case 2: Target = AxisButton2; break;
+    case 3: Target = AxisButton3; break;
+    default: break;
+    }
+
+    // UButton does not have SetText, so the design assumption is:
+    // Each axis button has a child TextBlock named "Label" or similar.
+    // We attempt to find the first TextBlock in the button tree and set it.
+    if (Target)
+    {
+        UTextBlock* Label = Target->GetChildAt(0) ? Cast<UTextBlock>(Target->GetChildAt(0)) : nullptr;
+        if (!Label)
+        {
+            // fallback: try message text as debug output if the button label is not directly accessible
+            UE_LOG(LogJoyDlg, Verbose, TEXT("Axis button %d label not found; cannot set text."), AxisIndex);
+            return;
+        }
+
+        const Text t = Game::GetText(TextId);
+        Label->SetText(FText::FromString(UTF8_TO_TCHAR(t.data())));
+    }
+}
+
+// --------------------------------------------------------------------
+
+void UJoyDlg::SetInvertButtonState(UButton* InvertButton, bool bChecked)
+{
+    // Legacy uses button state; in UMG you typically swap style or use CheckBox.
+    // Here we store state by using the "IsEnabled" flag as a minimal stand-in:
+    // Enabled = checked, Disabled = unchecked (so the state is queryable).
+    // Replace with UCheckBox when you wire the real widget.
+    if (InvertButton)
+    {
+        InvertButton->SetIsEnabled(bChecked);
+    }
+}
+
+bool UJoyDlg::GetInvertButtonState(const UButton* InvertButton) const
+{
+    if (!InvertButton)
+        return false;
+
+    return InvertButton->GetIsEnabled();
 }

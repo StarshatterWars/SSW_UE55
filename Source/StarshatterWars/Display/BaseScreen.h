@@ -10,12 +10,13 @@
     ========
     UBaseScreen
     - Unreal base widget for Starshatter menu/dialog screens.
-    - Provides FORM-style ID binding and operations helpers.
-    - Includes data structures for legacy .frm parsing (form/ctrl/defctrl).
-    - defctrl behavior is implemented in BaseScreen.cpp (current-defaults merge).
-    - Adds unified dialog input helpers: HandleAccept() / HandleCancel()
+    - Provides FORM-style ID binding + helper ops (SetLabelText, SetVisible, etc).
+    - Includes legacy .frm parse structures (form/ctrl/defctrl) and merge support.
+    - Adds unified dialog input hooks: HandleAccept() / HandleCancel()
       so every dialog behaves identically (Enter/Escape).
-    - Adds RichText (FORM type: text) support using URichTextBlock.
+    - Adds RichText support for legacy FORM type: text (URichTextBlock).
+    - Adds FORM font mapping support (LegacyName -> UFont + size).
+    - Adds slider active_color support (FORM: active_color).
 */
 
 #pragma once
@@ -23,26 +24,29 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 
-// UMG components:
-#include "Components/Image.h"
-#include "Components/Button.h"
-#include "Components/TextBlock.h"
-#include "Components/RichTextBlock.h"
-#include "Components/ComboBoxString.h"
-#include "Components/EditableTextBox.h"
-#include "Components/ListView.h"
-#include "Components/Slider.h"
-
 // Input:
 #include "Input/Reply.h"
 #include "InputCoreTypes.h"
 
+// Styling / Fonts:
+#include "Fonts/SlateFontInfo.h"
+#include "Styling/SlateTypes.h"
 #include "Engine/Font.h"
+
+// UMG:
+#include "Components/Button.h"
+#include "Components/ComboBoxString.h"
+#include "Components/EditableTextBox.h"
+#include "Components/Image.h"
+#include "Components/ListView.h"
+#include "Components/RichTextBlock.h"
+#include "Components/Slider.h"
+#include "Components/TextBlock.h"
 
 #include "BaseScreen.generated.h"
 
 // ====================================================================
-//  FORM PARSE TYPES
+//  LEGACY FORM PARSE TYPES
 // ====================================================================
 
 USTRUCT(BlueprintType)
@@ -54,11 +58,11 @@ struct FFormFontMapEntry
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FString LegacyName;
 
-    // Unreal font asset (UFont). You can use a Font asset from your content.
+    // Unreal font asset (UFont).
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TObjectPtr<UFont> Font = nullptr;
 
-    // If > 0 and bOverrideSize is true, force this size.
+    // If bOverrideSize is true and Size > 0, force this size.
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     int32 Size = 0;
 
@@ -104,7 +108,9 @@ struct FFormIntRect
     UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 D = 0;
 
     FFormIntRect() = default;
-    FFormIntRect(int32 InA, int32 InB, int32 InC, int32 InD) : A(InA), B(InB), C(InC), D(InD) {}
+    FFormIntRect(int32 InA, int32 InB, int32 InC, int32 InD)
+        : A(InA), B(InB), C(InC), D(InD) {
+    }
 };
 
 USTRUCT(BlueprintType)
@@ -155,6 +161,9 @@ struct FParsedCtrl
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FLinearColor BackColor = FLinearColor::Transparent;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FLinearColor ForeColor = FLinearColor::Transparent;
 
+    // Slider colors (legacy):
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) FLinearColor ActiveColor = FLinearColor::Transparent;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bTransparent = false;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bSticky = false;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bBorder = false;
@@ -192,7 +201,7 @@ struct FParsedCtrl
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FFormColumnDef> Columns;
 
     // -----------------------------------------------------------------
-    // Internal “explicitness” flags (NOT UPROPERTY, not for Blueprint)
+    // Internal "explicitness" flags (NOT UPROPERTY; not for Blueprint).
     // Used to merge defctrl defaults correctly in BaseScreen.cpp.
     // -----------------------------------------------------------------
     bool bHasText = false;
@@ -201,6 +210,7 @@ struct FParsedCtrl
     bool bHasAlign = false;
     bool bHasBackColor = false;
     bool bHasForeColor = false;
+    bool bHasActiveColor = false;
 
     bool bHasTransparent = false;
     bool bHasSticky = false;
@@ -240,12 +250,11 @@ struct FParsedForm
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FFormIntRect Margins;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FFormLayout Layout;
-
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FParsedCtrl> Controls;
 };
 
 // ====================================================================
-//  OPTIONAL COMPILED FORM DEF TYPES
+//  OPTIONAL COMPILED FORM DEF TYPES (DOCUMENTATION / FUTURE USE)
 // ====================================================================
 
 USTRUCT(BlueprintType)
@@ -315,33 +324,29 @@ class STARSHATTERWARS_API UBaseScreen : public UUserWidget
     GENERATED_BODY()
 
 public:
-    // ----------------------------------------------------------------
-    //  Optional common widgets (bind if your UMG has them)
-    // ----------------------------------------------------------------
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* Title = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* CancelButtonText = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* ApplyButtonText = nullptr;
+    UBaseScreen(const FObjectInitializer& ObjectInitializer);
 
-    // These are used by HandleAccept/HandleCancel in BaseScreen.cpp:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelButton = nullptr;
+    // ----------------------------------------------------------------
+    // Optional common widgets (bind if your UMG has them)
+    // ----------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> Title = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> CancelButtonText = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> ApplyButtonText = nullptr;
 
-public:
+    // Used by HandleAccept / HandleCancel (optional)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelButton = nullptr;
+
     // ----------------------------------------------------------------
-    //  FORM-style API
+    // FORM-style API (override per-screen as needed)
     // ----------------------------------------------------------------
-    /** Override in derived screens to bind legacy FORM IDs to widgets */
     virtual void BindFormWidgets() {}
-
-    /** Optional: provide compiled FORM defaults (labels, etc.) */
     virtual const FFormDef* GetFormDef() const { return nullptr; }
-
-    /** Optional: provide raw legacy .frm text to parse and apply defaults */
     virtual FString GetLegacyFormText() const { return FString(); }
 
-public:
     // ----------------------------------------------------------------
-    //  Dialog input helpers (Enter/Escape)
+    // Dialog input hooks (Enter/Escape)
+    // Override in derived dialogs.
     // ----------------------------------------------------------------
     virtual void HandleAccept();
     virtual void HandleCancel();
@@ -349,21 +354,21 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Dialog")
     void SetDialogInputEnabled(bool bEnabled) { bDialogInputEnabled = bEnabled; }
 
-    // Optional: fill this in Defaults to map FORM font names to assets.
+    // ----------------------------------------------------------------
+    // Fonts: LegacyName -> UFont (+ optional size override)
+    // ----------------------------------------------------------------
     UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
     TArray<FFormFontMapEntry> FontMappings;
 
-    // Fallback if a FORM font name is not mapped.
     UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
     TObjectPtr<UFont> DefaultFont = nullptr;
 
-    // Fallback size if not inferable from name and not overridden.
     UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
     int32 DefaultFontSize = 12;
 
 protected:
     // ----------------------------------------------------------------
-    //  Binding helpers (call from BindFormWidgets)
+    // Binding helpers (call from BindFormWidgets)
     // ----------------------------------------------------------------
     void BindLabel(int32 Id, UTextBlock* Widget);
     void BindText(int32 Id, URichTextBlock* Widget);
@@ -376,7 +381,7 @@ protected:
 
 protected:
     // ----------------------------------------------------------------
-    //  Operations helpers
+    // Operations helpers
     // ----------------------------------------------------------------
     void SetLabelText(int32 Id, const FText& Text);
     void SetEditText(int32 Id, const FText& Text);
@@ -385,7 +390,7 @@ protected:
 
 protected:
     // ----------------------------------------------------------------
-    //  Lookup helpers
+    // Lookup helpers
     // ----------------------------------------------------------------
     UTextBlock* GetLabel(int32 Id) const;
     URichTextBlock* GetText(int32 Id) const;
@@ -398,56 +403,54 @@ protected:
 
 protected:
     // ----------------------------------------------------------------
-    //  Default application
+    // Defaults application
     // ----------------------------------------------------------------
     void ApplyFormDefaults();
 
 protected:
     // ----------------------------------------------------------------
-    //  Legacy FORM parse + defaults application (supports defctrl)
+    // Legacy FORM parse + defaults application (supports defctrl)
     // ----------------------------------------------------------------
     bool ParseLegacyForm(const FString& InText, FParsedForm& OutForm, FString& OutError) const;
     void ApplyLegacyFormDefaults(const FParsedForm& Parsed);
 
 protected:
     // ----------------------------------------------------------------
-    //  Optional mapping hooks
+    // Optional mapping hooks
     // ----------------------------------------------------------------
     virtual bool ResolveFont(const FString& InFontName, FSlateFontInfo& OutFont) const;
     virtual bool ResolveTextJustification(EFormAlign InAlign, ETextJustify::Type& OutJustify) const;
 
 protected:
     // ----------------------------------------------------------------
-    //  Internal state
+    // UUserWidget lifecycle
     // ----------------------------------------------------------------
-    UPROPERTY(Transient)
-    FFormWidgetMap FormMap;
-
-    UPROPERTY(Transient)
-    FParsedForm ParsedForm;
+    virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
+    virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
     // ----------------------------------------------------------------
-    //  Dialog policy
+    // Centralized key handling (Enter/Escape)
+    // ----------------------------------------------------------------
+    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
+protected:
+    // ----------------------------------------------------------------
+    // Dialog policy
     // ----------------------------------------------------------------
     UPROPERTY(EditAnywhere, Category = "Dialog")
     bool bDialogInputEnabled = true;
 
+    // If you need the old "exit latch" behavior, flip true on show and clear next tick.
     UPROPERTY(Transient)
     bool bExitLatch = false;
 
 protected:
     // ----------------------------------------------------------------
-    //  UUserWidget lifecycle
+    // Internal state
     // ----------------------------------------------------------------
-    virtual void NativeOnInitialized() override;
-    virtual void NativeConstruct() override;
-    virtual void NativePreConstruct() override;
-    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
-protected:
-    // ----------------------------------------------------------------
-    //  Centralized key handling (Enter/Escape)
-    // ----------------------------------------------------------------
-    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+    UPROPERTY(Transient) FFormWidgetMap FormMap;
+    UPROPERTY(Transient) FParsedForm ParsedForm;
 };

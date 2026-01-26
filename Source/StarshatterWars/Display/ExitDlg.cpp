@@ -4,8 +4,6 @@
 #include "Misc/Paths.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-#include "MenuScreen.h"
-
 UExitDlg::UExitDlg()
 {
     SetDialogInputEnabled(true);

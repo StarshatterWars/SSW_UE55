@@ -59,7 +59,7 @@ public:
     SimShot* NetFireSecondary(SimObject* targ, SimSystem* sub, DWORD objid);
     void               SetTarget(SimObject* t, SimSystem* sub);
     void               SelectTarget();
-    bool               CanTarget(DWORD classification) const;
+    bool               CanTarget(uint32 classification) const;
     SimObject* GetTarget()    const { return target; }
     SimSystem* GetSubTarget() const { return subtarget; }
     void               SetFiringOrders(int o);

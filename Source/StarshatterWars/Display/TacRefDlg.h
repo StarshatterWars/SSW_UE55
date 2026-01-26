@@ -20,6 +20,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "MenuScreen.h"
 
 // Minimal Unreal includes requested for headers:
 #include "Math/Vector.h"              // FVector
@@ -36,8 +37,6 @@ class UTextBlock;
 class URichTextBlock;
 class UImage;
 
-// Forward declarations (Starshatter core / legacy, non-UObject):
-class MenuScreen;
 class ShipDesign;
 class WeaponDesign;
 
@@ -113,7 +112,7 @@ protected:
     // ---- External/legacy manager -------------------------------------
 
     // Legacy MenuScreen manager (non-UObject):
-    MenuScreen* manager = nullptr;
+    UMenuScreen* manager = nullptr;
 
 protected:
     // ---- UMG widgets --------------------------------------------------

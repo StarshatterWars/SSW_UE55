@@ -32,6 +32,7 @@
 #include "KeyMap.h"
 #include "HUDView.h"
 #include "HUDSounds.h"
+#include "GameStructs.h"
 
 #include "Game.h"
 
@@ -482,7 +483,7 @@ void NavAI::ThrottleControl()
     }
 
     // Ensure fighter-class airborne craft don't stall:
-    if (ship->IsAirborne() && ship->Class() < Ship::LCA) {
+    if (ship->IsAirborne() && ship->Class() < CLASSIFICATION::LCA) {
         if (ShipSpeed < 250.0) {
             throttle = 100.0;
             brakes = 0.0;

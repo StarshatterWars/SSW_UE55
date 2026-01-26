@@ -330,7 +330,7 @@ void UCmdForceDlg::OnExitClicked()
     if (Stars)
     {
         Mouse::Show(false);
-        Stars->SetGameMode(Starshatter::MENU_MODE);
+        Stars->SetGameMode((int)EMODE::MENU_MODE);
     }
 }
 
@@ -565,35 +565,35 @@ void UCmdForceDlg::OnTransferClicked()
     if (!PlayerPtr)
         return;
 
-    int CmdClass = Ship::FIGHTER;
+    int CmdClass = (int)CLASSIFICATION::FIGHTER;
 
     switch (CurrentGroup->GetType())
     {
     case ECOMBATGROUP_TYPE::WING:
     case ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON:
     case ECOMBATGROUP_TYPE::FIGHTER_SQUADRON:
-        CmdClass = Ship::FIGHTER;
+        CmdClass = (int)CLASSIFICATION::FIGHTER;
         break;
 
     case ECOMBATGROUP_TYPE::ATTACK_SQUADRON:
-        CmdClass = Ship::ATTACK;
+        CmdClass = (int)CLASSIFICATION::ATTACK;
         break;
 
     case ECOMBATGROUP_TYPE::LCA_SQUADRON:
-        CmdClass = Ship::LCA;
+        CmdClass = (int)CLASSIFICATION::LCA;
         break;
 
     case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
-        CmdClass = Ship::DESTROYER;
+        CmdClass = (int)CLASSIFICATION::DESTROYER;
         break;
 
     case ECOMBATGROUP_TYPE::BATTLE_GROUP:
-        CmdClass = Ship::CRUISER;
+        CmdClass = (int)CLASSIFICATION::CRUISER;
         break;
 
     case ECOMBATGROUP_TYPE::CARRIER_GROUP:
     case ECOMBATGROUP_TYPE::FLEET:
-        CmdClass = Ship::CARRIER;
+        CmdClass = (int)CLASSIFICATION::CARRIER;
         break;
     }
 

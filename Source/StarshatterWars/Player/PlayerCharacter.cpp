@@ -615,7 +615,7 @@ PlayerCharacter::MedalDescription(int medal)
 bool
 PlayerCharacter::CanCommand(int ship_class)
 {
-    if (ship_class <= Ship::ATTACK)
+    if (ship_class <= (int)CLASSIFICATION::ATTACK)
         return true;
 
     for (int32 RankIndex = rank_table.size() - 1; RankIndex >= 0; --RankIndex) {

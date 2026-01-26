@@ -1,14 +1,19 @@
-/*  Project Starshatter 4.5
-    Destroyer Studios LLC
-    Copyright © 1997-2004. All Rights Reserved.
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         FirstTimeDlg.h
-    AUTHOR:       John DiCamillo
+    AUTHOR:       Carlos Bott
 
-    UNREAL PORT:
-    - Converted from FormWindow to UBaseScreen (UUserWidget-derived).
-    - Preserves original member names and intent.
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    First-time player setup screen.
+    Unreal UMG version of the legacy FirstTimeDlg FormWindow.
 */
 
 #pragma once
@@ -17,13 +22,16 @@
 #include "BaseScreen.h"
 #include "FirstTimeDlg.generated.h"
 
+// ------------------------------------------------------------
+// Forward declarations (keep header light)
+// ------------------------------------------------------------
 class UButton;
-class UComboBoxString;
 class UEditableTextBox;
+class UComboBoxString;
+class UMenuScreen;
 
-/**
- * Main Menu Dialog Active Window class (UE UBaseScreen port)
- */
+// ------------------------------------------------------------
+
 UCLASS()
 class STARSHATTERWARS_API UFirstTimeDlg : public UBaseScreen
 {
@@ -32,40 +40,46 @@ class STARSHATTERWARS_API UFirstTimeDlg : public UBaseScreen
 public:
     UFirstTimeDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Original API surface (ported):
-    virtual void      RegisterControls();   // bind widget events, cache pointers if needed
-    virtual void      Show();               // make visible / focus
-    virtual void      ExecFrame();          // optional per-frame logic (usually avoid)
+    // --------------------------------------------------------
+    // UUserWidget lifecycle
+    // --------------------------------------------------------
+    virtual void NativeOnInitialized() override;
+    virtual void NativeConstruct() override;
+    virtual void NativeTick(
+        const FGeometry& MyGeometry,
+        float InDeltaTime
+    ) override;
 
-    // Operations:
+    // --------------------------------------------------------
+    // Legacy parity
+    // --------------------------------------------------------
+    void ExecFrame();
+
+    void SetManager(UMenuScreen* InManager);
+
+protected:
+    // --------------------------------------------------------
+    // Button handlers
+    // --------------------------------------------------------
     UFUNCTION()
-    virtual void      OnApply();
+    void OnApplyClicked();
 
 protected:
-    // UUserWidget lifecycle:
-    virtual void      NativeOnInitialized() override;
-    virtual void      NativeConstruct() override;
-    virtual void      NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    // --------------------------------------------------------
+    // Bound UMG widgets
+    // --------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional))
+    UEditableTextBox* NameEdit = nullptr;      // id 200
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UComboBoxString* PlaystyleCombo = nullptr; // id 201
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UComboBoxString* ExperienceCombo = nullptr; // id 202
 
 protected:
-    // Starshatter: MenuScreen* manager;
-    // UE: BaseScreen is the shared base; keep manager generic but strongly typed to your base.
-    UPROPERTY(BlueprintReadWrite, Category = "FirstTimeDlg")
-    UBaseScreen* manager = nullptr;
-
-    // Starshatter: EditBox* edt_name;
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UEditableTextBox* edt_name = nullptr;
-
-    // Starshatter: ComboBox* cmb_playstyle;
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UComboBoxString* cmb_playstyle = nullptr;
-
-    // Starshatter: ComboBox* cmb_experience;
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UComboBoxString* cmb_experience = nullptr;
-
-    // Starshatter: Button* btn_apply;
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UButton* btn_apply = nullptr;
+    // --------------------------------------------------------
+    // Owning menu screen
+    // --------------------------------------------------------
+    UMenuScreen* Manager = nullptr;
 };

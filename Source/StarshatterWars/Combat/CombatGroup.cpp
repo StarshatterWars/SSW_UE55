@@ -441,8 +441,8 @@ CombatGroup::Clone(bool deep)
 					for (int u = 0; u < g->GetUnits().size(); u++) {
 						CombatUnit* unit = g->GetUnits()[u];
 
-						if (unit->Type() >= Ship::FIGHTER ||
-							unit->Type() <= Ship::LCA) {
+						if (unit->Type() >= (int)CLASSIFICATION::FIGHTER ||
+							unit->Type() <= (int)CLASSIFICATION::LCA) {
 							unit->SetCarrier(carrier);
 							unit->SetRegion(carrier->GetRegion());
 						}
@@ -822,8 +822,8 @@ CombatGroup::GetRandomUnit()
 			result = live[index];
 
 			int ship_class = result->GetShipClass();
-			if (ship_class >= Ship::CRUISER &&
-				ship_class <= Ship::FARCASTER)
+			if (ship_class >= (int)CLASSIFICATION::CRUISER &&
+				ship_class <= (int)CLASSIFICATION::FARCASTER)
 				result = 0;
 		}
 	}
@@ -1209,14 +1209,14 @@ else GET_DEF_NUM(id);
 									}
 
 									if (parent_group &&
-										(u->Type() == Ship::FIGHTER ||
-											u->Type() == Ship::ATTACK)) {
+										(u->Type() == (int)CLASSIFICATION::FIGHTER ||
+											u->Type() == (int)CLASSIFICATION::ATTACK)) {
 
 										CombatUnit* carrier = 0;
 										CombatGroup* p = parent_group;
 
 										while (p && !carrier) {
-											if (p->units.size() && p->units[0]->Type() == Ship::CARRIER) {
+											if (p->units.size() && p->units[0]->Type() == (int)CLASSIFICATION::CARRIER) {
 												carrier = p->units[0];
 												u->SetCarrier(carrier);
 												u->SetRegion(carrier->GetRegion());

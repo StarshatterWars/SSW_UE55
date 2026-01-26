@@ -25,9 +25,6 @@
 // Starshatter core:
 #include "AudioConfig.h"
 
-// Manager (your menu controller):
-#include "GameScreen.h"
-
 UAudioDlg::UAudioDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -35,7 +32,7 @@ UAudioDlg::UAudioDlg(const FObjectInitializer& ObjectInitializer)
     SetDialogInputEnabled(true);
 }
 
-void UAudioDlg::SetManager(GameScreen* InManager)
+void UAudioDlg::SetManager(UGameScreen* InManager)
 {
     Manager = InManager;
 }
@@ -363,12 +360,6 @@ void UAudioDlg::OnControls()
 {
     if (Manager) Manager->ShowCtlDlg();
     else UE_LOG(LogTemp, Warning, TEXT("AudioDlg: Manager is null (OnControls)."));
-}
-
-void UAudioDlg::OnMod()
-{
-    if (Manager) Manager->ShowModDlg();
-    else UE_LOG(LogTemp, Warning, TEXT("AudioDlg: Manager is null (OnMod)."));
 }
 
 void UAudioDlg::OnApply()

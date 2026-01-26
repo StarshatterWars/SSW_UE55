@@ -1,31 +1,34 @@
-/*  Project Starshatter 4.5
-    Destroyer Studios LLC
-    Copyright © 1997-2004. All Rights Reserved.
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         LoadDlg.h
-    AUTHOR:       John DiCamillo
+    AUTHOR:       Carlos Bott
 
-    UNREAL PORT:
-    - Converted from FormWindow to UBaseScreen (UUserWidget).
-    - Preserves original member names and intent.
-    - UE-only: UMG widgets are bound via BindWidget (Widget Blueprint).
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    Loading progress dialog (legacy LoadDlg) adapted for Unreal UMG.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-
-// UMG components:
-#include "Components/TextBlock.h"
-#include "Components/ProgressBar.h"
-
 #include "LoadDlg.generated.h"
 
-/**
- * Loading progress dialog box (UE UUserWidget port)
- */
+// Forward declarations (UMG)
+class UTextBlock;
+class UProgressBar;
+
+class Starshatter;
+
+// --------------------------------------------------------------------
+
 UCLASS()
 class STARSHATTERWARS_API ULoadDlg : public UBaseScreen
 {
@@ -34,26 +37,26 @@ class STARSHATTERWARS_API ULoadDlg : public UBaseScreen
 public:
     ULoadDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Original API surface (ported):
-    virtual void RegisterControls();   // cache pointers / bind events if needed
-    virtual void ExecFrame();          // optional per-frame logic
-
-protected:
-    // UUserWidget lifecycle:
-    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-protected:
-    // Starshatter: ActiveWindow* title/activity; Slider* progress;
-    // UE: map to UTextBlock and UProgressBar.
-
-    UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
-    UTextBlock* activity = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
-    UProgressBar* progress = nullptr;
+    // Legacy parity:
+    void RegisterControls();
+    void ExecFrame();
 
 protected:
-    float ProgressValue = 0.0f;
+    // ----------------------------------------------------------------
+    // Bound UMG widgets (legacy ids: 100, 101, 102)
+    // ----------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* TitleText = nullptr;        // id 100
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* ActivityText = nullptr;     // id 101
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UProgressBar* ProgressBar = nullptr;    // id 102 (Slider -> ProgressBar)
+
+private:
+    void SetTextBlock(UTextBlock* Block, const char* AnsiText);
 };

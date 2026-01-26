@@ -303,7 +303,7 @@ void UCmdDlg::OnExitClicked()
     if (Stars)
     {
         Mouse::Show(false);
-        Stars->SetGameMode(Starshatter::MENU_MODE);
+        Stars->SetGameMode((int)EMODE::MENU_MODE);
     }
     else
     {

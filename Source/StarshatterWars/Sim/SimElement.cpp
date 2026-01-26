@@ -126,7 +126,7 @@ int
 SimElement::GetShipClass()
 {
 	if (ships.size())
-		return ships[0]->Class();
+		return (int) ships[0]->Class();
 
 	return 0;
 }

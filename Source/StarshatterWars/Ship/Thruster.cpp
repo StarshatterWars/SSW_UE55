@@ -190,7 +190,7 @@ Thruster::Orient(const Physical* rep)
 
     bool hide_all = false;
 
-    if (!ship || (ship->IsAirborne() && ship->Class() != Ship::LCA))
+    if (!ship || (ship->IsAirborne() && ship->Class() != CLASSIFICATION::LCA))
         hide_all = true;
 
     if (ship->Rep() && ship->Rep()->Hidden())
@@ -376,7 +376,7 @@ Thruster::TransZLimit()
 void
 Thruster::ExecTrans(double x, double y, double z)
 {
-    if (!ship || (ship->IsAirborne() && ship->Class() != Ship::LCA)) {
+    if (!ship || (ship->IsAirborne() && ship->Class() != CLASSIFICATION::LCA)) {
         if (thruster_sound && thruster_sound->IsPlaying())
             thruster_sound->Stop();
 
@@ -395,7 +395,7 @@ Thruster::ExecTrans(double x, double y, double z)
     if (ship->Rep() && ship->Rep()->Hidden())
         show_flare = false;
 
-    if (ship->Class() == Ship::LCA &&
+    if (ship->Class() == CLASSIFICATION::LCA &&
         ship->IsAirborne() &&
         ship->Velocity().Length() < 250 &&
         ship->AltitudeAGL() > ship->Radius() / 2) {

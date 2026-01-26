@@ -153,7 +153,7 @@ Weapon* WeaponGroup::GetSelected() const
 	return weapons[selected];
 }
 
-bool WeaponGroup::CanTarget(DWORD tgt_class) const
+bool WeaponGroup::CanTarget(uint32 tgt_class) const
 {
 	if (selected >= 0 && selected < weapons.size())
 		return weapons[selected]->CanTarget(tgt_class);

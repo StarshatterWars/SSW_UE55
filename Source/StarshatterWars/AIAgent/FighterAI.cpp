@@ -15,8 +15,9 @@
     Fighter (low-level) Artificial Intelligence class
 */
 
-#include "FighterAI.h"
 
+#include "FighterAI.h"
+#include "CoreMinimal.h"
 #include "FighterTacticalAI.h"
 #include "Ship.h"
 #include "SimShot.h"
@@ -42,6 +43,7 @@
 #include "CoreMinimal.h"
 #include "Math/UnrealMathUtility.h"
 #include "Math/Vector.h"
+#include "GameStructs.h"
 
 static const double TIME_TO_DOCK = 30.0;
 
@@ -746,7 +748,7 @@ FighterAI::HelmControl()
         station_keeping = true;
 
         // go into a slow orbit if airborne:
-        if (ship->IsAirborne() && ship->Class() < Ship::LCA) {
+        if (ship->IsAirborne() && ship->Class() < CLASSIFICATION::LCA) {
             accumulator.brake = 0.2;
             accumulator.stop = 0;
 
@@ -785,7 +787,7 @@ FighterAI::HelmControl()
     }
 
     // if not otherwise occupied, pitch to orient with world coords:
-    if (station_keeping && (!ship->IsAirborne() || ship->Class() < Ship::LCA)) {
+    if (station_keeping && (!ship->IsAirborne() || ship->Class() < CLASSIFICATION::LCA)) {
         const FVector heading = ship->Heading();
         const double  pitch_deflection = heading.Y;
 
@@ -828,7 +830,7 @@ FighterAI::ThrottleControl()
     // STATION KEEPING
     else if (station_keeping) {
         // go into a slow orbit if airborne:
-        if (ship->IsAirborne() && ship->Class() < Ship::LCA) {
+        if (ship->IsAirborne() && ship->Class() < CLASSIFICATION::LCA) {
             throttle = 30.0;
             brakes = 0.0;
         }
@@ -839,7 +841,7 @@ FighterAI::ThrottleControl()
     }
 
     // TRY TO STAY AIRBORNE
-    else if (ship->IsAirborne() && ship_speed < 250.0 && ship->Class() < Ship::LCA) {
+    else if (ship->IsAirborne() && ship_speed < 250.0 && ship->Class() < CLASSIFICATION::LCA) {
         throttle = 100.0;
         brakes = 0.0;
 
@@ -1075,7 +1077,7 @@ FighterAI::ThrottleControl()
 
             if (hold) {
                 // go into a slow orbit if airborne:
-                if (ship->IsAirborne() && ship->Class() < Ship::LCA) {
+                if (ship->IsAirborne() && ship->Class() < CLASSIFICATION::LCA) {
                     throttle = 25.0;
                     brakes = 0.0;
                 }
@@ -1115,7 +1117,7 @@ FighterAI::ThrottleControl()
     }
 
     // clamp / floor behavior (preserve original semantics)
-    if (ship->IsAirborne() && throttle < 20.0 && ship->Class() < Ship::LCA)
+    if (ship->IsAirborne() && throttle < 20.0 && ship->Class() < CLASSIFICATION::LCA)
         throttle = 20.0;
     else if (ship->Design()->auto_roll > 1 && throttle < 5.0)
         throttle = 5.0;
@@ -1737,7 +1739,7 @@ FighterAI::FireControl()
         gun_basket *= (3 - ai_level);
 
         if (tgt_ship) {
-            if (!primary->CanTarget(tgt_ship->Class()))
+            if (!primary->CanTarget((uint32)tgt_ship->Class()))
                 use_primary = false;
 
             /*** XXX NEED TO SUBTARGET SYSTEMS IF TARGET IS STARSHIP...
@@ -1779,7 +1781,7 @@ FighterAI::FireControl()
                     s_basket *= 0.33;
 
                 if (tgt_ship) {
-                    if (tgt_ship->Class() == Ship::MINE) {
+                    if (tgt_ship->Class() == CLASSIFICATION::MINE) {
                         extra_time = 10.0;
                         s_range = 0.75;
                     }
@@ -1805,10 +1807,10 @@ FighterAI::FireControl()
                                 // call fox:
                                 int call = RadioMessage::FOX_3;                 // A2A
 
-                                if (secondary->CanTarget(Ship::GROUND_UNITS))   // AGM
+                                if (secondary->CanTarget((int)CLASSIFICATION::GROUND_UNITS))   // AGM
                                     call = RadioMessage::FOX_1;
 
-                                else if (secondary->CanTarget(Ship::DESTROYER)) // ASM
+                                else if (secondary->CanTarget((int)CLASSIFICATION::DESTROYER)) // ASM
                                     call = RadioMessage::FOX_2;
 
                                 RadioTraffic::SendQuickMessage(ship, call);

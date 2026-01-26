@@ -385,25 +385,58 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 
 	if (abrv[0] == 0) {
 		switch (type) {
-		case Ship::DRONE:       strcpy_s(abrv, "DR");     break;
-		case Ship::FIGHTER:     strcpy_s(abrv, "F");      break;
-		case Ship::ATTACK:      strcpy_s(abrv, "F/A");    break;
-		case Ship::LCA:         strcpy_s(abrv, "LCA");    break;
-		case Ship::CORVETTE:    strcpy_s(abrv, "FC");     break;
-		case Ship::COURIER:
-		case Ship::CARGO:
-		case Ship::FREIGHTER:   strcpy_s(abrv, "MV");     break;
-		case Ship::FRIGATE:     strcpy_s(abrv, "FF");     break;
-		case Ship::DESTROYER:   strcpy_s(abrv, "DD");     break;
-		case Ship::CRUISER:     strcpy_s(abrv, "CA");     break;
-		case Ship::BATTLESHIP:  strcpy_s(abrv, "BB");     break;
-		case Ship::CARRIER:     strcpy_s(abrv, "CV");     break;
-		case Ship::DREADNAUGHT: strcpy_s(abrv, "DN");     break;
-		case Ship::MINE:        strcpy_s(abrv, "MINE");   break;
-		case Ship::COMSAT:      strcpy_s(abrv, "COMS");   break;
-		case Ship::DEFSAT:      strcpy_s(abrv, "DEFS");   break;
-		case Ship::SWACS:       strcpy_s(abrv, "SWAC");   break;
-		default:                                        break;
+		case (int) CLASSIFICATION::DRONE:     
+			strcpy_s(abrv, "DR");   
+			break;
+		case (int)CLASSIFICATION::FIGHTER:
+			strcpy_s(abrv, "F");
+			break;
+		case (int)CLASSIFICATION::ATTACK: 
+			strcpy_s(abrv, "F/A");
+			break;
+		case (int)CLASSIFICATION::LCA: 
+			strcpy_s(abrv, "LCA"); 
+			break;
+		case (int)CLASSIFICATION::CORVETTE: 
+			strcpy_s(abrv, "FC");  
+			break;
+		case (int)CLASSIFICATION::COURIER:
+		case (int)CLASSIFICATION::CARGO:
+		case (int)CLASSIFICATION::FREIGHTER:
+			strcpy_s(abrv, "MV"); 
+			break;
+		case (int)CLASSIFICATION::FRIGATE:
+			strcpy_s(abrv, "FF");    
+			break;
+		case (int)CLASSIFICATION::DESTROYER:  
+			strcpy_s(abrv, "DD"); 
+			break;
+		case (int)CLASSIFICATION::CRUISER:
+			strcpy_s(abrv, "CA"); 
+			break;
+		case (int)CLASSIFICATION::BATTLESHIP:
+			strcpy_s(abrv, "BB");
+			break;
+		case (int)CLASSIFICATION::CARRIER:   
+			strcpy_s(abrv, "CV");   
+			break;
+		case (int)CLASSIFICATION::DREADNAUGHT:
+			strcpy_s(abrv, "DN");   
+			break;
+		case (int)CLASSIFICATION::MINE: 
+			strcpy_s(abrv, "MINE"); 
+			break;
+		case (int)CLASSIFICATION::COMSAT: 
+			strcpy_s(abrv, "COMS");
+			break;
+		case (int)CLASSIFICATION::DEFSAT:  
+			strcpy_s(abrv, "DEFS");  
+			break;
+		case (int)CLASSIFICATION::SWACS:  
+			strcpy_s(abrv, "SWAC");
+			break;
+		default:    
+			break;
 		}
 	}
 
@@ -417,7 +450,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		repair_speed = 1.0e-6f;
 
 	if (commit_range <= 0) {
-		if (type <= Ship::LCA)
+		if (type <= (int)CLASSIFICATION::LCA)
 			commit_range = 80.0e3f;
 		else
 			commit_range = 200.0e3f;
@@ -852,7 +885,7 @@ ShipDesign::PreloadCatalog(int index)
 			return;
 
 		int ship_class = ClassForName(entry->type);
-		if (ship_class > Ship::STARSHIPS)
+		if (ship_class > (int) CLASSIFICATION::STARSHIPS)
 			return;
 
 		if (!entry->path.contains("Alliance_"))
@@ -1237,7 +1270,7 @@ ShipDesign::ParseShip(TermDef* def)
 
 		type = ClassForName(typestr);
 
-		if (type <= Ship::LCA) {
+		if (type <= (int)CLASSIFICATION::LCA) {
 			repair_auto   = false;
 			repair_screen = false;
 			wep_screen    = false;

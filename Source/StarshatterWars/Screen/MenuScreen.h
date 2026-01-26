@@ -1,10 +1,6 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         MenuScreen.h
@@ -12,29 +8,25 @@
 
     OVERVIEW
     ========
-    Main Menu Screen (Unreal UUserWidget)
+    UMenuScreen (C++ ONLY)
+    - Unreal replacement for legacy MenuScreen.
+    - Inherits from UBaseScreen.
+    - Owns dialog widgets as standard raw pointers (no TObjectPtr, no Transient UPROPERTY).
+    - Enter/Escape handled by UBaseScreen::NativeOnKeyDown -> HandleAccept/HandleCancel.
 */
 
 #pragma once
 
-// Minimal Unreal includes required by project conventions:
-#include "Math/Vector.h"                // FVector
-#include "Math/Color.h"                 // FColor
-#include "Math/UnrealMathUtility.h"     // Math
-
-// Base screen is a UUserWidget in this port:
+#include "CoreMinimal.h"
 #include "BaseScreen.h"
-
 #include "MenuScreen.generated.h"
 
-// Forward declarations (keep header light):
-class UWidget;
-
+// Dialog forward declares (all should inherit from UBaseScreen)
 class UMenuDlg;
 class UAudioDlg;
-class UVidDlg;
+class UVideoDlg;
 class UOptDlg;
-class UCtlDlg;
+class UControlOptionsDlg;
 class UJoyDlg;
 class UKeyDlg;
 class UExitDlg;
@@ -45,139 +37,159 @@ class UPlayerDlg;
 class UAwardShowDlg;
 
 class UMsnSelectDlg;
-class UCmpSelectDlg;
+class UCampaignSelectDlg;
 
-class UMsnEditDlg;
-class UMsnElemDlg;
-class UMsnEventDlg;
-class UNavDlg;
+class UMissionEditorDlg;
+class UMissionElementDlg;
+class UMissionEventDlg;
+class UMsnEditNavDlg;
 
 class ULoadDlg;
 class UTacRefDlg;
 
 UCLASS()
-class UMenuScreen : public UBaseScreen
+class STARSHATTERWARS_API UMenuScreen : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UMenuScreen(const FObjectInitializer& ObjectInitializer);
 
-    // UUserWidget overrides:
-    virtual void NativeConstruct() override;
-    virtual void NativeDestruct() override;
-    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    // Setup / teardown
+    void Setup();
+    void TearDown();
 
-    // Display state:
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    bool IsShown() const { return isShown; }
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Show();
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Hide();
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
     bool CloseTopmost();
 
-    // Dialog navigation:
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowMenuDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowCmpSelectDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowMsnSelectDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowMsnEditDlg();
+    bool IsShown() const { return bIsShown; }
+    void Show();
+    void Hide();
 
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowFirstTimeDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowPlayerDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowTacRefDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowAwardDlg();
+    // Dialog routing
+    void ShowMenuDlg();
+    void ShowCampaignSelectDlg();
+    void ShowMissionSelectDlg();
+    void ShowMissionEditorDlg();
 
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowAudDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowVidDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowOptDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowCtlDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowJoyDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowKeyDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowExitDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowConfirmDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void HideConfirmDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowLoadDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void HideLoadDlg();
+    void ShowMsnElemDlg();
+    void HideMsnElemDlg();
 
-    // Base screen interface (mission editor support):
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowMsnElemDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void HideMsnElemDlg();
-    UMsnElemDlg* GetMsnElemDlg() const { return msnElemDlg; }
+    void ShowMissionEventDlg();
+    void HideMsnEventDlg();
 
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowMsnEventDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void HideMsnEventDlg();
-    UMsnEventDlg* GetMsnEventDlg() const { return msnEventDlg; }
+    void ShowNavDlg();
+    void HideNavDlg();
+    bool IsNavShown() const;
 
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void ShowNavDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") void HideNavDlg();
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI") bool IsNavShown() const;
+    void ShowFirstTimeDlg();
+    void ShowPlayerDlg();
+    void ShowTacRefDlg();
+    void ShowAwardDlg();
 
-    UNavDlg* GetNavDlg() const { return msnEditNavDlg; }
+    void ShowAudDlg();
+    void ShowVidDlg();
+    void ShowOptDlg();
+    void ShowCtlDlg();
+    void ShowJoyDlg();
+    void ShowKeyDlg();
 
-    // Getters (optional convenience):
-    UMsnSelectDlg* GetMsnSelectDlg() const { return msnSelectDlg; }
+    void ShowExitDlg();
 
-    UMsnEditDlg* GetMsnEditDlg()   const { return msnEditDlg; }
-    ULoadDlg* GetLoadDlg()      const { return loadDlg; }
-    UTacRefDlg* GetTacRefDlg()    const { return tacRefDlg; }
+    void ShowConfirmDlg();
+    void HideConfirmDlg();
 
-    UAudioDlg* GetAudDlg()       const { return auddlg; }
-    UVidDlg* GetVidDlg()       const { return viddlg; }
-    UOptDlg* GetOptDlg()       const { return optdlg; }
-    UCtlDlg* GetCtlDlg()       const { return ctldlg; }
-    UJoyDlg* GetJoyDlg()       const { return joydlg; }
-    UKeyDlg* GetKeyDlg()       const { return keydlg; }
-    UExitDlg* GetExitDlg()      const { return exitdlg; }
-    UFirstTimeDlg* GetFirstTimeDlg() const { return firstdlg; }
-    UPlayerDlg* GetPlayerDlg()    const { return playdlg; }
-    UAwardShowDlg* GetAwardDlg()     const { return awarddlg; }
-    UConfirmDlg* GetConfirmDlg()   const { return confirmdlg; }
+    void ShowLoadDlg();
+    void HideLoadDlg();
 
-    // Apply / cancel option changes (invoked by dialogs):
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
     void ApplyOptions();
-
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
     void CancelOptions();
+
+    // Getters
+    UMissionEditorDlg* GetMsnEditDlg()  const { return MsnEditDlg; }
+    UMissionElementDlg* GetMsnElemDlg()  const { return MsnElemDlg; }
+    UMissionEventDlg* GetMsnEventDlg() const { return MsnEventDlg; }
+    UMsnEditNavDlg* GetNavDlg()      const { return MsnEditNavDlg; }
+
+protected:
+    virtual void NativeConstruct() override;
+
+    // BaseScreen dialog hooks
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
 
 private:
     void HideAll();
 
+    // “Topmost” via viewport Z-order
+    void ShowDialog(UBaseScreen* Dialog, bool bTopMost);
+    void HideDialog(UBaseScreen* Dialog);
+
+    template<typename TDialog>
+    TDialog* EnsureDialog(TSubclassOf<UBaseScreen> ClassToSpawn, TDialog*& Storage);
+
 private:
-    // Dialog widgets (UMG instances / children):
-    UPROPERTY() UMenuDlg* menudlg = nullptr;
+    // Spawn classes (set in defaults or constructor)
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MenuDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ExitDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> AudDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> VidDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> OptDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> CtlDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> JoyDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> KeyDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ConfirmDlgClass;
 
-    UPROPERTY() UExitDlg* exitdlg = nullptr;
-    UPROPERTY() UAudioDlg* auddlg = nullptr;
-    UPROPERTY() UVidDlg* viddlg = nullptr;
-    UPROPERTY() UOptDlg* optdlg = nullptr;
-    UPROPERTY() UCtlDlg* ctldlg = nullptr;
-    UPROPERTY() UJoyDlg* joydlg = nullptr;
-    UPROPERTY() UKeyDlg* keydlg = nullptr;
-    UPROPERTY() UConfirmDlg* confirmdlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> FirstTimeDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> PlayerDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> AwardDlgClass;
 
-    UPROPERTY() UPlayerDlg* playdlg = nullptr;
-    UPROPERTY() UAwardShowDlg* awarddlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnSelectDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> CmpSelectDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ModDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ModInfoDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEditDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnElemDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEventDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEditNavDlgClass;
 
-    UPROPERTY() UMsnSelectDlg* msnSelectDlg = nullptr;
-    UPROPERTY() UMsnEditDlg* msnEditDlg = nullptr;
-    UPROPERTY() UMsnElemDlg* msnElemDlg = nullptr;
-    UPROPERTY() UMsnEventDlg* msnEventDlg = nullptr;
-    UPROPERTY() UNavDlg* msnEditNavDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetClientDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetAddrDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetPassDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetLobbyDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetServerDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetUnitDlgClass;
 
-    UPROPERTY() ULoadDlg* loadDlg = nullptr;
-    UPROPERTY() UTacRefDlg* tacRefDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> LoadDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> TacRefDlgClass;
 
-    UPROPERTY() UCmpSelectDlg* cmpSelectDlg = nullptr;
-    UPROPERTY() UFirstTimeDlg* firstdlg = nullptr;
+private:
+    // Instances (standard raw pointers, NOT UPROPERTY, NOT TObjectPtr)
+    UMenuDlg* MenuDlg = nullptr;
+    UExitDlg* ExitDlg = nullptr;
+    UAudioDlg* AudDlg = nullptr;
+    UVideoDlg* VidDlg = nullptr;
+    UOptDlg* OptDlg = nullptr;
+    UControlOptionsDlg* CtlDlg = nullptr;
+    UJoyDlg* JoyDlg = nullptr;
+    UKeyDlg* KeyDlg = nullptr;
+    UConfirmDlg* ConfirmDlg = nullptr;
 
-    // Track the currently displayed dialog (optional):
-    UPROPERTY() UWidget* current_dlg = nullptr;
+    UFirstTimeDlg* FirstTimeDlg = nullptr;
+    UPlayerDlg* PlayerDlg = nullptr;
+    UAwardShowDlg* AwardDlg = nullptr;
 
-    bool isShown = false;
+    UMsnSelectDlg* MsnSelectDlg = nullptr;
+    UCampaignSelectDlg* CmpSelectDlg = nullptr;
+    UMissionEditorDlg* MsnEditDlg = nullptr;
+    UMissionElementDlg* MsnElemDlg = nullptr;
+    UMissionEventDlg* MsnEventDlg = nullptr;
+    UMsnEditNavDlg* MsnEditNavDlg = nullptr;
+
+    ULoadDlg* LoadDlg = nullptr;
+    UTacRefDlg* TacRefDlg = nullptr;
+
+    UBaseScreen* CurrentDialog = nullptr;
+
+    bool  bIsShown = false;
+    int32 ZCounter = 100;
 };

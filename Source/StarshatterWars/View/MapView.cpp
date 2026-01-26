@@ -47,6 +47,7 @@
 #include "Mouse.h"
 #include "FormatUtil.h"
 #include "Menu.h"
+#include "GameStructs.h"
 
 #include "Math/UnrealMathUtility.h"
 
@@ -2030,7 +2031,7 @@ MapView::DrawRegion()
 				SimContact* contact = c_iter.value();
 				Ship* s = contact->GetShip();
 
-				if (s && (s->Class() & ship_filter) && !IsClutter(*s) && s != ship)
+				if (s && ((int)s->Class() & ship_filter) && !IsClutter(*s) && s != ship)
 					DrawShip(*s, (s == current_ship), rep);
 			}
 
@@ -2853,7 +2854,7 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 				break;
 		}
 
-		if (unit && unit->GetRegion() == rgn->Name() && unit->Type() > Ship::LCA && unit->Count() > 0) {
+		if (unit && unit->GetRegion() == rgn->Name() && unit->Type() > (int) CLASSIFICATION::LCA && unit->Count() > 0) {
 			const FVector uloc = unit->Location();
 
 			const double sx = (uloc.X + rlx) * scale;

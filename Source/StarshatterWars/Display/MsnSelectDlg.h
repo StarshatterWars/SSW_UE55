@@ -127,7 +127,7 @@ protected:
 
     // Model pointers:
     Starshatter* stars = nullptr;
-    Campaign* campaign = nullptr;)
+    Campaign* campaign = nullptr;
     int32 selected_mission = -1;
 
     int32 mission_id = 0;

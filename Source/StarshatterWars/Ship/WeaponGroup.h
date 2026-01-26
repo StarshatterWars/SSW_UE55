@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Types.h"
 #include "Weapon.h"
 #include "Text.h"
@@ -84,7 +85,7 @@ public:
 	int               Status()                   const;
 
 	WeaponDesign*	  GetDesign()                const;
-	bool              CanTarget(DWORD tgt_class) const;
+	bool              CanTarget(uint32 tgt_class) const;
 
 	void              PowerOn();
 	void              PowerOff();

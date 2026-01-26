@@ -35,6 +35,7 @@
 #include "StarSystem.h"
 #include "Random.h"
 #include "PlayerCharacter.h"
+#include "GameStructs.h"
 
 #include "Logging/LogMacros.h"
 
@@ -376,7 +377,7 @@ CampaignSituationReport::GetThreatInfo()
 		while (++elem) {
 			if (elem->GetIFF() > 0 && elem->GetIFF() != iff && elem->IntelLevel() > Intel::SECRET) {
 				if (elem->IsGroundUnit()) {
-					if (!elem->GetDesign() || elem->GetDesign()->type != Ship::SAM)
+					if (!elem->GetDesign() || elem->GetDesign()->type != (int)CLASSIFICATION::SAM)
 						continue;
 
 					if (elem->Region() != rgn0 && elem->Region() != rgn1)
@@ -391,7 +392,7 @@ CampaignSituationReport::GetThreatInfo()
 					mission_role == Mission::TRANSPORT)
 					continue;
 
-				if (elem->GetDesign()->type >= Ship::MINE && elem->GetDesign()->type <= Ship::DEFSAT)
+				if (elem->GetDesign()->type >= (int)CLASSIFICATION::MINE && elem->GetDesign()->type <= (int)CLASSIFICATION::DEFSAT)
 					enemy_sites += elem->Count();
 
 				else if (elem->IsDropship())

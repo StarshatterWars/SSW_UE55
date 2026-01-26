@@ -1116,7 +1116,7 @@ HUDView::DrawContact(SimContact* contact, int index)
 				char code = *(Game::GetText("HUDView.symbol.fighter").data());
 
 				if (c_ship) {
-					if (c_ship->Class() > Ship::LCA)
+					if (c_ship->Class() > CLASSIFICATION::LCA)
 						code = *(Game::GetText("HUDView.symbol.starship").data());
 				}
 				else if (c_shot) {
@@ -3800,7 +3800,7 @@ HUDView::DrawOrbitalBody(OrbitalBody* body)
 // +--------------------------------------------------------------------+
 
 void
-HUDView::ExecFrame()
+HUDView::ExecFrame(float DeltaTime)
 {
 	// update the position of HUD elements that are
 	// part of the 3D scene (like fpm and lcos sprites)

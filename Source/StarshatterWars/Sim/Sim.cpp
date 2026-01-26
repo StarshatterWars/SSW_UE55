@@ -71,6 +71,7 @@
 #include "Random.h"
 #include "Video.h"
 #include "Graphic.h"
+#include "GameStructs.h"
 
 // Minimal Unreal includes (logging + FVector):
 #include "Logging/LogMacros.h"
@@ -909,13 +910,13 @@ Sim::CreateElements()
 							ShieldPtr->SetPowerLevel(50);
 						}
 
-						if (NewShip->Class() > Ship::FRIGATE) {
+						if (NewShip->Class() > CLASSIFICATION::FRIGATE) {
 							ListIter<WeaponGroup> WeaponGroupIter = NewShip->Weapons();
 							while (++WeaponGroupIter) {
 								WeaponGroup* WeaponGroupPtr = WeaponGroupIter.value();
 
 								// anti-air weapon?
-								if (WeaponGroupPtr->GetDesign()->target_type & Ship::DRONE) {
+								if (WeaponGroupPtr->GetDesign()->target_type & (int) CLASSIFICATION::DRONE) {
 									WeaponGroupPtr->SetFiringOrders(Weapon::POINT_DEFENSE);
 								}
 								else {
@@ -924,13 +925,13 @@ Sim::CreateElements()
 							}
 						}
 
-						if (NewShip->Class() > Ship::DRONE && NewShip->Class() < Ship::STATION) {
+						if (NewShip->Class() > CLASSIFICATION::DRONE && NewShip->Class() < CLASSIFICATION::STATION) {
 							ShipStats* Stats = ShipStats::Find(ShipName);
 							if (Stats) {
 								char DesignName[64];
 								sprintf_s(DesignName, "%s %s", NewShip->Abbreviation(), NewShip->Design()->display_name);
 								Stats->SetType(DesignName);
-								Stats->SetShipClass(NewShip->Class());
+								Stats->SetShipClass((int) NewShip->Class());
 								Stats->SetRole(Mission::RoleName(MissionElem->MissionRole()));
 								Stats->SetIFF(NewShip->GetIFF());
 								Stats->SetRegion(MissionElem->Region());
@@ -1576,7 +1577,7 @@ Sim::ExecFrame(double DeltaSeconds)
 	// setup music
 	if (!MusicManager::IsNoMusic()) {
 		Starshatter* Stars = Starshatter::GetInstance();
-		if (Stars && Stars->GetGameMode() == Starshatter::PLAY_MODE) {
+		if (Stars && Stars->GetGameMode() == (int) EMODE::PLAY_MODE) {
 			Ship* PlayerShip = GetPlayerShip();
 			if (PlayerShip) {
 				const int32 Phase = PlayerShip->GetFlightPhase();

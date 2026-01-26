@@ -323,9 +323,9 @@ void UAwardDlg::OnCloseClicked()
 
     Campaign* Cmpn = Campaign::GetCampaign();
     if (Cmpn && Cmpn->GetCampaignId() < Campaign::SINGLE_MISSIONS)
-        Stars->SetGameMode(Starshatter::CMPN_MODE);
+        Stars->SetGameMode((int)EMODE::CMPN_MODE);
     else
-        Stars->SetGameMode(Starshatter::MENU_MODE);
+        Stars->SetGameMode((int)EMODE::MENU_MODE);
 
     // Close/hide widget:
     SetVisibility(ESlateVisibility::Hidden);

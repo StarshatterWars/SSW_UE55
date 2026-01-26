@@ -31,6 +31,7 @@
 
 #include "Game.h"
 #include "Physical.h"
+#include "GameStructs.h"
 
 #include "CoreMinimal.h" // UE_LOG
 
@@ -199,7 +200,7 @@ GroundAI::ExecFrame(double secs)
         while (++iter) {
             WeaponGroup* group = (WeaponGroup*)iter.value();
 
-            if (group->NumWeapons() > 1 && group->CanTarget(Ship::DROPSHIPS))
+            if (group->NumWeapons() > 1 && group->CanTarget((int)CLASSIFICATION::DROPSHIPS))
                 group->SetFiringOrders(Weapon::POINT_DEFENSE);
             else
                 group->SetFiringOrders(Weapon::AUTO);

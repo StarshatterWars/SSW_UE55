@@ -230,9 +230,9 @@ void FighterTacticalAI::SelectTargetOpportunity()
 	if (roe < FLEXIBLE)
 		TargetDist = 0.5 * ship->Design()->commit_range;
 
-	int ClassLimit = Ship::LCA;
-	if (ship->Class() == Ship::ATTACK)
-		ClassLimit = Ship::DESTROYER;
+	int ClassLimit = (int)CLASSIFICATION::LCA;
+	if (ship->Class() == CLASSIFICATION::ATTACK)
+		ClassLimit = (int)CLASSIFICATION::DESTROYER;
 
 	ListIter<SimContact> ContactIter = ship->ContactList();
 	while (++ContactIter) {
@@ -252,7 +252,7 @@ void FighterTacticalAI::SelectTargetOpportunity()
 			continue;
 
 		// reasonable target?
-		if (ContactShip && ContactShip->Class() <= ClassLimit && !ContactShip->InTransition()) {
+		if (ContactShip && (int) ContactShip->Class() <= ClassLimit && !ContactShip->InTransition()) {
 
 			if (!bRogue) {
 				SimObject* TheirTarget = ContactShip->GetTarget();
@@ -332,7 +332,7 @@ FighterTacticalAI::ListSecondariesForTarget(Ship* tgt, List<WeaponGroup>& weps)
 		while (++iter) {
 			WeaponGroup* w = iter.value();
 
-			if (w->Ammo() && w->CanTarget(tgt->Class()))
+			if (w->Ammo() && w->CanTarget((uint32) tgt->Class()))
 				weps.append(w);
 		}
 	}
@@ -409,7 +409,7 @@ FighterTacticalAI::SelectSecondaryForTarget(Ship* tgt)
 			// just drop it:
 
 			Weapon* primary = ship->GetPrimary();
-			if (!primary || !primary->CanTarget(tgt->Class())) {
+			if (!primary || !primary->CanTarget((uint32)tgt->Class())) {
 				ship_ai->DropTarget(3);
 				ship->DropTarget();
 			}
@@ -552,7 +552,7 @@ FighterTacticalAI::IsStrikeComplete(Instruction* instr)
 		while (++g_iter) {
 			WeaponGroup* w = g_iter.value();
 
-			if (w->Ammo() && w->CanTarget(target->Class())) {
+			if (w->Ammo() && w->CanTarget((uint32)target->Class())) {
 				ListIter<Weapon> w_iter = w->GetWeapons();
 
 				while (++w_iter) {

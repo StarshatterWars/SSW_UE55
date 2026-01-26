@@ -1,286 +1,276 @@
 /*  Project Starshatter Wars
-	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
-	SUBSYSTEM:    Game
-	FILE:         MenuDlg.cpp
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    Stars.exe
+    FILE:         MenuDlg.cpp
+    AUTHOR:       Carlos Bott
 
-	OVERVIEW
-	========
-	Main Menu Screen
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    Main Menu dialog (legacy MenuDlg) implementation for Unreal UMG.
 */
 
-
 #include "MenuDlg.h"
-#include "SSWGameInstance.h"
+
+// Unreal
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+
+#include "Starshatter.h"
+#include "Campaign.h"
+#include "MenuScreen.h"
 #include "Game.h"
 
-void UMenuDlg::NativePreConstruct()
+DEFINE_LOG_CATEGORY_STATIC(LogMenuDlg, Log, All);
+
+// Provided by your project somewhere (legacy code used extern):
+extern const char* versionInfo;
+
+// --------------------------------------------------------------------
+
+UMenuDlg::UMenuDlg(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-	Super::NativePreConstruct();
 }
 
-void UMenuDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-	Super::NativeTick(MyGeometry, InDeltaTime);
-}
-
-void UMenuDlg::EnableMenuButtons(bool bEnabled)
-{
-	btn_mission->SetIsEnabled(bEnabled);
-	btn_multi->SetIsEnabled(bEnabled);
-	btn_tac->SetIsEnabled(bEnabled);
-	btn_player->SetIsEnabled(bEnabled);
-}
-
-void UMenuDlg::EnableStartMenuButton(bool bEnabled)
-{
-	btn_start->SetIsEnabled(bEnabled);
-}
+// --------------------------------------------------------------------
 
 void UMenuDlg::NativeConstruct()
 {
-	Super::NativeConstruct();
+    Super::NativeConstruct();
 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
+    Stars = Starshatter::GetInstance();
+    CampaignPtr = Campaign::GetCampaign();
 
-	if (btn_start) {
-		btn_start->OnClicked.AddDynamic(this, &UMenuDlg::OnStartButtonClicked);
-		btn_start->OnHovered.AddDynamic(this, &UMenuDlg::OnStartButtonHovered);
-		btn_start->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_start->SetIsEnabled(false);
-	}
-	if (btn_campaign) {
-		btn_campaign->OnClicked.AddDynamic(this, &UMenuDlg::OnCampaignButtonClicked);
-		btn_campaign->OnHovered.AddDynamic(this, &UMenuDlg::OnCampaignButtonHovered);
-		btn_campaign->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		
-		if (UGameplayStatics::DoesSaveGameExist(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot)) {
-			btn_campaign->SetIsEnabled(true);
-		}
-		else
-		{
-			btn_campaign->SetIsEnabled(false);
-		}
-	}
-	if (btn_mission) {
-		btn_mission->OnClicked.AddDynamic(this, &UMenuDlg::OnMissionButtonClicked);
-		btn_mission->OnHovered.AddDynamic(this, &UMenuDlg::OnMissionButtonHovered);
-		btn_mission->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_mission->SetIsEnabled(false);
-	}
-	if (btn_player) {
-		btn_player->OnClicked.AddDynamic(this, &UMenuDlg::OnPlayerButtonClicked);
-		btn_player->OnHovered.AddDynamic(this, &UMenuDlg::OnPlayerButtonHovered);
-		btn_player->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_player->SetIsEnabled(false);
-	}
-	if (btn_multi) {
-		btn_multi->OnClicked.AddDynamic(this, &UMenuDlg::OnMultiplayerButtonClicked);
-		btn_multi->OnHovered.AddDynamic(this, &UMenuDlg::OnMultiplayerButtonHovered);
-		btn_multi->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_multi->SetIsEnabled(false);
-	}
-	if (btn_tac) {
-		btn_tac->OnClicked.AddDynamic(this, &UMenuDlg::OnTacticalButtonClicked);
-		btn_tac->OnHovered.AddDynamic(this, &UMenuDlg::OnTacticalButtonHovered);
-		btn_tac->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_tac->SetIsEnabled(true);
-	}
-	if (btn_video) {
-		btn_video->OnClicked.AddDynamic(this, &UMenuDlg::OnVideoButtonClicked);
-		btn_video->SetIsEnabled(true);
-	}
-	if (btn_options) {
-		btn_options->OnClicked.AddDynamic(this, &UMenuDlg::OnOptionsButtonClicked);
-		btn_options->OnHovered.AddDynamic(this, &UMenuDlg::OnOptionsButtonHovered);
-		btn_options->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_options->SetIsEnabled(true);
-	}
-	if (btn_controls) {
-		btn_controls->OnClicked.AddDynamic(this, &UMenuDlg::OnControlsButtonClicked);
-		btn_controls->SetIsEnabled(true);
-	}
-	if (btn_quit) {
-		btn_quit->OnClicked.AddDynamic(this, &UMenuDlg::OnQuitButtonClicked);
-		btn_quit->OnHovered.AddDynamic(this, &UMenuDlg::OnQuitButtonHovered);
-		btn_quit->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonUnHovered);
-		btn_quit->SetIsEnabled(true);
-	}
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString(""));
-
-	if(GameVersion)
-		GameVersion->SetText(FText::FromString(Game::GetGameVersion()));
-
-	if (SSWInstance->PlayerInfo.Campaign >= 0) {
-		EnableMenuButtons(true);
-		EnableStartMenuButton(true);
-	} else {
-		EnableMenuButtons(false);
-		EnableStartMenuButton(false);
-	}
+    RegisterControls();
+    Show();
 }
 
-void UMenuDlg::OnStartButtonClicked()
+// --------------------------------------------------------------------
+
+void UMenuDlg::RegisterControls()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	if (!SSWInstance)
-		return;
+    // Click bindings:
+    if (BtnStart)    BtnStart->OnClicked.AddDynamic(this, &UMenuDlg::OnStart);
+    if (BtnCampaign) BtnCampaign->OnClicked.AddDynamic(this, &UMenuDlg::OnCampaign);
+    if (BtnMission)  BtnMission->OnClicked.AddDynamic(this, &UMenuDlg::OnMission);
+    if (BtnPlayer)   BtnPlayer->OnClicked.AddDynamic(this, &UMenuDlg::OnPlayer);
+    if (BtnMulti)    BtnMulti->OnClicked.AddDynamic(this, &UMenuDlg::OnMultiplayer);
 
-	SSWInstance->PlayAcceptSound(this);
+    if (BtnVideo)    BtnVideo->OnClicked.AddDynamic(this, &UMenuDlg::OnVideo);
+    if (BtnOptions)  BtnOptions->OnClicked.AddDynamic(this, &UMenuDlg::OnOptions);
+    if (BtnControls) BtnControls->OnClicked.AddDynamic(this, &UMenuDlg::OnControls);
 
-	// Ensure SelectedCampaignIndex/RowName/DisplayName + CampaignSave are valid
-	SSWInstance->EnsureCampaignSaveLoaded();
+    if (BtnMod)      BtnMod->OnClicked.AddDynamic(this, &UMenuDlg::OnMod);
+    if (BtnTac)      BtnTac->OnClicked.AddDynamic(this, &UMenuDlg::OnTacReference);
+    if (BtnQuit)     BtnQuit->OnClicked.AddDynamic(this, &UMenuDlg::OnQuit);
 
-	// Now safe to go to Ops
-	SSWInstance->LoadOperationsScreen();
+    // Hover “alt text” (UMG doesn't have alt strings by default, so we store them):
+    AltStart = TEXT("Start a new game, or resume your current game");
+    AltCampaign = TEXT("Start a new dynamic campaign, or load a saved game");
+    AltMission = TEXT("Play or create a scripted mission exercise");
+    AltMulti = TEXT("Start or join a multiplayer scenario");
+    AltPlayer = TEXT("Manage your logbook and player preferences");
+    AltOptions = TEXT("Audio, Video, Gameplay, Control, and Mod configuration options");
+    AltTac = TEXT("View ship and weapon stats and mission roles");
+    AltQuit = TEXT("Exit Starshatter and return to Windows");
+
+    // Hover bindings (OnHovered/OnUnhovered):
+    if (BtnStart)
+    {
+        BtnStart->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Start);
+        BtnStart->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Start);
+    }
+
+    if (BtnCampaign)
+    {
+        BtnCampaign->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Campaign);
+        BtnCampaign->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Campaign);
+    }
+
+    if (BtnMission)
+    {
+        BtnMission->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Mission);
+        BtnMission->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Mission);
+    }
+
+    if (BtnPlayer)
+    {
+        BtnPlayer->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Player);
+        BtnPlayer->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Player);
+    }
+
+    if (BtnMulti)
+    {
+        BtnMulti->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Multi);
+        BtnMulti->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Multi);
+    }
+
+    if (BtnOptions)
+    {
+        BtnOptions->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Options);
+        BtnOptions->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Options);
+    }
+
+    if (BtnTac)
+    {
+        BtnTac->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Tac);
+        BtnTac->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Tac);
+    }
+
+    if (BtnQuit)
+    {
+        BtnQuit->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Quit);
+        BtnQuit->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Quit);
+    }
+
+    // Version text:
+    if (VersionText)
+    {
+        const char* Ver = versionInfo ? versionInfo : "";
+        VersionText->SetText(FText::FromString(UTF8_TO_TCHAR(Ver)));
+    }
 }
 
-void UMenuDlg::OnStartButtonHovered()
+// --------------------------------------------------------------------
+
+void UMenuDlg::Show()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
+    // Legacy behavior: disable multiplayer when UseFileSystem() is true:
+    if (BtnMulti && Starshatter::UseFileSystem())
+    {
+        BtnMulti->SetIsEnabled(false);
+    }
 
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Start a new game, or resume your current game"));
+    ClearDescription();
 }
 
-void UMenuDlg::OnCampaignButtonClicked()
+// --------------------------------------------------------------------
+
+void UMenuDlg::ExecFrame()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
-	SSWInstance->ShowCampaignScreen();
+    // Legacy was empty.
 }
 
-void UMenuDlg::OnCampaignButtonHovered()
+// --------------------------------------------------------------------
+// Click handlers
+// --------------------------------------------------------------------
+
+void UMenuDlg::OnStart()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Start a new dynamic campaign, or load a saved game"));
+    ClearDescription();
+    if (Stars)
+        Stars->StartOrResumeGame();
 }
 
-void UMenuDlg::OnMissionButtonClicked()
+void UMenuDlg::OnCampaign()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
+    ClearDescription();
+    if (Manager)
+        Manager->ShowCmpSelectDlg();
 }
 
-void UMenuDlg::OnMissionButtonHovered()
+void UMenuDlg::OnMission()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Play or create a scripted mission exercise"));
+    ClearDescription();
+    if (Manager)
+        Manager->ShowMsnSelectDlg();
 }
 
-void UMenuDlg::OnPlayerButtonClicked()
+void UMenuDlg::OnPlayer()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
+    ClearDescription();
+    if (Manager)
+        Manager->ShowPlayerDlg();
 }
 
-void UMenuDlg::OnPlayerButtonHovered()
+void UMenuDlg::OnVideo()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Manage your logbook and player preferences"));
+    ClearDescription();
+    if (Manager)
+        Manager->ShowVidDlg();
 }
 
-void UMenuDlg::OnMultiplayerButtonClicked()
+void UMenuDlg::OnOptions()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
+    ClearDescription();
+    if (Manager)
+        Manager->ShowOptDlg();
 }
 
-void UMenuDlg::OnMultiplayerButtonHovered()
+void UMenuDlg::OnControls()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Start or join a multiplayer scenario"));
+    ClearDescription();
+    if (Manager)
+        Manager->ShowCtlDlg();
 }
 
-void UMenuDlg::OnTacticalButtonClicked()
+void UMenuDlg::OnMod()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
+    ClearDescription();
+    if (Manager)
+        Manager->ShowModDlg();
 }
 
-void UMenuDlg::OnTacticalButtonHovered()
+void UMenuDlg::OnTacReference()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("View ship and weapon stats and mission roles"));
+    ClearDescription();
+    if (Stars)
+        Stars->OpenTacticalReference();
 }
 
-void UMenuDlg::OnVideoButtonClicked()
+void UMenuDlg::OnQuit()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
+    ClearDescription();
+    if (Manager)
+        Manager->ShowExitDlg();
 }
 
-void UMenuDlg::OnOptionsButtonClicked()
+// --------------------------------------------------------------------
+// Hover handlers (Enter/Exit)
+// --------------------------------------------------------------------
+
+void UMenuDlg::OnButtonEnter_Start() { SetDescription(AltStart); }
+void UMenuDlg::OnButtonExit_Start() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Campaign() { SetDescription(AltCampaign); }
+void UMenuDlg::OnButtonExit_Campaign() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Mission() { SetDescription(AltMission); }
+void UMenuDlg::OnButtonExit_Mission() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Player() { SetDescription(AltPlayer); }
+void UMenuDlg::OnButtonExit_Player() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Multi() { SetDescription(AltMulti); }
+void UMenuDlg::OnButtonExit_Multi() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Options() { SetDescription(AltOptions); }
+void UMenuDlg::OnButtonExit_Options() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Tac() { SetDescription(AltTac); }
+void UMenuDlg::OnButtonExit_Tac() { ClearDescription(); }
+
+void UMenuDlg::OnButtonEnter_Quit() { SetDescription(AltQuit); }
+void UMenuDlg::OnButtonExit_Quit() { ClearDescription(); }
+
+// --------------------------------------------------------------------
+// Helpers
+// --------------------------------------------------------------------
+
+void UMenuDlg::ClearDescription()
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
+    if (DescriptionText)
+        DescriptionText->SetText(FText::GetEmpty());
 }
 
-void UMenuDlg::OnOptionsButtonHovered()
+void UMenuDlg::SetDescription(const FString& Text)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Audio, Video, Gameplay, Control, and Mod configuration options"));
+    if (DescriptionText)
+        DescriptionText->SetText(FText::FromString(Text));
 }
-
-void UMenuDlg::OnControlsButtonClicked()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
-}
-
-void UMenuDlg::OnQuitButtonClicked()
-{ 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayAcceptSound(this);
-	SSWInstance->ToggleQuitDlg(true);
-}
-
-void UMenuDlg::OnQuitButtonHovered()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->PlayHoverSound(this);
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString("Exit Starshatter and return to Windows"));
-}
-
-void UMenuDlg::OnButtonUnHovered()
-{
-	if (MenuTooltip)
-		MenuTooltip->SetText(FText::FromString(""));
-}
-
-void UMenuDlg::ShowCampaignScreen()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ShowCampaignScreen();
-}
-
-
-
-
-
-
-

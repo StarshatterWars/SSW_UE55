@@ -108,6 +108,9 @@ public:
 
 	static Video*	  GetVideo();
 
+	static int        GammaLevel();
+	static void       SetGammaLevel(int g);
+
 	static const char* GetPanicMessage() { return panicbuf; }
 
 	virtual bool      GameLoop();

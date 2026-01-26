@@ -91,6 +91,7 @@
 
 #include "Parser.h"
 #include "Reader.h"
+#include "GameStructs.h"
 
 
 // ---------------------------------------------------------------------
@@ -756,7 +757,7 @@ Ship::SetupAgility()
 		}
 
 		else {
-			if (Class() != LCA)
+			if (Class() != CLASSIFICATION::LCA)
 				yaw_air_factor = 0.3f;
 
 			double rho = GetDensity();
@@ -1158,7 +1159,7 @@ Ship::ClassForName(const char* name)
 	return ShipDesign::ClassForName(name);
 }
 
-Ship::CLASSIFICATION
+CLASSIFICATION
 Ship::Class() const
 {
 	return (CLASSIFICATION)design->type;
@@ -1167,25 +1168,25 @@ Ship::Class() const
 bool
 Ship::IsGroundUnit() const
 {
-	return (design->type & GROUND_UNITS) ? true : false;
+	return (design->type & (int) CLASSIFICATION::GROUND_UNITS) ? true : false;
 }
 
 bool
 Ship::IsStarship() const
 {
-	return (design->type & STARSHIPS) ? true : false;
+	return (design->type & (int)CLASSIFICATION::STARSHIPS) ? true : false;
 }
 
 bool
 Ship::IsDropship() const
 {
-	return (design->type & DROPSHIPS) ? true : false;
+	return (design->type & (int)CLASSIFICATION::DROPSHIPS) ? true : false;
 }
 
 bool
 Ship::IsStatic() const
 {
-	return design->type >= STATION;
+	return design->type >= (int)CLASSIFICATION::STATION;
 }
 
 bool
@@ -1683,7 +1684,7 @@ Ship::HitBy(SimShot* Shot, FVector& Impact)
 
 				EffectiveDamage *= GetFriendlyFireLevel();
 
-				if (Class() > DRONE && OwnerShip->Class() > DRONE) {
+				if (Class() > CLASSIFICATION::DRONE && OwnerShip->Class() > CLASSIFICATION::DRONE) {
 					if (OwnerShip->IsRogue() && !WasRogue) {
 						RadioMessage* Warn = new RadioMessage(OwnerShip, this, RadioMessage::DECLARE_ROGUE);
 						RadioTraffic::Transmit(Warn);
@@ -2824,7 +2825,7 @@ Ship::ExecSystems(double seconds)
 		// keep going!
 		while (secondary != old_secondary) {
 			Weapon* missile = GetSecondary();
-			if (missile && missile->CanTarget(Ship::GROUND_UNITS))
+			if (missile && missile->CanTarget((int)CLASSIFICATION::GROUND_UNITS))
 				CycleSecondary();
 
 			else if (weapons[secondary]->Ammo() < 1)
@@ -2879,7 +2880,7 @@ Ship::AeroFrame(double seconds)
 {
 	const float g_save = g_accel;
 
-	if (Class() == LCA) {
+	if (Class() == CLASSIFICATION::LCA) {
 		lat_thrust = true;
 		SetGravity(0.0f);
 	}
@@ -2971,7 +2972,7 @@ Ship::LinearFrame(double seconds)
 {
 	Physical::LinearFrame(seconds);
 
-	if (!IsAirborne() || Class() != LCA)
+	if (!IsAirborne() || Class() != CLASSIFICATION::LCA)
 		return;
 
 	// damp lateral movement in atmosphere:
@@ -4012,7 +4013,7 @@ Ship::CycleSecondary()
 	// automatically switch sensors to appropriate mode:
 	if (IsAirborne()) {
 		Weapon* missile = GetSecondary();
-		if (missile && missile->CanTarget(Ship::GROUND_UNITS))
+		if (missile && missile->CanTarget((int)CLASSIFICATION::GROUND_UNITS))
 			SetSensorMode(Sensor::GM);
 		else if (sensor && sensor->GetMode() == Sensor::GM)
 			SetSensorMode(Sensor::STD);
@@ -5366,38 +5367,91 @@ Ship::Value(int type)
 	int value = 0;
 
 	switch (type) {
-	case DRONE:       value = 10; break;
-	case FIGHTER:     value = 20; break;
-	case ATTACK:      value = 40; break;
-	case LCA:         value = 50; break;
+	case (int)CLASSIFICATION::DRONE: 
+		value = 10;
+		break;
+	case (int)CLASSIFICATION::FIGHTER:
+		value = 20;
+		break;
+	case (int)CLASSIFICATION::ATTACK: 
+		value = 40;
+		break;
+	case (int)CLASSIFICATION::LCA:
+		value = 50; break;
 
-	case COURIER:     value = 100; break;
-	case CARGO:       value = 100; break;
-	case CORVETTE:    value = 100; break;
-	case FREIGHTER:   value = 250; break;
-	case FRIGATE:     value = 200; break;
-	case DESTROYER:   value = 500; break;
-	case CRUISER:     value = 800; break;
-	case BATTLESHIP:  value = 1000; break;
-	case CARRIER:     value = 1500; break;
-	case SWACS:       value = 500; break;
-	case DREADNAUGHT: value = 1500; break;
+	case (int)CLASSIFICATION::COURIER:  
+		value = 100; 
+		break;
+	case (int)CLASSIFICATION::CARGO:   
+		value = 100;
+		break;
+	case (int)CLASSIFICATION::CORVETTE:   
+		value = 100;
+		break;
+	case (int)CLASSIFICATION::FREIGHTER:   
+		value = 250;
+		break;
+	case (int)CLASSIFICATION::FRIGATE:
+		value = 200; 
+		break;
+	case (int)CLASSIFICATION::DESTROYER:   
+		value = 500;
+		break;
+	case (int)CLASSIFICATION::CRUISER: 
+		value = 800;
+		break;
+	case (int)CLASSIFICATION::BATTLESHIP: 
+		value = 1000;
+		break;
+	case (int)CLASSIFICATION::CARRIER: 
+		value = 1500; 
+		break;
+	case (int)CLASSIFICATION::SWACS:
+		value = 500;
+		break;
+	case (int)CLASSIFICATION::DREADNAUGHT: 
+		value = 1500;
+		break;
 
-	case STATION:     value = 2500; break;
-	case FARCASTER:   value = 5000; break;
+	case (int)CLASSIFICATION::STATION:
+		value = 2500;
+		break;
+	case (int)CLASSIFICATION::FARCASTER:  
+		value = 5000;
+		break;
 
-	case MINE:        value = 20; break;
-	case COMSAT:      value = 200; break;
-	case DEFSAT:      value = 300; break;
+	case (int)CLASSIFICATION::MINE:        
+		value = 20;
+		break;
+	case (int)CLASSIFICATION::COMSAT: 
+		value = 200;
+		break;
+	case (int)CLASSIFICATION::DEFSAT:    
+		value = 300;
+		break;
 
-	case BUILDING:    value = 100; break;
-	case FACTORY:     value = 250; break;
-	case SAM:         value = 100; break;
-	case EWR:         value = 200; break;
-	case C3I:         value = 500; break;
-	case STARBASE:    value = 2000; break;
+	case (int)CLASSIFICATION::BUILDING:  
+		value = 100;
+		break;
+	case (int)CLASSIFICATION::FACTORY:    
+		value = 250;
+		break;
+	case (int)CLASSIFICATION::SAM:    
+		value = 100; 
+		break;
+	case (int)CLASSIFICATION::EWR:       
+		value = 200;
+		break;
+	case (int)CLASSIFICATION::C3I:   
+		value = 500; 
+		break;
+	case (int)CLASSIFICATION::STARBASE:  
+		value = 2000;
+		break;
 
-	default:          value = 100; break;
+	default: 
+		value = 100; 
+		break;
 	}
 
 	return value;

@@ -20,7 +20,9 @@ public class StarshatterWars : ModuleRules
             "SlateCore",
             "UMG",
             "MediaAssets",
-            "CommonUI"
+            "CommonUI",
+             "Slate",
+             "SlateCore"
         });
 
         // Since you want to include from Systems/ and Planners/ freely:

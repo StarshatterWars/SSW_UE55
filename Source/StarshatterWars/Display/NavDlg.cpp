@@ -31,7 +31,7 @@
 
 // Starshatter (ported core/gameplay):
 #include "MapView.h"
-#include "MsnElemDlg.h"
+#include "MissionElementDlg.h"
 #include "BaseScreen.h"
 #include "Ship.h"
 #include "ShipDesign.h"

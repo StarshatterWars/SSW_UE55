@@ -16,9 +16,9 @@
     TacRefDlg tactical reference dialog.
 */
 
-#include "GameStructs.h"
 
 #include "TacRefDlg.h"
+#include "GameStructs.h"
 
 // UMG:
 #include "Components/Button.h"
@@ -197,7 +197,7 @@ void UTacRefDlg::SelectShip(const ShipDesign* design)
             desc += Game::GetText("tacref.length");
             desc += "\t\t";
 
-            if (design->type < Ship::STATION)
+            if (design->type < (int)CLASSIFICATION::STATION)
                 FormatNumber(txt, design->radius / 2);
             else
                 FormatNumber(txt, design->radius * 2);
@@ -320,9 +320,9 @@ void UTacRefDlg::SelectWeapon(const WeaponDesign* design)
             desc += Game::GetText("tacref.targets");
             desc += "\t";
 
-            if ((design->target_type & Ship::DROPSHIPS) != 0) {
-                if ((design->target_type & Ship::STARSHIPS) != 0) {
-                    if ((design->target_type & Ship::GROUND_UNITS) != 0) {
+            if ((design->target_type & (int)CLASSIFICATION::DROPSHIPS) != 0) {
+                if ((design->target_type & (int)CLASSIFICATION::STARSHIPS) != 0) {
+                    if ((design->target_type & (int)CLASSIFICATION::GROUND_UNITS) != 0) {
                         desc += Game::GetText("tacref.targets.fsg");
                     }
                     else {
@@ -330,7 +330,7 @@ void UTacRefDlg::SelectWeapon(const WeaponDesign* design)
                     }
                 }
                 else {
-                    if ((design->target_type & Ship::GROUND_UNITS) != 0) {
+                    if ((design->target_type & (int)CLASSIFICATION::GROUND_UNITS) != 0) {
                         desc += Game::GetText("tacref.targets.fg");
                     }
                     else {
@@ -338,15 +338,15 @@ void UTacRefDlg::SelectWeapon(const WeaponDesign* design)
                     }
                 }
             }
-            else if ((design->target_type & Ship::STARSHIPS) != 0) {
-                if ((design->target_type & Ship::GROUND_UNITS) != 0) {
+            else if ((design->target_type & (int)CLASSIFICATION::STARSHIPS) != 0) {
+                if ((design->target_type & (int)CLASSIFICATION::GROUND_UNITS) != 0) {
                     desc += Game::GetText("tacref.targets.sg");
                 }
                 else {
                     desc += Game::GetText("tacref.targets.s");
                 }
             }
-            else if ((design->target_type & Ship::GROUND_UNITS) != 0) {
+            else if ((design->target_type & (int)CLASSIFICATION::GROUND_UNITS) != 0) {
                 desc += Game::GetText("tacref.targets.g");
             }
 

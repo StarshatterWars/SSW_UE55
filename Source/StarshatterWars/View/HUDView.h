@@ -89,7 +89,7 @@ public:
     // Operations:
     virtual void       Refresh();
     virtual void       OnWindowMove();
-    virtual void       ExecFrame();
+    virtual void       ExecFrame(float DeltaTime);
     virtual void       UseCameraView(CameraView* v);
 
     virtual Ship*      GetShip()   const { return ship; }

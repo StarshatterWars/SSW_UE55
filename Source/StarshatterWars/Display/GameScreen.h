@@ -27,13 +27,13 @@
 
 // Forward declares (UMG dialogs):
 class UNavDlg;
-class UEngDlg;
-class UFltDlg;
-class UCtlDlg;
+class UEngineeringDlg;
+class UFlightOpsDlg;
+class UControlOptionsDlg;
 class UJoyDlg;
 class UKeyDlg;
 class UAudioDlg;
-class UVidDlg;
+class UVideoDlg;
 class UOptDlg;
 class UQuitView;
 
@@ -121,17 +121,17 @@ public:
     void CycleHUDWarn();
 
     void FrameRate(double F);
-    void ExecFrame();
+    void ExecFrame(float DeltaTime);
 
     // Accessors (keep raw pointers):
     UNavDlg* GetNavDlg()   const { return NavDlg; }
-    UEngDlg* GetEngDlg()   const { return EngDlg; }
-    UFltDlg* GetFltDlg()   const { return FltDlg; }
-    UCtlDlg* GetCtlDlg()   const { return CtlDlg; }
+    UEngineeringDlg*    GetEngDlg()   const { return EngDlg; }
+    UFlightOpsDlg*      GetFltDlg()   const { return FltDlg; }
+    UControlOptionsDlg* GetCtlDlg()   const { return CtlDlg; }
     UKeyDlg* GetKeyDlg()   const { return KeyDlg; }
     UJoyDlg* GetJoyDlg()   const { return JoyDlg; }
     UAudioDlg* GetAudioDlg() const { return AudioDlg; }
-    UVidDlg* GetVidDlg()   const { return VidDlg; }
+    UVideoDlg* GetVidDlg()   const { return VidDlg; }
     UOptDlg* GetOptDlg()   const { return OptDlg; }
     UQuitView* GetQuitView() const { return QuitView; }
 
@@ -139,6 +139,7 @@ public:
 
 protected:
     virtual void NativeDestruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
     UUserWidget* MakeDlg(TSubclassOf<UUserWidget> Class, int32 ZOrder);
@@ -150,25 +151,25 @@ private:
 private:
     // Spawnable widget classes (assign in defaults or BP):
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UNavDlg>   NavDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UEngDlg>   EngDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UFltDlg>   FltDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UCtlDlg>   CtlDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UEngineeringDlg>   EngDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UFlightOpsDlg>   FltDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UControlOptionsDlg>   CtlDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UKeyDlg>   KeyDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UJoyDlg>   JoyDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UAudioDlg> AudioDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UVidDlg>   VidDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UVideoDlg>   VidDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UOptDlg>   OptDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UQuitView> QuitViewClass;
 
     // Spawned dialog instances:
     UNavDlg* NavDlg = nullptr;
-    UEngDlg* EngDlg = nullptr;
-    UFltDlg* FltDlg = nullptr;
-    UCtlDlg* CtlDlg = nullptr;
+    UEngineeringDlg*    EngDlg = nullptr;
+    UFlightOpsDlg*      FltDlg = nullptr;
+    UControlOptionsDlg* CtlDlg = nullptr;
     UKeyDlg* KeyDlg = nullptr;
     UJoyDlg* JoyDlg = nullptr;
     UAudioDlg* AudioDlg = nullptr;
-    UVidDlg* VidDlg = nullptr;
+    UVideoDlg* VidDlg = nullptr;
     UOptDlg* OptDlg = nullptr;
     UQuitView* QuitView = nullptr;
 

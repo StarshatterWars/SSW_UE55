@@ -36,6 +36,7 @@
 #include "Game.h"
 #include "Random.h"
 #include "Solid.h"
+#include "GameStructs.h"
 
 #include "CoreMinimal.h" // UE_LOG
 #include "Math/Vector.h" // FVector
@@ -609,7 +610,7 @@ StarshipAI::FireControl()
     // target missile threats even when the threat is aimed at another
     // friendly ship.  Forward facing weapons must be on auto fire,
     // while lateral and aft facing weapons are set to point defense.
-    if (ship->Class() == Ship::CORVETTE || ship->Class() == Ship::FRIGATE)
+    if (ship->Class() == CLASSIFICATION::CORVETTE || ship->Class() == CLASSIFICATION::FRIGATE)
     {
         ListIter<WeaponGroup> grp_iter = ship->Weapons();
         while (++grp_iter)
@@ -645,7 +646,7 @@ StarshipAI::FireControl()
         while (++grp_iter) {
             WeaponGroup* group = grp_iter.value();
 
-            if (group->GetDesign()->target_type & Ship::DROPSHIPS) { // anti-air weapon?
+            if (group->GetDesign()->target_type & (int)CLASSIFICATION::DROPSHIPS) { // anti-air weapon?
                 group->SetFiringOrders(Weapon::POINT_DEFENSE);
             }
             else if (group->IsDrone()) { // torpedoes

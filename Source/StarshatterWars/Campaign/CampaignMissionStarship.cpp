@@ -314,7 +314,7 @@ CampaignMissionStarship::SelectType()
     else
         mission_type = Mission::PATROL;
 
-    if (player_unit && player_unit->GetShipClass() == Ship::CARRIER)
+    if (player_unit && player_unit->GetShipClass() == (int)CLASSIFICATION::CARRIER)
         mission_type = Mission::FLIGHT_OPS;
 }
 
@@ -606,17 +606,17 @@ CampaignMissionStarship::CreateSingleElement(CombatGroup* g, CombatUnit* u)
     }
 
     if (g->GetType() == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-        if (u->Type() == Ship::CARRIER) {
+        if (u->Type() == (int)CLASSIFICATION::CARRIER) {
             elem->SetMissionRole(Mission::FLIGHT_OPS);
         }
         else {
             elem->SetMissionRole(Mission::ESCORT);
         }
     }
-    else if (u->Type() == Ship::STATION || u->Type() == Ship::FARCASTER) {
+    else if (u->Type() == (int)CLASSIFICATION::STATION || u->Type() == (int)CLASSIFICATION::FARCASTER) {
         elem->SetMissionRole(Mission::OTHER);
 
-        if (u->Type() == Ship::FARCASTER) {
+        if (u->Type() == (int)CLASSIFICATION::FARCASTER) {
             Text name = u->Name();
             int  dash = -1;
 
@@ -632,7 +632,7 @@ CampaignMissionStarship::CreateSingleElement(CombatGroup* g, CombatUnit* u)
                 elem->AddObjective(obj);
         }
     }
-    else if ((u->Type() & Ship::STARSHIPS) != 0) {
+    else if ((u->Type() & (int)CLASSIFICATION::STARSHIPS) != 0) {
         elem->SetMissionRole(Mission::FLEET);
     }
 
@@ -901,14 +901,30 @@ CampaignMissionStarship::CreateTargetsAssault()
 
                     if (prime_target && prime_target->GetDesign()) {
                         switch (prime_target->GetDesign()->type) {
-                        default:                extra = 20e3; break;
-                        case Ship::FRIGATE:     extra = 25e3; break;
-                        case Ship::DESTROYER:   extra = 30e3; break;
-                        case Ship::CRUISER:     extra = 50e3; break;
-                        case Ship::BATTLESHIP:  extra = 70e3; break;
-                        case Ship::DREADNAUGHT: extra = 80e3; break;
-                        case Ship::SWACS:       extra = 30e3; break;
-                        case Ship::CARRIER:     extra = 90e3; break;
+                        default:                
+                            extra = 20e3;
+                            break;
+                        case (int)CLASSIFICATION::FRIGATE: 
+                            extra = 25e3; 
+                            break;
+                        case (int)CLASSIFICATION::DESTROYER: 
+                            extra = 30e3;
+                            break;
+                        case (int)CLASSIFICATION::CRUISER:    
+                            extra = 50e3;
+                            break;
+                        case (int)CLASSIFICATION::BATTLESHIP:  
+                            extra = 70e3;
+                            break;
+                        case (int)CLASSIFICATION::DREADNAUGHT: 
+                            extra = 80e3; 
+                            break;
+                        case (int)CLASSIFICATION::SWACS: 
+                            extra = 30e3;
+                            break;
+                        case (int)CLASSIFICATION::CARRIER:   
+                            extra = 90e3; 
+                            break;
                         }
                     }
 
@@ -1573,5 +1589,5 @@ CampaignMissionStarship::Exit()
 {
     Starshatter* stars = Starshatter::GetInstance();
     if (stars)
-        stars->SetGameMode(Starshatter::MENU_MODE);
+        stars->SetGameMode((int)EMODE::MENU_MODE);
 }

@@ -27,13 +27,12 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "MenuScreen.h"
 
 #include "Components/ScrollBox.h"
 #include "Components/RichTextBlock.h"
 
 #include "ExitDlg.generated.h"
-
-class UMenuScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UExitDlg : public UBaseScreen

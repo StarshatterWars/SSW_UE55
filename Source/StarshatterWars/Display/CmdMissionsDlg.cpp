@@ -423,7 +423,7 @@ void UCmdMissionsDlg::OnAcceptClicked()
     Mouse::Show(false);
     CampaignPtr->SetMissionId(SelectedMission->Identity());
     CampaignPtr->StartMission();
-    Stars->SetGameMode(Starshatter::PREP_MODE);
+    Stars->SetGameMode((int)EMODE::PREP_MODE);
 }
 
 // --------------------------------------------------------------------
@@ -468,6 +468,6 @@ void UCmdMissionsDlg::OnExitClicked()
     if (Stars)
     {
         Mouse::Show(false);
-        Stars->SetGameMode(Starshatter::MENU_MODE);
+        Stars->SetGameMode((int)EMODE::MENU_MODE);
     }
 }

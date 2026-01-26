@@ -36,14 +36,14 @@ class HUDView;
 class Menu;
 class MenuItem;
 class MenuView;
-class GameScreen;
+class UGameScreen;
 
 // +--------------------------------------------------------------------+
 
 class TacticalView : public View, public SimObserver
 {
 public:
-    TacticalView(Window* c, GameScreen* parent);
+    TacticalView(Window* c, UGameScreen* parent);
     virtual ~TacticalView();
 
     // Operations:
@@ -86,7 +86,7 @@ protected:
     virtual void        DrawAction();
     virtual void        SendAction();
 
-    GameScreen* gamescreen;
+    UGameScreen* gamescreen;
     CameraView* camview;
     SimProjector* projector;
 

@@ -1,101 +1,100 @@
-/*  Project Starshatter 4.5
-    Destroyer Studios LLC
-    Copyright © 1997-2004. All Rights Reserved.
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         KeyDlg.h
-    AUTHOR:       John DiCamillo
+    AUTHOR:       Carlos Bott
 
-    UNREAL PORT:
-    - Converted from FormWindow to UUserWidget.
-    - Preserves original member names and intent.
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    Key Binding dialog (legacy KeyDlg) adapted for Unreal UMG.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
-#include "KeyDlg.generated.h"
+#include "BaseScreen.h"
+#include "MenuScreen.h"
 
+
+// Minimal Unreal includes requested for headers:
+#include "Math/UnrealMathUtility.h"
+#include "Math/Vector.h"
+#include "Math/Color.h"
+
+#include "KeyDlg.generated.h"
+// ------------------------------------------------------------
+// Forward declarations
+// ------------------------------------------------------------
 class UButton;
 class UTextBlock;
 
-/**
- * Navigation Active Window class (UE UUserWidget port)
- */
+// ------------------------------------------------------------
+
 UCLASS()
-class STARSHATTERWARS_API UKeyDlg : public UUserWidget
+class STARSHATTERWARS_API UKeyDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UKeyDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Original API surface (ported):
-    virtual void      RegisterControls();   // bind widget events, cache pointers if needed
-    virtual void      Show();               // make visible / focus
-    virtual void      ExecFrame();          // optional per-frame logic (usually avoid; see .cpp)
+    virtual void NativeOnInitialized() override;
+    virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-    // UI callbacks (ported from AWEvent style; UE will bind to these):
-    UFUNCTION()
-    virtual void      OnApply();
+    // Legacy parity:
+    void ExecFrame();
 
-    UFUNCTION()
-    virtual void      OnCancel();
+    int  GetKeyMapIndex() const { return KeyIndex; }
+    void SetKeyMapIndex(int i);
 
-    UFUNCTION()
-    virtual void      OnClear();
-
-    int               GetKeyMapIndex() const { return key_index; }
-    void              SetKeyMapIndex(int i);
+    void SetManager(UMenuScreen* InManager);
 
 protected:
-    // UUserWidget lifecycle:
-    virtual void      NativeOnInitialized() override;
-    virtual void      NativeConstruct() override;
-    virtual void      NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    UFUNCTION()
+    void OnApplyClicked();
+
+    UFUNCTION()
+    void OnCancelClicked();
+
+    UFUNCTION()
+    void OnClearClicked();
 
 protected:
-    // Starshatter: BaseScreen* manager;
-    // UE: keep as UObject* so you can point at HUD/Controller/SubSystem without hard dependency.
-    UPROPERTY(BlueprintReadWrite, Category = "KeyDlg")
-    UObject* manager = nullptr;
+    // --------------------------------------------------------
+    // Bound UMG widgets (matching legacy IDs conceptually)
+    // --------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* CommandText = nullptr;      // id 201
 
-    // Preserved member names:
-    UPROPERTY(BlueprintReadOnly, Category = "KeyDlg")
-    int32             key_index = 0;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* CurrentKeyText = nullptr;   // id 202
 
-    UPROPERTY(BlueprintReadOnly, Category = "KeyDlg")
-    int32             key_key = 0;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* NewKeyText = nullptr;       // id 203
 
-    UPROPERTY(BlueprintReadOnly, Category = "KeyDlg")
-    int32             key_shift = 0;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* ClearButton = nullptr;         // id 300
 
-    UPROPERTY(BlueprintReadOnly, Category = "KeyDlg")
-    int32             key_joy = 0;
+protected:
+    // Manager screen:
+    UMenuScreen* Manager = nullptr;
 
-    UPROPERTY(BlueprintReadOnly, Category = "KeyDlg")
-    int32             key_clear = 0;
+    // Legacy fields:
+    int  KeyIndex = 0;
+    int  KeyKey = 0;
+    int  KeyShift = 0;
+    int  KeyJoy = 0;
+    bool bKeyClear = false;
 
-    // Starshatter: Button* clear/apply/cancel;
-    // UE: UButton* with BindWidget (names must match in the Widget Blueprint).
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UButton* clear = nullptr;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UButton* apply = nullptr;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UButton* cancel = nullptr;
-
-    // Starshatter: ActiveWindow* command/current_key/new_key;
-    // UE: display fields as TextBlocks (or swap to UEditableTextBox if needed).
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UTextBlock* command = nullptr;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UTextBlock* current_key = nullptr;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-    UTextBlock* new_key = nullptr;
+private:
+    void RefreshDisplayFromCurrentBinding();
+    void SetTextBlock(UTextBlock* Block, const char* AnsiText);
+    void SetTextBlock(UTextBlock* Block, const FString& Text);
 };

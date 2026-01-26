@@ -1,179 +1,194 @@
-/*  Project Starshatter 4.5
-    Destroyer Studios LLC
-    Copyright © 1997-2004.
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         FirstTimeDlg.cpp
-    AUTHOR:       John DiCamillo
+    AUTHOR:       Carlos Bott
 
-    UNREAL PORT:
-    - Converted from FormWindow to UBaseScreen (UUserWidget-derived).
-    - Uses FRandomStream seeded from MachineId (deterministic per machine).
-    - Preserves original logic and flow.
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    First-time player setup screen implementation.
 */
 
 #include "FirstTimeDlg.h"
 
-#include "BaseScreen.h"
+#include "GameStructs.h"
 
-// UMG:
+// Unreal
+#include "Logging/LogMacros.h"
+#include "Math/UnrealMathUtility.h"
+
+// UMG
 #include "Components/Button.h"
-#include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
+#include "Components/ComboBoxString.h"
 
-// Starshatter port headers:
-#include "Starshatter.h"
+// Starshatter
 #include "PlayerCharacter.h"
+#include "MenuScreen.h"
 #include "Ship.h"
+#include "Starshatter.h"
 #include "KeyMap.h"
+#include "Random.h"
 
-// UE:
-#include "Misc/Guid.h"
-#include "Misc/Crc.h"
-#include "HAL/PlatformMisc.h"
-#include "Math/RandomStream.h"
+DEFINE_LOG_CATEGORY_STATIC(LogFirstTimeDlg, Log, All);
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
 
 UFirstTimeDlg::UFirstTimeDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
 }
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
 
 void UFirstTimeDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
-    RegisterControls();
+
+    if (ApplyButton)
+    {
+        ApplyButton->OnClicked.AddDynamic(
+            this,
+            &UFirstTimeDlg::OnApplyClicked
+        );
+    }
 }
+
+// ------------------------------------------------------------
 
 void UFirstTimeDlg::NativeConstruct()
 {
     Super::NativeConstruct();
-    SetIsFocusable(true);
+
+    if (NameEdit)
+    {
+        NameEdit->SetText(FText::FromString(TEXT("Noobie")));
+    }
 }
 
-void UFirstTimeDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+// ------------------------------------------------------------
+
+void UFirstTimeDlg::NativeTick(
+    const FGeometry& MyGeometry,
+    float InDeltaTime
+)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
     ExecFrame();
 }
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
 
-void UFirstTimeDlg::RegisterControls()
+void UFirstTimeDlg::SetManager(UMenuScreen* InManager)
 {
-    if (btn_apply)
-    {
-        btn_apply->OnClicked.RemoveAll(this);
-        btn_apply->OnClicked.AddDynamic(this, &UFirstTimeDlg::OnApply);
-    }
+    Manager = InManager;
 }
 
-// +--------------------------------------------------------------------+
-
-void UFirstTimeDlg::Show()
-{
-    SetVisibility(ESlateVisibility::Visible);
-    SetKeyboardFocus();
-
-    // Match original behavior:
-    if (edt_name && edt_name->GetText().IsEmpty())
-    {
-        edt_name->SetText(FText::FromString(TEXT("Noobie")));
-    }
-}
-
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
 
 void UFirstTimeDlg::ExecFrame()
 {
-    // Intentionally empty (matches original implementation)
+    // Legacy dialog had no per-frame logic
 }
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
 
-void UFirstTimeDlg::OnApply()
+void UFirstTimeDlg::OnApplyClicked()
 {
     Starshatter* stars = Starshatter::GetInstance();
     PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
 
-    if (player)
+    if (!player)
     {
-        if (edt_name)
-        {
-            // Deterministic per machine:
-            // - Get a stable machine identifier (FGuid)
-            // - Hash it to a 32-bit seed
-            // - Use FRandomStream to generate the password value
-            const FGuid MachineGuid = FPlatformMisc::GetMachineId();
-            const FString MachineIdString = MachineGuid.ToString(EGuidFormats::DigitsWithHyphens);
-            const uint32 Seed = FCrc::StrCrc32(*MachineIdString);
-
-            FRandomStream Stream((int32)Seed);
-
-            // Match original intent: 8 hex digits
-            const uint32 RandVal = (uint32)Stream.RandRange(0, 2000000000);
-            const FString Password = FString::Printf(TEXT("%08x"), RandVal);
-
-            const FString NewName = edt_name->GetText().ToString();
-            player->SetName(TCHAR_TO_ANSI(*NewName));
-            player->SetPassword(TCHAR_TO_ANSI(*Password));
-        }
-
-        if (cmb_playstyle)
-        {
-            const int32 StyleIndex = cmb_playstyle->GetSelectedIndex();
-
-            // ARCADE:
-            if (StyleIndex == 0)
-            {
-                player->SetFlightModel(2);
-                player->SetLandingModel(1);
-                player->SetHUDMode(0);
-                player->SetGunsight(1);
-
-                if (stars)
-                {
-                    KeyMap& keymap = stars->GetKeyMap();
-                    keymap.Bind(KEY_CONTROL_MODEL, 1, 0);
-                    keymap.SaveKeyMap("key.cfg", 256);
-                    stars->MapKeys();
-                }
-
-                Ship::SetControlModel(1);
-            }
-            // STANDARD / HARDCORE:
-            else
-            {
-                player->SetFlightModel(0);
-                player->SetLandingModel(0);
-                player->SetHUDMode(0);
-                player->SetGunsight(0);
-
-                if (stars)
-                {
-                    KeyMap& keymap = stars->GetKeyMap();
-                    keymap.Bind(KEY_CONTROL_MODEL, 0, 0);
-                    keymap.SaveKeyMap("key.cfg", 256);
-                    stars->MapKeys();
-                }
-
-                Ship::SetControlModel(0);
-            }
-        }
-
-        if (cmb_experience && cmb_experience->GetSelectedIndex() > 0)
-        {
-            player->SetRank(2);      // Lieutenant
-            player->SetTrained(255); // Fully Trained
-        }
-
-        PlayerCharacter::Save();
+        UE_LOG(LogFirstTimeDlg, Warning, TEXT("No current player."));
+        if (Manager)
+            Manager->ShowMenuDlg();
+        return;
     }
 
-    // Legacy: manager->ShowMenuDlg();
-    // UE: hide this dialog and let owning screen decide what comes next.
-    SetVisibility(ESlateVisibility::Collapsed);
+    // --------------------------------------------------------
+    // Player name & password
+    // --------------------------------------------------------
+    if (NameEdit)
+    {
+        const FString PlayerName = NameEdit->GetText().ToString();
+
+        const uint32 PassValue =
+            (uint32)FMath::RandRange(0, 2000000000);
+
+        const FString Password =
+            FString::Printf(TEXT("%08x"), PassValue);
+
+        FTCHARToUTF8 NameUtf8(*PlayerName);
+        FTCHARToUTF8 PassUtf8(*Password);
+
+        player->SetName(NameUtf8.Get());
+        player->SetPassword(PassUtf8.Get());
+    }
+
+    // --------------------------------------------------------
+    // Play style
+    // --------------------------------------------------------
+    if (PlaystyleCombo)
+    {
+        const int32 Sel = PlaystyleCombo->GetSelectedIndex();
+
+        // ARCADE
+        if (Sel == 0)
+        {
+            player->SetFlightModel(2);
+            player->SetLandingModel(1);
+            player->SetHUDMode(0);
+            player->SetGunsight(1);
+
+            if (stars)
+            {
+                KeyMap& keymap = stars->GetKeyMap();
+                keymap.Bind(KEY_CONTROL_MODEL, 1, 0);
+                keymap.SaveKeyMap("key.cfg", 256);
+                stars->MapKeys();
+            }
+
+            Ship::SetControlModel(1);
+        }
+        // STANDARD / HARDCORE
+        else
+        {
+            player->SetFlightModel(0);
+            player->SetLandingModel(0);
+            player->SetHUDMode(0);
+            player->SetGunsight(0);
+
+            if (stars)
+            {
+                KeyMap& keymap = stars->GetKeyMap();
+                keymap.Bind(KEY_CONTROL_MODEL, 0, 0);
+                keymap.SaveKeyMap("key.cfg", 256);
+                stars->MapKeys();
+            }
+
+            Ship::SetControlModel(0);
+        }
+    }
+
+    // --------------------------------------------------------
+    // Experience level
+    // --------------------------------------------------------
+    if (ExperienceCombo &&
+        ExperienceCombo->GetSelectedIndex() > 0)
+    {
+        player->SetRank(2);        // Lieutenant
+        player->SetTrained(255);   // Fully trained
+    }
+
+    PlayerCharacter::Save();
+
+    if (Manager)
+        Manager->ShowMenuDlg();
 }

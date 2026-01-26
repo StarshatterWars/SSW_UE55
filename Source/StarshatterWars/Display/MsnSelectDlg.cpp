@@ -22,10 +22,10 @@
 #include "Mission.h"
 
 // Optional manager screens/dialogs (stubs you likely have in your menu system):
-// #include "MsnEditDlg.h"
-// #include "MsnEditNavDlg.h"
-// #include "ConfirmDlg.h"
-// #include "MenuScreen.h"
+#include "MissionEditorDlg.h"
+//#include "MsnEditNavDlg.h"
+#include "ConfirmDlg.h"
+#include "MenuScreen.h"
 
 #include "Components/ListView.h"
 #include "Components/ComboBoxString.h"

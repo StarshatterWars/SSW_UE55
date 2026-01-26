@@ -16,7 +16,7 @@
     Integrated legacy OptDlg.frm as a pure C++ WidgetTree build.
 */
 
-#include "GameStructs.h"
+
 
 #include "OptDlg.h"
 
@@ -42,11 +42,12 @@
 
 // Manager screen (dialog switching + apply/cancel options):
 #include "MenuScreen.h"
+#include "GameStructs.h"
 
 // Starshatter core (legacy types kept in game logic):
 #include "Ship.h"
 #include "HUDView.h"
-#include "Player.h"
+#include "PlayerCharacter.h"
 #include "Starshatter.h"
 
 // +--------------------------------------------------------------------+
@@ -412,7 +413,7 @@ void UOptDlg::NativeConstruct()
             if (ff_mode)       ClearAndSetSelection(ff_mode, (int32)(Ship::GetFriendlyFireLevel() * 4.0f));
         }
 
-        Player* player = Player::GetCurrentPlayer();
+        PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
         if (player)
         {
             if (flying_start)  ClearAndSetSelection(flying_start, player->FlyingStart());
@@ -495,7 +496,7 @@ void UOptDlg::Apply()
     if (closed)
         return;
 
-    Player* player = Player::GetCurrentPlayer();
+    PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
     if (player)
     {
         if (flight_model)  player->SetFlightModel(flight_model->GetSelectedIndex());

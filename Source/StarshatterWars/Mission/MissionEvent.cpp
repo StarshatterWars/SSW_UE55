@@ -50,6 +50,7 @@
 #include "FormatUtil.h"
 #include "Random.h"
 #include "Video.h"
+#include "GameStructs.h"
 
 // Minimal Unreal logging support:
 #include "Logging/LogMacros.h"
@@ -221,7 +222,7 @@ MissionEvent::CheckTrigger()
 			while (++s_iter) {
 				Ship* ship = s_iter.value();
 
-				if (ship->Type() >= Ship::STATION)
+				if (ship->Type() >= (int)CLASSIFICATION::STATION)
 					continue;
 
 				if (ship->Life() == 0 && ship->RespawnCount() < 1)

@@ -43,14 +43,17 @@ public:
     UQuitView(const FObjectInitializer& ObjectInitializer);
 
     // Legacy-style API (kept):
-    UFUNCTION() bool  IsMenuShown() const;
-    UFUNCTION() void  ShowMenu();
-    UFUNCTION() void  CloseMenu();
-    UFUNCTION() bool  CanAccept();
+    bool  IsMenuShown() const;
+    void  ShowMenu();
+    void  CloseMenu();
+    bool  CanAccept();
+
+    virtual void ExecFrame(float DeltaTime);
 
 protected:
     virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
+    
 
     // Button handlers:
     UFUNCTION() void OnAcceptClicked();

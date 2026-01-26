@@ -59,7 +59,7 @@ TacticalView* TacticalView::tac_view = 0;
 
 // +--------------------------------------------------------------------+
 
-TacticalView::TacticalView(Window* c, GameScreen* parent)
+TacticalView::TacticalView(Window* c, UGameScreen* parent)
     : View(c),
     gamescreen(parent),
     ship(0),

@@ -439,7 +439,7 @@ void Weapon::SetSweep(int s)
 
 // +--------------------------------------------------------------------+
 
-bool Weapon::CanTarget(DWORD classification) const
+bool Weapon::CanTarget(uint32 classification) const
 {
     return (design->target_type & classification) ? true : false;
 }
@@ -458,7 +458,7 @@ void Weapon::SetTarget(SimObject* targ, SimSystem* sub)
         case SimObject::SIM_SHIP: {
             Ship* tgt_ship = (Ship*)targ;
 
-            if ((tgt_ship->Class() & design->target_type) == 0)
+            if (((int)tgt_ship->Class() & design->target_type) == 0)
                 return;
         } break;
 
@@ -466,7 +466,7 @@ void Weapon::SetTarget(SimObject* targ, SimSystem* sub)
             return;
 
         case SimObject::SIM_DRONE: {
-            if ((design->target_type & Ship::DRONE) == 0)
+            if ((design->target_type & (int)CLASSIFICATION::DRONE) == 0)
                 return;
         } break;
 
@@ -502,7 +502,7 @@ void Weapon::SelectTarget()
         ListIter<SimContact> contact = ship->ContactList();
 
         // lock onto any threatening shots first (if we can):
-        if (design->target_type & Ship::DRONE) {
+        if (design->target_type & (int)CLASSIFICATION::DRONE) {
             while (++contact) {
                 SimShot* c_shot = contact->GetShot();
 
@@ -535,7 +535,7 @@ void Weapon::SelectTarget()
 
             // can we lock onto this target?
             if ((c_ship->IsRogue() || (c_ship->GetIFF() > 0 && c_ship->GetIFF() != ship->GetIFF())) &&
-                (c_ship->Class() & design->target_type) &&
+                ((int)c_ship->Class() & design->target_type) &&
                 c_ship->Weapons().size() > 0)
             {
                 // distance from self to target:

@@ -1,106 +1,127 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    Stars.exe
     FILE:         JoyDlg.h
     AUTHOR:       Carlos Bott
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
     OVERVIEW
     ========
-    Joystick Options Dialog (Unreal UUserWidget)
+    Joystick Axis Setup dialog.
+    Unreal UMG version of the legacy JoyDlg FormWindow.
 */
 
 #pragma once
 
-// Minimal Unreal includes required by project conventions:
-#include "Math/Vector.h"                // FVector
-#include "Math/Color.h"                 // FColor
-#include "Math/UnrealMathUtility.h"     // Math
+#include "CoreMinimal.h"
+#include "BaseScreen.h"
+#include "MenuScreen.h"
 
-#include "Blueprint/UserWidget.h"
+
+// Minimal Unreal includes requested for headers:
+#include "Math/Vector.h"              // FVector
+#include "Math/Color.h"               // FColor
+#include "Math/UnrealMathUtility.h"   // Math
+
 #include "JoyDlg.generated.h"
 
-// Forward declarations (keep header light):
+// ------------------------------------------------------------
+// Forward declarations (keep header light)
+// ------------------------------------------------------------
 class UButton;
-class UCheckBox;
 class UTextBlock;
-class UBaseScreen;
+class UComboBoxString;
+
+// ------------------------------------------------------------
 
 UCLASS()
-class STARSHATTERWARS_API UJoyDlg : public UUserWidget
+class STARSHATTERWARS_API UJoyDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UJoyDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Manager bridge (MenuScreen or other UBaseScreen-derived controller):
-    void SetManager(UBaseScreen* InManager) { manager = InManager; }
-    UBaseScreen* GetManager() const { return manager; }
-
-    // UUserWidget overrides:
+    // UUserWidget lifecycle:
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-protected:
-    virtual bool IsFocusable() const override { return true; }
-
-    // Keyboard handling (Enter = Apply, Escape = Cancel):
-    virtual FReply NativeOnKeyDown(
-        const FGeometry& InGeometry,
-        const FKeyEvent& InKeyEvent) override;
+    // Legacy parity:
+    void ExecFrame();
+    void SetManager(UMenuScreen* InManager);
 
 protected:
-    // Operations:
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Apply();
+    // UMG handlers:
+    UFUNCTION()
+    void OnApplyClicked();
 
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Cancel();
+    UFUNCTION()
+    void OnCancelClicked();
 
-protected:
-    // Button handlers:
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
+    UFUNCTION()
+    void OnAxis0Clicked();
 
-    UFUNCTION() void OnAxis0Clicked();
-    UFUNCTION() void OnAxis1Clicked();
-    UFUNCTION() void OnAxis2Clicked();
-    UFUNCTION() void OnAxis3Clicked();
+    UFUNCTION()
+    void OnAxis1Clicked();
 
-    UFUNCTION() void OnInvert0Changed(bool bIsChecked);
-    UFUNCTION() void OnInvert1Changed(bool bIsChecked);
-    UFUNCTION() void OnInvert2Changed(bool bIsChecked);
-    UFUNCTION() void OnInvert3Changed(bool bIsChecked);
+    UFUNCTION()
+    void OnAxis2Clicked();
+
+    UFUNCTION()
+    void OnAxis3Clicked();
 
 protected:
-    // External dialog manager (legacy bridge):
-    UPROPERTY() UBaseScreen* manager = nullptr;
+    // --------------------------------------------------------
+    // Bound UMG widgets (BindWidgetOptional to allow iteration)
+    // --------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* MessageText = nullptr;     // id 11 (label)
 
-    // UI bindings (optionally authored in UMG):
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* message = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* AxisButton0 = nullptr;        // id 201
 
-    // Axis selection buttons (4):
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_0 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_1 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_2 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* axis_button_3 = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* AxisButton1 = nullptr;        // id 202
 
-    // Invert checkboxes (4):
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_0 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_1 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_2 = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* invert_checkbox_3 = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* AxisButton2 = nullptr;        // id 203
 
-    // Action buttons:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* AxisButton3 = nullptr;        // id 204
 
-    // Local UI state:
-    int32 selected_axis = 0;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* Invert0 = nullptr;            // id 301
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* Invert1 = nullptr;            // id 302
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* Invert2 = nullptr;            // id 303
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UButton* Invert3 = nullptr;            // id 304
+
+protected:
+    // Manager screen:
+    UMenuScreen* Manager = nullptr;
+
+    // Local state (replaces legacy statics):
+    int SelectedAxis = -1;
+    int SampleAxis = -1;
+    int Samples[8] = { 0,0,0,0,0,0,0,0 };
+    int MapAxis[4] = { -1,-1,-1,-1 };
+
+private:
+    // Helpers:
+    void HandleAxisClicked(int AxisIndex);
+    void RefreshAxisButtonsFromCurrentBindings();
+    void UpdateAxisButtonText(int AxisIndex, const char* TextId);
+    void SetInvertButtonState(UButton* InvertButton, bool bChecked);
+    bool GetInvertButtonState(const UButton* InvertButton) const;
 };

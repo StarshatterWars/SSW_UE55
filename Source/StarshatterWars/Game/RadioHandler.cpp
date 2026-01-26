@@ -37,6 +37,7 @@
 
 #include "Text.h"
 #include "Game.h"
+#include "GameStructs.h"
 
 // Minimal Unreal includes for UE_LOG + FVector conversions used below:
 #include "Math/Vector.h"
@@ -63,7 +64,7 @@ RadioHandler::ProcessMessage(RadioMessage* msg, Ship* s)
 	if (!s || !msg || !msg->Sender())
 		return false;
 
-	if (s->Class() >= Ship::FARCASTER && s->Class() <= Ship::C3I)
+	if (s->Class() >= CLASSIFICATION::FARCASTER && s->Class() <= CLASSIFICATION::C3I)
 		return false;
 
 	if (msg->Sender()->IsRogue()) {

@@ -474,7 +474,7 @@ void TacticalAI::SelectTarget()
 			// frigates need to be ready to abandon ship-type targets
 			// in favor of drone-type targets, others should just go
 			// with what they have:
-			if (ship->Class() != Ship::CORVETTE && ship->Class() != Ship::FRIGATE)
+			if (ship->Class() != CLASSIFICATION::CORVETTE && ship->Class() != CLASSIFICATION::FRIGATE)
 				return;
 
 			// in case the check decided to drop the target:
@@ -502,7 +502,7 @@ void TacticalAI::SelectTarget()
 		SelectTargetOpportunity();
 
 		// don't switch one ship target for another...
-		if (ship->Class() == Ship::CORVETTE || ship->Class() == Ship::FRIGATE) {
+		if (ship->Class() == CLASSIFICATION::CORVETTE || ship->Class() == CLASSIFICATION::FRIGATE) {
 			SimObject* potential_target = ship_ai->GetTarget();
 			if (target && potential_target && target != potential_target) {
 				if (target->Type() == SimObject::SIM_SHIP &&
@@ -593,7 +593,7 @@ TacticalAI::SelectTargetOpportunity()
 	// FRIGATES are primarily anti-air platforms, but may
 	// also attack smaller starships:
 
-	if (ship->Class() == Ship::CORVETTE || ship->Class() == Ship::FRIGATE) {
+	if (ship->Class() == CLASSIFICATION::CORVETTE || ship->Class() == CLASSIFICATION::FRIGATE) {
 		Ship* CurrentShipTarget = nullptr;
 		SimShot* CurrentShotTarget = nullptr;
 
@@ -629,8 +629,8 @@ TacticalAI::SelectTargetOpportunity()
 
 			if (bRogue || bTargetOk) {
 				if (ContactShip && ContactShip != ship && !ContactShip->InTransition()) {
-					if (ContactShip->Class() < Ship::DESTROYER ||
-						(ContactShip->Class() >= Ship::MINE && ContactShip->Class() <= Ship::DEFSAT)) {
+					if (ContactShip->Class() < CLASSIFICATION::DESTROYER ||
+						(ContactShip->Class() >= CLASSIFICATION::MINE && ContactShip->Class() <= CLASSIFICATION::DEFSAT)) {
 						// found an enemy, check distance:
 						const double Dist = (ship->Location() - ContactShip->Location()).Length();
 
@@ -740,7 +740,7 @@ TacticalAI::SelectTargetOpportunity()
 		}
 	}
 
-	if (ship->Class() != Ship::CARRIER || ship->Class() != Ship::SWACS)
+	if (ship->Class() != CLASSIFICATION::CARRIER || ship->Class() != CLASSIFICATION::SWACS)
 		ship_ai->SetTarget(PotentialTarget);
 }
 
@@ -846,8 +846,8 @@ void TacticalAI::FindThreat()
 
 				Ship* c_ship = contact->GetShip();
 				if (c_ship && !c_ship->InTransition() &&
-					c_ship->Class() != Ship::FREIGHTER &&
-					c_ship->Class() != Ship::FARCASTER) {
+					c_ship->Class() != CLASSIFICATION::FREIGHTER &&
+					c_ship->Class() != CLASSIFICATION::FARCASTER) {
 
 					if (c_ship->GetTarget() == ship) {
 						if (!threat || c_ship->Class() > threat->Class()) {

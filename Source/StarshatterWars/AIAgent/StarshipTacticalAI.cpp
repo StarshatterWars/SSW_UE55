@@ -145,8 +145,8 @@ StarshipTacticalAI::FindThreat()
                 double rng = contact->Range(ship);
 
                 if (c_ship &&
-                    c_ship->Class() != Ship::FREIGHTER &&
-                    c_ship->Class() != Ship::FARCASTER) {
+                    c_ship->Class() != CLASSIFICATION::FREIGHTER &&
+                    c_ship->Class() != CLASSIFICATION::FARCASTER) {
 
                     if (c_ship->GetTarget() == ship) {
                         if (!threat_ship || c_ship->Class() > threat_ship->Class()) {
@@ -218,7 +218,7 @@ void
 StarshipTacticalAI::CheckBugOut(Ship* c_ship, double rng)
 {
     // see if carrier should bug out...
-    if (!ship || !c_ship || ship->Class() != Ship::CARRIER || ship->Class() != Ship::SWACS)
+    if (!ship || !c_ship || ship->Class() != CLASSIFICATION::CARRIER || ship->Class() != CLASSIFICATION::SWACS)
         return;
 
     if (bugout)
@@ -227,7 +227,7 @@ StarshipTacticalAI::CheckBugOut(Ship* c_ship, double rng)
     if (ship->GetElement() && ship->GetElement()->GetZoneLock())
         return;
 
-    if (c_ship->Class() < Ship::DESTROYER || c_ship->Class() > Ship::STATION)
+    if (c_ship->Class() < CLASSIFICATION::DESTROYER || c_ship->Class() > CLASSIFICATION::STATION)
         return;
 
     Starshatter* stars = Starshatter::GetInstance();

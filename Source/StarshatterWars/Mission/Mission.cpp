@@ -32,6 +32,7 @@
 #include "FormatUtil.h"
 #include "Random.h"
 #include "Skin.h"
+#include "GameStructs.h"
 
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/Paths.h"
@@ -2000,7 +2001,7 @@ MissionElement::IsStatic() const
 	if (GetDesign())
 		design_type = GetDesign()->type;
 
-	return design_type >= Ship::STATION;
+	return design_type >= (int)CLASSIFICATION::STATION;
 }
 
 bool
@@ -2010,7 +2011,7 @@ MissionElement::IsGroundUnit() const
 	if (GetDesign())
 		design_type = GetDesign()->type;
 
-	return (design_type & Ship::GROUND_UNITS) ? true : false;
+	return (design_type & (int)CLASSIFICATION::GROUND_UNITS) ? true : false;
 }
 
 bool
@@ -2020,7 +2021,7 @@ MissionElement::IsStarship() const
 	if (GetDesign())
 		design_type = GetDesign()->type;
 
-	return (design_type & Ship::STARSHIPS) ? true : false;
+	return (design_type & (int)CLASSIFICATION::STARSHIPS) ? true : false;
 }
 
 bool
@@ -2030,7 +2031,7 @@ MissionElement::IsDropship() const
 	if (GetDesign())
 		design_type = GetDesign()->type;
 
-	return (design_type & Ship::DROPSHIPS) ? true : false;
+	return (design_type & (int)CLASSIFICATION::DROPSHIPS) ? true : false;
 }
 
 bool

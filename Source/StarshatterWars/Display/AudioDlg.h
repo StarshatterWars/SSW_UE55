@@ -22,13 +22,12 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "GameScreen.h"
 #include "AudioDlg.generated.h"
 
 class UButton;
 class USlider;
 class UTextBlock;
-
-class GameScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
@@ -57,7 +56,7 @@ public:
     virtual void OnControls();
     virtual void OnMod();
 
-    void SetManager(GameScreen* InManager);
+    void SetManager(UGameScreen* InManager);
 
 protected:
     // ------------------------------------------------------------
@@ -90,7 +89,7 @@ protected:
     // ------------------------------------------------------------
     // Manager
     // ------------------------------------------------------------
-    GameScreen* Manager = nullptr;
+    UGameScreen* Manager = nullptr;
 
     // ------------------------------------------------------------
     // Widgets (BindWidgetOptional; must match UMG widget names)

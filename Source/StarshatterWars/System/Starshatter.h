@@ -16,16 +16,16 @@
 #include "Game.h"
 #include "KeyMap.h"
 #include "Text.h"
+#include "MenuScreen.h"
 
 // Forward declarations to keep header light:
 class Bitmap;
 
 class Campaign;
-class MenuScreen;
-class CmpnScreen;
+class UCmpnScreen;
 class PlanScreen;
 class LoadScreen;
-class GameScreen;
+class UGameScreen;
 class Ship;
 class Sim;
 class FadeView;
@@ -35,7 +35,6 @@ class MouseController;
 class MusicManager;
 class DataLoader;
 class SystemFont;
-class TrackIR;
 class Mission;
 class Window;
 // +--------------------------------------------------------------------+
@@ -52,18 +51,6 @@ public:
 	virtual void GameState();
 	virtual void Exit();
 	virtual bool OnHelp();
-
-	enum MODE
-	{
-		MENU_MODE,  // main menu
-		CLOD_MODE,  // loading campaign
-		CMPN_MODE,  // operational command for dynamic campaign
-		PREP_MODE,  // loading mission info for planning
-		PLAN_MODE,  // mission briefing
-		LOAD_MODE,  // loading mission into simulator
-		PLAY_MODE,  // active simulation
-		EXIT_MODE   // shutting down
-	};
 
 	int       GetGameMode() { return game_mode; }
 	void      SetGameMode(int mode);
@@ -142,11 +129,11 @@ protected:
 
 	static Starshatter* instance;
 	Window*		gamewin;
-	MenuScreen* menuscreen;
-	LoadScreen* loadscreen;
+	UMenuScreen* menuscreen;
+	LoadScreen*  loadscreen;
 	PlanScreen* planscreen;
-	GameScreen* gamescreen;
-	CmpnScreen* cmpnscreen;
+	UGameScreen* gamescreen;
+	UCmpnScreen* cmpnscreen;
 
 	FadeView* splash;
 	int                 splash_index;
@@ -155,8 +142,7 @@ protected:
 	Bitmap* splash_image;
 
 	MultiController* input;
-	MouseController* mouse_input;
-	TrackIR* head_tracker;
+	MouseController* mouse_input;;
 	DataLoader* loader;
 
 	Ship* player_ship;

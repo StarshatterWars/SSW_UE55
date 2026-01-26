@@ -32,6 +32,7 @@
 #include "Game.h"
 #include "RadioView.h"
 #include "GameScreen.h"
+#include "GameStructs.h"
 
 // Unreal:
 #include "GameFramework/PlayerController.h"
@@ -62,6 +63,12 @@ void UQuitView::NativeConstruct()
 
     sim = Sim::GetSim();
     SetMessageText(TEXT(""));
+}
+
+void
+UQuitView::ExecFrame(float DeltaTime)
+{
+
 }
 
 bool UQuitView::IsMenuShown() const
@@ -206,7 +213,7 @@ void UQuitView::OnAcceptClicked()
 
     Starshatter* stars = Starshatter::GetInstance();
     if (stars)
-        stars->SetGameMode(Starshatter::PLAN_MODE);
+        stars->SetGameMode((int)EMODE::PLAN_MODE);
 }
 
 void UQuitView::OnDiscardClicked()
@@ -225,11 +232,11 @@ void UQuitView::OnDiscardClicked()
     if (campaign && campaign->GetCampaignId() < Campaign::SINGLE_MISSIONS)
     {
         campaign->RollbackMission();
-        if (stars) stars->SetGameMode(Starshatter::CMPN_MODE);
+        if (stars) stars->SetGameMode((int)EMODE::CMPN_MODE);
     }
     else
     {
-        if (stars) stars->SetGameMode(Starshatter::MENU_MODE);
+        if (stars) stars->SetGameMode((int)EMODE::MENU_MODE);
     }
 }
 
@@ -241,7 +248,7 @@ void UQuitView::OnResumeClicked()
 void UQuitView::OnControlsClicked()
 {
     // Legacy behavior: open controls dialog from GameScreen:
-    if (GameScreen* game_screen = GameScreen::GetInstance())
+    if (UGameScreen* game_screen = UGameScreen::GetInstance())
     {
         CloseMenu();
         game_screen->ShowCtlDlg();

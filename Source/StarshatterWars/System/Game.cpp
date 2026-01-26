@@ -307,3 +307,22 @@ Game::GetVideo()
 
 	return 0;
 }
+int
+Game::GammaLevel()
+{
+	if (game)
+		return game->gamma;
+
+	return 0;
+}
+
+void
+Game::SetGammaLevel(int g)
+{
+	if (game) {
+		game->gamma = g;
+
+		if (game->video)
+			game->video->SetGammaLevel(g);
+	}
+}
