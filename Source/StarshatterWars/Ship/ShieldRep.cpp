@@ -82,52 +82,77 @@ ShieldRep::~ShieldRep()
 
 // +--------------------------------------------------------------------+
 
-void
-ShieldRep::Hit(FVector impact, SimShot* shot, double damage)
+void ShieldRep::Hit(FVector Impact, SimShot* Shot, double Damage)
 {
 	if (!model || model->GetSurfaces().size() < 1)
 		return;
 
-	// transform impact into object space:
-	Matrix xform(Orientation());
+	// --------------------------------------------------
+	// Transform impact into object (local) space
+	// --------------------------------------------------
 
-	const FVector tmp = impact - loc;
+	// World -> local offset
+	const FVector LocalDelta = Impact - Location();
 
-	impact.X = tmp * FVector(xform(0, 0), xform(0, 1), xform(0, 2));
-	impact.Y = tmp * FVector(xform(1, 0), xform(1, 1), xform(1, 2));
-	impact.Z = tmp * FVector(xform(2, 0), xform(2, 1), xform(2, 2));
+	// Orientation() assumed to be a Starshatter-style orientation matrix
+	// converted to an Unreal-compatible FMatrix wrapper.
+	const FMatrix XForm = Orientation();
 
-	// find slot to store the hit:
-	int    slot = -1;
-	double oldest_age = -1.0;
+	// Extract basis vectors explicitly (ROW-MAJOR)
+	const FVector XAxis(XForm.M[0][0], XForm.M[0][1], XForm.M[0][2]);
+	const FVector YAxis(XForm.M[1][0], XForm.M[1][1], XForm.M[1][2]);
+	const FVector ZAxis(XForm.M[2][0], XForm.M[2][1], XForm.M[2][2]);
 
-	for (int i = 0; i < MAX_SHIELD_HITS; i++) {
-		if (hits[i].shot == shot) {
-			slot = i;
+	Impact.X = FVector::DotProduct(LocalDelta, XAxis);
+	Impact.Y = FVector::DotProduct(LocalDelta, YAxis);
+	Impact.Z = FVector::DotProduct(LocalDelta, ZAxis);
+
+	// --------------------------------------------------
+	// Find slot to store the hit
+	// --------------------------------------------------
+
+	int Slot = -1;
+	double OldestAge = -1.0;
+
+	// Reuse slot if this shot already exists
+	for (int i = 0; i < MAX_SHIELD_HITS; i++)
+	{
+		if (hits[i].shot == Shot)
+		{
+			Slot = i;
 			break;
 		}
 	}
 
-	if (slot < 0) {
-		for (int i = 0; i < MAX_SHIELD_HITS; i++) {
-			if (hits[i].damage <= 0) {
-				slot = i;
+	// Otherwise find empty or oldest slot
+	if (Slot < 0)
+	{
+		for (int i = 0; i < MAX_SHIELD_HITS; i++)
+		{
+			if (hits[i].damage <= 0.0)
+			{
+				Slot = i;
 				break;
 			}
 
-			if (hits[i].age > oldest_age) {
-				slot = i;
-				oldest_age = hits[i].age;
+			if (hits[i].age > OldestAge)
+			{
+				Slot = i;
+				OldestAge = hits[i].age;
 			}
 		}
 	}
 
-	if (slot >= 0 && slot < MAX_SHIELD_HITS) {
-		// record the hit in the slot:
-		hits[slot].hitloc = impact;
-		hits[slot].damage = damage;
-		hits[slot].age = 1.0;
-		hits[slot].shot = shot;
+	// --------------------------------------------------
+	// Record hit
+	// --------------------------------------------------
+
+	if (Slot >= 0 && Slot < MAX_SHIELD_HITS)
+	{
+		hits[Slot].hitloc = Impact;
+		hits[Slot].damage = Damage;
+		hits[Slot].age = 1.0;
+		hits[Slot].shot = Shot;
 
 		if (nhits < MAX_SHIELD_HITS)
 			nhits++;
@@ -183,77 +208,148 @@ ShieldRep::Illuminate()
 		return;
 
 	Surface* surf = model->GetSurfaces().first();
+	if (!surf)
+		return;
+
 	VertexSet* vset = surf->GetVertexSet();
-	const int  nverts = vset->nverts;
+	if (!vset || vset->nverts < 1)
+		return;
 
-	for (int i = 0; i < nverts; i++) {
-		vset->diffuse[i] = 0;
-		vset->specular[i] = 0;
+	const int nverts = vset->nverts;
+
+	// Clear lighting buffers (FColor*)
+	for (int i = 0; i < nverts; i++)
+	{
+		vset->diffuse[i] = FColor(0, 0, 0, 0);
+		vset->specular[i] = FColor(0, 0, 0, 0);
 	}
-
-	double all_damage = 0.0;
 
 	if (nhits < 1)
 		return;
 
-	for (int i = 0; i < MAX_SHIELD_HITS; i++) {
-		if (hits[i].damage > 0) {
-			// add the hit's contribution to the shield verts:
-			const FVector hitloc = hits[i].hitloc;
-			double        hitdam = hits[i].damage * 2000.0;
+	double all_damage = 0.0;
 
-			all_damage += hits[i].damage;
+	// --------------------------------------------------
+	// Non-bubble: add hit glow contribution per-vertex
+	// --------------------------------------------------
+	for (int i = 0; i < MAX_SHIELD_HITS; i++)
+	{
+		if (hits[i].damage <= 0.0)
+			continue;
 
-			if (!bubble) {
+		const FVector HitLoc = hits[i].hitloc;
+		double HitDam = hits[i].damage * 2000.0;
 
-				const double limit = radius * radius;
-				if (hitdam > limit)
-					hitdam = limit;
+		all_damage += hits[i].damage;
 
-				for (int v = 0; v < nverts; v++) {
-					double dist = (vset->loc[v] - hitloc).Length();
+		if (!bubble)
+		{
+			const double limit = (double)radius * (double)radius;
+			if (HitDam > limit)
+				HitDam = limit;
 
-					if (dist < 1.0)
-						dist = 1.0;  // can't divide by zero!
-					else
-						dist = pow(dist, 2.7);
+			for (int v = 0; v < nverts; v++)
+			{
+				// vset->loc[v] may be FVector OR UE::Math::TVector<double>.
+				// Convert explicitly to FVector to avoid operator mismatches:
+				const FVector VLoc(
+					(float)vset->loc[v].X,
+					(float)vset->loc[v].Y,
+					(float)vset->loc[v].Z
+				);
 
-					const double pert = FMath::FRandRange(0.1, 1.5);
-					const double intensity = pert * hitdam / dist;
+				double dist = (VLoc - HitLoc).Length();
 
-					if (intensity > 0.003)
-						vset->diffuse[v] = ((Color::White * intensity) + vset->diffuse[v]).Value();
+				if (dist < 1.0)
+					dist = 1.0;
+				else
+					dist = pow(dist, 2.7);
+
+				const double pert = (double)FMath::FRandRange(0.1f, 1.5f);
+				const double intensity = pert * HitDam / dist;
+
+				if (intensity > 0.003)
+				{
+					const float AddF = (float)FMath::Clamp(intensity, 0.0, 1.0);
+					const uint8 AddU = (uint8)FMath::Clamp<int32>((int32)(AddF * 255.0f), 0, 255);
+
+					const FColor Base = vset->diffuse[v];
+
+					const uint8 R = (uint8)FMath::Min(255, (int32)Base.R + (int32)AddU);
+					const uint8 G = (uint8)FMath::Min(255, (int32)Base.G + (int32)AddU);
+					const uint8 B = (uint8)FMath::Min(255, (int32)Base.B + (int32)AddU);
+
+					vset->diffuse[v] = FColor(R, G, B, 255);
 				}
 			}
 		}
 	}
 
-	if (bubble) {
+	// --------------------------------------------------
+	// Bubble: rim-light effect (view vector vs normal)
+	// --------------------------------------------------
+	if (bubble)
+	{
 		double shield_gain = 1.0;
-
-		if (all_damage < 1000.0) {
+		if (all_damage < 1000.0)
 			shield_gain = all_damage / 1000.0;
-		}
 
-		for (int i = 0; i < nverts; i++) {
-			const FVector vloc = (vset->loc[i] * orientation) + loc;
-			const FVector vnrm = (vset->nrm[i] * orientation);
+		// Solid::Orientation() returns const FMatrix& (per your Solid.h)
+		const FMatrix& orientation = Orientation();
 
-			FVector V = vloc * -1.0f;
-			V.Normalize();
+		// Basis vectors from matrix rows:
+		const FVector XAxis((float)orientation.M[0][0], (float)orientation.M[0][1], (float)orientation.M[0][2]);
+		const FVector YAxis((float)orientation.M[1][0], (float)orientation.M[1][1], (float)orientation.M[1][2]);
+		const FVector ZAxis((float)orientation.M[2][0], (float)orientation.M[2][1], (float)orientation.M[2][2]);
 
-			double intensity = 1.0 - V * vnrm;
+		const FVector WorldOrigin = Location();
 
-			if (intensity > 0.0) {
+		for (int i = 0; i < nverts; i++)
+		{
+			const FVector L(
+				(float)vset->loc[i].X,
+				(float)vset->loc[i].Y,
+				(float)vset->loc[i].Z
+			);
+
+			const FVector N(
+				(float)vset->nrm[i].X,
+				(float)vset->nrm[i].Y,
+				(float)vset->nrm[i].Z
+			);
+
+			// Rotate local -> world (row-dot semantics consistent with Hit)
+			const FVector RotLoc(
+				FVector::DotProduct(L, XAxis),
+				FVector::DotProduct(L, YAxis),
+				FVector::DotProduct(L, ZAxis)
+			);
+
+			const FVector RotNrm(
+				FVector::DotProduct(N, XAxis),
+				FVector::DotProduct(N, YAxis),
+				FVector::DotProduct(N, ZAxis)
+			);
+
+			const FVector vloc = RotLoc + WorldOrigin;
+			const FVector vnrm = RotNrm.GetSafeNormal();
+
+			const FVector V = (-vloc).GetSafeNormal();
+
+			double intensity = 1.0 - (double)FVector::DotProduct(V, vnrm);
+
+			if (intensity > 0.0)
+			{
 				intensity *= intensity;
-
 				if (intensity > 1.0)
 					intensity = 1.0;
 
-				intensity *= (shield_gain * Random(0.75, 1.0));
+				intensity *= (shield_gain * (double)FMath::FRandRange(0.75f, 1.0f));
 
-				const Color vs = Color::White * intensity;
-				vset->diffuse[i] = vs.Value();
+				const float I = (float)FMath::Clamp(intensity, 0.0, 1.0);
+				const uint8 U = (uint8)FMath::Clamp<int32>((int32)(I * 255.0f), 0, 255);
+
+				vset->diffuse[i] = FColor(U, U, U, 255);
 			}
 		}
 	}

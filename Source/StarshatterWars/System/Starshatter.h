@@ -24,7 +24,7 @@ class Bitmap;
 class Campaign;
 class UCmpnScreen;
 class PlanScreen;
-class LoadScreen;
+class ULoadScreen;
 class UGameScreen;
 class Ship;
 class Sim;

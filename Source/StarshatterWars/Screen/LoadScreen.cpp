@@ -17,9 +17,8 @@
     - Controls which loading dialog is shown based on current game mode.
 */
 
-#include "GameStructs.h"
-
 #include "LoadScreen.h"
+#include "GameStructs.h"
 
 // Child widgets:
 #include "LoadDlg.h"
@@ -158,8 +157,8 @@ void ULoadScreen::ShowLoadDlg()
     // Show campaign load dialog if available and loading campaign:
     if (Stars && CmpLoadDlg)
     {
-        if (Stars->GetGameMode() == Starshatter::CLOD_MODE ||
-            Stars->GetGameMode() == Starshatter::CMPN_MODE)
+        if (Stars->GetGameMode() == (int)EMODE::CLOD_MODE ||
+            Stars->GetGameMode() == (int)EMODE::CMPN_MODE)
         {
             CmpLoadDlg->SetVisibility(ESlateVisibility::Visible);
 

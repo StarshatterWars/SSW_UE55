@@ -63,7 +63,6 @@ void UEngineeringDlg::NativeConstruct()
 void UEngineeringDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame();
 }
 
 // --------------------------------------------------------------------
@@ -156,7 +155,6 @@ void UEngineeringDlg::Show()
     // In UE: AddToViewport/SetVisibility handled by owning screen stack.
     // Keep refresh behavior:
     UpdateRouteTables();
-    ExecFrame();
 }
 
 void UEngineeringDlg::Hide()
@@ -189,7 +187,6 @@ void UEngineeringDlg::SetShip(Ship* s)
 
         if (ship) {
             UpdateRouteTables();
-            ExecFrame();
         }
     }
     else if (!s) {

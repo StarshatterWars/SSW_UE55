@@ -172,14 +172,14 @@ void UMenuDlg::OnCampaign()
 {
     ClearDescription();
     if (Manager)
-        Manager->ShowCmpSelectDlg();
+        Manager->ShowCampaignSelectDlg();
 }
 
 void UMenuDlg::OnMission()
 {
     ClearDescription();
     if (Manager)
-        Manager->ShowMsnSelectDlg();
+        Manager->ShowMissionSelectDlg();
 }
 
 void UMenuDlg::OnPlayer()
@@ -208,13 +208,6 @@ void UMenuDlg::OnControls()
     ClearDescription();
     if (Manager)
         Manager->ShowCtlDlg();
-}
-
-void UMenuDlg::OnMod()
-{
-    ClearDescription();
-    if (Manager)
-        Manager->ShowModDlg();
 }
 
 void UMenuDlg::OnTacReference()

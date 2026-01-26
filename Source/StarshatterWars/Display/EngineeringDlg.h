@@ -23,6 +23,7 @@
 #include "GameScreen.h"
 
 #include "List.h"
+#include "ThreadSync.h"
 #include "EngineeringDlg.generated.h"
 
 
@@ -42,7 +43,6 @@ class SimComponent;
 
 // Legacy containers/types (ported in your codebase):
 template<typename T> class List;
-class ThreadSync;
 
 UCLASS()
 class STARSHATTERWARS_API UEngineeringDlg : public UBaseScreen
