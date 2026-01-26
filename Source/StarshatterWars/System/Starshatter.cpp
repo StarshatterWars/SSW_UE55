@@ -922,10 +922,10 @@ Starshatter::GameState()
 		if (cmpnscreen)
 			cmpnscreen->Hide();
 
-		if (!loadscreen)
+		if (!LoadScreen)
 			SetupLoadScreen();
 		else
-			loadscreen->Show();
+			LoadScreen->Show();
 
 		if (game_mode == (int)EMODE::CLOD_MODE)
 			MusicManager::SetMode(MusicManager::MENU);
@@ -942,8 +942,8 @@ Starshatter::GameState()
 		if (cmpnscreen)
 			menuscreen->Hide();
 
-		if (loadscreen)
-			loadscreen->Hide();
+		if (LoadScreen)
+			LoadScreen->Hide();
 
 		if (gamescreen)
 			gamescreen->Hide();

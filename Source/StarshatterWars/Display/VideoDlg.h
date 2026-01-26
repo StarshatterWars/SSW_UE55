@@ -39,10 +39,11 @@ public:
     void ApplySettings();
     void CancelSettings();
 
-protected:
-    virtual void        NativeConstruct() override;
     virtual void        ExecFrame(float DeltaTime);
 
+protected:
+    virtual void        NativeConstruct() override;
+   
 protected:
     // UBaseScreen overrides
     virtual void BindFormWidgets() override;
