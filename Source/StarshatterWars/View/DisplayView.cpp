@@ -1,17 +1,17 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         DisplayView.cpp
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    Stars.exe
+    FILE:         DisplayView.cpp
+    AUTHOR:       Carlos Bott
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+    ORIGINAL AUTHOR: John DiCamillo
+    ORIGINAL STUDIO: Destroyer Studios LLC
 
-	OVERVIEW
-	========
-	View class for Quantum Destination HUD Overlay
+    OVERVIEW
+    ========
+    View class for Quantum Destination HUD Overlay
 */
 
 #include "DisplayView.h"
@@ -19,239 +19,225 @@
 #include "Window.h"
 #include "Game.h"
 #include "Bitmap.h"
-#include "SystemFont.h"
+
+// SystemFont replaced by UE font:
+#include "Engine/Font.h"
 
 // Render asset replacement:
 #include "Engine/Texture2D.h"
 
 // +====================================================================+
 
-class DisplayElement
-{
-public:
-	static const char* TYPENAME() { return "DisplayElement"; }
-
-	DisplayElement()
-		: image(0), font(0), blend(0), hold(0), fade_in(0), fade_out(0)
-	{
-	}
-
-	Text        text;
-	Bitmap*		image;
-	SystemFont* font;
-	FColor      color;
-	Rect        rect;
-	int         blend;
-	double      hold;
-	double      fade_in;
-	double      fade_out;
-};
+TWeakObjectPtr<UDisplayView> UDisplayView::DisplayViewInstance;
 
 // +====================================================================+
 
-static DisplayView* display_view = 0;
-
-static FORCEINLINE uint8 ScaleByte(uint8 Value, float Scale)
+UDisplayView::UDisplayView(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-	const int32 Scaled = FMath::RoundToInt((float)Value * Scale);
-	return (uint8)FMath::Clamp(Scaled, 0, 255);
 }
 
-static FORCEINLINE FColor ScaleColor(const FColor& In, float Scale)
+UDisplayView* UDisplayView::GetInstance(UWorld* World, TSubclassOf<UDisplayView> WidgetClass)
 {
-	return FColor(
-		ScaleByte(In.R, Scale),
-		ScaleByte(In.G, Scale),
-		ScaleByte(In.B, Scale),
-		ScaleByte(In.A, Scale)   // scale alpha too for fade
-	);
+    if (DisplayViewInstance.IsValid())
+        return DisplayViewInstance.Get();
+
+    if (!World || !WidgetClass)
+        return nullptr;
+
+    // Use the first local player controller if available:
+    APlayerController* PC = World->GetFirstPlayerController();
+    if (!PC)
+        return nullptr;
+
+    UDisplayView* W = CreateWidget<UDisplayView>(PC, WidgetClass);
+    DisplayViewInstance = W;
+    return W;
 }
 
-DisplayView::DisplayView(Window* c)
-	: View(c), width(0), height(0), xcenter(0), ycenter(0)
+void UDisplayView::InitializeView(Window* InWindow)
 {
-	display_view = this;
-	DisplayView::OnWindowMove();
+    SetWindow(InWindow);     // inherited from UView
+    UpdateCachedWindowMetrics();
 }
 
-DisplayView::~DisplayView()
+void UDisplayView::UpdateCachedWindowMetrics()
 {
-	if (display_view == this)
-		display_view = 0;
+    Window* W = GetWindow();
+    if (!W)
+        return;
 
-	elements.destroy();
+    width = W->Width();
+    height = W->Height();
+    xcenter = (width / 2.0) - 0.5;
+    ycenter = (height / 2.0) + 0.5;
 }
 
-DisplayView*
-DisplayView::GetInstance()
+void UDisplayView::OnWindowMove()
 {
-	if (display_view == 0)
-		display_view = new DisplayView(0);
-
-	return display_view;
-}
-
-void
-DisplayView::OnWindowMove()
-{
-	if (window) {
-		width = window->Width();
-		height = window->Height();
-		xcenter = (width / 2.0) - 0.5;
-		ycenter = (height / 2.0) + 0.5;
-	}
+    UpdateCachedWindowMetrics();
 }
 
 // +--------------------------------------------------------------------+
 
-void
-DisplayView::Refresh()
+void UDisplayView::Refresh()
 {
-	ListIter<DisplayElement> iter = elements;
-	while (++iter) {
-		DisplayElement* elem = iter.value();
+    Window* W = GetWindow();
+    if (!W)
+        return;
 
-		// convert relative rect to window rect:
-		Rect elem_rect = elem->rect;
-		if (elem_rect.x == 0 && elem_rect.y == 0 && elem_rect.w == 0 && elem_rect.h == 0) {
-			// stretch to fit
-			elem_rect.w = width;
-			elem_rect.h = height;
-		}
-		else if (elem_rect.w < 0 && elem_rect.h < 0) {
-			// center image in window
-			elem_rect.w *= -1;
-			elem_rect.h *= -1;
+    // Legacy iteration:
+    for (const FDisplayElement& Elem : Elements)
+    {
+        // Convert relative rect to window rect:
+        Rect elem_rect = Elem.RectValue;
 
-			elem_rect.x = (width - elem_rect.w) / 2;
-			elem_rect.y = (height - elem_rect.h) / 2;
-		}
-		else {
-			// offset from right or bottom
-			if (elem_rect.x < 0) elem_rect.x += width;
-			if (elem_rect.y < 0) elem_rect.y += height;
-		}
+        if (elem_rect.x == 0 && elem_rect.y == 0 && elem_rect.w == 0 && elem_rect.h == 0)
+        {
+            // Stretch to fit:
+            elem_rect.w = width;
+            elem_rect.h = height;
+        }
+        else if (elem_rect.w < 0 && elem_rect.h < 0)
+        {
+            // Center image in window:
+            elem_rect.w *= -1;
+            elem_rect.h *= -1;
 
-		// compute current fade,
-		// assumes fades are 1 second or less:
-		double fade = 0;
-		if (elem->fade_in > 0)        fade = 1 - elem->fade_in;
-		else if (elem->hold > 0)      fade = 1;
-		else if (elem->fade_out > 0)  fade = elem->fade_out;
+            elem_rect.x = (width - elem_rect.w) / 2;
+            elem_rect.y = (height - elem_rect.h) / 2;
+        }
+        else
+        {
+            // Offset from right or bottom:
+            if (elem_rect.x < 0) elem_rect.x += width;
+            if (elem_rect.y < 0) elem_rect.y += height;
+        }
 
-		// draw text:
-		if (elem->text.length() && elem->font) {
-			elem->font->SetColor(elem->color);
-			elem->font->SetAlpha(fade);
-			window->SetFont(elem->font);
-			window->DrawText(elem->text, elem->text.length(), elem_rect, DT_WORDBREAK);
-		}
+        // Compute current fade (assumes fades are ~1 second or less in legacy logic):
+        double fade = 0.0;
+        if (Elem.FadeIn > 0) fade = 1.0 - Elem.FadeIn;
+        else if (Elem.Hold > 0) fade = 1.0;
+        else if (Elem.FadeOut > 0) fade = Elem.FadeOut;
 
-		// draw image:
-		else if (elem->image) {
+        // Clamp fade defensively:
+        fade = FMath::Clamp(fade, 0.0, 1.0);
 
-			const FColor FadedColor(
-				(uint8)FMath::Clamp(int(elem->color.R * fade), 0, 255),
-				(uint8)FMath::Clamp(int(elem->color.G * fade), 0, 255),
-				(uint8)FMath::Clamp(int(elem->color.B * fade), 0, 255),
-				elem->color.A
-			);
+        // Draw text:
+        if (Elem.HasText() && Elem.Font)
+        {
+            // IMPORTANT:
+            // This assumes your Window wrapper supports UE fonts now (SystemFont*),
+            // or that Window::SetFont performs any conversion needed.
+            W->SetFont(Elem.Font);
 
-			window->FadeBitmap(
-				elem_rect.x,
-				elem_rect.y,
-				elem_rect.x + elem_rect.w,
-				elem_rect.y + elem_rect.h,
-				elem->image,
-				FadedColor,
-				elem->blend
-			);
-		}
-	}
-}
+            // If your wrapper supports per-draw color/alpha:
+            W->SetTextColor(Elem.Color);
+            W->SetTextAlpha((float)fade);
 
+            W->DrawText(Elem.TextValue, Elem.TextValue.length(), elem_rect, DT_WORDBREAK);
+        }
 
-// +--------------------------------------------------------------------+
+        // Draw image:
+        else if (Elem.HasImage())
+        {
+            const FColor FadedColor(
+                (uint8)FMath::Clamp((int)(Elem.Color.R * fade), 0, 255),
+                (uint8)FMath::Clamp((int)(Elem.Color.G * fade), 0, 255),
+                (uint8)FMath::Clamp((int)(Elem.Color.B * fade), 0, 255),
+                Elem.Color.A
+            );
 
-void
-DisplayView::ExecFrame()
-{
-	double seconds = Game::GUITime();
-
-	ListIter<DisplayElement> iter = elements;
-	while (++iter) {
-		DisplayElement* elem = iter.value();
-
-		if (elem->fade_in > 0)
-			elem->fade_in -= seconds;
-
-		else if (elem->hold > 0)
-			elem->hold -= seconds;
-
-		else if (elem->fade_out > 0)
-			elem->fade_out -= seconds;
-
-		else
-			delete iter.removeItem();
-	}
+            W->FadeBitmap(
+                elem_rect.x,
+                elem_rect.y,
+                elem_rect.x + elem_rect.w,
+                elem_rect.y + elem_rect.h,
+                Elem.Image,
+                FadedColor,
+                Elem.Blend
+            );
+        }
+    }
 }
 
 // +--------------------------------------------------------------------+
 
-void
-DisplayView::ClearDisplay()
+void UDisplayView::ExecFrame(float DeltaTime)
 {
-	elements.destroy();
+    // Legacy used Game::GUITime() for step seconds.
+    // If you still want the exact legacy behavior, you can ignore DeltaTime and use Game::GUITime().
+    // But keeping DeltaTime makes this usable from UE tick.
+    const double seconds = (DeltaTime > 0.0f) ? (double)DeltaTime : (double)Game::GUITime();
+
+    for (int32 i = Elements.Num() - 1; i >= 0; --i)
+    {
+        FDisplayElement& Elem = Elements[i];
+
+        if (Elem.FadeIn > 0.0)
+            Elem.FadeIn -= seconds;
+        else if (Elem.Hold > 0.0)
+            Elem.Hold -= seconds;
+        else if (Elem.FadeOut > 0.0)
+            Elem.FadeOut -= seconds;
+        else
+            Elements.RemoveAtSwap(i);
+    }
 }
 
 // +--------------------------------------------------------------------+
 
-void
-DisplayView::AddText(const char* text,
-	SystemFont* font,
-	FColor        color,
-	const Rect& rect,
-	double       hold,
-	double       fade_in,
-	double       fade_out)
+void UDisplayView::ClearDisplay()
 {
-	DisplayElement* elem = new DisplayElement;
-
-	if (fade_in == 0 && fade_out == 0 && hold == 0)
-		hold = 300;
-
-	elem->text = text;
-	elem->font = font;
-	elem->color = color;
-	elem->rect = rect;
-	elem->hold = hold;
-	elem->fade_in = fade_in;
-	elem->fade_out = fade_out;
-
-	elements.append(elem);
+    Elements.Reset();
 }
 
-void
-DisplayView::AddImage(Bitmap* texture,
-	FColor        color,
-	int          blend,
-	const Rect& rect,
-	double       hold,
-	double       fade_in,
-	double       fade_out)
+// +--------------------------------------------------------------------+
+
+void UDisplayView::AddText(
+    const char* text,
+    SystemFont* font,
+    FColor color,
+    const Rect& rect,
+    double hold,
+    double fade_in,
+    double fade_out)
 {
-	DisplayElement* elem = new DisplayElement;
+    if (fade_in == 0 && fade_out == 0 && hold == 0)
+        hold = 300;
 
-	if (fade_in == 0 && fade_out == 0 && hold == 0)
-		hold = 300;
+    FDisplayElement Elem;
+    Elem.TextValue = text;
+    Elem.Font = font;
+    Elem.Color = color;
+    Elem.RectValue = rect;
+    Elem.Hold = hold;
+    Elem.FadeIn = fade_in;
+    Elem.FadeOut = fade_out;
 
-	elem->image = texture;
-	elem->rect = rect;
-	elem->color = color;
-	elem->blend = blend;
-	elem->hold = hold;
-	elem->fade_in = fade_in;
-	elem->fade_out = fade_out;
+    Elements.Add(Elem);
+}
 
-	elements.append(elem);
+void UDisplayView::AddImage(
+    Bitmap* texture,
+    FColor color,
+    int blend,
+    const Rect& rect,
+    double hold,
+    double fade_in,
+    double fade_out)
+{
+    if (fade_in == 0 && fade_out == 0 && hold == 0)
+        hold = 300;
+
+    FDisplayElement Elem;
+    Elem.Image = texture;
+    Elem.Color = color;
+    Elem.Blend = blend;
+    Elem.RectValue = rect;
+    Elem.Hold = hold;
+    Elem.FadeIn = fade_in;
+    Elem.FadeOut = fade_out;
+
+    Elements.Add(Elem);
 }

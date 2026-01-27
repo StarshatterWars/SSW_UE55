@@ -1,7 +1,39 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
+
+    SUBSYSTEM:    Stars.exe
+    FILE:         BaseScreen.cpp
+    AUTHOR:       Carlos Bott
+*/
+
 #include "BaseScreen.h"
+
+// Core:
+#include "Misc/Char.h"
+#include "Logging/LogMacros.h"
+
+// Input:
+#include "Input/Reply.h"
+#include "InputCoreTypes.h"
 
 // UMG:
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Components/TextBlock.h"
+#include "Components/RichTextBlock.h"
+#include "Components/Button.h"
+#include "Components/Image.h"
+#include "Components/EditableTextBox.h"
+#include "Components/ComboBoxString.h"
+#include "Components/ListView.h"
+#include "Components/Slider.h"
+
+// Slate styling:
+#include "Styling/SlateColor.h"
+#include "Fonts/SlateFontInfo.h"
+#include "Styling/SlateTypes.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogBaseScreen, Log, All);
 
 namespace
 {
@@ -61,11 +93,11 @@ namespace
     {
         while (true)
         {
-            int32 Start = S.Find(TEXT("/*"));
+            const int32 Start = S.Find(TEXT("/*"));
             if (Start == INDEX_NONE)
                 break;
 
-            int32 End = S.Find(TEXT("*/"), ESearchCase::IgnoreCase, ESearchDir::FromStart, Start + 2);
+            const int32 End = S.Find(TEXT("*/"), ESearchCase::IgnoreCase, ESearchDir::FromStart, Start + 2);
             if (End == INDEX_NONE)
             {
                 S = S.Left(Start);
@@ -102,6 +134,7 @@ namespace
             if (C == ',') { ++Pos; return { ETok::Comma, TEXT(",") }; }
             if (C == '#') { ++Pos; return { ETok::Hash, TEXT("#") }; }
 
+            // "string"
             if (C == '"')
             {
                 ++Pos;
@@ -118,6 +151,7 @@ namespace
                 return T;
             }
 
+            // 0x... as ident
             if (C == '0' && (Pos + 1) < Len && (Src[Pos + 1] == 'x' || Src[Pos + 1] == 'X'))
             {
                 const int32 Start = Pos;
@@ -131,6 +165,7 @@ namespace
                 return T;
             }
 
+            // number
             if (FChar::IsDigit(C) || C == '-' || C == '+')
             {
                 const int32 Start = Pos;
@@ -152,6 +187,7 @@ namespace
                 return T;
             }
 
+            // identifier
             if (IsIdentStart(C))
             {
                 const int32 Start = Pos;
@@ -233,7 +269,7 @@ namespace
                     continue;
                 }
 
-                // Added: form-level font support
+                // form-level font
                 if (IsIdent(TEXT("font")))
                 {
                     ConsumeIdent();
@@ -470,9 +506,9 @@ namespace
             const FString S = Tok.Text;
             Tok = Lex.Next();
 
-            if (S.Equals(TEXT("left"), ESearchCase::IgnoreCase)) return EFormAlign::Left;
+            if (S.Equals(TEXT("left"), ESearchCase::IgnoreCase))   return EFormAlign::Left;
             if (S.Equals(TEXT("center"), ESearchCase::IgnoreCase)) return EFormAlign::Center;
-            if (S.Equals(TEXT("right"), ESearchCase::IgnoreCase)) return EFormAlign::Right;
+            if (S.Equals(TEXT("right"), ESearchCase::IgnoreCase))  return EFormAlign::Right;
 
             OutError = TEXT("Unknown align value");
             return EFormAlign::None;
@@ -489,15 +525,15 @@ namespace
             const FString S = Tok.Text;
             Tok = Lex.Next();
 
-            if (S.Equals(TEXT("label"), ESearchCase::IgnoreCase)) return EFormCtrlType::Label;
-            if (S.Equals(TEXT("text"), ESearchCase::IgnoreCase)) return EFormCtrlType::Text;
-            if (S.Equals(TEXT("button"), ESearchCase::IgnoreCase)) return EFormCtrlType::Button;
-            if (S.Equals(TEXT("image"), ESearchCase::IgnoreCase)) return EFormCtrlType::Image;
-            if (S.Equals(TEXT("edit"), ESearchCase::IgnoreCase)) return EFormCtrlType::Edit;
-            if (S.Equals(TEXT("combo"), ESearchCase::IgnoreCase)) return EFormCtrlType::Combo;
-            if (S.Equals(TEXT("list"), ESearchCase::IgnoreCase)) return EFormCtrlType::List;
-            if (S.Equals(TEXT("slider"), ESearchCase::IgnoreCase)) return EFormCtrlType::Slider;
-            if (S.Equals(TEXT("panel"), ESearchCase::IgnoreCase)) return EFormCtrlType::Panel;
+            if (S.Equals(TEXT("label"), ESearchCase::IgnoreCase))      return EFormCtrlType::Label;
+            if (S.Equals(TEXT("text"), ESearchCase::IgnoreCase))       return EFormCtrlType::Text;
+            if (S.Equals(TEXT("button"), ESearchCase::IgnoreCase))     return EFormCtrlType::Button;
+            if (S.Equals(TEXT("image"), ESearchCase::IgnoreCase))      return EFormCtrlType::Image;
+            if (S.Equals(TEXT("edit"), ESearchCase::IgnoreCase))       return EFormCtrlType::Edit;
+            if (S.Equals(TEXT("combo"), ESearchCase::IgnoreCase))      return EFormCtrlType::Combo;
+            if (S.Equals(TEXT("list"), ESearchCase::IgnoreCase))       return EFormCtrlType::List;
+            if (S.Equals(TEXT("slider"), ESearchCase::IgnoreCase))     return EFormCtrlType::Slider;
+            if (S.Equals(TEXT("panel"), ESearchCase::IgnoreCase))      return EFormCtrlType::Panel;
             if (S.Equals(TEXT("background"), ESearchCase::IgnoreCase)) return EFormCtrlType::Background;
 
             OutError = TEXT("Unknown ctrl type");
@@ -692,9 +728,6 @@ namespace
                     continue;
                 }
 
-                // -----------------------------------------------------------------
-                // ADD: SLIDER ACTIVE COLOR (FORM: active_color)
-                // -----------------------------------------------------------------
                 if (Key.Equals(TEXT("active_color"), ESearchCase::IgnoreCase))
                 {
                     OutCtrl.ActiveColor = ParseColor(OutError);
@@ -828,81 +861,46 @@ namespace
 
         static void ApplyDefaults(FParsedCtrl& Ctrl, const FParsedCtrl& Def)
         {
-            if (!Ctrl.bHasTexture && Def.bHasTexture)        Ctrl.Texture = Def.Texture;
-            if (!Ctrl.bHasFont && Def.bHasFont)             Ctrl.Font = Def.Font;
-            if (!Ctrl.bHasAlign && Def.bHasAlign)           Ctrl.Align = Def.Align;
-            if (!Ctrl.bHasBackColor && Def.bHasBackColor)   Ctrl.BackColor = Def.BackColor;
-            if (!Ctrl.bHasForeColor && Def.bHasForeColor)   Ctrl.ForeColor = Def.ForeColor;
+            if (!Ctrl.bHasTexture && Def.bHasTexture)          Ctrl.Texture = Def.Texture;
+            if (!Ctrl.bHasFont && Def.bHasFont)               Ctrl.Font = Def.Font;
+            if (!Ctrl.bHasAlign && Def.bHasAlign)             Ctrl.Align = Def.Align;
+            if (!Ctrl.bHasBackColor && Def.bHasBackColor)     Ctrl.BackColor = Def.BackColor;
+            if (!Ctrl.bHasForeColor && Def.bHasForeColor)     Ctrl.ForeColor = Def.ForeColor;
 
-            // -------------------------------------------------------------
-            // ADD: SLIDER ACTIVE COLOR DEFAULT MERGE (defctrl -> ctrl)
-            // -------------------------------------------------------------
             if (!Ctrl.bHasActiveColor && Def.bHasActiveColor) Ctrl.ActiveColor = Def.ActiveColor;
 
-            if (!Ctrl.bHasTransparent && Def.bHasTransparent)    Ctrl.bTransparent = Def.bTransparent;
-            if (!Ctrl.bHasSticky && Def.bHasSticky)              Ctrl.bSticky = Def.bSticky;
-            if (!Ctrl.bHasBorder && Def.bHasBorder)              Ctrl.bBorder = Def.bBorder;
-            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial)    Ctrl.bHidePartial = Def.bHidePartial;
-            if (!Ctrl.bHasShowHeadings && Def.bHasShowHeadings)  Ctrl.bShowHeadings = Def.bShowHeadings;
+            if (!Ctrl.bHasTransparent && Def.bHasTransparent) Ctrl.bTransparent = Def.bTransparent;
+            if (!Ctrl.bHasSticky && Def.bHasSticky)           Ctrl.bSticky = Def.bSticky;
+            if (!Ctrl.bHasBorder && Def.bHasBorder)           Ctrl.bBorder = Def.bBorder;
+            if (!Ctrl.bHasHidePartial && Def.bHasHidePartial) Ctrl.bHidePartial = Def.bHidePartial;
+            if (!Ctrl.bHasShowHeadings && Def.bHasShowHeadings) Ctrl.bShowHeadings = Def.bShowHeadings;
 
-            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth)      Ctrl.FixedWidth = Def.FixedWidth;
-            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight)    Ctrl.FixedHeight = Def.FixedHeight;
+            if (!Ctrl.bHasFixedWidth && Def.bHasFixedWidth)   Ctrl.FixedWidth = Def.FixedWidth;
+            if (!Ctrl.bHasFixedHeight && Def.bHasFixedHeight) Ctrl.FixedHeight = Def.FixedHeight;
 
-            if (!Ctrl.bHasCells && Def.bHasCells)                Ctrl.Cells = Def.Cells;
-            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets)      Ctrl.CellInsets = Def.CellInsets;
-            if (!Ctrl.bHasMargins && Def.bHasMargins)            Ctrl.Margins = Def.Margins;
+            if (!Ctrl.bHasCells && Def.bHasCells)             Ctrl.Cells = Def.Cells;
+            if (!Ctrl.bHasCellInsets && Def.bHasCellInsets)   Ctrl.CellInsets = Def.CellInsets;
+            if (!Ctrl.bHasMargins && Def.bHasMargins)         Ctrl.Margins = Def.Margins;
 
-            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar)        Ctrl.ScrollBar = Def.ScrollBar;
-            if (!Ctrl.bHasStyle && Def.bHasStyle)                Ctrl.Style = Def.Style;
+            if (!Ctrl.bHasScrollBar && Def.bHasScrollBar)     Ctrl.ScrollBar = Def.ScrollBar;
+            if (!Ctrl.bHasStyle && Def.bHasStyle)             Ctrl.Style = Def.Style;
 
-            if (!Ctrl.bHasLayout && Def.bHasLayout)              Ctrl.Layout = Def.Layout;
+            if (!Ctrl.bHasLayout && Def.bHasLayout)           Ctrl.Layout = Def.Layout;
         }
 
         FFormLexer Lex;
         FTok Tok;
-
-        bool IsIdent(const TCHAR* S) const
-        {
-            return Tok.Type == ETok::Ident && Tok.Text.Equals(S, ESearchCase::IgnoreCase);
-        }
-
-        bool MatchIdent(const TCHAR* S)
-        {
-            if (!IsIdent(S))
-                return false;
-            Tok = Lex.Next();
-            return true;
-        }
-
-        void ConsumeIdent()
-        {
-            Tok = Lex.Next();
-        }
-
-        bool Consume(ETok T, FString& OutError, const TCHAR* Msg)
-        {
-            if (Tok.Type != T)
-            {
-                OutError = Msg;
-                return false;
-            }
-            Tok = Lex.Next();
-            return true;
-        }
-
-        void EatOptionalComma()
-        {
-            if (Tok.Type == ETok::Comma)
-                Tok = Lex.Next();
-        }
-
-        bool Is(ETok T) const { return Tok.Type == T; }
     };
-}
+} // namespace
 
 // --------------------------------------------------------------------
 // UBaseScreen lifecycle
 // --------------------------------------------------------------------
+
+UBaseScreen::UBaseScreen(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+{
+}
 
 void UBaseScreen::NativeOnInitialized()
 {
@@ -929,7 +927,7 @@ void UBaseScreen::NativeOnInitialized()
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("BaseScreen: ParseLegacyForm failed: %s"), *Err);
+            UE_LOG(LogBaseScreen, Warning, TEXT("BaseScreen: ParseLegacyForm failed: %s"), *Err);
         }
     }
 }
@@ -1086,23 +1084,23 @@ void UBaseScreen::SetVisible(int32 Id, bool bVisible)
 {
     const ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
 
-    if (UTextBlock* L = GetLabel(Id))        L->SetVisibility(Vis);
-    if (URichTextBlock* T = GetText(Id))     T->SetVisibility(Vis);
-    if (UButton* B = GetButton(Id))         B->SetVisibility(Vis);
-    if (UImage* I = GetImage(Id))           I->SetVisibility(Vis);
-    if (UEditableTextBox* E = GetEdit(Id))  E->SetVisibility(Vis);
-    if (UComboBoxString* C = GetCombo(Id))  C->SetVisibility(Vis);
-    if (UListView* LV = GetList(Id))        LV->SetVisibility(Vis);
-    if (USlider* S = GetSlider(Id))         S->SetVisibility(Vis);
+    if (UTextBlock* L = GetLabel(Id))          L->SetVisibility(Vis);
+    if (URichTextBlock* T = GetText(Id))       T->SetVisibility(Vis);
+    if (UButton* B = GetButton(Id))           B->SetVisibility(Vis);
+    if (UImage* I = GetImage(Id))             I->SetVisibility(Vis);
+    if (UEditableTextBox* E = GetEdit(Id))    E->SetVisibility(Vis);
+    if (UComboBoxString* C = GetCombo(Id))    C->SetVisibility(Vis);
+    if (UListView* LV = GetList(Id))          LV->SetVisibility(Vis);
+    if (USlider* S = GetSlider(Id))           S->SetVisibility(Vis);
 }
 
 void UBaseScreen::SetEnabled(int32 Id, bool bEnabled)
 {
-    if (UButton* B = GetButton(Id))         B->SetIsEnabled(bEnabled);
-    if (UEditableTextBox* E = GetEdit(Id))  E->SetIsEnabled(bEnabled);
-    if (UComboBoxString* C = GetCombo(Id))  C->SetIsEnabled(bEnabled);
-    if (UListView* LV = GetList(Id))        LV->SetIsEnabled(bEnabled);
-    if (USlider* S = GetSlider(Id))         S->SetIsEnabled(bEnabled);
+    if (UButton* B = GetButton(Id))           B->SetIsEnabled(bEnabled);
+    if (UEditableTextBox* E = GetEdit(Id))    E->SetIsEnabled(bEnabled);
+    if (UComboBoxString* C = GetCombo(Id))    C->SetIsEnabled(bEnabled);
+    if (UListView* LV = GetList(Id))          LV->SetIsEnabled(bEnabled);
+    if (USlider* S = GetSlider(Id))           S->SetIsEnabled(bEnabled);
 }
 
 // --------------------------------------------------------------------
@@ -1111,7 +1109,7 @@ void UBaseScreen::SetEnabled(int32 Id, bool bEnabled)
 
 void UBaseScreen::ApplyFormDefaults()
 {
-    // Intentionally empty in this version.
+    // Intentionally empty.
 }
 
 // --------------------------------------------------------------------
@@ -1138,7 +1136,6 @@ bool UBaseScreen::ResolveTextJustification(EFormAlign InAlign, ETextJustify::Typ
 
 bool UBaseScreen::ResolveFont(const FString& InFontName, FSlateFontInfo& OutFont) const
 {
-    // 1) Look up in FontMappings
     for (const FFormFontMapEntry& E : FontMappings)
     {
         if (E.LegacyName.Equals(InFontName, ESearchCase::IgnoreCase))
@@ -1151,7 +1148,6 @@ bool UBaseScreen::ResolveFont(const FString& InFontName, FSlateFontInfo& OutFont
         }
     }
 
-    // 2) Default fallback if set
     if (DefaultFont)
     {
         OutFont = FSlateFontInfo(DefaultFont, DefaultFontSize);
@@ -1163,9 +1159,13 @@ bool UBaseScreen::ResolveFont(const FString& InFontName, FSlateFontInfo& OutFont
 
 void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
 {
-    // Resolve form-level font once
     FSlateFontInfo FormFont;
-    const bool bHasFormFont = (!Parsed.Font.IsEmpty() && ResolveFont(Parsed.Font, FormFont));
+    bool bHasFormFont = false;
+
+    if (!Parsed.Font.IsEmpty())
+    {
+        bHasFormFont = ResolveFont(Parsed.Font, FormFont);
+    }
 
     for (const FParsedCtrl& C : Parsed.Controls)
     {
@@ -1185,7 +1185,6 @@ void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
             if (ResolveTextJustification(C.Align, Just))
                 L->SetJustification(Just);
 
-            // Ctrl font first, else form font
             if (!C.Font.IsEmpty())
             {
                 FSlateFontInfo CtrlFont;
@@ -1216,7 +1215,6 @@ void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
             if (ResolveTextJustification(C.Align, Just))
                 T->SetJustification(Just);
 
-            // Ctrl font first, else form font
             if (!C.Font.IsEmpty())
             {
                 FSlateFontInfo CtrlFont;
@@ -1243,8 +1241,6 @@ void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
             USlider* S = GetSlider(C.Id);
             if (!S) continue;
 
-            // Support FORM: active_color
-            // - If explicitly set on ctrl or inherited via defctrl, tint bar + handle.
             if (C.bHasActiveColor && C.ActiveColor != FLinearColor::Transparent)
             {
                 S->SetSliderBarColor(C.ActiveColor);
@@ -1255,4 +1251,3 @@ void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
         }
     }
 }
-

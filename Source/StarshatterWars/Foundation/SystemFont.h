@@ -1,152 +1,91 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright 2025-2026. All Rights Reserved.
+    Copyright (C) 2025-2026.
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
     FILE:         SystemFont.h
     AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO:
-    John DiCamillo, Destroyer Studios LLC
-
+    ORIGINAL:     John DiCamillo / Destroyer Studios LLC (1997-2004)
 
     OVERVIEW
     ========
-    Font Resource class
+    SystemFont
+    - Unreal-backed font state wrapper (UFont + size + tint + flags)
+    - Maintains legacy-style method names used across the port
+    - DOES NOT RENDER. Window/Video layer is responsible for drawing.
 */
 
 #pragma once
 
-#include "Types.h"
-#include "Color.h"
-#include "Geometry.h"
-#include "Bitmap.h"
-#include "Polygon.h"
+#include "CoreMinimal.h"
+#include "Fonts/SlateFontInfo.h"   // <-- REQUIRED (FSlateFontInfo is used in this header)
 
-// Minimal Unreal include required for UTexture2D declaration usage:
-#include "UObject/WeakObjectPtr.h"
-#include "Math/Color.h"
-
-// +--------------------------------------------------------------------+
-
-class UTexture2D;
-
-struct Poly;
-struct Material;
-struct VertexSet;
-class  Video;
-
-// +--------------------------------------------------------------------+
-
-struct FontChar
-{
-    short offset;
-    short width;
-};
-
-// +--------------------------------------------------------------------+
+class UFont;
 
 class SystemFont
 {
 public:
     static const char* TYPENAME() { return "SystemFont"; }
 
-    enum FLAGS {
+    enum FLAGS
+    {
         FONT_FIXED_PITCH = 1,
         FONT_ALL_CAPS = 2,
         FONT_NO_KERN = 4
     };
 
-    enum CHARS {
-        PIPE_NBSP = 16,
-        PIPE_VERT = 17,
-        PIPE_LT = 18,
-        PIPE_TEE = 19,
-        PIPE_UL = 20,
-        PIPE_LL = 21,
-        PIPE_HORZ = 22,
-        PIPE_PLUS = 23,
-        PIPE_MINUS = 24,
-        ARROW_UP = 25,
-        ARROW_DOWN = 26,
-        ARROW_LEFT = 27,
-        ARROW_RIGHT = 28
-    };
-
-    // default constructor:
     SystemFont();
-    SystemFont(const char* name);
+    explicit SystemFont(const char* InName);
     ~SystemFont();
 
-    bool     Load(const char* name);
+    // Legacy-style load. Recommended usage is a UFont asset path:
+    // "/Game/UI/Fonts/MyFont.MyFont"
+    bool Load(const char* InName);
 
-    int      CharWidth(char c) const;
-    int      SpaceWidth() const;
-    int      KernWidth(char left, char right) const;
-    int      StringWidth(const char* str, int len = 0) const;
-    void     DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags, Bitmap* tgt_bitmap = 0);
-    int      DrawString(const char* txt, int len, int x1, int y1, const Rect& clip, Bitmap* tgt_bitmap = 0);
+    // Basic state:
+    void   SetUFont(UFont* InFont);
+    UFont* GetUFont() const;
 
-    int      Height()                   const { return height; }
-    int      Baseline()                 const { return baseline; }
-    WORD     GetFlags()                 const { return flags; }
-    void     SetFlags(WORD s) { flags = s; }
-    FColor    GetColor()                 const { return color; }
-    void     SetColor(const FColor& c) { color = c; }
-    double   GetExpansion()             const { return expansion; }
-    void     SetExpansion(double e) { expansion = (float)e; }
-    double   GetAlpha()                 const { return alpha; }
-    void     SetAlpha(double a) { alpha = (float)a; }
-    int      GetBlend()                 const { return blend; }
-    void     SetBlend(int b) { blend = b; }
+    void   SetPointSize(int32 InSize);
+    int32  GetPointSize() const;
 
-    void     SetKern(char left, char right, int k = 0);
+    // Legacy API compatibility:
+    uint16 GetFlags() const;
+    void   SetFlags(uint16 InFlags);
 
-    int      GetCaretIndex()            const { return caret_index; }
-    void     SetCaretIndex(int n) { caret_index = n; }
+    FColor GetColor() const;
+    void   SetColor(const FColor& InColor);
+
+    double GetExpansion() const;
+    void   SetExpansion(double InExpansion);
+
+    double GetAlpha() const;
+    void   SetAlpha(double InAlpha);
+
+    int    GetBlend() const;
+    void   SetBlend(int InBlend);
+
+    // Useful for Slate drawing:
+    FLinearColor   GetLinearColor() const;
+    FSlateFontInfo MakeSlateFontInfo() const;
+
+    // Optional: keep name for debugging/lookup
+    const char* GetName() const;
 
 private:
-    void        AutoKern();
-    void        FindEdges(BYTE c, double* l, double* r);
-    int         CalcWidth(BYTE c) const;
-    int         GlyphOffset(BYTE c) const;
-    int         GlyphLocationX(BYTE c) const;
-    int         GlyphLocationY(BYTE c) const;
+    void UpdateHeuristics();
 
-    void        DrawTextSingle(const char* text, int count, const Rect& text_rect, Rect& clip_rect);
-    void        DrawTextWrap(const char* text, int count, const Rect& text_rect, Rect& clip_rect);
-    void        DrawTextMulti(const char* text, int count, const Rect& text_rect, Rect& clip_rect);
+private:
+    char  Name[64];
 
-    void        LoadDef(char* defname, char* imgname);
+    uint16 Flags;
+    float  Expansion;
+    float  Alpha;
+    int    Blend;
 
-    char        name[64];
-    WORD        flags;
-    BYTE        height;
-    BYTE        baseline;
-    BYTE        interspace;
-    BYTE        spacewidth;
-    float       expansion;
-    float       alpha;
-    int         blend;
-    int         scale;
+    int32  PointSize;
+    FColor Color;
 
-    int         caret_index;
-    int         caret_x;
-    int         caret_y;
-
-    int         imagewidth;
-    BYTE*       image;
-
-    Bitmap      bitmap;
-    Bitmap*     tgt_bitmap;
-
-    Material*   material;
-    VertexSet*  vset;
-    Poly*       polys;
-    int         npolys;
-
-    FontChar    glyph[256];
-    FColor      color;
-
-    char        kern[256][256];
+    // Unreal backing:
+    TWeakObjectPtr<UFont> UnrealFont;
 };

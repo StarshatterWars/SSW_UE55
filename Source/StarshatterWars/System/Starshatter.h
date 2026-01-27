@@ -28,7 +28,7 @@ class ULoadScreen;
 class UGameScreen;
 class Ship;
 class Sim;
-class FadeView;
+class UFadeView;
 class CameraManager;
 class MultiController;
 class MouseController;
@@ -135,7 +135,7 @@ protected:
 	UGameScreen* gamescreen;
 	UCmpnScreen* cmpnscreen;
 
-	FadeView* splash;
+	UFadeView* splash;
 	int                 splash_index;
 
 	// Replaced Bitmap (render asset) with Unreal texture pointer:

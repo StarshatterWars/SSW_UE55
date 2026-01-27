@@ -153,7 +153,7 @@ void UCmpSceneDlg::EnsureViewObjects()
 
     if (!DispView)
     {
-        DispView = DisplayView::GetInstance(); // or NewObject if you converted it that way
+        DispView = UDisplayView::GetInstance(); 
     }
 }
 
@@ -237,8 +237,8 @@ void UCmpSceneDlg::UpdateSubtitlesScroll(double NowSeconds)
     //
     // If you already implemented a “RichTextBox” port with ScrollDown(), call that here.
 
-    UStarshatter* Stars = UStarshatter::Get();
-    UMission* CutsceneMission = Stars ? Stars->GetCutsceneMission() : nullptr;
+    Starshatter* Stars = Starshatter::Get();
+    Mission* CutsceneMission = Stars ? Stars->GetCutsceneMission() : nullptr;
     if (!CutsceneMission)
         return;
 
@@ -247,8 +247,8 @@ void UCmpSceneDlg::UpdateSubtitlesScroll(double NowSeconds)
     {
         const int32 LineCount = 0; // TODO: provide your own line-counting method
 
-        UMissionEvent* BeginScene = CutsceneMission->FindEvent(EMissionEvent::BEGIN_SCENE);
-        UMissionEvent* EndScene = CutsceneMission->FindEvent(EMissionEvent::END_SCENE);
+        MissionEvent* BeginScene = CutsceneMission->FindEvent(EMissionEvent::BEGIN_SCENE);
+        MissionEvent* EndScene = CutsceneMission->FindEvent(EMissionEvent::END_SCENE);
 
         if (BeginScene && EndScene && LineCount > 0)
         {

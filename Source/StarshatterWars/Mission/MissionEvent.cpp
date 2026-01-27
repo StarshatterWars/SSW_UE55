@@ -297,7 +297,7 @@ void
 MissionEvent::Execute(bool silent)
 {
 	Starshatter* stars = Starshatter::GetInstance();
-	HUDView* hud = HUDView::GetInstance();
+	UHUDView* hud = UHUDView::GetInstance();
 	Sim* sim = Sim::GetSim();
 	Ship* player = sim->GetPlayerShip();
 	Ship* ship = 0;
@@ -369,7 +369,7 @@ MissionEvent::Execute(bool silent)
 			elem->AddObjective(obj);
 
 			if (elem->Contains(player)) {
-				HUDView* hud_local = HUDView::GetInstance();
+				UHUDView* hud_local = UHUDView::GetInstance();
 				if (hud_local)
 					hud_local->ShowHUDInst();
 			}
@@ -384,7 +384,7 @@ MissionEvent::Execute(bool silent)
 			elem->AddInstruction(event_message);
 
 			if (elem->Contains(player) && event_message.length() > 0) {
-				HUDView* hud_local = HUDView::GetInstance();
+				UHUDView* hud_local = UHUDView::GetInstance();
 				if (hud_local)
 					hud_local->ShowHUDInst();
 			}

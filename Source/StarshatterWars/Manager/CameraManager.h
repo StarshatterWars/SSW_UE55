@@ -28,7 +28,7 @@
 
 // +--------------------------------------------------------------------+
 
-class HUDView;
+class UHUDView;
 class Orbital;
 class Ship;
 class Sim;
@@ -154,7 +154,7 @@ protected:
 	double             transition;
 
 	Sim* sim;
-	HUDView* hud;
+	UHUDView* hud;
 
 	static CameraManager* instance;
 };

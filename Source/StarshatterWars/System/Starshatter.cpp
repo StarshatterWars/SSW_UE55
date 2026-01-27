@@ -53,7 +53,7 @@
 #include "ShipManager.h"
 #include "ShipDesign.h"
 #include "HUDView.h"
-#include "MFD.h"
+#include "MFDView.h"
 #include "RadioMessage.h"
 #include "RadioTraffic.h"
 #include "RadioVox.h"
@@ -248,7 +248,7 @@ Starshatter::~Starshatter()
 	PlayerCharacter::Close();
 	Drive::Close();
 	LandingGear::Close();
-	MFD::Close();
+	UMFDView::Close();
 	Explosion::Close();
 	FlightDeck::Close();
 	Campaign::Close();
@@ -570,7 +570,7 @@ Starshatter::SetGameMode(int m)
 		if (gamescreen)
 			gamescreen->SetFieldOfView(field_of_view);
 
-		HUDView::ClearMessages();
+		UHUDView::ClearMessages();
 		RadioView::ClearMessages();
 
 		SetTimeCompression(1);
@@ -1294,7 +1294,7 @@ Starshatter::DoLoadScreenFrame()
 			break;
 
 		case 5:
-			MFD::Initialize();
+			UMFDView::Initialize();
 			load_activity = Game::GetText("Starshatter.load.menus");
 			load_progress = 25;
 			break;
@@ -1436,7 +1436,7 @@ Starshatter::DoGameScreenFrame()
 
 	DoMouseFrame();
 
-	HUDView* hud_view = HUDView::GetInstance();
+	UHUDView* hud_view = UHUDView::GetInstance();
 
 	// changing to a new ship?
 	if (player_ship != sim->GetPlayerShip()) {
@@ -1453,7 +1453,7 @@ Starshatter::DoGameScreenFrame()
 				input->SwapYawRoll(false);
 
 			if (hud_view) {
-				hud_view->SetHUDMode(HUDView::HUD_MODE_TAC);
+				hud_view->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
 				hud_view->HideHUDWarn();
 			}
 		}
@@ -1511,7 +1511,7 @@ void
 Starshatter::DoGameKeys()
 {
 	Sim* sim = (Sim*)world;
-	HUDView* hud_view = HUDView::GetInstance();
+	UHUDView* hud_view = UHUDView::GetInstance();
 
 	if (time_til_change <= 0) {
 		if (KeyDown(KEY_CAM_BRIDGE)) {
@@ -2136,9 +2136,9 @@ Starshatter::DoMouseFrame()
 	}
 
 	else {
-		HUDView* hud_view = HUDView::GetInstance();
+		UHUDView* hud_view = UHUDView::GetInstance();
 
-		if (hud_view && hud_view->GetHUDMode() != HUDView::HUD_MODE_OFF) {
+		if (hud_view && hud_view->GetHUDMode() != (int) HUD_MODE::HUD_MODE_OFF) {
 			Mouse::Show(true);
 			Mouse::SetCursor(Mouse::ARROW);
 		}
@@ -2183,11 +2183,11 @@ Starshatter::SetupSplash()
 	int screen_width = GetScreenWidth();
 	int screen_height = GetScreenHeight();
 
-	gamewin = new  Window(screen, 0, 0, screen_width, screen_height);
-	splash = new  FadeView(gamewin, 2, 2, 2);
+	gamewin = new Window(screen, 0, 0, screen_width, screen_height);
+	splash = new UFadeView(gamewin, 2, 2, 2);
 
 	gamewin->AddView(splash);
-	gamewin->AddView(new  ImgView(gamewin, &splash_image));
+	gamewin->AddView(new ImageView(gamewin, &splash_image));
 	screen->AddWindow(gamewin);
 }
 
@@ -2613,9 +2613,9 @@ Starshatter::BeginCutscene()
 	Sim* sim = Sim::GetSim();
 
 	if (cutscene == 0) {
-		HUDView* hud_view = HUDView::GetInstance();
+		UHUDView* hud_view = UHUDView::GetInstance();
 		if (hud_view)
-			hud_view->SetHUDMode(HUDView::HUD_MODE_OFF);
+			hud_view->SetHUDMode((int)HUD_MODE::HUD_MODE_OFF);
 
 		if (sim->GetPlayerShip())
 			sim->GetPlayerShip()->SetControls(0);
@@ -2643,9 +2643,9 @@ Starshatter::EndCutscene()
 		if (disp_view)
 			disp_view->ClearDisplay();
 
-		HUDView* hud_view = HUDView::GetInstance();
+		UHUDView* hud_view = UHUDView::GetInstance();
 		if (hud_view)
-			hud_view->SetHUDMode(HUDView::HUD_MODE_TAC);
+			hud_view->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
 
 		Sim* sim = Sim::GetSim();
 		if (sim->GetPlayerShip())

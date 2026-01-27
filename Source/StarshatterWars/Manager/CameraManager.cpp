@@ -115,7 +115,7 @@ void
 CameraManager::SetShip(Ship* s)
 {
 	sim = Sim::GetSim();
-	hud = HUDView::GetInstance();
+	hud = UHUDView::GetInstance();
 
 	// can't take control of a dead ship:
 	if (s && (s->Life() == 0 || s->IsDying() || s->IsDead()))
@@ -464,7 +464,7 @@ CameraManager::ExecFrame(double seconds)
 	if (!ship)
 		return;
 
-	hud = HUDView::GetInstance();
+	hud = UHUDView::GetInstance();
 
 	const int flight_phase = ship->GetFlightPhase();
 
@@ -924,7 +924,7 @@ CameraManager::Docking(double seconds)
 	}
 	else if (flight_phase == Ship::LOCKED) {
 		if (hud)
-			hud->SetHUDMode(HUDView::HUD_MODE_TAC);
+			hud->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
 
 		// NOTE: preserve original lerp direction:
 		// cpos = base*transition + cloc*(1-transition)

@@ -39,7 +39,7 @@
 #include "FlightDeck.h"
 #include "Sky.h"
 #include "Grid.h"
-#include "MFD.h"
+#include "MFDView.h"
 #include "AudioConfig.h"
 #include "Mission.h"
 #include "MissionEvent.h"
@@ -195,7 +195,7 @@ Sim::Sim(MotionController* c)
 	FlightDeck::Initialize();
 	NavLight::Initialize();
 	SimShot::Initialize();
-	MFD::Initialize();
+	UMFDView::Initialize();
 	Asteroid::Initialize();
 
 	if (!sim)
@@ -293,7 +293,7 @@ Sim::CommitMission()
 void
 Sim::UnloadMission()
 {
-	HUDView* hud = HUDView::GetInstance();
+	UHUDView* hud = UHUDView::GetInstance();
 	if (hud)
 		hud->HideAll();
 
@@ -2004,9 +2004,9 @@ Sim::ResolveTimeSkip(double seconds)
 		player_ship->SetAutoNav(false);
 		player_ship->SetThrottle(75);
 
-		HUDView* hud = HUDView::GetInstance();
+		UHUDView* hud = UHUDView::GetInstance();
 		if (hud)
-			hud->SetHUDMode(HUDView::HUD_MODE_TAC);
+			hud->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
 
 		if (IsTestMode())
 			player_ship->SetControls(0);

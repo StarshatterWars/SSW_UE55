@@ -33,7 +33,7 @@ class MenuItem;
 
 // +--------------------------------------------------------------------+
 
-class MenuView : public View
+class MenuView : public UView
 {
 public:
     MenuView(Window* c);

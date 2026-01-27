@@ -22,7 +22,8 @@
 #include "CampaignSaveGame.h"
 #include "Random.h"
 #include "HUDView.h"
-#include "MFD.h"
+#include "MFDView.h"
+#include "GameStructs.h"
 
 #include "DataLoader.h"
 #include "Encrypt.h"
@@ -113,10 +114,11 @@ PlayerCharacter::PlayerCharacter(const char* n)
 {
     name.setSensitive(false);
 
-    mfd[0] = -1;
-    mfd[1] = -1;
-    mfd[2] = -1;
-    mfd[3] = -1;
+    mfd.SetNum(4);
+    mfd[0] = EMFDMode::OFF;
+    mfd[1] = EMFDMode::OFF;;
+    mfd[2] = EMFDMode::OFF;;
+    mfd[3] = EMFDMode::OFF;;
 }
 
 PlayerCharacter::PlayerCharacter()
@@ -128,10 +130,11 @@ PlayerCharacter::PlayerCharacter()
 {
     name.setSensitive(false);
 
-    mfd[0] = -1;
-    mfd[1] = -1;
-    mfd[2] = -1;
-    mfd[3] = -1;
+    mfd.SetNum(4);
+    mfd[0] = EMFDMode::OFF;;
+    mfd[1] = EMFDMode::OFF;;
+    mfd[2] = EMFDMode::OFF;;
+    mfd[3] = EMFDMode::OFF;
 }
 
 PlayerCharacter::~PlayerCharacter()
@@ -355,14 +358,14 @@ void
 PlayerCharacter::SetHUDMode(int n)
 {
     hud_mode = n;
-    HUDView::SetArcade(n > 0);
+    UHUDView::SetArcade(n > 0);
 }
 
 void
 PlayerCharacter::SetHUDColor(int n)
 {
     hud_color = n;
-    HUDView::SetDefaultColorSet(n);
+    UHUDView::SetDefaultColorSet(n);
 }
 
 void
@@ -813,12 +816,12 @@ PlayerCharacter::GetCurrentPlayer()
 void
 PlayerCharacter::SelectPlayer(PlayerCharacter* p)
 {
-    HUDView* hud = HUDView::GetInstance();
+    UHUDView* hud = UHUDView::GetInstance();
 
     if (current_player && current_player != p) {
         if (hud) {
             for (int i = 0; i < 3; i++) {
-                MFD* mfd = hud->GetMFD(i);
+                UMFDView* mfd = hud->GetMFD(i);
 
                 if (mfd)
                     current_player->mfd[i] = mfd->GetMode();
@@ -831,13 +834,13 @@ PlayerCharacter::SelectPlayer(PlayerCharacter* p)
 
         Ship::SetFlightModel(p->flight_model);
         Ship::SetLandingModel(p->landing_model);
-        HUDView::SetArcade(p->hud_mode > 0);
-        HUDView::SetDefaultColorSet(p->hud_color);
+        UHUDView::SetArcade(p->hud_mode > 0);
+        UHUDView::SetDefaultColorSet(p->hud_color);
 
         if (hud) {
             for (int i = 0; i < 3; i++) {
-                if (p->mfd[i] >= 0) {
-                    MFD* mfd = hud->GetMFD(i);
+                if ((int)p->mfd[i] >= 0) {
+                    UMFDView* mfd = hud->GetMFD(i);
 
                     if (mfd)
                         mfd->SetMode(p->mfd[i]);
@@ -1136,10 +1139,10 @@ else  GET_DEF_NUM(ff_level);
 void
 PlayerCharacter::Save()
 {
-    HUDView* hud = HUDView::GetInstance();
+    UHUDView* hud = UHUDView::GetInstance();
     if (hud && current_player) {
         for (int i = 0; i < 3; i++) {
-            MFD* mfd = hud->GetMFD(i);
+            UMFDView* mfd = hud->GetMFD(i);
 
             if (mfd)
                 current_player->mfd[i] = mfd->GetMode();
@@ -1202,7 +1205,7 @@ PlayerCharacter::Save()
             }
 
             for (int i = 0; i < 3; i++) {
-                if (p->mfd[i] >= 0) {
+                if ((int)p->mfd[i] >= 0) {
                     fprintf(f, "   mfd%d:         %d,\n", i, p->mfd[i]);
                 }
             }

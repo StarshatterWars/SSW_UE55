@@ -43,7 +43,7 @@ class Ship;
 class Starshatter;
 class CameraManager;
 class DisplayView;
-class HUDView;
+class UHUDView;
 class WepView;
 class QuantumView;
 class RadioView;
@@ -177,7 +177,7 @@ private:
     Sim* sim = nullptr;
     CameraManager* cam_dir = nullptr;
     DisplayView* disp_view = nullptr;
-    HUDView* hud_view = nullptr;
+    UHUDView* hud_view = nullptr;
     WepView* wep_view = nullptr;
     QuantumView* quantum_view = nullptr;
     RadioView* radio_view = nullptr;

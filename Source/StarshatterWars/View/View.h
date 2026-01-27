@@ -1,73 +1,104 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (C) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (C) 2025-2026.
 
-	SUBSYSTEM:    nGenEx.lib
-	FILE:         View.h
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
+    FILE:         View.h
+    AUTHOR:       Carlos Bott
 
-	ORIGINAL AUTHOR AND STUDIO
-	==========================
-	John DiCamillo / Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	OVERVIEW
-	========
-	Abstract View class
+    OVERVIEW
+    ========
+    Abstract View class (Unreal UUserWidget version)
+
+    NOTES
+    =====
+    - Legacy View converted to UUserWidget (UView)
+    - Legacy API preserved as wrappers
+    - Rendering is Slate-native via NativePaint (Option A: build + flush every paint)
 */
 
 #pragma once
 
-#include "Types.h"
-#include "SystemFont.h"
-#include "SimSystem.h"
+#include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
 
-// Minimal Unreal include required for UE_LOG:
-#include "Logging/LogMacros.h"
-#include "Math/Vector.h"   // FVector
-#include "Math/Color.h"    // FColor
+// Unreal:
+#include "Math/Color.h"
+#include "Engine/Font.h"
 
-static FColor hud_color = FColor::Black;
-static FColor txt_color = FColor::Black;
-static bool show_menu = false;
-
-SystemFont* hud_font = nullptr;
-SystemFont* big_font = nullptr;
-
-static bool   mouse_in = false;
-static int    mouse_latch = 0;
-static int    mouse_index = -1;
-
-static int ship_status = SimSystem::NOMINAL;
-static int tgt_status = SimSystem::NOMINAL;
-
+#include "View.generated.h"
 
 // +--------------------------------------------------------------------+
+// Forward declarations
 
 class Window;
 
 // +--------------------------------------------------------------------+
 
-class View
+UCLASS(Abstract)
+class STARSHATTERWARS_API UView : public UUserWidget
 {
-	friend class Window;
+    GENERATED_BODY()
 
 public:
-	static const char* TYPENAME() { return "View"; }
+    static const char* TYPENAME() { return "View"; } // Preserve Starshatter RTTI string
 
-	View(Window* c) : window(c) {}
-	virtual ~View() {}
+    UView(const FObjectInitializer& ObjectInitializer);
+    virtual ~UView() override;
 
-	int operator==(const View& that) const { return this == &that; }
+    // ----------------------------------------------------------------
+    // Legacy View API (preserved)
+    // ----------------------------------------------------------------
+    virtual void Refresh() {}
+    virtual void OnWindowMove() {}
+    virtual void OnShow() {}
+    virtual void OnHide() {}
 
-	// Operations:
-	virtual void		Refresh() {}
-	virtual void		OnWindowMove() {}
-	virtual void		OnShow() {}
-	virtual void		OnHide() {}
+    virtual void SetWindow(Window* InWindow);
+    virtual Window* GetWindow() const;
 
-	virtual void		SetWindow(Window* w) { window = w; OnWindowMove(); }
-	virtual Window*		GetWindow() { return window; }
+    // ----------------------------------------------------------------
+    // Legacy global state (now class-level statics)
+    // ----------------------------------------------------------------
+    static FColor HudColor;
+    static FColor TxtColor;
+    static bool   bShowMenu;
+
+    static TObjectPtr<UFont*> HudFont;
+    static TObjectPtr<UFont*> BigFont;
+
+    static bool   bMouseIn;
+    static int32  MouseLatch;
+    static int32  MouseIndex;
+
+    static int32  ShipStatus;
+    static int32  TgtStatus;
 
 protected:
-	Window* window;
+    // ----------------------------------------------------------------
+    // UUserWidget lifecycle
+    // ----------------------------------------------------------------
+    virtual void NativeConstruct() override;
+    virtual void NativeDestruct() override;
+
+    // ----------------------------------------------------------------
+    // Slate render bridge (Option A: build draw list here each paint)
+    // ----------------------------------------------------------------
+    virtual int32 NativePaint(
+        const FPaintArgs& Args,
+        const FGeometry& AllottedGeometry,
+        const FSlateRect& MyCullingRect,
+        FSlateWindowElementList& OutDrawElements,
+        int32 LayerId,
+        const FWidgetStyle& InWidgetStyle,
+        bool bParentEnabled
+    ) const override;
+
+protected:
+    // Legacy window pointer (intentionally non-UObject)
+    Window* WindowPtr = nullptr;
 };

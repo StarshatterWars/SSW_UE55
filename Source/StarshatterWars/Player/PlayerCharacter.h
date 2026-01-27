@@ -18,6 +18,7 @@
 #include "Types.h"
 #include "List.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 // +-------------------------------------------------------------------+
 
@@ -154,7 +155,8 @@ protected:
     Text           squadron;
     Text           signature;
     Text           chat_macros[10];
-    int            mfd[4];
+   
+    TArray<EMFDMode> mfd;
 
     // stats:
     int            create_date;

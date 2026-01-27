@@ -450,14 +450,14 @@ enum EWEATHER_STATE : uint8
 UENUM(BlueprintType)
 enum EOrbitalType : uint8 
 { 
-	NOTHING UMETA(DisplayName = "None"),
-	STAR UMETA(DisplayName = "Star"),
-	PLANET UMETA(DisplayName = "Planet"),
-	MOON UMETA(DisplayName = "Moon"),
-	JUMPGATE UMETA(DisplayName = "JumpGate"),
-	REGION UMETA(DisplayName = "Region"),
-	STATION UMETA(DisplayName = "Station"),
-	TERRAIN UMETA(DisplayName = "Terrain")
+	NOTHING			UMETA(DisplayName = "None"),
+	STAR			UMETA(DisplayName = "Star"),
+	PLANET			UMETA(DisplayName = "Planet"),
+	MOON			UMETA(DisplayName = "Moon"),
+	JUMPGATE		UMETA(DisplayName = "JumpGate"),
+	REGION			UMETA(DisplayName = "Region"),
+	STATION			UMETA(DisplayName = "Station"),
+	TERRAIN			UMETA(DisplayName = "Terrain")
 };
 
 UENUM()
@@ -542,6 +542,67 @@ enum class EMISSIONTYPE : uint8
 	OTHER, 
 	UNKNOWN,
 };
+
+UENUM()
+enum class SYSTEM_CATEGORY : uint8 {
+	MISC_SYSTEM		UMETA(DisplayName = "Miscellaneous"), 
+	DRIVE			UMETA(DisplayName = "Drive"), 
+	WEAPON			UMETA(DisplayName = "Weapon"),
+	SHIELD			UMETA(DisplayName = "Shield"),
+	SENSOR			UMETA(DisplayName = "Sensor"),
+	COMPUTER		UMETA(DisplayName = "Computer"),
+	POWER_SOURCE	UMETA(DisplayName = "Power Source"),
+	FLIGHT_DECK		UMETA(DisplayName = "Flight Deck"),
+	FARCASTER		UMETA(DisplayName = "Farcaster"),
+};
+
+UENUM()
+enum class SYSTEM_STATUS : uint8 {
+	DESTROYED		UMETA(DisplayName = "Destroyed"),
+	CRITICAL		UMETA(DisplayName = "Critical"),
+	DEGRADED		UMETA(DisplayName = "Degraded"),
+	NOMINAL			UMETA(DisplayName = "Nominal"),
+	MAINT			UMETA(DisplayName = "Maintanence"),
+};
+
+UENUM()
+enum class SYSTEM_POWER_FLAGS : uint8 {
+	POWER_OFF		UMETA(DisplayName = "Power off"),
+	POWER_WATTS		UMETA(DisplayName = "Power watts"),
+	POWER_CRITICAL	UMETA(DisplayName = "Power critical"),
+};
+
+UENUM()
+enum class HUD_MODE : uint8
+{
+	HUD_MODE_OFF	UMETA(DisplayName = "HUD Mode Off"),
+	HUD_MODE_TAC	UMETA(DisplayName = "HUD Mode Tactical"),
+	HUD_MODE_NAV	UMETA(DisplayName = "HUD Mode Navigation"),
+	HUD_MODE_ILS	UMETA(DisplayName = "HUD Mode ILS"),
+};
+
+UENUM()
+enum class EFadeState : uint8
+{
+	StateStart,
+	State2,
+	StateIn,
+	StateHold,
+	StateOut,
+	StateDone
+};
+
+UENUM(BlueprintType)
+enum class EMFDMode : uint8
+{
+	OFF,
+	GAME,
+	SHIP,
+	FOV,
+	HSD,
+	RADAR3D
+};
+
 /**
  * STRUCTS
  */

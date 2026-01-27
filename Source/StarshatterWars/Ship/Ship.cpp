@@ -1394,10 +1394,10 @@ Ship::SetInbound(InboundSlot* s)
 
 		SetCarrier((Ship*)inbound->GetDeck()->GetCarrier(), inbound->GetDeck());
 
-		HUDView* hud = HUDView::GetInstance();
+		UHUDView* hud = UHUDView::GetInstance();
 
 		if (hud && hud->GetShip() == this)
-			hud->SetHUDMode(HUDView::HUD_MODE_ILS);
+			hud->SetHUDMode((int)HUD_MODE::HUD_MODE_ILS);
 	}
 }
 

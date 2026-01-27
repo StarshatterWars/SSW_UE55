@@ -1,6 +1,6 @@
 /*  Project STARSHATTER WARS
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     ORIGINAL AUTHOR: John DiCamillo
     ORIGINAL STUDIO: Destroyer Studios
@@ -13,6 +13,7 @@
     ========
     UQuitView
     - Unreal (UMG) port of legacy QuitView (End Mission menu).
+    - Inherits from UView (UMG base).
     - UI uses UMG buttons (no manual mouse hit-testing).
     - Keeps all legacy mission/campaign logic.
 */
@@ -36,6 +37,7 @@
 
 // Unreal:
 #include "GameFramework/PlayerController.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 UQuitView::UQuitView(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -65,10 +67,9 @@ void UQuitView::NativeConstruct()
     SetMessageText(TEXT(""));
 }
 
-void
-UQuitView::ExecFrame(float DeltaTime)
+void UQuitView::ExecFrame(float DeltaTime)
 {
-
+    // Keep as legacy hook point (called by your game loop if desired).
 }
 
 bool UQuitView::IsMenuShown() const
@@ -84,7 +85,8 @@ void UQuitView::ShowMenu()
     bMenuShown = true;
 
     // Pause like legacy:
-    Starshatter::GetInstance()->Pause(true);
+    if (Starshatter* Stars = Starshatter::GetInstance())
+        Stars->Pause(true);
 
     // Show UI:
     SetMessageText(TEXT(""));
@@ -102,7 +104,8 @@ void UQuitView::CloseMenu()
     SetVisibility(ESlateVisibility::Hidden);
     ApplyMenuInputMode(false);
 
-    Starshatter::GetInstance()->Pause(false);
+    if (Starshatter* Stars = Starshatter::GetInstance())
+        Stars->Pause(false);
 }
 
 void UQuitView::ApplyMenuInputMode(bool bEnableMenu)
@@ -116,6 +119,7 @@ void UQuitView::ApplyMenuInputMode(bool bEnableMenu)
         bPrevShowMouseCursor = PC->bShowMouseCursor;
         PC->bShowMouseCursor = true;
 
+        // UI-only focus:
         FInputModeUIOnly Mode;
         Mode.SetWidgetToFocus(TakeWidget());
         Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -144,12 +148,12 @@ bool UQuitView::CanAccept()
     if (!sim)
         return false;
 
-    Ship* player_ship = sim->GetPlayerShip();
-    if (!player_ship)
+    Ship* PlayerShip = sim->GetPlayerShip();
+    if (!PlayerShip)
         return false;
 
     // Legacy: must fly at least 60 seconds:
-    if (player_ship->MissionClock() < 60000)
+    if (PlayerShip->MissionClock() < 60000)
     {
         RadioView::Message(Game::GetText("QuitView.too-soon"));
         RadioView::Message(Game::GetText("QuitView.abort"));
@@ -157,25 +161,25 @@ bool UQuitView::CanAccept()
         return false;
     }
 
-    ListIter<SimContact> iter = player_ship->ContactList();
+    ListIter<SimContact> iter = PlayerShip->ContactList();
     while (++iter)
     {
         SimContact* c = iter.value();
         if (!c) continue;
 
         Ship* cship = c->GetShip();
-        int   ciff = c->GetIFF(player_ship);
+        int   ciff = c->GetIFF(PlayerShip);
 
-        if (c->Threat(player_ship))
+        if (c->Threat(PlayerShip))
         {
             RadioView::Message(Game::GetText("QuitView.threats-present"));
             RadioView::Message(Game::GetText("QuitView.abort"));
             SetMessageText(TEXT("THREATS PRESENT. CANNOT ACCEPT RESULTS."));
             return false;
         }
-        else if (cship && ciff > 0 && ciff != player_ship->GetIFF())
+        else if (cship && ciff > 0 && ciff != PlayerShip->GetIFF())
         {
-            const FVector Delta = FVector(c->Location() - player_ship->Location());
+            const FVector Delta = (c->Location() - PlayerShip->Location());
             const double  Dist = Delta.Length();
 
             if (cship->IsDropship() && Dist < 50e3)
@@ -199,21 +203,19 @@ bool UQuitView::CanAccept()
 }
 
 // ------------------------------------------------------------
-// Button handlers (same legacy actions, just event-driven)
+// Button handlers (same legacy actions, event-driven)
 // ------------------------------------------------------------
 
 void UQuitView::OnAcceptClicked()
 {
-    // Was mission long enough to accept?
     if (!CanAccept())
         return;
 
     CloseMenu();
     Game::SetTimeCompression(1);
 
-    Starshatter* stars = Starshatter::GetInstance();
-    if (stars)
-        stars->SetGameMode((int)EMODE::PLAN_MODE);
+    if (Starshatter* Stars = Starshatter::GetInstance())
+        Stars->SetGameMode((int)EMODE::PLAN_MODE);
 }
 
 void UQuitView::OnDiscardClicked()
@@ -221,22 +223,22 @@ void UQuitView::OnDiscardClicked()
     CloseMenu();
     Game::SetTimeCompression(1);
 
-    Starshatter* stars = Starshatter::GetInstance();
-    Campaign* campaign = Campaign::GetCampaign();
+    Starshatter* Stars = Starshatter::GetInstance();
+    Campaign* CampaignPtr = Campaign::GetCampaign();
 
     // Discard mission and events:
     sim = Sim::GetSim();
     if (sim) sim->UnloadMission();
     else ShipStats::Initialize();
 
-    if (campaign && campaign->GetCampaignId() < Campaign::SINGLE_MISSIONS)
+    if (CampaignPtr && CampaignPtr->GetCampaignId() < Campaign::SINGLE_MISSIONS)
     {
-        campaign->RollbackMission();
-        if (stars) stars->SetGameMode((int)EMODE::CMPN_MODE);
+        CampaignPtr->RollbackMission();
+        if (Stars) Stars->SetGameMode((int)EMODE::CMPN_MODE);
     }
     else
     {
-        if (stars) stars->SetGameMode((int)EMODE::MENU_MODE);
+        if (Stars) Stars->SetGameMode((int)EMODE::MENU_MODE);
     }
 }
 
@@ -248,10 +250,10 @@ void UQuitView::OnResumeClicked()
 void UQuitView::OnControlsClicked()
 {
     // Legacy behavior: open controls dialog from GameScreen:
-    if (UGameScreen* game_screen = UGameScreen::GetInstance())
+    if (UGameScreen* GameScreen = UGameScreen::GetInstance())
     {
         CloseMenu();
-        game_screen->ShowCtlDlg();
+        GameScreen->ShowCtlDlg();
     }
     else
     {

@@ -246,6 +246,8 @@ struct FParsedForm
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FLinearColor BackColor = FLinearColor::Black;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FLinearColor ForeColor = FLinearColor::White;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) FString Font;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FString Texture;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FFormIntRect Margins;
 

@@ -1,6 +1,6 @@
 /*  Project STARSHATTER WARS
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     ORIGINAL AUTHOR: John DiCamillo
     ORIGINAL STUDIO: Destroyer Studios
@@ -13,7 +13,7 @@
     ========
     UQuitView
     - Unreal (UMG) port of legacy QuitView (End Mission menu).
-    - UI is a UserWidget (buttons + optional message text).
+    - Inherits from UView (which is a UUserWidget).
     - Keeps all legacy game logic:
       * CanAccept() threat/time checks
       * Accept (exit + keep results)
@@ -26,7 +26,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+
+// IMPORTANT: Inherit from the new View base (UView):
+#include "View.h"
+
 #include "QuitView.generated.h"
 
 class UButton;
@@ -35,7 +38,7 @@ class UTextBlock;
 class Sim;
 
 UCLASS()
-class STARSHATTERWARS_API UQuitView : public UUserWidget
+class STARSHATTERWARS_API UQuitView : public UView
 {
     GENERATED_BODY()
 
@@ -53,7 +56,6 @@ public:
 protected:
     virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
-    
 
     // Button handlers:
     UFUNCTION() void OnAcceptClicked();
@@ -66,13 +68,13 @@ protected:
 
 protected:
     // UMG widgets (must exist in the Widget Blueprint with these exact names):
-    UPROPERTY(meta = (BindWidget)) UButton* BtnAccept = nullptr;   // "ACCEPT / EXIT"
-    UPROPERTY(meta = (BindWidget)) UButton* BtnDiscard = nullptr;   // "DISCARD"
-    UPROPERTY(meta = (BindWidget)) UButton* BtnResume = nullptr;   // "RESUME"
-    UPROPERTY(meta = (BindWidget)) UButton* BtnControls = nullptr;   // "CONTROLS"
+    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnAccept = nullptr;     // "ACCEPT / EXIT"
+    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnDiscard = nullptr;    // "DISCARD"
+    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnResume = nullptr;     // "RESUME"
+    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnControls = nullptr;   // "CONTROLS"
 
     // Optional message label for errors like "too soon" / "threats present":
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TxtMessage = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> TxtMessage = nullptr;
 
 private:
     bool bMenuShown = false;

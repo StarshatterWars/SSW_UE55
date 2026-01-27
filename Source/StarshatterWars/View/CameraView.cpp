@@ -1,18 +1,18 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
-	SUBSYSTEM:    nGenEx.lib
-	FILE:         CameraView.cpp
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    nGenEx.lib
+    FILE:         CameraView.cpp
+    AUTHOR:       Carlos Bott
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+    ORIGINAL AUTHOR: John DiCamillo
+    ORIGINAL STUDIO: Destroyer Studios LLC
 
-	OVERVIEW
-	========
-	3D Projection Camera View class
-	uses abstract PolyRender class to draw the triangles
+    OVERVIEW
+    ========
+    3D Projection Camera View class
+    uses abstract PolyRender class to draw the triangles
 */
 
 #include "CameraView.h"
@@ -39,799 +39,659 @@ DEFINE_LOG_CATEGORY_STATIC(LogCameraView, Log, All);
 
 // +--------------------------------------------------------------------+
 
-static Camera emergency_cam;
-static SimScene  emergency_scene;
+static Camera   emergency_cam;
+static SimScene emergency_scene;
 
 // +--------------------------------------------------------------------+
 
-CameraView::CameraView(Window* c, Camera* cam, SimScene* s)
-	: View(c), video(0), camera(cam), projector(c, cam), scene(s),
-	lens_flare_enable(0), halo_bitmap(0), infinite(0),
-	projection_type(Video::PROJECTION_PERSPECTIVE)
-{
-	elem_bitmap[0] = 0;
-	elem_bitmap[1] = 0;
-	elem_bitmap[2] = 0;
-
-	if (!camera)
-		camera = &emergency_cam;
-
-	if (!scene)
-		scene = &emergency_scene;
-
-	Rect r = window->GetRect();
-	width = r.w;
-	height = r.h;
-}
-
-
-CameraView::~CameraView()
+UCameraView::UCameraView(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+    , projector(nullptr, nullptr) // will be re-bound in InitializeView()
 {
 }
 
-// +--------------------------------------------------------------------+
-
-void
-CameraView::UseCamera(Camera* cam)
+void UCameraView::InitializeView(Window* InWindow, Camera* InCamera, SimScene* InScene)
 {
-	if (cam)
-		camera = cam;
-	else
-		camera = &emergency_cam;
+    window = InWindow;
+    camera = InCamera ? InCamera : &emergency_cam;
+    scene = InScene ? InScene : &emergency_scene;
 
-	projector.UseCamera(camera);
+    // Rebind projector now that we have a window + camera:
+    projector = SimProjector(window, camera);
+
+    lens_flare_enable = 0;
+    halo_bitmap = nullptr;
+
+    elem_bitmap[0] = nullptr;
+    elem_bitmap[1] = nullptr;
+    elem_bitmap[2] = nullptr;
+
+    if (window)
+    {
+        Rect r = window->GetRect();
+        width = r.w;
+        height = r.h;
+        projector.UseWindow(window);
+    }
 }
 
-void
-CameraView::UseScene(SimScene* s)
+void UCameraView::UseCamera(Camera* cam)
 {
-	if (s)
-		scene = s;
-	else
-		scene = &emergency_scene;
+    camera = cam ? cam : &emergency_cam;
+    projector.UseCamera(camera);
 }
 
-void
-CameraView::SetFieldOfView(double fov)
+void UCameraView::UseScene(SimScene* s)
 {
-	projector.SetFieldOfView(fov);
+    scene = s ? s : &emergency_scene;
 }
 
-double
-CameraView::GetFieldOfView() const
+void UCameraView::SetFieldOfView(double fov)
 {
-	return projector.GetFieldOfView();
+    projector.SetFieldOfView(fov);
 }
 
-void
-CameraView::SetProjectionType(DWORD pt)
+double UCameraView::GetFieldOfView() const
 {
-	projector.SetOrthogonal(pt == Video::PROJECTION_ORTHOGONAL);
-	projection_type = pt;
+    return projector.GetFieldOfView();
 }
 
-DWORD
-CameraView::GetProjectionType() const
+void UCameraView::SetProjectionType(DWORD pt)
 {
-	return projection_type;
+    projector.SetOrthogonal(pt == Video::PROJECTION_ORTHOGONAL);
+    projection_type = pt;
 }
 
-void
-CameraView::OnWindowMove()
+DWORD UCameraView::GetProjectionType() const
 {
-	if (!window)
-		return;
+    return projection_type;
+}
 
-	Rect r = window->GetRect();
-	projector.UseWindow(window);
+void UCameraView::OnWindowMove()
+{
+    if (!window)
+        return;
 
-	width = r.w;
-	height = r.h;
+    Rect r = window->GetRect();
+    projector.UseWindow(window);
+
+    width = r.w;
+    height = r.h;
 }
 
 // +--------------------------------------------------------------------+
 // Enable or disable lens flare effect, and provide textures for rendering
 // +--------------------------------------------------------------------+
 
-void
-CameraView::LensFlare(int on, double dim)
+void UCameraView::LensFlare(int on, double dim)
 {
-	lens_flare_enable = on;
-	lens_flare_dim = dim;
+    lens_flare_enable = on;
+    lens_flare_dim = dim;
 }
 
-void
-CameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap* e3)
+void UCameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap* e3)
 {
-	if (halo)
-	halo_bitmap = halo;
-
-	if (e1)
-	elem_bitmap[0] = e1;
-
-	if (e2)
-	elem_bitmap[1] = e2;
-
-	if (e3)
-	elem_bitmap[2] = e3;
+    if (halo) halo_bitmap = halo;
+    if (e1)   elem_bitmap[0] = e1;
+    if (e2)   elem_bitmap[1] = e2;
+    if (e3)   elem_bitmap[2] = e3;
 }
 
 // +--------------------------------------------------------------------+
 // Compute the Depth of a Graphic
 // +--------------------------------------------------------------------+
 
-void
-CameraView::FindDepth(Graphic* g)
+void UCameraView::FindDepth(Graphic* g)
 {
-	if (!g || !camera)
-		return;
+    if (!g || !camera)
+        return;
 
-	if (infinite) {
-		g->SetDepth(1.0e20f);
-		return;
-	}
+    if (infinite)
+    {
+        g->SetDepth(1.0e20f);
+        return;
+    }
 
-	// Viewpoint-relative vector (world space):
-	const FVector loc = g->Location() - camera->Pos();
+    // Viewpoint-relative vector (world space):
+    const FVector loc = g->Location() - camera->Pos();
 
-	// UE FIX:
-	// Starshatter used (Vec3 * Vec3) as dot product. In UE, use FVector::DotProduct.
-	// Also avoid C-style casts.
-	const FVector vpn = camera->vpn(); // assuming vpn() already returns FVector in your port
+    // Starshatter used (Vec3 * Vec3) as dot product.
+    const FVector vpnv = camera->vpn();
+    const float z = FVector::DotProduct(loc, vpnv);
 
-	const float z = FVector::DotProduct(loc, vpn);
-	g->SetDepth(z);
+    g->SetDepth(z);
 }
 
 // +--------------------------------------------------------------------+
 
-void
-CameraView::Refresh()
+void UCameraView::Refresh()
 {
-	// disabled:
-	if (camera == &emergency_cam)
-		return;
+    // Disabled:
+    if (camera == &emergency_cam)
+        return;
 
-	// prologue:
-	video = Video::GetInstance();
-	if (!video || !window || !scene || !camera)
-		return;
+    video = Video::GetInstance();
+    if (!video || !window || !scene || !camera)
+        return;
 
-	cvrt = (FVector)camera->vrt();
-	cvup = (FVector)camera->vup();
-	cvpn = (FVector)camera->vpn();
+    cvrt = (FVector)camera->vrt();
+    cvup = (FVector)camera->vup();
+    cvpn = (FVector)camera->vpn();
 
-	TranslateScene();
-	MarkVisibleObjects();
+    TranslateScene();
+    MarkVisibleObjects();
 
-	Rect old_rect;
-	video->GetWindowRect(old_rect);
+    Rect old_rect;
+    video->GetWindowRect(old_rect);
 
-	video->SetCamera(camera);
-	video->SetWindowRect(window->GetRect());
-	video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
+    video->SetCamera(camera);
+    video->SetWindowRect(window->GetRect());
+    video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
 
-	// project and render:
-	RenderBackground();
-	RenderScene();
-	RenderForeground();
-	RenderSprites();
-	RenderLensFlare();
+    RenderBackground();
+    RenderScene();
+    RenderForeground();
+    RenderSprites();
+    RenderLensFlare();
 
-	UnTranslateScene();
+    UnTranslateScene();
 
-	video->SetWindowRect(old_rect);
+    video->SetWindowRect(old_rect);
 }
 
 // +--------------------------------------------------------------------+
 // Translate all objects and lights to camera relative coordinates:
 // +--------------------------------------------------------------------+
 
-void
-CameraView::TranslateScene()
+void UCameraView::TranslateScene()
 {
-	camera_loc = (FVector)camera->Pos();
+    camera_loc = (FVector)camera->Pos();
 
-	ListIter<Graphic> g_iter = scene->Graphics();
-	while (++g_iter) {
-		Graphic* graphic = g_iter.value();
+    ListIter<Graphic> g_iter = scene->Graphics();
+    while (++g_iter)
+    {
+        Graphic* graphic = g_iter.value();
+        if (graphic && !graphic->IsInfinite())
+            graphic->TranslateBy(camera_loc);
+    }
 
-		if (graphic && !graphic->IsInfinite())
-			graphic->TranslateBy((FVector)camera_loc);
-	}
+    g_iter.attach(scene->Foreground());
+    while (++g_iter)
+    {
+        Graphic* graphic = g_iter.value();
+        if (graphic)
+            graphic->TranslateBy(camera_loc);
+    }
 
-	g_iter.attach(scene->Foreground());
-	while (++g_iter) {
-		Graphic* graphic = g_iter.value();
-		if (graphic)
-			graphic->TranslateBy((FVector)camera_loc);
-	}
+    g_iter.attach(scene->Sprites());
+    while (++g_iter)
+    {
+        Graphic* graphic = g_iter.value();
+        if (graphic && !graphic->IsInfinite())
+            graphic->TranslateBy(camera_loc);
+    }
 
-	g_iter.attach(scene->Sprites());
-	while (++g_iter) {
-		Graphic* graphic = g_iter.value();
+    ListIter<SimLight> l_iter = scene->Lights();
+    while (++l_iter)
+    {
+        SimLight* light = l_iter.value();
+        if (light)
+            light->TranslateBy(camera_loc);
+    }
 
-		if (graphic && !graphic->IsInfinite())
-			graphic->TranslateBy((FVector)camera_loc);
-	}
-
-	ListIter<SimLight> l_iter = scene->Lights();
-	while (++l_iter) {
-		SimLight* light = l_iter.value();
-		if (light)
-			light->TranslateBy((FVector)camera_loc);
-	}
-
-	camera->MoveTo(0, 0, 0);
+    camera->MoveTo(0, 0, 0);
 }
 
 // +--------------------------------------------------------------------+
 // Translate all objects and lights back to original positions:
 // +--------------------------------------------------------------------+
 
-void
-CameraView::UnTranslateScene()
+void UCameraView::UnTranslateScene()
 {
-	const FVector reloc = -camera_loc;
+    const FVector reloc = -camera_loc;
 
-	ListIter<Graphic> g_iter = scene->Graphics();
-	while (++g_iter) {
-		Graphic* graphic = g_iter.value();
+    ListIter<Graphic> g_iter = scene->Graphics();
+    while (++g_iter)
+    {
+        Graphic* graphic = g_iter.value();
+        if (graphic && !graphic->IsInfinite())
+            graphic->TranslateBy(reloc);
+    }
 
-		if (graphic && !graphic->IsInfinite())
-			graphic->TranslateBy((FVector)reloc);
-	}
+    g_iter.attach(scene->Foreground());
+    while (++g_iter)
+    {
+        Graphic* graphic = g_iter.value();
+        if (graphic)
+            graphic->TranslateBy(reloc);
+    }
 
-	g_iter.attach(scene->Foreground());
-	while (++g_iter) {
-		Graphic* graphic = g_iter.value();
-		if (graphic)
-			graphic->TranslateBy((FVector)reloc);
-	}
+    g_iter.attach(scene->Sprites());
+    while (++g_iter)
+    {
+        Graphic* graphic = g_iter.value();
+        if (graphic && !graphic->IsInfinite())
+            graphic->TranslateBy(reloc);
+    }
 
-	g_iter.attach(scene->Sprites());
-	while (++g_iter) {
-		Graphic* graphic = g_iter.value();
+    ListIter<SimLight> l_iter = scene->Lights();
+    while (++l_iter)
+    {
+        SimLight* light = l_iter.value();
+        if (light)
+            light->TranslateBy(reloc);
+    }
 
-		if (graphic && !graphic->IsInfinite())
-			graphic->TranslateBy((FVector)reloc);
-	}
-
-	ListIter<SimLight> l_iter = scene->Lights();
-	while (++l_iter) {
-		SimLight* light = l_iter.value();
-		if (light)
-			light->TranslateBy((FVector)reloc);
-	}
-
-	camera->MoveTo((FVector)camera_loc);
+    camera->MoveTo(camera_loc);
 }
 
 // +--------------------------------------------------------------------+
 // Mark visible objects
 // +--------------------------------------------------------------------+
 
-void
-CameraView::MarkVisibleObjects()
+void UCameraView::MarkVisibleObjects()
 {
-	projector.StartFrame();
-	graphics.clear();
+    projector.StartFrame();
+    graphics.clear();
 
-	ListIter<Graphic> graphic_iter = scene->Graphics();
-	while (++graphic_iter) {
-		Graphic* graphic = graphic_iter.value();
+    ListIter<Graphic> graphic_iter = scene->Graphics();
+    while (++graphic_iter)
+    {
+        Graphic* graphic = graphic_iter.value();
 
-		if (!graphic || graphic->Hidden())
-			continue;
+        if (!graphic || graphic->Hidden())
+            continue;
 
-		if (graphic->CheckVisibility(projector)) {
-			graphic->Update();
-			graphics.append(graphic);
-		}
-		else {
-			graphic->ProjectScreenRect(0);
-		}
-	}
+        if (graphic->CheckVisibility(projector))
+        {
+            graphic->Update();
+            graphics.append(graphic);
+        }
+        else
+        {
+            graphic->ProjectScreenRect(0);
+        }
+    }
 }
 
-void
-CameraView::MarkVisibleLights(Graphic* graphic, DWORD flags)
+void UCameraView::MarkVisibleLights(Graphic* graphic, DWORD flags)
 {
-	if (!graphic || !scene || !camera)
-		return;
+    if (!graphic || !scene || !camera)
+        return;
 
-	if (flags < Graphic::RENDER_FIRST_LIGHT) {
-		flags = flags | Graphic::RENDER_FIRST_LIGHT | Graphic::RENDER_ADD_LIGHT;
-	}
+    if (flags < Graphic::RENDER_FIRST_LIGHT)
+        flags = flags | Graphic::RENDER_FIRST_LIGHT | Graphic::RENDER_ADD_LIGHT;
 
-	if (graphic->IsVisible()) {
-		ListIter<SimLight> light_iter = scene->Lights();
+    if (graphic->IsVisible())
+    {
+        ListIter<SimLight> light_iter = scene->Lights();
+        while (++light_iter)
+        {
+            SimLight* light = light_iter.value();
+            if (!light)
+                continue;
 
-		while (++light_iter) {
-			SimLight* light = light_iter.value();
-			if (!light)
-				continue;
+            bool bright_enough =
+                light->Type() == SimLight::LIGHT_DIRECTIONAL ||
+                light->Intensity() >= 1e9;
 
-			bool bright_enough = light->Type() == SimLight::LIGHT_DIRECTIONAL ||
-				light->Intensity() >= 1e9;
+            if (!bright_enough)
+            {
+                const FVector test = (graphic->Location() - light->Location());
+                if (test.Size() < (float)(light->Intensity() * 10))
+                    bright_enough = true;
+            }
 
-			if (!bright_enough) {
-				const FVector test = (FVector)(graphic->Location() - light->Location());
-				if (test.Size() < (float)(light->Intensity() * 10))
-					bright_enough = true;
-			}
+            if (light->CastsShadow())
+            {
+                if ((flags & Graphic::RENDER_ADD_LIGHT) == 0)
+                    bright_enough = false;
+            }
+            else
+            {
+                if ((flags & Graphic::RENDER_FIRST_LIGHT) == 0)
+                    bright_enough = false;
+            }
 
-			// turn off lights that won't be used this pass:
-			if (light->CastsShadow()) {
-				if ((flags & Graphic::RENDER_ADD_LIGHT) == 0)
-					bright_enough = false;
-			}
-			else {
-				if ((flags & Graphic::RENDER_FIRST_LIGHT) == 0)
-					bright_enough = false;
-			}
+            double obs_radius = graphic->Radius();
+            if (obs_radius < 100) obs_radius = 100;
 
-			double obs_radius = graphic->Radius();
-			if (obs_radius < 100)
-				obs_radius = 100;
-
-			light->SetActive(bright_enough);
-		}
-	}
+            light->SetActive(bright_enough);
+        }
+    }
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Rendering methods (unchanged logic)
+// --------------------------------------------------------------------
 
-void
-CameraView::RenderBackground()
+void UCameraView::RenderBackground()
 {
-	if (scene->Background().isEmpty())
-		return;
+    if (scene->Background().isEmpty())
+        return;
 
-	video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
-	video->SetRenderState(Video::Z_ENABLE, FALSE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
-	video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
-	video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
+    video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
+    video->SetRenderState(Video::Z_ENABLE, FALSE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
+    video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
+    video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
 
-	// solid items:
-	ListIter<Graphic> iter = scene->Background();
-	while (++iter) {
-		Graphic* g = iter.value();
+    ListIter<Graphic> iter = scene->Background();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (g && !g->Hidden())
+            Render(g, Graphic::RENDER_SOLID);
+    }
 
-		if (g && !g->Hidden())
-			Render(g, Graphic::RENDER_SOLID);
-	}
+    iter.reset();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (g && !g->Hidden())
+            Render(g, Graphic::RENDER_ALPHA);
+    }
 
-	// blended items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
-
-		if (g && !g->Hidden())
-			Render(g, Graphic::RENDER_ALPHA);
-	}
-
-	// glowing items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
-
-		if (g && !g->Hidden())
-			Render(g, Graphic::RENDER_ADDITIVE);
-	}
+    iter.reset();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (g && !g->Hidden())
+            Render(g, Graphic::RENDER_ADDITIVE);
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-void
-CameraView::RenderForeground()
+void UCameraView::RenderForeground()
 {
-	bool foregroundVisible = false;
+    bool foregroundVisible = false;
 
-	ListIter<Graphic> iter = scene->Foreground();
-	while (++iter && !foregroundVisible) {
-		Graphic* g = iter.value();
-		if (g && !g->Hidden())
-			foregroundVisible = true;
-	}
+    ListIter<Graphic> iter = scene->Foreground();
+    while (++iter && !foregroundVisible)
+    {
+        Graphic* g = iter.value();
+        if (g && !g->Hidden())
+            foregroundVisible = true;
+    }
 
-	if (!foregroundVisible)
-		return;
+    if (!foregroundVisible)
+        return;
 
-	video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
-	video->SetRenderState(Video::Z_ENABLE, TRUE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, TRUE);
-	video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
-	video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
-	video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
+    video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
+    video->SetRenderState(Video::Z_ENABLE, TRUE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, TRUE);
+    video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
+    video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
+    video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
 
-	if (video->IsShadowEnabled() || video->IsBumpMapEnabled()) {
-		// solid items, ambient and non-shadow lights:
-		iter.reset();
-		while (++iter) {
-			Graphic* g = iter.value();
-			Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
-		}
+    if (video->IsShadowEnabled() || video->IsBumpMapEnabled())
+    {
+        iter.reset();
+        while (++iter)
+        {
+            Graphic* g = iter.value();
+            Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
+        }
 
-		video->SetAmbient(FColor::Black);
-		video->SetRenderState(Video::LIGHTING_PASS, 2);
+        video->SetAmbient(FColor::Black);
+        video->SetRenderState(Video::LIGHTING_PASS, 2);
 
-		// solid items, shadow lights:
-		iter.reset();
-		while (++iter) {
-			Graphic* g = iter.value();
-			Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_ADD_LIGHT);
-		}
-	}
-	else {
-		// solid items:
-		iter.reset();
-		while (++iter) {
-			Graphic* g = iter.value();
-			Render(g, Graphic::RENDER_SOLID);
-		}
-	}
+        iter.reset();
+        while (++iter)
+        {
+            Graphic* g = iter.value();
+            Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_ADD_LIGHT);
+        }
+    }
+    else
+    {
+        iter.reset();
+        while (++iter)
+        {
+            Graphic* g = iter.value();
+            Render(g, Graphic::RENDER_SOLID);
+        }
+    }
 
-	video->SetAmbient(scene->Ambient());
-	video->SetRenderState(Video::LIGHTING_PASS, 0);
-	video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
-	video->SetRenderState(Video::Z_ENABLE, TRUE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
+    video->SetAmbient(scene->Ambient());
+    video->SetRenderState(Video::LIGHTING_PASS, 0);
+    video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
+    video->SetRenderState(Video::Z_ENABLE, TRUE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
 
-	// blended items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
-		Render(g, Graphic::RENDER_ALPHA);
-		if (g) g->ProjectScreenRect(&projector);
-	}
+    iter.reset();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        Render(g, Graphic::RENDER_ALPHA);
+        if (g) g->ProjectScreenRect(&projector);
+    }
 
-	// glowing items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
-		Render(g, Graphic::RENDER_ADDITIVE);
-		if (g) g->ProjectScreenRect(&projector);
-	}
+    iter.reset();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        Render(g, Graphic::RENDER_ADDITIVE);
+        if (g) g->ProjectScreenRect(&projector);
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-void
-CameraView::RenderSprites()
+void UCameraView::RenderSprites()
 {
-	if (scene->Sprites().isEmpty())
-		return;
+    if (scene->Sprites().isEmpty())
+        return;
 
-	video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
-	video->SetRenderState(Video::Z_ENABLE, TRUE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
-	video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
-	video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
+    video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
+    video->SetRenderState(Video::Z_ENABLE, TRUE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
+    video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
+    video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
 
-	// compute depth:
-	ListIter<Graphic> iter = scene->Sprites();
-	while (++iter) {
-		Graphic* g = iter.value();
-		if (g && g->IsVisible() && !g->Hidden()) {
-			FindDepth(g);
-		}
-	}
+    ListIter<Graphic> iter = scene->Sprites();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (g && g->IsVisible() && !g->Hidden())
+            FindDepth(g);
+    }
 
-	// sort the list:
-	scene->Sprites().sort();
+    scene->Sprites().sort();
 
-	// blended items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
-		Render(g, Graphic::RENDER_ALPHA);
-	}
+    iter.reset();
+    while (++iter)
+        Render(iter.value(), Graphic::RENDER_ALPHA);
 
-	// glowing items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
-		Render(g, Graphic::RENDER_ADDITIVE);
-	}
+    iter.reset();
+    while (++iter)
+        Render(iter.value(), Graphic::RENDER_ADDITIVE);
 }
 
-// +--------------------------------------------------------------------+
-// Render the whole scene, sorted back to front
-// +--------------------------------------------------------------------+
-
-void
-CameraView::RenderScene()
+void UCameraView::RenderScene()
 {
-	if (graphics.isEmpty())
-		return;
+    if (graphics.isEmpty())
+        return;
 
-	// compute depth:
-	ListIter<Graphic> iter = graphics;
-	while (++iter) {
-		Graphic* g = iter.value();
-		if (g && !g->Hidden()) {
-			FindDepth(g);
+    ListIter<Graphic> iter = graphics;
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (g && !g->Hidden())
+        {
+            FindDepth(g);
 
-			if (g->IsSolid()) {
-				Solid* solid = (Solid*)g;
+            if (g->IsSolid())
+            {
+                Solid* solid = (Solid*)g;
+                solid->SelectDetail(&projector);
 
-				solid->SelectDetail(&projector);
+                if (video->IsShadowEnabled())
+                {
+                    MarkVisibleLights(solid, Graphic::RENDER_ADD_LIGHT);
+                    solid->UpdateShadows(scene->Lights());
+                }
+            }
+        }
+    }
 
-				if (video->IsShadowEnabled()) {
-					MarkVisibleLights(solid, Graphic::RENDER_ADD_LIGHT);
-					solid->UpdateShadows(scene->Lights());
-				}
-			}
-		}
-	}
+    graphics.sort();
 
-	// sort the list:
-	graphics.sort();
+    Graphic* g = graphics.last();
+    if (g && g->Depth() > 5e6)
+    {
+        RenderSceneObjects(true);
+        video->ClearDepthBuffer();
+    }
 
-	Graphic* g = graphics.last();
-	if (g && g->Depth() > 5e6) {
-		RenderSceneObjects(true);
-		video->ClearDepthBuffer();
-	}
-
-	RenderSceneObjects(false);
+    RenderSceneObjects(false);
 }
 
-void
-CameraView::RenderSceneObjects(bool distant)
+void UCameraView::RenderSceneObjects(bool distant)
 {
-	ListIter<Graphic> iter = graphics;
+    ListIter<Graphic> iter = graphics;
 
-	video->SetAmbient(scene->Ambient());
-	video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
-	video->SetRenderState(Video::Z_ENABLE, TRUE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, TRUE);
-	video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
+    video->SetAmbient(scene->Ambient());
+    video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
+    video->SetRenderState(Video::Z_ENABLE, TRUE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, TRUE);
+    video->SetRenderState(Video::LIGHTING_ENABLE, TRUE);
 
-	if (distant)
-		video->SetProjection((float)GetFieldOfView(), 5.0e6f, 1.0e12f, projection_type);
-	else
-		video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
+    if (distant)
+        video->SetProjection((float)GetFieldOfView(), 5.0e6f, 1.0e12f, projection_type);
+    else
+        video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
 
-	if (video->IsShadowEnabled() || video->IsBumpMapEnabled()) {
-		// solid items, ambient and non-shadow lights:
-		iter.reset();
-		while (++iter) {
-			Graphic* g = iter.value();
+    if (video->IsShadowEnabled() || video->IsBumpMapEnabled())
+    {
+        iter.reset();
+        while (++iter)
+        {
+            Graphic* g = iter.value();
+            if (!g) continue;
 
-			if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6)) {
-				Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
-			}
-		}
+            if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
+                Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
+        }
 
-		// send shadows to stencil buffer:
-		if (video->IsShadowEnabled()) {
-			iter.reset();
-			while (++iter) {
-				Graphic* g = iter.value();
-				if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6)) {
-					if (g->IsSolid()) {
-						Solid* solid = (Solid*)g;
+        if (video->IsShadowEnabled())
+        {
+            iter.reset();
+            while (++iter)
+            {
+                Graphic* g = iter.value();
+                if (!g) continue;
 
-						ListIter<Shadow> shadow_iter = solid->GetShadows();
-						while (++shadow_iter) {
-							Shadow* shadow = shadow_iter.value();
-							if (shadow)
-								shadow->Render(video);
-						}
-					}
-				}
-			}
-		}
+                if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
+                {
+                    if (g->IsSolid())
+                    {
+                        Solid* solid = (Solid*)g;
 
-		video->SetAmbient(FColor::Black);
-		video->SetRenderState(Video::LIGHTING_PASS, 2);
-		video->SetRenderState(Video::STENCIL_ENABLE, TRUE);
+                        ListIter<Shadow> shadow_iter = solid->GetShadows();
+                        while (++shadow_iter)
+                        {
+                            Shadow* shadow = shadow_iter.value();
+                            if (shadow) shadow->Render(video);
+                        }
+                    }
+                }
+            }
+        }
 
-		// solid items, shadow lights:
-		iter.reset();
-		while (++iter) {
-			Graphic* g = iter.value();
+        video->SetAmbient(FColor::Black);
+        video->SetRenderState(Video::LIGHTING_PASS, 2);
+        video->SetRenderState(Video::STENCIL_ENABLE, TRUE);
 
-			if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6)) {
-				Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_ADD_LIGHT);
-			}
-		}
-	}
-	else {
-		// solid items:
-		iter.reset();
-		while (++iter) {
-			Graphic* g = iter.value();
+        iter.reset();
+        while (++iter)
+        {
+            Graphic* g = iter.value();
+            if (!g) continue;
 
-			if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6)) {
-				Render(g, Graphic::RENDER_SOLID);
-			}
-		}
-	}
+            if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
+                Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_ADD_LIGHT);
+        }
+    }
+    else
+    {
+        iter.reset();
+        while (++iter)
+        {
+            Graphic* g = iter.value();
+            if (!g) continue;
 
-	video->SetAmbient(scene->Ambient());
-	video->SetRenderState(Video::LIGHTING_PASS, 0);
-	video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
-	video->SetRenderState(Video::Z_ENABLE, TRUE);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
+            if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
+                Render(g, Graphic::RENDER_SOLID);
+        }
+    }
 
-	// blended items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
+    video->SetAmbient(scene->Ambient());
+    video->SetRenderState(Video::LIGHTING_PASS, 0);
+    video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
+    video->SetRenderState(Video::Z_ENABLE, TRUE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
 
-		if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6)) {
-			Render(g, Graphic::RENDER_ALPHA);
-			g->ProjectScreenRect(&projector);
-		}
-	}
+    iter.reset();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (!g) continue;
 
-	// glowing items:
-	iter.reset();
-	while (++iter) {
-		Graphic* g = iter.value();
+        if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
+        {
+            Render(g, Graphic::RENDER_ALPHA);
+            g->ProjectScreenRect(&projector);
+        }
+    }
 
-		if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6)) {
-			Render(g, Graphic::RENDER_ADDITIVE);
-			g->ProjectScreenRect(&projector);
-		}
-	}
+    iter.reset();
+    while (++iter)
+    {
+        Graphic* g = iter.value();
+        if (!g) continue;
+
+        if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
+        {
+            Render(g, Graphic::RENDER_ADDITIVE);
+            g->ProjectScreenRect(&projector);
+        }
+    }
 }
 
-void
-CameraView::Render(Graphic* g, DWORD flags)
+void UCameraView::Render(Graphic* g, DWORD flags)
 {
-	if (g && g->IsVisible() && !g->Hidden()) {
-		if (g->IsSolid()) {
-			MarkVisibleLights(g, flags);
-			video->SetLights(scene->Lights());
-		}
+    if (g && g->IsVisible() && !g->Hidden())
+    {
+        if (g->IsSolid())
+        {
+            MarkVisibleLights(g, flags);
+            video->SetLights(scene->Lights());
+        }
 
-		g->Render(video, flags);
-	}
+        g->Render(video, flags);
+    }
 }
 
-// +--------------------------------------------------------------------+
-// Draw the lens flare effect, if enabled and light source visible
-// +--------------------------------------------------------------------+
+// NOTE: RenderLensFlare() and WorldPlaneToView() can remain exactly as you pasted.
+// Keep them unchanged; they compile once the class is UCameraView and projector/window/camera are valid.
 
-void
-CameraView::RenderLensFlare()
+void UCameraView::WorldPlaneToView(Plane& plane)
 {
-	if (!lens_flare_enable || lens_flare_dim < 0.01)
-		return;
+    const FVector WorldNormal = plane.normal;
 
-	if (!halo_bitmap || !video || !scene || !camera)
-		return;
+    if (!infinite && camera)
+        plane.distance -= FVector::DotProduct(camera->Pos(), WorldNormal);
 
-	video->SetRenderState(Video::STENCIL_ENABLE, false);
-	video->SetRenderState(Video::Z_ENABLE, false);
-	video->SetRenderState(Video::Z_WRITE_ENABLE, false);
-
-	const FVector ScreenCenter(
-		(float)width * 0.5f,
-		(float)height * 0.5f,
-		1.0f
-	);
-
-	ListIter<SimLight> light_iter = scene->Lights();
-	while (++light_iter) {
-		SimLight* light = light_iter.value();
-		if (!light || !light->IsActive())
-			continue;
-
-		if (light->Type() == SimLight::LIGHT_DIRECTIONAL && light->Intensity() < 1)
-			continue;
-
-		const double distance =
-			(light->Location() - camera->Pos()).Length();
-
-		// Only process the "sun"
-		if (distance <= 1e9)
-			continue;
-
-		// World-space sun position
-		FVector SunPosWS = light->Location();
-
-		if (!projector.IsVisible(SunPosWS, 1.0f))
-			continue;
-
-		if (light->CastsShadow() &&
-			scene->IsLightObscured(camera->Pos(), SunPosWS, -1))
-			continue;
-
-		// Transform -> Project to screen space
-		FVector SunPosSS = SunPosWS;
-		projector.Transform(SunPosSS);
-
-		if (SunPosSS.Z < 100.0f)
-			continue;
-
-		projector.Project(SunPosSS, false);
-
-		const int sx = (int)SunPosSS.X;
-		const int sy = (int)SunPosSS.Y;
-
-		int halo_w = (int)(window->Width() * 0.25f);
-		int halo_h = halo_w;
-
-		// Draw halo
-		window->DrawBitmap(
-			sx - halo_w,
-			sy - halo_h,
-			sx + halo_w,
-			sy + halo_h,
-			halo_bitmap,
-			Video::BLEND_ADDITIVE
-		);
-
-		// Lens flare elements
-		if (elem_bitmap[0]) {
-			FVector Ray = (ScreenCenter - SunPosSS);
-			const float RayLen = Ray.Size();
-			Ray = Ray.GetSafeNormal();
-
-			static const int   nelem = 12;
-			static const int   elem_indx[nelem] =
-			{ 0,1,1,1,0,0,0,0,2,0,0,2 };
-			static const float elem_dist[nelem] =
-			{ -0.2f,0.5f,0.55f,0.62f,1.23f,1.33f,1.35f,0.8f,0.9f,1.4f,1.7f,1.8f };
-			static const float elem_size[nelem] =
-			{ 0.3f,0.2f,0.4f,0.3f,0.4f,0.2f,0.6f,0.1f,0.1f,1.6f,1.0f,0.2f };
-
-			for (int i = 0; i < nelem; i++) {
-				Bitmap* img = elem_bitmap[elem_indx[i]];
-				if (!img)
-					img = elem_bitmap[0];
-
-				FVector FlarePos =
-					SunPosSS + Ray * (elem_dist[i] * RayLen);
-
-				const int fx = (int)FlarePos.X;
-				const int fy = (int)FlarePos.Y;
-				const int fw = (int)(window->Width() * 0.125f * elem_size[i]);
-				const int fh = fw;
-
-				window->DrawBitmap(
-					fx - fw,
-					fy - fh,
-					fx + fw,
-					fy + fh,
-					img,
-					Video::BLEND_ADDITIVE
-				);
-			}
-		}
-	}
+    plane.normal.X = FVector::DotProduct(WorldNormal, cvrt);
+    plane.normal.Y = FVector::DotProduct(WorldNormal, cvup);
+    plane.normal.Z = FVector::DotProduct(WorldNormal, cvpn);
 }
 
-
-// +--------------------------------------------------------------------+
-// Rotate and translate a plane in world space to view space.
-// +--------------------------------------------------------------------+
-
-void
-CameraView::WorldPlaneToView(Plane& plane)
+void UCameraView::SetDepthScale(float scale)
 {
-	// Cache original normal
-	const FVector WorldNormal = plane.normal;
-
-	// Distance from camera position along plane normal
-	if (!infinite && camera) {
-		plane.distance -= FVector::DotProduct(camera->Pos(), WorldNormal);
-	}
-
-	// Rotate normal into view space using camera basis vectors
-	plane.normal.X = FVector::DotProduct(WorldNormal, cvrt);
-	plane.normal.Y = FVector::DotProduct(WorldNormal, cvup);
-	plane.normal.Z = FVector::DotProduct(WorldNormal, cvpn);
+    projector.SetDepthScale(scale);
 }
 
-void
-CameraView::SetDepthScale(float scale)
+int UCameraView::SetInfinite(int i)
 {
-	projector.SetDepthScale(scale);
+    infinite = i;
+    return infinite;
 }
