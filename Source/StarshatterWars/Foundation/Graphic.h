@@ -76,6 +76,7 @@ public:
 	float             Radius()       const { return radius; }
 
 	FVector           Location()     const { return loc; }
+
 	virtual void      MoveTo(const FVector& p) { loc = p; }
 
 	// NOTE: Legacy Starshatter semantics: TranslateBy(ref) subtracts ref from loc.
@@ -124,7 +125,9 @@ protected:
 	static int        id_key;
 
 	int               id;
+
 	FVector           loc;
+
 	float             depth;
 	float             radius;
 	int               life;

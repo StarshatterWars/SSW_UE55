@@ -3,13 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PlanScreen.generated.h"
 
 /**
  * 
  */
-class STARSHATTERWARS_API PlanScreen
+ UCLASS()
+class STARSHATTERWARS_API UPlanScreen
 {
+	 GENERATED_BODY()
+
 public:
-	PlanScreen();
-	~PlanScreen();
+	UPlanScreen();
+	~UPlanScreen();
 };

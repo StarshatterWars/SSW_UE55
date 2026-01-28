@@ -2006,7 +2006,7 @@ Sim::ResolveTimeSkip(double seconds)
 
 		HUDView* hud = HUDView::GetInstance();
 		if (hud)
-			hud->SetHUDMode((int)EHUDMode::Tactical);
+			hud->SetHUDMode(EHUDMode::Tactical);
 
 		if (IsTestMode())
 			player_ship->SetControls(0);

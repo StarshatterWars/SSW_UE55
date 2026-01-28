@@ -99,8 +99,8 @@ WepView::WepView(Window* c)
 
     OnWindowMove();
 
-    hud_font = FontManager::Find("HUD");
-    big_font = FontManager::Find("GUI");
+    HudFont = FontManager::Find("HUD");
+    BigFont = FontManager::Find("GUI");
 
     hud = HUDView::GetInstance();
     if (hud)
@@ -186,7 +186,7 @@ void
 WepView::Refresh()
 {
     sim = Sim::GetSim();
-    if (!sim || !hud || hud->GetHUDMode() == HUDView::HUD_MODE_OFF)
+    if (!sim || !hud || hud->GetHUDMode() == EHUDMode::Off)
         return;
 
     if (ship != sim->GetPlayerShip()) {
@@ -247,12 +247,12 @@ WepView::ExecFrame()
     // part of the 3D scene (like fpm and lcos sprites)
 
     if (hud) {
-        if (hud_color != hud->GetHUDColor()) {
-            hud_color = hud->GetHUDColor();
-            SetColor(hud_color);
+        if (HudColor != hud->GetHUDColor()) {
+            HudColor = hud->GetHUDColor();
+            SetColor(HudColor);
         }
 
-        if (hud->GetHUDMode() == HUDView::HUD_MODE_OFF)
+        if (hud->GetHUDMode() == EHUDMode::Off)
             hud_mode = 0;
     }
 
@@ -352,11 +352,17 @@ WepView::DrawOverlay()
 
             SimSystem* sys = ship->GetSubTarget();
             subtxt = sys->Abbreviation();
-            switch (sys->Status()) {
-            case SimSystem::DEGRADED:   stat = FColor(255, 255, 0);  break;
-            case SimSystem::CRITICAL:   stat = FColor(255, 180, 0);  break;
-            case SimSystem::DESTROYED:  stat = FColor(255, 0, 0);  break;
-            case SimSystem::MAINT:
+            switch (sys->GetStatus()) {
+            case SYSTEM_STATUS::DEGRADED:
+                stat = FColor(255, 255, 0); 
+                break;
+            case SYSTEM_STATUS::CRITICAL: 
+                stat = FColor(255, 180, 0);
+                break;
+            case SYSTEM_STATUS::DESTROYED: 
+                stat = FColor(255, 0, 0);
+                break;
+            case SYSTEM_STATUS::MAINT:
                 if (blink_delta < 250)
                     stat = FColor(8, 8, 8);
                 break;

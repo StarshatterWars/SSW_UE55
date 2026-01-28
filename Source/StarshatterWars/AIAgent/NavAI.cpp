@@ -88,7 +88,7 @@ NavAI::ExecFrame(double s)
     if (ShipManager::Toggled(KEY_AUTO_NAV)) {
         NavSystem* navsys = ship->GetNavSystem();
         if (navsys) {
-            HUDView::GetInstance()->SetHUDMode((int)EHUDMode::Tactical);
+            HUDView::GetInstance()->SetHUDMode(EHUDMode::Tactical);
             navsys->DisengageAutoNav();
 
             Sim* sim = Sim::GetSim();

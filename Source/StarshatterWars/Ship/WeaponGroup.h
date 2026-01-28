@@ -20,6 +20,7 @@
 #include "Types.h"
 #include "Weapon.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -82,7 +83,7 @@ public:
 	int               GetControlMode()           const { return control; }
 	void              SetSweep(int s);
 	int               GetSweep()                 const { return sweep; }
-	int               Status()                   const;
+	SYSTEM_STATUS     GetStatus()                const;
 
 	WeaponDesign*	  GetDesign()                const;
 	bool              CanTarget(uint32 tgt_class) const;

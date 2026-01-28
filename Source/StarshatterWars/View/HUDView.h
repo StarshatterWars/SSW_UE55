@@ -23,9 +23,13 @@
 #include "SimObject.h"
 #include "GameStructs.h"
 #include "Text.h"
+#include "Mouse.h"
+// Views
+#include "CameraView.h"
+#include "MFDView.h"
 
 #include "Math/Color.h"
-#include "Math/Vector.h"   // FVector
+#include "Math/Vector.h"  
 
 // --------------------------------------------------------------------
 // Unreal/Slate bridge (HUDView is NOT a UObject; this is a paint binding)
@@ -56,9 +60,8 @@ class Physical;
 class OrbitalBody;
 class OrbitalRegion;
 class Instruction;
-class CameraView;
 class SimProjector;
-class MFDView;
+
 
 // +--------------------------------------------------------------------+
 
@@ -66,10 +69,15 @@ class HUDView : public View,
     public SimObserver
 {
 public:
-    HUDView(Window* c);
+
+    HUDView(Screen* InScreen);
     virtual ~HUDView();
 
-    enum HUDModes { HUD_MODE_OFF, HUD_MODE_TAC, HUD_MODE_NAV, HUD_MODE_ILS };
+    using View::DrawRect;
+    using View::FillRect;
+    using View::DrawLine;
+    using View::DrawPoly;
+    using View::DrawEllipse;
 
     // Operations:
     virtual void      Refresh();
@@ -113,7 +121,7 @@ public:
 
     virtual void      MouseFrame();
 
-    virtual int       GetHUDMode()      const { return mode; }
+    virtual EHUDMode  GetHUDMode()      const { return mode; }
     virtual int       GetTacticalMode() const { return tactical; }
     virtual void      SetTacticalMode(int mode = 1);
     virtual int       GetOverlayMode()  const { return overlay; }

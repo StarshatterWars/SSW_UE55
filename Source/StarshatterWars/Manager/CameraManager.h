@@ -154,7 +154,7 @@ protected:
 	double             transition;
 
 	Sim* sim;
-	UHUDView* hud;
+	HUDView* hud;
 
 	static CameraManager* instance;
 };

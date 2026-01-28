@@ -17,6 +17,7 @@
 #include "WeaponGroup.h"
 #include "Ship.h"
 #include "CoreMinimal.h"
+#include "GameStructs.h"
 
 // +----------------------------------------------------------------------+
 
@@ -244,24 +245,24 @@ WeaponDesign* WeaponGroup::GetDesign() const
 
 // +--------------------------------------------------------------------+
 
-int WeaponGroup::Status() const
+SYSTEM_STATUS WeaponGroup::GetStatus() const
 {
-	int status = SimSystem::NOMINAL;
+	SYSTEM_STATUS status = SYSTEM_STATUS::NOMINAL;
 	int critical = true;
 
 	ListIter<Weapon> iter = (List<Weapon>&)weapons; // cast-away const
 	while (++iter) {
 		Weapon* w = iter.value();
 
-		if (w->Status() < SimSystem::NOMINAL)
-			status = SimSystem::DEGRADED;
+		if (w->GetStatus() < SYSTEM_STATUS::NOMINAL)
+			status = SYSTEM_STATUS::DEGRADED;
 
-		if (w->Status() > SimSystem::CRITICAL)
+		if (w->GetStatus() > SYSTEM_STATUS::CRITICAL)
 			critical = false;
 	}
 
 	if (critical)
-		return SimSystem::CRITICAL;
+		return SYSTEM_STATUS::CRITICAL;
 
 	return status;
 }

@@ -224,7 +224,7 @@ void TacticalView::ExecFrame()
 {
     HUDView* hud = HUDView::GetInstance();
     if (hud) {
-        if (hud_color != hud->GetTextColor()) {
+        if (HudColor != hud->GetTextColor()) {
             hud_color = hud->GetTextColor();
             SetColor(hud_color);
         }

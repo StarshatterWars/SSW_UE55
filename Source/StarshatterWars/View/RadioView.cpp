@@ -37,6 +37,7 @@
 #include "Mouse.h"
 #include "Game.h"
 #include "Menu.h"
+#include "GameStructs.h"
 
 // Minimal Unreal logging support:
 #include "Logging/LogMacros.h"
@@ -323,7 +324,7 @@ RadioView::Refresh()
 		bool hud_off = false;
 
 		if (HUDView::GetInstance())
-			hud_off = (HUDView::GetInstance()->GetHUDMode() == HUDView::HUD_MODE_OFF);
+			hud_off = (HUDView::GetInstance()->GetHUDMode() == EHUDMode::Off);
 
 		// draw messages:
 		if (!hud_off) {

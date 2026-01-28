@@ -4,10 +4,10 @@
 #include "PlanScreen.h"
 
 
-PlanScreen::PlanScreen()
+UPlanScreen::PlanScreen()
 {
 }
 
-PlanScreen::~PlanScreen()
+UPlanScreen::~PlanScreen()
 {
 }

@@ -23,6 +23,7 @@
 #include "Ship.h"
 #include "Sim.h"
 #include "SimEvent.h"
+#include "GameStructs.h"
 
 // Game systems:
 #include "Game.h"
@@ -644,7 +645,7 @@ SimShot* Weapon::Fire()
         if (design->ripple_count > 0 && ripple_count <= 0)
             ripple_count = design->ripple_count - 1;
 
-        if (status != NOMINAL)
+        if (status != SYSTEM_STATUS::NOMINAL)
             refire *= 2;
     }
 

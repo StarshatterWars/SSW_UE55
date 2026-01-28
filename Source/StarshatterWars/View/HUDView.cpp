@@ -58,12 +58,13 @@
 #include "AudioConfig.h"
 #include "PlayerCharacter.h"
 #include "GameStructs.h"
+#include "FontManager.h" 
 
 #include "CameraView.h"
 #include "Screen.h"
 #include "DataLoader.h"
 #include "SimScene.h"          // was Scene
-#include "FontManager.h"           // provides SystemFont*
+          // provides SystemFont*
 #include "Graphic.h"
 #include "Sprite.h"
 #include "Keyboard.h"
@@ -343,8 +344,9 @@ HUDView::DrawHUDText(int index, const char* txt, Rect& InRect, int align, int up
 
 		Sprite* s = hud_sprite[0];
 
-		const int cx = (int)s->Location().X;
-		const int cy = (int)s->Location().Y;
+		const FVector Loc = s->GetLocation();
+		const int cx = (int)Loc.X;
+		const int cy = (int)Loc.Y;
 		const int w2 = s->Width() / 2;
 		const int h2 = s->Height() / 2;
 
@@ -372,7 +374,7 @@ HUDView::DrawHUDText(int index, const char* txt, Rect& InRect, int align, int up
 			Rect boxRect(InRect);
 			boxRect.Inflate(3, 2);
 			boxRect.h--;
-			window->DrawRect(boxRect, HudColor);
+			DrawRect(boxRect, HudColor);
 		}
 	}
 }
@@ -397,8 +399,10 @@ int      HUDView::gunsight = 1;
 
 // +--------------------------------------------------------------------+
 
-HUDView::HUDView(Window* c)
-	: View(c, 0, 0, c ? c->Width() : 0, c ? c->Height() : 0),
+HUDView::HUDView(Screen* InScreen)
+	: View(InScreen, 0, 0,
+		InScreen ? InScreen->Width() : 0,
+		InScreen ? InScreen->Height() : 0),
 	
 	projector(nullptr),
 	camview(nullptr),
@@ -429,15 +433,10 @@ HUDView::HUDView(Window* c)
 	compass_scale(1.0)
 {
 	hud_view = this;
-	window = c;
 
 	sim = Sim::GetSim();
 	if (sim)
 		sim->ShowGrid(false);
-
-	// now window/rect base is valid
-	width = window ? window->Width() : 0;
-	height = window ? window->Height() : 0;
 
 	xcenter = (width / 2.0) - 0.5;
 	ycenter = (height / 2.0) + 0.5;
@@ -497,7 +496,6 @@ HUDView::HUDView(Window* c)
 	pitch_ladder_pos.SetType(Bitmap::BMP_TRANSLUCENT);
 	pitch_ladder_neg.SetType(Bitmap::BMP_TRANSLUCENT);
 
-	// Remove (__FILE__, __LINE__) allocator tags:
 	hud_left_sprite = new Sprite(&hud_left_fighter);
 	hud_right_sprite = new Sprite(&hud_right_fighter);
 	instr_left_sprite = new Sprite(&instr_left);
@@ -713,7 +711,8 @@ HUDView::~HUDView()
 	}
 
 	for (int i = 0; i < 32; i++) {
-		GRAPHIC_DESTROY(hud_sprite[i]);
+		delete hud_sprite[i];
+		hud_sprite[i] = nullptr;
 	}
 
 	fpm.ClearImage();
@@ -911,14 +910,15 @@ HUDView::GetObserverName() const
 
 // +--------------------------------------------------------------------+
 
-void
-HUDView::UseCameraView(CameraView* v)
+void HUDView::UseCameraView(CameraView* v)
 {
-	if (v && camview != v) {
+	if (v && camview != v)
+	{
 		camview = v;
 
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 3; i++) {
 			mfd[i]->UseCameraView(camview);
+		}
 
 		projector = camview->GetProjector();
 	}
@@ -1067,8 +1067,8 @@ HUDView::DrawContactMarkers()
 				const FColor hc = GetStatusColor(s);
 				const FColor sc = HudColor;
 
-				window->FillRect(sx, sy, sx + hw, sy + 1, hc);
-				window->FillRect(sx, sy + 3, sx + sw, sy + 4, sc);
+				FillRect(sx, sy, sx + hw, sy + 1, hc);
+				FillRect(sx, sy + 3, sx + sw, sy + 4, sc);
 			}
 		}
 	}
@@ -2075,8 +2075,8 @@ HUDView::DrawILS()
 						int y = (int)dst.Y;
 
 						if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
-							window->DrawLine(x - 6, y - 6, x + 6, y + 6, HudColor);
-							window->DrawLine(x + 6, y - 6, x - 6, y + 6, HudColor);
+							DrawLine(x - 6, y - 6, x + 6, y + 6, HudColor);
+							DrawLine(x + 6, y - 6, x - 6, y + 6, HudColor);
 						}
 					}
 				}
@@ -2122,8 +2122,8 @@ HUDView::DrawILS()
 								int y = (int)dst.Y;
 
 								if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
-									window->DrawLine(x - 6, y - 6, x + 6, y + 6, HudColor);
-									window->DrawLine(x + 6, y - 6, x - 6, y + 6, HudColor);
+									DrawLine(x - 6, y - 6, x + 6, y + 6, HudColor);
+									DrawLine(x + 6, y - 6, x - 6, y + 6, HudColor);
 								}
 							}
 						}
@@ -2169,9 +2169,9 @@ HUDView::DrawObjective()
 
 			if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
 				FColor c = FColor::Cyan;
-				window->DrawRect(x - 6, y - 6, x + 6, y + 6, c);
-				window->DrawLine(x - 6, y - 6, x + 6, y + 6, c);
-				window->DrawLine(x + 6, y - 6, x - 6, y + 6, c);
+				DrawRect(x - 6, y - 6, x + 6, y + 6, c);
+				DrawLine(x - 6, y - 6, x + 6, y + 6, c);
+				DrawLine(x + 6, y - 6, x - 6, y + 6, c);
 			}
 		}
 
@@ -2187,9 +2187,9 @@ HUDView::DrawObjective()
 
 				if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
 					FColor c = FColor::Orange;
-					window->DrawRect(x - 6, y - 6, x + 6, y + 6, c);
-					window->DrawLine(x - 6, y - 6, x + 6, y + 6, c);
-					window->DrawLine(x + 6, y - 6, x - 6, y + 6, c);
+					DrawRect(x - 6, y - 6, x + 6, y + 6, c);
+					DrawLine(x - 6, y - 6, x + 6, y + 6, c);
+					DrawLine(x + 6, y - 6, x - 6, y + 6, c);
 				}
 			}
 		}
@@ -2225,10 +2225,10 @@ void HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 				c = FColor(64, 64, 64);
 
 			if (next)
-				window->DrawEllipse(x - 6, y - 6, x + 5, y + 5, c);
+				DrawEllipse(x - 6, y - 6, x + 5, y + 5, c);
 
-			window->DrawLine(x - 6, y - 6, x + 6, y + 6, c);
-			window->DrawLine(x + 6, y - 6, x - 6, y + 6, c);
+			DrawLine(x - 6, y - 6, x + 6, y + 6, c);
+			DrawLine(x + 6, y - 6, x - 6, y + 6, c);
 
 			if (index > 0)
 			{
@@ -2546,7 +2546,7 @@ HUDView::Refresh()
 				int w2 = s->Width() / 2;
 				int h2 = s->Height() / 2;
 
-				window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, s->Frame(), Video::BLEND_ALPHA);
+				DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, s->Frame(), Video::BLEND_ALPHA);
 			}
 		}
 	}
@@ -2560,7 +2560,7 @@ HUDView::Refresh()
 				int w2 = s->Width() / 2;
 				int h2 = s->Height() / 2;
 
-				window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, s->Frame(), Video::BLEND_ALPHA);
+				DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, s->Frame(), Video::BLEND_ALPHA);
 			}
 		}
 
@@ -3488,5 +3488,5 @@ HUDView::DrawDiamond(int x, int y, int r, FColor c)
 	diamond[3].x = x - r;
 	diamond[3].y = y;
 
-	window->DrawPoly(4, (FVector*)diamond, c);
+	DrawPoly(4, (FVector*)diamond, c);
 }

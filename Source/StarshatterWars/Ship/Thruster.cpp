@@ -45,6 +45,7 @@
 #include "Bolt.h"
 #include "Sprite.h"
 #include "Game.h"
+#include "GameStructs.h"
 
 // Unreal color replacement:
 #include "Math/Color.h"
@@ -271,7 +272,7 @@ Thruster::ExecFrame(double seconds)
     FlightComputer* flcs = ship->GetFLCS();
 
     if (flcs) {
-        if (!flcs->IsPowerOn() || flcs->Status() < DEGRADED) {
+        if (!flcs->IsPowerOn() || flcs->GetStatus() < SYSTEM_STATUS::DEGRADED) {
             agility_factor = 0.3;
             stability_factor = 0.0;
         }

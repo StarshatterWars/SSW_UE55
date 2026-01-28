@@ -20,6 +20,15 @@
 #include "CoreMinimal.h"
 #include "Fonts/SlateFontInfo.h"   // <-- REQUIRED (FSlateFontInfo is used in this header)
 
+#ifdef _WIN32
+#ifdef DrawText
+#undef DrawText
+#endif
+#ifdef DrawTextEx
+#undef DrawTextEx
+#endif
+#endif
+
 class UFont;
 
 class SystemFont

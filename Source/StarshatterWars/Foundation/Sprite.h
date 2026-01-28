@@ -49,6 +49,11 @@ public:
 	virtual void   Rescale(double scale);
 	virtual void   Reshape(int w1, int h1);
 
+	virtual void      Hide() { hidden = true; }
+	virtual void      Show() { hidden = false; }
+
+	virtual void      MoveTo(const FVector& p) { location = p; }
+
 	// accessors / mutators
 	int            Width()     const { return w; }
 	int            Height()    const { return h; }
@@ -68,6 +73,8 @@ public:
 	virtual void   SetAnimation(Bitmap* animation, int length = 1, int repeat = 1, int share = 1);
 	virtual void   SetTexCoords(const double* uv_interleaved);
 
+	const FVector& GetLocation() const { return location; }
+
 	Bitmap* Frame()     const;
 	void           SetFrameIndex(int n);
 
@@ -76,10 +83,10 @@ public:
 protected:
 	int            w, h;
 	int            loop;
-
+	bool           hidden;
 	int            nframes;
 	int            own_frames;
-	Bitmap* frames;
+	Bitmap*		   frames;
 	int            frame_index;
 	DWORD          frame_time;
 	DWORD          last_time;
@@ -91,4 +98,6 @@ protected:
 	Poly           poly;
 	Material       mtl;
 	VertexSet      vset;
+
+	FVector		   Location = FVector::ZeroVector;
 };
