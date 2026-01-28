@@ -20,6 +20,7 @@
 #include "Physical.h"
 #include "List.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 // Minimal Unreal include (replaces Point/Vec3):
 #include "Math/Vector.h"
@@ -43,7 +44,7 @@ public:
 		MISC_SYSTEM = 0, DRIVE = 1, WEAPON, SHIELD, SENSOR,
 		COMPUTER, POWER_SOURCE, FLIGHT_DECK, FARCASTER
 	};
-	enum STATUS { DESTROYED, CRITICAL, DEGRADED, NOMINAL, MAINT };
+
 	enum POWER_FLAGS { POWER_WATTS = 1, POWER_CRITICAL = 2 };
 
 	SimSystem(CATEGORY t, int s, const char* n, int maxv,
@@ -64,7 +65,7 @@ public:
 
 	virtual int       Value()        const { return (int)(max_value * availability * 100); }
 	int               MaxValue()     const { return (int)(max_value * 100); }
-	STATUS            Status()       const { return       status; }
+	SYSTEM_STATUS     GetStatus()    const { return       status; }
 	double            Availability() const { return       availability * 100; }
 	double            Safety()       const { return       safety * 100; }
 	double            Stability()    const { return       stability * 100; }
@@ -142,7 +143,7 @@ protected:
 	Text              abrv;
 
 	// System health status:
-	STATUS            status;
+	SYSTEM_STATUS     status;
 	float             crit_level;
 	float             availability;
 	float             safety;

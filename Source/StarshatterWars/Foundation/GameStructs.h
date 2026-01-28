@@ -563,6 +563,7 @@ enum class SYSTEM_STATUS : uint8 {
 	DEGRADED		UMETA(DisplayName = "Degraded"),
 	NOMINAL			UMETA(DisplayName = "Nominal"),
 	MAINT			UMETA(DisplayName = "Maintanence"),
+	UNKNOWN			UMETA(DisplayName = "Unknown"),
 };
 
 UENUM()

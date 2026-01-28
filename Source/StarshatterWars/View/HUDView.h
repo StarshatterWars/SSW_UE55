@@ -24,6 +24,9 @@
 #include "GameStructs.h"
 #include "Text.h"
 
+#include "Math/Color.h"
+#include "Math/Vector.h"   // FVector
+
 // --------------------------------------------------------------------
 // Unreal/Slate bridge (HUDView is NOT a UObject; this is a paint binding)
 // --------------------------------------------------------------------
@@ -34,10 +37,6 @@
 #endif
 
 #if HUDVIEW_WITH_UE
-    // Keep includes minimal; you can move these to .cpp if you prefer.
-#include "Math/Color.h"
-#include "Math/Vector.h"   // FVector
-
 #include "Layout/Geometry.h"
 #include "Layout/SlateRect.h"
 #include "Fonts/SlateFontInfo.h"
@@ -94,7 +93,7 @@ public:
     virtual void      DrawContactMarkers();
     virtual void      DrawContact(SimContact* c, int index);
     virtual void      DrawTrack(SimContact* c);
-    virtual void      DrawTrackSegment(Point& t1, Point& t2, Color c);
+    virtual void      DrawTrackSegment(FVector& t1, FVector& t2, FColor c);
     virtual void      DrawRect(SimObject* targ);
     virtual void      DrawTarget();
     virtual void      DrawSight();
@@ -120,7 +119,7 @@ public:
     virtual int       GetOverlayMode()  const { return overlay; }
     virtual void      SetOverlayMode(int mode = 1);
 
-    virtual void      SetHUDMode(int mode);
+    virtual void      SetHUDMode(EHUDMode mode);
     virtual void      CycleHUDMode();
     virtual FColor    CycleHUDColor();
     virtual void      SetHUDColorSet(int c);
@@ -148,7 +147,7 @@ public:
     static void       ClearMessages();
     static void       PrepareBitmap(const char* name, Bitmap& img, BYTE*& shades);
     static void       TransferBitmap(const Bitmap& src, Bitmap& img, BYTE*& shades);
-    static void       ColorizeBitmap(Bitmap& img, BYTE* shades, Color color, bool force_alpha = false);
+    static void       ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool force_alpha = false);
 
     static int        GetGunsight() { return gunsight; }
     static void       SetGunsight(int s) { gunsight = s; }
@@ -156,7 +155,7 @@ public:
     static void       SetArcade(bool a) { arcade = a; }
     static int        DefaultColorSet() { return def_color_set; }
     static void       SetDefaultColorSet(int c) { def_color_set = c; }
-    static Color      GetStatusColor(SYSTEM_STATUS status);
+    static FColor     GetStatusColor(SYSTEM_STATUS status);
     static bool       ShowFPS() { return show_fps; }
     static void       ShowFPS(bool f) { show_fps = f; }
 
@@ -248,7 +247,7 @@ protected:
     int         inst_page;
     int         threat;
 
-    int         mode;
+    EHUDMode    mode;
     int         color;
     int         tactical;
     int         overlay;
@@ -281,7 +280,7 @@ protected:
 
 struct HUDText {
     SystemFont* font;
-    Color       color;
+    FColor      color;
     Rect        rect;
     bool        hidden;
 

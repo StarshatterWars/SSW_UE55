@@ -6,31 +6,29 @@
 	FILE:         HUDView.cpp
 	AUTHOR:       Carlos Bott
 
+	ORIGINAL AUTHOR / STUDIO CREDIT
+	===============================
+	Original HUDView implementation:
+	John DiCamillo / Destroyer Studios LLC
+	Copyright (c) 1997-2004. All Rights Reserved.
+
 	OVERVIEW
 	========
 	View class for Heads Up Display
-
-	Original Author: John DiCamillo
-	Original Studio: Destroyer Studios LLC (Starshatter 4.5, 1997-2004)
 */
 
 #include "HUDView.h"
 
-#include "View.h"
+// Unreal (minimal):
+#include "Math/Vector.h"               // FVector
+#include "Math/Color.h"                // FColor
+#include "Math/UnrealMathUtility.h"    // FMath
+#include "Logging/LogMacros.h"         // UE_LOG
 
-#include "Engine/Engine.h"
-#include "Engine/GameViewportClient.h"
-#include "GameFramework/PlayerController.h"
-#include "HAL/PlatformTime.h"
-#include "Misc/VarArgs.h"
-#include "InputCoreTypes.h"
-
-#include "GameStructs.h"
-
-// ---- Starshatter legacy includes (kept as-is; types mapped in .h/.cpp) ----
+// Starshatter / Starshatter Wars:
 #include "HUDSounds.h"
 #include "Ship.h"
-#include "SimElement.h"
+#include "SimElement.h"        // was Element
 #include "Computer.h"
 #include "Drive.h"
 #include "Instruction.h"
@@ -38,9 +36,9 @@
 #include "Power.h"
 #include "Shield.h"
 #include "Sensor.h"
-#include "SimContact.h"
+#include "SimContact.h"        // was Contact
 #include "ShipDesign.h"
-#include "SimShot.h"
+#include "SimShot.h"           // was Shot (keep SimShot*)
 #include "Drone.h"
 #include "Thruster.h"
 #include "Weapon.h"
@@ -48,9 +46,9 @@
 #include "FlightDeck.h"
 #include "SteerAI.h"
 #include "Sim.h"
-#include "StarSystem.h"
+#include "StarSystem.h"        // keep StarSystem*
 #include "Starshatter.h"
-#include "CameraManager.h"
+#include "CameraManager.h"     // was CameraDirector
 #include "MFDView.h"
 #include "RadioView.h"
 #include "FormatUtil.h"
@@ -59,12 +57,13 @@
 #include "KeyMap.h"
 #include "AudioConfig.h"
 #include "PlayerCharacter.h"
+#include "GameStructs.h"
 
 #include "CameraView.h"
 #include "Screen.h"
 #include "DataLoader.h"
-#include "SimScene.h"
-#include "FontManager.h"
+#include "SimScene.h"          // was Scene
+#include "FontManager.h"           // provides SystemFont*
 #include "Graphic.h"
 #include "Sprite.h"
 #include "Keyboard.h"
@@ -72,12 +71,51 @@
 #include "MouseController.h"
 #include "Polygon.h"
 #include "Sound.h"
+#include "Bitmap.h"
 #include "Game.h"
 #include "Window.h"
-#include "GameStructs.h"
+#include "SimProjector.h"
+// -------------------------------------------------------------------------------------------------
+// Local helpers (FColor math compatible with legacy "Color" ops)
+// -------------------------------------------------------------------------------------------------
 
-// ------------------------------------------------------------
-// Static legacy globals
+static inline FColor ColorMul(const FColor& C, float S)
+{
+	const FLinearColor L = FLinearColor(C) * S;
+	return L.ToFColor(true);
+}
+
+static inline FColor ColorDim(const FColor& C, float S)
+{
+	// Legacy dim() behaved like multiply.
+	return ColorMul(C, S);
+}
+
+static inline FColor ColorAdd(const FColor& A, const FColor& B)
+{
+	const FLinearColor L = FLinearColor(A) + FLinearColor(B);
+	return L.ToFColor(true);
+}
+
+static inline FColor ColorClamp(const FColor& C)
+{
+	const FLinearColor L = FLinearColor(C).GetClamped(0.0f, 1.0f);
+	return L.ToFColor(true);
+}
+
+static FORCEINLINE FIntRect ToIntRect(const Rect& R)
+{
+	// Rect is (x,y,w,h). FIntRect is (MinX,MinY,MaxX,MaxY).
+	return FIntRect(R.x, R.y, R.x + R.w, R.y + R.h);
+}
+
+// Starshatter used "OtherHand()" for RH/LH conversions.
+// Keep a local utility to avoid relying on Point::OtherHand().
+static FORCEINLINE FVector OtherHand(const FVector& V)
+{
+	return FVector(V.X, V.Z, V.Y); // adjust mapping if needed
+}
+// -------------------------------------------------------------------------------------------------
 
 static Bitmap hud_left_air;
 static Bitmap hud_right_air;
@@ -106,91 +144,89 @@ static Bitmap chase_bottom;
 static Bitmap icon_ship;
 static Bitmap icon_target;
 
-static uint8* hud_left_shade_air = nullptr;
-static uint8* hud_right_shade_air = nullptr;
-static uint8* hud_left_shade_fighter = nullptr;
-static uint8* hud_right_shade_fighter = nullptr;
-static uint8* hud_left_shade_starship = nullptr;
-static uint8* hud_right_shade_starship = nullptr;
-static uint8* instr_left_shade = nullptr;
-static uint8* instr_right_shade = nullptr;
-static uint8* warn_left_shade = nullptr;
-static uint8* warn_right_shade = nullptr;
-static uint8* lead_shade = nullptr;
-static uint8* cross_shade = nullptr;
-static uint8* cross1_shade = nullptr;
-static uint8* cross2_shade = nullptr;
-static uint8* cross3_shade = nullptr;
-static uint8* cross4_shade = nullptr;
-static uint8* fpm_shade = nullptr;
-static uint8* hpm_shade = nullptr;
-static uint8* pitch_ladder_pos_shade = nullptr;
-static uint8* pitch_ladder_neg_shade = nullptr;
-static uint8* chase_left_shade = nullptr;
-static uint8* chase_right_shade = nullptr;
-static uint8* chase_top_shade = nullptr;
-static uint8* chase_bottom_shade = nullptr;
-static uint8* icon_ship_shade = nullptr;
-static uint8* icon_target_shade = nullptr;
+static BYTE* hud_left_shade_air = 0;
+static BYTE* hud_right_shade_air = 0;
+static BYTE* hud_left_shade_fighter = 0;
+static BYTE* hud_right_shade_fighter = 0;
+static BYTE* hud_left_shade_starship = 0;
+static BYTE* hud_right_shade_starship = 0;
+static BYTE* instr_left_shade = 0;
+static BYTE* instr_right_shade = 0;
+static BYTE* warn_left_shade = 0;
+static BYTE* warn_right_shade = 0;
+static BYTE* lead_shade = 0;
+static BYTE* cross_shade = 0;
+static BYTE* cross1_shade = 0;
+static BYTE* cross2_shade = 0;
+static BYTE* cross3_shade = 0;
+static BYTE* cross4_shade = 0;
+static BYTE* fpm_shade = 0;
+static BYTE* hpm_shade = 0;
+static BYTE* pitch_ladder_pos_shade = 0;
+static BYTE* pitch_ladder_neg_shade = 0;
+static BYTE* chase_left_shade = 0;
+static BYTE* chase_right_shade = 0;
+static BYTE* chase_top_shade = 0;
+static BYTE* chase_bottom_shade = 0;
+static BYTE* icon_ship_shade = 0;
+static BYTE* icon_target_shade = 0;
 
-static Sprite* hud_left_sprite = nullptr;
-static Sprite* hud_right_sprite = nullptr;
-static Sprite* fpm_sprite = nullptr;
-static Sprite* hpm_sprite = nullptr;
-static Sprite* lead_sprite = nullptr;
-static Sprite* aim_sprite = nullptr;
-static Sprite* tgt1_sprite = nullptr;
-static Sprite* tgt2_sprite = nullptr;
-static Sprite* tgt3_sprite = nullptr;
-static Sprite* tgt4_sprite = nullptr;
-static Sprite* chase_sprite = nullptr;
-static Sprite* instr_left_sprite = nullptr;
-static Sprite* instr_right_sprite = nullptr;
-static Sprite* warn_left_sprite = nullptr;
-static Sprite* warn_right_sprite = nullptr;
-static Sprite* icon_ship_sprite = nullptr;
-static Sprite* icon_target_sprite = nullptr;
+static Sprite* hud_left_sprite = 0;
+static Sprite* hud_right_sprite = 0;
+static Sprite* fpm_sprite = 0;
+static Sprite* hpm_sprite = 0;
+static Sprite* lead_sprite = 0;
+static Sprite* aim_sprite = 0;
+static Sprite* tgt1_sprite = 0;
+static Sprite* tgt2_sprite = 0;
+static Sprite* tgt3_sprite = 0;
+static Sprite* tgt4_sprite = 0;
+static Sprite* chase_sprite = 0;
+static Sprite* instr_left_sprite = 0;
+static Sprite* instr_right_sprite = 0;
+static Sprite* warn_left_sprite = 0;
+static Sprite* warn_right_sprite = 0;
+static Sprite* icon_ship_sprite = 0;
+static Sprite* icon_target_sprite = 0;
 
 static Sound* missile_lock_sound = nullptr;
 
 const int NUM_HUD_COLORS = 4;
 
-// NOTE: Colors converted to Unreal FColor (used throughout HUDView now):
 static FColor standard_hud_colors[NUM_HUD_COLORS] = {
-	FColor(130,190,140,255),  // green
-	FColor(130,200,220,255),  // cyan
-	FColor(250,170, 80,255),  // orange
-	FColor(16, 16, 16,255)   // dark gray
+	FColor(130,190,140),  // green
+	FColor(130,200,220),  // cyan
+	FColor(250,170, 80),  // orange
+	FColor(16, 16, 16)   // dark gray
 };
 
 static FColor standard_txt_colors[NUM_HUD_COLORS] = {
-	FColor(150,200,170,255),  // green w/ green gray
-	FColor(220,220,180,255),  // cyan  w/ light yellow
-	FColor(220,220, 80,255),  // orange w/ yellow
-	FColor(32, 32, 32,255)   // dark gray
+	FColor(150,200,170),  // green w/ green gray
+	FColor(220,220,180),  // cyan  w/ light yellow
+	FColor(220,220, 80),  // orange w/ yellow
+	FColor(32, 32, 32)   // dark gray
 };
 
 static FColor night_vision_colors[NUM_HUD_COLORS] = {
-	FColor(20, 80, 20,255),  // green
-	FColor(30, 80, 80,255),  // cyan
-	FColor(80, 80, 20,255),  // yellow
-	FColor(0,  0,  0,255)   // no night vision
+	FColor(20, 80, 20),  // green
+	FColor(30, 80, 80),  // cyan
+	FColor(80, 80, 20),  // yellow
+	FColor(0,  0,  0)   // no night vision
 };
 
-static SystemFont* hud_font = nullptr;
-static SystemFont* big_font = nullptr;
+static SystemFont* hud_font = nullptr; // was Font*
+static SystemFont* big_font = nullptr; // was Font*
 
-static bool  mouse_in = false;
-static int   mouse_latch = 0;
-static int   mouse_index = -1;
+static bool   mouse_in = false;
+static int    mouse_latch = 0;
+static int    mouse_index = -1;
 
-// System::STATUS is mapped in the .h to SimSystem::STATUS (per your rules).
-static int ship_status = SimSystem::NOMINAL;
-static int tgt_status = SimSystem::NOMINAL;
+static SYSTEM_STATUS ship_status = SYSTEM_STATUS::NOMINAL;  // was System::STATUS
+static SYSTEM_STATUS tgt_status = SYSTEM_STATUS::NOMINAL;
 
 // +--------------------------------------------------------------------+
 
-static enum TXT {
+/*static enum TXT {
 	MAX_CONTACT = 50,
 
 	TXT_CAUTION_TXT = 0,
@@ -250,27 +286,14 @@ static enum TXT {
 
 	TXT_LAST_ACTIVE = TXT_NAV_HOLD,
 	TXT_INSTR_PAGE = TXT_CAUTION_TXT + 6,
-};
+};*/
 
 static HUDText hud_text[TXT_LAST];
 
-static inline FColor DimFColor(const FColor& In, float Scalar01)
-{
-	Scalar01 = FMath::Clamp(Scalar01, 0.0f, 1.0f);
-
-	// Do it in linear to avoid ugly gamma artifacts:
-	const FLinearColor Lin = FLinearColor(In) * Scalar01;
-
-	// Preserve incoming alpha:
-	FColor Out = Lin.ToFColor(true);
-	Out.A = In.A;
-	return Out;
-}
-
 // +--------------------------------------------------------------------+
-// HUD text rendering helpers
 
-void UHUDView::DrawHUDText(int index, const char* txt, Rect& rect, int align, int upcase, bool box)
+void
+HUDView::DrawHUDText(int index, const char* txt, Rect& InRect, int align, int upcase, bool box)
 {
 	if (index < 0 || index >= TXT_LAST)
 		return;
@@ -283,7 +306,7 @@ void UHUDView::DrawHUDText(int index, const char* txt, Rect& rect, int align, in
 
 	if (n > 250) n = 250;
 
-	int i = 0;
+	int i;
 	for (i = 0; i < n; i++) {
 		if (upcase && islower((unsigned char)txt[i]))
 			txt_buf[i] = (char)toupper((unsigned char)txt[i]);
@@ -293,15 +316,15 @@ void UHUDView::DrawHUDText(int index, const char* txt, Rect& rect, int align, in
 	txt_buf[i] = 0;
 
 	if (box) {
-		ht.font->DrawText(txt_buf, n, rect, DT_LEFT | DT_SINGLELINE | DT_CALCRECT);
+		ht.font->DrawText(txt_buf, n, InRect, DT_LEFT | DT_SINGLELINE | DT_CALCRECT);
 
 		if ((align & DT_CENTER) != 0) {
 			const int cx = width / 2;
-			rect.x = cx - rect.w / 2;
+			InRect.x = cx - InRect.w / 2;
 		}
 	}
 
-	if (!cockpit_hud_texture && rect.Contains(Mouse::X(), Mouse::Y())) {
+	if (!cockpit_hud_texture && InRect.Contains(Mouse::X(), Mouse::Y())) {
 		mouse_in = true;
 
 		if (index <= TXT_LAST_ACTIVE)
@@ -325,12 +348,13 @@ void UHUDView::DrawHUDText(int index, const char* txt, Rect& rect, int align, in
 		const int w2 = s->Width() / 2;
 		const int h2 = s->Height() / 2;
 
-		Rect txt_rect(rect);
+		Rect txt_rect(InRect);
 		txt_rect.x -= (cx - w2);
 		txt_rect.y -= (cy - h2);
 
 		if (index == TXT_ICON_SHIP_TYPE)
 			txt_rect = Rect(0, 500, 128, 12);
+
 		else if (index == TXT_ICON_TARGET_TYPE)
 			txt_rect = Rect(128, 500, 128, 12);
 
@@ -340,19 +364,22 @@ void UHUDView::DrawHUDText(int index, const char* txt, Rect& rect, int align, in
 	}
 	else {
 		ht.font->SetColor(hc);
-		ht.font->DrawText(txt_buf, n, rect, align | DT_SINGLELINE);
-		ht.rect = rect;
+		ht.font->DrawText(txt_buf, n, InRect, align | DT_SINGLELINE);
+		ht.rect = InRect;
 		ht.hidden = false;
 
 		if (box) {
-			rect.Inflate(3, 2);
-			rect.h--;
-			window->DrawRect(rect, hud_color);
+			Rect boxRect(InRect);
+			boxRect.Inflate(3, 2);
+			boxRect.h--;
+			window->DrawRect(boxRect, HudColor);
 		}
 	}
 }
 
-void UHUDView::HideHUDText(int index)
+
+void
+HUDView::HideHUDText(int index)
 {
 	if (index >= TXT_LAST)
 		return;
@@ -361,49 +388,57 @@ void UHUDView::HideHUDText(int index)
 }
 
 // +--------------------------------------------------------------------+
-// Static members
 
-UHUDView* UHUDView::hud_view = nullptr;
-bool      UHUDView::arcade = false;
-bool      UHUDView::show_fps = false;
-int       UHUDView::def_color_set = 1;
-int       UHUDView::gunsight = 1;
+HUDView* HUDView::hud_view = nullptr;
+bool     HUDView::arcade = false;
+bool     HUDView::show_fps = false;
+int      HUDView::def_color_set = 1;
+int      HUDView::gunsight = 1;
 
 // +--------------------------------------------------------------------+
-// Construction / Destruction
 
-UHUDView::UHUDView(Window* c)
-	: UView(c)
-	, projector(nullptr)
-	, camview(nullptr)
-	, sim(nullptr)
-	, ship(nullptr)
-	, target(nullptr)
-	, mode((int)HUD_MODE::HUD_MODE_TAC)
-	, tactical(0)
-	, overlay(0)
-	, cockpit_hud_texture(nullptr)
-	, threat(0)
-	, active_region(nullptr)
-	, transition(false)
-	, docking(false)
-	, az_ring(nullptr)
-	, az_pointer(nullptr)
-	, el_ring(nullptr)
-	, el_pointer(nullptr)
-	, compass_scale(1)
-	, show_warn(false)
-	, show_inst(false)
-	, inst_page(0)
+HUDView::HUDView(Window* c)
+	: View(c, 0, 0, c ? c->Width() : 0, c ? c->Height() : 0),
+	
+	projector(nullptr),
+	camview(nullptr),
+	width(0), height(0), aw(0), ah(0),
+	xcenter(0), ycenter(0),
+	sim(nullptr),
+	ship(nullptr),
+	target(nullptr),
+	active_region(nullptr),
+	cockpit_hud_texture(nullptr),
+	HudColor(FColor::Black),
+	TextColor(FColor::White),
+	StatusColor(FColor::White),
+	show_warn(false),
+	show_inst(false),
+	inst_page(0),
+	threat(0),
+	mode(EHUDMode::Tactical),
+	color(0),
+	tactical(0),
+	overlay(0),
+	transition(false),
+	docking(false),
+	az_ring(nullptr),
+	az_pointer(nullptr),
+	el_ring(nullptr),
+	el_pointer(nullptr),
+	compass_scale(1.0)
 {
 	hud_view = this;
+	window = c;
 
 	sim = Sim::GetSim();
 	if (sim)
 		sim->ShowGrid(false);
 
-	width = window->Width();
-	height = window->Height();
+	// now window/rect base is valid
+	width = window ? window->Width() : 0;
+	height = window ? window->Height() : 0;
+
 	xcenter = (width / 2.0) - 0.5;
 	ycenter = (height / 2.0) + 0.5;
 
@@ -462,7 +497,7 @@ UHUDView::UHUDView(Window* c)
 	pitch_ladder_pos.SetType(Bitmap::BMP_TRANSLUCENT);
 	pitch_ladder_neg.SetType(Bitmap::BMP_TRANSLUCENT);
 
-	// Unreal: remove debug allocator (__FILE__, __LINE__)
+	// Remove (__FILE__, __LINE__) allocator tags:
 	hud_left_sprite = new Sprite(&hud_left_fighter);
 	hud_right_sprite = new Sprite(&hud_right_fighter);
 	instr_left_sprite = new Sprite(&instr_left);
@@ -481,7 +516,7 @@ UHUDView::UHUDView(Window* c)
 	tgt4_sprite = new Sprite(&cross4);
 	chase_sprite = new Sprite(&chase_left);
 
-	FMemory::Memzero(hud_sprite, sizeof(hud_sprite));
+	ZeroMemory(hud_sprite, sizeof(hud_sprite));
 
 	hud_sprite[0] = hud_left_sprite;
 	hud_sprite[1] = hud_right_sprite;
@@ -505,10 +540,11 @@ UHUDView::UHUDView(Window* c)
 	double UV[8];
 
 	int i = 0;
+
 	for (i = 0; i < 15; i++) {
 		pitch_ladder[i] = new Sprite(&pitch_ladder_pos);
 
-		FMemory::Memcpy(UV, pitch_ladder_UV, sizeof(UV));
+		CopyMemory(UV, pitch_ladder_UV, sizeof(UV));
 		UV[1] = UV[3] = (pitch_ladder_UV[1] * (i));
 		UV[5] = UV[7] = (pitch_ladder_UV[1] * (i + 1));
 
@@ -525,7 +561,7 @@ UHUDView::UHUDView(Window* c)
 		UV[0] = UV[6] = 0;
 		UV[2] = UV[4] = 1;
 		UV[1] = UV[3] = (pitch_ladder_UV[1] * (i + 1));
-		UV[5] = UV[7] = (pitch_ladder_UV[1] * (i));
+		UV[5] = UV[7] = (pitch_ladder_UV[1] * (pitch_ladder_UV[1] * (i))); // legacy bug-guard; safe fallback
 
 		pitch_ladder[i]->Reshape(256, 16);
 		pitch_ladder[i]->SetTexCoords(UV);
@@ -536,7 +572,7 @@ UHUDView::UHUDView(Window* c)
 	for (i = 16; i < 31; i++) {
 		pitch_ladder[i] = new Sprite(&pitch_ladder_neg);
 
-		FMemory::Memcpy(UV, pitch_ladder_UV, sizeof(UV));
+		CopyMemory(UV, pitch_ladder_UV, sizeof(UV));
 		UV[1] = UV[3] = (pitch_ladder_UV[1] * (30 - i));
 		UV[5] = UV[7] = (pitch_ladder_UV[1] * (30 - i + 1));
 
@@ -546,56 +582,49 @@ UHUDView::UHUDView(Window* c)
 		pitch_ladder[i]->Hide();
 	}
 
-	MFDViews.SetNum(4);
+	for (i = 0; i < 3; i++)
+		mfd[i] = new MFDView(window, i);
 
-	for (int32 i = 0; i < 4; ++i)
-	{
-		UMFDView* MFDNodes = CreateWidget<UMFDView>(
-			GetWorld(),
-			UMFDView::StaticClass()
-		);
-	}
-	
 	mfd[0]->SetRect(Rect(8, height - 136, 128, 128));
 	mfd[1]->SetRect(Rect(width - 136, height - 136, 128, 128));
 	mfd[2]->SetRect(Rect(8, 8, 128, 128));
 
-	hud_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height / 2), 1.0f));
-	hud_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height / 2), 1.0f));
+	hud_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height / 2, 1));
+	hud_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height / 2, 1));
 	hud_left_sprite->SetBlendMode(2);
 	hud_left_sprite->SetFilter(0);
 	hud_right_sprite->SetBlendMode(2);
 	hud_right_sprite->SetFilter(0);
 
-	instr_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height - 128), 1.0f));
-	instr_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height - 128), 1.0f));
+	instr_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height - 128, 1));
+	instr_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height - 128, 1));
 	instr_left_sprite->SetBlendMode(2);
 	instr_left_sprite->SetFilter(0);
 	instr_right_sprite->SetBlendMode(2);
 	instr_right_sprite->SetFilter(0);
 
-	warn_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height - 128), 1.0f));
-	warn_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height - 128), 1.0f));
+	warn_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height - 128, 1));
+	warn_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height - 128, 1));
 	warn_left_sprite->SetBlendMode(2);
 	warn_left_sprite->SetFilter(0);
 	warn_right_sprite->SetBlendMode(2);
 	warn_right_sprite->SetFilter(0);
 
-	icon_ship_sprite->MoveTo(FVector(184.0f, (float)(height - 72), 1.0f));
-	icon_target_sprite->MoveTo(FVector((float)(width - 184), (float)(height - 72), 1.0f));
+	icon_ship_sprite->MoveTo(FVector(184.0f, (float)height - 72.0f, 1));
+	icon_target_sprite->MoveTo(FVector((float)width - 184.0f, (float)height - 72.0f, 1));
 	icon_ship_sprite->SetBlendMode(2);
 	icon_ship_sprite->SetFilter(0);
 	icon_target_sprite->SetBlendMode(2);
 	icon_target_sprite->SetFilter(0);
 
-	fpm_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	hpm_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	lead_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	aim_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	tgt1_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	tgt2_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	tgt3_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
-	tgt4_sprite->MoveTo(FVector((float)(width / 2), (float)(height / 2), 1.0f));
+	fpm_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	hpm_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	lead_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	aim_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	tgt1_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	tgt2_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	tgt3_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
+	tgt4_sprite->MoveTo(FVector((float)width / 2, (float)height / 2, 1));
 
 	fpm_sprite->SetBlendMode(2);
 	hpm_sprite->SetBlendMode(2);
@@ -632,8 +661,8 @@ UHUDView::UHUDView(Window* c)
 	mfd[1]->SetMode(EMFDMode::FOV);
 	mfd[2]->SetMode(EMFDMode::GAME);
 
-	hud_font = (SystemFont*)FontManager::Find("HUD");
-	big_font = (SystemFont*)FontManager::Find("GUI");
+	hud_font = FontManager::Find("HUD");
+	big_font = FontManager::Find("GUI");
 
 	for (i = 0; i < TXT_LAST; i++) {
 		hud_text[i].font = hud_font;
@@ -644,7 +673,7 @@ UHUDView::UHUDView(Window* c)
 	hud_text[TXT_AUTO].font = big_font;
 
 	SetHUDColorSet(def_color_set);
-	UMFDView::SetColor(standard_hud_colors[color]);
+	MFDView::SetColor(standard_hud_colors[color]);
 
 	DataLoader* loader = DataLoader::GetLoader();
 	loader->SetDataPath("HUD/");
@@ -662,13 +691,13 @@ UHUDView::UHUDView(Window* c)
 	loader->SetDataPath("Sounds/");
 	loader->LoadSound("MissileLock.wav", missile_lock_sound, Sound::LOOP | Sound::LOCKED);
 
-	loader->SetDataPath(nullptr);
+	loader->SetDataPath(0);
 
 	for (i = 0; i < MAX_MSG; i++)
 		msg_time[i] = 0;
 }
 
-UHUDView::~UHUDView()
+HUDView::~HUDView()
 {
 	HideCompass();
 
@@ -714,42 +743,74 @@ UHUDView::~UHUDView()
 	pitch_ladder_pos.ClearImage();
 	pitch_ladder_neg.ClearImage();
 
-	delete[] fpm_shade;                fpm_shade = nullptr;
-	delete[] hpm_shade;                hpm_shade = nullptr;
-	delete[] lead_shade;               lead_shade = nullptr;
-	delete[] cross_shade;              cross_shade = nullptr;
-	delete[] cross1_shade;             cross1_shade = nullptr;
-	delete[] cross2_shade;             cross2_shade = nullptr;
-	delete[] cross3_shade;             cross3_shade = nullptr;
-	delete[] cross4_shade;             cross4_shade = nullptr;
-	delete[] hud_left_shade_air;       hud_left_shade_air = nullptr;
-	delete[] hud_right_shade_air;      hud_right_shade_air = nullptr;
-	delete[] hud_left_shade_fighter;   hud_left_shade_fighter = nullptr;
-	delete[] hud_right_shade_fighter;  hud_right_shade_fighter = nullptr;
-	delete[] hud_left_shade_starship;  hud_left_shade_starship = nullptr;
-	delete[] hud_right_shade_starship; hud_right_shade_starship = nullptr;
-	delete[] instr_left_shade;         instr_left_shade = nullptr;
-	delete[] instr_right_shade;        instr_right_shade = nullptr;
-	delete[] warn_left_shade;          warn_left_shade = nullptr;
-	delete[] warn_right_shade;         warn_right_shade = nullptr;
-	delete[] icon_ship_shade;          icon_ship_shade = nullptr;
-	delete[] icon_target_shade;        icon_target_shade = nullptr;
-	delete[] chase_left_shade;         chase_left_shade = nullptr;
-	delete[] chase_right_shade;        chase_right_shade = nullptr;
-	delete[] chase_top_shade;          chase_top_shade = nullptr;
-	delete[] chase_bottom_shade;       chase_bottom_shade = nullptr;
-	delete[] pitch_ladder_pos_shade;   pitch_ladder_pos_shade = nullptr;
-	delete[] pitch_ladder_neg_shade;   pitch_ladder_neg_shade = nullptr;
+	delete[] fpm_shade;
+	delete[] hpm_shade;
+	delete[] lead_shade;
+	delete[] cross_shade;
+	delete[] cross1_shade;
+	delete[] cross2_shade;
+	delete[] cross3_shade;
+	delete[] cross4_shade;
+	delete[] hud_left_shade_air;
+	delete[] hud_right_shade_air;
+	delete[] hud_left_shade_fighter;
+	delete[] hud_right_shade_fighter;
+	delete[] hud_left_shade_starship;
+	delete[] hud_right_shade_starship;
+	delete[] instr_left_shade;
+	delete[] instr_right_shade;
+	delete[] warn_left_shade;
+	delete[] warn_right_shade;
+	delete[] icon_ship_shade;
+	delete[] icon_target_shade;
+	delete[] chase_left_shade;
+	delete[] chase_right_shade;
+	delete[] chase_top_shade;
+	delete[] chase_bottom_shade;
+	delete[] pitch_ladder_pos_shade;
+	delete[] pitch_ladder_neg_shade;
 
-	delete az_ring;     az_ring = nullptr;
-	delete az_pointer;  az_pointer = nullptr;
-	delete el_ring;     el_ring = nullptr;
-	delete el_pointer;  el_pointer = nullptr;
+	delete az_ring;
+	delete az_pointer;
+	delete el_ring;
+	delete el_pointer;
+
+	fpm_shade = nullptr;
+	hpm_shade = nullptr;
+	cross_shade = nullptr;
+	cross1_shade = nullptr;
+	cross2_shade = nullptr;
+	cross3_shade = nullptr;
+	cross4_shade = nullptr;
+	hud_left_shade_air = nullptr;
+	hud_right_shade_air = nullptr;
+	hud_left_shade_fighter = nullptr;
+	hud_right_shade_fighter = nullptr;
+	hud_left_shade_starship = nullptr;
+	hud_right_shade_starship = nullptr;
+	instr_left_shade = nullptr;
+	instr_right_shade = nullptr;
+	warn_left_shade = nullptr;
+	warn_right_shade = nullptr;
+	icon_ship_shade = nullptr;
+	icon_target_shade = nullptr;
+	chase_left_shade = nullptr;
+	chase_right_shade = nullptr;
+	chase_top_shade = nullptr;
+	chase_bottom_shade = nullptr;
+	pitch_ladder_pos_shade = nullptr;
+	pitch_ladder_neg_shade = nullptr;
+
+	az_ring = nullptr;
+	az_pointer = nullptr;
+	el_ring = nullptr;
+	el_pointer = nullptr;
 
 	hud_view = nullptr;
 }
 
-void UHUDView::OnWindowMove()
+void
+HUDView::OnWindowMove()
 {
 	width = window->Width();
 	height = window->Height();
@@ -760,15 +821,15 @@ void UHUDView::OnWindowMove()
 	mfd[1]->SetRect(Rect(width - 136, height - 136, 128, 128));
 	mfd[2]->SetRect(Rect(8, 8, 128, 128));
 
-	hud_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height / 2), 1.0f));
-	hud_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height / 2), 1.0f));
+	hud_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height / 2, 1));
+	hud_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height / 2, 1));
 
-	instr_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height - 128), 1.0f));
-	instr_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height - 128), 1.0f));
-	warn_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height - 128), 1.0f));
-	warn_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height - 128), 1.0f));
-	icon_ship_sprite->MoveTo(FVector(184.0f, (float)(height - 72), 1.0f));
-	icon_target_sprite->MoveTo(FVector((float)(width - 184), (float)(height - 72), 1.0f));
+	instr_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height - 128, 1));
+	instr_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height - 128, 1));
+	warn_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height - 128, 1));
+	warn_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height - 128, 1));
+	icon_ship_sprite->MoveTo(FVector(184.0f, (float)height - 72.0f, 1));
+	icon_target_sprite->MoveTo(FVector((float)width - 184.0f, (float)height - 72.0f, 1));
 
 	for (int i = 0; i < TXT_LAST; i++) {
 		hud_text[i].font = hud_font;
@@ -781,18 +842,20 @@ void UHUDView::OnWindowMove()
 		hud_text[TXT_AUTO].font = big_font;
 	}
 
-	UMFDView::SetColor(standard_hud_colors[color]);
+	MFDView::SetColor(standard_hud_colors[color]);
 
-	// int cx = width/2;
-	// int cy = height/2;
+	int cx = width / 2;
+	int cy = height / 2;
+	(void)cx; (void)cy;
 }
 
 // +--------------------------------------------------------------------+
 
-void UHUDView::SetTacticalMode(int InMode)
+void
+HUDView::SetTacticalMode(int mode_in)
 {
-	if (tactical != InMode) {
-		tactical = InMode;
+	if (tactical != mode_in) {
+		tactical = mode_in;
 
 		if (tactical) {
 			hud_left_sprite->Hide();
@@ -808,16 +871,18 @@ void UHUDView::SetTacticalMode(int InMode)
 	}
 }
 
-void UHUDView::SetOverlayMode(int InMode)
+void
+HUDView::SetOverlayMode(int mode_in)
 {
-	if (overlay != InMode) {
-		overlay = InMode;
+	if (overlay != mode_in) {
+		overlay = mode_in;
 	}
 }
 
 // +--------------------------------------------------------------------+
 
-bool UHUDView::Update(SimObject* obj)
+bool
+HUDView::Update(SimObject* obj)
 {
 	if (obj == ship) {
 		if (target)
@@ -832,20 +897,22 @@ bool UHUDView::Update(SimObject* obj)
 	if (obj == target) {
 		target = nullptr;
 		PrepareBitmap("hud_icon.pcx", icon_target, icon_target_shade);
-		ColorizeBitmap(icon_target, icon_target_shade, txt_color);
+		ColorizeBitmap(icon_target, icon_target_shade, TextColor);
 	}
 
 	return SimObserver::Update(obj);
 }
 
-const char* UHUDView::GetObserverName() const
+const char*
+HUDView::GetObserverName() const
 {
 	return "HUDView";
 }
 
 // +--------------------------------------------------------------------+
 
-void UHUDView::UseCameraView(CameraView* v)
+void
+HUDView::UseCameraView(CameraView* v)
 {
 	if (v && camview != v) {
 		camview = v;
@@ -858,52 +925,36 @@ void UHUDView::UseCameraView(CameraView* v)
 }
 
 // +--------------------------------------------------------------------+
-// Contact marker color
 
-FColor UHUDView::MarkerColor(SimContact* Contact)
+FColor
+HUDView::MarkerColor(SimContact* contact)
 {
-	FColor Out(80, 80, 80, 255);
+	FColor c(80, 80, 80);
 
-	if (!Contact)
-		return Out;
+	if (contact) {
+		Sim* sim_local = Sim::GetSim();
+		Ship* ship_local = sim_local ? sim_local->GetPlayerShip() : nullptr;
 
-	Sim* LocalSim = Sim::GetSim();
-	Ship* LocalShip = LocalSim ? LocalSim->GetPlayerShip() : nullptr;
-	if (!LocalShip)
-		return Out;
+		const int c_iff = ship_local ? contact->GetIFF(ship_local) : 0;
 
-	const int32 Iff = Contact->GetIFF(LocalShip);
+		// Legacy: c = Ship::IFFColor(c_iff) * contact->Age();
+		c = ColorMul(Ship::IFFColor(c_iff), (float)contact->Age());
 
-	// Age is assumed to be a 0..1 style fade. Clamp to be safe.
-	const float Age = FMath::Clamp((float)Contact->Age(), 0.0f, 1.0f);
-
-	// Ship::IFFColor should return FColor (or something convertible to it).
-	const FColor BaseColor = Ship::IFFColor(Iff);
-
-	FLinearColor LC = FLinearColor(BaseColor) * Age;
-
-	// Threat flash for shots:
-	if (Contact->GetShot() && Contact->Threat(LocalShip))
-	{
-		const bool bBlinkOn = (((Game::RealTime() / 500) & 1) != 0);
-		const float Scale = bBlinkOn ? 2.0f : 0.5f;
-		LC *= Scale;
+		if (contact->GetShot() && ship_local && contact->Threat(ship_local)) {
+			if ((Game::RealTime() / 500) & 1)
+				c = ColorMul(c, 2.0f);
+			else
+				c = ColorMul(c, 0.5f);
+		}
 	}
 
-	// Clamp to valid color range and convert back to FColor (sRGB)
-	LC.R = FMath::Clamp(LC.R, 0.0f, 1.0f);
-	LC.G = FMath::Clamp(LC.G, 0.0f, 1.0f);
-	LC.B = FMath::Clamp(LC.B, 0.0f, 1.0f);
-	LC.A = 1.0f;
-
-	Out = LC.ToFColor(true);
-	return Out;
+	return c;
 }
 
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawContactMarkers()
+HUDView::DrawContactMarkers()
 {
 	threat = 0;
 
@@ -915,8 +966,8 @@ UHUDView::DrawContactMarkers()
 	if (!ship)
 		return;
 
-	int                     index = 0;
-	ListIter<SimContact>     contact = ship->ContactList();
+	int                  index = 0;
+	ListIter<SimContact> contact = ship->ContactList();
 
 	// draw own sensor contacts:
 	while (++contact) {
@@ -934,7 +985,7 @@ UHUDView::DrawContactMarkers()
 
 	// draw own ship track ladder:
 	if (CameraManager::GetCameraMode() == CameraManager::MODE_ORBIT && ship->TrackLength() > 0) {
-		int ctl = ship->TrackLength();
+		const int ctl = ship->TrackLength();
 
 		FVector t1 = ship->Location();
 		FVector t2 = ship->TrackPoint(0);
@@ -947,7 +998,7 @@ UHUDView::DrawContactMarkers()
 			t2 = ship->TrackPoint(i + 1);
 
 			if (t1 != t2)
-				DrawTrackSegment(t1, t2, c * ((double)(ctl - i) / (double)ctl));
+				DrawTrackSegment(t1, t2, ColorMul(c, (float)((double)(ctl - i) / (double)ctl)));
 		}
 	}
 
@@ -956,15 +1007,13 @@ UHUDView::DrawContactMarkers()
 	projector->Transform(mark_pt);
 
 	// clip:
-	if (CameraManager::GetCameraMode() == CameraManager::MODE_ORBIT && mark_pt.Z > 1.0) {
+	if (CameraManager::GetCameraMode() == CameraManager::MODE_ORBIT && mark_pt.Z > 1.0f) {
 		projector->Project(mark_pt);
 
-		int x = (int)mark_pt.X;
-		int y = (int)mark_pt.Y;
+		const int x = (int)mark_pt.X;
+		const int y = (int)mark_pt.Y;
 
-		if (x > 4 && x < width - 4 &&
-			y > 4 && y < height - 4) {
-
+		if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
 			DrawDiamond(x, y, 5, c);
 
 			if (tactical) {
@@ -977,49 +1026,46 @@ UHUDView::DrawContactMarkers()
 	// draw life bars on targeted ship:
 	if (target && target->Type() == SimObject::SIM_SHIP && target->Rep()) {
 		Ship* tgt_ship = (Ship*)target;
-
 		if (!tgt_ship) {
-			UE_LOG(LogTemp, Warning, TEXT("Null Pointer in UHUDView::DrawContactMarkers(). Please investigate."));
+			UE_LOG(LogTemp, Warning, TEXT("Null pointer in HUDView::DrawContactMarkers() - tgt_ship"));
 			return;
 		}
 
 		Graphic* g = tgt_ship->Rep();
 		Rect     r = g->ScreenRect();
 
-		FVector tgt_pt = tgt_ship->Location();
-		projector->Transform(tgt_pt);
+		FVector mark_pt2 = tgt_ship->Location();
+		projector->Transform(mark_pt2);
 
 		// clip:
-		if (tgt_pt.Z > 1.0) {
-			projector->Project(tgt_pt);
+		if (mark_pt2.Z > 1.0f) {
+			projector->Project(mark_pt2);
 
-			int x = (int)tgt_pt.X;
+			int x = (int)mark_pt2.X;
 			int y = r.y;
 
 			if (y >= 2000)
-				y = (int)tgt_pt.Y;
+				y = (int)mark_pt2.Y;
 
-			if (x > 4 && x < width - 4 &&
-				y > 4 && y < height - 4) {
-
+			if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
 				const int BAR_LENGTH = 40;
 
 				// life bars:
-				int sx = x - BAR_LENGTH / 2;
-				int sy = y - 8;
+				const int sx = x - BAR_LENGTH / 2;
+				const int sy = y - 8;
 
-				double hull_strength = tgt_ship->Integrity() / tgt_ship->Design()->integrity;
+				const double hull_strength = tgt_ship->Integrity() / tgt_ship->Design()->integrity;
 
-				int hw = (int)(BAR_LENGTH * hull_strength);
-				int sw = (int)(BAR_LENGTH * (tgt_ship->ShieldStrength() / 100.0));
+				const int hw = (int)(BAR_LENGTH * hull_strength);
+				const int sw = (int)(BAR_LENGTH * (tgt_ship->ShieldStrength() / 100.0));
 
 				SYSTEM_STATUS s = SYSTEM_STATUS::NOMINAL;
 
-				if (hull_strength < 0.30)       s = SYSTEM_STATUS::CRITICAL;
-				else if (hull_strength < 0.60)  s = SYSTEM_STATUS::DEGRADED;
+				if (hull_strength < 0.30)        s = SYSTEM_STATUS::CRITICAL;
+				else if (hull_strength < 0.60)   s = SYSTEM_STATUS::DEGRADED;
 
-				FColor hc = GetStatusColor(s);
-				FColor sc = hud_color;
+				const FColor hc = GetStatusColor(s);
+				const FColor sc = HudColor;
 
 				window->FillRect(sx, sy, sx + hw, sy + 1, hc);
 				window->FillRect(sx, sy + 3, sx + sw, sy + 4, sc);
@@ -1027,807 +1073,60 @@ UHUDView::DrawContactMarkers()
 		}
 	}
 }
-
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawContact(SimContact* contact, int index)
+HUDView::DrawTarget()
 {
-	if (index >= MAX_CONTACT)
-		return;
-
-	FColor   c = MarkerColor(contact);
-	int      c_iff = contact->GetIFF(ship);
-	Ship* c_ship = contact->GetShip();
-	SimShot* c_shot = contact->GetShot();
-	FVector  mark_pt = contact->Location();
-	double   distance = 0;
-
-	if ((!c_ship && !c_shot) || c_ship == ship)
-		return;
-
-	if (c_ship && c_ship->GetFlightPhase() < Ship::ACTIVE)
-		return;
-
-	if (c_ship) {
-		mark_pt = c_ship->Location();
-
-		if (c_ship->IsGroundUnit())
-			mark_pt += FVector(0.f, 150.f, 0.f);
-	}
-	else {
-		mark_pt = c_shot->Location();
-	}
-
-	projector->Transform(mark_pt);
-
-	// clip:
-	if (mark_pt.Z > 1.0) {
-		distance = mark_pt.Length();
-
-		projector->Project(mark_pt);
-
-		int x = (int)mark_pt.X;
-		int y = (int)mark_pt.Y;
-
-		if (x > 4 && x < width - 4 &&
-			y > 4 && y < height - 4) {
-
-			DrawDiamond(x, y, 3, c);
-
-			if (contact->Threat(ship)) {
-				if (c_ship) {
-					window->DrawEllipse(x - 6, y - 6, x + 6, y + 6, c);
-				}
-				else {
-					DrawDiamond(x, y, 7, c);
-				}
-			}
-
-			bool name_crowded = false;
-
-			if (x < width - 8) {
-				char code = *(Game::GetText("HUDView.symbol.fighter").data());
-
-				if (c_ship) {
-					if (c_ship->Class() > CLASSIFICATION::LCA)
-						code = *(Game::GetText("HUDView.symbol.starship").data());
-				}
-				else if (c_shot) {
-					code = *(Game::GetText("HUDView.symbol.torpedo").data());
-				}
-
-				Sensor* sensor = ship->GetSensor();
-				double  limit = 75e3;
-
-				if (sensor)
-					limit = sensor->GetBeamRange();
-
-				double range = contact->Range(ship, limit);
-
-				char contact_buf[256];
-				Rect contact_rect(x + 8, y - 4, 120, 12);
-
-				if (range == 0) {
-					sprintf_s(contact_buf, "%c *", code);
-				}
-				else {
-					bool mega = false;
-
-					if (range > 999e3) {
-						range /= 1e6;
-						mega = true;
-					}
-					else if (range < 1e3) {
-						range = 1;
-					}
-					else {
-						range /= 1000;
-					}
-
-					if (arcade) {
-						if (c_ship) {
-							strcpy_s(contact_buf, c_ship->Name());
-						}
-						else if (!mega) {
-							sprintf_s(contact_buf, "%c %d", code, (int)range);
-						}
-						else {
-							sprintf_s(contact_buf, "%c %.1f M", code, range);
-						}
-					}
-					else {
-						char    closing = '+';
-						FVector delta_v;
-
-						if (c_ship)
-							delta_v = ship->Velocity() - c_ship->Velocity();
-						else if (c_shot)
-							delta_v = ship->Velocity() - c_shot->Velocity();
-
-						// losing ground:
-						if (FVector::DotProduct(delta_v, ship->Velocity()) < 0.0f)
-							closing = '-';
-
-						if (!mega)
-							sprintf_s(contact_buf, "%c %d%c", code, (int)range, closing);
-						else
-							sprintf_s(contact_buf, "%c %.1f M", code, range);
-					}
-				}
-
-				if (!IsNameCrowded(x, y)) {
-					DrawHUDText(TXT_CONTACT_INFO + index, contact_buf, contact_rect, DT_LEFT, HUD_MIXED_CASE);
-
-					if (c_shot || (c_ship && (c_ship->IsDropship() || c_ship->IsStatic())))
-						name_crowded = distance > 50e3;
-				}
-				else {
-					name_crowded = true;
-				}
-			}
-
-			bool name_drawn = false;
-
-			if (!name_drawn && !name_crowded && c_ship && c_iff < 10 && !arcade) {
-				Rect contact_rect(x + 8, y + 6, 120, 12);
-				DrawHUDText(TXT_CONTACT_NAME + index, c_ship->Name(), contact_rect, DT_LEFT, HUD_MIXED_CASE);
-			}
-		}
-	}
-
-	if (contact->Threat(ship) && !ship->IsStarship()) {
-		if (threat < 1 && c_ship && !c_ship->IsStarship())
-			threat = 1;
-
-		if (c_shot)
-			threat = 2;
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawTrackSegment(FVector& t1, FVector& t2, FColor c)
-{
-	int x1, y1, x2, y2;
-
-	projector->Transform(t1);
-	projector->Transform(t2);
-
-	const double CLIP_Z = 0.1;
-
-	if (t1.Z < CLIP_Z && t2.Z < CLIP_Z)
-		return;
-
-	if (t1.Z < CLIP_Z && t2.Z >= CLIP_Z) {
-		double dx = (double)t2.X - (double)t1.X;
-		double dy = (double)t2.Y - (double)t1.Y;
-		double s = (CLIP_Z - (double)t1.Z) / ((double)t2.Z - (double)t1.Z);
-
-		t1.X = (float)((double)t1.X + dx * s);
-		t1.Y = (float)((double)t1.Y + dy * s);
-		t1.Z = (float)CLIP_Z;
-	}
-	else if (t2.Z < CLIP_Z && t1.Z >= CLIP_Z) {
-		double dx = (double)t1.X - (double)t2.X;
-		double dy = (double)t1.Y - (double)t2.Y;
-		double s = (CLIP_Z - (double)t2.Z) / ((double)t1.Z - (double)t2.Z);
-
-		t2.X = (float)((double)t2.X + dx * s);
-		t2.Y = (float)((double)t2.Y + dy * s);
-		t2.Z = (float)CLIP_Z;
-	}
-
-	if (t1.Z >= CLIP_Z && t2.Z >= CLIP_Z) {
-		projector->Project(t1, false);
-		projector->Project(t2, false);
-
-		x1 = (int)t1.X;
-		y1 = (int)t1.Y;
-		x2 = (int)t2.X;
-		y2 = (int)t2.Y;
-
-		if (window->ClipLine(x1, y1, x2, y2))
-			window->DrawLine(x1, y1, x2, y2, c);
-	}
-}
-
-void
-UHUDView::DrawTrack(SimContact* contact)
-{
-	Ship* c_ship = contact->GetShip();
-
-	if (c_ship && c_ship->GetFlightPhase() < Ship::ACTIVE)
-		return;
-
-	int    ctl = contact->TrackLength();
-	FColor c = MarkerColor(contact);
-
-	FVector t1 = contact->Location();
-	FVector t2 = contact->TrackPoint(0);
-
-	if (t1 != t2)
-		DrawTrackSegment(t1, t2, c);
-
-	for (int i = 0; i < ctl - 1; i++) {
-		t1 = contact->TrackPoint(i);
-		t2 = contact->TrackPoint(i + 1);
-
-		if (t1 != t2)
-			DrawTrackSegment(t1, t2, c * ((double)(ctl - i) / (double)ctl));
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawRect(SimObject* targ)
-{
-	Graphic* g = targ->Rep();
-	Rect     r = g->ScreenRect();
-	FColor   c;
-
-	if (targ->Type() == SimObject::SIM_SHIP)
-		c = ((Ship*)targ)->MarkerColor();
-	else
-		c = ((SimShot*)targ)->MarkerColor();
-
-	if (r.w > 0 && r.h > 0) {
-		if (r.w < 8) {
-			r.x -= (8 - r.w) / 2;
-			r.w = 8;
-		}
-
-		if (r.h < 8) {
-			r.y -= (8 - r.h) / 2;
-			r.h = 8;
-		}
-	}
-	else {
-		FVector mark_pt = targ->Location();
-		projector->Transform(mark_pt);
-
-		// clip:
-		if (mark_pt.Z < 1.0)
-			return;
-
-		projector->Project(mark_pt);
-
-		int x = (int)mark_pt.X;
-		int y = (int)mark_pt.Y;
-
-		if (x < 4 || x > width - 4 || y < 4 || y > height - 4)
-			return;
-
-		r.x = x - 4;
-		r.y = y - 4;
-		r.w = 8;
-		r.h = 8;
-	}
-
-	// horizontal
-	window->DrawLine(r.x, r.y, r.x + 8, r.y, c);
-	window->DrawLine(r.x + r.w - 8, r.y, r.x + r.w, r.y, c);
-	window->DrawLine(r.x, r.y + r.h, r.x + 8, r.y + r.h, c);
-	window->DrawLine(r.x + r.w - 8, r.y + r.h, r.x + r.w, r.y + r.h, c);
-	// vertical
-	window->DrawLine(r.x, r.y, r.x, r.y + 8, c);
-	window->DrawLine(r.x, r.y + r.h - 8, r.x, r.y + r.h, c);
-	window->DrawLine(r.x + r.w, r.y, r.x + r.w, r.y + 8, c);
-	window->DrawLine(r.x + r.w, r.y + r.h - 8, r.x + r.w, r.y + r.h, c);
-}
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawFPM()
-{
-	fpm_sprite->Hide();
-
-	if (!ship)
-		return;
-
-	if (ship->Velocity().Length() > 50.0) {
-		double xtarg = xcenter;
-		double ytarg = ycenter;
-
-		FVector svel = ship->Velocity();
-		svel.Normalize();
-
-		FVector tloc = ship->Location() + svel * 1e8f;
-
-		// Translate into camera relative:
-		projector->Transform(tloc);
-
-		const bool behind = (tloc.Z < 0.0f);
-		if (behind)
-			return;
-
-		// Project into screen coordinates:
-		projector->Project(tloc);
-
-		xtarg = tloc.X;
-		ytarg = tloc.Y;
-
-		fpm_sprite->Show();
-		fpm_sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawPitchLadder()
-{
-	for (int i = 0; i < 31; i++)
-		pitch_ladder[i]->Hide();
-
-	if (!ship)
-		return;
-
-	if (ship->IsAirborne() && Game::MaxTexSize() > 128) {
-		double xtarg = xcenter;
-		double ytarg = ycenter;
-
-		FVector uvec(0.f, 1.f, 0.f);
-		FVector svel = ship->Velocity();
-
-		if (svel.Length() == 0.0f)
-			svel = ship->Heading();
-
-		if (svel.X == 0.0f && svel.Z == 0.0f)
-			return;
-
-		svel.Y = 0.0f;
-		svel.Normalize();
-
-		FVector gloc = ship->Location();
-		gloc.Y = 0.0f;
-
-		const double baseline = 1e9;
-		const double clip_angle = 20 * DEGREES;
-
-		FVector tloc = gloc + svel * (float)baseline;
-
-		// Translate into camera relative:
-		projector->Transform(tloc);
-
-		// Project into screen coordinates:
-		projector->Project(tloc);
-
-		xtarg = tloc.X;
-		ytarg = tloc.Y;
-
-		// compute roll angle:
-		double roll_angle = 0;
-		double pitch_angle = 0;
-
-		FVector heading = ship->Heading();
-		heading.Normalize();
-
-		if (heading.X != 0.0f || heading.Z != 0.0f) {
-			FVector gheading = heading;
-			gheading.Y = 0.0f;
-			gheading.Normalize();
-
-			double dot = FVector::DotProduct(gheading, heading);
-
-			if (heading.Y < 0.0f)
-				dot = -dot;
-
-			pitch_angle = acos(dot);
-
-			if (pitch_angle > PI / 2)
-				pitch_angle -= PI;
-
-			double s0 = sin(pitch_angle);
-			double c0 = cos(pitch_angle);
-			double s1 = sin(pitch_angle + 10 * DEGREES);
-			double c1 = cos(pitch_angle + 10 * DEGREES);
-
-			tloc = gloc + (svel * (float)(baseline * c0)) + (uvec * (float)(baseline * s0));
-			projector->Transform(tloc);
-
-			double x0 = tloc.X;
-			double y0 = tloc.Y;
-
-			tloc = gloc + (svel * (float)(baseline * c1)) + (uvec * (float)(baseline * s1));
-			projector->Transform(tloc);
-
-			double x1 = tloc.X;
-			double y1 = tloc.Y;
-
-			double dx = x1 - x0;
-			double dy = y1 - y0;
-
-			roll_angle = atan2(-dy, dx) + PI / 2;
-		}
-
-		const double alias_limit = 0.1 * DEGREES;
-
-		if (fabs(roll_angle) <= alias_limit) {
-			if (roll_angle > 0)
-				roll_angle = alias_limit;
-			else
-				roll_angle = -alias_limit;
-		}
-		else if (fabs(roll_angle - PI) <= alias_limit) {
-			roll_angle = PI - alias_limit;
-		}
-
-		if (fabs(pitch_angle) <= clip_angle) {
-			pitch_ladder[15]->Show();
-			pitch_ladder[15]->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
-			pitch_ladder[15]->SetAngle(roll_angle);
-		}
-
-		for (int i = 1; i <= 15; i++) {
-			double angle = i * 5 * DEGREES;
-
-			if (i > 12)
-				angle = (60 + (i - 12) * 10) * DEGREES;
-
-			double s = sin(angle);
-			double c = cos(angle);
-
-			if (fabs(pitch_angle - angle) <= clip_angle) {
-				// positive angle:
-				tloc = gloc + (svel * (float)(baseline * c)) + (uvec * (float)(baseline * s));
-				projector->Transform(tloc);
-
-				if (tloc.Z > 0.0f) {
-					projector->Project(tloc);
-					pitch_ladder[15 - i]->Show();
-					pitch_ladder[15 - i]->MoveTo(FVector(tloc.X, tloc.Y, 1.0f));
-					pitch_ladder[15 - i]->SetAngle(roll_angle);
-				}
-			}
-
-			if (fabs(pitch_angle + angle) <= clip_angle) {
-				// negative angle:
-				tloc = gloc + (svel * (float)(baseline * c)) + (uvec * (float)(-baseline * s));
-				projector->Transform(tloc);
-
-				if (tloc.Z > 0.0f) {
-					projector->Project(tloc);
-					pitch_ladder[15 + i]->Show();
-					pitch_ladder[15 + i]->MoveTo(FVector(tloc.X, tloc.Y, 1.0f));
-					pitch_ladder[15 + i]->SetAngle(roll_angle);
-				}
-			}
-		}
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawHPM()
-{
-	hpm_sprite->Hide();
-
-	if (!ship)
-		return;
-
-	double xtarg = xcenter;
-	double ytarg = ycenter;
-
-	double az = ship->GetHelmHeading() - PI;
-	double el = ship->GetHelmPitch();
-
-	FVector hvec((float)sin(az), (float)sin(el), (float)cos(az));
-	hvec.Normalize();
-
-	FVector tloc = ship->Location() + hvec * 1e8f;
-
-	// Translate into camera relative:
-	projector->Transform(tloc);
-
-	const bool behind = (tloc.Z < 0.0f);
-	if (behind)
-		return;
-
-	// Project into screen coordinates:
-	projector->Project(tloc);
-
-	xtarg = tloc.X;
-	ytarg = tloc.Y;
-
-	hpm_sprite->Show();
-	hpm_sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::HideCompass()
-{
-	az_ring->Hide();
-	az_pointer->Hide();
-	el_ring->Hide();
-	el_pointer->Hide();
-
-	SimScene* scene = az_ring->GetScene();
-	if (scene) {
-		scene->DelGraphic(az_ring);
-		scene->DelGraphic(az_pointer);
-		scene->DelGraphic(el_ring);
-		scene->DelGraphic(el_pointer);
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-static FORCEINLINE FRotator RotFromRadians(double YawRad, double PitchRad = 0.0, double RollRad = 0.0)
-{
-	// UE Rotator is (Pitch, Yaw, Roll) in DEGREES
-	return FRotator(
-		FMath::RadiansToDegrees(PitchRad),
-		FMath::RadiansToDegrees(YawRad),
-		FMath::RadiansToDegrees(RollRad)
-	);
-}
-
-void UHUDView::DrawCompass()
-{
-	if (!ship || !ship->Rep())
-		return;
-
-	Solid* SolidRep = static_cast<Solid*>(ship->Rep());
-	const FVector Loc = SolidRep->Location();
-
-	az_ring->MoveTo(Loc);
-	az_pointer->MoveTo(Loc);
-	el_ring->MoveTo(Loc);
-	el_pointer->MoveTo(Loc);
-
-	const double HelmHeading = ship->GetHelmHeading();
-	const double HelmPitch = ship->GetHelmPitch();
-	const double CurrHeading = ship->CompassHeading();
-	const double CurrPitch = ship->CompassPitch();
-
-	const bool bShowAz = FMath::Abs(HelmHeading - CurrHeading) > 5.0 * DEGREES;
-	const bool bShowEl = FMath::Abs(HelmPitch - CurrPitch) > 5.0 * DEGREES;
-
-	SimScene* Scene = camview ? camview->GetScene() : nullptr;
-	if (!Scene)
-		return;
-
-	if (bShowAz || bShowEl)
-	{
-		Scene->AddGraphic(az_ring);
-		az_ring->Show();
-
-		if (bShowEl || FMath::Abs(HelmPitch) > 5.0 * DEGREES)
-		{
-			Scene->AddGraphic(el_ring);
-
-			// === EL RING ORIENTATION ===
-			{
-				const FRotator Rot(
-					FMath::RadiansToDegrees(0.0),                 // Pitch
-					FMath::RadiansToDegrees(HelmHeading + PI),     // Yaw
-					0.0                                           // Roll
-				);
-				el_ring->SetOrientation(FRotationMatrix(Rot));
-				el_ring->Show();
-			}
-
-			Scene->AddGraphic(el_pointer);
-
-			// === EL POINTER ORIENTATION ===
-			{
-				const FRotator Rot(
-					FMath::RadiansToDegrees(-HelmPitch),           // Pitch
-					FMath::RadiansToDegrees(HelmHeading + PI),     // Yaw
-					FMath::RadiansToDegrees(PI / 2.0)              // Roll
-				);
-				el_pointer->SetOrientation(FRotationMatrix(Rot));
-				el_pointer->Show();
-			}
-		}
-		else
-		{
-			Scene->AddGraphic(az_pointer);
-
-			// === AZ POINTER ORIENTATION ===
-			{
-				const FRotator Rot(
-					0.0,
-					FMath::RadiansToDegrees(HelmHeading + PI),
-					0.0
-				);
-				az_pointer->SetOrientation(FRotationMatrix(Rot));
-				az_pointer->Show();
-			}
-		}
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawLCOS(SimObject* targ, double dist)
-{
-	lead_sprite->Hide();
-	aim_sprite->Hide();
-	chase_sprite->Hide();
-
-	double xtarg = xcenter;
-	double ytarg = ycenter;
-
-	Weapon* prim = ship ? ship->GetPrimary() : nullptr;
-	if (!prim)
-		return;
-
-	FVector tloc = targ->Location();
-
-	// Translate into camera relative:
-	projector->Transform(tloc);
-
-	const bool behind = (tloc.Z < 0.0f);
-
-	if (behind)
-		tloc.Z = -tloc.Z;
-
-	// Project into screen coordinates:
-	projector->Project(tloc);
-
-	// DRAW THE OFFSCREEN CHASE INDICATOR:
-	if (behind ||
-		tloc.X <= 0.0f || tloc.X >= (float)(width - 1) ||
-		tloc.Y <= 0.0f || tloc.Y >= (float)(height - 1)) {
-
-		// Left side:
-		if (tloc.X <= 0.0f || (behind && tloc.X < width / 2.0f)) {
-			if (tloc.Y < ah) tloc.Y = (float)ah;
-			else if (tloc.Y >= height - ah) tloc.Y = (float)(height - 1 - ah);
-
-			chase_sprite->Show();
-			chase_sprite->SetAnimation(&chase_left);
-			chase_sprite->MoveTo(FVector((float)aw, tloc.Y, 1.0f));
-		}
-
-		// Right side:
-		else if (tloc.X >= (float)(width - 1) || behind) {
-			if (tloc.Y < ah) tloc.Y = (float)ah;
-			else if (tloc.Y >= height - ah) tloc.Y = (float)(height - 1 - ah);
-
-			chase_sprite->Show();
-			chase_sprite->SetAnimation(&chase_right);
-			chase_sprite->MoveTo(FVector((float)(width - 1 - aw), tloc.Y, 1.0f));
-		}
-		else {
-			if (tloc.X < aw) tloc.X = (float)aw;
-			else if (tloc.X >= width - aw) tloc.X = (float)(width - 1 - aw);
-
-			// Top edge:
-			if (tloc.Y <= 0.0f) {
-				chase_sprite->Show();
-				chase_sprite->SetAnimation(&chase_top);
-				chase_sprite->MoveTo(FVector(tloc.X, (float)ah, 1.0f));
-			}
-
-			// Bottom edge:
-			else if (tloc.Y >= (float)(height - 1)) {
-				chase_sprite->Show();
-				chase_sprite->SetAnimation(&chase_bottom);
-				chase_sprite->MoveTo(FVector(tloc.X, (float)(height - 1 - ah), 1.0f));
-			}
-		}
-	}
-
-	// DRAW THE LCOS:
-	else {
-		if (!ship->IsStarship()) {
-			FVector aim_vec = ship->Heading();
-			aim_vec.Normalize();
-
-			// shot speed is relative to ship speed:
-			const FVector shot_vel = ship->Velocity() + aim_vec * (float)prim->Design()->speed;
-			const double  shot_speed = shot_vel.Length();
-
-			// time for shot to reach target
-			const double time = (shot_speed > 0.0) ? (dist / shot_speed) : 0.0;
-
-			// LCOS (Lead Computing Optical Sight)
-			if (gunsight == 0) {
-				// where the shot will be when it is the same distance
-				// away from the ship as the target:
-				const FVector impact = ship->Location() + (shot_vel * (float)time);
-
-				// where the target will be when the shot reaches it:
-				const FVector targ_vel = targ->Velocity();
-				const FVector dest = targ->Location() + (targ_vel * (float)time);
-				const FVector delta = impact - dest;
-
-				// draw the gun sight here in 3d world coordinates:
-				FVector sight = targ->Location() + delta;
-
-				// Project into screen coordinates:
-				projector->Transform(sight);
-				projector->Project(sight);
-
-				xtarg = sight.X;
-				ytarg = sight.Y;
-
-				aim_sprite->Show();
-				aim_sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
-			}
-
-			// Wing Commander style lead indicator
-			else {
-				// where the target will be when the shot reaches it:
-				const FVector targ_vel = targ->Velocity() - ship->Velocity();
-				FVector dest = targ->Location() + (targ_vel * (float)time);
-
-				// Translate into camera relative:
-				projector->Transform(dest);
-				projector->Project(dest);
-
-				xtarg = dest.X;
-				ytarg = dest.Y;
-
-				lead_sprite->Show();
-				lead_sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
-			}
-		}
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-UHUDView::DrawTarget()
-{
-	const int   bar_width = 256;
-	const int   bar_height = 192;
-	const int   box_width = 120;
+	const int bar_width = 256;
+	const int bar_height = 192;
+	const int box_width = 120;
 
 	SimObject* old_target = target;
 
-	if (!ship) {
-		target = old_target;
-		return;
-	}
-
-	if (mode == (int)HUD_MODE::HUD_MODE_ILS) {
-		Ship* controller = ship->GetController();
+	if (mode == EHUDMode::ILS) {
+		Ship* controller = ship ? ship->GetController() : 0;
 		if (controller && !target)
 			target = controller;
 	}
 
 	if (target && target->Rep()) {
-		Sensor* sensor = ship->GetSensor();
+		Sensor* sensor = ship ? ship->GetSensor() : 0;
 		SimContact* contact = 0;
 
-		if (sensor && target->Type() == SimObject::SIM_SHIP) {
+		if (sensor && ship && target->Type() == SimObject::SIM_SHIP) {
 			contact = sensor->FindContact((Ship*)target);
 		}
 
-		int     cx = width / 2;
-		int     cy = height / 2;
-		int     l = cx - bar_width / 2;
-		int     r = cx + bar_width / 2;
-		int     t = cy - bar_height / 2;
-		int     b = cy + bar_height / 2;
-		FVector delta = target->Location() - ship->Location();
-		double  distance = delta.Length();
-		FVector delta_v = ship->Velocity() - target->Velocity();
-		double  speed = delta_v.Length();
-		char    txt[256];
+		int    cx = width / 2;
+		int    cy = height / 2;
+		int    l = cx - bar_width / 2;
+		int    r = cx + bar_width / 2;
+		int    t = cy - bar_height / 2;
+		int    b = cy + bar_height / 2;
 
-		if (mode == (int)HUD_MODE::HUD_MODE_ILS && ship->GetInbound() && ship->GetInbound()->GetDeck()) {
+		FVector delta = target->Location() - ship->Location();
+		double  distance = delta.Size();
+
+		FVector delta_v = ship->Velocity() - target->Velocity();
+		double  speed = delta_v.Size();
+
+		char txt[256];
+
+		if (mode == EHUDMode::ILS && ship->GetInbound() && ship->GetInbound()->GetDeck()) {
 			delta = ship->GetInbound()->GetDeck()->EndPoint() - ship->Location();
-			distance = delta.Length();
+			distance = delta.Size();
 		}
 
-		if (FVector::DotProduct(delta, ship->Velocity()) > 0) {        // in front
-			if (FVector::DotProduct(delta_v, ship->Velocity()) < 0)     // losing ground
+		// Determine closing speed sign:
+		const double delta_dot_vel = FVector::DotProduct(delta, ship->Velocity());
+
+		if (delta_dot_vel > 0) { // in front
+			if (FVector::DotProduct(delta_v, ship->Velocity()) < 0) // losing ground
 				speed = -speed;
 		}
-		else {                                                        // behind
-			if (FVector::DotProduct(delta_v, ship->Velocity()) > 0)     // passing
+		else { // behind
+			if (FVector::DotProduct(delta_v, ship->Velocity()) > 0) // passing
 				speed = -speed;
 		}
 
@@ -1886,7 +1185,7 @@ UHUDView::DrawTarget()
 			range_rect.y += 10;
 			DrawHUDText(TXT_TARGET_DESIGN, tgt_ship->Design()->display_name, range_rect, DT_RIGHT);
 
-			if (mode != (int)HUD_MODE::HUD_MODE_ILS) {
+			if (mode != EHUDMode::ILS) {
 				if (tgt_ship->IsStarship()) {
 					range_rect.y += 10;
 					sprintf_s(txt, "%s %03d",
@@ -1903,17 +1202,21 @@ UHUDView::DrawTarget()
 
 				SimSystem* sys = ship->GetSubTarget();
 				if (sys) {
-					FColor        stat = hud_color;
-					static DWORD blink = Game::RealTime();
+					FColor        stat = HudColor;
+					static DWORD  blink = Game::RealTime();
 
 					int blink_delta = Game::RealTime() - blink;
 					sprintf_s(txt, "%s %03d", sys->Abbreviation(), (int)sys->Availability());
 
-					switch (sys->Status()) {
-					case SimSystem::DEGRADED:   stat = FColor(255, 255, 0);  break;
-					case SimSystem::CRITICAL:
-					case SimSystem::DESTROYED:  stat = FColor(255, 0, 0);    break;
-					case SimSystem::MAINT:
+					switch (sys->GetStatus()) {
+						case SYSTEM_STATUS::DEGRADED: 
+						stat = FColor(255, 255, 0);
+						break;
+					case SYSTEM_STATUS::CRITICAL:
+					case SYSTEM_STATUS::DESTROYED:
+						stat = FColor(255, 0, 0);
+						break;
+					case SYSTEM_STATUS::MAINT:
 						if (blink_delta < 250)
 							stat = FColor(8, 8, 8);
 						break;
@@ -1954,17 +1257,14 @@ UHUDView::DrawTarget()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawNavInfo()
+HUDView::DrawNavInfo()
 {
-	const int   bar_width = 256;
-	const int   bar_height = 192;
-	const int   box_width = 120;
-
-	if (!ship)
-		return;
+	const int bar_width = 256;
+	const int bar_height = 192;
+	const int box_width = 120;
 
 	if (arcade) {
-		if (ship->IsAutoNavEngaged()) {
+		if (ship && ship->IsAutoNavEngaged()) {
 			Rect info_rect(width / 2 - box_width, height / 2 + bar_height, box_width * 2, 12);
 
 			if (big_font)
@@ -1978,19 +1278,19 @@ UHUDView::DrawNavInfo()
 
 	hud_text[TXT_NAV_INDEX].font = hud_font;
 
-	Instruction* navpt = ship->GetNextNavPoint();
+	Instruction* navpt = ship ? ship->GetNextNavPoint() : 0;
 
 	if (navpt) {
-		int    cx = width / 2;
-		int    cy = height / 2;
-		int    l = cx - bar_width / 2;
-		int    r = cx + bar_width / 2;
-		int    t = cy - bar_height / 2;
-		int    b = cy + bar_height / 2;
+		int cx = width / 2;
+		int cy = height / 2;
+		int l = cx - bar_width / 2;
+		int r = cx + bar_width / 2;
+		int t = cy - bar_height / 2;
+		int b = cy + bar_height / 2;
 
 		int    index = ship->GetNavIndex(navpt);
 		double distance = ship->RangeToNavPoint(navpt);
-		double speed = ship->Velocity().Length();
+		double speed = ship->Velocity().Size();
 		int    etr = 0;
 		char   txt[256];
 
@@ -2046,14 +1346,11 @@ UHUDView::DrawNavInfo()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawSight()
+HUDView::DrawSight()
 {
-	if (!ship)
-		return;
-
 	if (target && target->Rep()) {
 		FVector delta = target->Location() - ship->Location();
-		double  distance = delta.Length();
+		double  distance = delta.Size();
 
 		// draw LCOS on target:
 		if (!tactical)
@@ -2064,7 +1361,7 @@ UHUDView::DrawSight()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawDesignators()
+HUDView::DrawDesignators()
 {
 	double     xtarg = xcenter;
 	double     ytarg = ycenter;
@@ -2072,9 +1369,6 @@ UHUDView::DrawDesignators()
 	SimObject* t2 = 0;
 	SimObject* t3 = 0;
 	Sprite* sprite = 0;
-
-	if (!ship)
-		return;
 
 	tgt1_sprite->Hide();
 	tgt2_sprite->Hide();
@@ -2088,6 +1382,7 @@ UHUDView::DrawDesignators()
 
 		if (t) {
 			FVector tloc = t->Location();
+
 			if (s) {
 				tloc = s->MountLocation();
 			}
@@ -2095,30 +1390,30 @@ UHUDView::DrawDesignators()
 				Ship* tgt_ship = (Ship*)t;
 
 				if (tgt_ship->IsGroundUnit())
-					tloc += FVector(0.f, 150.f, 0.f);
+					tloc += FVector(0, 150, 0);
 			}
 
 			projector->Transform(tloc);
 
-			if (tloc.Z > 0.0f) {
+			if (tloc.Z > 0) {
 				projector->Project(tloc);
 
 				xtarg = tloc.X;
 				ytarg = tloc.Y;
 
-				if (xtarg > 0 && xtarg < width - 1 && ytarg > 0 && ytarg < height - 1) {
-					double range = (t->Location() - ship->Location()).Length();
+				if (xtarg > 0 && xtarg < width - 1 && ytarg>0 && ytarg < height - 1) {
+					double range = (t->Location() - ship->Location()).Size();
 
 					// use out-of-range crosshair if out of range:
 					if (!ship->GetPrimaryDesign() || ship->GetPrimaryDesign()->max_range < range) {
 						tgt4_sprite->Show();
-						tgt4_sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
+						tgt4_sprite->MoveTo(FVector(xtarg, ytarg, 1));
 					}
 
 					// else, use in-range primary crosshair:
 					else {
 						tgt1_sprite->Show();
-						tgt1_sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
+						tgt1_sprite->MoveTo(FVector(xtarg, ytarg, 1));
 					}
 				}
 			}
@@ -2143,7 +1438,7 @@ UHUDView::DrawDesignators()
 				sprite = tgt2_sprite;
 
 				if (t2 == t1)
-					continue; // don't overlap target designators
+					continue;   // don't overlap target designators
 			}
 
 			else if (t) {
@@ -2151,7 +1446,7 @@ UHUDView::DrawDesignators()
 				sprite = tgt3_sprite;
 
 				if (t3 == t1 || t3 == t2)
-					continue; // don't overlap target designators
+					continue;   // don't overlap target designators
 			}
 
 			if (t) {
@@ -2162,14 +1457,14 @@ UHUDView::DrawDesignators()
 
 				projector->Transform(tloc);
 
-				if (tloc.Z > 0.0f) {
+				if (tloc.Z > 0) {
 					projector->Project(tloc);
 
 					xtarg = tloc.X;
 					ytarg = tloc.Y;
 
-					if (xtarg > 0 && xtarg < width - 1 && ytarg > 0 && ytarg < height - 1) {
-						double range = (t->Location() - ship->Location()).Length();
+					if (xtarg > 0 && xtarg < width - 1 && ytarg>0 && ytarg < height - 1) {
+						double range = (t->Location() - ship->Location()).Size();
 
 						// flip to out-of-range crosshair
 						if (sprite == tgt1_sprite) {
@@ -2179,7 +1474,7 @@ UHUDView::DrawDesignators()
 						}
 
 						sprite->Show();
-						sprite->MoveTo(FVector((float)xtarg, (float)ytarg, 1.0f));
+						sprite->MoveTo(FVector(xtarg, ytarg, 1));
 					}
 				}
 			}
@@ -2190,244 +1485,246 @@ UHUDView::DrawDesignators()
 // +--------------------------------------------------------------------+
 
 FColor
-UHUDView::GetStatusColor(SYSTEM_STATUS status)
+HUDView::GetStatusColor(SYSTEM_STATUS status)
 {
 	FColor sc;
 
 	switch (status) {
 	default:
-	case SYSTEM_STATUS::NOMINAL:    sc = FColor(32, 192, 32);  break;
-	case SYSTEM_STATUS::DEGRADED:   sc = FColor(255, 255, 0);  break;
-	case SYSTEM_STATUS::CRITICAL:   sc = FColor(255, 0, 0);    break;
-	case SYSTEM_STATUS::DESTROYED:  sc = FColor(0, 0, 0);      break;
+	case SYSTEM_STATUS::NOMINAL:     sc = FColor(32, 192, 32);  break;
+	case SYSTEM_STATUS::DEGRADED:    sc = FColor(255, 255, 0);  break;
+	case SYSTEM_STATUS::CRITICAL:    sc = FColor(255, 0, 0);  break;
+	case SYSTEM_STATUS::DESTROYED:   sc = FColor(0, 0, 0);  break;
 	}
 
 	return sc;
 }
 
 void
-UHUDView::SetStatusColor(SYSTEM_STATUS status)
+HUDView::SetStatusColor(SYSTEM_STATUS status)
 {
 	switch (status) {
 	default:
-	case SYSTEM_STATUS::NOMINAL:    status_color = txt_color;          break;
-	case SYSTEM_STATUS::DEGRADED:   status_color = FColor(255, 255, 0); break;
-	case SYSTEM_STATUS::CRITICAL:   status_color = FColor(255, 0, 0);   break;
-	case SYSTEM_STATUS::DESTROYED:  status_color = FColor(0, 0, 0);     break;
+	case SYSTEM_STATUS::NOMINAL:     StatusColor = TextColor;			break;
+	case SYSTEM_STATUS::DEGRADED:    StatusColor = FColor(255, 255, 0); break;
+	case SYSTEM_STATUS::CRITICAL:    StatusColor = FColor(255, 0, 0);	break;
+	case SYSTEM_STATUS::DESTROYED:   StatusColor = FColor(0, 0, 0);		break;
 	}
 }
 
 // +--------------------------------------------------------------------+
 
-static int GetReactorStatus(Ship* ship)
+static SYSTEM_STATUS GetReactorStatus(Ship* ship)
 {
 	if (!ship || ship->Reactors().size() < 1)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
-	int  status = SimSystem::NOMINAL;
+	SYSTEM_STATUS  status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
 	ListIter<PowerSource> iter = ship->Reactors();
 	while (++iter) {
 		PowerSource* s = iter.value();
 
-		if (s->Status() < status)
-			status = s->Status();
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
+			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
 
-static int GetDriveStatus(Ship* ship)
+static SYSTEM_STATUS GetDriveStatus(Ship* ship)
 {
 	if (!ship || ship->Drives().size() < 1)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
-	int  status = SimSystem::NOMINAL;
+	SYSTEM_STATUS  status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
 	ListIter<Drive> iter = ship->Drives();
 	while (++iter) {
 		Drive* s = iter.value();
 
-		if (s->Status() < status)
-			status = s->Status();
-		else if (s->Status() == SimSystem::MAINT)
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
 
-static int GetQuantumStatus(Ship* ship)
+static SYSTEM_STATUS GetQuantumStatus(Ship* ship)
 {
 	if (!ship || ship->GetQuantumDrive() == 0)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
 	QuantumDrive* s = ship->GetQuantumDrive();
-	return s->Status();
+	return s->GetStatus();
 }
 
-static int GetThrusterStatus(Ship* ship)
+static SYSTEM_STATUS GetThrusterStatus(Ship* ship)
 {
 	if (!ship || ship->GetThruster() == 0)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
 	Thruster* s = ship->GetThruster();
-	return s->Status();
+	return s->GetStatus();
 }
 
-static int GetShieldStatus(Ship* ship)
+static SYSTEM_STATUS GetShieldStatus(Ship* ship)
 {
 	if (!ship)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
 	Shield* s = ship->GetShield();
 	Weapon* d = ship->GetDecoy();
 
 	if (!s && !d)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
-	int  status = SimSystem::NOMINAL;
+	SYSTEM_STATUS  status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
 	if (s) {
-		if (s->Status() < status)
-			status = s->Status();
-		else if (s->Status() == SimSystem::MAINT)
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
 	if (d) {
-		if (d->Status() < status)
-			status = d->Status();
-		else if (d->Status() == SimSystem::MAINT)
+		if (d->GetStatus() < status)
+			status = d->GetStatus();
+		else if (d->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
 
-static int GetWeaponStatus(Ship* ship, int index)
+static SYSTEM_STATUS GetWeaponStatus(Ship* ship, int index)
 {
 	if (!ship || ship->Weapons().size() <= index)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
 	WeaponGroup* group = ship->Weapons().at(index);
 
-	int  status = SimSystem::NOMINAL;
+	SYSTEM_STATUS  status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
 	ListIter<Weapon> iter = group->GetWeapons();
 	while (++iter) {
 		Weapon* s = iter.value();
 
-		if (s->Status() < status)
-			status = s->Status();
-		else if (s->Status() == SimSystem::MAINT)
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
 
-static int GetSensorStatus(Ship* ship)
+static SYSTEM_STATUS GetSensorStatus(Ship* ship)
 {
 	if (!ship || ship->GetSensor() == 0)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
 	Sensor* s = ship->GetSensor();
 	Weapon* p = ship->GetProbeLauncher();
 
-	int  status = s->Status();
-	bool maint = (s->Status() == SimSystem::MAINT);
+	SYSTEM_STATUS status = s->GetStatus();
+	bool maint = s->GetStatus() == SYSTEM_STATUS::MAINT;
 
 	if (p) {
-		if (p->Status() < status)
-			status = p->Status();
-		else if (p->Status() == SimSystem::MAINT)
+		if (p->GetStatus() < status)
+			status = p->GetStatus();
+		else if (p->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
 
-static int GetComputerStatus(Ship* ship)
+static SYSTEM_STATUS GetComputerStatus(Ship* ship)
 {
 	if (!ship || ship->Computers().size() < 1)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
-	int  status = SimSystem::NOMINAL;
+	SYSTEM_STATUS status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
 	ListIter<Computer> iter = ship->Computers();
 	while (++iter) {
 		Computer* s = iter.value();
 
-		if (s->Status() < status)
-			status = s->Status();
-		else if (s->Status() == SimSystem::MAINT)
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
 	if (ship->GetNavSystem()) {
 		NavSystem* s = ship->GetNavSystem();
 
-		if (s->Status() < status)
-			status = s->Status();
-		else if (s->Status() == SimSystem::MAINT)
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
 
-static int GetFlightDeckStatus(Ship* ship)
+static SYSTEM_STATUS GetFlightDeckStatus(Ship* ship)
 {
 	if (!ship || ship->FlightDecks().size() < 1)
-		return -1;
+		return SYSTEM_STATUS::UNKNOWN;
 
-	int  status = SimSystem::NOMINAL;
+	SYSTEM_STATUS status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
 	ListIter<FlightDeck> iter = ship->FlightDecks();
 	while (++iter) {
 		FlightDeck* s = iter.value();
 
-		if (s->Status() < status)
-			status = s->Status();
-		else if (s->Status() == SimSystem::MAINT)
+		if (s->GetStatus() < status)
+			status = s->GetStatus();
+		else if (s->GetStatus() == SYSTEM_STATUS::MAINT)
 			maint = true;
 	}
 
-	if (maint && status == SimSystem::NOMINAL)
-		status = SimSystem::MAINT;
+	if (maint && status == SYSTEM_STATUS::NOMINAL)
+		status = SYSTEM_STATUS::MAINT;
 
 	return status;
 }
- 
+
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawWarningPanel()
+HUDView::DrawWarningPanel()
 {
 	int box_width = 75;
 	int box_height = 17;
@@ -2450,10 +1747,11 @@ UHUDView::DrawWarningPanel()
 		int y = cockpit_hud_texture ? 410 : height - 97;
 		int c = cockpit_hud_texture ? 3 : 4;
 
-		static DWORD blink = Game::RealTime();
+		static uint32 blink = (uint32)Game::RealTime();
 
 		for (int index = 0; index < 12; index++) {
-			int  stat = -1;
+			
+			SYSTEM_STATUS  stat = SYSTEM_STATUS::UNKNOWN;
 			Text abrv = Game::GetText("HUDView.UNKNOWN");
 
 			switch (index) {
@@ -2469,7 +1767,7 @@ UHUDView::DrawWarningPanel()
 			case 5:
 			case 6:
 			case 7:  stat = GetWeaponStatus(ship, index - 4);
-				if (stat >= 0) {
+				if (stat != SYSTEM_STATUS::UNKNOWN) {
 					WeaponGroup* g = ship->Weapons().at(index - 4);
 					abrv = g->Name();
 				}
@@ -2483,24 +1781,25 @@ UHUDView::DrawWarningPanel()
 
 			Rect warn_rect(x, y, box_width, box_height);
 
-			if (cockpit_hud_texture)
-				cockpit_hud_texture->DrawRect(warn_rect, FColor(64, 64, 64));
+			if (cockpit_hud_texture) {
+				cockpit_hud_texture->DrawRect(ToIntRect(warn_rect), FColor(64, 64, 64));
+			}
 
-			if (stat >= 0) {
+			if (stat != SYSTEM_STATUS::UNKNOWN) {
 				SetStatusColor((SYSTEM_STATUS)stat);
-				FColor tc = status_color;
+				FColor tc = StatusColor;
 
-				if (stat != (int)SYSTEM_STATUS::NOMINAL) {
+				if (stat != SYSTEM_STATUS::NOMINAL) {
 					if (Game::RealTime() - blink < 250) {
-						tc = cockpit_hud_texture ? txt_color : FColor(8, 8, 8);
+						tc = cockpit_hud_texture ? TextColor : FColor(8, 8, 8);
 					}
 				}
 
 				if (cockpit_hud_texture) {
-					if (tc != txt_color) {
+					if (tc != TextColor) {
 						Rect r2 = warn_rect;
 						r2.Inset(1, 1, 1, 1);
-						cockpit_hud_texture->FillRect(r2, tc);
+						cockpit_hud_texture->FillRect(ToIntRect(r2), tc);
 						tc = FColor::Black;
 					}
 
@@ -2534,7 +1833,7 @@ UHUDView::DrawWarningPanel()
 		}
 
 		if (Game::RealTime() - blink > 500)
-			blink = Game::RealTime();
+			blink = (uint32)Game::RealTime();
 
 		// reset for next time
 		SetStatusColor(SYSTEM_STATUS::NOMINAL);
@@ -2544,7 +1843,7 @@ UHUDView::DrawWarningPanel()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawInstructions()
+HUDView::DrawInstructions()
 {
 	if (!ship) return;
 
@@ -2553,8 +1852,8 @@ UHUDView::DrawInstructions()
 		instr_right_sprite->Show();
 	}
 
-	int          ninst = 0;
-	int          nobj = 0;
+	int         ninst = 0;
+	int         nobj = 0;
 	SimElement* elem = ship->GetElement();
 
 	if (elem) {
@@ -2584,8 +1883,8 @@ UHUDView::DrawInstructions()
 			r.y += 14;
 		}
 
-		char page[32];
-		sprintf_s(page, "%d / %d", inst_page + 1, npages);
+		char page[32] = { 0 };
+		snprintf(page, sizeof(page), "%d / %d", inst_page + 1, npages);
 		r = Rect(width / 2 + 40, height - 16, 110, 16);
 		DrawHUDText(TXT_INSTR_PAGE, page, r, DT_CENTER, HUD_MIXED_CASE);
 	}
@@ -2594,8 +1893,8 @@ UHUDView::DrawInstructions()
 		int n = TXT_CAUTION_TXT;
 
 		for (int i = 0; i < nobj; i++) {
-			char desc[256];
-			sprintf_s(desc, "* %s", elem->GetObjective(i)->GetShortDescription());
+			char desc[256] = { 0 };
+			snprintf(desc, sizeof(desc), "* %s", elem->GetObjective(i)->GetShortDescription());
 			hud_text[n].color = standard_txt_colors[color];
 			DrawHUDText(n++, desc, r, DT_LEFT, HUD_MIXED_CASE);
 			r.y += 14;
@@ -2611,7 +1910,7 @@ UHUDView::DrawInstructions()
 // +--------------------------------------------------------------------+
 
 const char*
-UHUDView::FormatInstruction(Text instr)
+HUDView::FormatInstruction(Text instr)
 {
 	if (!instr.contains('$'))
 		return (const char*)instr;
@@ -2651,7 +1950,7 @@ UHUDView::FormatInstruction(Text instr)
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::CycleInstructions(int direction)
+HUDView::CycleInstructions(int direction)
 {
 	if (direction > 0)
 		inst_page++;
@@ -2662,7 +1961,7 @@ UHUDView::CycleInstructions(int direction)
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawMessages()
+HUDView::DrawMessages()
 {
 	int message_queue_empty = true;
 
@@ -2703,18 +2002,19 @@ UHUDView::DrawMessages()
 				DrawHUDText(index, msg_text[i], msg_rect, DT_LEFT, HUD_MIXED_CASE);
 
 				if (msg_time[i] > 1)
-					hud_text[index].color = txt_color;
-				else
-					{
-						const float Alpha = FMath::Clamp(0.5f + 0.5f * (float)msg_time[i], 0.0f, 1.0f);
-
-						hud_text[index].color = FColor(
-							(uint8)FMath::Clamp(FMath::RoundToInt(txt_color.R * Alpha), 0, 255),
-							(uint8)FMath::Clamp(FMath::RoundToInt(txt_color.G * Alpha), 0, 255),
-							(uint8)FMath::Clamp(FMath::RoundToInt(txt_color.B * Alpha), 0, 255),
-							txt_color.A
-						);
-					}
+					hud_text[index].color = TextColor;
+				else {
+					// Legacy: txt_color.dim(...)
+					// If you still have a dim helper on FColor in your port, keep it.
+					// Otherwise, approximate via linear scale:
+					const float a = (float)(0.5 + 0.5 * msg_time[i]);
+					hud_text[index].color = FColor(
+						(uint8)FMath::Clamp((int)(TextColor.R * a), 0, 255),
+						(uint8)FMath::Clamp((int)(TextColor.G * a), 0, 255),
+						(uint8)FMath::Clamp((int)(TextColor.B * a), 0, 255),
+						TextColor.A
+					);
+				}
 			}
 		}
 	}
@@ -2723,7 +2023,7 @@ UHUDView::DrawMessages()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawNav()
+HUDView::DrawNav()
 {
 	if (!sim)
 		return;
@@ -2731,10 +2031,10 @@ UHUDView::DrawNav()
 	active_region = sim->GetActiveRegion();
 
 	if (ship) {
-		int          nav_index = 1;
+		int nav_index = 1;
 		Instruction* next = ship->GetNextNavPoint();
 
-		if (mode == (int)HUD_MODE::HUD_MODE_NAV) {
+		if (mode == EHUDMode::Navigation) {
 			if (next && next->Action() == Instruction::LAUNCH)
 				DrawNavPoint(*next, 0, true);
 
@@ -2750,7 +2050,7 @@ UHUDView::DrawNav()
 }
 
 void
-UHUDView::DrawILS()
+HUDView::DrawILS()
 {
 	if (ship) {
 		bool hoops_drawn = false;
@@ -2764,21 +2064,19 @@ UHUDView::DrawILS()
 				if (fd->GetCarrier()->GetRegion() == ship->GetRegion())
 					same_sector = true;
 
-				if (same_sector && mode == (int)HUD_MODE::HUD_MODE_ILS && !transition && !docking) {
+				if (same_sector && mode == EHUDMode::ILS && !transition && !docking) {
 					FVector dst = fd->MountLocation();
 					projector->Transform(dst);
 
-					if (dst.Z > 1.0f) {
+					if (dst.Z > 1.0) {
 						projector->Project(dst);
 
 						int x = (int)dst.X;
 						int y = (int)dst.Y;
 
-						if (x > 4 && x < width - 4 &&
-							y > 4 && y < height - 4) {
-
-							this->window->DrawLine(x - 6, y - 6, x + 6, y + 6, hud_color);
-							window->DrawLine(x + 6, y - 6, x - 6, y + 6, hud_color);
+						if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
+							window->DrawLine(x - 6, y - 6, x + 6, y + 6, HudColor);
+							window->DrawLine(x + 6, y - 6, x - 6, y + 6, HudColor);
 						}
 					}
 				}
@@ -2788,10 +2086,9 @@ UHUDView::DrawILS()
 				for (int h = 0; h < fd->NumHoops(); h++) {
 					Hoop* hoop = fd->GetHoops() + h;
 					if (hoop && scene) {
-						if (same_sector && mode == (int)HUD_MODE::HUD_MODE_ILS && !transition && !docking) {
+						if (same_sector && mode == EHUDMode::ILS && !transition && !docking) {
 							scene->AddGraphic(hoop);
 							hoop->Show();
-
 							hoops_drawn = true;
 						}
 						else {
@@ -2808,28 +2105,25 @@ UHUDView::DrawILS()
 			while (++iter) {
 				Ship* carrier = iter.value();
 
-				bool ours = (carrier->GetIFF() == ship->GetIFF()) ||
-					(carrier->GetIFF() == 0);
+				bool ours = (carrier->GetIFF() == ship->GetIFF()) || (carrier->GetIFF() == 0);
 
 				for (int i = 0; i < carrier->NumFlightDecks(); i++) {
 					FlightDeck* fd = carrier->GetFlightDeck(i);
 
 					if (fd && fd->IsRecoveryDeck()) {
-						if (mode == (int)HUD_MODE::vHUD_MODE_ILS && ours && !transition && !docking) {
+						if (mode == EHUDMode::ILS && ours && !transition && !docking) {
 							FVector dst = fd->MountLocation();
 							projector->Transform(dst);
 
-							if (dst.Z > 1.0f) {
+							if (dst.Z > 1.0) {
 								projector->Project(dst);
 
 								int x = (int)dst.X;
 								int y = (int)dst.Y;
 
-								if (x > 4 && x < width - 4 &&
-									y > 4 && y < height - 4) {
-
-									window->DrawLine(x - 6, y - 6, x + 6, y + 6, hud_color);
-									window->DrawLine(x + 6, y - 6, x - 6, y + 6, hud_color);
+								if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
+									window->DrawLine(x - 6, y - 6, x + 6, y + 6, HudColor);
+									window->DrawLine(x + 6, y - 6, x - 6, y + 6, HudColor);
 								}
 							}
 						}
@@ -2839,7 +2133,7 @@ UHUDView::DrawILS()
 						for (int h = 0; h < fd->NumHoops(); h++) {
 							Hoop* hoop = fd->GetHoops() + h;
 							if (hoop && scene) {
-								if (mode == (int)HUD_MODE::HUD_MODE_ILS && ours && !transition && !docking) {
+								if (mode == EHUDMode::ILS && ours && !transition && !docking) {
 									hoop->Show();
 									if (!hoop->GetScene())
 										scene->AddGraphic(hoop);
@@ -2859,23 +2153,22 @@ UHUDView::DrawILS()
 }
 
 void
-UHUDView::DrawObjective()
+HUDView::DrawObjective()
 {
 	if (ship && ship->GetDirector() && ship->GetDirector()->Type() >= SteerAI::SEEKER) {
 		SteerAI* steer = (SteerAI*)ship->GetDirector();
-		FVector  obj = steer->GetObjective();
+
+		FVector obj = steer->GetObjective();
 		projector->Transform(obj);
 
-		if (obj.Z > 1.0f) {
+		if (obj.Z > 1.0) {
 			projector->Project(obj);
 
 			int x = (int)obj.X;
 			int y = (int)obj.Y;
 
-			if (x > 4 && x < width - 4 &&
-				y > 4 && y < height - 4) {
-
-				Color c = Color::Cyan;
+			if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
+				FColor c = FColor::Cyan;
 				window->DrawRect(x - 6, y - 6, x + 6, y + 6, c);
 				window->DrawLine(x - 6, y - 6, x + 6, y + 6, c);
 				window->DrawLine(x + 6, y - 6, x - 6, y + 6, c);
@@ -2886,16 +2179,14 @@ UHUDView::DrawObjective()
 			obj = steer->GetOther()->Location();
 			projector->Transform(obj);
 
-			if (obj.Z > 1.0f) {
+			if (obj.Z > 1.0) {
 				projector->Project(obj);
 
 				int x = (int)obj.X;
 				int y = (int)obj.Y;
 
-				if (x > 4 && x < width - 4 &&
-					y > 4 && y < height - 4) {
-
-					Color c = Color::Orange;
+				if (x > 4 && x < width - 4 && y > 4 && y < height - 4) {
+					FColor c = FColor::Orange;
 					window->DrawRect(x - 6, y - 6, x + 6, y + 6, c);
 					window->DrawLine(x - 6, y - 6, x + 6, y + 6, c);
 					window->DrawLine(x + 6, y - 6, x - 6, y + 6, c);
@@ -2906,57 +2197,53 @@ UHUDView::DrawObjective()
 	/***/
 }
 
-void
-UHUDView::DrawNavPoint(Instruction& navpt, int index, int next)
+void HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 {
-	if (index >= 15 || !navpt.Region()) return;
+	if (index >= 15 || !navpt.Region())
+		return;
 
-	// transform from starsystem to world coordinates:
 	FVector npt = navpt.Region()->GetLocation() + navpt.Location();
 
 	if (active_region)
 		npt -= active_region->GetLocation();
 
-	npt = npt.OtherHand();
+	npt = OtherHand(npt);
 
-	// transform from world to camera:
 	projector->Transform(npt);
 
-	// clip:
-	if (npt.Z > 1.0f) {
-
-		// project:
+	if (npt.Z > 1.0)
+	{
 		projector->Project(npt);
 
-		int x = (int)npt.X;
-		int y = (int)npt.Y;
+		const int x = (int)npt.X;
+		const int y = (int)npt.Y;
 
-		// clip:
-		if (x > 4 && x < width - 4 &&
-			y > 4 && y < height - 4) {
-
-			Color c = Color::White;
+		if (x > 4 && x < width - 4 && y > 4 && y < height - 4)
+		{
+			FColor c = FColor::White;
 			if (navpt.Status() > Instruction::ACTIVE && navpt.HoldTime() <= 0)
-				c = Color::DarkGray;
+				c = FColor(64, 64, 64);
 
-			// draw:
 			if (next)
 				window->DrawEllipse(x - 6, y - 6, x + 5, y + 5, c);
 
 			window->DrawLine(x - 6, y - 6, x + 6, y + 6, c);
 			window->DrawLine(x + 6, y - 6, x - 6, y + 6, c);
 
-			if (index > 0) {
-				char npt_buf[32];
+			if (index > 0)
+			{
+				char npt_buf[32] = { 0 };
 				Rect npt_rect(x + 10, y - 4, 200, 12);
 
-				if (navpt.Status() == Instruction::COMPLETE && navpt.HoldTime() > 0) {
-					char hold_time[32];
+				if (navpt.Status() == Instruction::COMPLETE && navpt.HoldTime() > 0)
+				{
+					char hold_time[32] = { 0 };
 					FormatTime(hold_time, navpt.HoldTime());
-					sprintf_s(npt_buf, "%d %s", index, hold_time);
+					snprintf(npt_buf, sizeof(npt_buf), "%d %s", index, hold_time);
 				}
-				else {
-					sprintf_s(npt_buf, "%d", index);
+				else
+				{
+					snprintf(npt_buf, sizeof(npt_buf), "%d", index);
 				}
 
 				DrawHUDText(TXT_NAV_PT + index, npt_buf, npt_rect, DT_LEFT);
@@ -2964,60 +2251,55 @@ UHUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 		}
 	}
 
-	if (next && mode == (int)HUD_MODE::HUD_MODE_NAV && navpt.Region() == ship->GetRegion()) {
-
-		// Translate into camera relative:
-		FVector tloc = navpt.Location().OtherHand();
+	if (next && mode == EHUDMode::Navigation && navpt.Region() == ship->GetRegion())
+	{
+		FVector tloc = OtherHand(navpt.Location());
 		projector->Transform(tloc);
 
-		int behind = tloc.Z < 0;
-
+		const bool behind = (tloc.Z < 0);
 		if (behind)
 			tloc.Z = -tloc.Z;
 
-		// Project into screen coordinates:
 		projector->Project(tloc);
 
-		// DRAW THE OFFSCREEN CHASE INDICATOR:
 		if (behind ||
 			tloc.X <= 0 || tloc.X >= width - 1 ||
-			tloc.Y <= 0 || tloc.Y >= height - 1) {
-
-			// Left side:
-			if (tloc.X <= 0 || (behind && tloc.X < width / 2)) {
-				if (tloc.Y < ah) tloc.Y = ah;
-				else if (tloc.Y >= height - ah) tloc.Y = height - 1 - ah;
+			tloc.Y <= 0 || tloc.Y >= height - 1)
+		{
+			if (tloc.X <= 0 || (behind && tloc.X < width / 2))
+			{
+				if (tloc.Y < ah) tloc.Y = (float)ah;
+				else if (tloc.Y >= height - ah) tloc.Y = (float)(height - 1 - ah);
 
 				chase_sprite->Show();
 				chase_sprite->SetAnimation(&chase_left);
-				chase_sprite->MoveTo(FVector((float)aw, (float)tloc.Y, 1.0f));
+				chase_sprite->MoveTo(FVector((float)aw, tloc.Y, 1));
 			}
-
-			// Right side:
-			else if (tloc.X >= width - 1 || behind) {
-				if (tloc.Y < ah) tloc.Y = ah;
-				else if (tloc.Y >= height - ah) tloc.Y = height - 1 - ah;
+			else if (tloc.X >= width - 1 || behind)
+			{
+				if (tloc.Y < ah) tloc.Y = (float)ah;
+				else if (tloc.Y >= height - ah) tloc.Y = (float)(height - 1 - ah);
 
 				chase_sprite->Show();
 				chase_sprite->SetAnimation(&chase_right);
-				chase_sprite->MoveTo(FVector((float)(width - 1 - aw), (float)tloc.Y, 1.0f));
+				chase_sprite->MoveTo(FVector((float)(width - 1 - aw), tloc.Y, 1));
 			}
-			else {
-				if (tloc.X < aw) tloc.X = aw;
-				else if (tloc.X >= width - aw) tloc.X = width - 1 - aw;
+			else
+			{
+				if (tloc.X < aw) tloc.X = (float)aw;
+				else if (tloc.X >= width - aw) tloc.X = (float)(width - 1 - aw);
 
-				// Top edge:
-				if (tloc.Y <= 0) {
+				if (tloc.Y <= 0)
+				{
 					chase_sprite->Show();
 					chase_sprite->SetAnimation(&chase_top);
-					chase_sprite->MoveTo(FVector((float)tloc.X, (float)ah, 1.0f));
+					chase_sprite->MoveTo(FVector(tloc.X, (float)ah, 1));
 				}
-
-				// Bottom edge:
-				else if (tloc.Y >= height - 1) {
+				else if (tloc.Y >= height - 1)
+				{
 					chase_sprite->Show();
 					chase_sprite->SetAnimation(&chase_bottom);
-					chase_sprite->MoveTo(FVector((float)tloc.X, (float)(height - 1 - ah), 1.0f));
+					chase_sprite->MoveTo(FVector(tloc.X, (float)(height - 1 - ah), 1));
 				}
 			}
 		}
@@ -3027,12 +2309,12 @@ UHUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::SetShip(Ship* s)
+HUDView::SetShip(Ship* s)
 {
 	if (ship != s) {
 		double new_scale = 1;
 
-		ship_status = -1;
+		ship_status = SYSTEM_STATUS::UNKNOWN;
 		ship = s;
 
 		if (ship) {
@@ -3045,7 +2327,7 @@ UHUDView::SetShip(Ship* s)
 
 				if (ship->Design()->hud_icon.Width()) {
 					TransferBitmap(ship->Design()->hud_icon, icon_ship, icon_ship_shade);
-					ColorizeBitmap(icon_ship, icon_ship_shade, txt_color);
+					ColorizeBitmap(icon_ship, icon_ship_shade, TextColor);
 				}
 			}
 		}
@@ -3080,20 +2362,20 @@ UHUDView::SetShip(Ship* s)
 
 	else if (ship && ship->Design()->hud_icon.Width()) {
 		bool update = false;
-		SimSystem::STATUS s = SimSystem::NOMINAL;
+		SYSTEM_STATUS sstat = SYSTEM_STATUS::NOMINAL;
 		int integrity = (int)(ship->Integrity() / ship->Design()->integrity * 100);
 
-		if (integrity < 30)        s = SimSystem::CRITICAL;
-		else if (integrity < 60)   s = SimSystem::DEGRADED;
+		if (integrity < 30)        sstat = SYSTEM_STATUS::CRITICAL;
+		else if (integrity < 60)   sstat = SYSTEM_STATUS::DEGRADED;
 
-		if (s != ship_status) {
-			ship_status = s;
+		if (sstat != ship_status) {
+			ship_status = sstat;
 			update = true;
 		}
 
 		if (update) {
 			SetStatusColor((SYSTEM_STATUS)ship_status);
-			ColorizeBitmap(icon_ship, icon_ship_shade, status_color);
+			ColorizeBitmap(icon_ship, icon_ship_shade, StatusColor);
 		}
 	}
 
@@ -3130,27 +2412,27 @@ UHUDView::SetShip(Ship* s)
 }
 
 void
-UHUDView::SetTarget(SimObject* t)
+HUDView::SetTarget(SimObject* t)
 {
 	bool update = false;
 
 	if (target != t) {
-		tgt_status = -1;
+		tgt_status = SYSTEM_STATUS::UNKNOWN;
 		target = t;
 		if (target) Observe(target);
 		update = true;
 	}
 
 	if (target && target->Type() == SimObject::SIM_SHIP) {
-		SYSTEM_STATUS s = SYSTEM_STATUS::NOMINAL;
+		SYSTEM_STATUS sstat = SYSTEM_STATUS::NOMINAL;
 		Ship* tship = (Ship*)target;
 		int integrity = (int)(tship->Integrity() / tship->Design()->integrity * 100);
 
-		if (integrity < 30)        s = SYSTEM_STATUS::CRITICAL;
-		else if (integrity < 60)   s = SYSTEM_STATUS::DEGRADED;
+		if (integrity < 30)        sstat = SYSTEM_STATUS::CRITICAL;
+		else if (integrity < 60)   sstat = SYSTEM_STATUS::DEGRADED;
 
-		if ((int) s != tgt_status) {
-			tgt_status = (int)s;
+		if (sstat != tgt_status) {
+			tgt_status = sstat;
 			update = true;
 		}
 	}
@@ -3165,14 +2447,14 @@ UHUDView::SetTarget(SimObject* t)
 		}
 
 		SetStatusColor((SYSTEM_STATUS)tgt_status);
-		ColorizeBitmap(icon_target, icon_target_shade, status_color);
+		ColorizeBitmap(icon_target, icon_target_shade, StatusColor);
 	}
 }
 
 // +--------------------------------------------------------------------+
 
-UMFDView*
-UHUDView::GetMFD(int n) const
+MFDView*
+HUDView::GetMFD(int n) const
 {
 	if (n >= 0 && n < 3)
 		return mfd[n];
@@ -3183,7 +2465,7 @@ UHUDView::GetMFD(int n) const
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::Refresh()
+HUDView::Refresh()
 {
 	sim = Sim::GetSim();
 	mouse_in = false;
@@ -3201,9 +2483,9 @@ UHUDView::Refresh()
 
 	SetShip(sim->GetPlayerShip());
 
-	if (mode == (int)HUD_MODE::HUD_MODE_OFF) {
+	if (mode == EHUDMode::Off) {
 		if (cockpit_hud_texture) {
-			cockpit_hud_texture->FillRect(0, 0, 512, 256, Color::Black);
+			cockpit_hud_texture->FillRect(0, 0, 512, 256, FColor::Black);
 		}
 
 		sim->ShowGrid(false);
@@ -3231,7 +2513,7 @@ UHUDView::Refresh()
 
 		if (hud_sprite[6]) {
 			if (hud_sprite[6]->Hidden()) {
-				cockpit_hud_texture->FillRect(0, 384, 128, 512, Color::Black);
+				cockpit_hud_texture->FillRect(0, 384, 128, 512, FColor::Black);
 			}
 			else {
 				hud_bmp = hud_sprite[6]->Frame();
@@ -3244,7 +2526,7 @@ UHUDView::Refresh()
 
 		if (hud_sprite[7]) {
 			if (hud_sprite[7]->Hidden()) {
-				cockpit_hud_texture->FillRect(128, 384, 256, 512, Color::Black);
+				cockpit_hud_texture->FillRect(128, 384, 256, 512, FColor::Black);
 			}
 			else {
 				hud_bmp = hud_sprite[7]->Frame();
@@ -3257,38 +2539,38 @@ UHUDView::Refresh()
 
 		for (int i = 8; i < 32; i++) {
 			if (hud_sprite[i] && !hud_sprite[i]->Hidden()) {
-				Sprite* spr = hud_sprite[i];
+				Sprite* s = hud_sprite[i];
 
-				int cx = (int)spr->Location().X;
-				int cy = (int)spr->Location().Y;
-				int w2 = spr->Width() / 2;
-				int h2 = spr->Height() / 2;
+				int cx = (int)s->Location().X;
+				int cy = (int)s->Location().Y;
+				int w2 = s->Width() / 2;
+				int h2 = s->Height() / 2;
 
-				window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, spr->Frame(), Video::BLEND_ALPHA);
+				window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, s->Frame(), Video::BLEND_ALPHA);
 			}
 		}
 	}
 	else {
 		for (int i = 0; i < 32; i++) {
 			if (hud_sprite[i] && !hud_sprite[i]->Hidden()) {
-				Sprite* spr = hud_sprite[i];
+				Sprite* s = hud_sprite[i];
 
-				int cx = (int)spr->Location().X;
-				int cy = (int)spr->Location().Y;
-				int w2 = spr->Width() / 2;
-				int h2 = spr->Height() / 2;
+				int cx = (int)s->Location().X;
+				int cy = (int)s->Location().Y;
+				int w2 = s->Width() / 2;
+				int h2 = s->Height() / 2;
 
-				window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, spr->Frame(), Video::BLEND_ALPHA);
+				window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, s->Frame(), Video::BLEND_ALPHA);
 			}
 		}
 
 		Video* video = Video::GetInstance();
 
 		for (int i = 0; i < 31; i++) {
-			Sprite* spr = pitch_ladder[i];
+			Sprite* s = pitch_ladder[i];
 
-			if (spr && !spr->Hidden()) {
-				spr->Render2D(video);
+			if (s && !s->Hidden()) {
+				s->Render2D(video);
 			}
 		}
 	}
@@ -3309,10 +2591,10 @@ UHUDView::Refresh()
 			RestoreHUD();
 		}
 
-		CameraManager* cam_dir = CameraManager::GetInstance();
+		CameraManager* cam_mgr = CameraManager::GetInstance();
 
 		// everything is off during docking, except the final message:
-		if (cam_dir && cam_dir->GetMode() == CameraManager::MODE_DOCKING) {
+		if (cam_mgr && cam_mgr->GetMode() == CameraManager::MODE_DOCKING) {
 			docking = true;
 			HideAll();
 
@@ -3333,7 +2615,7 @@ UHUDView::Refresh()
 
 		// go to NAV mode during autopilot:
 		if (ship->GetNavSystem() && ship->GetNavSystem()->AutoNavEngaged() && !arcade)
-			mode = (int)HUD_MODE::HUD_MODE_NAV;
+			mode = EHUDMode::Navigation;
 
 		SetTarget(ship->GetTarget());
 
@@ -3393,7 +2675,7 @@ UHUDView::Refresh()
 		warn_right_sprite->Hide();
 
 		if (cockpit_hud_texture)
-			cockpit_hud_texture->FillRect(256, 384, 512, 512, Color::Black);
+			cockpit_hud_texture->FillRect(256, 384, 512, 512, FColor::Black);
 
 		if (show_inst) {
 			DrawInstructions();
@@ -3436,7 +2718,7 @@ UHUDView::Refresh()
 }
 
 void
-UHUDView::DrawMFDs()
+HUDView::DrawMFDs()
 {
 	for (int i = 0; i < 3; i++) {
 		mfd[i]->Show();
@@ -3449,7 +2731,7 @@ UHUDView::DrawMFDs()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::DrawStarSystem()
+HUDView::DrawStarSystem()
 {
 	if (sim && sim->GetStarSystem()) {
 		StarSystem* sys = sim->GetStarSystem();
@@ -3463,14 +2745,14 @@ UHUDView::DrawStarSystem()
 }
 
 void
-UHUDView::DrawOrbitalBody(OrbitalBody* body)
+HUDView::DrawOrbitalBody(OrbitalBody* body)
 {
 	if (body) {
 		FVector p = body->Rep()->Location();
 
 		projector->Transform(p);
 
-		if (p.Z > 100.0f) {
+		if (p.Z > 100) {
 			float r = (float)body->Radius();
 			r = projector->ProjectRadius(p, r);
 			projector->Project(p, false);
@@ -3479,13 +2761,13 @@ UHUDView::DrawOrbitalBody(OrbitalBody* body)
 				(int)(p.Y - r),
 				(int)(p.X + r),
 				(int)(p.Y + r),
-				Color::Cyan);
+				FColor::Cyan);
 		}
 
 		ListIter<OrbitalBody> iter = body->Satellites();
 		while (++iter) {
-			OrbitalBody* sat = iter.value();
-			DrawOrbitalBody(sat);
+			OrbitalBody* child = iter.value();
+			DrawOrbitalBody(child);
 		}
 	}
 }
@@ -3493,13 +2775,13 @@ UHUDView::DrawOrbitalBody(OrbitalBody* body)
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::ExecFrame(float DeltaTime)
+HUDView::ExecFrame()
 {
 	// update the position of HUD elements that are
 	// part of the 3D scene (like fpm and lcos sprites)
 	HideCompass();
 
-	if (ship && !transition && !docking && mode != (int)HUD_MODE::HUD_MODE_OFF) {
+	if (ship && !transition && !docking && mode != EHUDMode::Off) {
 		PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 		gunsight = p->Gunsight();
 
@@ -3513,8 +2795,8 @@ UHUDView::ExecFrame(float DeltaTime)
 				hud_left_sprite->SetAnimation(&hud_left_starship);
 				hud_right_sprite->SetAnimation(&hud_right_starship);
 
-				hud_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height / 2), 1.0f));
-				hud_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height / 2), 1.0f));
+				hud_left_sprite->MoveTo(FVector((float)(width / 2 - 128), (float)(height / 2), 1));
+				hud_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height / 2), 1));
 			}
 		}
 
@@ -3550,7 +2832,7 @@ UHUDView::ExecFrame(float DeltaTime)
 				DrawCompass();
 		}
 
-		if (mode == (int)HUD_MODE::HUD_MODE_TAC) {
+		if (mode == EHUDMode::Tactical) {
 			DrawSight();
 			DrawDesignators();
 		}
@@ -3567,7 +2849,6 @@ UHUDView::ExecFrame(float DeltaTime)
 
 	// if the hud is off or prohibited,
 	// hide all of the sprites:
-
 	else {
 		hud_left_sprite->Hide();
 		hud_right_sprite->Hide();
@@ -3597,39 +2878,63 @@ UHUDView::ExecFrame(float DeltaTime)
 	}
 }
 
+
+
+// +--------------------------------------------------------------------+
+// Local helpers
+// +--------------------------------------------------------------------+
+
+static inline FColor DimColor(const FColor& In, float Scalar)
+{
+	Scalar = FMath::Clamp(Scalar, 0.0f, 1.0f);
+
+	const uint8 R = (uint8)FMath::Clamp(FMath::RoundToInt(In.R * Scalar), 0, 255);
+	const uint8 G = (uint8)FMath::Clamp(FMath::RoundToInt(In.G * Scalar), 0, 255);
+	const uint8 B = (uint8)FMath::Clamp(FMath::RoundToInt(In.B * Scalar), 0, 255);
+
+	return FColor(R, G, B, In.A);
+}
+
+static const FColor HUD_DarkGray(64, 64, 64, 255);
+static const FColor HUD_Orange(255, 165, 0, 255);
+
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::CycleMFDMode(int mfd_index)
+HUDView::CycleMFDMode(int mfd_index)
 {
 	if (mfd_index < 0 || mfd_index > 2) return;
 
-	int m = (int) mfd[mfd_index]->GetMode();
-	m++;
+	EMFDMode Mode = mfd[mfd_index]->GetMode();
+	int32 M = static_cast<int32>(Mode);
+	++M;
+	Mode = static_cast<EMFDMode>(M);
 
-	if (mfd_index == 2) {
-		if (m > (int)EMFDMode::SHIP)
-			m = (int)EMFDMode::OFF;
+	if (mfd_index == 2)
+	{
+		if (Mode > EMFDMode::SHIP)
+			Mode = EMFDMode::OFF;
 	}
-	else {
-		if (m > (int)EMFDMode::RADAR3D)
-			m = (int)EMFDMode::OFF;
+	else
+	{
+		if (Mode > EMFDMode::RADAR3D)
+			Mode = EMFDMode::OFF;
 
-		if (m == (int)EMFDMode::GAME)
-			m++;
+		if (Mode == EMFDMode::GAME)
+			Mode = static_cast<EMFDMode>(static_cast<int32>(Mode) + 1);
 
-		if (mfd_index != 0 && m == (int)EMFDMode::SHIP)
-			m++;
+		if (mfd_index != 0 && Mode == EMFDMode::SHIP)
+			Mode = static_cast<EMFDMode>(static_cast<int32>(Mode) + 1);
 	}
 
-	mfd[mfd_index]->SetMode((int)m);
+	mfd[mfd_index]->SetMode(Mode);
 	HUDSounds::PlaySound(HUDSounds::SND_MFD_MODE);
 }
 
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::ShowHUDWarn()
+HUDView::ShowHUDWarn()
 {
 	if (!show_warn) {
 		show_warn = true;
@@ -3642,7 +2947,7 @@ UHUDView::ShowHUDWarn()
 }
 
 void
-UHUDView::ShowHUDInst()
+HUDView::ShowHUDInst()
 {
 	show_inst = true;
 }
@@ -3650,7 +2955,7 @@ UHUDView::ShowHUDInst()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::HideHUDWarn()
+HUDView::HideHUDWarn()
 {
 	show_warn = false;
 
@@ -3661,7 +2966,7 @@ UHUDView::HideHUDWarn()
 }
 
 void
-UHUDView::HideHUDInst()
+HUDView::HideHUDInst()
 {
 	show_inst = false;
 }
@@ -3669,7 +2974,7 @@ UHUDView::HideHUDInst()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::CycleHUDWarn()
+HUDView::CycleHUDWarn()
 {
 	HUDSounds::PlaySound(HUDSounds::SND_HUD_WIDGET);
 	show_warn = !show_warn;
@@ -3681,7 +2986,7 @@ UHUDView::CycleHUDWarn()
 }
 
 void
-UHUDView::CycleHUDInst()
+HUDView::CycleHUDInst()
 {
 	show_inst = !show_inst;
 	HUDSounds::PlaySound(HUDSounds::SND_HUD_WIDGET);
@@ -3690,43 +2995,40 @@ UHUDView::CycleHUDInst()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::SetHUDMode(int m)
+HUDView::SetHUDMode(EHUDMode m)
 {
 	if (mode != m) {
 		mode = m;
 
-		if (mode > (int) HUD_MODE::HUD_MODE_ILS || mode < (int)HUD_MODE::HUD_MODE_OFF)
-			mode = (int) HUD_MODE::HUD_MODE_OFF;
+		if (mode > EHUDMode::ILS || mode < EHUDMode::Off)
+			mode = EHUDMode::Off;
 
-		if (ship && !ship->IsDropship() && mode == (int)HUD_MODE::HUD_MODE_ILS)
-			mode = (int)HUD_MODE::HUD_MODE_OFF;
+		if (ship && !ship->IsDropship() && mode == EHUDMode::ILS)
+			mode = EHUDMode::Off;
 
 		RestoreHUD();
 	}
 }
 
-void
-UHUDView::CycleHUDMode()
+void HUDView::CycleHUDMode()
 {
-	mode++;
+	mode = EnumInc(mode);
 
-	if (arcade && mode != (int)HUD_MODE::HUD_MODE_TAC)
-		mode = (int)HUD_MODE::HUD_MODE_OFF;
-
-	else if (mode > (int)HUD_MODE::HUD_MODE_ILS || mode < (int)HUD_MODE::HUD_MODE_OFF)
-		mode = (int)HUD_MODE::HUD_MODE_OFF;
-
-	else if (!ship->IsDropship() && mode == (int)HUD_MODE::HUD_MODE_ILS)
-		mode = (int)HUD_MODE::HUD_MODE_OFF;
+	if (arcade && mode != EHUDMode::Tactical)
+		mode = EHUDMode::Off;
+	else if (mode > EHUDMode::ILS) // enum class: don’t use mode < Off
+		mode = EHUDMode::Off;
+	else if (ship && !ship->IsDropship() && mode == EHUDMode::ILS)
+		mode = EHUDMode::Off;
 
 	RestoreHUD();
 	HUDSounds::PlaySound(HUDSounds::SND_HUD_MODE);
 }
 
 void
-UHUDView::RestoreHUD()
+HUDView::RestoreHUD()
 {
-	if (mode == (int)HUD_MODE::HUD_MODE_OFF) {
+	if (mode == EHUDMode::Off) {
 		HideAll();
 	}
 	else {
@@ -3760,7 +3062,7 @@ UHUDView::RestoreHUD()
 }
 
 void
-UHUDView::HideAll()
+HUDView::HideAll()
 {
 	for (int i = 0; i < 3; i++)
 		mfd[i]->Hide();
@@ -3799,9 +3101,9 @@ UHUDView::HideAll()
 // +--------------------------------------------------------------------+
 
 FColor
-UHUDView::Ambient() const
+HUDView::Ambient() const
 {
-	if (!sim || !ship || mode == (int)HUD_MODE::HUD_MODE_OFF)
+	if (!sim || !ship || mode == EHUDMode::Off)
 		return FColor::Black;
 
 	SimRegion* rgn = sim->GetActiveRegion();
@@ -3809,6 +3111,8 @@ UHUDView::Ambient() const
 	if (!rgn || !rgn->IsAirSpace())
 		return FColor::Black;
 
+	// Legacy: Color c = sim->GetStarSystem()->Ambient();
+	// Now: assume StarSystem ambient returns FColor (or adapt at call site).
 	FColor c = sim->GetStarSystem()->Ambient();
 
 	if (c.R > 32 || c.G > 32 || c.B > 32)
@@ -3819,118 +3123,124 @@ UHUDView::Ambient() const
 }
 
 FColor
-UHUDView::CycleHUDColor()
+HUDView::CycleHUDColor()
 {
 	HUDSounds::PlaySound(HUDSounds::SND_HUD_MODE);
 	SetHUDColorSet(color + 1);
-	return hud_color;
+	return HudColor;
 }
 
 void
-UHUDView::SetHUDColorSet(int c)
+HUDView::SetHUDColorSet(int c)
 {
 	color = c;
 	if (color > NUM_HUD_COLORS - 1) color = 0;
-	hud_color = standard_hud_colors[color];
-	txt_color = standard_txt_colors[color];
 
-	ColorizeBitmap(fpm, fpm_shade, hud_color, true);
-	ColorizeBitmap(hpm, hpm_shade, hud_color, true);
-	ColorizeBitmap(lead, lead_shade, txt_color * 1.25, true);
-	ColorizeBitmap(cross, cross_shade, hud_color, true);
-	ColorizeBitmap(cross1, cross1_shade, hud_color, true);
-	ColorizeBitmap(cross2, cross2_shade, hud_color, true);
-	ColorizeBitmap(cross3, cross3_shade, hud_color, true);
-	ColorizeBitmap(cross4, cross4_shade, hud_color, true);
+	HudColor = standard_hud_colors[color];
+	TextColor = standard_txt_colors[color];
+
+	ColorizeBitmap(fpm, fpm_shade, HudColor, true);
+	ColorizeBitmap(hpm, hpm_shade, HudColor, true);
+	ColorizeBitmap(lead, lead_shade, DimColor(TextColor, 1.0f), true); // legacy txt_color * 1.25
+	ColorizeBitmap(cross, cross_shade, HudColor, true);
+	ColorizeBitmap(cross1, cross1_shade, HudColor, true);
+	ColorizeBitmap(cross2, cross2_shade, HudColor, true);
+	ColorizeBitmap(cross3, cross3_shade, HudColor, true);
+	ColorizeBitmap(cross4, cross4_shade, HudColor, true);
 
 	if (Game::MaxTexSize() > 128) {
-		ColorizeBitmap(hud_left_air, hud_left_shade_air, hud_color);
-		ColorizeBitmap(hud_right_air, hud_right_shade_air, hud_color);
-		ColorizeBitmap(hud_left_fighter, hud_left_shade_fighter, hud_color);
-		ColorizeBitmap(hud_right_fighter, hud_right_shade_fighter, hud_color);
-		ColorizeBitmap(hud_left_starship, hud_left_shade_starship, hud_color);
-		ColorizeBitmap(hud_right_starship, hud_right_shade_starship, hud_color);
+		ColorizeBitmap(hud_left_air, hud_left_shade_air, HudColor);
+		ColorizeBitmap(hud_right_air, hud_right_shade_air, HudColor);
+		ColorizeBitmap(hud_left_fighter, hud_left_shade_fighter, HudColor);
+		ColorizeBitmap(hud_right_fighter, hud_right_shade_fighter, HudColor);
+		ColorizeBitmap(hud_left_starship, hud_left_shade_starship, HudColor);
+		ColorizeBitmap(hud_right_starship, hud_right_shade_starship, HudColor);
 
-		ColorizeBitmap(instr_left, instr_left_shade, hud_color);
-		ColorizeBitmap(instr_right, instr_right_shade, hud_color);
-		ColorizeBitmap(warn_left, warn_left_shade, hud_color);
-		ColorizeBitmap(warn_right, warn_right_shade, hud_color);
+		ColorizeBitmap(instr_left, instr_left_shade, HudColor);
+		ColorizeBitmap(instr_right, instr_right_shade, HudColor);
+		ColorizeBitmap(warn_left, warn_left_shade, HudColor);
+		ColorizeBitmap(warn_right, warn_right_shade, HudColor);
 
-		ColorizeBitmap(pitch_ladder_pos, pitch_ladder_pos_shade, hud_color);
-		ColorizeBitmap(pitch_ladder_neg, pitch_ladder_neg_shade, hud_color);
+		ColorizeBitmap(pitch_ladder_pos, pitch_ladder_pos_shade, HudColor);
+		ColorizeBitmap(pitch_ladder_neg, pitch_ladder_neg_shade, HudColor);
 	}
 
-	ColorizeBitmap(icon_ship, icon_ship_shade, txt_color);
-	ColorizeBitmap(icon_target, icon_target_shade, txt_color);
+	ColorizeBitmap(icon_ship, icon_ship_shade, TextColor);
+	ColorizeBitmap(icon_target, icon_target_shade, TextColor);
 
-	ColorizeBitmap(chase_left, chase_left_shade, hud_color, true);
-	ColorizeBitmap(chase_right, chase_right_shade, hud_color, true);
-	ColorizeBitmap(chase_top, chase_top_shade, hud_color, true);
-	ColorizeBitmap(chase_bottom, chase_bottom_shade, hud_color, true);
+	ColorizeBitmap(chase_left, chase_left_shade, HudColor, true);
+	ColorizeBitmap(chase_right, chase_right_shade, HudColor, true);
+	ColorizeBitmap(chase_top, chase_top_shade, HudColor, true);
+	ColorizeBitmap(chase_bottom, chase_bottom_shade, HudColor, true);
 
-	UMFDView::SetColor(hud_color);
-	Hoop::SetColor(hud_color);
+	MFDView::SetColor(HudColor);
+	Hoop::SetColor(HudColor);
 
 	for (int i = 0; i < 3; i++)
-		mfd[i]->SetText3DColor(txt_color);
+		mfd[i]->SetText3DColor(TextColor);
 
-	SystemFont* font = FontManager::Find("HUD");
-	if (font)
-		font->SetColor(txt_color);
+	SystemFont* ffont = FontManager::Find("HUD");
+	if (ffont)
+		ffont->SetColor(TextColor);
 
 	for (int i = 0; i < TXT_LAST; i++)
-		hud_text[i].color = txt_color;
+		hud_text[i].color = TextColor;
 }
 
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::Message(const char* fmt, ...)
+HUDView::Message(const char* fmt, ...)
 {
-	if (fmt) {
-		char msg[512];
+	if (!fmt)
+		return;
 
-		va_list args;
-		va_start(args, fmt);
-		vsnprintf(msg, sizeof(msg), fmt, args);
-		va_end(args);
+	char msg[512] = { 0 };
 
-		char* newline = strchr(msg, '\n');
-		if (newline)
-			*newline = 0;
+	va_list args;
+	va_start(args, fmt);
+#if defined(_MSC_VER)
+	vsnprintf_s(msg, sizeof(msg), _TRUNCATE, fmt, args);
+#else
+	vsnprintf(msg, sizeof(msg), fmt, args);
+#endif
+	va_end(args);
 
-		UE_LOG(LogTemp, Log, TEXT("%hs"), msg);
+	if (char* newline = strchr(msg, '\n'))
+		*newline = 0;
 
-		if (hud_view) {
-			int index = -1;
+	// Legacy Print -> UE_LOG
+	UE_LOG(LogTemp, Log, TEXT("%s"), UTF8_TO_TCHAR(msg));
 
-			for (int i = 0; i < MAX_MSG; i++) {
-				if (hud_view->msg_time[i] <= 0) {
-					index = i;
-					break;
-				}
+	if (hud_view) {
+		int index = -1;
+
+		for (int i = 0; i < MAX_MSG; i++) {
+			if (hud_view->msg_time[i] <= 0) {
+				index = i;
+				break;
 			}
-
-			// no space; advance pipeline:
-			if (index < 0) {
-				for (int i = 0; i < MAX_MSG - 1; i++) {
-					hud_view->msg_text[i] = hud_view->msg_text[i + 1];
-					hud_view->msg_time[i] = hud_view->msg_time[i + 1];
-				}
-
-				index = MAX_MSG - 1;
-			}
-
-			hud_view->msg_text[index] = msg;
-			hud_view->msg_time[index] = 10;
 		}
+
+		// no space; advance pipeline:
+		if (index < 0) {
+			for (int i = 0; i < MAX_MSG - 1; i++) {
+				hud_view->msg_text[i] = hud_view->msg_text[i + 1];
+				hud_view->msg_time[i] = hud_view->msg_time[i + 1];
+			}
+
+			index = MAX_MSG - 1;
+		}
+
+		hud_view->msg_text[index] = msg;
+		hud_view->msg_time[index] = 10;
 	}
 }
 
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::ClearMessages()
+HUDView::ClearMessages()
 {
 	if (hud_view) {
 		for (int i = 0; i < MAX_MSG - 1; i++) {
@@ -3943,35 +3253,35 @@ UHUDView::ClearMessages()
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::PrepareBitmap(const char* name, Bitmap& img, BYTE*& shades)
+HUDView::PrepareBitmap(const char* name, Bitmap& img, uint8*& shades)
 {
 	delete[] shades;
-	shades = 0;
+	shades = nullptr;
 
 	DataLoader* loader = DataLoader::GetLoader();
 
 	loader->SetDataPath("HUD/");
 	int loaded = loader->LoadBitmap(name, img, Bitmap::BMP_TRANSPARENT);
-	loader->SetDataPath(0);
+	loader->SetDataPath(nullptr);
 
 	if (!loaded)
 		return;
 
-	int w = img.Width();
-	int h = img.Height();
+	const int w = img.Width();
+	const int h = img.Height();
 
-	shades = new BYTE[w * h];
+	shades = new uint8[w * h];
 
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
-			shades[y * w + x] = (BYTE)(img.GetColor(x, y).Red() * 0.66);
+			shades[y * w + x] = (uint8)(img.GetColor(x, y).R * 0.66f);
 }
 
 void
-UHUDView::TransferBitmap(const Bitmap& src, Bitmap& img, BYTE*& shades)
+HUDView::TransferBitmap(const Bitmap& src, Bitmap& img, uint8*& shades)
 {
 	delete[] shades;
-	shades = 0;
+	shades = nullptr;
 
 	if (src.Width() != img.Width() || src.Height() != img.Height())
 		return;
@@ -3979,21 +3289,22 @@ UHUDView::TransferBitmap(const Bitmap& src, Bitmap& img, BYTE*& shades)
 	img.CopyBitmap(src);
 	img.SetType(Bitmap::BMP_TRANSLUCENT);
 
-	int w = img.Width();
-	int h = img.Height();
+	const int w = img.Width();
+	const int h = img.Height();
 
-	shades = new BYTE[w * h];
+	shades = new uint8[w * h];
 
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
-			shades[y * w + x] = (BYTE)(img.GetColor(x, y).Red() * 0.5);
+			shades[y * w + x] = (uint8)(img.GetColor(x, y).R * 0.5f);
 }
 
-void UHUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool force_alpha)
+void
+HUDView::ColorizeBitmap(Bitmap& img, uint8* shades, FColor color, bool force_alpha)
 {
 	if (!shades) return;
 
-	int max_tex_size = Game::MaxTexSize();
+	const int max_tex_size = Game::MaxTexSize();
 
 	if (max_tex_size < 128)
 		Game::SetMaxTexSize(128);
@@ -4001,12 +3312,12 @@ void UHUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool forc
 	if (hud_view && hud_view->cockpit_hud_texture && !force_alpha) {
 		img.FillColor(FColor::Black);
 		FColor* dst = img.HiPixels();
-		BYTE* src = shades;
+		uint8* src = shades;
 
 		for (int y = 0; y < img.Height(); y++) {
 			for (int x = 0; x < img.Width(); x++) {
 				if (*src)
-					*dst = DimFColor(color, (float)(*src) / 200.0f);
+					*dst = DimColor(color, (*src) / 200.0f);
 				else
 					*dst = FColor::Black;
 
@@ -4014,7 +3325,6 @@ void UHUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool forc
 				src++;
 			}
 		}
-
 		img.MakeTexture();
 	}
 	else {
@@ -4030,7 +3340,7 @@ void UHUDView::ColorizeBitmap(Bitmap& img, BYTE* shades, FColor color, bool forc
 // +--------------------------------------------------------------------+
 
 void
-UHUDView::MouseFrame()
+HUDView::MouseFrame()
 {
 	MouseController* ctrl = MouseController::GetInstance();
 	if (ctrl && ctrl->Active())
@@ -4064,7 +3374,7 @@ UHUDView::MouseFrame()
 	if (mouse_index == TXT_HUD_MODE) {
 		CycleHUDMode();
 
-		if (mode == (int)HUD_MODE::HUD_MODE_OFF)
+		if (mode == EHUDMode::Off)
 			CycleHUDMode();
 	}
 
@@ -4102,19 +3412,19 @@ UHUDView::MouseFrame()
 
 	if (mouse_index >= TXT_NAV_INDEX && mouse_index <= TXT_NAV_ETR) {
 		ship->SetAutoNav(!ship->IsAutoNavEngaged());
-		SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
+		SetHUDMode(EHUDMode::Tactical);
 	}
 }
 
 // +--------------------------------------------------------------------+
 
 bool
-UHUDView::IsMouseLatched()
+HUDView::IsMouseLatched()
 {
 	bool result = mouse_in;
 
 	if (!result) {
-		UHUDView* hud = UHUDView::GetInstance();
+		HUDView* hud = HUDView::GetInstance();
 
 		for (int i = 0; i < 3; i++)
 			result = result || hud->mfd[i]->IsMouseLatched();
@@ -4126,7 +3436,7 @@ UHUDView::IsMouseLatched()
 // +--------------------------------------------------------------------+
 
 bool
-UHUDView::IsNameCrowded(int x, int y)
+HUDView::IsNameCrowded(int x, int y)
 {
 	for (int i = 0; i < MAX_CONTACT; i++) {
 		HUDText& test = hud_text[TXT_CONTACT_NAME + i];
@@ -4160,22 +3470,23 @@ UHUDView::IsNameCrowded(int x, int y)
 }
 
 void
-UHUDView::DrawDiamond(int x, int y, int r, FColor c)
+HUDView::DrawDiamond(int x, int y, int r, FColor c)
 {
-	FVector diamond[4];
+	// Avoid Windows POINT; keep a tiny local POD that matches legacy usage.
+	struct SPolyPoint { int x; int y; };
+	SPolyPoint diamond[4];
 
-	diamond[0].X = x;
-	diamond[0].Y = y - r;
+	diamond[0].x = x;
+	diamond[0].y = y - r;
 
-	diamond[1].X = x + r;
-	diamond[1].Y = y;
+	diamond[1].x = x + r;
+	diamond[1].y = y;
 
-	diamond[2].X = x;
-	diamond[2].Y = y + r;
+	diamond[2].x = x;
+	diamond[2].y = y + r;
 
-	diamond[3].X = x - r;
-	diamond[3].Y = y;
+	diamond[3].x = x - r;
+	diamond[3].y = y;
 
-	window->DrawPoly(4, diamond, c);
+	window->DrawPoly(4, (FVector*)diamond, c);
 }
-

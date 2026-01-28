@@ -174,6 +174,28 @@ int SystemFont::DrawTextW(const wchar_t* text, int len, int x, int y, const Rect
     return video->DrawTextW(*this, text, len, x, y, clip);
 }
 
+int SystemFont::DrawText(const Text& text, int len, const Rect& clip, uint32 flags) const
+{
+    // If Text can provide UTF-8/ANSI:
+    const char* s = (const char*)text;   // if your Text supports this
+    if (!s) s = "";
+
+    if (len < 0)
+        len = (int)strlen(s);
+
+    return DrawText(s, len, clip, flags);
+}
+
+int SystemFont::DrawText(const char* text, int len, const Rect& clip, uint32 flags, Bitmap* target) const
+{
+    return 0;
+}
+
+int SystemFont::DrawText(const Text& text, int len, const Rect& clip, uint32 flags, Bitmap* target) const
+{
+    return 0;
+}
+
 static Video* GetActiveVideo()
 {
     Screen* screen = Screen::GetCurrent(); // or however you access it

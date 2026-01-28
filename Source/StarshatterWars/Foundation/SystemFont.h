@@ -69,6 +69,29 @@ public:
         uint32 flags
     ) const;
 
+    int DrawText(
+        const Text& text,
+        int len,
+        const Rect& clip,
+        uint32 flags
+    ) const;
+
+    int DrawText(
+        const char* text,
+        int len,
+        const Rect& clip,
+        uint32 flags,
+        Bitmap* target
+    ) const;
+
+    int DrawText(
+        const Text& text,
+        int len,
+        const Rect& clip,
+        uint32 flags,
+        Bitmap* target
+    ) const;
+
     // Basic state:
     void   SetUFont(UFont* InFont);
     UFont* GetUFont() const;

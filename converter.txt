@@ -48,6 +48,10 @@ add to .h files#include "Math/UnrealMathUtility.h" //Math
 Use Unreal FColor in place of the current Color
 Format all components correctly use .X, .Y and .Z for FVector
 
+add "Include "GameStructs.h" as the last include for the .h 
+use UE memory functions
+use UE Random functions
+
 Remove any (__FILE__, __LINE__) as not supported in Unreal
 
 apply this template to the pasted file
