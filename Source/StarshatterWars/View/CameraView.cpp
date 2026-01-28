@@ -1,135 +1,129 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026.
+    Copyright (C) 2025–2026.
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
     FILE:         CameraView.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR: John DiCamillo
-    ORIGINAL STUDIO: Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo
+    Destroyer Studios LLC
+    Copyright (C) 1997–2004.
 
     OVERVIEW
     ========
-    3D Projection Camera View class
-    uses abstract PolyRender class to draw the triangles
+    CameraView implementation.
+
+    Uses legacy Video/Projector/Scene pipeline. This class does not own
+    rendering resources; it coordinates view rect, projection settings,
+    visibility, sorting, and optional lens flare.
 */
 
 #include "CameraView.h"
-
-#include "Color.h"
-#include "Window.h"
+#include "Camera.h"
+#include "Geometry.h"
 #include "SimScene.h"
 #include "SimLight.h"
 #include "Solid.h"
 #include "Shadow.h"
-#include "Sprite.h"
 #include "Video.h"
+#include "Bitmap.h"
 #include "Screen.h"
-#include "Game.h"
+#include "GameStructs.h"
 
-// Unreal render asset replacement:
-#include "Engine/Texture2D.h"
-
-// Unreal logging / math:
-#include "Logging/LogMacros.h"
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCameraView, Log, All);
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Emergency fallbacks (legacy behavior):
+static Camera emergency_cam;
+static SimScene  emergency_scene;
 
-static Camera   emergency_cam;
-static SimScene emergency_scene;
+// --------------------------------------------------------------------
 
-// +--------------------------------------------------------------------+
+CameraView::CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera* cam, SimScene* s)
+    : View(InScreen, ax, ay, aw, ah)
+    , camera(cam)
+    , scene(s)
+    , projector(GetWindow(), cam)   // CORRECT
+    , infinite(0)
+    , projection_type(Video::PROJECTION_PERSPECTIVE)
+{
+    if (!camera)
+        camera = &emergency_cam;
 
-UCameraView::UCameraView(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-    , projector(nullptr, nullptr) // will be re-bound in InitializeView()
+    if (!scene)
+        scene = &emergency_scene;
+
+    width = aw;
+    height = ah;
+}
+
+CameraView::~CameraView()
 {
 }
 
-void UCameraView::InitializeView(Window* InWindow, Camera* InCamera, SimScene* InScene)
-{
-    window = InWindow;
-    camera = InCamera ? InCamera : &emergency_cam;
-    scene = InScene ? InScene : &emergency_scene;
+// --------------------------------------------------------------------
 
-    // Rebind projector now that we have a window + camera:
-    projector = SimProjector(window, camera);
-
-    lens_flare_enable = 0;
-    halo_bitmap = nullptr;
-
-    elem_bitmap[0] = nullptr;
-    elem_bitmap[1] = nullptr;
-    elem_bitmap[2] = nullptr;
-
-    if (window)
-    {
-        Rect r = window->GetRect();
-        width = r.w;
-        height = r.h;
-        projector.UseWindow(window);
-    }
-}
-
-void UCameraView::UseCamera(Camera* cam)
+void CameraView::UseCamera(Camera* cam)
 {
     camera = cam ? cam : &emergency_cam;
     projector.UseCamera(camera);
 }
 
-void UCameraView::UseScene(SimScene* s)
+void CameraView::UseScene(SimScene* s)
 {
     scene = s ? s : &emergency_scene;
 }
 
-void UCameraView::SetFieldOfView(double fov)
+void CameraView::SetFieldOfView(double fov)
 {
     projector.SetFieldOfView(fov);
 }
 
-double UCameraView::GetFieldOfView() const
+double CameraView::GetFieldOfView() const
 {
     return projector.GetFieldOfView();
 }
 
-void UCameraView::SetProjectionType(DWORD pt)
+void CameraView::SetProjectionType(uint32 pt)
 {
     projector.SetOrthogonal(pt == Video::PROJECTION_ORTHOGONAL);
     projection_type = pt;
 }
 
-DWORD UCameraView::GetProjectionType() const
+uint32 CameraView::GetProjectionType() const
 {
     return projection_type;
 }
 
-void UCameraView::OnWindowMove()
+void CameraView::OnWindowMove()
 {
-    if (!window)
-        return;
-
-    Rect r = window->GetRect();
-    projector.UseWindow(window);
-
+    // With the new View system, your rect should already be authoritative.
+    // If Screen size changes, you typically rebuild views or call this.
+    Rect r = GetRect(); // assumes View exposes GetRect()
     width = r.w;
     height = r.h;
+
+    // Keep projector in sync:
+    projector.UseWindow(GetWindow()); // if your Projector expects Screen*; rename if needed
 }
 
-// +--------------------------------------------------------------------+
-// Enable or disable lens flare effect, and provide textures for rendering
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Lens flare controls
+// --------------------------------------------------------------------
 
-void UCameraView::LensFlare(int on, double dim)
+void CameraView::LensFlare(int on, double dim)
 {
     lens_flare_enable = on;
     lens_flare_dim = dim;
 }
 
-void UCameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap* e3)
+void CameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap* e3)
 {
     if (halo) halo_bitmap = halo;
     if (e1)   elem_bitmap[0] = e1;
@@ -137,11 +131,21 @@ void UCameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap
     if (e3)   elem_bitmap[2] = e3;
 }
 
-// +--------------------------------------------------------------------+
-// Compute the Depth of a Graphic
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
-void UCameraView::FindDepth(Graphic* g)
+int CameraView::SetInfinite(int i)
+{
+    int old = infinite;
+    infinite = i;
+    projector.SetInfinite(i);
+    return old;
+}
+
+// --------------------------------------------------------------------
+// Depth computation
+// --------------------------------------------------------------------
+
+void CameraView::FindDepth(Graphic* g)
 {
     if (!g || !camera)
         return;
@@ -152,31 +156,34 @@ void UCameraView::FindDepth(Graphic* g)
         return;
     }
 
-    // Viewpoint-relative vector (world space):
     const FVector loc = g->Location() - camera->Pos();
 
-    // Starshatter used (Vec3 * Vec3) as dot product.
-    const FVector vpnv = camera->vpn();
-    const float z = FVector::DotProduct(loc, vpnv);
-
+    const float z = FVector::DotProduct(loc, camera->vpn());
     g->SetDepth(z);
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
-void UCameraView::Refresh()
+void CameraView::Refresh()
 {
-    // Disabled:
+    // Disabled / emergency camera:
     if (camera == &emergency_cam)
         return;
 
     video = Video::GetInstance();
-    if (!video || !window || !scene || !camera)
+    if (!video)
+    {
+        UE_LOG(LogCameraView, Warning, TEXT("CameraView::Refresh - Video::GetInstance() returned null"));
         return;
+    }
 
-    cvrt = (FVector)camera->vrt();
-    cvup = (FVector)camera->vup();
-    cvpn = (FVector)camera->vpn();
+    Rect r = GetRect();
+    width = r.w;
+    height = r.h;
+
+    cvrt = camera->vrt();
+    cvup = camera->vup();
+    cvpn = camera->vpn();
 
     TranslateScene();
     MarkVisibleObjects();
@@ -185,7 +192,7 @@ void UCameraView::Refresh()
     video->GetWindowRect(old_rect);
 
     video->SetCamera(camera);
-    video->SetWindowRect(window->GetRect());
+    video->SetWindowRect(r);
     video->SetProjection((float)GetFieldOfView(), 1.0f, 1.0e6f, projection_type);
 
     RenderBackground();
@@ -199,19 +206,19 @@ void UCameraView::Refresh()
     video->SetWindowRect(old_rect);
 }
 
-// +--------------------------------------------------------------------+
-// Translate all objects and lights to camera relative coordinates:
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Translate scene to camera-relative coordinates
+// --------------------------------------------------------------------
 
-void UCameraView::TranslateScene()
+void CameraView::TranslateScene()
 {
-    camera_loc = (FVector)camera->Pos();
+    camera_loc = camera->Pos();
 
     ListIter<Graphic> g_iter = scene->Graphics();
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (graphic && !graphic->IsInfinite())
+        if (!graphic->IsInfinite())
             graphic->TranslateBy(camera_loc);
     }
 
@@ -219,15 +226,14 @@ void UCameraView::TranslateScene()
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (graphic)
-            graphic->TranslateBy(camera_loc);
+        graphic->TranslateBy(camera_loc);
     }
 
     g_iter.attach(scene->Sprites());
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (graphic && !graphic->IsInfinite())
+        if (!graphic->IsInfinite())
             graphic->TranslateBy(camera_loc);
     }
 
@@ -235,26 +241,21 @@ void UCameraView::TranslateScene()
     while (++l_iter)
     {
         SimLight* light = l_iter.value();
-        if (light)
-            light->TranslateBy(camera_loc);
+        light->TranslateBy(camera_loc);
     }
 
     camera->MoveTo(0, 0, 0);
 }
 
-// +--------------------------------------------------------------------+
-// Translate all objects and lights back to original positions:
-// +--------------------------------------------------------------------+
-
-void UCameraView::UnTranslateScene()
+void CameraView::UnTranslateScene()
 {
-    const FVector reloc = -camera_loc;
+    FVector reloc = -camera_loc;
 
     ListIter<Graphic> g_iter = scene->Graphics();
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (graphic && !graphic->IsInfinite())
+        if (!graphic->IsInfinite())
             graphic->TranslateBy(reloc);
     }
 
@@ -262,15 +263,14 @@ void UCameraView::UnTranslateScene()
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (graphic)
-            graphic->TranslateBy(reloc);
+        graphic->TranslateBy(reloc);
     }
 
     g_iter.attach(scene->Sprites());
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (graphic && !graphic->IsInfinite())
+        if (!graphic->IsInfinite())
             graphic->TranslateBy(reloc);
     }
 
@@ -278,18 +278,17 @@ void UCameraView::UnTranslateScene()
     while (++l_iter)
     {
         SimLight* light = l_iter.value();
-        if (light)
-            light->TranslateBy(reloc);
+        light->TranslateBy(reloc);
     }
 
     camera->MoveTo(camera_loc);
 }
 
-// +--------------------------------------------------------------------+
-// Mark visible objects
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Visibility
+// --------------------------------------------------------------------
 
-void UCameraView::MarkVisibleObjects()
+void CameraView::MarkVisibleObjects()
 {
     projector.StartFrame();
     graphics.clear();
@@ -314,61 +313,57 @@ void UCameraView::MarkVisibleObjects()
     }
 }
 
-void UCameraView::MarkVisibleLights(Graphic* graphic, DWORD flags)
+void CameraView::MarkVisibleLights(Graphic* graphic, uint32 flags)
 {
-    if (!graphic || !scene || !camera)
+    if (!graphic)
         return;
 
     if (flags < Graphic::RENDER_FIRST_LIGHT)
         flags = flags | Graphic::RENDER_FIRST_LIGHT | Graphic::RENDER_ADD_LIGHT;
 
-    if (graphic->IsVisible())
+    if (!graphic->IsVisible())
+        return;
+
+    ListIter<SimLight> light_iter = scene->Lights();
+    while (++light_iter)
     {
-        ListIter<SimLight> light_iter = scene->Lights();
-        while (++light_iter)
+        SimLight* light = light_iter.value();
+        if (!light)
+            continue;
+
+        bool bright_enough =
+            light->Type() == LIGHTTYPE::LIGHT_DIRECTIONAL ||
+            light->Intensity() >= 1e9;
+
+        if (!bright_enough)
         {
-            SimLight* light = light_iter.value();
-            if (!light)
-                continue;
-
-            bool bright_enough =
-                light->Type() == SimLight::LIGHT_DIRECTIONAL ||
-                light->Intensity() >= 1e9;
-
-            if (!bright_enough)
-            {
-                const FVector test = (graphic->Location() - light->Location());
-                if (test.Size() < (float)(light->Intensity() * 10))
-                    bright_enough = true;
-            }
-
-            if (light->CastsShadow())
-            {
-                if ((flags & Graphic::RENDER_ADD_LIGHT) == 0)
-                    bright_enough = false;
-            }
-            else
-            {
-                if ((flags & Graphic::RENDER_FIRST_LIGHT) == 0)
-                    bright_enough = false;
-            }
-
-            double obs_radius = graphic->Radius();
-            if (obs_radius < 100) obs_radius = 100;
-
-            light->SetActive(bright_enough);
+            FVector test = graphic->Location() - light->Location();
+            if (test.Length() < light->Intensity() * 10)
+                bright_enough = true;
         }
+
+        if (light->CastsShadow())
+        {
+            if ((flags & Graphic::RENDER_ADD_LIGHT) == 0)
+                bright_enough = false;
+        }
+        else
+        {
+            if ((flags & Graphic::RENDER_FIRST_LIGHT) == 0)
+                bright_enough = false;
+        }
+
+        light->SetActive(bright_enough);
     }
 }
 
 // --------------------------------------------------------------------
-// Rendering methods (unchanged logic)
+// Rendering passes (legacy Video pipeline preserved)
 // --------------------------------------------------------------------
 
-void UCameraView::RenderBackground()
+void CameraView::RenderBackground()
 {
-    if (scene->Background().isEmpty())
-        return;
+    if (scene->Background().isEmpty()) return;
 
     video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
     video->SetRenderState(Video::Z_ENABLE, FALSE);
@@ -401,7 +396,7 @@ void UCameraView::RenderBackground()
     }
 }
 
-void UCameraView::RenderForeground()
+void CameraView::RenderForeground()
 {
     bool foregroundVisible = false;
 
@@ -427,29 +422,20 @@ void UCameraView::RenderForeground()
     {
         iter.reset();
         while (++iter)
-        {
-            Graphic* g = iter.value();
-            Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
-        }
+            Render(iter.value(), Graphic::RENDER_SOLID | Graphic::RENDER_FIRST_LIGHT);
 
         video->SetAmbient(FColor::Black);
         video->SetRenderState(Video::LIGHTING_PASS, 2);
 
         iter.reset();
         while (++iter)
-        {
-            Graphic* g = iter.value();
-            Render(g, Graphic::RENDER_SOLID | Graphic::RENDER_ADD_LIGHT);
-        }
+            Render(iter.value(), Graphic::RENDER_SOLID | Graphic::RENDER_ADD_LIGHT);
     }
     else
     {
         iter.reset();
         while (++iter)
-        {
-            Graphic* g = iter.value();
-            Render(g, Graphic::RENDER_SOLID);
-        }
+            Render(iter.value(), Graphic::RENDER_SOLID);
     }
 
     video->SetAmbient(scene->Ambient());
@@ -462,23 +448,28 @@ void UCameraView::RenderForeground()
     while (++iter)
     {
         Graphic* g = iter.value();
-        Render(g, Graphic::RENDER_ALPHA);
-        if (g) g->ProjectScreenRect(&projector);
+        if (g)
+        {
+            Render(g, Graphic::RENDER_ALPHA);
+            g->ProjectScreenRect(&projector);
+        }
     }
 
     iter.reset();
     while (++iter)
     {
         Graphic* g = iter.value();
-        Render(g, Graphic::RENDER_ADDITIVE);
-        if (g) g->ProjectScreenRect(&projector);
+        if (g)
+        {
+            Render(g, Graphic::RENDER_ADDITIVE);
+            g->ProjectScreenRect(&projector);
+        }
     }
 }
 
-void UCameraView::RenderSprites()
+void CameraView::RenderSprites()
 {
-    if (scene->Sprites().isEmpty())
-        return;
+    if (scene->Sprites().isEmpty()) return;
 
     video->SetRenderState(Video::FILL_MODE, Video::FILL_SOLID);
     video->SetRenderState(Video::Z_ENABLE, TRUE);
@@ -505,10 +496,9 @@ void UCameraView::RenderSprites()
         Render(iter.value(), Graphic::RENDER_ADDITIVE);
 }
 
-void UCameraView::RenderScene()
+void CameraView::RenderScene()
 {
-    if (graphics.isEmpty())
-        return;
+    if (graphics.isEmpty()) return;
 
     ListIter<Graphic> iter = graphics;
     while (++iter)
@@ -544,7 +534,7 @@ void UCameraView::RenderScene()
     RenderSceneObjects(false);
 }
 
-void UCameraView::RenderSceneObjects(bool distant)
+void CameraView::RenderSceneObjects(bool distant)
 {
     ListIter<Graphic> iter = graphics;
 
@@ -584,12 +574,12 @@ void UCameraView::RenderSceneObjects(bool distant)
                     if (g->IsSolid())
                     {
                         Solid* solid = (Solid*)g;
-
                         ListIter<Shadow> shadow_iter = solid->GetShadows();
                         while (++shadow_iter)
                         {
                             Shadow* shadow = shadow_iter.value();
-                            if (shadow) shadow->Render(video);
+                            if (shadow)
+                                shadow->Render(video);
                         }
                     }
                 }
@@ -656,7 +646,7 @@ void UCameraView::RenderSceneObjects(bool distant)
     }
 }
 
-void UCameraView::Render(Graphic* g, DWORD flags)
+void CameraView::Render(Graphic* g, uint32 flags)
 {
     if (g && g->IsVisible() && !g->Hidden())
     {
@@ -670,28 +660,120 @@ void UCameraView::Render(Graphic* g, DWORD flags)
     }
 }
 
-// NOTE: RenderLensFlare() and WorldPlaneToView() can remain exactly as you pasted.
-// Keep them unchanged; they compile once the class is UCameraView and projector/window/camera are valid.
+// --------------------------------------------------------------------
+// Lens flare (legacy draw calls preserved; you may redirect to Video later)
+// --------------------------------------------------------------------
 
-void UCameraView::WorldPlaneToView(Plane& plane)
+void CameraView::RenderLensFlare()
 {
-    const FVector WorldNormal = plane.normal;
+    if (!lens_flare_enable || lens_flare_dim < 0.01)
+        return;
 
-    if (!infinite && camera)
-        plane.distance -= FVector::DotProduct(camera->Pos(), WorldNormal);
+    if (!halo_bitmap)
+        return;
 
-    plane.normal.X = FVector::DotProduct(WorldNormal, cvrt);
-    plane.normal.Y = FVector::DotProduct(WorldNormal, cvup);
-    plane.normal.Z = FVector::DotProduct(WorldNormal, cvpn);
+    if (!video || !scene || !camera)
+        return;
+
+    video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
+    video->SetRenderState(Video::Z_ENABLE, FALSE);
+    video->SetRenderState(Video::Z_WRITE_ENABLE, FALSE);
+
+    const FVector center((float)width / 2.0f, (float)height / 2.0f, 1.0f);
+
+    ListIter<SimLight> light_iter = scene->Lights();
+    while (++light_iter)
+    {
+        SimLight* light = light_iter.value();
+        if (!light || !light->IsActive())
+            continue;
+
+        if (light->Type() == LIGHTTYPE::LIGHT_DIRECTIONAL && light->Intensity() < 1)
+            continue;
+
+        const double distance = (light->Location() - camera->Pos()).Size();
+
+        if (distance > 1e9)
+        {
+            if (projector.IsVisible(light->Location(), 1.0f))
+            {
+                FVector sun_pos = light->Location();
+
+                if (light->CastsShadow() && scene->IsLightObscured(camera->Pos(), sun_pos, -1))
+                    continue;
+
+                projector.Transform(sun_pos);
+
+                if (sun_pos.Z < 100)
+                    continue;
+
+                projector.Project(sun_pos, false);
+
+                int x = (int)(sun_pos.X);
+                int y = (int)(sun_pos.Y);
+                int w = (int)(width / 4.0);
+                int h = w;
+
+                // Draw halo:
+                DrawBitmap(
+                    x - w,
+                    y - h,
+                    x + w,
+                    y + h,
+                    halo_bitmap,
+                    Video::BLEND_ADDITIVE
+                );
+
+                if (elem_bitmap[0])
+                {
+                    FVector vec = center - sun_pos;
+                    const float vlen = vec.Size();
+                    if (vlen < KINDA_SMALL_NUMBER)
+                        continue;
+
+                    const FVector dir = vec / vlen;
+
+                    static int   nelem = 12;
+                    static int   elem_indx[] = { 0,1,1,1,0,0,0,0,2,0,0,2 };
+                    static float elem_dist[] = { -0.2f,0.5f,0.55f,0.62f,1.23f,1.33f,1.35f,0.8f,0.9f,1.4f,1.7f,1.8f };
+                    static float elem_size[] = { 0.3f,0.2f,0.4f,0.3f,0.4f,0.2f,0.6f,0.1f,0.1f,1.6f,1.0f,0.2f };
+
+                    for (int elem = 0; elem < nelem; elem++)
+                    {
+                        Bitmap* img = elem_bitmap[elem_indx[elem]];
+                        if (!img) img = elem_bitmap[0];
+
+                        const FVector flare_pos = sun_pos + (dir * elem_dist[elem] * vlen);
+
+                        x = (int)(flare_pos.X);
+                        y = (int)(flare_pos.Y);
+                        w = (int)(width / 8.0 * elem_size[elem]);
+                        h = w;
+
+                        DrawBitmap(x - w, y - h, x + w, y + h, img, Video::BLEND_ADDITIVE);
+                    }
+                }
+            }
+        }
+    }
 }
 
-void UCameraView::SetDepthScale(float scale)
+
+// --------------------------------------------------------------------
+
+void CameraView::WorldPlaneToView(Plane& plane)
+{
+    FVector tnormal = plane.normal;
+
+    if (!infinite)
+        plane.distance -= (float)(FVector::DotProduct(camera->Pos(), tnormal));
+
+    plane.normal.X = FVector::DotProduct(tnormal, cvrt);
+    plane.normal.Y = FVector::DotProduct(tnormal, cvup);
+    plane.normal.Z = FVector::DotProduct(tnormal, cvpn);
+}
+
+void CameraView::SetDepthScale(float scale)
 {
     projector.SetDepthScale(scale);
-}
-
-int UCameraView::SetInfinite(int i)
-{
-    infinite = i;
-    return infinite;
 }

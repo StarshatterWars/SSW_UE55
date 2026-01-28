@@ -33,13 +33,28 @@ static VertexSet vset4(4);
 // +--------------------------------------------------------------------+
 
 View::View(Screen* s, int ax, int ay, int aw, int ah)
-    : rect(ax, ay, aw, ah), screen(s), parent(nullptr), shown(true), font(nullptr)
+    : rect(ax, ay, aw, ah)
+    , screen(s)
+    , window(nullptr)
+    , parent(nullptr)
+    , shown(true)
+    , font(nullptr)
+    , children(nullptr)
 {
+    // If your Screen can provide a Window, bind it here.
+    // If not, leave it null and set it later via SetWindow(...)
+    //
+    // window = (screen ? screen->GetWindow() : nullptr);   // <-- only if this exists
 }
 
 View::View(View* inParent, int ax, int ay, int aw, int ah)
-    : rect(ax, ay, aw, ah), screen(inParent ? inParent->GetScreen() : nullptr),
-    parent(inParent), shown(true), font(nullptr)
+    : rect(ax, ay, aw, ah)
+    , screen(inParent ? inParent->GetScreen() : nullptr)
+    , window(inParent ? inParent->GetWindow() : nullptr)   // inherit window from parent
+    , parent(inParent)
+    , shown(true)
+    , font(nullptr)
+    , children(nullptr)
 {
     if (parent)
         parent->AddView(this);
@@ -47,7 +62,17 @@ View::View(View* inParent, int ax, int ay, int aw, int ah)
 
 View::~View()
 {
-    view_list.destroy();
+    // IMPORTANT:
+    // Destroy whatever you actually own.
+    // If you are now using the opaque children holder, delete it here.
+    if (children)
+    {
+        //delete children;
+        //children = nullptr;
+    }
+
+    // If you still truly use view_list and it needs explicit destroy:
+    // view_list.destroy();
 }
 
 // +--------------------------------------------------------------------+

@@ -2184,7 +2184,7 @@ Starshatter::SetupSplash()
 	int screen_height = GetScreenHeight();
 
 	gamewin = new Window(screen, 0, 0, screen_width, screen_height);
-	splash = NewObject<UFadeView>(gamewin);
+	splash = new FadeView(gamewin);
 	splash->Init(2.0, 2.0, 2.0);
 
 	gamewin->AddView(splash);

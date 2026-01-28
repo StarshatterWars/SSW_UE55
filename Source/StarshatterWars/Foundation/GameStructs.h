@@ -603,6 +603,15 @@ enum class EMFDMode : uint8
 	RADAR3D
 };
 
+UENUM()
+enum class LIGHTTYPE : uint32 
+{
+	LIGHT_POINT = 1,
+	LIGHT_SPOT = 2,
+	LIGHT_DIRECTIONAL = 3,
+	LIGHT_FORCE_DWORD = 0x7fffffff
+};
+
 /**
  * STRUCTS
  */

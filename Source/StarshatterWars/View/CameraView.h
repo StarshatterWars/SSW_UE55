@@ -1,17 +1,27 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026.
+    Copyright (C) 2025–2026.
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
     FILE:         CameraView.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR: John DiCamillo
-    ORIGINAL STUDIO: Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo
+    Destroyer Studios LLC
+    Copyright (C) 1997–2004.
 
     OVERVIEW
     ========
-    3D Projection Camera View class
+    CameraView
+    ----------
+    Legacy 3D projection camera view.
+
+    CameraView is a non-UObject view that configures the Video/Projector
+    pipeline to render a Scene from a given Camera into the view rectangle.
+    Rendering remains delegated to the Video layer; this class coordinates
+    visibility, sorting, projection, and optional lens flare.
 */
 
 #pragma once
@@ -19,81 +29,65 @@
 #include "CoreMinimal.h"
 
 #include "View.h"
-
-// Legacy:
-#include "Types.h"
 #include "Camera.h"
 #include "SimProjector.h"
 #include "Video.h"
 #include "List.h"
-#include "Bitmap.h"
 
-// Unreal:
-#include "Math/Vector.h"
-#include "GameStructs.h"
 
-#include "CameraView.generated.h"
-
-class Video;
+// Forward declarations (keep header light):
+class Screen;
 class SimScene;
-class Camera;
+class Bitmap;
 class Graphic;
-class Window;
 
-// +--------------------------------------------------------------------+
-
-UCLASS()
-class STARSHATTERWARS_API UCameraView : public UUserWidget
+class CameraView : public View
 {
-    GENERATED_BODY()
-
 public:
-    UCameraView(const FObjectInitializer& ObjectInitializer);
-
     static const char* TYPENAME() { return "CameraView"; }
 
-    // ----------------------------------------------------------------
-    // Unreal-friendly init (replaces legacy constructor params)
-    // ----------------------------------------------------------------
-    void InitializeView(Window* InWindow, Camera* InCamera, SimScene* InScene);
+    // Root-style ctor: you now build Views using Screen + rect
+    CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera* cam, SimScene* s);
+    virtual ~CameraView() override;
 
     // Operations:
     virtual void   Refresh() override;
     virtual void   OnWindowMove() override;
-    virtual void   OnShow() override {}
-    virtual void   OnHide() override {}
 
-    virtual void   UseCamera(Camera* Cam);
-    virtual void   UseScene(SimScene* Scene);
-    virtual void   LensFlare(int On, double Dim = 1.0);
-    virtual void   LensFlareElements(Bitmap* Halo, Bitmap* E1, Bitmap* E2, Bitmap* E3);
-    virtual void   SetDepthScale(float Scale);
+    virtual void   UseCamera(Camera* cam);
+    virtual void   UseScene(SimScene* scene);
+
+    virtual void   LensFlareElements(Bitmap* halo, Bitmap* e1 = nullptr, Bitmap* e2 = nullptr, Bitmap* e3 = nullptr);
+    virtual void   LensFlare(int on, double dim = 1);
+    virtual void   SetDepthScale(float scale);
 
     // Accessors:
-    Camera* GetCamera() const { return camera; }
-    SimProjector* GetProjector() { return &projector; }
-    SimScene* GetScene() const { return scene; }
+    Camera* GetCamera()                   const { return camera; }
+    SimProjector* GetProjector()        { return &projector; }
+
+
+    SimScene* GetScene()                  const { return scene; }
 
     virtual void   SetFieldOfView(double fov);
-    virtual double GetFieldOfView() const;
+    virtual double GetFieldOfView()              const;
 
-    virtual void   SetProjectionType(DWORD pt);
-    virtual DWORD  GetProjectionType() const;
+    virtual void   SetProjectionType(uint32 pt);
+    virtual uint32 GetProjectionType()           const;
 
-    FVector        Pos() const { return camera ? (FVector)camera->Pos() : FVector::ZeroVector; }
-    FVector        vrt() { return camera ? (FVector)camera->vrt() : FVector::ZeroVector; }
-    FVector        vup() { return camera ? (FVector)camera->vup() : FVector::ZeroVector; }
-    FVector        vpn() { return camera ? (FVector)camera->vpn() : FVector::ZeroVector; }
+    // Convenience pass-throughs (legacy naming):
+    FVector        Pos() const { return camera->Pos(); }
+    FVector        vrt() { return camera->vrt(); }
+    FVector        vup() { return camera->vup(); }
+    FVector        vpn() { return camera->vpn(); }
 
     const Matrix& Orientation() const { return camera->Orientation(); }
+    FVector          SceneOffset()  const { return camera_loc; }
 
-    FVector        SceneOffset() const { return camera_loc; }
-
-    // Projection and clipping geometry:
+    // Projection / clipping geometry:
     virtual void   TranslateScene();
     virtual void   UnTranslateScene();
     virtual void   MarkVisibleObjects();
-    virtual void   MarkVisibleLights(Graphic* g, DWORD flags);
+    virtual void   MarkVisibleLights(Graphic* g, uint32 flags);
 
     virtual void   RenderScene();
     virtual void   RenderSceneObjects(bool distant = false);
@@ -101,7 +95,7 @@ public:
     virtual void   RenderBackground();
     virtual void   RenderSprites();
     virtual void   RenderLensFlare();
-    virtual void   Render(Graphic* g, DWORD flags);
+    virtual void   Render(Graphic* g, uint32 flags);
 
     virtual void   FindDepth(Graphic* g);
     virtual int    SetInfinite(int i);
@@ -109,33 +103,29 @@ public:
 protected:
     virtual void   WorldPlaneToView(Plane& plane);
 
-private:
-    // Legacy pointers (raw per your direction):
+protected:
     Camera* camera = nullptr;
     SimScene* scene = nullptr;
     Video* video = nullptr;
 
-    // NOTE: legacy Window is still used by the nGenEx pipeline for DrawBitmap.
-    // UView may or may not store this; we keep a local copy to be explicit.
-    Window* window = nullptr;
+    Point          camera_loc;
+    Vec3           cvrt;
+    Vec3           cvup;
+    Vec3           cvpn;
 
-    FVector     camera_loc = FVector::ZeroVector;
-    FVector     cvrt = FVector::ZeroVector;
-    FVector     cvup = FVector::ZeroVector;
-    FVector     cvpn = FVector::ZeroVector;
+    SimProjector      projector;
 
-    SimProjector projector;
-
-    int         infinite = 0;
-    int         width = 0;
-    int         height = 0;
-    DWORD       projection_type = Video::PROJECTION_PERSPECTIVE;
+    int            infinite = 0;
+    int            width = 0;
+    int            height = 0;
+    uint32         projection_type = 0;
 
     // Lens flare:
-    int         lens_flare_enable = 0;
-    double      lens_flare_dim = 0.0;
+    int            lens_flare_enable = 0;
+    double         lens_flare_dim = 0.0;
     Bitmap* halo_bitmap = nullptr;
     Bitmap* elem_bitmap[3] = { nullptr, nullptr, nullptr };
 
-    List<Graphic> graphics;
+    // Visible scene list:
+    List<Graphic>  graphics;
 };

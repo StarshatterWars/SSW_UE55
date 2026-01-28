@@ -12,9 +12,6 @@
 	3D Projection Camera class
 */
 
-#ifndef SimProjector_h
-#define SimProjector_h
-
 // Starshatter core:
 #include "Geometry.h"
 #include "Polygon.h"
@@ -32,7 +29,7 @@ class Camera;
 class SimProjector
 {
 public:
-	SimProjector(Window* win, Camera* cam);
+	SimProjector(Window* InWindow, Camera* InCamera);
 	virtual ~SimProjector();
 
 	// Operations:
@@ -106,4 +103,3 @@ protected:
 	float          yclip0, yclip1;
 };
 
-#endif SimProjector_h

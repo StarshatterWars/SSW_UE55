@@ -17,6 +17,7 @@
 // Minimal Unreal include (required by request: convert Point/Vec3 to FVector):
 #include "Math/Vector.h"
 #include "Math/Color.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -35,13 +36,6 @@ class SimLight
 public:
 	static const char* TYPENAME() { return "SimLight"; }
 
-	enum TYPES {
-		LIGHT_POINT = 1,
-		LIGHT_SPOT = 2,
-		LIGHT_DIRECTIONAL = 3,
-		LIGHT_FORCE_DWORD = 0x7fffffff
-	};
-
 	SimLight(float l = 0.0f, float dl = 1.0f, int time = -1);
 	virtual ~SimLight();
 
@@ -54,7 +48,7 @@ public:
 	int               Identity()        const { return id; }
 	FVector           Location()        const { return loc; }
 
-	DWORD             Type()            const { return type; }
+	LIGHTTYPE Type() const { return static_cast<LIGHTTYPE>(type); }
 	void              SetType(DWORD t) { type = t; }
 	float             Intensity()       const { return light; }
 	void              SetIntensity(float f) { light = f; }
@@ -81,7 +75,7 @@ protected:
 	static int        id_key;
 
 	int               id;
-	DWORD             type;
+	LIGHTTYPE         type;
 	FVector           loc;
 	int               life;
 	float             light;

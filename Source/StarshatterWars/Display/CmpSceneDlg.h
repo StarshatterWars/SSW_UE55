@@ -46,7 +46,7 @@ public:
     void ShowScreen();     // legacy Show()
     void HideScreen();     // legacy Hide()
 
-    UCameraView* GetCameraView() const { return CamView; }
+    CameraView* GetCameraView() const { return CamView; }
     UDisplayView* GetDisplayView() const { return DispView; }
 
 private:
@@ -63,7 +63,7 @@ private:
 
 private:
     // View objects:
-    UCameraView* CamView = nullptr;
+    CameraView* CamView = nullptr;
     UDisplayView* DispView = nullptr;
 
     // If your DisplayView still needs to remember old window/host:

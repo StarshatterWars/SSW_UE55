@@ -1,88 +1,101 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    Copyright (C) 2025–2026.
 
     SUBSYSTEM:    nGenEx.lib (ported to Unreal)
     FILE:         FadeView.h
     AUTHOR:       Carlos Bott
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo
+    Destroyer Studios LLC
+    Copyright (C) 1997–2004.
+
     OVERVIEW
     ========
-    UFadeView
-    - UUserWidget-based fade controller view (inherits from UView)
-    - Runs the legacy fade state machine in NativeTick
-    - Writes fade to UFadeSubsystem (no direct rendering)
+    FadeView
+    --------
+    Legacy-style fade controller view.
+
+    FadeView is a non-rendering UI view responsible for managing
+    timed fade-in, hold, and fade-out transitions. It computes
+    a normalized fade scalar (0.0–1.0) and emits that value to
+    the rendering layer via a callback sink.
+
+    - Plain C++ (NOT a UObject)
+    - Uses Unreal timing (FPlatformTime)
+    - Rendering is delegated to Video/Screen/Widget layers
+    - State machine uses shared EFadeState (GameStructs.h)
+
+    Typical usage:
+        - Splash screens
+        - Scene transitions
+        - Cinematic fades
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Math/Color.h"
-#include "View.h"            
-#include "GameStructs.h"
-#include "FadeSubsystem.h"
-#include "FadeView.generated.h"
+#include <functional>
 
-UCLASS()
-class STARSHATTERWARS_API UFadeView : public UUserWidget
+#include "GameStructs.h"   // <-- EFadeState now lives here
+#include "View.h"
+
+class FadeView : public View
 {
-    GENERATED_BODY()
 public:
     static const char* TYPENAME() { return "FadeView"; }
 
-    UFadeView(const FObjectInitializer& ObjectInitializer);
+public:
+    FadeView(
+        View* InParent,
+        double InFadeInSec = 1.0,
+        double InFadeOutSec = 1.0,
+        double InHoldSec = 4.0
+    );
 
-    // Starshatter-style parameters go here instead of ctor params:
-    void Init(double InSeconds, double OutSeconds, double HoldSeconds);
+    virtual ~FadeView() override = default;
 
-    // --- Legacy-ish API ---
+    // Operations:
+    virtual void Refresh() override;
+
     bool Done() const { return State == EFadeState::StateDone; }
     bool Holding() const { return State == EFadeState::StateHold; }
 
-    void FastFade(int32 FadeFast);
-    void FadeIn(double InFadeInSeconds);
-    void FadeOut(double InFadeOutSeconds);
-    void StopHold();
+    // Control:
+    void FastFade(int InFast) { bFast = (InFast != 0); }
+    void FadeIn(double InSec) { FadeInMs = InSec * 1000.0; }
+    void FadeOut(double InSec) { FadeOutMs = InSec * 1000.0; }
+    void StopHold() { HoldMs = 0.0; }
 
-    // Writes fade into the subsystem:
-    void SetFade(double Fade01, const FColor& Color, int32 BuildShade = 0);
+    // Current fade scalar (0..1)
+    float GetFade() const { return CurrentFade; }
 
-    // Convenience initializer (optional):
-    void InitFade(double InFadeInSeconds = 1.0, double InFadeOutSeconds = 1.0, double InHoldSeconds = 4.0);
-
-protected:
-    virtual void NativeConstruct() override;
-    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
-private:
-    UFadeSubsystem* GetFadeSubsystem() const;
-    void AdvanceStateMachine(double DeltaSeconds);
+    // Renderer hook
+    void SetFadeSink(std::function<void(float)> InSink)
+    {
+        FadeSink = std::move(InSink);
+    }
 
 private:
-    // Timings (seconds):
-    double FadeInSeconds = 1.0;
-    double FadeOutSeconds = 1.0;
-    double HoldSeconds = 4.0;
+    static double NowMs();
+    void ApplyFade(float Fade01);
 
-    // Running:
-    double StepTimeSeconds = 0.0;
-    int32  Fast = 1;              // legacy: kept for compatibility (you can decide how to use)
+private:
+    double FadeInMs = 1000.0;
+    double FadeOutMs = 1000.0;
+    double HoldMs = 4000.0;
+
+    double StepMs = 0.0;
+    double TimeMs = 0.0;
+
+    bool bFast = true;
+
+    // NOTE: now using shared enum from GameStructs.h
     EFadeState State = EFadeState::StateStart;
 
-    // Default fade color (legacy used black):
-    FColor FadeColor = FColor::Black;
+    float CurrentFade = 1.0f;
 
-protected:
-    double      fade_in;
-    double      fade_out;
-    double      hold_time;
-    double      time;
-    double      step_time;
-
-    int         fast;
-    EFadeState  state;
+    std::function<void(float)> FadeSink;
 };

@@ -17,6 +17,12 @@
     - Owns rect, visibility, font
     - Supports child views
     - Provides legacy clip + drawing + text API (implemented in View.cpp)
+
+    NOTES
+    =====
+    - View now carries a Window* for render ownership / draw context.
+    - Root views resolve Window from Screen (or are explicitly given a Window).
+    - Child views inherit Window from parent automatically.
 */
 
 #pragma once
@@ -42,7 +48,6 @@
 
 // ---------------------------------------------------------------------
 // Minimal legacy includes (keep header light).
-// Rect comes from your legacy Geometry.h (or similar).
 // ---------------------------------------------------------------------
 #include "Types.h"
 #include "List.h"
@@ -56,6 +61,7 @@
 // Forward declarations (keep compile dependencies low).
 // ---------------------------------------------------------------------
 class Screen;
+class Window;     // <-- NEW: render ownership context
 class Bitmap;
 class SystemFont;
 
@@ -73,6 +79,10 @@ public:
     // Root view:
     View(Screen* InScreen, int ax, int ay, int aw, int ah);
 
+    // OPTIONAL root view ctor if you want to construct without Screen:
+    // (useful when Screen isn't ready yet, or for pure UI previews)
+    View(Window* InWindow, int ax, int ay, int aw, int ah);
+
     // Child view (auto-attaches to parent):
     View(View* InParent, int ax, int ay, int aw, int ah);
 
@@ -82,16 +92,23 @@ public:
     int operator==(const View& that) const { return this == &that; }
 
     // ------------------------------------------------------------
-    // Geometry / state
+    // Context (Screen/Window)
     // ------------------------------------------------------------
     Screen* GetScreen() const { return screen; }
+    Window* GetWindow() const { return window; }
     View* GetParent() const { return parent; }
 
-    const       Rect& GetRect() const { return rect; }
-    int         X() const { return rect.x; }
-    int         Y() const { return rect.y; }
-    int         Width() const { return rect.w; }
-    int         Height() const { return rect.h; }
+    // Allows late binding if needed (e.g., before Screen is ready):
+    void SetWindow(Window* InWindow) { window = InWindow; }
+
+    // ------------------------------------------------------------
+    // Geometry / state
+    // ------------------------------------------------------------
+    const Rect& GetRect() const { return rect; }
+    int   X() const { return rect.x; }
+    int   Y() const { return rect.y; }
+    int   Width() const { return rect.w; }
+    int   Height() const { return rect.h; }
 
     virtual void Show();
     virtual void Hide();
@@ -161,13 +178,23 @@ protected:
 
 protected:
     Rect            rect;
-    Screen*         screen = nullptr;
-    View*           parent = nullptr;
+
+    // Logical ownership:
+    Screen* screen = nullptr;
+
+    // Render ownership context:
+    Window* window = nullptr;  // <-- NEW
+
+    // Hierarchy:
+    View* parent = nullptr;
     bool            shown = true;
-    SystemFont*     font = nullptr;
+
+    // State:
+    SystemFont* font = nullptr;
 
     // Opaque child list (defined in View.cpp) to avoid template issues in headers:
     FViewChildren* children = nullptr;
 
-    List<View>        view_list;
+    // Legacy list (if still used elsewhere):
+    List<View>      view_list;
 };
