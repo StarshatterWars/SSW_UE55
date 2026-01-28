@@ -573,15 +573,6 @@ enum class SYSTEM_POWER_FLAGS : uint8 {
 };
 
 UENUM()
-enum class HUD_MODE : uint8
-{
-	HUD_MODE_OFF	UMETA(DisplayName = "HUD Mode Off"),
-	HUD_MODE_TAC	UMETA(DisplayName = "HUD Mode Tactical"),
-	HUD_MODE_NAV	UMETA(DisplayName = "HUD Mode Navigation"),
-	HUD_MODE_ILS	UMETA(DisplayName = "HUD Mode ILS"),
-};
-
-UENUM()
 enum class EFadeState : uint8
 {
 	StateStart,
@@ -595,22 +586,95 @@ enum class EFadeState : uint8
 UENUM(BlueprintType)
 enum class EMFDMode : uint8
 {
-	OFF,
-	GAME,
-	SHIP,
-	FOV,
-	HSD,
-	RADAR3D
+	OFF			UMETA(DisplayName = "MFD Mode Off"),
+	GAME		UMETA(DisplayName = "HUD Mode Game"),
+	SHIP		UMETA(DisplayName = "HUD Mode Ship"),
+	FOV			UMETA(DisplayName = "HUD Mode FOV"),
+	HSD			UMETA(DisplayName = "HUD Mode HSD"),
+	RADAR3D		UMETA(DisplayName = "HUD Mode Radar"),
+};
+
+UENUM()
+enum class EHUDMode : uint8
+{
+	Off			UMETA(DisplayName = "HUD Mode Off"),
+	Tactical	UMETA(DisplayName = "HUD Mode Tactical"),
+	Navigation	UMETA(DisplayName = "HUD Mode Navigation"),
+	ILS			UMETA(DisplayName = "HUD Mode ILS"),
 };
 
 UENUM()
 enum class LIGHTTYPE : uint32 
 {
-	LIGHT_POINT = 1,
-	LIGHT_SPOT = 2,
-	LIGHT_DIRECTIONAL = 3,
+	LIGHT_NONE,
+	LIGHT_POINT,
+	LIGHT_SPOT,
+	LIGHT_DIRECTIONAL,
 	LIGHT_FORCE_DWORD = 0x7fffffff
 };
+
+static enum ETXT : int32
+{
+	MAX_CONTACT = 50,
+
+	TXT_CAUTION_TXT = 0,
+	TXT_LAST_CAUTION = 23,
+	TXT_CAM_ANGLE,
+	TXT_CAM_MODE,
+	TXT_PAUSED,
+	TXT_GEAR_DOWN,
+
+	TXT_HUD_MODE,
+	TXT_PRIMARY_WEP,
+	TXT_SECONDARY_WEP,
+	TXT_DECOY,
+	TXT_SHIELD,
+	TXT_AUTO,
+	TXT_SHOOT,
+	TXT_NAV_INDEX,
+	TXT_NAV_ACTION,
+	TXT_NAV_FORMATION,
+	TXT_NAV_SPEED,
+	TXT_NAV_ETR,
+	TXT_NAV_HOLD,
+
+	TXT_SPEED,
+	TXT_RANGE,
+	TXT_CLOSING_SPEED,
+	TXT_THREAT_WARN,
+	TXT_COMPASS,
+	TXT_HEADING,
+	TXT_PITCH,
+	TXT_ALTITUDE,
+	TXT_GFORCE,
+	TXT_MISSILE_T1,
+	TXT_MISSILE_T2,
+	TXT_ICON_SHIP_TYPE,
+	TXT_ICON_TARGET_TYPE,
+	TXT_TARGET_NAME,
+	TXT_TARGET_DESIGN,
+	TXT_TARGET_SHIELD,
+	TXT_TARGET_HULL,
+	TXT_TARGET_SUB,
+	TXT_TARGET_ETA,
+
+	TXT_MSG_1,
+	TXT_MSG_2,
+	TXT_MSG_3,
+	TXT_MSG_4,
+	TXT_MSG_5,
+	TXT_MSG_6,
+
+	TXT_NAV_PT,
+	TXT_SELF,
+	TXT_SELF_NAME,
+	TXT_CONTACT_NAME,
+	TXT_CONTACT_INFO = TXT_CONTACT_NAME + MAX_CONTACT,
+	TXT_LAST = TXT_CONTACT_INFO + MAX_CONTACT,
+
+	TXT_LAST_ACTIVE = TXT_NAV_HOLD,
+	TXT_INSTR_PAGE = TXT_CAUTION_TXT + 6,
+} 
 
 /**
  * STRUCTS

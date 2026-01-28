@@ -153,7 +153,7 @@ void UCmpSceneDlg::EnsureViewObjects()
 
     if (!DispView)
     {
-        DispView = UDisplayView::GetInstance(); 
+        DispView = DisplayView::GetInstance(); 
     }
 }
 

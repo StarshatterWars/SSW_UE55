@@ -367,7 +367,7 @@ void UMFDView::DrawGameMFD() const
     float Y = ScanY;
     const float LineH = 10.0f;
 
-    if (!UHUDView::IsArcade() && UHUDView::ShowFPS())
+    if (!HUDView::IsArcade() && HUDView::ShowFPS())
     {
         const FString FPS = FString::Printf(TEXT("FPS: %6.2f"), (double)Game::FrameRate());
         DrawMFDText(0, FPS, FSlateRect(ScanX, Y, ScanX + ScanW, Y + 12), DT_LEFT);

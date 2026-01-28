@@ -38,6 +38,7 @@
 #include "Starshatter.h"
 #include "GameScreen.h"
 #include "MenuView.h"
+#include "GameStructs.h"
 
 #include "SimProjector.h"
 #include "Color.h"
@@ -308,12 +309,12 @@ void TacticalView::DrawSelection(Ship* seln)
             if (sw < 0)
                 sw = 0;
 
-            SimSystem::STATUS s = SimSystem::NOMINAL;
+            SYSTEM_STATUS s = SYSTEM_STATUS::NOMINAL;
 
             if (hull_strength < 0.30)
-                s = SimSystem::CRITICAL;
+                s = SYSTEM_STATUS::CRITICAL;
             else if (hull_strength < 0.60)
-                s = SimSystem::DEGRADED;
+                s = SYSTEM_STATUS::DEGRADED;
 
             FColor hc = HUDView::GetStatusColor(s);
             FColor sc = hud_color;

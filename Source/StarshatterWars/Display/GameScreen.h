@@ -177,7 +177,7 @@ private:
     Sim* sim = nullptr;
     CameraManager* cam_dir = nullptr;
     DisplayView* disp_view = nullptr;
-    UHUDView* hud_view = nullptr;
+    HUDView* hud_view = nullptr;
     WepView* wep_view = nullptr;
     QuantumView* quantum_view = nullptr;
     RadioView* radio_view = nullptr;

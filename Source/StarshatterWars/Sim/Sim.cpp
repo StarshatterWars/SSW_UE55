@@ -293,7 +293,7 @@ Sim::CommitMission()
 void
 Sim::UnloadMission()
 {
-	UHUDView* hud = UHUDView::GetInstance();
+	HUDView* hud = HUDView::GetInstance();
 	if (hud)
 		hud->HideAll();
 
@@ -2004,9 +2004,9 @@ Sim::ResolveTimeSkip(double seconds)
 		player_ship->SetAutoNav(false);
 		player_ship->SetThrottle(75);
 
-		UHUDView* hud = UHUDView::GetInstance();
+		HUDView* hud = HUDView::GetInstance();
 		if (hud)
-			hud->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
+			hud->SetHUDMode((int)EHUDMode::Tactical);
 
 		if (IsTestMode())
 			player_ship->SetControls(0);

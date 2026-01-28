@@ -8,8 +8,7 @@
 
     ORIGINAL AUTHOR AND STUDIO
     ==========================
-    John DiCamillo
-    Destroyer Studios LLC
+    John DiCamillo / Destroyer Studios LLC
     Copyright (C) 1997–2004.
 
     OVERVIEW
@@ -26,64 +25,89 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+// Macro collision defense:
+#ifdef projector
+#undef projector
+#endif
+
+#ifdef Projector
+#undef Projector
+#endif
 
 #include "View.h"
-#include "Camera.h"
-#include "SimProjector.h"
-#include "Video.h"
+#include "Types.h"
 #include "List.h"
+#include "Geometry.h"     // Rect, Plane (legacy)
 
+#include "Math/Vector.h"  // FVector
 
 // Forward declarations (keep header light):
 class Screen;
+class Camera;
 class SimScene;
+class SimLight;
+class SimProjector;
+class Video;
 class Bitmap;
 class Graphic;
+class Solid;
+class Shadow;
+
+// If your Matrix type is legacy, forward declare it:
+struct Matrix;
+
+// LIGHTTYPE enum is in GameStructs.h:
+#include "GameStructs.h"
 
 class CameraView : public View
 {
 public:
     static const char* TYPENAME() { return "CameraView"; }
 
-    // Root-style ctor: you now build Views using Screen + rect
     CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera* cam, SimScene* s);
     virtual ~CameraView() override;
 
-    // Operations:
-    virtual void   Refresh() override;
-    virtual void   OnWindowMove() override;
+    // View lifecycle:
+    virtual void Refresh() override;
+    virtual void OnWindowMove() override;
 
+    // Operations:
     virtual void   UseCamera(Camera* cam);
     virtual void   UseScene(SimScene* scene);
 
+    // Lens flare:
     virtual void   LensFlareElements(Bitmap* halo, Bitmap* e1 = nullptr, Bitmap* e2 = nullptr, Bitmap* e3 = nullptr);
-    virtual void   LensFlare(int on, double dim = 1);
-    virtual void   SetDepthScale(float scale);
+    virtual void   LensFlare(int on, double dim = 1.0);
+    virtual void   RenderLensFlare();
 
-    // Accessors:
-    Camera* GetCamera()                   const { return camera; }
-    SimProjector* GetProjector()        { return &projector; }
-
-
-    SimScene* GetScene()                  const { return scene; }
-
+    // Projector / projection:
     virtual void   SetFieldOfView(double fov);
-    virtual double GetFieldOfView()              const;
+    virtual double GetFieldOfView() const;
 
     virtual void   SetProjectionType(uint32 pt);
-    virtual uint32 GetProjectionType()           const;
+    virtual uint32 GetProjectionType() const;
+
+    virtual void   SetDepthScale(float scale);
+    virtual int    SetInfinite(int i);
+
+    // Accessors:
+    Camera* GetCamera() const { return camera; }
+    SimScene* GetScene()  const { return scene; }
+
+    SimProjector* GetProjector() { return Projector; }
+    const SimProjector* GetProjector() const { return Projector; }
 
     // Convenience pass-throughs (legacy naming):
-    FVector        Pos() const { return camera->Pos(); }
-    FVector        vrt() { return camera->vrt(); }
-    FVector        vup() { return camera->vup(); }
-    FVector        vpn() { return camera->vpn(); }
+    FVector        Pos() const;
+    FVector        vrt() const;
+    FVector        vup() const;
+    FVector        vpn() const;
 
-    const Matrix& Orientation() const { return camera->Orientation(); }
-    FVector          SceneOffset()  const { return camera_loc; }
+    const Matrix& Orientation() const;
 
-    // Projection / clipping geometry:
+    FVector        SceneOffset() const { return camera_loc; }
+
+    // Pipeline stages:
     virtual void   TranslateScene();
     virtual void   UnTranslateScene();
     virtual void   MarkVisibleObjects();
@@ -94,11 +118,9 @@ public:
     virtual void   RenderForeground();
     virtual void   RenderBackground();
     virtual void   RenderSprites();
-    virtual void   RenderLensFlare();
     virtual void   Render(Graphic* g, uint32 flags);
 
     virtual void   FindDepth(Graphic* g);
-    virtual int    SetInfinite(int i);
 
 protected:
     virtual void   WorldPlaneToView(Plane& plane);
@@ -108,24 +130,26 @@ protected:
     SimScene* scene = nullptr;
     Video* video = nullptr;
 
-    Point          camera_loc;
-    Vec3           cvrt;
-    Vec3           cvup;
-    Vec3           cvpn;
+    // New UE vectors:
+    FVector         camera_loc = FVector::ZeroVector;
+    FVector         cvrt = FVector::ZeroVector;
+    FVector         cvup = FVector::ZeroVector;
+    FVector         cvpn = FVector::ZeroVector;
 
-    SimProjector      projector;
+    // Projector owned here:
+    SimProjector* Projector = nullptr;
 
-    int            infinite = 0;
-    int            width = 0;
-    int            height = 0;
-    uint32         projection_type = 0;
+    int             infinite = 0;
+    int             width = 0;
+    int             height = 0;
+    uint32          projection_type = 0;
 
     // Lens flare:
-    int            lens_flare_enable = 0;
-    double         lens_flare_dim = 0.0;
+    int             lens_flare_enable = 0;
+    double          lens_flare_dim = 0.0;
     Bitmap* halo_bitmap = nullptr;
     Bitmap* elem_bitmap[3] = { nullptr, nullptr, nullptr };
 
     // Visible scene list:
-    List<Graphic>  graphics;
+    List<Graphic>   graphics;
 };

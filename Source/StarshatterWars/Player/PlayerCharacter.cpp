@@ -358,14 +358,14 @@ void
 PlayerCharacter::SetHUDMode(int n)
 {
     hud_mode = n;
-    UHUDView::SetArcade(n > 0);
+    HUDView::SetArcade(n > 0);
 }
 
 void
 PlayerCharacter::SetHUDColor(int n)
 {
     hud_color = n;
-    UHUDView::SetDefaultColorSet(n);
+    HUDView::SetDefaultColorSet(n);
 }
 
 void
@@ -816,7 +816,7 @@ PlayerCharacter::GetCurrentPlayer()
 void
 PlayerCharacter::SelectPlayer(PlayerCharacter* p)
 {
-    UHUDView* hud = UHUDView::GetInstance();
+    HUDView* hud = HUDView::GetInstance();
 
     if (current_player && current_player != p) {
         if (hud) {
@@ -834,8 +834,8 @@ PlayerCharacter::SelectPlayer(PlayerCharacter* p)
 
         Ship::SetFlightModel(p->flight_model);
         Ship::SetLandingModel(p->landing_model);
-        UHUDView::SetArcade(p->hud_mode > 0);
-        UHUDView::SetDefaultColorSet(p->hud_color);
+        HUDView::SetArcade(p->hud_mode > 0);
+        HUDView::SetDefaultColorSet(p->hud_color);
 
         if (hud) {
             for (int i = 0; i < 3; i++) {
@@ -1139,7 +1139,7 @@ else  GET_DEF_NUM(ff_level);
 void
 PlayerCharacter::Save()
 {
-    UHUDView* hud = UHUDView::GetInstance();
+    HUDView* hud = HUDView::GetInstance();
     if (hud && current_player) {
         for (int i = 0; i < 3; i++) {
             UMFDView* mfd = hud->GetMFD(i);

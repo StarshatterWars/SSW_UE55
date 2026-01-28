@@ -8,8 +8,7 @@
 
     ORIGINAL AUTHOR AND STUDIO
     ==========================
-    John DiCamillo
-    Destroyer Studios LLC
+    John DiCamillo / Destroyer Studios LLC
     Copyright (C) 1997–2004.
 
     OVERVIEW
@@ -22,26 +21,25 @@
 */
 
 #include "CameraView.h"
+
 #include "Camera.h"
-#include "Geometry.h"
 #include "SimScene.h"
 #include "SimLight.h"
+#include "SimProjector.h"
 #include "Solid.h"
 #include "Shadow.h"
 #include "Video.h"
 #include "Bitmap.h"
 #include "Screen.h"
-#include "GameStructs.h"
 
-#include "Math/Vector.h"
 #include "Math/Color.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCameraView, Log, All);
 
 // --------------------------------------------------------------------
 // Emergency fallbacks (legacy behavior):
-static Camera emergency_cam;
-static SimScene  emergency_scene;
+static Camera  emergency_cam;
+static SimScene emergency_scene;
 
 // --------------------------------------------------------------------
 
@@ -49,7 +47,6 @@ CameraView::CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera*
     : View(InScreen, ax, ay, aw, ah)
     , camera(cam)
     , scene(s)
-    , projector(GetWindow(), cam)   // CORRECT
     , infinite(0)
     , projection_type(Video::PROJECTION_PERSPECTIVE)
 {
@@ -61,10 +58,49 @@ CameraView::CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera*
 
     width = aw;
     height = ah;
+
+    // IMPORTANT: Build projector AFTER camera is guaranteed valid:
+    Projector = new SimProjector(GetWindow(), camera);
+
+    // Keep projector state consistent:
+    Projector->SetInfinite(infinite);
+
+    OnWindowMove();
 }
 
 CameraView::~CameraView()
 {
+    delete Projector;
+    Projector = nullptr;
+}
+
+// --------------------------------------------------------------------
+// Convenience pass-throughs
+// --------------------------------------------------------------------
+
+FVector CameraView::Pos() const
+{
+    return camera ? camera->Pos() : FVector::ZeroVector;
+}
+
+FVector CameraView::vrt() const
+{
+    return camera ? camera->vrt() : FVector::UnitX();
+}
+
+FVector CameraView::vup() const
+{
+    return camera ? camera->vup() : FVector::UnitY();
+}
+
+FVector CameraView::vpn() const
+{
+    return camera ? camera->vpn() : FVector::UnitZ();
+}
+
+const Matrix& CameraView::Orientation() const
+{
+    return camera->Orientation();
 }
 
 // --------------------------------------------------------------------
@@ -72,7 +108,9 @@ CameraView::~CameraView()
 void CameraView::UseCamera(Camera* cam)
 {
     camera = cam ? cam : &emergency_cam;
-    projector.UseCamera(camera);
+
+    if (Projector)
+        Projector->UseCamera(camera);
 }
 
 void CameraView::UseScene(SimScene* s)
@@ -82,17 +120,20 @@ void CameraView::UseScene(SimScene* s)
 
 void CameraView::SetFieldOfView(double fov)
 {
-    projector.SetFieldOfView(fov);
+    if (Projector)
+        Projector->SetFieldOfView(fov);
 }
 
 double CameraView::GetFieldOfView() const
 {
-    return projector.GetFieldOfView();
+    return Projector ? Projector->GetFieldOfView() : 2.0;
 }
 
 void CameraView::SetProjectionType(uint32 pt)
 {
-    projector.SetOrthogonal(pt == Video::PROJECTION_ORTHOGONAL);
+    if (Projector)
+        Projector->SetOrthogonal(pt == Video::PROJECTION_ORTHOGONAL);
+
     projection_type = pt;
 }
 
@@ -101,16 +142,20 @@ uint32 CameraView::GetProjectionType() const
     return projection_type;
 }
 
+void CameraView::SetDepthScale(float scale)
+{
+    if (Projector)
+        Projector->SetDepthScale(scale);
+}
+
 void CameraView::OnWindowMove()
 {
-    // With the new View system, your rect should already be authoritative.
-    // If Screen size changes, you typically rebuild views or call this.
-    Rect r = GetRect(); // assumes View exposes GetRect()
+    const Rect r = GetRect();
     width = r.w;
     height = r.h;
 
-    // Keep projector in sync:
-    projector.UseWindow(GetWindow()); // if your Projector expects Screen*; rename if needed
+    if (Projector)
+        Projector->UseWindow(GetWindow());
 }
 
 // --------------------------------------------------------------------
@@ -135,9 +180,12 @@ void CameraView::LensFlareElements(Bitmap* halo, Bitmap* e1, Bitmap* e2, Bitmap*
 
 int CameraView::SetInfinite(int i)
 {
-    int old = infinite;
+    const int old = infinite;
     infinite = i;
-    projector.SetInfinite(i);
+
+    if (Projector)
+        Projector->SetInfinite(i);
+
     return old;
 }
 
@@ -157,8 +205,8 @@ void CameraView::FindDepth(Graphic* g)
     }
 
     const FVector loc = g->Location() - camera->Pos();
+    const float   z = FVector::DotProduct(loc, camera->vpn());
 
-    const float z = FVector::DotProduct(loc, camera->vpn());
     g->SetDepth(z);
 }
 
@@ -177,7 +225,7 @@ void CameraView::Refresh()
         return;
     }
 
-    Rect r = GetRect();
+    const Rect r = GetRect();
     width = r.w;
     height = r.h;
 
@@ -218,7 +266,7 @@ void CameraView::TranslateScene()
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (!graphic->IsInfinite())
+        if (graphic && !graphic->IsInfinite())
             graphic->TranslateBy(camera_loc);
     }
 
@@ -226,14 +274,15 @@ void CameraView::TranslateScene()
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        graphic->TranslateBy(camera_loc);
+        if (graphic)
+            graphic->TranslateBy(camera_loc);
     }
 
     g_iter.attach(scene->Sprites());
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (!graphic->IsInfinite())
+        if (graphic && !graphic->IsInfinite())
             graphic->TranslateBy(camera_loc);
     }
 
@@ -241,7 +290,8 @@ void CameraView::TranslateScene()
     while (++l_iter)
     {
         SimLight* light = l_iter.value();
-        light->TranslateBy(camera_loc);
+        if (light)
+            light->TranslateBy(camera_loc);
     }
 
     camera->MoveTo(0, 0, 0);
@@ -249,13 +299,13 @@ void CameraView::TranslateScene()
 
 void CameraView::UnTranslateScene()
 {
-    FVector reloc = -camera_loc;
+    const FVector reloc = -camera_loc;
 
     ListIter<Graphic> g_iter = scene->Graphics();
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (!graphic->IsInfinite())
+        if (graphic && !graphic->IsInfinite())
             graphic->TranslateBy(reloc);
     }
 
@@ -263,14 +313,15 @@ void CameraView::UnTranslateScene()
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        graphic->TranslateBy(reloc);
+        if (graphic)
+            graphic->TranslateBy(reloc);
     }
 
     g_iter.attach(scene->Sprites());
     while (++g_iter)
     {
         Graphic* graphic = g_iter.value();
-        if (!graphic->IsInfinite())
+        if (graphic && !graphic->IsInfinite())
             graphic->TranslateBy(reloc);
     }
 
@@ -278,7 +329,8 @@ void CameraView::UnTranslateScene()
     while (++l_iter)
     {
         SimLight* light = l_iter.value();
-        light->TranslateBy(reloc);
+        if (light)
+            light->TranslateBy(reloc);
     }
 
     camera->MoveTo(camera_loc);
@@ -290,7 +342,10 @@ void CameraView::UnTranslateScene()
 
 void CameraView::MarkVisibleObjects()
 {
-    projector.StartFrame();
+    if (!Projector)
+        return;
+
+    Projector->StartFrame();
     graphics.clear();
 
     ListIter<Graphic> graphic_iter = scene->Graphics();
@@ -301,7 +356,7 @@ void CameraView::MarkVisibleObjects()
         if (!graphic || graphic->Hidden())
             continue;
 
-        if (graphic->CheckVisibility(projector))
+        if (graphic->CheckVisibility(*Projector))
         {
             graphic->Update();
             graphics.append(graphic);
@@ -331,14 +386,16 @@ void CameraView::MarkVisibleLights(Graphic* graphic, uint32 flags)
         if (!light)
             continue;
 
+        const LIGHTTYPE lt = static_cast<LIGHTTYPE>(light->Type());
+
         bool bright_enough =
-            light->Type() == LIGHTTYPE::LIGHT_DIRECTIONAL ||
-            light->Intensity() >= 1e9;
+            (lt == LIGHTTYPE::LIGHT_DIRECTIONAL) ||
+            (light->Intensity() >= 1e9);
 
         if (!bright_enough)
         {
-            FVector test = graphic->Location() - light->Location();
-            if (test.Length() < light->Intensity() * 10)
+            const FVector test = graphic->Location() - light->Location();
+            if (test.Size() < light->Intensity() * 10)
                 bright_enough = true;
         }
 
@@ -451,7 +508,7 @@ void CameraView::RenderForeground()
         if (g)
         {
             Render(g, Graphic::RENDER_ALPHA);
-            g->ProjectScreenRect(&projector);
+            g->ProjectScreenRect(Projector);
         }
     }
 
@@ -462,7 +519,7 @@ void CameraView::RenderForeground()
         if (g)
         {
             Render(g, Graphic::RENDER_ADDITIVE);
-            g->ProjectScreenRect(&projector);
+            g->ProjectScreenRect(Projector);
         }
     }
 }
@@ -511,7 +568,7 @@ void CameraView::RenderScene()
             if (g->IsSolid())
             {
                 Solid* solid = (Solid*)g;
-                solid->SelectDetail(&projector);
+                solid->SelectDetail(Projector);
 
                 if (video->IsShadowEnabled())
                 {
@@ -628,7 +685,7 @@ void CameraView::RenderSceneObjects(bool distant)
         if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
         {
             Render(g, Graphic::RENDER_ALPHA);
-            g->ProjectScreenRect(&projector);
+            g->ProjectScreenRect(Projector);
         }
     }
 
@@ -641,7 +698,7 @@ void CameraView::RenderSceneObjects(bool distant)
         if ((distant && g->Depth() > 5e6) || (!distant && g->Depth() < 5e6))
         {
             Render(g, Graphic::RENDER_ADDITIVE);
-            g->ProjectScreenRect(&projector);
+            g->ProjectScreenRect(Projector);
         }
     }
 }
@@ -661,7 +718,7 @@ void CameraView::Render(Graphic* g, uint32 flags)
 }
 
 // --------------------------------------------------------------------
-// Lens flare (legacy draw calls preserved; you may redirect to Video later)
+// Lens flare (draw through View::DrawBitmap)
 // --------------------------------------------------------------------
 
 void CameraView::RenderLensFlare()
@@ -669,10 +726,7 @@ void CameraView::RenderLensFlare()
     if (!lens_flare_enable || lens_flare_dim < 0.01)
         return;
 
-    if (!halo_bitmap)
-        return;
-
-    if (!video || !scene || !camera)
+    if (!halo_bitmap || !video || !scene || !camera || !Projector)
         return;
 
     video->SetRenderState(Video::STENCIL_ENABLE, FALSE);
@@ -688,46 +742,40 @@ void CameraView::RenderLensFlare()
         if (!light || !light->IsActive())
             continue;
 
-        if (light->Type() == LIGHTTYPE::LIGHT_DIRECTIONAL && light->Intensity() < 1)
+        const LIGHTTYPE lt = static_cast<LIGHTTYPE>(light->Type());
+
+        if (lt == LIGHTTYPE::LIGHT_DIRECTIONAL && light->Intensity() < 1)
             continue;
 
         const double distance = (light->Location() - camera->Pos()).Size();
 
         if (distance > 1e9)
         {
-            if (projector.IsVisible(light->Location(), 1.0f))
+            if (Projector->IsVisible(light->Location(), 1.0f))
             {
                 FVector sun_pos = light->Location();
 
                 if (light->CastsShadow() && scene->IsLightObscured(camera->Pos(), sun_pos, -1))
                     continue;
 
-                projector.Transform(sun_pos);
+                Projector->Transform(sun_pos);
 
                 if (sun_pos.Z < 100)
                     continue;
 
-                projector.Project(sun_pos, false);
+                Projector->Project(sun_pos, false);
 
                 int x = (int)(sun_pos.X);
                 int y = (int)(sun_pos.Y);
                 int w = (int)(width / 4.0);
                 int h = w;
 
-                // Draw halo:
-                DrawBitmap(
-                    x - w,
-                    y - h,
-                    x + w,
-                    y + h,
-                    halo_bitmap,
-                    Video::BLEND_ADDITIVE
-                );
+                DrawBitmap(x - w, y - h, x + w, y + h, halo_bitmap, Video::BLEND_ADDITIVE);
 
                 if (elem_bitmap[0])
                 {
-                    FVector vec = center - sun_pos;
-                    const float vlen = vec.Size();
+                    const FVector vec = center - sun_pos;
+                    const float   vlen = vec.Size();
                     if (vlen < KINDA_SMALL_NUMBER)
                         continue;
 
@@ -747,7 +795,7 @@ void CameraView::RenderLensFlare()
 
                         x = (int)(flare_pos.X);
                         y = (int)(flare_pos.Y);
-                        w = (int)(width / 8.0 * elem_size[elem]);
+                        w = (int)(width / 8.0f * elem_size[elem]);
                         h = w;
 
                         DrawBitmap(x - w, y - h, x + w, y + h, img, Video::BLEND_ADDITIVE);
@@ -758,22 +806,16 @@ void CameraView::RenderLensFlare()
     }
 }
 
-
 // --------------------------------------------------------------------
 
 void CameraView::WorldPlaneToView(Plane& plane)
 {
-    FVector tnormal = plane.normal;
+    const FVector tnormal = plane.normal;
 
     if (!infinite)
         plane.distance -= (float)(FVector::DotProduct(camera->Pos(), tnormal));
 
-    plane.normal.X = FVector::DotProduct(tnormal, cvrt);
-    plane.normal.Y = FVector::DotProduct(tnormal, cvup);
-    plane.normal.Z = FVector::DotProduct(tnormal, cvpn);
-}
-
-void CameraView::SetDepthScale(float scale)
-{
-    projector.SetDepthScale(scale);
+    plane.normal.X = (float)FVector::DotProduct(tnormal, cvrt);
+    plane.normal.Y = (float)FVector::DotProduct(tnormal, cvup);
+    plane.normal.Z = (float)FVector::DotProduct(tnormal, cvpn);
 }

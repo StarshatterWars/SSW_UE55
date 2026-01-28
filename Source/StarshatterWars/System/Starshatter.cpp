@@ -570,7 +570,7 @@ Starshatter::SetGameMode(int m)
 		if (gamescreen)
 			gamescreen->SetFieldOfView(field_of_view);
 
-		UHUDView::ClearMessages();
+		HUDView::ClearMessages();
 		RadioView::ClearMessages();
 
 		SetTimeCompression(1);
@@ -1436,7 +1436,7 @@ Starshatter::DoGameScreenFrame()
 
 	DoMouseFrame();
 
-	UHUDView* hud_view = UHUDView::GetInstance();
+	HUDView* hud_view = HUDView::GetInstance();
 
 	// changing to a new ship?
 	if (player_ship != sim->GetPlayerShip()) {
@@ -1453,7 +1453,7 @@ Starshatter::DoGameScreenFrame()
 				input->SwapYawRoll(false);
 
 			if (hud_view) {
-				hud_view->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
+				hud_view->SetHUDMode((int)EHUDMode::Tactical);
 				hud_view->HideHUDWarn();
 			}
 		}
@@ -1511,7 +1511,7 @@ void
 Starshatter::DoGameKeys()
 {
 	Sim* sim = (Sim*)world;
-	UHUDView* hud_view = UHUDView::GetInstance();
+	HUDView* hud_view = HUDView::GetInstance();
 
 	if (time_til_change <= 0) {
 		if (KeyDown(KEY_CAM_BRIDGE)) {
@@ -2136,9 +2136,9 @@ Starshatter::DoMouseFrame()
 	}
 
 	else {
-		UHUDView* hud_view = UHUDView::GetInstance();
+		HUDView* hud_view = HUDView::GetInstance();
 
-		if (hud_view && hud_view->GetHUDMode() != (int) HUD_MODE::HUD_MODE_OFF) {
+		if (hud_view && hud_view->GetHUDMode() != (int) EHUDMode::Off) {
 			Mouse::Show(true);
 			Mouse::SetCursor(Mouse::ARROW);
 		}

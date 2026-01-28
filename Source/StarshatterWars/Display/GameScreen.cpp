@@ -599,7 +599,7 @@ void UGameScreen::ExecFrame(float DeltaTime)
     if (hud_view)
     {
         hud_view->UseCameraView(cam_view);
-        hud_view->ExecFrame(DeltaTime);
+        hud_view->ExecFrame();
     }
 
     // Quit menu:

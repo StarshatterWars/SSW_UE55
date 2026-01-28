@@ -115,7 +115,7 @@ void
 CameraManager::SetShip(Ship* s)
 {
 	sim = Sim::GetSim();
-	hud = UHUDView::GetInstance();
+	hud = HUDView::GetInstance();
 
 	// can't take control of a dead ship:
 	if (s && (s->Life() == 0 || s->IsDying() || s->IsDead()))
@@ -464,7 +464,7 @@ CameraManager::ExecFrame(double seconds)
 	if (!ship)
 		return;
 
-	hud = UHUDView::GetInstance();
+	hud = HUDView::GetInstance();
 
 	const int flight_phase = ship->GetFlightPhase();
 
