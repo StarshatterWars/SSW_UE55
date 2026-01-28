@@ -10,6 +10,8 @@
 
 #include "SystemFont.h"
 
+#include "Screen.h"
+#include "Video.h"
 #include "Engine/Font.h"
 #include "Styling/CoreStyle.h"
 
@@ -158,4 +160,67 @@ const char* SystemFont::GetName() const
 void SystemFont::UpdateHeuristics()
 {
     // Hook for future baseline/height if you need it.
+}
+
+int SystemFont::DrawString(const char* text, int len, int x, int y, const Rect& clip, Video* video) const
+{
+    if (!video || !text || len <= 0) return 0;
+    return video->DrawString(*this, text, len, x, y, clip);
+}
+
+int SystemFont::DrawTextW(const wchar_t* text, int len, int x, int y, const Rect& clip, Video* video) const
+{
+    if (!video || !text || len <= 0) return 0;
+    return video->DrawTextW(*this, text, len, x, y, clip);
+}
+
+static Video* GetActiveVideo()
+{
+    Screen* screen = Screen::GetCurrent(); // or however you access it
+    return screen ? screen->GetVideo() : nullptr;
+}
+
+int SystemFont::DrawString(
+    const char* text,
+    int len,
+    int x,
+    int y,
+    const Rect& clip
+) const
+{
+    Video* video = GetActiveVideo();
+    if (!video || !text || len <= 0)
+        return 0;
+
+    return video->DrawString(*this, text, len, x, y, clip);
+}
+
+
+int SystemFont::DrawTextW(
+    const wchar_t* text,
+    int len,
+    int x,
+    int y,
+    const Rect& clip
+) const
+{
+    Video* video = GetActiveVideo();
+    if (!video || !text || len <= 0)
+        return 0;
+
+    return video->DrawTextW(*this, text, len, x, y, clip);
+}
+
+int SystemFont::DrawText(
+    const char* text,
+    int len,
+    const Rect& clip,
+    uint32 flags
+) const
+{
+    Video* video = GetActiveVideo();
+    if (!video || !text || len <= 0)
+        return 0;
+
+    return video->DrawText(*this, text, len, clip, flags);
 }

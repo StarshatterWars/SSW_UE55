@@ -34,7 +34,7 @@ class CameraView;
 class SystemFont;
 
 UCLASS(BlueprintType)
-class STARSHATTERWARS_API UMFDView : public UView
+class STARSHATTERWARS_API UMFDView : public UUserWidget
 {
     GENERATED_BODY()
 

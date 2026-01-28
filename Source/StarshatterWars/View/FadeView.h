@@ -22,22 +22,22 @@
 
 #include "CoreMinimal.h"
 #include "Math/Color.h"
-#include "View.h"            /
+#include "View.h"            
 #include "GameStructs.h"
+#include "FadeSubsystem.h"
 #include "FadeView.generated.h"
 
-class UFadeSubsystem;
-
 UCLASS()
-class STARSHATTERWARS_API UFadeView : public UView
+class STARSHATTERWARS_API UFadeView : public UUserWidget
 {
     GENERATED_BODY()
-
 public:
     static const char* TYPENAME() { return "FadeView"; }
 
     UFadeView(const FObjectInitializer& ObjectInitializer);
-    UFadeView(Window* c, double fade_in = 1, double fade_out = 1, double hold_time = 4);
+
+    // Starshatter-style parameters go here instead of ctor params:
+    void Init(double InSeconds, double OutSeconds, double HoldSeconds);
 
     // --- Legacy-ish API ---
     bool Done() const { return State == EFadeState::StateDone; }
@@ -75,4 +75,14 @@ private:
 
     // Default fade color (legacy used black):
     FColor FadeColor = FColor::Black;
+
+protected:
+    double      fade_in;
+    double      fade_out;
+    double      hold_time;
+    double      time;
+    double      step_time;
+
+    int         fast;
+    EFadeState  state;
 };

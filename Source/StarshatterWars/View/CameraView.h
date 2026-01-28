@@ -18,7 +18,6 @@
 
 #include "CoreMinimal.h"
 
-// Base is now UView (a UUserWidget):
 #include "View.h"
 
 // Legacy:
@@ -44,7 +43,7 @@ class Window;
 // +--------------------------------------------------------------------+
 
 UCLASS()
-class STARSHATTERWARS_API UCameraView : public UView
+class STARSHATTERWARS_API UCameraView : public UUserWidget
 {
     GENERATED_BODY()
 

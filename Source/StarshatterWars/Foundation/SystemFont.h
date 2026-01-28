@@ -42,6 +42,33 @@ public:
     // "/Game/UI/Fonts/MyFont.MyFont"
     bool Load(const char* InName);
 
+    // Legacy compatibility (delegates to the active Video/Window renderer):
+    int DrawString(const char* text, int len, int x, int y, const Rect& clip, Video* video) const;
+    int DrawTextW(const wchar_t* text, int len, int x, int y, const Rect& clip, Video* video) const;
+
+    int DrawString(
+        const char* text,
+        int len,
+        int x,
+        int y,
+        const Rect& clip
+    ) const;
+
+    int DrawTextW(
+        const wchar_t* text,
+        int len,
+        int x,
+        int y,
+        const Rect& clip
+    ) const;
+
+    int DrawText(
+        const char* text,
+        int len,
+        const Rect& clip,
+        uint32 flags
+    ) const;
+
     // Basic state:
     void   SetUFont(UFont* InFont);
     UFont* GetUFont() const;

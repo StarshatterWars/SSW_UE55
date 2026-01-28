@@ -38,7 +38,7 @@ class UTextBlock;
 class Sim;
 
 UCLASS()
-class STARSHATTERWARS_API UQuitView : public UView
+class STARSHATTERWARS_API UQuitView : public UUserWidget
 {
     GENERATED_BODY()
 

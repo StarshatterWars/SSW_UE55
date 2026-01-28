@@ -550,12 +550,12 @@ UHUDView::UHUDView(Window* c)
 
 	for (int32 i = 0; i < 4; ++i)
 	{
-		UMFDView* MFD = CreateWidget<UMFDView>(
+		UMFDView* MFDNodes = CreateWidget<UMFDView>(
 			GetWorld(),
 			UMFDView::StaticClass()
 		);
 	}
-
+	
 	mfd[0]->SetRect(Rect(8, height - 136, 128, 128));
 	mfd[1]->SetRect(Rect(width - 136, height - 136, 128, 128));
 	mfd[2]->SetRect(Rect(8, 8, 128, 128));

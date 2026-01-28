@@ -70,7 +70,7 @@ struct FDisplayElement
 // +--------------------------------------------------------------------+
 
 UCLASS()
-class STARSHATTERWARS_API UDisplayView : public UView
+class STARSHATTERWARS_API UDisplayView : public UUserWidget
 {
     GENERATED_BODY()
 
