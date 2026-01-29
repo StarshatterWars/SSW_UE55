@@ -819,3 +819,13 @@ void CameraView::WorldPlaneToView(Plane& plane)
     plane.normal.Y = (float)FVector::DotProduct(tnormal, cvup);
     plane.normal.Z = (float)FVector::DotProduct(tnormal, cvpn);
 }
+
+CameraView* CameraView::GetInstance()
+{
+    // Legacy pattern; you may want to manage this in a HUD/Screen manager later.
+    if (!camera_view)
+    {
+        camera_view = new CameraView(nullptr, 0, 0, 0, 0, nullptr, nullptr);
+    }
+    return camera_view;
+}

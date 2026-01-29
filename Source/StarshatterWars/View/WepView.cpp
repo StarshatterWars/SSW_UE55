@@ -303,12 +303,12 @@ WepView::SetColor(FColor c)
     HUDView* hud = HUDView::GetInstance();
 
     if (hud) {
-        hud_color = hud->GetHUDColor();
-        txt_color = hud->GetTextColor();
+        HudColor = hud->GetHUDColor();
+        TextColor = hud->GetTextColor();
     }
     else {
-        hud_color = c;
-        txt_color = c;
+        HudColor = c;
+        TextColor = c;
     }
 
     // NOTE:
@@ -343,7 +343,7 @@ WepView::DrawOverlay()
     tgt_rect.h = 15;
 
     Text           subtxt;
-    FColor         stat = hud_color;
+    FColor         stat = HudColor;
     static DWORD   blink = Game::RealTime();
 
     if (ship->GetTarget()) {

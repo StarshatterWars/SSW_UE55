@@ -1080,11 +1080,7 @@ Starshatter::DoMenuScreenFrame()
 	}
 
 	if (show_missions) {
-		if (net_lobby)
-			menuscreen->ShowNetLobbyDlg();
-		else
-			menuscreen->ShowMsnSelectDlg();
-
+		menuscreen->ShowMsnSelectDlg();
 		show_missions = false;
 	}
 
@@ -2140,7 +2136,7 @@ Starshatter::DoMouseFrame()
 	else {
 		HUDView* hud_view = HUDView::GetInstance();
 
-		if (hud_view && hud_view->GetHUDMode() != (int) EHUDMode::Off) {
+		if (hud_view && hud_view->GetHUDMode() != EHUDMode::Off) {
 			Mouse::Show(true);
 			Mouse::SetCursor(Mouse::ARROW);
 		}

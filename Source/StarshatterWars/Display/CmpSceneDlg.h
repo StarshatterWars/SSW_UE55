@@ -19,13 +19,15 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "DisplayView.h"
+#include "CameraView.h"
 #include "CmpSceneDlg.generated.h"
 
 class UCanvasPanel;
 class URichTextBlock;
 
-class UCameraView;    // your ported camera view (UObject recommended)
-class UDisplayView;   // your ported display view (UObject recommended)
+    // your ported camera view (UObject recommended)
+   // your ported display view (UObject recommended)
 
 UCLASS()
 class STARSHATTERWARS_API UCmpSceneDlg : public UBaseScreen
@@ -47,7 +49,7 @@ public:
     void HideScreen();     // legacy Hide()
 
     CameraView* GetCameraView() const { return CamView; }
-    UDisplayView* GetDisplayView() const { return DispView; }
+    DisplayView* GetDisplayView() const { return DispView; }
 
 private:
     void EnsureViewObjects();

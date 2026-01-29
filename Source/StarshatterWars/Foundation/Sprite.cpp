@@ -67,34 +67,94 @@ static FVector RowAsVector(const FMatrix& M, int Row)
 
 // +--------------------------------------------------------------------+
 
-Sprite::Sprite()
-	: w(0), h(0), nframes(0), own_frames(0),
-	frames(0), frame_index(0), frame_time(100), loop(0), shade(1.0),
-	angle(0.0), blend_mode(4), filter(1), vset(4), poly(0)
+void
+Sprite::Render(Video* video, DWORD flags)
 {
-	trans = true;
+	if (shade < 0.001 || hidden || !visible || !video)
+		return;
 
-	vset.space = VertexSet::WORLD_SPACE;
-	for (int i = 0; i < 4; i++) {
-		vset.diffuse[i] = Color::White.Value();
+	if (blend_mode == 2 && !(flags & Graphic::RENDER_ALPHA))
+		return;
+
+	if (blend_mode == 4 && !(flags & Graphic::RENDER_ADDITIVE))
+		return;
+
+	if (!(life > 0 || loop))
+		return;
+
+	const Camera* camera = video->GetCamera();
+	if (!camera)
+		return;
+
+	// Convert camera orientation to Unreal matrix
+	const FMatrix CamM = ToFMatrix(camera->Orientation());
+
+	FVector Right = RowAsVector(CamM, 0);
+	FVector Up = RowAsVector(CamM, 1);
+
+	Vec3 vpn_ss = camera->vpn();
+	FVector Normal(
+		(float)vpn_ss.X,
+		(float)vpn_ss.Y,
+		(float)vpn_ss.Z
+	);
+
+	Normal *= -1.0f;
+
+	// Apply roll
+	if (fabs(angle) > KINDA_SMALL_NUMBER)
+	{
+		FQuat RollQ(Normal.GetSafeNormal(), (float)angle);
+		Right = RollQ.RotateVector(Right);
+		Up = RollQ.RotateVector(Up);
 	}
 
-	vset.tu[0] = 0.0f;
-	vset.tv[0] = 0.0f;
-	vset.tu[1] = 1.0f;
-	vset.tv[1] = 0.0f;
-	vset.tu[2] = 1.0f;
-	vset.tv[2] = 1.0f;
-	vset.tu[3] = 0.0f;
-	vset.tv[3] = 1.0f;
+	// Vertex color (Option B: FColor)
+	uint8 c = ClampColorByte(shade);
+	FColor VertexColor(c, c, c, c);
 
-	poly.nverts = 4;
-	poly.vertex_set = &vset;
-	poly.material = &mtl;
-	poly.verts[0] = 0;
-	poly.verts[1] = 1;
-	poly.verts[2] = 2;
-	poly.verts[3] = 3;
+	FVector vx = Right * (float)(w * 0.5);
+	FVector vy = Up * (float)(h * 0.5);
+
+	// Vertex positions
+	vset.loc[0] = loc - vx + vy;
+	vset.loc[1] = loc + vx + vy;
+	vset.loc[2] = loc + vx - vy;
+	vset.loc[3] = loc - vx - vy;
+
+	for (int i = 0; i < 4; i++)
+	{
+		vset.nrm[i] = Normal;
+		vset.diffuse[i] = VertexColor;
+	}
+
+	// Material setup
+	if (luminous)
+	{
+		mtl.Ka = FColor::Black;
+		mtl.Kd = FColor::Black;
+		mtl.Ks = FColor::Black;
+		mtl.Ke = FColor::White;
+		mtl.tex_diffuse = Frame();
+		mtl.tex_emissive = Frame();
+		mtl.blend = blend_mode;
+		mtl.luminous = true;
+	}
+	else
+	{
+		mtl.Ka = FColor::White;
+		mtl.Kd = FColor::White;
+		mtl.Ks = FColor::Black;
+		mtl.Ke = FColor::Black;
+		mtl.tex_diffuse = Frame();
+		mtl.tex_emissive = 0;
+		mtl.blend = blend_mode;
+		mtl.luminous = false;
+	}
+
+	video->DrawPolys(1, &poly);
+
+	memset(&screen_rect, 0, sizeof(Rect));
 }
 
 // +--------------------------------------------------------------------+
@@ -219,7 +279,7 @@ Sprite::SetAnimation(Bitmap* animation, int length, int repeat, int share)
 		last_time = Game::RealTime() - frame_time;
 	}
 	else {
-		UE_LOG(LogStarshatterWars, Warning, TEXT("Sprite::SetAnimation called with null animation"));
+		UE_LOG(LogTemp, Warning, TEXT("Sprite::SetAnimation called with null animation"));
 	}
 }
 
@@ -285,141 +345,147 @@ Sprite::Frame() const
 
 // +--------------------------------------------------------------------+
 
-void
-Sprite::Render(Video* video, DWORD flags)
+void Sprite::Render(Video* video, DWORD flags)
 {
-	if (shade < 0.001 || hidden || !visible || !video)
+	if (shade < 0.001f || hidden || !visible || !video) {
 		return;
-
-	if (blend_mode == 2 && !(flags & Graphic::RENDER_ALPHA))
-		return;
-
-	if (blend_mode == 4 && !(flags & Graphic::RENDER_ADDITIVE))
-		return;
-
-	if (life > 0 || loop) {
-		const Camera* camera = video->GetCamera();
-
-		// Convert Starshatter orientation matrix to Unreal FMatrix:
-		const FMatrix CamM = ToFMatrix(camera->Orientation());
-
-		// Camera basis (matches original usage of orient(0,*) and orient(1,*)):
-		FVector Right = RowAsVector(CamM, 0);
-		FVector Up = RowAsVector(CamM, 1);
-
-		// Camera normal: original code used nrm = camera->vpn() * -1
-		const Vec3 vpn_ss = camera->vpn();
-		const FVector Nrm = FVector((float)vpn_ss.x, (float)vpn_ss.y, (float)vpn_ss.z) * -1.0f;
-
-		// Apply roll (angle is assumed radians, matching Render2D's cos/sin usage):
-		if (FMath::Abs((float)angle) > KINDA_SMALL_NUMBER) {
-			const FQuat RollQ(Nrm.GetSafeNormal(), (float)angle);
-			Right = RollQ.RotateVector(Right);
-			Up = RollQ.RotateVector(Up);
-		}
-
-		// Vertex diffuse as packed ARGB using FColor:
-		const uint8  c = ClampColorByte(shade);
-		const FColor White(c, c, c, c);
-		const DWORD  diff = (DWORD)White.ToPackedARGB();
-
-		// Material still uses Starshatter ColorValue/Color types:
-		const ColorValue white((float)shade, (float)shade, (float)shade, (float)shade);
-
-		// Scale axes to sprite half extents:
-		const FVector vx = Right * (float)(w / 2.0f);
-		const FVector vy = Up * (float)(h / 2.0f);
-
-		// loc assumed FVector in the UE port:
-		vset.loc[0] = loc - vx + vy;
-		vset.nrm[0] = Nrm;
-		vset.diffuse[0] = diff;
-
-		vset.loc[1] = loc + vx + vy;
-		vset.nrm[1] = Nrm;
-		vset.diffuse[1] = diff;
-
-		vset.loc[2] = loc + vx - vy;
-		vset.nrm[2] = Nrm;
-		vset.diffuse[2] = diff;
-
-		vset.loc[3] = loc - vx - vy;
-		vset.nrm[3] = Nrm;
-		vset.diffuse[3] = diff;
-
-		if (luminous) {
-			mtl.Ka = Color::Black;
-			mtl.Kd = Color::Black;
-			mtl.Ks = Color::Black;
-			mtl.Ke = white;
-			mtl.tex_diffuse = Frame();
-			mtl.tex_emissive = Frame();
-			mtl.blend = blend_mode;
-			mtl.luminous = luminous;
-		}
-		else {
-			mtl.Ka = white;
-			mtl.Kd = white;
-			mtl.Ks = Color::Black;
-			mtl.Ke = Color::Black;
-			mtl.tex_diffuse = Frame();
-			mtl.tex_emissive = 0;
-			mtl.blend = blend_mode;
-			mtl.luminous = luminous;
-		}
-
-		video->DrawPolys(1, &poly);
 	}
 
-	std::memset(&screen_rect, 0, sizeof(Rect));
+	if (blend_mode == 2 && !(flags & Graphic::RENDER_ALPHA)) {
+		return;
+	}
+		
+	if (blend_mode == 4 && !(flags & Graphic::RENDER_ADDITIVE)) {
+		return;
+	}
+
+	if (life <= 0 && !loop) {
+		return;
+	}
+		
+	const Camera* camera = video->GetCamera();
+	if (!camera) {
+		return;
+	}
+
+	// Convert Starshatter orientation to UE matrix
+	const FMatrix CamM = ToFMatrix(camera->Orientation());
+
+	FVector Right = RowAsVector(CamM, 0);
+	FVector Up = RowAsVector(CamM, 1);
+
+	// Camera normal (legacy vpn * -1)
+	const Vec3 vpn_ss = camera->vpn();
+	FVector Nrm((float)vpn_ss.X, (float)vpn_ss.Y, (float)vpn_ss.Z);
+	Nrm *= -1.0f;
+
+	// Apply roll
+	if (FMath::Abs((float)angle) > KINDA_SMALL_NUMBER)
+	{
+		const FQuat RollQ(Nrm.GetSafeNormal(), (float)angle);
+		Right = RollQ.RotateVector(Right);
+		Up = RollQ.RotateVector(Up);
+	}
+
+	// Final sprite color (NO packed DWORD)
+	const uint8 c = ClampColorByte(shade);
+	const FColor Diff(c, c, c, c);
+
+	// Half-extents
+	const FVector vx = Right * (float)(w * 0.5f);
+	const FVector vy = Up * (float)(h * 0.5f);
+
+	// Quad vertices
+	vset.loc[0] = loc - vx + vy;
+	vset.loc[1] = loc + vx + vy;
+	vset.loc[2] = loc + vx - vy;
+	vset.loc[3] = loc - vx - vy;
+
+	vset.nrm[0] = Nrm;
+	vset.nrm[1] = Nrm;
+	vset.nrm[2] = Nrm;
+	vset.nrm[3] = Nrm;
+
+	vset.diffuse[0] = Diff;
+	vset.diffuse[1] = Diff;
+	vset.diffuse[2] = Diff;
+	vset.diffuse[3] = Diff;
+
+	// Material setup
+	if (luminous)
+	{
+		mtl.Ka = FColor::Black;
+		mtl.Kd = FColor::Black;
+		mtl.Ks = FColor::Black;
+		mtl.Ke = FColor::White;
+		mtl.tex_diffuse = Frame();
+		mtl.tex_emissive = Frame();
+		mtl.blend = blend_mode;
+		mtl.luminous = true;
+	}
+	else
+	{
+		mtl.Ka = FColor::White;
+		mtl.Kd = FColor::White;
+		mtl.Ks = FColor::Black;
+		mtl.Ke = FColor::Black;
+		mtl.tex_diffuse = Frame();
+		mtl.tex_emissive = nullptr;
+		mtl.blend = blend_mode;
+		mtl.luminous = false;
+	}
+
+	video->DrawPolys(1, &poly);
+
+	FMemory::Memzero(&screen_rect, sizeof(Rect));
 }
 
 // +--------------------------------------------------------------------+
 
-void
-Sprite::Render2D(Video* video)
+void Sprite::Render2D(Video* video)
 {
-	if (shade < 0.001 || hidden || !visible || !video)
+	if (shade < 0.001f || hidden || !visible || !video)
 		return;
 
+	// If your vset.diffuse[] is FColor (as indicated by the Render() compile errors),
+	// do NOT pack to DWORD here.
 	const uint8  c = ClampColorByte(shade);
-	const FColor White(c, c, c, c);
-	const DWORD  diff = (DWORD)White.ToPackedARGB();
-
-	const ColorValue white((float)shade, (float)shade, (float)shade, (float)shade);
+	const FColor Diff(c, c, c, c);
 
 	const double ca = std::cos(Angle());
 	const double sa = std::sin(Angle());
 
-	const double w2 = Width() / 2.0;
-	const double h2 = Height() / 2.0;
+	const double w2 = Width() * 0.5;
+	const double h2 = Height() * 0.5;
 
 	// loc assumed FVector:
-	vset.s_loc[0].x = (float)(loc.X + (-w2 * ca - -h2 * sa) - 0.5);
-	vset.s_loc[0].y = (float)(loc.Y + (-w2 * sa + -h2 * ca) - 0.5);
-	vset.s_loc[0].z = 0.0f;
+	vset.s_loc[0].X = (float)(loc.X + (-w2 * ca - -h2 * sa) - 0.5);
+	vset.s_loc[0].Y = (float)(loc.Y + (-w2 * sa + -h2 * ca) - 0.5);
+	vset.s_loc[0].Z = 0.0f;
 	vset.rw[0] = 1.0f;
-	vset.diffuse[0] = diff;
+	vset.diffuse[0] = Diff;
 
-	vset.s_loc[1].x = (float)(loc.X + (w2 * ca - -h2 * sa) - 0.5);
-	vset.s_loc[1].y = (float)(loc.Y + (w2 * sa + -h2 * ca) - 0.5);
-	vset.s_loc[1].z = 0.0f;
+	vset.s_loc[1].X = (float)(loc.X + (w2 * ca - -h2 * sa) - 0.5);
+	vset.s_loc[1].Y = (float)(loc.Y + (w2 * sa + -h2 * ca) - 0.5);
+	vset.s_loc[1].Z = 0.0f;
 	vset.rw[1] = 1.0f;
-	vset.diffuse[1] = diff;
+	vset.diffuse[1] = Diff;
 
-	vset.s_loc[2].x = (float)(loc.X + (w2 * ca - h2 * sa) - 0.5);
-	vset.s_loc[2].y = (float)(loc.Y + (w2 * sa + h2 * ca) - 0.5);
-	vset.s_loc[2].z = 0.0f;
+	vset.s_loc[2].X = (float)(loc.X + (w2 * ca - h2 * sa) - 0.5);
+	vset.s_loc[2].Y = (float)(loc.Y + (w2 * sa + h2 * ca) - 0.5);
+	vset.s_loc[2].Z = 0.0f;
 	vset.rw[2] = 1.0f;
-	vset.diffuse[2] = diff;
+	vset.diffuse[2] = Diff;
 
-	vset.s_loc[3].x = (float)(loc.X + (-w2 * ca - h2 * sa) - 0.5);
-	vset.s_loc[3].y = (float)(loc.Y + (-w2 * sa + h2 * ca) - 0.5);
-	vset.s_loc[3].z = 0.0f;
+	vset.s_loc[3].X = (float)(loc.X + (-w2 * ca - h2 * sa) - 0.5);
+	vset.s_loc[3].Y = (float)(loc.Y + (-w2 * sa + h2 * ca) - 0.5);
+	vset.s_loc[3].Z = 0.0f;
 	vset.rw[3] = 1.0f;
-	vset.diffuse[3] = diff;
+	vset.diffuse[3] = Diff;
 
-	mtl.Kd = white;
+	// Material: keep it consistent with your UE-side material struct.
+	// If mtl.Kd is also FColor now, assign FColor. If it's ColorValue, see note below.
+	mtl.Kd = Diff;
 	mtl.tex_diffuse = Frame();
 	mtl.blend = blend_mode;
 

@@ -138,7 +138,7 @@ void UCmpSceneDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     }
 
     // Drive the display view (legacy disp_view->ExecFrame()):
-    DispView->ExecFrame(InDeltaTime);
+    DispView->ExecFrame();
 
     const double NowSeconds = FPlatformTime::Seconds();
     UpdateSubtitlesScroll(NowSeconds);
@@ -148,7 +148,7 @@ void UCmpSceneDlg::EnsureViewObjects()
 {
     if (!CamView)
     {
-        CamView = NewObject<UCameraView>(this);
+        CamView = CameraView::GetInstance()
     }
 
     if (!DispView)
@@ -237,7 +237,7 @@ void UCmpSceneDlg::UpdateSubtitlesScroll(double NowSeconds)
     //
     // If you already implemented a “RichTextBox” port with ScrollDown(), call that here.
 
-    Starshatter* Stars = Starshatter::Get();
+    Starshatter* Stars = Starshatter::GetInstance();
     Mission* CutsceneMission = Stars ? Stars->GetCutsceneMission() : nullptr;
     if (!CutsceneMission)
         return;
@@ -247,8 +247,8 @@ void UCmpSceneDlg::UpdateSubtitlesScroll(double NowSeconds)
     {
         const int32 LineCount = 0; // TODO: provide your own line-counting method
 
-        MissionEvent* BeginScene = CutsceneMission->FindEvent(EMissionEvent::BEGIN_SCENE);
-        MissionEvent* EndScene = CutsceneMission->FindEvent(EMissionEvent::END_SCENE);
+        MissionEvent* BeginScene = CutsceneMission->FindEvent((int) MISSIONEVENT_TYPE::BEGIN_SCENE);
+        MissionEvent* EndScene = CutsceneMission->FindEvent((int)MISSIONEVENT_TYPE::END_SCENE);
 
         if (BeginScene && EndScene && LineCount > 0)
         {

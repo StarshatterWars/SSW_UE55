@@ -254,10 +254,10 @@ void TacticalView::DrawMouseRect()
     if (mouse_rect.w > 0 && mouse_rect.h > 0) {
        
        FColor c(
-            FMath::Clamp(int(hud_color.R * 0.66f), 0, 255),
-            FMath::Clamp(int(hud_color.G * 0.66f), 0, 255),
-            FMath::Clamp(int(hud_color.B * 0.66f), 0, 255),
-            hud_color.A
+            FMath::Clamp(int(HudColor.R * 0.66f), 0, 255),
+            FMath::Clamp(int(HudColor.G * 0.66f), 0, 255),
+            FMath::Clamp(int(HudColor.B * 0.66f), 0, 255),
+            HudColor.A
         );
 
         if (shift_down)
@@ -317,7 +317,7 @@ void TacticalView::DrawSelection(Ship* seln)
                 s = SYSTEM_STATUS::DEGRADED;
 
             FColor hc = HUDView::GetStatusColor(s);
-            FColor sc = hud_color;
+            FColor sc = HudColor;
 
             window->FillRect(sx, sy, sx + hw, sy + 1, hc);
             window->FillRect(sx, sy + 3, sx + sw, sy + 4, sc);
@@ -407,7 +407,7 @@ void TacticalView::DrawSelectionInfo(Ship* seln)
     }
 
     if (show_labels) {
-        font->SetColor(txt_color);
+        font->SetColor(TextColor);
         font->SetAlpha(1);
 
         font->DrawText(Game::GetText("TacView.name"), 5, label_rect, DT_LEFT);
@@ -1240,8 +1240,8 @@ void TacticalView::DrawMenu()
     }
 
     if (menu_view) {
-        menu_view->SetBackColor(hud_color);
-        menu_view->SetTextColor(txt_color);
+        menu_view->SetBackColor(HudColor);
+        menu_view->SetTextColor(TextColor);
         menu_view->SetMenu(active_menu);
         menu_view->Refresh();
     }
@@ -1382,7 +1382,7 @@ void TacticalView::DrawMove()
         FormatNumber(range, distance);
         font->SetColor(FColor::White);
         font->DrawText(range, 0, range_rect, DT_LEFT | DT_SINGLELINE);
-        font->SetColor(txt_color);
+        font->SetColor(TextColor);
     }
 }
 

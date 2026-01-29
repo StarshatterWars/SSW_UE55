@@ -22,7 +22,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseScreen.h"              
+#include "BaseScreen.h"   
+#include "CameraView.h"
 #include "GameScreen.generated.h"
 
 // Forward declares (UMG dialogs):
@@ -48,7 +49,6 @@ class WepView;
 class QuantumView;
 class RadioView;
 class TacticalView;
-class CameraView;
 class Bitmap;
 class DataLoader;
 class SystemFont;

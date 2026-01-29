@@ -876,11 +876,13 @@ FlightDeck::SpaceLeft(int Type) const
 
 // +----------------------------------------------------------------------+
 
-bool
-FlightDeck::Spot(Ship* s, int& outIndex)
+bool FlightDeck::Spot(Ship* s, int& outIndex)
 {
 	if (!s)
 		return false;
+
+	// Convert ship class/type to a bitmask that matches slots[i].filter:
+	const uint32 ShipMask = (uint32)s->ClassMask();   // <-- implement or rename to your actual mask getter
 
 	// Find first available compatible slot if caller didn't specify one:
 	if (outIndex < 0)
@@ -889,7 +891,9 @@ FlightDeck::Spot(Ship* s, int& outIndex)
 
 		for (int i = 0; i < num_slots; i++)
 		{
-			if (slots[i].ship == nullptr && (slots[i].filter & s->Class()))
+			const uint32 SlotMask = (uint32)slots[i].filter;
+
+			if (slots[i].ship == nullptr && ((SlotMask & ShipMask) != 0))
 			{
 				outIndex = i;
 				break;
@@ -945,7 +949,6 @@ FlightDeck::Spot(Ship* s, int& outIndex)
 
 	return true;
 }
-
 
 bool
 FlightDeck::Clear(int slotIndex)

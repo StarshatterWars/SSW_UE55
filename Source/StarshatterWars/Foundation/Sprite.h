@@ -52,7 +52,7 @@ public:
 	virtual void      Hide() { hidden = true; }
 	virtual void      Show() { hidden = false; }
 
-	virtual void      MoveTo(const FVector& p) { location = p; }
+	virtual void      MoveTo(const FVector& p) { Location = p; }
 
 	// accessors / mutators
 	int            Width()     const { return w; }
@@ -73,7 +73,7 @@ public:
 	virtual void   SetAnimation(Bitmap* animation, int length = 1, int repeat = 1, int share = 1);
 	virtual void   SetTexCoords(const double* uv_interleaved);
 
-	const FVector& GetLocation() const { return location; }
+	const FVector& GetLocation() const { return Location; }
 
 	Bitmap* Frame()     const;
 	void           SetFrameIndex(int n);

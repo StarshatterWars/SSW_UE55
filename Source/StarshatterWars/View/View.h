@@ -56,7 +56,7 @@
 // Minimal UE types used in signatures:
 #include "Math/Vector.h"  // FVector
 #include "Math/Color.h"   // FColor
-
+#include "GameStructs.h" 
 // ---------------------------------------------------------------------
 // Forward declarations (keep compile dependencies low).
 // ---------------------------------------------------------------------

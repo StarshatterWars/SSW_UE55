@@ -244,7 +244,7 @@ RadioView::Refresh()
 	if (!font)
 		return;
 
-	font->SetColor(txt_color);
+	font->SetColor(TextColor);
 	font->SetAlpha(1);
 
 	if (sim && ship != sim->GetPlayerShip()) {
@@ -469,7 +469,7 @@ RadioView::ExecFrame()
 	if (hud) {
 		if (TextColor != hud->GetTextColor()) {
 			TextColor = hud->GetTextColor();
-			SetColor(txt_color);
+			SetColor(TextColor);
 		}
 
 		HudColor = hud->GetHUDColor();
@@ -530,12 +530,12 @@ RadioView::SetColor(FColor c)
 	HUDView* hud = HUDView::GetInstance();
 
 	if (hud) {
-		hud_color = hud->GetHUDColor();
+		HudColor = hud->GetHUDColor();
 		TextColor = hud->GetTextColor();
 	}
 	else {
-		hud_color = c;
-		txt_color = c;
+		HudColor = c;
+		TextColor = c;
 	}
 }
 

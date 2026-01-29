@@ -223,7 +223,7 @@ QuantumView::ExecFrame()
 void
 QuantumView::SetColor(FColor c)
 {
-	hud_color = c;
+	HudColor = c;
 }
 
 // +--------------------------------------------------------------------+

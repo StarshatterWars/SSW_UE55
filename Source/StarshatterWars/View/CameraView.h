@@ -122,6 +122,8 @@ public:
 
     virtual void   FindDepth(Graphic* g);
 
+    static CameraView* GetInstance();
+
 protected:
     virtual void   WorldPlaneToView(Plane& plane);
 
@@ -152,4 +154,7 @@ protected:
 
     // Visible scene list:
     List<Graphic>   graphics;
+
+private:
+    static CameraView* camera_view;
 };

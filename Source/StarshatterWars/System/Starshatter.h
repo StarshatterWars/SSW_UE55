@@ -34,6 +34,7 @@ class MultiController;
 class MouseController;
 class MusicManager;
 class DataLoader;
+class FadeView;
 class SystemFont;
 class Mission;
 class Window;
@@ -135,8 +136,8 @@ protected:
 	UGameScreen* gamescreen;
 	UCmpnScreen* cmpnscreen;
 
-	UFadeView* splash;
-	int                 splash_index;
+	FadeView* splash;
+	int splash_index;
 
 	// Replaced Bitmap (render asset) with Unreal texture pointer:
 	Bitmap* splash_image;
