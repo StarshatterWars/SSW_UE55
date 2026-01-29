@@ -81,18 +81,18 @@ static FORCEINLINE FVector ToFVector(const Point& P)
 }
 
 MapView::MapView(Window* win)
-	: View(win)
-	, system(0), zoom(1.1), offset_x(0), offset_y(0), ship(0), campaign(0)
+	: View(win, 0, 0, win ? win->Width() : 0, win ? win->Height() : 0)
+	, system(nullptr), zoom(1.1f), offset_x(0), offset_y(0), ship(nullptr), campaign(nullptr)
 	, captured(false), dragging(false), adding_navpt(false)
 	, moving_navpt(false), moving_elem(false)
 	, view_mode(VIEW_SYSTEM), seln_mode(SELECT_REGION), ship_filter(0xffffffff)
 	, current_star(0), current_planet(0), current_region(0)
-	, current_ship(0), current_elem(0), current_navpt(0), mission(0)
+	, current_ship(nullptr), current_elem(nullptr), current_navpt(nullptr), mission(nullptr)
 	, scrolling(0), scroll_x(0), scroll_y(0), click_x(0), click_y(0)
-	, active_menu(0), map_menu(0), map_system_menu(0), map_sector_menu(0)
-	, ship_menu(0), editor(false)
-	, nav_menu(0), action_menu(0), objective_menu(0), formation_menu(0), speed_menu(0)
-	, hold_menu(0), farcast_menu(0), menu_view(0)
+	, active_menu(nullptr), map_menu(nullptr), map_system_menu(nullptr), map_sector_menu(nullptr)
+	, ship_menu(nullptr), editor(false)
+	, nav_menu(nullptr), action_menu(nullptr), objective_menu(nullptr), formation_menu(nullptr), speed_menu(nullptr)
+	, hold_menu(nullptr), farcast_menu(nullptr), menu_view(nullptr)
 {
 	for (int i = 0; i < 3; i++) {
 		view_zoom[i] = zoom;
@@ -1632,9 +1632,9 @@ MapView::GetSelectionIndex()
 }
 
 void
-MapView::DrawTabbedText(SystemFont* Font, const char* text)
+MapView::DrawTabbedText(SystemFont* MapFont, const char* text)
 {
-	if (Font && text && *text) {
+	if (MapFont && text && *text) {
 		Rect label_rect;
 
 		label_rect.w = rect.w;
@@ -1644,7 +1644,7 @@ MapView::DrawTabbedText(SystemFont* Font, const char* text)
 
 		const DWORD text_flags = DT_WORDBREAK | DT_LEFT;
 
-		active_window->SetFont(Font);
+		active_window->SetFont(MapFont);
 		active_window->DrawText(text, 0, label_rect, text_flags);
 	}
 }

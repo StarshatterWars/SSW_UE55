@@ -123,7 +123,7 @@ void DisplayView::Refresh()
             elem->font->SetAlpha(fade);
 
             SetFont(elem->font);
-            DrawText(elem->text.data(), elem->text.length(), elem_rect, DT_WORDBREAK);
+            this->DrawTextRect(elem->text.data(), elem->text.length(), elem_rect, DT_WORDBREAK);
         }
 
         // Draw image:
@@ -180,12 +180,12 @@ void DisplayView::ClearDisplay()
 
 void DisplayView::AddText(
     const char* txt,
-    SystemFont* font,
+    SystemFont* Font,
     const FColor& color,
-    const Rect& rect,
-    double        hold,
-    double        fade_in,
-    double        fade_out)
+    const Rect& text_rect,
+    double          hold,
+    double          fade_in,
+    double          fade_out)
 {
     DisplayElement* elem = new DisplayElement;
 
@@ -193,9 +193,9 @@ void DisplayView::AddText(
         hold = 300;
 
     elem->text = txt ? txt : "";
-    elem->font = font;
+    elem->font = Font;
     elem->color = color;
-    elem->rect = rect;
+    elem->rect = text_rect;
     elem->hold = hold;
     elem->fade_in = fade_in;
     elem->fade_out = fade_out;
@@ -206,11 +206,11 @@ void DisplayView::AddText(
 void DisplayView::AddImage(
     Bitmap* bmp,
     const FColor& color,
-    int           blend,
-    const Rect& rect,
-    double        hold,
-    double        fade_in,
-    double        fade_out)
+    int             blend,
+    const Rect& image_rect,
+    double          hold,
+    double          fade_in,
+    double          fade_out)
 {
     DisplayElement* elem = new DisplayElement;
 
@@ -218,7 +218,7 @@ void DisplayView::AddImage(
         hold = 300;
 
     elem->image = bmp;
-    elem->rect = rect;
+    elem->rect = image_rect;
     elem->color = color;
     elem->blend = blend;
     elem->hold = hold;

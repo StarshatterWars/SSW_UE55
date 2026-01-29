@@ -34,6 +34,10 @@
 #undef View
 #endif
 
+#ifdef DrawText
+#undef DrawText
+#endif
+
 #ifdef Screen
 #undef Screen
 #endif
@@ -52,6 +56,7 @@
 #include "Types.h"
 #include "List.h"
 #include "Geometry.h"     // Rect
+#include "FontManager.h"
 
 // Minimal UE types used in signatures:
 #include "Math/Vector.h"  // FVector
@@ -64,6 +69,7 @@ class Screen;
 class Window;     // <-- NEW: render ownership context
 class Bitmap;
 class SystemFont;
+class FontManager;
 
 // Opaque child list holder to avoid template parse explosions in headers:
 struct FViewChildren;
@@ -147,6 +153,7 @@ public:
     // ------------------------------------------------------------
     // Drawing (implemented in View.cpp)
     // ------------------------------------------------------------
+    void DrawTextRect(const char* txt, int count, Rect& txt_rect, DWORD flags);
     void DrawLine(int x1, int y1, int x2, int y2, const FColor& color, int blend = 0);
     void DrawRect(int x1, int y1, int x2, int y2, const FColor& color, int blend = 0);
     void DrawRect(const Rect& r, const FColor& color, int blend = 0);
@@ -175,8 +182,12 @@ public:
     void                SetTextColor(FColor TColor);
     void                SetHUDColor(FColor HColor);
 
+    FColor    GetBackColor() const { return BackColor; }
+    void      SetBackColor(const FColor& c) { BackColor = c; }
+
     void Print(int x1, int y1, const char* fmt, ...);
-    void DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags);
+   
+
 
 protected:
     // Legacy coordinate transform hooks (if needed later)
@@ -200,6 +211,9 @@ protected:
     // State:
     SystemFont* font = nullptr;
 
+    SystemFont* HUDFont = FontManager::Find("HUD");
+    SystemFont* GUIFont = FontManager::Find("GUI");
+
     // Opaque child list (defined in View.cpp) to avoid template issues in headers:
     FViewChildren* children = nullptr;
 
@@ -208,5 +222,6 @@ protected:
 
     FColor       HudColor = FColor::Black; 
     FColor       TextColor = FColor::White;
+    FColor       BackColor = FColor::Black;
     FColor       StatusColor;
 };

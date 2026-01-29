@@ -26,6 +26,9 @@
 #include "Logging/LogMacros.h"         // UE_LOG
 
 // Starshatter / Starshatter Wars:
+#include "CameraView.h"
+#include "MFDView.h"
+
 #include "HUDSounds.h"
 #include "Ship.h"
 #include "SimElement.h"        // was Element
@@ -49,7 +52,7 @@
 #include "StarSystem.h"        // keep StarSystem*
 #include "Starshatter.h"
 #include "CameraManager.h"     // was CameraDirector
-#include "MFDView.h"
+
 #include "RadioView.h"
 #include "FormatUtil.h"
 #include "Hoop.h"
@@ -59,8 +62,8 @@
 #include "PlayerCharacter.h"
 #include "GameStructs.h"
 #include "FontManager.h" 
+#include "SimProjector.h"
 
-#include "CameraView.h"
 #include "Screen.h"
 #include "DataLoader.h"
 #include "SimScene.h"          // was Scene
@@ -75,10 +78,7 @@
 #include "Bitmap.h"
 #include "Game.h"
 
-#include "SimProjector.h"
 
-#include "CameraView.h"
-#include "MFDView.h"
 // -------------------------------------------------------------------------------------------------
 // Local helpers (FColor math compatible with legacy "Color" ops)
 // -------------------------------------------------------------------------------------------------
@@ -1549,11 +1549,6 @@ HUDView::GetStatusColor(SYSTEM_STATUS status)
 	return sc;
 }
 
-void
-HUDView::SetTextColor(FColor& TColor)
-{
-	TextColor = TColor;
-}
 
 // +--------------------------------------------------------------------+
 

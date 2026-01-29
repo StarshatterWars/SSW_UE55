@@ -212,7 +212,7 @@ StarServer::InitGame()
 // --------------------------------------------------------------------
 
 void
-StarServer::SetGameMode(int m)
+StarServer::SetGameMode(EMODE m)
 {
 	if (game_mode == m)
 		return;

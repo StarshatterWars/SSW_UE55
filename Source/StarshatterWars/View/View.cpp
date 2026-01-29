@@ -965,26 +965,28 @@ View::Print(int x1, int y1, const char* fmt, ...)
     font->DrawString(msgbuf, (int)strlen(msgbuf), x1, y1, rect);
 }
 
-void
-View::DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags)
+void View::DrawTextRect(const char* txt, int count, Rect& txt_rect, DWORD flags)
 {
     if (!font)
         return;
 
-    if (txt && !count)
+    if (!txt)
+        return;
+
+    if (count <= 0)
         count = (int)strlen(txt);
 
-    // clip the rect:
+    // Clip the rect to this view:
     Rect clip_rect = txt_rect;
 
     if (clip_rect.x < 0) {
-        int dx = -clip_rect.x;
+        const int dx = -clip_rect.x;
         clip_rect.x += dx;
         clip_rect.w -= dx;
     }
 
     if (clip_rect.y < 0) {
-        int dy = -clip_rect.y;
+        const int dy = -clip_rect.y;
         clip_rect.y += dy;
         clip_rect.h -= dy;
     }
@@ -998,18 +1000,18 @@ View::DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags)
     if (clip_rect.y + clip_rect.h > rect.h)
         clip_rect.h = rect.h - clip_rect.y;
 
+    // Convert to window space:
     clip_rect.x += rect.x;
     clip_rect.y += rect.y;
 
-    if (txt && count) {
-        font->DrawText(txt, count, clip_rect, flags);
-        font->SetAlpha(1);
-    }
+    // Draw:
+    font->DrawText(txt, count, clip_rect, flags);
+    font->SetAlpha(1.0);
 
-    // if calc only, update the rectangle:
+    // If calc-only, return measured rect back to caller:
     if (flags & DT_CALCRECT) {
-        txt_rect.h = clip_rect.h;
         txt_rect.w = clip_rect.w;
+        txt_rect.h = clip_rect.h;
     }
 }
 

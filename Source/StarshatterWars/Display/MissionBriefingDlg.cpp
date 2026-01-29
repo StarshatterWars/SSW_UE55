@@ -24,9 +24,9 @@
 #include "Instruction.h"
 #include "StarSystem.h"
 #include "Game.h"
-#include "NetLobby.h"
 #include "FormatUtil.h"
 #include "Mouse.h"
+#include "GameStructs.h"
 
 UMissionBriefingDlg::UMissionBriefingDlg()
 {
@@ -241,7 +241,7 @@ void UMissionBriefingDlg::OnCommitClicked()
         Game::Panic("MissionBriefingDlg::OnCommitClicked - no Starshatter");
 
     Mouse::Show(false);
-    stars->SetGameMode(Starshatter::LOAD_MODE);
+    stars->SetGameMode(EMODE::LOAD_MODE);
 }
 
 void UMissionBriefingDlg::OnCancelClicked()

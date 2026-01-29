@@ -420,7 +420,7 @@ void UCampaignSelectDlg::OnAccept()
 
     Mouse::Show(false);
     if (stars)
-        stars->SetGameMode((int)EMODE::CLOD_MODE);
+        stars->SetGameMode(EMODE::CLOD_MODE);
 }
 
 void UCampaignSelectDlg::OnCancel()

@@ -79,12 +79,12 @@ void ULoadDlg::ExecFrame()
     // Title:
     if (TitleText)
     {
-        if (stars->GetGameMode() == (int)EMODE::CLOD_MODE ||
-            stars->GetGameMode() == (int)EMODE::CMPN_MODE)
+        if (stars->GetGameMode() == EMODE::CLOD_MODE ||
+            stars->GetGameMode() == EMODE::CMPN_MODE)
         {
             SetTextBlock(TitleText, Game::GetText("LoadDlg.campaign"));
         }
-        else if (stars->GetGameMode() == (int)EMODE::MENU_MODE)
+        else if (stars->GetGameMode() == EMODE::MENU_MODE)
         {
             SetTextBlock(TitleText, Game::GetText("LoadDlg.tac-ref"));
         }

@@ -1,13 +1,14 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026. All Rights Reserved.
 
-    SUBSYSTEM:    Stars.exe
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    SUBSYSTEM:    StarshatterWars
     FILE:         MenuView.h
     AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR: John DiCamillo
-    ORIGINAL STUDIO: Destroyer Studios LLC
 
     OVERVIEW
     ========
@@ -16,16 +17,22 @@
 
 #pragma once
 
+// ---------------------------------------------------------------------
+// Minimal includes (keep header light)
+// ---------------------------------------------------------------------
 #include "Types.h"
 #include "View.h"
-#include "SystemFont.h"
 #include "Text.h"
 
-#include "Math/Color.h"
+// Minimal UE types used in signatures / members:
+#include "Math/Vector.h"               // FVector
+#include "Math/Color.h"                // FColor
+#include "Math/UnrealMathUtility.h"    // Math
 
-// Replace Bitmap with Unreal texture pointer (forward declared to keep header light):
-class UTexture2D;
+#include "GameStructs.h"               // (must be last include)
 
+// +--------------------------------------------------------------------+
+// Forward declarations
 // +--------------------------------------------------------------------+
 
 class Menu;
@@ -33,7 +40,7 @@ class MenuItem;
 
 // +--------------------------------------------------------------------+
 
-class MenuView : public UView
+class MenuView : public View
 {
 public:
     MenuView(Window* c);
@@ -50,35 +57,25 @@ public:
 
     virtual bool      IsShown() { return show_menu != 0; }
     virtual int       GetAction() { return action; }
-    virtual Menu*     GetMenu() { return menu; }
+    virtual Menu* GetMenu() { return menu; }
     virtual void      SetMenu(Menu* m) { menu = m; }
-    virtual MenuItem* GetMenuItem() { return menu_item; }
-
-    virtual FColor     GetBackColor() { return back_color; }
-    virtual void      SetBackColor(FColor c) { back_color = c; }
-    virtual FColor     GetTextColor() { return text_color; }
-    virtual void      SetTextColor(FColor c) { text_color = c; }
+    virtual MenuItem* GetMenuItem() { return menu_item; } 
 
 protected:
-    int         width, height;
+    int         width = 0;
+    int         height = 0;
 
-    int         shift_down;
-    int         mouse_down;
-    int         right_down;
-    int         show_menu;
-    POINT       right_start;
-    POINT       offset;
+    int         shift_down = 0;
+    int         mouse_down = 0;
+    int         right_down = 0;
+    int         show_menu = 0;
 
-    int         action;
-    Menu* menu;
-    MenuItem* menu_item;
-    MenuItem* selected;
+    // Legacy POINT -> FVector (Z unused, keep at 0)
+    FVector     right_start = FVector::ZeroVector;
+    FVector     offset = FVector::ZeroVector;
 
-    // Previously Bitmap* usage (if any) should now be UTexture2D*.
-    // Kept as a forward-declared type to avoid heavy includes:
-    UTexture2D* menu_tex = nullptr;
-
-    FColor       back_color;
-    FColor       text_color;
+    int         action = 0;
+    Menu* menu = nullptr;
+    MenuItem* menu_item = nullptr;
+    MenuItem* selected = nullptr;
 };
-

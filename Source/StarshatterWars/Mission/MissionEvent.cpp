@@ -731,7 +731,7 @@ MissionEvent::Execute(bool silent)
 			if (event_target.length())
 				server->SetNextMission(event_target);
 
-			server->SetGameMode(StarServer::MENU_MODE);
+			server->SetGameMode(EMODE::MENU_MODE);
 		}
 	}
 }

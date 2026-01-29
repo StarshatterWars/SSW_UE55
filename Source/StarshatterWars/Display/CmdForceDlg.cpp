@@ -330,7 +330,7 @@ void UCmdForceDlg::OnExitClicked()
     if (Stars)
     {
         Mouse::Show(false);
-        Stars->SetGameMode((int)EMODE::MENU_MODE);
+        Stars->SetGameMode(EMODE::MENU_MODE);
     }
 }
 

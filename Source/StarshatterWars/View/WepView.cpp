@@ -99,9 +99,6 @@ WepView::WepView(Window* c)
 
     OnWindowMove();
 
-    HudFont = FontManager::Find("HUD");
-    BigFont = FontManager::Find("GUI");
-
     hud = HUDView::GetInstance();
     if (hud)
         SetColor(hud->GetHUDColor());
@@ -382,9 +379,9 @@ WepView::DrawOverlay()
     subtxt.toUpper();
 
     // If you still route text through Window/Font, keep that pipeline:
-    if (hud_font && window) {
-        hud_font->SetColor(stat);
-        window->SetFont(hud_font);
+    if (HUDFont && window) {
+        HUDFont->SetColor(stat);
+        window->SetFont(HUDFont);
         window->DrawText(subtxt.data(), subtxt.length(), tgt_rect, DT_SINGLELINE | DT_CENTER);
     }
 

@@ -215,7 +215,7 @@ void UQuitView::OnAcceptClicked()
     Game::SetTimeCompression(1);
 
     if (Starshatter* Stars = Starshatter::GetInstance())
-        Stars->SetGameMode((int)EMODE::PLAN_MODE);
+        Stars->SetGameMode(EMODE::PLAN_MODE);
 }
 
 void UQuitView::OnDiscardClicked()
@@ -234,11 +234,11 @@ void UQuitView::OnDiscardClicked()
     if (CampaignPtr && CampaignPtr->GetCampaignId() < Campaign::SINGLE_MISSIONS)
     {
         CampaignPtr->RollbackMission();
-        if (Stars) Stars->SetGameMode((int)EMODE::CMPN_MODE);
+        if (Stars) Stars->SetGameMode(EMODE::CMPN_MODE);
     }
     else
     {
-        if (Stars) Stars->SetGameMode((int)EMODE::MENU_MODE);
+        if (Stars) Stars->SetGameMode(EMODE::MENU_MODE);
     }
 }
 

@@ -21,6 +21,7 @@
 #include "Types.h"
 #include "Game.h"
 #include "KeyMap.h"
+#include "GameStructs.h"
 
 // --------------------------------------------------------------------
 // Minimal Unreal includes
@@ -68,8 +69,8 @@ public:
 	};
 
 	// Accessors / mutators
-	int               GetGameMode() const { return game_mode; }
-	void              SetGameMode(int mode);
+	EMODE             GetGameMode() const { return game_mode; }
+	void              SetGameMode(EMODE mode);
 	void              SetNextMission(const char* script);
 
 	// World control
@@ -92,7 +93,7 @@ protected:
 	NetLobbyServer* lobby_server;
 	DataLoader* loader;
 
-	int                 game_mode;
+	EMODE               game_mode;
 	DWORD               time_mark;
 	DWORD               minutes;
 };

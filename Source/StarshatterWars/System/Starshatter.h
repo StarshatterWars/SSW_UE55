@@ -17,6 +17,7 @@
 #include "KeyMap.h"
 #include "Text.h"
 #include "MenuScreen.h"
+#include "GameStructs.h"
 
 // Forward declarations to keep header light:
 class Bitmap;
@@ -53,8 +54,8 @@ public:
 	virtual void Exit();
 	virtual bool OnHelp();
 
-	int       GetGameMode() { return game_mode; }
-	void      SetGameMode(int mode);
+	EMODE     GetGameMode() { return game_mode; }
+	void      SetGameMode(EMODE mode);
 	void      RequestChangeVideo();
 	void      LoadVideoConfig(const char* filename);
 	void      SaveVideoConfig(const char* filename);
@@ -177,7 +178,7 @@ protected:
 	int                 mouse_dx;
 	int                 mouse_dy;
 
-	int                 game_mode;
+	EMODE               game_mode;
 	int                 test_mode;
 	int                 req_change_video;
 	int                 video_changed;
