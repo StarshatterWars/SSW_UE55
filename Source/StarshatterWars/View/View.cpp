@@ -23,6 +23,7 @@
 #include "Polygon.h"
 #include "Screen.h"
 #include "Video.h"
+#include "GameStructs.h"
 
 #include "CoreMinimal.h"
 #include "Math/Color.h"
@@ -1010,6 +1011,29 @@ View::DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags)
         txt_rect.h = clip_rect.h;
         txt_rect.w = clip_rect.w;
     }
+}
+
+void
+View::SetStatusColor(SYSTEM_STATUS status)
+{
+    switch (status) {
+    default:
+    case SYSTEM_STATUS::NOMINAL:     StatusColor = TextColor;			break;
+    case SYSTEM_STATUS::DEGRADED:    StatusColor = FColor(255, 255, 0); break;
+    case SYSTEM_STATUS::CRITICAL:    StatusColor = FColor(255, 0, 0);	break;
+    case SYSTEM_STATUS::DESTROYED:   StatusColor = FColor(0, 0, 0);		break;
+    }
+}
+
+void
+View::SetTextColor(FColor TColor)
+{
+    TextColor = TColor;
+}
+
+void View::SetHUDColor(FColor HColor)
+{
+    HudColor = HColor;
 }
 
 

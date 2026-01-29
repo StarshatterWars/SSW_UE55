@@ -409,16 +409,14 @@ HUDView::HUDView(Screen* InScreen)
 	
 	projector(nullptr),
 	camview(nullptr),
-	width(0), height(0), aw(0), ah(0),
-	xcenter(0), ycenter(0),
+	width(InScreen ? InScreen->Width() : 0),
+	height(InScreen ? InScreen->Height() : 0),
+
 	sim(nullptr),
 	ship(nullptr),
 	target(nullptr),
 	active_region(nullptr),
 	cockpit_hud_texture(nullptr),
-	HudColor(FColor::Black),
-	TextColor(FColor::White),
-	StatusColor(FColor::White),
 	show_warn(false),
 	show_inst(false),
 	inst_page(0),
@@ -654,13 +652,21 @@ HUDView::HUDView(Screen* InScreen)
 	tgt3_sprite->Hide();
 	tgt4_sprite->Hide();
 	chase_sprite->Hide();
-
-	aw = chase_left.Width() / 2;
-	ah = chase_left.Height() / 2;
+	
+	this->aw = chase_left.Width() / 2;
+	this->ah = chase_left.Height() / 2;
 
 	mfd[0]->SetMode(EMFDMode::SHIP);
 	mfd[1]->SetMode(EMFDMode::FOV);
 	mfd[2]->SetMode(EMFDMode::GAME);
+	
+	for (int mc = 0; mc < 3; mc++) {
+		mfd[mc]->SetHUDColor(standard_hud_colors[color]);
+	}
+	
+	SetHUDColor(FColor::Black);
+	SetTextColor(FColor::White);
+	SetStatusColor(SYSTEM_STATUS::NOMINAL);
 
 	HudFont = FontManager::Find("HUD");
 	BigFont = FontManager::Find("GUI");
@@ -674,7 +680,7 @@ HUDView::HUDView(Screen* InScreen)
 	hud_text[TXT_AUTO].font = BigFont;
 
 	SetHUDColorSet(def_color_set);
-	MFDView::SetColor(standard_hud_colors[color]);
+	
 
 	DataLoader* loader = DataLoader::GetLoader();
 	loader->SetDataPath("HUD/");
@@ -823,6 +829,10 @@ HUDView::OnWindowMove()
 	mfd[1]->SetRect(Rect(width - 136, height - 136, 128, 128));
 	mfd[2]->SetRect(Rect(8, 8, 128, 128));
 
+	mfd[0]->SetHUDColor(standard_hud_colors[color]);
+	mfd[1]->SetHUDColor(standard_hud_colors[color]);
+	mfd[2]->SetHUDColor(standard_hud_colors[color]);
+
 	hud_left_sprite->MoveTo(FVector((float)width / 2 - 128, (float)height / 2, 1));
 	hud_right_sprite->MoveTo(FVector((float)width / 2 + 128, (float)height / 2, 1));
 
@@ -843,8 +853,6 @@ HUDView::OnWindowMove()
 		hud_text[TXT_SHOOT].font = BigFont;
 		hud_text[TXT_AUTO].font = BigFont;
 	}
-
-	MFDView::SetColor(standard_hud_colors[color]);
 
 	int cx = width / 2;
 	int cy = height / 2;
@@ -1542,15 +1550,9 @@ HUDView::GetStatusColor(SYSTEM_STATUS status)
 }
 
 void
-HUDView::SetStatusColor(SYSTEM_STATUS status)
+HUDView::SetTextColor(FColor& TColor)
 {
-	switch (status) {
-	default:
-	case SYSTEM_STATUS::NOMINAL:     StatusColor = TextColor;			break;
-	case SYSTEM_STATUS::DEGRADED:    StatusColor = FColor(255, 255, 0); break;
-	case SYSTEM_STATUS::CRITICAL:    StatusColor = FColor(255, 0, 0);	break;
-	case SYSTEM_STATUS::DESTROYED:   StatusColor = FColor(0, 0, 0);		break;
-	}
+	TextColor = TColor;
 }
 
 // +--------------------------------------------------------------------+
@@ -3214,11 +3216,12 @@ HUDView::SetHUDColorSet(int c)
 	ColorizeBitmap(chase_top, chase_top_shade, HudColor, true);
 	ColorizeBitmap(chase_bottom, chase_bottom_shade, HudColor, true);
 
-	MFDView::SetColor(HudColor);
 	Hoop::SetColor(HudColor);
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++) {
 		mfd[i]->SetText3DColor(TextColor);
+		mfd[i]->SetHUDColor(HudColor);
+	}
 
 	SystemFont* ffont = FontManager::Find("HUD");
 	if (ffont)

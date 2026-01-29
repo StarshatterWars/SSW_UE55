@@ -1,445 +1,497 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    Stars.exe (ported to Unreal)
-    FILE:         MFDView.cpp
-    AUTHOR:       Carlos Bott
-*/
+// MFDView.cpp
 
 #include "MFDView.h"
 
-#include "SystemFont.h"
-#include "FontManager.h"
-#include "HUDView.h"
-#include "Ship.h"
-#include "Sensor.h"
+#include "Window.h"
 #include "Mouse.h"
+#include "Bitmap.h"
+
+#include "FontManager.h"     // You said this only resolves reliably when included in .h; move if needed.
+#include "Ship.h"
+
+// Optional: if you still rely on these HUD helpers (PrepareBitmap/ColorizeBitmap/MarkerColor)
+#include "HUDView.h"
+
+// If you have Game::GetText in UE, include your wrapper; otherwise replace calls with literal strings.
 #include "Game.h"
 
-#include "Engine/Engine.h"
-#include "Framework/Application/SlateApplication.h"
-#include "Fonts/SlateFontInfo.h"
-#include "Styling/CoreStyle.h"
-#include "Rendering/DrawElements.h"
+bool   MFDView::bInitialized = false;
+Bitmap MFDView::SensorFOV;
+Bitmap MFDView::SensorFWD;
+Bitmap MFDView::SensorHSD;
+Bitmap MFDView::Sensor3D;
 
-#include "Logging/LogMacros.h"
+uint8* MFDView::SensorFOVShade = nullptr;
+uint8* MFDView::SensorFWDShade = nullptr;
+uint8* MFDView::SensorHSDShade = nullptr;
+uint8* MFDView::Sensor3DShade = nullptr;
 
-DEFINE_LOG_CATEGORY_STATIC(LogMFDView, Log, All);
-
-// ---- Align flags compatibility (Starshatter uses DT_* style flags) ----
-// Keep using your existing DT_LEFT/DT_RIGHT/DT_CENTER/DT_VCENTER/DT_BOTTOM/DT_SINGLELINE definitions
-// from Types.h / Win32 compat layer.
-
-UMFDView::UMFDView(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+void MFDView::Initialize()
 {
-    bCanEverTick = true;
+    if (bInitialized)
+        return;
 
-    // Initialize default HUD font (legacy name "HUD"):
+    // If you kept HUDView::PrepareBitmap + shade tables, keep this.
+    // Otherwise: load into Bitmap without shade.
+    HUDView::PrepareBitmap("sensor_fov.pcx", SensorFOV, SensorFOVShade);
+    HUDView::PrepareBitmap("sensor_fwd.pcx", SensorFWD, SensorFWDShade);
+    HUDView::PrepareBitmap("sensor_hsd.pcx", SensorHSD, SensorHSDShade);
+    HUDView::PrepareBitmap("sensor_3d.pcx", Sensor3D, Sensor3DShade);
+
+    SensorFOV.SetType(Bitmap::BMP_TRANSLUCENT);
+    SensorFWD.SetType(Bitmap::BMP_TRANSLUCENT);
+    SensorHSD.SetType(Bitmap::BMP_TRANSLUCENT);
+    Sensor3D.SetType(Bitmap::BMP_TRANSLUCENT);
+
+    bInitialized = true;
+}
+
+void MFDView::Close()
+{
+    SensorFOV.ClearImage();
+    SensorFWD.ClearImage();
+    SensorHSD.ClearImage();
+    Sensor3D.ClearImage();
+
+    delete[] SensorFOVShade; SensorFOVShade = nullptr;
+    delete[] SensorFWDShade; SensorFWDShade = nullptr;
+    delete[] SensorHSDShade; SensorHSDShade = nullptr;
+    delete[] Sensor3DShade;  Sensor3DShade = nullptr;
+
+    bInitialized = false;
+}
+
+MFDView::MFDView(Window* InWindow, int32 InIndex)
+    : View(InWindow, 0, 0, 0, 0)
+    , RectPx(0, 0, 0, 0)
+    , Index(InIndex)
+    , Mode(EMFDMode::OFF)
+{
+    Initialize();
+
     HudFont = FontManager::Find("HUD");
 
-    for (int i = 0; i < TXT_LAST; ++i)
+    for (int32 i = 0; i < TXT_LAST; ++i)
     {
-        Slots[i].Font = HudFont;
-        Slots[i].Color = FColor::White;
-        Slots[i].bHidden = true;
+        TextSlots[i].Font = HudFont;
+        TextSlots[i].Color = FColor::White;
+        TextSlots[i].bHidden = true;
     }
 }
 
-void UMFDView::SetMFDRect(const FIntRect& InRect)
+MFDView::~MFDView()
 {
-    MFDRect = InRect;
+    // No sprite object in this UE port; bitmaps are static.
 }
 
-void UMFDView::SetHUDColor(const FColor& InHUD, const FColor& InText)
+void MFDView::UseCameraView(CameraView* InView)
 {
-    HUDColor = InHUD;
-    TextColor = InText;
-
-    // Keep slots coherent:
-    for (int i = 0; i < TXT_LAST; ++i)
-        Slots[i].Color = TextColor;
+    if (InView && !CamView)
+        CamView = InView;
 }
 
-void UMFDView::SetMode(EMFDMode InMode)
+void MFDView::SetHUDColor(const FColor& InHudColor)
+{
+    this->HudColor = InHudColor;
+
+    // Legacy colorizes the bitmaps via shade tables:
+    if (SensorFOVShade) HUDView::ColorizeBitmap(SensorFOV, SensorFOVShade, InHudColor);
+    if (SensorFWDShade) HUDView::ColorizeBitmap(SensorFWD, SensorFWDShade, InHudColor);
+    if (SensorHSDShade) HUDView::ColorizeBitmap(SensorHSD, SensorHSDShade, InHudColor);
+    if (Sensor3DShade)  HUDView::ColorizeBitmap(Sensor3D, Sensor3DShade, InHudColor);
+}
+
+void MFDView::SetColor(const FColor& InHudColor, const FColor& InTextColor)
+{
+    HudColor = InHudColor;
+    TextColor = InTextColor;
+
+    // Legacy colorizes the bitmaps via shade tables:
+    if (SensorFOVShade) HUDView::ColorizeBitmap(SensorFOV, SensorFOVShade, InHudColor);
+    if (SensorFWDShade) HUDView::ColorizeBitmap(SensorFWD, SensorFWDShade, InHudColor);
+    if (SensorHSDShade) HUDView::ColorizeBitmap(SensorHSD, SensorHSDShade, InHudColor);
+    if (Sensor3DShade)  HUDView::ColorizeBitmap(Sensor3D, Sensor3DShade, InHudColor);
+}
+
+void MFDView::SetText3DColor(const FColor& InColor)
+{
+    for (int32 i = 0; i < TXT_LAST; ++i)
+        TextSlots[i].Color = InColor;
+}
+
+void MFDView::Show()
+{
+    bHidden = false;
+}
+
+void MFDView::Hide()
+{
+    for (int32 i = 0; i < TXT_LAST; ++i)
+        HideMFDText(i);
+
+    bHidden = true;
+}
+
+void MFDView::SetRect(const Rect& InRect)
+{
+    RectPx = InRect;
+    SetRectPx(InRect);   
+}
+
+void MFDView::SetMode(EMFDMode InMode)
 {
     Mode = InMode;
 
-    for (int i = 0; i < TXT_LAST; ++i)
-        Slots[i].bHidden = true;
-
-    // Reset animation state counters etc (legacy behavior)
-    MouseLatch = 0;
-}
-
-void UMFDView::Refresh()
-{
-    // UView contract: request repaint/update; in UMG this is basically invalidation.
-    InvalidateLayoutAndVolatility();
-}
-
-void UMFDView::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-    Super::NativeTick(MyGeometry, InDeltaTime);
-
-    // We drive latch reset off your legacy Mouse API:
-    if (Mouse::LButton() == 0)
-        MouseLatch = 0;
-
-    Refresh();
-}
-
-int32 UMFDView::NativePaint(
-    const FPaintArgs& Args,
-    const FGeometry& AllottedGeometry,
-    const FSlateRect& MyCullingRect,
-    FSlateWindowElementList& OutDrawElements,
-    int32 LayerId,
-    const FWidgetStyle& InWidgetStyle,
-    bool bParentEnabled
-) const
-{
-    PaintElements = &OutDrawElements;
-    PaintGeo = &AllottedGeometry;
-    PaintLayer = LayerId;
-
-    Draw();
-
-    // Clear paint pointers:
-    PaintElements = nullptr;
-    PaintGeo = nullptr;
-
-    return PaintLayer;
-}
-
-// ------------------ Slate helpers ------------------
-
-FLinearColor UMFDView::Dim(const FLinearColor& C, float Factor)
-{
-    return FLinearColor(
-        C.R * Factor,
-        C.G * Factor,
-        C.B * Factor,
-        C.A
-    );
-}
-
-FSlateFontInfo UMFDView::GetSlateFont() const
-{
-    if (HudFont)
-        return HudFont->MakeSlateFontInfo();
-
-    return FCoreStyle::GetDefaultFontStyle("Regular", 12);
-}
-
-FVector2D UMFDView::MeasureText(const FString& S, const FSlateFontInfo& FontInfo) const
-{
-    if (FSlateApplication::IsInitialized() && FSlateApplication::Get().GetRenderer())
-    {
-        TSharedRef<FSlateFontMeasure> Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
-        return Measure->Measure(S, FontInfo);
-    }
-
-    // Safe fallback:
-    return FVector2D((float)S.Len() * (float)FontInfo.Size * 0.55f, (float)FontInfo.Size + 4.0f);
-}
-
-void UMFDView::DrawLine(const FVector2D& A, const FVector2D& B, const FLinearColor& C, float Thickness) const
-{
-    if (!PaintElements || !PaintGeo) return;
-
-    TArray<FVector2D> Points;
-    Points.Add(A);
-    Points.Add(B);
-
-    FSlateDrawElement::MakeLines(
-        *PaintElements,
-        PaintLayer++,
-        PaintGeo->ToPaintGeometry(),
-        Points,
-        ESlateDrawEffect::None,
-        C,
-        true,
-        Thickness
-    );
-}
-
-void UMFDView::FillRect(const FSlateRect& R, const FLinearColor& C) const
-{
-    if (!PaintElements || !PaintGeo) return;
-
-    const FVector2D Pos(R.Left, R.Top);
-    const FVector2D Size(R.Right - R.Left, R.Bottom - R.Top);
-
-    FSlateDrawElement::MakeBox(
-        *PaintElements,
-        PaintLayer++,
-        PaintGeo->ToPaintGeometry(Pos, Size),
-        FCoreStyle::Get().GetBrush("WhiteBrush"),
-        ESlateDrawEffect::None,
-        C
-    );
-}
-
-void UMFDView::DrawRectOutline(const FSlateRect& R, const FLinearColor& C, float Thickness) const
-{
-    const FVector2D TL(R.Left, R.Top);
-    const FVector2D TR(R.Right, R.Top);
-    const FVector2D BR(R.Right, R.Bottom);
-    const FVector2D BL(R.Left, R.Bottom);
-
-    DrawLine(TL, TR, C, Thickness);
-    DrawLine(TR, BR, C, Thickness);
-    DrawLine(BR, BL, C, Thickness);
-    DrawLine(BL, TL, C, Thickness);
-}
-
-void UMFDView::DrawEllipseOutline(const FVector2D& Center, float Rx, float Ry, const FLinearColor& C, float Thickness, int32 Segments) const
-{
-    if (Segments < 8) Segments = 8;
-
-    TArray<FVector2D> Pts;
-    Pts.Reserve(Segments + 1);
-
-    for (int32 i = 0; i <= Segments; ++i)
-    {
-        const float T = (2.0f * PI) * ((float)i / (float)Segments);
-        Pts.Add(FVector2D(
-            Center.X + FMath::Cos(T) * Rx,
-            Center.Y + FMath::Sin(T) * Ry
-        ));
-    }
-
-    // Draw polyline:
-    for (int32 i = 0; i < Pts.Num() - 1; ++i)
-        DrawLine(Pts[i], Pts[i + 1], C, Thickness);
-}
-
-void UMFDView::DrawTextAt(const FVector2D& Pos, const FString& Text, const FSlateFontInfo& FontInfo, const FLinearColor& C) const
-{
-    if (!PaintElements || !PaintGeo) return;
-
-    FSlateDrawElement::MakeText(
-        *PaintElements,
-        PaintLayer++,
-        PaintGeo->ToPaintGeometry(Pos, FVector2D(1, 1)),
-        Text,
-        FontInfo,
-        ESlateDrawEffect::None,
-        C
-    );
-}
-
-// ------------------ MFD main draw ------------------
-
-void UMFDView::Draw() const
-{
-    if (!PaintElements || !PaintGeo) return;
-    if (bHidden || Mode == EMFDMode::OFF) return;
-
-    // Determine widget-local scan rect:
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanW = (float)(MFDRect.Max.X - MFDRect.Min.X);
-    const float ScanH = (float)(MFDRect.Max.Y - MFDRect.Min.Y);
-
-    // Mouse-in (legacy Mouse API assumed screen-space; you likely already map it)
-    // Here we assume Mouse::X/Y are already in same UI space as your widgets.
-    bMouseIn = (Mouse::X() >= (int)ScanX && Mouse::X() <= (int)(ScanX + ScanW) &&
-        Mouse::Y() >= (int)ScanY && Mouse::Y() <= (int)(ScanY + ScanH));
-
-    // Hide all slots each frame like the legacy code:
-    for (int i = 0; i < TXT_LAST; ++i)
-        Slots[i].bHidden = true;
+    for (int32 i = 0; i < TXT_LAST; ++i)
+        HideMFDText(i);
 
     switch (Mode)
     {
-    case EMFDMode::GAME:    DrawGameMFD();   break;
-    case EMFDMode::SHIP:    DrawStatusMFD(); break;
-    case EMFDMode::FOV:     DrawSensorMFD(); break;
-    case EMFDMode::HSD:     DrawHSD();       break;
-    case EMFDMode::RADAR3D: Draw3D();        break;
-    default: break;
+    case EMFDMode::GAME:
+    case EMFDMode::SHIP:
+        Lines = 0;
+        break;
+    default:
+        break;
     }
 }
 
-// ------------------ Text slots ------------------
-
-void UMFDView::DrawMFDText(int32 DSlot, const FString& Txt, const FSlateRect& R, int32 AlignFlags, int32 Status) const
+bool MFDView::IsMouseLatched() const
 {
-    if (DSlot < 0 || DSlot >= TXT_LAST) return;
+    return bMouseIn;
+}
 
-    FColor DrawC = TextColor;
+void MFDView::Draw()
+{
+    bMouseIn = false;
 
-    // Status coloring:
+    if (Mouse::LButton() == 0)
+        MouseLatch = 0;
+
+    if (RectPx.Contains(Mouse::X(), Mouse::Y()))
+        bMouseIn = true;
+
+    // Legacy: click to turn on / cycle when off (only for non-sensor modes)
+    if ((int32)Mode < (int32)EMFDMode::FOV && Mouse::LButton() && !MouseLatch)
+    {
+        MouseLatch = 1;
+        if (bMouseIn)
+        {
+            if (HUDView* Hud = HUDView::GetInstance())
+                Hud->CycleMFDMode(Index);
+        }
+    }
+
+    for (int32 i = 0; i < TXT_LAST; ++i)
+        HideMFDText(i);
+
+    if (bHidden || (int32)Mode < (int32)EMFDMode::FOV)
+    {
+        // Legacy cockpit texture path: clear the 128x128 block.
+        if (CockpitHUDTexture)
+        {
+            const int32 x1 = Index * 128;
+            const int32 y1 = 256;
+            CockpitHUDTexture->FillRect(x1, y1, x1 + 128, y1 + 128, FColor::Black);
+        }
+
+        if (bHidden)
+            return;
+    }
+
+    // Draw sensor background bitmap (legacy sprite frame) for sensor modes.
+    if ((int32)Mode >= (int32)EMFDMode::FOV)
+    {
+        Bitmap* Frame = nullptr;
+
+        switch (Mode)
+        {
+        case EMFDMode::FOV: Frame = &SensorFOV; break;
+        case EMFDMode::HSD: Frame = &SensorHSD; break;
+        case EMFDMode::RADAR3D: Frame = &Sensor3D; break;
+        default: break;
+        }
+
+        if (Frame && Frame->Width() > 0 && Frame->Height() > 0)
+        {
+            if (CockpitHUDTexture)
+            {
+                const int32 x1 = Index * 128;
+                const int32 y1 = 256;
+                CockpitHUDTexture->BitBlt(x1, y1, *Frame, 0, 0, Frame->Width(), Frame->Height());
+            }
+            else if (window)
+            {
+                const int32 cx = RectPx.x + RectPx.w / 2;
+                const int32 cy = RectPx.y + RectPx.h / 2;
+                const int32 w2 = Frame->Width() / 2;
+                const int32 h2 = Frame->Height() / 2;
+
+                window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, Frame /*, blend if your API supports */);
+            }
+        }
+    }
+
+    switch (Mode)
+    {
+    default:
+    case EMFDMode::OFF:                        break;
+    case EMFDMode::GAME:     DrawGameMFD();    break;
+    case EMFDMode::SHIP:     DrawStatusMFD();  break;
+
+    case EMFDMode::FOV:      DrawSensorMFD();  break;
+    case EMFDMode::HSD:      DrawHSD();        break;
+    case EMFDMode::RADAR3D:  Draw3D();         break;
+    }
+}
+
+FColor MFDView::ResolveStatusColor(int32 Status) const
+{
+    // Mirror legacy mapping; replace constants with your System status enum values.
+    // 0 nominal, 1 degraded, 2 critical, 3 destroyed is a common pattern.
     switch (Status)
     {
-    default: /* NOMINAL */ break;
-    case 1:  DrawC = FColor(255, 255, 0, 255); break; // DEGRADED
-    case 2:  DrawC = FColor(255, 0, 0, 255); break;   // CRITICAL
-    case 3:  DrawC = FColor(0, 0, 0, 255); break;     // DESTROYED
+    default:
+    case 0:  return TextColor;
+    case 1:  return FColor(255, 255, 0);
+    case 2:  return FColor(255, 0, 0);
+    case 3:  return FColor(0, 0, 0);
     }
+}
 
-    // Hover highlight (legacy behavior):
-    if (bMouseIn &&
-        Mouse::X() >= (int)R.Left && Mouse::X() <= (int)R.Right &&
-        Mouse::Y() >= (int)R.Top && Mouse::Y() <= (int)R.Bottom)
+void MFDView::ToWideUpper(const char* In, wchar_t* Out, int32 OutChars)
+{
+    if (!Out || OutChars <= 0)
+        return;
+
+    Out[0] = 0;
+    if (!In)
+        return;
+
+    // Uppercase like legacy (and clamp)
+    char tmp[256];
+    int32 n = (int32)strlen(In);
+    if (n > 250) n = 250;
+
+    for (int32 i = 0; i < n; ++i)
     {
-        DrawC = FColor::White;
+        const unsigned char c = (unsigned char)In[i];
+        tmp[i] = (char)(FChar::IsLower(c) ? FChar::ToUpper(c) : c);
+    }
+    tmp[n] = 0;
+
+#if defined(_MSC_VER)
+    mbstowcs_s(nullptr, Out, OutChars, tmp, _TRUNCATE);
+#else
+    mbstowcs(Out, tmp, (size_t)(OutChars - 1));
+    Out[OutChars - 1] = 0;
+#endif
+}
+
+void MFDView::DrawMFDText(int32 Slot, const char* Txt, Rect& TxtRect, uint32 AlignFlags, int32 Status)
+{
+    if (Slot < 0 || Slot >= TXT_LAST)
+        return;
+
+    FMFDText& T = TextSlots[Slot];
+    if (!T.Font)
+        return;
+
+    FColor C = (Status >= 0) ? ResolveStatusColor(Status) : T.Color;
+
+    // Legacy: highlight white on hover (only when not using cockpit texture)
+    if (!CockpitHUDTexture && TxtRect.Contains(Mouse::X(), Mouse::Y()))
+        C = FColor::White;
+
+    T.Font->SetColor(C);
+
+    // cockpit texture path: translate to 128x128 atlas region (legacy)
+    Rect DrawRectPx = TxtRect;
+    if (CockpitHUDTexture)
+    {
+        DrawRectPx.x = TxtRect.x + Index * 128 - RectPx.x;
+        DrawRectPx.y = TxtRect.y + 256 - RectPx.y;
     }
 
-    // All-caps like your existing MFD pass:
-    FString Upper = Txt.ToUpper();
+    wchar_t W[256];
+    ToWideUpper(Txt ? Txt : "", W, UE_ARRAY_COUNT(W));
 
-    const FSlateFontInfo FontInfo = GetSlateFont();
-    const FVector2D Meas = MeasureText(Upper, FontInfo);
+    // Use your SystemFont draw; adjust to match your signature.
+    // If your SystemFont wants: DrawTextW(text, len, x, y, clipRect, targetBitmap)
+    //T.Font->DrawTextW(W, -1, DrawRectPx.x, DrawRectPx.y, DrawRectPx, CockpitHUDTexture);
+    T.Font->DrawTextW(W, -1, DrawRectPx.x, DrawRectPx.y, DrawRectPx);
 
-    float X = R.Left;
-    float Y = R.Top;
-
-    const float RW = R.Right - R.Left;
-    const float RH = R.Bottom - R.Top;
-
-    if (AlignFlags & DT_RIGHT)
-        X = R.Left + FMath::Max(0.0f, RW - Meas.X);
-    else if (AlignFlags & DT_CENTER)
-        X = R.Left + FMath::Max(0.0f, (RW - Meas.X) * 0.5f);
-
-    if (AlignFlags & DT_BOTTOM)
-        Y = R.Top + FMath::Max(0.0f, RH - Meas.Y);
-    else if (AlignFlags & DT_VCENTER)
-        Y = R.Top + FMath::Max(0.0f, (RH - Meas.Y) * 0.5f);
-
-    DrawTextAt(FVector2D(X, Y), Upper, FontInfo, FLinearColor(DrawC));
-
-    Slots[DSlot].Rect = R;
-    Slots[DSlot].Color = DrawC;
-    Slots[DSlot].bHidden = false;
+    T.RectPx = TxtRect;
+    T.bHidden = false;
 }
 
-void UMFDView::HideMFDText(int32 Slot) const
+void MFDView::HideMFDText(int32 Slot)
 {
-    if (Slot < 0 || Slot >= TXT_LAST) return;
-    Slots[Slot].bHidden = true;
+    if (Slot < 0 || Slot >= TXT_LAST)
+        return;
+
+    TextSlots[Slot].bHidden = true;
 }
 
-// ------------------ Minimal ports of the draw passes ------------------
-// NOTE: These are faithful to the on-screen behavior (labels, gauge, frames).
-// The deep contact rendering (bearing math, contact lists) should be lifted
-// from your existing MFD.cpp in the same pattern (lines/rects/ellipse/text calls).
+// --------------------------------------------------------------------
+// The big draw routines: keep structure identical, port internals next.
+// --------------------------------------------------------------------
 
-void UMFDView::DrawSensorLabels(const FString& ModeLabel) const
+void MFDView::DrawSensorLabels(const char* MfdModeLabel)
 {
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanR = (float)(MFDRect.Max.X - MFDRect.Min.X);
+    if (!ShipPtr)
+        return;
 
-    // Corners:
-    DrawMFDText(0, ModeLabel, FSlateRect(ScanX + 2, ScanY + 2, ScanX + 42, ScanY + 14), DT_LEFT);
-    DrawMFDText(2, ModeLabel, FSlateRect(ScanX + ScanR - 42, ScanY + 2, ScanX + ScanR - 2, ScanY + 14), DT_RIGHT);
+    // NOTE: This function depends on Sensor + your localization wrapper.
+    // Porting line-by-line is straightforward once your Sensor API is in UE.
+
+    // For now, keep the clickable rect layout matching legacy:
+    const int32 scan_r = RectPx.w;
+    const int32 scan_x = CockpitHUDTexture ? (Index * 128) : RectPx.x;
+    const int32 scan_y = CockpitHUDTexture ? 256 : RectPx.y;
+
+    Rect mode_rect(scan_x + 2, scan_y + 2, 40, 12);
+    Rect range_rect(scan_x + 2, scan_y + scan_r - 12, 40, 12);
+    Rect disp_rect(scan_x + scan_r - 41, scan_y + 2, 40, 12);
+    Rect probe_rect(scan_x + scan_r - 41, scan_y + scan_r - 12, 40, 12);
+
+    // Replace these strings with your Game::GetText equivalents when available.
+    Rect r0 = mode_rect;
+    DrawMFDText(0, "STD", r0, DT_LEFT);
+
+    Rect r1 = range_rect;
+    DrawMFDText(1, "-100+", r1, DT_LEFT);
+
+    Rect r2 = disp_rect;
+    DrawMFDText(2, (MfdModeLabel ? MfdModeLabel : "MFD"), r2, DT_RIGHT);
+
+    // probe label depends on your ProbeLauncher; keep hidden by default:
+    HideMFDText(3);
+
+    // Click handling exactly like legacy:
+    if (Mouse::LButton() && !MouseLatch)
+    {
+        MouseLatch = 1;
+
+        if (disp_rect.Contains(Mouse::X(), Mouse::Y()))
+        {
+            if (HUDView* Hud = HUDView::GetInstance())
+                Hud->CycleMFDMode(Index);
+        }
+
+        // TODO: add sensor mode/range/probe clicks once Sensor + ship hooks are UE-ready.
+    }
 }
 
-void UMFDView::DrawGauge(int32 X, int32 Y, int32 Percent) const
+void MFDView::DrawSensorMFD()
 {
-    const float BaseX = (float)MFDRect.Min.X + (float)X;
-    const float BaseY = (float)MFDRect.Min.Y + (float)Y;
+    // This is the big AZ/EL scanner. Port line-by-line once Sensor/Contact math is UE-side.
+    // For now, keep the skeleton with the right label call and safe guards.
 
-    FillRect(FSlateRect(BaseX, BaseY, BaseX + 53, BaseY + 8), FLinearColor(FColor(64, 64, 64, 255)));
+    if (!ShipPtr)
+    {
+        Rect r = RectPx;
+        DrawMFDText(0, "INACTIVE", r, DT_CENTER);
+        return;
+    }
 
+    // TODO: draw ellipses, nav point, contacts, threat markers using your Window/Bitmap API.
+    DrawSensorLabels("FOV");
+}
+
+void MFDView::DrawHSD()
+{
+    if (!ShipPtr)
+    {
+        Rect r = RectPx;
+        DrawMFDText(0, "INACTIVE", r, DT_CENTER);
+        return;
+    }
+
+    // TODO: port legacy HSD camera flattening + ring ticks + nav + contacts.
+    DrawSensorLabels("HSD");
+}
+
+void MFDView::Draw3D()
+{
+    if (!ShipPtr)
+    {
+        Rect r = RectPx;
+        DrawMFDText(0, "INACTIVE", r, DT_CENTER);
+        return;
+    }
+
+    // TODO: port elite-style 3D radar; keep same marker rules as legacy.
+    DrawSensorLabels("3D");
+}
+
+void MFDView::DrawMap()
+{
+    Rect top(RectPx.x, RectPx.y, RectPx.w, 12);
+    DrawMFDText(0, "GROUND", top, DT_CENTER);
+}
+
+void MFDView::DrawGauge(int32 X, int32 Y, int32 Percent)
+{
+    // Match legacy: 53x8 outline + half-scale fill
     if (Percent < 3) return;
-    Percent = FMath::Clamp(Percent, 0, 100);
+    if (Percent > 100) Percent = 100;
 
-    int32 P = Percent / 2;
-    FillRect(FSlateRect(BaseX + 2, BaseY + 2, BaseX + 2 + (float)P, BaseY + 7), FLinearColor(FColor(128, 128, 128, 255)));
+    int32 px = X;
+    int32 py = Y;
+
+    if (CockpitHUDTexture)
+    {
+        px += Index * 128 - RectPx.x;
+        py += 256 - RectPx.y;
+        CockpitHUDTexture->DrawRect(px, py, px + 53, py + 8, FColor(64, 64, 64));
+    }
+    else if (window)
+    {
+        window->DrawRect(px, py, px + 53, py + 8, FColor(64, 64, 64));
+    }
+
+    Percent /= 2;
+
+    if (CockpitHUDTexture)
+        CockpitHUDTexture->FillRect(px + 2, py + 2, px + 2 + Percent, py + 7, FColor(128, 128, 128));
+    else if (window)
+        window->FillRect(px + 2, py + 2, px + 2 + Percent, py + 7, FColor(128, 128, 128));
 }
 
-void UMFDView::DrawGameMFD() const
+void MFDView::DrawGameMFD()
 {
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanW = (float)(MFDRect.Max.X - MFDRect.Min.X);
+    if (Lines < 10) Lines++;
 
-    float Y = ScanY;
-    const float LineH = 10.0f;
+    Rect txt_rect(RectPx.x, RectPx.y, RectPx.w, 12);
 
-    if (!HUDView::IsArcade() && HUDView::ShowFPS())
-    {
-        const FString FPS = FString::Printf(TEXT("FPS: %6.2f"), (double)Game::FrameRate());
-        DrawMFDText(0, FPS, FSlateRect(ScanX, Y, ScanX + ScanW, Y + 12), DT_LEFT);
-        Y += LineH;
-    }
+    int32 t = 0;
+
+    // Replace these with your Game::FrameRate / ShowFPS / etc when ported:
+    DrawMFDText(t++, "MFD GAME", txt_rect, DT_LEFT);
+    txt_rect.y += 10;
+
+    if (Lines <= 2) return;
 
     if (ShipPtr)
     {
-        DrawMFDText(1, UTF8_TO_TCHAR(ShipPtr->Name()), FSlateRect(ScanX, Y, ScanX + ScanW, Y + 12), DT_LEFT);
-        Y += LineH;
+        DrawMFDText(t++, "SHIP", txt_rect, DT_LEFT);
+        txt_rect.y += 10;
     }
-
-    // Time:
-    int32 Hours = (int32)(Game::GameTime() / 3600000);
-    int32 Minutes = (int32)(Game::GameTime() / 60000) % 60;
-    int32 Seconds = (int32)(Game::GameTime() / 1000) % 60;
-
-    const FString T = (Game::TimeCompression() > 1)
-        ? FString::Printf(TEXT("%02d:%02d:%02d x%d"), Hours, Minutes, Seconds, Game::TimeCompression())
-        : FString::Printf(TEXT("%02d:%02d:%02d"), Hours, Minutes, Seconds);
-
-    DrawMFDText(2, T, FSlateRect(ScanX, Y, ScanX + ScanW, Y + 12), DT_LEFT);
 }
 
-void UMFDView::DrawStatusMFD() const
+void MFDView::DrawStatusMFD()
 {
-    // Placeholder for your status panel content (systems, shields, power, etc.)
-    // Port line-by-line from MFD::DrawStatusMFD using DrawMFDText/DrawGauge/FillRect calls.
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanW = (float)(MFDRect.Max.X - MFDRect.Min.X);
+    if (Lines < 10) Lines++;
 
-    DrawMFDText(0, TEXT("STATUS"), FSlateRect(ScanX, ScanY, ScanX + ScanW, ScanY + 12), DT_CENTER);
-}
+    Rect status_rect(RectPx.x, RectPx.y, RectPx.w, 12);
+    int32 row = 0;
 
-void UMFDView::DrawSensorMFD() const
-{
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanR = (float)(MFDRect.Max.X - MFDRect.Min.X);
+    if (!ShipPtr)
+        return;
 
-    // Outer ring:
-    const FVector2D C(ScanX + ScanR * 0.5f, ScanY + ScanR * 0.5f);
-    DrawEllipseOutline(C, ScanR * 0.5f - 4.0f, ScanR * 0.5f - 4.0f, FLinearColor(HUDColor), 1.0f, 48);
-
-    DrawSensorLabels(TEXT("FOV"));
-}
-
-void UMFDView::DrawHSD() const
-{
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanR = (float)(MFDRect.Max.X - MFDRect.Min.X);
-
-    const FVector2D C(ScanX + ScanR * 0.5f, ScanY + ScanR * 0.5f);
-
-    // HSD ring:
-    DrawEllipseOutline(C, ScanR * 0.5f - 4.0f, ScanR * 0.5f - 4.0f, FLinearColor(HUDColor), 1.0f, 48);
-
-    DrawSensorLabels(TEXT("HSD"));
-}
-
-void UMFDView::Draw3D() const
-{
-    const float ScanX = (float)MFDRect.Min.X;
-    const float ScanY = (float)MFDRect.Min.Y;
-    const float ScanR = (float)(MFDRect.Max.X - MFDRect.Min.X);
-
-    const FVector2D C(ScanX + ScanR * 0.5f, ScanY + ScanR * 0.5f);
-
-    // 3D radar frame:
-    DrawEllipseOutline(C, ScanR * 0.5f - 4.0f, (ScanR * 0.5f - 4.0f) * 0.6f, FLinearColor(HUDColor), 1.0f, 48);
-
-    DrawSensorLabels(TEXT("3D"));
+    // Port these once Drive/Power/Shield/Weapon hooks are available in UE:
+    DrawMFDText(row++, "THRUST", status_rect, DT_LEFT);
+    DrawGauge(status_rect.x + 70, status_rect.y, 50);
+    status_rect.y += 10;
 }

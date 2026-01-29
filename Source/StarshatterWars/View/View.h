@@ -98,6 +98,9 @@ public:
     Window* GetWindow() const { return window; }
     View* GetParent() const { return parent; }
 
+    virtual void SetRectPx(const Rect& R) { ViewRectPx = R; }
+    const Rect& GetRectPx() const { return ViewRectPx; }
+
     // Allows late binding if needed (e.g., before Screen is ready):
     void SetWindow(Window* InWindow) { window = InWindow; }
 
@@ -168,6 +171,10 @@ public:
     void        SetFont(SystemFont* f) { font = f; }
     SystemFont* GetFont() const { return font; }
 
+    void                SetStatusColor(SYSTEM_STATUS status);
+    void                SetTextColor(FColor TColor);
+    void                SetHUDColor(FColor HColor);
+
     void Print(int x1, int y1, const char* fmt, ...);
     void DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags);
 
@@ -178,6 +185,7 @@ protected:
 
 protected:
     Rect            rect;
+    Rect            ViewRectPx;
 
     // Logical ownership:
     Screen* screen = nullptr;
@@ -197,4 +205,8 @@ protected:
 
     // Legacy list (if still used elsewhere):
     List<View>      view_list;
+
+    FColor       HudColor = FColor::Black; 
+    FColor       TextColor = FColor::White;
+    FColor       StatusColor;
 };

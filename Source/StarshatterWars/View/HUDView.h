@@ -215,7 +215,6 @@ protected:
 
 protected:
     const char*         FormatInstruction(Text instr);
-    void                SetStatusColor(SYSTEM_STATUS status);
 
     enum HUD_CASE { HUD_MIXED_CASE, HUD_UPPER_CASE };
 
@@ -238,10 +237,6 @@ protected:
     SimRegion*  active_region;
 
     Bitmap*     cockpit_hud_texture;
-
-    FColor       HudColor;
-    FColor       TextColor;
-    FColor       StatusColor;
 
     bool        show_warn;
     bool        show_inst;

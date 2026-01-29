@@ -195,7 +195,7 @@ Sim::Sim(MotionController* c)
 	FlightDeck::Initialize();
 	NavLight::Initialize();
 	SimShot::Initialize();
-	UMFDView::Initialize();
+	MFDView::Initialize();
 	Asteroid::Initialize();
 
 	if (!sim)

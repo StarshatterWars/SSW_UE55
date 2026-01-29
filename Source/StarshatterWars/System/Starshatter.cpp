@@ -248,7 +248,7 @@ Starshatter::~Starshatter()
 	PlayerCharacter::Close();
 	Drive::Close();
 	LandingGear::Close();
-	UMFDView::Close();
+	MFDView::Close();
 	Explosion::Close();
 	FlightDeck::Close();
 	Campaign::Close();
@@ -1296,7 +1296,7 @@ Starshatter::DoLoadScreenFrame()
 			break;
 
 		case 5:
-			UMFDView::Initialize();
+			MFDView::Initialize();
 			load_activity = Game::GetText("Starshatter.load.menus");
 			load_progress = 25;
 			break;
