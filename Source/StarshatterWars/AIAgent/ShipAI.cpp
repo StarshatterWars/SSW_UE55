@@ -585,7 +585,7 @@ ShipAI::FindObjectiveNavPoint()
 		(navpt->Farcast() ||
 			!QDrive ||
 			!QDrive->IsPowerOn() ||
-			QDrive->Status() < SimSystem::DEGRADED);
+			QDrive->GetStatus() < SYSTEM_STATUS::DEGRADED);
 
 	if (bUseFarcaster) {
 		FindObjectiveFarcaster(SelfRgn, NavRgn);
@@ -656,7 +656,7 @@ ShipAI::FindObjectiveQuantum()
 		(Orders->Farcast() ||
 			!QDrive ||
 			!QDrive->IsPowerOn() ||
-			QDrive->Status() < SimSystem::DEGRADED);
+			QDrive->GetStatus() < SYSTEM_STATUS::DEGRADED);
 
 	if (bUseFarcaster) {
 		FindObjectiveFarcaster(SelfRgn, NavRgn);
@@ -838,7 +838,7 @@ ShipAI::FindObjectiveFormation()
 			(NavPointLocal->Farcast() ||
 				!QDrive ||
 				!QDrive->IsPowerOn() ||
-				QDrive->Status() < SimSystem::DEGRADED);
+				QDrive->GetStatus() < SYSTEM_STATUS::DEGRADED);
 
 		if (bUseFarcaster) {
 			ListIter<Ship> ShipIter = SelfRegion->GetShips();

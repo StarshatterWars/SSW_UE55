@@ -383,7 +383,7 @@ FighterAI::ReturnToBase(Ship* controller)
                 QuantumDrive* qdrive = ship->GetQuantumDrive();
                 const bool    use_farcaster = !qdrive ||
                     !qdrive->IsPowerOn() ||
-                    qdrive->Status() < SimSystem::DEGRADED;
+                    qdrive->GetStatus() < SYSTEM_STATUS::DEGRADED;
 
                 if (use_farcaster) {
                     if (!farcaster) {
@@ -1404,7 +1404,7 @@ FighterAI::SeekFormationSlot()
 
         if (self_rgn != lead_rgn) {
             QuantumDrive* qdrive = ship->GetQuantumDrive();
-            const bool use_farcaster = !qdrive || !qdrive->IsPowerOn() || qdrive->Status() < SimSystem::DEGRADED;
+            const bool use_farcaster = !qdrive || !qdrive->IsPowerOn() || qdrive->GetStatus() < SYSTEM_STATUS::DEGRADED;
 
             if (use_farcaster) {
                 FindObjectiveFarcaster(self_rgn, lead_rgn);

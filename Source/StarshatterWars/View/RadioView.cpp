@@ -362,7 +362,7 @@ RadioView::Refresh()
 		font->DrawText(chat, 0, chat_rect, DT_LEFT);
 
 		chat_rect.Inflate(2, 2);
-		window->DrawRect(chat_rect, hud_color);
+		window->DrawRect(chat_rect, HudColor);
 	}
 }
 
@@ -467,12 +467,12 @@ RadioView::ExecFrame()
 {
 	HUDView* hud = HUDView::GetInstance();
 	if (hud) {
-		if (txt_color != hud->GetTextColor()) {
-			txt_color = hud->GetTextColor();
+		if (TextColor != hud->GetTextColor()) {
+			TextColor = hud->GetTextColor();
 			SetColor(txt_color);
 		}
 
-		hud_color = hud->GetHUDColor();
+		HudColor = hud->GetHUDColor();
 	}
 
 	static int current_key = 0;
@@ -531,7 +531,7 @@ RadioView::SetColor(FColor c)
 
 	if (hud) {
 		hud_color = hud->GetHUDColor();
-		txt_color = hud->GetTextColor();
+		TextColor = hud->GetTextColor();
 	}
 	else {
 		hud_color = c;

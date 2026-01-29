@@ -607,10 +607,10 @@ enum class EHUDMode : uint8
 UENUM()
 enum class LIGHTTYPE : uint32 
 {
-	LIGHT_NONE,
-	LIGHT_POINT,
-	LIGHT_SPOT,
-	LIGHT_DIRECTIONAL,
+	NONE,
+	POINT,
+	SPOT,
+	DIRECTIONAL,
 	LIGHT_FORCE_DWORD = 0x7fffffff
 };
 

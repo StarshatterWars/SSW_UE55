@@ -29,7 +29,7 @@ int SimLight::id_key = 1;
 
 SimLight::SimLight(float l, float dl, int time)
 	: id(id_key++),
-	type(LIGHT_POINT),
+	type(LIGHTTYPE::POINT),
 	loc(FVector::ZeroVector),
 	life(time),
 	light(l),
@@ -82,6 +82,6 @@ SimLight::MoveTo(const FVector& dst)
 void
 SimLight::TranslateBy(const FVector& ref)
 {
-	if (type != LIGHT_DIRECTIONAL)
+	if (type != LIGHTTYPE::DIRECTIONAL)
 		loc = loc - ref;
 }

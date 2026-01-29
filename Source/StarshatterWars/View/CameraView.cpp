@@ -389,7 +389,7 @@ void CameraView::MarkVisibleLights(Graphic* graphic, uint32 flags)
         const LIGHTTYPE lt = static_cast<LIGHTTYPE>(light->Type());
 
         bool bright_enough =
-            (lt == LIGHTTYPE::LIGHT_DIRECTIONAL) ||
+            (lt == LIGHTTYPE::DIRECTIONAL) ||
             (light->Intensity() >= 1e9);
 
         if (!bright_enough)
@@ -744,7 +744,7 @@ void CameraView::RenderLensFlare()
 
         const LIGHTTYPE lt = static_cast<LIGHTTYPE>(light->Type());
 
-        if (lt == LIGHTTYPE::LIGHT_DIRECTIONAL && light->Intensity() < 1)
+        if (lt == LIGHTTYPE::DIRECTIONAL && light->Intensity() < 1)
             continue;
 
         const double distance = (light->Location() - camera->Pos()).Size();

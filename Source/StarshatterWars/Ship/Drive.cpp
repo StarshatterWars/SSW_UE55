@@ -382,7 +382,7 @@ Drive::IsAugmenterOn() const
     return augmenter > 0 &&
         augmenter_throttle > 0.05f &&
         IsPowerOn() &&
-        status > CRITICAL;
+        status > SYSTEM_STATUS::CRITICAL;
 }
 
 // +--------------------------------------------------------------------+

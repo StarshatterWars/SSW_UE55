@@ -108,7 +108,7 @@ bool
 QuantumDrive::Engage(bool immediate)
 {
 	if (active_state == ACTIVE_READY && ship != 0 &&
-		IsPowerOn() && Status() == NOMINAL && energy == capacity) {
+		IsPowerOn() && GetStatus() == SYSTEM_STATUS::NOMINAL && energy == capacity) {
 
 		active_state = ACTIVE_COUNTDOWN;
 		if (immediate) {

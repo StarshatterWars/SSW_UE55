@@ -29,6 +29,7 @@
 #include "Video.h"
 #include "SimLight.h"
 #include "SimScene.h"
+#include "GameStructs.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterShadow, Log, All);
 
@@ -111,7 +112,7 @@ void Shadow::Update(SimLight* light)
 		return;
 
 	FVector lpos = light->Location();
-	const bool directional = light->Type() == SimLight::LIGHT_DIRECTIONAL;
+	const bool directional = light->Type() == LIGHTTYPE::DIRECTIONAL;
 	Model* model = solid->GetModel();
 
 	ListIter<Surface> iter = model->GetSurfaces();

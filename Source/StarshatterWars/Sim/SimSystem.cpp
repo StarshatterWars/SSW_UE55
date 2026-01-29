@@ -37,7 +37,7 @@ SimSystem::SimSystem(SimSystem::CATEGORY t, int s, const char* n, int maxv,
 	id(0),
 	subtype(s),
 	max_value(0),
-	status(NOMINAL),
+	status(SYSTEM_STATUS::NOMINAL),
 	crit_level(0.5f),
 	availability(1.0f),
 	safety(1.0f),
@@ -241,14 +241,14 @@ SimSystem::ExecFrame(double seconds)
 	if (seconds < 0.01)
 		seconds = 0.01;
 
-	STATUS s = DESTROYED;
+	SYSTEM_STATUS s = SYSTEM_STATUS::DESTROYED;
 
 	if (availability > 0.99)
-		s = NOMINAL;
+		s = SYSTEM_STATUS::NOMINAL;
 	else if (availability > crit_level)
-		s = DEGRADED;
+		s = SYSTEM_STATUS::DEGRADED;
 	else
-		s = CRITICAL;
+		s = SYSTEM_STATUS::CRITICAL;
 
 	bool repair = false;
 
@@ -298,8 +298,8 @@ SimSystem::ExecFrame(double seconds)
 void
 SimSystem::Repair()
 {
-	if (status != MAINT) {
-		status = MAINT;
+	if (status != SYSTEM_STATUS::MAINT) {
+		status = SYSTEM_STATUS;::MAINT;
 		safety_overload = 0.0f;
 
 		//NetUtil::SendSysStatus(ship, this);

@@ -49,7 +49,7 @@ public:
 	FVector           Location()        const { return loc; }
 
 	LIGHTTYPE Type() const { return static_cast<LIGHTTYPE>(type); }
-	void              SetType(DWORD t) { type = t; }
+	void              SetType(LIGHTTYPE t) { type = t; }
 	float             Intensity()       const { return light; }
 	void              SetIntensity(float f) { light = f; }
 	FColor            GetColor()        const { return color; }
@@ -59,9 +59,9 @@ public:
 	bool              CastsShadow()     const { return shadow; }
 	void              SetShadow(bool s) { shadow = s; }
 
-	bool              IsPoint()         const { return type == LIGHT_POINT; }
-	bool              IsSpot()          const { return type == LIGHT_SPOT; }
-	bool              IsDirectional()   const { return type == LIGHT_DIRECTIONAL; }
+	bool              IsPoint()         const { return type == LIGHTTYPE::POINT; }
+	bool              IsSpot()          const { return type == LIGHTTYPE::SPOT; }
+	bool              IsDirectional()   const { return type == LIGHTTYPE::DIRECTIONAL; }
 
 	virtual void      MoveTo(const FVector& dst);
 	virtual void      TranslateBy(const FVector& ref);

@@ -112,8 +112,8 @@ FlightComputer::ExecTrans()
 	if (IsPowerOn())
 	{
 		bFlcsOperative =
-			Status() == SimSystem::NOMINAL ||
-			Status() == SimSystem::DEGRADED;
+			GetStatus() == SYSTEM_STATUS::NOMINAL ||
+			GetStatus() == SYSTEM_STATUS::DEGRADED;
 	}
 
 	// Convenience: Starshatter-style "*" was effectively dot-product.

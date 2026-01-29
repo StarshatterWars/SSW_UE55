@@ -142,7 +142,7 @@ QuantumView::Refresh()
 	if (IsMenuShown()) {
 		Rect menu_rect(width - 115, 10, 115, 12);
 
-		font->SetColor(hud_color);
+		font->SetColor(HudColor);
 		font->SetAlpha(1);
 		font->DrawText(quantum_menu->GetTitle(), 0, menu_rect, DT_CENTER);
 
@@ -165,9 +165,9 @@ QuantumView::ExecFrame()
 {
 	HUDView* hud = HUDView::GetInstance();
 	if (hud) {
-		if (hud_color != hud->GetTextColor()) {
-			hud_color = hud->GetTextColor();
-			SetColor(hud_color);
+		if (HudColor != hud->GetTextColor()) {
+			HudColor = hud->GetTextColor();
+			SetColor(HudColor);
 		}
 	}
 

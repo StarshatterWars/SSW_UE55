@@ -520,7 +520,7 @@ StarshipAI::SeekTarget()
             (navpt->Farcast() ||
                 !qdrive ||
                 !qdrive->IsPowerOn() ||
-                qdrive->Status() < SimSystem::DEGRADED);
+                qdrive->GetStatus() < SYSTEM_STATUS::DEGRADED);
 
         if (use_farcaster) {
             if (!farcaster) {

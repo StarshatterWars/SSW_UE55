@@ -558,7 +558,7 @@ FighterTacticalAI::IsStrikeComplete(Instruction* instr)
 				while (++w_iter) {
 					Weapon* weapon = w_iter.value();
 
-					if (weapon->Status() > SimSystem::CRITICAL)
+					if (weapon->GetStatus() > SYSTEM_STATUS::CRITICAL)
 						return false;
 				}
 			}
