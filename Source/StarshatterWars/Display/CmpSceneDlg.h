@@ -64,7 +64,7 @@ private:
 private:
     // View objects:
     CameraView* CamView = nullptr;
-    UDisplayView* DispView = nullptr;
+    DisplayView* DispView = nullptr;
 
     // If your DisplayView still needs to remember old window/host:
     void* OldDispHost = nullptr;

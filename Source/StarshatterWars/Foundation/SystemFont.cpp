@@ -10,10 +10,11 @@
 
 #include "SystemFont.h"
 
-#include "Screen.h"
-#include "Video.h"
 #include "Engine/Font.h"
 #include "Styling/CoreStyle.h"
+
+// If you actually USE Text methods in the .cpp later, include its real definition:
+// #include "Text.h"
 
 SystemFont::SystemFont()
     : Flags(0)
@@ -49,6 +50,7 @@ bool SystemFont::Load(const char* InName)
 
     FCStringAnsi::Strncpy(Name, InName, sizeof(Name));
 
+    // Accept UFont asset path:
     const FString Path = UTF8_TO_TCHAR(InName);
 
     UFont* Loaded = Cast<UFont>(StaticLoadObject(UFont::StaticClass(), nullptr, *Path));
@@ -138,7 +140,7 @@ void SystemFont::SetBlend(int InBlend)
 FLinearColor SystemFont::GetLinearColor() const
 {
     FColor C = Color;
-    C.A = (uint8)FMath::Clamp((int)FMath::RoundToInt(Alpha * 255.0f), 0, 255);
+    C.A = (uint8)FMath::Clamp(FMath::RoundToInt(Alpha * 255.0f), 0, 255);
     return FLinearColor(C);
 }
 
@@ -159,90 +161,61 @@ const char* SystemFont::GetName() const
 
 void SystemFont::UpdateHeuristics()
 {
-    // Hook for future baseline/height if you need it.
+    // Hook for future baseline/height metrics if you decide to cache them.
 }
+
+// --------------------------------------------------------------------------------------
+// Legacy draw calls
+// NOTE: SystemFont does NOT render. These are compatibility stubs.
+// If/when your Video layer exposes matching APIs, you can delegate here.
+// --------------------------------------------------------------------------------------
 
 int SystemFont::DrawString(const char* text, int len, int x, int y, const Rect& clip, Video* video) const
 {
-    if (!video || !text || len <= 0) return 0;
-    return video->DrawString(*this, text, len, x, y, clip);
+    // No-op by design (renderer owns drawing).
+    return 0;
 }
 
 int SystemFont::DrawTextW(const wchar_t* text, int len, int x, int y, const Rect& clip, Video* video) const
 {
-    if (!video || !text || len <= 0) return 0;
-    return video->DrawTextW(*this, text, len, x, y, clip);
+    // No-op by design (renderer owns drawing).
+    return 0;
+}
+
+int SystemFont::DrawString(const char* text, int len, int x, int y, const Rect& clip) const
+{
+    // No-op by design (renderer owns drawing).
+    return 0;
+}
+
+int SystemFont::DrawTextW(const wchar_t* text, int len, int x, int y, const Rect& clip) const
+{
+    // No-op by design (renderer owns drawing).
+    return 0;
+}
+
+int SystemFont::DrawText(const char* text, int len, const Rect& clip, uint32 flags) const
+{
+    // No-op by design (renderer owns drawing).
+    return 0;
 }
 
 int SystemFont::DrawText(const Text& text, int len, const Rect& clip, uint32 flags) const
 {
-    // If Text can provide UTF-8/ANSI:
-    const char* s = (const char*)text;   // if your Text supports this
-    if (!s) s = "";
-
-    if (len < 0)
-        len = (int)strlen(s);
-
-    return DrawText(s, len, clip, flags);
+    // No-op by design (renderer owns drawing).
+    // If you later want to support Text here, include "Text.h" and convert to UTF-8.
+    return 0;
 }
 
 int SystemFont::DrawText(const char* text, int len, const Rect& clip, uint32 flags, Bitmap* target) const
 {
+    // No-op by design (renderer owns drawing).
     return 0;
 }
 
 int SystemFont::DrawText(const Text& text, int len, const Rect& clip, uint32 flags, Bitmap* target) const
 {
+    // No-op by design (renderer owns drawing).
+    // If you later want to support Text here, include "Text.h" and convert to UTF-8.
     return 0;
-}
-
-static Video* GetActiveVideo()
-{
-    Screen* screen = Screen::GetCurrent(); // or however you access it
-    return screen ? screen->GetVideo() : nullptr;
-}
-
-int SystemFont::DrawString(
-    const char* text,
-    int len,
-    int x,
-    int y,
-    const Rect& clip
-) const
-{
-    Video* video = GetActiveVideo();
-    if (!video || !text || len <= 0)
-        return 0;
-
-    return video->DrawString(*this, text, len, x, y, clip);
-}
-
-
-int SystemFont::DrawTextW(
-    const wchar_t* text,
-    int len,
-    int x,
-    int y,
-    const Rect& clip
-) const
-{
-    Video* video = GetActiveVideo();
-    if (!video || !text || len <= 0)
-        return 0;
-
-    return video->DrawTextW(*this, text, len, x, y, clip);
-}
-
-int SystemFont::DrawText(
-    const char* text,
-    int len,
-    const Rect& clip,
-    uint32 flags
-) const
-{
-    Video* video = GetActiveVideo();
-    if (!video || !text || len <= 0)
-        return 0;
-
-    return video->DrawText(*this, text, len, clip, flags);
 }

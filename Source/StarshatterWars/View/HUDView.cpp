@@ -74,8 +74,11 @@
 #include "Sound.h"
 #include "Bitmap.h"
 #include "Game.h"
-#include "Window.h"
+
 #include "SimProjector.h"
+
+#include "CameraView.h"
+#include "MFDView.h"
 // -------------------------------------------------------------------------------------------------
 // Local helpers (FColor math compatible with legacy "Color" ops)
 // -------------------------------------------------------------------------------------------------
@@ -215,8 +218,8 @@ static FColor night_vision_colors[NUM_HUD_COLORS] = {
 	FColor(0,  0,  0)   // no night vision
 };
 
-static SystemFont* hud_font = nullptr; // was Font*
-static SystemFont* big_font = nullptr; // was Font*
+static SystemFont* HudFont = nullptr; // was Font*
+static SystemFont* BigFont = nullptr; // was Font*
 
 static bool   mouse_in = false;
 static int    mouse_latch = 0;
@@ -227,7 +230,7 @@ static SYSTEM_STATUS tgt_status = SYSTEM_STATUS::NOMINAL;
 
 // +--------------------------------------------------------------------+
 
-/*static enum TXT {
+static enum TXT {
 	MAX_CONTACT = 50,
 
 	TXT_CAUTION_TXT = 0,
@@ -287,7 +290,7 @@ static SYSTEM_STATUS tgt_status = SYSTEM_STATUS::NOMINAL;
 
 	TXT_LAST_ACTIVE = TXT_NAV_HOLD,
 	TXT_INSTR_PAGE = TXT_CAUTION_TXT + 6,
-};*/
+};
 
 static HUDText hud_text[TXT_LAST];
 
@@ -340,7 +343,7 @@ HUDView::DrawHUDText(int index, const char* txt, Rect& InRect, int align, int up
 	if (cockpit_hud_texture &&
 		index >= TXT_HUD_MODE &&
 		index <= TXT_TARGET_ETA &&
-		ht.font != big_font) {
+		ht.font != BigFont) {
 
 		Sprite* s = hud_sprite[0];
 
@@ -659,16 +662,16 @@ HUDView::HUDView(Screen* InScreen)
 	mfd[1]->SetMode(EMFDMode::FOV);
 	mfd[2]->SetMode(EMFDMode::GAME);
 
-	hud_font = FontManager::Find("HUD");
-	big_font = FontManager::Find("GUI");
+	HudFont = FontManager::Find("HUD");
+	BigFont = FontManager::Find("GUI");
 
 	for (i = 0; i < TXT_LAST; i++) {
-		hud_text[i].font = hud_font;
+		hud_text[i].font = HudFont;
 	}
 
-	hud_text[TXT_THREAT_WARN].font = big_font;
-	hud_text[TXT_SHOOT].font = big_font;
-	hud_text[TXT_AUTO].font = big_font;
+	hud_text[TXT_THREAT_WARN].font = BigFont;
+	hud_text[TXT_SHOOT].font = BigFont;
+	hud_text[TXT_AUTO].font = BigFont;
 
 	SetHUDColorSet(def_color_set);
 	MFDView::SetColor(standard_hud_colors[color]);
@@ -811,8 +814,8 @@ HUDView::~HUDView()
 void
 HUDView::OnWindowMove()
 {
-	width = window->Width();
-	height = window->Height();
+	width = Width();
+	height = Height();
 	xcenter = (width / 2.0) - 0.5;
 	ycenter = (height / 2.0) + 0.5;
 
@@ -831,14 +834,14 @@ HUDView::OnWindowMove()
 	icon_target_sprite->MoveTo(FVector((float)width - 184.0f, (float)height - 72.0f, 1));
 
 	for (int i = 0; i < TXT_LAST; i++) {
-		hud_text[i].font = hud_font;
+		hud_text[i].font = HudFont;
 		hud_text[i].color = standard_txt_colors[color];
 	}
 
-	if (big_font) {
-		hud_text[TXT_THREAT_WARN].font = big_font;
-		hud_text[TXT_SHOOT].font = big_font;
-		hud_text[TXT_AUTO].font = big_font;
+	if (BigFont) {
+		hud_text[TXT_THREAT_WARN].font = BigFont;
+		hud_text[TXT_SHOOT].font = BigFont;
+		hud_text[TXT_AUTO].font = BigFont;
 	}
 
 	MFDView::SetColor(standard_hud_colors[color]);
@@ -1075,8 +1078,7 @@ HUDView::DrawContactMarkers()
 }
 // +--------------------------------------------------------------------+
 
-void
-HUDView::DrawTarget()
+void HUDView::DrawTarget()
 {
 	const int bar_width = 256;
 	const int bar_height = 192;
@@ -1084,26 +1086,30 @@ HUDView::DrawTarget()
 
 	SimObject* old_target = target;
 
-	if (mode == EHUDMode::ILS) {
-		Ship* controller = ship ? ship->GetController() : 0;
+	if (mode == EHUDMode::ILS)
+	{
+		Ship* controller = ship ? ship->GetController() : nullptr;
 		if (controller && !target)
 			target = controller;
 	}
 
-	if (target && target->Rep()) {
-		Sensor* sensor = ship ? ship->GetSensor() : 0;
-		SimContact* contact = 0;
+	if (target && target->Rep())
+	{
+		Sensor* sensor = ship ? ship->GetSensor() : nullptr;
+		SimContact* contact = nullptr;
 
-		if (sensor && ship && target->Type() == SimObject::SIM_SHIP) {
+		if (sensor && ship && target->Type() == SimObject::SIM_SHIP)
+		{
 			contact = sensor->FindContact((Ship*)target);
 		}
 
-		int    cx = width / 2;
-		int    cy = height / 2;
-		int    l = cx - bar_width / 2;
-		int    r = cx + bar_width / 2;
-		int    t = cy - bar_height / 2;
-		int    b = cy + bar_height / 2;
+		const int cx = width / 2;
+		const int cy = height / 2;
+
+		const int l = cx - bar_width / 2;
+		const int r = cx + bar_width / 2;
+		const int t = cy - bar_height / 2;
+		const int b = cy + bar_height / 2;
 
 		FVector delta = target->Location() - ship->Location();
 		double  distance = delta.Size();
@@ -1111,22 +1117,28 @@ HUDView::DrawTarget()
 		FVector delta_v = ship->Velocity() - target->Velocity();
 		double  speed = delta_v.Size();
 
-		char txt[256];
+		char txt[256] = {};
 
-		if (mode == EHUDMode::ILS && ship->GetInbound() && ship->GetInbound()->GetDeck()) {
+		if (mode == EHUDMode::ILS && ship->GetInbound() && ship->GetInbound()->GetDeck())
+		{
 			delta = ship->GetInbound()->GetDeck()->EndPoint() - ship->Location();
 			distance = delta.Size();
 		}
 
-		// Determine closing speed sign:
-		const double delta_dot_vel = FVector::DotProduct(delta, ship->Velocity());
+		// --------------------------------------------------------------------
+		// Determine closing speed sign (UE-correct dot usage)
+		// --------------------------------------------------------------------
+		const FVector ShipVel = ship->Velocity();
+		const double  delta_dot_vel = delta.Dot(ShipVel);
 
-		if (delta_dot_vel > 0) { // in front
-			if (FVector::DotProduct(delta_v, ship->Velocity()) < 0) // losing ground
+		if (delta_dot_vel > 0.0) // target in front
+		{
+			if (delta_v.Dot(ShipVel) < 0.0) // losing ground
 				speed = -speed;
 		}
-		else { // behind
-			if (FVector::DotProduct(delta_v, ship->Velocity()) > 0) // passing
+		else // target behind
+		{
+			if (delta_v.Dot(ShipVel) > 0.0) // passing
 				speed = -speed;
 		}
 
@@ -1135,30 +1147,35 @@ HUDView::DrawTarget()
 		if (tactical)
 			range_rect.x = width - range_rect.w - 8;
 
-		if (contact) {
+		if (contact)
+		{
 			Sensor* sensor2 = ship->GetSensor();
-			double  limit = 75e3;
+			double limit = 75e3;
 
 			if (sensor2)
 				limit = sensor2->GetBeamRange();
 
 			distance = contact->Range(ship, limit);
 
-			if (!contact->ActLock() && !contact->PasLock()) {
+			if (!contact->ActLock() && !contact->PasLock())
+			{
 				strcpy_s(txt, Game::GetText("HUDView.No-Range").data());
 				speed = 0;
 			}
-			else {
+			else
+			{
 				FormatNumber(txt, distance);
 			}
 		}
-		else {
+		else
+		{
 			FormatNumber(txt, distance);
 		}
 
 		DrawHUDText(TXT_RANGE, txt, range_rect, DT_RIGHT);
 
-		if (arcade) {
+		if (arcade)
+		{
 			target = old_target;
 			return;
 		}
@@ -1167,11 +1184,15 @@ HUDView::DrawTarget()
 		FormatNumber(txt, speed);
 		DrawHUDText(TXT_CLOSING_SPEED, txt, range_rect, DT_RIGHT);
 
-		// target info:
-		if (!tactical) {
+		// --------------------------------------------------------------------
+		// Target info
+		// --------------------------------------------------------------------
+		if (!tactical)
+		{
 			range_rect.y = cy - 76;
 		}
-		else {
+		else
+		{
 			range_rect.x = width - 2 * box_width - 8;
 			range_rect.y = cy - 76;
 			range_rect.w = 2 * box_width;
@@ -1179,43 +1200,62 @@ HUDView::DrawTarget()
 
 		DrawHUDText(TXT_TARGET_NAME, target->Name(), range_rect, DT_RIGHT);
 
-		if (target->Type() == SimObject::SIM_SHIP) {
+		if (target->Type() == SimObject::SIM_SHIP)
+		{
 			Ship* tgt_ship = (Ship*)target;
 
 			range_rect.y += 10;
-			DrawHUDText(TXT_TARGET_DESIGN, tgt_ship->Design()->display_name, range_rect, DT_RIGHT);
+			DrawHUDText(
+				TXT_TARGET_DESIGN,
+				tgt_ship->Design()->display_name,
+				range_rect,
+				DT_RIGHT
+			);
 
-			if (mode != EHUDMode::ILS) {
-				if (tgt_ship->IsStarship()) {
+			if (mode != EHUDMode::ILS)
+			{
+				if (tgt_ship->IsStarship())
+				{
 					range_rect.y += 10;
-					sprintf_s(txt, "%s %03d",
+					sprintf_s(
+						txt,
+						"%s %03d",
 						Game::GetText("HUDView.symbol.shield").data(),
-						(int)tgt_ship->ShieldStrength());
+						(int)tgt_ship->ShieldStrength()
+					);
 					DrawHUDText(TXT_TARGET_SHIELD, txt, range_rect, DT_RIGHT);
 				}
 
 				range_rect.y += 10;
-				sprintf_s(txt, "%s %03d",
+				sprintf_s(
+					txt,
+					"%s %03d",
 					Game::GetText("HUDView.symbol.hull").data(),
-					(int)(tgt_ship->Integrity() / tgt_ship->Design()->integrity * 100));
+					(int)(tgt_ship->Integrity() /
+						tgt_ship->Design()->integrity * 100)
+				);
 				DrawHUDText(TXT_TARGET_HULL, txt, range_rect, DT_RIGHT);
 
 				SimSystem* sys = ship->GetSubTarget();
-				if (sys) {
-					FColor        stat = HudColor;
-					static DWORD  blink = Game::RealTime();
+				if (sys)
+				{
+					FColor       stat = HudColor;
+					static DWORD blink = Game::RealTime();
 
 					int blink_delta = Game::RealTime() - blink;
 					sprintf_s(txt, "%s %03d", sys->Abbreviation(), (int)sys->Availability());
 
-					switch (sys->GetStatus()) {
-						case SYSTEM_STATUS::DEGRADED: 
+					switch (sys->GetStatus())
+					{
+					case SYSTEM_STATUS::DEGRADED:
 						stat = FColor(255, 255, 0);
 						break;
+
 					case SYSTEM_STATUS::CRITICAL:
 					case SYSTEM_STATUS::DESTROYED:
 						stat = FColor(255, 0, 0);
 						break;
+
 					case SYSTEM_STATUS::MAINT:
 						if (blink_delta < 250)
 							stat = FColor(8, 8, 8);
@@ -1230,8 +1270,8 @@ HUDView::DrawTarget()
 				}
 			}
 		}
-
-		else if (target->Type() == SimObject::SIM_DRONE) {
+		else if (target->Type() == SimObject::SIM_DRONE)
+		{
 			Drone* tgt_drone = (Drone*)target;
 
 			range_rect.y += 10;
@@ -1240,9 +1280,10 @@ HUDView::DrawTarget()
 			range_rect.y += 10;
 			int eta = tgt_drone->GetEta();
 
-			if (eta > 0) {
+			if (eta > 0)
+			{
 				int minutes = (eta / 60) % 60;
-				int seconds = (eta) % 60;
+				int seconds = eta % 60;
 
 				char eta_buf[16];
 				sprintf_s(eta_buf, "T %d:%02d", minutes, seconds);
@@ -1250,9 +1291,9 @@ HUDView::DrawTarget()
 			}
 		}
 	}
-
 	target = old_target;
 }
+
 
 // +--------------------------------------------------------------------+
 
@@ -1267,8 +1308,8 @@ HUDView::DrawNavInfo()
 		if (ship && ship->IsAutoNavEngaged()) {
 			Rect info_rect(width / 2 - box_width, height / 2 + bar_height, box_width * 2, 12);
 
-			if (big_font)
-				hud_text[TXT_NAV_INDEX].font = big_font;
+			if (BigFont)
+				hud_text[TXT_NAV_INDEX].font = BigFont;
 
 			DrawHUDText(TXT_NAV_INDEX, Game::GetText("HUDView.Auto-Nav"), info_rect, DT_CENTER);
 		}
@@ -1276,7 +1317,7 @@ HUDView::DrawNavInfo()
 		return;
 	}
 
-	hud_text[TXT_NAV_INDEX].font = hud_font;
+	hud_text[TXT_NAV_INDEX].font = HudFont;
 
 	Instruction* navpt = ship ? ship->GetNextNavPoint() : 0;
 
@@ -1805,8 +1846,8 @@ HUDView::DrawWarningPanel()
 
 					warn_rect.y += 4;
 
-					hud_font->SetColor(tc);
-					hud_font->DrawText(abrv, -1,
+					HudFont->SetColor(tc);
+					HudFont->DrawText(abrv, -1,
 						warn_rect,
 						DT_CENTER | DT_SINGLELINE,
 						cockpit_hud_texture);
@@ -2541,8 +2582,8 @@ HUDView::Refresh()
 			if (hud_sprite[i] && !hud_sprite[i]->Hidden()) {
 				Sprite* s = hud_sprite[i];
 
-				int cx = (int)s->Location().X;
-				int cy = (int)s->Location().Y;
+				int cx = (int)s->GetLocation().X;
+				int cy = (int)s->GetLocation().Y;
 				int w2 = s->Width() / 2;
 				int h2 = s->Height() / 2;
 
@@ -2555,8 +2596,8 @@ HUDView::Refresh()
 			if (hud_sprite[i] && !hud_sprite[i]->Hidden()) {
 				Sprite* s = hud_sprite[i];
 
-				int cx = (int)s->Location().X;
-				int cy = (int)s->Location().Y;
+				int cx = (int)s->GetLocation().X;
+				int cy = (int)s->GetLocation().Y;
 				int w2 = s->Width() / 2;
 				int h2 = s->Height() / 2;
 
@@ -2757,7 +2798,7 @@ HUDView::DrawOrbitalBody(OrbitalBody* body)
 			r = projector->ProjectRadius(p, r);
 			projector->Project(p, false);
 
-			window->DrawEllipse((int)(p.X - r),
+			DrawEllipse((int)(p.X - r),
 				(int)(p.Y - r),
 				(int)(p.X + r),
 				(int)(p.Y + r),
@@ -3012,7 +3053,7 @@ HUDView::SetHUDMode(EHUDMode m)
 
 void HUDView::CycleHUDMode()
 {
-	mode = EnumInc(mode);
+	mode = static_cast<EHUDMode>(static_cast<int>(mode) + 1);
 
 	if (arcade && mode != EHUDMode::Tactical)
 		mode = EHUDMode::Off;

@@ -2,7 +2,7 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026. All Rights Reserved.
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
     FILE:         FontManager.h
     AUTHOR:       Carlos Bott
 
@@ -12,25 +12,24 @@
     OVERVIEW
     ========
     Font Resource Manager class
+    - Unreal-friendly registry using TArray
+    - Keeps legacy method names: Close/Register/Find
 */
 
 #pragma once
 
-#include "List.h"
-#include "Text.h"
+#include "CoreMinimal.h"
 
-// Forward declarations (keep header light)
+// Forward declarations:
 class SystemFont;
 
 // +--------------------------------------------------------------------+
 
-struct FontItem
+struct FFontItem
 {
-    static const char* TYPENAME() { return "FontItem"; }
-
-    Text  name;
-    int   size = 0;
-    SystemFont* font = nullptr;
+    FString     Name;
+    int32       Size = 0;
+    SystemFont* Font = nullptr;
 };
 
 // +--------------------------------------------------------------------+
@@ -40,11 +39,10 @@ class FontManager
 public:
     static const char* TYPENAME() { return "FontManager"; }
 
-    static void   Close();
-    static void   Register(const char* name, SystemFont* font);
-    static SystemFont* Find(const char* name);
+    static void        Close();
+    static void        Register(const char* NameAnsi, SystemFont* Font);
+    static SystemFont* Find(const char* NameAnsi);
 
 private:
-    static List<FontItem> fonts;
+    static TArray<FFontItem> Fonts;
 };
-

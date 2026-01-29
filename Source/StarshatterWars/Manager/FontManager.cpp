@@ -2,16 +2,12 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026. All Rights Reserved.
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
     FILE:         FontManager.cpp
     AUTHOR:       Carlos Bott
 
     ORIGINAL AUTHOR AND STUDIO:
     John DiCamillo / Destroyer Studios LLC
-
-    OVERVIEW
-    ========
-    Font Resource Manager class implementation
 */
 
 #include "FontManager.h"
@@ -19,54 +15,61 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogFontManager, Log, All);
 
-// +--------------------------------------------------------------------+
-
-List<FontItem> FontManager::fonts;
+TArray<FFontItem> FontManager::Fonts;
 
 // +--------------------------------------------------------------------+
 
-void
-FontManager::Close()
+void FontManager::Close()
 {
-    fonts.destroy();
+    // We do not own SystemFont memory here; just clear the registry.
+    Fonts.Reset();
 }
 
 // +--------------------------------------------------------------------+
 
-void
-FontManager::Register(const char* name, SystemFont* font)
+void FontManager::Register(const char* NameAnsi, SystemFont* Font)
 {
-    if (!name || !*name || !font) {
+    if (!NameAnsi || !*NameAnsi || !Font)
+    {
         UE_LOG(LogFontManager, Warning, TEXT("FontManager::Register called with invalid parameters."));
         return;
     }
 
-    FontItem* item = new FontItem;
+    const FString Name = UTF8_TO_TCHAR(NameAnsi);
 
-    if (item) {
-        item->name = name;
-        item->size = 0;
-        item->font = font;
+    // Prevent duplicates:
+    for (FFontItem& Item : Fonts)
+    {
+        if (Item.Name.Equals(Name, ESearchCase::IgnoreCase))
+        {
+            Item.Font = Font;   // update existing
+            Item.Size = 0;
+            UE_LOG(LogFontManager, Verbose, TEXT("FontManager::Register updated existing font: %s"), *Name);
+            return;
+        }
+    }
 
-        fonts.append(item);
-    }
-    else {
-        UE_LOG(LogFontManager, Error, TEXT("FontManager::Register failed to allocate FontItem."));
-    }
+    FFontItem NewItem;
+    NewItem.Name = Name;
+    NewItem.Size = 0;
+    NewItem.Font = Font;
+
+    Fonts.Add(MoveTemp(NewItem));
 }
 
 // +--------------------------------------------------------------------+
 
-SystemFont*
-FontManager::Find(const char* name)
+SystemFont* FontManager::Find(const char* NameAnsi)
 {
-    if (!name || !*name)
+    if (!NameAnsi || !*NameAnsi)
         return nullptr;
 
-    ListIter<FontItem> item = fonts;
-    while (++item) {
-        if (item->name == name)
-            return item->font;
+    const FString Name = UTF8_TO_TCHAR(NameAnsi);
+
+    for (const FFontItem& Item : Fonts)
+    {
+        if (Item.Font && Item.Name.Equals(Name, ESearchCase::IgnoreCase))
+            return Item.Font;
     }
 
     return nullptr;

@@ -821,7 +821,7 @@ PlayerCharacter::SelectPlayer(PlayerCharacter* p)
     if (current_player && current_player != p) {
         if (hud) {
             for (int i = 0; i < 3; i++) {
-                UMFDView* mfd = hud->GetMFD(i);
+                MFDView* mfd = hud->GetMFD(i);
 
                 if (mfd)
                     current_player->mfd[i] = mfd->GetMode();
@@ -840,7 +840,7 @@ PlayerCharacter::SelectPlayer(PlayerCharacter* p)
         if (hud) {
             for (int i = 0; i < 3; i++) {
                 if ((int)p->mfd[i] >= 0) {
-                    UMFDView* mfd = hud->GetMFD(i);
+                    MFDView* mfd = hud->GetMFD(i);
 
                     if (mfd)
                         mfd->SetMode(p->mfd[i]);
@@ -1142,7 +1142,7 @@ PlayerCharacter::Save()
     HUDView* hud = HUDView::GetInstance();
     if (hud && current_player) {
         for (int i = 0; i < 3; i++) {
-            UMFDView* mfd = hud->GetMFD(i);
+            MFDView* mfd = hud->GetMFD(i);
 
             if (mfd)
                 current_player->mfd[i] = mfd->GetMode();

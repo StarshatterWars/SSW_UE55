@@ -532,10 +532,12 @@ Starshatter::SetGameMode(int m)
 		"EXIT_MODE"   // shutting down
 	};
 
-	if (m >= (int)EMODE::MENU_MODE && m <= (int)EMODE::EXIT_MODE)
+	if (m >= (int)EMODE::MENU_MODE && m <= (int)EMODE::EXIT_MODE) {
 		UE_LOG(LogStarshatterWars, Log, TEXT(">>> Starshatter::SetGameMode(%d) (%s)"), m, UTF8_TO_TCHAR(mode_name[m]));
-	else
+	}
+	else {
 		UE_LOG(LogStarshatterWars, Warning, TEXT(">>> Starshatter::SetGameMode(%d) (UNKNOWN MODE)"), m);
+	}
 
 	MouseController* mouse_con = MouseController::GetInstance();
 	if (mouse_con)
@@ -1453,7 +1455,7 @@ Starshatter::DoGameScreenFrame()
 				input->SwapYawRoll(false);
 
 			if (hud_view) {
-				hud_view->SetHUDMode((int)EHUDMode::Tactical);
+				hud_view->SetHUDMode(EHUDMode::Tactical);
 				hud_view->HideHUDWarn();
 			}
 		}
@@ -2614,9 +2616,9 @@ Starshatter::BeginCutscene()
 	Sim* sim = Sim::GetSim();
 
 	if (cutscene == 0) {
-		UHUDView* hud_view = UHUDView::GetInstance();
+		HUDView* hud_view = HUDView::GetInstance();
 		if (hud_view)
-			hud_view->SetHUDMode((int)HUD_MODE::HUD_MODE_OFF);
+			hud_view->SetHUDMode((int)EHUDMode::Off);
 
 		if (sim->GetPlayerShip())
 			sim->GetPlayerShip()->SetControls(0);
@@ -2644,9 +2646,9 @@ Starshatter::EndCutscene()
 		if (disp_view)
 			disp_view->ClearDisplay();
 
-		UHUDView* hud_view = UHUDView::GetInstance();
+		HUDView* hud_view = HUDView::GetInstance();
 		if (hud_view)
-			hud_view->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
+			hud_view->SetHUDMode(EHUDMode::Tactical);
 
 		Sim* sim = Sim::GetSim();
 		if (sim->GetPlayerShip())

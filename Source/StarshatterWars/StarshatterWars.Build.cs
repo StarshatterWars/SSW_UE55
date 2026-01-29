@@ -25,7 +25,6 @@ public class StarshatterWars : ModuleRules
              "SlateCore"
         });
 
-        // Since you want to include from Systems/ and Planners/ freely:
         PublicIncludePaths.AddRange(new string[]
         {
             Path.Combine(ModuleDirectory, "System"),
@@ -39,7 +38,6 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "Game"),
             Path.Combine(ModuleDirectory, "View"),
             Path.Combine(ModuleDirectory, "Display"),
-            Path.Combine(ModuleDirectory, "Network"),
             Path.Combine(ModuleDirectory, "Manager"),
             Path.Combine(ModuleDirectory, "Design"),
             Path.Combine(ModuleDirectory, "Levels"),

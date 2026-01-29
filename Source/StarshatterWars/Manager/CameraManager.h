@@ -28,7 +28,7 @@
 
 // +--------------------------------------------------------------------+
 
-class UHUDView;
+class HUDView;
 class Orbital;
 class Ship;
 class Sim;

@@ -11,43 +11,26 @@
     ========
     View class for Heads Up Display
 */
-
-#ifndef HUDView_h
-#define HUDView_h
-
-#include "Types.h"
-#include "View.h"
-#include "Bitmap.h"
-#include "SystemFont.h"
-#include "SimSystem.h"
-#include "SimObject.h"
-#include "GameStructs.h"
-#include "Text.h"
-#include "Mouse.h"
-// Views
-#include "CameraView.h"
-#include "MFDView.h"
+#pragma once
 
 #include "Math/Color.h"
-#include "Math/Vector.h"  
+#include "Math/Vector.h"
+#include "View.h"
+#include "GameStructs.h"
+#include "Text.h"
+#include "Sim.h"
+#include "SimObject.h"
+#include "Mouse.h"
 
-// --------------------------------------------------------------------
-// Unreal/Slate bridge (HUDView is NOT a UObject; this is a paint binding)
-// --------------------------------------------------------------------
-#if defined(UE_BUILD) || defined(UE_GAME) || defined(UNREAL_ENGINE)
-#define HUDVIEW_WITH_UE 1
-#else
-#define HUDVIEW_WITH_UE 0
-#endif
+#include "CameraView.h"
+#include "FontManager.h" 
 
-#if HUDVIEW_WITH_UE
 #include "Layout/Geometry.h"
 #include "Layout/SlateRect.h"
 #include "Fonts/SlateFontInfo.h"
 #include "Rendering/DrawElements.h"
 #include "Input/Reply.h"
 #include "Templates/SharedPointer.h"
-#endif
 
 // +--------------------------------------------------------------------+
 
@@ -61,6 +44,16 @@ class OrbitalBody;
 class OrbitalRegion;
 class Instruction;
 class SimProjector;
+
+class Types;
+
+class Bitmap;
+class SystemFont;
+class SimSystem;
+
+// Views
+
+class MFDView;
 
 
 // +--------------------------------------------------------------------+
@@ -292,10 +285,6 @@ struct HUDText {
     Rect        rect;
     bool        hidden;
 
-#if HUDVIEW_WITH_UE
-    // Optional: cache the Slate font used for this slot (does not replace legacy Font*)
     FSlateFontInfo slate_font;
-#endif
 };
 
-#endif HUDView_h

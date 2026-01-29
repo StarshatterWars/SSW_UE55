@@ -614,7 +614,7 @@ enum class LIGHTTYPE : uint32
 	LIGHT_FORCE_DWORD = 0x7fffffff
 };
 
-static enum ETXT : int32
+/*static enum ETXT : int32
 {
 	MAX_CONTACT = 50,
 
@@ -675,7 +675,7 @@ static enum ETXT : int32
 
 	TXT_LAST_ACTIVE = TXT_NAV_HOLD,
 	TXT_INSTR_PAGE = TXT_CAUTION_TXT + 6,
-} 
+} */
 
 /**
  * STRUCTS

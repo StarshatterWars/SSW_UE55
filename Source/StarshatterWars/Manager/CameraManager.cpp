@@ -924,7 +924,7 @@ CameraManager::Docking(double seconds)
 	}
 	else if (flight_phase == Ship::LOCKED) {
 		if (hud)
-			hud->SetHUDMode((int)HUD_MODE::HUD_MODE_TAC);
+			hud->SetHUDMode(EHUDMode::Tactical);
 
 		// NOTE: preserve original lerp direction:
 		// cpos = base*transition + cloc*(1-transition)

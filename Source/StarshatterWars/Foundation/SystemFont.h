@@ -18,7 +18,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Fonts/SlateFontInfo.h"   // <-- REQUIRED (FSlateFontInfo is used in this header)
+#include "Fonts/SlateFontInfo.h"
 
 #ifdef _WIN32
 #ifdef DrawText
@@ -30,6 +30,16 @@
 #endif
 
 class UFont;
+
+// Forward declarations (keep header light):
+class Video;
+class Bitmap;
+class Text;
+
+// NOTE:
+// Rect MUST be a real type name (struct/class) for forward declare to work.
+// If Rect is a typedef/using alias, include the header that defines it instead of forward-declaring.
+struct Rect;
 
 class SystemFont
 {
@@ -43,6 +53,7 @@ public:
         FONT_NO_KERN = 4
     };
 
+public:
     SystemFont();
     explicit SystemFont(const char* InName);
     ~SystemFont();
@@ -51,55 +62,20 @@ public:
     // "/Game/UI/Fonts/MyFont.MyFont"
     bool Load(const char* InName);
 
-    // Legacy compatibility (delegates to the active Video/Window renderer):
+    // Legacy compatibility (renderer delegation if provided; otherwise no-op):
     int DrawString(const char* text, int len, int x, int y, const Rect& clip, Video* video) const;
     int DrawTextW(const wchar_t* text, int len, int x, int y, const Rect& clip, Video* video) const;
 
-    int DrawString(
-        const char* text,
-        int len,
-        int x,
-        int y,
-        const Rect& clip
-    ) const;
+    // No renderer: SystemFont does not render (no-op by design):
+    int DrawString(const char* text, int len, int x, int y, const Rect& clip) const;
+    int DrawTextW(const wchar_t* text, int len, int x, int y, const Rect& clip) const;
 
-    int DrawTextW(
-        const wchar_t* text,
-        int len,
-        int x,
-        int y,
-        const Rect& clip
-    ) const;
+    // Block-style text APIs (ANSI/UTF-8 only; wide block-text not provided here):
+    int DrawText(const char* text, int len, const Rect& clip, uint32 flags) const;
+    int DrawText(const Text& text, int len, const Rect& clip, uint32 flags) const;
 
-    int DrawText(
-        const char* text,
-        int len,
-        const Rect& clip,
-        uint32 flags
-    ) const;
-
-    int DrawText(
-        const Text& text,
-        int len,
-        const Rect& clip,
-        uint32 flags
-    ) const;
-
-    int DrawText(
-        const char* text,
-        int len,
-        const Rect& clip,
-        uint32 flags,
-        Bitmap* target
-    ) const;
-
-    int DrawText(
-        const Text& text,
-        int len,
-        const Rect& clip,
-        uint32 flags,
-        Bitmap* target
-    ) const;
+    int DrawText(const char* text, int len, const Rect& clip, uint32 flags, Bitmap* target) const;
+    int DrawText(const Text& text, int len, const Rect& clip, uint32 flags, Bitmap* target) const;
 
     // Basic state:
     void   SetUFont(UFont* InFont);
@@ -108,7 +84,6 @@ public:
     void   SetPointSize(int32 InSize);
     int32  GetPointSize() const;
 
-    // Legacy API compatibility:
     uint16 GetFlags() const;
     void   SetFlags(uint16 InFlags);
 
@@ -128,7 +103,6 @@ public:
     FLinearColor   GetLinearColor() const;
     FSlateFontInfo MakeSlateFontInfo() const;
 
-    // Optional: keep name for debugging/lookup
     const char* GetName() const;
 
 private:

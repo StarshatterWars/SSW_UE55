@@ -43,7 +43,7 @@ class Ship;
 class Starshatter;
 class CameraManager;
 class DisplayView;
-class UHUDView;
+class HUDView;
 class WepView;
 class QuantumView;
 class RadioView;
