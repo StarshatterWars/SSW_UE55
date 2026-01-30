@@ -66,8 +66,8 @@ protected:
 	double      xcenter, ycenter;
 
 	SystemFont* font;
-	Sim* sim;
-	Ship* ship;
+	Sim*		sim;
+	Ship*		ship;
 
 	static QuantumView* quantum_view;
 };

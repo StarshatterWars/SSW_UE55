@@ -1,43 +1,36 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-
-    SUBSYSTEM:    nGenEx.lib
-    FILE:         ImageView.cpp
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    ImageView
-    - Bitmap billboard renderer.
-    - Centers image inside its Window.
-*/
-
 #include "ImageView.h"
-
-#include "Window.h"
 #include "Video.h"
 #include "Bitmap.h"
 
 // --------------------------------------------------------------------
 
-ImageView::ImageView(Window* InWindow, Bitmap* InBitmap)
-    : View(InWindow),
-    Image(InBitmap),
-    Blend(Video::BLEND_SOLID)
+ImageView::ImageView(View* InParent, Bitmap* InBitmap)
+    : View(InParent,
+        0,
+        0,
+        InParent ? InParent->Width() : 0,
+        InParent ? InParent->Height() : 0)
+    , Image(InBitmap)
+    , Blend(Video::BLEND_SOLID)
 {
-    if (Image) {
-        Width = Image->Width();
-        Height = Image->Height();
+    ImageW = 0;
+    ImageH = 0;
+
+    if (Image)
+    {
+        ImageW = Image->Width();
+        ImageH = Image->Height();
     }
 
-    if (window && Width < window->Width()) {
-        XOffset = (window->Width() - Width) / 2;
-    }
+    XOffset = 0;
+    YOffset = 0;
 
-    if (window && Height < window->Height()) {
-        YOffset = (window->Height() - Height) / 2;
-    }
+    // Center in parent view
+    const int ParentW = InParent ? InParent->Width() : 0;
+    const int ParentH = InParent ? InParent->Height() : 0;
+
+    if (ImageW > 0 && ParentW > ImageW) XOffset = (ParentW - ImageW) / 2;
+    if (ImageH > 0 && ParentH > ImageH) YOffset = (ParentH - ImageH) / 2;
 }
 
 ImageView::~ImageView()
@@ -48,14 +41,14 @@ ImageView::~ImageView()
 
 void ImageView::Refresh()
 {
-    if (!Image || Width <= 0 || Height <= 0 || !window)
+    if (!Image || ImageW <= 0 || ImageH <= 0)
         return;
 
-    window->DrawBitmap(
+    DrawBitmap(
         XOffset,
         YOffset,
-        XOffset + Width,
-        YOffset + Height,
+        XOffset + ImageW,
+        YOffset + ImageH,
         Image,
         Blend
     );
@@ -66,18 +59,22 @@ void ImageView::Refresh()
 void ImageView::SetPicture(Bitmap* InBmp)
 {
     Image = InBmp;
-    Width = 0;
-    Height = 0;
+
+    ImageW = 0;
+    ImageH = 0;
     XOffset = 0;
     YOffset = 0;
 
-    if (Image) {
-        Width = Image->Width();
-        Height = Image->Height();
+    if (Image)
+    {
+        ImageW = Image->Width();
+        ImageH = Image->Height();
     }
 
-    if (window) {
-        XOffset = (window->Width() - Width) / 2;
-        YOffset = (window->Height() - Height) / 2;
-    }
+    // Center in THIS view
+    const int VW = View::Width();
+    const int VH = View::Height();
+
+    if (ImageW > 0 && VW > ImageW) XOffset = (VW - ImageW) / 2;
+    if (ImageH > 0 && VH > ImageH) YOffset = (VH - ImageH) / 2;
 }

@@ -9,9 +9,9 @@
     OVERVIEW
     ========
     ImageView
-    - Bitmap "billboard" view.
-    - Centers a bitmap within its parent Window.
-    - Direct port of legacy ImgView (Starshatter 4.5).
+    - Bitmap billboard renderer.
+    - Centers image inside its parent View.
+    - UE-port safe (no Window dependency in ctor).
 */
 
 #pragma once
@@ -30,7 +30,8 @@ class ImageView : public View
 public:
     static const char* TYPENAME() { return "ImageView"; }
 
-    ImageView(Window* InWindow, Bitmap* InBitmap);
+    // Construct as a child View (preferred in UE port)
+    ImageView(View* InParent, Bitmap* InBitmap);
     virtual ~ImageView();
 
     // ------------------------------------------------------------
@@ -53,10 +54,13 @@ protected:
     // ------------------------------------------------------------
     Bitmap* Image = nullptr;
 
+    // Cached image size (avoid collision with View::Width()/Height())
+    int ImageW = 0;
+    int ImageH = 0;
+
+    // Draw offset relative to View origin
     int XOffset = 0;
     int YOffset = 0;
-    int Width = 0;
-    int Height = 0;
 
     int Blend = 0;
 };

@@ -60,6 +60,7 @@
 #include "CameraManager.h"
 #include "KeyMap.h"
 
+#include "View.h"
 #include "GameScreen.h"
 #include "QuantumView.h"
 #include "QuitView.h"
@@ -2174,13 +2175,20 @@ Starshatter::SetupSplash()
 	int screen_width = GetScreenWidth();
 	int screen_height = GetScreenHeight();
 
-	gamewin = new Window(screen, 0, 0, screen_width, screen_height);
-	splash = new FadeView(gamewin);
+	// IMPORTANT: assign to the Starshatter member, not a local variable
+	gamewin = new View(screen, 0, 0, screen_width, screen_height);
+
+	// Splash should be a full-screen child view
+	FadeView* splash = new FadeView(gamewin, 0, 0, screen_width, screen_height);
 	splash->Init(2.0, 2.0, 2.0);
 
 	gamewin->AddView(splash);
+
+	// ImageView centers within parent, so it just needs parent + bitmap
 	gamewin->AddView(new ImageView(gamewin, &splash_image));
-	screen->AddWindow(gamewin);
+
+	// Root attach
+	screen->AddView(gamewin);
 }
 
 // +--------------------------------------------------------------------+

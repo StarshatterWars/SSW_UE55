@@ -260,7 +260,7 @@ protected:
     Solid*      el_ring;
     Solid*      el_pointer;
     double      compass_scale;
-
+    
     enum        { MAX_MSG = 6 };
     Text        msg_text[MAX_MSG];
     double      msg_time[MAX_MSG];

@@ -130,7 +130,7 @@ protected:
 	virtual void InitMouse();
 
 	static Starshatter* instance;
-	Window*		gamewin;
+	View*		 gamewin;
 	UMenuScreen* menuscreen;
 	ULoadScreen* LoadScreen;
 	PlanScreen* planscreen;
