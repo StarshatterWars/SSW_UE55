@@ -614,6 +614,62 @@ enum class LIGHTTYPE : uint32
 	LIGHT_FORCE_DWORD = 0x7fffffff
 };
 
+UENUM()
+enum class INSTRUCTION_ACTION : uint8
+{
+	VECTOR,
+	LAUNCH,
+	DOCK,
+	RTB,
+
+	DEFEND,
+	ESCORT,
+	PATROL,
+	SWEEP,
+	INTERCEPT,
+	STRIKE,     // ground attack
+	ASSAULT,    // starship attack
+	RECON,
+
+	RECALL,
+	DEPLOY,
+
+	NUM_ACTIONS
+};
+
+UENUM()
+enum class INSTRUCTION_STATUS : uint8
+{
+	PENDING,
+	ACTIVE,
+	SKIPPED,
+	ABORTED,
+	FAILED,
+	COMPLETE,
+
+	NUM_STATUS
+};
+
+UENUM()
+enum class INSTRCUTION_FORMATION : uint8
+{
+	DIAMOND,
+	SPREAD,
+	BOX,
+	TRAIL,
+
+	NUM_FORMATIONS
+};
+
+UENUM()
+enum class INSTRCUTION_PRIORITY : uint8
+{
+	NONE,
+	PRIMARY,
+	SECONDARY,
+	BONUS
+};
+
 /*static enum ETXT : int32
 {
 	MAX_CONTACT = 50,

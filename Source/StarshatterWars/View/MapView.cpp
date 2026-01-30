@@ -295,7 +295,7 @@ MapView::BuildMenu()
 {
 	ClearMenu();
 
-	map_system_menu = new Menu(Game::GetText("MapView.menu.STARSYSTEM"));
+	map_system_menu = new Menu("STAR SYSTEM");
 
 	if (system_list.size() > 0) {
 		int i = 0;
@@ -311,31 +311,31 @@ MapView::BuildMenu()
 		map_system_menu->AddItem(system->Name(), MAP_SYSTEM);
 	}
 
-	map_sector_menu = new Menu(Game::GetText("MapView.menu.SECTOR"));
+	map_sector_menu = new Menu("SECTOR"));
 	for (int i = 0; i < regions.size(); i++) {
 		Orbital* rgn = regions[i];
 		map_sector_menu->AddItem(rgn->Name(), MAP_SECTOR + i);
 	}
 
-	map_menu = new Menu(Game::GetText("MapView.menu.MAP"));
+	map_menu = new Menu("MAP");
 	map_menu->AddMenu("System", map_system_menu);
 	map_menu->AddMenu("Sector", map_sector_menu);
 
 	if (ship || mission) {
-		ship_menu = new Menu(Game::GetText("MapView.menu.SHIP"));
-		ship_menu->AddMenu(Game::GetText("MapView.item.Starsystem"), map_system_menu);
-		ship_menu->AddMenu(Game::GetText("MapView.item.Sector"), map_sector_menu);
+		ship_menu = new Menu("SHIP");
+		ship_menu->AddMenu("Starsystem", map_system_menu);
+		ship_menu->AddMenu("Sector", map_sector_menu);
 
 		ship_menu->AddItem("", 0);
-		ship_menu->AddItem(Game::GetText("MapView.item.Add-Nav"), MAP_ADDNAV);
-		ship_menu->AddItem(Game::GetText("MapView.item.Clear-All"), MAP_CLEAR);
+		ship_menu->AddItem("Add Navpoint"), MAP_ADDNAV);
+		ship_menu->AddItem("Clea AllNavpoints"), MAP_CLEAR);
 
-		action_menu = new Menu(Game::GetText("MapView.menu.ACTION"));
+		action_menu = new Menu("ACTION");
 		for (int i = 0; i < Instruction::NUM_ACTIONS; i++) {
 			action_menu->AddItem(Game::GetText(Text("MapView.item.") + Instruction::ActionName(i)), MAP_ACTION + i);
 		}
 
-		formation_menu = new Menu(Game::GetText("MapView.menu.FORMATION"));
+		formation_menu = new Menu("FORMATION");
 		for (int i = 0; i < Instruction::NUM_FORMATIONS; i++) {
 			formation_menu->AddItem(Game::GetText(Text("MapView.item.") + Instruction::FormationName(i)), MAP_FORMATION + i);
 		}
