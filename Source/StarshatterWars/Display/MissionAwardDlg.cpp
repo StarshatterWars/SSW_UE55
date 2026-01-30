@@ -15,7 +15,7 @@
     UAwardDlg implementation (Unreal port)
 */
 
-#include "AwardDlg.h"
+#include "MissionAwardDlg.h"
 
 // UMG:
 #include "Components/TextBlock.h"
@@ -34,19 +34,19 @@
 // If you have a sound wrapper, include it here.
 // #include "Sound.h"
 
-UAwardDlg::UAwardDlg(const FObjectInitializer& ObjectInitializer)
+UMissionAwardDlg::UMissionAwardDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
 }
 
-void UAwardDlg::NativeConstruct()
+void UMissionAwardDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
     // Bind close:
     if (btn_close)
     {
-        btn_close->OnClicked.AddDynamic(this, &UAwardDlg::OnCloseClicked);
+        btn_close->OnClicked.AddDynamic(this, &UMissionAwardDlg::OnCloseClicked);
     }
 
     // Match legacy behavior: first frame is latched so Enter/Escape doesn't instantly close.
@@ -56,7 +56,7 @@ void UAwardDlg::NativeConstruct()
     // We do not auto-call ShowPlayer() here because some screens construct hidden.
 }
 
-FReply UAwardDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+FReply UMissionAwardDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
     // Mirror legacy behavior:
     // - Enter/Escape close only if latch is released.
@@ -81,7 +81,7 @@ FReply UAwardDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& 
     return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
-void UAwardDlg::UpdateExitLatchFromInput(const FKeyEvent& InKeyEvent, bool& bOutHandled)
+void UMissionAwardDlg::UpdateExitLatchFromInput(const FKeyEvent& InKeyEvent, bool& bOutHandled)
 {
     bOutHandled = false;
 
@@ -110,7 +110,7 @@ void UAwardDlg::UpdateExitLatchFromInput(const FKeyEvent& InKeyEvent, bool& bOut
 // UBaseScreen overrides
 // --------------------------------------------------------------------
 
-void UAwardDlg::BindFormWidgets()
+void UMissionAwardDlg::BindFormWidgets()
 {
     // Bind FORM IDs to widgets (IDs come from AwardDlg.frm)
     BindLabel(203, lbl_name);
@@ -119,7 +119,7 @@ void UAwardDlg::BindFormWidgets()
     BindButton(1, btn_close);
 }
 
-FString UAwardDlg::GetLegacyFormText() const
+FString UMissionAwardDlg::GetLegacyFormText() const
 {
     // Raw FORM text (AwardDlg.frm)
     // NOTE: If you keep the /*** ... ***/ commented block, ensure BaseScreen.cpp
@@ -251,7 +251,7 @@ form: {
 // Public API (ported behavior)
 // --------------------------------------------------------------------
 
-void UAwardDlg::ShowDialog()
+void UMissionAwardDlg::ShowDialog()
 {
     // Legacy Show(): show window, then ShowPlayer(), and latch input.
     SetVisibility(ESlateVisibility::Visible);
@@ -261,7 +261,7 @@ void UAwardDlg::ShowDialog()
     bExitLatch = true;
 }
 
-void UAwardDlg::ShowPlayer()
+void UMissionAwardDlg::ShowPlayer()
 {
     PlayerCharacter* P = PlayerCharacter::GetCurrentPlayer();
 
@@ -299,7 +299,7 @@ void UAwardDlg::ShowPlayer()
 // Actions
 // --------------------------------------------------------------------
 
-void UAwardDlg::OnCloseClicked()
+void UMissionAwardDlg::OnCloseClicked()
 {
     // Legacy behavior:
     // Player::ClearShowAward(); then switch Starshatter mode based on campaign id.

@@ -26,7 +26,7 @@
 #include "CmpFileDlg.h"
 #include "CmdMsgDlg.h"
 #include "CmpCompleteDlg.h"
-#include "CmpSceneDlg.h"
+#include "CampaignSceneDlg.h"
 
 // Legacy:
 #include "Campaign.h"

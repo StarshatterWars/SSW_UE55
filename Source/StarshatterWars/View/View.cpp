@@ -965,6 +965,11 @@ View::Print(int x1, int y1, const char* fmt, ...)
     font->DrawString(msgbuf, (int)strlen(msgbuf), x1, y1, rect);
 }
 
+void View::ExecFrame()
+{ 
+    // usually overridden
+}
+
 void View::DrawTextRect(const char* txt, int count, Rect& txt_rect, DWORD flags)
 {
     if (!font)

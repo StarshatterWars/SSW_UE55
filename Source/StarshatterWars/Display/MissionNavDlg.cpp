@@ -5,7 +5,7 @@
 #include "Components/ListView.h"
 #include "Input/Reply.h"
 
-#include "PlanScreen.h"
+#include "MissionPlanner.h"
 #include "Campaign.h"
 #include "Mission.h"
 #include "MissionInfo.h"
@@ -14,7 +14,7 @@ UMissionNavDlg::UMissionNavDlg()
 {
 }
 
-void UMissionNavDlg::InitializeDlg(UPlanScreen* InManager)
+void UMissionNavDlg::InitializeDlg(UMissionPlanner* InManager)
 {
     Manager = InManager;
 }

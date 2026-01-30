@@ -24,7 +24,7 @@ class UButton;
 class UTextBlock;
 class UListView;
 
-class UPlanScreen;
+class UMissionPlanner;
 class Campaign;
 class Mission;
 class MissionInfo;
@@ -37,7 +37,7 @@ class STARSHATTERWARS_API UMissionNavDlg : public UBaseScreen
 public:
     UMissionNavDlg();
 
-    void InitializeDlg(UPlanScreen* InManager);
+    void InitializeDlg(UMissionPlanner* InManager);
     void SetMissionContext(Campaign* InCampaign, Mission* InMission, MissionInfo* InInfo);
     void ShowDlg();
 
@@ -72,7 +72,7 @@ private:
 
 private:
     UPROPERTY(Transient)
-    UPlanScreen* Manager = nullptr;
+    UMissionPlanner* Manager = nullptr;
 
     Campaign* CampaignPtr = nullptr;
     Mission* MissionPtr = nullptr;

@@ -7,7 +7,7 @@
     John DiCamillo / Destroyer Studios LLC
 
     SUBSYSTEM:    Stars.exe
-    FILE:         AwardDlg.h
+    FILE:         MissionAwardDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
@@ -29,19 +29,19 @@
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 
-#include "AwardDlg.generated.h"
+#include "MissionAwardDlg.generated.h"
 
 class UTextBlock;
 class UButton;
 class UImage;
 
 UCLASS()
-class STARSHATTERWARS_API UAwardDlg : public UBaseScreen
+class STARSHATTERWARS_API UMissionAwardDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
-    UAwardDlg(const FObjectInitializer& ObjectInitializer);
+    UMissionAwardDlg(const FObjectInitializer& ObjectInitializer);
 
     // ------------------------------------------------------------
     // UUserWidget lifecycle

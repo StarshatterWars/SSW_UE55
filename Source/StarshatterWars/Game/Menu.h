@@ -1,123 +1,218 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Types.h"
-#include "List.h"
-#include "Text.h"
-
-#include <cstdint>
-
-
-// +-------------------------------------------------------------------+
-
-class Menu;
-class MenuItem;
-class MenuHistory;
-
-// +-------------------------------------------------------------------+
 
 /**
- * 
+ * Unreal-friendly Menu system.
+ * - Uses FString
+ * - Uses TArray for storage
+ * - Menu owns MenuItem allocations
  */
+
+class Menu;
+
+class STARSHATTERWARS_API MenuItem
+{
+public:
+    static const char* TYPENAME() { return "MenuItem"; }
+
+    MenuItem() = default;
+
+    MenuItem(const FString& InLabel, uintptr_t InData = 0, bool bInEnabled = true)
+        : Text(InLabel)
+        , Data(InData)
+        , bEnabled(bInEnabled)
+        , bSelected(false)
+        , MenuPtr(nullptr)
+        , SubMenuPtr(nullptr)
+    {
+    }
+
+    ~MenuItem() = default;
+
+    // Text
+    const FString& GetText() const { return Text; }
+    void SetText(const FString& InText) { Text = InText; }
+
+    // Data (opaque)
+    uintptr_t GetData() const { return Data; }
+    void SetData(uintptr_t InData) { Data = InData; }
+
+    // Flags
+    bool IsEnabled() const { return bEnabled; }
+    void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
+
+    bool IsSelected() const { return bSelected; }
+    void SetSelected(bool bInSelected) { bSelected = bInSelected; }
+
+    // Links
+    Menu* GetMenu() const { return MenuPtr; }
+    void SetMenu(Menu* InMenu) { MenuPtr = InMenu; }
+
+    Menu* GetSubmenu() const { return SubMenuPtr; }
+    void SetSubmenu(Menu* InSubmenu) { SubMenuPtr = InSubmenu; }
+
+    bool HasSubMenu() const { return SubMenuPtr != nullptr; }
+
+private:
+    FString   Text;
+    uintptr_t Data = 0;
+
+    bool bEnabled = true;
+    bool bSelected = false;
+
+    Menu* MenuPtr = nullptr;
+    Menu* SubMenuPtr = nullptr;
+
+    friend class Menu;
+};
+
+
 class STARSHATTERWARS_API Menu
 {
 public:
-	static const char* TYPENAME() { return "Menu"; }
+    static const char* TYPENAME() { return "Menu"; }
 
-	Menu() {}
-	Menu(Text t) : title(t) {}
-	virtual ~Menu() { items.destroy(); }
+    Menu() = default;
+    explicit Menu(const FString& InTitle) : Title(InTitle) {}
 
-	virtual Text      GetTitle()     const { return title; }
-	virtual void      SetTitle(Text t) { title = t; }
-	virtual Menu*	  GetParent()    const { return parent; }
-	virtual void      SetParent(Menu* p) { parent = p; }
+    virtual ~Menu()
+    {
+        ClearItems();
+    }
 
-	
-	virtual void	  AddItem(Text label, uintptr_t value = 0, bool enabled = true);
-	virtual void      AddItem(MenuItem* item);
-	virtual void      AddMenu(Text label, Menu* menu, DWORD value = 0);
-	virtual MenuItem* GetItem(int index);
-	virtual void      SetItem(int index, MenuItem* item);
-	virtual int       NumItems() const;
-	virtual void      ClearItems();
+    // Title
+    const FString& GetTitle() const { return Title; }
+    void SetTitle(const FString& InTitle) { Title = InTitle; }
 
-	ListIter<MenuItem> GetItems() { return items; }
+    // Parent
+    Menu* GetParent() const { return Parent; }
+    void SetParent(Menu* InParent) { Parent = InParent; }
 
-protected:
-	Text           title;
-	List<MenuItem> items;
-	Menu* parent;
+    // Items
+    void AddItem(const FString& Label, uintptr_t Value = 0, bool bEnabled = true)
+    {
+        MenuItem* Item = new MenuItem(Label, Value, bEnabled);
+        if (Item)
+        {
+            Item->MenuPtr = this;
+            Items.Add(Item);
+        }
+    }
 
-	friend class MenuItem;
+    void AddItem(MenuItem* Item)
+    {
+        if (!Item)
+            return;
 
-};
-// +-------------------------------------------------------------------+
+        if (Item->SubMenuPtr)
+            Item->SubMenuPtr->SetParent(this);
 
-class MenuItem
-{
-public:
-	static const char* TYPENAME() { return "MenuItem"; }
+        Item->MenuPtr = this;
+        Items.Add(Item);
+    }
 
-	MenuItem(Text label, DWORD value = 0, bool enabled = true);
-	virtual ~MenuItem();
+    void AddMenu(const FString& Label, Menu* SubMenu, uintptr_t Value = 0)
+    {
+        MenuItem* Item = new MenuItem(Label, Value, true);
+        if (Item)
+        {
+            Item->MenuPtr = this;
+            Item->SubMenuPtr = SubMenu;
 
-	virtual Text      GetText()      const { return text; }
-	virtual void      SetText(Text t) { text = t; }
+            if (SubMenu)
+                SubMenu->Parent = this;
 
-	
-	//virtual DWORD     GetData()      const { return data; }
-	//virtual void      SetData(DWORD d) { data = d; }
+            Items.Add(Item);
+        }
+    }
 
-	virtual uintptr_t  GetData() const { return data; }
-	virtual void	   SetData(uintptr_t v) { data = v; }
+    MenuItem* GetItem(int32 Index) const
+    {
+        return Items.IsValidIndex(Index) ? Items[Index] : nullptr;
+    }
 
-	virtual int       GetEnabled()   const { return enabled; }
-	virtual void      SetEnabled(int  e) { enabled = e; }
+    void SetItem(int32 Index, MenuItem* Item)
+    {
+        if (Items.IsValidIndex(Index) && Item)
+        {
+            Items[Index] = Item;
+            Item->MenuPtr = this;
+        }
+    }
 
-	virtual int       GetSelected()  const { return selected; }
-	virtual void      SetSelected(int  s) { selected = s; }
+    int32 NumItems() const
+    {
+        return Items.Num();
+    }
 
-	virtual Menu*	  GetMenu()      const { return menu; }
-	virtual void      SetMenu(Menu* m) { menu = m; }
+    void ClearItems()
+    {
+        for (MenuItem* Item : Items)
+        {
+            delete Item;
+        }
+        Items.Reset();
+    }
 
-	virtual Menu*	  GetSubmenu()   const { return submenu; }
-	virtual void      SetSubmenu(Menu* s) { submenu = s; }
-
-protected:
-	Text           text;
-	//DWORD          data;
-	// was: DWORD data;
-	uintptr_t      data = 0;
-	int            enabled;
-	int            selected;
-
-	Menu* menu;
-	Menu* submenu;
-
-	friend class Menu;
-};
-
-// +-------------------------------------------------------------------+
-
-class MenuHistory
-{
-public:
-	static const char* TYPENAME() { return "MenuHistory"; }
-
-	MenuHistory() {}
-	virtual ~MenuHistory() { history.clear(); }
-
-	virtual Menu*	  GetCurrent();
-	virtual Menu*     GetLevel(int n);
-	virtual Menu*     Find(const char* title);
-	virtual void      Pop();
-	virtual void      Push(Menu* menu);
-	virtual void      Clear();
+    const TArray<MenuItem*>& GetItems() const { return Items; }
+    TArray<MenuItem*>& GetItems() { return Items; }
 
 private:
-	List<Menu>  history;
+    FString Title;
+    TArray<MenuItem*> Items;
+    Menu* Parent = nullptr;
 };
 
+
+class STARSHATTERWARS_API MenuHistory
+{
+public:
+    static const char* TYPENAME() { return "MenuHistory"; }
+
+    MenuHistory() = default;
+    virtual ~MenuHistory()
+    {
+        History.Reset(); // does NOT delete menus; history is non-owning
+    }
+
+    Menu* GetCurrent() const
+    {
+        return History.Num() > 0 ? History.Last() : nullptr;
+    }
+
+    Menu* GetLevel(int32 N) const
+    {
+        return History.IsValidIndex(N) ? History[N] : nullptr;
+    }
+
+    Menu* Find(const FString& InTitle) const
+    {
+        for (Menu* M : History)
+        {
+            if (M && M->GetTitle().Equals(InTitle, ESearchCase::IgnoreCase))
+                return M;
+        }
+        return nullptr;
+    }
+
+    void Pop()
+    {
+        if (History.Num() > 0)
+            History.Pop(false);
+    }
+
+    void Push(Menu* InMenu)
+    {
+        if (InMenu)
+            History.Add(InMenu);
+    }
+
+    void Clear()
+    {
+        History.Reset();
+    }
+
+private:
+    TArray<Menu*> History; // non-owning
+};

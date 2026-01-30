@@ -1,120 +1,152 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
+    SUBSYSTEM:    StarshatterWars
     FILE:         TacticalView.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR: John DiCamillo
-    ORIGINAL STUDIO: Destroyer Studios LLC
-
     OVERVIEW
     ========
-    View class for Radio Communications HUD Overlay
+    TacticalView (UE port, plain C++)
+    - Tactical data readout / selection overlay
+    - Ported from Starshatter 5.0 TacticalView
+    - Uses UE-friendly primitives (FVector/FColor/FString)
+    - No Window.h dependency (View carries render context)
 */
 
 #pragma once
 
-#include "Types.h"
+#include "CoreMinimal.h"
+#include "List.h"
 #include "View.h"
 #include "SimObject.h"
-#include "Text.h"
 
-// Minimal Unreal include for FVector conversion (replaces Point/Vec3 usage in this header):
-#include "Math/Vector.h" // FVector
-#include "Math/Color.h"
-
-// +--------------------------------------------------------------------+
-
-class SystemFont;
+// Forward declarations (ported sim/UI types):
 class Ship;
+class SimContact;
+class Instruction;
+class Sim;
+class SimRegion;
+class SimElement;
+
 class RadioMessage;
-class CameraView;
-class SimProjector;
-class HUDView;
+class RadioTraffic;
+
+class UGameScreen;
+
 class Menu;
 class MenuItem;
 class MenuView;
-class UGameScreen;
-
-// +--------------------------------------------------------------------+
+class SimProjector;
 
 class TacticalView : public View, public SimObserver
 {
 public:
-    TacticalView(Window* c, UGameScreen* parent);
+    TacticalView(View* InParent, UGameScreen* InParentScreen);
     virtual ~TacticalView();
 
-    // Operations:
-    virtual void        Refresh();
-    virtual void        OnWindowMove();
-    virtual void        ExecFrame();
-    virtual void        UseProjector(SimProjector* p);
+    // View overrides:
+    virtual void Refresh() override;
+    virtual void OnWindowMove() override;
+    void ExecFrame();
 
-    virtual void        DoMouseFrame();
+    // Wiring:
+    virtual void UseProjector(SimProjector* InProjector);
 
-    virtual bool        Update(SimObject* obj);
-    virtual const char* GetObserverName() const;
+    // Input:
+    virtual void DoMouseFrame();
 
-    static void         SetColor(FColor c);
+    // SimObserver:
+    virtual bool        Update(SimObject* Obj) override;
+    virtual const char* GetObserverName() const override;
 
-    static void         Initialize();
-    static void         Close();
+    // Global:
+    static void Initialize();
+    static void Close();
+    static TacticalView* GetInstance() { return TacView; }
 
-    static TacticalView* GetInstance() { return tac_view; }
+    static void SetColor(const FColor& InHudColor, const FColor& InTextColor);
 
 protected:
-    virtual bool        SelectAt(int x, int y);
-    virtual bool        SelectRect(const Rect& r);
-    virtual Ship*       WillSelectAt(int x, int y);
-    virtual void        SetHelm(bool approach);
+    // Selection:
+    virtual bool  SelectAt(int32 X, int32 Y);
+    virtual bool  SelectRect(const Rect& R);
+    virtual Ship* WillSelectAt(int32 X, int32 Y);
+    virtual void  SetHelm(bool bApproach);
 
-    virtual void        DrawMouseRect();
-    virtual void        DrawSelection(Ship* seln);
-    virtual void        DrawSelectionInfo(Ship* seln);
-    virtual void        DrawSelectionList(ListIter<Ship> seln);
+    // Drawing:
+    virtual void DrawMouseRect();
+    virtual void DrawSelection(Ship* SelectedShip);
+    virtual void DrawSelectionInfo(Ship* SelectedShip);
+    virtual void DrawSelectionList(ListIter<Ship>& SelectionIter);
 
-    virtual void        BuildMenu();
-    virtual void        DrawMenu();
-    virtual void        ProcessMenuItem(int action);
+    // Menu:
+    virtual void BuildMenu();
+    virtual void DrawMenu();
+    virtual void ProcessMenuItem(int32 Action);
 
-    virtual void        DrawMove();
-    virtual void        SendMove();
-    virtual bool        GetMouseLoc3D();
+    // Move/Action:
+    virtual void DrawMove();
+    virtual void SendMove();
+    virtual bool GetMouseLoc3D();
 
-    virtual void        DrawAction();
-    virtual void        SendAction();
+    virtual void DrawAction();
+    virtual void SendAction();
 
-    UGameScreen* gamescreen;
-    CameraView* camview;
-    SimProjector* projector;
+protected:
+    // Parent:
+    UGameScreen* GameParent = nullptr;
 
-    int                 width, height;
-    double              xcenter, ycenter;
+    // Projector:
+    SimProjector* ProjectorPtr = nullptr;
 
-    int                 shift_down;
-    int                 mouse_down;
-    int                 right_down;
-    int                 show_move;
-    int                 show_action;
+    // Cached geometry:
+    int32   WidthPx = 0;
+    int32   HeightPx = 0;
+    double  XCenter = 0.0;
+    double  YCenter = 0.0;
 
-    FVector             move_loc;     // was: Point
-    double              base_alt;
-    double              move_alt;
+    // Input state:
+    int32   bShiftDown = 0;
+    int32   bMouseDown = 0;
+    int32   bRightDown = 0;
+    int32   bShowMove = 0;
+    int32   ShowAction = 0;
 
-    FVector             mouse_action;
-    FVector             mouse_start;
-    Rect                mouse_rect;
+    // Move state:
+    FVector MoveLoc = FVector::ZeroVector;
+    double  BaseAlt = 0.0;
+    double  MoveAlt = 0.0;
 
-    SystemFont*         font;
-    Sim*                sim;
-    Ship*               ship;
-    Ship*               msg_ship;
-    Text                current_sector;
+    // Mouse points/rect:
+    FIntPoint MouseAction = FIntPoint::ZeroValue;
+    FIntPoint MouseStart = FIntPoint::ZeroValue;
+    Rect      MouseRect;
 
-    Menu* active_menu;
-    MenuView* menu_view;
+    // Sim pointers:
+    Sim* SimPtr = nullptr;
 
-    static TacticalView* tac_view;
+    Ship* PlayerShip = nullptr;
+    Ship* MsgShip = nullptr;
+
+    FString CurrentSector;
+
+    // Menu:
+    Menu* ActiveMenu = nullptr;
+    MenuView* MenuViewPtr = nullptr;
+    MenuItem* MenuItemPtr = nullptr;
+
+protected:
+    static TacticalView* TacView;
+
+    // Colors (legacy had static Color hud_color/txt_color):
+    static FColor HudColor;
+    static FColor TxtColor;
+
+private:
+    TacticalView(const TacticalView&) = delete;
+    TacticalView& operator=(const TacticalView&) = delete;
+
+    MenuItem* MI;
 };

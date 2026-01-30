@@ -1,3 +1,5 @@
+// MissionBriefingDlg.cpp
+
 /*  Project Starshatter Wars
     Fractal Dev Studios
     Copyright (c) 2025-2026.
@@ -5,255 +7,292 @@
     SUBSYSTEM:    Stars.exe
     FILE:         MissionBriefingDlg.cpp
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    UMissionBriefingDlg
-    - Unreal UUserWidget replacement for legacy MsnDlg.
-    - Inherits from UBaseScreen to use legacy FORM parsing.
-    - Implements mission briefing dialog behavior.
 */
 
 #include "MissionBriefingDlg.h"
+#include "MissionPlanner.h"
 
-// Starshatter systems
-#include "PlanScreen.h"
-#include "Starshatter.h"
+// Legacy sim/campaign includes (match your ported headers/paths):
 #include "Campaign.h"
 #include "Mission.h"
-#include "Instruction.h"
 #include "StarSystem.h"
-#include "Game.h"
 #include "FormatUtil.h"
-#include "Mouse.h"
-#include "GameStructs.h"
 
-UMissionBriefingDlg::UMissionBriefingDlg()
-{
-}
+// UE:
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+#include "InputCoreTypes.h"
+#include "GameFramework/PlayerController.h"
 
-void UMissionBriefingDlg::InitializeMissionBriefing(UPlanScreen* InPlanScreen)
+#if __has_include("NetLobby.h")
+#include "NetLobby.h"
+#define SSW_HAS_NETLOBBY 1
+#else
+#define SSW_HAS_NETLOBBY 0
+#endif
+
+UMissionBriefingDlg::UMissionBriefingDlg(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-    PlanScreen = InPlanScreen;
 }
 
 void UMissionBriefingDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Enable BaseScreen Enter/Escape behavior
-    ApplyButton = CommitButton;
-    CancelButton = CancelBtn;
+    CampaignPtr = Campaign::GetCampaign();
+    MissionPtr = CampaignPtr ? CampaignPtr->GetMission() : nullptr;
 
-    if (CommitButton)
-        CommitButton->OnClicked.AddDynamic(this, &UMissionBriefingDlg::OnCommitClicked);
-
-    if (CancelBtn)
-        CancelBtn->OnClicked.AddDynamic(this, &UMissionBriefingDlg::OnCancelClicked);
-
-    if (SitButton)
-        SitButton->OnClicked.AddDynamic(this, &UMissionBriefingDlg::OnSitClicked);
-
-    if (PkgButton)
-        PkgButton->OnClicked.AddDynamic(this, &UMissionBriefingDlg::OnPkgClicked);
-
-    if (NavButton)
-        NavButton->OnClicked.AddDynamic(this, &UMissionBriefingDlg::OnNavClicked);
-
-    if (WepButton)
-        WepButton->OnClicked.AddDynamic(this, &UMissionBriefingDlg::OnWepClicked);
-
+    BindButtons();
     ShowMsnDlg();
 }
 
-FString UMissionBriefingDlg::GetLegacyFormText() const
+void UMissionBriefingDlg::NativeDestruct()
 {
-    return LegacyFormText;
+    UnbindButtons();
+    Super::NativeDestruct();
 }
 
-void UMissionBriefingDlg::BindFormWidgets()
+void UMissionBriefingDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
-    BindLabel(200, MissionName);
-    BindLabel(202, MissionSystem);
-    BindLabel(204, MissionSector);
-    BindLabel(206, MissionTimeStart);
-    BindLabel(208, MissionTimeTarget);
-    BindLabel(207, MissionTimeTargetLabel);
+    Super::NativeTick(MyGeometry, InDeltaTime);
 
-    BindButton(900, SitButton);
-    BindButton(901, PkgButton);
-    BindButton(902, NavButton);
-    BindButton(903, WepButton);
+    // Legacy: Enter triggers accept
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        if (PC->WasInputKeyJustPressed(EKeys::Enter))
+        {
+            OnCommit();
+        }
+    }
+}
 
-    BindButton(1, CommitButton);
-    BindButton(2, CancelBtn);
+FText UMissionBriefingDlg::ToTextFromUtf8(const char* Utf8)
+{
+    if (!Utf8 || !Utf8[0])
+        return FText::GetEmpty();
+
+    // IMPORTANT: no TStringConversion default-ctor usage
+    return FText::FromString(FString(UTF8_TO_TCHAR(Utf8)));
+}
+
+void UMissionBriefingDlg::BindButtons()
+{
+    if (AcceptButton) AcceptButton->OnClicked.AddUniqueDynamic(this, &UMissionBriefingDlg::HandleAcceptClicked);
+    if (CancelButton) CancelButton->OnClicked.AddUniqueDynamic(this, &UMissionBriefingDlg::HandleCancelClicked);
+
+    if (SitButton) SitButton->OnClicked.AddUniqueDynamic(this, &UMissionBriefingDlg::HandleSitClicked);
+    if (PkgButton) PkgButton->OnClicked.AddUniqueDynamic(this, &UMissionBriefingDlg::HandlePkgClicked);
+    if (NavButton) NavButton->OnClicked.AddUniqueDynamic(this, &UMissionBriefingDlg::HandleNavClicked);
+    if (WepButton) WepButton->OnClicked.AddUniqueDynamic(this, &UMissionBriefingDlg::HandleWepClicked);
+}
+
+void UMissionBriefingDlg::UnbindButtons()
+{
+    if (AcceptButton) AcceptButton->OnClicked.RemoveAll(this);
+    if (CancelButton) CancelButton->OnClicked.RemoveAll(this);
+
+    if (SitButton) SitButton->OnClicked.RemoveAll(this);
+    if (PkgButton) PkgButton->OnClicked.RemoveAll(this);
+    if (NavButton) NavButton->OnClicked.RemoveAll(this);
+    if (WepButton) WepButton->OnClicked.RemoveAll(this);
 }
 
 void UMissionBriefingDlg::ShowMsnDlg()
 {
-    campaign = Campaign::GetCampaign();
-    mission = nullptr;
-    pkg_index = -1;
+    CampaignPtr = Campaign::GetCampaign();
+    MissionPtr = CampaignPtr ? CampaignPtr->GetMission() : nullptr;
+    PackageIndex = -1;
 
-    if (campaign)
-        mission = campaign->GetMission();
-
-    if (MissionName)
+    // Mission name
+    if (MissionNameText)
     {
-        if (mission)
-            MissionName->SetText(FText::FromString(ANSI_TO_TCHAR(mission->Name())));
+        if (MissionPtr)
+            MissionNameText->SetText(ToTextFromUtf8(MissionPtr->Name()));
         else
-            MissionName->SetText(FText::FromString(ANSI_TO_TCHAR(Game::GetText("MsnDlg.no-mission"))));
+            MissionNameText->SetText(FText::FromString(TEXT("NO MISSION")));
     }
 
-    if (MissionSystem)
+    // System
+    if (MissionSystemText)
     {
-        MissionSystem->SetText(FText::GetEmpty());
-        if (mission && mission->GetStarSystem())
-            MissionSystem->SetText(
-                FText::FromString(ANSI_TO_TCHAR(mission->GetStarSystem()->Name())));
-    }
+        MissionSystemText->SetText(FText::GetEmpty());
 
-    if (MissionSector)
-    {
-        MissionSector->SetText(FText::GetEmpty());
-        if (mission)
-            MissionSector->SetText(
-                FText::FromString(ANSI_TO_TCHAR(mission->GetRegion())));
-    }
-
-    if (MissionTimeStart)
-    {
-        if (mission)
+        if (MissionPtr)
         {
-            char txt[32] = { 0 };
-            FormatDayTime(txt, mission->Start());
-            MissionTimeStart->SetText(FText::FromString(ANSI_TO_TCHAR(txt)));
-        }
-        else
-        {
-            MissionTimeStart->SetText(FText::GetEmpty());
+            if (StarSystem* Sys = MissionPtr->GetStarSystem())
+                MissionSystemText->SetText(ToTextFromUtf8(Sys->Name()));
         }
     }
 
-    if (MissionTimeTarget)
+    // Sector/Region
+    if (MissionSectorText)
     {
-        int32 time_on_target = CalcTimeOnTarget();
+        MissionSectorText->SetText(FText::GetEmpty());
 
-        if (time_on_target)
+        if (MissionPtr)
+            MissionSectorText->SetText(ToTextFromUtf8(MissionPtr->GetRegion()));
+    }
+
+    // Start time
+    if (MissionTimeStartText)
+    {
+        if (MissionPtr)
         {
-            char txt[32] = { 0 };
-            FormatDayTime(txt, time_on_target);
-            MissionTimeTarget->SetText(FText::FromString(ANSI_TO_TCHAR(txt)));
-
-            if (MissionTimeTargetLabel)
-                MissionTimeTargetLabel->SetText(
-                    FText::FromString(ANSI_TO_TCHAR(Game::GetText("MsnDlg.target"))));
+            char Buf[32] = { 0 };
+            FormatDayTime(Buf, MissionPtr->Start());        // matches legacy signature FormatDayTime(char*, int)
+            MissionTimeStartText->SetText(ToTextFromUtf8(Buf));
         }
         else
         {
-            MissionTimeTarget->SetText(FText::GetEmpty());
-            if (MissionTimeTargetLabel)
-                MissionTimeTargetLabel->SetText(FText::GetEmpty());
+            MissionTimeStartText->SetText(FText::GetEmpty());
         }
     }
 
-    bool mission_ok = (mission && mission->IsOK());
-
-    if (SitButton) SitButton->SetIsEnabled(mission_ok);
-    if (PkgButton) PkgButton->SetIsEnabled(mission_ok);
-    if (NavButton) NavButton->SetIsEnabled(mission_ok);
-
-    if (WepButton)
+    // Target time (optional)
+    if (MissionTimeTargetText && MissionTimeTargetLabelText)
     {
-        bool wep_ok = mission_ok;
-        if (mission_ok && mission->GetPlayer())
-            wep_ok = mission->GetPlayer()->Loadouts().size() > 0;
+        if (bShowTimeOnTarget)
+        {
+            const int32 TimeOnTarget = CalcTimeOnTarget();
+            if (TimeOnTarget > 0)
+            {
+                char Buf[32] = { 0 };
+                FormatDayTime(Buf, TimeOnTarget);
+                MissionTimeTargetText->SetText(ToTextFromUtf8(Buf));
+                MissionTimeTargetLabelText->SetText(FText::FromString(TEXT("TARGET:")));
+            }
+            else
+            {
+                MissionTimeTargetText->SetText(FText::GetEmpty());
+                MissionTimeTargetLabelText->SetText(FText::GetEmpty());
+            }
+        }
+        else
+        {
+            MissionTimeTargetText->SetText(FText::GetEmpty());
+            MissionTimeTargetLabelText->SetText(FText::GetEmpty());
+        }
+    }
 
+    const bool bMissionOK = (MissionPtr && MissionPtr->IsOK());
+
+    // Tabs enable gating
+    if (bDisableTabsWhenMissionNotOK)
+    {
+        if (SitButton) SitButton->SetIsEnabled(bMissionOK);
+        if (PkgButton) PkgButton->SetIsEnabled(bMissionOK);
+        if (NavButton) NavButton->SetIsEnabled(bMissionOK);
+        if (WepButton) WepButton->SetIsEnabled(bMissionOK);
+    }
+    else
+    {
+        if (SitButton) SitButton->SetIsEnabled(true);
+        if (PkgButton) PkgButton->SetIsEnabled(true);
+        if (NavButton) NavButton->SetIsEnabled(true);
+        if (WepButton) WepButton->SetIsEnabled(true);
+    }
+
+    // Optional: disable WEP in net lobby
+    if (bDisableWeaponTabInNetLobby && WepButton)
+    {
+#if SSW_HAS_NETLOBBY
         if (NetLobby::GetInstance())
-            wep_ok = false;
-
-        WepButton->SetIsEnabled(wep_ok);
+            WepButton->SetIsEnabled(false);
+#endif
     }
 
-    if (CommitButton) CommitButton->SetIsEnabled(mission_ok);
-    if (CancelBtn)    CancelBtn->SetIsEnabled(true);
+    // Accept/Cancel enable gating
+    if (AcceptButton) AcceptButton->SetIsEnabled(bMissionOK);
+    if (CancelButton) CancelButton->SetIsEnabled(true);
 }
 
 int32 UMissionBriefingDlg::CalcTimeOnTarget() const
 {
-    if (!mission)
-        return 0;
+    // If your ported Mission/Instruction navigation types are available,
+    // implement this exactly like legacy. If not, safely return 0.
+#if __has_include("Instruction.h") && __has_include("Element.h")
+#include "Instruction.h"
+#include "Element.h"
+    if (!MissionPtr) return 0;
 
-    MissionElement* element = mission->GetElements()[0];
-    if (!element)
-        return 0;
+    MissionElement* Element = MissionPtr->GetElements()[0];
+    if (!Element) return 0;
 
-    Point loc = element->Location();
-    loc.SwapYZ();
+    // Legacy Point math lives in your port. If it’s not Point anymore,
+    // update these 3 lines to your actual vector type.
+    Point Loc = Element->Location();
+    Loc.SwapYZ();
 
-    int mission_time = mission->Start();
+    int32 MissionTime = MissionPtr->Start();
 
-    ListIter<Instruction> navpt = element->NavList();
-    while (++navpt)
+    ListIter<Instruction> NavPt = Element->NavList();
+    while (++NavPt)
     {
-        double dist = Point(loc - navpt->Location()).length();
-        int etr = (navpt->Speed() > 0) ? (int)(dist / navpt->Speed()) : (int)(dist / 500);
+        const int32 Action = NavPt->Action();
 
-        mission_time += etr;
-        loc = navpt->Location();
+        const double Dist = Point(Loc - NavPt->Location()).length();
+        int32 ETR = 0;
+        if (NavPt->Speed() > 0)
+            ETR = (int32)(Dist / NavPt->Speed());
+        else
+            ETR = (int32)(Dist / 500);
 
-        if (navpt->Action() >= Instruction::ESCORT)
-            return mission_time;
+        MissionTime += ETR;
+        Loc = NavPt->Location();
+
+        if (Action >= Instruction::ESCORT)
+            return MissionTime;
     }
+#endif
 
     return 0;
 }
 
-// Tab navigation
-
-void UMissionBriefingDlg::OnSitClicked()
+void UMissionBriefingDlg::OnTabButton(UButton* Pressed)
 {
-    if (PlanScreen) PlanScreen->ShowMsnObjDlg();
+    if (!Manager || !Pressed)
+        return;
+
+    if (Pressed == SitButton)
+    {
+        Manager->ShowMsnObjDlg();
+    }
+    else if (Pressed == PkgButton)
+    {
+        Manager->ShowMsnPkgDlg();
+    }
+    else if (Pressed == NavButton)
+    {
+        Manager->ShowNavDlg();
+    }
+    else if (Pressed == WepButton)
+    {
+        Manager->ShowMsnWepDlg();
+    }
 }
 
-void UMissionBriefingDlg::OnPkgClicked()
+void UMissionBriefingDlg::OnCommit()
 {
-    if (PlanScreen) PlanScreen->ShowMsnPkgDlg();
+    // Unreal handoff point – keep behavior minimal for now:
+    if (Manager)
+    {
+        Manager->Hide();
+    }
 }
 
-void UMissionBriefingDlg::OnNavClicked()
+void UMissionBriefingDlg::OnCancel()
 {
-    if (PlanScreen) PlanScreen->ShowNavDlg();
+    if (Manager)
+    {
+        Manager->Hide();
+    }
 }
 
-void UMissionBriefingDlg::OnWepClicked()
-{
-    if (PlanScreen) PlanScreen->ShowMsnWepDlg();
-}
+void UMissionBriefingDlg::HandleAcceptClicked() { OnCommit(); }
+void UMissionBriefingDlg::HandleCancelClicked() { OnCancel(); }
 
-// Commit / Cancel
-
-void UMissionBriefingDlg::OnCommitClicked()
-{
-    Starshatter* stars = Starshatter::GetInstance();
-    if (!stars)
-        Game::Panic("MissionBriefingDlg::OnCommitClicked - no Starshatter");
-
-    Mouse::Show(false);
-    stars->SetGameMode(EMODE::LOAD_MODE);
-}
-
-void UMissionBriefingDlg::OnCancelClicked()
-{
-    Starshatter* stars = Starshatter::GetInstance();
-    if (!stars)
-        Game::Panic("MissionBriefingDlg::OnCancelClicked - no Starshatter");
-
-    Mouse::Show(false);
-
-    if (campaign && (campaign->IsDynamic() || campaign->IsTraining()))
-        stars->SetGameMode(Starshatter::CMPN_MODE);
-    else
-        stars->SetGameMode(Starshatter::MENU_MODE);
-}
+void UMissionBriefingDlg::HandleSitClicked() { OnTabButton(SitButton); }
+void UMissionBriefingDlg::HandlePkgClicked() { OnTabButton(PkgButton); }
+void UMissionBriefingDlg::HandleNavClicked() { OnTabButton(NavButton); }
+void UMissionBriefingDlg::HandleWepClicked() { OnTabButton(WepButton); }

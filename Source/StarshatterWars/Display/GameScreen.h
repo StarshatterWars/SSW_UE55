@@ -33,6 +33,7 @@ class UFlightOpsDlg;
 class UControlOptionsDlg;
 class UJoyDlg;
 class UKeyDlg;
+class UWepDlg;
 class UAudioDlg;
 class UVideoDlg;
 class UOptDlg;
@@ -86,6 +87,10 @@ public:
     UFUNCTION() void HideFltDlg();
     UFUNCTION() bool IsFltShown() const;
 
+    UFUNCTION() void ShowWepDlg();
+    UFUNCTION() void HideWepDlg();
+    UFUNCTION() bool IsWepShown() const;
+
     UFUNCTION() void ShowCtlDlg();
     UFUNCTION() void HideCtlDlg();
     UFUNCTION() bool IsCtlShown() const;
@@ -112,6 +117,7 @@ public:
     UFUNCTION() void CancelOptions();
 
     // Legacy ops:
+    
     void SetFieldOfView(double Fov);
     double GetFieldOfView() const;
 
@@ -170,6 +176,7 @@ private:
     UJoyDlg* JoyDlg = nullptr;
     UAudioDlg* AudioDlg = nullptr;
     UVideoDlg* VidDlg = nullptr;
+    UWepDlg* WepDlg = nullptr;
     UOptDlg* OptDlg = nullptr;
     UQuitView* QuitView = nullptr;
 

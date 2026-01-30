@@ -70,6 +70,7 @@ class Window;     // <-- NEW: render ownership context
 class Bitmap;
 class SystemFont;
 class FontManager;
+class SimProjector;
 
 // Opaque child list holder to avoid template parse explosions in headers:
 struct FViewChildren;
@@ -182,17 +183,19 @@ public:
     void                SetTextColor(FColor TColor);
     void                SetHUDColor(FColor HColor);
 
-    FColor    GetBackColor() const { return BackColor; }
-    void      SetBackColor(const FColor& c) { BackColor = c; }
+    FColor              GetBackColor() const { return BackColor; }
+    void                SetBackColor(const FColor& c) { BackColor = c; }
 
     void Print(int x1, int y1, const char* fmt, ...);
    
+    void                ExecFrame();
 
 
 protected:
     // Legacy coordinate transform hooks (if needed later)
     virtual void ScreenToWindow(int& x, int& y) {}
     virtual void ScreenToWindow(Rect& r) {}
+
 
 protected:
     Rect            rect;

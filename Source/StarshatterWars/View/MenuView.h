@@ -43,7 +43,7 @@ class MenuItem;
 class MenuView : public View
 {
 public:
-    MenuView(Window* c);
+    MenuView(View* InParent, int ax = 0, int ay = 0, int aw = 0, int ah = 0);
     virtual ~MenuView();
 
     // Operations:

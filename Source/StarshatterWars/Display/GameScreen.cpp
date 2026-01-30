@@ -341,6 +341,19 @@ bool UGameScreen::IsFltShown() const
     return IsDlgVisible(FltDlg);
 }
 
+void UGameScreen::ShowWepDlg()
+{
+if (wep_view)
+       wep_view->CycleOverlayMode();
+}
+
+void
+UGameScreen::HideWeaponsOverlay()
+{
+    if (wep_view)
+        wep_view->SetOverlayMode(0);
+}
+
 void UGameScreen::ShowCtlDlg()
 {
     if (!CtlDlg)
@@ -683,3 +696,7 @@ bool UGameScreen::CloseTopmost()
 
     return false;
 }
+
+
+
+

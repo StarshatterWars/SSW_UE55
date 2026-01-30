@@ -15,7 +15,7 @@
 
 #include "MenuScreen.h"
 #include "LoadScreen.h"
-#include "PlanScreen.h"
+#include "MissionPlanner.h"
 #include "CmpnScreen.h"
 
 #include "AudioConfig.h"

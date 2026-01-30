@@ -1,18 +1,17 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    nGenEx.lib
     FILE:         ImageView.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
-    Bitmap "Billboard" View class
+    ImageView
+    - Bitmap "billboard" view.
+    - Centers a bitmap within its parent Window.
+    - Direct port of legacy ImgView (Starshatter 4.5).
 */
 
 #pragma once
@@ -20,40 +19,44 @@
 #include "Types.h"
 #include "View.h"
 
-// Unreal (minimal, per project standard):
-#include "Math/Vector.h"               // FVector
-#include "Math/Color.h"                // FColor
-#include "Math/UnrealMathUtility.h"    // FMath
+// --------------------------------------------------------------------
 
-// +--------------------------------------------------------------------+
-// Forward Declarations:
-
-class Window;
 class Bitmap;
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 class ImageView : public View
 {
 public:
-    static const char* TYPENAME() { return "ImgView"; }
+    static const char* TYPENAME() { return "ImageView"; }
 
-    ImageView(Window* c, Bitmap* bmp);
+    ImageView(Window* InWindow, Bitmap* InBitmap);
     virtual ~ImageView();
 
-    // Operations:
-    virtual void      Refresh();
+    // ------------------------------------------------------------
+    // View interface
+    // ------------------------------------------------------------
+    virtual void Refresh() override;
 
-    virtual Bitmap*     GetPicture() const { return img; }
-    virtual void        SetPicture(Bitmap* bmp);
-    virtual int         GetBlend()   const { return blend; }
-    virtual void        SetBlend(int b) { blend = b; }
+    // ------------------------------------------------------------
+    // Accessors
+    // ------------------------------------------------------------
+    Bitmap* GetPicture() const { return Image; }
+    void    SetPicture(Bitmap* InBmp);
+
+    int     GetBlend() const { return Blend; }
+    void    SetBlend(int InBlend) { Blend = InBlend; }
 
 protected:
-    Bitmap* img;
-    int         x_offset;
-    int         y_offset;
-    int         width;
-    int         height;
-    int         blend;
+    // ------------------------------------------------------------
+    // Internal state
+    // ------------------------------------------------------------
+    Bitmap* Image = nullptr;
+
+    int XOffset = 0;
+    int YOffset = 0;
+    int Width = 0;
+    int Height = 0;
+
+    int Blend = 0;
 };

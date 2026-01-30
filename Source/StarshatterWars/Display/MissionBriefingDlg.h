@@ -1,3 +1,5 @@
+// MissionBriefingDlg.h
+
 /*  Project Starshatter Wars
     Fractal Dev Studios
     Copyright (c) 2025-2026.
@@ -8,20 +10,24 @@
 
     OVERVIEW
     ========
-    UMissionBriefingDlg
-    - Unreal UUserWidget replacement for legacy MsnDlg.
-    - Inherits from UBaseScreen to use legacy FORM parsing.
-    - Implements mission briefing dialog behavior.
+    MissionBriefingDlg (Unreal)
+    - Common mission header + SIT/PKG/NAV/WEP + ACCEPT/CANCEL handling
+    - Ported from legacy MsnDlg (Starshatter 4.5)
+    - Widget components use UPROPERTY BindWidgetOptional for UMG wiring
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-
 #include "MissionBriefingDlg.generated.h"
 
-class UPlanScreen;
+class UMissionPlanner;
+
+class UButton;
+class UTextBlock;
+
+// Legacy sim/campaign forward declarations (your ported types):
 class Campaign;
 class Mission;
 class MissionInfo;
@@ -32,60 +38,114 @@ class STARSHATTERWARS_API UMissionBriefingDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UMissionBriefingDlg();
-    void InitializeMissionBriefing(UPlanScreen* InPlanScreen);
-    void ShowMsnDlg();
+    UMissionBriefingDlg(const FObjectInitializer& ObjectInitializer);
 
-protected:
-    int32 CalcTimeOnTarget() const;
+    // External wiring:
+    void SetManager(UMissionPlanner* InManager) { Manager = InManager; }
 
-protected:
-    // UBaseScreen overrides
-    virtual void BindFormWidgets() override;
-    virtual FString GetLegacyFormText() const override;
+    // Legacy-like API:
+    virtual void ShowMsnDlg();                 // refresh header + tabs + buttons
+    virtual void OnCommit();                   // Accept
+    virtual void OnCancel();                   // Cancel
+    virtual void OnTabButton(UButton* Pressed);// SIT/PKG/NAV/WEP (Pressed is one of the tab buttons)
 
 protected:
     // UUserWidget lifecycle
     virtual void NativeConstruct() override;
+    virtual void NativeDestruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
-    // Button handlers
-    UFUNCTION() void OnCommitClicked();
-    UFUNCTION() void OnCancelClicked();
-    UFUNCTION() void OnSitClicked();
-    UFUNCTION() void OnPkgClicked();
-    UFUNCTION() void OnNavClicked();
-    UFUNCTION() void OnWepClicked();
+    // Legacy helper:
+    virtual int32 CalcTimeOnTarget() const;
 
 protected:
-    // Legacy FORM text
-    UPROPERTY(EditDefaultsOnly, Category = "FORM")
-    FString LegacyFormText;
+    // ------------------------------------------------------------
+    // UMG Bindings (OPTIONAL so you can wire gradually in UMG)
+    // ------------------------------------------------------------
+
+    // Header labels (legacy ids: 200/202/204/206/208/207)
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UTextBlock* MissionNameText = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UTextBlock* MissionSystemText = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UTextBlock* MissionSectorText = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UTextBlock* MissionTimeStartText = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UTextBlock* MissionTimeTargetText = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UTextBlock* MissionTimeTargetLabelText = nullptr;
+
+    // Tabs (legacy ids: 900/901/902/903)
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UButton* SitButton = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UButton* PkgButton = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UButton* NavButton = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UButton* WepButton = nullptr;
+
+    // Accept/Cancel (legacy ids: 1/2)
+    UPROPERTY(BlueprintReadOnly, Category = "MissionBriefing|Widgets", meta = (BindWidgetOptional))
+    UButton* AcceptButton = nullptr;
+
+    // ------------------------------------------------------------
+    // Options (MUST be exposed to avoid "Category but not exposed" warnings)
+    // ------------------------------------------------------------
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MissionBriefing|Options")
+    bool bDisableWeaponTabInNetLobby = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MissionBriefing|Options")
+    bool bDisableTabsWhenMissionNotOK = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MissionBriefing|Options")
+    bool bShowTimeOnTarget = true;
 
 protected:
-    UPlanScreen* PlanScreen = nullptr;
+    // ------------------------------------------------------------
+    // Raw pointers by request (NO UPROPERTY)
+    // ------------------------------------------------------------
+    UMissionPlanner* Manager = nullptr;
 
-    Campaign* campaign = nullptr;
-    Mission* mission = nullptr;
-    MissionInfo* info = nullptr;
+    Campaign* CampaignPtr = nullptr;
+    Mission* MissionPtr = nullptr;
+    MissionInfo* InfoPtr = nullptr;
 
-    int32 pkg_index = -1;
+    int32 PackageIndex = -1;
 
-protected:
-    // Bound widgets (FORM IDs)
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* MissionName = nullptr;            // id 200
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* MissionSystem = nullptr;          // id 202
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* MissionSector = nullptr;          // id 204
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* MissionTimeStart = nullptr;       // id 206
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* MissionTimeTarget = nullptr;      // id 208
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* MissionTimeTargetLabel = nullptr; // id 207
+private:
+    // Internal click handlers
+    UFUNCTION()
+    void HandleAcceptClicked();
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* SitButton = nullptr;   // id 900
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* PkgButton = nullptr;   // id 901
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* NavButton = nullptr;   // id 902
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* WepButton = nullptr;   // id 903
+    UFUNCTION()
+    void HandleCancelClicked();
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CommitButton = nullptr; // id 1
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;    // id 2
+    UFUNCTION()
+    void HandleSitClicked();
+
+    UFUNCTION()
+    void HandlePkgClicked();
+
+    UFUNCTION()
+    void HandleNavClicked();
+
+    UFUNCTION()
+    void HandleWepClicked();
+
+private:
+    void BindButtons();
+    void UnbindButtons();
+    static FText ToTextFromUtf8(const char* Utf8);
 };
-#pragma once

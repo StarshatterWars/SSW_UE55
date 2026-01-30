@@ -28,6 +28,7 @@
 // Starshatter / Starshatter Wars:
 #include "CameraView.h"
 #include "MFDView.h"
+#include "SimProjector.h"
 
 #include "HUDSounds.h"
 #include "Ship.h"
@@ -62,7 +63,6 @@
 #include "PlayerCharacter.h"
 #include "GameStructs.h"
 #include "FontManager.h" 
-#include "SimProjector.h"
 
 #include "Screen.h"
 #include "DataLoader.h"

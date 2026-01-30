@@ -41,8 +41,12 @@ static FColor ScaleColor(const FColor& C, float S)
 
 // +--------------------------------------------------------------------+
 
-MenuView::MenuView(Window* c)
-    : View(c, 0, 0, c ? c->Width() : 0, c ? c->Height() : 0)
+MenuView::MenuView(View* InParent)
+    : View(InParent,
+        0,
+        0,
+        InParent ? InParent->Width() : 0,
+        InParent ? InParent->Height() : 0)
     , shift_down(0)
     , mouse_down(0)
     , right_down(0)
@@ -55,6 +59,7 @@ MenuView::MenuView(Window* c)
     right_start = FVector::ZeroVector;
     offset = FVector::ZeroVector;
 
+    // Ensure we match parent after construction (in case parent rect changes later)
     OnWindowMove();
 }
 

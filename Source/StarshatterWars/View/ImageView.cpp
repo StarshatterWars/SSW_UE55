@@ -1,18 +1,16 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     SUBSYSTEM:    nGenEx.lib
     FILE:         ImageView.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
-    Bitmap "billboard" Image View class
+    ImageView
+    - Bitmap billboard renderer.
+    - Centers image inside its Window.
 */
 
 #include "ImageView.h"
@@ -20,35 +18,25 @@
 #include "Window.h"
 #include "Video.h"
 #include "Bitmap.h"
-#include "Screen.h"
 
-// Unreal (for UE_LOG only):
-#include "Logging/LogMacros.h"
+// --------------------------------------------------------------------
 
-DEFINE_LOG_CATEGORY_STATIC(LogImageView, Log, All);
-
-// +--------------------------------------------------------------------+
-
-ImageView::ImageView(Window* c, Bitmap* bmp)
-    : View(c)
-    , img(bmp)
-    , x_offset(0)
-    , y_offset(0)
-    , width(0)
-    , height(0)
-    , blend(Video::BLEND_SOLID)
+ImageView::ImageView(Window* InWindow, Bitmap* InBitmap)
+    : View(InWindow),
+    Image(InBitmap),
+    Blend(Video::BLEND_SOLID)
 {
-    if (img) {
-        width = img->Width();
-        height = img->Height();
+    if (Image) {
+        Width = Image->Width();
+        Height = Image->Height();
     }
 
-    if (window) {
-        if (width < window->Width())
-            x_offset = (window->Width() - width) / 2;
+    if (window && Width < window->Width()) {
+        XOffset = (window->Width() - Width) / 2;
+    }
 
-        if (height < window->Height())
-            y_offset = (window->Height() - height) / 2;
+    if (window && Height < window->Height()) {
+        YOffset = (window->Height() - Height) / 2;
     }
 }
 
@@ -56,42 +44,40 @@ ImageView::~ImageView()
 {
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
-void
-ImageView::Refresh()
+void ImageView::Refresh()
 {
-    if (img && width > 0 && height > 0 && window) {
-        window->DrawBitmap(
-            x_offset,
-            y_offset,
-            x_offset + width,
-            y_offset + height,
-            img,
-            blend
-        );
-    }
+    if (!Image || Width <= 0 || Height <= 0 || !window)
+        return;
+
+    window->DrawBitmap(
+        XOffset,
+        YOffset,
+        XOffset + Width,
+        YOffset + Height,
+        Image,
+        Blend
+    );
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
-void
-ImageView::SetPicture(Bitmap* bmp)
+void ImageView::SetPicture(Bitmap* InBmp)
 {
-    img = bmp;
-    width = 0;
-    height = 0;
-    x_offset = 0;
-    y_offset = 0;
+    Image = InBmp;
+    Width = 0;
+    Height = 0;
+    XOffset = 0;
+    YOffset = 0;
 
-    if (img) {
-        width = img->Width();
-        height = img->Height();
+    if (Image) {
+        Width = Image->Width();
+        Height = Image->Height();
     }
 
     if (window) {
-        x_offset = (window->Width() - width) / 2;
-        y_offset = (window->Height() - height) / 2;
+        XOffset = (window->Width() - Width) / 2;
+        YOffset = (window->Height() - Height) / 2;
     }
 }
-
