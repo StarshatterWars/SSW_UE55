@@ -188,8 +188,8 @@ public:
 
     void Print(int x1, int y1, const char* fmt, ...);
    
-    void                ExecFrame();
-
+    virtual void        ExecFrame();
+   
 
 protected:
     // Legacy coordinate transform hooks (if needed later)

@@ -1,17 +1,22 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         RadioView.h
-	AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+    SUBSYSTEM:    StarshatterWars
+    FILE:         RadioView.h
+    AUTHOR:       Carlos Bott
 
-	OVERVIEW
-	========
-	View class for Radio Communications HUD Overlay
+    OVERVIEW
+    ========
+    View class for Radio Communications HUD Overlay (UE port)
+    - Plain C++ (NOT a UObject)
+    - Inherits your combined View/Window layer (View.h)
+    - Draws radio messages + context radio menu overlay
+    - Thread-safe static message queue
 */
 
 #pragma once
@@ -20,71 +25,68 @@
 #include "View.h"
 #include "SimObject.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 #include "Math/Color.h"
+#include "HAL/CriticalSection.h"
 
-// +--------------------------------------------------------------------+
-
-class SystemFont;
 class SimElement;
 class Ship;
 class RadioMessage;
-class CameraView;
-class HUDView;
 class Menu;
 class MenuItem;
-class SimElement;
-
 class Sim;
-class ThreadSync;
-class Window;
 
-// +--------------------------------------------------------------------+
+// legacy helper (you already have it in Starshatter):
+class MenuHistory;
 
 class RadioView : public View, public SimObserver
 {
 public:
-	RadioView(Window* c);
-	virtual ~RadioView();
+    // Ported ctor style: parent-based View
+    RadioView(View* InParent, int ax = 0, int ay = 0, int aw = 0, int ah = 0);
+    virtual ~RadioView();
 
-	// Operations:
-	virtual void      Refresh();
-	virtual void      OnWindowMove();
-	virtual void      ExecFrame();
+    // Operations:
+    virtual void      Refresh() override;
+    virtual void      OnWindowMove() override;
+    virtual void      ExecFrame() override;
 
-	virtual Menu*	  GetRadioMenu(Ship* ship);
-	virtual bool      IsMenuShown();
-	virtual void      ShowMenu();
-	virtual void      CloseMenu();
+    virtual Menu* GetRadioMenu(Ship* ship);
+    virtual bool      IsMenuShown();
+    virtual void      ShowMenu();
+    virtual void      CloseMenu();
 
-	static void       Message(const char* msg);
-	static void       ClearMessages();
+    static void       Message(const char* msg);
+    static void       ClearMessages();
 
-	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+    virtual bool         Update(SimObject* obj) override;
+    virtual const char* GetObserverName() const override;
 
-	static void       SetColor(FColor c);
+    static void       SetColor(FColor c);
 
-	static void       Initialize();
-	static void       Close();
+    static void       Initialize();
+    static void       Close();
 
-	static RadioView* GetInstance() { return radio_view; }
+    static RadioView* GetInstance() { return radio_view; }
 
 protected:
-	void              SendRadioMessage(Ship* ship, MenuItem* item);
+    void              SendRadioMessage(Ship* ship, MenuItem* item);
 
-	int         width, height;
-	double      xcenter, ycenter;
+protected:
+    int         width = 0;
+    int         height = 0;
+    double      xcenter = 0.0;
+    double      ycenter = 0.0;
 
-	SystemFont* font;
-	Sim* sim;
-	Ship* ship;
-	SimElement* dst_elem;
+    Sim* sim = nullptr;
+    Ship* ship = nullptr;
+    SimElement* dst_elem = nullptr;
 
-	enum { MAX_MSG = 6 };
-	Text        msg_text[MAX_MSG];
-	double      msg_time[MAX_MSG];
+    enum { MAX_MSG = 6 };
+    Text        msg_text[MAX_MSG];
+    double      msg_time[MAX_MSG];
 
-	static RadioView* radio_view;
-	static ThreadSync sync;
+    static RadioView* radio_view;
+    static FCriticalSection sync;
 };

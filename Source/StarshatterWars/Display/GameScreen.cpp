@@ -348,7 +348,7 @@ if (wep_view)
 }
 
 void
-UGameScreen::HideWeaponsOverlay()
+UGameScreen::HideWepDlg()
 {
     if (wep_view)
         wep_view->SetOverlayMode(0);

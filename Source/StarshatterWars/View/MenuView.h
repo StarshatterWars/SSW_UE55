@@ -1,44 +1,17 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    StarshatterWars
-    FILE:         MenuView.h
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    View class for displaying right-click context menus
-*/
-
 #pragma once
 
-// ---------------------------------------------------------------------
-// Minimal includes (keep header light)
-// ---------------------------------------------------------------------
 #include "Types.h"
 #include "View.h"
 #include "Text.h"
 
-// Minimal UE types used in signatures / members:
-#include "Math/Vector.h"               // FVector
-#include "Math/Color.h"                // FColor
-#include "Math/UnrealMathUtility.h"    // Math
+#include "Math/Vector.h"
+#include "Math/Color.h"
+#include "Math/UnrealMathUtility.h"
 
-#include "GameStructs.h"               // (must be last include)
-
-// +--------------------------------------------------------------------+
-// Forward declarations
-// +--------------------------------------------------------------------+
+#include "GameStructs.h"
 
 class Menu;
 class MenuItem;
-
-// +--------------------------------------------------------------------+
 
 class MenuView : public View
 {
@@ -59,7 +32,7 @@ public:
     virtual int       GetAction() { return action; }
     virtual Menu* GetMenu() { return menu; }
     virtual void      SetMenu(Menu* m) { menu = m; }
-    virtual MenuItem* GetMenuItem() { return menu_item; } 
+    virtual MenuItem* GetMenuItem() { return menu_item; }
 
 protected:
     int         width = 0;
@@ -70,7 +43,6 @@ protected:
     int         right_down = 0;
     int         show_menu = 0;
 
-    // Legacy POINT -> FVector (Z unused, keep at 0)
     FVector     right_start = FVector::ZeroVector;
     FVector     offset = FVector::ZeroVector;
 

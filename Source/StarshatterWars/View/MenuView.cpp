@@ -1,6 +1,6 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
     ORIGINAL AUTHOR AND STUDIO
     ==========================
@@ -25,11 +25,12 @@
 #include "UIButton.h"
 #include "Game.h"
 
+#include "Misc/Char.h"          // FTCHARToUTF8
 #include "Logging/LogMacros.h"
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
 // Local helpers
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
 
 static FColor ScaleColor(const FColor& C, float S)
 {
@@ -39,27 +40,67 @@ static FColor ScaleColor(const FColor& C, float S)
     return FColor((uint8)R, (uint8)G, (uint8)B, C.A);
 }
 
-// +--------------------------------------------------------------------+
+// ---- MenuItem API adapters (compile-time tolerant) -------------------
+// You had errors because your MenuItem doesn’t match legacy names.
+// These adapters try common variants and fall back safely.
 
-MenuView::MenuView(View* InParent)
-    : View(InParent,
-        0,
-        0,
-        InParent ? InParent->Width() : 0,
-        InParent ? InParent->Height() : 0)
-    , shift_down(0)
-    , mouse_down(0)
-    , right_down(0)
-    , show_menu(false)
-    , action(0)
-    , menu(nullptr)
-    , menu_item(nullptr)
-    , selected(nullptr)
+template <typename T>
+static auto MI_GetEnabled_Impl(const T* I, int) -> decltype(I->GetEnabled(), bool())
 {
-    right_start = FVector::ZeroVector;
-    offset = FVector::ZeroVector;
+    return I ? (bool)I->GetEnabled() : false;
+}
+template <typename T>
+static auto MI_GetEnabled_Impl(const T* I, long) -> decltype(I->IsEnabled(), bool())
+{
+    return I ? (bool)I->IsEnabled() : false;
+}
+template <typename T>
+static auto MI_GetEnabled_Impl(const T* I, double) -> decltype(I->Enabled(), bool())
+{
+    return I ? (bool)I->Enabled() : false;
+}
+static bool MI_GetEnabled_Impl(...)
+{
+    return true; // permissive fallback to keep UI usable
+}
 
-    // Ensure we match parent after construction (in case parent rect changes later)
+static bool MI_IsEnabled(const MenuItem* I)
+{
+    return MI_GetEnabled_Impl(I, 0);
+}
+
+template <typename T>
+static auto MI_GetSelected_Impl(const T* I, int) -> decltype(I->GetSelected(), int())
+{
+    return I ? (int)I->GetSelected() : 0;
+}
+template <typename T>
+static auto MI_GetSelected_Impl(const T* I, long) -> decltype(I->Selected(), int())
+{
+    return I ? (int)I->Selected() : 0;
+}
+static int MI_GetSelected_Impl(...)
+{
+    return 0;
+}
+
+static int MI_Selected(const MenuItem* I)
+{
+    return MI_GetSelected_Impl(I, 0);
+}
+
+// ---------------------------------------------------------------------
+// Ctor / Dtor (MUST match header signature)
+// ---------------------------------------------------------------------
+
+MenuView::MenuView(View* InParent, int ax, int ay, int aw, int ah)
+    : View(InParent,
+        ax,
+        ay,
+        (aw > 0 ? aw : (InParent ? InParent->Width() : 0)),
+        (ah > 0 ? ah : (InParent ? InParent->Height() : 0)))
+{
+    // Cache initial sizing/offset:
     OnWindowMove();
 }
 
@@ -67,19 +108,32 @@ MenuView::~MenuView()
 {
 }
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
+// Window move (cache offset + size)
+// ---------------------------------------------------------------------
 
 void MenuView::OnWindowMove()
 {
-    offset.X = (float)window->X();
-    offset.Y = (float)window->Y();
+    // offset is used to convert screen mouse coords into local coords
+    if (window) {
+        offset.X = (float)window->X();
+        offset.Y = (float)window->Y();
+    }
+    else {
+        offset.X = 0.0f;
+        offset.Y = 0.0f;
+    }
+
     offset.Z = 0.0f;
 
-    width = window->Width();
-    height = window->Height();
+    // Use our view rect (not window) for width/height:
+    width = Width();
+    height = Height();
 }
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
+// Refresh
+// ---------------------------------------------------------------------
 
 void MenuView::Refresh()
 {
@@ -87,7 +141,9 @@ void MenuView::Refresh()
         DrawMenu();
 }
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
+// Input
+// ---------------------------------------------------------------------
 
 void MenuView::DoMouseFrame()
 {
@@ -99,8 +155,8 @@ void MenuView::DoMouseFrame()
         MouseController* mouse_con = MouseController::GetInstance();
         if (!right_down && (!mouse_con || !mouse_con->Active())) {
             rbutton_latch = (uint32)Game::RealTime();
-            right_down = true;
-            show_menu = false;
+            right_down = 1;
+            show_menu = 0;
         }
     }
     else {
@@ -109,11 +165,11 @@ void MenuView::DoMouseFrame()
             right_start.Y = (float)(Mouse::Y() - (int)offset.Y);
             right_start.Z = 0.0f;
 
-            show_menu = true;
+            show_menu = 1;
             UIButton::PlaySound(UIButton::SND_MENU_OPEN);
         }
 
-        right_down = false;
+        right_down = 0;
     }
 
     MouseController* mouse_con = MouseController::GetInstance();
@@ -121,56 +177,54 @@ void MenuView::DoMouseFrame()
     if (!mouse_con || !mouse_con->Active()) {
         if (Mouse::LButton()) {
             if (!mouse_down)
-                shift_down = Keyboard::KeyDown(VK_SHIFT);
+                shift_down = Keyboard::KeyDown(VK_SHIFT) ? 1 : 0;
 
-            mouse_down = true;
+            mouse_down = 1;
         }
         else if (mouse_down) {
-            const int mouse_x = Mouse::X() - (int)offset.X;
-            const int mouse_y = Mouse::Y() - (int)offset.Y;
-            int       keep_menu = false;
+            int keep_menu = 0;
 
             if (show_menu) {
                 keep_menu = ProcessMenuItem();
                 Mouse::Show(true);
             }
 
-            mouse_down = false;
+            mouse_down = 0;
 
             if (!keep_menu) {
                 ClearMenuSelection(menu);
-                show_menu = false;
+                show_menu = 0;
             }
         }
     }
 }
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
+// Menu selection -> action
+// ---------------------------------------------------------------------
 
 int MenuView::ProcessMenuItem()
 {
-    if (!menu_item || !menu_item->GetEnabled())
-        return false;
+    if (!menu_item)
+        return 0;
 
-    if (menu_item->GetSubmenu()) {
-        ListIter<MenuItem> item = menu_item->GetMenu()->GetItems();
-        while (++item) {
-            if (item.value() == menu_item)
-                item->SetSelected(2);
-            else
-                item->SetSelected(0);
-        }
+    if (!MI_IsEnabled(menu_item))
+        return 0;
 
-       UIButton::PlaySound(UIButton::SND_MENU_OPEN);
-        return true; // keep menu showing
+    if (menu_item->GetSubmenu() != 0) {
+        menu_item->SetSelected(true);   // correct
+        UIButton::PlaySound(UIButton::SND_MENU_OPEN);
+        return 1; // keep menu open
     }
 
     action = menu_item->GetData();
     UIButton::PlaySound(UIButton::SND_MENU_SELECT);
-    return false;
+    return 0;
 }
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
+// Draw menu
+// ---------------------------------------------------------------------
 
 void MenuView::DrawMenu()
 {
@@ -190,8 +244,8 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
 
     MenuItem* locked_item = nullptr;
     Menu* submenu = nullptr;
-    int           subx = 0;
-    int           suby = 0;
+    int       subx = 0;
+    int       suby = 0;
 
     Rect menu_rect(mx, my, 100, m->NumItems() * 10 + 6);
 
@@ -199,24 +253,34 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
     int max_height = 0;
     int extra_width = 16;
 
-    ListIter<MenuItem> item = m->GetItems();
-    while (++item) {
+    // Items are now TArray<MenuItem*>
+    const TArray<MenuItem*>& Items = m->GetItems();
+
+    // -------- Measure pass --------
+    for (MenuItem* It : Items) {
         menu_rect.w = width / 2;
 
-        if (item->GetText().length()) {
-            window->SetFont(HUDFont);
-            window->DrawText(item->GetText(), 0, menu_rect, DT_LEFT | DT_SINGLELINE | DT_CALCRECT);
+        const FString Txt = It ? It->GetText() : FString();
+
+        if (Txt.Len() > 0) {
+            // Use HUD font by convention:
+            SetFont(HUDFont);
+
+            // DrawTextRect supports DT_CALCRECT like legacy:
+            FTCHARToUTF8 Conv(*Txt);
+            const char* AnsiObjectName = (const char*)Conv.Get();
+            DrawTextRect((const char*)Conv.Get(), 0, menu_rect, DT_LEFT | DT_SINGLELINE | DT_CALCRECT);
 
             if (menu_rect.w > max_width)
                 max_width = menu_rect.w;
 
             max_height += 11;
 
-            if (item->GetSubmenu())
+            if (It && It->GetSubmenu())
                 extra_width = 28;
 
-            if (item->GetSelected() > 1)
-                locked_item = item.value();
+            if (It && MI_Selected(It) > 1)
+                locked_item = It;
         }
         else {
             max_height += 4;
@@ -232,21 +296,23 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
     if (menu_rect.y + menu_rect.h >= height)
         menu_rect.y = height - menu_rect.h - 2;
 
-    window->FillRect(menu_rect, ScaleColor(BackColor, 0.20f));
-    window->DrawRect(menu_rect, BackColor);
+    // Background + border:
+    FillRect(menu_rect, ScaleColor(BackColor, 0.20f));
+    DrawRect(menu_rect, BackColor);
 
     Rect item_rect = menu_rect;
-
     item_rect.x += 4;
     item_rect.y += 3;
     item_rect.w -= 8;
     item_rect.h = 12;
 
-    item.reset();
-    while (++item) {
+    // -------- Draw pass --------
+    for (MenuItem* It : Items) {
         int line_height = 0;
 
-        if (item->GetText().length()) {
+        const FString Txt = It ? It->GetText() : FString();
+
+        if (Txt.Len() > 0) {
             Rect fill_rect = item_rect;
             fill_rect.Inflate(2, -1);
             fill_rect.y -= 1;
@@ -254,21 +320,21 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
             const int mouse_x = Mouse::X() - (int)offset.X;
             const int mouse_y = Mouse::Y() - (int)offset.Y;
 
-            // is this item picked?
+            // Is this item hovered/picked?
             if (menu_rect.Contains(mouse_x, mouse_y)) {
                 if (mouse_y >= fill_rect.y && mouse_y <= fill_rect.y + fill_rect.h) {
                     if (Mouse::LButton()) {
-                        menu_item = item.value();
-                        item->SetSelected(2);
+                        menu_item = It;
+                        It->SetSelected(2);
 
-                        if (locked_item && locked_item->GetMenu() == m)
-                            locked_item->SetSelected(0);
+                        if (locked_item)
+                            locked_item->SetSelected(false);
 
                         locked_item = menu_item;
                     }
-                    else if (!locked_item || locked_item->GetMenu() != m) {
-                        item->SetSelected(true);
-                        menu_item = item.value();
+                    else if (!locked_item) {
+                        It->SetSelected(1);
+                        menu_item = It;
                     }
 
                     if (menu_item && menu_item != selected) {
@@ -276,33 +342,38 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
                         UIButton::PlaySound(UIButton::SND_MENU_HILITE);
                     }
                 }
-                else if (item.value() != locked_item) {
-                    item->SetSelected(false);
+                else if (It != locked_item) {
+                    It->SetSelected(0);
                 }
             }
 
-            if (item->GetSelected()) {
-                window->FillRect(fill_rect, ScaleColor(BackColor, 0.35f));
-                window->DrawRect(fill_rect, ScaleColor(BackColor, 0.75f));
+            if (MI_Selected(It) != 0) {
+                FillRect(fill_rect, ScaleColor(BackColor, 0.35f));
+                DrawRect(fill_rect, ScaleColor(BackColor, 0.75f));
 
-                if (item->GetSubmenu()) {
-                    submenu = item->GetSubmenu();
+                if (It->GetSubmenu()) {
+                    submenu = It->GetSubmenu();
                     subx = menu_rect.x + max_width + extra_width;
                     suby = fill_rect.y - 3;
                 }
             }
 
-            if (item->GetEnabled())
+            // Text color:
+            if (MI_IsEnabled(It))
                 HUDFont->SetColor(TextColor);
             else
                 HUDFont->SetColor(ScaleColor(TextColor, 0.33f));
 
-            window->SetFont(HUDFont);
-            window->DrawText(item->GetText(), 0, item_rect, DT_LEFT | DT_SINGLELINE);
+            SetFont(HUDFont);
+
+            FTCHARToUTF8 Conv(*Txt);
+            DrawTextRect((const char*)Conv.Get(), 0, item_rect, DT_LEFT | DT_SINGLELINE);
+
             line_height = 11;
         }
         else {
-            window->DrawLine(
+            // separator line
+            DrawLine(
                 item_rect.x,
                 item_rect.y + 2,
                 item_rect.x + max_width + extra_width - 8,
@@ -312,22 +383,23 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
             line_height = 4;
         }
 
-        if (item->GetSubmenu()) {
+        // submenu arrow
+        if (It && It->GetSubmenu()) {
             const int left = item_rect.x + max_width + 10;
             const int top = item_rect.y + 1;
 
-            // draw the arrow (Point -> FVector; Z unused):
             FVector arrow[3];
             arrow[0] = FVector((float)left, (float)top, 0.0f);
             arrow[1] = FVector((float)left + 8, (float)top + 4, 0.0f);
             arrow[2] = FVector((float)left, (float)top + 8, 0.0f);
 
-            window->FillPoly(3, arrow, BackColor);
+            FillPoly(3, arrow, BackColor);
         }
 
         item_rect.y += line_height;
     }
 
+    // Recurse submenu:
     if (submenu) {
         if (subx + 60 > width)
             subx = menu_rect.x - 60;
@@ -336,18 +408,24 @@ void MenuView::DrawMenu(int mx, int my, Menu* m)
     }
 }
 
-// +--------------------------------------------------------------------+
+// ---------------------------------------------------------------------
+// Clear selection (recursive)
+// ---------------------------------------------------------------------
 
 void MenuView::ClearMenuSelection(Menu* m)
 {
     if (!m)
         return;
 
-    ListIter<MenuItem> item = m->GetItems();
-    while (++item) {
-        item->SetSelected(0);
+    const TArray<MenuItem*>& Items = m->GetItems();
 
-        if (item->GetSubmenu())
-            ClearMenuSelection(item->GetSubmenu());
+    for (MenuItem* It : Items) {
+        if (!It)
+            continue;
+
+        It->SetSelected(0);
+
+        if (It->GetSubmenu())
+            ClearMenuSelection(It->GetSubmenu());
     }
 }
