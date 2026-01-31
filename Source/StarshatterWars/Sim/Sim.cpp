@@ -15,6 +15,7 @@
 #include "Sim.h"
 #include "SimEvent.h"
 #include "SimObject.h"
+#include "SimRegion.h"
 #include "Starshatter.h"
 #include "StarSystem.h"
 #include "SimContact.h"
@@ -1089,14 +1090,6 @@ Sim::DestroyShip(Ship* ship)
 		rgn->DestroyShip(ship);
 }
 
-void
-Sim::NetDockShip(Ship* ship, Ship* carrier, FlightDeck* deck)
-{
-	SimRegion* rgn = ship->GetRegion();
-	if (rgn)
-		rgn->NetDockShip(ship, carrier, deck);
-}
-
 Ship*
 Sim::FindShipByObjID(uint32 objid)
 {
@@ -1332,7 +1325,7 @@ Sim::GetPlayerElement()
 	for (int i = 0; i < elements.size(); i++) {
 		SimElement* e = elements[i];
 
-		if (e->Player() > 0)
+		if (e->GetPlayer() > 0)
 			elem = e;
 	}
 
@@ -2112,7 +2105,7 @@ Sim::CreateMissionElement(SimElement* elem)
 			msn_elem->SetLocation(OtherHand(ship->Location()));
 			msn_elem->SetDesign(ship->Design());
 
-			msn_elem->SetPlayer(elem->Player());
+			msn_elem->SetPlayer(elem->GetPlayer());
 			msn_elem->SetCommandAI(elem->GetCommandAILevel());
 			msn_elem->SetHoldTime((int)elem->GetHoldTime());
 			msn_elem->SetZoneLock(elem->GetZoneLock());
@@ -2242,75 +2235,6 @@ Sim::FindSquadron(const char* name, int& index)
 	}
 
 	return hangar;
-}
-
-// +===================================================================-+
-
-SimRegion::SimRegion(Sim* s, const char* n, int t)
-	: sim(s), name(n), type(t), orbital_region(0), star_system(0)
-	, player_ship(0), grid(0), active(false), current_view(0), sim_time(0)
-	, ai_index(0), terrain(0)
-{
-	if (sim) {
-		star_system = sim->GetStarSystem();
-	}
-}
-
-SimRegion::SimRegion(Sim* SimPtr, OrbitalRegion* OrbitalRegionPtr)
-	: sim(SimPtr)
-	, orbital_region(OrbitalRegionPtr)
-	, type(REAL_SPACE)
-	, star_system(nullptr)
-	, player_ship(nullptr)
-	, grid(nullptr)
-	, active(false)
-	, current_view(0)
-	, sim_time(0)
-	, ai_index(0)
-	, terrain(nullptr)
-{
-	if (OrbitalRegionPtr) {
-		star_system = OrbitalRegionPtr->System();
-	}
-
-	if (orbital_region) {
-		name = orbital_region->Name();
-		grid = new Grid(
-			(int32)orbital_region->Radius(),
-			(int32)orbital_region->GridSpace()
-		);
-
-		if (orbital_region->Type() == Orbital::TERRAIN) {
-			TerrainRegion* TerrainRegionPtr = (TerrainRegion*)orbital_region;
-			terrain = new Terrain(TerrainRegionPtr);
-			type = AIR_SPACE;
-		}
-
-		else if (orbital_region->Asteroids() > 0) {
-			const int32 NumAsteroids = (int32)orbital_region->Asteroids();
-
-			// Stable stream for this region instance (no per-asteroid reseeding):
-			const int32 SeedValue = (int32)((uintptr_t)this);
-			FRandomStream RandomStream(SeedValue);
-
-			for (int32 AsteroidIndex = 0; AsteroidIndex < NumAsteroids; AsteroidIndex++) {
-				const FVector InitialLocation(
-					(RandomStream.FRand() - 0.5f) * 983040.0f,   // approx (rand()-16384)*30
-					(RandomStream.FRand() - 0.5f) * 98304.0f,    // approx (rand()-16384)*3
-					(RandomStream.FRand() - 0.5f) * 983040.0f    // approx (rand()-16384)*30
-				);
-
-				const double MassMin = 1.0e7;
-				const double MassMax = 1.0e8;
-				const double Mass = MassMin + (static_cast<double>(RandomStream.FRand()) * (MassMax - MassMin));
-
-				sim->CreateAsteroid(InitialLocation, AsteroidIndex, Mass, this);
-			}
-		}
-	}
-	else {
-		name = Game::GetText("Unknown");
-	}
 }
 
 const char* FormatGameTime()

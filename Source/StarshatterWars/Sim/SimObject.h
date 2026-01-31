@@ -85,13 +85,13 @@ public:
 
 	int operator == (const SimObserver& o) const { return this == &o; }
 
-	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual bool			Update(SimObject* obj);
+	virtual const char*		GetObserverName() const;
 
-	virtual void         Observe(SimObject* obj);
-	virtual void         Ignore(SimObject* obj);
+	virtual void			Observe(SimObject* obj);
+	virtual void			Ignore(SimObject* obj);
 
 protected:
-	List<SimObject>      observe_list;
+	List<SimObject>			observe_list;
 };
 

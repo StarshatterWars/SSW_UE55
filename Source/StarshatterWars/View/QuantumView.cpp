@@ -1,328 +1,341 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025–2026.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         QuantumView.cpp
-	AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+    SUBSYSTEM:    StarshatterWars
+    FILE:         QuantumView.h
+    AUTHOR:       Carlos Bott
 
-	OVERVIEW
-	========
-	View class for Quantum Destination HUD Overlay
+    OVERVIEW
+    ========
+    QuantumView
+    - Quantum Drive destination HUD overlay
+    - Displays selectable quantum destinations
+    - Numeric hotkey selection (1–9)
+    - Ported from Starshatter 4.5 QuantumView
+    - Uses legacy View + Menu system (non-UObject)
 */
 
 #include "QuantumView.h"
+
 #include "QuantumDrive.h"
 #include "HUDView.h"
 #include "Ship.h"
-#include "SimElement.h"
 #include "Sim.h"
+#include "SimRegion.h"
 #include "StarSystem.h"
 #include "FormatUtil.h"
 
-#include "Color.h"
-#include "Window.h"
-#include "Video.h"
-#include "Screen.h"
-#include "DataLoader.h"
-#include "SimScene.h"
-#include "SystemFont.h"
-#include "FontManager.h"
-#include "Keyboard.h"
-#include "Mouse.h"
+#include "ActiveWindow.h"
 #include "Game.h"
 #include "Menu.h"
+#include "Keyboard.h"
+#include "GameStructs.h"
 
-// Minimal Unreal support needed here (FVector + UE_LOG):
-#include "Math/Vector.h"
-#include "Logging/LogMacros.h"
+// ------------------------------------------------------------
+// Static state (matches legacy behavior)
+// ------------------------------------------------------------
+static FColor HudColor = FColor::Black;
 
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsQuantumView, Log, All);
+static Menu* QuantumMenu = nullptr;
+static bool  bShowMenu = false;
 
-// +====================================================================+
-//
-// QUANTUM DRIVE DESTINATION MENU:
-//
+QuantumView* QuantumView::QuantumViewInstance = nullptr;
 
-static Menu* quantum_menu = 0;
-
-void
-QuantumView::Initialize()
+// ------------------------------------------------------------
+// Lifecycle
+// ------------------------------------------------------------
+void QuantumView::Initialize()
 {
-	static int initialized = 0;
-	if (initialized) return;
+    static bool bInitialized = false;
+    if (bInitialized) return;
 
-	quantum_menu = new Menu(Game::GetText("QuantumView.menu"));
-
-	initialized = 1;
+    QuantumMenu = new Menu("Quantum Drive");
+    bInitialized = true;
 }
 
-void
-QuantumView::Close()
+void QuantumView::Close()
 {
-	delete quantum_menu;
-	quantum_menu = 0;
+    delete QuantumMenu;
+    QuantumMenu = nullptr;
 }
 
-// +====================================================================+
-
-QuantumView* QuantumView::quantum_view = 0;
-
-QuantumView::QuantumView(Window* c)
-	: View(c), sim(0), ship(0), font(0)
+// ------------------------------------------------------------
+// Ctor / Dtor
+// ------------------------------------------------------------
+QuantumView::QuantumView(View* InParent, ActiveWindow* InActiveWindow)
+    : View(
+        InParent,
+        0,
+        0,
+        InActiveWindow ? InActiveWindow->Width() : 1024,
+        InActiveWindow ? InActiveWindow->Height() : 768
+    )
 {
-	quantum_view = this;
-	sim = Sim::GetSim();
+    QuantumViewInstance = this;
 
-	width = window->Width();
-	height = window->Height();
-	xcenter = (width / 2.0) - 0.5;
-	ycenter = (height / 2.0) + 0.5;
-	font = FontManager::Find("HUD");
+    // Bind rendering context (View owns this):
+    window = InActiveWindow;
 
-	HUDView* hud = HUDView::GetInstance();
-	if (hud)
-		SetColor(hud->GetTextColor());
+    SimPtr = Sim::GetSim();
+    ShipPtr = nullptr;
+
+    WidthPx = window ? window->Width() : rect.w;
+    HeightPx = window ? window->Height() : rect.h;
+
+    XCenter = (WidthPx / 2.0) - 0.5;
+    YCenter = (HeightPx / 2.0) + 0.5;
+
+    // Use View-provided fonts
+    HudFont = HUDFont;
+
+    HUDView* Hud = HUDView::GetInstance();
+    if (Hud)
+        SetColor(Hud->GetTextColor());
 }
 
 QuantumView::~QuantumView()
 {
-	quantum_view = 0;
+    QuantumViewInstance = nullptr;
 }
 
-void
-QuantumView::OnWindowMove()
+// ------------------------------------------------------------
+// View hooks
+// ------------------------------------------------------------
+void QuantumView::OnWindowMove()
 {
-	width = window->Width();
-	height = window->Height();
-	xcenter = (width / 2.0) - 0.5;
-	ycenter = (height / 2.0) + 0.5;
+    WidthPx = window ? window->Width() : rect.w;
+    HeightPx = window ? window->Height() : rect.h;
+
+    XCenter = (WidthPx / 2.0) - 0.5;
+    YCenter = (HeightPx / 2.0) + 0.5;
 }
 
-// +--------------------------------------------------------------------+
-
-bool
-QuantumView::Update(SimObject* obj)
+bool QuantumView::Update(SimObject* Obj)
 {
-	if (obj == ship)
-		ship = 0;
+    if (Obj == ShipPtr)
+        ShipPtr = nullptr;
 
-	return SimObserver::Update(obj);
+    return SimObserver::Update(Obj);
 }
 
-const char*
-QuantumView::GetObserverName() const
+const char* QuantumView::GetObserverName() const
 {
-	return "QuantumView";
+    return "QuantumView";
 }
 
-// +--------------------------------------------------------------------+
-
-void
-QuantumView::Refresh()
+void QuantumView::Refresh()
 {
-	sim = Sim::GetSim();
+    SimPtr = Sim::GetSim();
 
-	if (sim && ship != sim->GetPlayerShip()) {
-		ship = sim->GetPlayerShip();
+    if (SimPtr && ShipPtr != SimPtr->GetPlayerShip()) {
+        ShipPtr = SimPtr->GetPlayerShip();
 
-		if (ship) {
-			if (ship->Life() == 0 || ship->IsDying() || ship->IsDead()) {
-				ship = 0;
-			}
-			else {
-				Observe(ship);
-			}
-		}
-	}
+        if (ShipPtr) {
+            if (ShipPtr->Life() == 0 || ShipPtr->IsDying() || ShipPtr->IsDead()) {
+                ShipPtr = nullptr;
+            }
+            else {
+                Observe(ShipPtr);
+            }
+        }
+    }
 
-	if (IsMenuShown()) {
-		Rect menu_rect(width - 115, 10, 115, 12);
+    if (!IsMenuShown() || !QuantumMenu || !HudFont || !window)
+        return;
 
-		font->SetColor(HudColor);
-		font->SetAlpha(1);
-		font->DrawText(quantum_menu->GetTitle(), 0, menu_rect, DT_CENTER);
+    Rect MenuRect(WidthPx - 115, 10, 115, 12);
 
-		menu_rect.y += 15;
+    HudFont->SetColor(HudColor);
+    HudFont->SetAlpha(1);
 
-		ListIter<MenuItem> item = quantum_menu->GetItems();
-		while (++item) {
-			item->SetEnabled(true);
+    window->SetFont(HudFont);
 
-			font->DrawText(item->GetText(), 0, menu_rect, DT_LEFT);
-			menu_rect.y += 10;
-		}
-	}
+    // ----- Title -----
+    {
+        const FString TitleStr = QuantumMenu->GetTitle();
+        FTCHARToUTF8 TitleUtf8(*TitleStr);
+        window->DrawText(TitleUtf8.Get(), -1, MenuRect, DT_CENTER);
+    }
+
+    // ----- Items -----
+    MenuRect.y += 15;
+
+    const TArray<MenuItem*>& Items = QuantumMenu->GetItems();
+    for (MenuItem* Item : Items)
+    {
+        if (!Item)
+            continue;
+
+        Item->SetEnabled(true);
+
+        const FString ItemStr = Item->GetText();
+        FTCHARToUTF8 ItemUtf8(*ItemStr);
+        window->DrawText(ItemUtf8.Get(), -1, MenuRect, DT_LEFT);
+
+        MenuRect.y += 10;
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-void
-QuantumView::ExecFrame()
+void QuantumView::ExecFrame()
 {
-	HUDView* hud = HUDView::GetInstance();
-	if (hud) {
-		if (HudColor != hud->GetTextColor()) {
-			HudColor = hud->GetTextColor();
-			SetColor(HudColor);
-		}
-	}
+    HUDView* Hud = HUDView::GetInstance();
+    if (Hud) {
+        const FColor NewColor = Hud->GetTextColor();
+        if (HudColor != NewColor) {
+            HudColor = NewColor;
+            SetColor(HudColor);
+        }
+    }
 
-	static double time_til_change = 0;
+    static double TimeTilChange = 0.0;
 
-	if (time_til_change > 0)
-		time_til_change -= Game::GUITime();
+    if (TimeTilChange > 0.0)
+        TimeTilChange -= Game::GUITime();
 
-	if (time_til_change <= 0) {
-		time_til_change = 0;
+    if (TimeTilChange > 0.0)
+        return;
 
-		if (show_menu) {
-			QuantumDrive* quantum_drive = 0;
+    TimeTilChange = 0.0;
 
-			if (ship)
-				quantum_drive = ship->GetQuantumDrive();
+    if (!bShowMenu || !QuantumMenu)
+        return;
 
-			if (quantum_drive && quantum_drive->ActiveState() != QuantumDrive::ACTIVE_READY) {
-				show_menu = false;
-				return;
-			}
+    QuantumDrive* QDrive = nullptr;
+    if (ShipPtr)
+        QDrive = ShipPtr->GetQuantumDrive();
 
-			int max_items = quantum_menu->NumItems();
+    if (QDrive && QDrive->ActiveState() != QuantumDrive::ACTIVE_READY) {
+        bShowMenu = false;
+        return;
+    }
 
-			for (int i = 0; i < max_items; i++) {
-				if (Keyboard::KeyDown('1' + i)) {
-					MenuItem* item = quantum_menu->GetItem(i);
-					if (item && item->IsEnabled()) {
+    const int32 MaxItems = QuantumMenu->NumItems();
+    for (int32 i = 0; i < MaxItems; i++) {
+        if (Keyboard::KeyDown('1' + i)) {
+            MenuItem* Item = QuantumMenu->GetItem(i);
+            if (Item && Item->IsEnabled()) {
 
-						SimRegion* rgn = (SimRegion*)item->GetData();
+                // Stored pointer data:
+                SimRegion* Region = reinterpret_cast<SimRegion*>(Item->GetData());
 
-						if (rgn) {
-							// Convert Starshatter Point to Unreal FVector:
-							quantum_drive->SetDestination(rgn, FVector::ZeroVector);
-							quantum_drive->Engage();
-						}
-						else {
-							UE_LOG(LogStarshatterWarsQuantumView, Warning, TEXT("QuantumView: selected menu item had null region."));
-						}
+                if (Region && QDrive) {
+                    QDrive->SetDestination(Region, FVector::ZeroVector);
+                    QDrive->Engage();
+                }
 
-						show_menu = false;
-						time_til_change = 0.3;
-						break;
-					}
-				}
-			}
-		}
-	}
+                bShowMenu = false;
+                TimeTilChange = 0.3;
+                break;
+            }
+        }
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-void
-QuantumView::SetColor(FColor c)
+void QuantumView::SetColor(const FColor& InColor)
 {
-	HudColor = c;
+    SetHUDColor(InColor);
 }
 
-// +--------------------------------------------------------------------+
-
-bool
-QuantumView::IsMenuShown()
+bool QuantumView::IsMenuShown() const
 {
-	return show_menu;
+    return bShowMenu;
 }
 
-void
-QuantumView::ShowMenu()
+void QuantumView::ShowMenu()
 {
-	if (!ship) return;
+    if (!ShipPtr) return;
 
-	if (!show_menu) {
-		if (ship->IsStarship() && ship->GetQuantumDrive()) {
-			GetQuantumMenu(ship);
-			show_menu = true;
-		}
+    if (!bShowMenu) {
+        if (ShipPtr->IsStarship() && ShipPtr->GetQuantumDrive()) {
+            GetQuantumMenu(ShipPtr);
+            bShowMenu = true;
+        }
 
-		for (int i = 0; i < 10; i++) {
-			if (Keyboard::KeyDown('1' + i)) {
-				// just need to clear the key down flag
-				// so we don't process old keystrokes
-				// as valid menu picks...
-			}
-		}
-	}
+        // Clear stale key presses:
+        for (int32 i = 0; i < 10; i++) {
+            if (Keyboard::KeyDown('1' + i)) {
+                // intentionally empty (legacy behavior)
+            }
+        }
+    }
 }
 
-void
-QuantumView::CloseMenu()
+void QuantumView::CloseMenu()
 {
-	show_menu = false;
+    bShowMenu = false;
 }
 
-// +--------------------------------------------------------------------+
-
-Menu*
-QuantumView::GetQuantumMenu(Ship* s)
+// ------------------------------------------------------------
+// Menu builder
+// ------------------------------------------------------------
+Menu* QuantumView::GetQuantumMenu(Ship* InShip)
 {
-	if (s && sim) {
-		if (s->IsStarship()) {
-			quantum_menu->ClearItems();
+    if (!InShip || !SimPtr || !QuantumMenu)
+        return nullptr;
 
-			SimRegion* current_region = ship->GetRegion();
+    if (!InShip->IsStarship())
+        return nullptr;
 
-			if (!current_region)
-				return 0;
+    QuantumMenu->ClearItems();
 
-			StarSystem* current_system = current_region->GetSystem();
+    SimRegion* CurrentRegion = InShip->GetRegion();
+    if (!CurrentRegion)
+        return nullptr;
 
-			List<SimRegion> rgn_list;
+    StarSystem* CurrentSystem = CurrentRegion->GetSystem();
 
-			ListIter<SimRegion> iter = sim->GetRegions();
-			while (++iter) {
-				SimRegion* rgn = iter.value();
-				StarSystem* rgn_system = rgn->GetSystem();
+    List<SimRegion> RegionList;
 
-				if (rgn != ship->GetRegion() && !rgn->IsAirSpace() &&
-					rgn_system == current_system) {
-					rgn_list.append(rgn);
-				}
-			}
+    // Local regions in same star system:
+    ListIter<SimRegion> Iter = SimPtr->GetRegions();
+    while (++Iter) {
+        SimRegion* Rgn = Iter.value();
+        StarSystem* RgnSystem = Rgn->GetSystem();
 
-			// sort local regions by distance from star:
-			rgn_list.sort();
+        if (Rgn != CurrentRegion && !Rgn->IsAirSpace() && RgnSystem == CurrentSystem) {
+            RegionList.append(Rgn);
+        }
+    }
 
-			// now add regions in other star systems:
-			iter.reset();
-			while (++iter) {
-				SimRegion* rgn = iter.value();
-				StarSystem* rgn_system = rgn->GetSystem();
+    // Sort local regions by distance (legacy list sort):
+    RegionList.sort();
 
-				if (rgn != ship->GetRegion() && rgn->GetType() != SimRegion::AIR_SPACE &&
-					rgn_system != current_system && current_region->GetLinks().contains(rgn)) {
-					rgn_list.append(rgn);
-				}
-			}
+    // Add linked regions in other systems:
+    Iter.reset();
+    while (++Iter) {
+        SimRegion* Rgn = Iter.value();
+        StarSystem* RgnSystem = Rgn->GetSystem();
 
-			int n = 1;
-			iter.attach(rgn_list);
-			while (++iter) {
-				SimRegion* rgn = iter.value();
-				StarSystem* rgn_system = rgn->GetSystem();
-				char text[64];
+        if (Rgn != CurrentRegion &&
+            Rgn->GetType() != SimRegion::AIR_SPACE &&
+            RgnSystem != CurrentSystem &&
+            CurrentRegion->GetLinks().contains(Rgn))
+        {
+            RegionList.append(Rgn);
+        }
+    }
 
-				if (rgn_system != current_system)
-					sprintf_s(text, "%d. %s/%s", n++, rgn_system->Name(), rgn->GetName());
-				else
-					sprintf_s(text, "%d. %s", n++, rgn->GetName());
+    // Populate menu items (store SimRegion* as pointer payload):
+    int32 n = 1;
+    Iter.attach(RegionList);
+    while (++Iter) {
+        SimRegion* Rgn = Iter.value();
+        StarSystem* RgnSystem = Rgn->GetSystem();
 
-				quantum_menu->AddItem(text, (intptr_t)rgn);
-			}
+        char TextBuf[64] = {};
+        if (RgnSystem != CurrentSystem)
+            sprintf_s(TextBuf, "%d. %s/%s", n++, RgnSystem->Name(), Rgn->GetName());
+        else
+            sprintf_s(TextBuf, "%d. %s", n++, Rgn->GetName());
 
-			return quantum_menu;
-		}
-	}
+        // IMPORTANT: add a pointer-safe API on MenuItem:
+        QuantumMenu->AddItem(TextBuf, reinterpret_cast<uintptr_t>(Rgn));
+    }
 
-	return 0;
+    return QuantumMenu;
 }

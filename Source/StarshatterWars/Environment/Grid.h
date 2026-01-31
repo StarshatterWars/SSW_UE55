@@ -41,13 +41,14 @@ public:
 
 	virtual void      Render(Video* video, DWORD flags) override;
 	virtual int       CollidesWith(Graphic& o) override;
-
+	void              ShowGrid(bool bShow) { bVisible = bShow; }
 protected:
 	virtual void      DrawLine(Video* video, FVector& p1, FVector& p2, FColor c);
 
 	int               size;
 	int               step;
 	int               drawn;
+	bool			  bVisible = true;
 };
 
 // +--------------------------------------------------------------------+

@@ -27,6 +27,7 @@
 // Minimal Unreal includes (used only for logging + FVector):
 #include "Math/Vector.h"
 #include "Logging/LogMacros.h"
+#include "Containers/StringConv.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsInstruction, Log, All);
 
@@ -174,16 +175,23 @@ Instruction::GetTarget()
 
 void Instruction::SetTarget(const FString& InTarget)
 {
-	if (!InTarget.IsEmpty() && tgt_name != InTarget)
+	if (!InTarget.IsEmpty())
 	{
-		tgt_name = InTarget;
-		tgt_desc = InTarget;
+		// Convert UE string -> ANSI (or UTF-8 if your Text supports it)
+		const FTCHARToUTF8 Conv(*InTarget);
+		const char* Ansi = Conv.Get();
 
-		// Clear resolved target pointer (forces re-resolve)
-		target = nullptr;
+		// Only update if changed:
+		if (tgt_name != Ansi)
+		{
+			tgt_name = Ansi;
+			tgt_desc = Ansi;
+
+			// Clear resolved target pointer (forces re-resolve)
+			target = nullptr;
+		}
 	}
 }
-
 void
 Instruction::SetTarget(SimObject* s)
 {

@@ -3083,20 +3083,20 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 bool
 MapView::IsClutter(Ship& test)
 {
-	Ship* lead = test.GetLeader();
+	Ship* leader = test.GetLeader();
 
-	if (lead == &test)   // this is the leader:
+	if (leader == &test)   // this is the leader:
 		return false;
 
 	// too close to leader?
-	if (lead) {
-		FVector testloc{}, leadloc{};
+	if (leader) {
+		FVector testloc{}, leaderloc{};
 
 		GetShipLoc(test, testloc);
-		GetShipLoc(*lead, leadloc);
+		GetShipLoc(*leader, leaderloc);
 
-		double dx = testloc.X - leadloc.X;
-		double dy = testloc.Y - leadloc.Y;
+		double dx = testloc.X - leaderloc.X;
+		double dy = testloc.Y - leaderloc.Y;
 		double d = dx * dx + dy * dy;
 
 		if (d <= 64)

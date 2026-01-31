@@ -1,73 +1,81 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025–2026.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         QuantumView.h
-	AUTHOR:       Carlos Bott
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+    SUBSYSTEM:    StarshatterWars
+    FILE:         QuantumView.h
+    AUTHOR:       Carlos Bott
 
-	OVERVIEW
-	========
-	View class for Radio Communications HUD Overlay
+    OVERVIEW
+    ========
+    QuantumView
+    - Quantum Drive destination HUD overlay
+    - Displays selectable quantum destinations
+    - Numeric hotkey selection (1–9)
+    - Ported from Starshatter 4.5 QuantumView
+    - Uses legacy View + Menu system (non-UObject)
 */
+
 
 #pragma once
 
 #include "Types.h"
 #include "View.h"
 #include "SimObject.h"
-#include "Text.h"
-#include "Math/Color.h"
+#include "GameStructs.h"
 
-// +--------------------------------------------------------------------+
-
-class SystemFont;
+// Forward decls (keep header light):
+class Ship;
 class HUDView;
 class Menu;
-class RadioMessage;
-class Ship;
-
 class Sim;
-class Window;
-
-// +--------------------------------------------------------------------+
+class QuantumDrive;
+class SimRegion;
+class StarSystem;
 
 class QuantumView : public View, public SimObserver
 {
 public:
-	QuantumView(Window* c);
-	virtual ~QuantumView();
+    // UE port style ctor (matches your View.h):
+    QuantumView(View* InParent, class ActiveWindow* InActiveWindow);
+    virtual ~QuantumView();
 
-	// Operations:
-	virtual void      Refresh();
-	virtual void      OnWindowMove();
-	virtual void      ExecFrame();
+    // View hooks:
+    virtual void Refresh() override;
+    virtual void OnWindowMove() override;
+    virtual void ExecFrame() override;
 
-	virtual Menu* GetQuantumMenu(Ship* ship);
-	virtual bool      IsMenuShown();
-	virtual void      ShowMenu();
-	virtual void      CloseMenu();
+    // Menu controls:
+    virtual Menu* GetQuantumMenu(Ship* InShip);
+    virtual bool  IsMenuShown() const;
+    virtual void  ShowMenu();
+    virtual void  CloseMenu();
 
-	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+    // SimObserver:
+    virtual bool        Update(SimObject* Obj) override;
+    virtual const char* GetObserverName() const override;
 
-	static void       SetColor(FColor c);
+    // Static color sync:
+    void   SetColor(const FColor& InColor);
 
-	static void       Initialize();
-	static void       Close();
-
-	static QuantumView* GetInstance() { return quantum_view; }
+    // Lifecycle:
+    static void        Initialize();
+    static void        Close();
+    static QuantumView* GetInstance() { return QuantumViewInstance; }
 
 protected:
-	int         width, height;
-	double      xcenter, ycenter;
+    int32   WidthPx = 0;
+    int32   HeightPx = 0;
+    double  XCenter = 0.0;
+    double  YCenter = 0.0;
 
-	SystemFont* font;
-	Sim*		sim;
-	Ship*		ship;
+    SystemFont* HudFont = nullptr;
+    Sim* SimPtr = nullptr;
+    Ship* ShipPtr = nullptr;
 
-	static QuantumView* quantum_view;
+    static QuantumView* QuantumViewInstance;
 };

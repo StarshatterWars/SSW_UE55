@@ -50,6 +50,10 @@ int Grid::CollidesWith(Graphic& o)
 
 void Grid::Render(Video* video, DWORD flags)
 {
+	if (!bVisible) {
+		return;
+	}
+
 	if (!video || hidden) return;
 
 	int   c = 0;

@@ -50,7 +50,7 @@ public:
 	const Text& Name()            const { return name; }
 	void              SetName(const char* s) { name = s; }
 	virtual int       GetIFF()          const { return iff; }
-	int               Player()          const { return player; }
+	int               GetPlayer()       const { return player; }
 	void              SetPlayer(int p) { player = p; }
 	DWORD             GetLaunchTime()   const { return launch_time; }
 	void              SetLaunchTime(DWORD t);

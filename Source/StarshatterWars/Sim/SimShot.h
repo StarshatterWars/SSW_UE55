@@ -89,6 +89,8 @@ public:
 	virtual void       Disarm();
 	virtual void       Destroy();
 
+	void              SetLife(int seconds) { life = seconds; }
+
 	const WeaponDesign* Design()      const { return design; }
 	const char* DesignName()   const;
 	int                GetEta()       const { return eta; }
