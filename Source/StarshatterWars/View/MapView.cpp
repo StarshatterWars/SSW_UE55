@@ -1,31 +1,24 @@
 /*  Project Starshatter Wars
 	Fractal Dev Studios
-	Copyright 2025-2026. All Rights Reserved.
+	Copyright (c) 2025-2026.
 
 	SUBSYSTEM:    Stars.exe
 	FILE:         MapView.cpp
-	AUTHOR:       Carlos Bott
-
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
+	AUTHOR:       John DiCamillo (original) / UE Port: Carlos Bott
 
 	OVERVIEW
 	========
-	Star Map class
+	Star Map class (UE port)
 */
 
 #include "MapView.h"
-
-// Minimal Unreal includes (only what this TU requires):
-#include "Math/Vector.h"        // FVector
-#include "Logging/LogMacros.h"  // UE_LOG
 
 #include "Galaxy.h"
 #include "StarSystem.h"
 #include "Ship.h"
 #include "ShipDesign.h"
 #include "Instruction.h"
-#include "SimElement.h"
+#include "SimElement.h"      
 #include "NavAI.h"
 #include "Weapon.h"
 #include "Sim.h"
@@ -34,7 +27,7 @@
 #include "Combatant.h"
 #include "CombatGroup.h"
 #include "CombatUnit.h"
-#include "SimContact.h"
+#include "SimContact.h"     
 #include "MenuView.h"
 
 #include "Game.h"
@@ -42,17 +35,17 @@
 #include "EventDispatch.h"
 #include "Video.h"
 #include "UIButton.h"
-#include "SystemFont.h"
-#include "FontManager.h"
+#include "Bitmap.h"
 #include "Mouse.h"
 #include "FormatUtil.h"
 #include "Menu.h"
 #include "GameStructs.h"
+#include "Bitmap.h"
 
-#include "Math/UnrealMathUtility.h"
+#include "Math/Vector.h"   // FVector
+#include "Math/Color.h"    // FColor
 
 // +--------------------------------------------------------------------+
-
 // Supported Selection Modes:
 
 const int SELECT_NONE = -1;
@@ -70,19 +63,28 @@ const int VIEW_REGION = 2;
 
 // +--------------------------------------------------------------------+
 
-static FORCEINLINE FVector ToFVector(double X, double Y, double Z = 0.0)
+static FORCEINLINE FColor ShadeTint(const FColor& Tint, uint8 Shade)
 {
-	return FVector((float)X, (float)Y, (float)Z);
+	// Shade is 0..255-ish. Original code used (Blue/2), so often 0..127.
+	const float S = (float)Shade / 255.0f;
+
+	return FColor(
+		(uint8)FMath::Clamp(FMath::RoundToInt(Tint.R * S), 0, 255),
+		(uint8)FMath::Clamp(FMath::RoundToInt(Tint.G * S), 0, 255),
+		(uint8)FMath::Clamp(FMath::RoundToInt(Tint.B * S), 0, 255),
+		Tint.A
+	);
 }
 
-static FORCEINLINE FVector ToFVector(const Point& P)
+FORCEINLINE FVector ToOtherHand(const FVector& V)
 {
-	return FVector((float)P.X, (float)P.Y, (float)P.Z);
+	return FVector(V.X, -V.Y, V.Z);
 }
 
-MapView::MapView(Window* win)
-	: View(win, 0, 0, win ? win->Width() : 0, win ? win->Height() : 0)
-	, system(nullptr), zoom(1.1f), offset_x(0), offset_y(0), ship(nullptr), campaign(nullptr)
+MapView::MapView(View* InParent, ActiveWindow* InActiveWindow)
+	: View(InParent, 0, 0, InParent ? InParent->Width() : 0, InParent ? InParent->Height() : 0)
+	, active_window(InActiveWindow)
+	, system(nullptr), zoom(1.1), offset_x(0), offset_y(0), ship(nullptr), campaign(nullptr)
 	, captured(false), dragging(false), adding_navpt(false)
 	, moving_navpt(false), moving_elem(false)
 	, view_mode(VIEW_SYSTEM), seln_mode(SELECT_REGION), ship_filter(0xffffffff)
@@ -100,33 +102,30 @@ MapView::MapView(Window* win)
 		view_offset_y[i] = offset_y;
 	}
 
-	menu_view = new MenuView(window);
-
-	title_font = FontManager::Find("Limerick12");
-	font = FontManager::Find("Verdana");
-
-	active_window = (ActiveWindow*)window;
+	menu_view = new MenuView(this);  
 
 	if (active_window)
 		active_window->AddView(this);
 }
-
 // +--------------------------------------------------------------------+
 
 MapView::~MapView()
 {
 	ClearMenu();
 
-	// galaxy_image is now an Unreal render asset pointer (UTexture2D*), not a Starshatter Bitmap.
-	galaxy_image = nullptr;
+	if (galaxy_image) {
+		galaxy_image->ClearImage(); 
+		delete galaxy_image;
+		galaxy_image = nullptr;
+	}
 
 	delete menu_view;
+	menu_view = nullptr;
 }
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::OnWindowMove()
+void MapView::OnWindowMove()
 {
 	if (menu_view)
 		menu_view->OnWindowMove();
@@ -134,8 +133,7 @@ MapView::OnWindowMove()
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SetGalaxy(List<StarSystem>& g)
+void MapView::SetGalaxy(List<StarSystem>& g)
 {
 	system_list.clear();
 	system_list.append(g);
@@ -145,8 +143,7 @@ MapView::SetGalaxy(List<StarSystem>& g)
 	}
 }
 
-void
-MapView::SetSystem(StarSystem* s)
+void MapView::SetSystem(StarSystem* s)
 {
 	if (system != s) {
 		system = s;
@@ -201,8 +198,7 @@ MapView::SetSystem(StarSystem* s)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SetShip(Ship* s)
+void MapView::SetShip(Ship* s)
 {
 	if (ship != s) {
 		ship = s;
@@ -230,8 +226,7 @@ MapView::SetShip(Ship* s)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SetMission(Mission* m)
+void MapView::SetMission(Mission* m)
 {
 	if (mission != m) {
 		mission = m;
@@ -255,6 +250,27 @@ MapView::SetMission(Mission* m)
 
 // +--------------------------------------------------------------------+
 
+void MapView::SetCampaign(Campaign* InCampaign)
+{
+	if (campaign != InCampaign) {
+		campaign = InCampaign;
+
+		// forget invalid selection:
+		current_star = 0;
+		current_planet = 0;
+		current_region = 0;
+		current_ship = 0;
+		current_elem = 0;
+		current_navpt = 0;
+
+		if (campaign) {
+			SetGalaxy(campaign->GetSystemList());
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
 enum MapView_MENU {
 	MAP_SYSTEM = 1000,
 	MAP_SECTOR = 2000,
@@ -271,31 +287,11 @@ enum MapView_MENU {
 	MAP_OBJECTIVE = 9000
 };
 
-void
-MapView::SetCampaign(Campaign* in_campaign)
-{
-	if (campaign != in_campaign) {
-		campaign = in_campaign;
-
-		// forget invalid selection:
-		current_star = 0;
-		current_planet = 0;
-		current_region = 0;
-		current_ship = 0;
-		current_elem = 0;
-		current_navpt = 0;
-
-		if (campaign)
-			SetGalaxy(campaign->GetSystemList());
-	}
-}
-
-void
-MapView::BuildMenu()
+void MapView::BuildMenu()
 {
 	ClearMenu();
 
-	map_system_menu = new Menu("STAR SYSTEM");
+	map_system_menu = new Menu("STARSYSTEM");
 
 	if (system_list.size() > 0) {
 		int i = 0;
@@ -306,12 +302,11 @@ MapView::BuildMenu()
 			i++;
 		}
 	}
-
 	else if (system) {
 		map_system_menu->AddItem(system->Name(), MAP_SYSTEM);
 	}
 
-	map_sector_menu = new Menu("SECTOR"));
+	map_sector_menu = new Menu("SECTOR");
 	for (int i = 0; i < regions.size(); i++) {
 		Orbital* rgn = regions[i];
 		map_sector_menu->AddItem(rgn->Name(), MAP_SECTOR + i);
@@ -323,54 +318,64 @@ MapView::BuildMenu()
 
 	if (ship || mission) {
 		ship_menu = new Menu("SHIP");
-		ship_menu->AddMenu("Starsystem", map_system_menu);
+		ship_menu->AddMenu("Star System", map_system_menu);
 		ship_menu->AddMenu("Sector", map_sector_menu);
 
 		ship_menu->AddItem("", 0);
-		ship_menu->AddItem("Add Navpoint"), MAP_ADDNAV);
-		ship_menu->AddItem("Clea AllNavpoints"), MAP_CLEAR);
+		ship_menu->AddItem("Add Navpoint", MAP_ADDNAV);
+		ship_menu->AddItem("Clear All", MAP_CLEAR);
 
 		action_menu = new Menu("ACTION");
-		for (int i = 0; i < Instruction::NUM_ACTIONS; i++) {
-			action_menu->AddItem(Game::GetText(Text("MapView.item.") + Instruction::ActionName(i)), MAP_ACTION + i);
+
+
+		const UEnum* ActionEnum = StaticEnum<INSTRUCTION_ACTION>();
+
+		for (int i = 0; i < (int)INSTRUCTION_ACTION::NUM_ACTIONS; i++)
+		{
+			const INSTRUCTION_ACTION Act = (INSTRUCTION_ACTION)i;
+
+			FString Name = ActionEnum
+				? ActionEnum->GetNameStringByValue((int64)Act)
+				: FString::FromInt(i);
+
+			// Optional prettify (VECTOR -> Vector, RTB stays RTB, etc.)
+			Name = Name.Replace(TEXT("_"), TEXT(" "));
+			Name = FText::FromString(Name).ToString(); // keeps it simple; you can do smarter title-casing if you want
+
+			const FString Label = FString::Printf(TEXT("Action %s"), *Name);
+			action_menu->AddItem(Label, MAP_ACTION + i);
 		}
 
-		formation_menu = new Menu("FORMATION");
-		for (int i = 0; i < Instruction::NUM_FORMATIONS; i++) {
-			formation_menu->AddItem(Game::GetText(Text("MapView.item.") + Instruction::FormationName(i)), MAP_FORMATION + i);
-		}
-
-		speed_menu = new Menu(Game::GetText("MapView.menu.SPEED"));
+		speed_menu = new Menu("SPEED");
 		speed_menu->AddItem("250", MAP_SPEED + 0);
 		speed_menu->AddItem("500", MAP_SPEED + 1);
 		speed_menu->AddItem("750", MAP_SPEED + 2);
 		speed_menu->AddItem("1000", MAP_SPEED + 3);
 
-		hold_menu = new Menu(Game::GetText("MapView.menu.HOLD"));
-		hold_menu->AddItem(Game::GetText("MapView.item.None"), MAP_HOLD + 0);
-		hold_menu->AddItem(Game::GetText("MapView.item.1-Minute"), MAP_HOLD + 1);
-		hold_menu->AddItem(Game::GetText("MapView.item.5-Minutes"), MAP_HOLD + 2);
-		hold_menu->AddItem(Game::GetText("MapView.item.10-Minutes"), MAP_HOLD + 3);
-		hold_menu->AddItem(Game::GetText("MapView.item.15-Minutes"), MAP_HOLD + 4);
+		hold_menu = new Menu("HOLD");
+		hold_menu->AddItem("None", MAP_HOLD + 0);
+		hold_menu->AddItem("1 Minute", MAP_HOLD + 1);
+		hold_menu->AddItem("5 Minutes", MAP_HOLD + 2);
+		hold_menu->AddItem("10 Minutes", MAP_HOLD + 3);
+		hold_menu->AddItem("15 Minutes", MAP_HOLD + 4);
 
-		farcast_menu = new Menu(Game::GetText("MapView.menu.FARCAST"));
-		farcast_menu->AddItem(Game::GetText("MapView.item.Use-Quantum"), MAP_FARCAST + 0);
-		farcast_menu->AddItem(Game::GetText("MapView.item.Use-Farcast"), MAP_FARCAST + 1);
+		farcast_menu = new Menu("FARCAST");
+		farcast_menu->AddItem("Use Quantum", MAP_FARCAST + 0);
+		farcast_menu->AddItem("Use Farcast", MAP_FARCAST + 1);
 
-		objective_menu = new Menu(Game::GetText("MapView.menu.OBJECTIVE"));
+		objective_menu = new Menu("OBJECTIVE");
 
-		nav_menu = new Menu(Game::GetText("MapView.menu.NAVPT"));
-		nav_menu->AddMenu(Game::GetText("MapView.item.Action"), action_menu);
-		nav_menu->AddMenu(Game::GetText("MapView.item.Objective"), objective_menu);
-		nav_menu->AddMenu(Game::GetText("MapView.item.Formation"), formation_menu);
-		nav_menu->AddMenu(Game::GetText("MapView.item.Speed"), speed_menu);
-		nav_menu->AddMenu(Game::GetText("MapView.item.Hold"), hold_menu);
-		nav_menu->AddMenu(Game::GetText("MapView.item.Farcast"), farcast_menu);
+		nav_menu = new Menu("NAVPT");
+		nav_menu->AddMenu("Action", action_menu);
+		nav_menu->AddMenu("Objective", objective_menu);
+		nav_menu->AddMenu("Formation", formation_menu);
+		nav_menu->AddMenu("Speed", speed_menu);
+		nav_menu->AddMenu("Hold", hold_menu);
+		nav_menu->AddMenu("Farcast", farcast_menu);
 		nav_menu->AddItem("", 0);
-		nav_menu->AddItem(Game::GetText("MapView.item.Add-Nav"), MAP_ADDNAV);
-		nav_menu->AddItem(Game::GetText("MapView.item.Del-Nav"), MAP_DELETE);
+		nav_menu->AddItem("Add Nav Point", MAP_ADDNAV);
+		nav_menu->AddItem("Del Nav Point", MAP_DELETE);
 	}
-
 	else if (campaign) {
 		ship_menu = 0;
 		speed_menu = 0;
@@ -386,8 +391,7 @@ MapView::BuildMenu()
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::ClearMenu()
+void MapView::ClearMenu()
 {
 	delete map_menu;
 	delete map_system_menu;
@@ -416,8 +420,7 @@ MapView::ClearMenu()
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::ProcessMenuItem(int action)
+void MapView::ProcessMenuItem(int action)
 {
 	bool send_nav_data = false;
 	bool can_command = true;
@@ -430,12 +433,12 @@ MapView::ProcessMenuItem(int action)
 		}
 	}
 
-
 	if (action >= MAP_OBJECTIVE) {
-		int index = action - MAP_OBJECTIVE;
+		const int index = action - MAP_OBJECTIVE;
 
-		if (current_navpt && can_command) {
-			current_navpt->SetTarget(objective_menu->GetItem(index)->GetText());
+		if (current_navpt && can_command && objective_menu && objective_menu->GetItem(index)) {
+			const FString Tgt = objective_menu->GetItem(index)->GetText(); // must be FString-returning overload
+			current_navpt->SetTarget(Tgt);
 			send_nav_data = true;
 		}
 	}
@@ -487,23 +490,25 @@ MapView::ProcessMenuItem(int action)
 	}
 
 	else if (action == MAP_ADDNAV) {
-		Text           rgn_name = regions[current_region]->Name();
+		Text         rgn_name = regions[current_region]->Name();
 		Instruction* prior = current_navpt;
 		Instruction* n = 0;
 
 		if (current_ship && can_command) {
 			Sim* sim = Sim::GetSim();
-			SimRegion* rgn = sim->FindRegion(rgn_name);
-			FVector     init_pt = FVector::ZeroVector;
+			SimRegion* rgn = sim ? sim->FindRegion(rgn_name) : 0;
+
+			// Point -> FVector (UE):
+			FVector init_pt(0.0f, 0.0f, 0.0f);
 
 			if (rgn) {
 				if (rgn->IsAirSpace())
-					init_pt.Z = 10000.0f;
+					init_pt.Z = 10e3f;
 
-				n = new Instruction(rgn, Point(init_pt.X, init_pt.Y, init_pt.Z));
+				n = new Instruction(rgn, init_pt);
 			}
 			else {
-				n = new Instruction(rgn_name, Point(init_pt.X, init_pt.Y, init_pt.Z));
+				n = new Instruction(rgn_name, init_pt);
 			}
 
 			n->SetSpeed(500);
@@ -519,12 +524,12 @@ MapView::ProcessMenuItem(int action)
 		}
 
 		else if (current_elem && can_command) {
-			FVector     init_pt = FVector::ZeroVector;
+			FVector init_pt(0.0f, 0.0f, 0.0f);
 
 			if (regions[current_region]->Type() == Orbital::TERRAIN)
-				init_pt.Z = 10000.0f;
+				init_pt.Z = 10e3f;
 
-			n = new Instruction(rgn_name, Point(init_pt.X, init_pt.Y, init_pt.Z));
+			n = new Instruction(rgn_name, init_pt);
 			n->SetSpeed(500);
 
 			if (prior) {
@@ -566,9 +571,11 @@ MapView::ProcessMenuItem(int action)
 	}
 
 	else if (action >= MAP_NAV) {
+		// handled elsewhere
 	}
 
 	else if (action >= MAP_SHIP) {
+		// handled elsewhere
 	}
 
 	else if (action >= MAP_SECTOR) {
@@ -588,50 +595,30 @@ MapView::ProcessMenuItem(int action)
 
 		if (index < system_list.size())
 			SetSystem(system_list[index]);
-	}
-
-	else {
-	}
-
-	Sim* sim = Sim::GetSim();
-	if (send_nav_data && sim) {
-		Ship* s = current_ship;
-
-		if (s && s->GetElement()) {
-			SimElement* elem = s->GetElement();
-			int      index = elem->GetNavIndex(current_navpt);
-		}
-	}
+	}	
 }
 
 // +--------------------------------------------------------------------+
 
-bool
-MapView::SetCapture()
+bool MapView::SetCapture()
 {
-	EventDispatch* dispatch = EventDispatch::GetInstance();
-	if (dispatch)
-		return dispatch->CaptureMouse(this) ? true : false;
+	if (EventDispatch* dispatch = EventDispatch::GetInstance())
+		return dispatch->CaptureMouse(static_cast<EventTarget*>(this)) != 0;
 
-	return 0;
+	return false;
 }
 
-// +--------------------------------------------------------------------+
-
-bool
-MapView::ReleaseCapture()
+bool MapView::ReleaseCapture()
 {
-	EventDispatch* dispatch = EventDispatch::GetInstance();
-	if (dispatch)
-		return dispatch->ReleaseMouse(this) ? true : false;
+	if (EventDispatch* dispatch = EventDispatch::GetInstance())
+		return dispatch->ReleaseMouse(static_cast<EventTarget*>(this)) != 0;
 
-	return 0;
+	return false;
 }
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SetViewMode(int mode)
+void MapView::SetViewMode(int mode)
 {
 	if (mode >= 0 && mode < 3) {
 		// save state:
@@ -643,7 +630,6 @@ MapView::SetViewMode(int mode)
 		view_mode = mode;
 
 		// restore state:
-
 		if (view_mode == VIEW_GALAXY) {
 			zoom = 1;
 			offset_x = 0;
@@ -663,8 +649,7 @@ MapView::SetViewMode(int mode)
 
 // +--------------------------------------------------------------------+
 
-bool
-MapView::Update(SimObject* obj)
+bool MapView::Update(SimObject* obj)
 {
 	if (obj == current_ship) {
 		current_ship = 0;
@@ -676,8 +661,7 @@ MapView::Update(SimObject* obj)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SelectShip(Ship* selship)
+void MapView::SelectShip(Ship* selship)
 {
 	if (selship != current_ship) {
 		current_ship = selship;
@@ -697,8 +681,7 @@ MapView::SelectShip(Ship* selship)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SelectElem(MissionElement* elem)
+void MapView::SelectElem(MissionElement* elem)
 {
 	if (elem != current_elem) {
 		current_elem = elem;
@@ -707,11 +690,9 @@ MapView::SelectElem(MissionElement* elem)
 			if (current_elem->IsStarship()) {
 				ship_menu->GetItem(3)->SetEnabled(true);
 			}
-
 			else if (current_elem->IsDropship()) {
 				ship_menu->GetItem(3)->SetEnabled(true);
 			}
-
 			else {
 				ship_menu->GetItem(3)->SetEnabled(false);
 			}
@@ -723,8 +704,7 @@ MapView::SelectElem(MissionElement* elem)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SelectNavpt(Instruction* navpt)
+void MapView::SelectNavpt(Instruction* navpt)
 {
 	current_navpt = navpt;
 
@@ -740,7 +720,7 @@ MapView::SelectNavpt(Instruction* navpt)
 		case Instruction::PATROL:
 		case Instruction::SWEEP:
 		case Instruction::RECON:
-			objective_menu->AddItem(Game::GetText("MapView.item.not-available"), 0);
+			objective_menu->AddItem("NOT AVAILABLE", 0);
 			objective_menu->GetItem(0)->SetEnabled(false);
 			break;
 
@@ -776,68 +756,54 @@ MapView::SelectNavpt(Instruction* navpt)
 	}
 	else {
 		objective_menu->ClearItems();
-		objective_menu->AddItem(Game::GetText("MapView.item.not-available"), 0);
+		objective_menu->AddItem("NOT AVAILABLE", 0);
 		objective_menu->GetItem(0)->SetEnabled(false);
 	}
 }
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::FindShips(bool Friendly, bool Station, bool Starship, bool Dropship,
-	List<Text>& Result)
+void MapView::FindShips(bool bFriendly, bool bStation, bool bStarship, bool bDropship, List<Text>& OutResult)
 {
 	if (mission) {
-		const List<MissionElement>& Elements = mission->GetElements();
+		for (int i = 0; i < mission->GetElements().size(); i++) {
+			MissionElement* elem = mission->GetElements().at(i);
 
-		for (int ElementIndex = 0; ElementIndex < Elements.size(); ElementIndex++) {
-			MissionElement* Elem = Elements.at(ElementIndex);
+			if (elem->IsSquadron())                 continue;
+			if (!bStation && elem->IsStatic())     continue;
+			if (!bStarship && elem->IsStarship())   continue;
+			if (!bDropship && elem->IsDropship())   continue;
 
-			if (Elem->IsSquadron())                 continue;
-			if (!Station && Elem->IsStatic())     continue;
-			if (!Starship && Elem->IsStarship())   continue;
-			if (!Dropship && Elem->IsDropship())   continue;
-
-			if (!editor && Friendly &&
-				Elem->GetIFF() > 0 &&
-				Elem->GetIFF() != mission->Team())
+			if (!editor && bFriendly && elem->GetIFF() > 0 && elem->GetIFF() != mission->Team())
 				continue;
 
-			if (!editor && !Friendly &&
-				(Elem->GetIFF() == 0 || Elem->GetIFF() == mission->Team()))
+			if (!editor && !bFriendly && (elem->GetIFF() == 0 || elem->GetIFF() == mission->Team()))
 				continue;
 
-			Result.append(new Text(Elem->Name()));
+			OutResult.append(new Text(elem->Name()));
 		}
 	}
 	else if (ship) {
-		Sim* SimPtr = Sim::GetSim();
-		if (!SimPtr)
-			return;
+		Sim* sim = Sim::GetSim();
+		if (sim) {
+			for (int RegionIdx = 0; RegionIdx < sim->GetRegions().size(); RegionIdx++) {
+				SimRegion* rgn = sim->GetRegions().at(RegionIdx);
 
-		const List<SimRegion>& Regions = SimPtr->GetRegions();
+				for (int i = 0; i < rgn->GetShips().size(); i++) {
+					Ship* s = rgn->GetShips().at(i);
 
-		for (int RegionIndex = 0; RegionIndex < Regions.size(); RegionIndex++) {
-			SimRegion* Region = Regions.at(RegionIndex);
-			const List<Ship>& Ships = Region->GetShips();
+					if (!bStation && s->IsStatic())     continue;
+					if (!bStarship && s->IsStarship())   continue;
+					if (!bDropship && s->IsDropship())   continue;
 
-			for (int ShipIndex = 0; ShipIndex < Ships.size(); ShipIndex++) {
-				Ship* ShipPtr = Ships.at(ShipIndex);
+					if (bFriendly && s->GetIFF() > 0 && s->GetIFF() != ship->GetIFF())
+						continue;
 
-				if (!Station && ShipPtr->IsStatic())     continue;
-				if (!Starship && ShipPtr->IsStarship())   continue;
-				if (!Dropship && ShipPtr->IsDropship())   continue;
+					if (!bFriendly && (s->GetIFF() == 0 || s->GetIFF() == ship->GetIFF()))
+						continue;
 
-				if (Friendly &&
-					ShipPtr->GetIFF() > 0 &&
-					ShipPtr->GetIFF() != ship->GetIFF())
-					continue;
-
-				if (!Friendly &&
-					(ShipPtr->GetIFF() == 0 || ShipPtr->GetIFF() == ship->GetIFF()))
-					continue;
-
-				Result.append(new Text(ShipPtr->Name()));
+					OutResult.append(new Text(s->Name()));
+				}
 			}
 		}
 	}
@@ -845,8 +811,7 @@ MapView::FindShips(bool Friendly, bool Station, bool Starship, bool Dropship,
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::SetSelectionMode(int mode)
+void MapView::SetSelectionMode(int mode)
 {
 	if (mode <= SELECT_NONE) {
 		seln_mode = SELECT_NONE;
@@ -859,278 +824,274 @@ MapView::SetSelectionMode(int mode)
 		// when changing mode,
 		// select the item closest to the current center:
 		if (system && view_mode == VIEW_SYSTEM)
-			SelectAt(rect.x + rect.w / 2,
-				rect.y + rect.h / 2);
+			SelectAt(rect.x + rect.w / 2, rect.y + rect.h / 2);
 	}
 }
 
-void
-MapView::SetSelection(int Index)
-{
-	if (scrolling)
-		return;
-
-	Orbital* SelectedOrbital = 0;
-
-	switch (seln_mode) {
-	case SELECT_SYSTEM:
-		if (Index < system_list.size())
-			SetSystem(system_list[Index]);
-
-		SelectedOrbital = stars[current_star];
-		break;
-
-	default:
-	case SELECT_PLANET:
-		if (Index < planets.size())
-			current_planet = Index;
-
-		SelectedOrbital = planets[current_planet];
-		break;
-
-	case SELECT_REGION:
-		if (Index < regions.size())
-			current_region = Index;
-
-		SelectedOrbital = regions[current_region];
-		break;
-
-	case SELECT_STATION:
-	{
-		if (mission) {
-			MissionElement* SelectedElem = 0;
-
-			ListIter<MissionElement> ElemIter = mission->GetElements();
-			while (++ElemIter) {
-				if (ElemIter->IsStatic()) {
-					if (ElemIter->Identity() == Index) {
-						SelectedElem = ElemIter.value();
-						break;
-					}
-				}
-			}
-
-			SelectElem(SelectedElem);
-
-			if (SelectedElem && regions.size()) {
-				ListIter<Orbital> RegionIter = regions;
-				while (++RegionIter) {
-					if (!_stricmp(SelectedElem->Region(), RegionIter->Name())) {
-						Orbital* ElemRegion = RegionIter.value();
-						current_region = regions.index(ElemRegion);
-					}
-				}
-			}
-		}
-		else {
-			Ship* SelectedShip = 0;
-
-			if (ship) {
-				SimRegion* ShipRegion = ship->GetRegion();
-				if (ShipRegion) {
-					ListIter<Ship> ShipIter = ShipRegion->GetShips();
-					while (++ShipIter) {
-						if (ShipIter->IsStatic()) {
-							if (ShipIter->Identity() == Index) {
-								SelectedShip = ShipIter.value();
-								break;
-							}
-						}
-					}
-				}
-			}
-
-			SelectShip(SelectedShip);
-
-			if (SelectedShip) {
-				SelectedOrbital = SelectedShip->GetRegion()->GetOrbitalRegion();
-				current_region = regions.index(SelectedOrbital);
-			}
-		}
-	}
-	break;
-
-	case SELECT_STARSHIP:
-	{
-		if (mission) {
-			MissionElement* SelectedElem = 0;
-
-			ListIter<MissionElement> ElemIter = mission->GetElements();
-			while (++ElemIter) {
-				if (ElemIter->IsStarship()) {
-					if (ElemIter->Identity() == Index) {
-						SelectedElem = ElemIter.value();
-						break;
-					}
-				}
-			}
-
-			SelectElem(SelectedElem);
-
-			if (SelectedElem && regions.size()) {
-				ListIter<Orbital> RegionIter = regions;
-				while (++RegionIter) {
-					if (!_stricmp(SelectedElem->Region(), RegionIter->Name())) {
-						Orbital* ElemRegion = RegionIter.value();
-						current_region = regions.index(ElemRegion);
-					}
-				}
-			}
-		}
-		else {
-			Ship* SelectedShip = 0;
-
-			if (ship) {
-				SimRegion* ShipRegion = ship->GetRegion();
-				if (ShipRegion) {
-					ListIter<Ship> ShipIter = ShipRegion->GetShips();
-					while (++ShipIter) {
-						if (ShipIter->IsStarship()) {
-							if (ShipIter->Identity() == Index) {
-								SelectedShip = ShipIter.value();
-								break;
-							}
-						}
-					}
-				}
-			}
-
-			SelectShip(SelectedShip);
-
-			if (SelectedShip) {
-				SelectedOrbital = SelectedShip->GetRegion()->GetOrbitalRegion();
-				current_region = regions.index(SelectedOrbital);
-			}
-		}
-	}
-	break;
-
-	case SELECT_FIGHTER:
-	{
-		if (mission) {
-			MissionElement* SelectedElem = 0;
-
-			ListIter<MissionElement> ElemIter = mission->GetElements();
-			while (++ElemIter) {
-				if (ElemIter->IsDropship() && !ElemIter->IsSquadron()) {
-					if (ElemIter->Identity() == Index) {
-						SelectedElem = ElemIter.value();
-						break;
-					}
-				}
-			}
-
-			SelectElem(SelectedElem);
-
-			if (SelectedElem && regions.size()) {
-				ListIter<Orbital> RegionIter = regions;
-				while (++RegionIter) {
-					if (!_stricmp(SelectedElem->Region(), RegionIter->Name())) {
-						Orbital* ElemRegion = RegionIter.value();
-						current_region = regions.index(ElemRegion);
-					}
-				}
-			}
-		}
-		else {
-			Ship* SelectedShip = 0;
-
-			if (ship) {
-				SimRegion* ShipRegion = ship->GetRegion();
-				if (ShipRegion) {
-					ListIter<Ship> ShipIter = ShipRegion->GetShips();
-					while (++ShipIter) {
-						if (ShipIter->IsDropship()) {
-							if (ShipIter->Identity() == Index) {
-								SelectedShip = ShipIter.value();
-								break;
-							}
-						}
-					}
-				}
-			}
-
-			SelectShip(SelectedShip);
-
-			if (SelectedShip) {
-				SelectedOrbital = SelectedShip->GetRegion()->GetOrbitalRegion();
-				current_region = regions.index(SelectedOrbital);
-			}
-		}
-	}
-	break;
-	}
-
-	SetupScroll(SelectedOrbital);
-}
-
-
-void
-MapView::SetSelectedShip(Ship* InShip)
-{
-	if (scrolling)
-		return;
-
-	Orbital* SelectedOrbital = 0;
-	Ship* SelectedShip = 0;
-
-	switch (seln_mode) {
-	case SELECT_SYSTEM:
-	case SELECT_PLANET:
-	case SELECT_REGION:
-	default:
-		break;
-
-	case SELECT_STATION:
-	case SELECT_STARSHIP:
-	case SELECT_FIGHTER:
-	{
-		if (InShip) {
-			SimRegion* ShipRegion = InShip->GetRegion();
-
-			if (ShipRegion && ShipRegion->GetNumShips()) {
-				SelectedShip = ShipRegion->GetShips().find(InShip);
-			}
-		}
-
-		SelectShip(SelectedShip);
-
-		if (SelectedShip) {
-			SelectedOrbital = SelectedShip->GetRegion()->GetOrbitalRegion();
-			current_region = regions.index(SelectedOrbital);
-		}
-	}
-	break;
-	}
-
-	if (SelectedShip)
-		SetupScroll(SelectedOrbital);
-}
-
-void
-MapView::SetSelectedElem(MissionElement* elem)
+void MapView::SetSelection(int index)
 {
 	if (scrolling) return;
 	Orbital* s = 0;
 
 	switch (seln_mode) {
 	case SELECT_SYSTEM:
+		if (index < system_list.size())
+			SetSystem(system_list[index]);
+		s = stars[current_star];
+		break;
+
+	default:
+	case SELECT_PLANET:
+		if (index < planets.size())
+			current_planet = index;
+		s = planets[current_planet];
+		break;
+
+	case SELECT_REGION:
+		if (index < regions.size())
+			current_region = index;
+		s = regions[current_region];
+		break;
+
+	case SELECT_STATION:
+	{
+		if (mission) {
+			MissionElement* selected_elem = 0;
+
+			ListIter<MissionElement> elem = mission->GetElements();
+			while (++elem) {
+				if (elem->IsStatic()) {
+					if (elem->Identity() == index) {
+						selected_elem = elem.value();
+						break;
+					}
+				}
+			}
+
+			SelectElem(selected_elem);
+
+			if (selected_elem && regions.size()) {
+				ListIter<Orbital> rgn = regions;
+				while (++rgn) {
+					if (!_stricmp(selected_elem->Region(), rgn->Name())) {
+						Orbital* elem_region = rgn.value();
+						current_region = regions.index(elem_region);
+					}
+				}
+			}
+		}
+		else {
+			Ship* selship = 0;
+
+			if (ship) {
+				SimRegion* simrgn = ship->GetRegion();
+				if (simrgn) {
+					ListIter<Ship> sIter = simrgn->GetShips();
+					while (++sIter) {
+						if (sIter->IsStatic()) {
+							if (sIter->Identity() == index) {
+								selship = sIter.value();
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			SelectShip(selship);
+
+			if (selship) {
+				s = selship->GetRegion()->GetOrbitalRegion();
+				current_region = regions.index(s);
+			}
+		}
+	}
+	break;
+
+	case SELECT_STARSHIP:
+	{
+		if (mission) {
+			MissionElement* selected_elem = 0;
+
+			ListIter<MissionElement> elem = mission->GetElements();
+			while (++elem) {
+				if (elem->IsStarship()) {
+					if (elem->Identity() == index) {
+						selected_elem = elem.value();
+						break;
+					}
+				}
+			}
+
+			SelectElem(selected_elem);
+
+			if (selected_elem && regions.size()) {
+				ListIter<Orbital> rgn = regions;
+				while (++rgn) {
+					if (!_stricmp(selected_elem->Region(), rgn->Name())) {
+						Orbital* elem_region = rgn.value();
+						current_region = regions.index(elem_region);
+					}
+				}
+			}
+		}
+		else {
+			Ship* selship = 0;
+
+			if (ship) {
+				SimRegion* simrgn = ship->GetRegion();
+				if (simrgn) {
+					ListIter<Ship> sIter = simrgn->GetShips();
+					while (++sIter) {
+						if (sIter->IsStarship()) {
+							if (sIter->Identity() == index) {
+								selship = sIter.value();
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			SelectShip(selship);
+
+			if (selship) {
+				s = selship->GetRegion()->GetOrbitalRegion();
+				current_region = regions.index(s);
+			}
+		}
+	}
+	break;
+
+	case SELECT_FIGHTER:
+	{
+		if (mission) {
+			MissionElement* selected_elem = 0;
+
+			ListIter<MissionElement> elem = mission->GetElements();
+			while (++elem) {
+				if (elem->IsDropship() && !elem->IsSquadron()) {
+					if (elem->Identity() == index) {
+						selected_elem = elem.value();
+						break;
+					}
+				}
+			}
+
+			SelectElem(selected_elem);
+
+			if (selected_elem && regions.size()) {
+				ListIter<Orbital> rgn = regions;
+				while (++rgn) {
+					if (!_stricmp(selected_elem->Region(), rgn->Name())) {
+						Orbital* elem_region = rgn.value();
+						current_region = regions.index(elem_region);
+					}
+				}
+			}
+		}
+		else {
+			Ship* selship = 0;
+
+			if (ship) {
+				SimRegion* simrgn = ship->GetRegion();
+				if (simrgn) {
+					ListIter<Ship> sIter = simrgn->GetShips();
+					while (++sIter) {
+						if (sIter->IsDropship()) {
+							if (sIter->Identity() == index) {
+								selship = sIter.value();
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			SelectShip(selship);
+
+			if (selship) {
+				s = selship->GetRegion()->GetOrbitalRegion();
+				current_region = regions.index(s);
+			}
+		}
+	}
+	break;
+	}
+
+	SetupScroll(s);
+}
+
+// ============================================================================
+// MapView.cpp (Section 2)
+// - Selection helpers (ship/element), scrolling, visibility tests
+// - Region selection helpers
+// - Click selection (SelectAt)
+// - Accessors + Refresh + DrawTitle + DrawGalaxy/DrawSystem/DrawRegion
+// ============================================================================
+
+void
+MapView::SetSelectedShip(Ship* InShip)
+{
+	if (scrolling) return;
+
+	Ship* selship = nullptr;
+
+	switch (seln_mode) {
+	case SELECT_STATION:
+	case SELECT_STARSHIP:
+	case SELECT_FIGHTER:
+	{
+		if (InShip) {
+			SimRegion* simrgn = InShip->GetRegion();
+
+			// NOTE: legacy List::find returns a pointer if present.
+			if (simrgn && simrgn->GetNumShips()) {
+				selship = simrgn->GetShips().find(InShip);
+			}
+		}
+
+		SelectShip(selship);
+
+		// In VIEW_REGION we scroll to ship/elem location, not an Orbital*.
+		// SetupScroll ignores the Orbital* in VIEW_REGION when ship/elem exists,
+		// so pass current selection for VIEW_SYSTEM convenience:
+		if (selship)
+			SetupScroll(GetSelection());
+	}
+	break;
+
+	case SELECT_SYSTEM:
 	case SELECT_PLANET:
 	case SELECT_REGION:
 	default:
 		break;
+	}
+}
 
+void
+MapView::SetSelectedElem(MissionElement* elem)
+{
+	if (scrolling) return;
+
+	switch (seln_mode) {
 	case SELECT_STATION:
 	case SELECT_STARSHIP:
 	case SELECT_FIGHTER:
 	{
 		SelectElem(elem);
+
+		if (current_elem)
+			SetupScroll(GetSelection());
 	}
 	break;
-	}
 
-	if (current_elem)
-		SetupScroll(s);
+	case SELECT_SYSTEM:
+	case SELECT_PLANET:
+	case SELECT_REGION:
+	default:
+		break;
+	}
 }
 
 void
@@ -1145,31 +1106,30 @@ MapView::SetupScroll(Orbital* s)
 		break;
 
 	case VIEW_SYSTEM:
-		if (!s) {
+		if (s == 0) {
 			offset_x = 0;
 			offset_y = 0;
 			scrolling = 0;
 		}
 		else {
-			const FVector& Loc = s->Location();
-
-			scroll_x = (offset_x + Loc.X) / 5.0;
-			scroll_y = (offset_y + Loc.Y) / 5.0;
+			scroll_x = (offset_x + s->Location().X) / 5.0;
+			scroll_y = (offset_y + s->Location().Y) / 5.0;
 			scrolling = 5;
 		}
 		break;
 
 	case VIEW_REGION:
 		if (current_navpt) {
-			// don't move the map
+			// don't move the map while moving/previewing a nav point:
 			scrolling = 0;
 		}
 		else if (current_ship) {
-			const FVector Sloc = current_ship->Location();
+			// NOTE: legacy uses OtherHand() (handedness swap) for ship locations.
+			FVector sloc = ToOtherHand(current_ship->Location());
 
-			if (!IsVisible(Sloc)) {
-				scroll_x = (offset_x + Sloc.X) / 5.0;
-				scroll_y = (offset_y + Sloc.Y) / 5.0;
+			if (!IsVisible(sloc)) {
+				scroll_x = (offset_x + sloc.X) / 5.0;
+				scroll_y = (offset_y + sloc.Y) / 5.0;
 				scrolling = 5;
 			}
 			else {
@@ -1179,11 +1139,11 @@ MapView::SetupScroll(Orbital* s)
 			}
 		}
 		else if (current_elem) {
-			const FVector Sloc = current_elem->Location();
+			FVector sloc = current_elem->Location();
 
-			if (!IsVisible(Sloc)) {
-				scroll_x = (offset_x + Sloc.X) / 5.0;
-				scroll_y = (offset_y + Sloc.Y) / 5.0;
+			if (!IsVisible(sloc)) {
+				scroll_x = (offset_x + sloc.X) / 5.0;
+				scroll_y = (offset_y + sloc.Y) / 5.0;
 				scrolling = 5;
 			}
 			else {
@@ -1202,21 +1162,21 @@ MapView::SetupScroll(Orbital* s)
 }
 
 bool
-MapView::IsVisible(const FVector& Loc)
+MapView::IsVisible(const FVector& loc)
 {
 	if (view_mode == VIEW_REGION) {
 		double scale = c / r;
 		double ox = offset_x * scale;
 		double oy = offset_y * scale;
-		double sx = Loc.X * scale;
-		double sy = Loc.Y * scale;
+		double sx = loc.X * scale;
+		double sy = loc.Y * scale;
 		double cx = rect.w / 2;
 		double cy = rect.h / 2;
 
-		int    test_x = (int)(cx + sx + ox);
-		int    test_y = (int)(cy + sy + oy);
+		int test_x = (int)(cx + sx + ox);
+		int test_y = (int)(cy + sy + oy);
 
-		bool   visible = test_x >= 0 && test_x < rect.w &&
+		bool visible = test_x >= 0 && test_x < rect.w &&
 			test_y >= 0 && test_y < rect.h;
 
 		return visible;
@@ -1264,12 +1224,12 @@ MapView::SetRegion(OrbitalRegion* rgn)
 void
 MapView::SetRegionByName(const char* rgn_name)
 {
-	OrbitalRegion* rgn = nullptr;
+	OrbitalRegion* rgn = 0;
 
 	for (int i = 0; i < regions.size(); i++) {
-		Orbital* orb = regions[i];
-		if (orb && !strcmp(rgn_name, orb->Name())) {
-			rgn = static_cast<OrbitalRegion*>(orb);
+		Orbital* ro = regions[i];
+		if (!strcmp(rgn_name, ro->Name())) {
+			rgn = (OrbitalRegion*)ro;
 			break;
 		}
 	}
@@ -1283,18 +1243,17 @@ void
 MapView::SelectAt(int x, int y)
 {
 	if (scrolling) return;
-	if (c == 0)    return;
+	if (c == 0) return;
 	if (seln_mode < 0) return;
 
-	Orbital* selection_orbital = nullptr;
+	Orbital* s = 0;
 
-	const double scale = r / c;
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
-	const double test_x = (x - rect.x - cx) * scale - offset_x;
-	const double test_y = (y - rect.y - cy) * scale - offset_y;
-
-	double best_dist = 1.0e20;
+	double scale = r / c;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
+	double test_x = (x - rect.x - cx) * scale - offset_x;
+	double test_y = (y - rect.y - cy) * scale - offset_y;
+	double dist = 1.0e20;
 	int    closest = 0;
 
 	if (view_mode == VIEW_GALAXY) {
@@ -1305,18 +1264,18 @@ MapView::SelectAt(int x, int y)
 		if (g)
 			r = g->Radius();
 
-		StarSystem* closest_system = nullptr;
+		StarSystem* closest_system = 0;
 
 		ListIter<StarSystem> iter = system_list;
 		while (++iter) {
 			StarSystem* sys = iter.value();
 
-			const double dx = (sys->Location().X - test_x);
-			const double dy = (sys->Location().Y - test_y);
-			const double d = FMath::Sqrt(dx * dx + dy * dy);
+			double dx = (sys->Location().X - test_x);
+			double dy = (sys->Location().Y - test_y);
+			double d = sqrt(dx * dx + dy * dy);
 
-			if (d < best_dist) {
-				best_dist = d;
+			if (d < dist) {
+				dist = d;
 				closest_system = sys;
 			}
 		}
@@ -1329,83 +1288,77 @@ MapView::SelectAt(int x, int y)
 		switch (seln_mode) {
 		case SELECT_SYSTEM: {
 			if (stars.isEmpty()) return;
-
 			int index = 0;
 			ListIter<Orbital> star = stars;
 			while (++star) {
-				const double dx = (star->Location().X - test_x);
-				const double dy = (star->Location().Y - test_y);
-				const double d = FMath::Sqrt(dx * dx + dy * dy);
+				double dx = (star->Location().X - test_x);
+				double dy = (star->Location().Y - test_y);
+				double d = sqrt(dx * dx + dy * dy);
 
-				if (d < best_dist) {
-					best_dist = d;
+				if (d < dist) {
+					dist = d;
 					closest = index;
 				}
-
 				index++;
 			}
 
 			current_star = closest;
 		}
-						  selection_orbital = stars[current_star];
+						  s = stars[current_star];
 						  break;
 
 		case SELECT_PLANET: {
 			if (planets.isEmpty()) return;
-
 			int index = 0;
 			ListIter<Orbital> planet = planets;
 			while (++planet) {
-				const double dx = (planet->Location().X - test_x);
-				const double dy = (planet->Location().Y - test_y);
-				const double d = FMath::Sqrt(dx * dx + dy * dy);
+				double dx = (planet->Location().X - test_x);
+				double dy = (planet->Location().Y - test_y);
+				double d = sqrt(dx * dx + dy * dy);
 
-				if (d < best_dist) {
-					best_dist = d;
+				if (d < dist) {
+					dist = d;
 					closest = index;
 				}
-
 				index++;
 			}
 
 			current_planet = closest;
 		}
-						  selection_orbital = planets[current_planet];
+						  s = planets[current_planet];
 						  break;
 
 		default:
 		case SELECT_REGION: {
 			if (regions.isEmpty()) return;
-
 			int index = 0;
 			ListIter<Orbital> region = regions;
 			while (++region) {
-				const double dx = (region->Location().X - test_x);
-				const double dy = (region->Location().Y - test_y);
-				const double d = FMath::Sqrt(dx * dx + dy * dy);
+				double dx = (region->Location().X - test_x);
+				double dy = (region->Location().Y - test_y);
+				double d = sqrt(dx * dx + dy * dy);
 
-				if (d < best_dist) {
-					best_dist = d;
+				if (d < dist) {
+					dist = d;
 					closest = index;
 				}
-
 				index++;
 			}
 
 			current_region = closest;
 		}
-						  selection_orbital = regions[current_region];
+						  s = regions[current_region];
 						  break;
 		}
 	}
 
 	else if (view_mode == VIEW_REGION) {
-		best_dist = 5.0e3;
+		dist = 5.0e3;
 
 		if (mission) {
 			Orbital* rgn = regions[current_region];
-			MissionElement* sel_elem = nullptr;
-			Instruction* sel_nav = nullptr;
+			MissionElement* sel_elem = 0;
+			Instruction* sel_nav = 0;
 
 			if (!rgn) return;
 
@@ -1420,14 +1373,13 @@ MapView::SelectAt(int x, int y)
 						Instruction* n = navpt.value();
 
 						if (!_stricmp(n->RegionName(), rgn->Name())) {
-							const FVector nloc = n->Location();
+							FVector  nloc = n->Location();
+							double dx = nloc.X - test_x;
+							double dy = nloc.Y - test_y;
+							double d = sqrt(dx * dx + dy * dy);
 
-							const double dx = nloc.X - test_x;
-							const double dy = nloc.Y - test_y;
-							const double d = FMath::Sqrt(dx * dx + dy * dy);
-
-							if (d < best_dist) {
-								best_dist = d;
+							if (d < dist) {
+								dist = d;
 								sel_nav = n;
 								sel_elem = e;
 							}
@@ -1448,14 +1400,13 @@ MapView::SelectAt(int x, int y)
 					MissionElement* e = elem.value();
 
 					if (e->Region() == rgn->Name() && !e->IsSquadron()) {
-						const FVector sloc = e->Location();
+						FVector  sloc = e->Location();
+						double dx = sloc.X - test_x;
+						double dy = sloc.Y - test_y;
+						double d = sqrt(dx * dx + dy * dy);
 
-						const double dx = sloc.X - test_x;
-						const double dy = sloc.Y - test_y;
-						const double d = FMath::Sqrt(dx * dx + dy * dy);
-
-						if (d < best_dist) {
-							best_dist = d;
+						if (d < dist) {
+							dist = d;
 							sel_elem = e;
 						}
 					}
@@ -1464,16 +1415,15 @@ MapView::SelectAt(int x, int y)
 				SelectElem(sel_elem);
 
 				if (sel_elem)
-					selection_orbital = rgn;
+					s = rgn;
 			}
 		}
-
 		else if (ship) {
 			Sim* sim = Sim::GetSim();
 			Orbital* rgn = regions[current_region];
-			SimRegion* simrgn = nullptr;
-			Ship* sel_ship = nullptr;
-			Instruction* sel_nav = nullptr;
+			SimRegion* simrgn = 0;
+			Ship* sel_ship = 0;
+			Instruction* sel_nav = 0;
 
 			if (sim && rgn)
 				simrgn = sim->FindRegion(rgn->Name());
@@ -1481,27 +1431,26 @@ MapView::SelectAt(int x, int y)
 			// check nav points:
 			if (simrgn) {
 				for (int rr = 0; rr < sim->GetRegions().size(); rr++) {
-					SimRegion* sr = sim->GetRegions().at(rr);
+					SimRegion* region = sim->GetRegions().at(rr);
 
-					for (int i = 0; i < sr->GetShips().size(); i++) {
-						Ship* sref = sr->GetShips().at(i);
+					for (int i = 0; i < region->GetShips().size(); i++) {
+						Ship* sh = region->GetShips().at(i);
 
-						if (sref->GetIFF() == ship->GetIFF() && sref->GetElementIndex() == 1) {
-							ListIter<Instruction> navpt = sref->GetFlightPlan();
+						if (sh->GetIFF() == ship->GetIFF() && sh->GetElementIndex() == 1) {
+							ListIter<Instruction> navpt = sh->GetFlightPlan();
 							while (++navpt) {
 								Instruction* n = navpt.value();
 
 								if (!_stricmp(n->RegionName(), rgn->Name())) {
-									const FVector nloc = n->Location();
+									FVector  nloc = n->Location();
+									double dx = nloc.X - test_x;
+									double dy = nloc.Y - test_y;
+									double d = sqrt(dx * dx + dy * dy);
 
-									const double dx = nloc.X - test_x;
-									const double dy = nloc.Y - test_y;
-									const double d = FMath::Sqrt(dx * dx + dy * dy);
-
-									if (d < best_dist) {
-										best_dist = d;
+									if (d < dist) {
+										dist = d;
 										sel_nav = n;
-										sel_ship = sref;
+										sel_ship = sh;
 									}
 								}
 							}
@@ -1517,20 +1466,19 @@ MapView::SelectAt(int x, int y)
 
 			// check ships:
 			else if (simrgn && simrgn->GetNumShips()) {
-				ListIter<Ship> ship_iter = simrgn->GetShips();
-				while (++ship_iter) {
-					Ship* sref = ship_iter.value();
+				ListIter<Ship> shipIter = simrgn->GetShips();
+				while (++shipIter) {
+					Ship* sh = shipIter.value();
 
-					if (sref && !IsClutter(*sref)) {
-						const FVector sloc = sref->Location();
+					if (!IsClutter(*sh)) {
+						FVector sloc = ToOtherHand(current_ship->Location());
+						double dx = sloc.X - test_x;
+						double dy = sloc.Y - test_y;
+						double d = sqrt(dx * dx + dy * dy);
 
-						const double dx = sloc.X - test_x;
-						const double dy = sloc.Y - test_y;
-						const double d = FMath::Sqrt(dx * dx + dy * dy);
-
-						if (d < best_dist) {
-							best_dist = d;
-							sel_ship = sref;
+						if (d < dist) {
+							dist = d;
+							sel_ship = sh;
 						}
 					}
 				}
@@ -1538,14 +1486,14 @@ MapView::SelectAt(int x, int y)
 				SelectShip(sel_ship);
 			}
 			else {
-				SelectShip(nullptr);
-				SelectNavpt(nullptr);
+				SelectShip(0);
+				SelectNavpt(0);
 			}
 		}
 	}
 
-	if (selection_orbital)
-		SetupScroll(selection_orbital);
+	if (s)
+		SetupScroll(s);
 }
 
 // +--------------------------------------------------------------------+
@@ -1553,7 +1501,7 @@ MapView::SelectAt(int x, int y)
 Orbital*
 MapView::GetSelection()
 {
-	Orbital* s = nullptr;
+	Orbital* s = 0;
 
 	switch (seln_mode) {
 	case SELECT_SYSTEM:
@@ -1611,10 +1559,9 @@ MapView::GetSelectionIndex()
 	case SELECT_FIGHTER:
 	{
 		s = -1;
-
 		Sim* sim = Sim::GetSim();
 		Orbital* rgn = regions[current_region];
-		SimRegion* simrgn = nullptr;
+		SimRegion* simrgn = 0;
 
 		if (sim && rgn)
 			simrgn = sim->FindRegion(rgn->Name());
@@ -1631,20 +1578,18 @@ MapView::GetSelectionIndex()
 	return s;
 }
 
-void
-MapView::DrawTabbedText(SystemFont* MapFont, const char* text)
+void MapView::DrawTabbedText(SystemFont* InFont, const char* text)
 {
-	if (MapFont && text && *text) {
+	if (InFont && text && *text) {
 		Rect label_rect;
 
 		label_rect.w = rect.w;
 		label_rect.h = rect.h;
-
 		label_rect.Inset(8, 8, 8, 8);
 
-		const DWORD text_flags = DT_WORDBREAK | DT_LEFT;
+		DWORD text_flags = DT_WORDBREAK | DT_LEFT;
 
-		active_window->SetFont(MapFont);
+		active_window->SetFont(InFont);
 		active_window->DrawText(text, 0, label_rect, text_flags);
 	}
 }
@@ -1658,7 +1603,7 @@ MapView::Refresh()
 
 	if (!system) {
 		DrawGrid();
-		DrawTabbedText(title_font, Game::GetText("MapView.item.no-system"));
+		DrawTabbedText(TitleFont, "No System");
 		return;
 	}
 
@@ -1689,13 +1634,13 @@ MapView::Refresh()
 			active_menu = nav_menu;
 		}
 		else if (current_ship) {
-			if (current_ship->GetIFF() == ship->GetIFF())
+			if (ship && current_ship->GetIFF() == ship->GetIFF())
 				active_menu = ship_menu;
 			else
 				active_menu = map_menu;
 		}
 		else if (current_elem) {
-			if (editor || current_elem->GetIFF() == mission->Team())
+			if (mission && (editor || current_elem->GetIFF() == mission->Team()))
 				active_menu = ship_menu;
 			else
 				active_menu = map_menu;
@@ -1704,7 +1649,7 @@ MapView::Refresh()
 			active_menu = map_menu;
 		}
 
-		menu_view->SetBackColor(FColor(128, 128, 128, 255));
+		menu_view->SetBackColor(FColor(128, 128, 128));
 		menu_view->SetTextColor(FColor::White);
 		menu_view->SetMenu(active_menu);
 		menu_view->DoMouseFrame();
@@ -1719,11 +1664,13 @@ MapView::Refresh()
 	DrawTitle();
 }
 
+// +--------------------------------------------------------------------+
+
 void
 MapView::DrawTitle()
 {
-	title_font->SetColor(active_window->GetForeColor());
-	DrawTabbedText(title_font, title);
+	TitleFont->SetColor(active_window->GetForeColor());
+	DrawTabbedText(TitleFont, title);
 }
 
 // +--------------------------------------------------------------------+
@@ -1734,29 +1681,29 @@ MapView::DrawGalaxy()
 	title = Game::GetText("MapView.title.Galaxy");
 	DrawGrid();
 
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
 	c = (cx > cy) ? cx : cy;
-	r = 10;
+	r = 10; // * zoom;
 
 	Galaxy* g = Galaxy::GetInstance();
 	if (g)
-		r = g->Radius();
+		r = g->Radius(); // * zoom;
 
-	const double scale = c / r;
+	double scale = c / r;
 	double ox = 0;
 	double oy = 0;
 
 	// compute offset:
 	ListIter<StarSystem> iter = system_list;
 	while (++iter) {
-		StarSystem* s = iter.value();
+		StarSystem* sys = iter.value();
 
-		if (system == s) {
-			if(FMath::Abs(s->Location().X) > 10.0 || FMath::Abs(s->Location().Y) > 10.0) {
-				int sx = (int)s->Location().X;
-				int sy = (int)s->Location().Y;
+		if (system == sys) {
+			if (fabs(sys->Location().X) > 10 || fabs(sys->Location().Y) > 10) {
+				int sx = (int)sys->Location().X;
+				int sy = (int)sys->Location().Y;
 
 				sx -= sx % 10;
 				sy -= sy % 10;
@@ -1770,31 +1717,31 @@ MapView::DrawGalaxy()
 	// draw the list of systems, and their connections:
 	iter.reset();
 	while (++iter) {
-		StarSystem* s = iter.value();
+		StarSystem* sys = iter.value();
 
-		const int sx = (int)(cx + ox + s->Location().X * scale);
-		const int sy = (int)(cy + oy + s->Location().Y * scale);
+		int sx = (int)(cx + ox + sys->Location().X * scale);
+		int sy = (int)(cy + oy + sys->Location().Y * scale);
 
 		if (sx < 4 || sx > rect.w - 4 || sy < 4 || sy > rect.h - 4)
 			continue;
 
-		window->DrawEllipse(sx - 7, sy - 7, sx + 7, sy + 7, Ship::IFFColor(s->Affiliation()));
+		window->DrawEllipse(sx - 7, sy - 7, sx + 7, sy + 7, Ship::IFFColor(sys->Affiliation()));
 
-		if (s == system) {
-			window->DrawLine(0, sy, rect.w, sy, FColor(128, 128, 128), Video::BLEND_ADDITIVE);
-			window->DrawLine(sx, 0, sx, rect.h, FColor(128, 128, 128), Video::BLEND_ADDITIVE);
+		if (sys == system) {
+			DrawLine(0, sy, rect.w, sy, FColor(128, 128, 128), Video::BLEND_ADDITIVE);
+			DrawLine(sx, 0, sx, rect.h, FColor(128, 128, 128), Video::BLEND_ADDITIVE);
 		}
 
 		ListIter<StarSystem> iter2 = system_list;
 		while (++iter2) {
-			StarSystem* s2 = iter2.value();
+			StarSystem* sys2 = iter2.value();
 
-			if (s != s2 && s->HasLinkTo(s2)) {
+			if (sys != sys2 && sys->HasLinkTo(sys2)) {
 				int ax = sx;
 				int ay = sy;
 
-				int bx = (int)(cx + ox + s2->Location().X * scale);
-				int by = (int)(cy + oy + s2->Location().Y * scale);
+				int bx = (int)(cx + ox + sys2->Location().X * scale);
+				int by = (int)(cy + oy + sys2->Location().Y * scale);
 
 				if (ax == bx) {
 					if (ay < by) { ay += 8; by -= 8; }
@@ -1805,44 +1752,44 @@ MapView::DrawGalaxy()
 					else { ax -= 8; bx += 8; }
 				}
 				else {
-					FVector d((float)(bx - ax), (float)(by - ay), 0.0f);
-					d = d.GetSafeNormal();
+					FVector d = FVector(bx, by, 0) - FVector(ax, ay, 0);
+					d.Normalize();
 
-					ax += (int)(8.0f * d.X);
-					ay += (int)(8.0f * d.Y);
+					ax += (int)(8 * d.X);
+					ay += (int)(8 * d.Y);
 
-					bx -= (int)(8.0f * d.X);
-					by -= (int)(8.0f * d.Y);
+					bx -= (int)(8 * d.X);
+					by -= (int)(8 * d.Y);
 				}
 
-				window->DrawLine(ax, ay, bx, by, FColor(120, 120, 120), Video::BLEND_ADDITIVE);
+				DrawLine(ax, ay, bx, by, FColor(120, 120, 120), Video::BLEND_ADDITIVE);
 			}
 		}
 	}
 
 	// finally draw all the stars in the galaxy:
 	if (g) {
-		ListIter<Star> s_iter = g->Stars();
-		while (++s_iter) {
-			Star* s = s_iter.value();
+		ListIter<Star> sIter = g->Stars();
+		while (++sIter) {
+			Star* st = sIter.value();
 
-			const int sx = (int)(cx + ox + s->Location().X * scale);
-			const int sy = (int)(cy + oy + s->Location().Y * scale);
-			const int sr = s->GetSize();
+			int sx = (int)(cx + ox + st->Location().X * scale);
+			int sy = (int)(cy + oy + st->Location().Y * scale);
+			int sr = st->GetSize();
 
 			if (sx < 4 || sx > rect.w - 4 || sy < 4 || sy > rect.h - 4)
 				continue;
 
-			window->FillEllipse(sx - sr, sy - sr, sx + sr, sy + sr, s->GetColor());
+			window->FillEllipse(sx - sr, sy - sr, sx + sr, sy + sr, st->GetColor());
 
-			if (!std::strncmp(s->Name(), "GSC", 3))
+			if (!strncmp(st->Name(), "GSC", 3))
 				font->SetColor(FColor(100, 100, 100));
 			else
 				font->SetColor(FColor::White);
 
 			Rect name_rect(sx - 60, sy + 8, 120, 20);
 			active_window->SetFont(font);
-			active_window->DrawText(s->Name(), 0, name_rect, DT_SINGLELINE | DT_CENTER);
+			active_window->DrawText(st->Name(), 0, name_rect, DT_SINGLELINE | DT_CENTER);
 		}
 	}
 
@@ -1914,9 +1861,14 @@ MapView::DrawSystem()
 	sprintf_s(resolution, "%s: %s", Game::GetText("MapView.info.Resolution").data(), r_txt);
 
 	active_window->SetFont(font);
+	Rect text_rect(4, 4, rect.w - 8, 24);
 
-	Rect TextRect(4, 4, rect.w - 8, 24);
-	active_window->DrawText(resolution, -1, TextRect, DT_SINGLELINE | DT_RIGHT);
+	active_window->DrawText(
+		resolution,
+		-1,
+		text_rect,
+		DT_SINGLELINE | DT_RIGHT
+	);
 }
 
 // +--------------------------------------------------------------------+
@@ -1945,24 +1897,23 @@ MapView::DrawRegion()
 
 	title = caption;
 
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
-	const int size = (int)rgn->Radius();
-	const int step = (int)rgn->GridSpace();
+	int size = (int)rgn->Radius();
+	int step = (int)rgn->GridSpace();
 
 	c = (cx < cy) ? cx : cy;
 	r = rgn->Radius() * zoom;
+	double scale = c / r;
 
-	const double scale = c / r;
+	double ox = offset_x * scale;
+	double oy = offset_y * scale;
 
-	const double ox = offset_x * scale;
-	const double oy = offset_y * scale;
-
-	const int left = (int)(-size * scale + ox + cx);
-	const int right = (int)(size * scale + ox + cx);
-	const int top = (int)(-size * scale + oy + cy);
-	const int bottom = (int)(size * scale + oy + cy);
+	int left = (int)(-size * scale + ox + cx);
+	int right = (int)(size * scale + ox + cx);
+	int top = (int)(-size * scale + oy + cy);
+	int bottom = (int)(size * scale + oy + cy);
 
 	FColor major(48, 48, 48);
 	FColor minor(24, 24, 24);
@@ -1972,12 +1923,16 @@ MapView::DrawRegion()
 
 	for (x = 0; x <= size; x += step) {
 		int lx = (int)(x * scale + ox + cx);
-		if (!tick) window->DrawLine(lx, top, lx, bottom, major, Video::BLEND_ADDITIVE);
-		else       window->DrawLine(lx, top, lx, bottom, minor, Video::BLEND_ADDITIVE);
+		if (!tick)
+			DrawLine(lx, top, lx, bottom, major, Video::BLEND_ADDITIVE);
+		else
+			DrawLine(lx, top, lx, bottom, minor, Video::BLEND_ADDITIVE);
 
 		lx = (int)(-x * scale + ox + cx);
-		if (!tick) window->DrawLine(lx, top, lx, bottom, major, Video::BLEND_ADDITIVE);
-		else       window->DrawLine(lx, top, lx, bottom, minor, Video::BLEND_ADDITIVE);
+		if (!tick)
+			DrawLine(lx, top, lx, bottom, major, Video::BLEND_ADDITIVE);
+		else
+			DrawLine(lx, top, lx, bottom, minor, Video::BLEND_ADDITIVE);
 
 		if (++tick > 3) tick = 0;
 	}
@@ -1986,18 +1941,22 @@ MapView::DrawRegion()
 
 	for (y = 0; y <= size; y += step) {
 		int ly = (int)(y * scale + oy + cy);
-		if (!tick) window->DrawLine(left, ly, right, ly, major, Video::BLEND_ADDITIVE);
-		else       window->DrawLine(left, ly, right, ly, minor, Video::BLEND_ADDITIVE);
+		if (!tick)
+			DrawLine(left, ly, right, ly, major, Video::BLEND_ADDITIVE);
+		else
+			DrawLine(left, ly, right, ly, minor, Video::BLEND_ADDITIVE);
 
 		ly = (int)(-y * scale + oy + cy);
-		if (!tick) window->DrawLine(left, ly, right, ly, major, Video::BLEND_ADDITIVE);
-		else       window->DrawLine(left, ly, right, ly, minor, Video::BLEND_ADDITIVE);
+		if (!tick)
+			DrawLine(left, ly, right, ly, major, Video::BLEND_ADDITIVE);
+		else
+			DrawLine(left, ly, right, ly, minor, Video::BLEND_ADDITIVE);
 
 		if (++tick > 3) tick = 0;
 	}
 
 	int rep = 3;
-	if (r > 70e3) rep = 2;
+	if (r > 70e3)  rep = 2;
 	if (r > 250e3) rep = 1;
 
 	if (campaign && rgn) {
@@ -2020,15 +1979,15 @@ MapView::DrawRegion()
 	else if (ship) {
 		// draw the ships in this region:
 		Sim* sim = Sim::GetSim();
-		SimRegion* simrgn = nullptr;
+		SimRegion* simrgn = 0;
 
 		if (sim && rgn)
 			simrgn = sim->FindRegion(rgn->Name());
 
 		if (simrgn) {
-			ListIter<SimContact> c_iter = simrgn->TrackList(ship->GetIFF());
-			while (++c_iter) {
-				SimContact* contact = c_iter.value();
+			ListIter<SimContact> cIter = simrgn->TrackList(ship->GetIFF());
+			while (++cIter) {
+				SimContact* contact = cIter.value();
 				Ship* s = contact->GetShip();
 
 				if (s && ((int)s->Class() & ship_filter) && !IsClutter(*s) && s != ship)
@@ -2047,19 +2006,19 @@ MapView::DrawRegion()
 			// draw nav routes for allied ships not in the region:
 			ListIter<SimRegion> r_iter = sim->GetRegions();
 			while (++r_iter) {
-				SimRegion* rrgn = r_iter.value();
+				SimRegion* r2 = r_iter.value();
 
-				if (rrgn != simrgn) {
-					ListIter<Ship> rs_iter = rrgn->GetShips();
-					while (++rs_iter) {
-						Ship* s = rs_iter.value();
+				if (r2 != simrgn) {
+					ListIter<Ship> s_iter2 = r2->GetShips();
+					while (++s_iter2) {
+						Ship* s2 = s_iter2.value();
 
-						if (s && !s->IsStatic() && !IsClutter(*s) &&
-							(s->GetIFF() == ship->GetIFF() || s->GetIFF() == 0)) {
+						if (s2 && !s2->IsStatic() && !IsClutter(*s2) &&
+							(s2->GetIFF() == ship->GetIFF() || s2->GetIFF() == 0)) {
 							DrawNavRoute(simrgn->GetOrbitalRegion(),
-								s->GetFlightPlan(),
-								s->MarkerColor(),
-								s, 0);
+								s2->GetFlightPlan(),
+								s2->MarkerColor(),
+								s2, 0);
 						}
 					}
 				}
@@ -2077,20 +2036,43 @@ MapView::DrawRegion()
 	sprintf_s(resolution, "%s: %s", Game::GetText("MapView.info.Resolution").data(), r_txt);
 
 	active_window->SetFont(font);
+	Rect text_rect(4, 4, rect.w - 8, 24);
 
-	Rect TextRect(4, 4, rect.w - 8, 24);
-	active_window->DrawText(resolution, -1, TextRect, DT_SINGLELINE | DT_RIGHT);
+	active_window->DrawText(
+		resolution,
+		-1,
+		text_rect,
+		DT_SINGLELINE | DT_RIGHT
+	);
 }
 
 // +--------------------------------------------------------------------+
 
+void
+MapView::DrawGrid()
+{
+	int grid_step = rect.w / 8;
+	int cx = rect.w / 2;
+	int cy = rect.h / 2;
+
+	FColor cc(32, 32, 32);
+
+	window->DrawLine(0, cy, rect.w, cy, cc, Video::BLEND_ADDITIVE);
+	window->DrawLine(cx, 0, cx, rect.h, cc, Video::BLEND_ADDITIVE);
+
+	for (int i = 1; i < 4; i++) {
+		window->DrawLine(0, cy + (i * grid_step), rect.w, cy + (i * grid_step), cc, Video::BLEND_ADDITIVE);
+		window->DrawLine(0, cy - (i * grid_step), rect.w, cy - (i * grid_step), cc, Video::BLEND_ADDITIVE);
+		window->DrawLine(cx + (i * grid_step), 0, cx + (i * grid_step), rect.h, cc, Video::BLEND_ADDITIVE);
+		window->DrawLine(cx - (i * grid_step), 0, cx - (i * grid_step), rect.h, cc, Video::BLEND_ADDITIVE);
+	}
+}
+
 // +--------------------------------------------------------------------+
 
-void
-MapView::DrawOrbital(Orbital& body, int index)
+void MapView::DrawOrbital(Orbital& body, int index)
 {
 	int type = body.Type();
-
 	if (type == Orbital::NOTHING)
 		return;
 
@@ -2099,8 +2081,8 @@ MapView::DrawOrbital(Orbital& body, int index)
 	int  label_w = 64;
 	int  label_h = 18;
 
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
 	c = (cx < cy) ? cx : cy;
 	r = system->Radius() * zoom;
@@ -2108,15 +2090,16 @@ MapView::DrawOrbital(Orbital& body, int index)
 	if ((r > 300e9) && (type > Orbital::PLANET))
 		return;
 
-	const double xscale = cx / r;
-	const double yscale = cy / r * 0.75;
+	double xscale = cx / r;
+	double yscale = cy / r * 0.75;
 
-	const double ox = offset_x * xscale;
-	const double oy = offset_y * yscale;
+	double ox = offset_x * xscale;
+	double oy = offset_y * yscale;
 
 	double bo_x = body.Orbit() * xscale;
 	double bo_y = body.Orbit() * yscale;
 	double br = body.Radius() * yscale;
+
 	double bx = body.Location().X * xscale;
 	double by = body.Location().Y * yscale;
 
@@ -2127,14 +2110,12 @@ MapView::DrawOrbital(Orbital& body, int index)
 		double min_pr = GetMinRadius(body.Primary()->Type());
 
 		if (index) {
-			if (min_pr < 4)
-				min_pr = 4;
-
+			if (min_pr < 4) min_pr = 4;
 			min_pr *= (index + 1);
 		}
 
-		const double min_x = min_pr * xscale / yscale;
-		const double min_y = min_pr;
+		double min_x = min_pr * xscale / yscale;
+		double min_y = min_pr;
 
 		if (bo_x < min_x) bo_x = min_x;
 		if (bo_y < min_y) bo_y = min_y;
@@ -2146,10 +2127,10 @@ MapView::DrawOrbital(Orbital& body, int index)
 	if (type == Orbital::TERRAIN)
 		bo_x = bo_y;
 
-	const int ipx = (int)(cx + px + ox);
-	const int ipy = (int)(cy + py + oy);
-	const int ibo_x = (int)bo_x;
-	const int ibo_y = (int)bo_y;
+	int ipx = (int)(cx + px + ox);
+	int ipy = (int)(cy + py + oy);
+	int ibo_x = (int)bo_x;
+	int ibo_y = (int)bo_y;
 
 	x1 = ipx - ibo_x;
 	y1 = ipy - ibo_y;
@@ -2157,67 +2138,60 @@ MapView::DrawOrbital(Orbital& body, int index)
 	y2 = ipy + ibo_y;
 
 	if (type != Orbital::TERRAIN) {
-		const double a = x2 - x1;
-		const double b = rect.w * 32.0;
-
+		double a = x2 - x1;
+		double b = rect.w * 32;
 		if (a < b)
-			window->DrawEllipse(x1, y1, x2, y2, FColor(64, 64, 64), Video::BLEND_ADDITIVE);
+			DrawEllipse(x1, y1, x2, y2, FColor(64, 64, 64), Video::BLEND_ADDITIVE);
 	}
 
-	// show body's location on possibly magnified orbit:
-	bx = px + bo_x * FMath::Cos(body.Phase());
-	by = py + bo_y * FMath::Sin(body.Phase());
+	bx = px + bo_x * cos(body.Phase());
+	by = py + bo_y * sin(body.Phase());
 
-	const double min_br = GetMinRadius(type);
+	double min_br = GetMinRadius(type);
 	if (br < min_br) br = min_br;
 
-	FColor color;
-
+	FColor color = FColor::White;
 	switch (type) {
-	case Orbital::STAR:  
-		color = FColor(248, 248, 128); 
-		break;
-	case Orbital::PLANET:  
-		color = FColor(64, 64, 192);
-		break;
-	case Orbital::MOON:    
-		color = FColor(32, 192, 96); 
-		break;
-	case Orbital::REGION:  
-		color = FColor(255, 255, 255); 
-		break;
-	case Orbital::TERRAIN: 
-		color = FColor(16, 128, 48); 
-		break;
-	default:            
-		color = FColor::White;   
-		break;
+	case Orbital::STAR:    color = FColor(248, 248, 128); break;
+	case Orbital::PLANET:  color = FColor(64, 64, 192); break;
+	case Orbital::MOON:    color = FColor(32, 192, 96); break;
+	case Orbital::REGION:  color = FColor(255, 255, 255); break;
+	case Orbital::TERRAIN: color = FColor(16, 128, 48); break;
+	default: break;
 	}
 
-	const int icx = (int)(cx + bx + ox);
-	const int icy = (int)(cy + by + oy);
-	const int ibr = (int)br;
+	int icx = (int)(cx + bx + ox);
+	int icy = (int)(cy + by + oy);
+	int ibr = (int)br;
 
 	x1 = icx - ibr;
 	y1 = icy - ibr;
 	x2 = icx + ibr;
 	y2 = icy + ibr;
 
-	// NOTE: Bitmap->UTexture2D conversion is handled at the type level.
-	// Here we preserve the original "has icon" logic, but do not assume Bitmap APIs exist.
-	if (type < Orbital::REGION) {
-		// If you keep a texture/icon pointer on Orbital, branch here to draw it.
-		// Otherwise, fall back to a simple filled ellipse:
-		window->FillEllipse(x1, y1, x2, y2, color);
+	if (type < Orbital::REGION)
+	{
+		// IMPORTANT: capture to an l-value (copy) so we can take & and call Width()
+		Bitmap* map_icon = body.GetMapIcon();
+
+		if (map_icon.Width() > 64) {
+			if (type == Orbital::STAR)
+				DrawBitmap(x1, y1, x2, y2, map_icon, Video::BLEND_ADDITIVE);
+			else
+				DrawBitmap(x1, y1, x2, y2, map_icon, Video::BLEND_ALPHA);
+		}
+		else {
+			FillEllipse(x1, y1, x2, y2, color);
+		}
 	}
-	else {
-		window->DrawRect(x1, y1, x2, y2, color);
+	else
+	{
+		DrawRect(x1, y1, x2, y2, color);
 
 		if (campaign) {
 			ListIter<Combatant> iter = campaign->GetCombatants();
 			while (++iter) {
 				Combatant* combatant = iter.value();
-
 				if (ibr >= 4 || combatant->GetIFF() == 1)
 					DrawCombatantSystem(combatant, &body, icx, icy, ibr);
 			}
@@ -2241,11 +2215,10 @@ double
 MapView::GetMinRadius(int type)
 {
 	switch (type) {
-	case Orbital::STAR:   return 8;
-	case Orbital::PLANET: return 4;
-	case Orbital::MOON:   return 2;
-	case Orbital::REGION: return 2;
-	default:              break;
+	case Orbital::STAR:     return 8;
+	case Orbital::PLANET:   return 4;
+	case Orbital::MOON:     return 2;
+	case Orbital::REGION:   return 2;
 	}
 
 	return 0;
@@ -2253,114 +2226,233 @@ MapView::GetMinRadius(int type)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::DrawShip(Ship& s, bool current, int rep)
+static void ColorizeBitmap(Bitmap& img, const FColor& Tint)
 {
-	OrbitalRegion* rgn = (OrbitalRegion*)regions[current_region];
-	if (!rgn) return;
+	const int w = img.Width();
+	const int h = img.Height();
 
-	int   x1, y1, x2, y2;
-	POINT shiploc;
+	for (int y = 0; y < h; ++y) {
+		for (int x = 0; x < w; ++x) {
+			const FColor c = img.GetColor(x, y);
 
-	// NOTE: Original used OtherHand(). Ensure your Ship::Location() already matches the map handedness.
-	const FVector sloc = s.Location();
-
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
-
-	c = (cx < cy) ? cx : cy;
-	r = rgn->Radius() * zoom;
-
-	const double scale = c / r;
-
-	const double ox = offset_x * scale;
-	const double oy = offset_y * scale;
-
-	const double rlx = 0;
-	const double rly = 0;
-
-	int sprite_width = 10;
-
-	window->SetFont(font);
-
-	// draw ship icon:
-	if (rep && view_mode == VIEW_REGION && rgn == s.GetRegion()->GetOrbitalRegion()) {
-		const double sx = (sloc.X + rlx) * scale;
-		const double sy = (sloc.Y + rly) * scale;
-
-		shiploc.x = (int)(cx + sx + ox);
-		shiploc.y = (int)(cy + sy + oy);
-
-		const bool ship_visible =
-			shiploc.x >= 0 && shiploc.x < rect.w &&
-			shiploc.y >= 0 && shiploc.y < rect.h;
-
-		if (ship_visible) {
-			if (rep < 3) {
-				window->FillRect(shiploc.x - 2, shiploc.y - 2, shiploc.x + 2, shiploc.y + 2, s.MarkerColor());
-				sprite_width = 2;
-
-				if (&s == ship || !IsCrowded(s))
-					window->Print(shiploc.x - sprite_width, shiploc.y + sprite_width + 2, s.Name());
-			}
-			else {
-				FVector heading = s.Heading();
-				heading.Z = 0.0f;
-				heading = heading.GetSafeNormal();
-
-				double theta = 0;
-
-				if (heading.Y > 0)
-					theta = FMath::Acos(FMath::Clamp(heading.X, -1.0, 1.0));
-				else
-					theta = -FMath::Acos(FMath::Clamp(heading.X, -1.0, 1.0));
-
-				const double THETA_SLICE = 4.0 / PI;
-				const double THETA_OFFSET = PI + THETA_SLICE / 2.0;
-
-				int sprite_index = (int)((theta + THETA_OFFSET) * THETA_SLICE);
-				const int nsprites = s.Design()->map_sprites.size();
-
-				if (nsprites) {
-					if (sprite_index < 0 || sprite_index >= nsprites)
-						sprite_index = sprite_index % nsprites;
-
-					// NOTE: map_sprites should be migrated from Bitmap* to UTexture2D* at the design layer.
-					// When that happens, replace this branch with your engine/UI draw call for textures.
-					UE_LOG(LogTemp, VeryVerbose, TEXT("MapView::DrawShip: sprite draw path not yet migrated (Ship=%s)"), *FString(s.Name()));
-				}
-				else {
-					// fallback primitives:
-					if (s.IsStatic()) {
-						window->FillRect(shiploc.x - 6, shiploc.y - 6, shiploc.x + 6, shiploc.y + 6, s.MarkerColor());
-						window->DrawRect(shiploc.x - 6, shiploc.y - 6, shiploc.x + 6, shiploc.y + 6, FColor::White);
-					}
-					else if (s.IsStarship()) {
-						window->FillRect(shiploc.x - 4, shiploc.y - 4, shiploc.x + 4, shiploc.y + 4, s.MarkerColor());
-						window->DrawRect(shiploc.x - 4, shiploc.y - 4, shiploc.x + 4, shiploc.y + 4, FColor::White);
-					}
-					else {
-						window->FillRect(shiploc.x - 3, shiploc.y - 3, shiploc.x + 3, shiploc.y + 3, s.MarkerColor());
-						window->DrawRect(shiploc.x - 3, shiploc.y - 3, shiploc.x + 3, shiploc.y + 3, FColor::White);
-					}
-				}
-
-				window->Print(shiploc.x - sprite_width, shiploc.y + sprite_width + 2, s.Name());
+			if (c != FColor::Black && c != FColor::White) {
+				const uint8 shade = (uint8)(c.B / 2);
+				img.SetColor(x, y, ShadeTint(Tint, shade));
 			}
 		}
 	}
 
-	// draw current ship marker:
-	if (current && Text(s.GetRegion()->GetName()) == regions[current_region]->Name()) {
-		x1 = (int)(shiploc.x - sprite_width - 1);
-		x2 = (int)(shiploc.x + sprite_width + 1);
-		y1 = (int)(shiploc.y - sprite_width - 1);
-		y2 = (int)(shiploc.y + sprite_width + 1);
+	img.AutoMask();
+}
 
-		window->DrawRect(x1, y1, x2, y2, FColor::White);
+static FVector shipshape1[] = {
+	FVector(6.f,  0.f, 0.f),
+	FVector(-6.f,  4.f, 0.f),
+	FVector(-6.f, -4.f, 0.f)
+};
+
+static FVector shipshape2[] = {
+	FVector(8.f,  0.f, 0.f),
+	FVector(4.f,  4.f, 0.f),
+	FVector(-8.f,  4.f, 0.f),
+	FVector(-8.f, -4.f, 0.f),
+	FVector(4.f, -4.f, 0.f)
+};
+
+static FVector shipshape3[] = {
+	FVector(8.f,  8.f, 0.f),
+	FVector(-8.f,  8.f, 0.f),
+	FVector(-8.f, -8.f, 0.f),
+	FVector(8.f, -8.f, 0.f)
+};
+
+// +--------------------------------------------------------------------+
+
+void MapView::DrawShip(Ship& s, bool current, int rep)
+{
+	OrbitalRegion* rgn = (OrbitalRegion*)regions[current_region];
+	if (!rgn)
+		return;
+
+	int x1, y1, x2, y2;
+
+	FVector shiploc(0, 0, 0);
+
+	// Legacy handedness fix:
+	FVector sloc = ToOtherHand(FVector(s.Location()));
+
+	double cx = rect.w * 0.5;
+	double cy = rect.h * 0.5;
+
+	c = (cx < cy) ? cx : cy;
+	r = rgn->Radius() * zoom;
+
+	double scale = c / r;
+	double ox = offset_x * scale;
+	double oy = offset_y * scale;
+
+	double rlx = 0;
+	double rly = 0;
+
+	int sprite_width = 10;
+
+	SetFont(font);
+
+	// ----------------------------------------------------
+	// Draw ship icon
+	// ----------------------------------------------------
+	if (rep && view_mode == VIEW_REGION &&
+		s.GetRegion() &&
+		rgn == s.GetRegion()->GetOrbitalRegion())
+	{
+		double sx = (sloc.X + rlx) * scale;
+		double sy = (sloc.Y + rly) * scale;
+
+		shiploc.X = (int)(cx + sx + ox);
+		shiploc.Y = (int)(cy + sy + oy);
+
+		bool ship_visible =
+			shiploc.X >= 0 && shiploc.X < rect.w &&
+			shiploc.Y >= 0 && shiploc.Y < rect.h;
+
+		if (ship_visible) {
+			// ------------------------------------------------
+			// Low-detail marker
+			// ------------------------------------------------
+			if (rep < 3) {
+				FillRect(
+					(int)shiploc.X - 2,
+					(int)shiploc.Y - 2,
+					(int)shiploc.X + 2,
+					(int)shiploc.Y + 2,
+					s.MarkerColor()
+				);
+
+				sprite_width = 2;
+
+				if (&s == ship || !IsCrowded(s)) {
+					Print(
+						(int)shiploc.X - sprite_width,
+						(int)shiploc.Y + sprite_width + 2,
+						s.Name()
+					);
+				}
+			}
+			// ------------------------------------------------
+			// High-detail sprite
+			// ------------------------------------------------
+			else {
+				FVector heading = ToOtherHand(FVector(s.Heading()));
+				heading.Z = 0;
+				heading.Normalize();
+
+				double theta;
+				if (heading.Y > 0)
+					theta = acos(heading.X);
+				else
+					theta = -acos(heading.X);
+
+				const double THETA_SLICE = 4.0 / PI;
+				const double THETA_OFFSET = PI + THETA_SLICE * 0.5;
+
+				int sprite_index = (int)((theta + THETA_OFFSET) * THETA_SLICE);
+				int nsprites = s.Design()->map_sprites.size();
+
+				if (nsprites > 0) {
+					sprite_index = sprite_index % nsprites;
+					if (sprite_index < 0)
+						sprite_index += nsprites;
+
+					Bitmap* map_sprite = s.Design()->map_sprites[sprite_index];
+
+					Bitmap bmp;
+					bmp.CopyBitmap(*map_sprite);
+					ColorizeBitmap(bmp, s.MarkerColor());
+
+					sprite_width = bmp.Width() / 2;
+					int h = bmp.Height() / 2;
+
+					DrawBitmap(
+						(int)shiploc.X - sprite_width,
+						(int)shiploc.Y - h,
+						(int)shiploc.X + sprite_width,
+						(int)shiploc.Y + h,
+						&bmp,
+						Video::BLEND_ALPHA
+					);
+				}
+				// ------------------------------------------------
+				// Fallback shapes
+				// ------------------------------------------------
+				else {
+					if (s.IsStatic()) {
+						FillRect(
+							(int)shiploc.X - 6, (int)shiploc.Y - 6,
+							(int)shiploc.X + 6, (int)shiploc.Y + 6,
+							s.MarkerColor()
+						);
+						DrawRect(
+							(int)shiploc.X - 6, (int)shiploc.Y - 6,
+							(int)shiploc.X + 6, (int)shiploc.Y + 6,
+							FColor::White
+						);
+						sprite_width = 6;
+					}
+					else if (s.IsStarship()) {
+						FillRect(
+							(int)shiploc.X - 4, (int)shiploc.Y - 4,
+							(int)shiploc.X + 4, (int)shiploc.Y + 4,
+							s.MarkerColor()
+						);
+						DrawRect(
+							(int)shiploc.X - 4, (int)shiploc.Y - 4,
+							(int)shiploc.X + 4, (int)shiploc.Y + 4,
+							FColor::White
+						);
+						sprite_width = 4;
+					}
+					else {
+						FillRect(
+							(int)shiploc.X - 3, (int)shiploc.Y - 3,
+							(int)shiploc.X + 3, (int)shiploc.Y + 3,
+							s.MarkerColor()
+						);
+						DrawRect(
+							(int)shiploc.X - 3, (int)shiploc.Y - 3,
+							(int)shiploc.X + 3, (int)shiploc.Y + 3,
+							FColor::White
+						);
+						sprite_width = 3;
+					}
+				}
+
+				Print(
+					(int)shiploc.X - sprite_width,
+					(int)shiploc.Y + sprite_width + 2,
+					s.Name()
+				);
+			}
+		}
 	}
 
-	// only see routes for your own team:
+	// ----------------------------------------------------
+	// Current selection highlight
+	// ----------------------------------------------------
+	if (current &&
+		s.GetRegion() &&
+		Text(s.GetRegion()->GetName()) == regions[current_region]->Name())
+	{
+		x1 = (int)(shiploc.X - sprite_width - 1);
+		x2 = (int)(shiploc.X + sprite_width + 1);
+		y1 = (int)(shiploc.Y - sprite_width - 1);
+		y2 = (int)(shiploc.Y + sprite_width + 1);
+
+		DrawRect(x1, y1, x2, y2, FColor::White);
+	}
+
+	// ----------------------------------------------------
+	// Draw nav routes (friendly only)
+	// ----------------------------------------------------
 	if (s.GetIFF() == 0 || (ship && s.GetIFF() == ship->GetIFF())) {
 		DrawNavRoute(rgn, s.GetFlightPlan(), s.MarkerColor(), &s, 0);
 	}
@@ -2373,7 +2465,7 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 {
 	if (!mission) return;
 
-	const bool visible =
+	bool visible =
 		editor ||
 		s.GetIFF() == 0 ||
 		s.GetIFF() == mission->Team() ||
@@ -2385,53 +2477,51 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 	if (!rgn) return;
 
 	int   x1, y1, x2, y2;
-	POINT shiploc;
+	FVector shiploc{};
 
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
 	c = (cx < cy) ? cx : cy;
 	r = rgn->Radius() * zoom;
 
-	const double scale = c / r;
+	double scale = c / r;
 
-	const double ox = offset_x * scale;
-	const double oy = offset_y * scale;
+	double ox = offset_x * scale;
+	double oy = offset_y * scale;
 
-	const double rlx = 0;
-	const double rly = 0;
+	double rlx = 0;
+	double rly = 0;
 
 	int sprite_width = 10;
 
 	window->SetFont(font);
 
-	// draw element icon:
+	// draw ship icon:
 	if (!_stricmp(s.Region(), rgn->Name())) {
-		const FVector loc = s.Location();
+		double sx = (s.Location().X + rlx) * scale;
+		double sy = (s.Location().Y + rly) * scale;
 
-		const double sx = (loc.X + rlx) * scale;
-		const double sy = (loc.Y + rly) * scale;
+		shiploc.X = (int)(cx + sx + ox);
+		shiploc.Y = (int)(cy + sy + oy);
 
-		shiploc.x = (int)(cx + sx + ox);
-		shiploc.y = (int)(cy + sy + oy);
-
-		const bool ship_visible =
-			shiploc.x >= 0 && shiploc.x < rect.w &&
-			shiploc.y >= 0 && shiploc.y < rect.h;
+		bool ship_visible =
+			shiploc.X >= 0 && shiploc.X < rect.w &&
+			shiploc.Y >= 0 && shiploc.Y < rect.h;
 
 		if (ship_visible) {
 			if (rep < 3) {
-				window->FillRect(shiploc.x - 2, shiploc.y - 2, shiploc.x + 2, shiploc.y + 2, s.MarkerColor());
+				window->FillRect(shiploc.X - 2, shiploc.Y - 2, shiploc.X + 2, shiploc.Y + 2, s.MarkerColor());
 				sprite_width = 2;
 
 				if (!IsCrowded(s))
-					window->Print(shiploc.x - sprite_width, shiploc.y + sprite_width + 2, s.Name());
+					window->Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, s.Name());
 			}
 			else {
 				double theta = s.Heading();
 
-				const double THETA_SLICE = 4.0 / PI;
-				const double THETA_OFFSET = PI / 2.0;
+				const double THETA_SLICE = 4 / PI;
+				const double THETA_OFFSET = PI / 2;
 
 				int sprite_index = (int)((theta + THETA_OFFSET) * THETA_SLICE);
 				int nsprites = 0;
@@ -2443,23 +2533,35 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 					if (sprite_index < 0 || sprite_index >= nsprites)
 						sprite_index = sprite_index % nsprites;
 
-					// NOTE: map_sprites should be migrated from Bitmap* to UTexture2D* at the design layer.
-					UE_LOG(LogTemp, VeryVerbose, TEXT("MapView::DrawElem: sprite draw path not yet migrated (Elem=%s)"), *FString(s.Name()));
+					Bitmap* map_sprite = s.GetDesign()->map_sprites[sprite_index];
+
+					Bitmap bmp;
+					bmp.CopyBitmap(*map_sprite);
+					ColorizeBitmap(bmp, s.MarkerColor());
+					sprite_width = bmp.Width() / 2;
+					int h = bmp.Height() / 2;
+
+					DrawBitmap(shiploc.X - sprite_width,
+						shiploc.Y - h,
+						shiploc.X + sprite_width,
+						shiploc.Y + h,
+						&bmp,
+						Video::BLEND_ALPHA);
 				}
 				else {
-					theta -= PI / 2.0;
+					theta -= PI / 2;
 
 					if (s.IsStatic()) {
-						window->FillRect(shiploc.x - 6, shiploc.y - 6, shiploc.x + 6, shiploc.y + 6, s.MarkerColor());
-						window->DrawRect(shiploc.x - 6, shiploc.y - 6, shiploc.x + 6, shiploc.y + 6, FColor::White);
+						FillRect(shiploc.X - 6, shiploc.Y - 6, shiploc.X + 6, shiploc.Y + 6, s.MarkerColor());
+						DrawRect(shiploc.X - 6, shiploc.Y - 6, shiploc.X + 6, shiploc.Y + 6, FColor::White);
 					}
 					else if (s.IsStarship()) {
-						window->FillRect(shiploc.x - 4, shiploc.y - 4, shiploc.x + 4, shiploc.y + 4, s.MarkerColor());
-						window->DrawRect(shiploc.x - 4, shiploc.y - 4, shiploc.x + 4, shiploc.y + 4, FColor::White);
+						window->FillRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, s.MarkerColor());
+						window->DrawRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, FColor::White);
 					}
 					else {
-						window->FillRect(shiploc.x - 3, shiploc.y - 3, shiploc.x + 3, shiploc.y + 3, s.MarkerColor());
-						window->DrawRect(shiploc.x - 3, shiploc.y - 3, shiploc.x + 3, shiploc.y + 3, FColor::White);
+						window->FillRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, s.MarkerColor());
+						window->DrawRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, FColor::White);
 					}
 				}
 
@@ -2470,19 +2572,19 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 				else
 					strcpy_s(label, (const char*)s.Name());
 
-				window->Print(shiploc.x - sprite_width, shiploc.y + sprite_width + 2, label);
+				window->Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, label);
 			}
 		}
 	}
 
-	// draw current marker:
+	// draw current element marker:
 	if (current && s.Region() == regions[current_region]->Name()) {
-		x1 = (int)(shiploc.x - sprite_width - 1);
-		x2 = (int)(shiploc.x + sprite_width + 1);
-		y1 = (int)(shiploc.y - sprite_width - 1);
-		y2 = (int)(shiploc.y + sprite_width + 1);
+		x1 = (int)(shiploc.X - sprite_width - 1);
+		x2 = (int)(shiploc.X + sprite_width + 1);
+		y1 = (int)(shiploc.Y - sprite_width - 1);
+		y2 = (int)(shiploc.Y + sprite_width + 1);
 
-		window->DrawRect(x1, y1, x2, y2, FColor::White);
+		DrawRect(x1, y1, x2, y2, FColor::White);
 	}
 
 	// only see routes for your own team:
@@ -2493,226 +2595,252 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::DrawNavRoute(OrbitalRegion* Region,
-	List<Instruction>& Route,
-	FColor RouteMarker,
-	Ship* InShip,
-	MissionElement* InElem)
+void MapView::DrawNavRoute(
+	OrbitalRegion* rgn,
+	List<Instruction>& s_route,
+	FColor               s_marker,
+	Ship* route_ship,   
+	MissionElement* elem
+)
 {
-	int X1 = 0, Y1 = 0, X2 = 0, Y2 = 0;
+	if (!rgn)
+		return;
 
-	const double CX = rect.w / 2.0;
-	const double CY = rect.h / 2.0;
+	int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 
-	c = (CX < CY) ? CX : CY;
-	r = system->Radius() * zoom;
+	const double cx = rect.w * 0.5;
+	const double cy = rect.h * 0.5;
+
+	c = (cx < cy) ? cx : cy;
+	r = system ? (system->Radius() * zoom) : 1.0;
 
 	if (view_mode == VIEW_REGION) {
-		if (!Region)
-			return;
-
-		r = Region->Radius() * zoom;
+		r = rgn->Radius() * zoom;
 	}
 
-	const double Scale = c / r;
-	const double OX = offset_x * Scale;
-	const double OY = offset_y * Scale;
+	const double scale = c / r;
+	const double ox = offset_x * scale;
+	const double oy = offset_y * scale;
 
-	FVector OldLoc(0, 0, 0);
-	double  OldX = 0;
-	double  OldY = 0;
-	bool    OldIn = false;
+	// --- Helpers ------------------------------------------------------
 
-	FVector FirstLoc(0, 0, 0);
-	int     FirstX = 0;
-	int     FirstY = 0;
-	bool    FirstIn = false;
+	auto ScaleColor = [](const FColor& In, float S) -> FColor
+		{
+			FLinearColor L(In);
+			L *= S;
+			return L.ToFColor(true);
+		};
 
-	bool DrawRoute = true;
-	bool DrawBold = false;
+	auto AbsI = [](int v) { return v < 0 ? -v : v; };
 
-	if (InShip && InShip->GetElementIndex() > 1)
-		DrawRoute = false;
-	
-	if (InShip && InShip == current_ship) {
-		RouteMarker = (FLinearColor(RouteMarker) * 1.5f).ToFColor(true);
-		DrawBold = true;
+	// --- Route state --------------------------------------------------
+
+	FVector old_loc(0, 0, 0);
+	double  old_x = 0;
+	double  old_y = 0;
+	bool    old_in = false;
+
+	FVector first_loc(0, 0, 0);
+	int     first_x = 0;
+	int     first_y = 0;
+	bool    first_in = false;
+
+	bool draw_route = true;
+	bool draw_bold = false;
+
+	// Legacy rule: element index > 1 means "not flight lead" => don't draw route:
+	if (route_ship && route_ship->GetElementIndex() > 1)
+		draw_route = false;
+
+	// Bold highlight if current selection:
+	if (route_ship && route_ship == current_ship) {
+		s_marker = ScaleColor(s_marker, 1.5f);
+		draw_bold = true;
 	}
-	else if (InElem && InElem == current_elem) {
-		RouteMarker = (FLinearColor(RouteMarker) * 1.5f).ToFColor(true);
-		DrawBold = true;
-	}
-
-	for (int RouteIndex = 0; RouteIndex < Route.size(); RouteIndex++) {
-		Instruction* NavPt = Route[RouteIndex];
-
-		if (!_stricmp(NavPt->RegionName(), Region->Name())) {
-			const FVector NavLoc = NavPt->Location();
-			const double  NavX = NavLoc.X * Scale;
-			const double  NavY = NavLoc.Y * Scale;
-
-			const int ISX = (int)(CX + NavX + OX);
-			const int ISY = (int)(CY + NavY + OY);
-
-			if (OldIn && DrawRoute) {
-				const int IOX = (int)(CX + OldX + OX);
-				const int IOY = (int)(CY + OldY + OY);
-				window->DrawLine(IOX, IOY, ISX, ISY, RouteMarker);
-
-				const int DXP = (IOX - ISX);
-				const int DYP = (IOY - ISY);
-
-				if (DrawBold) {
-					if (DXP > DYP)
-						window->DrawLine(IOX, IOY + 1, ISX, ISY + 1, RouteMarker);
-					else
-						window->DrawLine(IOX + 1, IOY, ISX + 1, ISY, RouteMarker);
-				}
-
-				if ((DXP * DXP + DYP * DYP) > 2000) {
-					const double Dist = (NavLoc - OldLoc).Size();
-
-					const int IMX = (int)(CX + (OldX + NavX) / 2.0 + OX);
-					const int IMY = (int)(CY + (OldY + NavY) / 2.0 + OY);
-
-					char DistTxt[32];
-					FormatNumber(DistTxt, Dist);
-
-					font->SetColor(FColor(128, 128, 128));
-					window->SetFont(font);
-					window->Print(IMX - 20, IMY - 6, DistTxt);
-					font->SetColor(FColor::White);
-				}
-			}
-
-			X1 = ISX - 3;
-			Y1 = ISY - 3;
-			X2 = ISX + 3;
-			Y2 = ISY + 3;
-
-			FColor Mark = FColor::White;
-			if (NavPt->Status() > Instruction::ACTIVE) {
-				Mark = FColor(128, 128, 128);
-			}
-			else if (!FirstIn) {
-				FirstIn = true;
-				FirstLoc = NavLoc;
-				FirstX = ISX;
-				FirstY = ISY;
-			}
-
-			if (DrawRoute) {
-				window->DrawLine(X1, Y1, X2, Y2, Mark);
-				window->DrawLine(X1, Y2, X2, Y1, Mark);
-
-				if (NavPt == current_navpt)
-					window->DrawRect(X1 - 2, Y1 - 2, X2 + 2, Y2 + 2, Mark);
-
-				char Buf[256];
-				sprintf_s(Buf, "%d", RouteIndex + 1);
-
-				window->SetFont(font);
-				window->Print(X2 + 3, Y1, Buf);
-
-				if (NavPt == current_navpt) {
-					if (NavPt->TargetName() && strlen(NavPt->TargetName())) {
-						sprintf_s(Buf, "%s %s",
-							Game::GetText(Text("MapView.item.") + Instruction::ActionName(NavPt->Action())).data(),
-							NavPt->TargetName());
-						window->Print(X2 + 3, Y1 + 10, Buf);
-					}
-					else {
-						sprintf_s(Buf, "%s",
-							Game::GetText(Text("MapView.item.") + Instruction::ActionName(NavPt->Action())).data());
-						window->Print(X2 + 3, Y1 + 10, Buf);
-					}
-
-					sprintf_s(Buf, "%s",
-						Game::GetText(Text("MapView.item.") + Instruction::FormationName(NavPt->Formation())).data());
-					window->Print(X2 + 3, Y1 + 20, Buf);
-
-					sprintf_s(Buf, "%d", NavPt->Speed());
-					window->Print(X2 + 3, Y1 + 30, Buf);
-
-					if (NavPt->HoldTime()) {
-						char HoldTime[32];
-						FormatTime(HoldTime, NavPt->HoldTime());
-
-						sprintf_s(Buf, "%s %s", Game::GetText("MapView.item.Hold").data(), HoldTime);
-						window->Print(X2 + 3, Y1 + 40, Buf);
-					}
-				}
-			}
-
-			OldLoc = NavLoc;
-			OldX = NavX;
-			OldY = NavY;
-			OldIn = true;
-		}
-		else {
-			OldLoc = NavPt->Location();
-			OldX = 0;
-			OldY = 0;
-			OldIn = false;
-		}
+	else if (elem && elem == current_elem) {
+		s_marker = ScaleColor(s_marker, 1.5f);
+		draw_bold = true;
 	}
 
-	// If the ship/element and the first active navpoint are both in-region,
-	// draw a line from the ship/element to the first active navpoint:
-	if (FirstIn) {
-		OldIn = false;
+	// --- Draw segments + navpoint markers ----------------------------
 
-		if (InShip && InShip->GetRegion()) {
-			OldIn = (InShip->GetRegion()->GetOrbitalRegion() == Region);
+	for (int i = 0; i < s_route.size(); i++) {
+		Instruction* navpt = s_route[i];
+		if (!navpt)
+			continue;
 
-			if (OldIn) {
-				OldLoc = InShip->Location();
-				OldX = OldLoc.X * Scale;
-				OldY = OldLoc.Y * Scale;
-			}
-		}
-		else if (InElem) {
-			OldIn = (_stricmp(InElem->Region(), Region->Name()) == 0);
-
-			if (OldIn) {
-				OldLoc = InElem->Location();
-				OldX = OldLoc.X * Scale;
-				OldY = OldLoc.Y * Scale;
-			}
+		// Only draw navpoints that belong to this region:
+		if (_stricmp(navpt->RegionName(), rgn->Name()) != 0) {
+			old_loc = FVector(navpt->Location());
+			old_x = 0;
+			old_y = 0;
+			old_in = false;
+			continue;
 		}
 
-		if (OldIn) {
-			const int IOX = (int)(CX + OldX + OX);
-			const int IOY = (int)(CY + OldY + OY);
+		const FVector nav_loc = FVector(navpt->Location());
 
-			window->DrawLine(IOX, IOY, FirstX, FirstY, RouteMarker);
+		const double nav_x = nav_loc.X * scale;
+		const double nav_y = nav_loc.Y * scale;
 
-			const int DXP = (IOX - FirstX);
-			const int DYP = (IOY - FirstY);
+		const int isx = (int)(cx + nav_x + ox);
+		const int isy = (int)(cy + nav_y + oy);
 
-			if (DrawBold) {
-				if (DXP > DYP)
-					window->DrawLine(IOX, IOY + 1, FirstX, FirstY + 1, RouteMarker);
+		// draw segment from previous point:
+		if (old_in && draw_route) {
+			const int iox = (int)(cx + old_x + ox);
+			const int ioy = (int)(cy + old_y + oy);
+
+			window->DrawLine(iox, ioy, isx, isy, s_marker, 0);
+
+			const int dx = (iox - isx);
+			const int dy = (ioy - isy);
+
+			if (draw_bold) {
+				// Legacy behavior was a rough "more horizontal vs vertical" decision.
+				if (AbsI(dx) > AbsI(dy))
+					window->DrawLine(iox, ioy + 1, isx, isy + 1, s_marker, 0);
 				else
-					window->DrawLine(IOX + 1, IOY, FirstX + 1, FirstY, RouteMarker);
+					window->DrawLine(iox + 1, ioy, isx + 1, isy, s_marker, 0);
 			}
 
-			if ((DXP * DXP + DYP * DYP) > 2000) {
-				const double Dist = (FirstLoc - OldLoc).Size();
+			// distance label:
+			if ((dx * dx + dy * dy) > 2000) {
+				const double dist = FVector(nav_loc - old_loc).Length();
 
-				const double NavX = FirstLoc.X * Scale;
-				const double NavY = FirstLoc.Y * Scale;
+				const int imx = (int)(cx + (old_x + nav_x) * 0.5 + ox);
+				const int imy = (int)(cy + (old_y + nav_y) * 0.5 + oy);
 
-				const int IMX = (int)(CX + (OldX + NavX) / 2.0 + OX);
-				const int IMY = (int)(CY + (OldY + NavY) / 2.0 + OY);
-
-				char DistTxt[32];
-				FormatNumber(DistTxt, Dist);
+				char dist_txt[32];
+				FormatNumber(dist_txt, dist);
 
 				font->SetColor(FColor(128, 128, 128));
-				window->SetFont(font);
-				window->Print(IMX - 20, IMY - 6, DistTxt);
+				SetFont(font);
+				Print(imx - 20, imy - 6, dist_txt);
+				font->SetColor(FColor::White);
+			}
+		}
+
+		// navpoint marker:
+		x1 = isx - 3; y1 = isy - 3;
+		x2 = isx + 3; y2 = isy + 3;
+
+		FColor markColor = FColor::White;
+
+		if (navpt->Status() > Instruction::ACTIVE) {
+			markColor = FColor(128, 128, 128);
+		}
+		else if (!first_in) {
+			first_in = true;
+			first_loc = nav_loc;
+			first_x = isx;
+			first_y = isy;
+		}
+
+		if (draw_route) {
+			window->DrawLine(x1, y1, x2, y2, markColor, 0);
+			window->DrawLine(x1, y2, x2, y1, markColor, 0);
+
+			if (navpt == current_navpt)
+				window->DrawRect(x1 - 2, y1 - 2, x2 + 2, y2 + 2, markColor, 0);
+
+			char buf[256];
+			sprintf_s(buf, "%d", i + 1);
+			window->SetFont(font);
+			window->Print(x2 + 3, y1, buf);
+
+			// expanded info for selected navpoint:
+			if (navpt == current_navpt) {
+				if (navpt->TargetName() && strlen(navpt->TargetName())) {
+					sprintf_s(buf, "%s %s",
+						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->Action())).data(),
+						navpt->TargetName());
+					window->Print(x2 + 3, y1 + 10, buf);
+				}
+				else {
+					sprintf_s(buf, "%s",
+						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->Action())).data());
+					window->Print(x2 + 3, y1 + 10, buf);
+				}
+
+				sprintf_s(buf, "%s",
+					Game::GetText(Text("MapView.item.") + Instruction::FormationName(navpt->Formation())).data());
+				window->Print(x2 + 3, y1 + 20, buf);
+
+				sprintf_s(buf, "%d", navpt->Speed());
+				window->Print(x2 + 3, y1 + 30, buf);
+
+				if (navpt->HoldTime()) {
+					char hold_time[32];
+					FormatTime(hold_time, navpt->HoldTime());
+
+					sprintf_s(buf, "%s %s", Game::GetText("MapView.item.Hold").data(), hold_time);
+					window->Print(x2 + 3, y1 + 40, buf);
+				}
+			}
+		}
+
+		old_loc = nav_loc;
+		old_x = nav_x;
+		old_y = nav_y;
+		old_in = true;
+	}
+
+	// --- Draw line from ship/elem to first active navpoint ------------
+
+	if (first_in) {
+		old_in = false;
+
+		if (route_ship && route_ship->GetRegion()) {
+			old_in = (route_ship->GetRegion()->GetOrbitalRegion() == rgn);
+
+			if (old_in) {
+				old_loc = ToOtherHand(FVector(route_ship->Location()));
+				old_x = old_loc.X * scale;
+				old_y = old_loc.Y * scale;
+			}
+		}
+		else if (elem) {
+			old_in = (_stricmp(elem->Region(), rgn->Name()) == 0);
+
+			if (old_in) {
+				old_loc = FVector(elem->Location());
+				old_x = old_loc.X * scale;
+				old_y = old_loc.Y * scale;
+			}
+		}
+
+		if (old_in) {
+			const int iox = (int)(cx + old_x + ox);
+			const int ioy = (int)(cy + old_y + oy);
+
+			window->DrawLine(iox, ioy, first_x, first_y, s_marker, 0);
+
+			const int dx = (iox - first_x);
+			const int dy = (ioy - first_y);
+
+			if (draw_bold) {
+				if (AbsI(dx) > AbsI(dy))
+					window->DrawLine(iox, ioy + 1, first_x, first_y + 1, s_marker, 0);
+				else
+					window->DrawLine(iox + 1, ioy, first_x + 1, first_y, s_marker, 0);
+			}
+
+			if ((dx * dx + dy * dy) > 2000) {
+				const double dist = FVector(first_loc - old_loc).Length();
+
+				const double nav_x = first_loc.X * scale;
+				const double nav_y = first_loc.Y * scale;
+
+				const int imx = (int)(cx + (old_x + nav_x) * 0.5 + ox);
+				const int imy = (int)(cy + (old_y + nav_y) * 0.5 + oy);
+
+				char dist_txt[32];
+				FormatNumber(dist_txt, dist);
+
+				font->SetColor(FColor(128, 128, 128));
+				SetFont(font);
+				Print(imx - 20, imy - 6, dist_txt);
 				font->SetColor(FColor::White);
 			}
 		}
@@ -2721,38 +2849,39 @@ MapView::DrawNavRoute(OrbitalRegion* Region,
 
 // +--------------------------------------------------------------------+
 
-void
-MapView::DrawCombatantSystem(Combatant* InCombatant, Orbital* InRegion, int X, int Y, int Radius)
+void MapView::DrawCombatantSystem(Combatant* CombatantPtr, Orbital* RegionOrbital, int InX, int InY, int InRadiusPx)
 {
-	const int Team = InCombatant ? InCombatant->GetIFF() : 0;
+	if (!CombatantPtr) return;
+
+	const int Team = CombatantPtr->GetIFF();
 
 	int X1 = 0;
 	int X2 = 0;
-	int Y1 = Y - Radius;
+	int Y1 = InY - InRadiusPx;
 	int Align = 0;
 
 	switch (Team) {
 	case 0:
-		X1 = X - 64;
-		X2 = X + 64;
-		Y1 = Y + Radius + 4;
+		X1 = InX - 64;
+		X2 = InX + 64;
+		Y1 = InY + InRadiusPx + 4;
 		Align = DT_CENTER;
 		break;
 
 	case 1:
-		X1 = X - 200;
-		X2 = X - Radius - 4;
+		X1 = InX - 200;
+		X2 = InX - InRadiusPx - 4;
 		Align = DT_RIGHT;
 		break;
 
 	default:
-		X1 = X + Radius + 4;
-		X2 = X + 200;
+		X1 = InX + InRadiusPx + 4;
+		X2 = InX + 200;
 		Align = DT_LEFT;
 		break;
 	}
 
-	DrawCombatGroupSystem(InCombatant ? InCombatant->GetForce() : 0, InRegion, X1, X2, Y1, Align);
+	DrawCombatGroupSystem(CombatantPtr->GetForce(), RegionOrbital, X1, X2, Y1, Align);
 }
 
 // +--------------------------------------------------------------------+
@@ -2764,18 +2893,22 @@ MapView::DrawCombatGroupSystem(CombatGroup* group, Orbital* rgn, int x1, int x2,
 		return;
 
 	char txt[80];
-	Rect TextRect(x1, y, x2 - x1, 12);
 
 	if (group->GetRegion() == rgn->Name()) {
 		switch (group->GetType()) {
 		case ECOMBATGROUP_TYPE::CARRIER_GROUP:
 		case ECOMBATGROUP_TYPE::BATTLE_GROUP:
 		case ECOMBATGROUP_TYPE::DESTROYER_SQUADRON:
+		{
 			sprintf_s(txt, "%s '%s'", group->GetShortDescription(), group->Name().data());
 			active_window->SetFont(font);
-			active_window->DrawText(txt, 0, TextRect, a);
+
+			Rect text_rect(x1, y, x2 - x1, 12);
+			active_window->DrawText(txt, 0, text_rect, a);
+
 			y += 10;
 			break;
+		}
 
 		case ECOMBATGROUP_TYPE::BATTALION:
 		case ECOMBATGROUP_TYPE::STATION:
@@ -2783,11 +2916,21 @@ MapView::DrawCombatGroupSystem(CombatGroup* group, Orbital* rgn, int x1, int x2,
 		case ECOMBATGROUP_TYPE::MINEFIELD:
 		case ECOMBATGROUP_TYPE::BATTERY:
 		case ECOMBATGROUP_TYPE::MISSILE:
+		{
 			active_window->SetFont(font);
-			active_window->DrawText(group->GetShortDescription(), 0, TextRect, a);
-			y += 10;
 
+			Rect text_rect(x1, y, x2 - x1, 12);
+
+			active_window->DrawText(
+				group->GetShortDescription(),
+				0,
+				text_rect,
+				a
+			);
+
+			y += 10;
 			break;
+		}
 
 		default:
 			break;
@@ -2827,88 +2970,101 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 	OrbitalRegion* rgn = (OrbitalRegion*)regions[current_region];
 	if (!rgn) return;
 
-	POINT shiploc;
+	FVector shiploc{};
 
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
 	c = (cx < cy) ? cx : cy;
 	r = rgn->Radius() * zoom;
 
-	const double scale = c / r;
+	double scale = c / r;
 
-	const double ox = offset_x * scale;
-	const double oy = offset_y * scale;
+	double ox = offset_x * scale;
+	double oy = offset_y * scale;
 
-	const double rlx = 0;
-	const double rly = 0;
+	double rlx = 0;
+	double rly = 0;
 
 	int sprite_width = 10;
 
 	if (group->GetUnits().size() > 0) {
-		CombatUnit* unit = nullptr;
+		CombatUnit* unit = 0;
 
 		for (int i = 0; i < group->GetUnits().size(); i++) {
 			unit = group->GetUnits().at(i);
-			if (unit && (unit->Count() - unit->DeadCount() > 0))
+
+			if (unit->Count() - unit->DeadCount() > 0)
 				break;
 		}
 
+		// draw unit icon:
 		if (unit && unit->GetRegion() == rgn->Name() && unit->Type() > (int) CLASSIFICATION::LCA && unit->Count() > 0) {
-			const FVector uloc = unit->Location();
+			double sx = (unit->Location().X + rlx) * scale;
+			double sy = (unit->Location().Y + rly) * scale;
 
-			const double sx = (uloc.X + rlx) * scale;
-			const double sy = (uloc.Y + rly) * scale;
+			shiploc.X = (int)(cx + sx + ox);
+			shiploc.Y = (int)(cy + sy + oy);
 
-			shiploc.x = (int)(cx + sx + ox);
-			shiploc.y = (int)(cy + sy + oy);
-
-			const bool ship_visible =
-				shiploc.x >= 0 && shiploc.x < rect.w &&
-				shiploc.y >= 0 && shiploc.y < rect.h;
+			bool ship_visible =
+				shiploc.X >= 0 && shiploc.X < rect.w &&
+				shiploc.Y >= 0 && shiploc.Y < rect.h;
 
 			if (ship_visible) {
 				if (rep < 3) {
-					window->FillRect(shiploc.x - 2, shiploc.y - 2, shiploc.x + 2, shiploc.y + 2, unit->MarkerColor());
+					window->FillRect(shiploc.X - 2, shiploc.Y - 2, shiploc.X + 2, shiploc.Y + 2, unit->MarkerColor());
 					sprite_width = 2;
 
 					char buf[256];
 					sprintf_s(buf, "%s", unit->Name().data());
-
 					window->SetFont(font);
-					window->Print(shiploc.x - sprite_width, shiploc.y + sprite_width + 2, buf);
+					window->Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, buf);
 				}
 				else {
-					const int sprite_index = 2;
-
+					int sprite_index = 2;
 					int nsprites = 0;
+
 					if (unit->GetDesign())
 						nsprites = unit->GetDesign()->map_sprites.size();
 
 					if (nsprites) {
-						// NOTE: map_sprites should be migrated from Bitmap* to UTexture2D* at the design layer.
-						UE_LOG(LogTemp, VeryVerbose, TEXT("MapView::DrawCombatGroup: sprite draw path not yet migrated (Unit=%s)"), *FString(unit->Name().data()));
+						if (sprite_index < 0 || sprite_index >= nsprites)
+							sprite_index = sprite_index % nsprites;
+
+						Bitmap* map_sprite = unit->GetDesign()->map_sprites[sprite_index];
+
+						Bitmap bmp;
+						bmp.CopyBitmap(*map_sprite);
+						ColorizeBitmap(bmp, unit->MarkerColor());
+						sprite_width = bmp.Width() / 2;
+						int h = bmp.Height() / 2;
+
+						window->DrawBitmap(shiploc.X - sprite_width,
+							shiploc.Y - h,
+							shiploc.X + sprite_width,
+							shiploc.Y + h,
+							&bmp,
+							Video::BLEND_ALPHA);
 					}
 					else {
 						if (unit->IsStatic()) {
-							window->FillRect(shiploc.x - 6, shiploc.y - 6, shiploc.x + 6, shiploc.y + 6, unit->MarkerColor());
-							window->DrawRect(shiploc.x - 6, shiploc.y - 6, shiploc.x + 6, shiploc.y + 6, FColor::White);
+							FillRect(shiploc.X - 6, shiploc.Y - 6, shiploc.X + 6, shiploc.Y + 6, unit->MarkerColor());
+							DrawRect(shiploc.X - 6, shiploc.Y - 6, shiploc.X + 6, shiploc.Y + 6, FColor::White);
 						}
 						else if (unit->IsStarship()) {
-							window->FillRect(shiploc.x - 4, shiploc.y - 4, shiploc.x + 4, shiploc.y + 4, unit->MarkerColor());
-							window->DrawRect(shiploc.x - 4, shiploc.y - 4, shiploc.x + 4, shiploc.y + 4, FColor::White);
+							FillRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, unit->MarkerColor());
+							DrawRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, FColor::White);
 						}
 						else {
-							window->FillRect(shiploc.x - 3, shiploc.y - 3, shiploc.x + 3, shiploc.y + 3, unit->MarkerColor());
-							window->DrawRect(shiploc.x - 3, shiploc.y - 3, shiploc.x + 3, shiploc.y + 3, FColor::White);
+							FillRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, unit->MarkerColor());
+							DrawRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, FColor::White);
 						}
 					}
 
 					char label[128];
 					strcpy_s(label, unit->GetDescription());
-
-					window->SetFont(font);
-					window->Print(shiploc.x - sprite_width, shiploc.y + sprite_width + 2, label);
+					SetFont(font);
+					Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, label);
 				}
 			}
 		}
@@ -2924,55 +3080,41 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 
 // +--------------------------------------------------------------------+
 
-bool MapView::IsClutter(Ship& Test)
+bool
+MapView::IsClutter(Ship& test)
 {
-	// Get leader
-	Ship* Lead = Test.GetLeader();
+	Ship* lead = test.GetLeader();
 
-	// This ship is the leader
-	if (Lead == &Test)
-	{
+	if (lead == &test)   // this is the leader:
 		return false;
-	}
 
-	// Too close to leader?
-	if (Lead)
-	{
-		FVector TestLoc;
-		FVector LeadLoc;
+	// too close to leader?
+	if (lead) {
+		FVector testloc{}, leadloc{};
 
-		GetShipLoc(Test, TestLoc);
-		GetShipLoc(*Lead, LeadLoc);
+		GetShipLoc(test, testloc);
+		GetShipLoc(*lead, leadloc);
 
-		const float Dx = TestLoc.X - LeadLoc.X;
-		const float Dy = TestLoc.Y - LeadLoc.Y;
-		const float DistSq = Dx * Dx + Dy * Dy;
+		double dx = testloc.X - leadloc.X;
+		double dy = testloc.Y - leadloc.Y;
+		double d = dx * dx + dy * dy;
 
-		// 8 units squared = 64
-		if (DistSq <= 64.0f)
-		{
+		if (d <= 64)
 			return true;
-		}
 	}
 
 	return false;
 }
-
 
 // +--------------------------------------------------------------------+
 
 bool
 MapView::IsCrowded(Ship& test)
 {
-	FVector testloc, refloc;
-
+	FVector      testloc{}, refloc{};
 	Sim* sim = Sim::GetSim();
-	if (!sim) return false;
-
 	Orbital* rgn = regions[current_region];
-	if (!rgn) return false;
-
-	SimRegion* simrgn = sim->FindRegion(rgn->Name());
+	SimRegion* simrgn = sim ? sim->FindRegion(rgn->Name()) : 0;
 
 	if (simrgn) {
 		GetShipLoc(test, testloc);
@@ -2981,13 +3123,12 @@ MapView::IsCrowded(Ship& test)
 		while (++s) {
 			Ship* ref = s.value();
 
-			// too close?
 			if (ref && ref != &test) {
 				GetShipLoc(*ref, refloc);
 
-				const double dx = (double)testloc.X - (double)refloc.X;
-				const double dy = (double)testloc.Y - (double)refloc.Y;
-				const double d = dx * dx + dy * dy;
+				double dx = testloc.X - refloc.X;
+				double dy = testloc.Y - refloc.Y;
+				double d = dx * dx + dy * dy;
 
 				if (d <= 64)
 					return true;
@@ -3001,8 +3142,8 @@ MapView::IsCrowded(Ship& test)
 void
 MapView::GetShipLoc(Ship& s, FVector& shiploc)
 {
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
 	c = (cx < cy) ? cx : cy;
 	r = system->Radius() * zoom;
@@ -3014,10 +3155,10 @@ MapView::GetShipLoc(Ship& s, FVector& shiploc)
 		r = rgn->Radius() * zoom;
 	}
 
-	const double scale = c / r;
+	double scale = c / r;
 
-	const double ox = offset_x * scale;
-	const double oy = offset_y * scale;
+	double ox = offset_x * scale;
+	double oy = offset_y * scale;
 
 	double rlx = 0;
 	double rly = 0;
@@ -3033,12 +3174,8 @@ MapView::GetShipLoc(Ship& s, FVector& shiploc)
 
 	if (view_mode == VIEW_SYSTEM ||
 		(view_mode == VIEW_REGION && rgn == s.GetRegion()->GetOrbitalRegion())) {
-
-		// NOTE: Original used handedness conversion elsewhere. Ensure Ship::Location() matches your map convention.
-		const FVector loc = s.Location();
-
-		const double sx = (loc.X + rlx) * scale;
-		const double sy = (loc.Y + rly) * scale;
+		double sx = (s.Location().X + rlx) * scale;
+		double sy = (s.Location().Y + rly) * scale;
 
 		shiploc.X = (int)(cx + sx + ox);
 		shiploc.Y = (int)(cy + sy + oy);
@@ -3054,24 +3191,25 @@ MapView::GetShipLoc(Ship& s, FVector& shiploc)
 bool
 MapView::IsCrowded(MissionElement& test)
 {
-	FVector testloc, refloc;
-
+	FVector    testloc{}, refloc{};
+	Sim* sim = Sim::GetSim();
 	Orbital* rgn = regions[current_region];
-	if (!rgn) return false;
+
+	(void)sim; // legacy keeps sim around; unused in this branch.
 
 	if (mission) {
 		GetElemLoc(test, testloc);
 
-		ListIter<MissionElement> s = mission->GetElements();
-		while (++s) {
-			MissionElement* ref = s.value();
+		ListIter<MissionElement> it = mission->GetElements();
+		while (++it) {
+			MissionElement* ref = it.value();
 
 			if (ref && ref != &test && !_stricmp(ref->Region(), rgn->Name())) {
 				GetElemLoc(*ref, refloc);
 
-				const double dx = (double)testloc.X - (double)refloc.X;
-				const double dy = (double)testloc.Y - (double)refloc.Y;
-				const double d = dx * dx + dy * dy;
+				double dx = testloc.X - refloc.X;
+				double dy = testloc.Y - refloc.Y;
+				double d = dx * dx + dy * dy;
 
 				if (d <= 64)
 					return true;
@@ -3085,8 +3223,8 @@ MapView::IsCrowded(MissionElement& test)
 void
 MapView::GetElemLoc(MissionElement& s, FVector& shiploc)
 {
-	const double cx = rect.w / 2.0;
-	const double cy = rect.h / 2.0;
+	double cx = rect.w / 2;
+	double cy = rect.h / 2;
 
 	c = (cx < cy) ? cx : cy;
 	r = system->Radius() * zoom;
@@ -3098,10 +3236,10 @@ MapView::GetElemLoc(MissionElement& s, FVector& shiploc)
 		r = rgn->Radius() * zoom;
 	}
 
-	const double scale = c / r;
+	double scale = c / r;
 
-	const double ox = offset_x * scale;
-	const double oy = offset_y * scale;
+	double ox = offset_x * scale;
+	double oy = offset_y * scale;
 
 	double rlx = 0;
 	double rly = 0;
@@ -3117,11 +3255,8 @@ MapView::GetElemLoc(MissionElement& s, FVector& shiploc)
 
 	if (view_mode == VIEW_SYSTEM ||
 		(view_mode == VIEW_REGION && !_stricmp(s.Region(), rgn->Name()))) {
-
-		const FVector loc = s.Location();
-
-		const double sx = (loc.X + rlx) * scale;
-		const double sy = (loc.Y + rly) * scale;
+		double sx = (s.Location().X + rlx) * scale;
+		double sy = (s.Location().Y + rly) * scale;
 
 		shiploc.X = (int)(cx + sx + ox);
 		shiploc.Y = (int)(cy + sy + oy);
@@ -3137,7 +3272,7 @@ MapView::GetElemLoc(MissionElement& s, FVector& shiploc)
 OrbitalRegion*
 MapView::GetRegion() const
 {
-	OrbitalRegion* result = nullptr;
+	OrbitalRegion* result = 0;
 
 	if (current_region < regions.size())
 		result = (OrbitalRegion*)regions[current_region];
@@ -3253,7 +3388,7 @@ int
 MapView::OnMouseMove(int x, int y)
 {
 	if (captured) {
-		EventTarget* test = nullptr;
+		EventTarget* test = 0;
 		EventDispatch* dispatch = EventDispatch::GetInstance();
 		if (dispatch)
 			test = dispatch->GetCapture();
@@ -3264,8 +3399,8 @@ MapView::OnMouseMove(int x, int y)
 		}
 		else {
 			if (dragging) {
-				const int delta_x = x - mouse_x;
-				const int delta_y = y - mouse_y;
+				int delta_x = x - mouse_x;
+				int delta_y = y - mouse_y;
 
 				offset_x += delta_x * r / c;
 				offset_y += delta_y * r / c;
@@ -3273,24 +3408,21 @@ MapView::OnMouseMove(int x, int y)
 				Mouse::SetCursorPos(mouse_x, mouse_y);
 			}
 			else if (view_mode == VIEW_REGION) {
-				const double scale = r / c;
-
+				double scale = r / c;
 				click_x = (x - rect.x - rect.w / 2) * scale - offset_x;
 				click_y = (y - rect.y - rect.h / 2) * scale - offset_y;
 
 				if ((adding_navpt || moving_navpt) && current_navpt) {
 					FVector loc = current_navpt->Location();
-					loc.X = (float)click_x;
-					loc.Y = (float)click_y;
-
+					loc.X = click_x;
+					loc.Y = click_y;
 					current_navpt->SetLocation(loc);
 					current_navpt->SetStatus(current_status);
 				}
 				else if (editor && moving_elem && current_elem) {
 					FVector loc = current_elem->Location();
-					loc.X = (float)click_x;
-					loc.Y = (float)click_y;
-
+					loc.X = click_x;
+					loc.Y = click_y;
 					current_elem->SetLocation(loc);
 				}
 			}
@@ -3353,17 +3485,15 @@ MapView::OnLButtonDown(int x, int y)
 			captured = SetCapture();
 
 		if (view_mode == VIEW_REGION) {
-			const double scale = r / c;
-
+			double scale = r / c;
 			click_x = (x - rect.x - rect.w / 2) * scale - offset_x;
 			click_y = (y - rect.y - rect.h / 2) * scale - offset_y;
 
 			if (current_navpt) {
-				const FVector nloc = current_navpt->Location();
-
-				const double dx = nloc.X - click_x;
-				const double dy = nloc.Y - click_y;
-				const double d = FMath::Sqrt(dx * dx + dy * dy);
+				FVector  nloc = current_navpt->Location();
+				double dx = nloc.X - click_x;
+				double dy = nloc.Y - click_y;
+				double d = sqrt(dx * dx + dy * dy);
 
 				if (d < 5e3) {
 					moving_navpt = true;
@@ -3375,18 +3505,6 @@ MapView::OnLButtonDown(int x, int y)
 							}
 						}
 					}
-				}
-			}
-
-			else if (editor && current_elem) {
-				const FVector nloc = current_elem->Location();
-
-				const double dx = nloc.X - click_x;
-				const double dy = nloc.Y - click_y;
-				const double d = FMath::Sqrt(dx * dx + dy * dy);
-
-				if (d < 5e3) {
-					moving_elem = true;
 				}
 			}
 		}
@@ -3413,8 +3531,7 @@ MapView::OnLButtonUp(int x, int y)
 		}
 
 		if (view_mode == VIEW_REGION) {
-			const double scale = r / c;
-
+			double scale = r / c;
 			click_x = (x - rect.x - rect.w / 2) * scale - offset_x;
 			click_y = (y - rect.y - rect.h / 2) * scale - offset_y;
 
@@ -3431,16 +3548,6 @@ MapView::OnLButtonUp(int x, int y)
 
 	if ((adding_navpt || moving_navpt) && current_navpt) {
 		current_navpt->SetStatus(current_status);
-
-		Sim* sim = Sim::GetSim();
-		if (sim) {
-			Ship* s = current_ship;
-
-			if (s && s->GetElement()) {
-				SimElement* elem = s->GetElement();
-				const int index = elem->GetNavIndex(current_navpt);
-			}
-		}
 	}
 
 	adding_navpt = false;
@@ -3449,7 +3556,3 @@ MapView::OnLButtonUp(int x, int y)
 
 	return active_window->OnLButtonUp(x, y);
 }
-
-
-
-

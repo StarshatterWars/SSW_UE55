@@ -216,6 +216,8 @@ protected:
 
     SystemFont* HUDFont = FontManager::Find("HUD");
     SystemFont* GUIFont = FontManager::Find("GUI");
+    SystemFont* TitleFont = FontManager::Find("Limerick12");
+    SystemFont* MapFont = FontManager::Find("Verdana");
 
     // Opaque child list (defined in View.cpp) to avoid template issues in headers:
     FViewChildren* children = nullptr;

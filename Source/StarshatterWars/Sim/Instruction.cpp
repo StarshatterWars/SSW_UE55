@@ -172,15 +172,15 @@ Instruction::GetTarget()
 	return target;
 }
 
-void
-Instruction::SetTarget(const char* n)
+void Instruction::SetTarget(const FString& InTarget)
 {
-	if (n && *n && tgt_name != n) {
-		tgt_name = n;
-		tgt_desc = n;
+	if (!InTarget.IsEmpty() && tgt_name != InTarget)
+	{
+		tgt_name = InTarget;
+		tgt_desc = InTarget;
 
-		if (target)
-			target = 0;
+		// Clear resolved target pointer (forces re-resolve)
+		target = nullptr;
 	}
 }
 

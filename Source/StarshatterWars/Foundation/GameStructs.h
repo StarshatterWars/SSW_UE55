@@ -651,7 +651,7 @@ enum class INSTRUCTION_STATUS : uint8
 };
 
 UENUM()
-enum class INSTRCUTION_FORMATION : uint8
+enum class INSTRUCTION_FORMATION : uint8
 {
 	DIAMOND,
 	SPREAD,

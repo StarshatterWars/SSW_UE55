@@ -195,7 +195,7 @@ QuantumView::ExecFrame()
 			for (int i = 0; i < max_items; i++) {
 				if (Keyboard::KeyDown('1' + i)) {
 					MenuItem* item = quantum_menu->GetItem(i);
-					if (item && item->GetEnabled()) {
+					if (item && item->IsEnabled()) {
 
 						SimRegion* rgn = (SimRegion*)item->GetData();
 

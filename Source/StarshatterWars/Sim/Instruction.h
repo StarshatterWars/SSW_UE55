@@ -15,6 +15,7 @@
 */
 
 #pragma once
+#include "CoreMinimal.h"
 #include "Types.h"
 #include "SimObject.h"
 #include "Text.h"
@@ -22,6 +23,7 @@
 
 // Minimal Unreal include (required for by-value FVector in the public API):
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // +--------------------------------------------------------------------+
 
@@ -134,7 +136,7 @@ public:
 	void         SetFarcast(int f) { farcast = f; }
 	void         SetHoldTime(double t) { hold_time = t; }
 
-	void         SetTarget(const char* n);
+	void		 SetTarget(const FString& InTarget); 
 	void         SetTarget(SimObject* s);
 	void         SetTargetDesc(const char* d);
 	void         ClearTarget();

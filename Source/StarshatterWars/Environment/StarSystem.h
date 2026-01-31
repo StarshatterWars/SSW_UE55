@@ -26,7 +26,7 @@
 
 // +--------------------------------------------------------------------+
 
-class UTexture2D;
+class Bitmap;
 
 class StarSystem;
 class Orbital;
@@ -218,7 +218,7 @@ public:
 	FVector           Location()     const { return loc; }
 	Graphic* Rep()          const { return rep; }
 
-	UTexture2D* GetMapIcon()   const { return map_icon; }
+	Bitmap* GetMapIcon()   const { return map_icon; }
 	void              SetMapIcon(UTexture2D* img) { map_icon = img; }
 
 	StarSystem* System()       const { return system; }
@@ -242,7 +242,7 @@ protected:
 	FVector           loc;
 	bool              retro;
 	Graphic* rep;
-	UTexture2D* map_icon;
+	Bitmap* map_icon;
 
 	StarSystem* system;
 	Orbital* primary;

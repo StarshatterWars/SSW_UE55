@@ -1,230 +1,288 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (C) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         MapView.h
-	AUTHOR:       Carlos Bott
-	ORIGINAL AUTHOR & STUDIO: John DiCamillo / Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
+    SUBSYSTEM:    Stars.exe (legacy) -> Starshatter Wars (UE port)
+    FILE:         MapView.h
+    AUTHOR:       Carlos Bott
 
-	OVERVIEW
-	========
-	Star Map class
+    OVERVIEW
+    ========
+    MapView (UE port, plain C++ class)
+    - Tactical/strategic map rendering and interaction
+    - Keeps Starshatter core container/string types (Text, List, etc.)
+    - Uses Unreal math types for vectors (FVector) and colors (FColor)
 */
 
 #pragma once
 
-#include "Types.h"
-#include "SimObject.h"
+#include "Math/Vector.h"               // FVector
+#include "Math/Color.h"                // FColor
+#include "Math/UnrealMathUtility.h"    // Math
+
+// Minimal project includes (keep header light):
 #include "View.h"
-#include "EventTarget.h"
 #include "List.h"
 #include "Text.h"
+#include "SimObject.h"
+#include "EventTarget.h"
 
-// Minimal Unreal include for FVector:
-#include "Math/Vector.h"
-#include "Math/Color.h"
-
-// +--------------------------------------------------------------------+
-
+// Forward declarations (aggressive):
 class ActiveWindow;
-class StarSystem;
-class Orbital;
-class OrbitalRegion;
-class Ship;
-class Instruction;
-class Mission;
-class MissionElement;
 class Campaign;
 class Combatant;
 class CombatGroup;
+class CombatUnit;
+class Galaxy;
+class Instruction;
 class Menu;
-class MenuItem;
 class MenuView;
-class SystemFont;
+class Mission;
+class MissionElement;
+class Orbital;
+class OrbitalBody;
+class OrbitalRegion;
+class Ship;
+class Sim;
+class SimElement;
+class SimLight;
+class SimProjector;
+class SimScene;
+class SimShot;
+class SimSystem;
+class Star;
+class StarSystem;
+class Window;
+class Bitmap;
 
-// Unreal render asset (forward declared to keep header light):
-class UTexture2D;
+// NOTE: User mapping requested "Contact* should by SimCo0ntact*"
+class SimContact;
 
-const int EID_MAP_CLICK = 1000;
+// Requested renames:
+class CameraManager;   // was CameraDirector
+class MusicManager;    // was MusicDirector
+class SystemFont;      // was Font
+
+#include "GameStructs.h" // last include
 
 // +--------------------------------------------------------------------+
 
-class MapView : public View,
-	public EventTarget,
-	public SimObserver
+class MapView : public View, public SimObserver, public EventTarget
 {
 public:
-	MapView(Window* win);
-	virtual ~MapView();
+    MapView(View* InParent, ActiveWindow* InActiveWindow);
+    virtual ~MapView();
 
-	// Operations:
-	virtual void      Refresh();
-	virtual void      OnWindowMove();
-	virtual void      OnShow();
-	virtual void      OnHide();
+    // View:
+    virtual void      Refresh() override;
+    virtual void      OnWindowMove() override;
 
-	virtual void      DrawTitle();
-	virtual void      DrawGalaxy();
-	virtual void      DrawSystem();
-	virtual void      DrawRegion();
+    // Visibility lifecycle:
+    virtual void      OnShow();
+    virtual void      OnHide();
 
-	virtual void      DrawGrid();
-	virtual void      DrawOrbital(Orbital& orbital, int index);
-	virtual void      DrawShip(Ship& ship, bool current = false, int rep = 3);
-	virtual void      DrawElem(MissionElement& elem, bool current = false, int rep = 3);
-	virtual void      DrawNavRoute(OrbitalRegion* rgn,
-		List<Instruction>& route,
-		FColor                smarker,
-		Ship* ship = 0,
-		MissionElement* elem = 0);
+    // Input:
+    virtual int       OnMouseMove(int x, int y);
+    virtual int       OnRButtonDown(int x, int y);
+    virtual int       OnRButtonUp(int x, int y);
+    virtual int       OnLButtonDown(int x, int y);
+    virtual int       OnLButtonUp(int x, int y);
+    virtual int       OnClick();
 
-	virtual void      DrawCombatantSystem(Combatant* c, Orbital* rgn, int x, int y, int r);
-	virtual void      DrawCombatGroupSystem(CombatGroup* g, Orbital* rgn, int x1, int x2, int& y, int a);
-	virtual void      DrawCombatGroup(CombatGroup* g, int rep = 3);
+    // Data binding:
+    void              SetGalaxy(List<StarSystem>& g);
+    void              SetSystem(StarSystem* s);
+    void              SetShip(Ship* s);
+    void              SetMission(Mission* m);
+    void              SetCampaign(Campaign* cpn);
 
-	virtual int       GetViewMode() const { return view_mode; }
-	virtual void      SetViewMode(int mode);
-	virtual void      SetSelectionMode(int mode);
-	virtual int       GetSelectionMode() const { return seln_mode; }
-	virtual void      SetSelection(int index);
-	virtual void      SetSelectedShip(Ship* ship);
-	virtual void      SetSelectedElem(MissionElement* elem);
-	virtual void      SetRegion(OrbitalRegion* rgn);
-	virtual void      SetRegionByName(const char* rgn_name);
-	virtual void      SelectAt(int x, int y);
-	virtual Orbital* GetSelection();
-	virtual Ship* GetSelectedShip();
-	virtual MissionElement* GetSelectedElem();
-	virtual int       GetSelectionIndex();
-	virtual void      SetShipFilter(DWORD f) { ship_filter = f; }
+    // Modes:
+    int               GetViewMode() const;
+    void              SetViewMode(int mode);
 
-	// Event Target Interface:
-	virtual int       OnMouseMove(int x, int y);
-	virtual int       OnLButtonDown(int x, int y);
-	virtual int       OnLButtonUp(int x, int y);
-	virtual int       OnClick();
-	virtual int       OnRButtonDown(int x, int y);
-	virtual int       OnRButtonUp(int x, int y);
+    void              SetSelectionMode(int mode);
+    int               GetSelectionMode() const;
 
-	virtual bool      IsEnabled()    const;
-	virtual bool      IsVisible()    const;
-	virtual bool      IsFormActive() const;
-	virtual Rect      TargetRect()   const;
+    // Selection:
+    void              SetSelection(int index);
+    void              SetSelectedShip(Ship* sel);
+    void              SetSelectedElem(MissionElement* elem);
 
-	void              ZoomIn();
-	void              ZoomOut();
+    Orbital* GetSelection();
+    int               GetSelectionIndex();
 
-	void              SetGalaxy(List<StarSystem>& systems);
-	void              SetSystem(StarSystem* s);
-	void              SetMission(Mission* m);
-	void              SetShip(Ship* s);
-	void              SetCampaign(Campaign* c);
+    Ship* GetSelectedShip();
+    MissionElement* GetSelectedElem();
 
-	// Convert Starshatter math type to Unreal FVector:
-	bool              IsVisible(const FVector& loc);
+    // Region:
+    void              SetRegion(OrbitalRegion* rgn);
+    void              SetRegionByName(const char* rgn_name);
+    OrbitalRegion* GetRegion() const;
 
-	// accessors:
-	virtual void      GetClickLoc(double& x, double& y) { x = click_x; y = click_y; }
-	List<StarSystem>& GetGalaxy() { return system_list; }
-	StarSystem* GetSystem() const { return system; }
-	OrbitalRegion* GetRegion() const;
+    // Zoom:
+    void              ZoomIn();
+    void              ZoomOut();
 
-	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const { return "MapWin"; }
-
-	bool              GetEditorMode()            const { return editor; }
-	void              SetEditorMode(bool b) { editor = b; }
+    // Sim observer:
+    virtual bool      Update(SimObject* obj) override;
 
 protected:
-	virtual void      BuildMenu();
-	virtual void      ClearMenu();
-	virtual void      ProcessMenuItem(int action);
-	virtual bool      SetCapture();
-	virtual bool      ReleaseCapture();
+    // Internals:
+    void              BuildMenu();
+    void              ClearMenu();
+    void              ProcessMenuItem(int action);
 
-	virtual void      DrawTabbedText(SystemFont* font, const char* text);
+    // Capture:
+    bool              SetCapture();
+    bool              ReleaseCapture();
 
-	bool              IsClutter(Ship& s);
-	bool              IsCrowded(Ship& s);
-	bool              IsCrowded(MissionElement& elem);
-	void              GetShipLoc(Ship& s, FVector& loc);
-	void              GetElemLoc(MissionElement& s, FVector& loc);
-	void              SelectShip(Ship* selship);
-	void              SelectElem(MissionElement* selelem);
-	void              SelectNavpt(Instruction* navpt);
-	void              FindShips(bool friendly, bool station, bool starship, bool dropship, List<Text>& result);
-	void              SetupScroll(Orbital* s);
+    // Scrolling/visibility:
+    void              SetupScroll(Orbital* s);
+    bool              IsVisible(const FVector& loc);
 
-	double            GetMinRadius(int type);
+    // Picking:
+    void              SelectAt(int x, int y);
 
-	Text              title;
-	Rect              rect;
-	Campaign* campaign;
-	Mission* mission;
-	List<StarSystem>  system_list;
-	StarSystem* system;
-	List<Orbital>     stars;
-	List<Orbital>     planets;
-	List<Orbital>     regions;
-	Ship* ship;
+    // Ship/element/nav selection helpers:
+    void              SelectShip(Ship* selship);
+    void              SelectElem(MissionElement* elem);
+    void              SelectNavpt(Instruction* navpt);
 
-	// Replaced Bitmap galaxy_image with Unreal render asset pointer:
-	UTexture2D* galaxy_image = nullptr;
+    // Objective population:
+    void              FindShips(bool friendly, bool station, bool starship, bool dropship, List<Text>& result);
 
-	bool              editor;
+    // Drawing:
+    void              DrawTitle();
+    void              DrawTabbedText(SystemFont* InFont, const char* text);
 
-	int               current_star;
-	int               current_planet;
-	int               current_region;
-	Ship*			  current_ship;
-	MissionElement*	  current_elem;
-	Instruction*      current_navpt;
-	int               current_status;
+    void              DrawGrid();
+    void              DrawGalaxy();
+    void              DrawSystem();
+    void              DrawRegion();
 
-	int               view_mode;
-	int               seln_mode;
-	bool              captured;
-	bool              dragging;
-	bool              adding_navpt;
-	bool              moving_navpt;
-	bool              moving_elem;
-	int               scrolling;
-	int               mouse_x;
-	int               mouse_y;
-	DWORD             ship_filter;
+    void              DrawOrbital(Orbital& body, int index);
+    double            GetMinRadius(int type);
 
-	double            zoom;
-	double            view_zoom[3];
-	double            offset_x;
-	double            offset_y;
-	double            view_offset_x[3];
-	double            view_offset_y[3];
-	double            c, r;
-	double            scroll_x;
-	double            scroll_y;
-	double            click_x;
-	double            click_y;
+    // System overlay (campaign):
+    void              DrawCombatantSystem(Combatant* cbt, Orbital* rgn, int x, int y, int rr);
+    void              DrawCombatGroupSystem(CombatGroup* group, Orbital* rgn, int x1, int x2, int& y, int align);
 
-	SystemFont* font;
-	SystemFont* title_font;
+    // Region overlay:
+    void              DrawCombatGroup(CombatGroup* group, int rep);
+    void              DrawShip(Ship& s, bool current, int rep);
+    void              DrawElem(MissionElement& s, bool current, int rep);
 
-	ActiveWindow* active_window;
-	Menu* active_menu;
+    // Routes:
+    void              DrawNavRoute(OrbitalRegion* rgn, List<Instruction>& s_route, FColor s_marker, Ship* ship, MissionElement* elem);
 
-	Menu* map_menu;
-	Menu* map_system_menu;
-	Menu* map_sector_menu;
-	Menu* ship_menu;
-	Menu* nav_menu;
-	Menu* action_menu;
-	Menu* objective_menu;
-	Menu* formation_menu;
-	Menu* speed_menu;
-	Menu* hold_menu;
-	Menu* farcast_menu;
+    // Crowding/clutter:
+    bool              IsClutter(Ship& test);
+    bool              IsCrowded(Ship& test);
+    bool              IsCrowded(MissionElement& test);
 
-	MenuView* menu_view;
+    bool              IsEnabled() const;
+    bool              IsVisible() const;
+
+    bool              IsFormActive() const;
+    Rect              TargetRect() const;
+
+    // Coordinate helpers:
+    void              GetShipLoc(Ship& s, FVector& shiploc);
+    void              GetElemLoc(MissionElement& s, FVector& shiploc);
+
+protected:
+    // -----------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------
+
+    Text              title;
+    Rect              rect;
+
+    Campaign* campaign;
+    Mission* mission;
+
+    List<StarSystem>  system_list;
+    StarSystem* system;
+
+    List<Orbital>     stars;
+    List<Orbital>     planets;
+    List<Orbital>     regions;
+
+    Ship* ship;
+
+    Bitmap*           galaxy_image = nullptr;
+
+    bool              editor;
+
+    int               current_star;
+    int               current_planet;
+    int               current_region;
+
+    Ship* current_ship;
+    MissionElement* current_elem;
+    Instruction* current_navpt;
+
+    int               current_status;
+
+    int               view_mode;
+    int               seln_mode;
+
+    bool              captured;
+    bool              dragging;
+    bool              adding_navpt;
+    bool              moving_navpt;
+    bool              moving_elem;
+
+    int               scrolling;
+    int               mouse_x;
+    int               mouse_y;
+
+    unsigned int      ship_filter;
+
+    double            zoom;
+    double            offset_x;
+    double            offset_y;
+
+    // Cached scale helpers (legacy naming kept):
+    double            c;
+    double            r;
+
+    // Smooth scrolling:
+    double            scroll_x;
+    double            scroll_y;
+
+    // Click world coords (region view):
+    double            click_x;
+    double            click_y;
+
+    // Per-view saved zoom/offset:
+    double            view_zoom[3];
+    double            view_offset_x[3];
+    double            view_offset_y[3];
+
+    // Window/menu:
+    ActiveWindow* active_window;
+    Menu* active_menu;
+
+    Menu* map_menu;
+    Menu* map_system_menu;
+    Menu* map_sector_menu;
+
+    Menu* ship_menu;
+    Menu* nav_menu;
+
+    Menu* action_menu;
+    Menu* objective_menu;
+    Menu* formation_menu;
+    Menu* speed_menu;
+    Menu* hold_menu;
+    Menu* farcast_menu;
+
+    MenuView* menu_view;
+
+    const int EID_MAP_CLICK = 1000;
 };
-
