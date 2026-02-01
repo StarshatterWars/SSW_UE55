@@ -670,11 +670,11 @@ Sim::CreateElements()
 
 				if (Region) {
 					Instruction* NavPoint = new
-						Instruction(Region, OtherHand(NavIter->Location()), NavIter->Action());
+						Instruction(Region, OtherHand(NavIter->Location()), NavIter->GetAction());
 
-					NavPoint->SetStatus(NavIter->Status());
+					NavPoint->SetStatus(NavIter->GetStatus());
 					NavPoint->SetEMCON(NavIter->EMCON());
-					NavPoint->SetFormation(NavIter->Formation());
+					NavPoint->SetFormation(NavIter->GetFormation());
 					NavPoint->SetSpeed(NavIter->Speed());
 					NavPoint->SetTarget(NavIter->TargetName());
 					NavPoint->SetHoldTime(NavIter->HoldTime());
@@ -2146,14 +2146,14 @@ Sim::CreateMissionElement(SimElement* elem)
 		ListIter<Instruction> nav_iter = elem->GetFlightPlan();
 		while (++nav_iter) {
 			Instruction* nav = nav_iter.value();
-			Instruction* npt = new Instruction(nav->RegionName(), nav->Location(), nav->Action());
+			Instruction* npt = new Instruction(nav->RegionName(), nav->Location(), nav->GetAction());
 
-			npt->SetFormation(nav->Formation());
+			npt->SetFormation(nav->GetFormation());
 			npt->SetSpeed(nav->Speed());
 			npt->SetTarget(nav->TargetName());
 			npt->SetHoldTime(nav->HoldTime());
 			npt->SetFarcast(nav->Farcast());
-			npt->SetStatus(nav->Status());
+			npt->SetStatus(nav->GetStatus());
 
 			msn_elem->AddNavPoint(npt);
 		}

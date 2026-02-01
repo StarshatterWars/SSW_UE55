@@ -476,17 +476,23 @@ void MapView::ProcessMenuItem(int action)
 
 	else if (action >= MAP_FORMATION) {
 		if (current_navpt && can_command) {
-			current_navpt->SetFormation(action - MAP_FORMATION);
+			const INSTRUCTION_FORMATION formation =
+				static_cast<INSTRUCTION_FORMATION>(action - MAP_FORMATION);
+
+			current_navpt->SetFormation(formation);
 			send_nav_data = true;
 		}
 	}
 
-	else if (action >= MAP_ACTION) {
-		if (current_navpt && can_command) {
-			current_navpt->SetAction(action - MAP_ACTION);
-			SelectNavpt(current_navpt);
-			send_nav_data = true;
-		}
+
+	const int raw = action - MAP_ACTION;
+
+	if (raw >= 0 && raw < (int)INSTRUCTION_ACTION::NUM_ACTIONS) {
+		current_navpt->SetAction(
+			static_cast<INSTRUCTION_ACTION>(raw)
+		);
+		SelectNavpt(current_navpt);
+		send_nav_data = true;
 	}
 
 	else if (action == MAP_ADDNAV) {
@@ -514,8 +520,8 @@ void MapView::ProcessMenuItem(int action)
 			n->SetSpeed(500);
 
 			if (prior) {
-				n->SetAction(prior->Action());
-				n->SetFormation(prior->Formation());
+				n->SetAction(prior->GetAction());
+				n->SetFormation(prior->GetFormation());
 				n->SetSpeed(prior->Speed());
 				n->SetTarget(prior->GetTarget());
 			}
@@ -533,8 +539,8 @@ void MapView::ProcessMenuItem(int action)
 			n->SetSpeed(500);
 
 			if (prior) {
-				n->SetAction(prior->Action());
-				n->SetFormation(prior->Formation());
+				n->SetAction(prior->GetAction());
+				n->SetFormation(prior->GetFormation());
 				n->SetSpeed(prior->Speed());
 				n->SetTarget(prior->GetTarget());
 			}
@@ -544,7 +550,7 @@ void MapView::ProcessMenuItem(int action)
 
 		if (can_command) {
 			current_navpt = n;
-			current_status = Instruction::PENDING;
+			current_status = INSTRUCTION_STATUS::PENDING;
 			adding_navpt = true;
 			captured = SetCapture();
 		}
@@ -709,42 +715,42 @@ void MapView::SelectNavpt(Instruction* navpt)
 	current_navpt = navpt;
 
 	if (current_navpt) {
-		current_status = current_navpt->Status();
+		current_status = current_navpt->GetStatus();
 
 		List<Text> ships;
 		objective_menu->ClearItems();
 
-		switch (current_navpt->Action()) {
-		case Instruction::VECTOR:
-		case Instruction::LAUNCH:
-		case Instruction::PATROL:
-		case Instruction::SWEEP:
-		case Instruction::RECON:
+		switch (current_navpt->GetAction()) {
+		case INSTRUCTION_ACTION::VECTOR:
+		case INSTRUCTION_ACTION::LAUNCH:
+		case INSTRUCTION_ACTION::PATROL:
+		case INSTRUCTION_ACTION::SWEEP:
+		case INSTRUCTION_ACTION::RECON:
 			objective_menu->AddItem("NOT AVAILABLE", 0);
 			objective_menu->GetItem(0)->SetEnabled(false);
 			break;
 
-		case Instruction::DOCK:
+		case INSTRUCTION_ACTION::DOCK:
 			FindShips(true, true, true, false, ships);
 			break;
 
-		case Instruction::DEFEND:
+		case INSTRUCTION_ACTION::DEFEND:
 			FindShips(true, true, true, false, ships);
 			break;
 
-		case Instruction::ESCORT:
+		case INSTRUCTION_ACTION::ESCORT:
 			FindShips(true, false, true, true, ships);
 			break;
 
-		case Instruction::INTERCEPT:
+		case INSTRUCTION_ACTION::INTERCEPT:
 			FindShips(false, false, false, true, ships);
 			break;
 
-		case Instruction::ASSAULT:
+		case INSTRUCTION_ACTION::ASSAULT:
 			FindShips(false, false, true, false, ships);
 			break;
 
-		case Instruction::STRIKE:
+		case INSTRUCTION_ACTION::STRIKE:
 			FindShips(false, true, false, false, ships);
 			break;
 		}
@@ -2727,7 +2733,7 @@ void MapView::DrawNavRoute(
 
 		FColor markColor = FColor::White;
 
-		if (navpt->Status() > Instruction::ACTIVE) {
+		if (navpt->GetStatus() > INSTRUCTION_STATUS::ACTIVE) {
 			markColor = FColor(128, 128, 128);
 		}
 		else if (!first_in) {
@@ -2753,18 +2759,18 @@ void MapView::DrawNavRoute(
 			if (navpt == current_navpt) {
 				if (navpt->TargetName() && strlen(navpt->TargetName())) {
 					sprintf_s(buf, "%s %s",
-						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->Action())).data(),
+						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->GetAction())).data(),
 						navpt->TargetName());
 					window->Print(x2 + 3, y1 + 10, buf);
 				}
 				else {
 					sprintf_s(buf, "%s",
-						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->Action())).data());
+						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->GetAction())).data());
 					window->Print(x2 + 3, y1 + 10, buf);
 				}
 
 				sprintf_s(buf, "%s",
-					Game::GetText(Text("MapView.item.") + Instruction::FormationName(navpt->Formation())).data());
+					Game::GetText(Text("MapView.item.") + Instruction::FormationName(navpt->GetFormation())).data());
 				window->Print(x2 + 3, y1 + 20, buf);
 
 				sprintf_s(buf, "%d", navpt->Speed());
@@ -2774,7 +2780,7 @@ void MapView::DrawNavRoute(
 					char hold_time[32];
 					FormatTime(hold_time, navpt->HoldTime());
 
-					sprintf_s(buf, "%s %s", Game::GetText("MapView.item.Hold").data(), hold_time);
+					sprintf_s(buf, "%s %s", "Hold", hold_time);
 					window->Print(x2 + 3, y1 + 40, buf);
 				}
 			}

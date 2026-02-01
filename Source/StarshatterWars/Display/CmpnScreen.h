@@ -107,6 +107,9 @@ public:
     // Close highest-priority modal:
     bool CloseTopmost();
 
+    float GetFieldOfView() const { return CurrentFOV; }
+    void  SetFieldOfView(float InFOV);
+
     // Accessors used by dialogs (fixes your Manager->GetCampaign() issue):
     Campaign* GetCampaign() const { return campaign; }
     Starshatter* GetStars() const { return stars; }
@@ -146,4 +149,11 @@ private:
     // Legacy pointers:
     Campaign* campaign = nullptr;
     Starshatter* stars = nullptr;
+
+    // Stored desired FOV (degrees)
+    float CurrentFOV = 90.0f;
+
+    // Optional clamps to keep warp effects sane
+    float MinFOV = 30.0f;
+    float MaxFOV = 170.0f;
 };

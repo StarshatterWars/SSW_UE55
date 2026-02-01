@@ -1353,15 +1353,16 @@ HUDView::DrawNavInfo()
 			info_rect.x = width - info_rect.w - 8;
 
 		if (ship->IsAutoNavEngaged())
-			sprintf_s(txt, "%s %d", Game::GetText("HUDView.Auto-Nav").data(), index);
+			sprintf_s(txt, "%s %d", "Auto Nav", index);
 		else
-			sprintf_s(txt, "%s %d", Game::GetText("HUDView.Nav").data(), index);
+			sprintf_s(txt, "%s %d", "Nav", index);
 
 		DrawHUDText(TXT_NAV_INDEX, txt, info_rect, DT_RIGHT);
 
 		info_rect.y += 10;
-		if (navpt->Action())
-			DrawHUDText(TXT_NAV_ACTION, Instruction::ActionName(navpt->Action()), info_rect, DT_RIGHT);
+		const INSTRUCTION_ACTION Action = navpt->GetAction();
+		if (Action != INSTRUCTION_ACTION::NONE)
+			DrawHUDText(TXT_NAV_ACTION, Instruction::ActionName(Action), info_rect, DT_RIGHT);;
 
 		info_rect.y += 10;
 		FormatNumber(txt, navpt->Speed());
@@ -1369,7 +1370,7 @@ HUDView::DrawNavInfo()
 
 		if (etr > 3600) {
 			info_rect.y += 10;
-			sprintf_s(txt, "%s XX:XX", Game::GetText("HUDView.time-enroute").data());
+			sprintf_s(txt, "%s XX:XX","ETR");
 			DrawHUDText(TXT_NAV_ETR, txt, info_rect, DT_RIGHT);
 		}
 		else if (etr > 0) {
@@ -1377,7 +1378,7 @@ HUDView::DrawNavInfo()
 
 			int minutes = (etr / 60) % 60;
 			int seconds = (etr) % 60;
-			sprintf_s(txt, "%s %2d:%02d", Game::GetText("HUDView.time-enroute").data(), minutes, seconds);
+			sprintf_s(txt, "%s %2d:%02d", "ETR", minutes, seconds);
 			DrawHUDText(TXT_NAV_ETR, txt, info_rect, DT_RIGHT);
 		}
 
@@ -1387,7 +1388,7 @@ HUDView::DrawNavInfo()
 			int hold = (int)navpt->HoldTime();
 			int minutes = (hold / 60) % 60;
 			int seconds = (hold) % 60;
-			sprintf_s(txt, "%s %2d:%02d", Game::GetText("HUDView.HOLD").data(), minutes, seconds);
+			sprintf_s(txt, "%s %2d:%02d", "HOLD", minutes, seconds);
 			DrawHUDText(TXT_NAV_HOLD, txt, info_rect, DT_RIGHT);
 		}
 	}
@@ -2082,7 +2083,7 @@ HUDView::DrawNav()
 		Instruction* next = ship->GetNextNavPoint();
 
 		if (mode == EHUDMode::Navigation) {
-			if (next && next->Action() == Instruction::LAUNCH)
+			if (next && next->GetAction() == INSTRUCTION_ACTION::LAUNCH)
 				DrawNavPoint(*next, 0, true);
 
 			ListIter<Instruction> navpt = ship->GetFlightPlan();
@@ -2268,7 +2269,7 @@ void HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 		if (x > 4 && x < width - 4 && y > 4 && y < height - 4)
 		{
 			FColor c = FColor::White;
-			if (navpt.Status() > Instruction::ACTIVE && navpt.HoldTime() <= 0)
+			if (navpt.GetStatus() > INSTRUCTION_STATUS::ACTIVE && navpt.HoldTime() <= 0)
 				c = FColor(64, 64, 64);
 
 			if (next)
@@ -2282,7 +2283,7 @@ void HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 				char npt_buf[32] = { 0 };
 				Rect npt_rect(x + 10, y - 4, 200, 12);
 
-				if (navpt.Status() == Instruction::COMPLETE && navpt.HoldTime() > 0)
+				if (navpt.GetStatus() == INSTRUCTION_STATUS::COMPLETE && navpt.HoldTime() > 0)
 				{
 					char hold_time[32] = { 0 };
 					FormatTime(hold_time, navpt.HoldTime());

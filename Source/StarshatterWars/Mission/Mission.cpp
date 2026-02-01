@@ -1082,9 +1082,9 @@ Mission::ParseShip(TermStruct* Val, MissionElement* Element)
 Instruction*
 Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 {
-	int   order = Instruction::VECTOR;
-	int   status = Instruction::PENDING;
-	int   formation = 0;
+	INSTRUCTION_ACTION order = INSTRUCTION_ACTION::VECTOR;
+	INSTRUCTION_STATUS status = INSTRUCTION_STATUS::PENDING;
+	INSTRUCTION_FORMATION formation = INSTRUCTION_FORMATION::DIAMOND;
 	int   speed = 0;
 	int   priority = 1;
 	int   farcast = 0;
@@ -1107,17 +1107,29 @@ Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 			if (defname == "cmd") {
 				GetDefText(order_name, pdef, filename);
 
-				for (int cmd = 0; cmd < Instruction::NUM_ACTIONS; cmd++)
-					if (!_stricmp(order_name, Instruction::ActionName(cmd)))
-						order = cmd;
+				for (int cmd = 0; cmd < (int) INSTRUCTION_ACTION::NUM_ACTIONS; cmd++) {
+					const INSTRUCTION_ACTION Action =
+						static_cast<INSTRUCTION_ACTION>(cmd);
+
+					if (!_stricmp(order_name, Instruction::ActionName(Action))) {
+						order = Action;
+						break;
+					}
+				}
 			}
 
 			else if (defname == "status") {
 				GetDefText(status_name, pdef, filename);
 
-				for (int n = 0; n < Instruction::NUM_STATUS; n++)
-					if (!_stricmp(status_name, Instruction::StatusName(n)))
-						status = n;
+				for (int n = 0; n < (int)INSTRUCTION_STATUS::NUM_STATUS; n++) {
+					const INSTRUCTION_STATUS Stat =
+						static_cast<INSTRUCTION_STATUS>(n);
+
+					if (!_stricmp(status_name, Instruction::StatusName(Stat))) {
+						status = Stat;
+						break;
+					}
+				}
 			}
 
 			else if (defname == "loc") {
@@ -1186,7 +1198,7 @@ Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 	instr->SetEMCON(emcon);
 	instr->SetFormation(formation);
 	instr->SetSpeed(speed);
-	instr->SetTarget(tgt_name);
+	instr->SetTarget(FString(tgt_name.data()));
 	instr->SetTargetDesc(tgt_desc);
 	instr->SetPriority(priority - 1);
 	instr->SetFarcast(farcast);
@@ -1640,7 +1652,7 @@ Mission::Serialize(const char* player_elem, int player_index)
 				Instruction* inst = obj_iter.value();
 
 				s += "   objective: { cmd: ";
-				s += Instruction::ActionName(inst->Action());
+				s += Instruction::ActionName(inst->GetAction());
 				s += ", tgt: \"";
 				s += SafeString(inst->TargetName());
 				s += "\" }\n";
@@ -1655,9 +1667,9 @@ Mission::Serialize(const char* player_elem, int player_index)
 				Instruction* inst = nav_iter.value();
 
 				s += "   navpt:     { cmd: ";
-				s += Instruction::ActionName(inst->Action());
+				s += Instruction::ActionName(inst->GetAction());
 				s += ", status: ";
-				s += Instruction::StatusName(inst->Status());
+				s += Instruction::StatusName(inst->GetStatus());
 
 				if (inst->TargetName() && *inst->TargetName()) {
 					s += ", tgt: \"";
@@ -1686,8 +1698,8 @@ Mission::Serialize(const char* player_elem, int player_index)
 					s += ", farcast: true";
 				}
 
-				if (inst->Formation() > Instruction::DIAMOND) {
-					sprintf_s(buffer, ", formation: %d", (int)inst->Formation());
+				if (inst->GetFormation() > INSTRUCTION_FORMATION::DIAMOND) {
+					sprintf_s(buffer, ", formation: %d", (int)inst->GetFormation());
 					s += buffer;
 				}
 

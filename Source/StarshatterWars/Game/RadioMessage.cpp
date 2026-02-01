@@ -25,7 +25,7 @@
 
 // +--------------------------------------------------------------------+
 
-RadioMessage::RadioMessage(Ship* dst, const Ship* s, int a)
+RadioMessage::RadioMessage(Ship* dst, const Ship* s, RadioMessageAction a)
 	: sender(s)
 	, dst_ship(dst)
 	, dst_elem(nullptr)
@@ -37,7 +37,7 @@ RadioMessage::RadioMessage(Ship* dst, const Ship* s, int a)
 		channel = s->GetIFF();
 }
 
-RadioMessage::RadioMessage(SimElement* dst, const Ship* s, int a)
+RadioMessage::RadioMessage(SimElement* dst, const Ship* s, RadioMessageAction a)
 	: sender(s)
 	, dst_ship(nullptr)
 	, dst_elem(dst)
@@ -73,9 +73,9 @@ RadioMessage::~RadioMessage()
 
 // +--------------------------------------------------------------------+
 
-const char* RadioMessage::ActionName(int a)
+const char* RadioMessage::ActionName(RadioMessageAction a)
 {
-	if (a == ACK) {
+	if (a == RadioMessageAction::ACK) {
 		const int coin = rand();
 		if (coin < 10000) return "Acknowledged";
 		if (coin < 17000) return "Roger that";
@@ -84,7 +84,7 @@ const char* RadioMessage::ActionName(int a)
 		return "Affirmative";
 	}
 
-	if (a == DISTRESS) {
+	if (a == RadioMessageAction::DISTRESS) {
 		const int coin = rand();
 		if (coin < 15000) return "Mayday! Mayday!";
 		if (coin < 18000) return "She's breaking up!";
@@ -92,7 +92,7 @@ const char* RadioMessage::ActionName(int a)
 		return "We're going down!";
 	}
 
-	if (a == WARN_ACCIDENT) {
+	if (a == RadioMessageAction::WARN_ACCIDENT) {
 		const int coin = rand();
 		if (coin < 15000) return "Check your fire!";
 		if (coin < 18000) return "Watch it!";
@@ -100,7 +100,7 @@ const char* RadioMessage::ActionName(int a)
 		return "Confirm your targets!";
 	}
 
-	if (a == WARN_TARGETED) {
+	if (a == RadioMessageAction::WARN_TARGETED) {
 		const int coin = rand();
 		if (coin < 15000) return "Break off immediately!";
 		if (coin < 20000) return "Buddy spike!";
@@ -108,67 +108,117 @@ const char* RadioMessage::ActionName(int a)
 	}
 
 	switch (a) {
-	case NONE:            return "";
+	case RadioMessageAction::NONE:     
+		return "";
 
-	case NACK:            return "Negative, Unable";
+	case RadioMessageAction::NACK:     
+		return "Negative, Unable";
 
-	case ATTACK:          return "Engage";
-	case ESCORT:          return "Escort";
-	case BRACKET:         return "Bracket";
-	case IDENTIFY:        return "Identify";
+	case RadioMessageAction::ATTACK:
+		return "Engage";
+	case RadioMessageAction::ESCORT:
+		return "Escort";
+	case RadioMessageAction::BRACKET:  
+		return "Bracket";
+	case RadioMessageAction::IDENTIFY:
+		return "Identify";
 
-	case COVER_ME:        return "Cover Me";
-	case MOVE_PATROL:     return "Vector";
-	case SKIP_NAVPOINT:   return "Skip Navpoint";
-	case RESUME_MISSION:  return "Resume Mission";
-	case RTB:             return "Return to Base";
-	case DOCK_WITH:       return "Dock With";
-	case QUANTUM_TO:      return "Jump to";
-	case FARCAST_TO:      return "Farcast to";
+	case RadioMessageAction::COVER_ME: 
+		return "Cover Me";
+	case RadioMessageAction::MOVE_PATROL:    
+		return "Vector";
+	case RadioMessageAction::SKIP_NAVPOINT:
+		return "Skip Navpoint";
+	case RadioMessageAction::RESUME_MISSION: 
+		return "Resume Mission";
+	case RadioMessageAction::RTB: 
+		return "Return to Base";
+	case RadioMessageAction::DOCK_WITH:   
+		return "Dock With";
+	case RadioMessageAction::QUANTUM_TO:    
+		return "Jump to";
+	case RadioMessageAction::FARCAST_TO:  
+		return "Farcast to";
 
-	case GO_DIAMOND:      return "Goto Diamond Formation";
-	case GO_SPREAD:       return "Goto Spread Formation";
-	case GO_BOX:          return "Goto Box Formation";
-	case GO_TRAIL:        return "Goto Trail Formation";
+	case RadioMessageAction::GO_DIAMOND:  
+		return "Goto Diamond Formation";
+	case RadioMessageAction::GO_SPREAD:   
+		return "Goto Spread Formation";
+	case RadioMessageAction::GO_BOX:   
+		return "Goto Box Formation";
+	case RadioMessageAction::GO_TRAIL:  
+		return "Goto Trail Formation";
 
-	case WEP_FREE:        return "Break and Attack";
-	case WEP_HOLD:        return "Hold All Weapons";
-	case FORM_UP:         return "Return to Formation";
-	case SAY_POSITION:    return "Say Your Position";
+	case RadioMessageAction::WEP_FREE:
+		return "Break and Attack";
+	case RadioMessageAction::WEP_HOLD:
+		return "Hold All Weapons";
+	case RadioMessageAction::FORM_UP: 
+		return "Return to Formation";
+	case RadioMessageAction::SAY_POSITION: 
+		return "Say Your Position";
 
-	case LAUNCH_PROBE:    return "Launch Probe";
-	case GO_EMCON1:       return "Goto EMCON 1";
-	case GO_EMCON2:       return "Goto EMCON 2";
-	case GO_EMCON3:       return "Goto EMCON 3";
+	case RadioMessageAction::LAUNCH_PROBE: 
+		return "Launch Probe";
+	case RadioMessageAction::GO_EMCON1:  
+		return "Goto EMCON 1";
+	case RadioMessageAction::GO_EMCON2: 
+		return "Goto EMCON 2";
+	case RadioMessageAction::GO_EMCON3: 
+		return "Goto EMCON 3";
 
-	case REQUEST_PICTURE: return "Request Picture";
-	case REQUEST_SUPPORT: return "Request Support";
-	case PICTURE:         return "Picture is clear";
+	case RadioMessageAction::REQUEST_PICTURE: 
+		return "Request Picture";
+	case RadioMessageAction::REQUEST_SUPPORT:
+		return "Request Support";
+	case RadioMessageAction::PICTURE: 
+		return "Picture is clear";
 
-	case CALL_INBOUND:    return "Calling Inbound";
-	case CALL_APPROACH:   return "Roger your approach";
-	case CALL_CLEARANCE:  return "You have clearance";
-	case CALL_FINALS:     return "On final approach";
-	case CALL_WAVE_OFF:   return "Wave off - Runway is closed";
+	case RadioMessageAction::CALL_INBOUND:
+		return "Calling Inbound";
+	case RadioMessageAction::CALL_APPROACH:
+		return "Roger your approach";
+	case RadioMessageAction::CALL_CLEARANCE:  
+		return "You have clearance";
+	case RadioMessageAction::CALL_FINALS: 
+		return "On final approach";
+	case RadioMessageAction::CALL_WAVE_OFF:
+		return "Wave off - Runway is closed";
 
-	case DECLARE_ROGUE:   return "Prepare to be destroyed!";
+	case RadioMessageAction::DECLARE_ROGUE: 
+		return "Prepare to be destroyed!";
 
-	case CALL_ENGAGING:   return "Engaging";
-	case FOX_1:           return "Fox One!";
-	case FOX_2:           return "Fox Two!";
-	case FOX_3:           return "Fox Three!";
-	case SPLASH_1:        return "Splash One!";
-	case SPLASH_2:        return "Splash Two!";
-	case SPLASH_3:        return "Splash Three!";
-	case SPLASH_4:        return "Splash Four!";
-	case SPLASH_5:        return "Target Destroyed!";
-	case SPLASH_6:        return "Enemy Destroyed!";
-	case SPLASH_7:        return "Confirmed Kill!";
-	case BREAK_ORBIT:     return "Breaking Orbit";
-	case MAKE_ORBIT:      return "Heading for Orbit";
-	case QUANTUM_JUMP:    return "Going Quantum";
+	case RadioMessageAction::CALL_ENGAGING:  
+		return "Engaging";
+	case RadioMessageAction::FOX_1: 
+		return "Fox One!";
+	case RadioMessageAction::FOX_2: 
+		return "Fox Two!";
+	case RadioMessageAction::FOX_3:        
+		return "Fox Three!";
+	case RadioMessageAction::SPLASH_1: 
+		return "Splash One!";
+	case RadioMessageAction::SPLASH_2: 
+		return "Splash Two!";
+	case RadioMessageAction::SPLASH_3:   
+		return "Splash Three!";
+	case RadioMessageAction::SPLASH_4: 
+		return "Splash Four!";
+	case RadioMessageAction::SPLASH_5:     
+		return "Target Destroyed!";
+	case RadioMessageAction::SPLASH_6:
+		return "Enemy Destroyed!";
+	case RadioMessageAction::SPLASH_7:  
+		return "Confirmed Kill!";
+	case RadioMessageAction::BREAK_ORBIT: 
+		return "Breaking Orbit";
+	case RadioMessageAction::MAKE_ORBIT:    
+		return "Heading for Orbit";
+	case RadioMessageAction::QUANTUM_JUMP: 
+		return "Going Quantum";
 
-	default:              return "Unknown";
+	default:      
+		return "Unknown";
 	}
 }
 

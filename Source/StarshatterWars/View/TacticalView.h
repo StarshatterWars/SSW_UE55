@@ -112,7 +112,7 @@ protected:
     int32   bMouseDown = 0;
     int32   bRightDown = 0;
     int32   bShowMove = 0;
-    int32   ShowAction = 0;
+    RadioMessageAction ShowAction = RadioMessageAction::NONE;
 
     // Move state:
     FVector MoveLoc = FVector::ZeroVector;

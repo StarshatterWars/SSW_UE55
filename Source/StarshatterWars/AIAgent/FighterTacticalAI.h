@@ -23,6 +23,7 @@
 // Minimal Unreal include required for FVector usage patterns elsewhere;
 // also provides UE integral types (uint32, etc.) if needed.
 #include "Math/Vector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -43,7 +44,7 @@ protected:
 	virtual void      SelectTarget();
 	virtual void      SelectTargetDirected(Ship* tgt = 0);
 	virtual void      SelectTargetOpportunity();
-	virtual void      FindFormationSlot(int formation);
+	virtual void      FindFormationSlot(INSTRUCTION_FORMATION formation);
 	virtual void      FindThreat();
 
 	virtual void      SelectSecondaryForTarget(Ship* tgt);

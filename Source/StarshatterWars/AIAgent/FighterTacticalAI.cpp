@@ -29,6 +29,7 @@
 #include "Drive.h"
 #include "Sim.h"
 #include "StarSystem.h"
+#include "GameStructs.h"
 
 #include "Game.h"
 
@@ -74,61 +75,65 @@ FighterTacticalAI::CheckFlightPlan()
 {
 	navpt = ship->GetNextNavPoint();
 
-	int order = Instruction::PATROL;
+	INSTRUCTION_ACTION order = INSTRUCTION_ACTION::PATROL;
 	roe = FLEXIBLE;
 
 	if (navpt) {
-		order = navpt->Action();
+		order = navpt->GetAction();
 
 		switch (order) {
-		case Instruction::LAUNCH:
-		case Instruction::DOCK:
-		case Instruction::RTB:     roe = NONE;
+		case INSTRUCTION_ACTION::LAUNCH:
+		case INSTRUCTION_ACTION::DOCK:
+		case INSTRUCTION_ACTION::RTB:     
+			roe = NONE;
 			break;
 
-		case Instruction::VECTOR:
+		case INSTRUCTION_ACTION::VECTOR:
 			roe = SELF_DEFENSIVE;
 			if (element_index > 1)
 				roe = DEFENSIVE;
 			break;
 
-		case Instruction::DEFEND:
-		case Instruction::ESCORT:  roe = DEFENSIVE;
+		case INSTRUCTION_ACTION::DEFEND:
+		case INSTRUCTION_ACTION::ESCORT: 
+			roe = DEFENSIVE;
 			break;
 
-		case Instruction::INTERCEPT:
+		case INSTRUCTION_ACTION::INTERCEPT:
 			if (element_index > 1)
 				roe = DEFENSIVE;
 			else
 				roe = DIRECTED;
 			break;
 
-		case Instruction::RECON:
-		case Instruction::STRIKE:
-		case Instruction::ASSAULT: roe = DIRECTED;
+		case INSTRUCTION_ACTION::RECON:
+		case INSTRUCTION_ACTION::STRIKE:
+		case INSTRUCTION_ACTION::ASSAULT: 
+			roe = DIRECTED;
 			break;
 
-		case Instruction::PATROL:
-		case Instruction::SWEEP:   roe = FLEXIBLE;
+		case INSTRUCTION_ACTION::PATROL:
+		case INSTRUCTION_ACTION::SWEEP:   
+			roe = FLEXIBLE;
 			break;
 
 		default: break;
 		}
 
-		if (order == Instruction::STRIKE) {
+		if (order == INSTRUCTION_ACTION::STRIKE) {
 			ship->SetSensorMode(Sensor::GM);
 
 			if (IsStrikeComplete(navpt)) {
-				ship->SetNavptStatus(navpt, Instruction::COMPLETE);
+				ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::COMPLETE);
 			}
 		}
 
-		else if (order == Instruction::ASSAULT) {
+		else if (order == INSTRUCTION_ACTION::ASSAULT) {
 			if (ship->GetSensorMode() == Sensor::GM)
 				ship->SetSensorMode(Sensor::STD);
 
 			if (IsStrikeComplete(navpt)) {
-				ship->SetNavptStatus(navpt, Instruction::COMPLETE);
+				ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::COMPLETE);
 			}
 		}
 
@@ -139,12 +144,18 @@ FighterTacticalAI::CheckFlightPlan()
 	}
 
 	switch (roe) {
-	case NONE:              ship->SetDirectorInfo(Game::GetText("ai.none"));            break;
-	case SELF_DEFENSIVE:    ship->SetDirectorInfo(Game::GetText("ai.self-defensive"));  break;
-	case DEFENSIVE:         ship->SetDirectorInfo(Game::GetText("ai.defensive"));       break;
-	case DIRECTED:          ship->SetDirectorInfo(Game::GetText("ai.directed"));        break;
-	case FLEXIBLE:          ship->SetDirectorInfo(Game::GetText("ai.flexible"));        break;
-	default:                ship->SetDirectorInfo(Game::GetText("ai.default"));         break;
+	case NONE:              ship->SetDirectorInfo("Cruise");
+		break;
+	case SELF_DEFENSIVE:    ship->SetDirectorInfo("SELF DEF"); 
+		break;
+	case DEFENSIVE:         ship->SetDirectorInfo("DEFENSE");
+		break;
+	case DIRECTED:          ship->SetDirectorInfo("DIRECT");
+		break;
+	case FLEXIBLE:          ship->SetDirectorInfo("FLEX");
+		break;
+	default:                ship->SetDirectorInfo("???");
+		break;
 	}
 
 	return (navpt != 0);
@@ -328,7 +339,7 @@ FighterTacticalAI::ListSecondariesForTarget(Ship* tgt, List<WeaponGroup>& weps)
 	weps.clear();
 
 	if (tgt) {
-		ListIter<WeaponGroup> iter = ship->Weapons();
+		ListIter<WeaponGroup> iter = ship->GetWeapons();
 		while (++iter) {
 			WeaponGroup* w = iter.value();
 
@@ -426,42 +437,42 @@ FighterTacticalAI::SelectSecondaryForTarget(Ship* tgt)
 // +--------------------------------------------------------------------+
 
 void
-FighterTacticalAI::FindFormationSlot(int formation)
+FighterTacticalAI::FindFormationSlot(INSTRUCTION_FORMATION formation)
 {
 	// find the formation delta:
 	int s = element_index - 1;
 	Point delta(5 * s, 0, -5 * s);
 
 	// diamond:
-	if (formation == Instruction::DIAMOND) {
+	if (formation == INSTRUCTION_FORMATION::DIAMOND) {
 		switch (element_index) {
-		case 2:  delta = Point(12, -1, -10); break;
-		case 3:  delta = Point(-12, -1, -10); break;
-		case 4:  delta = Point(0, -2, -20); break;
+		case 2:  delta = FVector(12, -1, -10); break;
+		case 3:  delta = FVector(-12, -1, -10); break;
+		case 4:  delta = FVector(0, -2, -20); break;
 		}
 	}
 
 	// spread:
-	if (formation == Instruction::SPREAD) {
+	if (formation == INSTRUCTION_FORMATION::SPREAD) {
 		switch (element_index) {
-		case 2:  delta = Point(15, 0, 0); break;
-		case 3:  delta = Point(-15, 0, 0); break;
-		case 4:  delta = Point(-30, 0, 0); break;
+		case 2:  delta = FVector(15, 0, 0); break;
+		case 3:  delta = FVector(-15, 0, 0); break;
+		case 4:  delta = FVector(-30, 0, 0); break;
 		}
 	}
 
 	// box:
-	if (formation == Instruction::BOX) {
+	if (formation == INSTRUCTION_FORMATION::BOX) {
 		switch (element_index) {
-		case 2:  delta = Point(15, 0, 0); break;
-		case 3:  delta = Point(0, -2, -20); break;
-		case 4:  delta = Point(15, -2, -20); break;
+		case 2:  delta = FVector(15, 0, 0); break;
+		case 3:  delta = FVector(0, -2, -20); break;
+		case 4:  delta = FVector(15, -2, -20); break;
 		}
 	}
 
 	// trail:
-	if (formation == Instruction::TRAIL) {
-		delta = Point(0, s, -20 * s);
+	if (formation == INSTRUCTION_FORMATION::TRAIL) {
+		delta = FVector(0, s, -20 * s);
 	}
 
 	ship_ai->SetFormationDelta(delta * ship->Radius() * 2);
@@ -548,7 +559,7 @@ FighterTacticalAI::IsStrikeComplete(Instruction* instr)
 		if (!s || s->Integrity() < 25) // || (s->Location() - target->Location()).length() > 250e3)
 			continue;
 
-		ListIter<WeaponGroup> g_iter = s->Weapons();
+		ListIter<WeaponGroup> g_iter = s->GetWeapons();
 		while (++g_iter) {
 			WeaponGroup* w = g_iter.value();
 

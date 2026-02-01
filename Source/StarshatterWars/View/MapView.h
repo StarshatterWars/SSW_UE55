@@ -226,7 +226,7 @@ protected:
     MissionElement* current_elem;
     Instruction* current_navpt;
 
-    int               current_status;
+    INSTRUCTION_STATUS      current_status;
 
     int               view_mode;
     int               seln_mode;

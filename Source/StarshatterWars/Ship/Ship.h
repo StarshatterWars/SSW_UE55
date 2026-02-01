@@ -366,7 +366,7 @@ public:
     Instruction*            GetNextNavPoint();
     int                     GetNavIndex(const Instruction* n);
     double                  RangeToNavPoint(const Instruction* n);
-    void                    SetNavptStatus(Instruction* n, int status);
+    void                    SetNavptStatus(Instruction* n, INSTRUCTION_STATUS status);
     List<Instruction>&      GetFlightPlan();
     int                     FlightPlanLength();
     CombatUnit*             GetCombatUnit() const { return combat_unit; }

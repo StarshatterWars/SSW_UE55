@@ -1835,61 +1835,61 @@ Starshatter::DoGameKeys()
 
 	if (KeyDown(KEY_COMM_ATTACK_TGT)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::ATTACK);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::ATTACK);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_ESCORT_TGT)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::ESCORT);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::ESCORT);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_WEP_FREE)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::WEP_FREE);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::WEP_FREE);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_WEP_HOLD)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::FORM_UP);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::FORM_UP);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_COVER_ME)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::COVER_ME);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::COVER_ME);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_SKIP_NAV)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::SKIP_NAVPOINT);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::SKIP_NAVPOINT);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_RETURN_TO_BASE)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::RTB);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::RTB);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_CALL_INBOUND)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::CALL_INBOUND);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::CALL_INBOUND);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_REQUEST_PICTURE)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::REQUEST_PICTURE);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::REQUEST_PICTURE);
 		comm_key = true;
 	}
 
 	else if (KeyDown(KEY_COMM_REQUEST_SUPPORT)) {
 		if (!comm_key)
-			RadioTraffic::SendQuickMessage(player_ship, RadioMessage::REQUEST_SUPPORT);
+			RadioTraffic::SendQuickMessage(player_ship, RadioMessageAction::REQUEST_SUPPORT);
 		comm_key = true;
 	}
 

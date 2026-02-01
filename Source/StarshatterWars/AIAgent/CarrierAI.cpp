@@ -32,7 +32,7 @@
 #include "Sim.h"
 #include "StarSystem.h"
 #include "Callsign.h"
-
+#include "GameStructs.h"
 #include "Game.h"
 #include "Random.h"
 
@@ -311,21 +311,31 @@ CarrierAI::CreatePackage(int SquadronIndex, int PackageSize, int MissionCode, co
 	Element->SetCarrier(ship);
 
 	if (Target) {
-		int InstructionCode = 0;
+		INSTRUCTION_ACTION InstructionCode = INSTRUCTION_ACTION::VECTOR;
 
 		switch (MissionCode) {
-		case Mission::ASSAULT:     InstructionCode = Instruction::ASSAULT;   break;
-		case Mission::STRIKE:      InstructionCode = Instruction::STRIKE;    break;
+		case Mission::ASSAULT: 
+			InstructionCode = INSTRUCTION_ACTION::ASSAULT;  
+			break;
+
+		case Mission::STRIKE:   
+			InstructionCode = INSTRUCTION_ACTION::STRIKE;   
+			break;
 
 		case Mission::AIR_INTERCEPT:
-		case Mission::INTERCEPT:   InstructionCode = Instruction::INTERCEPT; break;
+		case Mission::INTERCEPT:  
+			InstructionCode = INSTRUCTION_ACTION::INTERCEPT; 
+			break;
 
 		case Mission::ESCORT:
 		case Mission::ESCORT_STRIKE:
 		case Mission::ESCORT_FREIGHT:
-			InstructionCode = Instruction::ESCORT; break;
+			InstructionCode = INSTRUCTION_ACTION::ESCORT; 
+			break;
 
-		case Mission::DEFEND:      InstructionCode = Instruction::DEFEND;    break;
+		case Mission::DEFEND:      
+			InstructionCode = INSTRUCTION_ACTION::DEFEND;
+			break;
 
 		default:
 			break;

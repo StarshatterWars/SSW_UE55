@@ -622,7 +622,7 @@ Ship::Destroy()
 		for (int i = 0; i < element->NumObjectives(); i++) {
 			Instruction* obj = element->GetObjective(i);
 
-			if (obj->Status() <= Instruction::ACTIVE) {
+			if (obj->GetStatus() <= INSTRUCTION_STATUS::ACTIVE) {
 				obj->Evaluate(this);
 			}
 		}
@@ -1686,7 +1686,7 @@ Ship::HitBy(SimShot* Shot, FVector& Impact)
 
 				if (Class() > CLASSIFICATION::DRONE && OwnerShip->Class() > CLASSIFICATION::DRONE) {
 					if (OwnerShip->IsRogue() && !WasRogue) {
-						RadioMessage* Warn = new RadioMessage(OwnerShip, this, RadioMessage::DECLARE_ROGUE);
+						RadioMessage* Warn = new RadioMessage(OwnerShip, this, RadioMessageAction::DECLARE_ROGUE);
 						RadioTraffic::Transmit(Warn);
 					}
 					else if (!OwnerShip->IsRogue() && (Game::GameTime() - ff_warn_time) > 5000) {
@@ -1694,9 +1694,9 @@ Ship::HitBy(SimShot* Shot, FVector& Impact)
 
 						RadioMessage* Warn = 0;
 						if (OwnerShip->GetTarget() == this)
-							Warn = new RadioMessage(OwnerShip, this, RadioMessage::WARN_TARGETED);
+							Warn = new RadioMessage(OwnerShip, this, RadioMessageAction::WARN_TARGETED);
 						else
-							Warn = new RadioMessage(OwnerShip, this, RadioMessage::WARN_ACCIDENT);
+							Warn = new RadioMessage(OwnerShip, this, RadioMessageAction::WARN_ACCIDENT);
 
 						RadioTraffic::Transmit(Warn);
 					}
@@ -2208,7 +2208,7 @@ Ship::CommandMode()
 Instruction*
 Ship::GetNextNavPoint()
 {
-	if (launch_point && launch_point->Status() <= Instruction::ACTIVE)
+	if (launch_point && launch_point->GetStatus() <= INSTRUCTION_STATUS::ACTIVE)
 		return launch_point;
 
 	if (element)
@@ -2242,21 +2242,21 @@ Ship::RangeToNavPoint(const Instruction* NavPoint)
 }
 
 void
-Ship::SetNavptStatus(Instruction* navpt, int status)
+Ship::SetNavptStatus(Instruction* navpt, INSTRUCTION_STATUS status)
 {
-	if (navpt && navpt->Status() != status) {
-		if (status == Instruction::COMPLETE) {
-			if (navpt->Action() == Instruction::ASSAULT) {
+	if (navpt && navpt->GetStatus() != status) {
+		if (status == INSTRUCTION_STATUS::COMPLETE) {
+			if (navpt->GetAction() == INSTRUCTION_ACTION::ASSAULT) {
 				UE_LOG(LogTemp, Log, TEXT("Completed Assault"));
 			}
-			else if (navpt->Action() == Instruction::STRIKE) {
+			else if (navpt->GetAction() == INSTRUCTION_ACTION::STRIKE) {
 				UE_LOG(LogTemp, Log, TEXT("Completed Strike"));
 			}
 		}
 
 		navpt->SetStatus(status);
 
-		if (status == Instruction::COMPLETE)
+		if (status == INSTRUCTION_STATUS::COMPLETE)
 			sim->ProcessEventTrigger(MissionEvent::TRIGGER_NAVPT, 0, Name(), GetNavIndex(navpt));
 
 		if (element) {
@@ -2652,7 +2652,7 @@ Ship::ExecNavFrame(double Seconds)
 			const double Distance = (NavLoc - Location()).Size();
 
 			if (Distance < 10.0 * Radius())
-				SetNavptStatus(NavPt, Instruction::COMPLETE);
+				SetNavptStatus(NavPt, INSTRUCTION_STATUS::COMPLETE);
 		}
 	}
 }
@@ -2678,7 +2678,7 @@ Ship::ExecEvalFrame(double seconds)
 		for (int i = 0; i < element->NumObjectives(); i++) {
 			Instruction* obj = element->GetObjective(i);
 
-			if (obj->Status() <= Instruction::ACTIVE) {
+			if (obj->GetStatus() <= INSTRUCTION_STATUS::ACTIVE) {
 				obj->Evaluate(this);
 			}
 		}
@@ -3569,7 +3569,7 @@ Ship::DropOrbit()
 			transition_type = TRANSITION_DROP_ORBIT;
 			transition_loc = Location() + Heading() * (float)(-2 * Radius());
 
-			RadioTraffic::SendQuickMessage(this, RadioMessage::BREAK_ORBIT);
+			RadioTraffic::SendQuickMessage(this, RadioMessageAction::BREAK_ORBIT);
 			SetControls(0);
 		}
 	}
@@ -3583,7 +3583,7 @@ Ship::MakeOrbit()
 		transition_type = TRANSITION_MAKE_ORBIT;
 		transition_loc = Location() + Heading() * (float)(-2 * Radius());
 
-		RadioTraffic::SendQuickMessage(this, RadioMessage::MAKE_ORBIT);
+		RadioTraffic::SendQuickMessage(this, RadioMessageAction::MAKE_ORBIT);
 		SetControls(0);
 	}
 }
@@ -3748,7 +3748,7 @@ Ship::DeathSpiral()
 	}
 
 	if (GetIFF() < 100 && !IsGroundUnit()) {
-		RadioTraffic::SendQuickMessage(this, RadioMessage::DISTRESS);
+		RadioTraffic::SendQuickMessage(this, RadioMessageAction::DISTRESS);
 	}
 
 	transition_type = TRANSITION_DEATH_SPIRAL;
@@ -5334,7 +5334,7 @@ void
 Ship::ClearRadioOrders()
 {
 	if (radio_orders) {
-		radio_orders->SetAction(0);
+		radio_orders->SetAction(INSTRUCTION_ACTION::NONE);
 		radio_orders->ClearTarget();
 		radio_orders->SetLocation(FVector::ZeroVector);
 	}

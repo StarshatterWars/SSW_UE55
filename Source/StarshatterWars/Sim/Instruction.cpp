@@ -28,17 +28,18 @@
 #include "Math/Vector.h"
 #include "Logging/LogMacros.h"
 #include "Containers/StringConv.h"
+#include "GameStructs.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsInstruction, Log, All);
 
 // +----------------------------------------------------------------------+
 
-Instruction::Instruction(int act, const char* tgt)
+Instruction::Instruction(INSTRUCTION_ACTION act, const char* tgt)
 	: region(0),
 	action(act),
-	formation(0),
+	formation(INSTRUCTION_FORMATION::DIAMOND),
 	tgt_name(tgt),
-	status(PENDING),
+	status(INSTRUCTION_STATUS::PENDING),
 	speed(0),
 	target(0),
 	emcon(0),
@@ -49,11 +50,11 @@ Instruction::Instruction(int act, const char* tgt)
 {
 }
 
-Instruction::Instruction(const char* rgn, FVector loc, int act)
+Instruction::Instruction(const char* rgn, FVector loc, INSTRUCTION_ACTION act)
 	: region(0),
 	action(act),
-	formation(0),
-	status(PENDING),
+	formation(INSTRUCTION_FORMATION::DIAMOND),
+	status(INSTRUCTION_STATUS::PENDING),
 	speed(0),
 	target(0),
 	emcon(0),
@@ -67,11 +68,11 @@ Instruction::Instruction(const char* rgn, FVector loc, int act)
 	rloc.SetDistance(0);
 }
 
-Instruction::Instruction(SimRegion* rgn, FVector loc, int act)
+Instruction::Instruction(SimRegion* rgn, FVector loc, INSTRUCTION_ACTION act)
 	: region(rgn),
 	action(act),
-	formation(0),
-	status(PENDING),
+	formation(INSTRUCTION_FORMATION::DIAMOND),
+	status(INSTRUCTION_STATUS::PENDING),
 	speed(0),
 	target(0),
 	emcon(0),
@@ -244,26 +245,26 @@ Instruction::Evaluate(Ship* ship)
 	Sim* sim = Sim::GetSim();
 
 	switch (action) {
-	case VECTOR:
+	case INSTRUCTION_ACTION::VECTOR:
 		break;
 
-	case LAUNCH:
+	case INSTRUCTION_ACTION::LAUNCH:
 		if (ship->GetFlightPhase() == Ship::ACTIVE)
-			SetStatus(COMPLETE);
+			SetStatus(INSTRUCTION_STATUS::COMPLETE);
 		break;
 
-	case DOCK:
-	case RTB:
+	case INSTRUCTION_ACTION::DOCK:
+	case INSTRUCTION_ACTION::RTB:
 		if (sim->GetPlayerShip() == ship &&
 			(ship->GetFlightPhase() == Ship::DOCKING ||
 				ship->GetFlightPhase() == Ship::DOCKED))
-			SetStatus(COMPLETE);
+			SetStatus(INSTRUCTION_STATUS::COMPLETE);
 		else if (ship->Integrity() < 1)
-			SetStatus(FAILED);
+			SetStatus(INSTRUCTION_STATUS::FAILED);
 		break;
 
-	case DEFEND:
-	case ESCORT:
+	case INSTRUCTION_ACTION::DEFEND:
+	case INSTRUCTION_ACTION::ESCORT:
 	{
 		bool found = false;
 		bool safe = true;
@@ -284,15 +285,15 @@ Instruction::Evaluate(Ship* ship)
 					Ship* s = e->GetShip(i + 1);
 
 					if (s && s->Integrity() < 1)
-						SetStatus(FAILED);
+						SetStatus(INSTRUCTION_STATUS::FAILED);
 				}
 
-				if (status == PENDING) {
+				if (status == INSTRUCTION_STATUS::PENDING) {
 					// if the element had a flight plan, and all nav points
 					// have been addressed, then the element is safe
 					if (e->FlightPlanLength() > 0) {
 						if (e->GetNextNavPoint() == 0)
-							SetStatus(COMPLETE);
+							SetStatus(INSTRUCTION_STATUS::COMPLETE);
 						else
 							safe = false;
 					}
@@ -300,17 +301,17 @@ Instruction::Evaluate(Ship* ship)
 			}
 		}
 
-		if (status == PENDING && safe &&
+		if (status == INSTRUCTION_STATUS::PENDING && safe &&
 			sim->GetPlayerShip() == ship &&
 			(ship->GetFlightPhase() == Ship::DOCKING ||
 				ship->GetFlightPhase() == Ship::DOCKED)) {
-			SetStatus(COMPLETE);
+			SetStatus(INSTRUCTION_STATUS::COMPLETE);
 		}
 	}
 	break;
 
-	case PATROL:
-	case SWEEP:
+	case INSTRUCTION_ACTION::PATROL:
+	case INSTRUCTION_ACTION::SWEEP:
 	{
 		bool alive = false;
 
@@ -331,15 +332,15 @@ Instruction::Evaluate(Ship* ship)
 			}
 		}
 
-		if (status == PENDING && !alive) {
-			SetStatus(COMPLETE);
+		if (status == INSTRUCTION_STATUS::PENDING && !alive) {
+			SetStatus(INSTRUCTION_STATUS::COMPLETE);
 		}
 	}
 	break;
 
-	case INTERCEPT:
-	case STRIKE:
-	case ASSAULT:
+	case INSTRUCTION_ACTION::INTERCEPT:
+	case INSTRUCTION_ACTION::STRIKE:
+	case INSTRUCTION_ACTION::ASSAULT:
 	{
 		bool alive = false;
 
@@ -360,13 +361,13 @@ Instruction::Evaluate(Ship* ship)
 			}
 		}
 
-		if (status == PENDING && !alive) {
-			SetStatus(COMPLETE);
+		if (status == INSTRUCTION_STATUS::PENDING && !alive) {
+			SetStatus(INSTRUCTION_STATUS::COMPLETE);
 		}
 	}
 	break;
 
-	case RECON:
+	case INSTRUCTION_ACTION::RECON:
 		break;
 
 	default:
@@ -375,7 +376,7 @@ Instruction::Evaluate(Ship* ship)
 }
 
 void
-Instruction::SetStatus(int s)
+Instruction::SetStatus(INSTRUCTION_STATUS s)
 {
 	status = s;
 }
@@ -388,69 +389,68 @@ Instruction::GetShortDescription() const
 	static char desc[256];
 
 	switch (action) {
-	case VECTOR:
+	case INSTRUCTION_ACTION::VECTOR:
 		if (farcast)
-			sprintf_s(desc, Game::GetText("instr.short.farcast").data(), rgn_name.data());
+			sprintf_s(desc, "Farcast to %s sector", rgn_name.data());
 		else
-			sprintf_s(desc, Game::GetText("instr.short.vector").data(), rgn_name.data());
+			sprintf_s(desc, "Go to %s sector", rgn_name.data());
 		break;
 
-	case LAUNCH:
-		sprintf_s(desc, Game::GetText("instr.short.launch").data(), tgt_name.data());
+	case INSTRUCTION_ACTION::LAUNCH:
+		sprintf_s(desc, "Launch from the %s", tgt_name.data());
 		break;
 
-	case DOCK:
-		sprintf_s(desc, Game::GetText("instr.short.dock").data(), tgt_name.data());
+	case INSTRUCTION_ACTION::DOCK:
+		sprintf_s(desc, "Dock with the %s", tgt_name.data());
 		break;
 
-	case RTB:
-		sprintf_s(desc, Game::GetText("instr.short.return-to-base").data());
+	case INSTRUCTION_ACTION::RTB:
+		sprintf_s(desc, "Return safely to base");
 		break;
 
-	case DEFEND:
+	case INSTRUCTION_ACTION::DEFEND:
 		if (priority == PRIMARY) {
-			sprintf_s(desc, Game::GetText("instr.short.defend").data(), ActionName(action), tgt_desc.data());
+			sprintf_s(desc, "Defend %s", tgt_desc.data());
 		}
 		else {
-			sprintf_s(desc, Game::GetText("instr.short.protect").data(), tgt_desc.data());
+			sprintf_s(desc, "Protect %s in the area", tgt_desc.data());
 		}
 		break;
 
-	case ESCORT:
+	case INSTRUCTION_ACTION::ESCORT:
 		if (priority == PRIMARY) {
-			sprintf_s(desc, Game::GetText("instr.short.escort").data(), ActionName(action), tgt_desc.data());
+			sprintf_s(desc, "Escort %s", tgt_desc.data());
 		}
 		else {
-			sprintf_s(desc, Game::GetText("instr.short.protect").data(), tgt_desc.data());
+			sprintf_s(desc, "Protect %s in the area", tgt_desc.data());
 		}
 		break;
-
-	case PATROL:
-		sprintf_s(desc, Game::GetText("instr.short.patrol").data(),
+	case INSTRUCTION_ACTION::PATROL:
+		sprintf_s(desc, "Patrol for %s in %s",
 			tgt_desc.data(),
 			rgn_name.data());
 		break;
 
-	case SWEEP:
-		sprintf_s(desc, Game::GetText("instr.short.sweep").data(),
+	case INSTRUCTION_ACTION::SWEEP:
+		sprintf_s(desc, "Sweep for %s in %s",
 			tgt_desc.data(),
 			rgn_name.data());
 		break;
 
-	case INTERCEPT:
-		sprintf_s(desc, Game::GetText("instr.short.intercept").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::INTERCEPT:
+		sprintf_s(desc, "Intercept and destroy %s", tgt_desc.data());
 		break;
 
-	case STRIKE:
-		sprintf_s(desc, Game::GetText("instr.short.strike").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::STRIKE:
+		sprintf_s(desc, "Engage and destroy %s", tgt_desc.data());
 		break;
 
-	case ASSAULT:
-		sprintf_s(desc, Game::GetText("instr.short.assault").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::ASSAULT:
+		sprintf_s(desc, "Engage and destroy %s", tgt_desc.data());
 		break;
 
-	case RECON:
-		sprintf_s(desc, Game::GetText("instr.short.recon").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::RECON:
+		sprintf_s(desc,"Recon scan %s", tgt_desc.data());
 		break;
 
 	default:
@@ -458,15 +458,16 @@ Instruction::GetShortDescription() const
 		break;
 	}
 
-	if (status != PENDING) {
+	if (status != INSTRUCTION_STATUS::PENDING) {
 		strcat_s(desc, " - ");
-		strcat_s(desc, Game::GetText(StatusName(status)));
+		strcat_s(desc, StatusName(status));
 	}
 
 	return desc;
 }
 
 // +----------------------------------------------------------------------+
+
 
 const char*
 Instruction::GetDescription() const
@@ -474,69 +475,69 @@ Instruction::GetDescription() const
 	static char desc[1024];
 
 	switch (action) {
-	case VECTOR:
+	case INSTRUCTION_ACTION::VECTOR:
 		if (farcast)
-			sprintf_s(desc, Game::GetText("instr.long.farcast").data(), rgn_name.data());
+			sprintf_s(desc, "Farcast to the %s sector", rgn_name.data());
 		else
-			sprintf_s(desc, Game::GetText("instr.long.vector").data(), rgn_name.data());
+			sprintf_s(desc, "Go to the %s sector", rgn_name.data());
 		break;
 
-	case LAUNCH:
-		sprintf_s(desc, Game::GetText("instr.long.launch").data(), tgt_name.data());
+	case INSTRUCTION_ACTION::LAUNCH:
+		sprintf_s(desc, "Launch from the %s", tgt_name.data());
 		break;
 
-	case DOCK:
-		sprintf_s(desc, Game::GetText("instr.long.dock").data(), tgt_name.data());
+	case INSTRUCTION_ACTION::DOCK:
+		sprintf_s(desc, "Dock with the %s", tgt_name.data());
 		break;
 
-	case RTB:
-		sprintf_s(desc, Game::GetText("instr.long.return-to-base").data());
+	case INSTRUCTION_ACTION::RTB:
+		sprintf_s(desc, "Return safely to base");
 		break;
 
-	case DEFEND:
+	case INSTRUCTION_ACTION::DEFEND:
 		if (priority == PRIMARY) {
-			sprintf_s(desc, Game::GetText("instr.long.defend").data(), ActionName(action), tgt_desc.data());
+			sprintf_s(desc, "Defend the %s", tgt_desc.data());
 		}
 		else {
-			sprintf_s(desc, Game::GetText("instr.long.protect").data(), tgt_desc.data());
+			sprintf_s(desc, "Protect %s in the area", tgt_desc.data());
 		}
 		break;
 
-	case ESCORT:
+	case INSTRUCTION_ACTION::ESCORT:
 		if (priority == PRIMARY) {
-			sprintf_s(desc, Game::GetText("instr.long.escort").data(), ActionName(action), tgt_desc.data());
+			sprintf_s(desc, "Escort the %s", tgt_desc.data());
 		}
 		else {
-			sprintf_s(desc, Game::GetText("instr.long.protect").data(), tgt_desc.data());
+			sprintf_s(desc, "Protect %s in the area", tgt_desc.data());
 		}
 		break;
 
-	case PATROL:
-		sprintf_s(desc, Game::GetText("instr.long.patrol").data(),
+	case INSTRUCTION_ACTION::PATROL:
+		sprintf_s(desc, "Disable or destroy %s in the %s sector",
 			tgt_desc.data(),
 			rgn_name.data());
 		break;
 
-	case SWEEP:
-		sprintf_s(desc, Game::GetText("instr.long.sweep").data(),
+	case INSTRUCTION_ACTION::SWEEP:
+		sprintf_s(desc, "Disable or destroy %s in the %s sector",
 			tgt_desc.data(),
 			rgn_name.data());
 		break;
 
-	case INTERCEPT:
-		sprintf_s(desc, Game::GetText("instr.long.intercept").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::INTERCEPT:
+		sprintf_s(desc, "Intercept and destroy %s", tgt_desc.data());
 		break;
 
-	case STRIKE:
-		sprintf_s(desc, Game::GetText("instr.long.strike").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::STRIKE:
+		sprintf_s(desc, "Engage and destroy %s", tgt_desc.data());
 		break;
 
-	case ASSAULT:
-		sprintf_s(desc, Game::GetText("instr.long.assault").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::ASSAULT:
+		sprintf_s(desc, "Engage and destroy %s", tgt_desc.data());
 		break;
 
-	case RECON:
-		sprintf_s(desc, Game::GetText("instr.long.recon").data(), tgt_desc.data());
+	case INSTRUCTION_ACTION::RECON:
+		sprintf_s(desc, "Recon scan %s", tgt_desc.data());
 		break;
 
 	default:
@@ -544,9 +545,9 @@ Instruction::GetDescription() const
 		break;
 	}
 
-	if (status != PENDING) {
+	if (status != INSTRUCTION_STATUS::PENDING) {
 		strcat_s(desc, " - ");
-		strcat_s(desc, Game::GetText(StatusName(status)));
+		strcat_s(desc, StatusName(status));
 	}
 
 	return desc;
@@ -555,50 +556,79 @@ Instruction::GetDescription() const
 // +----------------------------------------------------------------------+
 
 const char*
-Instruction::ActionName(int a)
+Instruction::ActionName(INSTRUCTION_ACTION a)
 {
 	switch (a) {
-	case VECTOR:    return "Vector";
-	case LAUNCH:    return "Launch";
-	case DOCK:      return "Dock";
-	case RTB:       return "RTB";
+	case INSTRUCTION_ACTION::VECTOR: 
+		return "Vector";
+	case INSTRUCTION_ACTION::LAUNCH:
+		return "Launch";
+	case INSTRUCTION_ACTION::DOCK:  
+		return "Dock";
+	case INSTRUCTION_ACTION::RTB:  
+		return "RTB";
+	case INSTRUCTION_ACTION::DEFEND: 
+		return "Defend";
+	case INSTRUCTION_ACTION::ESCORT:  
+		return "Escort";
+	case INSTRUCTION_ACTION::PATROL:
+		return "Patrol";
+	case INSTRUCTION_ACTION::SWEEP: 
+		return "Sweep";
+	case INSTRUCTION_ACTION::INTERCEPT: 
+		return "Intercept";
+	case INSTRUCTION_ACTION::STRIKE:  
+		return "Strike";
+	case INSTRUCTION_ACTION::ASSAULT: 
+		return "Assault";
+	case INSTRUCTION_ACTION::RECON: 
+		return "Recon";
 
-	case DEFEND:    return "Defend";
-	case ESCORT:    return "Escort";
-	case PATROL:    return "Patrol";
-	case SWEEP:     return "Sweep";
-	case INTERCEPT: return "Intercept";
-	case STRIKE:    return "Strike";
-	case ASSAULT:   return "Assault";
-	case RECON:     return "Recon";
-
-	default:        return "Unknown";
+	default:      
+		return "Unknown";
 	}
 }
 
+const char* Instruction::ActionName(int ActionIndex)
+{
+	return ActionName(
+		static_cast<INSTRUCTION_ACTION>(ActionIndex)
+	);
+}
+
 const char*
-Instruction::StatusName(int s)
+Instruction::StatusName(INSTRUCTION_STATUS s)
 {
 	switch (s) {
-	case PENDING:  return "Pending";
-	case ACTIVE:   return "Active";
-	case SKIPPED:  return "Skipped";
-	case ABORTED:  return "Aborted";
-	case FAILED:   return "Failed";
-	case COMPLETE: return "Complete";
+	case INSTRUCTION_STATUS::PENDING: 
+		return "Pending";
+	case INSTRUCTION_STATUS::ACTIVE: 
+		return "Active";
+	case INSTRUCTION_STATUS::SKIPPED: 
+		return "Skipped";
+	case INSTRUCTION_STATUS::ABORTED:  
+		return "Aborted";
+	case INSTRUCTION_STATUS::FAILED: 
+		return "Failed";
+	case INSTRUCTION_STATUS::COMPLETE:
+		return "Complete";
 
 	default:       return "Unknown";
 	}
 }
 
 const char*
-Instruction::FormationName(int f)
+Instruction::FormationName(INSTRUCTION_FORMATION f)
 {
 	switch (f) {
-	case DIAMOND: return "Diamond";
-	case SPREAD:  return "Spread";
-	case BOX:     return "Box";
-	case TRAIL:   return "Trail";
+	case INSTRUCTION_FORMATION::DIAMOND: 
+		return "Diamond";
+	case INSTRUCTION_FORMATION::SPREAD:
+		return "Spread";
+	case INSTRUCTION_FORMATION::BOX:  
+		return "Box";
+	case INSTRUCTION_FORMATION::TRAIL:  
+		return "Trail";
 
 	default:      return "Unknown";
 	}

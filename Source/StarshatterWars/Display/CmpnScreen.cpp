@@ -16,6 +16,9 @@
 
 // UMG:
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
 
 // Dialog headers (adjust include paths to match your folder layout):
 #include "CmdOrdersDlg.h"
@@ -324,4 +327,23 @@ bool UCmpnScreen::CloseTopmost()
     }
 
     return false;
+}
+
+void UCmpnScreen::SetFieldOfView(float InFOV)
+{
+    CurrentFOV = FMath::Clamp(InFOV, MinFOV, MaxFOV);
+
+    // Apply to the active player camera (works for “screen overlays” too):
+    UWorld* World = GetWorld();
+    if (!World)
+        return;
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+    if (!PC)
+        return;
+
+    if (PC->PlayerCameraManager)
+    {
+        PC->PlayerCameraManager->SetFOV(CurrentFOV);
+    }
 }

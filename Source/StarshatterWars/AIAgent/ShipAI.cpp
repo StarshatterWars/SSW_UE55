@@ -310,7 +310,7 @@ ShipAI::ExecFrame(double secs)
 			// if this isn't the same ship we last called out:
 			if (target->Identity() != engaged_ship_id && Game::GameTime() - last_call_time > 10000) {
 				// call engaging:
-				RadioMessage* msg = new RadioMessage(ship->GetElement(), ship, RadioMessage::CALL_ENGAGING);
+				RadioMessage* msg = new RadioMessage(ship->GetElement(), ship, RadioMessageAction::CALL_ENGAGING);
 				msg->AddTarget(target);
 				RadioTraffic::Transmit(msg);
 				last_call_time = Game::GameTime();
@@ -371,10 +371,10 @@ ShipAI::FindObjective()
 {
 	distance = 0;
 
-	int order = ship->GetRadioOrders()->Action();
+	RadioMessageAction order = ship->GetRadioOrders()->GetRadioAction();
 
-	if (order == RadioMessage::QUANTUM_TO ||
-		order == RadioMessage::FARCAST_TO) {
+	if (order == RadioMessageAction::QUANTUM_TO ||
+		order == RadioMessageAction::FARCAST_TO) {
 
 		FindObjectiveQuantum();
 		objective = Transform(obj_w);
@@ -382,12 +382,12 @@ ShipAI::FindObjective()
 	}
 
 	bool form =
-		(order == RadioMessage::WEP_HOLD) ||
-		(order == RadioMessage::FORM_UP) ||
-		(order == RadioMessage::MOVE_PATROL) ||
-		(order == RadioMessage::RTB) ||
-		(order == RadioMessage::DOCK_WITH) ||
-		(!order && !target) ||
+		(order == RadioMessageAction::WEP_HOLD) ||
+		(order == RadioMessageAction::FORM_UP) ||
+		(order == RadioMessageAction::MOVE_PATROL) ||
+		(order == RadioMessageAction::RTB) ||
+		(order == RadioMessageAction::DOCK_WITH) ||
+		((order == RadioMessageAction::NONE) && !target) ||   
 		(farcaster);
 
 	Ship* ward = ship->GetWard();
@@ -396,7 +396,7 @@ ShipAI::FindObjective()
 	if (form && element_index > 1) {
 		ship->SetDirectorInfo(Game::GetText("ai.formation"));
 
-		if (navpt && navpt->Action() == Instruction::LAUNCH) {
+		if (navpt && navpt->GetAction() == INSTRUCTION_ACTION::LAUNCH) {
 			FindObjectiveNavPoint();
 		}
 		else {
@@ -422,7 +422,7 @@ ShipAI::FindObjective()
 		if (support) {
 			double d_support = ((FVector)(support->Location() - ship->Location())).Size();
 			if (d_support > 35e3) {
-				ship->SetDirectorInfo(Game::GetText("ai.regroup"));
+				ship->SetDirectorInfo("Regroup");
 				FindObjectiveTarget(support);
 				objective = Transform(obj_w);
 				return;
@@ -431,7 +431,7 @@ ShipAI::FindObjective()
 
 		// run away:
 		else if (threat != target) {
-			ship->SetDirectorInfo(Game::GetText("ai.retreat"));
+			ship->SetDirectorInfo("Retreat");
 			obj_w = ship->Location() + (FVector)(ship->Location() - threat->Location()) * 100.0f;
 			objective = Transform(obj_w);
 			return;
@@ -440,31 +440,31 @@ ShipAI::FindObjective()
 
 	// normal processing:
 	if (target) {
-		ship->SetDirectorInfo(Game::GetText("ai.seek-target"));
+		ship->SetDirectorInfo("Seek Target");
 		FindObjectiveTarget(target);
 		objective = AimTransform(obj_w);
 	}
 
 	else if (patrol) {
-		ship->SetDirectorInfo(Game::GetText("ai.patrol"));
+		ship->SetDirectorInfo("Patrol");
 		FindObjectivePatrol();
 		objective = Transform(obj_w);
 	}
 
 	else if (ward) {
-		ship->SetDirectorInfo(Game::GetText("ai.seek-ward"));
+		ship->SetDirectorInfo("Seek Wward");
 		FindObjectiveFormation();
 		objective = Transform(obj_w);
 	}
 
 	else if (navpt && form) {
-		ship->SetDirectorInfo(Game::GetText("ai.seek-navpt"));
+		ship->SetDirectorInfo("Seek Navpoint");
 		FindObjectiveNavPoint();
 		objective = Transform(obj_w);
 	}
 
 	else if (rumor) {
-		ship->SetDirectorInfo(Game::GetText("ai.search"));
+		ship->SetDirectorInfo("Search");
 		FindObjectiveTarget(rumor);
 		objective = Transform(obj_w);
 	}
@@ -632,9 +632,9 @@ ShipAI::FindObjectiveNavPoint()
 		farcaster = nullptr;
 
 	if (distance < 1000.0 ||
-		(navpt->Action() == Instruction::LAUNCH && distance > 25000.0))
+		(navpt->GetAction() == INSTRUCTION_ACTION::LAUNCH && distance > 25000.0))
 	{
-		ship->SetNavptStatus(navpt, Instruction::COMPLETE);
+		ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::COMPLETE);
 	}
 }
 
@@ -866,14 +866,18 @@ ShipAI::FindObjectiveFormation()
 
 // +--------------------------------------------------------------------+
 
-void
-ShipAI::Splash(const Ship* targ)
+void ShipAI::Splash(const Ship* targ)
 {
 	if (splash_count > 6)
 		splash_count = 4;
 
-	// call splash:
-	RadioTraffic::SendQuickMessage(ship, RadioMessage::SPLASH_1 + splash_count);
+	RadioTraffic::SendQuickMessage(
+		ship,
+		static_cast<RadioMessageAction>(
+			static_cast<int32>(RadioMessageAction::SPLASH_1) + splash_count
+			)
+	);
+
 	splash_count++;
 }
 
@@ -922,17 +926,17 @@ ShipAI::Navigator()
 
 	hold = false;
 	if ((ship->GetElement() && ship->GetElement()->GetHoldTime() > 0) ||
-		(navpt && navpt->Status() == Instruction::COMPLETE && navpt->HoldTime() > 0))
+		(navpt && navpt->GetStatus() == INSTRUCTION_STATUS::COMPLETE && navpt->HoldTime() > 0))
 		hold = true;
 
 	ship->SetFLCSMode(Ship::FLCS_HELM);
 
 	if (target)
-		ship->SetDirectorInfo(Game::GetText("ai.seek-target"));
+		ship->SetDirectorInfo("Seek Target");
 	else if (rumor)
-		ship->SetDirectorInfo(Game::GetText("ai.seek-rumor"));
+		ship->SetDirectorInfo("Seek Rumor");
 	else
-		ship->SetDirectorInfo(Game::GetText("ai.none"));
+		ship->SetDirectorInfo("Cruise");
 
 	Accumulate(AvoidCollision());
 	Accumulate(AvoidTerrain());

@@ -335,7 +335,9 @@ MissionEvent::Execute(bool silent)
 	case MESSAGE:
 		if (event_message.length() > 0) {
 			if (ship) {
-				RadioMessage* msg = new RadioMessage(ship, src, event_param[0]);
+				const auto Action = static_cast<RadioMessageAction>(event_param[0]);
+				RadioMessage* msg = new RadioMessage(ship, src, Action);
+
 				msg->SetInfo(event_message);
 				msg->SetChannel(ship->GetIFF());
 				if (tgt)
@@ -343,7 +345,9 @@ MissionEvent::Execute(bool silent)
 				RadioTraffic::Transmit(msg);
 			}
 			else if (elem) {
-				RadioMessage* msg = new RadioMessage(elem, src, event_param[0]);
+				const auto Action = static_cast<RadioMessageAction>(event_param[0]);
+				RadioMessage* msg = new RadioMessage(ship, src, Action);
+
 				msg->SetInfo(event_message);
 				msg->SetChannel(elem->GetIFF());
 				if (tgt)
@@ -358,23 +362,37 @@ MissionEvent::Execute(bool silent)
 		break;
 
 	case OBJECTIVE:
-		if (elem) {
-			if (event_param[0]) {
-				elem->ClearInstructions();
-				elem->ClearObjectives();
-			}
+	{
+		if (!elem)
+			break;
 
-			Instruction* obj = new Instruction(event_param[0], 0);
-			obj->SetTarget(event_target);
-			elem->AddObjective(obj);
+		// Clear existing objectives if requested
+		if (event_param[0]) {
+			elem->ClearInstructions();
+			elem->ClearObjectives();
+		}
 
-			if (elem->Contains(player)) {
-				HUDView* hud_local = HUDView::GetInstance();
-				if (hud_local)
-					hud_local->ShowHUDInst();
+		// Create new objective instruction
+		Instruction* obj = new Instruction(
+			static_cast<INSTRUCTION_ACTION>(event_param[0]),
+			nullptr
+		);
+
+		// Set target name (UTF-8 safe)
+		if (!event_target.empty()) {
+			obj->SetTarget(UTF8_TO_TCHAR(event_target.data()));
+		}
+
+		elem->AddObjective(obj);
+
+		// If this affects the player, update HUD
+		if (elem->Contains(player)) {
+			if (HUDView* hud_local = HUDView::GetInstance()) {
+				hud_local->ShowHUDInst();
 			}
 		}
-		break;
+	}
+	break;
 
 	case INSTRUCTION:
 		if (elem) {
@@ -658,7 +676,7 @@ MissionEvent::Execute(bool silent)
 			}
 			// fire all weapons:
 			else {
-				ListIter<WeaponGroup> g_iter = ship->Weapons();
+				ListIter<WeaponGroup> g_iter = ship->GetWeapons();
 				while (++g_iter) {
 					ListIter<Weapon> w_iter = g_iter->GetWeapons();
 					while (++w_iter) {

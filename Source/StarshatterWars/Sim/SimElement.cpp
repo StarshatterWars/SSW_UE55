@@ -265,7 +265,7 @@ SimElement::IsObjectiveTargetOf(const Ship* s) const
 	int         e_len = Name().length();
 
 	Instruction* orders = s->GetRadioOrders();
-	if (orders && orders->Action() > Instruction::SWEEP) {
+	if (orders && orders->GetAction() > INSTRUCTION_ACTION::SWEEP) {
 		const char* o_name = orders->TargetName();
 		int         o_len = 0;
 
@@ -447,10 +447,10 @@ SimElement::GetNextNavPoint()
 		while (++iter) {
 			Instruction* navpt = iter.value();
 
-			if (navpt->Status() == Instruction::COMPLETE && navpt->HoldTime() > 0)
+			if (navpt->GetStatus() == INSTRUCTION_STATUS::COMPLETE && navpt->HoldTime() > 0)
 				return navpt;
 
-			if (navpt->Status() <= Instruction::ACTIVE)
+			if (navpt->GetStatus() <= INSTRUCTION_STATUS::ACTIVE)
 				return navpt;
 		}
 	}
@@ -525,16 +525,16 @@ SimElement::GetTargetObjective()
 	for (int i = 0; i < objectives.size(); i++) {
 		Instruction* obj = objectives[i];
 
-		if (obj->Status() <= Instruction::ACTIVE) {
-			switch (obj->Action()) {
-			case Instruction::INTERCEPT:
-			case Instruction::STRIKE:
-			case Instruction::ASSAULT:
-			case Instruction::SWEEP:
-			case Instruction::PATROL:
-			case Instruction::RECON:
-			case Instruction::ESCORT:
-			case Instruction::DEFEND:
+		if (obj->GetStatus() <= INSTRUCTION_STATUS::ACTIVE) {
+			switch (obj->GetAction()) {
+			case INSTRUCTION_ACTION::INTERCEPT:
+			case INSTRUCTION_ACTION::STRIKE:
+			case INSTRUCTION_ACTION::ASSAULT:
+			case INSTRUCTION_ACTION::SWEEP:
+			case INSTRUCTION_ACTION::PATROL:
+			case INSTRUCTION_ACTION::RECON:
+			case INSTRUCTION_ACTION::ESCORT:
+			case INSTRUCTION_ACTION::DEFEND:
 				return obj;
 
 			default:
@@ -590,11 +590,11 @@ SimElement::ResumeAssignment()
 	for (int i = 0; i < objectives.size() && !objective; i++) {
 		Instruction* instr = objectives[i];
 
-		if (instr->Status() <= Instruction::ACTIVE) {
-			switch (instr->Action()) {
-			case Instruction::INTERCEPT:
-			case Instruction::STRIKE:
-			case Instruction::ASSAULT:
+		if (instr->GetStatus() <= INSTRUCTION_STATUS::ACTIVE) {
+			switch (instr->GetAction()) {
+			case INSTRUCTION_ACTION::INTERCEPT:
+			case INSTRUCTION_ACTION::STRIKE:
+			case INSTRUCTION_ACTION::ASSAULT:
 				objective = instr;
 				break;
 			}
@@ -629,14 +629,14 @@ SimElement::HandleRadioMessage(RadioMessage* msg)
 	// if this is a message from within the element,
 	// then all ships should report in.  Otherwise,
 	// just the leader will acknowledge the message.
-	int full_report = ships.contains(msg->Sender());
+	int full_report = ships.contains(msg->GetSender());
 	int reported = false;
 
 	ListIter<Ship> s = ships;
 	while (++s) {
 		if (rh.ProcessMessage(msg, s.value())) {
 			if (full_report) {
-				if (s.value() != msg->Sender())
+				if (s.value() != msg->GetSender())
 					rh.AcknowledgeMessage(msg, s.value());
 			}
 			else if (!reported) {
@@ -675,7 +675,7 @@ SimElement::ExecFrame(double seconds)
 	while (++iter) {
 		Instruction* instr = iter.value();
 
-		if (instr->Status() == Instruction::COMPLETE && instr->HoldTime() > 0)
+		if (instr->GetStatus() == INSTRUCTION_STATUS::COMPLETE && instr->HoldTime() > 0)
 			instr->SetHoldTime(instr->HoldTime() - seconds);
 	}
 }

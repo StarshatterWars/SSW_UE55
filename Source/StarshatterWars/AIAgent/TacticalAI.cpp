@@ -50,7 +50,7 @@ TacticalAI::TacticalAI(ShipAI* ai)
 	, carrier_ai(0)
 	, navpt(0)
 	, orders(0)
-	, action(0)
+	, action(RadioMessageAction::NONE)
 	, threat_level(0)
 	, support_level(1)
 	, directed_tgtid(0)
@@ -100,12 +100,12 @@ void TacticalAI::ExecFrame(double secs)
 		FindSupport();
 
 		if (element_index > 1) {
-			int formation = 0;
+			INSTRUCTION_FORMATION formation = INSTRUCTION_FORMATION::DIAMOND;
 
-			if (orders && orders->Formation() >= 0)
-				formation = orders->Formation();
+			if (orders && orders->GetFormation() >= INSTRUCTION_FORMATION::DIAMOND)
+				formation = orders->GetFormation();
 			else if (navpt)
-				formation = navpt->Formation();
+				formation = navpt->GetFormation();
 
 			FindFormationSlot(formation);
 		}
@@ -146,9 +146,9 @@ bool TacticalAI::CheckShipOrders()
 
 bool TacticalAI::CheckObjectives()
 {
-	bool     processed = false;
-	Ship* ward = 0;
-	SimElement* elem = ship->GetElement();
+	bool        processed = false;
+	Ship* ward = nullptr;
+	SimElement* elem = ship ? ship->GetElement() : nullptr;
 
 	if (elem) {
 		Instruction* obj = elem->GetTargetObjective();
@@ -156,27 +156,29 @@ bool TacticalAI::CheckObjectives()
 		if (obj) {
 			ship_ai->ClearPatrol();
 
-			if (obj->Action()) {
-				switch (obj->Action()) {
-				case Instruction::INTERCEPT:
-				case Instruction::STRIKE:
-				case Instruction::ASSAULT:
+			const INSTRUCTION_ACTION Action = obj->GetAction();
+
+			if (Action != INSTRUCTION_ACTION::NONE) {
+				switch (Action) {
+				case INSTRUCTION_ACTION::INTERCEPT:
+				case INSTRUCTION_ACTION::STRIKE:
+				case INSTRUCTION_ACTION::ASSAULT:
 				{
 					SimObject* tgt = obj->GetTarget();
 					if (tgt && tgt->Type() == SimObject::SIM_SHIP) {
 						roe = DIRECTED;
-						SelectTargetDirected((Ship*)tgt);
+						SelectTargetDirected(static_cast<Ship*>(tgt));
 					}
 				}
 				break;
 
-				case Instruction::DEFEND:
-				case Instruction::ESCORT:
+				case INSTRUCTION_ACTION::DEFEND:
+				case INSTRUCTION_ACTION::ESCORT:
 				{
 					SimObject* tgt = obj->GetTarget();
 					if (tgt && tgt->Type() == SimObject::SIM_SHIP) {
 						roe = DEFENSIVE;
-						ward = (Ship*)tgt;
+						ward = static_cast<Ship*>(tgt);
 					}
 				}
 				break;
@@ -196,7 +198,6 @@ bool TacticalAI::CheckObjectives()
 }
 
 // +--------------------------------------------------------------------+
-
 bool TacticalAI::ProcessOrders()
 {
 	if (ship_ai)
@@ -212,11 +213,13 @@ bool TacticalAI::ProcessOrders()
 			ship->SetEMCON(desired_emcon);
 	}
 
-	if (orders && orders->Action()) {
-		switch (orders->Action()) {
-		case RadioMessage::ATTACK:
-		case RadioMessage::BRACKET:
-		case RadioMessage::IDENTIFY:
+	// FIX: enum class cannot be used as a boolean
+	if (orders && orders->GetRadioAction() != RadioMessageAction::NONE) {
+
+		switch (orders->GetRadioAction()) {
+		case RadioMessageAction::ATTACK:
+		case RadioMessageAction::BRACKET:
+		case RadioMessageAction::IDENTIFY:
 		{
 			bool       tgt_ok = false;
 			SimObject* tgt = orders->GetTarget();
@@ -228,8 +231,8 @@ bool TacticalAI::ProcessOrders()
 					roe = DIRECTED;
 					SelectTargetDirected((Ship*)tgt);
 
-					ship_ai->SetBracket(orders->Action() == RadioMessage::BRACKET);
-					ship_ai->SetIdentify(orders->Action() == RadioMessage::IDENTIFY);
+					ship_ai->SetBracket(orders->GetRadioAction() == RadioMessageAction::BRACKET);
+					ship_ai->SetIdentify(orders->GetRadioAction() == RadioMessageAction::IDENTIFY);
 					ship_ai->SetNavPoint(0);
 
 					tgt_ok = true;
@@ -241,8 +244,8 @@ bool TacticalAI::ProcessOrders()
 		}
 		break;
 
-		case RadioMessage::ESCORT:
-		case RadioMessage::COVER_ME:
+		case RadioMessageAction::ESCORT:
+		case RadioMessageAction::COVER_ME:
 		{
 			SimObject* tgt = orders->GetTarget();
 			if (tgt && tgt->Type() == SimObject::SIM_SHIP) {
@@ -256,26 +259,26 @@ bool TacticalAI::ProcessOrders()
 		}
 		break;
 
-		case RadioMessage::WEP_FREE:
+		case RadioMessageAction::WEP_FREE:
 			roe = AGRESSIVE;
 			ship_ai->DropTarget(0.1);
 			break;
 
-		case RadioMessage::WEP_HOLD:
-		case RadioMessage::FORM_UP:
+		case RadioMessageAction::WEP_HOLD:
+		case RadioMessageAction::FORM_UP:
 			roe = NONE;
 			ship_ai->DropTarget(5);
 			break;
 
-		case RadioMessage::MOVE_PATROL:
+		case RadioMessageAction::MOVE_PATROL:
 			roe = SELF_DEFENSIVE;
 			ship_ai->SetPatrol(orders->Location());
 			ship_ai->SetNavPoint(0);
 			ship_ai->DropTarget(FMath::FRandRange(5.0, 10.0));
 			break;
 
-		case RadioMessage::RTB:
-		case RadioMessage::DOCK_WITH:
+		case RadioMessageAction::RTB:
+		case RadioMessageAction::DOCK_WITH:
 		{
 			roe = NONE;
 
@@ -285,7 +288,7 @@ bool TacticalAI::ProcessOrders()
 				RadioMessage* msg = 0;
 				Ship* controller = ship->GetController();
 
-				if (orders->Action() == RadioMessage::DOCK_WITH && orders->GetTarget()) {
+				if (orders->GetRadioAction() == RadioMessageAction::DOCK_WITH && orders->GetTarget()) {
 					controller = (Ship*)orders->GetTarget();
 				}
 
@@ -306,7 +309,7 @@ bool TacticalAI::ProcessOrders()
 						double range = (controller->Location() - ship->Location()).Length();
 
 						if (range < 50e3) {
-							msg = new RadioMessage(controller, ship, RadioMessage::CALL_INBOUND);
+							msg = new RadioMessage(controller, ship, RadioMessageAction::CALL_INBOUND);
 							RadioTraffic::Transmit(msg);
 						}
 					}
@@ -320,28 +323,31 @@ bool TacticalAI::ProcessOrders()
 		}
 		break;
 
-		case RadioMessage::QUANTUM_TO:
-		case RadioMessage::FARCAST_TO:
+		case RadioMessageAction::QUANTUM_TO:
+		case RadioMessageAction::FARCAST_TO:
 			roe = NONE;
 			ship_ai->DropTarget(10);
 			break;
+
+		default:
+			break;
 		}
 
-		action = orders->Action();
+		action = orders->GetRadioAction();
 		return true;
 	}
 
 	// if we had an action before, this must be a "cancel orders"
-	else if (action) {
+	else if (action != RadioMessageAction::NONE) {
 		ClearRadioOrders();
 	}
 
 	return false;
 }
-
+If you want to make this pain
 void TacticalAI::ClearRadioOrders()
 {
-	action = 0;
+	action = RadioMessageAction::NONE;
 	roe = FLEXIBLE;
 
 	if (ship_ai)
@@ -363,34 +369,34 @@ bool TacticalAI::CheckFlightPlan()
 	roe = FLEXIBLE;
 
 	if (navpt) {
-		switch (navpt->Action()) {
-		case Instruction::LAUNCH:
-		case Instruction::DOCK:
-		case Instruction::RTB:
+		switch (navpt->GetAction()) {
+		case INSTRUCTION_ACTION::LAUNCH:
+		case INSTRUCTION_ACTION::DOCK:
+		case INSTRUCTION_ACTION::RTB:
 			roe = NONE;
 			break;
 
-		case Instruction::VECTOR:
+		case INSTRUCTION_ACTION::VECTOR:
 			roe = SELF_DEFENSIVE;
 			break;
 
-		case Instruction::DEFEND:
-		case Instruction::ESCORT:
+		case INSTRUCTION_ACTION::DEFEND:
+		case INSTRUCTION_ACTION::ESCORT:
 			roe = DEFENSIVE;
 			break;
 
-		case Instruction::INTERCEPT:
+		case INSTRUCTION_ACTION::INTERCEPT:
 			roe = DIRECTED;
 			break;
 
-		case Instruction::RECON:
-		case Instruction::STRIKE:
-		case Instruction::ASSAULT:
+		case INSTRUCTION_ACTION::RECON:
+		case INSTRUCTION_ACTION::STRIKE:
+		case INSTRUCTION_ACTION::ASSAULT:
 			roe = DIRECTED;
 			break;
 
-		case Instruction::PATROL:
-		case Instruction::SWEEP:
+		case INSTRUCTION_ACTION::PATROL:
+		case INSTRUCTION_ACTION::SWEEP:
 			roe = FLEXIBLE;
 			break;
 
@@ -432,7 +438,7 @@ void TacticalAI::SelectTarget()
 	}
 
 	// unarmed vessels should never engage an enemy:
-	if (ship->Weapons().size() < 1)
+	if (ship->GetWeapons().size() < 1)
 		roe = NONE;
 
 	SimObject* target = ship_ai->GetTarget();
@@ -916,41 +922,41 @@ void TacticalAI::FindSupport()
 
 // +--------------------------------------------------------------------+
 
-void TacticalAI::FindFormationSlot(int formation)
+void TacticalAI::FindFormationSlot(INSTRUCTION_FORMATION formation)
 {
 	// find the formation delta:
 	int   s = element_index - 1;
 	FVector delta = FVector(10 * s, 0, 10 * s);
 
 	// diamond:
-	if (formation == Instruction::DIAMOND) {
+	if (formation == INSTRUCTION_FORMATION::DIAMOND) {
 		switch (element_index) {
-		case 2: delta = Point(10, 0, -12); break;
-		case 3: delta = Point(-10, 0, -12); break;
-		case 4: delta = Point(0, 0, -24); break;
+		case 2: delta = FVector(10, 0, -12); break;
+		case 3: delta = FVector(-10, 0, -12); break;
+		case 4: delta = FVector(0, 0, -24); break;
 		}
 	}
 
 	// spread:
-	if (formation == Instruction::SPREAD) {
+	if (formation == INSTRUCTION_FORMATION::SPREAD) {
 		switch (element_index) {
-		case 2: delta = Point(15, 0, 0); break;
-		case 3: delta = Point(-15, 0, 0); break;
-		case 4: delta = Point(-30, 0, 0); break;
+		case 2: delta = FVector(15, 0, 0); break;
+		case 3: delta = FVector(-15, 0, 0); break;
+		case 4: delta = FVector(-30, 0, 0); break;
 		}
 	}
 
 	// box:
-	if (formation == Instruction::BOX) {
+	if (formation == INSTRUCTION_FORMATION::BOX) {
 		switch (element_index) {
-		case 2: delta = Point(15, 0, 0); break;
-		case 3: delta = Point(0, -1, -15); break;
-		case 4: delta = Point(15, -1, -15); break;
+		case 2: delta = FVector(15, 0, 0); break;
+		case 3: delta = FVector(0, -1, -15); break;
+		case 4: delta = FVector(15, -1, -15); break;
 		}
 	}
 
 	// trail:
-	if (formation == Instruction::TRAIL) {
+	if (formation == INSTRUCTION_FORMATION::TRAIL) {
 		delta = FVector(0, 0, -15 * s);
 	}
 

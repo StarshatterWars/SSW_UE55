@@ -19,6 +19,7 @@
 
 #include "Types.h"
 #include "SimDirector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -64,7 +65,7 @@ protected:
 	virtual void      CheckTarget();
 	virtual void      FindThreat();
 	virtual void      FindSupport();
-	virtual void      FindFormationSlot(int formation);
+	virtual void      FindFormationSlot(INSTRUCTION_FORMATION formation);
 
 	virtual bool      CanTarget(Ship* tgt);
 	virtual void      ClearRadioOrders();
@@ -76,13 +77,13 @@ protected:
 	Instruction* navpt;
 	Instruction* orders;
 
-	double            agression;
-	ROE               roe;
-	int               element_index;
-	int               action;
-	int               exec_time;
-	int               directed_tgtid;
+	double				agression;
+	ROE					roe;
+	int					element_index;
+	RadioMessageAction	action;
+	int					exec_time;
+	int					directed_tgtid;
 
-	double            threat_level;
-	double            support_level;
+	double				threat_level;
+	double				support_level;
 };

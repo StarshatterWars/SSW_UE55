@@ -94,10 +94,10 @@ FighterAI::ExecFrame(double s)
     inbound = ship->GetInbound();
     missile_time -= s;
 
-    int order = 0;
+    RadioMessageAction order = RadioMessageAction::NONE;
 
     if (navpt)
-        order = navpt->Action();
+        order = navpt->GetRadioAction();
 
     if (inbound) {
         form_up = false;
@@ -195,8 +195,8 @@ FighterAI::ExecFrame(double s)
         Instruction* orders = ship->GetRadioOrders();
 
         if (orders &&
-            (orders->Action() == RadioMessage::WEP_HOLD ||
-                orders->Action() == RadioMessage::FORM_UP)) {
+            (orders->GetRadioAction() == RadioMessageAction::WEP_HOLD ||
+                orders->GetRadioAction() == RadioMessageAction::FORM_UP)) {
             form_up = true;
             rtb_code = 0;
         }
@@ -205,7 +205,10 @@ FighterAI::ExecFrame(double s)
         }
     }
 
-    if (!target && order != Instruction::STRIKE)
+    const INSTRUCTION_ACTION InstrOrder =
+        static_cast<INSTRUCTION_ACTION>(static_cast<int32>(order));
+
+    if (!target && InstrOrder != INSTRUCTION_ACTION::STRIKE)
         ship->SetSensorMode(Sensor::STD);
 
     ShipAI::ExecFrame(s); // this must be the last line of this method
@@ -227,17 +230,17 @@ FighterAI::FindObjective()
     // ALWAYS complete initial launch navpt:
     if (!navpt) {
         navpt = ship->GetNextNavPoint();
-        if (navpt && (navpt->Action() != Instruction::LAUNCH || navpt->Status() == Instruction::COMPLETE))
+        if (navpt && (navpt->GetAction() != INSTRUCTION_ACTION::LAUNCH || navpt->GetStatus() == INSTRUCTION_STATUS::COMPLETE))
             navpt = 0;
     }
 
-    if (navpt && navpt->Action() == Instruction::LAUNCH) {
-        if (navpt->Status() != Instruction::COMPLETE) {
+    if (navpt && navpt->GetAction() == INSTRUCTION_ACTION::LAUNCH) {
+        if (navpt->GetStatus() != INSTRUCTION_STATUS::COMPLETE) {
             FindObjectiveNavPoint();
 
             // transform into camera coords:
             objective = Transform(obj_w);
-            ship->SetDirectorInfo(Game::GetText("ai.launch"));
+            ship->SetDirectorInfo("Launch");
             return;
         }
         else {
@@ -252,7 +255,7 @@ FighterAI::FindObjective()
 
         // transform into camera coords:
         objective = Transform(obj_w);
-        ship->SetDirectorInfo(Game::GetText("ai.takeoff"));
+        ship->SetDirectorInfo("Takeoff");
         return;
     }
 
@@ -273,14 +276,14 @@ FighterAI::FindObjective()
 
             // transform into camera coords:
             objective = Transform(obj_w);
-            ship->SetDirectorInfo(Game::GetText("ai.inbound"));
+            ship->SetDirectorInfo("Inbound");
 
             return;
         }
 
         // final approach
         else {
-            ship->SetDirectorInfo(Game::GetText("ai.finals"));
+            ship->SetDirectorInfo("Finals");
 
             obj_w = deck->StartPoint();
             if (inbound->Final()) {
@@ -304,28 +307,28 @@ FighterAI::FindObjective()
     // not inbound yet, check for RTB order:
     else {
         Instruction* orders = (Instruction*)ship->GetRadioOrders();
-        int          action = 0;
+        RadioMessageAction action = RadioMessageAction::NONE;
 
         if (orders)
-            action = orders->Action();
+            action = orders->GetRadioAction();
 
-        if (navpt && !action) {
+        if (navpt && action != RadioMessageAction::NONE) {
             FindObjectiveNavPoint();
             if (distance < 5e3) {
-                action = navpt->Action();
+                action = navpt->GetRadioAction();
             }
         }
 
-        if (action == RadioMessage::RTB ||
-            action == RadioMessage::DOCK_WITH) {
+        if (action == RadioMessageAction::RTB ||
+            action == RadioMessageAction::DOCK_WITH) {
 
             Ship* controller = ship->GetController();
 
-            if (orders && orders->Action() == RadioMessage::DOCK_WITH && orders->GetTarget()) {
+            if (orders && orders->GetRadioAction() == RadioMessageAction::DOCK_WITH && orders->GetTarget()) {
                 controller = (Ship*)orders->GetTarget();
             }
 
-            else if (navpt && navpt->Action() == RadioMessage::DOCK_WITH && navpt->GetTarget()) {
+            else if (navpt && navpt->GetRadioAction() == RadioMessageAction::DOCK_WITH && navpt->GetTarget()) {
                 controller = (Ship*)navpt->GetTarget();
             }
 
@@ -592,15 +595,15 @@ FighterAI::Navigator()
         }
     }
 
-    int order = 0;
+    INSTRUCTION_ACTION order = INSTRUCTION_ACTION::VECTOR;
 
     if (navpt)
-        order = navpt->Action();
+        order = navpt->GetAction();
 
-    if (rtb_code == 1 && navpt && navpt->Status() < Instruction::SKIPPED &&
+    if (rtb_code == 1 && navpt && navpt->GetStatus() < INSTRUCTION_STATUS::SKIPPED &&
         !inbound && distance < 35e3) { // (this should be distance to the ship)
 
-        if (order == Instruction::RTB) {
+        if (order == INSTRUCTION_ACTION::RTB) {
             Ship* controller = ship->GetController();
             Hangar* hangar = controller ? controller->GetHangar() : 0;
 
@@ -609,11 +612,11 @@ FighterAI::Navigator()
                     Ship* s = elem->GetShip(i + 1);
 
                     if (s && s->GetDirector() && s->GetDirector()->Type() >= ShipAI::FIGHTER)
-                        RadioTraffic::SendQuickMessage(s, RadioMessage::CALL_INBOUND);
+                        RadioTraffic::SendQuickMessage(s, RadioMessageAction::CALL_INBOUND);
                 }
 
                 if (element_index == 1)
-                    ship->SetNavptStatus(navpt, Instruction::COMPLETE);
+                    ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::COMPLETE);
             }
 
             else {
@@ -621,7 +624,7 @@ FighterAI::Navigator()
                     UE_LOG(LogTemp, Warning,
                         TEXT("WARNING: FighterAI NAVPT RTB, but no controller or hangar found for ship '%s'"),
                         ship ? ANSI_TO_TCHAR(ship->Name()) : TEXT("null"));
-                    ship->SetNavptStatus(navpt, Instruction::SKIPPED);
+                    ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::SKIPPED);
                 }
             }
         }
@@ -633,13 +636,13 @@ FighterAI::Navigator()
                     Ship* s = elem->GetShip(i + 1);
 
                     if (s) {
-                        RadioMessage* msg = new RadioMessage(dock_target, s, RadioMessage::CALL_INBOUND);
+                        RadioMessage* msg = new RadioMessage(dock_target, s, RadioMessageAction::CALL_INBOUND);
                         RadioTraffic::Transmit(msg);
                     }
                 }
 
                 if (element_index == 1)
-                    ship->SetNavptStatus(navpt, Instruction::COMPLETE);
+                    ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::COMPLETE);
             }
 
             else {
@@ -647,14 +650,14 @@ FighterAI::Navigator()
                     UE_LOG(LogTemp, Warning,
                         TEXT("WARNING: FighterAI NAVPT DOCK, but no dock target found for ship '%s'"),
                         ship ? ANSI_TO_TCHAR(ship->Name()) : TEXT("null"));
-                    ship->SetNavptStatus(navpt, Instruction::SKIPPED);
+                    ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::SKIPPED);
                 }
             }
         }
     }
 
     if (target)
-        ship->SetDirectorInfo(Game::GetText("ai.seek-target"));
+        ship->SetDirectorInfo("Seek Target");
 
     accumulator.Clear();
     magnitude = 0;
@@ -663,7 +666,7 @@ FighterAI::Navigator()
 
     hold = false;
     if ((ship->GetElement() && ship->GetElement()->GetHoldTime() > 0) ||
-        (navpt && navpt->Status() == Instruction::COMPLETE && navpt->HoldTime() > 0))
+        (navpt && navpt->GetStatus() == INSTRUCTION_STATUS::COMPLETE && navpt->HoldTime() > 0))
         hold = true;
 
     if (ship->MissionClock() < 10000) {
@@ -1147,7 +1150,7 @@ FighterAI::AvoidTerrain()
     terrain_warning = false;
 
     if (!ship || !ship->GetRegion() || !ship->GetRegion()->IsActive() ||
-        (navpt && navpt->Action() == Instruction::LAUNCH)) {
+        (navpt && navpt->GetAction() == INSTRUCTION_ACTION::LAUNCH)) {
         return avoid;
     }
 
@@ -1156,7 +1159,7 @@ FighterAI::AvoidTerrain()
         if (ship->AltitudeMSL() > 25e3) {
             if (!navpt || (navpt->Region() == ship->GetRegion() && navpt->Location().Z < 27e3)) {
                 terrain_warning = true;
-                ship->SetDirectorInfo(Game::GetText("ai.too-high"));
+                ship->SetDirectorInfo("Too High");
 
                 // where will we be?
                 const FVector SelfPt = ship->Location() + ship->Velocity() + FVector(0.0, 0.0, -15e3);
@@ -1172,11 +1175,11 @@ FighterAI::AvoidTerrain()
         // too low?
         else if (ship->AltitudeAGL() < 2500) {
             terrain_warning = true;
-            ship->SetDirectorInfo(Game::GetText("ai.too-low"));
+            ship->SetDirectorInfo("Too Low");
 
             // way too low?
             if (ship->AltitudeAGL() < 1500) {
-                ship->SetDirectorInfo(Game::GetText("ai.way-too-low"));
+                ship->SetDirectorInfo(Game::GetText("Way Too Low!"));
                 target = nullptr;
                 drop_time = 5.0;
             }
@@ -1267,7 +1270,7 @@ FighterAI::SeekTarget()
                                 time_to_dock *= (CurrentDist / TotalDist);
                         }
 
-                        RadioTraffic::SendQuickMessage(ship, RadioMessage::CALL_FINALS);
+                        RadioTraffic::SendQuickMessage(ship, RadioMessageAction::CALL_FINALS);
                     }
 
                     inbound->SetFinal(true);
@@ -1302,8 +1305,8 @@ FighterAI::SeekTarget()
         return Steer();
     }
 
-    else if (navpt && navpt->Action() == Instruction::LAUNCH) {
-        ship->SetDirectorInfo(Game::GetText("ai.launch"));
+    else if (navpt && navpt->GetAction() == INSTRUCTION_ACTION::LAUNCH) {
+        ship->SetDirectorInfo("Launch");
         return Seek(objective);
     }
 
@@ -1312,7 +1315,7 @@ FighterAI::SeekTarget()
         if (element_index > 1)
             return SeekFormationSlot();
 
-        ship->SetDirectorInfo(Game::GetText("ai.seek-farcaster"));
+        ship->SetDirectorInfo("Seek Farcaster");
         return Seek(objective);
     }
 
@@ -1372,13 +1375,13 @@ FighterAI::SeekTarget()
                 return Steer();
             }
 
-            ship->SetDirectorInfo(Game::GetText("ai.seek-target"));
+            ship->SetDirectorInfo("Seek Target");
             return Seek(objective);
         }
     }
 
     if (navpt) {
-        ship->SetDirectorInfo(Game::GetText("ai.seek-navpt"));
+        ship->SetDirectorInfo("Seek Navpoint");
     }
 
     return Seek(objective);
@@ -1702,7 +1705,7 @@ FighterAI::FireControl()
         return;
 
     // if the objective is a navpt or landing bay (not a target), then don't shoot!
-    if (inbound || farcaster || (navpt && navpt->Action() < Instruction::DEFEND))
+    if (inbound || farcaster || (navpt && navpt->GetAction() < INSTRUCTION_ACTION::DEFEND))
         return;
 
     // object behind us, or too close:
@@ -1805,13 +1808,13 @@ FighterAI::FireControl()
 
                             if (Game::GameTime() - last_call_time > 6000) {
                                 // call fox:
-                                int call = RadioMessage::FOX_3;                 // A2A
+                                RadioMessageAction call = RadioMessageAction::FOX_3;                 // A2A
 
                                 if (secondary->CanTarget((int)CLASSIFICATION::GROUND_UNITS))   // AGM
-                                    call = RadioMessage::FOX_1;
+                                    call = RadioMessageAction::FOX_1;
 
                                 else if (secondary->CanTarget((int)CLASSIFICATION::DESTROYER)) // ASM
-                                    call = RadioMessage::FOX_2;
+                                    call = RadioMessageAction::FOX_2;
 
                                 RadioTraffic::SendQuickMessage(ship, call);
                                 last_call_time = Game::GameTime();
@@ -1832,7 +1835,7 @@ FighterAI::CalcDefensePerimeter(Ship* starship)
     double perimeter = 15e3;
 
     if (starship) {
-        ListIter<WeaponGroup> g_iter = starship->Weapons();
+        ListIter<WeaponGroup> g_iter = starship->GetWeapons();
         while (++g_iter) {
             WeaponGroup* group = g_iter.value();
 

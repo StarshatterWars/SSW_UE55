@@ -120,7 +120,7 @@ TacticalView::TacticalView(View* InParent, UGameScreen* InParentScreen)
     bRightDown = 0;
     bShiftDown = 0;
     bShowMove = 0;
-    ShowAction = 0;
+    ShowAction = RadioMessageAction::NONE;
 
     MouseStart = FIntPoint(0, 0);
     MouseAction = FIntPoint(0, 0);
@@ -272,7 +272,7 @@ void TacticalView::Refresh()
         Mouse::Show(false);
         DrawMove();
     }
-    else if (ShowAction)
+    else if (ShowAction == RadioMessageAction::NONE)
     {
         Mouse::Show(false);
         DrawAction();
@@ -464,7 +464,7 @@ void TacticalView::DoMouseFrame()
             MouseRect = Rect(RX, RY, RW, RH);
 
             // Dont draw while zooming or special modes:
-            if (Mouse::RButton() || bShowMove || ShowAction)
+            if (Mouse::RButton() || bShowMove || ShowAction != RadioMessageAction::NONE)
             {
                 MouseRect.w = 0;
                 MouseRect.h = 0;
@@ -490,10 +490,10 @@ void TacticalView::DoMouseFrame()
                 bShowMove = 0;
                 Mouse::Show(true);
             }
-            else if (ShowAction)
+            else if (ShowAction != RadioMessageAction::NONE)
             {
                 SendAction();
-                ShowAction = 0;
+                ShowAction = RadioMessageAction::NONE;
                 Mouse::Show(true);
             }
             else
@@ -522,7 +522,7 @@ void TacticalView::DoMouseFrame()
         }
     }
 
-    if (ShowAction && !bMouseDown && !bRightDown)
+    if (ShowAction != RadioMessageAction::NONE && !bMouseDown && !bRightDown)
         MouseAction = FIntPoint(Mouse::X(), Mouse::Y());
 }
 
@@ -743,40 +743,40 @@ void TacticalView::Initialize()
     gMainMenu = new Menu("MAIN");
 
     gActionMenu = new Menu("ACTION");
-    gActionMenu->AddItem("Engage", RadioMessage::ATTACK);
-    gActionMenu->AddItem("Bracket", RadioMessage::BRACKET);
-    gActionMenu->AddItem("Escort", RadioMessage::ESCORT);
-    gActionMenu->AddItem("Identify", RadioMessage::IDENTIFY);
-    gActionMenu->AddItem("Hold", RadioMessage::WEP_HOLD);
+    gActionMenu->AddItem("Engage", (int) RadioMessageAction::ATTACK);
+    gActionMenu->AddItem("Bracket", (int)RadioMessageAction::::BRACKET);
+    gActionMenu->AddItem("Escort", (int)RadioMessageAction::::ESCORT);
+    gActionMenu->AddItem("Identify", (int)RadioMessageAction::::IDENTIFY);
+    gActionMenu->AddItem("Hold", (int)RadioMessageAction::::WEP_HOLD);
 
     gFormationMenu = new Menu("FORMATION");
-    gFormationMenu->AddItem("Diamond", RadioMessage::GO_DIAMOND);
-    gFormationMenu->AddItem("Spread", RadioMessage::GO_SPREAD);
-    gFormationMenu->AddItem("Box", RadioMessage::GO_BOX);
-    gFormationMenu->AddItem("Trail", RadioMessage::GO_TRAIL);
+    gFormationMenu->AddItem("Diamond", (int)RadioMessageAction::::GO_DIAMOND);
+    gFormationMenu->AddItem("Spread", (int)RadioMessageAction::::GO_SPREAD);
+    gFormationMenu->AddItem("Box", (int)RadioMessageAction::::GO_BOX);
+    gFormationMenu->AddItem("Trail", (int)RadioMessageAction::::GO_TRAIL);
 
     gSensorsMenu = new Menu("SENSORS");
-    gSensorsMenu->AddItem("Goto EMCON 1", RadioMessage::GO_EMCON1);
-    gSensorsMenu->AddItem("Goto EMCON 2", RadioMessage::GO_EMCON2);
-    gSensorsMenu->AddItem("TGoto EMCON 3", RadioMessage::GO_EMCON3);
-    gSensorsMenu->AddItem("Launch Probe", RadioMessage::LAUNCH_PROBE);
+    gSensorsMenu->AddItem("Goto EMCON 1", (int)RadioMessageAction::::GO_EMCON1);
+    gSensorsMenu->AddItem("Goto EMCON 2", (int)RadioMessageAction::::GO_EMCON2);
+    gSensorsMenu->AddItem("TGoto EMCON 3", (int)RadioMessageAction::::GO_EMCON3);
+    gSensorsMenu->AddItem("Launch Probe", (int)RadioMessageAction::::LAUNCH_PROBE);
 
     gFighterMenu = new Menu("CONTEXT");
     gFighterMenu->AddMenu("Action", gActionMenu);
     gFighterMenu->AddMenu("Formation", gFormationMenu);
     gFighterMenu->AddMenu("Sensors", gSensorsMenu);
-    gFighterMenu->AddItem("Move Patrol", RadioMessage::MOVE_PATROL);
-    gFighterMenu->AddItem("Cancel Orders", RadioMessage::RESUME_MISSION);
+    gFighterMenu->AddItem("Move Patrol", (int)RadioMessageAction::::MOVE_PATROL);
+    gFighterMenu->AddItem("Cancel Orders", (int)RadioMessageAction::::RESUME_MISSION);
     gFighterMenu->AddItem("", 0);
-    gFighterMenu->AddItem("Return to Base", RadioMessage::RTB);
-    gFighterMenu->AddItem("Dock With", RadioMessage::DOCK_WITH);
+    gFighterMenu->AddItem("Return to Base", (int)RadioMessageAction::::RTB);
+    gFighterMenu->AddItem("Dock With", (int)RadioMessageAction::::DOCK_WITH);
     gFighterMenu->AddMenu("Farcast", gFarcastMenu);
 
     gStarshipMenu = new Menu("CONTEXT");
     gStarshipMenu->AddMenu("Action", gActionMenu);
     gStarshipMenu->AddMenu("Sensors", gSensorsMenu);
-    gStarshipMenu->AddItem("Move Patrol", RadioMessage::MOVE_PATROL);
-    gStarshipMenu->AddItem("Cancel Orders", RadioMessage::RESUME_MISSION);
+    gStarshipMenu->AddItem("Move Patrol", (int)RadioMessageAction::::MOVE_PATROL);
+    gStarshipMenu->AddItem("Cancel Orders", (int)RadioMessageAction::::RESUME_MISSION);
     gStarshipMenu->AddItem("", 0);
     gStarshipMenu->AddMenu("Quantum", gQuantumMenu);
     gStarshipMenu->AddMenu("Farcast", gFarcastMenu);
@@ -858,12 +858,12 @@ void TacticalView::BuildMenu()
     if (PlayerShip->NumFlightDecks() > 0)
         gMainMenu->AddItem("FLIGHT", VIEW_FLT);
 
-    gEmconMenu->AddItem("Goto EMCON 1", RadioMessage::GO_EMCON1);
-    gEmconMenu->AddItem("Goto EMCON 2", RadioMessage::GO_EMCON2);
-    gEmconMenu->AddItem("Goto EMCON 3", RadioMessage::GO_EMCON3);
+    gEmconMenu->AddItem("Goto EMCON 1", (int)RadioMessageAction::::GO_EMCON1);
+    gEmconMenu->AddItem("Goto EMCON 2", (int)RadioMessageAction::::GO_EMCON2);
+    gEmconMenu->AddItem("Goto EMCON 3", (int)RadioMessageAction::::GO_EMCON3);
 
     if (PlayerShip->GetProbeLauncher())
-        gEmconMenu->AddItem("Launch Probe", RadioMessage::LAUNCH_PROBE);
+        gEmconMenu->AddItem("Launch Probe", (int)RadioMessageAction::::LAUNCH_PROBE);
 
     gMainMenu->AddItem("", 0);
     gMainMenu->AddMenu("Sensors", gEmconMenu);
@@ -1061,7 +1061,7 @@ void TacticalView::SendMove()
     if (GetMouseLoc3D())
     {
         SimElement* Elem = MsgShip->GetElement();
-        RadioMessage* Msg = new RadioMessage(Elem, PlayerShip, RadioMessage::MOVE_PATROL);
+        RadioMessage* Msg = new RadioMessage(Elem, PlayerShip, RadioMessageAction::MOVE_PATROL);
 
         FVector Dest = MoveLoc;
         Dest.Y += (float)MoveAlt;
@@ -1074,7 +1074,7 @@ void TacticalView::SendMove()
 
 void TacticalView::DrawAction()
 {
-    if (!ProjectorPtr || !ShowAction || !MsgShip || !PlayerShip)
+    if (!ProjectorPtr || ShowAction == RadioMessageAction::NONE || !MsgShip || !PlayerShip)
         return;
 
     FVector Origin = MsgShip->Location();
@@ -1100,22 +1100,22 @@ void TacticalView::DrawAction()
 
     switch (ShowAction)
     {
-    case RadioMessage::ATTACK:
-    case RadioMessage::BRACKET:
+    case RadioMessageAction::ATTACK:
+    case RadioMessageAction::BRACKET:
         C = Ship::IFFColor(Enemy);
         if (Tgt && (TgtIFF == PlayerShip->GetIFF() || TgtIFF == 0))
             R = 0;
         break;
 
-    case RadioMessage::ESCORT:
-    case RadioMessage::DOCK_WITH:
+    case RadioMessageAction::ESCORT:
+    case RadioMessageAction::DOCK_WITH:
         C = PlayerShip->MarkerColor();
         if (Tgt)
         {
             if (TgtIFF == Enemy)
                 R = 0;
 
-            if (ShowAction == RadioMessage::DOCK_WITH && Tgt->GetHangar() == 0)
+            if (ShowAction == RadioMessageAction::DOCK_WITH && Tgt->GetHangar() == 0)
                 R = 0;
         }
         break;
@@ -1151,7 +1151,7 @@ void TacticalView::DrawAction()
 
 void TacticalView::SendAction()
 {
-    if (!ShowAction || !MsgShip || gInvalidAction)
+    if ((ShowAction == RadioMessageAction::NONE || !MsgShip || gInvalidAction)
     {
         HUDSounds::PlaySound(HUDSounds::SND_TAC_REJECT);
         return;

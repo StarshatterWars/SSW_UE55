@@ -857,10 +857,12 @@ MissionTemplate::CheckObjectives()
 			if (tgt.length()) {
 				tgt_elem = FindElement(tgt);
 
-				if (!tgt_elem)
+				if (!tgt_elem) {
 					obj.removeItem();
-				else
-					o->SetTarget(tgt_elem->Name());
+				}
+				else {
+					o->SetTarget(FString(tgt_elem->Name().data()));
+				}
 			}
 		}
 	}

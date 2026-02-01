@@ -61,25 +61,25 @@ RadioHandler::~RadioHandler()
 bool
 RadioHandler::ProcessMessage(RadioMessage* msg, Ship* s)
 {
-	if (!s || !msg || !msg->Sender())
+	if (!s || !msg || !msg->GetSender())
 		return false;
 
 	if (s->Class() >= CLASSIFICATION::FARCASTER && s->Class() <= CLASSIFICATION::C3I)
 		return false;
 
-	if (msg->Sender()->IsRogue()) {
-		Ship* sender = (Ship*)msg->Sender();  // cast-away const
-		RadioMessage* nak = new RadioMessage(sender, s, RadioMessage::NACK);
+	if (msg->GetSender()->IsRogue()) {
+		Ship* sender = (Ship*)msg->GetSender();  // cast-away const
+		RadioMessage* nak = new RadioMessage(sender, s, RadioMessageAction::NACK);
 		RadioTraffic::Transmit(nak);
 		return false;
 	}
 
-	bool respond = (s != msg->Sender());
+	bool respond = (s != msg->GetSender());
 
 	// SPECIAL CASE:
 	// skip navpoint must be processed by elem leader,
 	// even if the elem leader sent the message:
-	if (msg->Action() == RadioMessage::SKIP_NAVPOINT && !respond)
+	if (msg->GetRadioAction() == RadioMessageAction::SKIP_NAVPOINT && !respond)
 		ProcessMessageAction(msg, s);
 
 	if (!ProcessMessageOrders(msg, s))
@@ -91,63 +91,87 @@ RadioHandler::ProcessMessage(RadioMessage* msg, Ship* s)
 // +----------------------------------------------------------------------+
 
 bool
-RadioHandler::IsOrder(int action)
+RadioHandler::IsOrder(RadioMessageAction action)
 {
 	bool result = false;
 
 	switch (action) {
 	default:
-	case RadioMessage::NONE:
-	case RadioMessage::ACK:
-	case RadioMessage::NACK:            result = false; break;
+	case RadioMessageAction::NONE:
+	case RadioMessageAction::ACK:
+	case RadioMessageAction::NACK:  
+		result = false; 
+		break;
 
 		// target mgt:
-	case RadioMessage::ATTACK:
-	case RadioMessage::ESCORT:
-	case RadioMessage::BRACKET:
-	case RadioMessage::IDENTIFY:        result = true;  break;
+	case RadioMessageAction::ATTACK:
+	case RadioMessageAction::ESCORT:
+	case RadioMessageAction::BRACKET:
+	case RadioMessageAction::IDENTIFY:
+		result = true;  
+		break;
 
 		// combat mgt:
-	case RadioMessage::COVER_ME:
-	case RadioMessage::WEP_HOLD:
-	case RadioMessage::FORM_UP:         result = true;  break;
+	case RadioMessageAction::COVER_ME:
+	case RadioMessageAction::WEP_HOLD:
+	case RadioMessageAction::FORM_UP: 
+		result = true;  
+		break;
 
-	case RadioMessage::WEP_FREE:
-	case RadioMessage::SAY_POSITION:
-	case RadioMessage::LAUNCH_PROBE:    result = false; break;
+	case RadioMessageAction::WEP_FREE:
+	case RadioMessageAction::SAY_POSITION:
+	case RadioMessageAction::LAUNCH_PROBE:  
+		result = false; 
+		break;
 
 		// formation mgt:
-	case RadioMessage::GO_DIAMOND:
-	case RadioMessage::GO_SPREAD:
-	case RadioMessage::GO_BOX:
-	case RadioMessage::GO_TRAIL:        result = true;  break;
+	case RadioMessageAction::GO_DIAMOND:
+	case RadioMessageAction::GO_SPREAD:
+	case RadioMessageAction::GO_BOX:
+	case RadioMessageAction::GO_TRAIL:  
+		result = true;
+		break;
 
 		// mission mgt:
-	case RadioMessage::MOVE_PATROL:     result = true;  break;
-	case RadioMessage::SKIP_NAVPOINT:   result = false; break;
-	case RadioMessage::RESUME_MISSION:  result = true;  break;
+	case RadioMessageAction::MOVE_PATROL:    
+		result = true;
+		break;
+	case RadioMessageAction::SKIP_NAVPOINT:   
+		result = false;
+		break;
+	case RadioMessageAction::RESUME_MISSION:
+		result = true; 
+		break;
 
-	case RadioMessage::RTB:
-	case RadioMessage::DOCK_WITH:
-	case RadioMessage::QUANTUM_TO:
-	case RadioMessage::FARCAST_TO:      result = true;  break;
+	case RadioMessageAction::RTB:
+	case RadioMessageAction::DOCK_WITH:
+	case RadioMessageAction::QUANTUM_TO:
+	case RadioMessageAction::FARCAST_TO:
+		result = true;
+		break;
 
 		// sensor mgt:
-	case RadioMessage::GO_EMCON1:
-	case RadioMessage::GO_EMCON2:
-	case RadioMessage::GO_EMCON3:       result = true;  break;
+	case RadioMessageAction::GO_EMCON1:
+	case RadioMessageAction::GO_EMCON2:
+	case RadioMessageAction::GO_EMCON3:     
+		result = true;  
+		break;
 
 		// support:
-	case RadioMessage::REQUEST_PICTURE:
-	case RadioMessage::REQUEST_SUPPORT:
-	case RadioMessage::PICTURE:         result = false; break;
+	case RadioMessageAction::REQUEST_PICTURE:
+	case RadioMessageAction::REQUEST_SUPPORT:
+	case RadioMessageAction::PICTURE:    
+		result = false;
+		break;
 
 		// traffic control:
-	case RadioMessage::CALL_INBOUND:
-	case RadioMessage::CALL_APPROACH:
-	case RadioMessage::CALL_CLEARANCE:
-	case RadioMessage::CALL_FINALS:
-	case RadioMessage::CALL_WAVE_OFF:   result = false; break;
+	case RadioMessageAction::CALL_INBOUND:
+	case RadioMessageAction::CALL_APPROACH:
+	case RadioMessageAction::CALL_CLEARANCE:
+	case RadioMessageAction::CALL_FINALS:
+	case RadioMessageAction::CALL_WAVE_OFF:
+		result = false;
+		break;
 	}
 
 	return result;
@@ -159,11 +183,11 @@ bool
 RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 {
 	Instruction* instruction = ship->GetRadioOrders();
-	int          action = 0;
+	RadioMessageAction action = RadioMessageAction::NONE;
 
-	if (msg && msg->Action() == RadioMessage::RESUME_MISSION) {
-		instruction->SetAction(RadioMessage::NONE);
-		instruction->SetFormation(-1);
+	if (msg && msg->GetRadioAction() == RadioMessageAction::RESUME_MISSION) {
+		instruction->SetRadioAction(RadioMessageAction::NONE);
+		instruction->SetFormation(INSTRUCTION_FORMATION::NONE);
 		instruction->SetWeaponsFree(true);
 		if (instruction->GetTarget()) {
 			instruction->ClearTarget();
@@ -172,22 +196,22 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 		return true;
 	}
 
-	if (msg && IsOrder(msg->Action())) {
+	if (msg && IsOrder(msg->GetRadioAction())) {
 		int posture_only = false;
 
-		action = msg->Action();
+		action = msg->GetRadioAction();
 
-		if (action == RadioMessage::FORM_UP)
-			action = RadioMessage::WEP_HOLD;
+		if (action == RadioMessageAction::FORM_UP)
+			action = RadioMessageAction::WEP_HOLD;
 
 		// target orders => drop current target:
-		if (action >= RadioMessage::ATTACK &&
-			action <= RadioMessage::COVER_ME ||
-			action == RadioMessage::WEP_HOLD ||
-			action >= RadioMessage::DOCK_WITH &&
-			action <= RadioMessage::FARCAST_TO) {
+		if (action >= RadioMessageAction::ATTACK &&
+			action <= RadioMessageAction::COVER_ME ||
+			action == RadioMessageAction::WEP_HOLD ||
+			action >= RadioMessageAction::DOCK_WITH &&
+			action <= RadioMessageAction::FARCAST_TO) {
 
-			if (ship != msg->Sender())
+			if (ship != msg->GetSender())
 				ship->DropTarget();
 
 			SimDirector* dir = ship->GetDirector();
@@ -197,17 +221,17 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 			}
 
 			// farcast and quantum jump radio messages:
-			if (action >= RadioMessage::QUANTUM_TO) {
+			if (action >= RadioMessageAction::QUANTUM_TO) {
 				Sim* sim = Sim::GetSim();
 
 				if (sim) {
-					SimRegion* rgn = sim->FindRegion(msg->Info());
+					SimRegion* rgn = sim->FindRegion(msg->GetInfo());
 
 					if (rgn) {
-						instruction->SetAction(action);
+						instruction->SetRadioAction(action);
 						instruction->SetLocation(FVector::ZeroVector); // Point(0,0,0) -> FVector
 						instruction->SetRegion(rgn);
-						instruction->SetFarcast(action == RadioMessage::FARCAST_TO);
+						instruction->SetFarcast(action == RadioMessageAction::FARCAST_TO);
 						instruction->SetWeaponsFree(false);
 						return true;
 					}
@@ -216,34 +240,48 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 		}
 
 		// formation orders => set formation:
-		if (action >= RadioMessage::GO_DIAMOND &&
-			action <= RadioMessage::GO_TRAIL) {
+		if (action >= RadioMessageAction::GO_DIAMOND &&
+			action <= RadioMessageAction::GO_TRAIL) {
 
 			switch (action) {
-			case RadioMessage::GO_DIAMOND:   instruction->SetFormation(Instruction::DIAMOND); break;
-			case RadioMessage::GO_SPREAD:    instruction->SetFormation(Instruction::SPREAD);  break;
-			case RadioMessage::GO_BOX:       instruction->SetFormation(Instruction::BOX);     break;
-			case RadioMessage::GO_TRAIL:     instruction->SetFormation(Instruction::TRAIL);   break;
+			case RadioMessageAction::GO_DIAMOND:  
+				instruction->SetFormation(INSTRUCTION_FORMATION::DIAMOND); 
+				break;
+			case RadioMessageAction::GO_SPREAD:    
+				instruction->SetFormation(INSTRUCTION_FORMATION::SPREAD);
+				break;
+			case RadioMessageAction::GO_BOX:
+				instruction->SetFormation(INSTRUCTION_FORMATION::BOX);
+				break;
+			case RadioMessageAction::GO_TRAIL:    
+				instruction->SetFormation(INSTRUCTION_FORMATION::TRAIL);
+				break;
 			}
 
 			posture_only = true;
 		}
 
 		// emcon orders => set emcon:
-		if (action >= RadioMessage::GO_EMCON1 &&
-			action <= RadioMessage::GO_EMCON3) {
+		if (action >= RadioMessageAction::GO_EMCON1 &&
+			action <= RadioMessageAction::GO_EMCON3) {
 
-			switch (msg->Action()) {
-			case RadioMessage::GO_EMCON1:    instruction->SetEMCON(1);  break;
-			case RadioMessage::GO_EMCON2:    instruction->SetEMCON(2);  break;
-			case RadioMessage::GO_EMCON3:    instruction->SetEMCON(3);  break;
+			switch (msg->GetRadioAction()) {
+			case RadioMessageAction::GO_EMCON1:  
+				instruction->SetEMCON(1);  
+				break;
+			case RadioMessageAction::GO_EMCON2: 
+				instruction->SetEMCON(2);  
+				break;
+			case RadioMessageAction::GO_EMCON3:   
+				instruction->SetEMCON(3);
+				break;
 			}
 
 			posture_only = true;
 		}
 
 		if (!posture_only) {
-			instruction->SetAction(action);
+			instruction->SetRadioAction(action);
 			instruction->ClearTarget();
 
 			if (msg->TargetList().size() > 0) {
@@ -254,17 +292,17 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 				instruction->SetLocation(msg_tgt->Location());
 			}
 
-			else if (action == RadioMessage::COVER_ME) {
-				instruction->SetTarget((Ship*)msg->Sender());
-				instruction->SetLocation(msg->Sender()->Location());
+			else if (action == RadioMessageAction::COVER_ME) {
+				instruction->SetTarget((Ship*)msg->GetSender());
+				instruction->SetLocation(msg->GetSender()->Location());
 			}
 
-			else if (action == RadioMessage::MOVE_PATROL) {
-				instruction->SetLocation(msg->Location());
+			else if (action == RadioMessageAction::MOVE_PATROL) {
+				instruction->SetLocation(msg->GetLocation());
 			}
 
 			// handle element engagement:
-			if (action == RadioMessage::ATTACK && msg->TargetList().size() > 0) {
+			if (action == RadioMessageAction::ATTACK && msg->TargetList().size() > 0) {
 				SimElement* elem = msg->DestinationElem();
 
 				if (!elem && msg->DestinationShip())
@@ -287,7 +325,7 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 				}
 			}
 
-			else if (action == RadioMessage::RESUME_MISSION) {
+			else if (action == RadioMessageAction::RESUME_MISSION) {
 				SimElement* elem = msg->DestinationElem();
 
 				if (!elem && msg->DestinationShip())
@@ -299,7 +337,7 @@ RadioHandler::ProcessMessageOrders(RadioMessage* msg, Ship* ship)
 			}
 		}
 
-		instruction->SetWeaponsFree(action <= RadioMessage::WEP_FREE);
+		instruction->SetWeaponsFree(action <= RadioMessageAction::WEP_FREE);
 		return true;
 	}
 
@@ -313,22 +351,22 @@ RadioHandler::ProcessMessageAction(RadioMessage* msg, Ship* ship)
 {
 	if (!msg) return false;
 
-	if (msg->Action() == RadioMessage::CALL_INBOUND)
+	if (msg->GetRadioAction() == RadioMessageAction::CALL_INBOUND)
 		return Inbound(msg, ship);
 
-	if (msg->Action() == RadioMessage::CALL_FINALS)
+	if (msg->GetRadioAction() == RadioMessageAction::CALL_FINALS)
 		return true;   // acknowledge
 
-	if (msg->Action() == RadioMessage::REQUEST_PICTURE)
+	if (msg->GetRadioAction() == RadioMessageAction::REQUEST_PICTURE)
 		return Picture(msg, ship);
 
-	if (msg->Action() == RadioMessage::REQUEST_SUPPORT)
+	if (msg->GetRadioAction() == RadioMessageAction::REQUEST_SUPPORT)
 		return Support(msg, ship);
 
-	if (msg->Action() == RadioMessage::SKIP_NAVPOINT)
+	if (msg->GetRadioAction() == RadioMessageAction::SKIP_NAVPOINT)
 		return SkipNavpoint(msg, ship);
 
-	if (msg->Action() == RadioMessage::LAUNCH_PROBE)
+	if (msg->GetRadioAction() == RadioMessageAction::LAUNCH_PROBE)
 		return LaunchProbe(msg, ship);
 
 	return false;
@@ -342,7 +380,7 @@ RadioHandler::SkipNavpoint(RadioMessage* msg, Ship* ship)
 	int          elem_index = ship->GetElementIndex();
 
 	if (navpt && elem_index < 2) {
-		ship->SetNavptStatus(navpt, Instruction::SKIPPED);
+		ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::SKIPPED);
 	}
 
 	return true;
@@ -362,7 +400,7 @@ RadioHandler::LaunchProbe(RadioMessage* msg, Ship* ship)
 bool
 RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 {
-	Ship* inbound = (Ship*)msg->Sender();
+	Ship* inbound = (Ship*)msg->GetSender();
 	Hangar* hangar = ship->GetHangar();
 	FlightDeck* deck = 0;
 	int         squadron = -1;
@@ -405,18 +443,18 @@ RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 
 	// if no space (or not a carrier!) wave sender off:
 	if (!deck || !same_rgn || squadron < 0 || slot < 0) {
-		RadioMessage* wave_off = new RadioMessage(inbound, ship, RadioMessage::NACK);
+		RadioMessage* wave_off = new RadioMessage(inbound, ship, RadioMessageAction::NACK);
 		if (!hangar)
-			wave_off->SetInfo(Game::GetText("RadioHandler.no-hangar"));
+			wave_off->SetInfo("No Hangar"));
 
 		else if (!same_rgn) {
 			char info[256];
-			sprintf_s(info, Game::GetText("RadioHandler.too-far-away").data(), ship->GetRegion()->GetName());
+			sprintf_s(info, "Too Far Away", ship->GetRegion()->GetName());
 			wave_off->SetInfo(info);
 		}
 
 		else
-			wave_off->SetInfo(Game::GetText("RadioHandler.all-full"));
+			wave_off->SetInfo("Landing Bays all full");
 
 		RadioTraffic::Transmit(wave_off);
 		return false;
@@ -435,16 +473,16 @@ RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 	}
 
 	// inform sender of status:
-	RadioMessage* approach = new RadioMessage(inbound, ship, RadioMessage::CALL_APPROACH);
+	RadioMessage* approach = new RadioMessage(inbound, ship, RadioMessageAction::CALL_APPROACH);
 
 	if (inbound_slot->Cleared()) {
 		char info[256];
-		sprintf_s(info, Game::GetText("RadioHandler.cleared").data(), deck->Name());
+		sprintf_s(info, "Cleared to land", deck->Name());
 		approach->SetInfo(info);
 	}
 	else if (sequence) {
 		char info[256];
-		sprintf_s(info, Game::GetText("RadioHandler.sequenced").data(), sequence, deck->Name());
+		sprintf_s(info, "Sequenced to land", sequence, deck->Name());
 		approach->SetInfo(info);
 	}
 
@@ -469,7 +507,7 @@ RadioHandler::Picture(RadioMessage* msg, Ship* ship)
 		Ship* s = c->GetShip();
 
 		if (s && s->IsDropship() && s->IsHostileTo(ship)) {
-			const FVector Delta = msg->Sender()->Location() - s->Location();
+			const FVector Delta = msg->GetSender()->Location() - s->Location();
 			const double s_range = (double)Delta.Size();
 			if (!tgt || s_range < range) {
 				tgt = s;
@@ -480,9 +518,9 @@ RadioHandler::Picture(RadioMessage* msg, Ship* ship)
 
 	// found some:
 	if (tgt) {
-		SimElement* sender = msg->Sender()->GetElement();
+		SimElement* sender = msg->GetSender()->GetElement();
 		SimElement* tgt_elem = tgt->GetElement();
-		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::ATTACK);
+		RadioMessage* response = new RadioMessage(sender, ship, RadioMessageAction::ATTACK);
 
 		if (tgt_elem) {
 			for (int i = 1; i <= tgt_elem->NumShips(); i++)
@@ -497,8 +535,8 @@ RadioHandler::Picture(RadioMessage* msg, Ship* ship)
 
 	// nobody worth killin':
 	else {
-		Ship* sender = (Ship*)msg->Sender();  // cast-away const
-		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::PICTURE);
+		Ship* sender = (Ship*)msg->GetSender();  // cast-away const
+		RadioMessage* response = new RadioMessage(sender, ship, RadioMessageAction::PICTURE);
 		RadioTraffic::Transmit(response);
 	}
 
@@ -513,8 +551,8 @@ RadioHandler::Support(RadioMessage* msg, Ship* ship)
 	// try to find some fighters with time on their hands...
 	SimElement* help = 0;
 	SimElement* cmdr = ship->GetElement();
-	SimElement* baby = msg->Sender()->GetElement();
-	SimRegion* rgn = msg->Sender()->GetRegion();
+	SimElement* baby = msg->GetSender()->GetElement();
+	SimRegion* rgn = msg->GetSender()->GetRegion();
 
 	for (int i = 0; i < rgn->GetShips().size(); i++) {
 		Ship* s = rgn->GetShips().at(i);
@@ -524,7 +562,7 @@ RadioHandler::Support(RadioMessage* msg, Ship* ship)
 			e->Type() == Mission::PATROL &&
 			e != baby &&
 			cmdr->CanCommand(e) &&
-			s->GetRadioOrders()->Action() == RadioMessage::NONE) {
+			s->GetRadioOrders()->GetRadioAction() == RadioMessageAction::NONE) {
 			help = e;
 			break;
 		}
@@ -532,22 +570,22 @@ RadioHandler::Support(RadioMessage* msg, Ship* ship)
 
 	// found some:
 	if (help) {
-		RadioMessage* escort = new RadioMessage(help, ship, RadioMessage::ESCORT);
-		escort->TargetList().append(msg->Sender());
+		RadioMessage* escort = new RadioMessage(help, ship, RadioMessageAction::ESCORT);
+		escort->TargetList().append(msg->GetSender());
 		RadioTraffic::Transmit(escort);
 
-		Text ok = Game::GetText("RadioHandler.help-enroute");
-		Ship* sender = (Ship*)msg->Sender();  // cast-away const
-		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::ACK);
+		Text ok = "Help Enroute";
+		Ship* sender = (Ship*)msg->GetSender();  // cast-away const
+		RadioMessage* response = new RadioMessage(sender, ship, RadioMessageAction::ACK);
 		response->SetInfo(ok);
 		RadioTraffic::Transmit(response);
 	}
 
 	// no help in sight:
 	else {
-		Text nope = Game::GetText("RadioHandler.no-help-for-you");
-		Ship* sender = (Ship*)msg->Sender();  // cast-away const
-		RadioMessage* response = new RadioMessage(sender, ship, RadioMessage::NACK);
+		Text nope = "No help available";
+		Ship* sender = (Ship*)msg->GetSender();  // cast-away const
+		RadioMessage* response = new RadioMessage(sender, ship, RadioMessageAction::NACK);
 		response->SetInfo(nope);
 		RadioTraffic::Transmit(response);
 	}
@@ -560,12 +598,16 @@ RadioHandler::Support(RadioMessage* msg, Ship* ship)
 void
 RadioHandler::AcknowledgeMessage(RadioMessage* msg, Ship* s)
 {
-	if (s && msg && msg->Sender() && msg->Action()) {
-		if (msg->Action() >= RadioMessage::ACK && msg->Action() <= RadioMessage::NACK)
-			return;  // nothing to say here
+	if (!s || !msg || !msg->GetSender())
+		return;
 
-		Ship* sender = (Ship*)msg->Sender();  // cast-away const
-		RadioMessage* ack = new RadioMessage(sender, s, RadioMessage::ACK);
-		RadioTraffic::Transmit(ack);
-	}
+	const RadioMessageAction Action = msg->GetRadioAction();
+
+	// If it's already an ACK/NACK, don't acknowledge it again:
+	if (Action >= RadioMessageAction::ACK && Action <= RadioMessageAction::NACK)
+		return;
+
+	Ship* sender = (Ship*)msg->GetSender(); // cast-away const (legacy)
+	RadioMessage* ack = new RadioMessage(sender, s, RadioMessageAction::ACK);
+	RadioTraffic::Transmit(ack);
 }

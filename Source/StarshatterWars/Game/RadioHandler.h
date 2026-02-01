@@ -21,6 +21,7 @@
 
 // Minimal Unreal include (Vec3/Point -> FVector conversion):
 #include "Math/Vector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -39,7 +40,7 @@ public:
 	virtual void      AcknowledgeMessage(RadioMessage* msg, Ship* s);
 
 protected:
-	virtual bool      IsOrder(int action);
+	virtual bool      IsOrder(RadioMessageAction action);
 	virtual bool      ProcessMessageOrders(RadioMessage* msg, Ship* s);
 	virtual bool      ProcessMessageAction(RadioMessage* msg, Ship* s);
 

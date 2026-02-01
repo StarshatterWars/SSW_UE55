@@ -24,6 +24,7 @@
 // Minimal Unreal include (required for by-value FVector in the public API):
 #include "Math/Vector.h"
 #include "Math/Color.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -36,50 +37,6 @@ class Instruction : public SimObserver
 public:
 	static const char* TYPENAME() { return "Instruction"; }
 
-	enum ACTION
-	{
-		VECTOR,
-		LAUNCH,
-		DOCK,
-		RTB,
-
-		DEFEND,
-		ESCORT,
-		PATROL,
-		SWEEP,
-		INTERCEPT,
-		STRIKE,     // ground attack
-		ASSAULT,    // starship attack
-		RECON,
-
-		//RECALL,
-		//DEPLOY,
-
-		NUM_ACTIONS
-	};
-
-	enum STATUS
-	{
-		PENDING,
-		ACTIVE,
-		SKIPPED,
-		ABORTED,
-		FAILED,
-		COMPLETE,
-
-		NUM_STATUS
-	};
-
-	enum FORMATION
-	{
-		DIAMOND,
-		SPREAD,
-		BOX,
-		TRAIL,
-
-		NUM_FORMATIONS
-	};
-
 	enum PRIORITY
 	{
 		PRIMARY = 1,
@@ -87,27 +44,33 @@ public:
 		BONUS
 	};
 
-	Instruction(int action, const char* tgt);
-	Instruction(const char* rgn, FVector loc, int act = VECTOR);
-	Instruction(SimRegion* rgn, FVector loc, int act = VECTOR);
+	Instruction(INSTRUCTION_ACTION action, const char* tgt);
+	Instruction(const char* rgn, FVector loc, INSTRUCTION_ACTION act = INSTRUCTION_ACTION::VECTOR);
+	Instruction(SimRegion* rgn, FVector loc, INSTRUCTION_ACTION act = INSTRUCTION_ACTION::VECTOR);
 	Instruction(const Instruction& instr);
 	virtual ~Instruction();
 
 	Instruction& operator = (const Instruction& n);
+	static const char* ActionName(int ActionIndex);
 
 	// accessors:
-	static const char* ActionName(int a);
-	static const char* StatusName(int s);
-	static const char* FormationName(int f);
+	static const char* ActionName(INSTRUCTION_ACTION a);
+
+	static const char* StatusName(INSTRUCTION_STATUS s);
+	static const char* FormationName(INSTRUCTION_FORMATION f);
 	static const char* PriorityName(int p);
 
 	const char* RegionName()  const { return rgn_name; }
 	SimRegion* Region()      const { return region; }
 	FVector      Location()    const;
 	RLoc& GetRLoc() { return rloc; }
-	int          Action()      const { return action; }
-	int          Status()      const { return status; }
-	int          Formation()   const { return formation; }
+
+	INSTRUCTION_ACTION          GetAction()      const { return action; }
+	INSTRUCTION_STATUS			GetStatus()      const { return status; }
+	INSTRUCTION_FORMATION       GetFormation()   const { return formation; }
+
+	RadioMessageAction          GetRadioAction()  const { return RadioAction; }
+
 	int          Speed()       const { return speed; }
 	int          EMCON()       const { return emcon; }
 	int          WeaponsFree() const { return wep_free; }
@@ -117,7 +80,7 @@ public:
 
 	const char* TargetName() const { return tgt_name; }
 	const char* TargetDesc() const { return tgt_desc; }
-	SimObject* GetTarget();
+	SimObject*	GetTarget();
 
 	void         Evaluate(Ship* s);
 	const char* GetShortDescription() const;
@@ -126,9 +89,11 @@ public:
 	// mutators:
 	void         SetRegion(SimRegion* r) { region = r; }
 	void         SetLocation(const FVector& l);
-	void         SetAction(int s) { action = s; }
-	void         SetStatus(int s);
-	void         SetFormation(int s) { formation = s; }
+	void         SetAction(INSTRUCTION_ACTION s) { action = s; }
+	void         SetStatus(INSTRUCTION_STATUS s);
+	void         SetFormation(INSTRUCTION_FORMATION s) { formation = s; }
+
+	void         SetRadioAction(RadioMessageAction ra) { RadioAction = ra; }
 	void         SetSpeed(int s) { speed = s; }
 	void         SetEMCON(int e) { emcon = e; }
 	void         SetWeaponsFree(int f) { wep_free = f; }
@@ -148,9 +113,12 @@ protected:
 	Text       rgn_name;
 	SimRegion* region;
 	RLoc       rloc;
-	int        action;
-	int        formation;
-	int        status;
+	INSTRUCTION_ACTION		action;
+	INSTRUCTION_FORMATION	formation;
+	INSTRUCTION_STATUS      status;
+
+	RadioMessageAction		RadioAction;
+	
 	int        speed;
 
 	Text       tgt_name;

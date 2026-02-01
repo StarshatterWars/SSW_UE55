@@ -617,22 +617,23 @@ enum class LIGHTTYPE : uint32
 UENUM()
 enum class INSTRUCTION_ACTION : uint8
 {
-	VECTOR,
-	LAUNCH,
-	DOCK,
-	RTB,
+	NONE		UMETA(DisplayName = "None"), 
+	VECTOR		UMETA(DisplayName = "Vector"),
+	LAUNCH		UMETA(DisplayName = "Launch"),
+	DOCK		UMETA(DisplayName = "Dock"),
+	RTB			UMETA(DisplayName = "Return to Base"),
 
-	DEFEND,
-	ESCORT,
-	PATROL,
-	SWEEP,
-	INTERCEPT,
-	STRIKE,     // ground attack
-	ASSAULT,    // starship attack
-	RECON,
+	DEFEND		UMETA(DisplayName = "Defend"),
+	ESCORT		UMETA(DisplayName = "Escort"),
+	PATROL		UMETA(DisplayName = "Patrol"),
+	SWEEP		UMETA(DisplayName = "Sweep"),
+	INTERCEPT	UMETA(DisplayName = "Intercept"),
+	STRIKE		UMETA(DisplayName = "Strike"),     // ground attack
+	ASSAULT		UMETA(DisplayName = "Assault"),    // starship attack
+	RECON		UMETA(DisplayName = "Recon"),
 
-	RECALL,
-	DEPLOY,
+	RECALL		UMETA(DisplayName = "Recall"),
+	DEPLOY		UMETA(DisplayName = "Deploy"),
 
 	NUM_ACTIONS
 };
@@ -640,12 +641,12 @@ enum class INSTRUCTION_ACTION : uint8
 UENUM()
 enum class INSTRUCTION_STATUS : uint8
 {
-	PENDING,
-	ACTIVE,
-	SKIPPED,
-	ABORTED,
-	FAILED,
-	COMPLETE,
+	PENDING			UMETA(DisplayName = "Pending"),
+	ACTIVE			UMETA(DisplayName = "Active"),
+	SKIPPED			UMETA(DisplayName = "Skipped"),
+	ABORTED			UMETA(DisplayName = "Aborted"),
+	FAILED			UMETA(DisplayName = "Failed"),
+	COMPLETE		UMETA(DisplayName = "Complete"),
 
 	NUM_STATUS
 };
@@ -653,10 +654,11 @@ enum class INSTRUCTION_STATUS : uint8
 UENUM()
 enum class INSTRUCTION_FORMATION : uint8
 {
-	DIAMOND,
-	SPREAD,
-	BOX,
-	TRAIL,
+	NONE			UMETA(DisplayName = "None"),
+	DIAMOND			UMETA(DisplayName = "Diamond"),
+	SPREAD			UMETA(DisplayName = "Spread"),
+	BOX				UMETA(DisplayName = "Box"),
+	TRAIL			UMETA(DisplayName = "Trail"),
 
 	NUM_FORMATIONS
 };
@@ -694,6 +696,86 @@ enum class WeaponsSweep : uint8
 	SWEEP_WIDE			UMETA(DisplayName = "Sweep Wide"),
 };
 
+UENUM()
+enum class RadioMessageAction : uint8 
+{
+	NONE = 0,
+
+	DOCK_WITH = INSTRUCTION_ACTION::DOCK,
+	RTB = INSTRUCTION_ACTION::RTB,
+	QUANTUM_TO = INSTRUCTION_ACTION::NUM_ACTIONS,
+	FARCAST_TO,
+
+	// protocol:
+	ACK,
+	NACK,
+
+	// target mgt:
+	ATTACK,
+	ESCORT,
+	BRACKET,
+	IDENTIFY,
+
+	// combat mgt:
+	COVER_ME,
+	WEP_FREE,
+	WEP_HOLD,
+	FORM_UP,       // alias for wep_hold
+	SAY_POSITION,
+
+	// sensor mgt:
+	LAUNCH_PROBE,
+	GO_EMCON1,
+	GO_EMCON2,
+	GO_EMCON3,
+
+	// formation mgt:
+	GO_DIAMOND,
+	GO_SPREAD,
+	GO_BOX,
+	GO_TRAIL,
+
+	// mission mgt:
+	MOVE_PATROL,
+	SKIP_NAVPOINT,
+	RESUME_MISSION,
+
+	// misc announcements:
+	CALL_ENGAGING,
+	FOX_1,
+	FOX_2,
+	FOX_3,
+	SPLASH_1,
+	SPLASH_2,
+	SPLASH_3,
+	SPLASH_4,
+	SPLASH_5,   // target destroyed
+	SPLASH_6,   // enemy destroyed
+	SPLASH_7,   // confirmed kill
+	DISTRESS,
+	BREAK_ORBIT,
+	MAKE_ORBIT,
+	QUANTUM_JUMP,
+
+	// friendly fire:
+	WARN_ACCIDENT,
+	WARN_TARGETED,
+	DECLARE_ROGUE,
+
+	// support:
+	PICTURE,
+	REQUEST_PICTURE,
+	REQUEST_SUPPORT,
+
+	// traffic control:
+	CALL_INBOUND,
+	CALL_APPROACH,
+	CALL_CLEARANCE,
+	CALL_FINALS,
+	CALL_WAVE_OFF,
+
+	NUM_ACTIONS
+};
 
 /*static enum ETXT : int32
 {

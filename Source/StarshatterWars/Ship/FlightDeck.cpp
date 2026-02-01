@@ -608,7 +608,7 @@ FlightDeck::LaunchShip(Ship* slot_ship)
 			FVector departure = end_point;
 
 			Instruction* launch_point =
-				new Instruction(carrier->GetRegion(), departure, Instruction::LAUNCH);
+				new Instruction(carrier->GetRegion(), departure, INSTRUCTION_ACTION::LAUNCH);
 			launch_point->SetSpeed(350);
 
 			slot_ship->SetLaunchPoint(launch_point);
@@ -1253,7 +1253,7 @@ FlightDeck::GrantClearance()
 
 				Ship* dst = recovery_queue[0]->GetShip();
 
-				RadioMessage* clearance = new RadioMessage(dst, carrier, RadioMessage::CALL_CLEARANCE);
+				RadioMessage* clearance = new RadioMessage(dst, carrier, RadioMessageAction::CALL_CLEARANCE);
 				clearance->SetInfo(Text("for final approach to ") + Name());
 				RadioTraffic::Transmit(clearance);
 			}

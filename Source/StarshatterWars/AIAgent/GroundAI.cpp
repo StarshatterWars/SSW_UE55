@@ -196,7 +196,7 @@ GroundAI::ExecFrame(double secs)
         if (shield)
             shield->SetPowerLevel(100);
 
-        ListIter<WeaponGroup> iter = ship->Weapons();
+        ListIter<WeaponGroup> iter = ship->GetWeapons();
         while (++iter) {
             WeaponGroup* group = (WeaponGroup*)iter.value();
 

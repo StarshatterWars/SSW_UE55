@@ -39,6 +39,7 @@
 
 #include "Misc/ScopeLock.h"
 #include "Misc/Char.h"
+#include "GameStructs.h"
 
 // ---------------------------------------------------------------------
 // Local colors (ported from legacy static Color)
@@ -83,9 +84,9 @@ static bool TargetRequired(const MenuItem* item)
         return false;
 
     switch (item->GetData()) {
-    case RadioMessage::ATTACK:
-    case RadioMessage::BRACKET:
-    case RadioMessage::ESCORT:
+    case (int) RadioMessageAction::ATTACK:
+    case (int) RadioMessageAction::BRACKET:
+    case (int) RadioMessageAction::ESCORT:
         return true;
     default:
         break;
@@ -112,31 +113,31 @@ RadioView::Initialize()
     if (initialized) return;
 
     target_menu = new Menu("TARGET");
-    target_menu->AddItem("1, Attack Target", RadioMessage::ATTACK);
-    target_menu->AddItem("2. Bracket Target", RadioMessage::BRACKET);
-    target_menu->AddItem("3. Escort Target", RadioMessage::ESCORT);
+    target_menu->AddItem("1, Attack Target", (int) RadioMessageAction::ATTACK);
+    target_menu->AddItem("2. Bracket Target", (int) RadioMessageAction::BRACKET);
+    target_menu->AddItem("3. Escort Target", (int) RadioMessageAction::ESCORT);
 
     combat_menu = new Menu("COMBAT");
-    combat_menu->AddItem("1. Cover Me", RadioMessage::COVER_ME);
-    combat_menu->AddItem("2. Break and attack", RadioMessage::WEP_FREE);
-    combat_menu->AddItem("3. Form up", RadioMessage::FORM_UP);
+    combat_menu->AddItem("1. Cover Me", (int) RadioMessageAction::COVER_ME);
+    combat_menu->AddItem("2. Break and attack", (int) RadioMessageAction::WEP_FREE);
+    combat_menu->AddItem("3. Form up", (int) RadioMessageAction::FORM_UP);
 
     formation_menu = new Menu("FORMATION");
-    formation_menu->AddItem("1. Goto Diamond", RadioMessage::GO_DIAMOND);
-    formation_menu->AddItem("2. Goto Spread", RadioMessage::GO_SPREAD);
-    formation_menu->AddItem("3. Goto Box", RadioMessage::GO_BOX);
-    formation_menu->AddItem("4. Goto Trail", RadioMessage::GO_TRAIL);
+    formation_menu->AddItem("1. Goto Diamond", (int) RadioMessageAction::GO_DIAMOND);
+    formation_menu->AddItem("2. Goto Spread", (int) RadioMessageAction::GO_SPREAD);
+    formation_menu->AddItem("3. Goto Box", (int) RadioMessageAction::GO_BOX);
+    formation_menu->AddItem("4. Goto Trail", (int) RadioMessageAction::GO_TRAIL);
 
     sensors_menu = new Menu("SENSORS");
-    sensors_menu->AddItem("1. Goto EMCON 1", RadioMessage::GO_EMCON1);
-    sensors_menu->AddItem("2. Goto EMCON 2", RadioMessage::GO_EMCON2);
-    sensors_menu->AddItem("3. Goto EMCON 3", RadioMessage::GO_EMCON3);
-    sensors_menu->AddItem("4. Launch Probe", RadioMessage::LAUNCH_PROBE);
+    sensors_menu->AddItem("1. Goto EMCON 1", (int) RadioMessageAction::GO_EMCON1);
+    sensors_menu->AddItem("2. Goto EMCON 2", (int) RadioMessageAction::GO_EMCON2);
+    sensors_menu->AddItem("3. Goto EMCON 3", (int) RadioMessageAction::GO_EMCON3);
+    sensors_menu->AddItem("4. Launch Probe", (int) RadioMessageAction::LAUNCH_PROBE);
 
     mission_menu = new Menu("MISSION");
-    mission_menu->AddItem("1. Skip Navpoint", RadioMessage::SKIP_NAVPOINT);
-    mission_menu->AddItem("2. Cancel Orders", RadioMessage::RESUME_MISSION);
-    mission_menu->AddItem("3. Return to Base", RadioMessage::RTB);
+    mission_menu->AddItem("1. Skip Navpoint", (int) RadioMessageAction::SKIP_NAVPOINT);
+    mission_menu->AddItem("2. Cancel Orders", (int) RadioMessageAction::RESUME_MISSION);
+    mission_menu->AddItem("3. Return to Base", (int) RadioMessageAction::RTB);
 
     wing_menu = new Menu("WINGMAN");
     wing_menu->AddMenu("1. Target", target_menu);
@@ -153,10 +154,10 @@ RadioView::Initialize()
     elem_menu->AddMenu("5. Sensors", sensors_menu);
 
     control_menu = new Menu("CONTROL");
-    control_menu->AddItem("1. Request Picture", RadioMessage::REQUEST_PICTURE);
-    control_menu->AddItem("2. Request Backup", RadioMessage::REQUEST_SUPPORT);
-    control_menu->AddItem("3. Call Inbound", RadioMessage::CALL_INBOUND);
-    control_menu->AddItem("4. Call Finals", RadioMessage::CALL_FINALS);
+    control_menu->AddItem("1. Request Picture", (int)RadioMessageAction::REQUEST_PICTURE);
+    control_menu->AddItem("2. Request Backup", (int)RadioMessageAction::REQUEST_SUPPORT);
+    control_menu->AddItem("3. Call Inbound", (int)RadioMessageAction::CALL_INBOUND);
+    control_menu->AddItem("4. Call Finals", (int)RadioMessageAction::CALL_FINALS);
 
     fighter_menu = new Menu("RADIO");
     fighter_menu->AddMenu("1. Wingman", wing_menu);
@@ -424,7 +425,11 @@ void RadioView::SendRadioMessage(Ship* InShip, MenuItem* item)
     if (!elem) return;
 
     if (dst_elem) {
-        RadioMessage* msg = new RadioMessage(dst_elem, InShip, item->GetData());
+        const auto Action =
+            static_cast<RadioMessageAction>(item->GetData());
+
+        RadioMessage* msg =
+            new RadioMessage(dst_elem, InShip, Action);
 
         if (TargetRequired(item))
             msg->AddTarget(InShip->GetTarget());
@@ -447,7 +452,8 @@ void RadioView::SendRadioMessage(Ship* InShip, MenuItem* item)
         if (wing) {
             Ship* dst = elem->GetShip(wing);
             if (dst) {
-                RadioMessage* msg = new RadioMessage(dst, InShip, item->GetData());
+                const auto Action = static_cast<RadioMessageAction>(item->GetData());
+                RadioMessage* msg = new RadioMessage(dst, InShip, Action);
 
                 if (TargetRequired(item))
                     msg->AddTarget(InShip->GetTarget());
@@ -457,7 +463,8 @@ void RadioView::SendRadioMessage(Ship* InShip, MenuItem* item)
         }
     }
     else if (history.Find("ELEMENT")) {
-        RadioMessage* msg = new RadioMessage(elem, InShip, item->GetData());
+        const auto Action = static_cast<RadioMessageAction>(item->GetData());
+        RadioMessage* msg = new RadioMessage(elem, InShip, Action);
 
         if (TargetRequired(item))
             msg->AddTarget(InShip->GetTarget());
@@ -467,7 +474,8 @@ void RadioView::SendRadioMessage(Ship* InShip, MenuItem* item)
     else if (history.Find("CONTROL")) {
         Ship* controller = InShip->GetController();
         if (controller) {
-            RadioMessage* msg = new RadioMessage(controller, InShip, item->GetData());
+            const auto Action = static_cast<RadioMessageAction>(item->GetData());
+            RadioMessage* msg = new RadioMessage(controller, InShip, Action);
             RadioTraffic::Transmit(msg);
         }
     }

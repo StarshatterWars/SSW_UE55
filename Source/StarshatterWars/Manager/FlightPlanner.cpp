@@ -83,7 +83,7 @@ FlightPlanner::CreatePatrolRoute(SimElement* elem, int index)
 	rloc.SetAzimuth(-10 * DEGREES + zone);
 	rloc.SetAzimuthVar(0);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::VECTOR);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::VECTOR);
 	instr->SetSpeed(750);
 	instr->GetRLoc() = rloc;
 
@@ -99,7 +99,7 @@ FlightPlanner::CreatePatrolRoute(SimElement* elem, int index)
 	rloc.SetAzimuth(-20 * DEGREES + zone);
 	rloc.SetAzimuthVar(15 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::PATROL);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::PATROL);
 	instr->SetSpeed(500);
 	instr->GetRLoc() = rloc;
 
@@ -111,7 +111,7 @@ FlightPlanner::CreatePatrolRoute(SimElement* elem, int index)
 	rloc.SetAzimuth(60 * DEGREES + zone);
 	rloc.SetAzimuthVar(20 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::PATROL);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::PATROL);
 	instr->SetSpeed(350);
 	instr->GetRLoc() = rloc;
 
@@ -123,7 +123,7 @@ FlightPlanner::CreatePatrolRoute(SimElement* elem, int index)
 	rloc.SetAzimuth(120 * DEGREES + zone);
 	rloc.SetAzimuthVar(20 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::PATROL);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::PATROL);
 	instr->SetSpeed(350);
 	instr->GetRLoc() = rloc;
 
@@ -136,7 +136,7 @@ FlightPlanner::CreatePatrolRoute(SimElement* elem, int index)
 	rloc.SetAzimuth(180 * DEGREES + ship->CompassHeading());
 	rloc.SetAzimuthVar(0 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::RTB);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::RTB);
 	instr->SetSpeed(500);
 	instr->GetRLoc() = rloc;
 
@@ -181,7 +181,7 @@ FlightPlanner::CreateStrikeRoute(SimElement* elem, SimElement* target)
 	rloc.SetAzimuth(head);
 	rloc.SetAzimuthVar(2 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::VECTOR);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::VECTOR);
 	instr->SetSpeed(750);
 	instr->GetRLoc() = rloc;
 
@@ -207,11 +207,11 @@ FlightPlanner::CreateStrikeRoute(SimElement* elem, SimElement* target)
 			rloc.SetAzimuth(beam);
 			rloc.SetAzimuthVar(5 * DEGREES);
 
-			instr = new Instruction(tgt_ship2->GetRegion(), dummy, Instruction::ASSAULT);
+			instr = new Instruction(tgt_ship2->GetRegion(), dummy, INSTRUCTION_ACTION::ASSAULT);
 			instr->SetSpeed(750);
 			instr->GetRLoc() = rloc;
-			instr->SetTarget(target->Name());
-			instr->SetFormation(Instruction::TRAIL);
+			instr->SetTarget(FString(target->Name().data()));
+			instr->SetFormation(INSTRUCTION_FORMATION::TRAIL);
 
 			elem->AddNavPoint(instr);
 		}
@@ -224,7 +224,7 @@ FlightPlanner::CreateStrikeRoute(SimElement* elem, SimElement* target)
 			rloc.SetAzimuth(beam);
 			rloc.SetAzimuthVar(15 * DEGREES);
 
-			instr = new Instruction(tgt_ship2->GetRegion(), dummy, Instruction::VECTOR);
+			instr = new Instruction(tgt_ship2->GetRegion(), dummy, INSTRUCTION_ACTION::VECTOR);
 			instr->SetSpeed(750);
 			instr->GetRLoc() = rloc;
 
@@ -237,16 +237,16 @@ FlightPlanner::CreateStrikeRoute(SimElement* elem, SimElement* target)
 			rloc.SetAzimuth(beam);
 			rloc.SetAzimuthVar(5 * DEGREES);
 
-			int action = Instruction::ASSAULT;
+			INSTRUCTION_ACTION action = INSTRUCTION_ACTION::ASSAULT;
 
 			if (tgt_ship2->IsGroundUnit())
-				action = Instruction::STRIKE;
+				action = INSTRUCTION_ACTION::STRIKE;
 
 			instr = new Instruction(tgt_ship2->GetRegion(), dummy, action);
 			instr->SetSpeed(750);
 			instr->GetRLoc() = rloc;
-			instr->SetTarget(target->Name());
-			instr->SetFormation(Instruction::TRAIL);
+			instr->SetTarget(FString(target->Name().data()));
+			instr->SetFormation(INSTRUCTION_FORMATION::TRAIL);
 
 			elem->AddNavPoint(instr);
 		}
@@ -259,11 +259,11 @@ FlightPlanner::CreateStrikeRoute(SimElement* elem, SimElement* target)
 			rloc.SetAzimuth(tgt_ship2->CompassHeading());
 			rloc.SetAzimuthVar(20 * DEGREES);
 
-			instr = new Instruction(tgt_ship2->GetRegion(), dummy, Instruction::INTERCEPT);
+			instr = new Instruction(tgt_ship2->GetRegion(), dummy, INSTRUCTION_ACTION::INTERCEPT);
 			instr->SetSpeed(750);
 			instr->GetRLoc() = rloc;
-			instr->SetTarget(target->Name());
-			instr->SetFormation(Instruction::SPREAD);
+			instr->SetTarget(FString(target->Name().data()));
+			instr->SetFormation(INSTRUCTION_FORMATION::SPREAD);
 
 			elem->AddNavPoint(instr);
 		}
@@ -276,7 +276,7 @@ FlightPlanner::CreateStrikeRoute(SimElement* elem, SimElement* target)
 	rloc.SetAzimuth(180 * DEGREES + ship->CompassHeading());
 	rloc.SetAzimuthVar(0 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::RTB);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::RTB);
 	instr->SetSpeed(500);
 	instr->GetRLoc() = rloc;
 
@@ -311,7 +311,7 @@ FlightPlanner::CreateEscortRoute(SimElement* elem, SimElement* ward)
 	rloc.SetAzimuth(head);
 	rloc.SetAzimuthVar(0);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::VECTOR);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::VECTOR);
 	instr->SetSpeed(750);
 	instr->GetRLoc() = rloc;
 
@@ -325,18 +325,17 @@ FlightPlanner::CreateEscortRoute(SimElement* elem, SimElement* ward)
 			while (++iter) {
 				Instruction* ward_instr = iter.value();
 
-				if (ward_instr->Action() != Instruction::RTB) {
+				if (ward_instr->GetAction() != INSTRUCTION_ACTION::RTB) {
 					rloc.SetReferenceLoc(&ward_instr->GetRLoc());
 					rloc.SetDistance(25e3);
 					rloc.SetDistanceVar(5e3);
 					rloc.SetAzimuth(0);
 					rloc.SetAzimuthVar(90 * DEGREES);
 
-					instr = new Instruction(ship->GetRegion(), dummy, Instruction::ESCORT);
+					instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::ESCORT);
 					instr->SetSpeed(350);
 					instr->GetRLoc() = rloc;
-					instr->SetTarget(ward->Name());
-
+					instr->SetTarget(FString(ward->Name().data()));
 					elem->AddNavPoint(instr);
 				}
 			}
@@ -351,10 +350,10 @@ FlightPlanner::CreateEscortRoute(SimElement* elem, SimElement* ward)
 			rloc.SetAzimuth(0);
 			rloc.SetAzimuthVar(90 * DEGREES);
 
-			instr = new Instruction(ship->GetRegion(), dummy, Instruction::DEFEND);
+			instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::DEFEND);
 			instr->SetSpeed(500);
 			instr->GetRLoc() = rloc;
-			instr->SetTarget(ward->Name());
+			instr->SetTarget(FString(ward->Name().data()));
 			instr->SetHoldTime(15 * 60); // fifteen minutes
 
 			elem->AddNavPoint(instr);
@@ -368,7 +367,7 @@ FlightPlanner::CreateEscortRoute(SimElement* elem, SimElement* ward)
 	rloc.SetAzimuth(180 * DEGREES + ship->CompassHeading());
 	rloc.SetAzimuthVar(0 * DEGREES);
 
-	instr = new Instruction(ship->GetRegion(), dummy, Instruction::RTB);
+	instr = new Instruction(ship->GetRegion(), dummy, INSTRUCTION_ACTION::RTB);
 	instr->SetSpeed(500);
 	instr->GetRLoc() = rloc;
 

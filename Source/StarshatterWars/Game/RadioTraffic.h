@@ -24,6 +24,7 @@
 
 // Minimal Unreal include (Vec3/Point -> FVector conversion if needed by inline callers):
 #include "Math/Vector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -46,12 +47,12 @@ public:
 
 	static RadioTraffic* GetInstance() { return radio_traffic; }
 
-	static void          SendQuickMessage(Ship* ship, int msg);
+	static void          SendQuickMessage(Ship* ship, RadioMessageAction msg);
 	static void          Transmit(RadioMessage* msg);
 	static void          DiscardMessages();
 	static Text          TranslateVox(const char* phrase);
 
-	void                 SendMessage(RadioMessage* msg);
+	void                 SendRadioMessage(RadioMessage* msg);
 	void                 DisplayMessage(RadioMessage* msg);
 
 protected:

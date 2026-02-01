@@ -342,16 +342,16 @@ NavAI::Navigator()
     hold = false;
 
     if (navpt) {
-        if (navpt->Status() == Instruction::COMPLETE && navpt->HoldTime() > 0) {
-            ship->SetDirectorInfo(Game::GetText("ai.auto-hold"));
+        if (navpt->GetStatus() == INSTRUCTION_STATUS::COMPLETE && navpt->HoldTime() > 0) {
+            ship->SetDirectorInfo("AutoHold");
             hold = true;
         }
         else {
-            ship->SetDirectorInfo(Game::GetText("ai.auto-nav"));
+            ship->SetDirectorInfo("AutoNav");
         }
     }
     else {
-        ship->SetDirectorInfo(Game::GetText("ai.auto-stop"));
+        ship->SetDirectorInfo("AutoStop");
     }
 
     Accumulate(AvoidTerrain());
@@ -542,7 +542,7 @@ NavAI::SeekTarget()
         }
 
         if (distance < 2 * self->Radius()) {
-            ship->SetNavptStatus(navpt, Instruction::COMPLETE);
+            ship->SetNavptStatus(navpt, INSTRUCTION_STATUS::COMPLETE);
             return Steer();
         }
         else {
@@ -644,18 +644,18 @@ NavAI::AvoidTerrain()
     terrain_warning = 0;
 
     if (!ship || !ship->GetRegion() || !ship->GetRegion()->IsActive() ||
-        takeoff || (navpt && navpt->Action() == Instruction::LAUNCH))
+        takeoff || (navpt && navpt->GetAction() == INSTRUCTION_ACTION::LAUNCH))
         return Avoid;
 
     if (ship->IsAirborne() && ship->GetFlightPhase() == Ship::ACTIVE) {
         // too low?
         if (ship->AltitudeAGL() < 1000) {
             terrain_warning = 1;
-            ship->SetDirectorInfo(Game::GetText("ai.too-low"));
+            ship->SetDirectorInfo("Too Low");
 
             // way too low?
             if (ship->AltitudeAGL() < 750) {
-                ship->SetDirectorInfo(Game::GetText("ai.way-too-low"));
+                ship->SetDirectorInfo("Way Too Low!");
             }
 
             // where will we be?
