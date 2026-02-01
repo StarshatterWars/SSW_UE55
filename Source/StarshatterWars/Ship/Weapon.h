@@ -62,7 +62,7 @@ public:
     bool               CanTarget(uint32 classification) const;
     SimObject* GetTarget()    const { return target; }
     SimSystem* GetSubTarget() const { return subtarget; }
-    void               SetFiringOrders(int o);
+    void               SetFiringOrders(WeaponsOrders o);
     int                GetFiringOrders() const { return orders; }
     void               SetControlMode(int m);
     int                GetControlMode()  const { return control; }

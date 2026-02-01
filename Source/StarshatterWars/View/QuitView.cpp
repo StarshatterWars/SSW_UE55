@@ -1,262 +1,230 @@
-/*  Project STARSHATTER WARS
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-
-    ORIGINAL AUTHOR: John DiCamillo
-    ORIGINAL STUDIO: Destroyer Studios
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         QuitView.cpp
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    UQuitView
-    - Unreal (UMG) port of legacy QuitView (End Mission menu).
-    - Inherits from UView (UMG base).
-    - UI uses UMG buttons (no manual mouse hit-testing).
-    - Keeps all legacy mission/campaign logic.
-*/
-
 #include "QuitView.h"
-
-// UMG:
-#include "Components/Button.h"
-#include "Components/TextBlock.h"
-
-// Gameplay/legacy:
+#include "Menu.h"
+#include "MenuItem.h"
 #include "Sim.h"
-#include "Ship.h"
-#include "SimContact.h"
-#include "Campaign.h"
-#include "Starshatter.h"
-#include "Game.h"
-#include "RadioView.h"
-#include "GameScreen.h"
-#include "GameStructs.h"
 
-// Unreal:
-#include "GameFramework/PlayerController.h"
-#include "Blueprint/WidgetBlueprintLibrary.h"
+// If you want to trigger engine quit later, include your game singletons here.
+// #include "Starshatter.h"
+// #include "Game.h"
 
-UQuitView::UQuitView(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+QuitView* QuitView::quit_view = nullptr;
+
+// Action payloads stored in MenuItem::Data:
+static constexpr uintptr_t QUIT_ACTION_RESUME = 1;
+static constexpr uintptr_t QUIT_ACTION_QUIT = 2;
+
+QuitView::QuitView(View* InParent)
+    : View(InParent, 0, 0,
+        InParent ? InParent->Width() : 1024,
+        InParent ? InParent->Height() : 768)
 {
-}
+    quit_view = this;
 
-void UQuitView::NativeOnInitialized()
-{
-    Super::NativeOnInitialized();
-
-    // Bind buttons once:
-    if (BtnAccept)   BtnAccept->OnClicked.AddDynamic(this, &UQuitView::OnAcceptClicked);
-    if (BtnDiscard)  BtnDiscard->OnClicked.AddDynamic(this, &UQuitView::OnDiscardClicked);
-    if (BtnResume)   BtnResume->OnClicked.AddDynamic(this, &UQuitView::OnResumeClicked);
-    if (BtnControls) BtnControls->OnClicked.AddDynamic(this, &UQuitView::OnControlsClicked);
-}
-
-void UQuitView::NativeConstruct()
-{
-    Super::NativeConstruct();
-
-    // Start hidden by default:
-    SetVisibility(ESlateVisibility::Hidden);
-    bMenuShown = false;
+    // Size from our rect (NOT window):
+    width = rect.w;
+    height = rect.h;
+    xcenter = width / 2;
+    ycenter = height / 2;
 
     sim = Sim::GetSim();
-    SetMessageText(TEXT(""));
-}
 
-void UQuitView::ExecFrame(float DeltaTime)
-{
-    // Keep as legacy hook point (called by your game loop if desired).
-}
+    // Build menu (adjust Menu ctor signature if yours is FString-based):
+    QuitMenu = new Menu("PAUSE MENU");
 
-bool UQuitView::IsMenuShown() const
-{
-    return bMenuShown && GetVisibility() == ESlateVisibility::Visible;
-}
-
-void UQuitView::ShowMenu()
-{
-    if (IsMenuShown())
-        return;
+    QuitMenu->AddItem("RESUME", QUIT_ACTION_RESUME);
+    QuitMenu->AddItem("QUIT", QUIT_ACTION_QUIT);
 
     bMenuShown = true;
-
-    // Pause like legacy:
-    if (Starshatter* Stars = Starshatter::GetInstance())
-        Stars->Pause(true);
-
-    // Show UI:
-    SetMessageText(TEXT(""));
-    SetVisibility(ESlateVisibility::Visible);
-    ApplyMenuInputMode(true);
 }
 
-void UQuitView::CloseMenu()
+QuitView::~QuitView()
 {
-    if (!IsMenuShown())
-        return;
+    // If Menu owns items, let Menu delete them; otherwise, clean up here.
+    // For now:
+    delete QuitMenu;
+    QuitMenu = nullptr;
 
+    if (quit_view == this)
+        quit_view = nullptr;
+}
+
+void QuitView::Initialize(View* Parent)
+{
+    if (!quit_view && Parent)
+        new QuitView(Parent);
+}
+
+void QuitView::Close()
+{
+    if (quit_view) {
+        delete quit_view;
+        quit_view = nullptr;
+    }
+}
+
+void QuitView::OnWindowMove()
+{
+    // When our rect changes, recompute layout:
+    width = rect.w;
+    height = rect.h;
+    xcenter = width / 2;
+    ycenter = height / 2;
+}
+
+void QuitView::ExecFrame()
+{
+    // Keep lightweight; you can add pause logic here later if needed.
+}
+
+bool QuitView::CanAccept()
+{
+    return bMenuShown && QuitMenu != nullptr;
+}
+
+bool QuitView::IsMenuShown() const
+{
+    return bMenuShown;
+}
+
+void QuitView::ShowMenu()
+{
+    bMenuShown = true;
+    MouseIndex = -1;
+}
+
+void QuitView::CloseMenu()
+{
     bMenuShown = false;
-
-    SetVisibility(ESlateVisibility::Hidden);
-    ApplyMenuInputMode(false);
-
-    if (Starshatter* Stars = Starshatter::GetInstance())
-        Stars->Pause(false);
+    MouseIndex = -1;
 }
 
-void UQuitView::ApplyMenuInputMode(bool bEnableMenu)
+void QuitView::Refresh()
 {
-    APlayerController* PC = GetOwningPlayer();
-    if (!PC)
+    if (!shown)
         return;
 
-    if (bEnableMenu)
-    {
-        bPrevShowMouseCursor = PC->bShowMouseCursor;
-        PC->bShowMouseCursor = true;
+    if (bMenuShown)
+        DrawMenu();
+}
 
-        // UI-only focus:
-        FInputModeUIOnly Mode;
-        Mode.SetWidgetToFocus(TakeWidget());
-        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-        PC->SetInputMode(Mode);
-    }
-    else
-    {
-        PC->bShowMouseCursor = bPrevShowMouseCursor;
+void QuitView::DrawMenu()
+{
+    if (!QuitMenu || !GetFont())
+        return;
 
-        FInputModeGameOnly Mode;
-        PC->SetInputMode(Mode);
+    Rect menuRect(xcenter - 120, ycenter - 60, 240, 18);
+
+    // Title
+    DrawTextRect(QuitMenu->GetTitle(), -1, menuRect, DT_CENTER);
+
+    menuRect.y += 24;
+
+    const TArray<MenuItem*>& Items = QuitMenu->GetItems();
+    for (int32 i = 0; i < Items.Num(); ++i) {
+        MenuItem* Item = Items[i];
+        if (!Item) continue;
+
+        Rect lineRect = menuRect;
+
+        if (i == MouseIndex) {
+            DrawTextRect(TEXT(">"), -1, lineRect, DT_LEFT);
+        }
+
+        lineRect.x += 16;
+        DrawTextRect(Item->GetText(), -1, lineRect, DT_LEFT);
+
+        menuRect.y += 16;
     }
 }
 
-void UQuitView::SetMessageText(const FString& InText)
+int QuitView::HitTestItem(const Rect& menuRect, int x, int y) const
 {
-    if (TxtMessage)
-    {
-        TxtMessage->SetText(FText::FromString(InText));
-    }
+    if (!QuitMenu)
+        return -1;
+
+    const int itemsTop = menuRect.y + 24;
+    if (y < itemsTop)
+        return -1;
+
+    const int relY = y - itemsTop;
+    const int idx = relY / 16;
+
+    const TArray<MenuItem*>& Items = QuitMenu->GetItems();
+    if (!Items.IsValidIndex(idx))
+        return -1;
+
+    return idx;
 }
 
-bool UQuitView::CanAccept()
+bool QuitView::OnMouseMove(const FVector2D& ScreenPos)
 {
-    sim = Sim::GetSim();
-    if (!sim)
+    if (!CanAccept())
         return false;
 
-    Ship* PlayerShip = sim->GetPlayerShip();
-    if (!PlayerShip)
+    Rect menuRect(xcenter - 120, ycenter - 60, 240, 18);
+
+    const int x = (int)ScreenPos.X;
+    const int y = (int)ScreenPos.Y;
+
+    MouseIndex = HitTestItem(menuRect, x, y);
+    return MouseIndex >= 0;
+}
+
+bool QuitView::OnMouseButtonDown(int32 Button, const FVector2D& ScreenPos)
+{
+    if (!CanAccept())
         return false;
 
-    // Legacy: must fly at least 60 seconds:
-    if (PlayerShip->MissionClock() < 60000)
-    {
-        RadioView::Message(Game::GetText("QuitView.too-soon"));
-        RadioView::Message(Game::GetText("QuitView.abort"));
-        SetMessageText(TEXT("TOO SOON TO ACCEPT RESULTS."));
+    mouse_latch = true;
+    return OnMouseMove(ScreenPos);
+}
+
+bool QuitView::OnMouseButtonUp(int32 Button, const FVector2D& ScreenPos)
+{
+    if (!CanAccept())
         return false;
-    }
 
-    ListIter<SimContact> iter = PlayerShip->ContactList();
-    while (++iter)
-    {
-        SimContact* c = iter.value();
-        if (!c) continue;
+    mouse_latch = false;
 
-        Ship* cship = c->GetShip();
-        int   ciff = c->GetIFF(PlayerShip);
+    Rect menuRect(xcenter - 120, ycenter - 60, 240, 18);
+    const int idx = HitTestItem(menuRect, (int)ScreenPos.X, (int)ScreenPos.Y);
+    if (idx < 0)
+        return false;
 
-        if (c->Threat(PlayerShip))
-        {
-            RadioView::Message(Game::GetText("QuitView.threats-present"));
-            RadioView::Message(Game::GetText("QuitView.abort"));
-            SetMessageText(TEXT("THREATS PRESENT. CANNOT ACCEPT RESULTS."));
-            return false;
-        }
-        else if (cship && ciff > 0 && ciff != PlayerShip->GetIFF())
-        {
-            const FVector Delta = (c->Location() - PlayerShip->Location());
-            const double  Dist = Delta.Length();
+    const TArray<MenuItem*>& Items = QuitMenu->GetItems();
+    MenuItem* chosen = Items[idx];
+    if (!chosen)
+        return false;
 
-            if (cship->IsDropship() && Dist < 50e3)
-            {
-                RadioView::Message(Game::GetText("QuitView.threats-present"));
-                RadioView::Message(Game::GetText("QuitView.abort"));
-                SetMessageText(TEXT("DROPSHIP THREAT NEARBY. CANNOT ACCEPT RESULTS."));
-                return false;
-            }
-            else if (cship->IsStarship() && Dist < 100e3)
-            {
-                RadioView::Message(Game::GetText("QuitView.threats-present"));
-                RadioView::Message(Game::GetText("QuitView.abort"));
-                SetMessageText(TEXT("STARSHIP THREAT NEARBY. CANNOT ACCEPT RESULTS."));
-                return false;
-            }
-        }
-    }
-
+    ExecuteAction(chosen->GetData());
     return true;
 }
 
-// ------------------------------------------------------------
-// Button handlers (same legacy actions, event-driven)
-// ------------------------------------------------------------
-
-void UQuitView::OnAcceptClicked()
+bool QuitView::OnKeyDown(int32 Key, bool bRepeat)
 {
     if (!CanAccept())
-        return;
+        return false;
 
-    CloseMenu();
-    Game::SetTimeCompression(1);
-
-    if (Starshatter* Stars = Starshatter::GetInstance())
-        Stars->SetGameMode(EMODE::PLAN_MODE);
-}
-
-void UQuitView::OnDiscardClicked()
-{
-    CloseMenu();
-    Game::SetTimeCompression(1);
-
-    Starshatter* Stars = Starshatter::GetInstance();
-    Campaign* CampaignPtr = Campaign::GetCampaign();
-
-    // Discard mission and events:
-    sim = Sim::GetSim();
-    if (sim) sim->UnloadMission();
-    else ShipStats::Initialize();
-
-    if (CampaignPtr && CampaignPtr->GetCampaignId() < Campaign::SINGLE_MISSIONS)
-    {
-        CampaignPtr->RollbackMission();
-        if (Stars) Stars->SetGameMode(EMODE::CMPN_MODE);
+    // Minimal: ESC closes menu / resumes
+    // Replace Key codes with your input system mapping if needed.
+    if (Key == 27 /* ESC */) {
+        ExecuteAction(QUIT_ACTION_RESUME);
+        return true;
     }
-    else
-    {
-        if (Stars) Stars->SetGameMode(EMODE::MENU_MODE);
-    }
+
+    return false;
 }
 
-void UQuitView::OnResumeClicked()
+void QuitView::ExecuteAction(uintptr_t Action)
 {
-    CloseMenu();
-}
-
-void UQuitView::OnControlsClicked()
-{
-    // Legacy behavior: open controls dialog from GameScreen:
-    if (UGameScreen* GameScreen = UGameScreen::GetInstance())
-    {
+    if (Action == QUIT_ACTION_RESUME) {
         CloseMenu();
-        GameScreen->ShowCtlDlg();
+
+        // Hook this to your actual pause/dialog stack:
+        // e.g. sim->SetPaused(false); or Starshatter::GetInstance()->PopView(this);
     }
-    else
-    {
-        CloseMenu();
+    else if (Action == QUIT_ACTION_QUIT) {
+        // Hook this to your real quit path:
+        // e.g. Game::Exit(); or Starshatter::GetInstance()->RequestExit();
     }
 }

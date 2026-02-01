@@ -37,7 +37,7 @@ class UWepDlg;
 class UAudioDlg;
 class UVideoDlg;
 class UOptDlg;
-class UQuitView;
+class QuitView;
 
 // Legacy systems (raw classes):
 class Sim;
@@ -48,6 +48,7 @@ class DisplayView;
 class HUDView;
 class WepView;
 class QuantumView;
+class CameraView;
 class RadioView;
 class TacticalView;
 class Bitmap;
@@ -139,7 +140,7 @@ public:
     UAudioDlg* GetAudioDlg() const { return AudioDlg; }
     UVideoDlg* GetVidDlg()   const { return VidDlg; }
     UOptDlg* GetOptDlg()   const { return OptDlg; }
-    UQuitView* GetQuitView() const { return QuitView; }
+    QuitView* GetQuitView() const { return QuitViewClass; }
 
     static UGameScreen* GetInstance() { return GameScreenInstance; }
 
@@ -165,7 +166,7 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UAudioDlg> AudioDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UVideoDlg>   VidDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UOptDlg>   OptDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UQuitView> QuitViewClass;
+    QuitView*   QuitViewClass;
 
     // Spawned dialog instances:
     UNavDlg* NavDlg = nullptr;
@@ -178,7 +179,6 @@ private:
     UVideoDlg* VidDlg = nullptr;
     UWepDlg* WepDlg = nullptr;
     UOptDlg* OptDlg = nullptr;
-    UQuitView* QuitView = nullptr;
 
     // Legacy raw systems (keep logic; no UPROPERTY):
     Sim* sim = nullptr;
@@ -190,6 +190,7 @@ private:
     RadioView* radio_view = nullptr;
     TacticalView* tac_view = nullptr;
     CameraView* cam_view = nullptr;
+    QuitView* quit_View = nullptr;
 
     DataLoader* loader = nullptr;
     Bitmap* flare1 = nullptr;

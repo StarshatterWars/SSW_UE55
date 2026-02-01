@@ -889,6 +889,7 @@ HUDView::SetOverlayMode(int mode_in)
 	}
 }
 
+
 // +--------------------------------------------------------------------+
 
 bool
@@ -1471,7 +1472,7 @@ HUDView::DrawDesignators()
 
 	// starships show up to three targets:
 	else {
-		ListIter<WeaponGroup> w = ship->Weapons();
+		ListIter<WeaponGroup> w = ship->GetWeapons();
 		while (!t3 && ++w) {
 			SimObject* t = w->GetTarget();
 			SimSystem* s = w->GetSubTarget();
@@ -1578,13 +1579,13 @@ static SYSTEM_STATUS GetReactorStatus(Ship* ship)
 
 static SYSTEM_STATUS GetDriveStatus(Ship* ship)
 {
-	if (!ship || ship->Drives().size() < 1)
+	if (!ship || ship->GetDrives().size() < 1)
 		return SYSTEM_STATUS::UNKNOWN;
 
 	SYSTEM_STATUS  status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
-	ListIter<Drive> iter = ship->Drives();
+	ListIter<Drive> iter = ship->GetDrives();
 	while (++iter) {
 		Drive* s = iter.value();
 
@@ -1654,10 +1655,10 @@ static SYSTEM_STATUS GetShieldStatus(Ship* ship)
 
 static SYSTEM_STATUS GetWeaponStatus(Ship* ship, int index)
 {
-	if (!ship || ship->Weapons().size() <= index)
+	if (!ship || ship->GetWeapons().size() <= index)
 		return SYSTEM_STATUS::UNKNOWN;
 
-	WeaponGroup* group = ship->Weapons().at(index);
+	WeaponGroup* group = ship->GetWeapons().at(index);
 
 	SYSTEM_STATUS  status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
@@ -1704,13 +1705,13 @@ static SYSTEM_STATUS GetSensorStatus(Ship* ship)
 
 static SYSTEM_STATUS GetComputerStatus(Ship* ship)
 {
-	if (!ship || ship->Computers().size() < 1)
+	if (!ship || ship->GetComputers().size() < 1)
 		return SYSTEM_STATUS::UNKNOWN;
 
 	SYSTEM_STATUS status = SYSTEM_STATUS::NOMINAL;
 	bool maint = false;
 
-	ListIter<Computer> iter = ship->Computers();
+	ListIter<Computer> iter = ship->GetComputers();
 	while (++iter) {
 		Computer* s = iter.value();
 
@@ -1806,15 +1807,23 @@ HUDView::DrawWarningPanel()
 			case 6:
 			case 7:  stat = GetWeaponStatus(ship, index - 4);
 				if (stat != SYSTEM_STATUS::UNKNOWN) {
-					WeaponGroup* g = ship->Weapons().at(index - 4);
+					WeaponGroup* g = ship->GetWeapons().at(index - 4);
 					abrv = g->Name();
 				}
 				break;
 
-			case 8:  stat = GetSensorStatus(ship);     abrv = Game::GetText("HUDView.SENSOR");   break;
-			case 9:  stat = GetComputerStatus(ship);   abrv = Game::GetText("HUDView.COMPUTER"); break;
-			case 10: stat = GetThrusterStatus(ship);   abrv = Game::GetText("HUDView.THRUSTER"); break;
-			case 11: stat = GetFlightDeckStatus(ship); abrv = Game::GetText("HUDView.FLTDECK");  break;
+			case 8:  stat = GetSensorStatus(ship);    
+				abrv = "SENSOR";
+				break;
+			case 9:  stat = GetComputerStatus(ship);
+				abrv = "COMP";
+				break;
+			case 10: stat = GetThrusterStatus(ship);   
+				abrv = "THRUST";
+				break;
+			case 11: stat = GetFlightDeckStatus(ship); 
+				abrv = "FLTDECK"; 
+				break;
 			}
 
 			Rect warn_rect(x, y, box_width, box_height);

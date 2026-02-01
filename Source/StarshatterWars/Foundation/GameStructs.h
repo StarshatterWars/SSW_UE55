@@ -670,6 +670,31 @@ enum class INSTRCUTION_PRIORITY : uint8
 	BONUS
 };
 
+UENUM()
+enum class WeaponsOrders : uint8 
+{
+	MANUAL				UMETA(DisplayName = "Manual"),
+	AUTO				UMETA(DisplayName = "Automatic"), 
+	POINT_DEFENSE		UMETA(DisplayName = "Point Defense"),
+};
+
+UENUM()
+enum class WeaponsControl : uint8 
+{
+	SINGLE_FIRE			UMETA(DisplayName = "Single Fire"),
+	RIPPLE_FIRE			UMETA(DisplayName = "Ripple Fire"),
+	SALVO_FIRE			UMETA(DisplayName = "Salvo Fire"),
+};
+
+UENUM()
+enum class WeaponsSweep : uint8 
+{
+	SWEEP_NONE			UMETA(DisplayName = "Sweep None"),
+	SWEEP_TIGHT			UMETA(DisplayName = "Sweep Tight"),
+	SWEEP_WIDE			UMETA(DisplayName = "Sweep Wide"),
+};
+
+
 /*static enum ETXT : int32
 {
 	MAX_CONTACT = 50,

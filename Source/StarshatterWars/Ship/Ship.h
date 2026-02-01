@@ -402,10 +402,10 @@ public:
     void                    ClearCaution() { master_caution = 0; }
 
     // SYSTEM ACCESSORS:
-    List<SimSystem>& Systems() { return systems; }
-    List<WeaponGroup>& Weapons() { return weapons; }
-    List<Drive>& Drives() { return drives; }
-    List<Computer>& Computers() { return computers; }
+    List<SimSystem>&        GetSystems() { return systems; }
+    List<WeaponGroup>&      GetWeapons() { return weapons; }
+    List<Drive>&            GetDrives() { return drives; }
+    List<Computer>&         GetComputers() { return computers; }
     List<FlightDeck>& FlightDecks() { return flight_decks; }
     List<PowerSource>& Reactors() { return reactors; }
     List<NavLight>& NavLights() { return navlights; }

@@ -1038,9 +1038,60 @@ View::SetTextColor(FColor TColor)
     TextColor = TColor;
 }
 
-void View::SetHUDColor(FColor HColor)
+void 
+View::SetHUDColor(FColor HColor)
 {
     HudColor = HColor;
+}
+
+void View::DrawTextRect(const FString& Text, int Count, Rect& TxtRect, DWORD Flags)
+{
+    if (Text.IsEmpty())
+        return;
+
+    FTCHARToUTF8 Conv(*Text);
+    DrawTextRect(Conv.Get(), Count, TxtRect, Flags);
+}
+
+void View::Print(int x1, int y1, const FString& Text)
+{
+    if (Text.IsEmpty())
+        return;
+
+    FTCHARToUTF8 Conv(*Text);
+    Print(x1, y1, "%s", Conv.Get());
+}
+
+bool 
+View::OnMouseDown(int32 Button, int32 x, int32 y)
+{
+    return OnMouseButtonDown(Button, FVector2D((float)x, (float)y));
+}
+
+bool 
+View::OnMouseUp(int32 Button, int32 x, int32 y)
+{
+    return OnMouseButtonUp(Button, FVector2D((float)x, (float)y));
+}
+
+bool 
+View::OnMouseMove(int32 x, int32 y)
+{
+    return OnMouseMove(FVector2D((float)x, (float)y));
+}
+
+bool 
+View::OnKeyDown(int32 Key)
+{
+    return OnKeyDown(Key, false);
+}
+
+bool 
+View::OnKeyUp(int32 Key)
+{
+    // If you don’t have a KeyUp surface yet, default to “not handled”.
+    // You can add a UE-ish OnKeyUp(int32) later if needed.
+    return false;
 }
 
 

@@ -3384,8 +3384,8 @@ MapView::TargetRect() const
 
 // +--------------------------------------------------------------------+
 
-int
-MapView::OnMouseMove(int x, int y)
+bool
+MapView::OnMouseMove(int32 x, int32 y)
 {
 	if (captured) {
 		EventTarget* test = 0;
@@ -3429,13 +3429,14 @@ MapView::OnMouseMove(int x, int y)
 		}
 	}
 
-	return active_window->OnMouseMove(x, y);
+	const int Result = active_window->OnMouseMove(x, y);
+	return Result != 0;
 }
 
 // +--------------------------------------------------------------------+
 
 int
-MapView::OnRButtonDown(int x, int y)
+MapView::OnRButtonDown(int32 x, int32 y)
 {
 	if (!captured)
 		captured = SetCapture();
@@ -3453,7 +3454,7 @@ MapView::OnRButtonDown(int x, int y)
 // +--------------------------------------------------------------------+
 
 int
-MapView::OnRButtonUp(int x, int y)
+MapView::OnRButtonUp(int32 x, int32 y)
 {
 	if (captured) {
 		ReleaseCapture();
@@ -3475,7 +3476,7 @@ MapView::OnClick()
 }
 
 int
-MapView::OnLButtonDown(int x, int y)
+MapView::OnLButtonDown(int32 x, int32 y)
 {
 	if (menu_view && menu_view->IsShown()) {
 		// ignore this event...
@@ -3514,7 +3515,7 @@ MapView::OnLButtonDown(int x, int y)
 }
 
 int
-MapView::OnLButtonUp(int x, int y)
+MapView::OnLButtonUp(int32 x, int32 y)
 {
 	bool process_event = false;
 

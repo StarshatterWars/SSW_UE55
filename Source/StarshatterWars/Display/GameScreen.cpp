@@ -32,7 +32,7 @@
 #include "AudioDlg.h"
 #include "VideoDlg.h"
 #include "OptDlg.h"
-#include "QuitView.h"   // <- make your UQuitView widget header name match
+#include "QuitView.h"   
 
 // Legacy:
 #include "Sim.h"
@@ -126,9 +126,6 @@ void UGameScreen::Setup()
     VidDlg = Cast<UVideoDlg>(MakeDlg(VidDlgClass, 70));
     OptDlg = Cast<UOptDlg>(MakeDlg(OptDlgClass, 70));
 
-    // Quit menu should be "last in chain" => highest Z-order:
-    QuitView = Cast<UQuitView>(MakeDlg(QuitViewClass, 100));
-
     HideAll();
     bIsShown = false;
 }
@@ -155,7 +152,6 @@ void UGameScreen::TearDown()
     W = AudioDlg; Kill(W); AudioDlg = nullptr;
     W = VidDlg;   Kill(W); VidDlg = nullptr;
     W = OptDlg;   Kill(W); OptDlg = nullptr;
-    W = QuitView; Kill(W); QuitView = nullptr;
 
     // legacy pointers are not owned here; just clear:
     sim = nullptr;
@@ -204,9 +200,6 @@ void UGameScreen::HideAll()
     SetDlgVisible(AudioDlg, false);
     SetDlgVisible(VidDlg, false);
     SetDlgVisible(OptDlg, false);
-
-    // Quit menu should also be hidden unless explicitly shown:
-    SetDlgVisible(QuitView, false);
 }
 
 bool UGameScreen::IsFormShown() const
@@ -357,11 +350,7 @@ UGameScreen::HideWepDlg()
 void UGameScreen::ShowCtlDlg()
 {
     if (!CtlDlg)
-        return;
-
-    // Legacy behavior: if Quit is open, close it then pause:
-    if (QuitView && QuitView->IsMenuShown())
-        QuitView->CloseMenu();
+        return;;
 
     HideAll();
 
@@ -375,10 +364,6 @@ void UGameScreen::HideCtlDlg()
     {
         SetDlgVisible(CtlDlg, false);
         Starshatter::GetInstance()->Pause(false);
-
-        // Legacy behavior: if quit menu was open, show it again:
-        if (QuitView)
-            QuitView->ShowMenu();
     }
 }
 
@@ -391,9 +376,6 @@ void UGameScreen::ShowKeyDlg()
 {
     if (!KeyDlg)
         return;
-
-    if (QuitView && QuitView->IsMenuShown())
-        QuitView->CloseMenu();
 
     HideAll();
 
@@ -415,9 +397,6 @@ void UGameScreen::ShowJoyDlg()
     if (!JoyDlg)
         return;
 
-    if (QuitView && QuitView->IsMenuShown())
-        QuitView->CloseMenu();
-
     HideAll();
 
     // Legacy: show control dlg under joy dlg:
@@ -438,9 +417,6 @@ void UGameScreen::ShowAudDlg()
     if (!AudioDlg)
         return;
 
-    if (QuitView && QuitView->IsMenuShown())
-        QuitView->CloseMenu();
-
     HideAll();
     SetDlgVisible(AudioDlg, true);
     Starshatter::GetInstance()->Pause(true);
@@ -452,9 +428,6 @@ void UGameScreen::HideAudDlg()
     {
         SetDlgVisible(AudioDlg, false);
         Starshatter::GetInstance()->Pause(false);
-
-        if (QuitView)
-            QuitView->ShowMenu();
     }
 }
 
@@ -468,9 +441,6 @@ void UGameScreen::ShowVidDlg()
     if (!VidDlg)
         return;
 
-    if (QuitView && QuitView->IsMenuShown())
-        QuitView->CloseMenu();
-
     HideAll();
     SetDlgVisible(VidDlg, true);
     Starshatter::GetInstance()->Pause(true);
@@ -482,9 +452,6 @@ void UGameScreen::HideVidDlg()
     {
         SetDlgVisible(VidDlg, false);
         Starshatter::GetInstance()->Pause(false);
-
-        if (QuitView)
-            QuitView->ShowMenu();
     }
 }
 
@@ -498,9 +465,6 @@ void UGameScreen::ShowOptDlg()
     if (!OptDlg)
         return;
 
-    if (QuitView && QuitView->IsMenuShown())
-        QuitView->CloseMenu();
-
     HideAll();
     SetDlgVisible(OptDlg, true);
     Starshatter::GetInstance()->Pause(true);
@@ -512,9 +476,6 @@ void UGameScreen::HideOptDlg()
     {
         SetDlgVisible(OptDlg, false);
         Starshatter::GetInstance()->Pause(false);
-
-        if (QuitView)
-            QuitView->ShowMenu();
     }
 }
 
@@ -605,21 +566,13 @@ void UGameScreen::ExecFrame(float DeltaTime)
         return;
 
     bool bDialogShowing =
-        IsFormShown() ||
-        (QuitView && QuitView->IsMenuShown());
+        IsFormShown();
 
     // HUD always updates:
     if (hud_view)
     {
         hud_view->UseCameraView(cam_view);
         hud_view->ExecFrame();
-    }
-
-    // Quit menu:
-    if (QuitView && QuitView->IsMenuShown())
-    {
-        QuitView->ExecFrame(DeltaTime);
-        bDialogShowing = true;
     }
 
     // Dialog ticks (UMG-style):
@@ -648,7 +601,7 @@ void UGameScreen::ExecFrame(float DeltaTime)
         VidDlg->ExecFrame(DeltaTime);
 
     if (OptDlg && IsDlgVisible(OptDlg))
-        OptDlg->ExecFrame();
+        //OptDlg->ExecFrame();
 
     if (CtlDlg && IsDlgVisible(CtlDlg))
         CtlDlg->ExecFrame();
@@ -691,7 +644,6 @@ bool UGameScreen::CloseTopmost()
 
     // Menu views:
     if (quantum_view && quantum_view->IsMenuShown()) { quantum_view->CloseMenu(); return true; }
-    if (QuitView && QuitView->IsMenuShown()) { QuitView->CloseMenu();     return true; }
     if (radio_view && radio_view->IsMenuShown()) { radio_view->CloseMenu();   return true; }
 
     return false;

@@ -31,7 +31,7 @@ public:
 
     int operator==(const EventTarget& t) const { return this == &t; }
 
-    virtual int  OnMouseMove(int x, int y) { return 0; }
+    virtual bool OnMouseMove(int32 x, int32 y) { return false; }
     virtual int  OnLButtonDown(int x, int y) { return 0; }
     virtual int  OnLButtonUp(int x, int y) { return 0; }
     virtual int  OnClick() { return 0; }

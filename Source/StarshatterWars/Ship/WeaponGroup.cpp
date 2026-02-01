@@ -269,7 +269,7 @@ SYSTEM_STATUS WeaponGroup::GetStatus() const
 
 // +--------------------------------------------------------------------+
 
-void WeaponGroup::SetFiringOrders(int o)
+void WeaponGroup::SetFiringOrders(WeaponsOrders o)
 {
 	orders = o;
 

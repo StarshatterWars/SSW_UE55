@@ -53,14 +53,18 @@
 // ---------------------------------------------------------------------
 // Minimal legacy includes (keep header light).
 // ---------------------------------------------------------------------
+#include "CoreMinimal.h"
+
+
 #include "Types.h"
 #include "List.h"
 #include "Geometry.h"     // Rect
 #include "FontManager.h"
 
 // Minimal UE types used in signatures:
-#include "Math/Vector.h"  // FVector
-#include "Math/Color.h"   // FColor
+#include "Math/Vector.h"
+#include "Math/Vector2D.h"
+#include "Math/Color.h"   
 #include "GameStructs.h" 
 // ---------------------------------------------------------------------
 // Forward declarations (keep compile dependencies low).
@@ -155,6 +159,8 @@ public:
     // Drawing (implemented in View.cpp)
     // ------------------------------------------------------------
     void DrawTextRect(const char* txt, int count, Rect& txt_rect, DWORD flags);
+    void DrawTextRect(const FString& Text, int Count, Rect& TxtRect, DWORD Flags);
+
     void DrawLine(int x1, int y1, int x2, int y2, const FColor& color, int blend = 0);
     void DrawRect(int x1, int y1, int x2, int y2, const FColor& color, int blend = 0);
     void DrawRect(const Rect& r, const FColor& color, int blend = 0);
@@ -183,19 +189,33 @@ public:
     void                SetTextColor(FColor TColor);
     void                SetHUDColor(FColor HColor);
 
+    FColor              GetHUDColor() const { return HudColor; }
+    FColor              GetTextColor() const { return TextColor; }
+
     FColor              GetBackColor() const { return BackColor; }
     void                SetBackColor(const FColor& c) { BackColor = c; }
 
+    virtual bool        OnMouseButtonDown(int32 Button, const FVector2D& ScreenPos);
+    virtual bool        OnMouseButtonUp(int32 Button, const FVector2D& ScreenPos);
+    virtual bool        OnMouseMove(const FVector2D& ScreenPos);
+    virtual bool        OnKeyDown(int32 Key, bool bRepeat);
+
+    virtual bool        OnMouseDown(int32 Button, int32 x, int32 y);
+    virtual bool        OnMouseUp(int32 Button, int32 x, int32 y);
+    virtual bool        OnMouseMove(int32 x, int32 y);
+    virtual bool        OnKeyDown(int32 Key);      // legacy no-repeat
+    virtual bool        OnKeyUp(int32 Key);        // optional legacy hook
+
     void Print(int x1, int y1, const char* fmt, ...);
+    void Print(int x1, int y1, const FString& Text);
    
     virtual void        ExecFrame();
-   
+
 
 protected:
     // Legacy coordinate transform hooks (if needed later)
     virtual void ScreenToWindow(int& x, int& y) {}
     virtual void ScreenToWindow(Rect& r) {}
-
 
 protected:
     Rect            rect;

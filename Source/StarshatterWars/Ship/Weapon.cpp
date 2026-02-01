@@ -77,9 +77,9 @@ Weapon::Weapon(WeaponDesign* d, int nmuz, FVector* muzzles, double az, double el
     FMemory::Memzero(visible_stores, sizeof(visible_stores));
 
     if (design->primary)
-        abrv = Game::GetText("sys.weapon.primary.abrv");
+        abrv = "Wep Pri";
     else
-        abrv = Game::GetText("sys.weapon.secondary.abrv");
+        abrv = "Wep Sec";
 
     nbarrels = nmuz;
 
@@ -420,9 +420,9 @@ const char* Weapon::GetObserverName() const
 
 // +--------------------------------------------------------------------+
 
-void Weapon::SetFiringOrders(int o)
+void Weapon::SetFiringOrders(WeaponsOrders o)
 {
-    if (o >= MANUAL && o <= POINT_DEFENSE)
+    if (o >= WeaponsOrders::MANUAL && o <= WeaponsOrders::POINT_DEFENSE)
         orders = o;
 }
 

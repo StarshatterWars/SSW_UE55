@@ -77,8 +77,8 @@ public:
 	SimObject*		  GetTarget()                const;
 	SimSystem*		  GetSubTarget()             const;
 	void              DropTarget();
-	void              SetFiringOrders(int o);
-	int               GetFiringOrders()          const { return orders; }
+	void              SetFiringOrders(WeaponsOrders o);
+	WeaponsOrders     GetFiringOrders()          const { return orders; }
 	void              SetControlMode(int m);
 	int               GetControlMode()           const { return control; }
 	void              SetSweep(int s);
@@ -102,7 +102,7 @@ protected:
 	bool              trigger;
 	int               ammo;
 
-	int               orders;
+	WeaponsOrders     orders;
 	int               control;
 	int               sweep;
 

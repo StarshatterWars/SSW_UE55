@@ -77,17 +77,22 @@ void UMenuScreen::ShowDialog(UBaseScreen* Dialog, bool bTopMost)
     if (!Dialog)
         return;
 
-    if (!Dialog->IsInViewport())
-        Dialog->AddToViewport(0);
+    if (Dialog->IsInViewport())
+    {
+        Dialog->RemoveFromParent();
+    }
 
-    Dialog->SetVisibility(ESlateVisibility::Visible);
-    Dialog->SetDialogInputEnabled(true);
+    int32 Z = 0;
 
     if (bTopMost)
     {
         ++ZCounter;
-        Dialog->SetZOrderInViewport(ZCounter);
+        Z = ZCounter;
     }
+
+    Dialog->AddToViewport(Z);
+    Dialog->SetVisibility(ESlateVisibility::Visible);
+    Dialog->SetDialogInputEnabled(true);
 
     CurrentDialog = Dialog;
 }

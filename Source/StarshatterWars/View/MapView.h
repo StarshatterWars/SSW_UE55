@@ -86,11 +86,11 @@ public:
     virtual void      OnHide();
 
     // Input:
-    virtual int       OnMouseMove(int x, int y);
-    virtual int       OnRButtonDown(int x, int y);
-    virtual int       OnRButtonUp(int x, int y);
-    virtual int       OnLButtonDown(int x, int y);
-    virtual int       OnLButtonUp(int x, int y);
+    virtual bool      OnMouseMove(int32 x, int32 y);
+    virtual int       OnRButtonDown(int32 x, int32 y);
+    virtual int       OnRButtonUp(int32 x, int32 y);
+    virtual int       OnLButtonDown(int32 x, int32 y);
+    virtual int       OnLButtonUp(int32 x, int32 y);
     virtual int       OnClick();
 
     // Data binding:

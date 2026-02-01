@@ -1,491 +1,418 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    SUBSYSTEM:    StarshatterWars
     FILE:         WepView.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO:
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
-    View class for Tactical HUD Overlay
+    Weapons Overlay View (Unreal-friendly port)
 */
 
 #include "WepView.h"
 
 #include "HUDView.h"
-#include "HUDSounds.h"
-#include "Ship.h"
-#include "Computer.h"
-#include "NavSystem.h"
-#include "Drive.h"
-#include "Power.h"
-#include "Shield.h"
-#include "SimContact.h"
-#include "ShipDesign.h"
-#include "SimShot.h"
-#include "Drone.h"
-#include "Weapon.h"
 #include "Sim.h"
-#include "StarSystem.h"
+#include "Ship.h"
+#include "Weapon.h"
 #include "WeaponGroup.h"
-
-#include "CameraView.h"
-#include "Color.h"
-#include "Window.h"
-#include "Video.h"
-#include "Screen.h"
-#include "DataLoader.h"
-#include "SimScene.h"
-#include "FontManager.h"
-#include "Graphic.h"
-#include "Keyboard.h"
-#include "Mouse.h"
-#include "Game.h"
-#include "FormatUtil.h"
-
-#include "Logging/LogMacros.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogWepView, Log, All);
-
-// +--------------------------------------------------------------------+
-// Bitmap -> UTexture2D* (assets now managed as Unreal textures)
-
-class UTexture2D;
-
-static UTexture2D* tac_left = nullptr;
-static UTexture2D* tac_right = nullptr;
-static UTexture2D* tac_button = nullptr;
-static UTexture2D* tac_man = nullptr;
-static UTexture2D* tac_aut = nullptr;
-static UTexture2D* tac_def = nullptr;
-
-static BYTE* tac_left_shade = nullptr;
-static BYTE* tac_right_shade = nullptr;
-static BYTE* tac_button_shade = nullptr;
-static BYTE* tac_man_shade = nullptr;
-static BYTE* tac_aut_shade = nullptr;
-static BYTE* tac_def_shade = nullptr;
-
-
-
-// +--------------------------------------------------------------------+
+#include "SimObject.h"
 
 WepView* WepView::wep_view = nullptr;
+bool     WepView::bMouseLatched = false;
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
+// Construction
+// ------------------------------------------------------------
 
-WepView::WepView(Window* c)
-    : View(c), sim(nullptr), ship(nullptr), target(nullptr), active_region(nullptr),
-    transition(false), mode(0), mouse_down(0)
+WepView::WepView(View* InParent, int32 InWidth, int32 InHeight)
+    : View(InParent, 0, 0, InWidth, InHeight)
 {
     wep_view = this;
 
-    sim = Sim::GetSim();
+    width = InWidth;
+    height = InHeight;
 
-    // NOTE:
-    // Original code prepared PCX bitmaps and per-pixel "shade" buffers, then drew them via Window.
-    // In Unreal, these should be migrated to UTexture2D assets (and ideally Slate/UMG drawing).
-    // The existing HUDView::PrepareBitmap / ColorizeBitmap calls are no longer valid with UTexture2D*.
-    // Leaving these as TODO hooks to keep behavior equivalent without bloating this file with loader code.
-    //
-    // TODO (Unreal):
-    // - Load textures: "TAC_left", "TAC_right", "TAC_button", "MAN", "AUTO", "DEF"
-    // - Replace shade-buffer pipeline with material tinting or Slate color modulation
-    UE_LOG(LogWepView, Verbose, TEXT("WepView constructed: texture-backed overlay assets are TODO for Unreal."));
+    sim = Sim::GetSim();
+    ship = nullptr;
+
+    // Default font:
+    if (HUDFont)
+        SetFont(HUDFont);
+
+    // Default color from HUDView if available:
+    if (HUDView* hud = HUDView::GetInstance())
+        SetColor(hud->GetHUDColor());
+    else
+        SetColor(FColor::Green);
 
     OnWindowMove();
-
-    hud = HUDView::GetInstance();
-    if (hud)
-        SetColor(hud->GetHUDColor());
 }
 
 WepView::~WepView()
 {
-    // NOTE:
-    // Texture lifetimes are expected to be owned/managed by Unreal's asset system/GC.
-    // Do not manually delete UTexture2D* here.
+    if (wep_view == this)
+        wep_view = nullptr;
 
-    delete[] tac_left_shade;
-    delete[] tac_right_shade;
-    delete[] tac_button_shade;
-    delete[] tac_man_shade;
-    delete[] tac_aut_shade;
-    delete[] tac_def_shade;
-
-    tac_left_shade = nullptr;
-    tac_right_shade = nullptr;
-    tac_button_shade = nullptr;
-    tac_man_shade = nullptr;
-    tac_aut_shade = nullptr;
-    tac_def_shade = nullptr;
-
-    wep_view = nullptr;
+    // If we own the latch:
+    if (bMouseLatched)
+        bMouseLatched = false;
 }
 
-void
-WepView::OnWindowMove()
+// ------------------------------------------------------------
+// Singleton helpers
+// ------------------------------------------------------------
+
+void WepView::Initialize(View* Parent, int32 W, int32 H)
 {
-    width = window->Width();
-    height = window->Height();
-    xcenter = (width / 2.0) - 0.5;
-    ycenter = (height / 2.0) + 0.5;
+    if (!wep_view && Parent)
+        new WepView(Parent, W, H);
+}
 
-    int btn_loc = width / 2 - 147 - 45;
-    int man_loc = width / 2 - 177 - 16;
-    int aut_loc = width / 2 - 145 - 16;
-    int def_loc = width / 2 - 115 - 16;
-
-    int index = 0;
-
-    for (int i = 0; i < MAX_WEP; i++) {
-        btn_rect[index++] = Rect(btn_loc, 30, 90, 20);
-        btn_rect[index++] = Rect(man_loc, 56, 32, 8);
-        btn_rect[index++] = Rect(aut_loc, 56, 32, 8);
-        btn_rect[index++] = Rect(def_loc, 56, 32, 8);
-
-        btn_loc += 98;
-        man_loc += 98;
-        aut_loc += 98;
-        def_loc += 98;
+void WepView::Close()
+{
+    if (wep_view) {
+        delete wep_view;
+        wep_view = nullptr;
     }
 }
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
+// Colors
+// ------------------------------------------------------------
 
-bool
-WepView::Update(SimObject* obj)
+void WepView::CycleOverlayMode()
 {
-    if (obj == ship) {
-        ship = nullptr;
-        target = nullptr;
-    }
-    else if (obj == target) {
-        target = nullptr;
-    }
+    // Legacy Starshatter behavior:
+    // 0 = hidden
+    // 1 = compact
+    // 2 = expanded
 
-    return SimObserver::Update(obj);
+    mode = (mode + 1) % 3;
+
+    // Force layout refresh if needed
+    OnWindowMove();
 }
 
-const char*
-WepView::GetObserverName() const
+void WepView::SetColor(FColor c)
 {
-    return "WepView";
+    if (HUDView* hud = HUDView::GetInstance()) {
+        LocalHudColor = hud->GetHUDColor();
+        LocalTextColor = hud->GetTextColor();
+    }
+    else {
+        LocalHudColor = c;
+        LocalTextColor = c;
+    }
+
+    // Optionally also drive base View colors:
+    SetHUDColor(LocalHudColor);
+    SetTextColor(LocalTextColor);
 }
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
+// View lifecycle
+// ------------------------------------------------------------
 
-void
-WepView::Refresh()
+void WepView::OnWindowMove()
 {
+    // In your View system rect is already stored; keep width/height in sync:
+    width = rect.w;
+    height = rect.h;
+}
+
+void WepView::ExecFrame()
+{
+    // Keep the ship pointer fresh:
     sim = Sim::GetSim();
-    if (!sim || !hud || hud->GetHUDMode() == EHUDMode::Off)
-        return;
-
-    if (ship != sim->GetPlayerShip()) {
+    if (sim)
         ship = sim->GetPlayerShip();
+    else
+        ship = nullptr;
+}
 
-        if (ship) {
-            if (ship->Life() == 0 || ship->IsDying() || ship->IsDead()) {
-                ship = nullptr;
-            }
-            else {
-                Observe(ship);
-            }
-        }
-    }
-
-    if (mode < 1)
+void WepView::Refresh()
+{
+    if (!IsShown() || !bShownOverlay)
         return;
 
-    if (ship) {
-        // no tactical overlay for fighters:
-        if (ship->Design() && !ship->Design()->wep_screen) {
-            mode = 0;
-            return;
-        }
+    // Update ship each draw as well (safe redundancy):
+    sim = Sim::GetSim();
+    ship = sim ? sim->GetPlayerShip() : nullptr;
 
-        // no hud in transition:
-        if (ship->InTransition()) {
-            transition = true;
-            return;
-        }
-        else if (transition) {
-            transition = false;
-            RestoreOverlay();
-        }
+    // Draw a simple overlay frame for now:
+    const Rect ovr = GetOverlayRect();
+    FillRect(ovr, FColor(0, 0, 0, 160), 0);
+    DrawRect(ovr, LocalHudColor, 0);
 
-        if (target != ship->GetTarget()) {
-            target = ship->GetTarget();
-            if (target) Observe(target);
-        }
-
-        DrawOverlay();
-    }
-    else {
-        if (target) {
-            target = nullptr;
-        }
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-void
-WepView::ExecFrame()
-{
-    int hud_mode = 1;
-
-    // update the position of HUD elements that are
-    // part of the 3D scene (like fpm and lcos sprites)
-
-    if (hud) {
-        if (HudColor != hud->GetHUDColor()) {
-            HudColor = hud->GetHUDColor();
-            SetColor(HudColor);
-        }
-
-        if (hud->GetHUDMode() == EHUDMode::Off)
-            hud_mode = 0;
-    }
-
-    if (ship && !transition && mode > 0 && hud_mode > 0) {
-        if (mode > 0) {
-            DoMouseFrame();
-        }
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-void
-WepView::SetOverlayMode(int m)
-{
-    if (mode != m) {
-        mode = m;
-
-        if (hud)
-            hud->SetOverlayMode(mode);
-
-        RestoreOverlay();
-    }
-}
-
-void
-WepView::CycleOverlayMode()
-{
-    SetOverlayMode(!mode);
-}
-
-void
-WepView::RestoreOverlay()
-{
-    if (mode > 0) {
-        HUDSounds::PlaySound(HUDSounds::SND_WEP_DISP);
-    }
-    else {
-        HUDSounds::PlaySound(HUDSounds::SND_WEP_MODE);
-    }
-}
-
-// +--------------------------------------------------------------------+
-
-void
-WepView::SetColor(FColor c)
-{
-    HUDView* hud = HUDView::GetInstance();
-
-    if (hud) {
-        HudColor = hud->GetHUDColor();
-        TextColor = hud->GetTextColor();
-    }
-    else {
-        HudColor = c;
-        TextColor = c;
-    }
-
-    // NOTE:
-    // Original code recolored bitmaps using per-pixel shade buffers.
-    // With UTexture2D*, prefer tinting via material params or Slate color.
-    // TODO (Unreal): apply tint to overlay textures/materials.
-}
-
-// +--------------------------------------------------------------------+
-
-void
-WepView::DrawOverlay()
-{
-    // NOTE:
-    // The original drew Bitmap resources through Window::DrawBitmap/FadeBitmap.
-    // With Unreal textures, this needs a rendering path (Slate/UMG/HUD canvas).
-    // Keeping gameplay logic intact; rendering calls are TODO.
-    //
-    // TODO (Unreal):
-    // - Draw tac_left/tac_right at top center
-    // - Draw tac_button and MAN/AUTO/DEF toggles
-    // - Draw subtarget status text
+    // Title:
+    Rect titleR = ovr;
+    titleR.h = 16;
+    DrawTextRect(FString(TEXT("WEAPONS")), -1, titleR, DT_CENTER);
 
     if (!ship)
         return;
 
-    // Preserve the original decision logic for subtarget text and status color:
-    Rect tgt_rect;
-    tgt_rect.x = width / 2 + 73;
-    tgt_rect.y = 74;
-    tgt_rect.w = 100;
-    tgt_rect.h = 15;
+    // Weapon rows:
+    int32 max_wep = (int32)ship->GetWeapons().size();
+    if (max_wep > MAX_WEP)
+        max_wep = MAX_WEP;
 
-    Text           subtxt;
-    FColor         stat = HudColor;
-    static DWORD   blink = Game::RealTime();
+    // Draw each weapon line + 4 buttons:
+    for (int32 i = 0; i < max_wep; ++i) {
+        // Row label area:
+        Rect row = ovr;
+        row.y += 20 + i * 18;
+        row.h = 16;
 
+        // Left label:
+        Rect labelR = row;
+        labelR.x += 10;
+        labelR.w = 120;
+
+        const FString Label = FString::Printf(TEXT("WEP %02d"), i + 1);
+        DrawTextRect(Label, -1, labelR, DT_LEFT);
+
+        // Buttons (Fire / MAN / AUTO / DEF):
+        const int32 baseIndex = i * 4;
+
+        Rect b0 = GetButtonRect(baseIndex + 0);
+        Rect b1 = GetButtonRect(baseIndex + 1);
+        Rect b2 = GetButtonRect(baseIndex + 2);
+        Rect b3 = GetButtonRect(baseIndex + 3);
+
+        DrawRect(b0, LocalHudColor, 0);
+        DrawRect(b1, LocalHudColor, 0);
+        DrawRect(b2, LocalHudColor, 0);
+        DrawRect(b3, LocalHudColor, 0);
+
+        DrawTextRect(FString(TEXT("FIRE")), -1, b0, DT_CENTER);
+        DrawTextRect(FString(TEXT("MAN")), -1, b1, DT_CENTER);
+        DrawTextRect(FString(TEXT("AUTO")), -1, b2, DT_CENTER);
+        DrawTextRect(FString(TEXT("DEF")), -1, b3, DT_CENTER);
+    }
+
+    // Subtarget arrows if target exists:
     if (ship->GetTarget()) {
-        if (ship->GetSubTarget()) {
-            int blink_delta = Game::RealTime() - blink;
+        Rect leftArrow(rect.w / 2 + 50, 70, 20, 20);
+        Rect rightArrow(rect.w / 2 + 180, 70, 20, 20);
 
-            SimSystem* sys = ship->GetSubTarget();
-            subtxt = sys->Abbreviation();
-            switch (sys->GetStatus()) {
-            case SYSTEM_STATUS::DEGRADED:
-                stat = FColor(255, 255, 0); 
-                break;
-            case SYSTEM_STATUS::CRITICAL: 
-                stat = FColor(255, 180, 0);
-                break;
-            case SYSTEM_STATUS::DESTROYED: 
-                stat = FColor(255, 0, 0);
-                break;
-            case SYSTEM_STATUS::MAINT:
-                if (blink_delta < 250)
-                    stat = FColor(8, 8, 8);
-                break;
-            }
+        DrawRect(leftArrow, LocalHudColor, 0);
+        DrawRect(rightArrow, LocalHudColor, 0);
 
-            if (blink_delta > 500)
-                blink = Game::RealTime();
-        }
-        else {
-            subtxt = ship->GetTarget()->Name();
-        }
+        DrawTextRect(FString(TEXT("<")), -1, leftArrow, DT_CENTER);
+        DrawTextRect(FString(TEXT(">")), -1, rightArrow, DT_CENTER);
     }
-    else {
-        subtxt = "NO TGT";
-    }
-
-    subtxt.toUpper();
-
-    // If you still route text through Window/Font, keep that pipeline:
-    if (HUDFont && window) {
-        HUDFont->SetColor(stat);
-        window->SetFont(HUDFont);
-        window->DrawText(subtxt.data(), subtxt.length(), tgt_rect, DT_SINGLELINE | DT_CENTER);
-    }
-
-    UE_LOG(LogWepView, VeryVerbose, TEXT("WepView::DrawOverlay called; full Unreal texture rendering is TODO."));
 }
 
-// +--------------------------------------------------------------------+
+// ------------------------------------------------------------
+// Input routing (UE-friendly)
+// ------------------------------------------------------------
 
-void
-WepView::DoMouseFrame()
+bool WepView::OnMouseMove(const FVector2D& ScreenPos)
 {
-    static int mouse_down_local = false;
-    static int mouse_down_x = 0;
-    static int mouse_down_y = 0;
+    if (!bShownOverlay)
+        return false;
 
-    int x = Mouse::X();
-    int y = Mouse::Y();
+    const int32 X = (int32)ScreenPos.X;
+    const int32 Y = (int32)ScreenPos.Y;
 
-    // coarse-grained test: is mouse in overlay at all?
-    if (x < width / 2 - 256 || x > width / 2 + 256 || y > 90) {
-        mouse_in = false;
+    mouse_in = (GetOverlayRect().Contains(X, Y) != 0);
+
+    // If we latched, we “own” movement until release:
+    return bMouseLatched;
+}
+
+bool WepView::OnMouseButtonDown(int32 Button, const FVector2D& ScreenPos)
+{
+    if (!bShownOverlay)
+        return false;
+
+    // Left mouse only:
+    if (Button != 0)
+        return false;
+
+    const int32 X = (int32)ScreenPos.X;
+    const int32 Y = (int32)ScreenPos.Y;
+
+    // Only latch if pressed inside overlay:
+    if (!GetOverlayRect().Contains(X, Y))
+        return false;
+
+    mouse_down = true;
+    MouseDownPos = ScreenPos;
+
+    bMouseLatched = true;
+
+    HandlePressAt(X, Y);
+    return true;
+}
+
+bool WepView::OnMouseButtonUp(int32 Button, const FVector2D& ScreenPos)
+{
+    if (!bShownOverlay)
+        return false;
+
+    if (Button != 0)
+        return false;
+
+    const int32 X = (int32)ScreenPos.X;
+    const int32 Y = (int32)ScreenPos.Y;
+
+    const bool bWasLatched = bMouseLatched;
+
+    mouse_down = false;
+    bMouseLatched = false;
+
+    HandleReleaseAt(X, Y);
+
+    // If we had the latch, we handled it:
+    return bWasLatched;
+}
+
+// ------------------------------------------------------------
+// Click logic
+// ------------------------------------------------------------
+
+void WepView::HandlePressAt(int32 X, int32 Y)
+{
+    if (!ship)
+        return;
+
+    int32 max_wep = (int32)ship->GetWeapons().size();
+    if (max_wep > MAX_WEP)
+        max_wep = MAX_WEP;
+
+    for (int32 i = 0; i < max_wep; i++) {
+        const int32 index = i * 4;
+
+        if (CheckButton(index + 0, X, Y)) {
+            ship->FireWeapon(i);
+            return;
+        }
+        else if (CheckButton(index + 1, X, Y)) {
+            ship->GetWeapons()[i]->SetFiringOrders(WeaponsOrders::MANUAL);
+            return;
+        }
+        else if (CheckButton(index + 2, X, Y)) {
+            ship->GetWeapons()[i]->SetFiringOrders(WeaponsOrders::AUTO);
+            return;
+        }
+        else if (CheckButton(index + 3, X, Y)) {
+            ship->GetWeapons()[i]->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
+            return;
+        }
+    }
+}
+
+void WepView::HandleReleaseAt(int32 X, int32 Y)
+{
+    if (!ship || !ship->GetTarget())
+        return;
+
+    Rect r(rect.w / 2 + 50, 70, 20, 20);
+    if (r.Contains(X, Y)) {
+        CycleSubTarget(-1);
         return;
     }
 
-    mouse_in = true;
-
-    if (Mouse::LButton()) {
-        if (!mouse_down_local) {
-            mouse_down_local = true;
-            mouse_down_x = x;
-            mouse_down_y = y;
-        }
-
-        // check weapons buttons:
-        int max_wep = ship->Weapons().size();
-
-        if (max_wep > MAX_WEP)
-            max_wep = MAX_WEP;
-
-        for (int i = 0; i < max_wep; i++) {
-            int index = i * 4;
-
-            if (CheckButton(index, mouse_down_x, mouse_down_y)) {
-                ship->FireWeapon(i);
-                return;
-            }
-            else if (CheckButton(index + 1, mouse_down_x, mouse_down_y)) {
-                ship->Weapons()[i]->SetFiringOrders(Weapon::MANUAL);
-                return;
-            }
-            else if (CheckButton(index + 2, mouse_down_x, mouse_down_y)) {
-                ship->Weapons()[i]->SetFiringOrders(Weapon::AUTO);
-                return;
-            }
-            else if (CheckButton(index + 3, mouse_down_x, mouse_down_y)) {
-                ship->Weapons()[i]->SetFiringOrders(Weapon::POINT_DEFENSE);
-                return;
-            }
-        }
-    }
-    else if (mouse_down_local) {
-        mouse_down_local = false;
-        mouse_down_x = 0;
-        mouse_down_y = 0;
-
-        // check subtarget buttons:
-        if (ship->GetTarget()) {
-            Rect r(width / 2 + 50, 70, 20, 20);
-            if (r.Contains(x, y)) {
-                CycleSubTarget(-1);
-                return;
-            }
-
-            r.x = width / 2 + 180;
-            if (r.Contains(x, y)) {
-                CycleSubTarget(1);
-                return;
-            }
-        }
+    r.x = rect.w / 2 + 180;
+    if (r.Contains(X, Y)) {
+        CycleSubTarget(1);
+        return;
     }
 }
 
-bool
-WepView::CheckButton(int index, int x, int y)
+void WepView::SetOverlayMode(int InMode)
 {
-    if (index >= 0 && index < MAX_BTN) {
-        return btn_rect[index].Contains(x, y) ? true : false;
+    // Clamp to valid legacy range
+    // 0 = hidden
+    // 1 = compact
+    // 2 = expanded
+    if (InMode < 0)
+        InMode = 0;
+    else if (InMode > 2)
+        InMode = 2;
+
+    if (mode == InMode)
+        return;
+
+    mode = InMode;
+
+    // Force layout / redraw update
+    OnWindowMove();
+}
+
+// ------------------------------------------------------------
+// Button layout + hit test
+// ------------------------------------------------------------
+
+Rect WepView::GetOverlayRect() const
+{
+    // Matches your legacy “centered 512px wide” test with a top band.
+    // Tune these if your HUD scaling differs.
+    const int32 OverlayW = 512;
+    const int32 OverlayH = 90;
+
+    return Rect((rect.w / 2) - (OverlayW / 2), 0, OverlayW, OverlayH);
+}
+
+Rect WepView::GetButtonRect(int32 ButtonIndex) const
+{
+    // ButtonIndex maps: weapon i => base = i*4:
+    //  base+0 FIRE, base+1 MAN, base+2 AUTO, base+3 DEF
+    const int32 weaponIndex = ButtonIndex / 4;
+    const int32 which = ButtonIndex % 4;
+
+    const Rect ovr = GetOverlayRect();
+
+    // Row baseline:
+    const int32 rowY = ovr.y + 20 + weaponIndex * 18;
+
+    // Right-side buttons:
+    const int32 btnW = 48;
+    const int32 btnH = 16;
+
+    // Start near the right edge of overlay:
+    const int32 rightEdge = ovr.x + ovr.w - 10;
+
+    // 4 buttons packed right-to-left:
+    const int32 x3 = rightEdge - btnW;
+    const int32 x2 = x3 - 6 - btnW;
+    const int32 x1 = x2 - 6 - btnW;
+    const int32 x0 = x1 - 6 - btnW;
+
+    int32 bx = x0;
+    switch (which) {
+    case 0: bx = x0; break;
+    case 1: bx = x1; break;
+    case 2: bx = x2; break;
+    case 3: bx = x3; break;
     }
 
-    return false;
+    return Rect(bx, rowY, btnW, btnH);
 }
+
+bool WepView::CheckButton(int32 ButtonIndex, int32 X, int32 Y) const
+{
+    return GetButtonRect(ButtonIndex).Contains(X, Y) != 0;
+}
+
+// ------------------------------------------------------------
+// Sub-target cycling (simulation responsibility)
+// ------------------------------------------------------------
 
 void
 WepView::CycleSubTarget(int direction)
 {
-    if (ship->GetTarget() == nullptr || ship->GetTarget()->Type() != SimObject::SIM_SHIP)
+    if (ship->GetTarget() == 0 || ship->GetTarget()->Type() != SimObject::SIM_SHIP)
         return;
 
     ship->CycleSubTarget(direction);
 }
-
-bool
-WepView::IsMouseLatched()
-{
-    return mouse_in;
-}
-

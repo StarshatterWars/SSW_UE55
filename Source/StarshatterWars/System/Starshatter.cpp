@@ -262,7 +262,7 @@ Starshatter::~Starshatter()
 	SystemDesign::Close();
 	TacticalView::Close();
 	QuantumView::Close();
-	UQuitView::Close();
+	QuitView::Close();
 	RadioView::Close();
 
 	Mouse::Close();
@@ -1558,7 +1558,7 @@ Starshatter::DoGameKeys()
 			time_til_change = 0.5;
 
 			if (!gamescreen->CloseTopmost()) {
-				UQuitView* quit = UQuitView::GetInstance();
+				QuitView* quit = QuitView::GetInstance();
 				if (quit)
 					quit->ShowMenu();
 				else
@@ -2175,12 +2175,10 @@ Starshatter::SetupSplash()
 	int screen_width = GetScreenWidth();
 	int screen_height = GetScreenHeight();
 
-	// IMPORTANT: assign to the Starshatter member, not a local variable
 	gamewin = new View(screen, 0, 0, screen_width, screen_height);
 
-	// Splash should be a full-screen child view
-	FadeView* splash = new FadeView(gamewin, 0, 0, screen_width, screen_height);
-	splash->Init(2.0, 2.0, 2.0);
+	// Fade timings: fade-in, fade-out, hold
+	this->splash = new FadeView(gamewin, 2.0, 2.0, 2.0);
 
 	gamewin->AddView(splash);
 

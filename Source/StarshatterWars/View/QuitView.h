@@ -1,84 +1,59 @@
-/*  Project STARSHATTER WARS
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-
-    ORIGINAL AUTHOR: John DiCamillo
-    ORIGINAL STUDIO: Destroyer Studios
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         QuitView.h
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    UQuitView
-    - Unreal (UMG) port of legacy QuitView (End Mission menu).
-    - Inherits from UView (which is a UUserWidget).
-    - Keeps all legacy game logic:
-      * CanAccept() threat/time checks
-      * Accept (exit + keep results)
-      * Discard (rollback/unload)
-      * Resume
-      * Controls (delegates to GameScreen)
-      * Pause/unpause + mouse cursor/input mode toggles
-*/
-
 #pragma once
 
-#include "CoreMinimal.h"
-
-// IMPORTANT: Inherit from the new View base (UView):
 #include "View.h"
 
-#include "QuitView.generated.h"
-
-class UButton;
-class UTextBlock;
-
+class Menu;
+class MenuItem;
 class Sim;
 
-UCLASS()
-class STARSHATTERWARS_API UQuitView : public UUserWidget
+class QuitView : public View
 {
-    GENERATED_BODY()
-
 public:
-    UQuitView(const FObjectInitializer& ObjectInitializer);
+    // NEW: no Window* — Window is “part of views” now
+    QuitView(View* InParent);
+    virtual ~QuitView();
 
-    // Legacy-style API (kept):
-    bool  IsMenuShown() const;
-    void  ShowMenu();
-    void  CloseMenu();
-    bool  CanAccept();
+    // Operations:
+    virtual void Refresh() override;
+    virtual void OnWindowMove() override;
+    virtual void ExecFrame() override;
 
-    virtual void ExecFrame(float DeltaTime);
+    virtual bool CanAccept();
+    virtual bool IsMenuShown() const;
+    virtual void ShowMenu();
+    virtual void CloseMenu();
+
+    static void Initialize(View* Parent);
+    static void Close();
+    static QuitView* GetInstance() { return quit_view; }
+
+    // Input (MATCHES View.h signatures):
+    virtual bool OnMouseButtonDown(int32 Button, const FVector2D& ScreenPos) override;
+    virtual bool OnMouseButtonUp(int32 Button, const FVector2D& ScreenPos) override;
+    virtual bool OnMouseMove(const FVector2D& ScreenPos) override;
+    virtual bool OnKeyDown(int32 Key, bool bRepeat) override;
 
 protected:
-    virtual void NativeOnInitialized() override;
-    virtual void NativeConstruct() override;
+    void DrawMenu();
+    int  HitTestItem(const Rect& menuRect, int x, int y) const;
 
-    // Button handlers:
-    UFUNCTION() void OnAcceptClicked();
-    UFUNCTION() void OnDiscardClicked();
-    UFUNCTION() void OnResumeClicked();
-    UFUNCTION() void OnControlsClicked();
-
-    void ApplyMenuInputMode(bool bEnableMenu);
-    void SetMessageText(const FString& InText);
+    // Action handler you can wire to your real pause/quit flow:
+    void ExecuteAction(uintptr_t Action);
 
 protected:
-    // UMG widgets (must exist in the Widget Blueprint with these exact names):
-    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnAccept = nullptr;     // "ACCEPT / EXIT"
-    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnDiscard = nullptr;    // "DISCARD"
-    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnResume = nullptr;     // "RESUME"
-    UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> BtnControls = nullptr;   // "CONTROLS"
+    int   width = 0;
+    int   height = 0;
+    int   xcenter = 0;
+    int   ycenter = 0;
 
-    // Optional message label for errors like "too soon" / "threats present":
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> TxtMessage = nullptr;
+    bool  mouse_latch = false;
+    bool  bMenuShown = false;
 
-private:
-    bool bMenuShown = false;
-    bool bPrevShowMouseCursor = false;
+    int   MouseIndex = -1;
 
-    Sim* sim = nullptr; // raw pointer per your direction
+    Sim* sim = nullptr;
+
+    Menu* QuitMenu = nullptr;
+
+    static QuitView* quit_view;
 };

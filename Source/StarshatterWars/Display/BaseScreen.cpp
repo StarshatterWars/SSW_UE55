@@ -19,6 +19,7 @@
 
 // UMG:
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/RichTextBlock.h"
 #include "Components/Button.h"
@@ -1251,3 +1252,4 @@ void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
         }
     }
 }
+
