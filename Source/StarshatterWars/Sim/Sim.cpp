@@ -912,16 +912,16 @@ Sim::CreateElements()
 						}
 
 						if (NewShip->Class() > CLASSIFICATION::FRIGATE) {
-							ListIter<WeaponGroup> WeaponGroupIter = NewShip->Weapons();
+							ListIter<WeaponGroup> WeaponGroupIter = NewShip->GetWeapons();
 							while (++WeaponGroupIter) {
 								WeaponGroup* WeaponGroupPtr = WeaponGroupIter.value();
 
 								// anti-air weapon?
 								if (WeaponGroupPtr->GetDesign()->target_type & (int) CLASSIFICATION::DRONE) {
-									WeaponGroupPtr->SetFiringOrders(Weapon::POINT_DEFENSE);
+									WeaponGroupPtr->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
 								}
 								else {
-									WeaponGroupPtr->SetFiringOrders(Weapon::MANUAL);
+									WeaponGroupPtr->SetFiringOrders(WeaponsOrders::MANUAL);
 								}
 							}
 						}

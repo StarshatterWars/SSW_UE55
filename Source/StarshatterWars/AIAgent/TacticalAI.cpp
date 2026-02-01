@@ -344,7 +344,7 @@ bool TacticalAI::ProcessOrders()
 
 	return false;
 }
-If you want to make this pain
+
 void TacticalAI::ClearRadioOrders()
 {
 	action = RadioMessageAction::NONE;

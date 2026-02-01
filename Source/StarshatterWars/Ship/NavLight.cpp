@@ -34,15 +34,15 @@ static class Bitmap* images[4];
 // +----------------------------------------------------------------------+
 
 NavLight::NavLight(double p, double s)
-	: SimSystem(COMPUTER, 32, "Navigation Lights", 1, 0)
+	: SimSystem(SYSTEM_CATEGORY::COMPUTER, 32, "Navigation Lights", 1, 0)
 	, period(p)
 	, scale(s)
 	, enable(true)
 	, nlights(0)
 	, offset(0)
 {
-	name = Game::GetText("sys.nav-light");
-	abrv = Game::GetText("sys.nav-light.abrv");
+	name = "Navigation Lights";
+	abrv = "NavLights";
 
 	std::memset(beacon, 0, sizeof(beacon));
 	std::memset(beacon_type, 0, sizeof(beacon_type));

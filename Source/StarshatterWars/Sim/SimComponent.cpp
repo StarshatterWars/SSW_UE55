@@ -18,6 +18,7 @@
 #include "SimComponent.h"
 #include "SimSystem.h"
 #include "Game.h"
+#include "GameStructs.h"
 
 // +----------------------------------------------------------------------+
 
@@ -39,13 +40,14 @@ ComponentDesign::~ComponentDesign()
 
 SimComponent::SimComponent(ComponentDesign* d, SimSystem* s)
 	: design(d),
-	status(NOMINAL),
 	availability(100.0f),
 	time_remaining(0.0f),
 	spares(0),
 	jerried(0),
 	system(s)
 {
+	Status = SYSTEM_STATUS::NOMINAL;
+	
 	if (design)
 		spares = design->spares;
 }
@@ -54,7 +56,7 @@ SimComponent::SimComponent(ComponentDesign* d, SimSystem* s)
 
 SimComponent::SimComponent(const SimComponent& c)
 	: design(c.design),
-	status(c.status),
+	Status(c.Status),
 	availability(c.availability),
 	time_remaining(c.time_remaining),
 	spares(c.spares),
@@ -74,12 +76,12 @@ SimComponent::~SimComponent()
 void
 SimComponent::ExecMaintFrame(double seconds)
 {
-	if (status > NOMINAL) {
+	if (Status > SYSTEM_STATUS::NOMINAL) {
 		time_remaining -= (float)seconds;
 
 		// when repairs are complete:
 		if (time_remaining <= 0) {
-			if (status == REPAIR) {
+			if (Status == SYSTEM_STATUS::REPAIR) {
 				// did we just jerry-rig a failed component?
 				if (availability < 50)
 					jerried++;
@@ -94,11 +96,11 @@ SimComponent::ExecMaintFrame(double seconds)
 			}
 
 			if (availability > 99)
-				status = NOMINAL;
+				Status = SYSTEM_STATUS::NOMINAL;
 			else if (availability > 49)
-				status = DEGRADED;
+				Status = SYSTEM_STATUS::DEGRADED;
 			else
-				status = CRITICAL;
+				Status = SYSTEM_STATUS::CRITICAL;
 
 			time_remaining = 0.0f;
 
@@ -117,13 +119,13 @@ SimComponent::ApplyDamage(double damage)
 	if (availability < 1)
 		availability = 0.0f;
 
-	if (status < REPLACE) {
+	if (Status < SYSTEM_STATUS::REPLACE) {
 		if (availability > 99)
-			status = NOMINAL;
+			SetStatus(SYSTEM_STATUS::NOMINAL);
 		else if (availability > 49)
-			status = DEGRADED;
+			SetStatus(SYSTEM_STATUS::DEGRADED);
 		else
-			status = CRITICAL;
+			SetStatus(SYSTEM_STATUS::CRITICAL);
 	}
 
 	if (system)
@@ -135,8 +137,8 @@ SimComponent::ApplyDamage(double damage)
 void
 SimComponent::Repair()
 {
-	if (status < NOMINAL) {
-		status = REPAIR;
+	if (Status < SYSTEM_STATUS::NOMINAL) {
+		Status = SYSTEM_STATUS::REPAIR;
 		time_remaining = design->repair_time;
 
 		if (system)
@@ -149,8 +151,8 @@ SimComponent::Repair()
 void
 SimComponent::Replace()
 {
-	if (status <= NOMINAL) {
-		status = REPLACE;
+	if (Status <= SYSTEM_STATUS::NOMINAL) {
+		Status = SYSTEM_STATUS::REPLACE;
 		spares--;
 		time_remaining = design->replace_time;
 
@@ -164,7 +166,7 @@ SimComponent::Replace()
 float
 SimComponent::Availability() const
 {
-	if (status > NOMINAL && availability > 50)
+	if (Status > SYSTEM_STATUS::NOMINAL && availability > 50)
 		return 50.0f;
 
 	return availability;

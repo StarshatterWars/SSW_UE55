@@ -219,7 +219,7 @@ public:
 	Graphic* Rep()          const { return rep; }
 
 	Bitmap* GetMapIcon()   const { return map_icon; }
-	void              SetMapIcon(UTexture2D* img) { map_icon = img; }
+	void              SetMapIcon(Bitmap* img) { map_icon = img; }
 
 	StarSystem* System()       const { return system; }
 	Orbital* Primary()      const { return primary; }

@@ -79,10 +79,10 @@ public:
 	void              DropTarget();
 	void              SetFiringOrders(WeaponsOrders o);
 	WeaponsOrders     GetFiringOrders()          const { return orders; }
-	void              SetControlMode(int m);
-	int               GetControlMode()           const { return control; }
-	void              SetSweep(int s);
-	int               GetSweep()                 const { return sweep; }
+	void              SetControlMode(WeaponsControl m);
+	WeaponsControl    GetControlMode()           const { return control; }
+	void              SetSweep(WeaponsSweep s);
+	WeaponsSweep      GetSweep()                 const { return sweep; }
 	SYSTEM_STATUS     GetStatus()                const;
 
 	WeaponDesign*	  GetDesign()                const;
@@ -103,8 +103,8 @@ protected:
 	int               ammo;
 
 	WeaponsOrders     orders;
-	int               control;
-	int               sweep;
+	WeaponsControl    control;
+	WeaponsSweep      sweep;
 
 	float             mass;
 	float             resist;

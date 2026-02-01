@@ -42,7 +42,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogSSWWeapon, Log, All);
 // +----------------------------------------------------------------------+
 
 Weapon::Weapon(WeaponDesign* d, int nmuz, FVector* muzzles, double az, double el)
-    : SimSystem(WEAPON, d->type, d->name, d->value,
+    : SimSystem(SYSTEM_CATEGORY::WEAPON, d->type, d->name, d->value,
         d->capacity, d->capacity, d->recharge_rate),
     design(d),
     group(d->group),
@@ -68,9 +68,9 @@ Weapon::Weapon(WeaponDesign* d, int nmuz, FVector* muzzles, double az, double el
     target(0),
     subtarget(0),
     beams(0),
-    orders(MANUAL),
-    control(SINGLE_FIRE),
-    sweep(SWEEP_TIGHT),
+    orders(WeaponsOrders::MANUAL),
+    control(WeaponsControl::SINGLE_FIRE),
+    sweep(WeaponsSweep::SWEEP_TIGHT),
     turret(0),
     turret_base(0)
 {
@@ -151,9 +151,9 @@ Weapon::Weapon(const Weapon& w)
     target(0),
     subtarget(0),
     beams(0),
-    orders(MANUAL),
-    control(SINGLE_FIRE),
-    sweep(SWEEP_TIGHT),
+    orders(WeaponsOrders::MANUAL),
+    control(WeaponsControl::SINGLE_FIRE),
+    sweep(WeaponsSweep::SWEEP_TIGHT),
     group(w.group),
     aim_az_max(w.aim_az_max),
     aim_az_min(w.aim_az_min),
@@ -308,7 +308,7 @@ void Weapon::ExecFrame(double seconds)
     if (!ship)
         return;
 
-    if (orders == POINT_DEFENSE && enabled)
+    if (orders == WeaponsOrders::POINT_DEFENSE && enabled)
         SelectTarget();
 
     if (beams && !target) {
@@ -354,7 +354,7 @@ void Weapon::ExecFrame(double seconds)
             if (!ship->IsHostileTo(target))
                 return;
 
-            if (orders == AUTO && centered) {
+            if (orders == WeaponsOrders::AUTO && centered) {
                 if (energy >= design->charge &&
                     (ammo < 0 || (target && target->Integrity() >= 1)) &&
                     objective.Length() < design->max_range)
@@ -362,7 +362,7 @@ void Weapon::ExecFrame(double seconds)
                     Fire();
                 }
             }
-            else if (orders == POINT_DEFENSE) {
+            else if (orders == WeaponsOrders::POINT_DEFENSE) {
                 if (energy >= design->min_charge &&
                     (ammo < 0 || (target && target->Integrity() >= 1)) &&
                     objective.Length() < design->max_range)
@@ -426,15 +426,15 @@ void Weapon::SetFiringOrders(WeaponsOrders o)
         orders = o;
 }
 
-void Weapon::SetControlMode(int m)
+void Weapon::SetControlMode(WeaponsControl m)
 {
-    if (m >= SINGLE_FIRE && m <= SALVO_FIRE)
+    if (m >= WeaponsControl::SINGLE_FIRE && m <= WeaponsControl::SALVO_FIRE)
         control = m;
 }
 
-void Weapon::SetSweep(int s)
+void Weapon::SetSweep(WeaponsSweep s)
 {
-    if (s >= SWEEP_NONE && s <= SWEEP_WIDE)
+    if (s >= WeaponsSweep::SWEEP_NONE && s <= WeaponsSweep::SWEEP_WIDE)
         sweep = s;
 }
 
@@ -645,7 +645,7 @@ SimShot* Weapon::Fire()
         if (design->ripple_count > 0 && ripple_count <= 0)
             ripple_count = design->ripple_count - 1;
 
-        if (status != SYSTEM_STATUS::NOMINAL)
+        if (Status != SYSTEM_STATUS::NOMINAL)
             refire *= 2;
     }
 
@@ -1038,9 +1038,9 @@ void Weapon::Aim()
                 if (s->IsStarship()) {
                     switch (sweep) {
                     default:
-                    case SWEEP_NONE:  factor = 0; break;
-                    case SWEEP_TIGHT: factor = 1; break;
-                    case SWEEP_WIDE:  factor = 2; break;
+                    case WeaponsSweep::SWEEP_NONE:  factor = 0; break;
+                    case WeaponsSweep::SWEEP_TIGHT: factor = 1; break;
+                    case WeaponsSweep::SWEEP_WIDE:  factor = 2; break;
                     }
                 }
             }
@@ -1098,7 +1098,7 @@ void Weapon::Aim()
 
                 double firing_cone = 10 * DEGREES;
 
-                if (orders == MANUAL)
+                if (orders == WeaponsOrders::MANUAL)
                     firing_cone = 30 * DEGREES;
 
                 if (az < firing_cone && el < firing_cone)
@@ -1202,7 +1202,7 @@ bool Weapon::CanLockPoint(const FVector& test, double& az, double& el, FVector* 
     if (IsDrone() && guided) {
         double firing_cone = 10 * DEGREES;
 
-        if (orders == MANUAL)
+        if (orders == WeaponsOrders::MANUAL)
             firing_cone = 20 * DEGREES;
 
         if (az < firing_cone && el < firing_cone)

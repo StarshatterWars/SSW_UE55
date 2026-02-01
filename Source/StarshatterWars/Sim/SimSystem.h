@@ -47,17 +47,18 @@ public:
 
 	enum POWER_FLAGS { POWER_WATTS = 1, POWER_CRITICAL = 2 };
 
-	SimSystem(CATEGORY t, int s, const char* n, int maxv,
+	SimSystem(SYSTEM_CATEGORY t, int s, const char* n, int maxv,
 		double energy = 0, double capacity = 100, double sink_rate = 1);
 	SimSystem(const SimSystem& s);
 	virtual ~SimSystem();
 
 	int operator==(const SimSystem& s) const { return this == &s; }
 
-	CATEGORY          Type()         const { return type; }
-	int               Subtype()      const { return subtype; }
-	const char* Name()         const { return name; }
-	const char* Abbreviation() const { return abrv; }
+	SYSTEM_CATEGORY			GetType()      const { return type; }
+	int						Subtype()      const { return subtype; }
+	const char*				Name()         const { return name; }
+	const char*				Abbreviation() const { return abrv; }
+	SYSTEM_STATUS			GetStatus() const { return Status; }
 
 	void              SetName(const char* n) { name = n; }
 	void              SetAbbreviation(const char* a) { abrv = a; }
@@ -65,7 +66,7 @@ public:
 
 	virtual int       Value()        const { return (int)(max_value * availability * 100); }
 	int               MaxValue()     const { return (int)(max_value * 100); }
-	SYSTEM_STATUS     GetStatus()    const { return       status; }
+
 	double            Availability() const { return       availability * 100; }
 	double            Safety()       const { return       safety * 100; }
 	double            Stability()    const { return       stability * 100; }
@@ -132,8 +133,8 @@ public:
 
 protected:
 	// AI information:
-	CATEGORY          type;
-	Ship* ship;
+	SYSTEM_CATEGORY   type;
+	Ship*			  ship;
 	int               id;
 	int               subtype;
 	int               max_value;
@@ -143,7 +144,7 @@ protected:
 	Text              abrv;
 
 	// System health status:
-	SYSTEM_STATUS     status;
+	SYSTEM_STATUS     Status;
 	float             crit_level;
 	float             availability;
 	float             safety;

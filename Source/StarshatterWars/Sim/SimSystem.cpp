@@ -30,14 +30,14 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSystem, Log, All);
 
 // +----------------------------------------------------------------------+
 
-SimSystem::SimSystem(SimSystem::CATEGORY t, int s, const char* n, int maxv,
+SimSystem::SimSystem(SYSTEM_CATEGORY t, int s, const char* n, int maxv,
 	double e, double c, double r)
 	: type(t),
 	ship(0),
 	id(0),
 	subtype(s),
 	max_value(0),
-	status(SYSTEM_STATUS::NOMINAL),
+	Status(SYSTEM_STATUS::NOMINAL),
 	crit_level(0.5f),
 	availability(1.0f),
 	safety(1.0f),
@@ -81,7 +81,7 @@ SimSystem::SimSystem(const SimSystem& s)
 	id(s.id),
 	subtype(s.subtype),
 	max_value(s.max_value),
-	status(s.status),
+	Status(s.Status),
 	crit_level(s.crit_level),
 	availability(s.availability),
 	safety(s.safety),
@@ -255,7 +255,7 @@ SimSystem::ExecFrame(double seconds)
 	if (components.size() > 0) {
 		ListIter<SimComponent> comp = components;
 		while (++comp) {
-			if (comp->Status() > SimComponent::NOMINAL) {
+			if (comp->GetStatus() > SYSTEM_STATUS::NOMINAL) {
 				repair = true;
 				break;
 			}
@@ -267,8 +267,8 @@ SimSystem::ExecFrame(double seconds)
 	}
 
 	else {
-		if (status != s) {
-			status = s;
+		if (Status != s) {
+			Status = s;
 			//NetUtil::SendSysStatus(ship, this);
 		}
 
@@ -298,8 +298,8 @@ SimSystem::ExecFrame(double seconds)
 void
 SimSystem::Repair()
 {
-	if (status != SYSTEM_STATUS::MAINT) {
-		status = SYSTEM_STATUS::MAINT;
+	if (Status != SYSTEM_STATUS::MAINT) {
+		Status = SYSTEM_STATUS::MAINT;
 		safety_overload = 0.0f;
 
 		//NetUtil::SendSysStatus(ship, this);
@@ -314,7 +314,7 @@ SimSystem::ExecMaintFrame(double seconds)
 	if (components.size() > 0) {
 		ListIter<SimComponent> comp = components;
 		while (++comp) {
-			if (comp->Status() > SimComponent::NOMINAL) {
+			if (comp->GetStatus() > SYSTEM_STATUS::NOMINAL) {
 				comp->ExecMaintFrame(seconds);
 			}
 		}

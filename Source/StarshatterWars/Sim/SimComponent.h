@@ -20,8 +20,8 @@
 #include "Types.h"
 #include "Text.h"
 
-// Minimal Unreal include required for FVector (replaces Vec3/Point usage):
 #include "Math/Vector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -58,7 +58,6 @@ class SimComponent
 public:
 	static const char* TYPENAME() { return "SimComponent"; }
 
-	enum STATUS { DESTROYED, CRITICAL, DEGRADED, NOMINAL, REPLACE, REPAIR };
 	enum DAMAGE {
 		DAMAGE_EFFICIENCY = 0x01,
 		DAMAGE_SAFETY = 0x02,
@@ -78,7 +77,8 @@ public:
 	bool DamageSafety()     const { return (design->affects & DAMAGE_SAFETY) ? true : false; }
 	bool DamageStability()  const { return (design->affects & DAMAGE_STABILITY) ? true : false; }
 
-	STATUS Status()        const { return status; }
+	SYSTEM_STATUS	GetStatus() const { return Status; }
+	void			SetStatus(SYSTEM_STATUS stat) { Status = stat; }
 	float  Availability()  const;
 	float  TimeRemaining() const;
 	int    SpareCount()    const;
@@ -97,10 +97,10 @@ protected:
 	ComponentDesign* design;
 
 	// Component health status:
-	STATUS  status;
-	float   availability;
-	float   time_remaining;
-	int     spares;
-	int     jerried;
-	SimSystem* system;
+	SYSTEM_STATUS	Status;
+	float			availability;
+	float			time_remaining;
+	int				spares;
+	int				jerried;
+	SimSystem*		system;
 };

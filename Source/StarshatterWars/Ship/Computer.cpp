@@ -30,9 +30,9 @@ static int computer_value[] = {
 // +----------------------------------------------------------------------+
 
 Computer::Computer(int comp_type, const char* comp_name)
-	: SimSystem(COMPUTER, comp_type, comp_name, 1, 1, 1, 1)
+	: SimSystem(SYSTEM_CATEGORY::COMPUTER, comp_type, comp_name, 1, 1, 1, 1)
 {
-	SetAbbreviation(Game::GetText("sys.computer.abrv"));
+	SetAbbreviation("COMP");
 	power_flags = POWER_WATTS | POWER_CRITICAL;
 
 	if (subtype == FLIGHT) {

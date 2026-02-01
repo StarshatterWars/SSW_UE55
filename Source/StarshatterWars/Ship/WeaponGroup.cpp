@@ -24,9 +24,9 @@
 WeaponGroup::WeaponGroup(const char* n)
 	: selected(0)
 	, trigger(false)
-	, orders(Weapon::MANUAL)
-	, control(Weapon::SINGLE_FIRE)
-	, sweep(Weapon::SWEEP_TIGHT)
+	, orders(WeaponsOrders::MANUAL)
+	, control(WeaponsControl::SINGLE_FIRE)
+	, sweep(WeaponsSweep::SWEEP_TIGHT)
 	, mass(0.0f)
 	, resist(0.0f)
 	, name(n)
@@ -278,7 +278,7 @@ void WeaponGroup::SetFiringOrders(WeaponsOrders o)
 		w->SetFiringOrders(orders);
 }
 
-void WeaponGroup::SetControlMode(int m)
+void WeaponGroup::SetControlMode(WeaponsControl m)
 {
 	control = m;
 
@@ -287,7 +287,7 @@ void WeaponGroup::SetControlMode(int m)
 		w->SetControlMode(control);
 }
 
-void WeaponGroup::SetSweep(int s)
+void WeaponGroup::SetSweep(WeaponsSweep s)
 {
 	sweep = s;
 

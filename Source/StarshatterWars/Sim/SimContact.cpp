@@ -277,7 +277,7 @@ SimContact::Threat(const Ship* observer) const
 				ship->GetIFF() != observer->GetIFF() &&
 				ship->GetEMCON() > 2 &&
 				ship->IsTracking((Ship*)observer) &&
-				ship->Weapons().size() > 0);
+				ship->GetWeapons().size() > 0);
 
 			if (threat && observer->GetIFF() == 0)
 				threat = ship->GetIFF() > 1;

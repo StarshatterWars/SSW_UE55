@@ -201,9 +201,9 @@ GroundAI::ExecFrame(double secs)
             WeaponGroup* group = (WeaponGroup*)iter.value();
 
             if (group->NumWeapons() > 1 && group->CanTarget((int)CLASSIFICATION::DROPSHIPS))
-                group->SetFiringOrders(Weapon::POINT_DEFENSE);
+                group->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
             else
-                group->SetFiringOrders(Weapon::AUTO);
+                group->SetFiringOrders(WeaponsOrders::AUTO);
 
             group->SetTarget((Ship*)target, 0);
         }

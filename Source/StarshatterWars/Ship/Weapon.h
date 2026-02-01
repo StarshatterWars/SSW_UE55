@@ -24,6 +24,7 @@
 
 // Minimal Unreal include for FVector conversion:
 #include "Math/Vector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 // Forward Declarations (keep header light)
@@ -43,10 +44,7 @@ public:
     static const char* TYPENAME() { return "Weapon"; }
 
     enum Constants { MAX_BARRELS = 8 };
-    enum Orders { MANUAL, AUTO, POINT_DEFENSE };
-    enum Control { SINGLE_FIRE, RIPPLE_FIRE, SALVO_FIRE };
-    enum Sweep { SWEEP_NONE, SWEEP_TIGHT, SWEEP_WIDE };
-
+    
     Weapon(WeaponDesign* d, int nmuz, FVector* muzzles, double az = 0, double el = 0);
     Weapon(const Weapon& rhs);
     virtual ~Weapon();
@@ -62,12 +60,12 @@ public:
     bool               CanTarget(uint32 classification) const;
     SimObject* GetTarget()    const { return target; }
     SimSystem* GetSubTarget() const { return subtarget; }
-    void               SetFiringOrders(WeaponsOrders o);
-    int                GetFiringOrders() const { return orders; }
-    void               SetControlMode(int m);
-    int                GetControlMode()  const { return control; }
-    void               SetSweep(int s);
-    int                GetSweep()        const { return sweep; }
+    void                         SetFiringOrders(WeaponsOrders o);
+    WeaponsOrders                GetFiringOrders() const { return orders; }
+    void                         SetControlMode(WeaponsControl m);
+    WeaponsControl               GetControlMode()  const { return control; }
+    void                         SetSweep(WeaponsSweep s);
+    WeaponsSweep                 GetSweep()        const { return sweep; }
 
     void               Enable() { enabled = true; }
     void               Disable() { enabled = false; }
@@ -180,9 +178,9 @@ protected:
 
     int               index;
 
-    int               orders;
-    int               control;
-    int               sweep;
+    WeaponsOrders               orders;
+    WeaponsControl              control;
+    WeaponsSweep                sweep;
 
     SimObject* target;
     SimSystem* subtarget;

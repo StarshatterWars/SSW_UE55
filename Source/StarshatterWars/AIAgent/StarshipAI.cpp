@@ -651,12 +651,12 @@ StarshipAI::FireControl()
 
                 if (fabs(weapon_az) < 45 * DEGREES)
                 {
-                    weapon->SetFiringOrders(Weapon::AUTO);
+                    weapon->SetFiringOrders(WeaponsOrders::AUTO);
                     weapon->SetTarget(target, nullptr);
                 }
                 else
                 {
-                    weapon->SetFiringOrders(Weapon::POINT_DEFENSE);
+                    weapon->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
                 }
             }
         }
@@ -667,15 +667,15 @@ StarshipAI::FireControl()
     else {
         SimSystem* subtgt = SelectSubtarget();
 
-        ListIter<WeaponGroup> grp_iter = ship->Weapons();
+        ListIter<WeaponGroup> grp_iter = ship->GetWeapons();
         while (++grp_iter) {
             WeaponGroup* group = grp_iter.value();
 
             if (group->GetDesign()->target_type & (int)CLASSIFICATION::DROPSHIPS) { // anti-air weapon?
-                group->SetFiringOrders(Weapon::POINT_DEFENSE);
+                group->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
             }
             else if (group->IsDrone()) { // torpedoes
-                group->SetFiringOrders(Weapon::MANUAL);
+                group->SetFiringOrders(WeaponsOrders::MANUAL);
                 group->SetTarget(target, 0);
 
                 if (target && target->GetRegion() == ship->GetRegion()) {
@@ -684,17 +684,17 @@ StarshipAI::FireControl()
 
                     if (range < group->GetDesign()->max_range * 0.9 &&
                         !AssessTargetPointDefense()) {
-                        group->SetFiringOrders(Weapon::AUTO);
+                        group->SetFiringOrders(WeaponsOrders::AUTO);
                     }
                     else if (range < group->GetDesign()->max_range * 0.5) {
-                        group->SetFiringOrders(Weapon::AUTO);
+                        group->SetFiringOrders(WeaponsOrders::AUTO);
                     }
                 }
             }
             else { // anti-ship weapon
-                group->SetFiringOrders(Weapon::AUTO);
+                group->SetFiringOrders(WeaponsOrders::AUTO);
                 group->SetTarget(target, subtgt);
-                group->SetSweep(subtgt ? Weapon::SWEEP_NONE : Weapon::SWEEP_TIGHT);
+                group->SetSweep(subtgt ? WeaponsSweep::SWEEP_NONE : WeaponsSweep::SWEEP_TIGHT);
             }
         }
     }

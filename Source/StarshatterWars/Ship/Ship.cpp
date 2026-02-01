@@ -363,9 +363,9 @@ Ship::Ship(const char* ship_name, const char* reg_num, ShipDesign* ship_dsn, int
 		systems.append(gun);
 
 		if (IsDropship() && gun->GetTurret())
-			gun->SetFiringOrders(Weapon::POINT_DEFENSE);
+			gun->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
 		else
-			gun->SetFiringOrders(Weapon::MANUAL);
+			gun->SetFiringOrders(WeaponsOrders::MANUAL);
 	}
 
 	int loadout_size = design->hard_points.size();
@@ -406,7 +406,7 @@ Ship::Ship(const char* ship_name, const char* reg_num, ShipDesign* ship_dsn, int
 
 				// turrets on fighters are set to point defense by default,
 				// this forces the primary turret back to manual control
-				group->SetFiringOrders(Weapon::MANUAL);
+				group->SetFiringOrders(WeaponsOrders::MANUAL);
 			}
 
 			else if (group->IsMissile() && secondary < 0) {
@@ -1825,7 +1825,7 @@ Ship::CheckShotIntersection(SimShot* shot, FVector& ipt, FVector& hpt, Weapon** 
 	}
 
 	if (IsStarship() || IsStatic()) {
-		ListIter<WeaponGroup> g_iter = Weapons();
+		ListIter<WeaponGroup> g_iter = GetWeapons();
 		while (++g_iter) {
 			WeaponGroup* g = g_iter.value();
 
@@ -1920,7 +1920,7 @@ Ship::InflictNetSystemDamage(SimSystem* system, double damage, BYTE dmg_type)
 }
 
 void
-Ship::SetNetSystemStatus(SimSystem* system, int status, int power, int reactor, double avail)
+Ship::SetNetSystemStatus(SimSystem* system, SYSTEM_STATUS status, int power, int reactor, double avail)
 {
 	if (system && !IsNetObserver()) {
 		if (system->GetPowerLevel() != power)
@@ -1929,19 +1929,19 @@ Ship::SetNetSystemStatus(SimSystem* system, int status, int power, int reactor, 
 		if (system->GetSourceIndex() != reactor) {
 			SimSystem* s = GetSystem(reactor);
 
-			if (s && s->Type() == SimSystem::POWER_SOURCE) {
+			if (s && s->GetType() == SYSTEM_CATEGORY::POWER_SOURCE) {
 				PowerSource* reac = (PowerSource*)s;
 				reac->AddClient(system);
 			}
 		}
 
-		if (system->Status() != status) {
-			if (status == SimSystem::MAINT) {
+		if (system->GetStatus() != status) {
+			if (status == SYSTEM_STATUS::MAINT) {
 				ListIter<SimComponent> comp = system->GetComponents();
 				while (++comp) {
 					SimComponent* c = comp.value();
 
-					if (c->Status() < SimComponent::NOMINAL && c->Availability() < 75) {
+					if (c->GetStatus() < SYSTEM_STATUS::NOMINAL && c->Availability() < 75) {
 						if (c->SpareCount() &&
 							c->ReplaceTime() <= 300 &&
 							(c->Availability() < 50 ||
@@ -2327,13 +2327,13 @@ Ship::SetTarget(SimObject* targ, SimSystem* sub, bool from_net)
 
 	ListIter<WeaponGroup> weapon = weapons;
 	while (++weapon) {
-		if (weapon->GetFiringOrders() != Weapon::POINT_DEFENSE) {
+		if (weapon->GetFiringOrders() != WeaponsOrders::POINT_DEFENSE) {
 			weapon->SetTarget(target, subtarget);
 
 			if (sub || !IsStarship())
-				weapon->SetSweep(Weapon::SWEEP_NONE);
+				weapon->SetSweep(WeaponsSweep::SWEEP_NONE);
 			else
-				weapon->SetSweep(Weapon::SWEEP_TIGHT);
+				weapon->SetSweep(WeaponsSweep::SWEEP_TIGHT);
 		}
 	}
 
@@ -2373,7 +2373,7 @@ Ship::CycleSubTarget(int Dir)
 
 	SimSystem* SubTarget = 0;
 
-	ListIter<SimSystem> SysIter = TargetShip->Systems();
+	ListIter<SimSystem> SysIter = TargetShip->GetSystems();
 
 	if (Dir > 0) {
 		int Latch = (subtarget == 0);
@@ -2385,7 +2385,7 @@ Ship::CycleSubTarget(int Dir)
 				continue;
 
 			// computers and sensors are not targetable
-			if (Sys->Type() == SimSystem::COMPUTER || Sys->Type() == SimSystem::SENSOR)
+			if (Sys->GetType() == SYSTEM_CATEGORY::COMPUTER || Sys->GetType() == SYSTEM_CATEGORY::SENSOR)
 				continue;
 
 			if (Sys == subtarget) {
@@ -2407,7 +2407,7 @@ Ship::CycleSubTarget(int Dir)
 				continue;
 
 			// computers and sensors are not targetable
-			if (Sys->Type() == SimSystem::COMPUTER || Sys->Type() == SimSystem::SENSOR)
+			if (Sys->GetType() == SYSTEM_CATEGORY::COMPUTER || Sys->GetType() == SYSTEM_CATEGORY::SENSOR)
 				continue;
 
 			if (Sys == subtarget) {
@@ -2763,7 +2763,7 @@ Ship::ExecSystems(double seconds)
 
 		// sensors have already been executed,
 		// they can notxbe run twice in a frame!
-		if (sys->Type() != SimSystem::SENSOR)
+		if (sys->GetType() != SYSTEM_CATEGORY::SENSOR)
 			sys->ExecFrame(seconds);
 	}
 
@@ -2781,7 +2781,7 @@ Ship::ExecSystems(double seconds)
 		WeaponGroup* w_group = weapons[i];
 		w_group->ExecFrame(seconds);
 
-		if (w_group->GetTrigger() && w_group->GetFiringOrders() == Weapon::MANUAL) {
+		if (w_group->GetTrigger() && w_group->GetFiringOrders() == WeaponsOrders::MANUAL) {
 
 			Weapon* gun = w_group->GetSelected();
 			SimObject* gun_tgt = gun->GetTarget();
@@ -3969,7 +3969,7 @@ Ship::CyclePrimary()
 		Weapon* w = p->GetSelected();
 
 		if (w && w->GetTurret()) {
-			p->SetFiringOrders(Weapon::POINT_DEFENSE);
+			p->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
 		}
 	}
 
@@ -3979,7 +3979,7 @@ Ship::CyclePrimary()
 			n = 0;
 
 		if (weapons[n]->IsPrimary()) {
-			weapons[n]->SetFiringOrders(Weapon::MANUAL);
+			weapons[n]->SetFiringOrders(WeaponsOrders::MANUAL);
 			break;
 		}
 
@@ -4938,11 +4938,11 @@ Ship::ExecMaintFrame(double seconds)
 		while (++iter) {
 			SimSystem* sys = iter.value();
 
-			if (sys->Status() != SimSystem::NOMINAL) {
+			if (sys->GetStatus() != SYSTEM_STATUS::NOMINAL) {
 				bool started_repairs = false;
 
 				// emergency power routing:
-				if (sys->Type() == SimSystem::POWER_SOURCE && sys->Availability() < 33) {
+				if (sys->GetType() == SYSTEM_CATEGORY::POWER_SOURCE && sys->Availability() < 33) {
 					PowerSource* src = (PowerSource*)sys;
 					PowerSource* dst = 0;
 
@@ -4970,7 +4970,7 @@ Ship::ExecMaintFrame(double seconds)
 				while (++comp) {
 					SimComponent* c = comp.value();
 
-					if (c->Status() < SimComponent::NOMINAL && c->Availability() < 75) {
+					if (c->GetStatus() < SYSTEM_STATUS::NOMINAL && c->Availability() < 75) {
 						if (c->SpareCount() &&
 							c->ReplaceTime() <= 300 &&
 							(c->Availability() < 50 ||
@@ -5001,12 +5001,12 @@ Ship::ExecMaintFrame(double seconds)
 			sys->ExecMaintFrame(seconds * RepairSpeed());
 			team++;
 
-			if (sys->Status() != SimSystem::MAINT) {
+			if (sys->GetStatus() != SYSTEM_STATUS::MAINT) {
 				iter.removeItem();
 
 				// emergency power routing (restore):
-				if (sys->Type() == SimSystem::POWER_SOURCE &&
-					sys->Status() == SimSystem::NOMINAL) {
+				if (sys->GetType() == SYSTEM_CATEGORY::POWER_SOURCE &&
+					sys->GetStatus() == SYSTEM_STATUS::NOMINAL) {
 					PowerSource* src = (PowerSource*)sys;
 					const int isrc = reactors.index(src);
 

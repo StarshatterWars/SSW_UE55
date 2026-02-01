@@ -32,7 +32,7 @@ class UCmdTheaterDlg;
 class UCmdMsgDlg;
 class UCmpFileDlg;
 class UCmpCompleteDlg;
-class UCmpSceneDlg;
+class UCampaignSceneDlg;
 
 // Forward decls (legacy singletons/objects):
 class Campaign;
@@ -142,7 +142,7 @@ private:
     UCmdMsgDlg* cmd_msg_dlg = nullptr;
     UCmpFileDlg* cmp_file_dlg = nullptr;
     UCmpCompleteDlg* cmp_end_dlg = nullptr;
-    UCmpSceneDlg* cmp_scene_dlg = nullptr;
+    UCampaignSceneDlg* cmp_scene_dlg = nullptr;
 
     bool                 isShown = false;
 

@@ -65,12 +65,12 @@ void ShipKiller::BeginDeathSpiral()
 		return;
 
 	// shut down all ship systems:
-	ListIter<SimSystem> iter = ship->Systems();
+	ListIter<SimSystem> iter = ship->GetSystems();
 	while (++iter) {
 		iter->PowerOff();
 		iter->SetPowerLevel(0);
 
-		if (iter->Type() == SimSystem::WEAPON) {
+		if (iter->GetType() == SYSTEM_CATEGORY::WEAPON) {
 			Weapon* gun = (Weapon*)iter.value();
 
 			for (int i = 0; i < Weapon::MAX_BARRELS; i++) {

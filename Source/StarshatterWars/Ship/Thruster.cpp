@@ -86,7 +86,7 @@ static int sys_value = 2;
 // +----------------------------------------------------------------------+
 
 Thruster::Thruster(int dtype, double max_thrust, float flare_scale)
-    : SimSystem(DRIVE, dtype, "Thruster", sys_value, max_thrust, max_thrust, max_thrust),
+    : SimSystem(SYSTEM_CATEGORY::DRIVE, dtype, "Thruster", sys_value, max_thrust, max_thrust, max_thrust),
     ship(nullptr),
     thrust(1.0f),
     scale(flare_scale),
@@ -280,19 +280,19 @@ Thruster::ExecFrame(double seconds)
 
     // Check for thruster damage here:
     if (components.size() >= 3) {
-        int stat = components[0]->Status();
-        if (stat == SimComponent::NOMINAL)       this->avail_x = 1.0f;
-        else if (stat == SimComponent::DEGRADED) this->avail_x = 0.5f;
+        SYSTEM_STATUS stat = components[0]->GetStatus();
+        if (stat == SYSTEM_STATUS::NOMINAL)       this->avail_x = 1.0f;
+        else if (stat == SYSTEM_STATUS::DEGRADED) this->avail_x = 0.5f;
         else                                     this->avail_x = 0.0f;
 
-        stat = components[1]->Status();
-        if (stat == SimComponent::NOMINAL)       this->avail_z = 1.0f;
-        else if (stat == SimComponent::DEGRADED) this->avail_z = 0.5f;
+        stat = components[1]->GetStatus();
+        if (stat == SYSTEM_STATUS::NOMINAL)       this->avail_z = 1.0f;
+        else if (stat == SYSTEM_STATUS::DEGRADED) this->avail_z = 0.5f;
         else                                     this->avail_z = 0.0f;
 
-        stat = components[2]->Status();
-        if (stat == SimComponent::NOMINAL)       this->avail_y = 1.0f;
-        else if (stat == SimComponent::DEGRADED) this->avail_y = 0.5f;
+        stat = components[2]->GetStatus();
+        if (stat == SYSTEM_STATUS::NOMINAL)       this->avail_y = 1.0f;
+        else if (stat == SYSTEM_STATUS::DEGRADED) this->avail_y = 0.5f;
         else                                     this->avail_y = 0.0f;
     }
 

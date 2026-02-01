@@ -562,6 +562,8 @@ enum class SYSTEM_STATUS : uint8 {
 	CRITICAL		UMETA(DisplayName = "Critical"),
 	DEGRADED		UMETA(DisplayName = "Degraded"),
 	NOMINAL			UMETA(DisplayName = "Nominal"),
+	REPAIR			UMETA(DisplayName = "Repair"),
+	REPLACE			UMETA(DisplayName = "Replace"),
 	MAINT			UMETA(DisplayName = "Maintanence"),
 	UNKNOWN			UMETA(DisplayName = "Unknown"),
 };
@@ -664,7 +666,7 @@ enum class INSTRUCTION_FORMATION : uint8
 };
 
 UENUM()
-enum class INSTRCUTION_PRIORITY : uint8
+enum class INSTRUCTION_PRIORITY : uint8
 {
 	NONE,
 	PRIMARY,

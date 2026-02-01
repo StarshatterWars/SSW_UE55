@@ -744,39 +744,39 @@ void TacticalView::Initialize()
 
     gActionMenu = new Menu("ACTION");
     gActionMenu->AddItem("Engage", (int) RadioMessageAction::ATTACK);
-    gActionMenu->AddItem("Bracket", (int)RadioMessageAction::::BRACKET);
-    gActionMenu->AddItem("Escort", (int)RadioMessageAction::::ESCORT);
-    gActionMenu->AddItem("Identify", (int)RadioMessageAction::::IDENTIFY);
-    gActionMenu->AddItem("Hold", (int)RadioMessageAction::::WEP_HOLD);
+    gActionMenu->AddItem("Bracket", (int)RadioMessageAction::BRACKET);
+    gActionMenu->AddItem("Escort", (int)RadioMessageAction::ESCORT);
+    gActionMenu->AddItem("Identify", (int)RadioMessageAction::IDENTIFY);
+    gActionMenu->AddItem("Hold", (int)RadioMessageAction::WEP_HOLD);
 
     gFormationMenu = new Menu("FORMATION");
-    gFormationMenu->AddItem("Diamond", (int)RadioMessageAction::::GO_DIAMOND);
-    gFormationMenu->AddItem("Spread", (int)RadioMessageAction::::GO_SPREAD);
-    gFormationMenu->AddItem("Box", (int)RadioMessageAction::::GO_BOX);
-    gFormationMenu->AddItem("Trail", (int)RadioMessageAction::::GO_TRAIL);
+    gFormationMenu->AddItem("Diamond", (int)RadioMessageAction::GO_DIAMOND);
+    gFormationMenu->AddItem("Spread", (int)RadioMessageAction::GO_SPREAD);
+    gFormationMenu->AddItem("Box", (int)RadioMessageAction::GO_BOX);
+    gFormationMenu->AddItem("Trail", (int)RadioMessageAction::GO_TRAIL);
 
     gSensorsMenu = new Menu("SENSORS");
-    gSensorsMenu->AddItem("Goto EMCON 1", (int)RadioMessageAction::::GO_EMCON1);
-    gSensorsMenu->AddItem("Goto EMCON 2", (int)RadioMessageAction::::GO_EMCON2);
-    gSensorsMenu->AddItem("TGoto EMCON 3", (int)RadioMessageAction::::GO_EMCON3);
-    gSensorsMenu->AddItem("Launch Probe", (int)RadioMessageAction::::LAUNCH_PROBE);
+    gSensorsMenu->AddItem("Goto EMCON 1", (int)RadioMessageAction::GO_EMCON1);
+    gSensorsMenu->AddItem("Goto EMCON 2", (int)RadioMessageAction::GO_EMCON2);
+    gSensorsMenu->AddItem("TGoto EMCON 3", (int)RadioMessageAction::GO_EMCON3);
+    gSensorsMenu->AddItem("Launch Probe", (int)RadioMessageAction::LAUNCH_PROBE);
 
     gFighterMenu = new Menu("CONTEXT");
     gFighterMenu->AddMenu("Action", gActionMenu);
     gFighterMenu->AddMenu("Formation", gFormationMenu);
     gFighterMenu->AddMenu("Sensors", gSensorsMenu);
-    gFighterMenu->AddItem("Move Patrol", (int)RadioMessageAction::::MOVE_PATROL);
-    gFighterMenu->AddItem("Cancel Orders", (int)RadioMessageAction::::RESUME_MISSION);
+    gFighterMenu->AddItem("Move Patrol", (int)RadioMessageAction::MOVE_PATROL);
+    gFighterMenu->AddItem("Cancel Orders", (int)RadioMessageAction::RESUME_MISSION);
     gFighterMenu->AddItem("", 0);
-    gFighterMenu->AddItem("Return to Base", (int)RadioMessageAction::::RTB);
-    gFighterMenu->AddItem("Dock With", (int)RadioMessageAction::::DOCK_WITH);
+    gFighterMenu->AddItem("Return to Base", (int)RadioMessageAction::RTB);
+    gFighterMenu->AddItem("Dock With", (int)RadioMessageAction::DOCK_WITH);
     gFighterMenu->AddMenu("Farcast", gFarcastMenu);
 
     gStarshipMenu = new Menu("CONTEXT");
     gStarshipMenu->AddMenu("Action", gActionMenu);
     gStarshipMenu->AddMenu("Sensors", gSensorsMenu);
-    gStarshipMenu->AddItem("Move Patrol", (int)RadioMessageAction::::MOVE_PATROL);
-    gStarshipMenu->AddItem("Cancel Orders", (int)RadioMessageAction::::RESUME_MISSION);
+    gStarshipMenu->AddItem("Move Patrol", (int)RadioMessageAction::MOVE_PATROL);
+    gStarshipMenu->AddItem("Cancel Orders", (int)RadioMessageAction::RESUME_MISSION);
     gStarshipMenu->AddItem("", 0);
     gStarshipMenu->AddMenu("Quantum", gQuantumMenu);
     gStarshipMenu->AddMenu("Farcast", gFarcastMenu);
@@ -858,12 +858,12 @@ void TacticalView::BuildMenu()
     if (PlayerShip->NumFlightDecks() > 0)
         gMainMenu->AddItem("FLIGHT", VIEW_FLT);
 
-    gEmconMenu->AddItem("Goto EMCON 1", (int)RadioMessageAction::::GO_EMCON1);
-    gEmconMenu->AddItem("Goto EMCON 2", (int)RadioMessageAction::::GO_EMCON2);
-    gEmconMenu->AddItem("Goto EMCON 3", (int)RadioMessageAction::::GO_EMCON3);
+    gEmconMenu->AddItem("Goto EMCON 1", (int)RadioMessageAction::GO_EMCON1);
+    gEmconMenu->AddItem("Goto EMCON 2", (int)RadioMessageAction::GO_EMCON2);
+    gEmconMenu->AddItem("Goto EMCON 3", (int)RadioMessageAction::GO_EMCON3);
 
     if (PlayerShip->GetProbeLauncher())
-        gEmconMenu->AddItem("Launch Probe", (int)RadioMessageAction::::LAUNCH_PROBE);
+        gEmconMenu->AddItem("Launch Probe", (int)RadioMessageAction::LAUNCH_PROBE);
 
     gMainMenu->AddItem("", 0);
     gMainMenu->AddMenu("Sensors", gEmconMenu);
@@ -1151,7 +1151,7 @@ void TacticalView::DrawAction()
 
 void TacticalView::SendAction()
 {
-    if ((ShowAction == RadioMessageAction::NONE || !MsgShip || gInvalidAction)
+    if (ShowAction == RadioMessageAction::NONE || !MsgShip || gInvalidAction)
     {
         HUDSounds::PlaySound(HUDSounds::SND_TAC_REJECT);
         return;

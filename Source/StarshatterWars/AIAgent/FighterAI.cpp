@@ -1756,7 +1756,7 @@ FighterAI::FireControl()
             const double dx = FMath::Abs(objective.X / distance);
             const double dy = FMath::Abs(objective.Y / distance);
 
-            if (primary->GetFiringOrders() == Weapon::MANUAL &&
+            if (primary->GetFiringOrders() == WeaponsOrders::MANUAL &&
                 dx < gun_basket && dy < gun_basket &&
                 distance > dsgn_primary->min_range &&
                 distance < dsgn_primary->max_range &&
@@ -1766,7 +1766,7 @@ FighterAI::FireControl()
         }
     }
 
-    if (secondary && secondary->GetFiringOrders() == Weapon::MANUAL) {
+    if (secondary && secondary->GetFiringOrders() == WeaponsOrders::MANUAL) {
         dsgn_secondary = secondary->Design();
 
         if (missile_time <= 0.0 && secondary->Ammo() && !secondary->IsBlockedFriendly()) {

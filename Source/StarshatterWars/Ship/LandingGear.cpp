@@ -34,14 +34,14 @@ static Sound* gear_transit_sound = nullptr;
 // +----------------------------------------------------------------------+
 
 LandingGear::LandingGear()
-    : SimSystem(MISC_SYSTEM, 0, "Landing Gear", 1, 1, 1, 1),
+    : SimSystem(SYSTEM_CATEGORY::MISC_SYSTEM, 0, "Landing Gear", 1, 1, 1, 1),
     state(GEAR_UP),
     transit(0),
     clearance(0),
     ngear(0)
 {
-    name = Game::GetText("sys.landing-gear");
-    abrv = Game::GetText("sys.landing-gear.abrv");
+    name = "Landing Gear";
+    abrv = "Gear";
 
     for (int i = 0; i < MAX_GEAR; i++) {
         models[i] = nullptr;

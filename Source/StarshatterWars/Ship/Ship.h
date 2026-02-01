@@ -278,7 +278,7 @@ public:
 
     virtual void      InflictNetDamage(double damage, SimShot* shot = 0);
     virtual void      InflictNetSystemDamage(SimSystem* system, double damage, BYTE type);
-    virtual void      SetNetSystemStatus(SimSystem* system, int status, int power, int reactor, double avail);
+    virtual void      SetNetSystemStatus(SimSystem* system, SYSTEM_STATUS status, int power, int reactor, double avail);
     virtual void      SetIntegrity(float n) { integrity = n; }
 
     virtual void      Destroy();

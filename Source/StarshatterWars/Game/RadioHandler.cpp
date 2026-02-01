@@ -445,7 +445,7 @@ RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 	if (!deck || !same_rgn || squadron < 0 || slot < 0) {
 		RadioMessage* wave_off = new RadioMessage(inbound, ship, RadioMessageAction::NACK);
 		if (!hangar)
-			wave_off->SetInfo("No Hangar"));
+			wave_off->SetInfo("No Hangar");
 
 		else if (!same_rgn) {
 			char info[256];

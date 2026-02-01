@@ -24,7 +24,7 @@ class Bitmap;
 
 class Campaign;
 class UCmpnScreen;
-class PlanScreen;
+class UMissionPlanner;
 class ULoadScreen;
 class UGameScreen;
 class Ship;
@@ -39,6 +39,7 @@ class FadeView;
 class SystemFont;
 class Mission;
 class Window;
+class View;
 // +--------------------------------------------------------------------+
 
 class Starshatter : public Game
@@ -133,7 +134,7 @@ protected:
 	View*		 gamewin;
 	UMenuScreen* menuscreen;
 	ULoadScreen* LoadScreen;
-	PlanScreen* planscreen;
+	UMissionPlanner* planscreen;
 	UGameScreen* gamescreen;
 	UCmpnScreen* cmpnscreen;
 

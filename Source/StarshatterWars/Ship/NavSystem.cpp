@@ -28,11 +28,11 @@ DEFINE_LOG_CATEGORY_STATIC(LogNavSystem, Log, All);
 // +----------------------------------------------------------------------+
 
 NavSystem::NavSystem()
-	: SimSystem(COMPUTER, 2, "Auto Nav System", 1, 1, 1, 1),
+	: SimSystem(SYSTEM_CATEGORY::COMPUTER, 2, "Auto Nav System", 1, 1, 1, 1),
 	autonav(false)
 {
-	name = Game::GetText("sys.nav-system");
-	abrv = Game::GetText("sys.nav-system.abrv");
+	name = "Auto Nav System";
+	abrv = "Nav";
 
 	power_flags = POWER_WATTS | POWER_CRITICAL;
 }

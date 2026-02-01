@@ -101,7 +101,7 @@ static inline FVector OtherHand(const FVector& V)
 	return FVector((float)V.X, (float)V.Y, (float)-V.Z);
 }
 
-static inline UTexture2D* LoadMapIconTexture(const char* IconName)
+static inline Bitmap* LoadMapIconTexture(const char* IconName)
 {
 	if (!IconName || !*IconName)
 		return nullptr;

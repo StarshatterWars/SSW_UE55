@@ -32,7 +32,7 @@ static int source_value[] = {
 };
 
 PowerSource::PowerSource(SUBTYPE s, double max_out, double f_ratio)
-	: SimSystem(POWER_SOURCE, (int)s, "Power", source_value[s], 0),
+	: SimSystem(SYSTEM_CATEGORY::POWER_SOURCE, (int)s, "Power", source_value[s], 0),
 	max_output((float)max_out), fuel_ratio((float)f_ratio),
 	route_changed(false), requested_power_level(1.0f)
 {

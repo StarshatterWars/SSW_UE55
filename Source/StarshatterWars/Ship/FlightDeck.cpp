@@ -203,7 +203,7 @@ InboundSlot::GetObserverName() const
 // +======================================================================+
 
 FlightDeck::FlightDeck()
-	: SimSystem(FLIGHT_DECK, FLIGHT_DECK_LAUNCH, "Flight Deck", 1, 1),
+	: SimSystem(SYSTEM_CATEGORY::FLIGHT_DECK, FLIGHT_DECK_LAUNCH, "Flight Deck", 1, 1),
 	carrier(0), index(0), num_slots(0), slots(0), cycle_time(5), num_hoops(0), hoops(0),
 	azimuth(0), light(0), num_catsounds(0), num_approach_pts(0)
 {

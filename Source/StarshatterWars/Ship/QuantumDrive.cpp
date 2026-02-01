@@ -56,7 +56,7 @@ static inline FVector RandomDirectionPoint()
 // +----------------------------------------------------------------------+
 
 QuantumDrive::QuantumDrive(SUBTYPE s, double cap, double rate)
-	: SimSystem(DRIVE, s, "Quantum", qdrive_value, (float)cap, (float)cap, (float)rate),
+	: SimSystem(SYSTEM_CATEGORY::DRIVE, s, "Quantum", qdrive_value, (float)cap, (float)cap, (float)rate),
 	dst_rgn(0),
 	active_state(ACTIVE_READY),
 	warp_fov(1),

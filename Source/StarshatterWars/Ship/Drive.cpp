@@ -75,7 +75,7 @@ DrivePort::~DrivePort()
 // +----------------------------------------------------------------------+
 
 Drive::Drive(SUBTYPE InSubtype, float MaxThrust, float MaxAug, bool bShow)
-    : SimSystem(DRIVE, InSubtype, "Drive", drive_value[InSubtype],
+    : SimSystem(SYSTEM_CATEGORY::DRIVE, InSubtype, "Drive", drive_value[InSubtype],
         MaxThrust * 2.0f, MaxThrust * 2.0f, MaxThrust * 2.0f),
     thrust(MaxThrust),
     augmenter(MaxAug),
@@ -382,7 +382,7 @@ Drive::IsAugmenterOn() const
     return augmenter > 0 &&
         augmenter_throttle > 0.05f &&
         IsPowerOn() &&
-        status > SYSTEM_STATUS::CRITICAL;
+        Status > SYSTEM_STATUS::CRITICAL;
 }
 
 // +--------------------------------------------------------------------+

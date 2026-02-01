@@ -86,10 +86,8 @@ private:
 
     // Child dialog widgets (UMG)
     // BindWidgetOptional lets you wire these in the UMG designer if desired.
-    UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<ULoadDlg> LoadDlg = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UCmpLoadDlg> CmpLoadDlg = nullptr;
 
     bool bIsShown = false;

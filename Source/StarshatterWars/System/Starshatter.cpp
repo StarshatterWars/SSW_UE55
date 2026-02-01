@@ -220,17 +220,9 @@ Starshatter::~Starshatter()
 	if (Status() <= EXIT)
 		PlayerCharacter::Save();
 
-	delete menuscreen;
-	delete loadscreen;
 	delete planscreen;
-	delete gamescreen;
-	delete cmpnscreen;
 
-	menuscreen = 0;
-	loadscreen = 0;
 	planscreen = 0;
-	gamescreen = 0;
-	cmpnscreen = 0;
 
 	music_dir = 0;
 
@@ -627,7 +619,7 @@ Starshatter::ChangeVideo()
 {
 	bool result = false;
 
-	if (menuscreen) {
+	/*if (menuscreen) {
 		delete menuscreen;
 		menuscreen = 0;
 	}
@@ -650,7 +642,7 @@ Starshatter::ChangeVideo()
 	if (cmpnscreen) {
 		delete cmpnscreen;
 		cmpnscreen = 0;
-	}
+	}*/
 
 	loader->SetDataPath(0);
 
