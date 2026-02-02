@@ -28,6 +28,9 @@ class STARSHATTERWARS_API UUIAudioManager : public UObject
     UFUNCTION(BlueprintCallable, Category = "UI Audio")
     static void StopCurrentSound(float FadeOutDuration = 0.2f);
 
+    UFUNCTION(BlueprintCallable, Category = "UI Audio")
+    static void StopSoundEffects();
+
     /** Sound setup */
     static USoundBase* ClickSound;
     static USoundBase* HoverSound;

@@ -14,6 +14,7 @@
 #include "Color.h"
 #include "Text.h"
 #include "SSWGameInstance.h"
+#include "UIAudioManager.h"
 
 #include "Math/Color.h"
 
@@ -30,7 +31,6 @@ class AGameDataLoader;
 class Locale;
 class SimUniverse;
 class Sound;
-class SoundCard;
 class Video;
 class VideoFactory;
 class VideoSettings;
@@ -143,7 +143,7 @@ protected:
 	VideoFactory* video_factory;
 	Video* video;
 	VideoSettings* video_settings;
-	SoundCard* soundcard;
+	UUIAudioManager* soundcard;
 	
 	int               gamma;
 	int               max_tex_size;

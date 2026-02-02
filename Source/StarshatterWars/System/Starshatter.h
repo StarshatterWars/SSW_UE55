@@ -108,8 +108,8 @@ public:
 	void              BeginCutscene();
 	void              EndCutscene();
 	bool              InCutscene() const { return cutscene > 0; }
-	Mission* GetCutsceneMission() const;
-	const char* GetSubtitles() const;
+	Mission*		  GetCutsceneMission() const;
+	const char*		  GetSubtitles() const;
 	void              EndMission();
 
 	void              StartOrResumeGame();

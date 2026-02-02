@@ -329,6 +329,12 @@ public:
     UBaseScreen(const FObjectInitializer& ObjectInitializer);
 
     virtual void ExecFrame(double DeltaTime);
+    
+    // Visibility / flow:
+    virtual bool IsShown()  const { return bIsShown; }
+    virtual void Show();
+    virtual void Hide();
+    virtual void HideAll();
 
     // ----------------------------------------------------------------
     // Optional common widgets (bind if your UMG has them)
@@ -432,6 +438,7 @@ protected:
     virtual void NativeOnInitialized() override;
     virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
+    virtual void NativeDestruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
@@ -457,4 +464,8 @@ protected:
     // ----------------------------------------------------------------
     UPROPERTY(Transient) FFormWidgetMap FormMap;
     UPROPERTY(Transient) FParsedForm ParsedForm;
+
+private:
+    UPROPERTY()
+    bool  bIsShown;
 };

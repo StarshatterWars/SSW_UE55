@@ -19,8 +19,6 @@
 // --------------------------------------------------------------------
 
 #include "Graphic.h"
-#include "Material.h"
-#include "VertexSet.h"
 #include "Polygon.h"
 #include "Bitmap.h"
 #include "DataLoader.h"
@@ -57,83 +55,111 @@ static Bitmap* quantum_flash_texture = nullptr;
 // +--------------------------------------------------------------------+
 
 QuantumFlash::QuantumFlash()
-	: length(8000.0)
-	, width(0.0)
-	, shade(1.0)
-	, npolys(16)
-	, nverts(64)
-	, mtl(nullptr)
-	, verts(nullptr)
-	, polys(nullptr)
-	, beams(nullptr)
-	, texture(quantum_flash_texture)
+    : length(8000.0)
+    , width(0.0)
+    , shade(1.0)
+    , npolys(16)
+    , nverts(64)
+    , mtl(nullptr)
+    , verts(nullptr)
+    , polys(nullptr)
+    , beams(nullptr)
+    , texture(quantum_flash_texture)
 {
-	trans = true;
-	luminous = true;
+    trans = true;
+    luminous = true;
 
-	FRandomStream RandomStream;
-	
+    // ------------------------------------------------------------
+    // Ensure texture is loaded
+    // ------------------------------------------------------------
+    if (!texture || texture->Width() < 1)
+    {
+        DataLoader* loader = DataLoader::GetLoader();
+        loader->SetDataPath("Explosions/");
+        loader->LoadTexture("quantum.pcx",
+            quantum_flash_texture,
+            Bitmap::BMP_TRANSLUCENT);
+        loader->SetDataPath(nullptr);
 
-	if (!texture || texture->Width() < 1) {
-		DataLoader* loader = DataLoader::GetLoader();
-		loader->SetDataPath("Explosions/");
-		loader->LoadTexture("quantum.pcx", quantum_flash_texture, Bitmap::BMP_TRANSLUCENT);
-		loader->SetDataPath(nullptr);
-		texture = quantum_flash_texture;
-	}
+        texture = quantum_flash_texture;
+    }
 
-	loc = FVector(0.0f, 0.0f, 1000.0f);
+    // ------------------------------------------------------------
+    // Initial location
+    // ------------------------------------------------------------
+    loc = FVector(0.0f, 0.0f, 1000.0f);
 
-	mtl = new Material;
-	verts = new VertexSet(nverts);
-	polys = new Poly[npolys];
-	beams = new Matrix[npolys];
+    // ------------------------------------------------------------
+    // Allocate render data
+    // ------------------------------------------------------------
+    mtl = new Material;
+    verts = new VertexSet(nverts);
+    polys = new Poly[npolys];
+    beams = new Matrix[npolys];
 
-	mtl->Kd = FColor::White;
-	mtl->tex_diffuse = texture;
-	mtl->tex_emissive = texture;
-	mtl->blend = Video::BLEND_ADDITIVE;
-	mtl->luminous = true;
+    // ------------------------------------------------------------
+    // Material setup
+    // ------------------------------------------------------------
+    mtl->Kd = FColor::White;
+    mtl->tex_diffuse = texture;
+    mtl->tex_emissive = texture;
+    mtl->blend = Video::BLEND_ADDITIVE;
+    mtl->luminous = true;
 
-	verts->nverts = nverts;
+    verts->nverts = nverts;
 
-	for (int i = 0; i < npolys; i++) {
-		verts->loc[4 * i + 0] = FVector(width, 0.0f, 1000.0f);
-		verts->loc[4 * i + 1] = FVector(width, -length, 1000.0f);
-		verts->loc[4 * i + 2] = FVector(-width, -length, 1000.0f);
-		verts->loc[4 * i + 3] = FVector(-width, 0.0f, 1000.0f);
+    // ------------------------------------------------------------
+    // Build beam geometry
+    // ------------------------------------------------------------
+    for (int i = 0; i < npolys; ++i)
+    {
+        const int base = 4 * i;
 
-		for (int n = 0; n < 4; n++) {
-			verts->diffuse[4 * i + n] = FColor::White.ToPackedARGB();
-			verts->specular[4 * i + n] = FColor::Black.ToPackedARGB();
-			verts->tu[4 * i + n] = (n < 2) ? 0.0f : 1.0f;
-			verts->tv[4 * i + n] = (n > 0 && n < 3) ? 1.0f : 0.0f;
-		}
+        // Quad geometry (local space)
+        verts->loc[base + 0] = FVector(width, 0.0f, 1000.0f);
+        verts->loc[base + 1] = FVector(width, -length, 1000.0f);
+        verts->loc[base + 2] = FVector(-width, -length, 1000.0f);
+        verts->loc[base + 3] = FVector(-width, 0.0f, 1000.0f);
 
-		const int32 SeedValue = i;   
-		FRandomStream RandomStream(SeedValue);
-		RandomStream.Initialize(SeedValue);
+        for (int n = 0; n < 4; ++n)
+        {
+            const int idx = base + n;
 
-		beams[i].Roll(RandomStream.FRandRange(-2.0 * PI, 2.0 * PI));
-		beams[i].Pitch(RandomStream.FRandRange(-2.0 * PI, 2.0 * PI));
-		beams[i].Yaw(RandomStream.FRandRange(-2.0 * PI, 2.0 * PI));
+            // FIX #1: correct color assignment (no uint32 packing)
+            verts->diffuse[idx] = FColor::White;
+            verts->specular[idx] = FColor::Black;
 
-		polys[i].nverts = 4;
-		polys[i].visible = 1;
-		polys[i].sortval = 0;
-		polys[i].vertex_set = verts;
-		polys[i].material = mtl;
+            verts->tu[idx] = (n < 2) ? 0.0f : 1.0f;
+            verts->tv[idx] = (n > 0 && n < 3) ? 1.0f : 0.0f;
+        }
 
-		polys[i].verts[0] = 4 * i + 0;
-		polys[i].verts[1] = 4 * i + 1;
-		polys[i].verts[2] = 4 * i + 2;
-		polys[i].verts[3] = 4 * i + 3;
-	}
+        // FIX #2: no shadowed RandomStream, deterministic per beam
+        FRandomStream BeamRng(i);
 
-	radius = static_cast<float>(length);
-	length = 0.0;
+        beams[i].Roll(BeamRng.FRandRange(-2.0f * PI, 2.0f * PI));
+        beams[i].Pitch(BeamRng.FRandRange(-2.0f * PI, 2.0f * PI));
+        beams[i].Yaw(BeamRng.FRandRange(-2.0f * PI, 2.0f * PI));
 
-	strcpy_s(name, "QuantumFlash");
+        // Poly setup
+        polys[i].nverts = 4;
+        polys[i].visible = 1;
+        polys[i].sortval = 0;
+        polys[i].vertex_set = verts;
+        polys[i].material = mtl;
+
+        polys[i].verts[0] = base + 0;
+        polys[i].verts[1] = base + 1;
+        polys[i].verts[2] = base + 2;
+        polys[i].verts[3] = base + 3;
+    }
+
+    // ------------------------------------------------------------
+    // Finalize bounds
+    // ------------------------------------------------------------
+    radius = static_cast<float>(length);
+    length = 0.0;
+
+    strcpy_s(name, "QuantumFlash");
 }
 
 // +--------------------------------------------------------------------+

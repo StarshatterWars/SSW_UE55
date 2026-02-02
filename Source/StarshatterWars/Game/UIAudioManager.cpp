@@ -102,5 +102,10 @@ void UUIAudioManager::StopCurrentSound(float FadeOutDuration)
     bIsPlaying = false;
 }
 
+void UUIAudioManager::StopSoundEffects()
+{
+
+}
+
 
 

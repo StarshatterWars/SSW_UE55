@@ -117,6 +117,9 @@ public:
     UFUNCTION() void ApplyOptions();
     UFUNCTION() void CancelOptions();
 
+    UFUNCTION() virtual void ShowWeaponsOverlay();
+    UFUNCTION() virtual void HideWeaponsOverlay();
+
     // Legacy ops:
     
     void SetFieldOfView(double Fov);

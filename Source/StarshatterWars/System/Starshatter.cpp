@@ -101,6 +101,7 @@
 #include "SimUniverse.h"
 #include "Video.h"
 #include "VideoSettings.h"
+#include "UIAudioManager.h"
 #include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
@@ -600,8 +601,6 @@ Starshatter::SetGameMode(EMODE m)
 		if (game_mode == EMODE::PLAN_MODE || game_mode == EMODE::PLAY_MODE) {
 			if (soundcard)
 				soundcard->StopSoundEffects();
-
-			//StopNetGame();
 		}
 
 		UE_LOG(LogStarshatterWars, Log, TEXT("Stardate: %.1f"), StarSystem::GetBaseTime());
@@ -2179,7 +2178,7 @@ Starshatter::SetupSplash()
 	gamewin->AddView(splash);
 
 	// ImageView centers within parent, so it just needs parent + bitmap
-	gamewin->AddView(new ImageView(gamewin, &splash_image));
+	gamewin->AddView(new ImageView(gamewin, splash_image));
 
 	// Root attach
 	screen->AddWindow(gamewin);

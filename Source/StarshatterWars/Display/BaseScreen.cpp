@@ -938,6 +938,11 @@ void UBaseScreen::NativeConstruct()
     Super::NativeConstruct();
 }
 
+void UBaseScreen::NativeDestruct()
+{
+    Super::NativeDestruct();
+}
+
 void UBaseScreen::NativePreConstruct()
 {
     Super::NativePreConstruct();
@@ -990,6 +995,28 @@ void UBaseScreen::HandleCancel()
         CancelButton->OnClicked.Broadcast();
         return;
     }
+}
+
+void UBaseScreen::Show()
+{
+    if (bIsShown)
+        return;
+   
+   bIsShown = true;
+}
+
+void UBaseScreen::Hide()
+{
+    if (!bIsShown)
+        return;
+
+    HideAll();
+    bIsShown = false;
+}
+
+void UBaseScreen::HideAll()
+{
+
 }
 
 // --------------------------------------------------------------------

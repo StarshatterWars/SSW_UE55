@@ -39,14 +39,14 @@ const double SENSOR_THRESHOLD = 0.25;
 // +----------------------------------------------------------------------+
 
 Sensor::Sensor()
-    : SimSystem(SENSOR, 1, "Dual Sensor Pkg", 1, 10, 10, 10),
+    : SimSystem(SYSTEM_CATEGORY::SENSOR, 1, "Dual Sensor Pkg", 1, 10, 10, 10),
     mode(STD),
     target(0),
     nsettings(0),
     range_index(0)
 {
-    name = Game::GetText("sys.sensor");
-    abrv = Game::GetText("sys.sensor.abrv");
+    name = "Sensor";
+    abrv = "Sensor";
 
     SetMode(mode);
     power_flags = POWER_WATTS;
