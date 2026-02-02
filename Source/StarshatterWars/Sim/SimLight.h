@@ -1,22 +1,33 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (C) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    nGenEx.lib
-	FILE:         SimLight.h
-	AUTHOR:       Carlos Bott
-	ORIGINAL:     John DiCamillo / Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 
-	OVERVIEW
-	========
-	Dynamic Light Source
+    SUBSYSTEM:    nGenEx.lib
+    FILE:         SimLight.h
+    AUTHOR:       Carlos Bott
+    ORIGINAL:     John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    Dynamic Light Source (UE port)
+    - Plain C++ class (not a UObject)
+    - Uses FVector/FQuat/FColor
+    - Adds Orientation() to support directional/spot light math (shadows, etc.)
 */
+
 #pragma once
+
 #include "Geometry.h"
 
-// Minimal Unreal include (required by request: convert Point/Vec3 to FVector):
+// Minimal Unreal includes (required by request: convert Point/Vec3 to FVector):
 #include "Math/Vector.h"
+#include "Math/Quat.h"
 #include "Math/Color.h"
+
 #include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
@@ -34,55 +45,96 @@ class SimScene;
 class SimLight
 {
 public:
-	static const char* TYPENAME() { return "SimLight"; }
+    static const char* TYPENAME() { return "SimLight"; }
 
-	SimLight(float l = 0.0f, float dl = 1.0f, int time = -1);
-	virtual ~SimLight();
+    SimLight(float l = 0.0f, float dl = 1.0f, int time = -1);
+    virtual ~SimLight();
 
-	int operator == (const SimLight& l) const { return id == l.id; }
+    int operator == (const SimLight& l) const { return id == l.id; }
 
-	// operations
-	virtual void      Update();
+    // --------------------------------------------------
+    // operations
+    // --------------------------------------------------
+    virtual void Update();
 
-	// accessors / mutators
-	int               Identity()        const { return id; }
-	FVector           Location()        const { return loc; }
+    // --------------------------------------------------
+    // identity
+    // --------------------------------------------------
+    int Identity() const { return id; }
 
-	LIGHTTYPE Type() const { return static_cast<LIGHTTYPE>(type); }
-	void              SetType(LIGHTTYPE t) { type = t; }
-	float             Intensity()       const { return light; }
-	void              SetIntensity(float f) { light = f; }
-	FColor            GetColor()        const { return color; }
-	void              SetColor(FColor c) { color = c; }
-	bool              IsActive()        const { return active; }
-	void              SetActive(bool a) { active = a; }
-	bool              CastsShadow()     const { return shadow; }
-	void              SetShadow(bool s) { shadow = s; }
+    // --------------------------------------------------
+    // transform
+    // --------------------------------------------------
+    FVector Location() const { return loc; }
+    void    SetLocation(const FVector& p) { loc = p; }
 
-	bool              IsPoint()         const { return type == LIGHTTYPE::POINT; }
-	bool              IsSpot()          const { return type == LIGHTTYPE::SPOT; }
-	bool              IsDirectional()   const { return type == LIGHTTYPE::DIRECTIONAL; }
+    // NEW: world-space orientation (used for directional/spot math)
+    FQuat   Orientation() const { return orient; }
+    void    SetOrientation(const FQuat& q) { orient = q; }
 
-	virtual void      MoveTo(const FVector& dst);
-	virtual void      TranslateBy(const FVector& ref);
+    // NEW: world-space direction (forward vector from orientation)
+    // Convention: forward vector indicates direction of emitted light rays.
+    FVector Direction() const { return orient.GetForwardVector(); }
 
-	virtual int       Life()            const { return life; }
-	virtual void      Destroy();
-	virtual SimScene* GetScene()        const { return scene; }
-	virtual void      SetScene(SimScene* s) { scene = s; }
+    // --------------------------------------------------
+    // light properties
+    // --------------------------------------------------
+    LIGHTTYPE Type() const { return static_cast<LIGHTTYPE>(type); }
+    void      SetType(LIGHTTYPE t) { type = t; }
+
+    float     Intensity() const { return light; }
+    void      SetIntensity(float f) { light = f; }
+
+    FColor    GetColor() const { return color; }
+    void      SetColor(FColor c) { color = c; }
+
+    bool      IsActive() const { return active; }
+    void      SetActive(bool a) { active = a; }
+
+    bool      CastsShadow() const { return shadow; }
+    void      SetShadow(bool s) { shadow = s; }
+
+    bool      IsPoint() const { return type == LIGHTTYPE::POINT; }
+    bool      IsSpot() const { return type == LIGHTTYPE::SPOT; }
+    bool      IsDirectional() const { return type == LIGHTTYPE::DIRECTIONAL; }
+
+    // --------------------------------------------------
+    // movement
+    // --------------------------------------------------
+    virtual void MoveTo(const FVector& dst);
+    virtual void TranslateBy(const FVector& ref);
+
+    // --------------------------------------------------
+    // lifetime
+    // --------------------------------------------------
+    virtual int  Life() const { return life; }
+    virtual void Destroy();
+
+    // --------------------------------------------------
+    // scene binding
+    // --------------------------------------------------
+    virtual SimScene* GetScene() const { return scene; }
+    virtual void      SetScene(SimScene* s) { scene = s; }
 
 protected:
-	static int        id_key;
+    static int  id_key;
 
-	int               id;
-	LIGHTTYPE         type;
-	FVector           loc;
-	int               life;
-	float             light;
-	float             dldt;
-	FColor            color;
-	bool              active;
-	bool              shadow;
-	SimScene* scene;
+    int         id;
+    LIGHTTYPE   type;
+
+    FVector     loc;
+
+    // NEW: orientation in world space
+    FQuat       orient;
+
+    int         life;
+    float       light;
+    float       dldt;
+
+    FColor      color;
+
+    bool        active;
+    bool        shadow;
+
+    SimScene* scene;
 };
-

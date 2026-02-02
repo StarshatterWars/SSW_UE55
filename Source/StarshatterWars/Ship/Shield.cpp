@@ -39,7 +39,7 @@ static int shield_value[] = {
 // +----------------------------------------------------------------------+
 
 Shield::Shield(SUBTYPE shield_type)
-	: SimSystem(SHIELD, shield_type, "shield", shield_value[shield_type], 100, 0)
+	: SimSystem(SYSTEM_CATEGORY::SHIELD, shield_type, "shield", shield_value[shield_type], 100, 0)
 	, shield_capacitor(false)
 	, shield_bubble(false)
 	, shield_factor(0.0f)

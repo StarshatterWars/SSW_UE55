@@ -32,7 +32,7 @@ class STARSHATTERWARS_API UVideoDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UVideoDlg();
+    UVideoDlg(const FObjectInitializer& ObjectInitializer);
     void InitializeVideoDlg(UBaseScreen* InManager);
     void ShowVideoDlg();
 

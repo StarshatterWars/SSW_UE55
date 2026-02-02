@@ -75,6 +75,8 @@ public:
 	static void       ResetGameTime();
 	static void       SkipGameTime(double seconds);
 
+	static bool       DisplayModeSupported(int w, int h, int bpp);
+
 	static double     FrameRate();
 	static double     FrameTime();
 	static double     GUITime();
@@ -90,7 +92,7 @@ public:
 
 	static Game*	  GetInstance();
 	
-	static Color      GetScreenColor();
+	static FColor     GetScreenColor();
 	static void       SetScreenColor(FColor c);
 	static int        GetScreenWidth();
 	static int        GetScreenHeight();

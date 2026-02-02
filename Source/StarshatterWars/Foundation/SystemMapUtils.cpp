@@ -491,11 +491,15 @@ UMaterialInstanceDynamic* SystemMapUtils::CreatePreviewMID(
 	const FString MIDName = FString::Printf(TEXT("MID_%s"), *Label);
 	DynMat->Rename(*MIDName);
 
-	// Optionally assign the base texture
-	if (BaseTexture)
+	if (BaseTexture && DynMat)
 	{
-		BaseTexture->UpdateResource();
-		DynMat->SetTextureParameterValue("BaseTexture", BaseTexture);
+		// Only needed if texture contents were changed at runtime
+		// BaseTexture->UpdateResource();
+
+		DynMat->SetTextureParameterValue(
+			FName(TEXT("BaseTexture")),
+			BaseTexture
+		);
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Created PreviewMID: %s (Label: %s, Texture: %s)"),

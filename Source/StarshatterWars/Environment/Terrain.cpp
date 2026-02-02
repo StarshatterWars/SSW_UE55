@@ -153,8 +153,8 @@ Terrain::BuildTerrain()
 	// Text -> const char* for legacy loader API:
 	Loader->SetDataPath(datapath.data());
 
-	Loader->LoadBitmap(region->PatchName(), terrain_patch);
-	Loader->LoadBitmap(region->ApronName(), terrain_apron);
+	Loader->LoadGameBitmap(region->PatchName(), terrain_patch);
+	Loader->LoadGameBitmap(region->ApronName(), terrain_apron);
 
 	Loader->LoadTexture(region->PatchTexture(), terrain_texture);
 	Loader->LoadTexture(region->ApronTexture(), apron_texture);

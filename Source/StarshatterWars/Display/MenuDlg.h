@@ -46,6 +46,10 @@ public:
     void Show();         // semantic: you may call AddToViewport / SetVisibility externally
     void ExecFrame();    // semantic: tick-driven in UMG; kept for parity
 
+    /** Legacy behavior: enable/disable all main menu buttons */
+    UFUNCTION(BlueprintCallable)
+    void EnableMenuButtons(bool bEnable);
+
     // Operations (legacy event handlers):
     UFUNCTION() void OnStart();
     UFUNCTION() void OnCampaign();
@@ -132,4 +136,6 @@ protected:
 private:
     void ClearDescription();
     void SetDescription(const FString& Text);
+
+    void SetButtonEnabled(UButton* Button, bool bEnable);
 };

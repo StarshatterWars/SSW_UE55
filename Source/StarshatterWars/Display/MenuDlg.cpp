@@ -267,3 +267,47 @@ void UMenuDlg::SetDescription(const FString& Text)
     if (DescriptionText)
         DescriptionText->SetText(FText::FromString(Text));
 }
+
+void UMenuDlg::SetButtonEnabled(UButton* Button, bool bEnable)
+{
+    if (Button)
+    {
+        Button->SetIsEnabled(bEnable);
+        // Optional: also set visibility or style here if you want “greyed out”
+    }
+}
+
+// --------------------------------------------------------------------
+// Legacy API: enable/disable all menu buttons
+// --------------------------------------------------------------------
+
+void UMenuDlg::EnableMenuButtons(bool bEnable)
+{
+    // Primary actions:
+    SetButtonEnabled(BtnStart, bEnable);
+    SetButtonEnabled(BtnCampaign, bEnable);
+    SetButtonEnabled(BtnMission, bEnable);
+    SetButtonEnabled(BtnPlayer, bEnable);
+
+    // Multiplayer has legacy gating:
+    if (BtnMulti && Starshatter::UseFileSystem())
+    {
+        // Legacy behavior: multiplayer disabled when using filesystem mode
+        SetButtonEnabled(BtnMulti, false);
+    }
+    else
+    {
+        SetButtonEnabled(BtnMulti, bEnable);
+    }
+
+    // Settings:
+    SetButtonEnabled(BtnVideo, bEnable);
+    SetButtonEnabled(BtnOptions, bEnable);
+    SetButtonEnabled(BtnControls, bEnable);
+
+    // Other:
+    SetButtonEnabled(BtnMod, bEnable);
+    SetButtonEnabled(BtnTac, bEnable);
+    SetButtonEnabled(BtnQuit, bEnable);
+}
+

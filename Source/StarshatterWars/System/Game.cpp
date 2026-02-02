@@ -206,14 +206,21 @@ Game::MaxTexAspect()
 
 	return 1;
 }
+
+bool
+Game::DisplayModeSupported(int w, int h, int bpp)
+{
+	return game && game->video && game->video->IsModeSupported(w, h, bpp);
+}
+
 Game* Game::GetInstance()
 {
 	return nullptr;
 }
 
-Color Game::GetScreenColor()
+FColor Game::GetScreenColor()
 {
-	return Color();
+	return FColor();
 }
 
 void Game::SetScreenColor(FColor c)

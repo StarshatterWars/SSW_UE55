@@ -262,11 +262,13 @@ int List<T>::count(const T* val) const
 template <class T>
 int List<T>::index(const T* val) const
 {
-    if (val) {
-        for (int i = 0; i < items; i++) {
-            if (array[i] && ((*array[i]) == (*val)))
-                return i;
-        }
+    if (!val)
+        return -1;
+
+    for (int i = 0; i < items; ++i)
+    {
+        if (array[i] == val)   // pointer identity
+            return i;
     }
 
     return -1;

@@ -111,28 +111,52 @@ void Shadow::Update(SimLight* light)
 	if (!light || !solid || !solid->GetModel() || !edges)
 		return;
 
-	FVector lpos = light->Location();
-	const bool directional = light->Type() == LIGHTTYPE::DIRECTIONAL;
+	const bool bDirectional = (light->Type() == LIGHTTYPE::DIRECTIONAL);
 	Model* model = solid->GetModel();
 
-	ListIter<Surface> iter = model->GetSurfaces();
-	while (++iter) {
-		Surface* surf = iter.value();
+	// Solid transform (UE port: matrix -> quat + vector):
+	const FMatrix SolidMatrix = solid->Orientation();
+	FQuat SolidRot(SolidMatrix);
+	SolidRot.Normalize();
+
+	const FVector SolidLoc = solid->Location();
+
+	ListIter<Surface> surfIter = model->GetSurfaces();
+	while (++surfIter)
+	{
+		Surface* surf = surfIter.value();
 		if (!surf)
 			continue;
 
-		// Transform light location into surface object space:
-		Matrix xform(solid->Orientation()); 
+		// -------------------------------------------------
+		// Transform light vector into *solid local space*
+		// -------------------------------------------------
 
-		FVector tmp = light->Location();
+		FVector LocalLight = FVector::ZeroVector;
 
-		if (!directional)
-			tmp -= (solid->Location() + surf->GetOffset());
+		if (bDirectional)
+		{
+			// Directional: use direction from SimLight orientation.
+			// Convention: forward vector points "where the light points".
+			// For silhouette tests/extrusion we want a vector from surface toward light,
+			// so we can use +/- as long as we're consistent. Keep it stable:
+			const FVector LightDirWS = light->Direction();      // NEW API (from SimLight.h)
+			LocalLight = SolidRot.UnrotateVector(LightDirWS);   // world -> solid local
+		}
+		else
+		{
+			// Point/Spot: use position relative to the surface
+			FVector WorldLight = light->Location();
+			WorldLight -= (SolidLoc + surf->GetOffset());       // bring into solid space w/ surf offset
+			LocalLight = SolidRot.UnrotateVector(WorldLight);   // world -> solid local
+		}
 
-		lpos = TransformVectorByBasisRows(tmp, xform);
+		// -------------------------------------------------
+		// Build silhouette edges
+		// -------------------------------------------------
 
-		// Compute the silhouette for the mesh with respect to the light:
-		for (int i = 0; i < surf->NumPolys(); i++) {
+		for (int32 i = 0; i < surf->NumPolys(); ++i)
+		{
 			Poly* p = surf->GetPolys() + i;
 			if (!p)
 				continue;
@@ -142,42 +166,58 @@ void Shadow::Update(SimLight* light)
 				continue;
 
 			// If this poly faces the light:
-			// NOTE: This assumes your plane.normal is now FVector (per conversion rule).
-			if (FVector::DotProduct(p->plane.normal, lpos) > 0.0f) {
-				for (int n = 0; n < p->nverts; n++) {
-					if (n < p->nverts - 1)
-						AddEdge(p->vlocs[n], p->vlocs[n + 1]);
-					else
-						AddEdge(p->vlocs[n], p->vlocs[0]);
+			// NOTE: assumes p->plane.normal is in the same local space as LocalLight.
+			if (FVector::DotProduct(p->plane.normal, LocalLight) > 0.0f)
+			{
+				for (int32 n = 0; n < p->nverts; ++n)
+				{
+					const int32 n0 = n;
+					const int32 n1 = (n + 1) % p->nverts;
+					AddEdge(p->vlocs[n0], p->vlocs[n1]);
 				}
 			}
 		}
 
-		// Extrude the silhouette away from the light source to create the shadow volume:
-		FVector extent = -lpos;
-		extent.Normalize();
-		extent *= 50.0e3f; // solid->Radius() * 2.1f;
+		// -------------------------------------------------
+		// Extrude shadow volume
+		// -------------------------------------------------
 
-		for (int i = 0; i < (int)num_edges; i++) {
-			if (nverts + 6 <= max_verts) {
-				// NOTE: Assumes Surface::GetVLoc() now returns FVector* after Vec3->FVector conversion.
-				const FVector v1 = surf->GetVLoc()[edges[2 * i + 0]];
-				const FVector v2 = surf->GetVLoc()[edges[2 * i + 1]];
-				const FVector v3 = v1 + extent;
-				const FVector v4 = v2 + extent;
+		// Extrude away from the light vector in local space:
+		FVector ExtrudeDir = -LocalLight;
+		if (!ExtrudeDir.Normalize())
+		{
+			// Degenerate light vector; nothing to extrude safely
+			continue;
+		}
 
-				verts[nverts++] = v1;
-				verts[nverts++] = v2;
-				verts[nverts++] = v3;
+		ExtrudeDir *= 50.0e3f; // legacy scale preserved (50 km)
 
-				verts[nverts++] = v2;
-				verts[nverts++] = v4;
-				verts[nverts++] = v3;
-			}
-			else {
-				UE_LOG(LogStarshatterShadow, Warning, TEXT("Shadow volume vertex buffer overflow (nverts=%d max=%d)"), nverts, max_verts);
+		for (int32 i = 0; i < (int32)num_edges; ++i)
+		{
+			if (nverts + 6 > max_verts)
+			{
+				UE_LOG(LogStarshatterShadow, Warning,
+					TEXT("Shadow volume vertex buffer overflow (nverts=%d max=%d)"),
+					nverts, max_verts);
 				break;
 			}
+
+			// NOTE: Assumes Surface::GetVLoc() returns FVector* (Vec3->FVector conversion done).
+			const int32 i0 = edges[2 * i + 0];
+			const int32 i1 = edges[2 * i + 1];
+
+			const FVector v1 = surf->GetVLoc()[i0];
+			const FVector v2 = surf->GetVLoc()[i1];
+			const FVector v3 = v1 + ExtrudeDir;
+			const FVector v4 = v2 + ExtrudeDir;
+
+			verts[nverts++] = v1;
+			verts[nverts++] = v2;
+			verts[nverts++] = v3;
+
+			verts[nverts++] = v2;
+			verts[nverts++] = v4;
+			verts[nverts++] = v3;
 		}
 	}
 }

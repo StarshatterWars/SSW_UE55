@@ -11,7 +11,8 @@
 #include "Video.h"
 #include "VideoSettings.h"
 
-UVideoDlg::UVideoDlg()
+UVideoDlg::UVideoDlg(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     StarsInstance = Starshatter::GetInstance();
 }

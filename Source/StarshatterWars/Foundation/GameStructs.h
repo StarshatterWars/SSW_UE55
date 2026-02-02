@@ -17,6 +17,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Blueprint/UserWidget.h"
+#include "Text.h"
 #include "GameStructs.generated.h"
 
 
@@ -4224,3 +4225,8 @@ struct FCampaignMissionReq
 
 	UPROPERTY() EMissionPrimaryDomain Domain = EMissionPrimaryDomain::Fighter;
 };
+
+inline FString TextToFString(const Text& T)
+{
+	return FString(ANSI_TO_TCHAR((const char*)T));
+}

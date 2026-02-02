@@ -1,22 +1,23 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (C) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (C) 2025-2026. All Rights Reserved.
 
-	SUBSYSTEM:    nGenEx.lib
-	FILE:         SimLight.cpp
-	AUTHOR:       Carlos Bott
-	ORIGINAL:     John DiCamillo / Destroyer Studios LLC
+    SUBSYSTEM:    nGenEx.lib
+    FILE:         SimLight.cpp
+    AUTHOR:       Carlos Bott
+    ORIGINAL:     John DiCamillo / Destroyer Studios LLC
 
-	OVERVIEW
-	========
-	Dynamic Light Source
+    OVERVIEW
+    ========
+    Dynamic Light Source (UE port, plain C++)
 */
 
 #include "SimLight.h"
 #include "SimScene.h"
 
-// Minimal Unreal support (required: FVector conversions + UE_LOG):
+// Minimal Unreal support:
 #include "Math/Vector.h"
+#include "Math/Quat.h"
 #include "Logging/LogMacros.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSimLight, Log, All);
@@ -28,16 +29,17 @@ int SimLight::id_key = 1;
 // +--------------------------------------------------------------------+
 
 SimLight::SimLight(float l, float dl, int time)
-	: id(id_key++),
-	type(LIGHTTYPE::POINT),
-	loc(FVector::ZeroVector),
-	life(time),
-	light(l),
-	dldt(dl),
-	color(255, 255, 255),
-	active(true),
-	shadow(false),
-	scene(0)
+    : id(id_key++)
+    , type(LIGHTTYPE::POINT)
+    , loc(FVector::ZeroVector)
+    , orient(FQuat::Identity)     // NEW: default orientation
+    , life(time)
+    , light(l)
+    , dldt(dl)
+    , color(255, 255, 255)
+    , active(true)
+    , shadow(false)
+    , scene(nullptr)
 {
 }
 
@@ -49,39 +51,37 @@ SimLight::~SimLight()
 
 // +--------------------------------------------------------------------+
 
-void
-SimLight::Update()
+void SimLight::Update()
 {
-	if (dldt < 1.0f)
-		light *= dldt;
+    if (dldt < 1.0f)
+        light *= dldt;
 
-	if (life > 0)
-		life--;
+    if (life > 0)
+        life--;
 }
 
 // +--------------------------------------------------------------------+
 
-void
-SimLight::Destroy()
+void SimLight::Destroy()
 {
-	if (scene)
-		scene->DelLight(this);
+    if (scene)
+        scene->DelLight(this);
 
-	delete this;
+    delete this;
 }
 
 // +--------------------------------------------------------------------+
 
-void
-SimLight::MoveTo(const FVector& dst)
+void SimLight::MoveTo(const FVector& dst)
 {
-	// if (type != LIGHT_DIRECTIONAL)
-	loc = dst;
+    // Directional lights can still have a loc (used by some tools),
+    // but legacy code typically ignores it for directional.
+    loc = dst;
 }
 
-void
-SimLight::TranslateBy(const FVector& ref)
+void SimLight::TranslateBy(const FVector& ref)
 {
-	if (type != LIGHTTYPE::DIRECTIONAL)
-		loc = loc - ref;
+    // Legacy behavior: do not translate directional lights by region offset
+    if (type != LIGHTTYPE::DIRECTIONAL)
+        loc = loc - ref;
 }

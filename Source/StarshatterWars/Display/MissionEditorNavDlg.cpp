@@ -2,156 +2,445 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
     SUBSYSTEM:    Stars.exe
-    FILE:         MissionNavDlg.cpp
+    FILE:         MissionEditorNavDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    UMissionNavDlg
-    - Mission planning navigation dialog (Unreal UUserWidget).
+    UMissionEditorNavDlg
+    - UMG replacement for legacy MsnEditNavDlg (Navigation tab)
+    - Inherits UBaseScreen (FORM ID binding + Enter/Escape policy)
+    - Preserves legacy control IDs:
+        1   Accept
+        2   Cancel
+        301 Situation tab
+        302 Package tab
+        303 Navigation tab (this)
+        201 Mission name
+        202 Mission type
+        203 Star system
+        204 Sector/region
 */
 
-#include "MissionNavDlg.h"
+
 #include "MissionEditorNavDlg.h"
 
-#include "Components/Button.h"
-#include "Components/TextBlock.h"
-#include "Components/ListView.h"
-#include "Input/Reply.h"
-#include "InputCoreTypes.h"
+#include "MenuScreen.h"
+#include "MissionEditorDlg.h"
 
-#include "MissionPlanner.h"
-#include "Campaign.h"
+#include "Galaxy.h"
+#include "StarSystem.h"
 #include "Mission.h"
 #include "MissionInfo.h"
+#include "GameStructs.h"
 
-UMissionNavDlg::UMissionNavDlg(const FObjectInitializer& ObjectInitializer)
+UMissionEditorNavDlg::UMissionEditorNavDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    // Do not touch widgets here.
-    // Do not bind delegates here.
+    SetDialogInputEnabled(true);
+    bIsFocusable = true;
 }
 
-void UMissionNavDlg::InitializeDlg(UMissionPlanner* InManager)
+void UMissionEditorNavDlg::BindFormWidgets()
 {
-    Manager = InManager;
+    // Accept/Cancel (base optional widgets):
+    if (ApplyButton)  BindButton(1, ApplyButton);
+    if (CancelButton) BindButton(2, CancelButton);
+
+    // Tabs:
+    if (BtnSit) BindButton(301, BtnSit);
+    if (BtnPkg) BindButton(302, BtnPkg);
+    if (BtnMap) BindButton(303, BtnMap);
+
+    // Fields:
+    if (TxtName)   BindEdit(201, TxtName);
+    if (CmbType)   BindCombo(202, CmbType);
+    if (CmbSystem) BindCombo(203, CmbSystem);
+    if (CmbRegion) BindCombo(204, CmbRegion);
 }
 
-void UMissionNavDlg::SetMissionContext(Campaign* InCampaign, Mission* InMission, MissionInfo* InInfo)
+FString UMissionEditorNavDlg::GetLegacyFormText() const
 {
-    CampaignPtr = InCampaign;
-    MissionPtr = InMission;
-    MissionInfoPtr = InInfo;
+    // Optional: keep FRM text for debugging/consistency.
+    // Not required at runtime.
+    return FString();
 }
 
-void UMissionNavDlg::NativeConstruct()
+void UMissionEditorNavDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (AcceptButton)
-    {
-        AcceptButton->OnClicked.Clear();
-        AcceptButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnAcceptClicked);
-    }
-
-    if (CancelButton)
-    {
-        CancelButton->OnClicked.Clear();
-        CancelButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnCancelClicked);
-    }
-
-    if (TabSitButton) { TabSitButton->OnClicked.Clear(); TabSitButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnTabSitClicked); }
-    if (TabPkgButton) { TabPkgButton->OnClicked.Clear(); TabPkgButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnTabPkgClicked); }
-    if (TabMapButton) { TabMapButton->OnClicked.Clear(); TabMapButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnTabMapClicked); }
-    if (TabWepButton) { TabWepButton->OnClicked.Clear(); TabWepButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnTabWepClicked); }
-
-    if (GalaxyButton) { GalaxyButton->OnClicked.Clear(); GalaxyButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnNavGalaxyClicked); }
-    if (SystemButton) { SystemButton->OnClicked.Clear(); SystemButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnNavSystemClicked); }
-    if (SectorButton) { SectorButton->OnClicked.Clear(); SectorButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnNavSectorClicked); }
-
-    if (ZoomInButton) { ZoomInButton->OnClicked.Clear();  ZoomInButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnZoomInClicked); }
-    if (ZoomOutButton) { ZoomOutButton->OnClicked.Clear(); ZoomOutButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnZoomOutClicked); }
-
-    if (FilterSystemButton) { FilterSystemButton->OnClicked.Clear();   FilterSystemButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnFilterSystemClicked); }
-    if (FilterPlanetButton) { FilterPlanetButton->OnClicked.Clear();   FilterPlanetButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnFilterPlanetClicked); }
-    if (FilterSectorButton) { FilterSectorButton->OnClicked.Clear();   FilterSectorButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnFilterSectorClicked); }
-    if (FilterStationButton) { FilterStationButton->OnClicked.Clear();  FilterStationButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnFilterStationClicked); }
-    if (FilterStarshipButton) { FilterStarshipButton->OnClicked.Clear(); FilterStarshipButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnFilterStarshipClicked); }
-    if (FilterFighterButton) { FilterFighterButton->OnClicked.Clear();  FilterFighterButton->OnClicked.AddDynamic(this, &UMissionNavDlg::OnFilterFighterClicked); }
+    BindFormWidgets();
+    RegisterControls();
+    PopulateTypeOptionsIfEmpty();
 }
 
-FReply UMissionNavDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+void UMissionEditorNavDlg::RegisterControls()
 {
-    const FKey Key = InKeyEvent.GetKey();
-
-    if (Key == EKeys::Enter || Key == EKeys::Virtual_Accept)
+    // Accept/Cancel:
+    if (UButton* Btn = GetButton(1))
     {
-        OnAcceptClicked();
-        return FReply::Handled();
+        Btn->OnClicked.RemoveAll(this);
+        Btn->OnClicked.AddDynamic(this, &UMissionEditorNavDlg::OnCommitClicked);
     }
 
-    if (Key == EKeys::Escape)
+    if (UButton* Btn = GetButton(2))
     {
-        OnCancelClicked();
-        return FReply::Handled();
+        Btn->OnClicked.RemoveAll(this);
+        Btn->OnClicked.AddDynamic(this, &UMissionEditorNavDlg::OnCancelClicked);
     }
 
-    return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+    // Tabs:
+    if (UButton* Btn = GetButton(301))
+    {
+        Btn->OnClicked.RemoveAll(this);
+        Btn->OnClicked.AddDynamic(this, &UMissionEditorNavDlg::OnTabClicked_Sit);
+    }
+
+    if (UButton* Btn = GetButton(302))
+    {
+        Btn->OnClicked.RemoveAll(this);
+        Btn->OnClicked.AddDynamic(this, &UMissionEditorNavDlg::OnTabClicked_Pkg);
+    }
+
+    if (UButton* Btn = GetButton(303))
+    {
+        Btn->OnClicked.RemoveAll(this);
+        Btn->OnClicked.AddDynamic(this, &UMissionEditorNavDlg::OnTabClicked_Map);
+    }
+
+    // System selection:
+    if (UComboBoxString* Cmb = GetCombo(203))
+    {
+        Cmb->OnSelectionChanged.RemoveAll(this);
+        Cmb->OnSelectionChanged.AddDynamic(this, &UMissionEditorNavDlg::OnSystemSelect);
+    }
 }
 
-void UMissionNavDlg::ShowDlg()
+void UMissionEditorNavDlg::Show()
 {
+    const bool bNeedTabUpdate = (GetVisibility() != ESlateVisibility::Visible);
+
     SetVisibility(ESlateVisibility::Visible);
-    RefreshHeader();
-    RefreshLists();
-}
+    bLocalExitLatch = true;
 
-void UMissionNavDlg::RefreshHeader()
-{
-    if (HeaderTitleText)  HeaderTitleText->SetText(FText::FromString(TEXT("MISSION BRIEFING")));
-    if (SystemValueText)  SystemValueText->SetText(FText::FromString(TEXT("SYSTEM")));
-    if (SectorValueText)  SectorValueText->SetText(FText::FromString(TEXT("SECTOR")));
-    if (TimeText)         TimeText->SetText(FText::FromString(TEXT("DAY 0 00:00:00")));
-    if (BriefingBodyText) BriefingBodyText->SetText(FText::FromString(TEXT("BRIEFING TEXT GOES HERE.")));
-}
-
-void UMissionNavDlg::RefreshLists()
-{
-    // TODO: Wire ListView data models here.
-}
-
-void UMissionNavDlg::OnAcceptClicked()
-{
-    if (Manager)
+    // Clear fields:
+    if (UEditableTextBox* NameEdit = GetEdit(201))
     {
-        Manager->OnMissionBriefingAccept();
+        NameEdit->SetText(FText::GetEmpty());
+    }
+
+    PopulateTypeOptionsIfEmpty();
+    PopulateSystems();
+
+    // Apply mission values:
+    if (!mission)
+    {
+        if (bNeedTabUpdate)
+            ShowTab(2);
+        return;
+    }
+
+    // Name:
+    if (UEditableTextBox* NameEdit = GetEdit(201))
+    {
+        const Text& NameText = mission->Name();
+        NameEdit->SetText(FText::FromString(TextToFString(mission->Name())));
+    }
+
+    // Type:
+    if (UComboBoxString* TypeCmb = GetCombo(202))
+    {
+        const int32 TypeIndex = mission->Type();
+        if (TypeIndex >= 0 && TypeIndex < TypeCmb->GetOptionCount())
+        {
+            TypeCmb->SetSelectedIndex(TypeIndex);
+        }
+    }
+
+    // System + Regions:
+    StarSystem* Sys = mission->GetStarSystem();
+    if (Sys)
+    {
+        const FString SysName = FString(Sys->Name());
+
+        if (UComboBoxString* SysCmb = GetCombo(203))
+        {
+            SysCmb->SetSelectedOption(SysName);
+        }
+
+        PopulateRegionsForSystem(Sys);
+
+        if (UComboBoxString* RgnCmb = GetCombo(204))
+        {
+            const FString MissionRegion = FString(mission->GetRegion());
+            RgnCmb->SetSelectedOption(MissionRegion);
+        }
+    }
+    else
+    {
+        PopulateRegionsForSystem(nullptr);
+    }
+
+    if (bNeedTabUpdate)
+        ShowTab(2);
+}
+
+void UMissionEditorNavDlg::PopulateTypeOptionsIfEmpty()
+{
+    UComboBoxString* TypeCmb = GetCombo(202);
+    if (!TypeCmb)
+        return;
+
+    if (TypeCmb->GetOptionCount() > 0)
+        return;
+
+    // Order must match legacy mission->Type() index values:
+    static const TCHAR* Types[] =
+    {
+        TEXT("Patrol"),
+        TEXT("Sweep"),
+        TEXT("Intercept"),
+        TEXT("Airborne Patrol"),
+        TEXT("Airborne Sweep"),
+        TEXT("Airborne Intercept"),
+        TEXT("Strike"),
+        TEXT("Assault"),
+        TEXT("Defend"),
+        TEXT("Escort"),
+        TEXT("Freight Escort"),
+        TEXT("Shuttle Escort"),
+        TEXT("Strike Escort"),
+        TEXT("Intel"),
+        TEXT("Scout"),
+        TEXT("Recon"),
+        TEXT("Blockade"),
+        TEXT("Fleet"),
+        TEXT("Attack"),
+        TEXT("Flight Ops"),
+        TEXT("Transport"),
+        TEXT("Cargo"),
+        TEXT("Training"),
+        TEXT("Misc"),
+    };
+
+    TypeCmb->ClearOptions();
+    for (const TCHAR* S : Types)
+        TypeCmb->AddOption(S);
+
+    TypeCmb->SetSelectedIndex(0);
+}
+
+void UMissionEditorNavDlg::PopulateSystems()
+{
+    UComboBoxString* SysCmb = GetCombo(203);
+    if (!SysCmb)
+        return;
+
+    SysCmb->ClearOptions();
+
+    Galaxy* galaxy = Galaxy::GetInstance();
+    if (!galaxy)
+        return;
+
+    ListIter<StarSystem> iter = galaxy->GetSystemList();
+    while (++iter)
+    {
+        StarSystem* s = iter.value();
+        if (s)
+            SysCmb->AddOption(FString(s->Name()));
+    }
+
+    if (SysCmb->GetOptionCount() > 0 && SysCmb->GetSelectedOption().IsEmpty())
+        SysCmb->SetSelectedIndex(0);
+}
+
+StarSystem* UMissionEditorNavDlg::FindSystemByName(const FString& Name) const
+{
+    Galaxy* galaxy = Galaxy::GetInstance();
+    if (!galaxy)
+        return nullptr;
+
+    ListIter<StarSystem> iter = galaxy->GetSystemList();
+    while (++iter)
+    {
+        StarSystem* s = iter.value();
+        if (s && Name == FString(s->Name()))
+            return s;
+    }
+
+    return nullptr;
+}
+
+void UMissionEditorNavDlg::PopulateRegionsForSystem(StarSystem* Sys)
+{
+    UComboBoxString* RgnCmb = GetCombo(204);
+    if (!RgnCmb)
+        return;
+
+    RgnCmb->ClearOptions();
+
+    if (!Sys)
+        return;
+
+    List<OrbitalRegion> regions;
+    regions.append(Sys->AllRegions());
+    regions.sort();
+
+    ListIter<OrbitalRegion> iter = regions;
+    while (++iter)
+    {
+        OrbitalRegion* r = iter.value();
+        if (r)
+            RgnCmb->AddOption(FString(r->Name()));
+    }
+
+    if (RgnCmb->GetOptionCount() > 0)
+        RgnCmb->SetSelectedIndex(0);
+}
+
+void UMissionEditorNavDlg::ScrapeForm()
+{
+    if (!mission)
+        return;
+
+    // Name:
+    if (UEditableTextBox* NameEdit = GetEdit(201))
+    {
+        const FString NewName = NameEdit->GetText().ToString();
+        mission->SetName(TCHAR_TO_ANSI(*NewName));
+
+        if (mission_info)
+            mission_info->name = TCHAR_TO_ANSI(*NewName);
+    }
+
+    // Type:
+    if (UComboBoxString* TypeCmb = GetCombo(202))
+    {
+        const int32 TypeIndex = TypeCmb->GetSelectedIndex();
+        if (TypeIndex >= 0)
+        {
+            mission->SetType(TypeIndex);
+            if (mission_info)
+                mission_info->type = TypeIndex;
+        }
+    }
+
+    // System:
+    StarSystem* system = nullptr;
+    if (UComboBoxString* SysCmb = GetCombo(203))
+    {
+        const FString SysName = SysCmb->GetSelectedOption();
+        system = FindSystemByName(SysName);
+    }
+
+    if (system)
+    {
+        mission->ClearSystemList();
+        mission->SetStarSystem(system);
+
+        if (mission_info)
+            mission_info->system = system->Name();
+    }
+
+    // Region:
+    if (UComboBoxString* RgnCmb = GetCombo(204))
+    {
+        const FString RegionName = RgnCmb->GetSelectedOption();
+        mission->SetRegion(TCHAR_TO_ANSI(*RegionName));
+
+        if (mission_info)
+            mission_info->region = TCHAR_TO_ANSI(*RegionName);
     }
 }
 
-void UMissionNavDlg::OnCancelClicked()
+void UMissionEditorNavDlg::ShowTab(int32 TabIndex)
 {
-    if (Manager)
+    if (TabIndex < 0 || TabIndex > 2)
+        TabIndex = 0;
+
+    // Legacy behavior: if leaving nav tab, show the main mission editor dlg tab:
+    if (TabIndex != 2 && Manager)
     {
-        Manager->OnMissionBriefingCancel();
+        UMissionEditorDlg* Dlg = Manager->GetMsnEditDlg();
+        if (Dlg)
+            Dlg->ShowTab(TabIndex);
+
+        Manager->ShowMissionEditorDlg();
     }
 }
 
-void UMissionNavDlg::OnTabSitClicked() { if (Manager) Manager->ShowBriefingSitTab(); }
-void UMissionNavDlg::OnTabPkgClicked() { if (Manager) Manager->ShowBriefingPkgTab(); }
-void UMissionNavDlg::OnTabMapClicked() { if (Manager) Manager->ShowBriefingMapTab(); }
-void UMissionNavDlg::OnTabWepClicked() { if (Manager) Manager->ShowBriefingWepTab(); }
+void UMissionEditorNavDlg::HandleAccept()
+{
+    Super::HandleAccept();
+    OnCommitClicked();
+}
 
-void UMissionNavDlg::OnNavGalaxyClicked() { if (Manager) Manager->NavModeGalaxy(); }
-void UMissionNavDlg::OnNavSystemClicked() { if (Manager) Manager->NavModeSystem(); }
-void UMissionNavDlg::OnNavSectorClicked() { if (Manager) Manager->NavModeSector(); }
+void UMissionEditorNavDlg::HandleCancel()
+{
+    // Match the legacy exit latch behavior:
+    if (bLocalExitLatch)
+    {
+        bLocalExitLatch = false;
+        return;
+    }
 
-void UMissionNavDlg::OnZoomInClicked() { if (Manager) Manager->NavZoomIn(); }
-void UMissionNavDlg::OnZoomOutClicked() { if (Manager) Manager->NavZoomOut(); }
+    Super::HandleCancel();
+    OnCancelClicked();
+}
 
-void UMissionNavDlg::OnFilterSystemClicked() { if (Manager) Manager->NavFilterSystem(); }
-void UMissionNavDlg::OnFilterPlanetClicked() { if (Manager) Manager->NavFilterPlanet(); }
-void UMissionNavDlg::OnFilterSectorClicked() { if (Manager) Manager->NavFilterSector(); }
-void UMissionNavDlg::OnFilterStationClicked() { if (Manager) Manager->NavFilterStation(); }
-void UMissionNavDlg::OnFilterStarshipClicked() { if (Manager) Manager->NavFilterStarship(); }
-void UMissionNavDlg::OnFilterFighterClicked() { if (Manager) Manager->NavFilterFighter(); }
+// ------------------------------------------------------------
+// Handlers
+// ------------------------------------------------------------
+
+void UMissionEditorNavDlg::OnSystemSelect(FString SelectedItem, ESelectInfo::Type /*SelectionType*/)
+{
+    StarSystem* Sys = FindSystemByName(SelectedItem);
+    PopulateRegionsForSystem(Sys);
+    ScrapeForm();
+}
+
+void UMissionEditorNavDlg::OnCommitClicked()
+{
+    if (mission)
+    {
+        ScrapeForm();
+
+        if (mission_info)
+            mission_info->name = mission->Name();
+
+        mission->Save();
+    }
+
+    if (Manager)
+        Manager->ShowMissionSelectDlg();
+}
+
+void UMissionEditorNavDlg::OnCancelClicked()
+{
+    if (mission)
+        mission->Load();
+
+    if (Manager)
+        Manager->ShowMissionSelectDlg();
+}
+
+void UMissionEditorNavDlg::OnTabClicked_Sit()
+{
+    ShowTab(0);
+}
+
+void UMissionEditorNavDlg::OnTabClicked_Pkg()
+{
+    ShowTab(1);
+}
+
+void UMissionEditorNavDlg::OnTabClicked_Map()
+{
+    ShowTab(2);
+}
