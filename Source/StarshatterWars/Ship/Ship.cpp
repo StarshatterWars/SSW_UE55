@@ -80,6 +80,7 @@
 #include "Bolt.h"
 #include "Game.h"
 #include "Solid.h"
+#include "SimModel.h"
 #include "Shadow.h"
 #include "Skin.h"
 #include "Sprite.h"
@@ -861,7 +862,7 @@ Ship::GetTextureList(List<UTexture2D*>& Textures)
 
 			if (g && g->IsSolid()) {
 				Solid* solid = (Solid*)g;
-				Model* model = solid->GetModel();
+				SimModel* model = solid->GetModel();
 
 				if (model) {
 					for (int n = 0; n < model->NumMaterials(); n++) {
@@ -1830,7 +1831,7 @@ Ship::CheckShotIntersection(SimShot* shot, FVector& ipt, FVector& hpt, Weapon** 
 			WeaponGroup* g = g_iter.value();
 
 			if (g->GetDesign() && g->GetDesign()->turret_model) {
-				const double tsize = g->GetDesign()->turret_model->Radius();
+				const double tsize = g->GetDesign()->turret_model->GetRadius();
 
 				ListIter<Weapon> w_iter = g->GetWeapons();
 				while (++w_iter) {

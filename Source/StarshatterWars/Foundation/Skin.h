@@ -19,7 +19,7 @@
 #include "List.h"
 
 // Forward declarations (keep header light)
-class Model;
+class SimModel;
 struct Material;
 
 // +--------------------------------------------------------------------+
@@ -38,8 +38,8 @@ public:
     virtual ~Skin();
 
     // operations
-    void              ApplyTo(Model* model) const;
-    void              Restore(Model* model) const;
+    void              ApplyTo(SimModel* model) const;
+    void              Restore(SimModel* model) const;
 
     // accessors / mutators
     const char* Name()     const { return name; }

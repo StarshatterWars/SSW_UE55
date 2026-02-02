@@ -78,6 +78,7 @@
 #include "Sound.h"
 #include "Bitmap.h"
 #include "Game.h"
+#include "SimModel.h"
 
 
 // -------------------------------------------------------------------------------------------------
@@ -2443,7 +2444,7 @@ HUDView::SetShip(Ship* s)
 			if (!cockpit_hud_texture)
 				change = true;
 
-			Model* cockpit_model = cockpit->GetModel();
+			SimModel* cockpit_model = cockpit->GetModel();
 			Material* hud_material = 0;
 
 			if (cockpit_model) {

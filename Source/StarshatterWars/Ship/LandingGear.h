@@ -19,6 +19,7 @@
 #include "Types.h"
 #include "SimSystem.h"
 #include "Solid.h"
+#include "SimModel.h"
 
 // Minimal Unreal include for FVector (Point/Vec3 conversion target):
 #include "Math/Vector.h"
@@ -26,7 +27,6 @@
 // +--------------------------------------------------------------------+
 
 class Ship;
-class Model;
 class Physical;
 class Solid;
 
@@ -42,7 +42,7 @@ public:
     LandingGear(const LandingGear& rhs);
     virtual ~LandingGear();
 
-    virtual int       AddGear(Model* m, const FVector& s, const FVector& e);
+    virtual int       AddGear(SimModel* m, const FVector& s, const FVector& e);
     virtual void      ExecFrame(double seconds);
     virtual void      Orient(const Physical* rep);
 
@@ -63,7 +63,7 @@ protected:
     double            clearance;
 
     int               ngear;
-    Model*            models[MAX_GEAR];
+    SimModel*         models[MAX_GEAR];
     Solid*            gear[MAX_GEAR];
     FVector           start[MAX_GEAR];
     FVector           end[MAX_GEAR];

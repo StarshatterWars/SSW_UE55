@@ -30,7 +30,7 @@
 // +----------------------------------------------------------------------+
 
 class ShipDesign;
-class Model;
+class SimModel;
 class Skin;
 class PowerSource;
 class Weapon;
@@ -96,7 +96,7 @@ public:
 
 	ShipDebris();
 
-	Model* model;
+	SimModel*		  model;
 	int               count;
 	int               life;
 	FVector           loc;
@@ -188,7 +188,7 @@ public:
 
 	// LOD representation:
 	int               lod_levels;
-	List<Model>       models[4];
+	List<SimModel>    models[4];
 	List<FVector>     offsets[4];      // Point -> FVector
 	float             feature_size[4];
 	List<FVector>     spin_rates;      // Point -> FVector
@@ -198,7 +198,7 @@ public:
 	const Skin* FindSkin(const char* skin_name) const;
 
 	// virtual cockpit:
-	Model* cockpit_model;
+	SimModel* cockpit_model;
 	float             cockpit_scale;
 
 	// performance:
@@ -265,7 +265,7 @@ public:
 	Sensor* sensor;
 	NavSystem* navsys;
 	Shield* shield;
-	Model* shield_model;
+	SimModel* shield_model;
 	Weapon* decoy;
 	Weapon* probe;
 	LandingGear* gear;

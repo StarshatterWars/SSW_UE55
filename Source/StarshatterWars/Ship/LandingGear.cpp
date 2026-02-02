@@ -22,6 +22,7 @@
 
 #include "DataLoader.h"
 #include "Physical.h"
+#include "SimModel.h"
 #include "SimScene.h"
 #include "Sound.h"
 #include "Game.h"
@@ -137,7 +138,7 @@ void LandingGear::Close()
 
 // +--------------------------------------------------------------------+
 
-int LandingGear::AddGear(Model* m, const FVector& s, const FVector& e)
+int LandingGear::AddGear(SimModel* m, const FVector& s, const FVector& e)
 {
     if (ngear < MAX_GEAR) {
         models[ngear] = m;

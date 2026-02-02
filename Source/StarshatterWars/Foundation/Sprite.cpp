@@ -32,8 +32,6 @@
 #include <cmath>
 #include <cstring>
 
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWars, Log, All);
-
 // +--------------------------------------------------------------------+
 
 static uint8 ClampColorByte(double v01)
@@ -67,96 +65,6 @@ static FVector RowAsVector(const FMatrix& M, int Row)
 
 // +--------------------------------------------------------------------+
 
-void
-Sprite::Render(Video* video, DWORD flags)
-{
-	if (shade < 0.001 || hidden || !visible || !video)
-		return;
-
-	if (blend_mode == 2 && !(flags & Graphic::RENDER_ALPHA))
-		return;
-
-	if (blend_mode == 4 && !(flags & Graphic::RENDER_ADDITIVE))
-		return;
-
-	if (!(life > 0 || loop))
-		return;
-
-	const Camera* camera = video->GetCamera();
-	if (!camera)
-		return;
-
-	// Convert camera orientation to Unreal matrix
-	const FMatrix CamM = ToFMatrix(camera->Orientation());
-
-	FVector Right = RowAsVector(CamM, 0);
-	FVector Up = RowAsVector(CamM, 1);
-
-	Vec3 vpn_ss = camera->vpn();
-	FVector Normal(
-		(float)vpn_ss.X,
-		(float)vpn_ss.Y,
-		(float)vpn_ss.Z
-	);
-
-	Normal *= -1.0f;
-
-	// Apply roll
-	if (fabs(angle) > KINDA_SMALL_NUMBER)
-	{
-		FQuat RollQ(Normal.GetSafeNormal(), (float)angle);
-		Right = RollQ.RotateVector(Right);
-		Up = RollQ.RotateVector(Up);
-	}
-
-	// Vertex color (Option B: FColor)
-	uint8 c = ClampColorByte(shade);
-	FColor VertexColor(c, c, c, c);
-
-	FVector vx = Right * (float)(w * 0.5);
-	FVector vy = Up * (float)(h * 0.5);
-
-	// Vertex positions
-	vset.loc[0] = loc - vx + vy;
-	vset.loc[1] = loc + vx + vy;
-	vset.loc[2] = loc + vx - vy;
-	vset.loc[3] = loc - vx - vy;
-
-	for (int i = 0; i < 4; i++)
-	{
-		vset.nrm[i] = Normal;
-		vset.diffuse[i] = VertexColor;
-	}
-
-	// Material setup
-	if (luminous)
-	{
-		mtl.Ka = FColor::Black;
-		mtl.Kd = FColor::Black;
-		mtl.Ks = FColor::Black;
-		mtl.Ke = FColor::White;
-		mtl.tex_diffuse = Frame();
-		mtl.tex_emissive = Frame();
-		mtl.blend = blend_mode;
-		mtl.luminous = true;
-	}
-	else
-	{
-		mtl.Ka = FColor::White;
-		mtl.Kd = FColor::White;
-		mtl.Ks = FColor::Black;
-		mtl.Ke = FColor::Black;
-		mtl.tex_diffuse = Frame();
-		mtl.tex_emissive = 0;
-		mtl.blend = blend_mode;
-		mtl.luminous = false;
-	}
-
-	video->DrawPolys(1, &poly);
-
-	memset(&screen_rect, 0, sizeof(Rect));
-}
-
 // +--------------------------------------------------------------------+
 
 Sprite::Sprite(Bitmap* animation, int length, int repeat, int share)
@@ -169,7 +77,7 @@ Sprite::Sprite(Bitmap* animation, int length, int repeat, int share)
 
 	vset.space = VertexSet::WORLD_SPACE;
 	for (int i = 0; i < 4; i++) {
-		vset.diffuse[i] = Color::White.Value();
+		vset.diffuse[i] = FColor::White;
 	}
 
 	vset.tu[0] = 0.0f;

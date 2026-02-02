@@ -16,7 +16,6 @@
 */
 
 #include "Sound.h"
-#include "SoundCard.h"
 #include "Wave.h"
 
 // Unreal logging:

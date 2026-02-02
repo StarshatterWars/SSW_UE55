@@ -16,6 +16,7 @@
 #include "TerrainHaze.h"
 #include "Terrain.h"
 #include "TerrainRegion.h"
+#include "SimModel.h"
 
 #include "CoreMinimal.h"
 

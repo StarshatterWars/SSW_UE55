@@ -41,6 +41,7 @@
 #include "Game.h"
 #include "SimLight.h"
 #include "Solid.h"
+#include "SimModel.h"
 #include "Bitmap.h"
 #include "Color.h"
 #include "DataLoader.h"

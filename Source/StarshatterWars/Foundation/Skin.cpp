@@ -16,6 +16,7 @@
 
 #include "Skin.h"
 #include "Solid.h"
+#include "SimModel.h"
 
 #include "Logging/LogMacros.h"
 
@@ -95,7 +96,7 @@ Skin::AddMaterial(const Material* mtl)
 // +--------------------------------------------------------------------+
 
 void
-Skin::ApplyTo(Model* model) const
+Skin::ApplyTo(SimModel* model) const
 {
     if (model) {
         for (int i = 0; i < cells.size(); i++) {
@@ -111,7 +112,7 @@ Skin::ApplyTo(Model* model) const
 // +--------------------------------------------------------------------+
 
 void
-Skin::Restore(Model* model) const
+Skin::Restore(SimModel* model) const
 {
     if (model) {
         for (int i = 0; i < cells.size(); i++) {

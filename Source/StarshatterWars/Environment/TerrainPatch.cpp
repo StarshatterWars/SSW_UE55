@@ -22,6 +22,8 @@
 #include "Sim.h"
 #include "SimLight.h"
 #include "Bitmap.h"
+#include "SimModel.h"
+#include "Segment.h"
 #include "GameStructs.h"
 
 #include "Water.h"
@@ -212,7 +214,7 @@ TerrainPatch::~TerrainPatch()
 	delete[] heights;
 
 	for (int i = 0; i < MAX_LOD; i++) {
-		Model* m = detail_levels[i];
+		SimModel* m = detail_levels[i];
 
 		if (m) {
 			m->GetMaterials().clear();
@@ -271,7 +273,7 @@ bool TerrainPatch::BuildDetailLevel(int level)
 	if (DetailSize > PATCH_SIZE)
 		return false;
 
-	Model* LocalModel = new Model;
+	SimModel* LocalModel = new SimModel;
 	detail_levels[level] = LocalModel;
 
 	LocalModel->SetLuminous(luminous);
@@ -592,12 +594,12 @@ bool TerrainPatch::BuildDetailLevel(int level)
 		SurfacePtr->Normalize();
 
 		// create contiguous segments for each material:
-		qsort((void*)SurfacePtr->GetPolys(), SurfacePtr->NumPolys(), sizeof(Poly), mcomp);
+		qsort((void*)SurfacePtr->GetPolys(), SurfacePtr->GetNumPolys(), sizeof(Poly), mcomp);
 
 		Segment* segment = nullptr;
 		Poly* spolys = SurfacePtr->GetPolys();
 
-		for (int n = 0; n < SurfacePtr->NumPolys(); n++) {
+		for (int n = 0; n < SurfacePtr->GetNumPolys(); n++) {
 			if (segment && segment->material == spolys[n].material) {
 				segment->npolys++;
 			}
@@ -774,7 +776,7 @@ TerrainPatch::CalcLayer(Poly* poly)
 void
 TerrainPatch::UpdateSurfaceWaves(FVector& eyePos)
 {
-	if (water && model && model->NumVerts() > 1) {
+	if (water && model && model->GetNumVerts() > 1) {
 		Surface* s = model->GetSurfaces().first();
 		if (s) {
 			VertexSet* vset = s->GetVertexSet();
@@ -832,7 +834,7 @@ TerrainPatch::SetDetailLevel(int nd)
 
 void TerrainPatch::Illuminate(FColor Ambient, List<SimLight>& Lights)
 {
-	if (!model || model->NumVerts() < 1)
+	if (!model || model->GetNumVerts() < 1)
 		return;
 
 	Surface* SurfacePtr = model->GetSurfaces().first();

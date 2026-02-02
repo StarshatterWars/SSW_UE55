@@ -26,6 +26,7 @@
 
 // Concrete type includes (forward-declared in header):
 #include "Solid.h"
+#include "SimModel.h"
 #include "Video.h"
 #include "SimLight.h"
 #include "SimScene.h"
@@ -47,10 +48,10 @@ Shadow::Shadow(Solid* s)
 	, num_edges(0)
 {
 	if (solid && solid->GetModel()) {
-		Model* model = solid->GetModel();
-		const int npolys = model->NumPolys();
+		SimModel* model = solid->GetModel();
+		const int npolys = model->GetNumPolys();
 
-		max_verts = model->NumVerts() * 4;
+		max_verts = model->GetNumVerts() * 4;
 
 		verts = new FVector[max_verts];
 		edges = new WORD[npolys * 6];
@@ -112,7 +113,7 @@ void Shadow::Update(SimLight* light)
 		return;
 
 	const bool bDirectional = (light->Type() == LIGHTTYPE::DIRECTIONAL);
-	Model* model = solid->GetModel();
+	SimModel* model = solid->GetModel();
 
 	// Solid transform (UE port: matrix -> quat + vector):
 	const FMatrix SolidMatrix = solid->Orientation();
@@ -155,7 +156,7 @@ void Shadow::Update(SimLight* light)
 		// Build silhouette edges
 		// -------------------------------------------------
 
-		for (int32 i = 0; i < surf->NumPolys(); ++i)
+		for (int32 i = 0; i < surf->GetNumPolys(); ++i)
 		{
 			Poly* p = surf->GetPolys() + i;
 			if (!p)

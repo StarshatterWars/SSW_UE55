@@ -189,49 +189,43 @@ QuantumFlash::Render(Video* video, DWORD flags)
 
 // +--------------------------------------------------------------------+
 
-void
-QuantumFlash::UpdateVerts(const FVector& cam_pos)
+void QuantumFlash::UpdateVerts(const FVector& cam_pos)
 {
-	if (length < radius) {
-		length += radius / 80.0;
-		width += 1.0;
-	}
+    if (length < radius) {
+        length += radius / 80.0;
+        width += 1.0;
+    }
 
-	for (int i = 0; i < npolys; i++) {
-		Matrix& m = beams[i];
+    for (int i = 0; i < npolys; i++) {
+        Matrix& m = beams[i];
 
-		m.Yaw(0.05);
+        m.Yaw(0.05);
 
-		FVector vpn(m(2, 0), m(2, 1), m(2, 2));
+        const FVector vpn(m(2, 0), m(2, 1), m(2, 2));
 
-		FVector head = loc;
-		FVector tail = loc - vpn * length;
-		FVector vtail = tail - head;
-		FVector vcam = cam_pos - loc;
+        const FVector head = loc;
+        const FVector tail = loc - vpn * length;
+        const FVector vtail = tail - head;
+        const FVector vcam = cam_pos - loc;
 
-		FVector vtmp = FVector::CrossProduct(vcam, vtail);
-		vtmp.Normalize();
+        FVector vtmp = FVector::CrossProduct(vcam, vtail);
+        vtmp.Normalize();
 
-		FVector vlat = vtmp * -width;
+        const FVector vlat = vtmp * -width;
 
-		verts->loc[4 * i + 0] = head + vlat;
-		verts->loc[4 * i + 1] = tail + vlat * 8.0f;
-		verts->loc[4 * i + 2] = tail - vlat * 8.0f;
-		verts->loc[4 * i + 3] = head - vlat;
+        verts->loc[4 * i + 0] = head + vlat;
+        verts->loc[4 * i + 1] = tail + vlat * 8.0f;
+        verts->loc[4 * i + 2] = tail - vlat * 8.0f;
+        verts->loc[4 * i + 3] = head - vlat;
 
-		FColor color(
-			static_cast<uint8>(255 * shade),
-			static_cast<uint8>(255 * shade),
-			static_cast<uint8>(255 * shade),
-			255
-		);
+        // OPTION A: write the actual color type (no packing)
+        const uint8 c = (uint8)FMath::Clamp<int32>((int32)(255.0f * shade), 0, 255);
+        const FColor color(c, c, c, 255);
 
-		const DWORD packed = color.ToPackedARGB();
-
-		for (int n = 0; n < 4; n++) {
-			verts->diffuse[4 * i + n] = packed;
-		}
-	}
+        for (int n = 0; n < 4; n++) {
+            verts->diffuse[4 * i + n] = color;
+        }
+    }
 }
 
 // +--------------------------------------------------------------------+

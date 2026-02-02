@@ -11,13 +11,32 @@
 
     OVERVIEW
     ========
-    ModelFile: loader/saver interface for Model (MAG or other formats)
+    ModelFile base class (getter-based, no internal pointer binding).
+
+    Option A:
+    - ModelFile stores a read-only snapshot (FModelFileInfo) of the model state.
+    - Derived loaders/savers use ModelFile::model (SimModel*) plus snapshot values.
 */
 
 #pragma once
 
-// Forward declaration:
-class Model;
+class SimModel;
+
+// --------------------------------------------------------------------
+// Read-only snapshot of model state (captured at Load/Save entry)
+// --------------------------------------------------------------------
+
+struct FModelFileInfo
+{
+    const char* Name = nullptr;   // pointer to model-owned name buffer (copy if you need persistence)
+    int         NumVerts = 0;
+    int         NumPolys = 0;
+    float       Radius = 0.0f;
+};
+
+// --------------------------------------------------------------------
+// ModelFile
+// --------------------------------------------------------------------
 
 class ModelFile
 {
@@ -25,17 +44,13 @@ public:
     ModelFile(const char* fname);
     virtual ~ModelFile();
 
-    virtual bool Load(Model* m, double scale = 1.0);
-    virtual bool Save(Model* m);
+    virtual bool Load(SimModel* m, double scale = 1.0);
+    virtual bool Save(SimModel* m);
 
 protected:
-    char  filename[256]{};
-    Model* model = nullptr;
+    char     filename[256];
+    SimModel* model;
 
-    // internal accessors (legacy pattern):
-    char* pname = nullptr;
-    int* pnverts = nullptr;
-    int* pnpolys = nullptr;
-    float* pradius = nullptr;
+    // Getter-based snapshot:
+    FModelFileInfo info;
 };
-

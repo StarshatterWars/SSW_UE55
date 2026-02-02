@@ -6152,7 +6152,7 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 	int   ngear = 0;
 	Vec3  start[LandingGear::MAX_GEAR];
 	Vec3  end[LandingGear::MAX_GEAR];
-	Model* model[LandingGear::MAX_GEAR];
+	SimModel* model[LandingGear::MAX_GEAR];
 
 	for (int i = 0; i < val->elements()->size(); i++) {
 		TermDef* pdef = val->elements()->at(i)->isDef();
@@ -6200,7 +6200,7 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 					}
 
 					if (ngear < LandingGear::MAX_GEAR) {
-						Model* m = new  Model;
+						SimModel* m = new  Model;
 						if (!m->Load(mod_name, scale)) {
 							Print("WARNING: Could notxload landing gear model '%s'\n", mod_name);
 							delete m;
@@ -6988,7 +6988,7 @@ ShipDesign::ParseDeathSpiral(TermStruct* val)
 				if (def->term() && def->term()->isText()) {
 					Text model_name;
 					GetDefText(model_name, def, filename);
-					Model* model = new  Model;
+					SimModel* model = new  Model;
 					if (!model->Load(model_name, scale)) {
 						Print("Could notxload debris model '%s'\n", model_name.data());
 						delete model;
@@ -7096,7 +7096,7 @@ ShipDesign::ParseDebris(TermStruct* val, int index)
 
 			if (defname == "model") {
 				GetDefText(model_name, def, filename);
-				Model* model = new  Model;
+				SimModel* model = new  Model;
 				if (!model->Load(model_name, scale)) {
 					Print("Could notxload debris model '%s'\n", model_name);
 					delete model;

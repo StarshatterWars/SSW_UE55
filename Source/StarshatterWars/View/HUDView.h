@@ -21,6 +21,7 @@
 #include "Sim.h"
 #include "SimObject.h"
 #include "Mouse.h"
+#include "SimModel.h"
 
 #include "CameraView.h"
 #include "FontManager.h" 

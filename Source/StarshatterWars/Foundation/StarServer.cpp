@@ -36,14 +36,9 @@
 #include "FlightDeck.h"
 #include "RadioTraffic.h"
 #include "Random.h"
-#include "ModConfig.h"
-
-//#include "NetServer.h"
-//#include "NetLobbyServer.h"
-//#include "NetServerConfig.h"
 
 #include "Token.h"
-//#include "MachineInfo.h"
+
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "EventDispatch.h"
@@ -51,6 +46,7 @@
 #include "DataLoader.h"
 #include "ParseUtil.h"
 #include "Resource.h"
+#include "GameSTructs.h"
 
 // --------------------------------------------------------------------
 // Unreal logging bridge
@@ -94,16 +90,13 @@ StarServer::StarServer()
 	: loader(nullptr)
 	, time_mark(0)
 	, minutes(0)
-	, game_mode(MENU_MODE)
-	, admin_server(nullptr)
-	, lobby_server(nullptr)
+	, game_mode(EMODE::MENU_MODE)
 {
 	if (!instance)
 		instance = this;
 
 	app_name = "Starshatter Wars Server";
 	title_text = "Starshatter Wars";
-	palette_name = "alpha";
 
 	Game::server = true;
 	Game::show_mouse = true;
@@ -126,12 +119,6 @@ StarServer::StarServer()
 
 StarServer::~StarServer()
 {
-	delete admin_server;
-	delete lobby_server;
-
-	admin_server = nullptr;
-	lobby_server = nullptr;
-
 	delete world;
 	world = nullptr;
 
@@ -161,7 +148,7 @@ StarServer::Init(HINSTANCE hi, HINSTANCE hpi, LPSTR cmdline, int nCmdShow)
 	if (loader)
 		loader->UseFileSystem(false);
 
-	return Game::Init(hi, hpi, cmdline, nCmdShow);
+	return Game::Init();
 }
 
 // --------------------------------------------------------------------
@@ -173,8 +160,6 @@ StarServer::InitGame()
 		return false;
 
 	RandomInit();
-	//ModConfig::Initialize();
-	//NetServerConfig::Initialize();
 
 	SystemDesign::Initialize("sys.def");
 	WeaponDesign::Initialize("wep.def");
@@ -192,20 +177,6 @@ StarServer::InitGame()
 	time_mark = Game::GameTime();
 	minutes = 0;
 
-	//NetServerConfig* server_config = NetServerConfig::GetInstance();
-	//if (!server_config)
-	//	return false;
-
-	Print("\nStarshatter Wars Server Init\n");
-	Print("---------------------------\n");
-	Print("Server Name: %s\n", (const char*)server_config->Name());
-	Print("Lobby Port:  %d\n", server_config->GetLobbyPort());
-	Print("Admin Port:  %d\n", server_config->GetAdminPort());
-	Print("---------------------------\n");
-
-	//lobby_server = new NetLobbyServer;
-	//admin_server = NetServer::CreateAdminServer(server_config->GetAdminPort());
-
 	return true;
 }
 
@@ -217,11 +188,11 @@ StarServer::SetGameMode(EMODE m)
 	if (game_mode == m)
 		return;
 
-	if (m == LOAD_MODE) {
+	if (m == EMODE::LOAD_MODE) {
 		Print("GameMode = LOAD\n");
 		paused = true;
 	}
-	else if (m == PLAY_MODE) {
+	else if (m == EMODE::PLAY_MODE) {
 		Print("GameMode = PLAY\n");
 
 		if (!world) {
@@ -354,13 +325,11 @@ StarServer::UpdateWorld()
 void
 StarServer::GameState()
 {
-	if (lobby_server)
-		lobby_server->ExecFrame();
 
-	if (game_mode == LOAD_MODE) {
+	if (game_mode == EMODE::LOAD_MODE) {
 		CreateWorld();
 		InstantiateMission();
-		SetGameMode(PLAY_MODE);
+		SetGameMode(EMODE::PLAY_MODE);
 	}
 }
 

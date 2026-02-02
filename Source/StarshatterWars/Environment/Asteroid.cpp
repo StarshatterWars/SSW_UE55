@@ -25,13 +25,14 @@
 #include "Sim.h"
 
 #include "Solid.h"
+#include "SimModel.h"
 #include "DataLoader.h"
 #include "Game.h"
 
 // +--------------------------------------------------------------------+
 
 static FVector asteroid_velocity = FVector::ZeroVector;
-static Model* asteroid_model[32];
+static SimModel* asteroid_model[32];
 
 // +--------------------------------------------------------------------+
 
@@ -54,37 +55,37 @@ Asteroid::Initialize()
 
 	int n = 0;
 
-	Model* a = new Model;
+	SimModel* a = new SimModel;
 	if (a) {
 		a->Load("a1.mag", 100);
 		asteroid_model[n++] = a;
 	}
 
-	a = new Model;
+	a = new SimModel;
 	if (a) {
 		a->Load("a2.mag", 50);
 		asteroid_model[n++] = a;
 	}
 
-	a = new Model;
+	a = new SimModel;
 	if (a) {
 		a->Load("a1.mag", 8);
 		asteroid_model[n++] = a;
 	}
 
-	a = new Model;
+	a = new SimModel;
 	if (a) {
 		a->Load("a2.mag", 10);
 		asteroid_model[n++] = a;
 	}
 
-	a = new Model;
+	a = new SimModel;
 	if (a) {
 		a->Load("a3.mag", 30);
 		asteroid_model[n++] = a;
 	}
 
-	a = new Model;
+	a = new SimModel;
 	if (a) {
 		a->Load("a4.mag", 20);
 		asteroid_model[n++] = a;
@@ -96,7 +97,7 @@ Asteroid::Initialize()
 
 	ListIter<Text> iter = mod_asteroids;
 	while (++iter && n < 32) {
-		a = new Model;
+		a = new SimModel;
 		if (a) {
 			a->Load(*iter.value(), 50);
 			asteroid_model[n++] = a;

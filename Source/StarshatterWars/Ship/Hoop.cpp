@@ -25,6 +25,9 @@
 #include "Game.h"
 #include "DataLoader.h"
 #include "Window.h"
+#include "SimModel.h"
+#include "Surface.h"
+#include "Segment.h"
 
 static FColor ils_color;
 
@@ -74,7 +77,7 @@ Hoop::CreatePolys()
 	int w = width / 2;
 	int h = height / 2;
 
-	model = new Model;
+	model = new SimModel;
 	own_model = 1;
 
 	Surface* surface = new Surface;

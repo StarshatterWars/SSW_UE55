@@ -90,7 +90,7 @@ protected:
 	Rect              rect;
 	float* heights = nullptr;
 
-	Model* detail_levels[MAX_LOD] = { nullptr };
+	SimModel* detail_levels[MAX_LOD] = { nullptr };
 	List<Material>    materials;
 	Water* water = nullptr;
 

@@ -42,6 +42,7 @@
 
 #include "Game.h"
 #include "Solid.h"
+#include "SimModel.h"
 #include "Skin.h"
 #include "Sprite.h"
 #include "SimLight.h"
@@ -135,7 +136,7 @@ ShipSquadron::ShipSquadron()
 	avail = 4;
 }
 
-static void PrepareModel(Model& model)
+static void PrepareModel(SimModel& model)
 {
 	bool uses_bumps = false;
 
@@ -314,7 +315,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 		while (++ModelIter) {
 			const char* ModelName = ModelIter.value()->data();
 
-			Model* ModelInst = new Model;
+			SimModel* ModelInst = new SimModel;
 			if (!ModelInst->Load(ModelName, scale)) {
 				UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could not load detail %d, model '%s'"), LodIndex, ANSI_TO_TCHAR(ModelName));
 				delete ModelInst;
@@ -324,8 +325,8 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 			else {
 				lod_levels = LodIndex + 1;
 
-				if (ModelInst->Radius() > radius)
-					radius = (float)ModelInst->Radius();
+				if (ModelInst->GetRadius() > radius)
+					radius = (float)ModelInst->GetRadius();
 
 				models[LodIndex].append(ModelInst);
 				PrepareModel(*ModelInst);
@@ -360,7 +361,7 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	if (cockpit_name[0]) {
 		const char* CockpitModelName = cockpit_name;
 
-		cockpit_model = new Model;
+		cockpit_model = new SimModel;
 		if (!cockpit_model->Load(CockpitModelName, cockpit_scale)) {
 			UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could not load cockpit model '%s'"), ANSI_TO_TCHAR(CockpitModelName));
 			delete cockpit_model;
@@ -2593,7 +2594,7 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 
 	FVector start[LandingGear::MAX_GEAR];
 	FVector end[LandingGear::MAX_GEAR];
-	Model* model[LandingGear::MAX_GEAR];
+	SimModel* model[LandingGear::MAX_GEAR];
 
 	// Ensure arrays are in a known state:
 	for (int k = 0; k < LandingGear::MAX_GEAR; k++) {
@@ -2655,7 +2656,7 @@ ShipDesign::ParseLandingGear(TermStruct* val)
 				}
 
 				if (ngear < LandingGear::MAX_GEAR) {
-					Model* m = new Model;
+					SimModel* m = new SimModel;
 
 					if (!m->Load(mod_name, scale)) {
 						UE_LOG(LogShipDesign, Warning,
@@ -3407,7 +3408,7 @@ ShipDesign::ParseShield(TermStruct* val)
 				shield->SetEMCONPower(3, emcon_3);
 
 			if (model_name.length()) {
-				shield_model = new  Model;
+				shield_model = new SimModel;
 				if (!shield_model->Load(model_name, scale)) {
 					UE_LOG(LogShipDesign, Error, TEXT("ERROR: Could notxload shield model '%s'"),
 						ANSI_TO_TCHAR(model_name.data()));
@@ -3508,7 +3509,7 @@ ShipDesign::ParseDeathSpiral(TermStruct* val)
 					Text model_name;
 					GetDefText(model_name, def, filename);
 
-					Model* model = new Model;
+					SimModel* model = new SimModel;
 					if (!model->Load(model_name, scale)) {
 						UE_LOG(LogShipDesign, Warning, TEXT("Could notxload debris model '%s'"),
 							ANSI_TO_TCHAR(model_name.data()));
@@ -3620,7 +3621,7 @@ ShipDesign::ParseDebris(TermStruct* val, int index)
 			if (defname == "model") {
 				GetDefText(model_name, def, filename);
 
-				Model* model = new Model;
+				SimModel* model = new SimModel;
 				if (!model->Load(model_name, scale)) {
 					UE_LOG(LogShipDesign, Warning, TEXT("Could notxload debris model '%s'"),
 						ANSI_TO_TCHAR(model_name));

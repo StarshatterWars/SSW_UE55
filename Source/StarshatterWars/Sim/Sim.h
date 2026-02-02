@@ -70,7 +70,7 @@ class FlightDeck;
 class Terrain;
 class TerrainPatch;
 
-class Model;
+class SimModel;
 
 // +--------------------------------------------------------------------+
 
@@ -135,7 +135,7 @@ public:
         SimSystem* sys = nullptr
     );
 
-    Debris* CreateDebris(const FVector& pos, const FVector& vel, Model* model, double mass, SimRegion* rgn = nullptr);
+    Debris* CreateDebris(const FVector& pos, const FVector& vel, SimModel* model, double mass, SimRegion* rgn = nullptr);
     Asteroid* CreateAsteroid(const FVector& pos, int type, double mass, SimRegion* rgn = nullptr);
 
     void CreateSplashDamage(Ship* ship);

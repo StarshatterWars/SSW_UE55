@@ -70,6 +70,7 @@
 #include "MouseController.h"
 #include "PlayerCharacter.h"
 #include "Random.h"
+#include "SimModel.h"
 #include "Video.h"
 #include "Graphic.h"
 #include "GameStructs.h"
@@ -365,7 +366,7 @@ Sim::LoadMission(Mission* m, bool preload_textures)
 
 		if (preload_textures) {
 			Video* video = Game::GetVideo();
-			List<Model>    all_models;
+			List<SimModel>    all_models;
 			// Textures are Unreal assets now (e.g., UTexture2D*), so legacy Bitmap preload is disabled.
 
 			ListIter<MissionElement> elem_iter = mission->GetElements();
@@ -375,11 +376,11 @@ Sim::LoadMission(Mission* m, bool preload_textures)
 
 				if (design) {
 					for (int i = 0; i < 4; i++) {
-						List<Model>& models = (List<Model>&) design->models[i]; // cast-away const
+						List<SimModel>& models = (List<SimModel>&) design->models[i]; // cast-away const
 
-						ListIter<Model> model_iter = models;
+						ListIter<SimModel> model_iter = models;
 						while (++model_iter) {
-							Model* model = model_iter.value();
+							SimModel* model = model_iter.value();
 							if (!all_models.contains(model)) {
 								all_models.append(model);
 
@@ -1177,7 +1178,7 @@ Sim::CreateExplosion(const FVector& pos, const FVector& vel, int type, float exp
 // +--------------------------------------------------------------------+
 
 Debris*
-Sim::CreateDebris(const FVector& pos, const FVector& vel, Model* model, double mass, SimRegion* rgn)
+Sim::CreateDebris(const FVector& pos, const FVector& vel, SimModel* model, double mass, SimRegion* rgn)
 {
 	Debris* debris = new Debris(model, pos, vel, mass);
 

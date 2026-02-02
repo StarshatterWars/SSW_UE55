@@ -17,6 +17,7 @@
 #pragma once
 
 #include "Types.h"
+#include "SimModel.h"
 #include "Solid.h"
 
 
@@ -26,6 +27,7 @@
 
 // Forward declarations to keep the header light:
 class UTexture2D;
+class SimModel;
 struct Material;
 
 class Hoop : public Solid

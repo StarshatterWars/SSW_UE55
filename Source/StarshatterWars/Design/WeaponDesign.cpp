@@ -26,6 +26,7 @@
 #include "SimLight.h"
 // Bitmap removed: render assets are Unreal UTexture2D*
 #include "Solid.h"
+#include "SimModel.h"
 #include "Sound.h"
 #include "DataLoader.h"
 
@@ -521,7 +522,7 @@ WeaponDesign::LoadDesign(const char* path, const char* filename, bool mod)
 							if (p.length() && p.data())
 								loader->SetDataPath(p.data());
 
-							design->turret_model = new Model;
+							design->turret_model = new SimModel;
 							design->turret_model->Load(t, design->scale);
 
 							if (design->turret_base.length()) {
@@ -543,7 +544,7 @@ WeaponDesign::LoadDesign(const char* path, const char* filename, bool mod)
 								if (p.length() && p.data())
 									loader->SetDataPath(p.data());
 
-								design->turret_base_model = new Model;
+								design->turret_base_model = new SimModel;
 								design->turret_base_model->Load(t, design->scale);
 							}
 
@@ -570,7 +571,7 @@ WeaponDesign::LoadDesign(const char* path, const char* filename, bool mod)
 							if (p.length() && p.data())
 								loader->SetDataPath(p.data());
 
-							design->shot_model = new Model;
+							design->shot_model = new SimModel;
 							design->shot_model->Load(t, design->scale);
 
 							// Return to the original weapon data path after loading the model:

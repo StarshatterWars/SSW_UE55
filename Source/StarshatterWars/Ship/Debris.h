@@ -24,7 +24,7 @@
 // +--------------------------------------------------------------------+
 
 class Solid;
-class Model;
+class SimModel;
 class SimShot;
 
 // +--------------------------------------------------------------------+
@@ -32,7 +32,7 @@ class SimShot;
 class Debris : public SimObject
 {
 public:
-	Debris(Model* model, const FVector& pos, const FVector& vel, double mass);
+	Debris(SimModel* model, const FVector& pos, const FVector& vel, double mass);
 
 	void              SetLife(int seconds) { life = seconds; }
 	virtual int       HitBy(SimShot* shot, FVector& impact);

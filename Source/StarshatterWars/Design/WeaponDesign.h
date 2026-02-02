@@ -28,7 +28,7 @@
 // +--------------------------------------------------------------------+
 
 class UTexture2D; // forward-declared Unreal render asset
-class Model;
+class SimModel;
 class Sound;
 
 // +--------------------------------------------------------------------+
@@ -182,9 +182,9 @@ public:
 	Bitmap* flash_img;
 	Bitmap* flare_img;
 
-	Model* shot_model;
-	Model* turret_model;
-	Model* turret_base_model;
+	SimModel* shot_model;
+	SimModel* turret_model;
+	SimModel* turret_base_model;
 	Sound* sound_resource;
 
 	int               trail_length;
