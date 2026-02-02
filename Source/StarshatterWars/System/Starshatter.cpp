@@ -2182,7 +2182,7 @@ Starshatter::SetupSplash()
 	gamewin->AddView(new ImageView(gamewin, &splash_image));
 
 	// Root attach
-	screen->AddView(gamewin);
+	screen->AddWindow(gamewin);
 }
 
 // +--------------------------------------------------------------------+
