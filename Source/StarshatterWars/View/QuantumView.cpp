@@ -24,6 +24,7 @@
 
 #include "QuantumDrive.h"
 #include "HUDView.h"
+#include "View.h"
 #include "Ship.h"
 #include "Sim.h"
 #include "SimRegion.h"
@@ -153,13 +154,13 @@ void QuantumView::Refresh()
     HudFont->SetColor(HudColor);
     HudFont->SetAlpha(1);
 
-    window->SetFont(HudFont);
+    SetFont(HudFont);
 
     // ----- Title -----
     {
         const FString TitleStr = QuantumMenu->GetTitle();
         FTCHARToUTF8 TitleUtf8(*TitleStr);
-        window->DrawText(TitleUtf8.Get(), -1, MenuRect, DT_CENTER);
+        DrawTextRect(TitleUtf8.Get(), -1, MenuRect, DT_LEFT);
     }
 
     // ----- Items -----
@@ -175,7 +176,7 @@ void QuantumView::Refresh()
 
         const FString ItemStr = Item->GetText();
         FTCHARToUTF8 ItemUtf8(*ItemStr);
-        window->DrawText(ItemUtf8.Get(), -1, MenuRect, DT_LEFT);
+        DrawTextRect(ItemUtf8.Get(), -1, MenuRect, DT_LEFT);
 
         MenuRect.y += 10;
     }

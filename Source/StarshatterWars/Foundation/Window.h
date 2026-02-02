@@ -98,7 +98,6 @@ public:
     SystemFont* GetFont()       const { return font; }
 
     void Print(int x1, int y1, const char* fmt, ...);
-    void DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags);
 
 protected:
     // translate screen coords into window relative coords

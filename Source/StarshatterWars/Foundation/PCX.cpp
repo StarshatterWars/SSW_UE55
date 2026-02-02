@@ -249,8 +249,9 @@ PcxImage::Load(const char* fname)
 
     // NOTE: avoid legacy/global identifier "filename"
     fopen_s(&f, fname, "rb");
-    if (!f)
+    if (!f) {
         return PCX_NOFILE;
+    }
 
     fread(&hdr, sizeof(PcxHeader), 1, f);
 

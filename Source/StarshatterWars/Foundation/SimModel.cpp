@@ -54,18 +54,6 @@ static inline FColor ColorBytes(uint8 r, uint8 g, uint8 b, uint8 a = 255)
     return FColor(r, g, b, a);
 }
 
-static int mcomp(const void* a, const void* b)
-{
-    Poly* pa = (Poly*)a;
-    Poly* pb = (Poly*)b;
-
-    if (pa->sortval == pb->sortval)
-        return 0;
-
-    // descending:
-    return (pa->sortval < pb->sortval) ? 1 : -1;
-}
-
 inline bool Collinear(const double* a, const double* b, const double* c)
 {
     const FVector ab((float)(b[0] - a[0]), (float)(b[1] - a[1]), (float)(b[2] - a[2]));
@@ -74,6 +62,18 @@ inline bool Collinear(const double* a, const double* b, const double* c)
     return cross.IsNearlyZero();
 }
 
+static int mcomp(const void* a, const void* b)
+{
+    Poly* pa = (Poly*)a;
+    Poly* pb = (Poly*)b;
+
+    if (pa->sortval == pb->sortval) {
+        return 0;
+    }
+
+    // descending:
+    return (pa->sortval < pb->sortval) ? 1 : -1;
+}
 struct HomogenousPlane
 {
     double distance;
