@@ -152,14 +152,14 @@ void UIButton::Draw()
 // Event handling (classic behavior)
 // +--------------------------------------------------------------------+
 
-int UIButton::OnMouseMove(int x, int y)
+bool UIButton::OnMouseMove(int32 x, int32 y)
 {
     if (captured) {
         // Optional: could update hover/pressed visuals while captured.
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 int UIButton::OnLButtonDown(int x, int y)

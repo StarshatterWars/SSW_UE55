@@ -1110,7 +1110,7 @@ void StarSystem::CreateBody(OrbitalBody& body)
 		sun_light->SetColor(sun_color);
 		sun_light->SetShadow(true);
 		sun_light->MoveTo(body.loc);
-		sun_light->SetType(SimLight::LIGHT_DIRECTIONAL);
+		sun_light->SetType(LIGHTTYPE::DIRECTIONAL);
 
 		sun_lights.append(sun_light);
 		body.light_rep = sun_light;
@@ -1120,7 +1120,7 @@ void StarSystem::CreateBody(OrbitalBody& body)
 			back_light->SetColor(body.back);
 			back_light->SetShadow(false);
 			back_light->MoveTo(body.loc * -1);
-			back_light->SetType(SimLight::LIGHT_DIRECTIONAL);
+			back_light->SetType(LIGHTTYPE::DIRECTIONAL);
 
 			back_lights.append(back_light);
 			body.back_light = back_light;

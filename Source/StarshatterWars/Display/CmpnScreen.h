@@ -102,7 +102,7 @@ public:
     void ShowCmpSceneDlg();
     void HideCmpSceneDlg();
     bool IsCmpSceneShown() const;
-    UCmpSceneDlg* GetCmpSceneDlg() const { return cmp_scene_dlg; }
+    UCampaignSceneDlg* GetCmpSceneDlg() const { return cmp_scene_dlg; }
 
     // Close highest-priority modal:
     bool CloseTopmost();
@@ -124,8 +124,8 @@ public:
 
     TSubclassOf<UCmpFileDlg>      CmpFileDlgClass;
     TSubclassOf<UCmdMsgDlg>       CmdMsgDlgClass;
-    TSubclassOf<UCmpCompleteDlg>  CmpCompleteDlgClass;
-    TSubclassOf<UCmpSceneDlg>     CmpSceneDlgClass;
+    TSubclassOf<UCmpCompleteDlg>    CmpCompleteDlgClass;
+    TSubclassOf<UCampaignSceneDlg>  CmpSceneDlgClass;
 
 private:
     // IMPORTANT: avoid Win32 macro collisions. Do NOT name anything CreateDialog.

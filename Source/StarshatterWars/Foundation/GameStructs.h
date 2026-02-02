@@ -643,6 +643,7 @@ enum class INSTRUCTION_ACTION : uint8
 UENUM()
 enum class INSTRUCTION_STATUS : uint8
 {
+	NONE			UMETA(DisplayName = "None"),
 	PENDING			UMETA(DisplayName = "Pending"),
 	ACTIVE			UMETA(DisplayName = "Active"),
 	SKIPPED			UMETA(DisplayName = "Skipped"),

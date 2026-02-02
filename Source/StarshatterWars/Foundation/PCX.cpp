@@ -236,15 +236,20 @@ PcxImage::~PcxImage()
 // +--------------------------------------------------------------------+
 
 int
-PcxImage::Load(char* filename)
+PcxImage::Load(const char* fname)
 {
     unsigned long i;
-    short mode = BYTEMODE, bytecount = 0;
-    unsigned char abyte = 0, * p = nullptr;
+    short mode = BYTEMODE;
+    short bytecount = 0;
+
+    unsigned char abyte = 0;
+    unsigned char* p = nullptr;
+
     FILE* f = nullptr;
 
-    fopen_s(&f, filename, "rb");
-    if (f == nullptr)
+    // NOTE: avoid legacy/global identifier "filename"
+    fopen_s(&f, fname, "rb");
+    if (!f)
         return PCX_NOFILE;
 
     fread(&hdr, sizeof(PcxHeader), 1, f);
@@ -265,13 +270,13 @@ PcxImage::Load(char* filename)
         fread(pal, 768, 1, f);
 
         // now go back and read the pixel data:
-        fseek(f, sizeof(PcxHeader), SEEK_SET);
+        fseek(f, (long)sizeof(PcxHeader), SEEK_SET);
 
         delete[] himap;  himap = nullptr;
         delete[] bitmap; bitmap = nullptr;
 
         himap = new unsigned long[imagebytes];
-        if (himap == nullptr) {
+        if (!himap) {
             fclose(f);
             return PCX_NOMEM;
         }
@@ -317,7 +322,7 @@ PcxImage::Load(char* filename)
         delete[] bitmap; bitmap = nullptr;
 
         himap = new unsigned long[imagebytes];
-        if (himap == nullptr) {
+        if (!himap) {
             fclose(f);
             return PCX_NOMEM;
         }
@@ -328,7 +333,9 @@ PcxImage::Load(char* filename)
         for (int row = 0; row < (int)height; row++) {
             // RED, GREEN, BLUE
             for (int plane = 2; plane >= 0; plane--) {
+                // p points into BGRA dword array as bytes:
                 p = ((unsigned char*)himap) + (int)width * row * 4 + plane;
+
                 for (int col = 0; col < (int)width; col++) {
                     if (mode == BYTEMODE) {
                         abyte = (unsigned char)fgetc(f);
@@ -358,15 +365,18 @@ PcxImage::Load(char* filename)
 // +--------------------------------------------------------------------+
 
 int
-PcxImage::LoadBuffer(unsigned char* buf, int len)
+PcxImage::Load(char* fname)
 {
     unsigned long i;
     short mode = BYTEMODE, bytecount = 0;
     unsigned char abyte = 0, * p = nullptr;
-    unsigned char* fp = nullptr;
+    FILE* f = nullptr;
 
-    if (buf == nullptr)
+    fopen_s(&f, fname, "rb");
+    if (f == nullptr)
         return PCX_NOFILE;
+
+    fread(&hdr, sizeof(PcxHeader), 1, f);
 
     fp = buf;
     memcpy(&hdr, buf, sizeof(PcxHeader));

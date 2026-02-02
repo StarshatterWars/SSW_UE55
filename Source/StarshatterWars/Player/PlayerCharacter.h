@@ -18,7 +18,12 @@
 #include "Types.h"
 #include "List.h"
 #include "Text.h"
+#include "DataLoader.h"
+#include "Encrypt.h"
+#include "ParseUtil.h"
 #include "GameStructs.h"
+#include <cstring>
+
 
 // +-------------------------------------------------------------------+
 
@@ -53,6 +58,7 @@ public:
     int            FlightTime()      const { return flight_time; }
     int            Missions()        const { return missions; }
     int            Kills()           const { return kills; }
+    int            Deaths()          const { return deaths; }
     int            Losses()          const { return losses; }
     int            Campaigns()       const { return campaigns; }
     int            Trained()         const { return trained; }
@@ -70,7 +76,7 @@ public:
     bool           ShowAward()       const { return award != 0; }
     Text           AwardName()       const;
     Text           AwardDesc()       const;
-    Bitmap*    AwardImage()      const;
+    Bitmap*        AwardImage()      const;
     Sound*         AwardSound()      const;
 
     bool           CanCommand(int ship_class);
@@ -89,6 +95,7 @@ public:
     void           SetFlightTime(int t);
     void           SetMissions(int m);
     void           SetKills(int k);
+    void           SetDeaths(int d);
     void           SetLosses(int l);
 
     void           AddFlightTime(int t);
@@ -96,6 +103,7 @@ public:
     void           AddMedal(int m);
     void           AddMissions(int m);
     void           AddKills(int k);
+    void           AddDeaths(int d);
     void           AddLosses(int l);
 
     bool           HasTrained(int n)            const;
@@ -139,10 +147,14 @@ public:
     static PlayerCharacter* Find(const char* name);
     static void                   Initialize();
     static void                   Close();
+    bool                          ConfigExists() const;
     static void                   Load();
     static void                   Save();
-    static bool                   ConfigExists();
     static void                   LoadAwardTables();
+
+    static PlayerCharacter* CreateDefault();
+    static void AddToRoster(PlayerCharacter* P);
+    static void RemoveFromRoster(PlayerCharacter* P);
 
 protected:
     PlayerCharacter();
@@ -165,6 +177,7 @@ protected:
     int            flight_time;
     int            missions;
     int            kills;
+    int            deaths;
     int            losses;
     int            campaigns;     // bitmap of completed campaigns
     int            trained;       // id of highest training mission completed
@@ -183,3 +196,93 @@ protected:
     // transient:
     AwardInfo* award;
 };
+
+// ------------------------------------------------------------
+// Inline DEF helpers (Starshatter-compatible, UE-safe)
+// ------------------------------------------------------------
+
+inline bool DefNameEquals(const TermDef* Def, const char* Key)
+{
+    if (!Def || !Def->name() || !Key)
+        return false;
+
+    // TermText::value() appears to be legacy Text (not std::string).
+    // Avoid operator== (may return int), compare raw C-strings:
+    const Text NameText = Def->name()->value();
+    const char* Name = NameText.data();
+
+    return Name && (::strcmp(Name, Key) == 0);
+}
+
+inline void DefReadBool(bool& Out, TermDef* Def, const char* Filename)
+{
+    // Legacy helpers typically return int; we don't use the return value as bool.
+    GetDefBool(Out, Def, Filename);
+
+    // Normalize to strict bool (optional but safe):
+    Out = Out ? true : false;
+}
+
+inline void DefReadInt(int& Out, TermDef* Def, const char* Filename)
+{
+    GetDefNumber(Out, Def, Filename);
+}
+
+inline void DefReadText(Text& Out, TermDef* Def, const char* Filename)
+{
+    GetDefText(Out, Def, Filename);
+}
+
+// Enum helper: read numeric value, cast to enum
+template<typename TEnum>
+inline void DefReadEnum(TEnum& Out, TermDef* Def, const char* Filename)
+{
+    int Temp = static_cast<int>(Out);
+    GetDefNumber(Temp, Def, Filename);
+    Out = static_cast<TEnum>(Temp);
+}
+
+// ------------------------------------------------------------
+// Inline Text helpers (avoid C4800 int->bool)
+// ------------------------------------------------------------
+
+inline bool TextStartsWith(const Text& S, const char* Prefix)
+{
+    const char* Str = S.data();
+    if (!Str || !Prefix)
+        return false;
+
+    const size_t N = ::strlen(Prefix);
+    return ::strncmp(Str, Prefix, N) == 0;
+}
+
+inline bool TextContains(const Text& S, const char* Needle)
+{
+    const char* Str = S.data();
+    if (!Str || !Needle)
+        return false;
+
+    // strstr returns pointer or null; convert explicitly to bool:
+    return (::strstr(Str, Needle) != nullptr);
+}
+
+// Optional: parse "chat_0".."chat_9" key
+inline bool TryParseChatIndex(const Text& Key, int& OutIndex)
+{
+    OutIndex = -1;
+
+    const char* Str = Key.data();
+    if (!Str)
+        return false;
+
+    // Expect "chat_X"
+    if (::strncmp(Str, "chat_", 5) != 0)
+        return false;
+
+    const char c = Str[5];
+    if (c < '0' || c > '9')
+        return false;
+
+    OutIndex = (c - '0');
+    return true;
+}

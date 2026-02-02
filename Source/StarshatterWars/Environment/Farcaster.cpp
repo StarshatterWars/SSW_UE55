@@ -37,7 +37,7 @@
 // +======================================================================+
 
 Farcaster::Farcaster(double cap, double rate)
-	: SimSystem(FARCASTER, 0, "Farcaster", 1, (float)cap, (float)cap, (float)rate),
+	: SimSystem(SYSTEM_CATEGORY::FARCASTER, 0, "Farcaster", 1, (float)cap, (float)cap, (float)rate),
 	ship(0),
 	dest(0),
 	jumpship(0),
@@ -46,8 +46,8 @@ Farcaster::Farcaster(double cap, double rate)
 	warp_fov(1),
 	no_dest(false)
 {
-	name = Game::GetText("sys.farcaster");
-	abrv = Game::GetText("sys.farcaster.abrv");
+	name = "Farcaster";
+	abrv = "Farcaster";
 }
 
 // +----------------------------------------------------------------------+

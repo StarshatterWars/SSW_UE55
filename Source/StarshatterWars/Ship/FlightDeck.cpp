@@ -881,19 +881,21 @@ bool FlightDeck::Spot(Ship* s, int& outIndex)
 	if (!s)
 		return false;
 
-	// Convert ship class/type to a bitmask that matches slots[i].filter:
-	const uint32 ShipMask = (uint32)s->ClassMask();   // <-- implement or rename to your actual mask getter
+	// Build ship compatibility mask from classification
+	// (Starshatter-style: one bit per ship class)
+	const uint32 ShipMask = 1u << static_cast<uint32>(s->Class());
 
-	// Find first available compatible slot if caller didn't specify one:
+	// If caller did not specify a slot, find first compatible free slot
 	if (outIndex < 0)
 	{
 		outIndex = -1;
 
-		for (int i = 0; i < num_slots; i++)
+		for (int i = 0; i < num_slots; ++i)
 		{
-			const uint32 SlotMask = (uint32)slots[i].filter;
+			const uint32 SlotMask = static_cast<uint32>(slots[i].filter);
 
-			if (slots[i].ship == nullptr && ((SlotMask & ShipMask) != 0))
+			if (slots[i].ship == nullptr &&
+				(SlotMask & ShipMask) != 0)
 			{
 				outIndex = i;
 				break;
@@ -901,14 +903,15 @@ bool FlightDeck::Spot(Ship* s, int& outIndex)
 		}
 	}
 
-	// Validate slot:
+	// Validate slot index
 	if (outIndex < 0 || outIndex >= num_slots)
 		return false;
 
+	// Slot must be empty
 	if (slots[outIndex].ship != nullptr)
 		return false;
 
-	// Assign:
+	// Assign ship to slot
 	slots[outIndex].state = READY;
 	slots[outIndex].ship = s;
 	slots[outIndex].clearance = 0.0f;
@@ -916,13 +919,13 @@ bool FlightDeck::Spot(Ship* s, int& outIndex)
 	if (LandingGear* Gear = s->GetGear())
 		slots[outIndex].clearance = Gear->GetClearance();
 
-	// Recovery deck: if ship is already landed, bleed velocity hard:
+	// Recovery deck: bleed off velocity if already landed
 	if (IsRecoveryDeck() && !s->IsAirborne())
 	{
 		s->SetVelocity(s->Velocity() * 0.01);
 	}
 
-	// Non-recovery deck:
+	// Non-recovery deck positioning
 	if (!IsRecoveryDeck())
 	{
 		Camera WorkCam;
@@ -944,6 +947,7 @@ bool FlightDeck::Spot(Ship* s, int& outIndex)
 		s->SetFlightPhase(Ship::ALERT);
 	}
 
+	// Finalize carrier ownership and observation
 	s->SetCarrier(carrier, this);
 	Observe(s);
 

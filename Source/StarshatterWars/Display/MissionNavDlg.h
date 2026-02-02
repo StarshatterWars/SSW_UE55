@@ -35,7 +35,7 @@ class STARSHATTERWARS_API UMissionNavDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UMissionNavDlg();
+    UMissionNavDlg(const FObjectInitializer& ObjectInitializer);
 
     void InitializeDlg(UMissionPlanner* InManager);
     void SetMissionContext(Campaign* InCampaign, Mission* InMission, MissionInfo* InInfo);

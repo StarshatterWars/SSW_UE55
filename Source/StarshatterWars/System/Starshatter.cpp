@@ -17,6 +17,7 @@
 #include "LoadScreen.h"
 #include "MissionPlanner.h"
 #include "CmpnScreen.h"
+#include "CmpLoadDlg.h"
 
 #include "AudioConfig.h"
 #include "MusicManager.h"
@@ -62,6 +63,7 @@
 
 #include "View.h"
 #include "GameScreen.h"
+
 #include "QuantumView.h"
 #include "QuitView.h"
 #include "RadioView.h"
@@ -70,7 +72,7 @@
 
 #include "LoadDlg.h"
 #include "TacRefDlg.h"
-#include "CmpLoadDlg.h"
+
 #include "Terrain.h"
 
 #include "ParseUtil.h"
@@ -888,7 +890,7 @@ Starshatter::GameState()
 			menuscreen->Show();
 
 			if (campaign_select)
-				menuscreen->ShowCmpSelectDlg();
+				menuscreen->ShowCampaignSelectDlg();
 		}
 
 		if (MusicManager::GetInstance() &&
@@ -1107,7 +1109,7 @@ Starshatter::DoPlanScreenFrame()
 		exit_latch = false;
 	}
 
-	planscreen->ExecFrame();
+	planscreen->ExecFrame(0);
 	show_missions = true;
 }
 
@@ -1399,7 +1401,7 @@ Starshatter::DoGameScreenFrame()
 		}
 
 		gamescreen->FrameRate(frame_rate);
-		gamescreen->ExecFrame();
+		gamescreen->ExecFrame(0);
 
 		if (KeyDown(KEY_EXIT)) {
 			gamescreen->SetFieldOfView(field_of_view);
@@ -1478,16 +1480,18 @@ Starshatter::DoGameScreenFrame()
 	}
 
 	gamescreen->FrameRate(frame_rate);
-	gamescreen->ExecFrame();
+	gamescreen->ExecFrame(0);
 
 	if (Game::GameTime() - time_mark > 60000) {
 		time_mark = Game::GameTime();
 		minutes++;
 
-		if (minutes > 60)
+		if (minutes > 60) {
 			UE_LOG(LogStarshatterWars, Log, TEXT("TIME %2d:%02d:00"), minutes / 60, minutes % 60);
-		else
+		}
+		else {
 			UE_LOG(LogStarshatterWars, Log, TEXT("TIME %2d:00"), minutes);
+		}
 	}
 }
 
@@ -2153,14 +2157,14 @@ Starshatter::SetupSplash()
 	switch (splash_index) {
 	case 0:
 		loader->SetDataPath(0);
-		loader->LoadBitmap("matrix.pcx", splash_image);
+		loader->LoadGameBitmap("matrix.pcx", splash_image);
 		break;
 
 	case 1:
 	default:
 		splash_image.ClearImage();
 		loader->SetDataPath(0);
-		loader->LoadBitmap("studio.pcx", splash_image);
+		loader->LoadGameBitmap("studio.pcx", splash_image);
 		break;
 	}
 
@@ -2186,13 +2190,15 @@ Starshatter::SetupSplash()
 void
 Starshatter::SetupMenuScreen()
 {
-	if (menuscreen) {
+	/*if (menuscreen) {
 		delete menuscreen;
 		menuscreen = 0;
 	}
 
 	menuscreen = new  MenuScreen();
-	menuscreen->Setup(screen);
+	menuscreen->Setup(screen); 
+
+	Replace with UE Code */
 }
 
 // +--------------------------------------------------------------------+
@@ -2200,13 +2206,15 @@ Starshatter::SetupMenuScreen()
 void
 Starshatter::SetupCmpnScreen()
 {
-	if (cmpnscreen) {
+	/*if (cmpnscreen) {
 		delete cmpnscreen;
 		cmpnscreen = 0;
 	}
 
-	cmpnscreen = new  CmpnScreen();
+	cmpnscreen = new  CampainScreen();
 	cmpnscreen->Setup(screen);
+	
+	Replace with UE Code */
 }
 
 // +--------------------------------------------------------------------+
@@ -2214,13 +2222,15 @@ Starshatter::SetupCmpnScreen()
 void
 Starshatter::SetupPlanScreen()
 {
-	if (planscreen) {
+	/*if (planscreen) {
 		delete planscreen;
 		planscreen = 0;
 	}
 
 	planscreen = new  PlanScreen();
 	planscreen->Setup(screen);
+
+	Replace with UE Code */
 }
 
 // +--------------------------------------------------------------------+
@@ -2228,13 +2238,15 @@ Starshatter::SetupPlanScreen()
 void
 Starshatter::SetupLoadScreen()
 {
-	if (loadscreen) {
+	/*if (loadscreen) {
 		delete loadscreen;
 		loadscreen = 0;
 	}
 
 	loadscreen = new  LoadScreen();
 	loadscreen->Setup(screen);
+	
+	Replace with UE Code */
 }
 
 // +--------------------------------------------------------------------+
@@ -2242,17 +2254,18 @@ Starshatter::SetupLoadScreen()
 void
 Starshatter::SetupGameScreen()
 {
-	if (gamescreen) {
+	/*if (gamescreen) {
 		delete gamescreen;
 		gamescreen = 0;
 	}
 
-	gamescreen = new  GameScreen();
+	gamescreen = new UGameScreen();
 	gamescreen->Setup(screen);
 	gamescreen->SetFieldOfView(field_of_view);
 
 	// initialize player_ship's MFD choices:
 	PlayerCharacter::SelectPlayer(PlayerCharacter::GetCurrentPlayer());
+	*/
 }
 
 // +--------------------------------------------------------------------+
@@ -2605,7 +2618,7 @@ Starshatter::BeginCutscene()
 	if (cutscene == 0) {
 		HUDView* hud_view = HUDView::GetInstance();
 		if (hud_view)
-			hud_view->SetHUDMode((int)EHUDMode::Off);
+			hud_view->SetHUDMode(EHUDMode::Off);
 
 		if (sim->GetPlayerShip())
 			sim->GetPlayerShip()->SetControls(0);

@@ -35,6 +35,8 @@ FString FormatDayFromString(FString txt);
 void FormatPoint(char* txt, const Point& p);
 Text FormatTimeString(int utc = 0);
 
+static const char* FormatTimeString(double seconds);
+
 const char* SafeString(const char* s);
 const char* SafeQuotes(const char* s);
 

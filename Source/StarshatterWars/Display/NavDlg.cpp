@@ -38,11 +38,13 @@
 #include "Sim.h"
 #include "Galaxy.h"
 #include "StarSystem.h"
+#include "OrbitalBody.h"
+#include "Orbital.h"
 #include "Instruction.h"
 #include "NavSystem.h"
 #include "FormatUtil.h"
 #include "Campaign.h"
-#include "Contact.h"
+#include "SimContact.h"
 #include "Mission.h"
 
 #include "Game.h"
@@ -125,7 +127,7 @@ UNavDlg::RegisterControls()
     if (map_win) {
         // MapView is a ported Starshatter class (non-UObject).
         // In the classic code it is created with allocation tags; those are removed.
-        star_map = new MapView(nullptr);
+        star_map = new MapView(nullptr, nullptr);
 
         // If your MapView can accept a UE widget/panel, update MapView to take a UCanvasPanel*
         // or a lightweight shim. For now, we keep construction minimal and rely on MapView
@@ -244,7 +246,7 @@ UNavDlg::SetShip(Ship* s)
     ship = s;
 
     if (ship)
-        SetSystem(ship->GetRegion()->System());
+        SetSystem(ship->GetRegion()->GetSystem());
 
     if (star_map) {
         Sim* sim = Sim::GetSim();
@@ -349,21 +351,13 @@ UNavDlg::SetEditorMode(bool e)
 
 // +--------------------------------------------------------------------+
 
-void
-UNavDlg::ExecFrame()
+void UNavDlg::ExecFrame()
 {
     Sim* sim = Sim::GetSim();
 
-    // NOTE:
-    // The classic code updated ActiveWindow text controls.
-    // In UE, you will set UTextBlock text. Here, we preserve the logic, but
-    // your UMG binding names differ and you may split the labels/data into
-    // UTextBlock widgets rather than CanvasPanels. If you retain CanvasPanels,
-    // you'll need child TextBlocks to set.
-
-    if (ship && star_system && sim) {
+    if (ship && star_system && sim)
+    {
         // Build numeric strings:
-        char loc_buf[512];
         char x[16];
         char y[16];
         char z[16];
@@ -371,65 +365,55 @@ UNavDlg::ExecFrame()
 
         // Classic coordinate swap:
         // x = -loc.x, y = loc.z, z = loc.y
-        const FVector Loc = ship->Location(); // Ported type assumed to be FVector
+        const FVector Loc = ship->Location();
         FormatNumber(x, -Loc.X);
         FormatNumber(y, Loc.Z);
         FormatNumber(z, Loc.Y);
 
         // Commit button behavior (UMG visuals handled elsewhere):
-        if (ship && commit_btn) {
+        if (commit_btn)
+        {
             NavSystem* navsys = ship->GetNavSystem();
 
-            if (ship->GetNextNavPoint() == 0 || !navsys) {
+            if (ship->GetNextNavPoint() == nullptr || !navsys)
+            {
                 // Disable commit
-                // (Text/Color set requires a UTextBlock and style; left to your UMG implementation)
             }
-            else if (navsys) {
-                if (navsys->AutoNavEngaged()) {
+            else
+            {
+                if (navsys->AutoNavEngaged())
+                {
                     // cancel state
                 }
-                else {
+                else
+                {
                     // commit state
                 }
             }
         }
 
         // Destination block (ported):
-        if (ship) {
-            Instruction* navpt = ship->GetNextNavPoint();
+        Instruction* navpt = ship->GetNextNavPoint();
+        if (navpt && navpt->Region())
+        {
+            const FVector NavLoc = navpt->Location();
+            FormatNumber(x, NavLoc.X);
+            FormatNumber(y, NavLoc.Y);
+            FormatNumber(z, NavLoc.Z);
 
-            if (navpt && navpt->Region()) {
-                const FVector NavLoc = navpt->Location(); // assumed FVector
-                FormatNumber(x, NavLoc.X);
-                FormatNumber(y, NavLoc.Y);
-                FormatNumber(z, NavLoc.Z);
+            FVector Npt = navpt->Region()->GetLocation() + NavLoc;
 
-                double distance = 0.0;
+            if (sim->GetActiveRegion())
+                Npt -= sim->GetActiveRegion()->GetLocation();
 
-                // Classic:
-                // Point npt = navpt->Region()->Location() + navpt->Location();
-                // if (sim->GetActiveRegion()) npt -= sim->GetActiveRegion()->Location();
-                // npt = npt.OtherHand();
-                // distance = Point(npt - ship->Location()).length();
-                //
-                // Port note: OtherHand() implies handedness swap; you may handle that in your
-                // math shim. Here we preserve by calling the existing legacy helpers if present.
+            // If you have a handedness helper, apply it here:
+            // Npt = OtherHand(Npt);
 
-                FVector Npt = navpt->Region()->Location() + NavLoc;
+            const double distance = FVector::Dist(Npt, ship->Location());
+            FormatNumber(d, distance);
 
-                if (sim->GetActiveRegion())
-                    Npt -= sim->GetActiveRegion()->Location();
-
-                // If you have an "OtherHand" helper in GameStructs.h, apply it here.
-                // Otherwise, remove/replace with your coordinate space convention.
-                // Npt = OtherHand(Npt);
-
-                distance = FVector::Dist(Npt, ship->Location());
-                FormatNumber(d, distance);
-
-                UE_LOG(LogTemp, Verbose, TEXT("NavDlg DST: %s %s %s dist=%s"),
-                    UTF8_TO_TCHAR(x), UTF8_TO_TCHAR(y), UTF8_TO_TCHAR(z), UTF8_TO_TCHAR(d));
-            }
+            UE_LOG(LogTemp, Verbose, TEXT("NavDlg DST: %s %s %s dist=%s"),
+                UTF8_TO_TCHAR(x), UTF8_TO_TCHAR(y), UTF8_TO_TCHAR(z), UTF8_TO_TCHAR(d));
         }
     }
 
@@ -437,20 +421,26 @@ UNavDlg::ExecFrame()
     UpdateLists();
 
     // Zoom controls:
-    if (star_map) {
-        if (Keyboard::KeyDown(VK_ADD) || (zoom_in_btn /* && pressed state via UMG */)) {
+    if (star_map)
+    {
+        if (Keyboard::KeyDown(VK_ADD) || (zoom_in_btn /* && pressed state via UMG */))
+        {
             star_map->ZoomIn();
         }
-        else if (Keyboard::KeyDown(VK_SUBTRACT) || (zoom_out_btn /* && pressed state via UMG */)) {
+        else if (Keyboard::KeyDown(VK_SUBTRACT) || (zoom_out_btn /* && pressed state via UMG */))
+        {
             star_map->ZoomOut();
         }
-        else if (star_map->TargetRect().Contains(Mouse::X(), Mouse::Y())) {
-            if (Mouse::Wheel() > 0) {
+        else if (star_map->TargetRect().Contains(Mouse::X(), Mouse::Y()))
+        {
+            if (Mouse::Wheel() > 0)
+            {
                 star_map->ZoomIn();
                 star_map->ZoomIn();
                 star_map->ZoomIn();
             }
-            else if (Mouse::Wheel() < 0) {
+            else if (Mouse::Wheel() < 0)
+            {
                 star_map->ZoomOut();
                 star_map->ZoomOut();
                 star_map->ZoomOut();
@@ -780,17 +770,4 @@ UNavDlg::SetNavEditMode(int mode)
 
         nav_edit_mode = mode;
     }
-}
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
-
-
-#include "NavDlg.h"
-
-
-NavDlg::NavDlg()
-{
-}
-
-NavDlg::~NavDlg()
-{
 }

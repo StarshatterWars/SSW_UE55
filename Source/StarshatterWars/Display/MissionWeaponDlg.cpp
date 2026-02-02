@@ -20,7 +20,7 @@
 // --- Sim includes (your ported equivalents) ---
 #include "Campaign.h"
 #include "Mission.h"
-#include "MissionElement.h"
+#include "MissionElementDlg.h"
 #include "ShipDesign.h"
 #include "WeaponDesign.h"
 #include "HardPoint.h"

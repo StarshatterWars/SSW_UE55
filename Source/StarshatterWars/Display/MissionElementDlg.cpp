@@ -3,43 +3,58 @@
     Copyright (c) 2025-2026
 
     SUBSYSTEM:    Stars.exe (Unreal Port)
-    FILE:         MissionElementDlg.h
+    FILE:         MissionElementDlg.cpp
     AUTHOR:       Carlos Bott
 
-    OVERVIEW
-    ========
-    UMissionElementDlg
-    - Unreal UUserWidget replacement for legacy MsnElemDlg.
-    - Uses standard UMG widget bindings (BindWidgetOptional).
-    - Bindings correspond to MsnElemDlg.frm control IDs.
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
 */
-
 
 #include "MissionElementDlg.h"
 
+// UMG
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 
-#include "Game.h"
+// Starshatter
 #include "Mission.h"
+#include "MissionEvent.h"
 #include "Instruction.h"
 #include "Ship.h"
 #include "ShipDesign.h"
 #include "StarSystem.h"
 #include "Skin.h"
 #include "Intel.h"
-#include "GameScreen.h"
 
-// If your legacy types are still non-UObject, include their headers as needed.
-// This file assumes your port still exposes Mission/MissionElement/ShipDesign, etc.
+// NOTE:
+// - Removed Game::GetText usage per project rules.
+// - Removed (__FILE__, __LINE__) allocations per project rules.
+
+static const TCHAR* MsnDefaultSkinLabel()
+{
+    return TEXT("DEFAULT");
+}
 
 UMissionElementDlg::UMissionElementDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    // DO NOT access widgets here
-    // DO NOT bind controls here
-    // Constructor is for defaults only
+    // Do not touch widgets or bind events here.
+}
+
+FString UMissionElementDlg::GetLegacyFormText() const
+{
+    return LegacyFormText;
+}
+
+void UMissionElementDlg::BindFormWidgets()
+{
+    // If you are parsing a legacy .frm, bind IDs here.
+    // Leave empty if you are binding via UMG only.
+    // Example:
+    // BindButton(1, AcceptButton);
+    // BindButton(2, CancelBtn);
 }
 
 void UMissionElementDlg::InitializeDlg(UMenuScreen* InManager)
@@ -61,45 +76,43 @@ void UMissionElementDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Buttons
+    // BaseScreen Enter/Escape
+    ApplyButton = AcceptButton;
+    CancelButton = CancelBtn;
+
     if (AcceptButton)
     {
-        AcceptButton->OnClicked.Clear();
+        AcceptButton->OnClicked.RemoveAll(this);
         AcceptButton->OnClicked.AddDynamic(this, &UMissionElementDlg::OnAcceptClicked);
     }
 
-    if (CancelButton)
+    if (CancelBtn)
     {
-        CancelButton->OnClicked.Clear();
-        CancelButton->OnClicked.AddDynamic(this, &UMissionElementDlg::OnCancelClicked);
+        CancelBtn->OnClicked.RemoveAll(this);
+        CancelBtn->OnClicked.AddDynamic(this, &UMissionElementDlg::OnCancelClicked);
     }
 
-    // FORM used checkbox-style buttons; treat them as toggles in your UMG layout.
-    // If you use actual UCheckBox widgets instead, swap these members and handlers.
-
-    // Combos
     if (ClassCombo)
     {
-        ClassCombo->OnSelectionChanged.Clear();
+        ClassCombo->OnSelectionChanged.RemoveAll(this);
         ClassCombo->OnSelectionChanged.AddDynamic(this, &UMissionElementDlg::OnClassChanged);
     }
 
     if (DesignCombo)
     {
-        DesignCombo->OnSelectionChanged.Clear();
+        DesignCombo->OnSelectionChanged.RemoveAll(this);
         DesignCombo->OnSelectionChanged.AddDynamic(this, &UMissionElementDlg::OnDesignChanged);
     }
 
     if (ObjectiveCombo)
     {
-        ObjectiveCombo->OnSelectionChanged.Clear();
+        ObjectiveCombo->OnSelectionChanged.RemoveAll(this);
         ObjectiveCombo->OnSelectionChanged.AddDynamic(this, &UMissionElementDlg::OnObjectiveChanged);
     }
 
-    // IFF change in legacy was EID_KILL_FOCUS; closest in UMG is commit.
     if (IFFEdit)
     {
-        IFFEdit->OnTextCommitted.Clear();
+        IFFEdit->OnTextCommitted.RemoveAll(this);
         IFFEdit->OnTextCommitted.AddDynamic(this, &UMissionElementDlg::OnIFFCommitted);
     }
 }
@@ -120,48 +133,45 @@ void UMissionElementDlg::RebuildFromModel()
     {
         ClassCombo->ClearOptions();
 
-        // Mirrors original ordering:
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::DRONE));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::FIGHTER));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::ATTACK));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::DRONE)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::FIGHTER)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::ATTACK)));
 
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::LCA));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::COURIER));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::CARGO));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::CORVETTE));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::FREIGHTER));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::FRIGATE));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::DESTROYER));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::CRUISER));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::BATTLESHIP));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::CARRIER));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::SWACS));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::DREADNAUGHT));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::STATION));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::FARCASTER));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::LCA)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::COURIER)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::CARGO)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::CORVETTE)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::FREIGHTER)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::FRIGATE)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::DESTROYER)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::CRUISER)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::BATTLESHIP)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::CARRIER)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::SWACS)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::DREADNAUGHT)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::STATION)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::FARCASTER)));
 
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::MINE));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::COMSAT));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::DEFSAT));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::MINE)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::COMSAT)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::DEFSAT)));
 
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::BUILDING));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::FACTORY));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::SAM));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::EWR));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::C3I));
-        ClassCombo->AddOption(Ship::GetShipClassName(CLASSIFICATION::STARBASE));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::BUILDING)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::FACTORY)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::SAM)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::EWR)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::C3I)));
+        ClassCombo->AddOption(UTF8_TO_TCHAR(Ship::GetShipClassName(CLASSIFICATION::STARBASE)));
 
         const ShipDesign* CurrentDesign = ElemPtr->GetDesign();
 
-        // Select the matching class:
         if (CurrentDesign)
         {
             const int32 Count = ClassCombo->GetOptionCount();
             for (int32 i = 0; i < Count; ++i)
             {
                 const FString Opt = ClassCombo->GetOptionAtIndex(i);
-                const int32 ClassId = Ship::ClassForName(TCHAR_TO_UTF8(*Opt));
-
+                const int32 ClassId = Ship::ClassForName(TCHAR_TO_ANSI(*Opt));
                 if (ClassId == CurrentDesign->type)
                 {
                     ClassCombo->SetSelectedIndex(i);
@@ -175,7 +185,6 @@ void UMissionElementDlg::RebuildFromModel()
         }
     }
 
-    // ----- DESIGN/SKIN/LOADOUT -----
     RebuildDesignListFromClass();
     RebuildSkinAndLoadoutFromDesign();
 
@@ -184,9 +193,7 @@ void UMissionElementDlg::RebuildFromModel()
     {
         RoleCombo->ClearOptions();
         for (int i = Mission::PATROL; i <= Mission::OTHER; ++i)
-        {
             RoleCombo->AddOption(UTF8_TO_TCHAR(Mission::RoleName(i)));
-        }
 
         const int32 RoleIndex = FMath::Max(0, ElemPtr->MissionRole() - Mission::PATROL);
         RoleCombo->SetSelectedIndex(RoleIndex);
@@ -213,10 +220,10 @@ void UMissionElementDlg::RebuildFromModel()
                 while (++Iter)
                 {
                     OrbitalRegion* R = Iter.value();
-                    if (!R) continue;
+                    if (!R || !R->Name())
+                        continue;
 
-                    const FString Name = UTF8_TO_TCHAR(R->Name());
-                    RegionCombo->AddOption(Name);
+                    RegionCombo->AddOption(UTF8_TO_TCHAR(R->Name()));
 
                     if (ElemPtr->Region() && !FCStringAnsi::Strcmp(ElemPtr->Region(), R->Name()))
                         Selected = Index;
@@ -231,21 +238,20 @@ void UMissionElementDlg::RebuildFromModel()
     }
 
     // ----- TEXT FIELDS -----
-    if (NameEdit)      NameEdit->SetText(FText::FromString(UTF8_TO_TCHAR(ElemPtr->Name())));
-    if (SizeEdit)      SizeEdit->SetText(FText::AsNumber(ElemPtr->Count()));
-    if (IFFEdit)       IFFEdit->SetText(FText::AsNumber(ElemPtr->GetIFF()));
+    if (NameEdit) NameEdit->SetText(FText::FromString(UTF8_TO_TCHAR(ElemPtr->Name())));
+    if (SizeEdit) SizeEdit->SetText(FText::AsNumber(ElemPtr->Count()));
+    if (IFFEdit)  IFFEdit->SetText(FText::AsNumber(ElemPtr->GetIFF()));
 
-    if (LocXEdit)      LocXEdit->SetText(FText::AsNumber((int32)(ElemPtr->Location().X / 1000)));
-    if (LocYEdit)      LocYEdit->SetText(FText::AsNumber((int32)(ElemPtr->Location().Y / 1000)));
-    if (LocZEdit)      LocZEdit->SetText(FText::AsNumber((int32)(ElemPtr->Location().Z / 1000)));
+    if (LocXEdit) LocXEdit->SetText(FText::AsNumber((int32)(ElemPtr->Location().X / 1000)));
+    if (LocYEdit) LocYEdit->SetText(FText::AsNumber((int32)(ElemPtr->Location().Y / 1000)));
+    if (LocZEdit) LocZEdit->SetText(FText::AsNumber((int32)(ElemPtr->Location().Z / 1000)));
 
-    if (RespawnsEdit)  RespawnsEdit->SetText(FText::AsNumber(ElemPtr->RespawnCount()));
-    if (HoldTimeEdit)  HoldTimeEdit->SetText(FText::AsNumber(ElemPtr->HoldTime()));
+    if (RespawnsEdit) RespawnsEdit->SetText(FText::AsNumber(ElemPtr->RespawnCount()));
+    if (HoldTimeEdit) HoldTimeEdit->SetText(FText::AsNumber(ElemPtr->HoldTime()));
 
     // ----- HEADING -----
     if (HeadingCombo)
     {
-        // Ensure the expected options exist:
         if (HeadingCombo->GetOptionCount() == 0)
         {
             HeadingCombo->AddOption(TEXT("North"));
@@ -258,19 +264,13 @@ void UMissionElementDlg::RebuildFromModel()
         while (Heading > 2 * PI) Heading -= 2 * PI;
         while (Heading < 0)      Heading += 2 * PI;
 
-        int32 Sel = 0; // North
-        if (Heading >= PI / 4 && Heading < 3 * PI / 4)       Sel = 1; // East
-        else if (Heading >= 3 * PI / 4 && Heading < 5 * PI / 4) Sel = 2; // South
-        else if (Heading >= 5 * PI / 4 && Heading < 7 * PI / 4) Sel = 3; // West
+        int32 Sel = 0;
+        if (Heading >= PI / 4 && Heading < 3 * PI / 4)            Sel = 1;
+        else if (Heading >= 3 * PI / 4 && Heading < 5 * PI / 4)   Sel = 2;
+        else if (Heading >= 5 * PI / 4 && Heading < 7 * PI / 4)   Sel = 3;
 
         HeadingCombo->SetSelectedIndex(Sel);
     }
-
-    // ----- BUTTON STATES -----
-    // NOTE: In UMG, you should ideally use UCheckBox; here we keep UButton placeholders.
-    // If you have a custom toggle button class, wire it here.
-    // For now, leave visual state to BP, but persist values on Accept.
-    // (PlayerButton / etc)
 
     UpdateTeamInfo();
 
@@ -302,20 +302,19 @@ void UMissionElementDlg::RebuildFromModel()
         ObjectiveCombo->ClearOptions();
         ObjectiveCombo->AddOption(TEXT(""));
 
-        Instruction* Instr = nullptr;
-        if (ElemPtr->Objectives().size() > 0)
-            Instr = ElemPtr->Objectives().at(0);
-
-        int32 Sel = 0;
-        for (int i = 0; i < Instruction::NUM_ACTIONS; ++i)
+        // Your port does not expose Instruction::NUM_ACTIONS / Action() / VECTOR.
+        // Populate using ActionName(i) until it returns null/empty (with a hard safety cap).
+        const int32 MaxScan = 128;
+        for (int i = 0; i < MaxScan; ++i)
         {
-            ObjectiveCombo->AddOption(UTF8_TO_TCHAR(Instruction::ActionName(i)));
+            const char* ActionName = Instruction::ActionName(i);
+            if (!ActionName || !ActionName[0])
+                break;
 
-            if (Instr && Instr->Action() == i)
-                Sel = i + 1;
+            ObjectiveCombo->AddOption(UTF8_TO_TCHAR(ActionName));
         }
 
-        ObjectiveCombo->SetSelectedIndex(Sel);
+        ObjectiveCombo->SetSelectedIndex(0);
     }
 
     BuildObjectiveTargets();
@@ -329,7 +328,7 @@ void UMissionElementDlg::RebuildDesignListFromClass()
         return;
 
     const FString ClassName = ClassCombo->GetSelectedOption();
-    const int32 ClassId = Ship::ClassForName(TCHAR_TO_UTF8(*ClassName));
+    const int32 ClassId = Ship::ClassForName(TCHAR_TO_ANSI(*ClassName));
 
     DesignCombo->ClearOptions();
 
@@ -340,7 +339,7 @@ void UMissionElementDlg::RebuildDesignListFromClass()
     if (Designs.size() > 0)
     {
         const ShipDesign* CurrentDesign = ElemPtr->GetDesign();
-        bool bFound = false;
+        bool Found = false;
 
         for (int i = 0; i < Designs.size(); ++i)
         {
@@ -350,11 +349,11 @@ void UMissionElementDlg::RebuildDesignListFromClass()
             if (CurrentDesign && !_stricmp(Dsn, CurrentDesign->name))
             {
                 Sel = i;
-                bFound = true;
+                Found = true;
             }
         }
 
-        if (!bFound)
+        if (!Found)
             Sel = 0;
     }
     else
@@ -375,7 +374,7 @@ void UMissionElementDlg::RebuildSkinAndLoadoutFromDesign()
     ShipDesign* Design = nullptr;
 
     if (!DesignName.IsEmpty())
-        Design = ShipDesign::Get(TCHAR_TO_UTF8(*DesignName));
+        Design = ShipDesign::Get(TCHAR_TO_ANSI(*DesignName));
 
     // LOADOUT
     if (LoadoutCombo)
@@ -390,17 +389,14 @@ void UMissionElementDlg::RebuildSkinAndLoadoutFromDesign()
                 CurrentLoad = ElemPtr->Loadouts().at(0);
 
             const List<ShipLoad>& Loadouts = Design->loadouts;
-            if (Loadouts.size() > 0)
+            for (int i = 0; i < Loadouts.size(); ++i)
             {
-                for (int i = 0; i < Loadouts.size(); ++i)
+                const ShipLoad* L = Loadouts[i];
+                if (L && L->name[0])
                 {
-                    const ShipLoad* L = Loadouts[i];
-                    if (L && L->name[0])
-                    {
-                        LoadoutCombo->AddOption(UTF8_TO_TCHAR(L->name));
-                        if (CurrentLoad && CurrentLoad->GetName() == L->name)
-                            Sel = LoadoutCombo->GetOptionCount() - 1;
-                    }
+                    LoadoutCombo->AddOption(UTF8_TO_TCHAR(L->name));
+                    if (CurrentLoad && CurrentLoad->GetName() == L->name)
+                        Sel = LoadoutCombo->GetOptionCount() - 1;
                 }
             }
         }
@@ -418,7 +414,7 @@ void UMissionElementDlg::RebuildSkinAndLoadoutFromDesign()
 
         if (Design)
         {
-            SkinCombo->AddOption(UTF8_TO_TCHAR(Game::GetText("MsnDlg.default").data()));
+            SkinCombo->AddOption(MsnDefaultSkinLabel());
             SkinCombo->SetSelectedIndex(0);
 
             int32 Sel = 0;
@@ -448,10 +444,6 @@ void UMissionElementDlg::BuildObjectiveTargets()
     if (!ObjectiveCombo || !TargetCombo || !MissionPtr || !ElemPtr)
         return;
 
-    Instruction* Instr = nullptr;
-    if (ElemPtr->Objectives().size() > 0)
-        Instr = ElemPtr->Objectives().at(0);
-
     const int32 ObjIndex = ObjectiveCombo->GetSelectedIndex() - 1;
 
     TargetCombo->ClearOptions();
@@ -464,19 +456,18 @@ void UMissionElementDlg::BuildObjectiveTargets()
         if (!E || E == ElemPtr)
             continue;
 
-        bool bAdd = false;
-        if (ObjIndex < Instruction::PATROL)
-            bAdd = (E->GetIFF() == 0) || (E->GetIFF() == ElemPtr->GetIFF());
-        else
-            bAdd = (E->GetIFF() != ElemPtr->GetIFF());
+        bool Add = false;
 
-        if (!bAdd)
+        // Keep original intent. Adjust threshold if your INSTRUCTION_ACTION differs.
+        if (ObjIndex < (int)INSTRUCTION_ACTION::PATROL)
+            Add = (E->GetIFF() == 0) || (E->GetIFF() == ElemPtr->GetIFF());
+        else
+            Add = (E->GetIFF() != ElemPtr->GetIFF());
+
+        if (!Add)
             continue;
 
         TargetCombo->AddOption(UTF8_TO_TCHAR(E->Name()));
-
-        if (Instr && !_stricmp(Instr->TargetName(), E->Name()))
-            TargetCombo->SetSelectedIndex(TargetCombo->GetOptionCount() - 1);
     }
 }
 
@@ -485,7 +476,6 @@ void UMissionElementDlg::UpdateTeamInfo()
     if (!MissionPtr || !ElemPtr)
         return;
 
-    // Commander
     if (CommanderCombo)
     {
         CommanderCombo->ClearOptions();
@@ -507,7 +497,6 @@ void UMissionElementDlg::UpdateTeamInfo()
         }
     }
 
-    // Squadron
     if (SquadronCombo)
     {
         SquadronCombo->ClearOptions();
@@ -529,7 +518,6 @@ void UMissionElementDlg::UpdateTeamInfo()
         }
     }
 
-    // Carrier
     if (CarrierCombo)
     {
         CarrierCombo->ClearOptions();
@@ -576,33 +564,41 @@ bool UMissionElementDlg::CanCommand(const MissionElement* Commander, const Missi
     return false;
 }
 
-// -----------------------------
-// UI EVENTS
-// -----------------------------
-
 void UMissionElementDlg::OnClassChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+    (void)SelectedItem;
+    (void)SelectionType;
+
     RebuildDesignListFromClass();
     RebuildSkinAndLoadoutFromDesign();
 }
 
 void UMissionElementDlg::OnDesignChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+    (void)SelectedItem;
+    (void)SelectionType;
+
     RebuildSkinAndLoadoutFromDesign();
 }
 
 void UMissionElementDlg::OnObjectiveChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+    (void)SelectedItem;
+    (void)SelectionType;
+
     BuildObjectiveTargets();
 }
 
 void UMissionElementDlg::OnIFFCommitted(const FText& Text, ETextCommit::Type CommitMethod)
 {
+    (void)CommitMethod;
+
     if (!ElemPtr)
         return;
 
     const FString S = Text.ToString();
     int32 NewIFF = 0;
+
     if (S.IsNumeric() || (S.Len() > 1 && S[0] == '-' && S.Mid(1).IsNumeric()))
         NewIFF = FCString::Atoi(*S);
 
@@ -619,7 +615,6 @@ void UMissionElementDlg::OnAcceptClicked()
 {
     if (!MissionPtr || !ElemPtr)
     {
-        // Return to editor even if null, matching legacy behavior.
         if (Manager)
         {
             // Manager->ShowMsnEditDlg();
@@ -635,14 +630,10 @@ void UMissionElementDlg::OnAcceptClicked()
             return FCString::Atoi(*S);
         };
 
-    // Name
     if (NameEdit)
-        ElemPtr->SetName(TCHAR_TO_UTF8(*NameEdit->GetText().ToString()));
+        ElemPtr->SetName(TCHAR_TO_ANSI(*NameEdit->GetText().ToString()));
 
-    // Size
     ElemPtr->SetCount(FMath::Max(1, ReadInt(SizeEdit, ElemPtr->Count())));
-
-    // IFF
     ElemPtr->SetIFF(ReadInt(IFFEdit, ElemPtr->GetIFF()));
 
     // Location (km -> meters)
@@ -654,20 +645,15 @@ void UMissionElementDlg::OnAcceptClicked()
         ElemPtr->SetLocation(Loc);
     }
 
-    // Respawns / Hold
     ElemPtr->SetRespawnCount(FMath::Max(0, ReadInt(RespawnsEdit, ElemPtr->RespawnCount())));
     ElemPtr->SetHoldTime(FMath::Max(0, ReadInt(HoldTimeEdit, ElemPtr->HoldTime())));
-
-    // Player/Playable/Alert/CommandAI
-    // NOTE: if these are true toggles, replace with real UCheckBox and read IsChecked().
-    // For now, preserve legacy by reading "pressed" from BP or leave unchanged if you prefer.
-    // (Implement according to your UI control type.)
 
     // Design + Skin
     if (DesignCombo)
     {
         const FString DesignName = DesignCombo->GetSelectedOption();
-        ShipDesign* D = DesignName.IsEmpty() ? nullptr : ShipDesign::Get(TCHAR_TO_UTF8(*DesignName));
+        ShipDesign* D = DesignName.IsEmpty() ? nullptr : ShipDesign::Get(TCHAR_TO_ANSI(*DesignName));
+
         if (D)
         {
             ElemPtr->SetDesign(D);
@@ -675,77 +661,72 @@ void UMissionElementDlg::OnAcceptClicked()
             if (SkinCombo)
             {
                 const FString SkinName = SkinCombo->GetSelectedOption();
-                const FString DefaultName = UTF8_TO_TCHAR(Game::GetText("MsnDlg.default").data());
+                const FString DefaultName = MsnDefaultSkinLabel();
 
                 if (!SkinName.IsEmpty() && SkinName != DefaultName)
-                    ElemPtr->SetSkin(D->FindSkin(TCHAR_TO_UTF8(*SkinName)));
+                    ElemPtr->SetSkin(D->FindSkin(TCHAR_TO_ANSI(*SkinName)));
                 else
                     ElemPtr->SetSkin(0);
             }
         }
     }
 
-    // Role
     if (RoleCombo)
         ElemPtr->SetMissionRole(RoleCombo->GetSelectedIndex() + Mission::PATROL);
 
-    // Region
     if (RegionCombo)
     {
         const FString RegionName = RegionCombo->GetSelectedOption();
-        ElemPtr->SetRegion(TCHAR_TO_UTF8(*RegionName));
+        ElemPtr->SetRegion(TCHAR_TO_ANSI(*RegionName));
 
         if (ElemPtr->Player() > 0)
-            MissionPtr->SetRegion(TCHAR_TO_UTF8(*RegionName));
+            MissionPtr->SetRegion(TCHAR_TO_ANSI(*RegionName));
     }
 
-    // Heading
     if (HeadingCombo)
     {
         switch (HeadingCombo->GetSelectedIndex())
         {
         default:
-        case 0: ElemPtr->SetHeading(0);       break; // North
-        case 1: ElemPtr->SetHeading(PI / 2);    break; // East
-        case 2: ElemPtr->SetHeading(PI);      break; // South
-        case 3: ElemPtr->SetHeading(3 * PI / 2);  break; // West
+        case 0: ElemPtr->SetHeading(0);           break;
+        case 1: ElemPtr->SetHeading(PI / 2);      break;
+        case 2: ElemPtr->SetHeading(PI);          break;
+        case 3: ElemPtr->SetHeading(3 * PI / 2);  break;
         }
     }
 
-    // Commander/Squadron/Carrier
-    if (CommanderCombo) ElemPtr->SetCommander(TCHAR_TO_UTF8(*CommanderCombo->GetSelectedOption()));
-    if (SquadronCombo)  ElemPtr->SetSquadron(TCHAR_TO_UTF8(*SquadronCombo->GetSelectedOption()));
-    if (CarrierCombo)   ElemPtr->SetCarrier(TCHAR_TO_UTF8(*CarrierCombo->GetSelectedOption()));
+    if (CommanderCombo) ElemPtr->SetCommander(TCHAR_TO_ANSI(*CommanderCombo->GetSelectedOption()));
+    if (SquadronCombo)  ElemPtr->SetSquadron(TCHAR_TO_ANSI(*SquadronCombo->GetSelectedOption()));
+    if (CarrierCombo)   ElemPtr->SetCarrier(TCHAR_TO_ANSI(*CarrierCombo->GetSelectedOption()));
 
-    // Intel
     if (IntelCombo)
-        ElemPtr->SetIntelLevel(Intel::IntelFromName(TCHAR_TO_UTF8(*IntelCombo->GetSelectedOption())));
+        ElemPtr->SetIntelLevel(Intel::IntelFromName(TCHAR_TO_ANSI(*IntelCombo->GetSelectedOption())));
 
-    // Loadout
     if (LoadoutCombo)
     {
         ElemPtr->Loadouts().destroy();
-        const FString LoadName = LoadoutCombo->GetSelectedOption();
 
+        const FString LoadName = LoadoutCombo->GetSelectedOption();
         if (!LoadName.IsEmpty())
         {
-            MissionLoad* MLoad = new(__FILE__, __LINE__) MissionLoad(-1, TCHAR_TO_UTF8(*LoadName));
+            MissionLoad* MLoad = new MissionLoad(-1, TCHAR_TO_ANSI(*LoadName));
             ElemPtr->Loadouts().append(MLoad);
         }
     }
 
-    // Objective/Target
+    // Objective/Target: build Instruction using ctor(action, targetName)
     if (ObjectiveCombo && TargetCombo)
     {
         List<Instruction>& Objectives = ElemPtr->Objectives();
         Objectives.destroy();
 
-        const int32 Action = ObjectiveCombo->GetSelectedIndex() - 1;
+        const int32 ActionIndex = ObjectiveCombo->GetSelectedIndex() - 1;
         const FString Target = TargetCombo->GetSelectedOption();
 
-        if (Action >= Instruction::VECTOR)
+        if (ActionIndex >= 0 && !Target.IsEmpty())
         {
-            Instruction* Obj = new(__FILE__, __LINE__) Instruction(Action, TCHAR_TO_UTF8(*Target));
+            const INSTRUCTION_ACTION Action = (INSTRUCTION_ACTION)ActionIndex;
+            Instruction* Obj = new Instruction(Action, TCHAR_TO_ANSI(*Target));
             Objectives.append(Obj);
         }
     }

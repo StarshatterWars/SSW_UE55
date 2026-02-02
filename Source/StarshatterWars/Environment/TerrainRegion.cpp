@@ -225,7 +225,7 @@ TerrainRegion::LoadSkyColors(const char* bmp_name)
 	Bitmap sky_colors_bmp;
 
 	DataLoader* loader = DataLoader::GetLoader();
-	loader->LoadBitmap(bmp_name, sky_colors_bmp);
+	loader->LoadGameBitmap(bmp_name, sky_colors_bmp);
 
 	int max_color = sky_colors_bmp.Width();
 

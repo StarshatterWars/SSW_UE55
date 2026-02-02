@@ -24,6 +24,7 @@
 
 // Minimal Unreal include for FVector:
 #include "Math/Vector.h"
+#include "GAmeStructs.h"
 
 // +--------------------------------------------------------------------+
 
@@ -34,8 +35,8 @@ class MissionTemplate;
 class MissionElement;
 class MissionLoad;
 
-class MsnEditDlg;
-class MsnEventDlg;
+class MissiopEditorDlg;
+class MissionEventDlg;
 
 class Ship;
 class SimSystem;
@@ -52,8 +53,8 @@ class MissionEvent
 {
 	friend class Mission;
 	friend class MissionTemplate;
-	friend class MsnEditDlg;
-	friend class MsnEventDlg;
+	friend class MissionEditorDlg;
+	friend class MissionEventDlg;
 
 public:
 	static const char* TYPENAME() { return "MissionEvent"; }
@@ -105,11 +106,11 @@ public:
 
 	// accessors:
 	int                  EventID()         const { return id; }
-	int                  Status()          const { return status; }
-	bool                 IsPending()       const { return status == PENDING; }
-	bool                 IsActive()        const { return status == ACTIVE; }
-	bool                 IsComplete()      const { return status == COMPLETE; }
-	bool                 IsSkipped()       const { return status == SKIPPED; }
+	INSTRUCTION_STATUS   GetStatus()       const { return status; }
+	bool                 IsPending()       const { return status == INSTRUCTION_STATUS::PENDING; }
+	bool                 IsActive()        const { return status == INSTRUCTION_STATUS::ACTIVE; }
+	bool                 IsComplete()      const { return status == INSTRUCTION_STATUS::COMPLETE; }
+	bool                 IsSkipped()       const { return status == INSTRUCTION_STATUS::SKIPPED; }
 
 	double               Time()            const { return time; }
 	double               Delay()           const { return delay; }
@@ -142,10 +143,11 @@ public:
 	static int           EventForName(const char* n);
 	static const char* TriggerName(int n);
 	static int           TriggerForName(const char* n);
+	int                  id = 0;
 
 protected:
-	int                  id = 0;
-	int                  status = PENDING;
+	
+	INSTRUCTION_STATUS   status = INSTRUCTION_STATUS::PENDING;
 	double               time = 0.0;
 	double               delay = 0.0;
 

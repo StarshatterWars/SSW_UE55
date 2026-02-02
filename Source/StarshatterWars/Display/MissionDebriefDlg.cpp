@@ -8,31 +8,35 @@
 
     OVERVIEW
     ========
-    Mission Debriefing dialog (Unreal) - port of DebriefDlg.cpp + DebriefDlg.frm
+    Mission Debriefing dialog (Unreal) - UBaseScreen/UMG port
 */
 
 #include "MissionDebriefDlg.h"
-#include "MissionPlanner.h"          // your renamed PlanScreen (do not change MissionPlanner)
+
+#include "MissionPlanner.h"   // your renamed PlanScreen (do not rename)
 #include "Starshatter.h"
 #include "Campaign.h"
 #include "Mission.h"
-#include "MissionInfo.h"
 #include "Sim.h"
 #include "Ship.h"
 #include "StarSystem.h"
-#include "Element.h"
+#include "SimElement.h"
 #include "Instruction.h"
 #include "FormatUtil.h"
-#include "Player.h"
+#include "PlayerCharacter.h"
 #include "SimEvent.h"
 #include "ShipDesign.h"
+#include "GameStructs.h"
 
-// FORM control wrappers (ported):
-#include "Button.h"
-#include "ListBox.h"
-#include "Text.h"
-#include "Keyboard.h"                // if you have a ported keyboard helper
-#include "Game.h"                    // legacy Game facade (time compression, text, etc.)
+// Legacy helpers:
+#include "Game.h"
+#include "Mouse.h"
+
+// Unreal:
+#include "Components/Button.h"
+#include "Components/ListView.h"
+#include "Components/TextBlock.h"
+#include "Components/RichTextBlock.h"
 
 UMissionDebriefDlg::UMissionDebriefDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -48,9 +52,24 @@ void UMissionDebriefDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // FORM-driven screens typically call Init/LoadForm in your UBaseScreen.
-    // If your BaseScreen already does that in NativeConstruct, leave it alone.
-    RegisterControls();
+    // Bind ID -> widget mapping into UBaseScreen’s FormMap:
+    BindFormWidgets();
+
+    // Button click:
+    if (CloseButtonWidget)
+    {
+        CloseButtonWidget->OnClicked.AddDynamic(this, &UMissionDebriefDlg::OnCloseClicked);
+    }
+
+    // Unit selection:
+    if (UnitListWidget)
+    {
+        UnitListWidget->OnItemSelectionChanged().AddUObject(this, &UMissionDebriefDlg::OnUnitSelectionChanged);
+    }
+
+    // Default hidden unless you show it:
+    // (Optional) leave as-is if your UI manages visibility elsewhere.
+    // SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UMissionDebriefDlg::NativeDestruct()
@@ -68,52 +87,58 @@ void UMissionDebriefDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
     }
 }
 
-// +--------------------------------------------------------------------+
-// Control binding
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// FORM binding (IDs -> widgets)
+// --------------------------------------------------------------------
 
-void UMissionDebriefDlg::RegisterControls()
+void UMissionDebriefDlg::BindFormWidgets()
 {
-    // Header/info controls:
-    MissionName = (UActiveWindow*)FindControl(200);
-    MissionSystem = (UActiveWindow*)FindControl(202);
-    MissionSector = (UActiveWindow*)FindControl(204);
-    MissionTimeStart = (UActiveWindow*)FindControl(206);
+    // Clear the map (optional safety):
+    // FormMap.Reset(); // FormMap is protected in UBaseScreen; if you keep it private, remove this.
 
-    Objectives = (UActiveWindow*)FindControl(210);
-    Situation = (UActiveWindow*)FindControl(240);
-    MissionScore = (UActiveWindow*)FindControl(211);
+    // IDs come from legacy DebriefDlg.frm mapping:
+    if (MissionNameWidget)      BindLabel(200, MissionNameWidget);
+    if (MissionSystemWidget)    BindLabel(202, MissionSystemWidget);
+    if (MissionSectorWidget)    BindLabel(204, MissionSectorWidget);
+    if (MissionTimeStartWidget) BindLabel(206, MissionTimeStartWidget);
 
-    UnitList = (UListBox*)FindControl(320);
-    SummaryList = (UListBox*)FindControl(330);
-    EventList = (UListBox*)FindControl(340);
+    if (MissionScoreWidget)     BindLabel(211, MissionScoreWidget);
 
-    // Button:
-    CloseButton = (UButton*)FindControl(1);
+    if (ObjectivesWidget)       BindText(210, ObjectivesWidget);
+    if (SituationWidget)        BindText(240, SituationWidget);
 
-    // Wire events using your wrapper’s delegate system.
-    // (Names below match typical ports of the legacy UI; adjust if your wrappers differ.)
+    if (CloseButtonWidget)      BindButton(1, CloseButtonWidget);
 
-    if (UnitList)
-    {
-        // legacy: REGISTER_CLIENT(EID_SELECT, unit_list, DebriefDlg, OnUnit);
-        UnitList->OnSelectionChanged().AddUObject(this, &UMissionDebriefDlg::OnUnit);
-    }
-
-    if (CloseButton)
-    {
-        // legacy: REGISTER_CLIENT(EID_CLICK, close_btn, DebriefDlg, OnClose);
-        CloseButton->OnClicked().AddUObject(this, &UMissionDebriefDlg::OnClose);
-    }
+    if (UnitListWidget)         BindList(320, UnitListWidget);
+    if (SummaryListWidget)      BindList(330, SummaryListWidget);
+    if (EventListWidget)        BindList(340, EventListWidget);
 }
 
-// +--------------------------------------------------------------------+
-// Show/Hide
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Dialog input hooks (Enter/Escape)
+// --------------------------------------------------------------------
+
+void UMissionDebriefDlg::HandleAccept()
+{
+    // Legacy: Enter closes
+    OnCloseClicked();
+}
+
+void UMissionDebriefDlg::HandleCancel()
+{
+    // Escape closes as well for debrief:
+    OnCloseClicked();
+}
+
+// --------------------------------------------------------------------
+// Show / Hide (UMG)
+// --------------------------------------------------------------------
 
 void UMissionDebriefDlg::Show()
 {
-    Super::Show();
+    const bool bNeedRefresh = (GetVisibility() != ESlateVisibility::Visible);
+
+    SetVisibility(ESlateVisibility::Visible);
     bIsShown = true;
 
     // Legacy behavior:
@@ -123,6 +148,7 @@ void UMissionDebriefDlg::Show()
     CampaignPtr = Campaign::GetCampaign();
     SimPtr = Sim::GetSim();
 
+    PlayerShip = nullptr;
     if (SimPtr)
     {
         PlayerShip = SimPtr->GetPlayerShip();
@@ -134,61 +160,62 @@ void UMissionDebriefDlg::Show()
     }
 
     // Mission title:
-    if (MissionName)
+    if (UTextBlock* MissionName = GetLabel(200))
     {
         if (MissionPtr)
-            MissionName->SetText(MissionPtr->Name());
+            MissionName->SetText(FText::FromString(ANSI_TO_TCHAR(MissionPtr->Name())));
         else
-            MissionName->SetText(Game::GetText("DebriefDlg.mission-name"));
+            MissionName->SetText(FText::FromString(ANSI_TO_TCHAR(Game::GetText("DebriefDlg.mission-name").data())));
     }
 
     // System:
-    if (MissionSystem)
+    if (UTextBlock* MissionSystem = GetLabel(202))
     {
-        MissionSystem->SetText("");
+        MissionSystem->SetText(FText::GetEmpty());
 
         if (MissionPtr)
         {
             StarSystem* Sys = MissionPtr->GetStarSystem();
             if (Sys)
-                MissionSystem->SetText(Sys->Name());
+                MissionSystem->SetText(FText::FromString(ANSI_TO_TCHAR(Sys->Name())));
         }
     }
 
-    // Sector:
-    if (MissionSector)
+    // Sector/Region:
+    if (UTextBlock* MissionSector = GetLabel(204))
     {
-        MissionSector->SetText("");
+        MissionSector->SetText(FText::GetEmpty());
 
         if (MissionPtr)
         {
-            // legacy uses mission->GetElements()[0] to get region/sector
             MissionElement* Elem0 = MissionPtr->GetElements().size() ? MissionPtr->GetElements().at(0) : nullptr;
             if (Elem0)
-                MissionSector->SetText(Elem0->Region());
+                MissionSector->SetText(FText::FromString(ANSI_TO_TCHAR(Elem0->Region())));
         }
     }
 
     // Start time:
-    if (MissionTimeStart)
+    if (UTextBlock* MissionTimeStart = GetLabel(206))
     {
+        MissionTimeStart->SetText(FText::GetEmpty());
+
         if (MissionPtr)
         {
             char Txt[32] = { 0 };
             FormatDayTime(Txt, MissionPtr->Start());
-            MissionTimeStart->SetText(Txt);
+            MissionTimeStart->SetText(FText::FromString(ANSI_TO_TCHAR(Txt)));
         }
     }
 
     // Objectives:
-    if (Objectives)
+    if (URichTextBlock* Objectives = GetText(210))
     {
         bool bFoundObjectives = false;
 
         if (SimPtr && SimPtr->GetPlayerElement())
         {
             Text T;
-            Element* PlayerElem = SimPtr->GetPlayerElement();
+            SimElement* PlayerElem = SimPtr->GetPlayerElement();
 
             for (int i = 0; i < PlayerElem->NumObjectives(); i++)
             {
@@ -197,31 +224,31 @@ void UMissionDebriefDlg::Show()
                 bFoundObjectives = true;
             }
 
-            Objectives->SetText(T);
+            Objectives->SetText(FText::FromString(ANSI_TO_TCHAR(T.data())));
         }
 
         if (!bFoundObjectives)
         {
             if (MissionPtr)
-                Objectives->SetText(MissionPtr->Objective());
+                Objectives->SetText(FText::FromString(ANSI_TO_TCHAR(MissionPtr->Objective())));
             else
-                Objectives->SetText(Game::GetText("DebriefDlg.unspecified"));
+                Objectives->SetText(FText::FromString(ANSI_TO_TCHAR(Game::GetText("DebriefDlg.unspecified").data())));
         }
     }
 
     // Situation:
-    if (Situation)
+    if (URichTextBlock* Situation = GetText(240))
     {
         if (MissionPtr)
-            Situation->SetText(MissionPtr->Situation());
+            Situation->SetText(FText::FromString(ANSI_TO_TCHAR(MissionPtr->Situation())));
         else
-            Situation->SetText(Game::GetText("DebriefDlg.unknown"));
+            Situation->SetText(FText::FromString(ANSI_TO_TCHAR(Game::GetText("DebriefDlg.unknown").data())));
     }
 
     // Score:
-    if (MissionScore)
+    if (UTextBlock* MissionScore = GetLabel(211))
     {
-        MissionScore->SetText(Game::GetText("DebriefDlg.no-stats"));
+        MissionScore->SetText(FText::FromString(ANSI_TO_TCHAR(Game::GetText("DebriefDlg.no-stats").data())));
 
         if (PlayerShip)
         {
@@ -232,46 +259,75 @@ void UMissionDebriefDlg::Show()
                 {
                     Stats->Summarize();
 
-                    Player* PlayerObj = Player::GetCurrentPlayer();
+                    PlayerCharacter* PlayerObj = PlayerCharacter::GetCurrentPlayer();
                     int Points = Stats->GetPoints() + Stats->GetCommandPoints();
 
                     if (PlayerObj && SimPtr)
                         Points = PlayerObj->GetMissionPoints(Stats, SimPtr->StartTime()) + Stats->GetCommandPoints();
 
-                    char Score[32] = { 0 };
-                    sprintf_s(Score, "%d %s", Points, Game::GetText("DebriefDlg.points").data());
-                    MissionScore->SetText(Score);
+                    char ScoreTxt[64] = { 0 };
+                    sprintf_s(ScoreTxt, "%d %s", Points, Game::GetText("DebriefDlg.points").data());
+                    MissionScore->SetText(FText::FromString(ANSI_TO_TCHAR(ScoreTxt)));
                     break;
                 }
             }
         }
     }
 
+    // Lists:
     DrawUnits();
+
+    if (bNeedRefresh)
+    {
+        // Optional: force selection behavior or first row selection.
+        // (Handled in ExecFrame)
+    }
 }
 
 void UMissionDebriefDlg::Hide()
 {
     bIsShown = false;
-    Super::Hide();
+    SetVisibility(ESlateVisibility::Collapsed);
 }
 
-// +--------------------------------------------------------------------+
-// Units list + selection
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// Frame
+// --------------------------------------------------------------------
+
+void UMissionDebriefDlg::ExecFrame(float /*DeltaSeconds*/)
+{
+    // Legacy: if list has items but none selected, force select first
+    if (UListView* UnitList = GetList(320))
+    {
+        if (UnitList->GetNumItems() > 0)
+        {
+            TArray<UObject*> Selected;
+            UnitList->GetSelectedItems(Selected);
+
+            if (Selected.Num() < 1)
+            {
+                UnitList->SetSelectedIndex(0);
+            }
+        }
+    }
+}
+
+// --------------------------------------------------------------------
+// Units + selection
+// --------------------------------------------------------------------
 
 void UMissionDebriefDlg::DrawUnits()
 {
-    if (!MissionPtr || !UnitList)
+    if (!MissionPtr)
         return;
 
-    UnitList->ClearItems();
+    UListView* UnitList = GetList(320);
+    if (!UnitList)
+        return;
 
-    int SelIndex = -1;
-    bool bNetGame = false;
+    UnitList->ClearListItems();
 
-    if (SimPtr && SimPtr->IsNetGame())
-        bNetGame = true;
+    int32 SelectIndex = INDEX_NONE;
 
     for (int i = 0; i < ShipStats::NumStats(); i++)
     {
@@ -280,101 +336,84 @@ void UMissionDebriefDlg::DrawUnits()
 
         Stats->Summarize();
 
-        if (bNetGame ||
-            (Stats->GetIFF() == MissionPtr->Team() &&
-                !strcmp(Stats->GetRegion(), MissionPtr->GetRegion())))
+        if (Stats->GetIFF() == MissionPtr->Team() &&
+            !strcmp(Stats->GetRegion(), MissionPtr->GetRegion()))
         {
-            int Row = UnitList->AddItemWithData(" ", i) - 1;
-            UnitList->SetItemText(Row, 1, Stats->GetName());
-            UnitList->SetItemText(Row, 2, Stats->GetRole());
-            UnitList->SetItemText(Row, 3, Stats->GetType());
+            // Col0 unused in original (space), keep for compatibility:
+            UDebriefListItem* Row = UDebriefListItem::Make(
+                this,
+                TEXT(" "),
+                ANSI_TO_TCHAR(Stats->GetName()),
+                ANSI_TO_TCHAR(Stats->GetRole()),
+                ANSI_TO_TCHAR(Stats->GetType()),
+                /*DataIndex*/ i
+            );
+
+            UnitList->AddItem(Row);
 
             if (PlayerShip && !strcmp(PlayerShip->Name(), Stats->GetName()))
-                SelIndex = Row;
+            {
+                SelectIndex = UnitList->GetNumItems() - 1;
+            }
         }
     }
 
-    if (SelIndex >= 0)
+    if (SelectIndex != INDEX_NONE)
     {
-        UnitList->SetSelected(SelIndex);
-        OnUnit();
+        UnitList->SetSelectedIndex(SelectIndex);
     }
 }
 
-// +--------------------------------------------------------------------+
-// Frame
-// +--------------------------------------------------------------------+
-
-void UMissionDebriefDlg::ExecFrame(float DeltaSeconds)
+void UMissionDebriefDlg::OnUnitSelectionChanged(UObject* SelectedItem)
 {
-    // Legacy: if list has items but none selected, force select first
-    if (UnitList && UnitList->NumItems() && UnitList->GetSelCount() < 1)
-    {
-        UnitList->SetSelected(0);
-        OnUnit();
-    }
-
-    // Legacy: Enter closes
-    if (Keyboard::KeyDown(VK_RETURN))
-    {
-        OnClose();
-    }
-}
-
-// +--------------------------------------------------------------------+
-// Event handlers
-// +--------------------------------------------------------------------+
-
-void UMissionDebriefDlg::OnUnit()
-{
-    if (!UnitList || !EventList || !SummaryList)
+    const UDebriefListItem* Item = Cast<UDebriefListItem>(SelectedItem);
+    if (!Item)
         return;
 
-    SummaryList->ClearItems();
-    EventList->ClearItems();
+    DrawSelectedUnit(Item->DataIndex);
+}
 
-    const int Sel = UnitList->GetSelection();
-    const int Unit = UnitList->GetItemData(Sel);
+void UMissionDebriefDlg::DrawSelectedUnit(int32 StatsIndex)
+{
+    UListView* SummaryList = GetList(330);
+    UListView* EventList = GetList(340);
 
-    ShipStats* Stats = ShipStats::GetStats(Unit);
+    if (!SummaryList || !EventList)
+        return;
+
+    SummaryList->ClearListItems();
+    EventList->ClearListItems();
+
+    ShipStats* Stats = (StatsIndex >= 0) ? ShipStats::GetStats(StatsIndex) : nullptr;
     if (!Stats)
         return;
 
     Stats->Summarize();
 
-    char Txt[64] = { 0 };
-    int Row = 0;
+    // Summary:
+    auto AddSummary = [&](const char* Label, int Value)
+        {
+            char Buf[64] = { 0 };
+            sprintf_s(Buf, "%d", Value);
 
-    sprintf_s(Txt, "%d", Stats->GetGunShots());
-    SummaryList->AddItem("Guns Fired: ");
-    SummaryList->SetItemText(Row++, 1, Txt);
+            SummaryList->AddItem(UDebriefListItem::Make(
+                this,
+                ANSI_TO_TCHAR(Label),
+                ANSI_TO_TCHAR(Buf)
+            ));
+        };
 
-    sprintf_s(Txt, "%d", Stats->GetGunHits());
-    SummaryList->AddItem("Gun Hits: ");
-    SummaryList->SetItemText(Row++, 1, Txt);
+    AddSummary("Guns Fired:", Stats->GetGunShots());
+    AddSummary("Gun Hits:", Stats->GetGunHits());
+    AddSummary("Gun Kills:", Stats->GetGunKills());
 
-    sprintf_s(Txt, "%d", Stats->GetGunKills());
-    SummaryList->AddItem("Gun Kills: ");
-    SummaryList->SetItemText(Row++, 1, Txt);
+    SummaryList->AddItem(UDebriefListItem::Make(this, TEXT(" "))); // spacer
 
-    // spacer
-    SummaryList->AddItem(" ");
-    Row++;
-
-    sprintf_s(Txt, "%d", Stats->GetMissileShots());
-    SummaryList->AddItem("Missiles Fired: ");
-    SummaryList->SetItemText(Row++, 1, Txt);
-
-    sprintf_s(Txt, "%d", Stats->GetMissileHits());
-    SummaryList->AddItem("Missile Hits: ");
-    SummaryList->SetItemText(Row++, 1, Txt);
-
-    sprintf_s(Txt, "%d", Stats->GetMissileKills());
-    SummaryList->AddItem("Missile Kills: ");
-    SummaryList->SetItemText(Row++, 1, Txt);
+    AddSummary("Missiles Fired:", Stats->GetMissileShots());
+    AddSummary("Missile Hits:", Stats->GetMissileHits());
+    AddSummary("Missile Kills:", Stats->GetMissileKills());
 
     // Events:
-    int EventRow = 0;
     ListIter<SimEvent> Iter = Stats->GetEvents();
     while (++Iter)
     {
@@ -384,22 +423,25 @@ void UMissionDebriefDlg::OnUnit()
         char TimeTxt[64] = { 0 };
         const int Time = E->GetTime();
 
-        if (Time > 24 * 60 * 60)
-            FormatDayTime(TimeTxt, Time);
-        else
-            FormatTime(TimeTxt, Time);
+        if (Time > 24 * 60 * 60) FormatDayTime(TimeTxt, Time);
+        else                     FormatTime(TimeTxt, Time);
 
-        EventList->AddItem(TimeTxt);
-        EventList->SetItemText(EventRow, 1, E->GetEventDesc());
+        const char* Target = E->GetTarget();
 
-        if (E->GetTarget())
-            EventList->SetItemText(EventRow, 2, E->GetTarget());
-
-        EventRow++;
+        EventList->AddItem(UDebriefListItem::Make(
+            this,
+            ANSI_TO_TCHAR(TimeTxt),
+            ANSI_TO_TCHAR(E->GetEventDesc()),
+            Target ? ANSI_TO_TCHAR(Target) : TEXT("")
+        ));
     }
 }
 
-void UMissionDebriefDlg::OnClose()
+// --------------------------------------------------------------------
+// Close
+// --------------------------------------------------------------------
+
+void UMissionDebriefDlg::OnCloseClicked()
 {
     Sim* LocalSim = Sim::GetSim();
     if (!LocalSim)
@@ -408,15 +450,7 @@ void UMissionDebriefDlg::OnClose()
     LocalSim->CommitMission();
     LocalSim->UnloadMission();
 
-    // Legacy net host flow (keep if you still support it):
-    NetLobby* Lobby = NetLobby::GetInstance();
-    if (Lobby && Lobby->IsHost())
-    {
-        Lobby->SelectMission(0);
-        Lobby->ExecFrame();
-    }
-
-    Player* PlayerObj = Player::GetCurrentPlayer();
+    PlayerCharacter* PlayerObj = PlayerCharacter::GetCurrentPlayer();
     if (PlayerObj && PlayerObj->ShowAward())
     {
         if (Manager)
@@ -426,7 +460,6 @@ void UMissionDebriefDlg::OnClose()
         return;
     }
 
-    // Back to campaign/menu like legacy:
     Starshatter* Stars = Starshatter::GetInstance();
     if (Stars)
     {
@@ -434,12 +467,12 @@ void UMissionDebriefDlg::OnClose()
 
         Campaign* Camp = Campaign::GetCampaign();
         if (Camp && Camp->GetCampaignId() < Campaign::SINGLE_MISSIONS)
-            Stars->SetGameMode(Starshatter::CMPN_MODE);
+            Stars->SetGameMode(EMODE::CMPN_MODE);
         else
-            Stars->SetGameMode(Starshatter::MENU_MODE);
+            Stars->SetGameMode(EMODE::MENU_MODE);
     }
     else
     {
-        Game::Panic("MissionDebriefDlg::OnClose() - Game instance not found");
+        Game::Panic("MissionDebriefDlg::OnCloseClicked() - Game instance not found");
     }
 }

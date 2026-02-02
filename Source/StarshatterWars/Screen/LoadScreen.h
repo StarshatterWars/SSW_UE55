@@ -85,10 +85,9 @@ private:
     Screen* ScreenPtr = nullptr;
 
     // Child dialog widgets (UMG)
-    // BindWidgetOptional lets you wire these in the UMG designer if desired.
-    TObjectPtr<ULoadDlg> LoadDlg = nullptr;
+    ULoadDlg* LoadDlg = nullptr;
 
-    TObjectPtr<UCmpLoadDlg> CmpLoadDlg = nullptr;
+    UCmpLoadDlg* CmpLoadDlg = nullptr;
 
     bool bIsShown = false;
 };

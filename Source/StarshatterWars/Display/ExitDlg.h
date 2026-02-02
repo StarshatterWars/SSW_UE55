@@ -13,26 +13,21 @@
     OVERVIEW
     ========
     ExitDlg (Unreal)
-    - Direct Unreal replacement for legacy ExitDlg FormWindow
+    - Unreal UMG replacement for legacy ExitDlg FormWindow
     - Maintains original method names and semantics
-    - FORM IDs:
-        100 = title label
-        101 = prompt label
-        201 = credits text (RichText)
-        1   = Exit button
-        2   = Cancel button
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "MenuScreen.h"
 
 #include "Components/ScrollBox.h"
 #include "Components/RichTextBlock.h"
 
 #include "ExitDlg.generated.h"
+
+class UMenuScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UExitDlg : public UBaseScreen
@@ -40,9 +35,12 @@ class STARSHATTERWARS_API UExitDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UExitDlg();
+    // Unreal-style constructor
+    UExitDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Legacy API (maintained names):
+    // ------------------------------------------------------------
+    // Legacy API (preserved)
+    // ------------------------------------------------------------
     virtual void RegisterControls();
     virtual void Show();
     virtual void ExecFrame(float DeltaTime);
@@ -67,7 +65,7 @@ protected:
 
 protected:
     // ------------------------------------------------------------
-    // Button click handlers (NO lambdas)
+    // Button handlers (NO lambdas)
     // ------------------------------------------------------------
     UFUNCTION()
     void HandleApplyClicked();
@@ -92,8 +90,7 @@ protected:
     UPROPERTY(Transient)
     TObjectPtr<UMenuScreen> Manager = nullptr;
 
-    bool bExitLatch = false;
-
+    bool  bExitLatch = false;
     float ScrollOffset = 0.0f;
 
     UPROPERTY(EditAnywhere, Category = "ExitDlg")

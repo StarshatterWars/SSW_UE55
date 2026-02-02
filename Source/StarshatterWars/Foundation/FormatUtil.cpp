@@ -13,6 +13,8 @@
 */
 
 #include "FormatUtil.h"
+#include <ctime>
+#include <cstdio>
 
 
 void FormatNumber(char* txt, double n)
@@ -57,20 +59,21 @@ const int MINUTE = 60;
 const int HOUR = 60 * MINUTE;
 const int DAY = 24 * HOUR;
 
-void FormatTime(char* txt, double time)
+void FormatTime(char* buf, double seconds)
 {
-	int t = (int)time;
+	if (!buf) return;
 
-	int h = (t / HOUR);
-	int m = ((t - h * HOUR) / MINUTE);
-	int s = ((t - h * HOUR - m * MINUTE));
+	int total = (int)seconds;
 
-	if (h > 0)
-		sprintf(txt, "%02d:%02d:%02d", h, m, s);
+	int hours = total / 3600;
+	int minutes = (total % 3600) / 60;
+	int secs = total % 60;
+
+	if (hours > 0)
+		sprintf_s(buf, 32, "%d:%02d:%02d", hours, minutes, secs);
 	else
-		sprintf(txt, "%02d:%02d", m, s);
+		sprintf_s(buf, 32, "%02d:%02d", minutes, secs);
 }
-
 // +--------------------------------------------------------------------+
 
 void FormatTimeOfDay(char* txt, double time)
@@ -337,4 +340,37 @@ Text FormatTextEscape(const char* msg)
 	result = buffer;
 	delete[] buffer;
 	return result;
+}
+
+const char* FormatTimeString(double seconds)
+{
+	static char buf[64];
+
+	if (seconds <= 0.0) {
+		strcpy_s(buf, "N/A");
+		return buf;
+	}
+
+	time_t t = (time_t)seconds;
+	tm tm_local;
+
+#if defined(_WIN32)
+	localtime_s(&tm_local, &t);
+#else
+	tm_local = *localtime(&t);
+#endif
+
+	// Classic Starshatter-style date:
+	// YYYY-MM-DD HH:MM
+	sprintf_s(
+		buf,
+		"%04d-%02d-%02d %02d:%02d",
+		tm_local.tm_year + 1900,
+		tm_local.tm_mon + 1,
+		tm_local.tm_mday,
+		tm_local.tm_hour,
+		tm_local.tm_min
+	);
+
+	return buf;
 }

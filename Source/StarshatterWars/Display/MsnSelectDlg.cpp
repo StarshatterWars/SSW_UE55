@@ -20,10 +20,11 @@
 #include "Starshatter.h"
 #include "Campaign.h"
 #include "Mission.h"
+#include "List.h"
 
 // Optional manager screens/dialogs (stubs you likely have in your menu system):
 #include "MissionEditorDlg.h"
-//#include "MsnEditNavDlg.h"
+#include "MissionEditorNavDlg.h"
 #include "ConfirmDlg.h"
 #include "MenuScreen.h"
 
@@ -598,7 +599,7 @@ void UMsnSelectDlg::OnAccept()
     campaign->SetMissionId(Id);
     campaign->ReloadMission(Id);
 
-    stars->SetGameMode(Starshatter::PREP_MODE);
+    stars->SetGameMode(EMODE::PREP_MODE);
 }
 
 void UMsnSelectDlg::OnCancel()

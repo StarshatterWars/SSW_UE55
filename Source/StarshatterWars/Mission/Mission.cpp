@@ -43,6 +43,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterMission, Log, All);
 
 // +--------------------------------------------------------------------+
 
+
 Mission::Mission(int identity, const char* fname, const char* pname)
 	: id(identity),
 	type(0),
@@ -1084,7 +1085,10 @@ Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 {
 	INSTRUCTION_ACTION order = INSTRUCTION_ACTION::VECTOR;
 	INSTRUCTION_STATUS status = INSTRUCTION_STATUS::PENDING;
-	INSTRUCTION_FORMATION formation = INSTRUCTION_FORMATION::DIAMOND;
+	INSTRUCTION_FORMATION formation = INSTRUCTION_FORMATION::NONE;
+	
+	int FormationValue = static_cast<int>(formation);
+
 	int   speed = 0;
 	int   priority = 1;
 	int   farcast = 0;
@@ -1148,7 +1152,7 @@ Mission::ParseInstruction(TermStruct* val, MissionElement* element)
 				GetDefNumber(speed, pdef, filename);
 			}
 			else if (defname == "formation") {
-				GetDefNumber(formation, pdef, filename);
+				GetDefNumber(FormationValue, pdef, filename);
 			}
 			else if (defname == "emcon") {
 				GetDefNumber(emcon, pdef, filename);

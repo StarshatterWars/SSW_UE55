@@ -133,7 +133,7 @@ protected:
 	static Starshatter* instance;
 	View*		 gamewin;
 	UMenuScreen* menuscreen;
-	ULoadScreen* LoadScreen;
+	ULoadScreen* loadScreen;
 	UMissionPlanner* planscreen;
 	UGameScreen* gamescreen;
 	UCmpnScreen* cmpnscreen;

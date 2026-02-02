@@ -73,7 +73,7 @@ void UCmpnScreen::Setup()
     cmp_file_dlg = Cast<UCmpFileDlg>(MakeDlg(CmpFileDlgClass));
     cmd_msg_dlg = Cast<UCmdMsgDlg>(MakeDlg(CmdMsgDlgClass));
     cmp_end_dlg = Cast<UCmpCompleteDlg>(MakeDlg(CmpCompleteDlgClass));
-    cmp_scene_dlg = Cast<UCmpSceneDlg>(MakeDlg(CmpSceneDlgClass));
+    cmp_scene_dlg = Cast<UCampaignSceneDlg>(MakeDlg(CmpSceneDlgClass));
 
     HideAll();
 }

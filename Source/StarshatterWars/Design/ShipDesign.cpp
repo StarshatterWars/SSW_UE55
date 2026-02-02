@@ -375,10 +375,10 @@ ShipDesign::ShipDesign(const char* n, const char* p, const char* fname, bool s)
 	}
 
 	if (beauty.Width() < 1 && Loader->FindFile("beauty.pcx"))
-		Loader->LoadBitmap("beauty.pcx", beauty);
+		Loader->LoadGameBitmap("beauty.pcx", beauty);
 
 	if (hud_icon.Width() < 1 && Loader->FindFile("hud_icon.pcx"))
-		Loader->LoadBitmap("hud_icon.pcx", hud_icon);
+		Loader->LoadGameBitmap("hud_icon.pcx", hud_icon);
 
 	Loader->ReleaseBuffer(Block);
 	Loader->SetDataPath("");
@@ -1225,7 +1225,7 @@ ShipDesign::ParseShip(TermDef* def)
 				Print("WARNING: invalid or missing beauty in '%s'\n", filename);
 
 			DataLoader* loader = DataLoader::GetLoader();
-			loader->LoadBitmap(beauty_name, beauty);
+			loader->LoadGameBitmap(beauty_name, beauty);
 		}
 	}
 
@@ -1235,7 +1235,7 @@ ShipDesign::ParseShip(TermDef* def)
 			Print("WARNING: invalid or missing hud_icon in '%s'\n", filename);
 
 		DataLoader* loader = DataLoader::GetLoader();
-		loader->LoadBitmap(hud_icon_name, hud_icon);
+		loader->LoadGameBitmap(hud_icon_name, hud_icon);
 	}
 
 	else if (defname == "feature_0") {
@@ -3690,7 +3690,7 @@ ShipDesign::ParseMap(TermStruct* val)
 
 				Bitmap* sprite = new Bitmap();
 				DataLoader* loader = DataLoader::GetLoader();
-				loader->LoadBitmap(sprite_name, *sprite, Bitmap::BMP_TRANSLUCENT);
+				loader->LoadGameBitmap(sprite_name, *sprite, Bitmap::BMP_TRANSLUCENT);
 
 				map_sprites.append(sprite);
 			}

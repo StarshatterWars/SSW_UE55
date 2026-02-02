@@ -6,27 +6,38 @@
     FILE:         MissionElementDlg.h
     AUTHOR:       Carlos Bott
 
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
     OVERVIEW
     ========
     UMissionElementDlg
-    - Unreal UUserWidget replacement for legacy MsnElemDlg.
-    - Uses standard UMG widget bindings (BindWidgetOptional).
-    - Bindings correspond to MsnElemDlg.frm control IDs.
+    - Unreal UUserWidget replacement for legacy MsnElemDlg
+    - Inherits from UBaseScreen (legacy FORM support + Enter/Escape behavior)
+    - Uses standard UMG widget bindings (BindWidgetOptional)
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
+#include "Math/Vector.h"              // FVector
+#include "Math/Color.h"               // FColor
+#include "Math/UnrealMathUtility.h"  
+
+#include "GameStructs.h"// Math
+
 #include "MissionElementDlg.generated.h"
 
+// Forward declarations (keep header light)
 class UButton;
 class UComboBoxString;
 class UEditableTextBox;
-class UTextBlock;
 
-class UMenuScreen;            // your UE screen/manager wrapper
-class UMsnEditDlg;            // optional UE wrapper
+class UMenuScreen;
+
 class Mission;
 class MissionElement;
 
@@ -41,61 +52,91 @@ public:
     void InitializeDlg(UMenuScreen* InManager);
     void SetMission(Mission* InMission);
     void SetMissionElement(MissionElement* InElem);
+
     void ShowDlg();
 
 protected:
+    // UBaseScreen overrides
+    virtual void BindFormWidgets() override;
+    virtual FString GetLegacyFormText() const override;
+
+protected:
+    // UUserWidget lifecycle
     virtual void NativeConstruct() override;
 
-private:
-    void RebuildFromModel();          // fills UI from elem/mission
-    void UpdateTeamInfo();            // commander/squadron/carrier lists
-    void BuildObjectiveTargets();     // based on objective selection
+protected:
+    void RebuildFromModel();
     void RebuildDesignListFromClass();
     void RebuildSkinAndLoadoutFromDesign();
+    void BuildObjectiveTargets();
+    void UpdateTeamInfo();
 
     bool CanCommand(const MissionElement* Commander, const MissionElement* Subordinate) const;
 
-private:
-    // UMG event handlers
-    UFUNCTION() void OnAcceptClicked();
-    UFUNCTION() void OnCancelClicked();
-
+protected:
+    // UI events
     UFUNCTION() void OnClassChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnDesignChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnObjectiveChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnIFFCommitted(const FText& Text, ETextCommit::Type CommitMethod);
 
-private:
+    UFUNCTION() void OnAcceptClicked();
+    UFUNCTION() void OnCancelClicked();
+
+protected:
+    // Legacy FORM text (optional: paste .frm text here or set in editor)
+    UPROPERTY(EditDefaultsOnly, Category = "FORM")
+    FString LegacyFormText;
+
+protected:
+    // Manager / model (legacy classes are non-UObject)
     UPROPERTY(Transient)
-    UMenuScreen* Manager = nullptr;
+    TObjectPtr<UMenuScreen> Manager = nullptr;
 
     Mission* MissionPtr = nullptr;
     MissionElement* ElemPtr = nullptr;
 
-    bool bExitLatch = true;
+    bool bExitLatch = false;
 
-    // -----------------------------
-    // Widget bindings (OPTIONAL)
-    // -----------------------------
+protected:
+    // Buttons
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* AcceptButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
 
-    // Left column
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* NameEdit = nullptr;      // id 201
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ClassCombo = nullptr;    // id 202
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DesignCombo = nullptr;   // id 203
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SkinCombo = nullptr;     // id 213
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* SizeEdit = nullptr;      // id 204
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* IFFEdit = nullptr;       // id 205
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* RoleCombo = nullptr;     // id 206
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* RegionCombo = nullptr;   // id 207
+protected:
+    // Combos
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ClassCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DesignCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SkinCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* LoadoutCombo = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* LocXEdit = nullptr;      // id 208
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* LocYEdit = nullptr;      // id 209
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* LocZEdit = nullptr;      // id 210
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* RoleCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* RegionCombo = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* HeadingCombo = nullptr;  // id 211
-    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* HoldTimeEdit = nullptr;  //*
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* HeadingCombo = nullptr;
 
-    // OK/Cancel
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* AcceptButton = nullptr; // 1
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* IntelCombo = nullptr;
+
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ObjectiveCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TargetCombo = nullptr;
+
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CommanderCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SquadronCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CarrierCombo = nullptr;
+
+protected:
+    // Text fields
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* NameEdit = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* SizeEdit = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* IFFEdit = nullptr;
+
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* LocXEdit = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* LocYEdit = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* LocZEdit = nullptr;
+
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* RespawnsEdit = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UEditableTextBox* HoldTimeEdit = nullptr;
+
+
 };

@@ -135,7 +135,7 @@ Mouse::LoadCursor(CURSOR c, const char* name, HOTSPOT hs)
 
 	if (name && *name) {
 		image[c] = new Bitmap;
-		result = DataLoader::GetLoader()->LoadBitmap(name, *image[c], Bitmap::BMP_TRANSPARENT);
+		result = DataLoader::GetLoader()->LoadGameBitmap(name, *image[c], Bitmap::BMP_TRANSPARENT);
 
 		if (result) {
 			Bitmap* bmp = image[c];

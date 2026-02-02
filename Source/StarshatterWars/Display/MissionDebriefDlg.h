@@ -9,19 +9,19 @@
     OVERVIEW
     ========
     Mission Debriefing dialog (Unreal)
-    - FORM-driven dialog (DebriefDlg.frm) port.
-    - Shows mission header info, objectives/situation, score,
-      active units list, per-unit summary stats, and mission log.
-    - Owned/managed by MissionPlanner (tab flow / show-hide).
+    - UMG/UBaseScreen version of DebriefDlg.frm
+    - Displays mission header info, objectives/situation, score,
+      unit list, per-unit summary stats, and mission event log.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
 #include "MissionDebriefDlg.generated.h"
 
-// Forward declarations (your legacy/ported sim classes):
+// Forward declarations (legacy/ported sim classes):
 class Campaign;
 class Mission;
 class MissionInfo;
@@ -29,16 +29,43 @@ class Sim;
 class Ship;
 class StarSystem;
 class MissionElement;
-class Player;
+class PlayerCharacter;
 class ShipStats;
 class SimEvent;
 
-// Forward declarations (your FORM control wrappers):
-class UActiveWindow;
-class UButton;
-class UListBox;
-
 class UMissionPlanner;
+
+UCLASS()
+class STARSHATTERWARS_API UDebriefListItem : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    // Generic 4-column row (UnitList uses 1..3, Summary/Event mostly use 0..2)
+    UPROPERTY() FString Col0;
+    UPROPERTY() FString Col1;
+    UPROPERTY() FString Col2;
+    UPROPERTY() FString Col3;
+
+    // Optional payload (e.g., ShipStats index):
+    UPROPERTY() int32 DataIndex = INDEX_NONE;
+
+    static UDebriefListItem* Make(UObject* Outer,
+        const FString& In0,
+        const FString& In1 = TEXT(""),
+        const FString& In2 = TEXT(""),
+        const FString& In3 = TEXT(""),
+        int32 InDataIndex = INDEX_NONE)
+    {
+        UDebriefListItem* Item = NewObject<UDebriefListItem>(Outer);
+        Item->Col0 = In0;
+        Item->Col1 = In1;
+        Item->Col2 = In2;
+        Item->Col3 = In3;
+        Item->DataIndex = InDataIndex;
+        return Item;
+    }
+};
 
 UCLASS()
 class STARSHATTERWARS_API UMissionDebriefDlg : public UBaseScreen
@@ -48,68 +75,75 @@ class STARSHATTERWARS_API UMissionDebriefDlg : public UBaseScreen
 public:
     UMissionDebriefDlg(const FObjectInitializer& ObjectInitializer);
 
-    // ----------------------------------------------------------------
-    // Legacy-like lifecycle
-    // ----------------------------------------------------------------
-    virtual void RegisterControls();
-    virtual void ExecFrame(float DeltaSeconds);
-    virtual void Show();
-    virtual void Hide();
+    // UBaseScreen (FORM binding hook):
+    virtual void BindFormWidgets() override;
 
-    // ----------------------------------------------------------------
-    // Operations (event handlers)
-    // ----------------------------------------------------------------
-    void OnClose();
-    void OnUnit();
+    // Dialog input hooks (Enter/Escape) via UBaseScreen:
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
 
-protected:
-    void DrawUnits();
+    // Show/Hide (Unreal-UMG style):
+    void Show();
+    void Hide();
+
+    // Manager (raw pointer by request):
+    void SetManager(UMissionPlanner* InManager) { Manager = InManager; }
+    UMissionPlanner* GetManager() const { return Manager; }
 
 protected:
-    // UUserWidget lifecycle
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-public:
-    // MissionPlanner will set this after CreateWidget (raw pointer by request):
-    void SetManager(UMissionPlanner* InManager) { Manager = InManager; }
-    UMissionPlanner* GetManager() const { return Manager; }
+private:
+    // ------------------------------------------------------------
+    // Event handlers
+    // ------------------------------------------------------------
+    UFUNCTION() void OnCloseClicked();
+    UFUNCTION() void OnUnitSelectionChanged(UObject* SelectedItem);
+
+    void ExecFrame(float DeltaSeconds);
+    void DrawUnits();
+    void DrawSelectedUnit(int32 StatsIndex);
 
 private:
-    // ----------------------------------------------------------------
-    // Owner/Manager (raw pointer by request)
-    // ----------------------------------------------------------------
+    // ------------------------------------------------------------
+    // Owner
+    // ------------------------------------------------------------
     UMissionPlanner* Manager = nullptr;
 
-    // ----------------------------------------------------------------
-    // FORM controls (raw pointers by request)
-    // ----------------------------------------------------------------
-    UButton* CloseButton = nullptr;
+    // ------------------------------------------------------------
+    // UMG Widgets (BindWidgetOptional)
+    // These are OPTIONAL so the class compiles even if your widget
+    // blueprint doesn't have them yet. BindFormWidgets() maps IDs.
+    // ------------------------------------------------------------
 
-    UActiveWindow* MissionName = nullptr;
-    UActiveWindow* MissionSystem = nullptr;
-    UActiveWindow* MissionSector = nullptr;
-    UActiveWindow* MissionTimeStart = nullptr;
+    // Button:
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CloseButtonWidget = nullptr;
 
-    UActiveWindow* Objectives = nullptr;
-    UActiveWindow* Situation = nullptr;
-    UActiveWindow* MissionScore = nullptr;
+    // Header fields:
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> MissionNameWidget = nullptr;       // id 200
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> MissionSystemWidget = nullptr;     // id 202
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> MissionSectorWidget = nullptr;     // id 204
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> MissionTimeStartWidget = nullptr;  // id 206
 
-    UListBox* UnitList = nullptr;
-    UListBox* SummaryList = nullptr;
-    UListBox* EventList = nullptr;
+    // Body text:
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<URichTextBlock> ObjectivesWidget = nullptr;    // id 210
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<URichTextBlock> SituationWidget = nullptr;     // id 240
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> MissionScoreWidget = nullptr;      // id 211
 
-    // ----------------------------------------------------------------
+    // Lists:
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UListView> UnitListWidget = nullptr;           // id 320
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UListView> SummaryListWidget = nullptr;        // id 330
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UListView> EventListWidget = nullptr;          // id 340
+
+    // ------------------------------------------------------------
     // Legacy state (raw pointers, non-UObject)
-    // ----------------------------------------------------------------
+    // ------------------------------------------------------------
     Campaign* CampaignPtr = nullptr;
     Mission* MissionPtr = nullptr;
-    MissionInfo* InfoPtr = nullptr;
-    int32        UnitIndex = 0;
-
     Sim* SimPtr = nullptr;
     Ship* PlayerShip = nullptr;
 
-    bool         bIsShown = false;
+    bool bIsShown = false;
 };

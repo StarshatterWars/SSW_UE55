@@ -63,7 +63,7 @@ const char* FormatGameTime();
 
 MissionEvent::MissionEvent()
 	: id(0),
-	status(PENDING),
+	status(INSTRUCTION_STATUS::PENDING),
 	time(0),
 	delay(0),
 	event(0),
@@ -93,14 +93,14 @@ MissionEvent::ExecFrame(double seconds)
 	Sim* sim = Sim::GetSim();
 
 	if (!sim) {
-		status = PENDING;
+		status = INSTRUCTION_STATUS::PENDING;
 		return;
 	}
 
-	if (status == PENDING)
+	if (status == INSTRUCTION_STATUS::PENDING)
 		CheckTrigger();
 
-	if (status == ACTIVE) {
+	if (status == INSTRUCTION_STATUS::ACTIVE) {
 		if (delay > 0)
 			delay -= seconds;
 		else
@@ -113,19 +113,19 @@ MissionEvent::ExecFrame(double seconds)
 void
 MissionEvent::Activate()
 {
-	if (status == PENDING) {
+	if (status == INSTRUCTION_STATUS::PENDING) {
 		if (event_chance > 0 && event_chance < 100) {
 			const int32 Roll = FMath::RandRange(0, 100);
 			if (Roll < event_chance)
-				status = ACTIVE;
+				status = INSTRUCTION_STATUS::ACTIVE;
 			else
-				status = SKIPPED;
+				status = INSTRUCTION_STATUS::SKIPPED;
 		}
 		else {
-			status = ACTIVE;
+			status = INSTRUCTION_STATUS::ACTIVE;
 		}
 
-		if (status == SKIPPED) {
+		if (status == INSTRUCTION_STATUS::SKIPPED) {
 			Sim::GetSim()->ProcessEventTrigger(TRIGGER_SKIPPED, id);
 		}
 	}
@@ -134,8 +134,8 @@ MissionEvent::Activate()
 void
 MissionEvent::Skip()
 {
-	if (status == PENDING) {
-		status = SKIPPED;
+	if (status == INSTRUCTION_STATUS::PENDING) {
+		status = INSTRUCTION_STATUS::SKIPPED;
 	}
 }
 
@@ -248,12 +248,12 @@ MissionEvent::CheckTrigger()
 			while (++iter) {
 				MissionEvent* e = iter.value();
 				if (e->EventID() == trigger_id) {
-					if (e->Status() != COMPLETE)
+					if (e->GetStatus() != INSTRUCTION_STATUS::COMPLETE)
 						all = false;
 					break;
 				}
 				else if (e->EventID() == -trigger_id) {
-					if (e->Status() == COMPLETE)
+					if (e->GetStatus() == INSTRUCTION_STATUS::COMPLETE)
 						all = false;
 					break;
 				}
@@ -275,7 +275,7 @@ MissionEvent::CheckTrigger()
 			while (++iter) {
 				MissionEvent* e = iter.value();
 				if (e->EventID() == trigger_id) {
-					if (e->Status() == COMPLETE)
+					if (e->GetStatus() == INSTRUCTION_STATUS::COMPLETE)
 						any = true;
 					break;
 				}
@@ -288,7 +288,7 @@ MissionEvent::CheckTrigger()
 						  break;
 	}
 
-	return status == ACTIVE;
+	return status == INSTRUCTION_STATUS::ACTIVE;
 }
 
 // +--------------------------------------------------------------------+
@@ -379,7 +379,7 @@ MissionEvent::Execute(bool silent)
 		);
 
 		// Set target name (UTF-8 safe)
-		if (!event_target.empty()) {
+		if (!event_target) {
 			obj->SetTarget(UTF8_TO_TCHAR(event_target.data()));
 		}
 
@@ -473,8 +473,8 @@ MissionEvent::Execute(bool silent)
 			while (++iter) {
 				MissionEvent* e = iter.value();
 				if (e->EventID() == skip_id) {
-					if (e->status != COMPLETE)
-						e->status = SKIPPED;
+					if (e->status != INSTRUCTION_STATUS::COMPLETE)
+						e->status = INSTRUCTION_STATUS::SKIPPED;
 				}
 			}
 		}
@@ -651,7 +651,7 @@ MissionEvent::Execute(bool silent)
 					// The DataLoader interface must be ported accordingly elsewhere.
 					if (loader) {
 						loader->SetDataPath(0);
-						loader->LoadBitmap(event_target, image, 0, true);
+						loader->LoadGameBitmap(event_target, *image, 0, true);
 					}
 
 					if (image) {
@@ -735,7 +735,7 @@ MissionEvent::Execute(bool silent)
 		}
 	}
 
-	status = COMPLETE;
+	status = INSTRUCTION_STATUS::COMPLETE;
 
 	if (end_mission) {
 		StarServer* server = StarServer::GetInstance();

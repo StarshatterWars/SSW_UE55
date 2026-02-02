@@ -113,14 +113,14 @@ MapView::~MapView()
 {
 	ClearMenu();
 
-	if (galaxy_image) {
-		galaxy_image->ClearImage(); 
-		delete galaxy_image;
-		galaxy_image = nullptr;
-	}
+	if (galaxy_image.Width() > 0)  // or galaxy_image.HasImage() / galaxy_image.IsValid()
+	{
+		galaxy_image.ClearImage();
 
-	delete menu_view;
-	menu_view = nullptr;
+		delete menu_view;
+		menu_view = 0;
+
+	}
 }
 
 // +--------------------------------------------------------------------+
@@ -2175,18 +2175,21 @@ void MapView::DrawOrbital(Orbital& body, int index)
 	x2 = icx + ibr;
 	y2 = icy + ibr;
 
-	if (type < Orbital::REGION)
+	if(type < Orbital::REGION)
 	{
-		// IMPORTANT: capture to an l-value (copy) so we can take & and call Width()
 		Bitmap* map_icon = body.GetMapIcon();
+		if (!map_icon)
+			return;
 
-		if (map_icon.Width() > 64) {
+		if (map_icon->Width() > 64)
+		{
 			if (type == Orbital::STAR)
 				DrawBitmap(x1, y1, x2, y2, map_icon, Video::BLEND_ADDITIVE);
 			else
 				DrawBitmap(x1, y1, x2, y2, map_icon, Video::BLEND_ALPHA);
 		}
-		else {
+		else
+		{
 			FillEllipse(x1, y1, x2, y2, color);
 		}
 	}

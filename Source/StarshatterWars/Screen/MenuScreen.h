@@ -42,7 +42,7 @@ class UCampaignSelectDlg;
 class UMissionEditorDlg;
 class UMissionElementDlg;
 class UMissionEventDlg;
-class UMsnEditNavDlg;
+class UMissionEditorNavDlg;
 
 class ULoadDlg;
 class UTacRefDlg;
@@ -108,7 +108,7 @@ public:
     UMissionEditorDlg* GetMsnEditDlg()  const { return MsnEditDlg; }
     UMissionElementDlg* GetMsnElemDlg()  const { return MsnElemDlg; }
     UMissionEventDlg* GetMsnEventDlg() const { return MsnEventDlg; }
-    UMsnEditNavDlg* GetNavDlg()      const { return MsnEditNavDlg; }
+    UMissionEditorNavDlg* GetNavDlg()      const { return MsnEditNavDlg; }
 
 protected:
     virtual void NativeConstruct() override;
@@ -152,13 +152,6 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEventDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEditNavDlgClass;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetClientDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetAddrDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetPassDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetLobbyDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetServerDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> NetUnitDlgClass;
-
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> LoadDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> TacRefDlgClass;
 
@@ -183,7 +176,7 @@ private:
     UMissionEditorDlg* MsnEditDlg = nullptr;
     UMissionElementDlg* MsnElemDlg = nullptr;
     UMissionEventDlg* MsnEventDlg = nullptr;
-    UMsnEditNavDlg* MsnEditNavDlg = nullptr;
+    UMissionEditorNavDlg* MsnEditNavDlg = nullptr;
 
     ULoadDlg* LoadDlg = nullptr;
     UTacRefDlg* TacRefDlg = nullptr;

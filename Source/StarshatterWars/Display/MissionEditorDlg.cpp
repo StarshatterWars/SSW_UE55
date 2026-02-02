@@ -1,3 +1,23 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
+
+    SUBSYSTEM:    Stars.exe
+    FILE:         MissionEditorDlg.cpp
+    AUTHOR:       Carlos Bott
+
+    ORIGINAL AUTHOR AND STUDIO
+    ==========================
+    John DiCamillo / Destroyer Studios LLC
+
+    OVERVIEW
+    ========
+    Mission Editor dialog (Unreal)
+    - UUserWidget-based replacement for legacy MsnEditDlg
+    - Uses UBaseScreen FORM binding helpers (BindButton/BindEdit/BindCombo/BindList)
+    - Edits mission header fields, SIT/PKG/MAP tab logic, and adds/removes elements/events
+*/
+
 #include "MissionEditorDlg.h"
 
 // UMG
@@ -15,11 +35,15 @@
 #include "Galaxy.h"
 #include "StarSystem.h"
 #include "OrbitalRegion.h"
-#include "Game.h"
-#include "Random.h"
+#include "GameStructs.h"
 
-UMissionEditorDlg::UMissionEditorDlg()
+// Unreal
+#include "Math/UnrealMathUtility.h"
+
+UMissionEditorDlg::UMissionEditorDlg(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
+    // Do not bind UMG events here (widgets not ready). Keep ctor lightweight.
 }
 
 void UMissionEditorDlg::InitializeMissionEditor(UMenuScreen* InManager)
@@ -43,42 +67,112 @@ void UMissionEditorDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // BaseScreen Enter/Escape
+    // BaseScreen Enter/Escape routing (assumes UBaseScreen exposes these pointers)
     ApplyButton = BtnAccept;
     CancelButton = BtnCancel;
 
-    if (BtnAccept) BtnAccept->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnAcceptClicked);
-    if (BtnCancel) BtnCancel->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnCancelClicked);
+    // Prevent accidental double-binding if widget reconstructs:
+    if (BtnAccept)
+    {
+        BtnAccept->OnClicked.RemoveAll(this);
+        BtnAccept->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnAcceptClicked);
+    }
 
-    if (BtnSit) BtnSit->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnTabSitClicked);
-    if (BtnPkg) BtnPkg->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnTabPkgClicked);
-    if (BtnMap) BtnMap->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnTabMapClicked);
+    if (BtnCancel)
+    {
+        BtnCancel->OnClicked.RemoveAll(this);
+        BtnCancel->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnCancelClicked);
+    }
 
-    if (BtnElemAdd)  BtnElemAdd->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemAddClicked);
-    if (BtnElemEdit) BtnElemEdit->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemEditClicked);
-    if (BtnElemDel)  BtnElemDel->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemDelClicked);
-    if (BtnElemInc)  BtnElemInc->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemIncClicked);
-    if (BtnElemDec)  BtnElemDec->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemDecClicked);
+    if (BtnSit)
+    {
+        BtnSit->OnClicked.RemoveAll(this);
+        BtnSit->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnTabSitClicked);
+    }
 
-    if (BtnEventAdd)  BtnEventAdd->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventAddClicked);
-    if (BtnEventEdit) BtnEventEdit->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventEditClicked);
-    if (BtnEventDel)  BtnEventDel->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventDelClicked);
-    if (BtnEventInc)  BtnEventInc->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventIncClicked);
-    if (BtnEventDec)  BtnEventDec->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventDecClicked);
+    if (BtnPkg)
+    {
+        BtnPkg->OnClicked.RemoveAll(this);
+        BtnPkg->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnTabPkgClicked);
+    }
+
+    if (BtnMap)
+    {
+        BtnMap->OnClicked.RemoveAll(this);
+        BtnMap->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnTabMapClicked);
+    }
+
+    if (BtnElemAdd)
+    {
+        BtnElemAdd->OnClicked.RemoveAll(this);
+        BtnElemAdd->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemAddClicked);
+    }
+
+    if (BtnElemEdit)
+    {
+        BtnElemEdit->OnClicked.RemoveAll(this);
+        BtnElemEdit->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemEditClicked);
+    }
+
+    if (BtnElemDel)
+    {
+        BtnElemDel->OnClicked.RemoveAll(this);
+        BtnElemDel->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemDelClicked);
+    }
+
+    if (BtnElemInc)
+    {
+        BtnElemInc->OnClicked.RemoveAll(this);
+        BtnElemInc->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemIncClicked);
+    }
+
+    if (BtnElemDec)
+    {
+        BtnElemDec->OnClicked.RemoveAll(this);
+        BtnElemDec->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnElemDecClicked);
+    }
+
+    if (BtnEventAdd)
+    {
+        BtnEventAdd->OnClicked.RemoveAll(this);
+        BtnEventAdd->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventAddClicked);
+    }
+
+    if (BtnEventEdit)
+    {
+        BtnEventEdit->OnClicked.RemoveAll(this);
+        BtnEventEdit->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventEditClicked);
+    }
+
+    if (BtnEventDel)
+    {
+        BtnEventDel->OnClicked.RemoveAll(this);
+        BtnEventDel->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventDelClicked);
+    }
+
+    if (BtnEventInc)
+    {
+        BtnEventInc->OnClicked.RemoveAll(this);
+        BtnEventInc->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventIncClicked);
+    }
+
+    if (BtnEventDec)
+    {
+        BtnEventDec->OnClicked.RemoveAll(this);
+        BtnEventDec->OnClicked.AddDynamic(this, &UMissionEditorDlg::OnEventDecClicked);
+    }
 
     if (CmbSystem)
     {
+        CmbSystem->OnSelectionChanged.RemoveAll(this);
         CmbSystem->OnSelectionChanged.AddDynamic(this, &UMissionEditorDlg::OnSystemSelectChanged);
     }
 
-    // Initial show
     Show();
 }
 
 FString UMissionEditorDlg::GetLegacyFormText() const
 {
-    // If you assign in editor, this will be used.
-    // If empty, you can paste the .frm contents into LegacyFormText.
     return LegacyFormText;
 }
 
@@ -143,7 +237,9 @@ void UMissionEditorDlg::Show()
             {
                 StarSystem* sys = iter.value();
                 if (sys && sys->Name())
+                {
                     CmbSystem->AddOption(ANSI_TO_TCHAR(sys->Name()));
+                }
             }
         }
     }
@@ -154,7 +250,9 @@ void UMissionEditorDlg::Show()
         TxtName->SetText(FText::FromString(ANSI_TO_TCHAR(mission->Name())));
 
         if (CmbType)
+        {
             CmbType->SetSelectedIndex(mission->Type());
+        }
 
         StarSystem* sys = mission->GetStarSystem();
         if (sys && CmbSystem && CmbRegion)
@@ -166,6 +264,8 @@ void UMissionEditorDlg::Show()
             // Fill regions
             CmbRegion->ClearOptions();
 
+            // NOTE: depending on your List<T> semantics, copying OrbitalRegion by value may be heavy.
+            // Keeping as-is to match legacy code patterns:
             List<OrbitalRegion> regions;
             regions.append(sys->AllRegions());
             regions.sort();
@@ -180,11 +280,12 @@ void UMissionEditorDlg::Show()
                 if (!region || !region->Name())
                     continue;
 
-                const FString RgnName = ANSI_TO_TCHAR(region->Name());
-                CmbRegion->AddOption(RgnName);
+                CmbRegion->AddOption(ANSI_TO_TCHAR(region->Name()));
 
                 if (!FCStringAnsi::Strcmp(mission->GetRegion(), region->Name()))
+                {
                     sel_rgn = idx;
+                }
 
                 idx++;
             }
@@ -193,13 +294,19 @@ void UMissionEditorDlg::Show()
         }
 
         if (TxtDescription && mission_info)
-            TxtDescription->SetText(FText::FromString(ANSI_TO_TCHAR(mission_info->description)));
+        {
+            TxtDescription->SetText(FText::FromString(ANSI_TO_TCHAR(mission_info->description.data())));
+        }
 
         if (TxtSituation)
+        {
             TxtSituation->SetText(FText::FromString(ANSI_TO_TCHAR(mission->Situation())));
+        }
 
         if (TxtObjective)
+        {
             TxtObjective->SetText(FText::FromString(ANSI_TO_TCHAR(mission->Objective())));
+        }
 
         DrawPackages();
     }
@@ -213,13 +320,20 @@ void UMissionEditorDlg::ScrapeForm()
         return;
 
     if (TxtName)
-        mission->SetName(TCHAR_TO_ANSI(*TxtName->GetText().ToString()));
+    {
+        const FString NameStr = TxtName->GetText().ToString();
+        mission->SetName(TCHAR_TO_ANSI(*NameStr));
+    }
 
     if (CmbType)
     {
-        mission->SetType(CmbType->GetSelectedIndex());
+        const int32 NewType = CmbType->GetSelectedIndex();
+        mission->SetType(NewType);
+
         if (mission_info)
-            mission_info->type = CmbType->GetSelectedIndex();
+        {
+            mission_info->type = NewType;
+        }
     }
 
     // System
@@ -238,7 +352,9 @@ void UMissionEditorDlg::ScrapeForm()
         mission->SetStarSystem(system);
 
         if (mission_info)
+        {
             mission_info->system = system->Name();
+        }
     }
 
     // Region
@@ -248,21 +364,33 @@ void UMissionEditorDlg::ScrapeForm()
         mission->SetRegion(TCHAR_TO_ANSI(*Region));
 
         if (mission_info)
+        {
             mission_info->region = TCHAR_TO_ANSI(*Region);
+        }
     }
 
     if (TxtDescription && mission_info)
     {
         const FString Desc = TxtDescription->GetText().ToString();
+
+        // Keep Starshatter Text core type:
         mission_info->description = TCHAR_TO_ANSI(*Desc);
+
+        // Also push into mission if you keep a duplicate field there:
         mission->SetDescription(TCHAR_TO_ANSI(*Desc));
     }
 
     if (TxtSituation)
-        mission->SetSituation(TCHAR_TO_ANSI(*TxtSituation->GetText().ToString()));
+    {
+        const FString Sit = TxtSituation->GetText().ToString();
+        mission->SetSituation(TCHAR_TO_ANSI(*Sit));
+    }
 
     if (TxtObjective)
-        mission->SetObjective(TCHAR_TO_ANSI(*TxtObjective->GetText().ToString()));
+    {
+        const FString Obj = TxtObjective->GetText().ToString();
+        mission->SetObjective(TCHAR_TO_ANSI(*Obj));
+    }
 }
 
 void UMissionEditorDlg::ShowTab(int32 Tab)
@@ -271,29 +399,16 @@ void UMissionEditorDlg::ShowTab(int32 Tab)
     if (current_tab < 0 || current_tab > 2)
         current_tab = 0;
 
-    // In legacy: controls < 400 always show, controls in [400+tab*100 .. +100) show, else hide.
-    // Here: we do the same with BaseScreen ID visibility helpers.
-    const int32 low = 400 + current_tab * 100;
-    const int32 high = low + 100;
-
-    // Always-visible group: < 400
-    // We do not have an enumeration of all IDs in this widget, so we use explicit list toggles:
-    // Keep: tabs and info area live, and switch 400/500 blocks by ID ranges when those widgets are bound.
-    //
-    // Practical approach:
-    // - If you bind additional widgets for ids 400..599 into BaseScreen maps, SetVisible() will work directly.
-    //
-    // For now, show/hide the two list blocks by tab:
     const bool bSit = (current_tab == 0);
     const bool bPkg = (current_tab == 1);
     const bool bMap = (current_tab == 2);
 
-    // SIT tab: description/situation/objective (410-412) and possibly 400 panel widgets
+    // SIT tab
     if (TxtDescription) TxtDescription->SetVisibility(bSit ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     if (TxtSituation)   TxtSituation->SetVisibility(bSit ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     if (TxtObjective)   TxtObjective->SetVisibility(bSit ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 
-    // PKG tab: element/event lists and buttons
+    // PKG tab
     if (LstElem)  LstElem->SetVisibility(bPkg ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     if (LstEvent) LstEvent->SetVisibility(bPkg ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 
@@ -309,23 +424,16 @@ void UMissionEditorDlg::ShowTab(int32 Tab)
     if (BtnEventInc)  BtnEventInc->SetVisibility(bPkg ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     if (BtnEventDec)  BtnEventDec->SetVisibility(bPkg ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 
-    // MAP tab: in legacy, it pushes the NavDlg screen.
+    // MAP tab: legacy pushes nav dialog
     if (bMap && Manager)
     {
-        // Preserve original behavior: scrape edits before switching screens.
         ScrapeForm();
-
-        // If your UMenuScreen already has Nav dialog methods, call them here.
-        // Example (adjust to your actual API):
-        // Manager->ShowNavDlg();
+        // Manager->ShowNavDlg(); // wire to your real API
     }
 }
 
 void UMissionEditorDlg::DrawPackages()
 {
-    // This method controls enable/disable state similarly to legacy.
-    // Actual list contents require a row widget + item data; not included here.
-
     bool elem_del = false;
     bool elem_edit = false;
     bool elem_inc = false;
@@ -336,11 +444,7 @@ void UMissionEditorDlg::DrawPackages()
     bool event_inc = false;
     bool event_dec = false;
 
-    if (mission)
-    {
-        // If you implement selection in your list view, update these.
-        // For now, leave them false until you wire list selection.
-    }
+    // Until you wire UE ListView selection to your legacy data model, keep these disabled.
 
     if (BtnElemDel)  BtnElemDel->SetIsEnabled(elem_del);
     if (BtnElemEdit) BtnElemEdit->SetIsEnabled(elem_edit);
@@ -352,10 +456,6 @@ void UMissionEditorDlg::DrawPackages()
     if (BtnEventInc)  BtnEventInc->SetIsEnabled(event_inc);
     if (BtnEventDec)  BtnEventDec->SetIsEnabled(event_dec);
 }
-
-// ------------------------------------------------------------
-// UI event handlers
-// ------------------------------------------------------------
 
 void UMissionEditorDlg::OnTabSitClicked()
 {
@@ -374,7 +474,9 @@ void UMissionEditorDlg::OnTabMapClicked()
 
 void UMissionEditorDlg::OnSystemSelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-    // Fill regions for selected system
+    (void)SelectedItem;
+    (void)SelectionType;
+
     StarSystem* sys = 0;
 
     if (CmbSystem)
@@ -410,14 +512,13 @@ void UMissionEditorDlg::OnSystemSelectChanged(FString SelectedItem, ESelectInfo:
         {
             OrbitalRegion* region = iter.value();
             if (region && region->Name())
+            {
                 CmbRegion->AddOption(ANSI_TO_TCHAR(region->Name()));
+            }
         }
     }
 
     ScrapeForm();
-
-    // In legacy, it also updates NavDlg mission pointer.
-    // If you have a Nav dialog instance in Manager, you can set it here.
 }
 
 void UMissionEditorDlg::OnAcceptClicked()
@@ -436,42 +537,49 @@ void UMissionEditorDlg::OnAcceptClicked()
 
     if (Manager)
     {
-        // Legacy: manager->ShowMsnSelectDlg();
-        // Adjust to your actual menu navigation API.
-        // Manager->ShowMsnSelectDlg();
+        // Manager->ShowMsnSelectDlg(); // wire to your real API
     }
 }
 
 void UMissionEditorDlg::OnCancelClicked()
 {
     if (mission)
+    {
         mission->Load();
+    }
 
     if (Manager)
     {
-        // Legacy: manager->ShowMsnSelectDlg();
-        // Manager->ShowMsnSelectDlg();
+        // Manager->ShowMsnSelectDlg(); // wire to your real API
     }
 }
-
-// ------------------------------------------------------------
-// Element ops (call into your dialog manager if available)
-// ------------------------------------------------------------
 
 void UMissionEditorDlg::OnElemAddClicked()
 {
     if (!mission)
         return;
 
-    // Legacy: add element, random location if elements exist
     List<MissionElement>& elements = mission->GetElements();
-    MissionElement* elem = new(__FILE__, __LINE__) MissionElement;
+    MissionElement* elem = new MissionElement;
 
     if (elements.size() > 0)
-        elem->SetLocation(RandomPoint());
+    {
+        // Use UE random functions (replace legacy RandomPoint()):
+        // If MissionElement expects a Point/Vec3, update its signature to accept FVector.
+        // Here we assume SetLocation(FVector) exists or will exist.
+        const FVector RandLoc(
+            FMath::FRandRange(-1.0f, 1.0f),
+            FMath::FRandRange(-1.0f, 1.0f),
+            FMath::FRandRange(-1.0f, 1.0f)
+        );
+
+        elem->SetLocation(RandLoc);
+    }
 
     if (CmbRegion)
+    {
         elem->SetRegion(TCHAR_TO_ANSI(*CmbRegion->GetSelectedOption()));
+    }
 
     elements.append(elem);
 
@@ -479,8 +587,6 @@ void UMissionEditorDlg::OnElemAddClicked()
 
     if (Manager)
     {
-        // Legacy: open element dialog
-        // ScrapeForm();
         // Manager->ShowMsnElemDlg();
     }
 }
@@ -490,8 +596,7 @@ void UMissionEditorDlg::OnElemDelClicked()
     if (!mission)
         return;
 
-    // Requires selection wiring for UE list view.
-    // When you implement selection: delete elements.removeIndex(SelectedIndex)
+    // Requires selection wiring for UE ListView.
     DrawPackages();
 }
 
@@ -500,8 +605,7 @@ void UMissionEditorDlg::OnElemEditClicked()
     if (!mission)
         return;
 
-    // Requires selection wiring for UE list view.
-    // When you implement selection: open element dialog on selected element.
+    // Requires selection wiring for UE ListView.
 }
 
 void UMissionEditorDlg::OnElemIncClicked()
@@ -522,17 +626,13 @@ void UMissionEditorDlg::OnElemDecClicked()
     DrawPackages();
 }
 
-// ------------------------------------------------------------
-// Event ops (call into your dialog manager if available)
-// ------------------------------------------------------------
-
 void UMissionEditorDlg::OnEventAddClicked()
 {
     if (!mission)
         return;
 
     List<MissionEvent>& events = mission->GetEvents();
-    MissionEvent* event = new(__FILE__, __LINE__) MissionEvent;
+    MissionEvent* event = new MissionEvent;
 
     int id = 1;
     for (int i = 0; i < events.size(); i++)
@@ -549,8 +649,6 @@ void UMissionEditorDlg::OnEventAddClicked()
 
     if (Manager)
     {
-        // Legacy: open event dialog
-        // ScrapeForm();
         // Manager->ShowMsnEventDlg();
     }
 }

@@ -42,6 +42,8 @@
 // Minimal Unreal includes for UE_LOG + FVector conversions used below:
 #include "Math/Vector.h"
 #include "Logging/LogMacros.h"
+#include "Containers/UnrealString.h"   // FString
+#include "Misc/StringBuilder.h"        // optional, not required
 
 // Create a local log category for this translation unit:
 DEFINE_LOG_CATEGORY_STATIC(LogRadioHandler, Log, All);
@@ -448,9 +450,9 @@ RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 			wave_off->SetInfo("No Hangar");
 
 		else if (!same_rgn) {
-			char info[256];
-			sprintf_s(info, "Too Far Away", ship->GetRegion()->GetName());
-			wave_off->SetInfo(info);
+			const char* RegionNameAnsi = ship->GetRegion() ? ship->GetRegion()->GetName() : "Unknown";
+			const FString Info = FString::Printf(TEXT("Too Far Away (%s)"), ANSI_TO_TCHAR(RegionNameAnsi));
+			wave_off->SetInfo(TCHAR_TO_ANSI(*Info));
 		}
 
 		else
@@ -476,14 +478,14 @@ RadioHandler::Inbound(RadioMessage* msg, Ship* ship)
 	RadioMessage* approach = new RadioMessage(inbound, ship, RadioMessageAction::CALL_APPROACH);
 
 	if (inbound_slot->Cleared()) {
-		char info[256];
-		sprintf_s(info, "Cleared to land", deck->Name());
-		approach->SetInfo(info);
+		const char* DeckNameAnsi = deck ? deck->Name() : "Unknown Deck";
+		const FString Info = FString::Printf(TEXT("Cleared to land on %s"), ANSI_TO_TCHAR(DeckNameAnsi));
+		approach->SetInfo(TCHAR_TO_ANSI(*Info));
 	}
 	else if (sequence) {
-		char info[256];
-		sprintf_s(info, "Sequenced to land", sequence, deck->Name());
-		approach->SetInfo(info);
+		const char* DeckNameAnsi = deck ? deck->Name() : "Unknown Deck";
+		const FString Info = FString::Printf(TEXT("Sequenced to land %d on %s"), sequence, ANSI_TO_TCHAR(DeckNameAnsi));
+		approach->SetInfo(TCHAR_TO_ANSI(*Info));
 	}
 
 	RadioTraffic::Transmit(approach);

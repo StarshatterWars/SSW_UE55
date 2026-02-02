@@ -24,6 +24,7 @@
 #include "Term.h"
 #include "List.h"
 #include "Bitmap.h"
+#include "MissionInfo.h"
 
 // Minimal Unreal includes (per port rules):
 #include "Math/Vector.h"               // FVector
@@ -47,41 +48,6 @@ class StarSystem;
 class TermStruct;
 
 // +--------------------------------------------------------------------+
-
-class MissionInfo
-{
-public:
-    static const char* TYPENAME() { return "MissionInfo"; }
-
-    MissionInfo();
-    ~MissionInfo();
-
-    int operator == (const MissionInfo& m) const { return id == m.id; }
-    int operator <  (const MissionInfo& m) const { return id < m.id; }
-    int operator <= (const MissionInfo& m) const { return id <= m.id; }
-
-    bool     IsAvailable();
-
-    int      id;
-    Text     name;
-    Text     player_info;
-    Text     description;
-    Text     system;
-    Text     region;
-    Text     script;
-    int      start;
-    int      type;
-
-    int      min_rank;
-    int      max_rank;
-    int      action_id;
-    int      action_status;
-    int      exec_once;
-    int      start_before;
-    int      start_after;
-
-    Mission* mission;
-};
 
 class TemplateList
 {

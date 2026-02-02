@@ -637,7 +637,7 @@ StarshipAI::FireControl()
     // while lateral and aft facing weapons are set to point defense.
     if (ship->Class() == CLASSIFICATION::CORVETTE || ship->Class() == CLASSIFICATION::FRIGATE)
     {
-        ListIter<WeaponGroup> grp_iter = ship->Weapons();
+        ListIter<WeaponGroup> grp_iter = ship->GetWeapons();
         while (++grp_iter)
         {
             WeaponGroup* group = grp_iter.value();
@@ -733,7 +733,7 @@ StarshipAI::SelectSubtarget()
     sub_select_time = NowMs;
 
     // first pass: turrets
-    ListIter<WeaponGroup> g_iter = tgt_ship->Weapons();
+    ListIter<WeaponGroup> g_iter = tgt_ship->GetWeapons();
     while (++g_iter) {
         WeaponGroup* g = g_iter.value();
 
@@ -829,7 +829,7 @@ StarshipAI::AssessTargetPointDefense()
     point_defense_time = Game::GameTime();
 
     // first pass: turrets
-    ListIter<WeaponGroup> g_iter = tgt_ship->Weapons();
+    ListIter<WeaponGroup> g_iter = tgt_ship->GetWeapons();
     while (++g_iter && !tgt_point_defense) {
         WeaponGroup* g = g_iter.value();
 

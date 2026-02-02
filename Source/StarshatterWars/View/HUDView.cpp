@@ -63,6 +63,7 @@
 #include "PlayerCharacter.h"
 #include "GameStructs.h"
 #include "FontManager.h" 
+#include "OrbitalBody.h" 
 
 #include "Screen.h"
 #include "DataLoader.h"
@@ -3310,7 +3311,7 @@ HUDView::PrepareBitmap(const char* name, Bitmap& img, uint8*& shades)
 	DataLoader* loader = DataLoader::GetLoader();
 
 	loader->SetDataPath("HUD/");
-	int loaded = loader->LoadBitmap(name, img, Bitmap::BMP_TRANSPARENT);
+	int loaded = loader->LoadGameBitmap(name, img, Bitmap::BMP_TRANSPARENT);
 	loader->SetDataPath(nullptr);
 
 	if (!loaded)

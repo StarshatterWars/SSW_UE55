@@ -537,7 +537,7 @@ void Weapon::SelectTarget()
             // can we lock onto this target?
             if ((c_ship->IsRogue() || (c_ship->GetIFF() > 0 && c_ship->GetIFF() != ship->GetIFF())) &&
                 ((int)c_ship->Class() & design->target_type) &&
-                c_ship->Weapons().size() > 0)
+                c_ship->GetWeapons().size() > 0)
             {
                 // distance from self to target:
                 double distance = FVector(c_ship->Location() - muzzle_pts[0]).Length();

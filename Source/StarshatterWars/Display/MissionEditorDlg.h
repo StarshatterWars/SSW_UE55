@@ -36,18 +36,19 @@ class STARSHATTERWARS_API UMissionEditorDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UMissionEditorDlg();
+    UMissionEditorDlg(const FObjectInitializer& ObjectInitializer);
 
     void InitializeMissionEditor(UMenuScreen* InManager);
     void SetMission(Mission* InMission);
     void SetMissionInfo(MissionInfo* InMissionInfo);
     void Show();
+    void ShowTab(int32 Tab);
 
 protected:
     // Legacy behaviors
     void ScrapeForm();
     void DrawPackages();
-    void ShowTab(int32 Tab);
+    
 
 protected:
     // UBaseScreen overrides

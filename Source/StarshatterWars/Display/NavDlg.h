@@ -20,7 +20,11 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "List.h"
+
 #include "NavDlg.generated.h"
+
+
 
 // Unreal widget forward declarations:
 class UButton;
@@ -119,6 +123,8 @@ public:
     UFUNCTION()
     void              OnClose();
 
+    MapView*          star_map;
+
 protected:
     // UUserWidget lifecycle:
     virtual void      NativeOnInitialized() override;
@@ -204,6 +210,11 @@ protected:
     StarSystem* star_system = nullptr;
     Ship* ship = nullptr;
     Mission* mission = nullptr;
+
+    List<Orbital>        stars;
+    List<Orbital>        planets;
+    List<OrbitalRegion>  regions;
+    List<Ship>           contacts;
 
     // Editor flag:
     UPROPERTY(BlueprintReadOnly, Category = "NavDlg")

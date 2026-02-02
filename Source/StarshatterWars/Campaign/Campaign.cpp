@@ -442,10 +442,10 @@ Campaign::Load()
     loader->SetDataPath(path);
 
     if (loader->FindFile("image.pcx")) {
-        loader->LoadBitmap("image.pcx", image[0]);
-        loader->LoadBitmap("selected.pcx", image[1]);
-        loader->LoadBitmap("unavail.pcx", image[2]);
-        loader->LoadBitmap("banner.pcx", image[3]);
+        loader->LoadGameBitmap("image.pcx", image[0]);
+        loader->LoadGameBitmap("selected.pcx", image[1]);
+        loader->LoadGameBitmap("unavail.pcx", image[2]);
+        loader->LoadGameBitmap("banner.pcx", image[3]);
     }
 
     loader->SetDataPath(0);

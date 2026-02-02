@@ -2,16 +2,18 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
+    ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+
     SUBSYSTEM:    Stars.exe
     FILE:         MissionPlanner.cpp
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    MissionPlanner (Unreal)
+    UMissionPlanner (Unreal)
     - Legacy PlanScreen port.
-    - Creates and owns mission planning dialogs (FORM-driven UBaseScreen widgets).
-    - Centralizes tab switching and topmost dialog closing.
+    - Creates and owns mission planning dialogs.
+    - Centralizes tab switching and dialog lifetime.
 */
 
 #include "MissionPlanner.h"
@@ -26,9 +28,9 @@
 #include "MissionDebriefDlg.h"
 #include "MissionAwardDlg.h"
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 // CONSTRUCTION / LIFECYCLE
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 UMissionPlanner::UMissionPlanner(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -38,9 +40,6 @@ UMissionPlanner::UMissionPlanner(const FObjectInitializer& ObjectInitializer)
 void UMissionPlanner::NativeConstruct()
 {
     Super::NativeConstruct();
-
-    // If you want auto-setup on construct, uncomment:
-    // Setup();
 }
 
 void UMissionPlanner::NativeDestruct()
@@ -55,46 +54,39 @@ void UMissionPlanner::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     ExecFrame(InDeltaTime);
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 // SETUP / TEARDOWN
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 void UMissionPlanner::Setup()
 {
-    // Prevent double-setup:
     if (ObjectiveDlg || PackageDlg || WeaponDlg || NavDlg || DebriefDlg || AwardDlg)
-    {
         return;
-    }
 
     ObjectiveDlg = CreateDialogWidget<UMissionObjectiveDlg>(MissionObjectiveDlgClass, TEXT("MissionObjectiveDlg"));
     PackageDlg = CreateDialogWidget<UMissionPackageDlg>(MissionPackageDlgClass, TEXT("MissionPackageDlg"));
-    NavDlg = CreateDialogWidget<UMissionNavDlg>(MissionNavDlgClass, TEXT("MissionNavigationDlg"));
+    NavDlg = CreateDialogWidget<UMissionNavDlg>(MissionNavDlgClass, TEXT("MissionNavDlg"));
     WeaponDlg = CreateDialogWidget<UMissionWeaponDlg>(MissionWeaponDlgClass, TEXT("MissionWeaponDlg"));
     AwardDlg = CreateDialogWidget<UMissionAwardDlg>(AwardDlgClass, TEXT("MissionAwardDlg"));
-    DebriefDlg = CreateDialogWidget<UMissionDebriefDlg>(DebriefDlgClass, TEXT("MissionDebriefDlg"));
+    DebriefDlg = CreateDialogWidget<UMissionDebriefDlg>(MissionDebriefDlgClass, TEXT("MissionDebriefDlg"));
 
-    // Start hidden; legacy PlanScreen shows Obj dialog when shown:
     HideAll();
     bIsShown = false;
 }
 
 void UMissionPlanner::TearDown()
 {
-    // Hide first (avoids “zombie” input focus issues in some setups)
     HideAll();
 
-    // Remove + release in a safe order:
     auto DestroyDlg = [this](UUserWidget*& W)
         {
-            if (!W) return;
+            if (!W)
+                return;
 
             ReleaseAlive(W);
 
             if (W->IsInViewport())
-            {
                 W->RemoveFromParent();
-            }
 
             W = nullptr;
         };
@@ -109,33 +101,23 @@ void UMissionPlanner::TearDown()
     bIsShown = false;
 }
 
-// +--------------------------------------------------------------------+
-// FRAME / CLOSE TOPMOST (LEGACY BEHAVIOR)
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
+// FRAME / CLOSE TOPMOST (LEGACY)
+// --------------------------------------------------------------------
 
 void UMissionPlanner::ExecFrame(float DeltaSeconds)
 {
-    // Mirror legacy behavior: only tick visible dialogs.
     if (!bIsShown)
         return;
 
-    // If your dialogs implement ExecFrame(DeltaSeconds), call that instead.
-    // Here we do nothing because UUserWidget tick already runs; we just keep
-    // the legacy PlanScreen API intact.
     (void)DeltaSeconds;
 }
 
 bool UMissionPlanner::CloseTopmost()
 {
-    // Legacy behavior:
-    // - If debrief is shown: close it (but function can still return false)
-    // - If award is shown: return true
-    // - Else: return false
-
     if (DebriefDlg && IsDialogActuallyShown(DebriefDlg))
     {
         HideDialog(DebriefDlg);
-        // Do NOT early-return; legacy continues.
     }
 
     if (AwardDlg && IsDialogActuallyShown(AwardDlg))
@@ -146,9 +128,9 @@ bool UMissionPlanner::CloseTopmost()
     return false;
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 // SHOW / HIDE (SCREEN LEVEL)
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 void UMissionPlanner::Show()
 {
@@ -165,9 +147,9 @@ void UMissionPlanner::Hide()
     bIsShown = false;
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 // DIALOG SWITCHING (LEGACY API)
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 void UMissionPlanner::ShowMsnDlg()
 {
@@ -251,7 +233,6 @@ bool UMissionPlanner::IsMsnWepShown() const
 
 void UMissionPlanner::ShowNavDlg()
 {
-    // Legacy: only show if it exists and isn't already shown:
     if (NavDlg && !IsDialogActuallyShown(NavDlg))
     {
         HideAll();
@@ -312,9 +293,9 @@ bool UMissionPlanner::IsAwardShown() const
     return AwardDlg && IsDialogActuallyShown(AwardDlg);
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 // HIDE ALL
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 void UMissionPlanner::HideAll()
 {
@@ -326,9 +307,9 @@ void UMissionPlanner::HideAll()
     HideDialog(DebriefDlg);
 }
 
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 // INTERNAL HELPERS
-// +--------------------------------------------------------------------+
+// --------------------------------------------------------------------
 
 template<typename TWidget>
 TWidget* UMissionPlanner::CreateDialogWidget(TSubclassOf<UUserWidget> Class, const TCHAR* DebugName)
@@ -353,11 +334,9 @@ TWidget* UMissionPlanner::CreateDialogWidget(TSubclassOf<UUserWidget> Class, con
         return nullptr;
     }
 
-    // Add to viewport once; toggle visibility for tab switching.
     Created->AddToViewport();
     Created->SetVisibility(ESlateVisibility::Collapsed);
 
-    // Keep alive per your “raw pointer” requirement:
     KeepAlive(Created);
 
     return Cast<TWidget>(Created);
@@ -375,17 +354,13 @@ bool UMissionPlanner::IsDialogActuallyShown(const UUserWidget* W)
 void UMissionPlanner::KeepAlive(UObject* Obj)
 {
     if (Obj && !Obj->IsRooted())
-    {
         Obj->AddToRoot();
-    }
 }
 
 void UMissionPlanner::ReleaseAlive(UObject* Obj)
 {
     if (Obj && Obj->IsRooted())
-    {
         Obj->RemoveFromRoot();
-    }
 }
 
 void UMissionPlanner::ShowDialog(UUserWidget* Dlg)
@@ -393,12 +368,9 @@ void UMissionPlanner::ShowDialog(UUserWidget* Dlg)
     if (!Dlg) return;
 
     if (!Dlg->IsInViewport())
-    {
         Dlg->AddToViewport();
-    }
 
     Dlg->SetVisibility(ESlateVisibility::Visible);
-    // Optional: set focus or input mode here if your UI framework needs it.
 }
 
 void UMissionPlanner::HideDialog(UUserWidget* Dlg)
@@ -406,3 +378,36 @@ void UMissionPlanner::HideDialog(UUserWidget* Dlg)
     if (!Dlg) return;
     Dlg->SetVisibility(ESlateVisibility::Collapsed);
 }
+
+// --------------------------------------------------------------------
+// CALLBACKS USED BY NAV DIALOG
+// --------------------------------------------------------------------
+
+void UMissionPlanner::OnMissionBriefingAccept()
+{
+    ShowMsnPkgDlg();
+}
+
+void UMissionPlanner::OnMissionBriefingCancel()
+{
+    Hide();
+}
+
+void UMissionPlanner::ShowBriefingSitTab() {}
+void UMissionPlanner::ShowBriefingPkgTab() {}
+void UMissionPlanner::ShowBriefingMapTab() {}
+void UMissionPlanner::ShowBriefingWepTab() {}
+
+void UMissionPlanner::NavModeGalaxy() {}
+void UMissionPlanner::NavModeSystem() {}
+void UMissionPlanner::NavModeSector() {}
+
+void UMissionPlanner::NavZoomIn() {}
+void UMissionPlanner::NavZoomOut() {}
+
+void UMissionPlanner::NavFilterSystem() {}
+void UMissionPlanner::NavFilterPlanet() {}
+void UMissionPlanner::NavFilterSector() {}
+void UMissionPlanner::NavFilterStation() {}
+void UMissionPlanner::NavFilterStarship() {}
+void UMissionPlanner::NavFilterFighter() {}

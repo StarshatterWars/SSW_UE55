@@ -135,13 +135,10 @@ void UFlightOpsDlg::SetShip(Ship* InShip)
     const int32 NumSquadrons = HangarPtr->NumSquadrons();
     for (int32 i = 0; i < NumSquadrons; ++i)
     {
-        FString Entry = FString::Printf(
-            TEXT("%s %s"),
-            HangarPtr->SquadronDesign(i)->abrv,
-            *FString(HangarPtr->SquadronName(i).data())
-        );
+        const FString Abbrev = ANSI_TO_TCHAR(HangarPtr->SquadronDesign(i)->abrv);
+        const FString SqnName = ANSI_TO_TCHAR(HangarPtr->SquadronName(i).data());
 
-        FilterList->AddOption(Entry);
+        FilterList->AddOption(FString::Printf(TEXT("%s %s"), *Abbrev, *SqnName));
     }
 
     FilterList->AddOption(TEXT("Pending"));

@@ -137,6 +137,41 @@ PlayerCharacter::PlayerCharacter()
     mfd[3] = EMFDMode::OFF;
 }
 
+PlayerCharacter* PlayerCharacter::CreateDefault()
+{
+    // Create a new player with whatever your defaults are
+    PlayerCharacter* P = new PlayerCharacter();
+    P->SetName("NEW PILOT");          // adjust to your API
+    // set other defaults...
+    return P;
+}
+
+void PlayerCharacter::AddToRoster(PlayerCharacter* P)
+{
+    if (!P) return;
+    GetRoster().append(P);
+    Save(); // if you have Save()
+}
+
+void PlayerCharacter::RemoveFromRoster(PlayerCharacter* P)
+{
+    if (!P) return;
+
+    List<PlayerCharacter>& R = GetRoster();
+    // remove by pointer:
+    for (int i = 0; i < R.size(); ++i)
+    {
+        if (R[i] == P)
+        {
+            R.remove(P);   // pointer-based remove
+            break;
+        }
+    }
+
+    delete P;
+    Save();
+}
+
 PlayerCharacter::~PlayerCharacter()
 {
 }
@@ -278,6 +313,12 @@ PlayerCharacter::SetKills(int k)
         kills = k;
 }
 
+void PlayerCharacter::SetDeaths(int d)
+{
+    if (d >= 0)
+        deaths = d;
+}
+
 void
 PlayerCharacter::SetLosses(int l)
 {
@@ -313,6 +354,12 @@ PlayerCharacter::AddKills(int k)
 {
     if (k > 0)
         kills += k;
+}
+
+void PlayerCharacter::AddDeaths(int d)
+{
+    if (d > 0)
+        deaths += d;
 }
 
 void
@@ -929,41 +976,41 @@ PlayerCharacter::Close()
 
 // +-------------------------------------------------------------------+
 
-bool
-PlayerCharacter::ConfigExists()
+bool PlayerCharacter::ConfigExists() const
 {
     return config_exists;
 }
-
 // +-------------------------------------------------------------------+
 
 #define GET_DEF_BOOL(x) if(pdef->name()->value()==(#x))GetDefBool(player->x,pdef,filename)
 #define GET_DEF_TEXT(x) if(pdef->name()->value()==(#x))GetDefText(player->x,pdef,filename)
 #define GET_DEF_NUM(x)  if(pdef->name()->value()==(#x))GetDefNumber(player->x,pdef,filename)
 
-void
-PlayerCharacter::Load()
+void PlayerCharacter::Load()
 {
     config_exists = false;
 
-    // read the config file:
-    BYTE* block = 0;
-    int         blocklen = 0;
+    // ------------------------------------------------------------
+    // Read config file into memory block
+    // ------------------------------------------------------------
+    BYTE* block = nullptr;
+    int   blocklen = 0;
 
-    char        filename[64];
+    char filename[64];
     strcpy_s(filename, "player.cfg");
 
-    FILE* f;
+    FILE* f = nullptr;
     ::fopen_s(&f, filename, "rb");
 
-    if (f) {
+    if (f)
+    {
         config_exists = true;
 
         ::fseek(f, 0, SEEK_END);
-        blocklen = ftell(f);
+        blocklen = static_cast<int>(::ftell(f));
         ::fseek(f, 0, SEEK_SET);
 
-        block = new  BYTE[blocklen + 1];
+        block = new BYTE[blocklen + 1];
         block[blocklen] = 0;
 
         ::fread(block, blocklen, 1, f);
@@ -973,166 +1020,202 @@ PlayerCharacter::Load()
     if (blocklen == 0)
         return;
 
-    Parser parser(new  BlockReader((const char*)block, blocklen));
+    // ------------------------------------------------------------
+    // Parse file
+    // ------------------------------------------------------------
+    Parser parser(new BlockReader((const char*)block, blocklen));
     Term* term = parser.ParseTerm();
 
-    if (!term) {
-        Print("ERROR: could notxparse '%s'.\n", filename);
+    if (!term)
+    {
+        Print("ERROR: could not parse '%s'.\n", filename);
+        delete[] block;
         return;
     }
-    else {
+    else
+    {
         TermText* file_type = term->isText();
-        if (!file_type || file_type->value() != "PLAYER_CONFIG") {
+        if (!file_type || file_type->value() != "PLAYER_CONFIG")
+        {
             Print("WARNING: invalid '%s' file.  Using defaults\n", filename);
+            delete term;
+            delete[] block;
             return;
         }
     }
 
+    // ------------------------------------------------------------
+    // Reset roster
+    // ------------------------------------------------------------
     if (current_player && !player_roster.contains(current_player))
         delete current_player;
+
     player_roster.destroy();
-    current_player = 0;
+    current_player = nullptr;
 
-    do {
+    // ------------------------------------------------------------
+    // Inline DEF helpers (must exist above this method or in a header)
+    // ------------------------------------------------------------
+    // inline bool DefNameEquals(const TermDef* Def, const char* Key);
+    // inline void DefReadBool(bool& Out, TermDef* Def, const char* Filename);
+    // inline void DefReadInt(int& Out, TermDef* Def, const char* Filename);
+    // inline void DefReadText(Text& Out, TermDef* Def, const char* Filename);
+    // template<typename TEnum> inline void DefReadEnum(TEnum& Out, TermDef* Def, const char* Filename);
+
+    // ------------------------------------------------------------
+    // Parse terms until EOF
+    // ------------------------------------------------------------
+    do
+    {
         delete term;
-
         term = parser.ParseTerm();
 
-        if (term) {
-            TermDef* def = term->isDef();
-            if (def) {
-                if (def->name()->value() == "player") {
+        if (!term)
+            break;
 
-                    if (!def->term() || !def->term()->isStruct()) {
-                        Print("WARNING: player structure missing in '%s'\n", filename);
-                    }
-                    else {
-                        PlayerCharacter* player = new  PlayerCharacter;
-                        bool        current = false;
-                        TermStruct* val = def->term()->isStruct();
+        TermDef* def = term->isDef();
+        if (!def)
+        {
+            Print("WARNING: term ignored in '%s'\n", filename);
+            term->print();
+            continue;
+        }
 
-                        for (int i = 0; i < val->elements()->size(); i++) {
-                            TermDef* pdef = val->elements()->at(i)->isDef();
-                            if (pdef) {
-                                GET_DEF_TEXT(name);
-                            else  GET_DEF_TEXT(squadron);
-                else  GET_DEF_TEXT(signature);
+        if (!DefNameEquals(def, "player"))
+        {
+            Print("WARNING: unknown label '%s' in '%s'\n",
+                def->name()->value().data(), filename);
+            continue;
+        }
 
-            else  GET_DEF_NUM(uid);
-        else  GET_DEF_NUM(flight_model);
-    else  GET_DEF_NUM(flying_start);
-    else  GET_DEF_NUM(landing_model);
-    else  GET_DEF_NUM(ai_level);
-else  GET_DEF_NUM(hud_mode);
-else  GET_DEF_NUM(hud_color);
-else  GET_DEF_NUM(ff_level);
-                                else  GET_DEF_NUM(grid);
-                                else  GET_DEF_NUM(gunsight);
+        if (!def->term() || !def->term()->isStruct())
+        {
+            Print("WARNING: player structure missing in '%s'\n", filename);
+            continue;
+        }
 
-                                else if (pdef->name()->value() == ("chat_0"))
-                                    GetDefText(player->chat_macros[0], pdef, filename);
+        PlayerCharacter* player = new PlayerCharacter;
+        bool             current = false;
 
-                                else if (pdef->name()->value() == ("chat_1"))
-                                    GetDefText(player->chat_macros[1], pdef, filename);
+        TermStruct* val = def->term()->isStruct();
 
-                                else if (pdef->name()->value() == ("chat_2"))
-                                    GetDefText(player->chat_macros[2], pdef, filename);
+        // Make sure arrays have enough slots before assignment:
+        // - chat_macros (legacy) assumed at least 10
+        // - mfd is now UE TArray<EMFDMode> (ensure >= 3)
+        if (player->mfd.Num() < 3)
+            player->mfd.SetNum(3);
 
-                                else if (pdef->name()->value() == ("chat_3"))
-                                    GetDefText(player->chat_macros[3], pdef, filename);
+        for (int i = 0; i < val->elements()->size(); i++)
+        {
+            TermDef* pdef = val->elements()->at(i)->isDef();
+            if (!pdef)
+                continue;
 
-                                else if (pdef->name()->value() == ("chat_4"))
-                                    GetDefText(player->chat_macros[4], pdef, filename);
+            // ----------------------------------------------------
+            // Common keys (Text)
+            // ----------------------------------------------------
+            if (DefNameEquals(pdef, "name")) { DefReadText(player->name, pdef, filename); }
+            else if (DefNameEquals(pdef, "squadron")) { DefReadText(player->squadron, pdef, filename); }
+            else if (DefNameEquals(pdef, "signature")) { DefReadText(player->signature, pdef, filename); }
 
-                                else if (pdef->name()->value() == ("chat_5"))
-                                    GetDefText(player->chat_macros[5], pdef, filename);
+            // ----------------------------------------------------
+            // Common keys (Numbers)
+            // ----------------------------------------------------
+            else if (DefNameEquals(pdef, "uid")) { DefReadInt(player->uid, pdef, filename); }
+            else if (DefNameEquals(pdef, "flight_model")) { DefReadInt(player->flight_model, pdef, filename); }
+            else if (DefNameEquals(pdef, "flying_start")) { DefReadInt(player->flying_start, pdef, filename); }
+            else if (DefNameEquals(pdef, "landing_model")) { DefReadInt(player->landing_model, pdef, filename); }
+            else if (DefNameEquals(pdef, "ai_level")) { DefReadInt(player->ai_level, pdef, filename); }
+            else if (DefNameEquals(pdef, "hud_mode")) { DefReadInt(player->hud_mode, pdef, filename); }
+            else if (DefNameEquals(pdef, "hud_color")) { DefReadInt(player->hud_color, pdef, filename); }
+            else if (DefNameEquals(pdef, "ff_level")) { DefReadInt(player->ff_level, pdef, filename); }
+            else if (DefNameEquals(pdef, "grid")) { DefReadInt(player->grid, pdef, filename); }
+            else if (DefNameEquals(pdef, "gunsight")) { DefReadInt(player->gunsight, pdef, filename); }
 
-                                else if (pdef->name()->value() == ("chat_6"))
-                                    GetDefText(player->chat_macros[6], pdef, filename);
+            // ----------------------------------------------------
+            // Chat macros: chat_0 .. chat_9
+            // ----------------------------------------------------
+            else
+            {
+                const Text Key = pdef->name()->value();
 
-                                else if (pdef->name()->value() == ("chat_7"))
-                                    GetDefText(player->chat_macros[7], pdef, filename);
+                if (Key.indexOf("chat_") == 0)
+                {
+                    int idx = -1;
+                    const char* Raw = Key.data();
+                    if (Raw && ::strlen(Raw) >= 6)
+                        idx = Raw[5] - '0';
 
-                                else if (pdef->name()->value() == ("chat_8"))
-                                    GetDefText(player->chat_macros[8], pdef, filename);
-
-                                else if (pdef->name()->value() == ("chat_9"))
-                                    GetDefText(player->chat_macros[9], pdef, filename);
-
-                                else if (pdef->name()->value() == ("mfd0"))
-                                    GetDefNumber(player->mfd[0], pdef, filename);
-
-                                else if (pdef->name()->value() == ("mfd1"))
-                                    GetDefNumber(player->mfd[1], pdef, filename);
-
-                                else if (pdef->name()->value() == ("mfd2"))
-                                    GetDefNumber(player->mfd[2], pdef, filename);
-
-                                else if (pdef->name()->value() == ("current"))
-                                    GetDefBool(current, pdef, filename);
-
-                                else if (pdef->name()->value() == ("trained"))
-                                    GetDefNumber(player->trained, pdef, filename);
-
-                                else if (pdef->name()->value() == ("stats")) {
-                                        Text stats;
-                                        GetDefText(stats, pdef, filename);
-                                        player->DecodeStats(stats);
-                                        }
-
-                                else if (pdef->name()->value().indexOf("XXX_CHEAT_A1B2C3_") == 0) {
-                                            if (pdef->name()->value().contains("points"))
-                                                GetDefNumber(player->points, pdef, filename);
-
-                                            else if (pdef->name()->value().contains("rank")) {
-                                                int rank = 0;
-                                                GetDefNumber(rank, pdef, filename);
-                                                player->SetRank(rank);
-                                            }
-
-                                            else if (pdef->name()->value().contains("medals"))
-                                                GetDefNumber(player->medals, pdef, filename);
-
-                                            else if (pdef->name()->value().contains("campaigns"))
-                                                GetDefNumber(player->campaigns, pdef, filename);
-
-                                            else if (pdef->name()->value().contains("missions"))
-                                                GetDefNumber(player->missions, pdef, filename);
-
-                                            else if (pdef->name()->value().contains("kills"))
-                                                GetDefNumber(player->kills, pdef, filename);
-
-                                            else if (pdef->name()->value().contains("losses"))
-                                                GetDefNumber(player->losses, pdef, filename);
-
-                                            else if (pdef->name()->value().contains("flight_time"))
-                                                GetDefNumber(player->flight_time, pdef, filename);
-                                                }
-                            }
-                        }
-
-                        player_roster.append(player);
-                        player->CreateUniqueID();
-
-                        if (current)
-                            SelectPlayer(player);
-                    }
-
+                    if (idx >= 0 && idx < 10)
+                        GetDefText(player->chat_macros[idx], pdef, filename);
                 }
-                else {
-                    Print("WARNING: unknown label '%s' in '%s'\n",
-                        def->name()->value().data(), filename);
+
+                // ------------------------------------------------
+                // MFD modes: mfd0..mfd2 (enum)
+                // ------------------------------------------------
+                else if (Key == "mfd0") { DefReadEnum(player->mfd[0], pdef, filename); }
+                else if (Key == "mfd1") { DefReadEnum(player->mfd[1], pdef, filename); }
+                else if (Key == "mfd2") { DefReadEnum(player->mfd[2], pdef, filename); }
+
+                // ------------------------------------------------
+                // Bool / other special keys
+                // ------------------------------------------------
+                else if (Key == "current")
+                {
+                    DefReadBool(current, pdef, filename);
                 }
-            }
-            else {
-                Print("WARNING: term ignored in '%s'\n", filename);
-                term->print();
+                else if (Key == "trained")
+                {
+                    DefReadInt(player->trained, pdef, filename);
+                }
+                else if (Key == "stats")
+                {
+                    Text stats;
+                    DefReadText(stats, pdef, filename);
+                    player->DecodeStats(stats);
+                }
+
+                // ------------------------------------------------
+                // Cheat keys (legacy)
+                // ------------------------------------------------
+                else if (Key.indexOf("XXX_CHEAT_A1B2C3_") == 0)
+                {
+                    if (Key.contains("points"))
+                        DefReadInt(player->points, pdef, filename);
+
+                    else if (Key.contains("rank"))
+                    {
+                        int rank = 0;
+                        DefReadInt(rank, pdef, filename);
+                        player->SetRank(rank);
+                    }
+                    else if (Key.contains("medals"))
+                        DefReadInt(player->medals, pdef, filename);
+                    else if (Key.contains("campaigns"))
+                        DefReadInt(player->campaigns, pdef, filename);
+                    else if (Key.contains("missions"))
+                        DefReadInt(player->missions, pdef, filename);
+                    else if (Key.contains("kills"))
+                        DefReadInt(player->kills, pdef, filename);
+                    else if (Key.contains("losses"))
+                        DefReadInt(player->losses, pdef, filename);
+                    else if (Key.contains("flight_time"))
+                        DefReadInt(player->flight_time, pdef, filename);
+                }
             }
         }
+
+        player_roster.append(player);
+        player->CreateUniqueID();
+
+        if (current)
+            SelectPlayer(player);
+
     } while (term);
 
     delete[] block;
 }
+
 
 // +-------------------------------------------------------------------+
 

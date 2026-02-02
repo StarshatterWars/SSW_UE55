@@ -1,18 +1,56 @@
 #include "ExitDlg.h"
 
+#include "MenuScreen.h"
+
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-UExitDlg::UExitDlg()
+// ------------------------------------------------------------
+// Construction
+// ------------------------------------------------------------
+
+UExitDlg::UExitDlg(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-    SetDialogInputEnabled(true);
+    // Constructor = defaults only
+    bIsFocusable = true;
 }
+
+// ------------------------------------------------------------
+// Setup / lifecycle
+// ------------------------------------------------------------
 
 void UExitDlg::SetManager(UMenuScreen* InManager)
 {
     Manager = InManager;
 }
+
+void UExitDlg::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+    RegisterControls();
+
+    bExitLatch = true;
+    ScrollOffset = 0.0f;
+
+    FString Credits;
+    if (LoadCreditsFile(Credits))
+    {
+        ApplyCredits(Credits);
+    }
+}
+
+void UExitDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+    ExecFrame(InDeltaTime);
+}
+
+// ------------------------------------------------------------
+// Legacy form integration
+// ------------------------------------------------------------
 
 void UExitDlg::BindFormWidgets()
 {
@@ -52,25 +90,9 @@ form: {
 )FRM"));
 }
 
-void UExitDlg::NativeConstruct()
-{
-    Super::NativeConstruct();
-
-    RegisterControls();
-
-    bExitLatch = true;
-    ScrollOffset = 0.0f;
-
-    FString Credits;
-    if (LoadCreditsFile(Credits))
-        ApplyCredits(Credits);
-}
-
-void UExitDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-    Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame(InDeltaTime);
-}
+// ------------------------------------------------------------
+// Control binding
+// ------------------------------------------------------------
 
 void UExitDlg::RegisterControls()
 {
@@ -87,6 +109,10 @@ void UExitDlg::RegisterControls()
     }
 }
 
+// ------------------------------------------------------------
+// Dialog control
+// ------------------------------------------------------------
+
 void UExitDlg::Show()
 {
     bExitLatch = true;
@@ -94,8 +120,13 @@ void UExitDlg::Show()
 
     SetVisibility(ESlateVisibility::Visible);
 
+    // Unreal modal behavior
+    SetDialogInputEnabled(true);
+
     if (CreditsScroll)
+    {
         CreditsScroll->SetScrollOffset(0.0f);
+    }
 }
 
 void UExitDlg::ExecFrame(float DeltaTime)
@@ -115,6 +146,10 @@ void UExitDlg::ExecFrame(float DeltaTime)
     }
 #endif
 }
+
+// ------------------------------------------------------------
+// Input handling
+// ------------------------------------------------------------
 
 void UExitDlg::HandleAccept()
 {
@@ -144,18 +179,31 @@ void UExitDlg::HandleCancelClicked()
     OnCancel();
 }
 
+// ------------------------------------------------------------
+// Actions
+// ------------------------------------------------------------
+
 void UExitDlg::OnApply()
 {
+    SetDialogInputEnabled(false);
     UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, true);
 }
 
 void UExitDlg::OnCancel()
 {
+    SetDialogInputEnabled(false);
+
     if (Manager)
+    {
         Manager->ShowMenuDlg();
+    }
 
     SetVisibility(ESlateVisibility::Hidden);
 }
+
+// ------------------------------------------------------------
+// Credits helpers
+// ------------------------------------------------------------
 
 bool UExitDlg::LoadCreditsFile(FString& OutText) const
 {

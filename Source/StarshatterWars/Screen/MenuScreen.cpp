@@ -27,7 +27,7 @@
 #include "MissionEditorDlg.h"
 #include "MissionElementDlg.h"
 #include "MissionEventDlg.h"
-//#include "MissionEditNavDlg.h"
+#include "MissionEditorNavDlg.h"
 #include "FirstTimeDlg.h"
 #include "AwardShowDlg.h"
 #include "LoadDlg.h"
@@ -131,7 +131,7 @@ void UMenuScreen::Setup()
     EnsureDialog<UMissionEditorDlg>(MsnEditDlgClass, MsnEditDlg);
     EnsureDialog<UMissionElementDlg>(MsnElemDlgClass, MsnElemDlg);
     EnsureDialog<UMissionEventDlg>(MsnEventDlgClass, MsnEventDlg);
-    EnsureDialog<UMsnEditNavDlg>(MsnEditNavDlgClass, MsnEditNavDlg);
+    EnsureDialog<UMissionEditorNavDlg>(MsnEditNavDlgClass, MsnEditNavDlg);
 
     EnsureDialog<ULoadDlg>(LoadDlgClass, LoadDlg);
     EnsureDialog<UTacRefDlg>(TacRefDlgClass, TacRefDlg);

@@ -67,7 +67,7 @@ public:
     virtual void      Draw();     // refresh backing store
 
     // Event Target Interface:
-    virtual int       OnMouseMove(int x, int y);
+    virtual bool      OnMouseMove(int32 x, int32 y);
     virtual int       OnLButtonDown(int x, int y);
     virtual int       OnLButtonUp(int x, int y);
     virtual int       OnClick();

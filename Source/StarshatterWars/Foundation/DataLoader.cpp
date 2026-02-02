@@ -191,7 +191,7 @@ DataLoader::ReleaseBuffer(BYTE*& buf)
 // +--------------------------------------------------------------------+
 
 int
-DataLoader::LoadBitmap(const char* name, Bitmap& bitmap, int type, bool optional)
+DataLoader::LoadGameBitmap(const char* name, Bitmap& bitmap, int type, bool optional)
 {
 	return 0;
 }

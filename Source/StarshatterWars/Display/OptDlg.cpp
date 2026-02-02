@@ -87,87 +87,100 @@ void UOptDlg::NativeConstruct()
 
     if (bNeedsBuild)
     {
-        // Build the legacy FORM as a UMG widget tree:
-        // (Implemented inline below as BuildFromLegacyForm-equivalent)
         if (!WidgetTree)
             return;
 
         // Root: Canvas
-        UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+        UCanvasPanel* RootCanvas =
+            WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
         WidgetTree->RootWidget = RootCanvas;
 
-        // Frame1 background (Frame1.pcx):
-        UImage* Frame1 = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("Frame1"));
+        // Frame1 background (Frame1.pcx)
+        UImage* Frame1Image =
+            WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("Frame1"));
         {
-            UCanvasPanelSlot* Slot = RootCanvas->AddChildToCanvas(Frame1);
-            Slot->SetAnchors(FAnchors(0, 0, 1, 1));
-            Slot->SetOffsets(FMargin(0, 0, 0, 0));
+            UCanvasPanelSlot* Frame1CanvasSlot = RootCanvas->AddChildToCanvas(Frame1Image);
+            Frame1CanvasSlot->SetAnchors(FAnchors(0, 0, 1, 1));
+            Frame1CanvasSlot->SetOffsets(FMargin(0, 0, 0, 0));
             // TODO: assign brush from "Frame1.pcx"
         }
 
-        // Overlay for Frame2a/Frame2b + UI:
-        UOverlay* RootOverlay = WidgetTree->ConstructWidget<UOverlay>(UOverlay::StaticClass(), TEXT("RootOverlay"));
+        // Overlay for Frame2a/Frame2b + UI
+        UOverlay* RootOverlay =
+            WidgetTree->ConstructWidget<UOverlay>(UOverlay::StaticClass(), TEXT("RootOverlay"));
         {
-            UCanvasPanelSlot* Slot = RootCanvas->AddChildToCanvas(RootOverlay);
-            Slot->SetAnchors(FAnchors(0, 0, 1, 1));
-            Slot->SetOffsets(FMargin(0, 0, 0, 0));
+            UCanvasPanelSlot* RootOverlayCanvasSlot = RootCanvas->AddChildToCanvas(RootOverlay);
+            RootOverlayCanvasSlot->SetAnchors(FAnchors(0, 0, 1, 1));
+            RootOverlayCanvasSlot->SetOffsets(FMargin(0, 0, 0, 0));
         }
 
-        // Frame2a:
-        UImage* Frame2a = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("Frame2a"));
+        // Frame2a
+        UImage* Frame2aImage =
+            WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("Frame2a"));
         {
-            UOverlaySlot* Slot = RootOverlay->AddChildToOverlay(Frame2a);
-            Slot->SetHorizontalAlignment(HAlign_Fill);
-            Slot->SetVerticalAlignment(VAlign_Fill);
+            UOverlaySlot* Frame2aOverlaySlot = RootOverlay->AddChildToOverlay(Frame2aImage);
+            Frame2aOverlaySlot->SetHorizontalAlignment(HAlign_Fill);
+            Frame2aOverlaySlot->SetVerticalAlignment(VAlign_Fill);
             // TODO: assign brush "Frame2a"
         }
 
-        // Frame2b:
-        UImage* Frame2b = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("Frame2b"));
+        // Frame2b
+        UImage* Frame2bImage =
+            WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("Frame2b"));
         {
-            UOverlaySlot* Slot = RootOverlay->AddChildToOverlay(Frame2b);
-            Slot->SetHorizontalAlignment(HAlign_Fill);
-            Slot->SetVerticalAlignment(VAlign_Fill);
+            UOverlaySlot* Frame2bOverlaySlot = RootOverlay->AddChildToOverlay(Frame2bImage);
+            Frame2bOverlaySlot->SetHorizontalAlignment(HAlign_Fill);
+            Frame2bOverlaySlot->SetVerticalAlignment(VAlign_Fill);
             // TODO: assign brush "Frame2b"
         }
 
-        // Main Grid (approximates legacy layout + margins):
-        UGridPanel* MainGrid = WidgetTree->ConstructWidget<UGridPanel>(UGridPanel::StaticClass(), TEXT("MainGrid"));
+        // Main Grid (approximates legacy layout + margins)
+        UGridPanel* MainGrid =
+            WidgetTree->ConstructWidget<UGridPanel>(UGridPanel::StaticClass(), TEXT("MainGrid"));
         {
-            UOverlaySlot* Slot = RootOverlay->AddChildToOverlay(MainGrid);
-            Slot->SetHorizontalAlignment(HAlign_Fill);
-            Slot->SetVerticalAlignment(VAlign_Fill);
-            MainGrid->SetPadding(FMargin(10, 10, 64, 8));
+            UOverlaySlot* MainGridOverlaySlot = RootOverlay->AddChildToOverlay(MainGrid);
+            MainGridOverlaySlot->SetHorizontalAlignment(HAlign_Fill);
+            MainGridOverlaySlot->SetVerticalAlignment(VAlign_Fill);
+
+            // IMPORTANT: Padding belongs to the SLOT, not UGridPanel (no SetPadding on UGridPanel)
+            MainGridOverlaySlot->SetPadding(FMargin(10.f, 10.f, 64.f, 8.f));
         }
 
-        // Title label "Options":
-        UTextBlock* TitleText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title_Options"));
+        // Title label "Options"
+        UTextBlock* TitleText =
+            WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title_Options"));
         TitleText->SetText(FText::FromString(TEXT("Options")));
         {
-            UGridSlot* Slot = MainGrid->AddChildToGrid(TitleText, 0, 0);
-            Slot->SetColumnSpan(6);
-            Slot->SetPadding(FMargin(0, 0, 0, 8));
-            Slot->SetHorizontalAlignment(HAlign_Left);
-            Slot->SetVerticalAlignment(VAlign_Top);
+            UGridSlot* TitleGridSlot = MainGrid->AddChildToGrid(TitleText, 0, 0);
+            TitleGridSlot->SetColumnSpan(6);
+            TitleGridSlot->SetPadding(FMargin(0.f, 0.f, 0.f, 8.f));
+            TitleGridSlot->SetHorizontalAlignment(HAlign_Left);
+            TitleGridSlot->SetVerticalAlignment(VAlign_Top);
         }
 
-        // Tabs row:
-        UHorizontalBox* TabsRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("TabsRow"));
+        // Tabs row
+        UHorizontalBox* TabsRow =
+            WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("TabsRow"));
         {
-            UGridSlot* Slot = MainGrid->AddChildToGrid(TabsRow, 1, 0);
-            Slot->SetColumnSpan(6);
-            Slot->SetPadding(FMargin(0, 8, 0, 8));
-            Slot->SetHorizontalAlignment(HAlign_Fill);
-            Slot->SetVerticalAlignment(VAlign_Top);
+            UGridSlot* TabsRowGridSlot = MainGrid->AddChildToGrid(TabsRow, 1, 0);
+            TabsRowGridSlot->SetColumnSpan(6);
+            TabsRowGridSlot->SetPadding(FMargin(0.f, 8.f, 0.f, 8.f));
+            TabsRowGridSlot->SetHorizontalAlignment(HAlign_Fill);
+            TabsRowGridSlot->SetVerticalAlignment(VAlign_Top);
         }
 
-        auto MakeTab = [&](const TCHAR* Name, const TCHAR* Label) -> UButton*
+        auto MakeTab = [&](const TCHAR* InName, const TCHAR* InLabel) -> UButton*
             {
-                UButton* Btn = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), Name);
-                UTextBlock* Txt = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), *(FString(Name) + TEXT("_Text")));
-                Txt->SetText(FText::FromString(Label));
-                Btn->AddChild(Txt);
-                return Btn;
+                UButton* TabButton =
+                    WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), InName);
+
+                const FString TabTextName = FString(InName) + TEXT("_Text");
+                UTextBlock* TabText =
+                    WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), *TabTextName);
+
+                TabText->SetText(FText::FromString(InLabel));
+                TabButton->AddChild(TabText);
+                return TabButton;
             };
 
         vid_btn = MakeTab(TEXT("Tab_Video"), TEXT("Video"));
@@ -176,13 +189,13 @@ void UOptDlg::NativeConstruct()
         opt_btn = MakeTab(TEXT("Tab_Gameplay"), TEXT("Gameplay"));
         mod_btn = MakeTab(TEXT("Tab_Mod"), TEXT("Mod Config"));
 
-        auto AddTab = [&](UButton* Btn)
+        auto AddTab = [&](UButton* InBtn)
             {
-                UHorizontalBoxSlot* Slot = TabsRow->AddChildToHorizontalBox(Btn);
-                Slot->SetPadding(FMargin(4, 0, 4, 0));
-                Slot->SetSize(ESlateSizeRule::Automatic);
-                Slot->SetHorizontalAlignment(HAlign_Left);
-                Slot->SetVerticalAlignment(VAlign_Fill);
+                UHorizontalBoxSlot* TabHBoxSlot = TabsRow->AddChildToHorizontalBox(InBtn);
+                TabHBoxSlot->SetPadding(FMargin(4.f, 0.f, 4.f, 0.f));
+                TabHBoxSlot->SetSize(ESlateSizeRule::Automatic);
+                TabHBoxSlot->SetHorizontalAlignment(HAlign_Left);
+                TabHBoxSlot->SetVerticalAlignment(VAlign_Fill);
             };
 
         AddTab(vid_btn);
@@ -191,76 +204,85 @@ void UOptDlg::NativeConstruct()
         AddTab(opt_btn);
         AddTab(mod_btn);
 
-        // Main panel:
-        UBorder* PanelBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("MainPanelBorder"));
+        // Main panel
+        UBorder* PanelBorder =
+            WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("MainPanelBorder"));
         {
-            UGridSlot* Slot = MainGrid->AddChildToGrid(PanelBorder, 2, 0);
-            Slot->SetColumnSpan(6);
-            Slot->SetPadding(FMargin(12, 12, 12, 0));
-            Slot->SetHorizontalAlignment(HAlign_Fill);
-            Slot->SetVerticalAlignment(VAlign_Fill);
-            // TODO: Panel brush
+            UGridSlot* PanelBorderGridSlot = MainGrid->AddChildToGrid(PanelBorder, 2, 0);
+            PanelBorderGridSlot->SetColumnSpan(6);
+            PanelBorderGridSlot->SetPadding(FMargin(12.f, 12.f, 12.f, 0.f));
+            PanelBorderGridSlot->SetHorizontalAlignment(HAlign_Fill);
+            PanelBorderGridSlot->SetVerticalAlignment(VAlign_Fill);
+            // TODO: panel brush
         }
 
-        UGridPanel* PanelGrid = WidgetTree->ConstructWidget<UGridPanel>(UGridPanel::StaticClass(), TEXT("PanelGrid"));
+        UGridPanel* PanelGrid =
+            WidgetTree->ConstructWidget<UGridPanel>(UGridPanel::StaticClass(), TEXT("PanelGrid"));
         PanelBorder->SetContent(PanelGrid);
 
-        auto MakeLabel = [&](const TCHAR* Name, const TCHAR* Text) -> UTextBlock*
+        auto MakeLabel = [&](const TCHAR* InName, const TCHAR* InText) -> UTextBlock*
             {
-                UTextBlock* L = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), Name);
-                L->SetText(FText::FromString(Text));
-                return L;
+                UTextBlock* Label =
+                    WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), InName);
+                Label->SetText(FText::FromString(InText));
+                return Label;
             };
 
-        auto MakeCombo = [&](const TCHAR* Name) -> UComboBoxString*
+        auto MakeCombo = [&](const TCHAR* InName) -> UComboBoxString*
             {
-                UComboBoxString* C = WidgetTree->ConstructWidget<UComboBoxString>(UComboBoxString::StaticClass(), Name);
-                return C;
+                return WidgetTree->ConstructWidget<UComboBoxString>(UComboBoxString::StaticClass(), InName);
             };
 
-        // Left side labels (rows):
-        struct FRowDef { const TCHAR* LabelName; const TCHAR* LabelText; const TCHAR* ComboName; int32 Row; };
+        // Left side labels (rows)
+        struct FRowDef
+        {
+            const TCHAR* LabelName;
+            const TCHAR* LabelText;
+            const TCHAR* ComboName;
+            int32 Row;
+        };
 
         const FRowDef Rows[] =
         {
-            { TEXT("Lbl_FlightModel"),  TEXT("Flight Model:"),   TEXT("Cmb_FlightModel"),  0 },
-            { TEXT("Lbl_FlyingStart"),  TEXT("Flying Start:"),   TEXT("Cmb_FlyingStart"),  1 },
-            { TEXT("Lbl_Landings"),     TEXT("Landings:"),       TEXT("Cmb_Landings"),     2 },
-            { TEXT("Lbl_AIDifficulty"), TEXT("AI Difficulty:"),  TEXT("Cmb_AIDifficulty"), 3 },
-            { TEXT("Lbl_HudMode"),      TEXT("HUD Mode:"),       TEXT("Cmb_HudMode"),      4 },
-            { TEXT("Lbl_HudColor"),     TEXT("HUD Color:"),      TEXT("Cmb_HudColor"),     5 },
-            { TEXT("Lbl_FriendlyFire"), TEXT("Friendly Fire:"),  TEXT("Cmb_FriendlyFire"), 6 },
-            { TEXT("Lbl_GridMode"),     TEXT("Reference Grid:"), TEXT("Cmb_GridMode"),     7 },
-            { TEXT("Lbl_Gunsight"),     TEXT("Gunsight:"),       TEXT("Cmb_Gunsight"),     8 },
+            { TEXT("Lbl_FlightModel"),  TEXT("Flight Model:"),   TEXT("Cmb_FlightModel"),   0 },
+            { TEXT("Lbl_FlyingStart"),  TEXT("Flying Start:"),   TEXT("Cmb_FlyingStart"),   1 },
+            { TEXT("Lbl_Landings"),     TEXT("Landings:"),       TEXT("Cmb_Landings"),      2 },
+            { TEXT("Lbl_AIDifficulty"), TEXT("AI Difficulty:"),  TEXT("Cmb_AIDifficulty"),  3 },
+            { TEXT("Lbl_HudMode"),      TEXT("HUD Mode:"),       TEXT("Cmb_HudMode"),       4 },
+            { TEXT("Lbl_HudColor"),     TEXT("HUD Color:"),      TEXT("Cmb_HudColor"),      5 },
+            { TEXT("Lbl_FriendlyFire"), TEXT("Friendly Fire:"),  TEXT("Cmb_FriendlyFire"),  6 },
+            { TEXT("Lbl_GridMode"),     TEXT("Reference Grid:"), TEXT("Cmb_GridMode"),      7 },
+            { TEXT("Lbl_Gunsight"),     TEXT("Gunsight:"),       TEXT("Cmb_Gunsight"),      8 },
         };
 
-        for (const FRowDef& R : Rows)
+        for (const FRowDef& RowDef : Rows)
         {
-            UTextBlock* L = MakeLabel(R.LabelName, R.LabelText);
-            UComboBoxString* C = MakeCombo(R.ComboName);
+            UTextBlock* RowLabel = MakeLabel(RowDef.LabelName, RowDef.LabelText);
+            UComboBoxString* RowCombo = MakeCombo(RowDef.ComboName);
 
-            UGridSlot* LSlot = PanelGrid->AddChildToGrid(L, R.Row, 0);
-            LSlot->SetPadding(FMargin(0, 4, 10, 4));
-            LSlot->SetHorizontalAlignment(HAlign_Left);
-            LSlot->SetVerticalAlignment(VAlign_Center);
+            UGridSlot* RowLabelGridSlot = PanelGrid->AddChildToGrid(RowLabel, RowDef.Row, 0);
+            RowLabelGridSlot->SetPadding(FMargin(0.f, 4.f, 10.f, 4.f));
+            RowLabelGridSlot->SetHorizontalAlignment(HAlign_Left);
+            RowLabelGridSlot->SetVerticalAlignment(VAlign_Center);
 
-            UGridSlot* CSlot = PanelGrid->AddChildToGrid(C, R.Row, 1);
-            CSlot->SetPadding(FMargin(0, 4, 0, 4));
-            CSlot->SetHorizontalAlignment(HAlign_Fill);
-            CSlot->SetVerticalAlignment(VAlign_Center);
+            UGridSlot* RowComboGridSlot = PanelGrid->AddChildToGrid(RowCombo, RowDef.Row, 1);
+            RowComboGridSlot->SetPadding(FMargin(0.f, 4.f, 0.f, 4.f));
+            RowComboGridSlot->SetHorizontalAlignment(HAlign_Fill);
+            RowComboGridSlot->SetVerticalAlignment(VAlign_Center);
         }
 
-        // Right side description (legacy id 500):
-        description = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Description"));
+        // Right side description (legacy id 500)
+        description =
+            WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Description"));
         {
-            UGridSlot* Slot = PanelGrid->AddChildToGrid(description, 0, 2);
-            Slot->SetRowSpan(9);
-            Slot->SetPadding(FMargin(20, 0, 0, 0));
-            Slot->SetHorizontalAlignment(HAlign_Fill);
-            Slot->SetVerticalAlignment(VAlign_Fill);
+            UGridSlot* DescriptionGridSlot = PanelGrid->AddChildToGrid(description, 0, 2);
+            DescriptionGridSlot->SetRowSpan(9);
+            DescriptionGridSlot->SetPadding(FMargin(20.f, 0.f, 0.f, 0.f));
+            DescriptionGridSlot->SetHorizontalAlignment(HAlign_Fill);
+            DescriptionGridSlot->SetVerticalAlignment(VAlign_Fill);
         }
 
-        // Assign combo refs by name:
+        // Assign combo refs by name
         flight_model = Cast<UComboBoxString>(WidgetTree->FindWidget(TEXT("Cmb_FlightModel")));
         flying_start = Cast<UComboBoxString>(WidgetTree->FindWidget(TEXT("Cmb_FlyingStart")));
         landings = Cast<UComboBoxString>(WidgetTree->FindWidget(TEXT("Cmb_Landings")));
@@ -271,7 +293,7 @@ void UOptDlg::NativeConstruct()
         grid_mode = Cast<UComboBoxString>(WidgetTree->FindWidget(TEXT("Cmb_GridMode")));
         gunsight = Cast<UComboBoxString>(WidgetTree->FindWidget(TEXT("Cmb_Gunsight")));
 
-        // Populate items (from legacy FORM):
+        // Populate items (from legacy FORM)
         if (flight_model)
         {
             AddComboItem(flight_model, TEXT("Standard"));
@@ -333,74 +355,157 @@ void UOptDlg::NativeConstruct()
             AddComboItem(gunsight, TEXT("Lead Indicator"));
         }
 
-        // Bottom buttons:
-        UHorizontalBox* BottomRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("BottomRow"));
+        // Bottom buttons
+        UHorizontalBox* BottomRow =
+            WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("BottomRow"));
         {
-            UGridSlot* Slot = MainGrid->AddChildToGrid(BottomRow, 3, 0);
-            Slot->SetColumnSpan(6);
-            Slot->SetPadding(FMargin(0, 12, 0, 0));
-            Slot->SetHorizontalAlignment(HAlign_Right);
-            Slot->SetVerticalAlignment(VAlign_Bottom);
+            UGridSlot* BottomRowGridSlot = MainGrid->AddChildToGrid(BottomRow, 3, 0);
+            BottomRowGridSlot->SetColumnSpan(6);
+            BottomRowGridSlot->SetPadding(FMargin(0.f, 12.f, 0.f, 0.f));
+            BottomRowGridSlot->SetHorizontalAlignment(HAlign_Right);
+            BottomRowGridSlot->SetVerticalAlignment(VAlign_Bottom);
         }
 
-        auto MakeAction = [&](const TCHAR* Name, const TCHAR* Text) -> UButton*
+        auto MakeAction = [&](const TCHAR* InName, const TCHAR* InText) -> UButton*
             {
-                UButton* Btn = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), Name);
-                UTextBlock* Txt = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), *(FString(Name) + TEXT("_Text")));
-                Txt->SetText(FText::FromString(Text));
-                Btn->AddChild(Txt);
-                return Btn;
+                UButton* ActionButton =
+                    WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), InName);
+
+                const FString ActionTextName = FString(InName) + TEXT("_Text");
+                UTextBlock* ActionText =
+                    WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), *ActionTextName);
+
+                ActionText->SetText(FText::FromString(InText));
+                ActionButton->AddChild(ActionText);
+                return ActionButton;
             };
 
         ApplyBtn = MakeAction(TEXT("ApplyBtn"), TEXT("Apply"));
         CancelBtn = MakeAction(TEXT("CancelBtn"), TEXT("Cancel"));
 
         {
-            UHorizontalBoxSlot* SlotA = BottomRow->AddChildToHorizontalBox(ApplyBtn);
-            SlotA->SetPadding(FMargin(8, 0, 0, 0));
-            SlotA->SetSize(ESlateSizeRule::Automatic);
+            UHorizontalBoxSlot* ApplyBtnHBoxSlot = BottomRow->AddChildToHorizontalBox(ApplyBtn);
+            ApplyBtnHBoxSlot->SetPadding(FMargin(8.f, 0.f, 0.f, 0.f));
+            ApplyBtnHBoxSlot->SetSize(ESlateSizeRule::Automatic);
 
-            UHorizontalBoxSlot* SlotC = BottomRow->AddChildToHorizontalBox(CancelBtn);
-            SlotC->SetPadding(FMargin(8, 0, 0, 0));
-            SlotC->SetSize(ESlateSizeRule::Automatic);
+            UHorizontalBoxSlot* CancelBtnHBoxSlot = BottomRow->AddChildToHorizontalBox(CancelBtn);
+            CancelBtnHBoxSlot->SetPadding(FMargin(8.f, 0.f, 0.f, 0.f));
+            CancelBtnHBoxSlot->SetSize(ESlateSizeRule::Automatic);
         }
     }
 
-    // Bind action buttons:
+    // -----------------------------------------------------------------
+    // Bind action buttons
+    // -----------------------------------------------------------------
+
     if (ApplyBtn)
+    {
+        ApplyBtn->OnClicked.Clear();
         ApplyBtn->OnClicked.AddDynamic(this, &UOptDlg::OnApplyClicked);
+    }
 
     if (CancelBtn)
+    {
+        CancelBtn->OnClicked.Clear();
         CancelBtn->OnClicked.AddDynamic(this, &UOptDlg::OnCancelClicked);
+    }
 
-    // Bind tabs:
+    // -----------------------------------------------------------------
+    // Bind tabs
+    // -----------------------------------------------------------------
+
     if (vid_btn)
+    {
+        vid_btn->OnClicked.Clear();
         vid_btn->OnClicked.AddDynamic(this, &UOptDlg::OnVideoClicked);
+    }
 
     if (aud_btn)
+    {
+        aud_btn->OnClicked.Clear();
         aud_btn->OnClicked.AddDynamic(this, &UOptDlg::OnAudioClicked);
+    }
 
     if (ctl_btn)
+    {
+        ctl_btn->OnClicked.Clear();
         ctl_btn->OnClicked.AddDynamic(this, &UOptDlg::OnControlsClicked);
+    }
 
     if (opt_btn)
+    {
+        opt_btn->OnClicked.Clear();
         opt_btn->OnClicked.AddDynamic(this, &UOptDlg::OnOptionsClicked);
+    }
 
     if (mod_btn)
+    {
+        mod_btn->OnClicked.Clear();
         mod_btn->OnClicked.AddDynamic(this, &UOptDlg::OnModClicked);
+    }
 
-    // Bind combo changes (optional):
-    if (flight_model)  flight_model->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnFlightModelChanged);
-    if (flying_start)  flying_start->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnFlyingStartChanged);
-    if (landings)      landings->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnLandingsChanged);
-    if (ai_difficulty) ai_difficulty->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnAIDifficultyChanged);
-    if (hud_mode)      hud_mode->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnHudModeChanged);
-    if (hud_color)     hud_color->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnHudColorChanged);
-    if (ff_mode)       ff_mode->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnFfModeChanged);
-    if (grid_mode)     grid_mode->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnGridModeChanged);
-    if (gunsight)      gunsight->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnGunsightChanged);
+    // -----------------------------------------------------------------
+    // Bind combo changes (optional)
+    // -----------------------------------------------------------------
 
-    // Mirror legacy Show() initialization:
+    if (flight_model)
+    {
+        flight_model->OnSelectionChanged.Clear();
+        flight_model->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnFlightModelChanged);
+    }
+
+    if (flying_start)
+    {
+        flying_start->OnSelectionChanged.Clear();
+        flying_start->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnFlyingStartChanged);
+    }
+
+    if (landings)
+    {
+        landings->OnSelectionChanged.Clear();
+        landings->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnLandingsChanged);
+    }
+
+    if (ai_difficulty)
+    {
+        ai_difficulty->OnSelectionChanged.Clear();
+        ai_difficulty->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnAIDifficultyChanged);
+    }
+
+    if (hud_mode)
+    {
+        hud_mode->OnSelectionChanged.Clear();
+        hud_mode->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnHudModeChanged);
+    }
+
+    if (hud_color)
+    {
+        hud_color->OnSelectionChanged.Clear();
+        hud_color->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnHudColorChanged);
+    }
+
+    if (ff_mode)
+    {
+        ff_mode->OnSelectionChanged.Clear();
+        ff_mode->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnFfModeChanged);
+    }
+
+    if (grid_mode)
+    {
+        grid_mode->OnSelectionChanged.Clear();
+        grid_mode->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnGridModeChanged);
+    }
+
+    if (gunsight)
+    {
+        gunsight->OnSelectionChanged.Clear();
+        gunsight->OnSelectionChanged.AddDynamic(this, &UOptDlg::OnGunsightChanged);
+    }
+
+    // -----------------------------------------------------------------
+    // Mirror legacy Show() initialization
+    // -----------------------------------------------------------------
+
     if (closed)
     {
         Starshatter* stars = Starshatter::GetInstance();
@@ -457,7 +562,6 @@ void UOptDlg::OnAudioClicked() { if (manager) manager->ShowAudDlg();  else UE_LO
 void UOptDlg::OnVideoClicked() { if (manager) manager->ShowVidDlg();  else UE_LOG(LogTemp, Warning, TEXT("OptDlg: manager null (Video).")); }
 void UOptDlg::OnOptionsClicked() { if (manager) manager->ShowOptDlg();  else UE_LOG(LogTemp, Warning, TEXT("OptDlg: manager null (Options).")); }
 void UOptDlg::OnControlsClicked() { if (manager) manager->ShowCtlDlg();  else UE_LOG(LogTemp, Warning, TEXT("OptDlg: manager null (Controls).")); }
-void UOptDlg::OnModClicked() { if (manager) manager->ShowModDlg();  else UE_LOG(LogTemp, Warning, TEXT("OptDlg: manager null (Mod).")); }
 
 // ---------------------------------------------------------------------
 // Actions:
@@ -512,7 +616,7 @@ void UOptDlg::Apply()
         if (grid_mode)     player->SetGridMode(grid_mode->GetSelectedIndex());
         if (gunsight)      player->SetGunsight(gunsight->GetSelectedIndex());
 
-        Player::Save();
+        PlayerCharacter::Save();
     }
 
     if (flight_model) Ship::SetFlightModel(flight_model->GetSelectedIndex());
