@@ -88,7 +88,7 @@ public:
 	static int        Nearer(Graphic* a, Graphic* b);
 	static int        Farther(Graphic* a, Graphic* b);
 
-	virtual int       IsInfinite()   const { return infinite; }
+	virtual bool      IsInfinite()   const { return infinite; }
 	virtual void      SetInfinite(bool b);
 	virtual int       IsForeground() const { return foreground; }
 	virtual void      SetForeground(bool f) { foreground = f; }
