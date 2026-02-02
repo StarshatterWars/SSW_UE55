@@ -65,6 +65,8 @@ public:
     void Show();
     void Hide();
 
+    virtual void ExecFrame(float DeltaTime);
+
     // Dialog routing
     void ShowMenuDlg();
     void ShowCampaignSelectDlg();
@@ -105,10 +107,11 @@ public:
     void CancelOptions();
 
     // Getters
-    UMissionEditorDlg* GetMsnEditDlg()  const { return MsnEditDlg; }
-    UMissionElementDlg* GetMsnElemDlg()  const { return MsnElemDlg; }
-    UMissionEventDlg* GetMsnEventDlg() const { return MsnEventDlg; }
-    UMissionEditorNavDlg* GetNavDlg()      const { return MsnEditNavDlg; }
+    UMissionEditorDlg*      GetMsnEditDlg()  const { return MsnEditDlg; }
+    UMissionElementDlg*     GetMsnElemDlg()  const { return MsnElemDlg; }
+    UMissionEventDlg*       GetMsnEventDlg() const { return MsnEventDlg; }
+    UMissionEditorNavDlg*   GetNavDlg()      const { return MsnEditNavDlg; }
+    ULoadDlg*               GetLoadDlg()     const { return LoadDlg; }
 
 protected:
     virtual void NativeConstruct() override;

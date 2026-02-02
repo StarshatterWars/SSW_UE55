@@ -20,7 +20,7 @@
 #include "Color.h"
 #include "Mouse.h"
 #include "Video.h"
-#include "Window.h"
+#include "View.h"
 
 #include "Logging/LogMacros.h"
 
@@ -51,7 +51,7 @@ Screen::~Screen()
 // +--------------------------------------------------------------------+
 
 bool
-Screen::AddWindow(Window* c)
+Screen::AddWindow(class View* c)
 {
 	if (!c || closed) return false;
 
@@ -66,14 +66,16 @@ Screen::AddWindow(Window* c)
 	return true;
 }
 
-bool
-Screen::DelWindow(Window* c)
+bool Screen::DelWindow(View* c)
 {
-	if (!c || closed) return false;
+	if (!c || closed)
+		return false;
 
-	return window_list.remove(c) == c;
+	if (window_list.contains(c))
+		window_list.remove(c);     
+
+	return true;
 }
-
 // +--------------------------------------------------------------------+
 
 void
@@ -120,9 +122,9 @@ Screen::Resize(int w, int h)
 	}
 
 	// scale all root-level windows to new screen size:
-	ListIter<Window> iter = window_list;
+	ListIter<View> iter = window_list;
 	while (++iter) {
-		Window* win = iter.value();
+		View* win = iter.value();
 		if (!win) continue;
 
 		Rect tmprect = win->GetRect();
@@ -162,9 +164,9 @@ Screen::Refresh()
 
 	video->StartFrame();
 
-	ListIter<Window> iter = window_list;
+	ListIter<View> iter = window_list;
 	while (++iter) {
-		Window* win = iter.value();
+		View* win = iter.value();
 
 		if (win && win->IsShown()) {
 			win->Paint();

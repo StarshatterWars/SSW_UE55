@@ -912,10 +912,10 @@ Starshatter::GameState()
 		if (cmpnscreen)
 			cmpnscreen->Hide();
 
-		if (!LoadScreen)
+		if (!loadscreen)
 			SetupLoadScreen();
 		else
-			LoadScreen->Show();
+			loadscreen->Show();
 
 		if (game_mode == EMODE::CLOD_MODE)
 			MusicManager::SetMode(MusicManager::MENU);
@@ -932,8 +932,8 @@ Starshatter::GameState()
 		if (cmpnscreen)
 			menuscreen->Hide();
 
-		if (LoadScreen)
-			LoadScreen->Hide();
+		if (loadscreen)
+			loadscreen->Hide();
 
 		if (gamescreen)
 			gamescreen->Hide();
@@ -1068,11 +1068,11 @@ Starshatter::DoMenuScreenFrame()
 	}
 
 	if (show_missions) {
-		menuscreen->ShowMsnSelectDlg();
+		menuscreen->ShowMissionSelectDlg();
 		show_missions = false;
 	}
 
-	menuscreen->ExecFrame();
+	menuscreen->ExecFrame(0);
 
 	if (req_change_video) {
 		ChangeVideo();
@@ -1190,7 +1190,7 @@ Starshatter::DoCmpnScreenFrame()
 		show_missions = false;
 	}
 
-	cmpnscreen->ExecFrame();
+	cmpnscreen->ExecFrame(0);
 }
 
 // +--------------------------------------------------------------------+
@@ -1202,7 +1202,7 @@ Starshatter::DoLoadScreenFrame()
 	Mouse::SetCursor(Mouse::ARROW);
 
 	if (game_mode == EMODE::CLOD_MODE) {
-		CmpLoadDlg* dlg = loadscreen->GetCmpLoadDlg();
+		UCmpLoadDlg* dlg = loadscreen->GetCmpLoadDlg();
 
 		switch (load_step) {
 		case 0:
@@ -2157,14 +2157,14 @@ Starshatter::SetupSplash()
 	switch (splash_index) {
 	case 0:
 		loader->SetDataPath(0);
-		loader->LoadGameBitmap("matrix.pcx", splash_image);
+		loader->LoadGameBitmap("matrix.pcx", *splash_image);
 		break;
 
 	case 1:
 	default:
-		splash_image.ClearImage();
+		splash_image->ClearImage();
 		loader->SetDataPath(0);
-		loader->LoadGameBitmap("studio.pcx", splash_image);
+		loader->LoadGameBitmap("studio.pcx", *splash_image);
 		break;
 	}
 

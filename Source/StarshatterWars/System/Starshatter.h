@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Types.h"
 #include "Game.h"
 #include "KeyMap.h"
@@ -26,6 +27,7 @@ class Campaign;
 class UCmpnScreen;
 class UMissionPlanner;
 class ULoadScreen;
+class UMenuScreen;
 class UGameScreen;
 class Ship;
 class Sim;
@@ -40,6 +42,7 @@ class SystemFont;
 class Mission;
 class Window;
 class View;
+class Screen;
 // +--------------------------------------------------------------------+
 
 class Starshatter : public Game
@@ -133,7 +136,7 @@ protected:
 	static Starshatter* instance;
 	View*		 gamewin;
 	UMenuScreen* menuscreen;
-	ULoadScreen* loadScreen;
+	ULoadScreen* loadscreen;
 	UMissionPlanner* planscreen;
 	UGameScreen* gamescreen;
 	UCmpnScreen* cmpnscreen;
@@ -161,9 +164,10 @@ protected:
 	SystemFont* limerick18;
 	SystemFont* limerick12;
 	SystemFont* ocrb;
+	Screen*     screen;
 
-	DWORD               time_mark;
-	DWORD               minutes;
+	uint64              time_mark;
+	uint64              minutes;
 
 	double              field_of_view;
 	double              orig_fov;

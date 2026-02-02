@@ -328,6 +328,8 @@ class STARSHATTERWARS_API UBaseScreen : public UUserWidget
 public:
     UBaseScreen(const FObjectInitializer& ObjectInitializer);
 
+    virtual void ExecFrame(double DeltaTime);
+
     // ----------------------------------------------------------------
     // Optional common widgets (bind if your UMG has them)
     // ----------------------------------------------------------------

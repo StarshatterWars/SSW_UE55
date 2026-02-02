@@ -24,6 +24,7 @@
 
 class Bitmap;
 class Window;
+class View;
 class Video;
 struct Rect;
 
@@ -41,8 +42,8 @@ public:
 
     virtual bool      Resize(int w, int h);
     virtual bool      Refresh();
-    virtual bool      AddWindow(Window* c);
-    virtual bool      DelWindow(Window* c);
+    virtual bool      AddWindow(View* c);
+    virtual bool      DelWindow(View* c);
 
     int               Width()     const { return width; }
     int               Height()    const { return height; }
@@ -60,5 +61,5 @@ protected:
 
     Video* video;
 
-    List<Window>      window_list;
+    List<View>      window_list;
 };
