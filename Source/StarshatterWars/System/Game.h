@@ -25,6 +25,11 @@
  * 
  */
 
+void              FlushKeys();
+void              BufferKey(int vkey);
+int               GetKey();
+int               GetKeyPlus(int& key, int& shift);
+
  // +--------------------------------------------------------------------+
 
 class AGameDataLoader;
@@ -90,6 +95,9 @@ public:
 	static int        MaxTexSize();
 	static int        MaxTexAspect();
 
+	virtual bool      ResizeVideo();
+	virtual bool      ResetVideo();
+
 	static Game*	  GetInstance();
 	
 	static FColor     GetScreenColor();
@@ -135,6 +143,11 @@ public:
 	static const int TIME_NEVER = (int)1e9;
 	static const int ONE_DAY = (int)24 * 3600;
 
+	static int      DefaultTrackUpdate; // milliseconds
+	static int      DefaultTrackLength; // 10 seconds
+	static double   DefaultTrackAge; // 10 seconds
+	static double   SensorThreshold;
+
 protected:
 	friend  bool      ProfileGameLoop(void);
 	
@@ -156,9 +169,6 @@ protected:
 	FString app_name;
 	FString title_text;
 	char* palette_name;
-
-
-	
 
 	// Internal variables for the state of the app
 	bool              is_windowed;

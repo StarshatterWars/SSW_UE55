@@ -681,7 +681,7 @@ Starshatter::CreateWorld()
 	RadioView::Initialize();
 	RadioVox::Initialize();
 	QuantumView::Initialize();
-	//UQuitView::Initialize();
+	//QuitView::Initialize();
 	TacticalView::Initialize();
 
 	// create world

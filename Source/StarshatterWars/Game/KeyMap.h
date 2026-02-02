@@ -34,17 +34,17 @@ public:
 	enum KEY_CATEGORY { KEY_FLIGHT, KEY_WEAPONS, KEY_VIEW, KEY_MISC };
 
 	int                     GetCategory(int i);
-	const char* DescribeAction(int i);
-	const char* DescribeKey(int i);
+	const char*				DescribeAction(int i);
+	const char*				DescribeKey(int i);
 	int                     FindMapIndex(int act);
 
-	static const char* DescribeKey(int vk, int shift, int joy);
+	static const char*		DescribeKey(int vk, int shift, int joy);
 	static int              GetMappableVKey(int n);
 
 	int                     GetNumKeys() { return nkeys; }
-	KeyMapEntry* GetMapping() { return map; }
-	KeyMapEntry* GetKeyMap(int i) { return &map[i]; }
-	KeyMapEntry* GetDefault(int i) { return &defmap[i]; }
+	KeyMapEntry*			GetMapping() { return map; }
+	KeyMapEntry*			GetKeyMap(int i) { return &map[i]; }
+	KeyMapEntry*			GetDefault(int i) { return &defmap[i]; }
 
 	void                    Bind(int a, int k, int s);
 

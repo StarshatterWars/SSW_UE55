@@ -12,6 +12,7 @@
 #include "Game.h"
 #include "Screen.h"
 #include "Video.h"
+#include "Keyboard.h"
 #include "GameDataLoader.h"	
 
 Game* game = 0;
@@ -39,6 +40,18 @@ char     Game::panicbuf[256];
 static LARGE_INTEGER  perf_freq;
 static LARGE_INTEGER  perf_cnt1;
 static LARGE_INTEGER  perf_cnt2;
+
+
+static int     DefaultTrackUpdate = 500; // milliseconds
+static int     DefaultTrackLength = 20; // 10 seconds
+static double  DefaultTrackAge = 10; // 10 seconds
+static double  SensorThreshold = 0.25;
+
+const int MAX_KEY_BUF = 512;
+static int vkbuf[MAX_KEY_BUF];
+static int vkshiftbuf[MAX_KEY_BUF];
+static int vkins = 0;
+static int vkext = 0;
 
 Game::Game()
 {
@@ -333,3 +346,72 @@ Game::SetGammaLevel(int g)
 			game->video->SetGammaLevel(g);
 	}
 }
+
+void
+FlushKeys()
+{
+	Keyboard::FlushKeys();
+	vkins = vkext = 0;
+}
+
+void
+BufferKey(int vkey)
+{
+	if (vkey < 1) return;
+
+	int shift = 0;
+
+	if (GetAsyncKeyState(VK_SHIFT))
+		shift |= 1;
+
+	if (GetAsyncKeyState(VK_CONTROL))
+		shift |= 2;
+
+	if (GetAsyncKeyState(VK_MENU))
+		shift |= 4;
+
+	vkbuf[vkins] = vkey;
+	vkshiftbuf[vkins++] = shift;
+
+	if (vkins >= MAX_KEY_BUF)
+		vkins = 0;
+
+	if (vkins == vkext) {
+		vkext++;
+		if (vkext >= MAX_KEY_BUF)
+			vkext = 0;
+	}
+}
+
+int
+GetKey()
+{
+	if (vkins == vkext) return 0;
+
+	int result = vkbuf[vkext++];
+	if (vkext >= MAX_KEY_BUF)
+		vkext = 0;
+
+	return result;
+}
+
+int
+GetKeyPlus(int& key, int& shift)
+{
+	if (vkins == vkext) return 0;
+
+	key = vkbuf[vkext];
+	shift = vkshiftbuf[vkext++];
+
+	if (vkext >= MAX_KEY_BUF)
+		vkext = 0;
+
+	return key;
+}
+
+bool
+Game::ResetVideo()
+{
+	return true;
+}
+

@@ -30,13 +30,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsSimContact, Log, All);
 
 // +----------------------------------------------------------------------+
 
-const int      DEFAULT_TRACK_UPDATE = 500; // milliseconds
-const int      DEFAULT_TRACK_LENGTH = 20; // 10 seconds
-const double   DEFAULT_TRACK_AGE = 10; // 10 seconds
-const double   SENSOR_THRESHOLD = 0.25;
-
-// +----------------------------------------------------------------------+
-
 SimContact::SimContact()
 	: ship(nullptr),
 	shot(nullptr),
@@ -155,7 +148,7 @@ SimContact::Age() const
 		return age;
 
 	const double seconds = (Game::GameTime() - time) / 1000.0;
-	age = 1.0 - seconds / DEFAULT_TRACK_AGE;
+	age = 1.0 - seconds / Game::DefaultTrackAge;
 
 	if (age < 0)
 		age = 0;
@@ -175,7 +168,7 @@ SimContact::GetIFF(const Ship* observer) const
 		// we know whose side he's on.
 		// Otherwise:
 		if (i != observer->GetIFF() && !Threat(observer)) {
-			if (d_pas < 2 * SENSOR_THRESHOLD && d_act < SENSOR_THRESHOLD && !Visible(observer))
+			if (d_pas < 2 * Game::SensorThreshold && d_act < Game::SensorThreshold && !Visible(observer))
 				i = -1000;   // indeterminate iff reading
 		}
 	}
@@ -190,13 +183,13 @@ SimContact::GetIFF(const Ship* observer) const
 bool
 SimContact::ActLock() const
 {
-	return d_act >= SENSOR_THRESHOLD;
+	return d_act >= Game::SensorThreshold;
 }
 
 bool
 SimContact::PasLock() const
 {
-	return d_pas >= SENSOR_THRESHOLD;
+	return d_pas >= Game::SensorThreshold;
 }
 
 // +----------------------------------------------------------------------+
@@ -363,19 +356,19 @@ SimContact::UpdateTrack()
 		return;
 
 	if (!track) {
-		track = new  FVector[DEFAULT_TRACK_LENGTH];
+		track = new  FVector[Game::DefaultTrackLength];
 		track[0] = loc;
 		ntrack = 1;
 		track_time = time;
 	}
 
-	else if (time - track_time > DEFAULT_TRACK_UPDATE) {
+	else if (time - track_time > (DWORD)Game::DefaultTrackUpdate) {
 		if (loc != track[0]) {
-			for (int i = DEFAULT_TRACK_LENGTH - 2; i >= 0; i--)
+			for (int i = Game::DefaultTrackLength - 2; i >= 0; i--)
 				track[i + 1] = track[i];
 
 			track[0] = loc;
-			if (ntrack < DEFAULT_TRACK_LENGTH) ntrack++;
+			if (ntrack < Game::DefaultTrackLength) ntrack++;
 		}
 
 		track_time = time;
