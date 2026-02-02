@@ -21,6 +21,8 @@
 #include "DataLoader.h"
 #include "SimLight.h"
 #include "Random.h"
+#include "SimModel.h"
+#include "Segment.h"
 
 #include "CoreMinimal.h"
 #include "Math/Vector.h"
@@ -378,7 +380,7 @@ PlanetRep::CreateSphere(double InRadius,
 {
 	const int sect_verts = nsections + 1;
 
-	model = new Model;
+	model = new SimModel;
 	own_model = 1;
 
 	Surface* surface = new Surface;

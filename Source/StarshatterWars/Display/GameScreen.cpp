@@ -21,6 +21,8 @@
 
 // UMG:
 #include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 // Dialog widget headers (your actual paths):
 #include "NavDlg.h"
@@ -648,6 +650,53 @@ bool UGameScreen::CloseTopmost()
 
     return false;
 }
+
+void UGameScreen::ShowExternal()
+{
+    bExternalVisible = true;
+
+    // If your UI has panels, toggle them here (safe even if not implemented yet).
+    // Example:
+    // if (ExternalRoot) { ExternalRoot->SetVisibility(ESlateVisibility::Visible); }
+    // if (InternalRoot) { InternalRoot->SetVisibility(ESlateVisibility::Collapsed); }
+
+    ApplyInputModeForScreen(true);
+}
+
+void UGameScreen::ShowInternal()
+{
+    bExternalVisible = false;
+
+    // Example:
+    // if (ExternalRoot) { ExternalRoot->SetVisibility(ESlateVisibility::Collapsed); }
+    // if (InternalRoot) { InternalRoot->SetVisibility(ESlateVisibility::Visible); }
+
+    ApplyInputModeForScreen(false);
+}
+
+void UGameScreen::ApplyInputModeForScreen(bool bExternal)
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!PC)
+        return;
+
+    // External view often behaved like "UI focus + mouse cursor".
+    if (bExternal)
+    {
+        FInputModeGameAndUI Mode;
+        Mode.SetWidgetToFocus(TakeWidget());
+        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        PC->SetInputMode(Mode);
+        PC->bShowMouseCursor = true;
+    }
+    else
+    {
+        FInputModeGameOnly Mode;
+        PC->SetInputMode(Mode);
+        PC->bShowMouseCursor = false;
+    }
+}
+
 
 
 

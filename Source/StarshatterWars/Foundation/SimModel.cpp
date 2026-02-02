@@ -62,7 +62,7 @@ inline bool Collinear(const double* a, const double* b, const double* c)
     return cross.IsNearlyZero();
 }
 
-static int mcomp(const void* a, const void* b)
+static int modelcomp(const void* a, const void* b)
 {
     Poly* pa = (Poly*)a;
     Poly* pb = (Poly*)b;
@@ -730,7 +730,7 @@ bool SimModel::LoadMag5(BYTE* block, int /*len*/, double scale)
     }
 
     // Sort polys by material:
-    qsort((void*)s->polys, s->npolys, sizeof(Poly), mcomp);
+    qsort((void*)s->polys, s->npolys, sizeof(Poly), modelcomp);
 
     // Build segments:
     Segment* segment = nullptr;
@@ -965,7 +965,7 @@ bool SimModel::LoadMag6(BYTE* block, int /*len*/, double scale)
             }
         }
 
-        qsort((void*)polys, npolys_local, sizeof(Poly), mcomp);
+        qsort((void*)polys, npolys_local, sizeof(Poly), modelcomp);
 
         // Segments:
         Segment* segment = nullptr;

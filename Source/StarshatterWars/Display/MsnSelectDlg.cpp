@@ -14,7 +14,7 @@
 
 #include "MsnSelectDlg.h"
 
-#include "MenuListItem.h"
+#include "MenuItem.h"
 
 // Your game-side singletons/models:
 #include "Starshatter.h"
@@ -238,7 +238,7 @@ void UMsnSelectDlg::Show()
 
             if (C->GetCampaignId() >= Campaign::SINGLE_MISSIONS)
             {
-                Items.Add(UMenuListItem::Make(this, C->Name(), C->GetCampaignId()));
+                Items.Add(MenuItem::Make(this, C->Name(), C->GetCampaignId()));
                 if (campaign && campaign->GetCampaignId() < Campaign::SINGLE_MISSIONS)
                 {
                     campaign = Campaign::SelectCampaign(C->Name());
@@ -256,7 +256,7 @@ void UMsnSelectDlg::Show()
         {
             for (UObject* Obj : Items)
             {
-                if (const UMenuListItem* Item = Cast<UMenuListItem>(Obj))
+                if (const MenuItem* Item = Cast<MenuItem>(Obj))
                 {
                     if (Item->Label == campaign->Name())
                     {
@@ -281,7 +281,7 @@ void UMsnSelectDlg::Show()
 
     if (description)
     {
-        description->SetText(FText::FromString(Game::GetText(TEXT("MsnSelectDlg.choose"))));
+        description->SetText(FText::FromString("Select a mission and press Accept."));
     }
 
     // Populate missions:
@@ -355,7 +355,7 @@ void UMsnSelectDlg::OnCampaignSelect()
     else if (lst_campaigns)
     {
         UObject* Sel = lst_campaigns->GetSelectedItem();
-        if (const UMenuListItem* Item = Cast<UMenuListItem>(Sel))
+        if (const MenuItem* Item = Cast<MenuItem>(Sel))
         {
             SelectedCampaign = Item->Label;
         }
@@ -379,7 +379,7 @@ void UMsnSelectDlg::OnCampaignSelect()
         for (MissionInfo* Info : List)
         {
             if (!Info) continue;
-            MissionItems.Add(UMenuListItem::Make(this, Info->name, Info->id));
+            MissionItems.Add(MenuItem::Make(this, Info->name, Info->id));
         }
 
         lst_missions->ClearListItems();

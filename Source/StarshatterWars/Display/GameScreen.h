@@ -133,6 +133,16 @@ public:
     void FrameRate(double F);
     void ExecFrame(float DeltaTime);
 
+    // Legacy-compat entry points:
+    UFUNCTION()
+    void ShowExternal();
+
+    UFUNCTION()
+    void ShowInternal();
+
+    UFUNCTION()
+    bool IsExternalVisible() const { return bExternalVisible; }
+
     // Accessors (keep raw pointers):
     UNavDlg* GetNavDlg()   const { return NavDlg; }
     UEngineeringDlg*    GetEngDlg()   const { return EngDlg; }
@@ -205,4 +215,8 @@ private:
     bool   bIsShown = false;
 
     static UGameScreen* GameScreenInstance;
+
+    bool bExternalVisible = false;
+
+    void ApplyInputModeForScreen(bool bExternal);
 };

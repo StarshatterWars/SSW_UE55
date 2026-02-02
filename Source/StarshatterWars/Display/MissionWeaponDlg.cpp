@@ -24,8 +24,8 @@
 #include "ShipDesign.h"
 #include "WeaponDesign.h"
 #include "HardPoint.h"
-#include "MissionLoad.h"
-#include "ShipLoad.h"
+//#include "MissionLoad.h"
+//#include "ShipLoad.h"
 
 // --- FORM/UI framework (your equivalents) ---
 #include "FormLabel.h"

@@ -33,29 +33,31 @@ enum { BYTEMODE, RUNMODE };
 // +--------------------------------------------------------------------+
 
 PcxImage::PcxImage()
-    : bitmap(nullptr)
-    , himap(nullptr)
-    , imagebytes(0)
-    , width(0)
-    , height(0)
 {
+    // PCX.h initializes members with defaults, but keep explicit safety:
+    bitmap = nullptr;
+    himap = nullptr;
+    imagebytes = 0;
+    width = 0;
+    height = 0;
 }
 
 PcxImage::PcxImage(short w, short h, unsigned char* bits, unsigned char* colors)
-    : bitmap(nullptr)
-    , himap(nullptr)
-    , imagebytes(0)
-    , width(0)
-    , height(0)
 {
-    hdr.manufacturer = 10;  // Always set to 10
-    hdr.version = 5;   // Always 5 for 256-color files
-    hdr.encoding = 1;   // Always set to 1
-    hdr.bits_per_pixel = 8;   // Should be 8 for 256-color files
+    bitmap = nullptr;
+    himap = nullptr;
+    imagebytes = 0;
+    width = 0;
+    height = 0;
+
+    hdr.manufacturer = 10;
+    hdr.version = 5;
+    hdr.encoding = 1;
+    hdr.bits_per_pixel = 8;
     hdr.xmin = 0;
-    hdr.xmax = w - 1;
+    hdr.xmax = (short)(w - 1);
     hdr.ymin = 0;
-    hdr.ymax = h - 1;
+    hdr.ymax = (short)(h - 1);
     hdr.hres = 0x48;
     hdr.vres = 0x48;
 
@@ -110,10 +112,10 @@ PcxImage::PcxImage(short w, short h, unsigned char* bits, unsigned char* colors)
     hdr.palette16[46] = (unsigned char)0x1F;
     hdr.palette16[47] = (unsigned char)0x1F;
 
-    hdr.reserved = 0;  // Reserved for future use
-    hdr.color_planes = 1;  // Color planes
-    hdr.bytes_per_line = w;  // Number of bytes in 1 line of pixels
-    hdr.palette_type = 1;  // Should be 1 for color palette
+    hdr.reserved = 0;
+    hdr.color_planes = 1;
+    hdr.bytes_per_line = w;
+    hdr.palette_type = 1;
 
     for (unsigned int i = 0; i < 58; i++)
         hdr.filler[i] = 0;
@@ -133,26 +135,27 @@ PcxImage::PcxImage(short w, short h, unsigned char* bits, unsigned char* colors)
             *p++ = *colors++;
             *p++ = *colors++;
             *p++ = *colors++;
-            colors++;
+            colors++; // skip alpha/unused byte
         }
     }
 }
 
 PcxImage::PcxImage(short w, short h, unsigned long* hibits)
-    : bitmap(nullptr)
-    , himap(nullptr)
-    , imagebytes(0)
-    , width(0)
-    , height(0)
 {
-    hdr.manufacturer = 10;  // Always set to 10
-    hdr.version = 5;   // Always 5 for true color files
-    hdr.encoding = 1;   // Always set to 1
-    hdr.bits_per_pixel = 8;   // Should be 8 for true color files
+    bitmap = nullptr;
+    himap = nullptr;
+    imagebytes = 0;
+    width = 0;
+    height = 0;
+
+    hdr.manufacturer = 10;
+    hdr.version = 5;
+    hdr.encoding = 1;
+    hdr.bits_per_pixel = 8;
     hdr.xmin = 0;
-    hdr.xmax = w - 1;
+    hdr.xmax = (short)(w - 1);
     hdr.ymin = 0;
-    hdr.ymax = h - 1;
+    hdr.ymax = (short)(h - 1);
     hdr.hres = 0x48;
     hdr.vres = 0x48;
 
@@ -207,10 +210,10 @@ PcxImage::PcxImage(short w, short h, unsigned long* hibits)
     hdr.palette16[46] = (unsigned char)0x1F;
     hdr.palette16[47] = (unsigned char)0x1F;
 
-    hdr.reserved = 0;  // Reserved for future use
-    hdr.color_planes = 3;  // Color planes
-    hdr.bytes_per_line = w;  // Number of bytes in 1 line of pixels
-    hdr.palette_type = 1;  // Should be 1 for color palette
+    hdr.reserved = 0;
+    hdr.color_planes = 3;
+    hdr.bytes_per_line = w;
+    hdr.palette_type = 1;
 
     for (unsigned int i = 0; i < 58; i++)
         hdr.filler[i] = 0;
@@ -230,13 +233,19 @@ PcxImage::PcxImage(short w, short h, unsigned long* hibits)
 PcxImage::~PcxImage()
 {
     delete[] bitmap;
+    bitmap = nullptr;
+
     delete[] himap;
+    himap = nullptr;
+
+    imagebytes = 0;
+    width = 0;
+    height = 0;
 }
 
 // +--------------------------------------------------------------------+
 
-int
-PcxImage::Load(const char* fname)
+int PcxImage::Load(const char* fname)
 {
     unsigned long i;
     short mode = BYTEMODE;
@@ -247,15 +256,18 @@ PcxImage::Load(const char* fname)
 
     FILE* f = nullptr;
 
-    // NOTE: avoid legacy/global identifier "filename"
+#if defined(_MSC_VER)
     fopen_s(&f, fname, "rb");
+#else
+    f = fopen(fname, "rb");
+#endif
     if (!f) {
         return PCX_NOFILE;
     }
 
     fread(&hdr, sizeof(PcxHeader), 1, f);
 
-    // read 256 color PCX file
+    // indexed (256 color) PCX
     if (hdr.color_planes == 1) {
         width = (unsigned short)(1 + hdr.xmax - hdr.xmin);
         height = (unsigned short)(1 + hdr.ymax - hdr.ymin);
@@ -266,11 +278,11 @@ PcxImage::Load(const char* fname)
             return PCX_TOOBIG;
         }
 
-        // get palette from pcx file
+        // palette at end
         fseek(f, -768L, SEEK_END);
         fread(pal, 768, 1, f);
 
-        // now go back and read the pixel data:
+        // pixel data begins after header
         fseek(f, (long)sizeof(PcxHeader), SEEK_SET);
 
         delete[] himap;  himap = nullptr;
@@ -282,7 +294,7 @@ PcxImage::Load(const char* fname)
             return PCX_NOMEM;
         }
 
-        // force alpha channel to 255
+        // force alpha to 255
         memset(himap, 0xff, imagebytes * 4);
 
         unsigned long* pix = himap;
@@ -308,7 +320,7 @@ PcxImage::Load(const char* fname)
         }
     }
 
-    // read 24-bit (true COLOR) PCX file
+    // true color PCX (24-bit = 3 planes)
     else {
         width = (unsigned short)(1 + hdr.xmax - hdr.xmin);
         height = (unsigned short)(1 + hdr.ymax - hdr.ymin);
@@ -328,11 +340,11 @@ PcxImage::Load(const char* fname)
             return PCX_NOMEM;
         }
 
-        // force alpha channel to 255
+        // force alpha to 255
         memset(himap, 0xff, imagebytes * 4);
 
         for (int row = 0; row < (int)height; row++) {
-            // RED, GREEN, BLUE
+            // RED, GREEN, BLUE planes
             for (int plane = 2; plane >= 0; plane--) {
                 // p points into BGRA dword array as bytes:
                 p = ((unsigned char*)himap) + (int)width * row * 4 + plane;
@@ -364,26 +376,27 @@ PcxImage::Load(const char* fname)
 }
 
 // +--------------------------------------------------------------------+
+// Buffer load (memory)
+// +--------------------------------------------------------------------+
 
-int
-PcxImage::Load(char* fname)
+int PcxImage::LoadBuffer(unsigned char* buf, int len)
 {
-    unsigned long i;
-    short mode = BYTEMODE, bytecount = 0;
-    unsigned char abyte = 0, * p = nullptr;
-    FILE* f = nullptr;
-
-    fopen_s(&f, fname, "rb");
-    if (f == nullptr)
+    if (!buf || len < (int)sizeof(PcxHeader))
         return PCX_NOFILE;
 
-    fread(&hdr, sizeof(PcxHeader), 1, f);
+    unsigned long i;
+    short mode = BYTEMODE;
+    short bytecount = 0;
 
-    fp = buf;
-    memcpy(&hdr, buf, sizeof(PcxHeader));
+    unsigned char abyte = 0;
+    unsigned char* p = nullptr;
+
+    unsigned char* fp = buf;
+
+    memcpy(&hdr, fp, sizeof(PcxHeader));
     fp += sizeof(PcxHeader);
 
-    // read 256 color PCX file
+    // indexed (256 color) PCX
     if (hdr.color_planes == 1) {
         width = (unsigned short)(1 + hdr.xmax - hdr.xmin);
         height = (unsigned short)(1 + hdr.ymax - hdr.ymin);
@@ -392,25 +405,36 @@ PcxImage::Load(char* fname)
         if (imagebytes > MAX_SIZE)
             return PCX_TOOBIG;
 
-        // get palette from end of pcx file
+        if (len < (int)sizeof(PcxHeader) + 768)
+            return PCX_NOFILE;
+
+        // palette at end:
         memcpy(pal, buf + len - 768, 768);
 
         delete[] himap;  himap = nullptr;
         delete[] bitmap; bitmap = nullptr;
 
         himap = new unsigned long[imagebytes];
-        if (himap == nullptr)
+        if (!himap)
             return PCX_NOMEM;
 
-        memset(himap, 0, imagebytes * 4);
+        // force alpha to 255
+        memset(himap, 0xff, imagebytes * 4);
 
         unsigned long* pix = himap;
         for (i = 0; i < imagebytes; i++) {
             if (mode == BYTEMODE) {
+                if (fp >= buf + len)
+                    return PCX_NOFILE;
+
                 abyte = *fp++;
 
                 if (abyte > 0xbf) {
                     bytecount = (short)(abyte & 0x3f);
+
+                    if (fp >= buf + len)
+                        return PCX_NOFILE;
+
                     abyte = *fp++;
                     if (--bytecount > 0)
                         mode = RUNMODE;
@@ -427,7 +451,7 @@ PcxImage::Load(char* fname)
         }
     }
 
-    // read 24-bit (true COLOR) PCX file
+    // true color PCX (24-bit = 3 planes)
     else {
         width = (unsigned short)(1 + hdr.xmax - hdr.xmin);
         height = (unsigned short)(1 + hdr.ymax - hdr.ymin);
@@ -440,21 +464,29 @@ PcxImage::Load(char* fname)
         delete[] bitmap; bitmap = nullptr;
 
         himap = new unsigned long[imagebytes];
-        if (himap == nullptr)
+        if (!himap)
             return PCX_NOMEM;
 
-        memset(himap, 0, imagebytes * 4);
+        // force alpha to 255
+        memset(himap, 0xff, imagebytes * 4);
 
         for (int row = 0; row < (int)height; row++) {
-            // RED, GREEN, BLUE
             for (int plane = 2; plane >= 0; plane--) {
                 p = ((unsigned char*)himap) + (int)width * row * 4 + plane;
+
                 for (int col = 0; col < (int)width; col++) {
                     if (mode == BYTEMODE) {
+                        if (fp >= buf + len)
+                            return PCX_NOFILE;
+
                         abyte = *fp++;
 
                         if (abyte > 0xbf) {
                             bytecount = (short)(abyte & 0x3f);
+
+                            if (fp >= buf + len)
+                                return PCX_NOFILE;
+
                             abyte = *fp++;
                             if (--bytecount > 0)
                                 mode = RUNMODE;
@@ -476,19 +508,26 @@ PcxImage::Load(char* fname)
 
 // +--------------------------------------------------------------------+
 
-int
-PcxImage::Save(char* filename)
+int PcxImage::Save(const char* filename)
 {
-    short mode = BYTEMODE;
     FILE* f = nullptr;
 
+#if defined(_MSC_VER)
     fopen_s(&f, filename, "wb");
-    if (f == nullptr)
+#else
+    f = fopen(filename, "wb");
+#endif
+    if (!f)
         return PCX_NOFILE;
 
     fwrite(&hdr, sizeof(PcxHeader), 1, f);
 
     if (hdr.color_planes == 1) {
+        if (!bitmap) {
+            fclose(f);
+            return PCX_NOFILE;
+        }
+
         unsigned char* pBits = bitmap;
         unsigned long total = imagebytes;
         unsigned long row = 0;
@@ -524,8 +563,13 @@ PcxImage::Save(char* filename)
         fwrite(pal, 768, 1, f);
     }
 
-    // write 24-bit (TRUE COLOR) PCX file
+    // 24-bit PCX (3 planes)
     else {
+        if (!himap) {
+            fclose(f);
+            return PCX_NOFILE;
+        }
+
         for (int row = 0; row < (int)height; row++) {
             for (int plane = 2; plane >= 0; plane--) {
                 unsigned long col = 0;
@@ -556,6 +600,5 @@ PcxImage::Save(char* filename)
     }
 
     fclose(f);
-    return PCX_OK; // success
+    return PCX_OK;
 }
-

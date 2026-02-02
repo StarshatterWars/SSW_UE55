@@ -25,6 +25,9 @@
 #include "DataLoader.h"
 #include "Game.h"
 #include "SimLight.h"
+#include "SimModel.h"
+#include "Segment.h"
+#include "Surface.h"
 #include "SimScene.h"
 #include "GameStructs.h"
 
@@ -118,7 +121,7 @@ TerrainApron::BuildApron()
 	const int32 NumVerts = MAX_VERTS;
 	const int32 NumPolys = DetailSize * DetailSize * 2;
 
-	model = new Model;
+	model = new SimModel;
 	model->SetLuminous(true);
 	model->SetDynamic(true);
 
@@ -268,7 +271,7 @@ TerrainApron::Update()
 void
 TerrainApron::Illuminate(FColor Ambient, List<SimLight>& Lights)
 {
-	if (!model || model->NumVerts() < 1)
+	if (!model || model->GetNumVerts() < 1)
 		return;
 
 	Surface* SurfacePtr = model->GetSurfaces().first();
