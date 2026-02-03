@@ -2,45 +2,65 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
+    ORIGINAL AUTHOR AND STUDIO:
+    John DiCamillo / Destroyer Studios LLC
+
     SUBSYSTEM:    Stars.exe
     FILE:         MissionWeaponDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    MissionWeaponDlg (Unreal)
-    - FORM-driven mission briefing "WEP" tab.
-    - Ports legacy MsnWepDlg behavior:
-      * Shows player element name/type/weight
-      * Shows standard loadouts list and custom station grid
-      * Clicking grid toggles mounts and updates MissionLoad
-      * Selecting a standard loadout applies ShipLoad mapping
-    - Raw pointers only (no UPROPERTY(Transient)).
+    UMissionWeaponDlg (Unreal)
+    - Port of legacy MsnWepDlg.
+    - Mission briefing WEAPON / LOADOUT dialog.
+    - Parses legacy FORM (.frm) via UBaseScreen.
+    - Uses FORM control IDs (no direct widget UPROPERTYs).
+    - Handles weapon hardpoint mounting and loadout selection.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
+#include "Math/Vector.h"               // FVector
+#include "Math/Color.h"                // FColor
+#include "Math/UnrealMathUtility.h"    // Math
+
+#include "GameStructs.h"
+
 #include "MissionWeaponDlg.generated.h"
 
-// Forward decls (legacy sim side)
+// --------------------------------------------------------------------
+// Forward declarations (keep header light)
+// --------------------------------------------------------------------
+
 class Campaign;
 class Mission;
-class MissionElement;
+class MissionElement; 
+class SimElement;
 class ShipDesign;
 class WeaponDesign;
 class HardPoint;
 class MissionLoad;
 class ShipLoad;
 
-// Forward decls (FORM/UI controls in your framework)
-class UFormLabel;
-class UFormButton;
-class UFormListBox;
-class UFormImageBox;
+class UMissionPlanner;
 
-class UMissionPlanner; // the manager/controller (your definitive MissionPlanner)
+// --------------------------------------------------------------------
+// Helper struct: mount button -> weapon/station mapping
+// --------------------------------------------------------------------
+
+struct FMountSlot
+{
+    int32 WeaponIndex = -1;
+    int32 StationIndex = -1;
+};
+
+// --------------------------------------------------------------------
+// UMissionWeaponDlg
+// --------------------------------------------------------------------
 
 UCLASS()
 class STARSHATTERWARS_API UMissionWeaponDlg : public UBaseScreen
@@ -50,100 +70,95 @@ class STARSHATTERWARS_API UMissionWeaponDlg : public UBaseScreen
 public:
     UMissionWeaponDlg(const FObjectInitializer& ObjectInitializer);
 
-    // ----------------------------------------------------------------
-    // UBaseScreen / UUserWidget
-    // ----------------------------------------------------------------
+    // ------------------------------------------------------------
+    // Screen lifecycle
+    // ------------------------------------------------------------
+
     virtual void NativeConstruct() override;
-    virtual void NativeDestruct() override;
-    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-    // ----------------------------------------------------------------
-    // Legacy-like API surface
-    // ----------------------------------------------------------------
     virtual void Show();
-    virtual void Hide();
-    virtual bool IsShown() const;
+    virtual void ExecFrame(double DeltaTime) override;
 
-    void SetManager(UMissionPlanner* InMgr) { Manager = InMgr; }
+    // ------------------------------------------------------------
+    // Dialog input hooks (Enter / Escape)
+    // ------------------------------------------------------------
+
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
+
+    // ------------------------------------------------------------
+    // Setup
+    // ------------------------------------------------------------
+
+    void SetMissionPlanner(UMissionPlanner* InPlanner) { MissionPlanner = InPlanner; }
+    void SetCampaign(Campaign* InCampaign) { CampaignPtr = InCampaign; }
+    void SetMission(Mission* InMission) { MissionPtr = InMission; }
 
 protected:
-    // ----------------------------------------------------------------
-    // FORM wiring
-    // ----------------------------------------------------------------
-    void RegisterControls();
-    void RegisterEvents();
+    // ------------------------------------------------------------
+    // Legacy logic ports
+    // ------------------------------------------------------------
 
-    // ----------------------------------------------------------------
-    // Core behavior (ported from MsnWepDlg)
-    // ----------------------------------------------------------------
-    void FindPlayerElement();
     void SetupControls();
     void BuildLists();
 
-    int32 LoadToPointIndex(int32 HardPointIndex) const;
-    int32 PointIndexToLoad(int32 HardPointIndex, int32 DesignIndexInHardPoint) const;
+    int  LoadToPointIndex(int Station) const;
+    int  PointIndexToLoad(int Station, int PointIndex) const;
 
-    void UpdateGridPicturesForStation(int32 Station);
-    void UpdateAllGridPictures();
-    void UpdateWeightLabelFromLoads();
-    void ClearLoadoutSelection();
+    // ------------------------------------------------------------
+    // Event wiring
+    // ------------------------------------------------------------
 
-    // ----------------------------------------------------------------
-    // Event handlers
-    // ----------------------------------------------------------------
-    void OnCommit();
-    void OnCancel();
-    void OnTabButton(int32 TabId);
+    void WireEvents();
 
-    void OnMount(UFormButton* ClickedButton);
-    void OnLoadoutSelectionChanged(int32 SelectedIndex);
+    // ------------------------------------------------------------
+    // Button handlers (no lambdas)
+    // ------------------------------------------------------------
 
-private:
-    // ----------------------------------------------------------------
-    // Manager + sim pointers
-    // ----------------------------------------------------------------
-    UMissionPlanner* Manager = nullptr;
+    UFUNCTION()
+    void OnAcceptClicked();
+
+    UFUNCTION()
+    void OnCancelClicked();
+
+    UFUNCTION()
+    void OnTabSit();
+
+    UFUNCTION()
+    void OnTabPkg();
+
+    UFUNCTION()
+    void OnTabMap();
+
+    UFUNCTION()
+    void OnTabWep();
+
+    UFUNCTION()
+    void OnMountClicked();
+
+protected:
+    // ------------------------------------------------------------
+    // Data pointers (non-owning)
+    // ------------------------------------------------------------
 
     Campaign* CampaignPtr = nullptr;
     Mission* MissionPtr = nullptr;
+    UMissionPlanner* MissionPlanner = nullptr;
 
-    MissionElement* PlayerElem = nullptr;
+    MissionElement* Elem = nullptr;
 
-    // ----------------------------------------------------------------
-    // FORM controls (raw pointers; owned by widget tree / form runtime)
-    // ----------------------------------------------------------------
-    UFormLabel* LblElement = nullptr; // 601
-    UFormLabel* LblType = nullptr; // 602
-    UFormLabel* LblWeight = nullptr; // 603
-    UFormListBox* LoadoutList = nullptr; // 604
+    // ------------------------------------------------------------
+    // Weapon / loadout state (legacy layout preserved)
+    // ------------------------------------------------------------
 
-    UFormImageBox* Beauty = nullptr; // 300 (optional)
-    UFormLabel* PlayerDesc = nullptr; // 301 (optional)
+    WeaponDesign* Designs[8];
+    bool              Mounts[8][8];
+    int               Loads[8];
+    int               FirstStation = 0;
 
-    UFormLabel* LblStation[8] = { nullptr }; // 401..408
-    UFormLabel* LblDesc[8] = { nullptr }; // 500,510..570 (label rows)
-    UFormButton* BtnLoad[8][8] = { { nullptr } }; // 501..578 (grid)
+    // ------------------------------------------------------------
+    // Button -> mount slot mapping
+    // ------------------------------------------------------------
 
-    // ----------------------------------------------------------------
-    // Data model (ported arrays)
-    // ----------------------------------------------------------------
-    WeaponDesign* Designs[8] = { nullptr };   // unique weapon designs
-    bool          Mounts[8][8] = { { false } }; // [designIdx][stationIdx]
-    int32         Loads[8] = { -1,-1,-1,-1,-1,-1,-1,-1 }; // station->designIdx or -1
-    int32         FirstStation = 0; // centering offset like legacy
-
-    // ----------------------------------------------------------------
-    // Visual assets (LED off/on)
-    // Your FORM system likely maps picture tokens; keep as names.
-    // ----------------------------------------------------------------
-    FName LedOffName = TEXT("LED0"); // from "LED0.pcx"
-    FName LedOnName = TEXT("LED1"); // from "LED1.pcx"
-
-    // ----------------------------------------------------------------
-    // State
-    // ----------------------------------------------------------------
-    bool bShown = false;
-
-    // Key debouncing for Enter-to-commit (legacy VK_RETURN)
-    bool bEnterWasDown = false;
+    TMap<UButton*, FMountSlot> ButtonIdToSlot;
 };

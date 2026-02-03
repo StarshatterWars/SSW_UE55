@@ -511,7 +511,7 @@ Mission::Validate()
 				AddError(err);
 			}
 
-			if (elem->Player() > 0) {
+			if (elem->IsPlayer()) {
 				if (!found_player) {
 					found_player = true;
 
@@ -1562,8 +1562,8 @@ Mission::Serialize(const char* player_elem, int player_index)
 			s += buffer;
 		}
 
-		if (elem->ZoneLock()) {
-			sprintf_s(buffer, "   zone_lock:  %d\n", elem->ZoneLock());
+		if (elem->GetZoneLock()) {
+			sprintf_s(buffer, "   zone_lock:  %d\n", elem->GetZoneLock());
 			s += buffer;
 		}
 
@@ -1572,7 +1572,7 @@ Mission::Serialize(const char* player_elem, int player_index)
 		}
 
 		if (!elem->IsSquadron()) {
-			sprintf_s(buffer, "   command_ai:%d\n", elem->CommandAI());
+			sprintf_s(buffer, "   command_ai:%d\n", elem->GetCommandAI());
 			s += buffer;
 		}
 
@@ -1590,8 +1590,8 @@ Mission::Serialize(const char* player_elem, int player_index)
 		}
 
 		else {
-			if (elem->Player()) {
-				sprintf_s(buffer, "   player:    %d\n", elem->Player());
+			if (elem->IsPlayer()) {
+				sprintf_s(buffer, "   player:    %d\n", elem->IsPlayer());
 				s += buffer;
 			}
 		}

@@ -89,8 +89,8 @@ public:
 	// OBJECTIVES:
 	void              ClearObjectives();
 	void              AddObjective(Instruction* obj);
-	Instruction* GetObjective(int index);
-	Instruction* GetTargetObjective();
+	Instruction*	  GetObjective(int index);
+	Instruction*	  GetTargetObjective();
 	int               NumObjectives()   const { return objectives.size(); }
 
 	void              ClearInstructions();
@@ -106,9 +106,9 @@ public:
 	void                 AddNavPoint(Instruction* pt, Instruction* afterPoint = 0, bool send = true);
 	void                 DelNavPoint(Instruction* pt, bool send = true);
 	void                 ClearFlightPlan(bool send = true);
-	Instruction* GetNextNavPoint();
+	Instruction*	     GetNextNavPoint();
 	int                  GetNavIndex(const Instruction* n);
-	List<Instruction>& GetFlightPlan();
+	List<Instruction>&	 GetFlightPlan();
 	int                  FlightPlanLength();
 	virtual void         HandleRadioMessage(RadioMessage* msg);
 
@@ -127,9 +127,9 @@ public:
 	void                 SetSquadron(const char* s) { squadron = s; }
 
 	// DYNAMIC CAMPAIGN:
-	CombatGroup* GetCombatGroup() { return combat_group; }
+	CombatGroup*		 GetCombatGroup() { return combat_group; }
 	void                 SetCombatGroup(CombatGroup* g) { combat_group = g; }
-	CombatUnit* GetCombatUnit() { return combat_unit; }
+	CombatUnit*		     GetCombatUnit() { return combat_unit; }
 	void                 SetCombatUnit(CombatUnit* u) { combat_unit = u; }
 
 	// SQUADRON STUFF:

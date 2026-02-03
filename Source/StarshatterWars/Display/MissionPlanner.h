@@ -93,12 +93,15 @@ public:
     UMissionAwardDlg* GetAwardDlg() const { return AwardDlg; }
 
     // Per-frame (legacy)
+
     void ExecFrame(float DeltaSeconds);
     void HideAll();
 
     // Callbacks used by UMissionNavDlg (you referenced these in cpp)
     void OnMissionBriefingAccept();
     void OnMissionBriefingCancel();
+
+
 
     void ShowBriefingSitTab();
     void ShowBriefingPkgTab();

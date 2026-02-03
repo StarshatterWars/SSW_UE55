@@ -566,7 +566,7 @@ MissionTemplate::ParseAlias(TermStruct* val)
 			if (code == "player") {
 				for (int i = 0; !elem && i < elements.size(); i++) {
 					MissionElement* e = elements[i];
-					if (e->Player() > 0) {
+					if (e->IsPlayer()) {
 						elem = e;
 					}
 				}

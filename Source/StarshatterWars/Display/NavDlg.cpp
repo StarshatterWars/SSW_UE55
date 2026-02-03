@@ -315,7 +315,7 @@ UNavDlg::SetMission(Mission* m)
                 while (++elem) {
                     MissionElement* e = elem.value();
 
-                    if (e->Player())
+                    if (e->IsPlayer())
                         star_map->SetSelectedElem(e);
                 }
             }

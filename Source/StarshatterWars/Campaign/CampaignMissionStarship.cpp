@@ -28,6 +28,7 @@
 #include "CombatZone.h"
 #include "Callsign.h"
 #include "Mission.h"
+#include "MissionElement.h"
 #include "MissionTemplate.h"
 #include "Instruction.h"
 #include "Ship.h"
@@ -1276,8 +1277,8 @@ CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_loc)
             MissionElement* elem = CreateFighterPackage(s, 3, Mission::ASSAULT);
             if (elem) {
                 elem->SetIntelLevel(Intel::KNOWN);
-                elem->Loadouts().destroy();
-                elem->Loadouts().append(new MissionLoad(-1, "Ship Strike"));
+                elem->GetLoadouts().destroy();
+                elem->GetLoadouts().append(new MissionLoad(-1, "Ship Strike"));
                 elem->SetRegion(rgn);
                 elem->SetLocation(base_loc + ScatterInSphere(1.0f));
                 mission->AddElement(elem);

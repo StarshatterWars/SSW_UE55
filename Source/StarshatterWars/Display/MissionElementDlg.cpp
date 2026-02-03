@@ -679,7 +679,7 @@ void UMissionElementDlg::OnAcceptClicked()
         const FString RegionName = RegionCombo->GetSelectedOption();
         ElemPtr->SetRegion(TCHAR_TO_ANSI(*RegionName));
 
-        if (ElemPtr->Player() > 0)
+        if (ElemPtr->IsPlayer())
             MissionPtr->SetRegion(TCHAR_TO_ANSI(*RegionName));
     }
 
@@ -731,7 +731,7 @@ void UMissionElementDlg::OnAcceptClicked()
         }
     }
 
-    if (ElemPtr->Player())
+    if (ElemPtr->IsPlayer())
         MissionPtr->SetTeam(ElemPtr->GetIFF());
 
     if (Manager)

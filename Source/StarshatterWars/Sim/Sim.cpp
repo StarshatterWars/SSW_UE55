@@ -590,18 +590,18 @@ Sim::CreateElements()
 				MissionElem->GetIFF(),
 				MissionElem->MissionRole());
 
-			Element->SetPlayer(MissionElem->Player());
+			Element->SetPlayer(MissionElem->IsPlayer());
 			Element->SetCombatGroup(MissionElem->GetCombatGroup());
 			Element->SetCombatUnit(MissionElem->GetCombatUnit());
-			Element->SetCommandAILevel(MissionElem->CommandAI());
+			Element->SetCommandAILevel(MissionElem->GetCommandAI());
 			Element->SetHoldTime(MissionElem->HoldTime());
-			Element->SetZoneLock(MissionElem->ZoneLock() ? true : false);
+			Element->SetZoneLock(MissionElem->GetZoneLock() ? true : false);
 			Element->SetRogue(MissionElem->IsRogue());
 			Element->SetPlayable(MissionElem->IsPlayable());
 			Element->SetIntelLevel(MissionElem->IntelLevel());
 
 			// if this is the player's element, make sure to activate the region:
-			if (MissionElem->Player()) {
+			if (MissionElem->IsPlayer()) {
 				SimRegion* Region = FindRegion(MissionElem->Region());
 
 				if (Region && Region != active_region)
@@ -749,7 +749,7 @@ Sim::CreateElements()
 							if (AlertShip) {
 								AlertShip->SetRespawnCount(Respawns);
 
-								if (MissionElem->Player() == i + 1) {
+								if (MissionElem->IsPlayer()) {
 									if (AlertShip->GetRegion()) {
 										AlertShip->GetRegion()->SetPlayerShip(AlertShip);
 									}
@@ -822,7 +822,7 @@ Sim::CreateElements()
 						(ShipDesign*)MissionElem->GetDesign(),
 						RegionName, SpawnLocation,
 						MissionElem->GetIFF(),
-						MissionElem->CommandAI(),
+						MissionElem->GetCommandAI(),
 						Loadout);
 
 					if (NewShip) {
@@ -858,7 +858,7 @@ Sim::CreateElements()
 						if (HangarPtr)
 							HangarPtr->FindSlot(NewShip, SquadronIndex, SlotIndex, Hangar::ACTIVE);
 
-						if (NewShip->GetRegion() && MissionElem->Player() == i + 1)
+						if (NewShip->GetRegion() && MissionElem->IsPlayer())
 							NewShip->GetRegion()->SetPlayerShip(NewShip);
 
 						if (NewShip->NumFlightDecks()) {
@@ -939,7 +939,7 @@ Sim::CreateElements()
 								Stats->SetRegion(MissionElem->Region());
 								Stats->SetCombatGroup(MissionElem->GetCombatGroup());
 								Stats->SetCombatUnit(MissionElem->GetCombatUnit());
-								Stats->SetPlayer(MissionElem->Player() == i + 1);
+								Stats->SetPlayer(MissionElem->IsPlayer());
 								Stats->SetElementIndex(NewShip->GetElementIndex());
 							}
 						}

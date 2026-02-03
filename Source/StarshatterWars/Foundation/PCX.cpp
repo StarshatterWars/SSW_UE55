@@ -508,12 +508,12 @@ int PcxImage::LoadBuffer(unsigned char* buf, int len)
 
 // +--------------------------------------------------------------------+
 
-int PcxImage::Save(const char* filename)
+int PcxImage::Save(const char* sfilename)
 {
     FILE* f = nullptr;
 
 #if defined(_MSC_VER)
-    fopen_s(&f, filename, "wb");
+    fopen_s(&f, sfilename, "wb");
 #else
     f = fopen(filename, "wb");
 #endif
