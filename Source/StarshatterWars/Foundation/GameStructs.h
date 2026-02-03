@@ -20,13 +20,6 @@
 #include "Text.h"
 #include "GameStructs.generated.h"
 
-
-
-#ifndef STARSHATTERWARS_LOG_DEFINED
-#define STARSHATTERWARS_LOG_DEFINED
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-#endif
-
 const double STARSHIP_TACTICAL_DROP_TIME = 15;
 static const double GRAV = 6.673e-11;
 static const int    NAMELEN = 64;

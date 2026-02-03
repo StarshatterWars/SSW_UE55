@@ -37,9 +37,7 @@ bool GetDefNumber(double& dst, TermDef* def, const char* file);
 bool GetDefVec(Vec3& dst, TermDef* def, const char* file);
 bool GetDefColor(Color& dst, TermDef* def, const char* file);
 bool GetDefColor(ColorValue& dst, TermDef* def, const char* file);
-
-// In ParseUtil.h/cpp (or wherever GetDefColor lives):
-bool GetDefFColor(FColor& out, TermDef* def, const char* filename);
+bool GetDefFColor(FColor& dst, TermDef* def, const char* file);
 
 bool GetDefRect(Rect& dst, TermDef* def, const char* file);
 bool GetDefInsets(Insets& dst, TermDef* def, const char* file);

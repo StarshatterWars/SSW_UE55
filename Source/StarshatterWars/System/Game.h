@@ -30,6 +30,12 @@ void              BufferKey(int vkey);
 int               GetKey();
 int               GetKeyPlus(int& key, int& shift);
 
+static inline FVector OtherHand(const FVector& V)
+{
+	// Starshatter used a handedness conversion helper. Preserve intent (Z flip) for now.
+	return FVector((float)V.X, (float)V.Y, (float)-V.Z);
+}
+
  // +--------------------------------------------------------------------+
 
 class AGameDataLoader;

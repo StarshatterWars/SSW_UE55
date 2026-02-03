@@ -130,9 +130,6 @@ public:
     int   Width() const { return rect.w; }
     int   Height() const { return rect.h; }
 
-    virtual void Show();
-    virtual void Hide();
-    virtual bool IsShown() const { return shown; }
 
     // Move/resize this view (notifies OnWindowMove)
     virtual void MoveTo(const Rect& r);
@@ -142,8 +139,7 @@ public:
     // ------------------------------------------------------------
     virtual void Refresh() {}        // draw/update per frame
     virtual void OnWindowMove() {}   // rect changed
-    virtual void OnShow() {}         // became visible
-    virtual void OnHide() {}         // became hidden
+
 
     // ------------------------------------------------------------
     // Child management
@@ -201,16 +197,26 @@ public:
     FColor              GetBackColor() const { return BackColor; }
     void                SetBackColor(const FColor& c) { BackColor = c; }
 
-    virtual bool        OnMouseButtonDown(int32 Button, const FVector2D& ScreenPos);
-    virtual bool        OnMouseButtonUp(int32 Button, const FVector2D& ScreenPos);
-    virtual bool        OnMouseMove(const FVector2D& ScreenPos);
-    virtual bool        OnKeyDown(int32 Key, bool bRepeat);
 
-    virtual bool        OnMouseDown(int32 Button, int32 x, int32 y);
-    virtual bool        OnMouseUp(int32 Button, int32 x, int32 y);
-    virtual bool        OnMouseMove(int32 x, int32 y);
-    virtual bool        OnKeyDown(int32 Key);      // legacy no-repeat
-    virtual bool        OnKeyUp(int32 Key);        // optional legacy hook
+    // Core handlers (the ones derived classes override)
+    virtual bool OnMouseButtonDown(int32 Button, const FVector2D& Pos);
+    virtual bool OnMouseButtonUp(int32 Button, const FVector2D& Pos);
+    virtual bool OnMouseMove(const FVector2D& Pos);
+    virtual bool OnKeyDown(int32 Key, bool bRepeat);
+
+    virtual void Show();
+    virtual void Hide();
+    virtual bool IsShown() const { return shown; }
+
+    // Legacy wrappers (optional)
+    bool OnMouseDown(int32 Button, int32 x, int32 y);
+    bool OnMouseUp(int32 Button, int32 x, int32 y);
+    bool OnMouseMove(int32 x, int32 y);
+    bool OnKeyDown(int32 Key);
+    bool OnKeyUp(int32 Key);
+
+    virtual void OnShow() {}         // became visible
+    virtual void OnHide() {}         // became hidden
 
     void Print(int x1, int y1, const char* fmt, ...);
     void Print(int x1, int y1, const FString& InText);

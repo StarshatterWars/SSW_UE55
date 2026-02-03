@@ -38,13 +38,15 @@
 #include "PlayerCharacter.h"
 #include "GameStructs.h"
 
+#include "StarshatterWarsLog.h"
+
 // Unreal:
 #include "Math/Vector.h"               // FVector
 #include "Math/UnrealMathUtility.h"    // FMath
 #include "Logging/LogMacros.h"         // UE_LOG
 
 static int pkg_id = 1000;
-extern int dump_missions;
+static int dump_missions;
 
 // +--------------------------------------------------------------------+
 

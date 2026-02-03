@@ -3921,4 +3921,7 @@ ShipDesign::FindSkin(const char* skin_name) const
 	return 0;
 }
 
+ShipExplosion::ShipExplosion()
+{
 
+}

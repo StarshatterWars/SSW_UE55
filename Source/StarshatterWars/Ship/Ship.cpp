@@ -93,6 +93,7 @@
 #include "Parser.h"
 #include "Reader.h"
 #include "GameStructs.h"
+#include "StarshatterWarsLog.h"
 
 
 // ---------------------------------------------------------------------

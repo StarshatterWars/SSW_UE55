@@ -84,6 +84,11 @@
 // -------------------------------------------------------------------------------------------------
 // Local helpers (FColor math compatible with legacy "Color" ops)
 // -------------------------------------------------------------------------------------------------
+static inline FVector HUDOtherHand(const FVector& V)
+{
+	// Starshatter used a handedness conversion helper. Preserve intent (Z flip) for now.
+	return FVector((float)V.X, (float)V.Y, (float)-V.Z);
+}
 
 static inline FColor ColorMul(const FColor& C, float S)
 {
@@ -115,12 +120,6 @@ static FORCEINLINE FIntRect ToIntRect(const Rect& R)
 	return FIntRect(R.x, R.y, R.x + R.w, R.y + R.h);
 }
 
-// Starshatter used "OtherHand()" for RH/LH conversions.
-// Keep a local utility to avoid relying on Point::OtherHand().
-static FORCEINLINE FVector OtherHand(const FVector& V)
-{
-	return FVector(V.X, V.Z, V.Y); // adjust mapping if needed
-}
 // -------------------------------------------------------------------------------------------------
 
 static Bitmap hud_left_air;
@@ -2256,7 +2255,7 @@ void HUDView::DrawNavPoint(Instruction& navpt, int index, int next)
 
 	if (active_region)
 		npt -= active_region->GetLocation();
-
+		
 	npt = OtherHand(npt);
 
 	projector->Transform(npt);

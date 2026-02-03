@@ -32,6 +32,7 @@
 
 #include "ParseUtil.h"
 
+List<WeaponDesign> WeaponDesign::catalog;
 // +--------------------------------------------------------------------+
 
 WeaponDesign::WeaponDesign()
@@ -161,12 +162,6 @@ void
 WeaponDesign::Close()
 {
 	catalog.destroy();
-	mod_catalog.destroy();
-}
-
-void
-WeaponDesign::ClearModCatalog()
-{
 	mod_catalog.destroy();
 }
 
@@ -687,43 +682,10 @@ WeaponDesign::Find(const char* name)
 		}
 	}
 
-	for (int i = 0; i < mod_catalog.size(); i++) {
-		WeaponDesign* d = mod_catalog.at(i);
-
-		if (d->name == name) {
-			return d;
-		}
-	}
-
 	UE_LOG(LogTemp, Warning,
 		TEXT("WeaponDesign: no catalog entry for design '%s', checking mods..."),
 		ANSI_TO_TCHAR(name));
-	return WeaponDesign::FindModDesign(name);
-}
-
-WeaponDesign*
-WeaponDesign::FindModDesign(const char* name)
-{
-	Text fname = name;
-	fname += ".def";
-
-	LoadDesign("Mods/Weapons/", fname, true);
-
-	for (int i = 0; i < mod_catalog.size(); i++) {
-		WeaponDesign* d = mod_catalog.at(i);
-
-		if (d->name == name) {
-			UE_LOG(LogTemp, Log,
-				TEXT("WeaponDesign: found mod weapon '%s'"),
-				ANSI_TO_TCHAR(d->name.data()));
-			return d;
-		}
-	}
-
-	UE_LOG(LogTemp, Warning,
-		TEXT("WeaponDesign: no mod found for design '%s'"),
-		ANSI_TO_TCHAR(name));
-	return 0;
+	return WeaponDesign::Find(name);
 }
 
 // +--------------------------------------------------------------------+
@@ -735,11 +697,6 @@ WeaponDesign::GetDesignList(List<Text>& designs)
 
 	for (int i = 0; i < catalog.size(); i++) {
 		WeaponDesign* design = catalog[i];
-		designs.append(&design->name);
-	}
-
-	for (int i = 0; i < mod_catalog.size(); i++) {
-		WeaponDesign* design = mod_catalog[i];
 		designs.append(&design->name);
 	}
 

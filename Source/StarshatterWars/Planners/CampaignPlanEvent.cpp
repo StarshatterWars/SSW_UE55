@@ -37,6 +37,7 @@
 #include "FormatUtil.h"
 
 #include "Misc/CString.h"
+#include "StarshatterWarsLog.h"
 
 // +--------------------------------------------------------------------+
 

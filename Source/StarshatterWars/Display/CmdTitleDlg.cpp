@@ -86,6 +86,11 @@ void UCmdTitleDlg::SetTitleTexture(UTexture2D* InTexture)
     TitleImage->SetBrushFromTexture(InTexture, /*bMatchSize*/ true);
 }
 
+void UCmdTitleDlg::OnTitleFinished()
+{
+
+}
+
 void UCmdTitleDlg::ExecFrame(float DeltaTime)
 {
     if (bFinished)

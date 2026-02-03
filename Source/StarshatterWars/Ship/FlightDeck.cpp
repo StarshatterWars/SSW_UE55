@@ -51,14 +51,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlightDeck, Log, All);
 static USound* tire_sound = 0;
 static USound* catapult_sound = 0;
 
-// Starshatter legacy helper that used to flip coordinate handedness.
-// In the Unreal port, this should map whatever “OtherHand()” did to FVector.
-static FORCEINLINE FVector OtherHand(const FVector& V)
-{
-	// Most common legacy->Unreal mapping: swap Y/Z (legacy Y-up -> Unreal Z-up).
-	return FVector(V.X, V.Z, V.Y);
-}
-
 // +======================================================================+
 
 class FlightDeckSlot

@@ -32,6 +32,7 @@
 #include "Campaign.h"
 #include "Combatant.h"
 #include "CombatGroup.h"
+#include "StarshatterWarsLog.h"
 
 #include "Game.h"
 

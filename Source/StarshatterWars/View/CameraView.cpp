@@ -19,6 +19,7 @@
     rendering resources; it coordinates view rect, projection settings,
     visibility, sorting, and optional lens flare.
 */
+#pragma once
 
 #include "CameraView.h"
 

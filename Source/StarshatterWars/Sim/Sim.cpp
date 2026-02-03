@@ -136,14 +136,6 @@ static FORCEINLINE double NormalizeRetLen(FVector& V)
 	return Len;
 }
 
-// Legacy “OtherHand” conversion point.
-// If you still need a handedness flip, implement it here consistently.
-// For now, identity mapping is used (expected to be reconciled in core math migration).
-static FORCEINLINE FVector OtherHand(const FVector& V)
-{
-	return V;
-}
-
 const char* FormatGameTime();
 
 // +--------------------------------------------------------------------+

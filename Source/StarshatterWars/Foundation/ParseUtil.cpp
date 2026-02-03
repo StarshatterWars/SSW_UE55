@@ -141,7 +141,7 @@ bool GetDefColor(Color& dst, TermDef* def, const char* file)
 }
 
 bool
-GetDefColor(FColor& dst, TermDef* def, const char* file)
+GetDefFColor(FColor& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
 		UE_LOG(LogTemp, Warning,

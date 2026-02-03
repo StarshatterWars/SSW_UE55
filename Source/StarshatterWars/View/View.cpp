@@ -1074,37 +1074,36 @@ void View::Print(int x1, int y1, const FString& InText)
     Print(x1, y1, "%s", Conv.Get());
 }
 
+bool View::OnMouseButtonDown(int32 Button, const FVector2D& Pos) { return false; }
+bool View::OnMouseButtonUp(int32 Button, const FVector2D& Pos) { return false; }
+bool View::OnMouseMove(const FVector2D& Pos) { return false; }
+bool View::OnKeyDown(int32 Key, bool bRepeat) { return false; }
 
-bool 
-View::OnMouseDown(int32 Button, int32 x, int32 y)
+void View::Show() {}
+void View::Hide() {}
+
+bool View::OnMouseDown(int32 Button, int32 x, int32 y)
 {
     return OnMouseButtonDown(Button, FVector2D((float)x, (float)y));
 }
 
-bool 
-View::OnMouseUp(int32 Button, int32 x, int32 y)
+bool View::OnMouseUp(int32 Button, int32 x, int32 y)
 {
     return OnMouseButtonUp(Button, FVector2D((float)x, (float)y));
 }
 
-bool 
-View::OnMouseMove(int32 x, int32 y)
+bool View::OnMouseMove(int32 x, int32 y)
 {
     return OnMouseMove(FVector2D((float)x, (float)y));
 }
 
-bool 
-View::OnKeyDown(int32 Key)
+bool View::OnKeyDown(int32 Key)
 {
     return OnKeyDown(Key, false);
 }
 
-bool 
-View::OnKeyUp(int32 Key)
+bool View::OnKeyUp(int32 Key)
 {
-    // If you don’t have a KeyUp surface yet, default to “not handled”.
-    // You can add a UE-ish OnKeyUp(int32) later if needed.
     return false;
 }
-
 

@@ -31,9 +31,6 @@
 
 #include "Logging/LogMacros.h"
 
-// NOTE: Assumes you have a log category declared elsewhere (recommended in a shared header/cpp):
-// DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterWars, Log, All);
-
 static inline void LogWarningIfNoCampaign()
 {
 	// intentionally empty placeholder for future shared diagnostics

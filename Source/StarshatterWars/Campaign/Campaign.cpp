@@ -33,6 +33,7 @@
 #include "CombatZone.h"
 #include "Galaxy.h"
 #include "Mission.h"
+#include "MissionInfo.h"
 #include "StarSystem.h"
 #include "Starshatter.h"
 #include "PlayerCharacter.h"
@@ -53,64 +54,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogCampaign, Log, All);
 
 const int TIME_NEVER = (int)1e9;
 const int ONE_DAY = (int)24 * 3600;
-
-// +====================================================================+
-
-MissionInfo::MissionInfo()
-    : mission(0)
-    , start(0)
-    , type(0)
-    , id(0)
-    , min_rank(0)
-    , max_rank(0)
-    , action_id(0)
-    , action_status(0)
-    , exec_once(0)
-    , start_before(TIME_NEVER)
-    , start_after(0)
-{
-}
-
-MissionInfo::~MissionInfo()
-{
-    delete mission;
-}
-
-bool
-MissionInfo::IsAvailable()
-{
-    Campaign* campaign = Campaign::GetCampaign();
-    PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-    CombatGroup* player_group = campaign ? campaign->GetPlayerGroup() : 0;
-
-    if (!campaign || !player || !player_group)
-        return false;
-
-    if (campaign->GetTime() < start_after)
-        return false;
-
-    if (campaign->GetTime() > start_before)
-        return false;
-
-    if (region.length() && player_group->GetRegion() != region)
-        return false;
-
-    if (min_rank && player->Rank() < min_rank)
-        return false;
-
-    if (max_rank && player->Rank() > max_rank)
-        return false;
-
-    if (exec_once < 0)
-        return false;
-
-    if (exec_once > 0)
-        exec_once = -1;
-
-    return true;
-}
-
-// +====================================================================+
 
 TemplateList::TemplateList()
     : mission_type(0)
@@ -2038,9 +1981,6 @@ Campaign::CheckPlayerGroup()
 
 // +--------------------------------------------------------------------+
 
-void FPU2Extended();
-void FPURestore();
-
 void
 Campaign::StartMission()
 {
@@ -2051,7 +1991,6 @@ Campaign::StartMission()
             m->Identity(), ANSI_TO_TCHAR(m->Name()));
 
         if (!scripted) {
-            FPU2Extended();
 
             double gtime = (double)Game::GameTime() / 1000.0;
             double base = startTime + m->Start() - 15 - gtime;
@@ -2079,7 +2018,6 @@ Campaign::RollbackMission()
 
     if (m) {
         if (!scripted) {
-            FPU2Extended();
 
             double gtime = (double)Game::GameTime() / 1000.0;
             double base = startTime + m->Start() - 60 - gtime;

@@ -102,8 +102,11 @@
 #include "VideoSettings.h"
 #include "UIAudioManager.h"
 #include "GameStructs.h"
+#include "StarshatterWarsLog.h"
 
 // +--------------------------------------------------------------------+
+
+DEFINE_LOG_CATEGORY(LogStarshatterWars);
 
 int            quick_mode = 0;
 char           quick_mission_name[64];

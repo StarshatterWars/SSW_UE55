@@ -39,6 +39,7 @@
 // Unreal:
 #include "Math/Vector.h"               // FVector
 #include "Math/UnrealMathUtility.h"    // FMath
+#include "StarshatterWarsLog.h"
 
 // +--------------------------------------------------------------------+
 
