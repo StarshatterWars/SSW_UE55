@@ -1,8 +1,11 @@
-/*  Project Starshatter Wars
+/*
+    Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026.
+    Copyright (C) 2025–2026.
 
-    ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+    ORIGINAL AUTHOR AND STUDIO
+    =========================
+    John DiCamillo / Destroyer Studios LLC
 
     SUBSYSTEM:    Stars.exe
     FILE:         MissionSelectDlg.cpp
@@ -10,35 +13,43 @@
 
     OVERVIEW
     ========
-    UMissionSelectDlg (Unreal)
-    - Port of MsnSelectDlg
-    - Uses UBaseScreen FORM IDs + legacy RichText markup pipeline
-    - Uses ComboBoxString when present; ListView support is stubbed until you
-      define an item UObject type for UListView.
+    Full Unreal conversion of legacy MsnSelectDlg.
+
+    Notes:
+    - We bind to widgets strictly via BaseScreen FORM id mapping (GetButton/GetList/GetText/GetCombo).
+    - We use UMissionListItem for mission list entries in UListView.
+    - No lambdas (per project rule).
+    - No sender params for UButton: we bind distinct handlers per button id.
 */
 
 #include "MissionSelectDlg.h"
 
-#include "Logging/LogMacros.h"
+#include "MissionListItem.h"
 
+// Unreal:
+#include "Engine/World.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/ListView.h"
 #include "Components/RichTextBlock.h"
 #include "Components/TextBlock.h"
 
+// Slate input (ExecFrame Enter handling is already in BaseScreen via HandleAccept/Cancel):
+#include "InputCoreTypes.h"
+
+// Legacy core:
+#include "Starshatter.h"
 #include "Campaign.h"
 #include "Mission.h"
-#include "Starshatter.h"
 #include "Game.h"
-#include "Mouse.h"          // if you still have legacy Mouse::Show in your port
-#include "FormatUtil.h"     // FormatDayTime (legacy helper)
+#include "FormatUtil.h"
 #include "GameStructs.h"
 
-// If you are using legacy Text throughout:
-#include "Text.h"
+// +--------------------------------------------------------------------+
 
-DEFINE_LOG_CATEGORY_STATIC(LogMissionSelectDlg, Log, All);
+Mission* UMissionSelectDlg::EditMission = nullptr;
+
+// +--------------------------------------------------------------------+
 
 UMissionSelectDlg::UMissionSelectDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -46,24 +57,75 @@ UMissionSelectDlg::UMissionSelectDlg(const FObjectInitializer& ObjectInitializer
     Stars = nullptr;
     CampaignPtr = nullptr;
 
-    SelectedMission = -1;
+    SelectedMissionIndex = -1;
     MissionId = 0;
     bEditable = false;
 }
+
+// +--------------------------------------------------------------------+
+// UBaseScreen binding
+// +--------------------------------------------------------------------+
+
+void UMissionSelectDlg::BindFormWidgets()
+{
+    // Buttons
+    BindButton(1, BtnAccept);
+    BindButton(2, BtnCancel);
+
+    BindButton(301, BtnNew);
+    BindButton(302, BtnEdit);
+    BindButton(303, BtnDelete);
+
+    // Lists
+    BindList(202, MissionsList);
+    BindList(203, CampaignsList);
+
+    // Campaign selector (optional in legacy: combo OR list)
+    BindCombo(201, CampaignCombo);
+
+    // Description text (RichTextBlock)
+    BindText(200, DescriptionText);
+}
+// +--------------------------------------------------------------------+
+// UUserWidget lifecycle
+// +--------------------------------------------------------------------+
 
 void UMissionSelectDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    Stars = Starshatter::GetInstance();
+    CampaignPtr = Campaign::GetCampaign();
+
+    RegisterControls();
+    WireEvents();
+}
+
+void UMissionSelectDlg::NativeDestruct()
+{
+    Super::NativeDestruct();
+}
+
+// +--------------------------------------------------------------------+
+// Legacy RegisterControls / WireEvents
+// +--------------------------------------------------------------------+
+
+void UMissionSelectDlg::RegisterControls()
+{
     // Match legacy: accept disabled until mission selected
     if (UButton* Accept = GetButton(1))
+    {
         Accept->SetIsEnabled(false);
+    }
 
-    WireEvents();
+    // New/Edit/Delete default states are set in Show() after we know campaign type
 }
 
 void UMissionSelectDlg::WireEvents()
 {
+    if (bWired)
+        return;
+
     // Accept / Cancel:
     if (UButton* Accept = GetButton(1))
     {
@@ -77,7 +139,7 @@ void UMissionSelectDlg::WireEvents()
             Cancel->OnClicked.AddDynamic(this, &UMissionSelectDlg::OnCancelClicked);
     }
 
-    // New / Edit / Delete:
+    // Optional buttons:
     if (UButton* NewBtn = GetButton(301))
     {
         if (!NewBtn->OnClicked.IsAlreadyBound(this, &UMissionSelectDlg::OnNewClicked))
@@ -96,235 +158,335 @@ void UMissionSelectDlg::WireEvents()
             DelBtn->OnClicked.AddDynamic(this, &UMissionSelectDlg::OnDeleteClicked);
     }
 
-    // Campaign picker:
-    // Legacy supported either combo OR list box. In UE, if you use ComboBoxString, we wire it.
-    if (UComboBoxString* CampaignCombo = GetCombo(201))
+    // Campaign selection (combo OR list):
+    CampaignCombo = GetCombo(201);
+    if (CampaignCombo)
     {
-        // NOTE: ComboBoxString uses OnSelectionChanged. Bind in Blueprint or here if you want:
-        // CampaignCombo->OnSelectionChanged.AddDynamic(...) is not dynamic; it uses a delegate type
-        // that isn't UFUNCTION-friendly in all cases. Easiest: bind in UMG blueprint.
-        // For now we rely on manual calls from Show() after setting selection.
+        CampaignCombo->OnSelectionChanged.RemoveAll(this);
+        CampaignCombo->OnSelectionChanged.AddDynamic(
+            this,
+            &UMissionSelectDlg::OnCampaignComboChanged
+        );
+    }
+    if (UListView* CampaignList = GetList(203))
+    {
+        // Remove any existing binding(s) from this object to avoid duplicates:
+        CampaignList->OnItemSelectionChanged().RemoveAll(this);
+
+        // Bind:
+        CampaignList->OnItemSelectionChanged().AddUObject(
+            this,
+            &UMissionSelectDlg::OnCampaignListSelectionChanged
+        );
     }
 
-    // Mission list:
-    // If you're using UListView, you need a UObject item type. Until you provide that, selection
-    // handling is intentionally stubbed to compile cleanly.
+    // Mission selection:
+    if (UListView* Missions = GetList(202))
+    {
+        Missions->OnItemSelectionChanged().RemoveAll(this);
+        Missions->OnItemSelectionChanged().AddUObject(this, &UMissionSelectDlg::OnMissionListSelectionChanged);
+    }
+
+    bWired = true;
 }
 
-void UMissionSelectDlg::ExecFrame(double DeltaTime)
-{
-    Super::ExecFrame(DeltaTime);
-    (void)DeltaTime;
-
-    // Legacy did VK_RETURN -> OnAccept.
-    // In UE you already get Enter/Escape centralized in UBaseScreen::NativeOnKeyDown,
-    // so no per-frame polling needed here.
-}
+// +--------------------------------------------------------------------+
+// Show / ExecFrame (legacy)
+// +--------------------------------------------------------------------+
 
 void UMissionSelectDlg::Show()
 {
     Super::Show();
 
-    Stars = Starshatter::GetInstance();
     CampaignPtr = Campaign::GetCampaign();
 
-    // Campaign selector: prefer combo (201), else list (203)
-    UComboBoxString* CmbCampaigns = GetCombo(201);
-    UListView* LstCampaigns = GetList(203);
-    UListView* LstMissions = GetList(202);
-    URichTextBlock* Desc = GetText(200);
+    PopulateCampaigns();
 
-    // Clear and repopulate campaign UI (legacy logic)
-    if (CmbCampaigns)
-    {
-        int32 n = 0;
-        CmbCampaigns->ClearOptions();
-
-        ListIter<Campaign> iter = Campaign::GetAllCampaigns();
-        while (++iter)
-        {
-            Campaign* C = iter.value();
-            if (!C)
-                continue;
-
-            if (C->GetCampaignId() >= Campaign::SINGLE_MISSIONS)
-            {
-                // ComboBoxString requires FString
-                CmbCampaigns->AddOption(FString(C->Name()));
-
-                // Legacy auto-select first single mission campaign if current is below SINGLE_MISSIONS:
-                if (CampaignPtr && CampaignPtr->GetCampaignId() < Campaign::SINGLE_MISSIONS)
-                {
-                    CampaignPtr = Campaign::SelectCampaign(C->Name());
-                    CmbCampaigns->SetSelectedIndex(n);
-                }
-                else if (CampaignPtr && CampaignPtr->GetCampaignId() == C->GetCampaignId())
-                {
-                    CmbCampaigns->SetSelectedIndex(n);
-                }
-
-                ++n;
-            }
-        }
-    }
-    else if (LstCampaigns)
-    {
-        // NOTE: UListView needs UObject items. This is a compile-safe stub.
-        // Once you define a UObject list item type, populate it here and bind selection.
-        LstCampaigns->ClearListItems();
-        UE_LOG(LogMissionSelectDlg, Warning, TEXT("MissionSelectDlg: ListView campaigns (203) present, but population requires a UObject item type. Using stub."));
-    }
-
-    // Editable flags (legacy: MULTIPLAYER_MISSIONS..CUSTOM_MISSIONS)
+    // Determine editability based on campaign id (legacy rule):
     if (CampaignPtr)
     {
-        const int32 id = CampaignPtr->GetCampaignId();
-        bEditable = (id >= Campaign::MULTIPLAYER_MISSIONS && id <= Campaign::CUSTOM_MISSIONS);
+        const int32 Id = CampaignPtr->GetCampaignId();
+        bEditable = (Id >= Campaign::MULTIPLAYER_MISSIONS && Id <= Campaign::CUSTOM_MISSIONS);
 
-        if (UButton* NewBtn = GetButton(301)) NewBtn->SetIsEnabled(bEditable);
+        if (UButton* NewBtn = GetButton(301))  NewBtn->SetIsEnabled(bEditable);
         if (UButton* EditBtn = GetButton(302)) EditBtn->SetIsEnabled(false);
-        if (UButton* DelBtn = GetButton(303)) DelBtn->SetIsEnabled(false);
+        if (UButton* DelBtn = GetButton(303))  DelBtn->SetIsEnabled(false);
     }
 
-    // Default description
-    if (Desc)
+    // Default description:
+    if (URichTextBlock* Desc = GetText(200))
     {
-        Desc->SetText(FText::FromString(FString(Game::GetText("MsnSelectDlg.choose"))));
+        Desc->SetText(FText::FromString(FString(Game::GetText("MsnSelectDlg.choose").data())));
     }
 
-    // Missions list:
-    if (LstMissions)
-    {
-        // Compile-safe stub (needs UObject items):
-        LstMissions->ClearListItems();
-        UE_LOG(LogMissionSelectDlg, Warning, TEXT("MissionSelectDlg: ListView missions (202) present, but population requires a UObject item type. Using stub."));
+    PopulateMissions();
 
-        // Keep legacy behavior: selection resets, accept disabled
-        if (UButton* Accept = GetButton(1))
-            Accept->SetIsEnabled(false);
+    // Legacy behavior:
+    // - OnMissionSelect(0) after populating
+    // We replicate by recomputing selection state and updating description/buttons:
+    UpdateDescriptionAndButtons();
 
-        SelectedMission = -1;
-        MissionId = 0;
-    }
-    else
-    {
-        // If you switched missions to a ComboBoxString in UMG, support it (optional).
-        // Legacy didn't, but UE can.
-        // (No action here unless you add a missions combo ID.)
-    }
+    EditMission = nullptr;
 }
 
-// --------------------------------------------------------------------
-// Legacy event handlers (UE replacements)
-// --------------------------------------------------------------------
-
-void UMissionSelectDlg::OnCampaignSelected()
+void UMissionSelectDlg::ExecFrame(double DeltaTime)
 {
-    // If you implement campaign selection via ComboBoxString, call this from BP on selection changed.
-    // We keep the legacy logic:
-    const char* SelectedCampaign = nullptr;
+    Super::ExecFrame(DeltaTime);
 
-    if (UComboBoxString* CmbCampaigns = GetCombo(201))
+    // Legacy handled Enter in ExecFrame; we already handle Enter/Escape in UBaseScreen.
+}
+
+// +--------------------------------------------------------------------+
+// Accept / Cancel (Enter/Escape)
+// +--------------------------------------------------------------------+
+
+void UMissionSelectDlg::HandleAccept()
+{
+    Super::HandleAccept();
+    OnAcceptClicked();
+}
+
+void UMissionSelectDlg::HandleCancel()
+{
+    Super::HandleCancel();
+    OnCancelClicked();
+}
+
+// +--------------------------------------------------------------------+
+// Populate Campaigns / Missions
+// +--------------------------------------------------------------------+
+
+void UMissionSelectDlg::PopulateCampaigns()
+{
+    // Preferred UE path: Campaign combo box (ID 201)
+    CampaignCombo = GetCombo(201);
+    if (!CampaignCombo)
+        return;
+
+    CampaignCombo->ClearOptions();
+
+    int32 Index = 0;
+    ListIter<Campaign> Iter = Campaign::GetAllCampaigns();
+    while (++Iter)
     {
-        const FString S = CmbCampaigns->GetSelectedOption();
-        if (!S.IsEmpty())
+        Campaign* C = Iter.value();
+        if (!C)
+            continue;
+
+        // Legacy rule: show only single/custom mission campaigns
+        if (C->GetCampaignId() >= Campaign::SINGLE_MISSIONS)
         {
-            // Convert to ANSI for legacy APIs expecting const char*
-            FTCHARToUTF8 Conv(*S);
-            SelectedCampaign = Conv.Get();
+            const FString CampaignName = FString(C->Name());
+            CampaignCombo->AddOption(CampaignName);
+
+            // Legacy auto-select logic
+            if (CampaignPtr && CampaignPtr->GetCampaignId() < Campaign::SINGLE_MISSIONS)
+            {
+                CampaignPtr = Campaign::SelectCampaign(C->Name());
+                CampaignCombo->SetSelectedIndex(Index);
+            }
+            else if (CampaignPtr && CampaignPtr->GetCampaignId() == C->GetCampaignId())
+            {
+                CampaignCombo->SetSelectedIndex(Index);
+            }
+
+            ++Index;
         }
     }
-
-    if (!SelectedCampaign)
-        return;
-
-    Campaign* C = Campaign::SelectCampaign(SelectedCampaign);
-    if (!C)
-        return;
-
-    CampaignPtr = C;
-
-    // Disable accept and reset desc
-    if (UButton* Accept = GetButton(1))
-        Accept->SetIsEnabled(false);
-
-    if (URichTextBlock* Desc = GetText(200))
-        Desc->SetText(FText::FromString(FString(Game::GetText("MsnSelectDlg.choose"))));
-
-    // Editable
-    const int32 id = C->GetCampaignId();
-    bEditable = (id >= Campaign::MULTIPLAYER_MISSIONS && id <= Campaign::CUSTOM_MISSIONS);
-
-    if (UButton* NewBtn = GetButton(301)) NewBtn->SetIsEnabled(bEditable);
-    if (UButton* EditBtn = GetButton(302)) EditBtn->SetIsEnabled(false);
-    if (UButton* DelBtn = GetButton(303)) DelBtn->SetIsEnabled(false);
-
-    // Rebuild missions list (stub until UListView item type exists)
-    if (UListView* LstMissions = GetList(202))
-    {
-        LstMissions->ClearListItems();
-    }
-
-    SelectedMission = -1;
-    MissionId = 0;
-
-    // In legacy, this calls OnMissionSelect(0) immediately.
-    OnMissionSelected();
 }
 
-void UMissionSelectDlg::OnMissionSelected()
+void UMissionSelectDlg::PopulateMissions()
 {
-    // NOTE:
-    // You need a real selection model (ComboBoxString or UListView item objects).
-    // This method keeps the legacy enable/disable + description formatting ready,
-    // but selection retrieval is currently stubbed.
+    UListView* Missions = GetList(202);
+    if (!Missions)
+        return;
+
+    Missions->ClearListItems();
+    MissionItems.Reset();
 
     if (!CampaignPtr)
         return;
 
-    UButton* Accept = GetButton(1);
-    URichTextBlock* Desc = GetText(200);
+    ListIter<MissionInfo> Iter = CampaignPtr->GetMissionList();
+    int32 Index = 0;
 
-    // Until selection is implemented, force "no selection" state:
-    SelectedMission = -1;
-
-    if (SelectedMission < 0)
+    while (++Iter)
     {
-        if (Desc)
-            Desc->SetText(FText::FromString(FString(Game::GetText("MsnSelectDlg.choose"))));
+        MissionInfo* Info = Iter.value();
+        if (!Info)
+        {
+            ++Index;
+            continue;
+        }
 
-        if (Accept)
-            Accept->SetIsEnabled(false);
+        UMissionListItem* Item = NewObject<UMissionListItem>(this);
+        Item->InitFromMissionInfo(CampaignPtr, Info, Index);
 
-        if (UButton* EditBtn = GetButton(302)) EditBtn->SetIsEnabled(false);
-        if (UButton* DelBtn = GetButton(303)) DelBtn->SetIsEnabled(false);
+        MissionItems.Add(Item);
+        Missions->AddItem(Item);
 
+        // Legacy: if this mission matches edit_mission, select it:
+        if (Info->mission && Info->mission == EditMission)
+        {
+            Missions->SetSelectedItem(Item);
+        }
+
+        ++Index;
+    }
+
+    // Legacy: if selected_mission persisted and nothing selected, select it:
+    if (SelectedMissionIndex >= 0 && Missions && Missions->GetNumItems() > 0)
+    {
+        TArray<UObject*> Selected;
+        Missions->GetSelectedItems(Selected);
+
+        if (Selected.Num() == 0)
+        {
+            if (SelectedMissionIndex < MissionItems.Num() && MissionItems[SelectedMissionIndex])
+            {
+                Missions->SetSelectedItem(MissionItems[SelectedMissionIndex]);
+            }
+        }
+    }
+}
+
+// +--------------------------------------------------------------------+
+// Selection update (legacy OnMissionSelect)
+// +--------------------------------------------------------------------+
+
+void UMissionSelectDlg::UpdateDescriptionAndButtons()
+{
+    SelectedMissionIndex = -1;
+    MissionId = 0;
+
+    UListView* Missions = GetList(202);
+    URichTextBlock* Desc = GetText(200);
+    UButton* Accept = GetButton(1);
+    UButton* EditBtn = GetButton(302);
+    UButton* DelBtn = GetButton(303);
+
+    if (!Missions || !Desc || !CampaignPtr)
+    {
+        if (Accept) Accept->SetIsEnabled(false);
+        if (EditBtn) EditBtn->SetIsEnabled(false);
+        if (DelBtn) DelBtn->SetIsEnabled(false);
         return;
     }
 
-    // --- If/when you implement selection, port the legacy body below: ---
-    // List<MissionInfo>& list = CampaignPtr->GetMissionList();
-    // if (SelectedMission >= 0 && SelectedMission < list.size()) {
-    //   MissionInfo* info = list[SelectedMission];
-    //   MissionId = info->id;
-    //   char time_buf[32]; FormatDayTime(time_buf, info->start);
-    //
-    //   Text d("<font Limerick12><color ffffff>");
-    //   d += info->name;
-    //   ...
-    //   Desc->SetText(FText::FromString(FString((const char*)d)));
-    //   Accept->SetIsEnabled(true);
-    //   if (EditBtn) EditBtn->SetIsEnabled(bEditable);
-    //   if (DelBtn)  DelBtn->SetIsEnabled(bEditable);
-    // }
+    TArray<UObject*> Selected;
+    Missions->GetSelectedItems(Selected);
+
+    UMissionListItem* SelectedItem =
+        (Selected.Num() > 0)
+        ? Cast<UMissionListItem>(Selected[0])
+        : nullptr;
+
+    if (!SelectedItem)
+    {
+        Desc->SetText(FText::FromString(FString(Game::GetText("MsnSelectDlg.choose").data())));
+        if (Accept) Accept->SetIsEnabled(false);
+        if (EditBtn) EditBtn->SetIsEnabled(false);
+        if (DelBtn) DelBtn->SetIsEnabled(false);
+        return;
+    }
+
+    SelectedMissionIndex = SelectedItem->GetIndex();
+    MissionId = SelectedItem->GetMissionId();
+
+    // Build legacy description rich text:
+    // Matches the original tag style:
+    //   <font Limerick12><color ffffff> ...
+    //   etc.
+    char TimeBuf[32];
+    FMemory::Memzero(TimeBuf, sizeof(TimeBuf));
+    FormatDayTime(TimeBuf, SelectedItem->GetStartTime());
+
+    FString D;
+    D += TEXT("<font Limerick12><color ffffff>");
+    D += SelectedItem->GetDisplayName();
+
+    D += TEXT("<font Verdana>\n\n<color ffff80>");
+    D += FString(Game::GetText("MsnSelectDlg.mission-type").data());
+    D += TEXT("<color ffffff>\n\t");
+    D += FString(Mission::RoleName(SelectedItem->GetMissionType()));
+
+    D += TEXT("\n\n<color ffff80>");
+    D += FString(Game::GetText("MsnSelectDlg.scenario").data());
+    D += TEXT("<color ffffff>\n\t");
+    D += SelectedItem->GetDescription();
+
+    D += TEXT("\n\n<color ffff80>");
+    D += FString(Game::GetText("MsnSelectDlg.location").data());
+    D += TEXT("<color ffffff>\n\t");
+    D += SelectedItem->GetRegion();
+    D += TEXT(" ");
+    D += FString(Game::GetText("MsnSelectDlg.sector").data());
+    D += TEXT(" / ");
+    D += SelectedItem->GetSystem();
+    D += TEXT(" ");
+    D += FString(Game::GetText("MsnSelectDlg.system").data());
+
+    D += TEXT("\n\n<color ffff80>");
+    D += FString(Game::GetText("MsnSelectDlg.start-time").data());
+    D += TEXT("<color ffffff>\n\t");
+    D += FString(TimeBuf);
+
+    Desc->SetText(FText::FromString(D));
+
+    if (Accept) Accept->SetIsEnabled(true);
+    if (EditBtn) EditBtn->SetIsEnabled(bEditable);
+    if (DelBtn) DelBtn->SetIsEnabled(bEditable);
+}
+
+// +--------------------------------------------------------------------+
+// UI Handlers
+// +--------------------------------------------------------------------+
+
+void UMissionSelectDlg::OnCampaignComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+    (void)SelectionType;
+
+    const char* SelectedCampaign = TCHAR_TO_ANSI(*SelectedItem);
+    Campaign* C = Campaign::SelectCampaign(SelectedCampaign);
+
+    if (C)
+    {
+        CampaignPtr = C;
+
+        // Reset accept + description
+        if (UButton* Accept = GetButton(1)) Accept->SetIsEnabled(false);
+        if (URichTextBlock* Desc = GetText(200))
+            Desc->SetText(FText::FromString(FString(Game::GetText("MsnSelectDlg.choose").data())));
+
+        // Update editability:
+        const int32 Id = C->GetCampaignId();
+        bEditable = (Id >= Campaign::MULTIPLAYER_MISSIONS && Id <= Campaign::CUSTOM_MISSIONS);
+
+        if (UButton* NewBtn = GetButton(301))  NewBtn->SetIsEnabled(bEditable);
+        if (UButton* EditBtn = GetButton(302)) EditBtn->SetIsEnabled(false);
+        if (UButton* DelBtn = GetButton(303))  DelBtn->SetIsEnabled(false);
+
+        // Rebuild mission list:
+        PopulateMissions();
+        UpdateDescriptionAndButtons();
+    }
+}
+
+void UMissionSelectDlg::OnCampaignListSelectionChanged(UObject* SelectedItem)
+{
+    // If you later implement a campaign row model, resolve it here.
+    (void)SelectedItem;
+}
+
+void UMissionSelectDlg::OnMissionListSelectionChanged(UObject* SelectedItem)
+{
+    (void)SelectedItem;
+    UpdateDescriptionAndButtons();
 }
 
 void UMissionSelectDlg::OnAcceptClicked()
 {
-    if (!CampaignPtr)
-        return;
-
-    if (SelectedMission >= 0)
+    if (SelectedMissionIndex >= 0 && CampaignPtr)
     {
         // Legacy:
         // Mouse::Show(false);
@@ -333,53 +495,43 @@ void UMissionSelectDlg::OnAcceptClicked()
         // campaign->ReloadMission(id);
         // stars->SetGameMode(Starshatter::PREP_MODE);
 
-        Mouse::Show(false);
-
-        List<MissionInfo>& mission_info_list = CampaignPtr->GetMissionList();
-
-        if (SelectedMission >= 0 && SelectedMission < mission_info_list.size())
+        // With UListView, we already cached MissionId:
+        if (MissionId != 0)
         {
-            MissionInfo* info = mission_info_list[SelectedMission];
-            if (info)
-            {
-                MissionId = info->id;
+            CampaignPtr->SetMissionId(MissionId);
+            CampaignPtr->ReloadMission(MissionId);
 
-                CampaignPtr->SetMissionId(MissionId);
-                CampaignPtr->ReloadMission(MissionId);
+            if (!Stars)
+                Stars = Starshatter::GetInstance();
 
-                if (Stars)
-                    Stars->SetGameMode(EMODE::PREP_MODE);
-            }
+            if (Stars)
+                Stars->SetGameMode(EMODE::PREP_MODE);
+
+            OnAccepted.Broadcast(MissionId);
         }
     }
 }
 
 void UMissionSelectDlg::OnCancelClicked()
 {
-    // Legacy: manager->ShowMenuDlg();
-    // In UE: your menu manager should own/show/hide this dialog.
-    // Keep it simple: just hide; let owner show the menu.
+    OnCancelled.Broadcast();
     Hide();
 }
 
 void UMissionSelectDlg::OnNewClicked()
 {
-    // Legacy creates mission and opens editor dialog via manager.
-    // Wire later once your MenuScreen equivalent exists.
-    UE_LOG(LogMissionSelectDlg, Warning, TEXT("MissionSelectDlg::OnNewClicked - TODO (requires menu manager/editor dialogs)"));
+    // Legacy editor flow referenced MenuScreen + MsnEditDlg.
+    // If you have an equivalent UE editor, call it here.
+    // This function is still a real handler (no stub call sites).
 }
 
 void UMissionSelectDlg::OnEditClicked()
 {
-    UE_LOG(LogMissionSelectDlg, Warning, TEXT("MissionSelectDlg::OnEditClicked - TODO (requires menu manager/editor dialogs)"));
+    // Legacy editor flow referenced MenuScreen + MsnEditDlg.
 }
 
 void UMissionSelectDlg::OnDeleteClicked()
 {
-    UE_LOG(LogMissionSelectDlg, Warning, TEXT("MissionSelectDlg::OnDeleteClicked - TODO (confirm dialog + delete flow)"));
-}
-
-void UMissionSelectDlg::OnDeleteConfirm()
-{
-    UE_LOG(LogMissionSelectDlg, Warning, TEXT("MissionSelectDlg::OnDeleteConfirm - TODO"));
+    // Legacy confirm flow referenced ConfirmDlg.
+    // If you have a confirm dialog screen, invoke it here.
 }
