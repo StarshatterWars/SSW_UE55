@@ -9,6 +9,8 @@ public class StarshatterWars : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+        bUseRTTI = true;
+
         PublicDependencyModuleNames.AddRange(new string[]
         {
             "Core",
@@ -24,6 +26,11 @@ public class StarshatterWars : ModuleRules
              "Slate",
              "SlateCore"
         });
+
+        AddEngineThirdPartyPrivateStaticDependencies(Target,
+            "Vorbis",
+            "Ogg"
+        );
 
         PublicIncludePaths.AddRange(new string[]
         {

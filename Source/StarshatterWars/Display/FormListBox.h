@@ -1,14 +1,10 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (C) 2025-2026. All Rights Reserved.
+    Copyright (C) 2025-2026.
 
     SUBSYSTEM:    Stars.exe (UE)
     FILE:         FormListBox.h
     AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
 
     OVERVIEW
     ========
@@ -19,11 +15,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/Widget.h"
-#include "FormListBox.generated.h"
+#include "Widgets/Views/SListView.h"
+#include "Widgets/Views/STableRow.h"
+#include "Widgets/Views/STableViewBase.h"
 
-class SListView;
-template<typename ItemType> class STableRow;
-class STextBlock;
+#include "FormListBox.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFormListSelectionChanged, int32, SelectedIndex);
 
@@ -51,6 +47,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Form|ListBox")
     void SetSelectedIndex(int32 InIndex);
 
+    UFUNCTION(BlueprintCallable, Category = "Form|ListBox")
+    FText GetItemText(int32 InIndex) const;
+
 public:
     UPROPERTY(BlueprintAssignable, Category = "Form|ListBox")
     FFormListSelectionChanged OnSelectionChanged;
@@ -59,6 +58,7 @@ protected:
     // UWidget
     virtual TSharedRef<SWidget> RebuildWidget() override;
     virtual void SynchronizeProperties() override;
+    virtual void ReleaseSlateResources(bool bReleaseChildren) override;
 
 private:
     using FItemPtr = TSharedPtr<FString>;
@@ -66,11 +66,22 @@ private:
     TSharedRef<ITableRow> GenerateRow(FItemPtr InItem, const TSharedRef<STableViewBase>& OwnerTable);
     void HandleSelectionChanged(FItemPtr InItem, ESelectInfo::Type SelectInfo);
 
-private:
-    TArray<FItemPtr> Items;
-    TArray<FText>    ItemsText;
+    void RebuildItemsFromText();
+    void RefreshList();
 
+private:
+    // Backing store:
+    TArray<FItemPtr> Items;
+    UPROPERTY()
+    TArray<FText> ItemsText;
+
+    // Slate:
     TSharedPtr<SListView<FItemPtr>> ListView;
 
+    // State:
     int32 SelectedIndex = INDEX_NONE;
+
+    // Optional style knobs (add later if you want Starshatter exact visuals):
+    UPROPERTY(EditAnywhere, Category = "Form|ListBox")
+    float RowPadding = 2.0f;
 };

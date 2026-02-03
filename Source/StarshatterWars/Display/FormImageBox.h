@@ -1,28 +1,12 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (C) 2025-2026. All Rights Reserved.
-
-    SUBSYSTEM:    Stars.exe (UE)
-    FILE:         FormImageBox.h
-    AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    OVERVIEW
-    ========
-    UE port of legacy FormImageBox control.
-*/
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/Widget.h"
 #include "Styling/SlateBrush.h"
+#include "Engine/Texture2D.h"
 #include "FormImageBox.generated.h"
 
-class SImage;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFormImageBoxClicked);
 
 UCLASS(BlueprintType, Blueprintable)
 class STARSHATTERWARS_API UFormImageBox : public UWidget
@@ -32,7 +16,10 @@ class STARSHATTERWARS_API UFormImageBox : public UWidget
 public:
     UFormImageBox(const FObjectInitializer& ObjectInitializer);
 
-    /** Legacy-like API */
+    // Legacy-like API:
+    UFUNCTION(BlueprintCallable, Category = "Form|ImageBox")
+    void Clear();
+
     UFUNCTION(BlueprintCallable, Category = "Form|ImageBox")
     void SetTexture(UTexture2D* InTexture);
 
@@ -40,24 +27,50 @@ public:
     void SetBrush(const FSlateBrush& InBrush);
 
     UFUNCTION(BlueprintCallable, Category = "Form|ImageBox")
-    UTexture2D* GetTexture() const { return Texture; }
+    void SetTint(const FLinearColor& InTint);
+
+    UFUNCTION(BlueprintCallable, Category = "Form|ImageBox")
+    void SetClickable(bool bInClickable);
+
+    UFUNCTION(BlueprintCallable, Category = "Form|ImageBox")
+    void SetScaleToFit(bool bInScaleToFit);
 
 public:
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Form|ImageBox")
-    UTexture2D* Texture = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Form|ImageBox")
-    FSlateBrush Brush;
+    UPROPERTY(BlueprintAssignable, Category = "Form|ImageBox")
+    FFormImageBoxClicked OnClicked;
 
 protected:
     // UWidget
     virtual TSharedRef<SWidget> RebuildWidget() override;
     virtual void SynchronizeProperties() override;
+    virtual void ReleaseSlateResources(bool bReleaseChildren) override;
 
 private:
-    const FSlateBrush* GetSlateBrush() const;
+    // Slate callbacks (UObject-safe bindings)
+    FReply HandleClicked();
+
+    // Attribute getter (UObject-safe)
+    const FSlateBrush* GetBrushPtr() const;
 
 private:
-    TSharedPtr<SImage> Image;
+    // Backing data
+    UPROPERTY(EditAnywhere, Category = "Form|ImageBox")
+    TObjectPtr<UTexture2D> Texture = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Form|ImageBox")
+    FSlateBrush Brush;
+
+    UPROPERTY(EditAnywhere, Category = "Form|ImageBox")
+    FLinearColor Tint = FLinearColor::White;
+
+    UPROPERTY(EditAnywhere, Category = "Form|ImageBox")
+    bool bClickable = false;
+
+    UPROPERTY(EditAnywhere, Category = "Form|ImageBox")
+    bool bScaleToFit = true;
+
+private:
+    // Slate widgets
+    TSharedPtr<class SImage>  ImageWidget;
+    TSharedPtr<class SButton> ButtonWidget;
 };
-

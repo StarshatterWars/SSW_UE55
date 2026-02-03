@@ -1,77 +1,126 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (C) 2025-2026. All Rights Reserved.
-
-    SUBSYSTEM:    Stars.exe (UE)
-    FILE:         FormImageBox.h
-    AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    OVERVIEW
-    ========
-    UE port of legacy FormImageBox control.
-*/
-
 #include "FormImageBox.h"
 
-#include "Engine/Texture2D.h"
 #include "Widgets/Images/SImage.h"
+#include "Widgets/Input/SButton.h"
+#include "Styling/CoreStyle.h"
 
 UFormImageBox::UFormImageBox(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    // Default brush
     Brush = FSlateBrush();
+    Brush.DrawAs = ESlateBrushDrawType::Image;
+    Brush.TintColor = FSlateColor(Tint);
+
+    bIsVariable = true;
+}
+
+void UFormImageBox::ReleaseSlateResources(bool bReleaseChildren)
+{
+    Super::ReleaseSlateResources(bReleaseChildren);
+
+    ImageWidget.Reset();
+    ButtonWidget.Reset();
+}
+
+void UFormImageBox::Clear()
+{
+    Texture = nullptr;
+    Brush.SetResourceObject(nullptr);
+    SynchronizeProperties();
+}
+
+void UFormImageBox::SetTexture(UTexture2D* InTexture)
+{
+    Texture = InTexture;
+    Brush.SetResourceObject(Texture);
+    Brush.DrawAs = ESlateBrushDrawType::Image;
+    SynchronizeProperties();
+}
+
+void UFormImageBox::SetBrush(const FSlateBrush& InBrush)
+{
+    Brush = InBrush;
+    SynchronizeProperties();
+}
+
+void UFormImageBox::SetTint(const FLinearColor& InTint)
+{
+    Tint = InTint;
+    SynchronizeProperties();
+}
+
+void UFormImageBox::SetClickable(bool bInClickable)
+{
+    if (bClickable != bInClickable)
+    {
+        bClickable = bInClickable;
+
+        // Clickable changes the Slate hierarchy (SImage vs SButton->SImage):
+        InvalidateLayoutAndVolatility();
+    }
+}
+
+void UFormImageBox::SetScaleToFit(bool bInScaleToFit)
+{
+    bScaleToFit = bInScaleToFit;
+    SynchronizeProperties();
+}
+
+const FSlateBrush* UFormImageBox::GetBrushPtr() const
+{
+    return &Brush;
 }
 
 TSharedRef<SWidget> UFormImageBox::RebuildWidget()
 {
-    Image =
+    // Create image
+    ImageWidget =
         SNew(SImage)
-        .Image(this, &UFormImageBox::GetSlateBrush);
+        .Image(TAttribute<const FSlateBrush*>::Create(
+            TAttribute<const FSlateBrush*>::FGetter::CreateUObject(
+                this, &UFormImageBox::GetBrushPtr)))
+        .ColorAndOpacity(Tint);
 
-    return Image.ToSharedRef();
+    if (bClickable)
+    {
+        ButtonWidget =
+            SNew(SButton)
+            .ButtonStyle(&FCoreStyle::Get().GetWidgetStyle<FButtonStyle>("NoBorder"))
+            .ContentPadding(FMargin(0.f))
+            .OnClicked(FOnClicked::CreateUObject(this, &UFormImageBox::HandleClicked))
+            [
+                ImageWidget.ToSharedRef()
+            ];
+
+        return ButtonWidget.ToSharedRef();
+    }
+
+    return ImageWidget.ToSharedRef();
 }
 
 void UFormImageBox::SynchronizeProperties()
 {
     Super::SynchronizeProperties();
 
+    // Keep brush resource synced with texture if texture is set:
     if (Texture)
     {
         Brush.SetResourceObject(Texture);
+        Brush.DrawAs = ESlateBrushDrawType::Image;
     }
 
-    // SImage pulls from GetSlateBrush; invalidation will redraw automatically.
+    Brush.TintColor = FSlateColor(Tint);
+
+    // Push tint to Slate if built:
+    if (ImageWidget.IsValid())
+    {
+        ImageWidget->SetColorAndOpacity(Tint);
+    }
 }
 
-const FSlateBrush* UFormImageBox::GetSlateBrush() const
+FReply UFormImageBox::HandleClicked()
 {
-    return &Brush;
-}
-
-void UFormImageBox::SetTexture(UTexture2D* InTexture)
-{
-    Texture = InTexture;
-
-    if (Texture)
-        Brush.SetResourceObject(Texture);
-    else
-        Brush.SetResourceObject(nullptr);
-
-    if (Image.IsValid())
-        Image->Invalidate(EInvalidateWidget::LayoutAndVolatility);
-}
-
-void UFormImageBox::SetBrush(const FSlateBrush& InBrush)
-{
-    Brush = InBrush;
-
-    // Try to keep Texture in sync if the brush has a UTexture2D:
-    Texture = Cast<UTexture2D>(Brush.GetResourceObject());
-
-    if (Image.IsValid())
-        Image->Invalidate(EInvalidateWidget::LayoutAndVolatility);
+    OnClicked.Broadcast();
+    return FReply::Handled();
 }
