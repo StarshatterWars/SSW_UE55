@@ -137,10 +137,10 @@ enum class ECampaignType : uint32 {
 
 UENUM()
 enum class ECampaignStatus {
-	CAMPAIGN_INIT				UMETA(DisplayName = "Campaign - Init"),
-	CAMPAIGN_ACTIVE				UMETA(DisplayName = "Campaign - Init"),
-	CAMPAIGN_SUCCESS			UMETA(DisplayName = "Campaign - Success"),
-	CAMPAIGN_FAILED				UMETA(DisplayName = "Campaign - Failed")
+	INIT				UMETA(DisplayName = "Campaign - Init"),
+	ACTIVE				UMETA(DisplayName = "Campaign - Init"),
+	SUCCESS				UMETA(DisplayName = "Campaign - Success"),
+	FAILED				UMETA(DisplayName = "Campaign - Failed")
 };
 
 enum COMPARISON_OPERATOR {

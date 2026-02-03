@@ -214,15 +214,15 @@ CampaignSaveGame::Load(const char* SourceFilename)
         }
     }
 
-    int    grp_iff = 0;
-    int    grp_type = 0;
-    int    grp_id = 0;
-    int    status = 0;
-    double baseTime = 0;
-    double time = 0;
-    Text   unit;
-    Text   sitrep;
-    Text   orders;
+    int                grp_iff = 0;
+    int                grp_type = 0;
+    int                grp_id = 0;
+    ECampaignStatus    status = ECampaignStatus::INIT;
+    double             baseTime = 0;
+    double             time = 0;
+    Text               unit;
+    Text               sitrep;
+    Text               orders;
 
     do {
         FPlatformProcess::Sleep(0.005f);
@@ -281,7 +281,10 @@ CampaignSaveGame::Load(const char* SourceFilename)
                 }
 
                 else if (def->name()->value() == "status") {
-                    GetDefNumber(status, def, SourceFilename);
+                    int StatusValue = 0;
+                    GetDefNumber(StatusValue, def, SourceFilename);
+
+                    status = static_cast<ECampaignStatus>(StatusValue);
                 }
 
                 else if (def->name()->value() == "basetime") {
@@ -503,8 +506,8 @@ CampaignSaveGame::Load(const char* SourceFilename)
 
         List<Campaign>& list = Campaign::GetAllCampaigns();
 
-        if (status < Campaign::CAMPAIGN_SUCCESS) {
-            campaign->SetStatus(status);
+        if (status < ECampaignStatus::SUCCESS) {
+            campaign->SetCampaignStatus(status);
             if (sitrep.length()) campaign->SetSituation(sitrep);
             if (orders.length()) campaign->SetOrders(orders);
             campaign->SetStartTime(baseTime);
@@ -529,7 +532,7 @@ CampaignSaveGame::Load(const char* SourceFilename)
         }
 
         // failed - restart current campaign:
-        else if (status == Campaign::CAMPAIGN_FAILED) {
+        else if (status == ECampaignStatus::FAILED) {
             UE_LOG(LogCampaignSaveGame, Log, TEXT("CampaignSaveGame: Loading FAILED campaign, restarting '%s'"),
                 ANSI_TO_TCHAR(campaign->Name()));
 
@@ -541,7 +544,7 @@ CampaignSaveGame::Load(const char* SourceFilename)
         }
 
         // start next campaign:
-        else if (status == Campaign::CAMPAIGN_SUCCESS) {
+        else if (status == ECampaignStatus::SUCCESS) {
             UE_LOG(LogCampaignSaveGame, Log, TEXT("CampaignSaveGame: Loading COMPLETED campaign '%s', searching for next campaign..."),
                 ANSI_TO_TCHAR(campaign->Name()));
 
@@ -630,7 +633,7 @@ CampaignSaveGame::Save(const char* name)
     if (player_unit)
         fprintf(f, "unit:     \"%s\"\n", player_unit->Name().data());
 
-    fprintf(f, "status:   %d\n", (int)campaign->GetStatus());
+    fprintf(f, "status:   %d\n", (int)campaign->GetCampaignStatus());
     fprintf(f, "basetime: %f\n", campaign->GetStartTime());
 
     fprintf(f, "time:     %f // %s\n\n",

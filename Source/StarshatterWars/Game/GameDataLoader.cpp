@@ -7621,7 +7621,7 @@ AGameDataLoader::CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* 
 void
 AGameDataLoader::Unload()
 {
-	SetStatus(CAMPAIGN_INIT);
+	SetCampaignStatus(ECampaignStatus::INIT);
 
 	Game::ResetGameTime();
 	StarSystem::SetBaseTime(0);
@@ -7641,19 +7641,19 @@ AGameDataLoader::Unload()
 // +--------------------------------------------------------------------+
 
 void
-AGameDataLoader::SetStatus(int s)
+AGameDataLoader::SetCampaignStatus(ECampaignStatus s)
 {
-	status = s;
+	CampaignStatus = s;
 
 	// record the win in player profile:
-	if (status == CAMPAIGN_SUCCESS) {
+	if (CampaignStatus == ECampaignStatus::SUCCESS) {
 		PlayerData* player = PlayerData::GetCurrentPlayer();
 
 		if (player)
 			player->SetCampaignComplete(campaign_id);
 	}
 
-	if (status > CAMPAIGN_ACTIVE) {
+	if (CampaignStatus > ECampaignStatus::ACTIVE) {
 		UE_LOG(LogTemp, Log, TEXT("Campaign::SetStatus() destroying mission list at campaign end"));
 		missions.destroy();
 	}

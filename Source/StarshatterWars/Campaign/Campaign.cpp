@@ -144,7 +144,7 @@ Campaign::Campaign(int id, const char* n)
     , loadTime(0)
     , player_group(0)
     , player_unit(0)
-    , status(CAMPAIGN_INIT)
+    , campaign_status(ECampaignStatus::INIT)
     , lockout(0)
     , loaded_from_savegame(false)
 {
@@ -165,7 +165,7 @@ Campaign::Campaign(int id, const char* n, const char* p)
     , loadTime(0)
     , player_group(0)
     , player_unit(0)
-    , status(CAMPAIGN_INIT)
+    , campaign_status(ECampaignStatus::INIT)
     , lockout(0)
     , loaded_from_savegame(false)
 {
@@ -455,7 +455,7 @@ Campaign::Load()
 void
 Campaign::Unload()
 {
-    SetStatus(CAMPAIGN_INIT);
+    SetCampaignStatus(ECampaignStatus::INIT);
 
     Game::ResetGameTime();
     StarSystem::SetBaseTime(0);
@@ -1918,7 +1918,7 @@ Campaign::Start()
     Prep();
 
     CreatePlanners();
-    SetStatus(CAMPAIGN_ACTIVE);
+    SetCampaignStatus(ECampaignStatus::ACTIVE);
 }
 
 void
@@ -1929,7 +1929,7 @@ Campaign::ExecFrame()
 
     time = Stardate() - startTime;
 
-    if (status < CAMPAIGN_ACTIVE)
+    if (campaign_status < ECampaignStatus::ACTIVE)
         return;
 
     if (IsDynamic()) {
@@ -2283,18 +2283,18 @@ Campaign::GetPlayerTeamScore()
 // +--------------------------------------------------------------------+
 
 void
-Campaign::SetStatus(int s)
+Campaign::SetCampaignStatus(ECampaignStatus s)
 {
-    status = s;
+    campaign_status = s;
 
     // record the win in player profile:
-    if (status == CAMPAIGN_SUCCESS) {
+    if (campaign_status == ECampaignStatus::SUCCESS) {
         PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
         if (player)
             player->SetCampaignComplete(campaign_id);
     }
 
-    if (status > CAMPAIGN_ACTIVE) {
+    if (campaign_status > ECampaignStatus::ACTIVE) {
         UE_LOG(LogCampaign, Log, TEXT("Campaign::SetStatus() destroying mission list at campaign end"));
         missions.destroy();
     }

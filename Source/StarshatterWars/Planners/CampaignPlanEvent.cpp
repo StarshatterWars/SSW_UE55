@@ -129,14 +129,14 @@ CampaignPlanEvent::ExecScriptedEvents()
                         UE_LOG(LogStarshatterWars, Log,
                             TEXT(">>>>> CAMPAIGN %d END  (Action %03d) <<<<<"),
                             campaign->GetCampaignId(), action->Identity());
-                        campaign->SetStatus(Campaign::CAMPAIGN_SUCCESS);
+                        campaign->SetCampaignStatus(ECampaignStatus::SUCCESS);
                     }
 
                     else if (action->Subtype() == CombatEvent::CAMPAIGN_FAIL) {
                         UE_LOG(LogStarshatterWars, Log,
                             TEXT(">>>>> CAMPAIGN %d FAIL (Action %03d) <<<<<"),
                             campaign->GetCampaignId(), action->Identity());
-                        campaign->SetStatus(Campaign::CAMPAIGN_FAILED);
+                        campaign->SetCampaignStatus(ECampaignStatus::FAILED);
                     }
                 }
                 break;

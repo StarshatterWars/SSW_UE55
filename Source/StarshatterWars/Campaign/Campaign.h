@@ -25,6 +25,7 @@
 #include "List.h"
 #include "Bitmap.h"
 #include "MissionInfo.h"
+#include "GameStructs.h"
 
 // Minimal Unreal includes (per port rules):
 #include "Math/Vector.h"               // FVector
@@ -79,13 +80,6 @@ public:
         CUSTOM_MISSIONS,
 
         NUM_IMAGES = 6
-    };
-
-    enum STATUS {
-        CAMPAIGN_INIT,
-        CAMPAIGN_ACTIVE,
-        CAMPAIGN_SUCCESS,
-        CAMPAIGN_FAILED
     };
 
     Campaign(int id, const char* name = 0);
@@ -178,11 +172,11 @@ public:
     bool                 IsSaveGame()      const { return loaded_from_savegame; }
     void                 SetSaveGame(bool s) { loaded_from_savegame = s; }
 
-    bool                 IsActive()        const { return status == CAMPAIGN_ACTIVE; }
-    bool                 IsComplete()      const { return status == CAMPAIGN_SUCCESS; }
-    bool                 IsFailed()        const { return status == CAMPAIGN_FAILED; }
-    void                 SetStatus(int s);
-    int                  GetStatus()       const { return status; }
+    bool                 IsActive()        const { return campaign_status == ECampaignStatus::ACTIVE; }
+    bool                 IsComplete()      const { return campaign_status == ECampaignStatus::SUCCESS; }
+    bool                 IsFailed()        const { return campaign_status == ECampaignStatus::FAILED; }
+    void                 SetCampaignStatus(ECampaignStatus s);
+    ECampaignStatus      GetCampaignStatus()       const { return campaign_status; }
 
     int                  GetAllCombatUnits(int iff, List<CombatUnit>& units);
 
@@ -222,7 +216,7 @@ protected:
 
     // attributes:
     int                  campaign_id;
-    int                  status;
+    ECampaignStatus      campaign_status;
     char                 filename[64];
     char                 path[64];
     Text                 name;

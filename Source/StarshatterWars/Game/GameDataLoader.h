@@ -115,7 +115,7 @@ public:
 	EEMPIRE_NAME GetEmpireName(int32 emp);
 	CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 	void Unload();
-	void SetStatus(int s);
+	void SetCampaignStatus(ECampaignStatus s);
 	double Stardate();
 	void Clear();
 	Combatant* GetCombatant(const char* cname);
@@ -157,7 +157,7 @@ public:
 	Dictionary<Text>  ContentValues;
 	// attributes:
 	int                  campaign_id;
-	int                  status;
+	ECampaignStatus      CampaignStatus;
 	int					 Index;
 	char                 filename[64];
 	Text                 path[64];
