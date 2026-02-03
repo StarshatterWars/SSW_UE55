@@ -591,10 +591,10 @@ WeaponDesign::LoadDesign(const char* path, const char* filename, bool mod)
 						}
 
 						if (design->sound.length()) {
-							int SOUND_FLAGS = Sound::LOCALIZED | Sound::LOC_3D;
+							int SOUND_FLAGS = USound::LOCALIZED | USound::LOC_3D;
 
 							if (design->beam)
-								SOUND_FLAGS = Sound::LOCALIZED | Sound::LOC_3D | Sound::LOCKED;
+								SOUND_FLAGS = USound::LOCALIZED | USound::LOC_3D | USound::LOCKED;
 
 							if (strstr(path, "Mods") == 0)
 								loader->SetDataPath("Sounds/");

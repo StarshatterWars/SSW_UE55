@@ -26,20 +26,20 @@ DEFINE_LOG_CATEGORY_STATIC(LogHUDSounds, Log, All);
 
 // +--------------------------------------------------------------------+
 
-static Sound* mfd_mode = 0;
-static Sound* nav_mode = 0;
-static Sound* wep_mode = 0;
-static Sound* wep_disp = 0;
-static Sound* hud_mode = 0;
-static Sound* hud_widget = 0;
-static Sound* shield_level = 0;
-static Sound* red_alert = 0;
-static Sound* tac_accept = 0;
-static Sound* tac_reject = 0;
+static USound* mfd_mode = 0;
+static USound* nav_mode = 0;
+static USound* wep_mode = 0;
+static USound* wep_disp = 0;
+static USound* hud_mode = 0;
+static USound* hud_widget = 0;
+static USound* shield_level = 0;
+static USound* red_alert = 0;
+static USound* tac_accept = 0;
+static USound* tac_reject = 0;
 
 // +--------------------------------------------------------------------+
 
-static void LoadInterfaceSound(DataLoader* loader, const char* wave, Sound*& s)
+static void LoadInterfaceSound(DataLoader* loader, const char* wave, USound*& s)
 {
 	if (!loader || !wave || !*wave) {
 		UE_LOG(LogHUDSounds, Warning, TEXT("LoadInterfaceSound: Invalid loader or wave name."));
@@ -76,7 +76,7 @@ HUDSounds::Initialize()
 	LoadInterfaceSound(loader, "tac_reject.wav", tac_reject);
 
 	if (red_alert) {
-		red_alert->SetFlags(Sound::AMBIENT | Sound::LOOP | Sound::LOCKED);
+		red_alert->SetFlags(USound::AMBIENT | USound::LOOP | USound::LOCKED);
 	}
 
 	loader->SetDataPath("");
@@ -102,7 +102,7 @@ HUDSounds::Close()
 void
 HUDSounds::PlaySound(int n)
 {
-	Sound* sound = 0;
+	USound* sound = nullptr;
 
 	switch (n) {
 	default:

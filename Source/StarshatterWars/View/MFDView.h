@@ -24,7 +24,7 @@ public:
     static void Close();
 
 public:
-    MFDView(Window* InWindow, int32 InIndex);
+    MFDView(View* InWindow, int32 InIndex);
     virtual ~MFDView();
 
     void UseCameraView(CameraView* InView);

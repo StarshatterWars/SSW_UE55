@@ -22,7 +22,7 @@
 
 class Bitmap;
 class Screen;
-class Window;
+class View;
 
 #if PLATFORM_WINDOWS
 struct HWND__;
@@ -83,5 +83,5 @@ private:
 	static Bitmap* image[8];
 	static int     hotspot[8];
 
-	static Window* window;
+	static View* window;
 };

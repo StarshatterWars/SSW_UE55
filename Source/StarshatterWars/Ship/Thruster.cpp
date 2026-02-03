@@ -54,8 +54,8 @@
 
 // +----------------------------------------------------------------------+
 
-static Sound* thruster_resource = nullptr;
-static Sound* thruster_sound = nullptr;
+static USound* thruster_resource = nullptr;
+static USound* thruster_sound = nullptr;
 
 extern Bitmap* drive_flare_bitmap[8];
 extern Bitmap* drive_trail_bitmap[8];
@@ -153,10 +153,10 @@ Thruster::Initialize()
 
     DataLoader* loader = DataLoader::GetLoader();
 
-    const int SOUND_FLAGS = Sound::LOCALIZED |
-        Sound::LOC_3D |
-        Sound::LOOP |
-        Sound::LOCKED;
+    const int SOUND_FLAGS = USound::LOCALIZED |
+        USound::LOC_3D |
+        USound::LOOP |
+        USound::LOCKED;
 
     loader->SetDataPath("Sounds/");
     loader->LoadSound("thruster.wav", thruster_resource, SOUND_FLAGS);

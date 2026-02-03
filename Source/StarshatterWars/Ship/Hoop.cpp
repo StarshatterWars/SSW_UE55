@@ -24,7 +24,7 @@
 
 #include "Game.h"
 #include "DataLoader.h"
-#include "Window.h"
+#include "View.h"
 #include "SimModel.h"
 #include "Surface.h"
 #include "Segment.h"

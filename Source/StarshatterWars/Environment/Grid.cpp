@@ -20,7 +20,7 @@
 
 #include "Game.h"
 #include "Video.h"
-#include "Window.h"
+#include "View.h"
 
 #include "Math/Vector.h" // FVector
 

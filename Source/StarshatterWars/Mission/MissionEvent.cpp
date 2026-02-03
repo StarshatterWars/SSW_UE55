@@ -697,8 +697,8 @@ MissionEvent::Execute(bool silent)
 	if (!silent && !sound && event_sound.length()) {
 		DataLoader* loader = DataLoader::GetLoader();
 		bool        use_fs = loader->IsFileSystemEnabled();
-		DWORD       flags = pan ? Sound::LOCKED | Sound::LOCALIZED :
-			Sound::LOCKED | Sound::AMBIENT;
+		DWORD       flags = pan ? USound::LOCKED | USound::LOCALIZED :
+			USound::LOCKED | USound::AMBIENT;
 
 		loader->UseFileSystem(true);
 		loader->SetDataPath("Sounds/");
@@ -719,7 +719,7 @@ MissionEvent::Execute(bool silent)
 
 		// fire and forget:
 		if (sound) {
-			if (sound->GetFlags() & Sound::STREAMED) {
+			if (sound->GetFlags() & USound::STREAMED) {
 				sound->SetFlags(flags | sound->GetFlags());
 				sound->SetVolume(AudioConfig::VoxVolume());
 				sound->Play();

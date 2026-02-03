@@ -52,7 +52,7 @@ Bitmap* drive_flare_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, n
 Bitmap* drive_trail_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 Bitmap* drive_glow_bitmap[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
-static Sound* sound_resource[3] = { nullptr, nullptr, nullptr };
+static USound* sound_resource[3] = { nullptr, nullptr, nullptr };
 
 #define CLAMP(x, a, b) if ((x) < (a)) (x) = (a); else if ((x) > (b)) (x) = (b);
 
@@ -184,10 +184,10 @@ Drive::Initialize()
     loader->LoadTexture("Glow4.pcx", drive_glow_bitmap[4], Bitmap::BMP_TRANSLUCENT);
     loader->LoadTexture("Glow5.pcx", drive_glow_bitmap[5], Bitmap::BMP_TRANSLUCENT);
 
-    const int SOUND_FLAGS = Sound::LOCALIZED |
-        Sound::LOC_3D |
-        Sound::LOOP |
-        Sound::LOCKED;
+    const int SOUND_FLAGS = USound::LOCALIZED |
+        USound::LOC_3D |
+        USound::LOOP |
+        USound::LOCKED;
 
     loader->SetDataPath("Sounds/");
     loader->LoadSound("engine.wav", sound_resource[0], SOUND_FLAGS);

@@ -45,7 +45,7 @@ class ShipDesign;
 class WeaponDesign;
 class StarSystem;
 class Instruction;
-class Sound;
+class USound;
 
 // +--------------------------------------------------------------------+
 
@@ -171,5 +171,5 @@ protected:
 
 	// Starshatter core Bitmap -> Unreal render asset pointer:
 	Bitmap* image = nullptr;
-	Sound* sound = nullptr;
+	USound* sound = nullptr;
 };

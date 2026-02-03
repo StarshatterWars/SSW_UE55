@@ -75,7 +75,7 @@ static float      part_rates[MAX_EXPLOSION_TYPES];
 static float      part_decays[MAX_EXPLOSION_TYPES];
 static bool       part_trails[MAX_EXPLOSION_TYPES];
 static int        part_alphas[MAX_EXPLOSION_TYPES];
-static Sound*     sounds[MAX_EXPLOSION_TYPES];
+static USound*    sounds[MAX_EXPLOSION_TYPES];
 static bool       recycles[MAX_EXPLOSION_TYPES];
 
 // +--------------------------------------------------------------------+
@@ -489,7 +489,7 @@ Explosion::Initialize()
 
                             if (sound_file[0]) {
                                 loader->SetDataPath("Sounds/");
-                                loader->LoadSound(sound_file, sounds[type], Sound::LOCALIZED | Sound::LOC_3D);
+                                loader->LoadSound(sound_file, sounds[type], USound::LOCALIZED | USound::LOC_3D);
                                 loader->SetDataPath("Explosions/");
 
                                 if (sounds[type]) {
@@ -640,7 +640,7 @@ Explosion::Activate(SimScene& scene)
         scene.AddGraphic(particles);
 
     if (sounds[obj_type]) {
-        Sound* sound = sounds[obj_type]->Duplicate();
+        USound* sound = sounds[obj_type]->Duplicate();
 
         // fire and forget:
         if (sound) {

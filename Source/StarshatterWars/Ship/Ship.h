@@ -64,7 +64,7 @@ class ShipDesign;
 class ShipKiller;
 class Solid;
 class Skin;
-class Sound;
+class USound;
 class Sensor;
 
 class Thruster;

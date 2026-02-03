@@ -21,7 +21,7 @@
 
 #include "Game.h"         // Game::GUITime()
 #include "Video.h"        // blend constants (Video::BLEND_*)
-#include "Window.h"       // Window size
+#include "View.h"       // Window size
 #include "SystemFont.h"   // SystemFont wrapper
 #include "Bitmap.h"       // if your Bitmap type is here; otherwise forward-only is fine
 
@@ -59,8 +59,8 @@ void DisplayView::OnWindowMove()
     // Prefer actual window size (since View now owns Window*):
     if (GetWindow())
     {
-        width = GetWindow()->Width();
-        height = GetWindow()->Height();
+        width = Width();
+        height = Height();
     }
     else
     {

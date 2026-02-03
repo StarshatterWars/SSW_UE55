@@ -1,27 +1,32 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright © 2025-2026.
-
-    SUBSYSTEM:    StarshatterWars (UE)
-    FILE:         Sound.h
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Unreal Sound handler that preserves legacy Sound API.
-*/
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
-#include "UObject/SoftObjectPtr.h"
 #include "Sound/SoundBase.h"
 #include "Components/AudioComponent.h"
 #include "Sound.generated.h"
 
-class SoundCard;   // legacy placeholder (kept for API compatibility)
-class Camera;      // legacy placeholder (kept for API compatibility)
+// ------------------------------------------------------------------
+// HRESULT compatibility shim (legacy Starshatter code expects HRESULT,
+// S_OK, E_FAIL, E_NOINTERFACE). Avoids pulling Windows headers into UE.
+// ------------------------------------------------------------------
+#ifndef HRESULT
+typedef long HRESULT;
+#endif
+
+#ifndef S_OK
+#define S_OK ((HRESULT)0L)
+#endif
+
+#ifndef E_FAIL
+#define E_FAIL ((HRESULT)0x80004005L)
+#endif
+
+#ifndef E_NOINTERFACE
+#define E_NOINTERFACE ((HRESULT)0x80004002L)
+#endif
+
+class Camera; // kept only to preserve your legacy SetListener signature
 
 UCLASS(BlueprintType)
 class STARSHATTERWARS_API USound : public UObject
@@ -31,16 +36,17 @@ class STARSHATTERWARS_API USound : public UObject
 public:
     static const char* TYPENAME() { return "Sound"; }
 
-    // Legacy-like factories (now load USoundBase assets):
+    // ------------------------------------------------------------------
+    // Required UE replacement for legacy "SoundCard":
+    // Call once early (GameInstance Init is perfect).
+    static void SetWorldContext(UObject* InWorldContext);
+
+    // Legacy factories (now load USoundBase assets):
     static USound* CreateStream(const char* InFilename);
-    static USound* CreateOggStream(const char* InFilename);
+    static USound* CreateOggStream(const char* InFilename); // same behavior as CreateStream in UE
 
-    // Legacy-ish listener hook (UE manages listener via PlayerController/CameraManager).
-    // Kept for compatibility; stored but not forced into AudioDevice.
+    // Legacy listener hook (UE manages listener; we store velocity for future doppler use):
     static void SetListener(const Camera& /*cam*/, const FVector& InVel);
-
-    // Legacy "sound card" hook; in UE this is just a world/context provider.
-    static void UseSoundCard(SoundCard* s) { creator = s; }
 
 public:
     USound();
@@ -51,56 +57,52 @@ public:
     // mark for collection:
     virtual void Release();
 
-    // data loading (legacy stubs; use assets in UE):
-    virtual HRESULT StreamFile(const char* /*name*/, DWORD /*offset*/) { return E_NOINTERFACE; }
-    virtual HRESULT Load(DWORD /*bytes*/, BYTE* /*data*/) { return E_NOINTERFACE; }
-    virtual USound* Duplicate() { return nullptr; }
-
     // transport operations:
     virtual HRESULT Play();
     virtual HRESULT Rewind();
     virtual HRESULT Pause();
     virtual HRESULT Stop();
 
-public:
+    virtual void AddToSoundCard();
+
+    // Stream timing (legacy compatibility)
+    virtual double GetTotalTime() const;
+    virtual double GetTimeRemaining() const;
+    virtual double GetTimeElapsed() const;
+
+
+    // accessors / mutators:
     int  IsReady()   const { return status == READY; }
     int  IsPlaying() const { return status == PLAYING; }
     int  IsDone()    const { return status == DONE; }
     int  LoopCount() const { return looped; }
 
+    // Legacy duplication: creates a new USound sharing the same asset/settings
+    virtual USound* Duplicate();
+
     virtual DWORD GetFlags()  const { return flags; }
     virtual void  SetFlags(DWORD f) { flags = f; }
     virtual DWORD GetStatus() const { return status; }
 
-    // Legacy volume is "centibels" (0 .. -10000). We convert to UE volume multiplier.
+    // Legacy volume is centibels (0 .. -10000). We convert to UE linear multiplier.
     virtual long GetVolume() const { return volume; }
     virtual void SetVolume(long v);
 
-    // Pan is not directly supported on AudioComponent without submix/SourceEffect.
-    // Keeping stubs for compatibility:
     virtual long GetPan() const { return 0; }
     virtual void SetPan(long /*p*/) {}
 
-    // Stream time accessors not implemented for asset-based playback:
-    virtual double GetTotalTime()     const { return 0; }
-    virtual double GetTimeRemaining() const { return 0; }
-    virtual double GetTimeElapsed()   const { return 0; }
-
-    // Localized 3D controls:
+    // 3D localization:
     virtual const FVector& GetLocation() const { return location; }
-    virtual void SetLocation(const FVector& l);
+    virtual void           SetLocation(const FVector& l);
 
     virtual const FVector& GetVelocity() const { return velocity; }
-    virtual void SetVelocity(const FVector& v) { velocity = v; }
+    virtual void           SetVelocity(const FVector& v) { velocity = v; }
 
     virtual float GetMinDistance() const { return min_distance; }
     virtual void  SetMinDistance(float f) { min_distance = f; ApplyAttenuation(); }
 
     virtual float GetMaxDistance() const { return max_distance; }
     virtual void  SetMaxDistance(float f) { max_distance = f; ApplyAttenuation(); }
-
-    virtual void  SetSoundCheck(class SoundCheck* s) { sound_check = s; }
-    virtual void  AddToSoundCard(); // in UE, ensures we have a valid World/Context
 
     const char* GetFilename() const { return filename_ansi; }
     void        SetFilename(const char* s);
@@ -132,32 +134,33 @@ public:
         DONE
     };
 
-private:
-    // Core UE asset + component:
-    UPROPERTY(Transient)
-    TObjectPtr<USoundBase> SoundAsset = nullptr;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UAudioComponent> AudioComp = nullptr;
-
-    // Attenuation (optional, built on the fly):
-    UPROPERTY(Transient)
-    TObjectPtr<class USoundAttenuation> AttenuationAsset = nullptr;
+protected:
+    double StartTimeSeconds = 0.0;
+    bool   bIsPlaying = false;
 
 private:
     void EnsureAssetLoaded();
     void EnsureAudioComponent();
     void ApplyAttenuation();
 
-    static UObject* ResolveWorldContext(); // best-effort context resolution
+    static UWorld* GetWorldFromContext();
     static USoundBase* LoadSoundAssetFromString(const FString& InRef);
-
     static float CentibelsToVolumeMultiplier(long Centibels);
+
+private:
+    UPROPERTY(Transient)
+    TObjectPtr<USoundBase> SoundAsset = nullptr;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> AudioComp = nullptr;
+
+    UPROPERTY(Transient)
+    TObjectPtr<class USoundAttenuation> AttenuationAsset = nullptr;
 
 private:
     DWORD flags = 0;
     DWORD status = UNINITIALIZED;
-    long  volume = 0;       // centibels (0 .. -10000)
+    long  volume = 0; // centibels, (0 .. -10000)
     int   looped = 0;
 
     FVector location = FVector::ZeroVector;
@@ -166,19 +169,9 @@ private:
     float min_distance = 200.f;
     float max_distance = 4000.f;
 
-    class SoundCheck* sound_check = nullptr;
-
-    // Keep filename exactly like legacy:
     char filename_ansi[64] = { 0 };
 
-    static SoundCard* creator;          // legacy hook (context provider in UE)
-    static FVector    ListenerVelocity; // stored for compatibility
-};
-
-// +--------------------------------------------------------------------+
-
-class SoundCheck
-{
-public:
-    virtual void Update(USound* /*s*/) {}
+private:
+    static TWeakObjectPtr<UObject> WorldContext;
+    static FVector ListenerVelocity;
 };

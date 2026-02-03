@@ -30,7 +30,7 @@ class Trail;
 class SimSystem;
 class WeaponDesign;
 class Sprite3D;
-class Sound;
+class USound;
 
 // +--------------------------------------------------------------------+
 

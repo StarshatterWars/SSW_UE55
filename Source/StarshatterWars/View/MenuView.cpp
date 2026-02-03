@@ -17,13 +17,13 @@
 
 #include "MenuView.h"
 
-#include "Window.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "MouseController.h"
 #include "Menu.h"
 #include "UIButton.h"
 #include "Game.h"
+#include "SystemFont.h"
 
 #include "Misc/Char.h"          // FTCHARToUTF8
 #include "Logging/LogMacros.h"
@@ -116,8 +116,8 @@ void MenuView::OnWindowMove()
 {
     // offset is used to convert screen mouse coords into local coords
     if (window) {
-        offset.X = (float)window->X();
-        offset.Y = (float)window->Y();
+        offset.X = X();
+        offset.Y = Y();
     }
     else {
         offset.X = 0.0f;

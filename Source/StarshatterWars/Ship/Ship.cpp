@@ -4633,7 +4633,7 @@ Ship::InflictDamage(double damage, SimShot* shot, int hit_type, FVector impact)
 			if (shot->IsBeam()) {
 				if (design->beam_hit_sound_resource) {
 					if (Game::RealTime() - last_beam_time > 400) {
-						Sound* s = design->beam_hit_sound_resource->Duplicate();
+						USound* s = design->beam_hit_sound_resource->Duplicate();
 						s->SetLocation(impact);
 						s->SetVolume(AudioConfig::EfxVolume());
 						s->Play();
@@ -4645,7 +4645,7 @@ Ship::InflictDamage(double damage, SimShot* shot, int hit_type, FVector impact)
 			else {
 				if (design->bolt_hit_sound_resource) {
 					if (Game::RealTime() - last_bolt_time > 400) {
-						Sound* s = design->bolt_hit_sound_resource->Duplicate();
+						USound* s = design->bolt_hit_sound_resource->Duplicate();
 						s->SetLocation(impact);
 						s->SetVolume(AudioConfig::EfxVolume());
 						s->Play();

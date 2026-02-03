@@ -32,7 +32,7 @@ class Trail;
 class SimSystem;      // renamed from System to avoid Unreal conflicts
 class WeaponDesign;
 class Sprite;
-class Sound;
+class USound;
 class SimScene;
 class Graphic;
 
@@ -125,7 +125,7 @@ protected:
 	Sprite* flare;   // drive flare
 	Trail* trail;   // exhaust trail
 
-	Sound* sound;
+	USound* sound;
 	WeaponDesign* design;
 
 	// for beam weapons:

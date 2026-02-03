@@ -30,7 +30,7 @@
 class Bitmap;
 class ShipStats;
 class AwardInfo;
-class Sound;
+class USound;
 
 // +-------------------------------------------------------------------+
 
@@ -77,7 +77,7 @@ public:
     Text           AwardName()       const;
     Text           AwardDesc()       const;
     Bitmap*        AwardImage()      const;
-    Sound*         AwardSound()      const;
+    USound*         AwardSound()      const;
 
     bool           CanCommand(int ship_class);
 

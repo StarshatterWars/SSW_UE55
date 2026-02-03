@@ -35,7 +35,7 @@ int               GetKeyPlus(int& key, int& shift);
 class AGameDataLoader;
 class Locale;
 class SimUniverse;
-class Sound;
+class USound;
 class Video;
 class VideoFactory;
 class VideoSettings;

@@ -35,6 +35,7 @@
 #include "Game.h"
 #include "Menu.h"
 #include "Keyboard.h"
+#include "SystemFont.h"
 #include "GameStructs.h"
 
 // ------------------------------------------------------------

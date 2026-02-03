@@ -81,7 +81,6 @@
 #include "Game.h"
 #include "VideoFactory.h"
 #include "Screen.h"
-#include "Window.h"
 #include "ActiveWindow.h"
 #include "UIButton.h"
 #include "CameraView.h"

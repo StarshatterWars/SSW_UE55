@@ -25,7 +25,7 @@
 class Element;
 class Ship;
 class RadioMessage;
-class Sound;
+class USound;
 
 // +--------------------------------------------------------------------+
 
@@ -51,7 +51,7 @@ protected:
 
 	Text              path;
 	Text              message;
-	List<Sound>       sounds;
+	List<USound>      sounds;
 	int               index;
 	int               channel;
 };

@@ -40,7 +40,7 @@
 #include "FormatUtil.h"
 #include "Menu.h"
 #include "GameStructs.h"
-#include "Bitmap.h"
+#include "SystemFont.h"
 
 #include "Math/Vector.h"   // FVector
 #include "Math/Color.h"    // FColor
@@ -1605,7 +1605,7 @@ void MapView::DrawTabbedText(SystemFont* InFont, const char* text)
 void
 MapView::Refresh()
 {
-	rect = window->GetRect();
+	rect = GetRect();
 
 	if (!system) {
 		DrawGrid();
@@ -1731,7 +1731,7 @@ MapView::DrawGalaxy()
 		if (sx < 4 || sx > rect.w - 4 || sy < 4 || sy > rect.h - 4)
 			continue;
 
-		window->DrawEllipse(sx - 7, sy - 7, sx + 7, sy + 7, Ship::IFFColor(sys->Affiliation()));
+		DrawEllipse(sx - 7, sy - 7, sx + 7, sy + 7, Ship::IFFColor(sys->Affiliation()));
 
 		if (sys == system) {
 			DrawLine(0, sy, rect.w, sy, FColor(128, 128, 128), Video::BLEND_ADDITIVE);
@@ -1786,7 +1786,7 @@ MapView::DrawGalaxy()
 			if (sx < 4 || sx > rect.w - 4 || sy < 4 || sy > rect.h - 4)
 				continue;
 
-			window->FillEllipse(sx - sr, sy - sr, sx + sr, sy + sr, st->GetColor());
+			FillEllipse(sx - sr, sy - sr, sx + sr, sy + sr, st->GetColor());
 
 			if (!strncmp(st->Name(), "GSC", 3))
 				font->SetColor(FColor(100, 100, 100));
@@ -2063,14 +2063,14 @@ MapView::DrawGrid()
 
 	FColor cc(32, 32, 32);
 
-	window->DrawLine(0, cy, rect.w, cy, cc, Video::BLEND_ADDITIVE);
-	window->DrawLine(cx, 0, cx, rect.h, cc, Video::BLEND_ADDITIVE);
+	DrawLine(0, cy, rect.w, cy, cc, Video::BLEND_ADDITIVE);
+	DrawLine(cx, 0, cx, rect.h, cc, Video::BLEND_ADDITIVE);
 
 	for (int i = 1; i < 4; i++) {
-		window->DrawLine(0, cy + (i * grid_step), rect.w, cy + (i * grid_step), cc, Video::BLEND_ADDITIVE);
-		window->DrawLine(0, cy - (i * grid_step), rect.w, cy - (i * grid_step), cc, Video::BLEND_ADDITIVE);
-		window->DrawLine(cx + (i * grid_step), 0, cx + (i * grid_step), rect.h, cc, Video::BLEND_ADDITIVE);
-		window->DrawLine(cx - (i * grid_step), 0, cx - (i * grid_step), rect.h, cc, Video::BLEND_ADDITIVE);
+		DrawLine(0, cy + (i * grid_step), rect.w, cy + (i * grid_step), cc, Video::BLEND_ADDITIVE);
+		DrawLine(0, cy - (i * grid_step), rect.w, cy - (i * grid_step), cc, Video::BLEND_ADDITIVE);
+		DrawLine(cx + (i * grid_step), 0, cx + (i * grid_step), rect.h, cc, Video::BLEND_ADDITIVE);
+		DrawLine(cx - (i * grid_step), 0, cx - (i * grid_step), rect.h, cc, Video::BLEND_ADDITIVE);
 	}
 }
 
@@ -2504,7 +2504,7 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 
 	int sprite_width = 10;
 
-	window->SetFont(font);
+	SetFont(font);
 
 	// draw ship icon:
 	if (!_stricmp(s.Region(), rgn->Name())) {
@@ -2520,11 +2520,11 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 
 		if (ship_visible) {
 			if (rep < 3) {
-				window->FillRect(shiploc.X - 2, shiploc.Y - 2, shiploc.X + 2, shiploc.Y + 2, s.MarkerColor());
+				FillRect(shiploc.X - 2, shiploc.Y - 2, shiploc.X + 2, shiploc.Y + 2, s.MarkerColor());
 				sprite_width = 2;
 
 				if (!IsCrowded(s))
-					window->Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, s.Name());
+					Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, s.Name());
 			}
 			else {
 				double theta = s.Heading();
@@ -2565,12 +2565,12 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 						DrawRect(shiploc.X - 6, shiploc.Y - 6, shiploc.X + 6, shiploc.Y + 6, FColor::White);
 					}
 					else if (s.IsStarship()) {
-						window->FillRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, s.MarkerColor());
-						window->DrawRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, FColor::White);
+						FillRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, s.MarkerColor());
+						DrawRect(shiploc.X - 4, shiploc.Y - 4, shiploc.X + 4, shiploc.Y + 4, FColor::White);
 					}
 					else {
-						window->FillRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, s.MarkerColor());
-						window->DrawRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, FColor::White);
+						FillRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, s.MarkerColor());
+						DrawRect(shiploc.X - 3, shiploc.Y - 3, shiploc.X + 3, shiploc.Y + 3, FColor::White);
 					}
 				}
 
@@ -2581,7 +2581,7 @@ MapView::DrawElem(MissionElement& s, bool current, int rep)
 				else
 					strcpy_s(label, (const char*)s.Name());
 
-				window->Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, label);
+				Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, label);
 			}
 		}
 	}
@@ -2700,7 +2700,7 @@ void MapView::DrawNavRoute(
 			const int iox = (int)(cx + old_x + ox);
 			const int ioy = (int)(cy + old_y + oy);
 
-			window->DrawLine(iox, ioy, isx, isy, s_marker, 0);
+			DrawLine(iox, ioy, isx, isy, s_marker, 0);
 
 			const int dx = (iox - isx);
 			const int dy = (ioy - isy);
@@ -2708,9 +2708,9 @@ void MapView::DrawNavRoute(
 			if (draw_bold) {
 				// Legacy behavior was a rough "more horizontal vs vertical" decision.
 				if (AbsI(dx) > AbsI(dy))
-					window->DrawLine(iox, ioy + 1, isx, isy + 1, s_marker, 0);
+					DrawLine(iox, ioy + 1, isx, isy + 1, s_marker, 0);
 				else
-					window->DrawLine(iox + 1, ioy, isx + 1, isy, s_marker, 0);
+					DrawLine(iox + 1, ioy, isx + 1, isy, s_marker, 0);
 			}
 
 			// distance label:
@@ -2747,16 +2747,16 @@ void MapView::DrawNavRoute(
 		}
 
 		if (draw_route) {
-			window->DrawLine(x1, y1, x2, y2, markColor, 0);
-			window->DrawLine(x1, y2, x2, y1, markColor, 0);
+			DrawLine(x1, y1, x2, y2, markColor, 0);
+			DrawLine(x1, y2, x2, y1, markColor, 0);
 
 			if (navpt == current_navpt)
-				window->DrawRect(x1 - 2, y1 - 2, x2 + 2, y2 + 2, markColor, 0);
+				DrawRect(x1 - 2, y1 - 2, x2 + 2, y2 + 2, markColor, 0);
 
 			char buf[256];
 			sprintf_s(buf, "%d", i + 1);
-			window->SetFont(font);
-			window->Print(x2 + 3, y1, buf);
+			SetFont(font);
+			Print(x2 + 3, y1, buf);
 
 			// expanded info for selected navpoint:
 			if (navpt == current_navpt) {
@@ -2764,27 +2764,27 @@ void MapView::DrawNavRoute(
 					sprintf_s(buf, "%s %s",
 						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->GetAction())).data(),
 						navpt->TargetName());
-					window->Print(x2 + 3, y1 + 10, buf);
+					Print(x2 + 3, y1 + 10, buf);
 				}
 				else {
 					sprintf_s(buf, "%s",
 						Game::GetText(Text("MapView.item.") + Instruction::ActionName(navpt->GetAction())).data());
-					window->Print(x2 + 3, y1 + 10, buf);
+					Print(x2 + 3, y1 + 10, buf);
 				}
 
 				sprintf_s(buf, "%s",
 					Game::GetText(Text("MapView.item.") + Instruction::FormationName(navpt->GetFormation())).data());
-				window->Print(x2 + 3, y1 + 20, buf);
+				Print(x2 + 3, y1 + 20, buf);
 
 				sprintf_s(buf, "%d", navpt->Speed());
-				window->Print(x2 + 3, y1 + 30, buf);
+				Print(x2 + 3, y1 + 30, buf);
 
 				if (navpt->HoldTime()) {
 					char hold_time[32];
 					FormatTime(hold_time, navpt->HoldTime());
 
 					sprintf_s(buf, "%s %s", "Hold", hold_time);
-					window->Print(x2 + 3, y1 + 40, buf);
+					Print(x2 + 3, y1 + 40, buf);
 				}
 			}
 		}
@@ -2823,16 +2823,16 @@ void MapView::DrawNavRoute(
 			const int iox = (int)(cx + old_x + ox);
 			const int ioy = (int)(cy + old_y + oy);
 
-			window->DrawLine(iox, ioy, first_x, first_y, s_marker, 0);
+			DrawLine(iox, ioy, first_x, first_y, s_marker, 0);
 
 			const int dx = (iox - first_x);
 			const int dy = (ioy - first_y);
 
 			if (draw_bold) {
 				if (AbsI(dx) > AbsI(dy))
-					window->DrawLine(iox, ioy + 1, first_x, first_y + 1, s_marker, 0);
+					DrawLine(iox, ioy + 1, first_x, first_y + 1, s_marker, 0);
 				else
-					window->DrawLine(iox + 1, ioy, first_x + 1, first_y, s_marker, 0);
+					DrawLine(iox + 1, ioy, first_x + 1, first_y, s_marker, 0);
 			}
 
 			if ((dx * dx + dy * dy) > 2000) {
@@ -3021,13 +3021,13 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 
 			if (ship_visible) {
 				if (rep < 3) {
-					window->FillRect(shiploc.X - 2, shiploc.Y - 2, shiploc.X + 2, shiploc.Y + 2, unit->MarkerColor());
+					FillRect(shiploc.X - 2, shiploc.Y - 2, shiploc.X + 2, shiploc.Y + 2, unit->MarkerColor());
 					sprite_width = 2;
 
 					char buf[256];
 					sprintf_s(buf, "%s", unit->Name().data());
-					window->SetFont(font);
-					window->Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, buf);
+					SetFont(font);
+					Print(shiploc.X - sprite_width, shiploc.Y + sprite_width + 2, buf);
 				}
 				else {
 					int sprite_index = 2;
@@ -3048,7 +3048,7 @@ MapView::DrawCombatGroup(CombatGroup* group, int rep)
 						sprite_width = bmp.Width() / 2;
 						int h = bmp.Height() / 2;
 
-						window->DrawBitmap(shiploc.X - sprite_width,
+						DrawBitmap(shiploc.X - sprite_width,
 							shiploc.Y - h,
 							shiploc.X + sprite_width,
 							shiploc.Y + h,

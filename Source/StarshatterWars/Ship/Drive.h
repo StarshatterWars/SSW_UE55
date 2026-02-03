@@ -29,7 +29,7 @@
 class Bolt;
 class DriveSprite;
 class Light;
-class Sound;
+class USound;
 class Ship;
 class Physical;
 
@@ -91,7 +91,7 @@ protected:
 
 	List<DrivePort>   ports;
 
-	Sound*			  sound;
-	Sound*			  burner_sound;
+	USound*			  sound;
+	USound*			  burner_sound;
 	bool              show_trail;
 };

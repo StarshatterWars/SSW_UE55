@@ -3423,7 +3423,7 @@ ShipDesign::ParseShield(TermStruct* val)
 			}
 
 			DataLoader* loader = DataLoader::GetLoader();
-			const uint32 SOUND_FLAGS = Sound::LOCALIZED | Sound::LOC_3D;
+			const uint32 SOUND_FLAGS = USound::LOCALIZED | USound::LOC_3D;
 
 			if (bolt_hit_sound.length()) {
 				if (!loader->LoadSound(bolt_hit_sound, bolt_hit_sound_resource, SOUND_FLAGS, true)) {

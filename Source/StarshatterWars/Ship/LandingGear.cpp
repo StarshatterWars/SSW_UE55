@@ -30,7 +30,7 @@
 #include "Math/Vector.h"
 #include "Logging/LogMacros.h"
 
-static Sound* gear_transit_sound = nullptr;
+static USound* gear_transit_sound = nullptr;
 
 // +----------------------------------------------------------------------+
 
@@ -163,7 +163,7 @@ void LandingGear::SetState(GEAR_STATE s)
     if (ship && ship == Sim::GetSim()->GetPlayerShip()) {
         if (state == GEAR_LOWER || state == GEAR_RAISE) {
             if (gear_transit_sound) {
-                Sound* sound = gear_transit_sound->Duplicate();
+                USound* sound = gear_transit_sound->Duplicate();
                 if (sound) {
                     sound->SetVolume(AudioConfig::EfxVolume());
                     sound->Play();

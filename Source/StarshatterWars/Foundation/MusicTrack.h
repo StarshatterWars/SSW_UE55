@@ -24,7 +24,7 @@
 
 // +-------------------------------------------------------------------+
 
-class Sound;
+class USound;
 
 // +-------------------------------------------------------------------+
 
@@ -46,7 +46,7 @@ public:
 
     // accessors / mutators
     const Text& Name()      const { return name; }
-    Sound* GetSound()  const { return sound; }
+    USound* GetSound()  const { return sound; }
     int               GetState()  const { return state; }
     int               GetMode()   const { return mode; }
     int               GetIndex()  const { return index; }
@@ -68,7 +68,7 @@ public:
 
 protected:
     Text              name;
-    Sound* sound;
+    USound* sound;
     int               state;
     int               mode;
     int               index;

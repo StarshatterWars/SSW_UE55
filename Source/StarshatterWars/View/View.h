@@ -106,14 +106,14 @@ public:
     // Context (Screen/Window)
     // ------------------------------------------------------------
     Screen* GetScreen() const { return screen; }
-    Window* GetWindow() const { return window; }
+    View* GetWindow() const { return window; }
     View* GetParent() const { return parent; }
 
     virtual void SetRectPx(const Rect& R) { ViewRectPx = R; }
     const Rect& GetRectPx() const { return ViewRectPx; }
 
     // Allows late binding if needed (e.g., before Screen is ready):
-    void SetWindow(Window* InWindow) { window = InWindow; }
+    void SetWindow(View* InWindow) { window = InWindow; }
 
     // ------------------------------------------------------------
     // Geometry / state
@@ -225,7 +225,7 @@ protected:
     Screen* screen = nullptr;
 
     // Render ownership context:
-    Window* window = nullptr;  // <-- NEW
+    View* window = nullptr;  // <-- NEW
 
     // Hierarchy:
     View* parent = nullptr;

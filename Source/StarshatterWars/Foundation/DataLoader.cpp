@@ -207,7 +207,7 @@ DataLoader::LoadTexture(const char* name, Bitmap*& bitmap, int type, bool preloa
 // +--------------------------------------------------------------------+
 
 int
-DataLoader::LoadSound(const char* name, Sound*& snd, DWORD flags, bool optional)
+DataLoader::LoadSound(const char* name, USound*& snd, DWORD flags, bool optional)
 {
 	return 0;
 }

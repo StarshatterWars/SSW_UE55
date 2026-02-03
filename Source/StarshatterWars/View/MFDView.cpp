@@ -2,7 +2,7 @@
 
 #include "MFDView.h"
 
-#include "Window.h"
+#include "View.h"
 #include "Mouse.h"
 #include "Bitmap.h"
 
@@ -61,7 +61,7 @@ void MFDView::Close()
     bInitialized = false;
 }
 
-MFDView::MFDView(Window* InWindow, int32 InIndex)
+MFDView::MFDView(View* InWindow, int32 InIndex)
     : View(InWindow, 0, 0, 0, 0)
     , RectPx(0, 0, 0, 0)
     , Index(InIndex)
@@ -227,7 +227,7 @@ void MFDView::Draw()
                 const int32 w2 = Frame->Width() / 2;
                 const int32 h2 = Frame->Height() / 2;
 
-                window->DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, Frame /*, blend if your API supports */);
+                DrawBitmap(cx - w2, cy - h2, cx + w2, cy + h2, Frame /*, blend if your API supports */);
             }
         }
     }
@@ -448,7 +448,7 @@ void MFDView::DrawGauge(int32 X, int32 Y, int32 Percent)
     }
     else if (window)
     {
-        window->DrawRect(px, py, px + 53, py + 8, FColor(64, 64, 64));
+        DrawRect(px, py, px + 53, py + 8, FColor(64, 64, 64));
     }
 
     Percent /= 2;
@@ -456,7 +456,7 @@ void MFDView::DrawGauge(int32 X, int32 Y, int32 Percent)
     if (CockpitHUDTexture)
         CockpitHUDTexture->FillRect(px + 2, py + 2, px + 2 + Percent, py + 7, FColor(128, 128, 128));
     else if (window)
-        window->FillRect(px + 2, py + 2, px + 2 + Percent, py + 7, FColor(128, 128, 128));
+        FillRect(px + 2, py + 2, px + 2 + Percent, py + 7, FColor(128, 128, 128));
 }
 
 void MFDView::DrawGameMFD()

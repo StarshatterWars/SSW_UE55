@@ -5,13 +5,11 @@
 #include "Sound/SoundAttenuation.h"
 #include "UObject/SoftObjectPath.h"
 
-// Unreal logging:
 #include "Logging/LogMacros.h"
-
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSound, Log, All);
 
-SoundCard* USound::creator = nullptr;
-FVector    USound::ListenerVelocity = FVector::ZeroVector;
+TWeakObjectPtr<UObject> USound::WorldContext = nullptr;
+FVector USound::ListenerVelocity = FVector::ZeroVector;
 
 USound::USound()
 {
@@ -21,16 +19,27 @@ USound::USound()
     looped = 0;
     location = FVector::ZeroVector;
     velocity = FVector::ZeroVector;
-    sound_check = nullptr;
 
-    // legacy default:
     FCStringAnsi::Strcpy(filename_ansi, "Sound()");
+}
+
+void USound::SetWorldContext(UObject* InWorldContext)
+{
+    WorldContext = InWorldContext;
+}
+
+UWorld* USound::GetWorldFromContext()
+{
+    UObject* Ctx = WorldContext.Get();
+    if (!Ctx)
+        return nullptr;
+
+    // Works for UGameInstance, UWorld, Actor, Component, etc.
+    return Ctx->GetWorld();
 }
 
 void USound::SetListener(const Camera& /*cam*/, const FVector& InVel)
 {
-    // UE listener is owned by PlayerController/AudioDevice.
-    // We keep this for legacy compatibility and Doppler bookkeeping if you later extend.
     ListenerVelocity = InVel;
 }
 
@@ -54,10 +63,7 @@ void USound::SetFilename(const char* s)
 
 float USound::CentibelsToVolumeMultiplier(long Centibels)
 {
-    // legacy: 0 .. -10000 centibels
-    // UE: linear multiplier
-    // dB = centibels / 100
-    // linear = 10^(dB/20)
+    // dB = centibels / 100. linear = 10^(dB/20)
     const float dB = (float)Centibels / 100.0f;
     const float linear = FMath::Pow(10.0f, dB / 20.0f);
     return FMath::Clamp(linear, 0.0f, 10.0f);
@@ -67,57 +73,30 @@ void USound::SetVolume(long v)
 {
     volume = v;
     if (AudioComp)
-    {
         AudioComp->SetVolumeMultiplier(CentibelsToVolumeMultiplier(volume));
-    }
 }
 
 void USound::SetLocation(const FVector& l)
 {
     location = l;
     if (AudioComp)
-    {
         AudioComp->SetWorldLocation(location);
-    }
-}
-
-UObject* USound::ResolveWorldContext()
-{
-    // Best-effort:
-    // - If you later implement SoundCard as a UObject provider, use it here.
-    // - Otherwise fall back to first game world.
-    if (GEngine)
-    {
-        for (const FWorldContext& Ctx : GEngine->GetWorldContexts())
-        {
-            if (Ctx.World() && (Ctx.WorldType == EWorldType::Game || Ctx.WorldType == EWorldType::PIE))
-            {
-                return Ctx.World();
-            }
-        }
-    }
-    return nullptr;
 }
 
 USoundBase* USound::LoadSoundAssetFromString(const FString& InRef)
 {
-    // Accept either:
-    // - Soft object path: "/Game/Audio/UI_Click.UI_Click"
-    // - Or a package path that StaticLoadObject can resolve
     if (InRef.IsEmpty())
         return nullptr;
 
-    // Prefer soft load:
+    // Accept "/Game/Audio/UI_Click.UI_Click" etc.
+    FSoftObjectPath SoftPath(InRef);
+    if (SoftPath.IsValid())
     {
-        FSoftObjectPath SoftPath(InRef);
-        if (SoftPath.IsValid())
-        {
-            UObject* Obj = SoftPath.TryLoad();
-            return Cast<USoundBase>(Obj);
-        }
+        UObject* Obj = SoftPath.TryLoad();
+        return Cast<USoundBase>(Obj);
     }
 
-    // Fallback: StaticLoadObject
+    // Fallback
     return Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *InRef));
 }
 
@@ -132,46 +111,39 @@ void USound::EnsureAssetLoaded()
     if (!SoundAsset)
     {
         UE_LOG(LogStarshatterSound, Warning,
-            TEXT("USound: Failed to load sound asset from ref '%s' (filename='%s')."),
-            *Ref, ANSI_TO_TCHAR(filename_ansi));
+            TEXT("USound: Failed to load sound asset from '%s'."), *Ref);
         status = DONE;
         return;
     }
 
-    // Looping: UE typically encodes looping in SoundCue/SoundWave settings.
-    // We can force looping on the component when we create it.
     status = READY;
 }
 
 void USound::ApplyAttenuation()
 {
-    if (!(flags & LOCALIZED) && !(flags & LOC_3D))
+    const bool bIs3D = (flags & LOCALIZED) || (flags & LOC_3D);
+    if (!bIs3D)
         return;
 
     if (!AttenuationAsset)
-    {
         AttenuationAsset = NewObject<USoundAttenuation>(this);
-    }
 
-    if (AttenuationAsset)
-    {
-        FSoundAttenuationSettings& S = AttenuationAsset->Attenuation;
-        S.bAttenuate = true;
-        S.bSpatialize = true;
+    if (!AttenuationAsset)
+        return;
 
-        // Use simple distance model:
-        S.FalloffDistance = FMath::Max(0.0f, max_distance - min_distance);
-        S.AttenuationShape = EAttenuationShape::Sphere;
-        S.AttenuationShapeExtents = FVector(FMath::Max(1.0f, max_distance), 0, 0);
+    FSoundAttenuationSettings& S = AttenuationAsset->Attenuation;
+    S.bAttenuate = true;
+    S.bSpatialize = true;
 
-        // Min distance approximation:
-        S.dBAttenuationAtMax = -60.0f;
+    // Simple sphere attenuation:
+    S.AttenuationShape = EAttenuationShape::Sphere;
+    S.AttenuationShapeExtents = FVector(FMath::Max(1.0f, max_distance), 0, 0);
 
-        if (AudioComp)
-        {
-            AudioComp->AttenuationSettings = AttenuationAsset;
-        }
-    }
+    S.FalloffDistance = FMath::Max(0.0f, max_distance - min_distance);
+    S.dBAttenuationAtMax = -60.0f;
+
+    if (AudioComp)
+        AudioComp->AttenuationSettings = AttenuationAsset;
 }
 
 void USound::EnsureAudioComponent()
@@ -179,21 +151,18 @@ void USound::EnsureAudioComponent()
     if (AudioComp)
         return;
 
-    UObject* WorldCtxObj = ResolveWorldContext();
-    UWorld* World = WorldCtxObj ? WorldCtxObj->GetWorld() : nullptr;
-
+    UWorld* World = GetWorldFromContext();
     if (!World)
     {
-        UE_LOG(LogStarshatterSound, Warning, TEXT("USound: No valid UWorld context to spawn audio."));
+        UE_LOG(LogStarshatterSound, Warning,
+            TEXT("USound: No WorldContext set. Call USound::SetWorldContext(GameInstance) early."));
         status = DONE;
         return;
     }
 
-    // Decide 2D vs 3D:
     const bool bIs3D = (flags & LOCALIZED) || (flags & LOC_3D);
-    const bool bIsUI = (flags & INTERFACE);
+    const bool bIsUI = (flags & INTERFACE) != 0;
 
-    // Spawn:
     if (bIs3D)
     {
         AudioComp = UGameplayStatics::SpawnSoundAtLocation(
@@ -220,31 +189,13 @@ void USound::EnsureAudioComponent()
         return;
     }
 
-    // UI sounds: you can route to a UI sound class/submix later.
-    (void)bIsUI;
-
-    // Looping:
-    const bool bLoop = (flags & LOOP) != 0;
     AudioComp->bIsUISound = bIsUI;
-    AudioComp->bAutoDestroy = !bLoop; // looped sounds shouldn't auto-destroy
-    AudioComp->SetVolumeMultiplier(CentibelsToVolumeMultiplier(volume));
 
-    if (bLoop)
-    {
-        // This only works reliably if the underlying asset supports looping.
-        // For SoundCue, add a Looping node; for SoundWave, enable looping in asset.
-        AudioComp->Play();
-        looped = 1;
-    }
+    const bool bLoop = (flags & LOOP) != 0;
+    AudioComp->bAutoDestroy = !bLoop;
 
-    ApplyAttenuation();
-}
-
-void USound::AddToSoundCard()
-{
-    // In UE, we don’t have a "sound card" list. This is a compatibility hook.
-    // We ensure asset is loaded so the sound is READY.
-    EnsureAssetLoaded();
+    if (bIs3D)
+        ApplyAttenuation();
 }
 
 USound* USound::CreateStream(const char* InFilename)
@@ -255,7 +206,7 @@ USound* USound::CreateStream(const char* InFilename)
     USound* S = NewObject<USound>(GetTransientPackage());
     S->SetFilename(InFilename);
 
-    // Decide ogg by extension (legacy behavior); both paths load assets in UE:
+    // Keep legacy behavior: detect ".ogg" and route to CreateOggStream
     const int32 Len = FCStringAnsi::Strlen(InFilename);
     if (Len >= 4)
     {
@@ -269,9 +220,7 @@ USound* USound::CreateStream(const char* InFilename)
             (c3 == 'g' || c3 == 'G');
 
         if (bIsOgg)
-        {
             return CreateOggStream(InFilename);
-        }
     }
 
     S->status = INITIALIZING;
@@ -281,16 +230,14 @@ USound* USound::CreateStream(const char* InFilename)
 
 USound* USound::CreateOggStream(const char* InFilename)
 {
+    // UE-native: treat Ogg the same way (as an imported asset reference)
     if (!InFilename || !InFilename[0])
         return nullptr;
 
-    // UE-native approach:
-    // - Import .ogg into Content -> becomes USoundWave
-    // - Pass soft object path to that asset here.
     USound* S = NewObject<USound>(GetTransientPackage());
     S->SetFilename(InFilename);
-
     S->flags |= OGGVORBIS;
+
     S->status = INITIALIZING;
     S->EnsureAssetLoaded();
     return S->IsReady() ? S : nullptr;
@@ -298,75 +245,58 @@ USound* USound::CreateOggStream(const char* InFilename)
 
 void USound::Update()
 {
-    if (sound_check)
-    {
-        sound_check->Update(this);
-    }
-
     if (AudioComp)
     {
-        // Track state:
         if (AudioComp->IsPlaying())
             status = PLAYING;
         else if (status == PLAYING)
             status = DONE;
 
-        // Keep 3D position updated:
         if ((flags & LOCALIZED) || (flags & LOC_3D))
-        {
             AudioComp->SetWorldLocation(location);
-        }
     }
 }
 
 void USound::Release()
 {
     flags &= ~LOCKED;
-
-    // In UE, if not locked, you can stop and allow GC:
-    if (!(flags & LOCKED))
-    {
+    if (!(flags & LOCKED))  {
         Stop();
     }
 }
 
 HRESULT USound::Play()
 {
-    EnsureAssetLoaded();
-    if (!SoundAsset)
+    if (!AudioComp || !SoundAsset)
         return E_FAIL;
 
-    EnsureAudioComponent();
-    if (!AudioComp)
-        return E_FAIL;
-
-    const bool bLoop = (flags & LOOP) != 0;
-    AudioComp->bAutoDestroy = !bLoop;
-
+    AudioComp->SetSound(SoundAsset);
     AudioComp->Play();
+
+    StartTimeSeconds = FPlatformTime::Seconds();
+    bIsPlaying = true;
+
     status = PLAYING;
-    return S_OK;
-}
-
-HRESULT USound::Pause()
-{
-    if (!AudioComp)
-        return E_NOINTERFACE;
-
-    AudioComp->SetPaused(true);
-    status = READY;
     return S_OK;
 }
 
 HRESULT USound::Stop()
 {
     if (AudioComp)
-    {
         AudioComp->Stop();
-        AudioComp = nullptr;
-    }
 
+    bIsPlaying = false;
     status = DONE;
+    return S_OK;
+}
+
+HRESULT USound::Pause()
+{
+    if (AudioComp)
+        AudioComp->SetPaused(true);
+
+    bIsPlaying = false;
+    status = READY;
     return S_OK;
 }
 
@@ -379,4 +309,80 @@ HRESULT USound::Rewind()
     AudioComp->Play(0.0f);
     status = READY;
     return S_OK;
+}
+
+USound* USound::Duplicate()
+{
+    // Create a new USound UObject
+    USound* NewSound = NewObject<USound>(GetTransientPackage());
+    if (!NewSound)
+        return nullptr;
+
+    // Copy basic state
+    NewSound->flags = flags;
+    NewSound->status = READY;
+    NewSound->volume = volume;
+    NewSound->looped = 0;
+    NewSound->location = location;
+    NewSound->velocity = velocity;
+    NewSound->min_distance = min_distance;
+    NewSound->max_distance = max_distance;
+
+    // Copy filename (legacy behavior)
+    FCStringAnsi::Strcpy(NewSound->filename_ansi, filename_ansi);
+
+    // Share the same sound asset (this is correct in UE)
+    NewSound->SoundAsset = SoundAsset;
+
+    // DO NOT copy AudioComponent or Attenuation instance
+    // Each duplicate must spawn its own AudioComponent on Play()
+
+    return NewSound;
+}
+
+void USound::AddToSoundCard()
+{
+    // Legacy compatibility:
+    // In Starshatter this registered the sound with the hardware mixer.
+    // In UE we just ensure the asset is loaded so Play() is fast and the sound becomes READY.
+    EnsureAssetLoaded();
+
+    // If the sound is meant to be 3D, apply attenuation defaults early:
+    if (IsReady() && ((flags & LOCALIZED) || (flags & LOC_3D)))
+    {
+        ApplyAttenuation();
+    }
+}
+
+double USound::GetTotalTime() const
+{
+    if (SoundAsset)
+    {
+        const float Duration = SoundAsset->GetDuration();
+        // UE returns INDEFINITELY_LOOPING_DURATION (-1.f) for looping sounds
+        if (Duration > 0.f)
+            return (double)Duration;
+    }
+
+    return 0.0;
+}
+
+double USound::GetTimeRemaining() const
+{
+    const double Total = GetTotalTime();
+    if (Total <= 0.0)
+        return 0.0;
+
+    const double Elapsed = GetTimeElapsed();
+    const double Remaining = Total - Elapsed;
+
+    return Remaining > 0.0 ? Remaining : 0.0;
+}
+
+double USound::GetTimeElapsed() const
+{
+    if (!bIsPlaying)
+        return 0.0;
+
+    return FPlatformTime::Seconds() - StartTimeSeconds;
 }

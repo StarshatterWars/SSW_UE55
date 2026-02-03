@@ -57,7 +57,7 @@ MusicTrack::MusicTrack(const Text& txt, int m, int n)
     name.setSensitive(false);
 
     if (name.contains(".ogg")) {
-        sound = Sound::CreateOggStream(name);
+        sound = USound::CreateOggStream(name);
 
         if (!sound) {
             UE_LOG(LogStarshatterAudio, Warning, TEXT("MusicTrack: Failed to create OGG stream for track."));
@@ -65,15 +65,15 @@ MusicTrack::MusicTrack(const Text& txt, int m, int n)
         }
 
         if (name.contains("-loop")) {
-            sound->SetFlags(Sound::STREAMED |
-                Sound::OGGVORBIS |
-                Sound::LOOP |
-                Sound::LOCKED);
+            sound->SetFlags(USound::STREAMED |
+                USound::OGGVORBIS |
+                USound::LOOP |
+                USound::LOCKED);
         }
         else {
-            sound->SetFlags(Sound::STREAMED |
-                Sound::OGGVORBIS |
-                Sound::LOCKED);
+            sound->SetFlags(USound::STREAMED |
+                USound::OGGVORBIS |
+                USound::LOCKED);
         }
 
         sound->SetVolume((long)SILENCE);

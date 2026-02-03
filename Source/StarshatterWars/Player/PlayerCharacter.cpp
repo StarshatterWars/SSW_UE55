@@ -473,12 +473,12 @@ PlayerCharacter::AwardImage() const
     return 0;
 }
 
-Sound*
+USound*
 PlayerCharacter::AwardSound() const
 {
     if (award && award->grant_sound.length()) {
         DataLoader* loader = DataLoader::GetLoader();
-        Sound* result = 0;
+        USound* result = 0;
 
         loader->LoadSound(award->grant_sound, result);
         return result;

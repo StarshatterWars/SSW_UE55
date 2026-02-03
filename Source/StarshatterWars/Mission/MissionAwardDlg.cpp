@@ -283,7 +283,7 @@ void UMissionAwardDlg::ShowPlayer()
         }
 
         // Legacy: play award sound
-        // if (Sound* Congrats = P->AwardSound()) Congrats->Play();
+        // if (USound* Congrats = P->AwardSound()) Congrats->Play();
     }
     else
     {

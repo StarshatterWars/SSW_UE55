@@ -197,17 +197,17 @@ RadioVox::AddPhrase(const char* key)
 		sprintf_s(filename, "%s.wav", key);
 
 		bool   use_fs = loader->IsFileSystemEnabled();
-		Sound* sound = 0;
+		USound* sound = 0;
 
 		loader->UseFileSystem(true);
 		loader->SetDataPath(datapath);
-		loader->LoadSound(filename, sound, Sound::LOCALIZED, true); // optional sound
+		loader->LoadSound(filename, sound, USound::LOCALIZED, true); // optional sound
 		loader->SetDataPath("");
 		loader->UseFileSystem(use_fs);
 
 		if (sound) {
 			sound->SetVolume(AudioConfig::VoxVolume());
-			sound->SetFlags(Sound::LOCALIZED | Sound::LOCKED);
+			sound->SetFlags(USound::LOCALIZED | USound::LOCKED);
 			sound->SetFilename(filename);
 			sounds.append(sound);
 
@@ -243,7 +243,7 @@ RadioVox::Update()
 	bool active = false;
 
 	while (!active && index < sounds.size()) {
-		Sound* s = sounds[index];
+		USound* s = sounds[index];
 
 		if (s->IsReady()) {
 			if (channel & 1)

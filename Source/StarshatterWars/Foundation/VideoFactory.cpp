@@ -31,7 +31,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogVideoFactory, Log, All);
 VideoFactory::VideoFactory(void* native_window)
     : native_window(native_window)
     , video(nullptr)
-    , audio(nullptr)
 {
 }
 
@@ -84,21 +83,4 @@ VideoFactory::DestroyVideo(Video* v)
 
 // +--------------------------------------------------------------------+
 
-SoundCard*
-VideoFactory::CreateSoundCard()
-{
-    /*if (!audio) {
-        audio = new SoundCardD3D(native_window);
-
-        if (!audio) {
-            UE_LOG(LogVideoFactory, Error, TEXT("Failed to create SoundCardD3D"));
-            return nullptr;
-        }
-
-        Sound::UseSoundCard(audio);
-        UE_LOG(LogVideoFactory, Log, TEXT("SoundCardD3D created and activated"));
-    }
-    */
-    return nullptr;
-}
 

@@ -47,7 +47,7 @@ class Shield;
 class FlightDeck;
 class LandingGear;
 class SimSystem;
-class Sound;
+class USound;
 
 // +====================================================================+
 
@@ -281,8 +281,8 @@ public:
 	Text               bolt_hit_sound;
 	Text               beam_hit_sound;
 
-	Sound* bolt_hit_sound_resource;
-	Sound* beam_hit_sound_resource;
+	USound* bolt_hit_sound_resource;
+	USound* beam_hit_sound_resource;
 
 	List<ShipLoad>     loadouts;
 

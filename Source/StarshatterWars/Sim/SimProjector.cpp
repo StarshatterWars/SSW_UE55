@@ -15,8 +15,8 @@
 #include "SimProjector.h"
 
 // Starshatter core:
-#include "Window.h"
 #include "Camera.h"
+#include "View.h"
 
 #include "Logging/LogMacros.h"
 #include <cmath> // std::sin/cos/atan/fabs
@@ -33,7 +33,7 @@ static Camera emergency_cam;
 
 // +--------------------------------------------------------------------+
 
-SimProjector::SimProjector(Window* InWindow, Camera* InCamera)
+SimProjector::SimProjector(View* InWindow, Camera* InCamera)
     : camera(InCamera)
 {
     if (!camera)
@@ -75,7 +75,7 @@ void SimProjector::UseCamera(Camera* cam)
     camera = cam ? cam : &emergency_cam;
 }
 
-void SimProjector::UseWindow(Window* win)
+void SimProjector::UseWindow(View* win)
 {
     if (!win) {
         width = height = 0;

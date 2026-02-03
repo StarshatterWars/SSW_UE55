@@ -21,10 +21,10 @@
 #include "Types.h"
 #include "Geometry.h"
 #include "Bitmap.h"
-#include "Window.h"
 #include "EventTarget.h"
 #include "List.h"
 #include "Text.h"
+#include "View.h"
 
 // Unreal (minimal):
 #include "Math/Vector.h"               // FVector
@@ -126,7 +126,7 @@ struct AWMap
 
 // +--------------------------------------------------------------------+
 
-class ActiveWindow : public Window,
+class ActiveWindow : public View,
     public EventTarget
 {
 public:

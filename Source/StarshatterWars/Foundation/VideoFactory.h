@@ -24,7 +24,7 @@
 
 class Video;
 class VideoSettings;
-class SoundCard;
+class USoundCard;
 
 // +--------------------------------------------------------------------+
 
@@ -43,12 +43,10 @@ public:
 
     virtual Video*      CreateVideo(VideoSettings* vs);
     virtual void        DestroyVideo(Video* video);
-    virtual SoundCard*  CreateSoundCard();
 
 private:
     void* native_window;
 
     Video* video;
-    SoundCard* audio;
 };
 

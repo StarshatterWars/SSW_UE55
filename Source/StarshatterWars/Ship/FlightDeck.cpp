@@ -48,8 +48,8 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlightDeck, Log, All);
 
-static Sound* tire_sound = 0;
-static Sound* catapult_sound = 0;
+static USound* tire_sound = 0;
+static USound* catapult_sound = 0;
 
 // Starshatter legacy helper that used to flip coordinate handedness.
 // In the Unreal port, this should map whatever “OtherHand()” did to FVector.
@@ -275,8 +275,8 @@ FlightDeck::Initialize()
 	DataLoader* loader = DataLoader::GetLoader();
 	loader->SetDataPath("Sounds/");
 
-	const int SOUND_FLAGS = Sound::LOCALIZED |
-		Sound::LOC_3D;
+	const int SOUND_FLAGS = USound::LOCALIZED |
+		USound::LOC_3D;
 
 	loader->LoadSound("Tires.wav", tire_sound, SOUND_FLAGS);
 	loader->LoadSound("Catapult.wav", catapult_sound, SOUND_FLAGS);
@@ -448,7 +448,7 @@ FlightDeck::ExecFrame(double Seconds)
 						{
 							if (catapult_sound)
 							{
-								Sound* Snd = catapult_sound->Duplicate();
+								USound* Snd = catapult_sound->Duplicate();
 								if (Snd)
 								{
 									Snd->SetLocation(SlotShip->Location());
@@ -481,7 +481,7 @@ FlightDeck::ExecFrame(double Seconds)
 						{
 							if (catapult_sound)
 							{
-								Sound* Snd = catapult_sound->Duplicate();
+								USound* Snd = catapult_sound->Duplicate();
 								if (Snd)
 								{
 									Snd->SetLocation(SlotShip->Location());
@@ -511,7 +511,7 @@ FlightDeck::ExecFrame(double Seconds)
 						{
 							if (catapult_sound)
 							{
-								Sound* Snd = catapult_sound->Duplicate();
+								USound* Snd = catapult_sound->Duplicate();
 								if (Snd)
 								{
 									Snd->SetLocation(SlotShip->Location());
@@ -1174,7 +1174,7 @@ FlightDeck::Dock(Ship* s)
 	{
 		if (s == Sim::GetSim()->GetPlayerShip() && tire_sound)
 		{
-			Sound* sound = tire_sound->Duplicate();
+			USound* sound = tire_sound->Duplicate();
 			sound->Play();
 		}
 	}

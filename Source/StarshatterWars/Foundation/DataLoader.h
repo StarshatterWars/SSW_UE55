@@ -22,7 +22,7 @@
 // +--------------------------------------------------------------------+
 
 class Bitmap;
-class Sound;
+class USound;
 class Video;
 class Archiver; // renamed from DataArchive (Archive.h) for Unreal compliance
 
@@ -62,7 +62,7 @@ public:
     int         LoadGameBitmap(const char* name, Bitmap& bmp, int type = 0, bool optional = false);
     int         CacheBitmap(const char* name, Bitmap*& bmp, int type = 0, bool optional = false);
     int         LoadTexture(const char* name, Bitmap*& bmp, int type = 0, bool preload_cache = false, bool optional = false);
-    int         LoadSound(const char* fname, Sound*& snd, DWORD flags = 0, bool optional = false);
+    int         LoadSound(const char* fname, USound*& snd, DWORD flags = 0, bool optional = false);
 
     void        ReleaseBuffer(BYTE*& buf);
     int         fread(void* buffer, size_t size, size_t count, BYTE*& stream);

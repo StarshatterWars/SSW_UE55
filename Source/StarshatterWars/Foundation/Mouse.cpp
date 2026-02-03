@@ -17,10 +17,10 @@
 #include "Mouse.h"
 
 #include "DataLoader.h"
-#include "Window.h"
 #include "Screen.h"
 #include "Bitmap.h"
 #include "Video.h"
+#include "View.h"
 
 #include "Logging/LogMacros.h"
 
@@ -46,7 +46,7 @@ int     Mouse::w = 0;
 
 Bitmap* Mouse::image[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 int     Mouse::hotspot[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-Window* Mouse::window = 0;
+View*   Mouse::window = 0;
 
 // +--------------------------------------------------------------------+
 
@@ -55,7 +55,7 @@ Mouse::Create(Screen* screen)
 {
 	if (screen) {
 		delete window;
-		window = new Window(screen, 0, 0, screen->Width(), screen->Height());
+		window = new View(screen, 0, 0, screen->Width(), screen->Height());
 	}
 }
 
@@ -66,7 +66,7 @@ Mouse::Resize(Screen* screen)
 {
 	if (screen) {
 		delete window;
-		window = new Window(screen, 0, 0, screen->Width(), screen->Height());
+		window = new View(screen, 0, 0, screen->Width(), screen->Height());
 	}
 }
 

@@ -20,7 +20,7 @@
 #include "Math/Vector.h"
 #include "Math/UnrealMathUtility.h" // FMath
 
-class Window;
+class View;
 class Camera;
 
 // NOTE:
@@ -31,11 +31,11 @@ class Camera;
 class SimProjector
 {
 public:
-    SimProjector(Window* InWindow, Camera* InCamera);
+    SimProjector(View* InWindow, Camera* InCamera);
     virtual ~SimProjector();
 
     // Operations:
-    virtual void   UseWindow(Window* win);
+    virtual void   UseWindow(View* win);
     virtual void   UseCamera(Camera* cam);
     virtual void   SetDepthScale(float scale);
     virtual double GetDepthScale() const;

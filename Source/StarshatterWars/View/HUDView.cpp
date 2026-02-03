@@ -195,7 +195,7 @@ static Sprite* warn_right_sprite = 0;
 static Sprite* icon_ship_sprite = 0;
 static Sprite* icon_target_sprite = 0;
 
-static Sound* missile_lock_sound = nullptr;
+static USound* missile_lock_sound = nullptr;
 
 const int NUM_HUD_COLORS = 4;
 
@@ -698,7 +698,7 @@ HUDView::HUDView(Screen* InScreen)
 	el_pointer->Load("CompassPointer.mag", compass_scale);
 
 	loader->SetDataPath("Sounds/");
-	loader->LoadSound("MissileLock.wav", missile_lock_sound, Sound::LOOP | Sound::LOCKED);
+	loader->LoadSound("MissileLock.wav", missile_lock_sound, USound::LOOP | USound::LOCKED);
 
 	loader->SetDataPath(0);
 

@@ -29,7 +29,7 @@
 
 class UTexture2D; // forward-declared Unreal render asset
 class SimModel;
-class Sound;
+class USound;
 
 // +--------------------------------------------------------------------+
 
@@ -185,7 +185,7 @@ public:
 	SimModel* shot_model;
 	SimModel* turret_model;
 	SimModel* turret_base_model;
-	Sound* sound_resource;
+	USound* sound_resource;
 
 	int               trail_length;
 	float             trail_width;
