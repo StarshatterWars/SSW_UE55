@@ -512,7 +512,7 @@ CampaignSaveGame::Load(const char* SourceFilename)
             campaign->LockoutEvents(3600);
             campaign->Start();
 
-            if (grp_type >= CombatGroup::FLEET && grp_type <= CombatGroup::PRIVATE) {
+            if (grp_type >= (int) ECOMBATGROUP_TYPE::FLEET && grp_type <= (int) ECOMBATGROUP_TYPE::PRIVATE) {
                 CombatGroup* player_group = campaign->FindGroup(grp_iff, grp_type, grp_id);
                 if (player_group) {
                     CombatUnit* player_unit = 0;

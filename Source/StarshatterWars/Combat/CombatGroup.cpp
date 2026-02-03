@@ -978,7 +978,7 @@ CombatGroup::NameFromType(ECOMBATGROUP_TYPE type)
 {
 	const int index = static_cast<int>(type);
 
-	if (index >= FORCE && index < PRIVATE)
+	if (index >= (int) ECOMBATGROUP_TYPE::FORCE && index < (int) ECOMBATGROUP_TYPE::PRIVATE)
 		return group_name[index];
 
 	return "UNKNOWN";

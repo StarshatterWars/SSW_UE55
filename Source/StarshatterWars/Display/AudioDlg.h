@@ -82,7 +82,6 @@ protected:
     UFUNCTION() void HandleVideoClicked();
     UFUNCTION() void HandleOptionsClicked();
     UFUNCTION() void HandleControlsClicked();
-    UFUNCTION() void HandleModClicked();
 
 protected:
     // ------------------------------------------------------------

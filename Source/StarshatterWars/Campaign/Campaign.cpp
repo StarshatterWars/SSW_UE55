@@ -2025,10 +2025,10 @@ Campaign::CheckPlayerGroup()
 
         if (force) {
             force->CalcValue();
-            SelectDefaultPlayerGroup(force, CombatGroup::WING);
+            SelectDefaultPlayerGroup(force, (int) ECOMBATGROUP_TYPE::WING);
 
             if (!player_group)
-                SelectDefaultPlayerGroup(force, CombatGroup::DESTROYER_SQUADRON);
+                SelectDefaultPlayerGroup(force, (int) ECOMBATGROUP_TYPE::DESTROYER_SQUADRON);
         }
     }
 

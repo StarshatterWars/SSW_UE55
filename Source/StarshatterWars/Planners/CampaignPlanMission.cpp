@@ -271,7 +271,7 @@ CampaignPlanMission::PlanRandomStarshipMission()
     type = mission_types[mission_type_index++];
 
     if (type == Mission::ESCORT_FREIGHT) {
-        CombatGroup* freight = campaign->FindGroup(ownside, CombatGroup::FREIGHT);
+        CombatGroup* freight = campaign->FindGroup(ownside, (int) ECOMBATGROUP_TYPE::FREIGHT);
         if (!freight || freight->CountUnits() < 1)
             type = Mission::PATROL;
     }
@@ -317,7 +317,7 @@ CampaignPlanMission::PlanRandomFighterMission()
         fighter_mission_index = 0;
 
     if (type == Mission::ESCORT_FREIGHT) {
-        CombatGroup* freight = campaign->FindGroup(ownside, CombatGroup::FREIGHT);
+        CombatGroup* freight = campaign->FindGroup(ownside, (int) ECOMBATGROUP_TYPE::FREIGHT);
         if (!freight || freight->CalcValue() < 1)
             type = Mission::PATROL;
         else
@@ -325,7 +325,7 @@ CampaignPlanMission::PlanRandomFighterMission()
     }
 
     else if (type == Mission::ESCORT_SHUTTLE) {
-        CombatGroup* shuttle = campaign->FindGroup(ownside, CombatGroup::LCA_SQUADRON);
+        CombatGroup* shuttle = campaign->FindGroup(ownside, (int) ECOMBATGROUP_TYPE::LCA_SQUADRON);
         if (!shuttle || shuttle->CalcValue() < 1)
             type = Mission::PATROL;
         else

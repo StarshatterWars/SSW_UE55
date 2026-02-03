@@ -290,12 +290,6 @@ void UAudioDlg::RegisterControls()
         opt_btn->OnClicked.RemoveAll(this);
         opt_btn->OnClicked.AddDynamic(this, &UAudioDlg::HandleOptionsClicked);
     }
-
-    if (mod_btn)
-    {
-        mod_btn->OnClicked.RemoveAll(this);
-        mod_btn->OnClicked.AddDynamic(this, &UAudioDlg::HandleModClicked);
-    }
 }
 
 void UAudioDlg::Show()

@@ -733,7 +733,7 @@ CampaignMissionStarship::CreateWardFreight()
         freight = request->GetObjective();
 
     if (!freight)
-        freight = campaign->FindGroup(ownside, CombatGroup::FREIGHT);
+        freight = campaign->FindGroup(ownside, (int) ECOMBATGROUP_TYPE::FREIGHT);
 
     if (!freight || freight->CalcValue() < 1)
         return;
@@ -1081,8 +1081,8 @@ CampaignMissionStarship::CreateTargetsFreightEscort()
         return;
     }
 
-    CombatGroup* s = FindSquadron(enemy, CombatGroup::ATTACK_SQUADRON);
-    CombatGroup* s2 = FindSquadron(enemy, CombatGroup::FIGHTER_SQUADRON);
+    CombatGroup* s = FindSquadron(enemy, (int) ECOMBATGROUP_TYPE::ATTACK_SQUADRON);
+    CombatGroup* s2 = FindSquadron(enemy, (int) ECOMBATGROUP_TYPE::FIGHTER_SQUADRON);
 
     if (!s || !s2)
         return;
@@ -1235,7 +1235,7 @@ CampaignMissionStarship::CreateRandomTarget(const char* rgn, FVector base_loc)
                 mission->AddElement(elem);
                 ntargets++;
 
-                CombatGroup* s2 = FindSquadron(enemy, CombatGroup::FIGHTER_SQUADRON);
+                CombatGroup* s2 = FindSquadron(enemy, (int) ECOMBATGROUP_TYPE::FIGHTER_SQUADRON);
 
                 if (s2) {
                     MissionElement* e2 = CreateFighterPackage(s2, 2, Mission::ESCORT);
