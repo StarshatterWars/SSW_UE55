@@ -36,7 +36,7 @@ class UFirstTimeDlg;
 class UPlayerDlg;
 class UAwardShowDlg;
 
-class UMsnSelectDlg;
+class UMissionSelectDlg;
 class UCampaignSelectDlg;
 
 class UMissionEditorDlg;
@@ -174,7 +174,7 @@ private:
     UPlayerDlg* PlayerDlg = nullptr;
     UAwardShowDlg* AwardDlg = nullptr;
 
-    UMsnSelectDlg* MsnSelectDlg = nullptr;
+    UMissionSelectDlg* MissionSelectDlg = nullptr;
     UCampaignSelectDlg* CmpSelectDlg = nullptr;
     UMissionEditorDlg* MsnEditDlg = nullptr;
     UMissionElementDlg* MsnElemDlg = nullptr;

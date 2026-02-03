@@ -23,7 +23,7 @@
 #include "ConfirmDlg.h"
 
 #include "PlayerDlg.h"
-#include "MsnSelectDlg.h"
+#include "MissionSelectDlg.h"
 #include "MissionEditorDlg.h"
 #include "MissionElementDlg.h"
 #include "MissionEventDlg.h"
@@ -126,7 +126,7 @@ void UMenuScreen::Setup()
     EnsureDialog<UPlayerDlg>(PlayerDlgClass, PlayerDlg);
     EnsureDialog<UAwardShowDlg>(AwardDlgClass, AwardDlg);
 
-    EnsureDialog<UMsnSelectDlg>(MsnSelectDlgClass, MsnSelectDlg);
+    EnsureDialog<UMissionSelectDlg>(MsnSelectDlgClass, MissionSelectDlg);
     EnsureDialog<UCampaignSelectDlg>(CmpSelectDlgClass, CmpSelectDlg);
     EnsureDialog<UMissionEditorDlg>(MsnEditDlgClass, MsnEditDlg);
     EnsureDialog<UMissionElementDlg>(MsnElemDlgClass, MsnElemDlg);
@@ -175,7 +175,7 @@ void UMenuScreen::TearDown()
     Unroot(reinterpret_cast<UBaseScreen*&>(PlayerDlg));
     Unroot(reinterpret_cast<UBaseScreen*&>(AwardDlg));
 
-    Unroot(reinterpret_cast<UBaseScreen*&>(MsnSelectDlg));
+    Unroot(reinterpret_cast<UBaseScreen*&>(MissionSelectDlg));
     Unroot(reinterpret_cast<UBaseScreen*&>(CmpSelectDlg));
 ;
     Unroot(reinterpret_cast<UBaseScreen*&>(MsnEditDlg));
@@ -206,7 +206,7 @@ void UMenuScreen::HideAll()
     HideDialog(AwardDlg);
     HideDialog(FirstTimeDlg);;
 
-    HideDialog(MsnSelectDlg);
+    HideDialog(MissionSelectDlg);
     HideDialog(MsnEditDlg);
     HideDialog(MsnElemDlg);
     HideDialog(MsnEventDlg);
