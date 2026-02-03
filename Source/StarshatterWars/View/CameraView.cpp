@@ -42,6 +42,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogCameraView, Log, All);
 static Camera  emergency_cam;
 static SimScene emergency_scene;
 
+CameraView* CameraView::camera_view = nullptr;
+
 // --------------------------------------------------------------------
 
 CameraView::CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera* cam, SimScene* s)

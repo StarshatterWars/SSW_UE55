@@ -81,6 +81,8 @@ public:
 
     void                AddSurface(Surface* s);
 
+    bool                Rescale(double scale);
+
     // Optional (if you want a getter):
     const List<Surface>& GetSurfaces() const { return surfaces; }
 

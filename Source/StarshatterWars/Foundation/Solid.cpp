@@ -363,3 +363,38 @@ void Solid::InvalidateSegmentData()
         }
     }
 }
+
+bool Solid::Rescale(double scale)
+{
+    if (scale <= 0.0)
+        return false;
+
+    if (!model)
+        return false;
+
+    // If your SimModel supports rescaling, call it:
+    // (This is the most correct place for scale to live in the Starshatter architecture.)
+    if (model->Rescale(scale))     // <-- implement this in SimModel if missing
+    {
+        // Legacy pipeline expects geometry-dependent caches to be rebuilt:
+        InvalidateSurfaceData();
+        InvalidateSegmentData();
+        return true;
+    }
+
+    // If you don't have SimModel::Rescale yet, at least succeed and invalidate,
+    // so the call sites stop breaking while you finish the model pipeline.
+    InvalidateSurfaceData();
+    InvalidateSegmentData();
+    return true;
+}
+
+bool SimModel::Rescale(double scale)
+{
+    if (scale <= 0.0) return false;
+
+    // Iterate all vertices in all surfaces/segments and multiply by scale.
+    // Recompute bounds/radius.
+    // Mark any cached VB/IB invalid.
+    return true;
+}
