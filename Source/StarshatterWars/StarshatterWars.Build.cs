@@ -23,14 +23,38 @@ public class StarshatterWars : ModuleRules
             "UMG",
             "MediaAssets",
             "CommonUI",
-             "Slate",
-             "SlateCore"
         });
 
-        AddEngineThirdPartyPrivateStaticDependencies(Target,
-            "Vorbis",
-            "Ogg"
-        );
+        PrivateDependencyModuleNames.AddRange(new string[]
+        {
+            "Niagara",
+            "NiagaraCore",
+            "RenderCore",
+            "RHI"
+        });
+
+        // Vorbis rules token exists in UE 5.6:
+        AddEngineThirdPartyPrivateStaticDependencies(Target, "Vorbis");
+
+        string EnginePath = Path.GetFullPath(Target.RelativeEnginePath);
+
+        // Vorbis headers:
+        PublicSystemIncludePaths.Add(Path.Combine(
+            EnginePath, "Source", "ThirdParty", "Vorbis", "libvorbis-1.3.2", "include"));
+
+        // Ogg headers (auto-detect version folder):
+        string OggRoot = Path.Combine(EnginePath, "Source", "ThirdParty", "Ogg");
+        if (Directory.Exists(OggRoot))
+        {
+            // Find a folder like "libogg-1.x.x"
+            string[] Candidates = Directory.GetDirectories(OggRoot, "libogg-*");
+            if (Candidates.Length > 0)
+            {
+                // Pick the first match (good enough; usually only one)
+                string OggInclude = Path.Combine(Candidates[0], "include");
+                PublicSystemIncludePaths.Add(OggInclude);
+            }
+        }
 
         PublicIncludePaths.AddRange(new string[]
         {
@@ -54,13 +78,5 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "Combat"),
             Path.Combine(ModuleDirectory, "Mission"),
         });
-        PrivateDependencyModuleNames.AddRange(new string[]
-        {
-            "Niagara",
-            "NiagaraCore",   // advanced parameter bindings
-            "RenderCore",    // GPU effects, custom render logic
-            "RHI"            // low-level rendering (rare)
-        });
     }
 }
-

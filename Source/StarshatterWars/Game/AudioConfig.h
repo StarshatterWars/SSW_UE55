@@ -1,69 +1,77 @@
 /*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright (c) 2025-2026. All Rights Reserved.
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
 
-	SUBSYSTEM:    Stars.exe
-	FILE:         AudioConfig.h
-	AUTHOR:       Carlos Bott
+    SUBSYSTEM:    Stars.exe
+    FILE:         AudioConfig.h
+    AUTHOR:       Carlos Bott
 
-	ORIGINAL AUTHOR: John DiCamillo
-	ORIGINAL STUDIO: Destroyer Studios LLC
-
-	OVERVIEW
-	========
-	Audio Configuration class
+    OVERVIEW
+    ========
+    Audio Configuration class
 */
 
 #pragma once
 
-#include "Types.h"
+#include "CoreMinimal.h"
 
-// +--------------------------------------------------------------------+
+// Forward declarations (legacy engine types):
+class DataLoader;
 
 class AudioConfig
 {
 public:
-	AudioConfig();
-	~AudioConfig();
+    AudioConfig();
+    ~AudioConfig();
 
-	static void          Initialize();
-	static void          Close();
-	static AudioConfig* GetInstance();
+    // Singleton lifecycle:
+    static void          Initialize();
+    static void          Close();
+    static AudioConfig* GetInstance();
 
-	void     Load();
-	void     Save();
+    // ------------------------------------------------------------------
+    // Modern internal getters (attenuation values):
+    static int MenuMusic();
+    static int GameMusic();
+    static int EfxVolume();
+    static int GuiVolume();
+    static int WrnVolume();
+    static int VoxVolume();
+    static int Silence();
 
-	static int  MenuMusic();
-	static int  GameMusic();
-	static int  EfxVolume();
-	static int  GuiVolume();
-	static int  WrnVolume();
-	static int  VoxVolume();
-	static int  Silence();
-	static void SetTraining(bool t);
+    // ------------------------------------------------------------------
+    // Legacy API compatibility (DO NOT REMOVE — used by UI code):
+    static int GetMenuMusic() { return MenuMusic(); }
+    static int GetGameMusic() { return GameMusic(); }
+    static int GetEfxVolume() { return EfxVolume(); }
+    static int GetGuiVolume() { return GuiVolume(); }
+    static int GetWrnVolume() { return WrnVolume(); }
+    static int GetVoxVolume() { return VoxVolume(); }
 
-	int      GetMenuMusic() const { return menu_music; }
-	int      GetGameMusic() const { return game_music; }
-	int      GetEfxVolume() const { return efx_volume; }
-	int      GetGuiVolume() const { return gui_volume; }
-	int      GetWrnVolume() const { return wrn_volume; }
-	int      GetVoxVolume() const { return vox_volume; }
+    // ------------------------------------------------------------------
+    // State:
+    static void SetTraining(bool t);
 
-	void     SetMenuMusic(int v);
-	void     SetGameMusic(int v);
-	void     SetEfxVolume(int v);
-	void     SetGuiVolume(int v);
-	void     SetWrnVolume(int v);
-	void     SetVoxVolume(int v);
+    // ------------------------------------------------------------------
+    // Setters (0–100 scale):
+    void SetMenuMusic(int v);
+    void SetGameMusic(int v);
+    void SetEfxVolume(int v);
+    void SetGuiVolume(int v);
+    void SetWrnVolume(int v);
+    void SetVoxVolume(int v);
 
-protected:
-	int      menu_music;
-	int      game_music;
+    // ------------------------------------------------------------------
+    // Persistence:
+    void Load();
+    void Save();
 
-	int      efx_volume;
-	int      gui_volume;
-	int      wrn_volume;
-	int      vox_volume;
-
-	bool     training;
+private:
+    int  menu_music;
+    int  game_music;
+    int  efx_volume;
+    int  gui_volume;
+    int  wrn_volume;
+    int  vox_volume;
+    bool training;
 };

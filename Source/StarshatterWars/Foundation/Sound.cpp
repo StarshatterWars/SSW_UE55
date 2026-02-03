@@ -1,303 +1,382 @@
-/*  Project Starshatter Wars
-	Fractal Dev Studios
-	Copyright © 2025-2026. All Rights Reserved.
-
-	ORIGINAL AUTHOR AND STUDIO:
-	John DiCamillo / Destroyer Studios LLC
-
-	SUBSYSTEM:    nGenEx.lib
-	FILE:         Sound.cpp
-	AUTHOR:       Carlos Bott
-
-
-	OVERVIEW
-	========
-	Abstract sound class
-*/
-
 #include "Sound.h"
-#include "Wave.h"
+
+#include "Engine/Engine.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundAttenuation.h"
+#include "UObject/SoftObjectPath.h"
 
 // Unreal logging:
 #include "Logging/LogMacros.h"
 
-#include "vorbis/codec.h"
-#include "vorbis/vorbisfile.h"
-
-// +--------------------------------------------------------------------+
-
-// If you already have a shared log category, replace this with that category.
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSound, Log, All);
 
-SoundCard* Sound::creator = 0;
+SoundCard* USound::creator = nullptr;
+FVector    USound::ListenerVelocity = FVector::ZeroVector;
 
-Sound*
-Sound::CreateStream(const char* filename)
+USound::USound()
 {
-	Sound* sound = 0;
+    status = UNINITIALIZED;
+    volume = 0;
+    flags = 0;
+    looped = 0;
+    location = FVector::ZeroVector;
+    velocity = FVector::ZeroVector;
+    sound_check = nullptr;
 
-	if (!filename || !filename[0] || !creator)
-		return sound;
-
-	int namelen = (int)strlen(filename);
-
-	if (namelen < 5)
-		return sound;
-
-	if ((filename[namelen - 3] == 'o' || filename[namelen - 3] == 'O') &&
-		(filename[namelen - 2] == 'g' || filename[namelen - 2] == 'G') &&
-		(filename[namelen - 1] == 'g' || filename[namelen - 1] == 'G')) {
-
-		return CreateOggStream(filename);
-	}
-
-	WAVE_HEADER    head;
-	WAVE_FMT       fmt;
-	WAVE_FACT      fact;
-	WAVE_DATA      data;
-	WAVEFORMATEX   wfex;
-
-	ZeroMemory(&head, sizeof(head));
-	ZeroMemory(&fmt, sizeof(fmt));
-	ZeroMemory(&fact, sizeof(fact));
-	ZeroMemory(&data, sizeof(data));
-
-	LPBYTE         buf = 0;
-	LPBYTE         p = 0;
-	int            len = 0;
-
-	FILE* f;
-	::fopen_s(&f, filename, "rb");
-
-	if (f) {
-		fseek(f, 0, SEEK_END);
-		len = (int)ftell(f);
-		fseek(f, 0, SEEK_SET);
-
-		if (len > 4096) {
-			len = 4096;
-		}
-
-		buf = new BYTE[len];
-
-		if (buf && len)
-			fread(buf, len, 1, f);
-
-		fclose(f);
-	}
-
-	if (len > (int)sizeof(head)) {
-		CopyMemory(&head, buf, sizeof(head));
-
-		if (head.RIFF == MAKEFOURCC('R', 'I', 'F', 'F') &&
-			head.WAVE == MAKEFOURCC('W', 'A', 'V', 'E')) {
-
-			p = buf + sizeof(WAVE_HEADER);
-
-			do {
-				DWORD chunk_id = *((LPDWORD)p);
-
-				switch (chunk_id) {
-				case MAKEFOURCC('f', 'm', 't', ' '):
-					CopyMemory(&fmt, p, sizeof(fmt));
-					p += fmt.chunk_size + 8;
-					break;
-
-				case MAKEFOURCC('f', 'a', 'c', 't'):
-					CopyMemory(&fact, p, sizeof(fact));
-					p += fact.chunk_size + 8;
-					break;
-
-				case MAKEFOURCC('s', 'm', 'p', 'l'):
-					CopyMemory(&fact, p, sizeof(fact));
-					p += fact.chunk_size + 8;
-					break;
-
-				case MAKEFOURCC('d', 'a', 't', 'a'):
-					CopyMemory(&data, p, sizeof(data));
-					p += 8;
-					break;
-
-				default:
-					delete[] buf;
-					return sound;
-				}
-			} while (data.chunk_size == 0);
-
-			wfex.wFormatTag = fmt.wFormatTag;
-			wfex.nChannels = fmt.nChannels;
-			wfex.nSamplesPerSec = fmt.nSamplesPerSec;
-			wfex.nAvgBytesPerSec = fmt.nAvgBytesPerSec;
-			wfex.nBlockAlign = fmt.nBlockAlign;
-			wfex.wBitsPerSample = fmt.wBitsPerSample;
-			wfex.cbSize = 0;
-
-			sound = Create(Sound::STREAMED, &wfex);
-
-			if (sound) {
-				sound->SetFilename(filename);
-				sound->StreamFile(filename, (DWORD)(p - buf));
-			}
-		}
-	}
-
-	delete[] buf;
-	return sound;
+    // legacy default:
+    FCStringAnsi::Strcpy(filename_ansi, "Sound()");
 }
 
-// +--------------------------------------------------------------------+
-
-Sound*
-Sound::CreateOggStream(const char* filename)
+void USound::SetListener(const Camera& /*cam*/, const FVector& InVel)
 {
-	Sound* sound = 0;
-
-	if (!filename || !filename[0] || !creator)
-		return sound;
-
-	int namelen = (int)strlen(filename);
-
-	if (namelen < 5)
-		return sound;
-
-	WAVEFORMATEX wfex;
-	ZeroMemory(&wfex, sizeof(wfex));
-
-	FILE* f;
-	::fopen_s(&f, filename, "rb");
-
-	if (f) {
-		OggVorbis_File* povf = new OggVorbis_File;
-
-		if (!povf) {
-			UE_LOG(LogStarshatterSound, Error, TEXT("Sound::CreateOggStream(%s) - out of memory!"), ANSI_TO_TCHAR(filename));
-			return sound;
-		}
-
-		ZeroMemory(povf, sizeof(OggVorbis_File));
-
-		if (ov_open(f, povf, NULL, 0) < 0) {
-			UE_LOG(LogStarshatterSound, Warning, TEXT("Sound::CreateOggStream(%s) - not an Ogg bitstream"), ANSI_TO_TCHAR(filename));
-			delete povf;
-			return sound;
-		}
-
-		UE_LOG(LogStarshatterSound, Log, TEXT("Opened Ogg Bitstream '%s'"), ANSI_TO_TCHAR(filename));
-
-		char** ptr = ov_comment(povf, -1)->user_comments;
-		vorbis_info* vi = ov_info(povf, -1);
-
-		while (ptr && *ptr) {
-			UE_LOG(LogStarshatterSound, Verbose, TEXT("%s"), ANSI_TO_TCHAR(*ptr));
-			++ptr;
-		}
-
-		if (vi) {
-			UE_LOG(LogStarshatterSound, Log, TEXT("Bitstream is %d channel, %ldHz"), vi->channels, (long)vi->rate);
-		}
-
-		UE_LOG(LogStarshatterSound, Log, TEXT("Decoded length: %ld samples"), (long)ov_pcm_total(povf, -1));
-
-		const char* vendor = ov_comment(povf, -1) ? ov_comment(povf, -1)->vendor : "";
-		UE_LOG(LogStarshatterSound, Log, TEXT("Encoded by: %s"), ANSI_TO_TCHAR(vendor ? vendor : ""));
-
-		wfex.wFormatTag = WAVE_FORMAT_PCM;
-		wfex.nChannels = vi ? vi->channels : 0;
-		wfex.nSamplesPerSec = vi ? (DWORD)vi->rate : 0;
-		wfex.nAvgBytesPerSec = (vi ? (DWORD)(vi->channels * vi->rate * 2) : 0);
-		wfex.nBlockAlign = (vi ? (WORD)(vi->channels * 2) : 0);
-		wfex.wBitsPerSample = 16;
-		wfex.cbSize = 0;
-
-		sound = Create(Sound::STREAMED | Sound::OGGVORBIS,
-			&wfex,
-			(DWORD)sizeof(OggVorbis_File),
-			(LPBYTE)povf);
-
-		if (sound) {
-			sound->SetFilename(filename);
-		}
-	}
-
-	return sound;
+    // UE listener is owned by PlayerController/AudioDevice.
+    // We keep this for legacy compatibility and Doppler bookkeeping if you later extend.
+    ListenerVelocity = InVel;
 }
 
-// +--------------------------------------------------------------------+
-
-Sound*
-Sound::Create(DWORD flags, LPWAVEFORMATEX format)
+void USound::SetFilename(const char* s)
 {
-	if (creator) return creator->CreateSound(flags, format);
-	else         return 0;
+    if (!s) return;
+
+    int n = (int)FCStringAnsi::Strlen(s);
+    if (n >= 60)
+    {
+        FMemory::Memzero(filename_ansi, sizeof(filename_ansi));
+        FCStringAnsi::Strcpy(filename_ansi, "...");
+        FCStringAnsi::Strcat(filename_ansi, s + n - 59);
+        filename_ansi[63] = 0;
+    }
+    else
+    {
+        FCStringAnsi::Strcpy(filename_ansi, s);
+    }
 }
 
-Sound*
-Sound::Create(DWORD flags, LPWAVEFORMATEX format, DWORD len, LPBYTE data)
+float USound::CentibelsToVolumeMultiplier(long Centibels)
 {
-	if (creator) return creator->CreateSound(flags, format, len, data);
-	else         return 0;
+    // legacy: 0 .. -10000 centibels
+    // UE: linear multiplier
+    // dB = centibels / 100
+    // linear = 10^(dB/20)
+    const float dB = (float)Centibels / 100.0f;
+    const float linear = FMath::Pow(10.0f, dB / 20.0f);
+    return FMath::Clamp(linear, 0.0f, 10.0f);
 }
 
-void
-Sound::SetListener(const Camera& cam, const FVector& vel)
+void USound::SetVolume(long v)
 {
-	if (creator)
-		creator->SetListener(cam, vel);
+    volume = v;
+    if (AudioComp)
+    {
+        AudioComp->SetVolumeMultiplier(CentibelsToVolumeMultiplier(volume));
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-Sound::Sound()
-	: status(UNINITIALIZED),
-	volume(0),
-	flags(0),
-	looped(0),
-	velocity(0, 0, 0),
-	location(0, 0, 0),
-	sound_check(0)
+void USound::SetLocation(const FVector& l)
 {
-	strcpy_s(filename, "Sound()");
+    location = l;
+    if (AudioComp)
+    {
+        AudioComp->SetWorldLocation(location);
+    }
 }
 
-// +--------------------------------------------------------------------+
-
-Sound::~Sound()
+UObject* USound::ResolveWorldContext()
 {
+    // Best-effort:
+    // - If you later implement SoundCard as a UObject provider, use it here.
+    // - Otherwise fall back to first game world.
+    if (GEngine)
+    {
+        for (const FWorldContext& Ctx : GEngine->GetWorldContexts())
+        {
+            if (Ctx.World() && (Ctx.WorldType == EWorldType::Game || Ctx.WorldType == EWorldType::PIE))
+            {
+                return Ctx.World();
+            }
+        }
+    }
+    return nullptr;
 }
 
-// +--------------------------------------------------------------------+
-
-void
-Sound::Release()
+USoundBase* USound::LoadSoundAssetFromString(const FString& InRef)
 {
-	flags &= ~LOCKED;
+    // Accept either:
+    // - Soft object path: "/Game/Audio/UI_Click.UI_Click"
+    // - Or a package path that StaticLoadObject can resolve
+    if (InRef.IsEmpty())
+        return nullptr;
+
+    // Prefer soft load:
+    {
+        FSoftObjectPath SoftPath(InRef);
+        if (SoftPath.IsValid())
+        {
+            UObject* Obj = SoftPath.TryLoad();
+            return Cast<USoundBase>(Obj);
+        }
+    }
+
+    // Fallback: StaticLoadObject
+    return Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *InRef));
 }
 
-// +--------------------------------------------------------------------+
-
-void
-Sound::AddToSoundCard()
+void USound::EnsureAssetLoaded()
 {
-	if (creator)
-		creator->AddSound(this);
+    if (SoundAsset)
+        return;
+
+    const FString Ref = FString(ANSI_TO_TCHAR(filename_ansi));
+    SoundAsset = LoadSoundAssetFromString(Ref);
+
+    if (!SoundAsset)
+    {
+        UE_LOG(LogStarshatterSound, Warning,
+            TEXT("USound: Failed to load sound asset from ref '%s' (filename='%s')."),
+            *Ref, ANSI_TO_TCHAR(filename_ansi));
+        status = DONE;
+        return;
+    }
+
+    // Looping: UE typically encodes looping in SoundCue/SoundWave settings.
+    // We can force looping on the component when we create it.
+    status = READY;
 }
 
-// +--------------------------------------------------------------------+
-
-void
-Sound::SetFilename(const char* s)
+void USound::ApplyAttenuation()
 {
-	if (s) {
-		int n = (int)strlen(s);
+    if (!(flags & LOCALIZED) && !(flags & LOC_3D))
+        return;
 
-		if (n >= 60) {
-			ZeroMemory(filename, sizeof(filename));
-			strcpy_s(filename, "...");
-			strcat_s(filename, s + n - 59);
-			filename[63] = 0;
-		}
-		else {
-			strcpy_s(filename, s);
-		}
-	}
+    if (!AttenuationAsset)
+    {
+        AttenuationAsset = NewObject<USoundAttenuation>(this);
+    }
+
+    if (AttenuationAsset)
+    {
+        FSoundAttenuationSettings& S = AttenuationAsset->Attenuation;
+        S.bAttenuate = true;
+        S.bSpatialize = true;
+
+        // Use simple distance model:
+        S.FalloffDistance = FMath::Max(0.0f, max_distance - min_distance);
+        S.AttenuationShape = EAttenuationShape::Sphere;
+        S.AttenuationShapeExtents = FVector(FMath::Max(1.0f, max_distance), 0, 0);
+
+        // Min distance approximation:
+        S.dBAttenuationAtMax = -60.0f;
+
+        if (AudioComp)
+        {
+            AudioComp->AttenuationSettings = AttenuationAsset;
+        }
+    }
+}
+
+void USound::EnsureAudioComponent()
+{
+    if (AudioComp)
+        return;
+
+    UObject* WorldCtxObj = ResolveWorldContext();
+    UWorld* World = WorldCtxObj ? WorldCtxObj->GetWorld() : nullptr;
+
+    if (!World)
+    {
+        UE_LOG(LogStarshatterSound, Warning, TEXT("USound: No valid UWorld context to spawn audio."));
+        status = DONE;
+        return;
+    }
+
+    // Decide 2D vs 3D:
+    const bool bIs3D = (flags & LOCALIZED) || (flags & LOC_3D);
+    const bool bIsUI = (flags & INTERFACE);
+
+    // Spawn:
+    if (bIs3D)
+    {
+        AudioComp = UGameplayStatics::SpawnSoundAtLocation(
+            World,
+            SoundAsset,
+            location,
+            FRotator::ZeroRotator,
+            CentibelsToVolumeMultiplier(volume)
+        );
+    }
+    else
+    {
+        AudioComp = UGameplayStatics::SpawnSound2D(
+            World,
+            SoundAsset,
+            CentibelsToVolumeMultiplier(volume)
+        );
+    }
+
+    if (!AudioComp)
+    {
+        UE_LOG(LogStarshatterSound, Warning, TEXT("USound: Failed to spawn AudioComponent."));
+        status = DONE;
+        return;
+    }
+
+    // UI sounds: you can route to a UI sound class/submix later.
+    (void)bIsUI;
+
+    // Looping:
+    const bool bLoop = (flags & LOOP) != 0;
+    AudioComp->bIsUISound = bIsUI;
+    AudioComp->bAutoDestroy = !bLoop; // looped sounds shouldn't auto-destroy
+    AudioComp->SetVolumeMultiplier(CentibelsToVolumeMultiplier(volume));
+
+    if (bLoop)
+    {
+        // This only works reliably if the underlying asset supports looping.
+        // For SoundCue, add a Looping node; for SoundWave, enable looping in asset.
+        AudioComp->Play();
+        looped = 1;
+    }
+
+    ApplyAttenuation();
+}
+
+void USound::AddToSoundCard()
+{
+    // In UE, we don’t have a "sound card" list. This is a compatibility hook.
+    // We ensure asset is loaded so the sound is READY.
+    EnsureAssetLoaded();
+}
+
+USound* USound::CreateStream(const char* InFilename)
+{
+    if (!InFilename || !InFilename[0])
+        return nullptr;
+
+    USound* S = NewObject<USound>(GetTransientPackage());
+    S->SetFilename(InFilename);
+
+    // Decide ogg by extension (legacy behavior); both paths load assets in UE:
+    const int32 Len = FCStringAnsi::Strlen(InFilename);
+    if (Len >= 4)
+    {
+        const char c1 = InFilename[Len - 3];
+        const char c2 = InFilename[Len - 2];
+        const char c3 = InFilename[Len - 1];
+
+        const bool bIsOgg =
+            (c1 == 'o' || c1 == 'O') &&
+            (c2 == 'g' || c2 == 'G') &&
+            (c3 == 'g' || c3 == 'G');
+
+        if (bIsOgg)
+        {
+            return CreateOggStream(InFilename);
+        }
+    }
+
+    S->status = INITIALIZING;
+    S->EnsureAssetLoaded();
+    return S->IsReady() ? S : nullptr;
+}
+
+USound* USound::CreateOggStream(const char* InFilename)
+{
+    if (!InFilename || !InFilename[0])
+        return nullptr;
+
+    // UE-native approach:
+    // - Import .ogg into Content -> becomes USoundWave
+    // - Pass soft object path to that asset here.
+    USound* S = NewObject<USound>(GetTransientPackage());
+    S->SetFilename(InFilename);
+
+    S->flags |= OGGVORBIS;
+    S->status = INITIALIZING;
+    S->EnsureAssetLoaded();
+    return S->IsReady() ? S : nullptr;
+}
+
+void USound::Update()
+{
+    if (sound_check)
+    {
+        sound_check->Update(this);
+    }
+
+    if (AudioComp)
+    {
+        // Track state:
+        if (AudioComp->IsPlaying())
+            status = PLAYING;
+        else if (status == PLAYING)
+            status = DONE;
+
+        // Keep 3D position updated:
+        if ((flags & LOCALIZED) || (flags & LOC_3D))
+        {
+            AudioComp->SetWorldLocation(location);
+        }
+    }
+}
+
+void USound::Release()
+{
+    flags &= ~LOCKED;
+
+    // In UE, if not locked, you can stop and allow GC:
+    if (!(flags & LOCKED))
+    {
+        Stop();
+    }
+}
+
+HRESULT USound::Play()
+{
+    EnsureAssetLoaded();
+    if (!SoundAsset)
+        return E_FAIL;
+
+    EnsureAudioComponent();
+    if (!AudioComp)
+        return E_FAIL;
+
+    const bool bLoop = (flags & LOOP) != 0;
+    AudioComp->bAutoDestroy = !bLoop;
+
+    AudioComp->Play();
+    status = PLAYING;
+    return S_OK;
+}
+
+HRESULT USound::Pause()
+{
+    if (!AudioComp)
+        return E_NOINTERFACE;
+
+    AudioComp->SetPaused(true);
+    status = READY;
+    return S_OK;
+}
+
+HRESULT USound::Stop()
+{
+    if (AudioComp)
+    {
+        AudioComp->Stop();
+        AudioComp = nullptr;
+    }
+
+    status = DONE;
+    return S_OK;
+}
+
+HRESULT USound::Rewind()
+{
+    if (!AudioComp)
+        return E_NOINTERFACE;
+
+    AudioComp->Stop();
+    AudioComp->Play(0.0f);
+    status = READY;
+    return S_OK;
 }
