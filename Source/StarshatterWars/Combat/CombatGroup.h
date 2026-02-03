@@ -110,40 +110,44 @@ public:
 	bool                IsStarshipGroup()    const;
 	bool                IsReserve()          const;
 
-	int  CalcValue() const;
+	
+	int CalcValue();
+	int CalcValue() const; 
 
 	// these two methods return zero terminated arrays of
 	// integers identifying the preferred assets for attack
 	// or defense in priority order:
 
-	static const int* PreferredAttacker(ECOMBATGROUP_TYPE InType);
-	static const int* PreferredDefender(ECOMBATGROUP_TYPE InType);
+	static const int*	PreferredAttacker(ECOMBATGROUP_TYPE InType);
+	static const int*	PreferredDefender(ECOMBATGROUP_TYPE InType);
 
 	bool                IsExpanded()         const { return expanded; }
 	void                SetExpanded(bool e) { expanded = e; }
 
-	const Text& GetAssignedSystem()  const { return assigned_system; }
+	const Text&			GetAssignedSystem()  const { return assigned_system; }
 	void                SetAssignedSystem(const char* s);
-	CombatZone* GetCurrentZone()     const { return current_zone; }
+	CombatZone*			GetCurrentZone()     const { return current_zone; }
 	void                SetCurrentZone(CombatZone* z) { current_zone = z; }
-	CombatZone* GetAssignedZone()    const { return assigned_zone; }
+	CombatZone*			GetAssignedZone()    const { return assigned_zone; }
 	void                SetAssignedZone(CombatZone* z);
 	void                ClearUnlockedZones();
 	bool                IsZoneLocked()       const { return assigned_zone && zone_lock; }
 	void                SetZoneLock(bool lock = true);
 	bool                IsSystemLocked()     const { return assigned_system.length() > 0; }
 
-	const Text& GetStrategicDirection()      const { return strategic_direction; }
-	void                SetStrategicDirection(Text dir) { strategic_direction = dir; }
+	const Text&			GetStrategicDirection()      const 
+						{ return strategic_direction; }
+
+	void                SetStrategicDirection(Text dir) 
+						{ strategic_direction = dir; }
 
 	void                SetIntelLevel(int n);
-	int                 CalcValue();
 
 	List<CombatAssignment>& GetAssignments() { return assignments; }
 	void                    ClearAssignments();
 
 	static ECOMBATGROUP_TYPE TypeFromName(const char* type_name);
-	static const char* NameFromType(ECOMBATGROUP_TYPE type);
+	static const char*		 NameFromType(ECOMBATGROUP_TYPE type);
 
 private:
 	const char* GetOrdinal() const;

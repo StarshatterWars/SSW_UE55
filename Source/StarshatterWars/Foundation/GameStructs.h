@@ -124,15 +124,23 @@ enum ECAM_MODE : uint8
 	MODE_LAST UMETA(DisplayName = "Camera - Last")
 };
 
-enum CAMPAIGN_CONSTANTS {
-	TRAINING_CAMPAIGN = 1,
-	DYNAMIC_CAMPAIGN,
-	MOD_CAMPAIGN = 100,
-	SINGLE_MISSIONS = 1000,
-	MULTIPLAYER_MISSIONS,
-	CUSTOM_MISSIONS,
+UENUM()
+enum class ECampaignType : uint32 {
+	UNKNOWN						UMETA(DisplayName = "Unknowm"),
+	TRAINING_CAMPAIGN			UMETA(DisplayName = "Training Campaign"),
+	DYNAMIC_CAMPAIGN			UMETA(DisplayName = "Dynamic Campaign"),
+	MOD_CAMPAIGN				UMETA(DisplayName = "Mod campaign"),
+	SINGLE_MISSION				UMETA(DisplayName = "Single Mission"),
+	MULTIPLAYER_MISSION			UMETA(DisplayName = "Multplayer Mission"),
+	CUSTOM_MISSION				UMETA(DisplayName = "Custom Mission"),
+};
 
-	NUM_IMAGES = 6
+UENUM()
+enum class ECampaignStatus {
+	CAMPAIGN_INIT				UMETA(DisplayName = "Campaign - Init"),
+	CAMPAIGN_ACTIVE				UMETA(DisplayName = "Campaign - Init"),
+	CAMPAIGN_SUCCESS			UMETA(DisplayName = "Campaign - Success"),
+	CAMPAIGN_FAILED				UMETA(DisplayName = "Campaign - Failed")
 };
 
 enum COMPARISON_OPERATOR {
@@ -165,14 +173,6 @@ enum EDAMAGE_TYPE : uint8
 	DAMAGE_EFFICIENCY = 0x01,
 	DAMAGE_SAFETY = 0x02,
 	DAMAGE_STABILITY = 0x04
-};
-
-UENUM(BlueprintType)
-enum ECAMPAIGN_STATUS : uint8 {
-	CAMPAIGN_INIT UMETA(DisplayName = "Campaign - Init"),
-	CAMPAIGN_ACTIVE UMETA(DisplayName = "Campaign - Init"),
-	CAMPAIGN_SUCCESS UMETA(DisplayName = "Campaign - Success"),
-	CAMPAIGN_FAILED UMETA(DisplayName = "Campaign - Failed")
 };
 
 UENUM()

@@ -50,14 +50,20 @@
 #undef List
 #endif
 
-// ---------------------------------------------------------------------
-// Minimal legacy includes (keep header light).
-// ---------------------------------------------------------------------
+#ifdef Print
+#undef Print
+#endif
+
+#ifdef TEXT
+// don't undef TEXT (UE needs it), but if something redefined it you have bigger issues
+#endif
+
 #include "CoreMinimal.h"
 
 
 #include "Types.h"
 #include "List.h"
+#include "Text.h"
 #include "Geometry.h"     // Rect
 #include "FontManager.h"
 
@@ -70,7 +76,7 @@
 // Forward declarations (keep compile dependencies low).
 // ---------------------------------------------------------------------
 class Screen;
-class Window;     // <-- NEW: render ownership context
+class Window;     
 class Bitmap;
 class SystemFont;
 class FontManager;
@@ -207,7 +213,7 @@ public:
     virtual bool        OnKeyUp(int32 Key);        // optional legacy hook
 
     void Print(int x1, int y1, const char* fmt, ...);
-    void Print(int x1, int y1, const FString& Text);
+    void Print(int x1, int y1, const FString& InText);
    
     virtual void        ExecFrame();
 

@@ -947,24 +947,6 @@ View::FillEllipse(int x1, int y1, int x2, int y2, const FColor& color, int blend
 
 // +--------------------------------------------------------------------+
 
-void
-View::Print(int x1, int y1, const char* fmt, ...)
-{
-    if (!font || x1 < 0 || y1 < 0 || x1 >= rect.w || y1 >= rect.h || !fmt)
-        return;
-
-    x1 += rect.x;
-    y1 += rect.y;
-
-    char msgbuf[512];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
-    va_end(args);
-
-    font->DrawString(msgbuf, (int)strlen(msgbuf), x1, y1, rect);
-}
-
 void View::ExecFrame()
 { 
     // usually overridden
@@ -1053,14 +1035,45 @@ void View::DrawTextRect(const FString& Text, int Count, Rect& TxtRect, DWORD Fla
     DrawTextRect(Conv.Get(), Count, TxtRect, Flags);
 }
 
-void View::Print(int x1, int y1, const FString& Text)
+void View::Print(int x1, int y1, const char* fmt, ...)
 {
-    if (Text.IsEmpty())
+    if (!font || !fmt)
         return;
 
-    FTCHARToUTF8 Conv(*Text);
+    if (x1 < 0 || y1 < 0 || x1 >= rect.w || y1 >= rect.h)
+        return;
+
+    x1 += rect.x;
+    y1 += rect.y;
+
+    char msgbuf[512];
+
+    va_list args;
+    va_start(args, fmt);
+
+#if PLATFORM_WINDOWS
+    vsnprintf_s(msgbuf, sizeof(msgbuf), _TRUNCATE, fmt, args);
+#else
+    vsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
+#endif
+
+    va_end(args);
+
+    font->DrawString(msgbuf, (int)strlen(msgbuf), x1, y1, rect);
+}
+
+// ------------------------------------------------------------
+// Unreal-friendly FString Print
+// ------------------------------------------------------------
+void View::Print(int x1, int y1, const FString& InText)
+{
+    if (InText.IsEmpty())
+        return;
+
+    FTCHARToUTF8 Conv(*InText);
     Print(x1, y1, "%s", Conv.Get());
 }
+
 
 bool 
 View::OnMouseDown(int32 Button, int32 x, int32 y)

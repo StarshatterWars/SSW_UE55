@@ -742,6 +742,12 @@ CombatGroup::CalcValue()
 	return value;
 }
 
+int CombatGroup::CalcValue() const
+{
+	// Safe legacy-style: reuse the existing non-const implementation
+	return const_cast<CombatGroup*>(this)->CalcValue();
+}
+
 int
 CombatGroup::CountUnits() const
 {
