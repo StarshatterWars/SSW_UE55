@@ -333,7 +333,6 @@ void UAudioDlg::HandleAudioClicked() { OnAudio(); }
 void UAudioDlg::HandleVideoClicked() { OnVideo(); }
 void UAudioDlg::HandleOptionsClicked() { OnOptions(); }
 void UAudioDlg::HandleControlsClicked() { OnControls(); }
-void UAudioDlg::HandleModClicked() { OnMod(); }
 
 // ---------------------------------------------------------------------
 // Legacy semantic methods

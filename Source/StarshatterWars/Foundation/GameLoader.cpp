@@ -64,11 +64,11 @@ void AGameLoader::InitializeGame()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	
-	UUniverse* Universe;
-	Universe = NewObject<UUniverse>();
+	//UUniverse* Universe;
+	//Universe = NewObject<UUniverse>();
 
-	USim* Sim;
-	Sim = NewObject<USim>();
+	//USim* Sim;
+	//Sim = NewObject<USim>();
 
 	//Campaign* Campaign;
 	//Campaign::Initialize();

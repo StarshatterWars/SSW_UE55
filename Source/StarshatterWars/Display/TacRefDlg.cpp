@@ -550,3 +550,7 @@ void UTacRefDlg::OnCamRButtonDown(void* Event) { (void)Event; }
 void UTacRefDlg::OnCamRButtonUp(void* Event) { (void)Event; }
 void UTacRefDlg::OnCamMove(void* Event) { (void)Event; }
 void UTacRefDlg::OnCamZoom(void* Event) { (void)Event; }
+
+void UTacRefDlg::BindFormWidgets()
+{
+}

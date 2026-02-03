@@ -54,7 +54,6 @@ public:
     virtual void OnVideo();
     virtual void OnOptions();
     virtual void OnControls();
-    virtual void OnMod();
 
     void SetManager(UGameScreen* InManager);
 

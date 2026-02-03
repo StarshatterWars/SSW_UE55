@@ -953,6 +953,10 @@ void UBaseScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     Super::NativeTick(MyGeometry, InDeltaTime);
 }
 
+void UBaseScreen::ExecFrame(double DeltaTime) {
+
+}
+
 // --------------------------------------------------------------------
 // Centralized dialog input (Enter/Escape)
 // --------------------------------------------------------------------

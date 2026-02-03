@@ -415,3 +415,9 @@ Game::ResetVideo()
 	return true;
 }
 
+bool
+Game::ResizeVideo()
+{
+	return true;
+}
+
