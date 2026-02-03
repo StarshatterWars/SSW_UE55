@@ -20,6 +20,7 @@
 
 #include "ParticleManager.h"
 #include "GameStructs.h"
+#include "Game.h"
 
 #include "Logging/LogMacros.h"
 #include "HAL/PlatformMath.h"
