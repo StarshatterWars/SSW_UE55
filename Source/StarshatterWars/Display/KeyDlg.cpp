@@ -6,13 +6,12 @@
     FILE:         KeyDlg.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
     Key Binding dialog (legacy KeyDlg) implementation for Unreal UMG.
+
+    UPDATED ROUTING:
+    - Returns to ControlOptionsDlg (Manager) on apply/cancel.
 */
 
 #include "KeyDlg.h"
@@ -26,9 +25,11 @@
 
 // Starshatter
 #include "KeyMap.h"
-#include "MenuScreen.h"
 #include "Starshatter.h"
 #include "Joystick.h"
+
+// UPDATED:
+#include "ControlOptionsDlg.h"
 
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
@@ -52,13 +53,23 @@ void UKeyDlg::NativeOnInitialized()
     Super::NativeOnInitialized();
 
     if (ClearButton)
+    {
+        ClearButton->OnClicked.RemoveAll(this);
         ClearButton->OnClicked.AddDynamic(this, &UKeyDlg::OnClearClicked);
+    }
 
+    // NOTE: ApplyButton / CancelButton come from UBaseScreen:
     if (ApplyButton)
+    {
+        ApplyButton->OnClicked.RemoveAll(this);
         ApplyButton->OnClicked.AddDynamic(this, &UKeyDlg::OnApplyClicked);
+    }
 
     if (CancelButton)
+    {
+        CancelButton->OnClicked.RemoveAll(this);
         CancelButton->OnClicked.AddDynamic(this, &UKeyDlg::OnCancelClicked);
+    }
 }
 
 // --------------------------------------------------------------------
@@ -85,7 +96,7 @@ void UKeyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 // --------------------------------------------------------------------
 
-void UKeyDlg::SetManager(UMenuScreen* InManager)
+void UKeyDlg::SetManager(UControlOptionsDlg* InManager)
 {
     Manager = InManager;
 }
@@ -152,7 +163,7 @@ void UKeyDlg::ExecFrame()
     {
         KeyKey = key;
         KeyShift = shift;
-        KeyJoy = joy; // keep any joy value detected this frame
+        KeyJoy = joy; // keep any joy detected this frame
 
         if (NewKeyText)
         {
@@ -222,16 +233,30 @@ void UKeyDlg::OnApplyClicked()
         UE_LOG(LogKeyDlg, Warning, TEXT("Starshatter instance not available."));
     }
 
+    // Hide this dialog and return to Controls page:
+    SetVisibility(ESlateVisibility::Collapsed);
+
     if (Manager)
-        Manager->ShowCtlDlg();
+    {
+        Manager->SetVisibility(ESlateVisibility::Visible);
+        Manager->Show();          // refresh list / selection text
+        Manager->SetKeyboardFocus();
+    }
 }
 
 // --------------------------------------------------------------------
 
 void UKeyDlg::OnCancelClicked()
 {
+    // Hide this dialog and return to Controls page:
+    SetVisibility(ESlateVisibility::Collapsed);
+
     if (Manager)
-        Manager->ShowCtlDlg();
+    {
+        Manager->SetVisibility(ESlateVisibility::Visible);
+        Manager->Show();
+        Manager->SetKeyboardFocus();
+    }
 }
 
 // --------------------------------------------------------------------
@@ -261,7 +286,6 @@ void UKeyDlg::SetTextBlock(UTextBlock* Block, const char* AnsiText)
     if (!AnsiText)
         AnsiText = "";
 
-    // Legacy engine uses char* (likely UTF-8/ANSI). Convert safely:
     Block->SetText(FText::FromString(UTF8_TO_TCHAR(AnsiText)));
 }
 

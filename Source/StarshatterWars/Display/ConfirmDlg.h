@@ -26,8 +26,8 @@
 class UButton;
 class UTextBlock;
 
-// Starshatter fwd:
-class MenuScreen;
+// Manager fwd (UE port):
+class UMenuScreen;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConfirmAccepted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConfirmCanceled);
@@ -52,6 +52,9 @@ public:
     virtual void RegisterControls();
     virtual void Show();
 
+    // Manager
+    void SetManager(UMenuScreen* InManager) { Manager = InManager; }
+
     // Classic API
     UFUNCTION(BlueprintCallable, Category = "ConfirmDlg")
     FString GetTitle() const;
@@ -66,16 +69,7 @@ public:
     void SetMessage(const FString& InMessage);
 
     // ----------------------------------------------------------------
-    // Callbacks (UMG)
-    // ----------------------------------------------------------------
-    UFUNCTION()
-    void OnApplyClicked();
-
-    UFUNCTION()
-    void OnCancelClicked();
-
-    // ----------------------------------------------------------------
-    // Events (replacement for parent_control->ClientEvent(EID_USER_1))
+    // Events
     // ----------------------------------------------------------------
     UPROPERTY(BlueprintAssignable, Category = "ConfirmDlg")
     FOnConfirmAccepted OnConfirmed;
@@ -83,16 +77,23 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "ConfirmDlg")
     FOnConfirmCanceled OnCanceled;
 
-public:
-    // Screen manager (set by owning menu screen)
-    MenuScreen* manager = nullptr;
-
 protected:
     // ----------------------------------------------------------------
     // UBaseScreen overrides
     // ----------------------------------------------------------------
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
+
+    // Centralized Enter/Escape:
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
+
+protected:
+    // ----------------------------------------------------------------
+    // Callbacks (UMG)
+    // ----------------------------------------------------------------
+    UFUNCTION() void HandleApplyClicked();
+    UFUNCTION() void HandleCancelClicked();
 
 protected:
     // ----------------------------------------------------------------
@@ -103,4 +104,8 @@ protected:
 
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* lbl_title = nullptr; // id 100
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* lbl_message = nullptr; // id 101
+
+protected:
+    UPROPERTY(Transient)
+    UMenuScreen* Manager = nullptr;
 };

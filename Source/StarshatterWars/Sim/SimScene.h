@@ -65,6 +65,8 @@ public:
 		double         obj_radius,
 		FVector* imp_point = 0) const;
 
+	static SimScene* emergency_scene;
+
 protected:
 	List<Graphic>     background;
 	List<Graphic>     foreground;

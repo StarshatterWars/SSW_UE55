@@ -12,7 +12,6 @@
 
     UNREAL PORT:
     - Converted from FormWindow/AWEvent mapping to UBaseScreen (UUserWidget-derived).
-    - Removes MemDebug and classic mapping macros.
 */
 
 #include "ConfirmDlg.h"
@@ -21,20 +20,19 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 
-// Starshatter (ported core/gameplay):
-#include "MenuScreen.h"
+// Manager:
+#include "MenuScreen.h" // your UE port class header that defines UMenuScreen
 
 UConfirmDlg::UConfirmDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    // Ensure UBaseScreen routes input:
+    SetDialogInputEnabled(true);
 }
 
 void UConfirmDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
-
-    // BindFormWidgets() is called by UBaseScreen::NativeOnInitialized()
-    // after FormMap.Reset(). We only need to hook click delegates here.
     RegisterControls();
 }
 
@@ -45,33 +43,69 @@ void UConfirmDlg::NativeConstruct()
 
 void UConfirmDlg::RegisterControls()
 {
-    // Wire UBaseScreen dialog policy (Enter/Escape)
+    // UBaseScreen expects these for centralized Enter/Escape:
     ApplyButton = btn_apply;
     CancelButton = btn_cancel;
 
     if (btn_apply)
     {
         btn_apply->OnClicked.RemoveAll(this);
-        btn_apply->OnClicked.AddDynamic(this, &UConfirmDlg::OnApplyClicked);
+        btn_apply->OnClicked.AddDynamic(this, &UConfirmDlg::HandleApplyClicked);
     }
 
     if (btn_cancel)
     {
         btn_cancel->OnClicked.RemoveAll(this);
-        btn_cancel->OnClicked.AddDynamic(this, &UConfirmDlg::OnCancelClicked);
+        btn_cancel->OnClicked.AddDynamic(this, &UConfirmDlg::HandleCancelClicked);
     }
 }
 
 void UConfirmDlg::Show()
 {
-    // In UE, the caller typically AddToViewport()/SetVisibility().
-    // This keeps the legacy surface for parity.
     SetVisibility(ESlateVisibility::Visible);
 
-    // Optional: ensure focus so Enter/Escape works consistently
-    // (depends on how you manage focus across screens)
+    // Nice-to-have: focus so Enter/Escape works immediately
     SetKeyboardFocus();
 }
+
+// ---------------------------------------------------------------------
+// UBaseScreen centralized input
+
+void UConfirmDlg::HandleAccept()
+{
+    HandleApplyClicked();
+}
+
+void UConfirmDlg::HandleCancel()
+{
+    HandleCancelClicked();
+}
+
+// ---------------------------------------------------------------------
+// Click handlers
+
+void UConfirmDlg::HandleApplyClicked()
+{
+    if (Manager)
+    {
+        Manager->HideConfirmDlg();
+    }
+
+    OnConfirmed.Broadcast();
+}
+
+void UConfirmDlg::HandleCancelClicked()
+{
+    if (Manager)
+    {
+        Manager->HideConfirmDlg();
+    }
+
+    OnCanceled.Broadcast();
+}
+
+// ---------------------------------------------------------------------
+// Text API
 
 FString UConfirmDlg::GetTitle() const
 {
@@ -95,49 +129,25 @@ void UConfirmDlg::SetMessage(const FString& InMessage)
         lbl_message->SetText(FText::FromString(InMessage));
 }
 
-void UConfirmDlg::OnApplyClicked()
-{
-    // Classic behavior: manager->HideConfirmDlg(); then parent_control user event.
-    if (manager)
-    {
-        // Keep this callsite; implement in your MenuScreen port.
-        // manager->HideConfirmDlg();
-    }
-
-    OnConfirmed.Broadcast();
-}
-
-void UConfirmDlg::OnCancelClicked()
-{
-    if (manager)
-    {
-        // manager->HideConfirmDlg();
-    }
-
-    OnCanceled.Broadcast();
-}
-
-// --------------------------------------------------------------------
+// ---------------------------------------------------------------------
 // UBaseScreen overrides
-// --------------------------------------------------------------------
 
 void UConfirmDlg::BindFormWidgets()
 {
-    // Map FORM ids to widgets for legacy default application
-    BindButton(1, btn_apply);
-    BindButton(2, btn_cancel);
-    BindLabel(100, lbl_title);
-    BindLabel(101, lbl_message);
+    // FORM id -> widget mapping
+    if (btn_apply)  BindButton(1, btn_apply);
+    if (btn_cancel) BindButton(2, btn_cancel);
 
-    // Ensure centralized Enter/Escape uses these:
+    if (lbl_title)   BindLabel(100, lbl_title);
+    if (lbl_message) BindLabel(101, lbl_message);
+
+    // Ensure UBaseScreen uses these:
     ApplyButton = btn_apply;
     CancelButton = btn_cancel;
 }
 
 FString UConfirmDlg::GetLegacyFormText() const
 {
-    // Original ConfirmDlg.frm content, preserved verbatim (minus file header comments).
-    // NOTE: Your parser accepts optional commas; keep format stable.
     return TEXT(R"FORM(
 form: {
    rect:       (0,0,400,280)

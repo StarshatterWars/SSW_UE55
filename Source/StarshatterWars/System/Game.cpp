@@ -53,6 +53,8 @@ static int vkshiftbuf[MAX_KEY_BUF];
 static int vkins = 0;
 static int vkext = 0;
 
+// Emergency fallbacks (legacy behavior):
+
 Game::Game()
 {
 }

@@ -2,32 +2,38 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    Stars.exe
+    SUBSYSTEM:    Stars.exe (Unreal Port)
     FILE:         AudioDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
     UAudioDlg
-    - Unreal replacement for legacy AudDlg (FormWindow)
-    - Uses UBaseScreen for FORM-style ID binding + Enter/Escape handling
-    - Applies legacy .frm defaults via GetLegacyFormText()
+    - Unreal-native Audio Options dialog.
+    - Does NOT depend on legacy AudioSettings.h.
+    - Reads/writes UStarshatterAudioSettings (model).
+    - Routed through UOptionsScreen for tab switching + Apply/Cancel.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "GameScreen.h"
+
+// Needed for ESelectInfo::Type in UFUNCTION signature:
+#include "Components/ComboBoxString.h"
+
 #include "AudioDlg.generated.h"
 
-class UButton;
+// UMG:
 class USlider;
-class UTextBlock;
+class UButton;
+
+// Host/router:
+class UOptionsScreen;
+
+// Model:
+class UStarshatterAudioSettings;
 
 UCLASS()
 class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
@@ -37,88 +43,86 @@ class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
 public:
     UAudioDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Legacy API (maintained names):
-    virtual void RegisterControls();
-    virtual void Show();
-    virtual void ExecFrame(float DeltaTime);
+    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
+    UOptionsScreen* GetManager() const { return Manager; }
 
-    // Operations:
-    virtual void Apply();
-    virtual void Cancel();
+    // Legacy-ish surface (kept for compatibility with your routing):
+    void Show();
+    void ExecFrame(float DeltaTime);
 
-    // Legacy semantic handlers:
-    virtual void OnApply();
-    virtual void OnCancel();
-
-    virtual void OnAudio();
-    virtual void OnVideo();
-    virtual void OnOptions();
-    virtual void OnControls();
-
-    void SetManager(UGameScreen* InManager);
+    // Compatibility with old callsites:
+    void Apply();
+    void Cancel();
 
 protected:
-    // ------------------------------------------------------------
-    // UBaseScreen overrides
-    // ------------------------------------------------------------
-    virtual void BindFormWidgets() override;
-    virtual FString GetLegacyFormText() const override;
-
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-    // Centralized Enter/Escape from UBaseScreen:
+protected:
+    // UBaseScreen overrides:
+    virtual void BindFormWidgets() override {}
+    virtual FString GetLegacyFormText() const override { return FString(); }
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
-protected:
-    // ------------------------------------------------------------
-    // UMG click handlers (NO lambdas)
-    // ------------------------------------------------------------
-    UFUNCTION() void HandleApplyClicked();
-    UFUNCTION() void HandleCancelClicked();
-
-    UFUNCTION() void HandleAudioClicked();
-    UFUNCTION() void HandleVideoClicked();
-    UFUNCTION() void HandleOptionsClicked();
-    UFUNCTION() void HandleControlsClicked();
-
-protected:
-    // ------------------------------------------------------------
-    // Manager
-    // ------------------------------------------------------------
-    UGameScreen* Manager = nullptr;
-
-    // ------------------------------------------------------------
-    // Widgets (BindWidgetOptional; must match UMG widget names)
-    // ------------------------------------------------------------
-
-    // Title label (FORM id 10):
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TitleLabel = nullptr;
-
-    // Nav tab buttons (FORM ids 901..905):
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* vid_btn = nullptr; // 901
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* aud_btn = nullptr; // 902
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ctl_btn = nullptr; // 903
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* opt_btn = nullptr; // 904
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* mod_btn = nullptr; // 905
-
-    // Sliders (FORM ids 201..206):
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* efx_volume_slider = nullptr; // 201
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* gui_volume_slider = nullptr; // 202
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* wrn_volume_slider = nullptr; // 203
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* vox_volume_slider = nullptr; // 204
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* menu_music_slider = nullptr; // 205
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* game_music_slider = nullptr; // 206
-
-    // Apply/Cancel (FORM ids 1/2):
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr; // 1
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr; // 2
-
-protected:
-    bool bClosed = true;
+private:
+    // Model access:
+    UStarshatterAudioSettings* GetAudioSettings() const;
+    void RefreshFromModel();
+    void PushToModel(bool bApplyRuntimeToo);
 
 private:
-    void LoadFromConfig();
-    void SaveToConfig();
+    // Slider handlers:
+    UFUNCTION() void OnMasterVolumeChanged(float Value);
+    UFUNCTION() void OnMusicVolumeChanged(float Value);
+    UFUNCTION() void OnEffectsVolumeChanged(float Value);
+    UFUNCTION() void OnVoiceVolumeChanged(float Value);
+
+    // Combo handlers:
+    UFUNCTION() void OnSoundQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
+    // Buttons:
+    UFUNCTION() void OnApplyClicked();
+    UFUNCTION() void OnCancelClicked();
+
+    // Tabs:
+    UFUNCTION() void OnAudioClicked();
+    UFUNCTION() void OnVideoClicked();
+    UFUNCTION() void OnOptionsClicked();
+    UFUNCTION() void OnControlsClicked();
+    UFUNCTION() void OnModClicked();
+
+private:
+    UPROPERTY(Transient) TObjectPtr<UOptionsScreen> Manager = nullptr;
+
+    // UI state:
+    bool  bClosed = true;
+
+    float MasterVolume = 1.0f;
+    float MusicVolume = 1.0f;
+    float EffectsVolume = 1.0f;
+    float VoiceVolume = 1.0f;
+    int32 SoundQuality = 1;
+
+protected:
+    // ------------------------------------------------------------
+    // UMG bindings
+    // ------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* MasterSlider = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* MusicSlider = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* EffectsSlider = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* VoiceSlider = nullptr;
+
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* QualityCombo = nullptr;
+
+    // Apply / Cancel:
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+
+    // Tabs:
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;
 };

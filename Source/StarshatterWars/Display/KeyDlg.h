@@ -6,21 +6,18 @@
     FILE:         KeyDlg.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
     Key Binding dialog (legacy KeyDlg) adapted for Unreal UMG.
+
+    UPDATED ROUTING:
+    - KeyDlg now routes back to ControlOptionsDlg (NOT MenuScreen / OptionsScreen).
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "MenuScreen.h"
-
 
 // Minimal Unreal includes requested for headers:
 #include "Math/UnrealMathUtility.h"
@@ -28,11 +25,15 @@
 #include "Math/Color.h"
 
 #include "KeyDlg.generated.h"
+
 // ------------------------------------------------------------
 // Forward declarations
 // ------------------------------------------------------------
 class UButton;
 class UTextBlock;
+
+// UPDATED: manager is now the Control Options dialog
+class UControlOptionsDlg;
 
 // ------------------------------------------------------------
 
@@ -54,7 +55,8 @@ public:
     int  GetKeyMapIndex() const { return KeyIndex; }
     void SetKeyMapIndex(int i);
 
-    void SetManager(UMenuScreen* InManager);
+    // UPDATED:
+    void SetManager(UControlOptionsDlg* InManager);
 
 protected:
     UFUNCTION()
@@ -83,8 +85,9 @@ protected:
     UButton* ClearButton = nullptr;         // id 300
 
 protected:
-    // Manager screen:
-    UMenuScreen* Manager = nullptr;
+    // UPDATED manager type:
+    UPROPERTY(Transient)
+    TObjectPtr<UControlOptionsDlg> Manager = nullptr;
 
     // Legacy fields:
     int  KeyIndex = 0;

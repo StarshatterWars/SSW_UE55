@@ -19,6 +19,7 @@
 
 // +--------------------------------------------------------------------+
 
+
 class Camera
 {
 public:
@@ -48,6 +49,8 @@ public:
 	FVector        vpn() const { return FVector((float)orientation(2, 0), (float)orientation(2, 1), (float)orientation(2, 2)); }
 
 	const Matrix& Orientation() const { return orientation; }
+
+	static Camera* emergency_cam;
 
 protected:
 	FVector  pos;

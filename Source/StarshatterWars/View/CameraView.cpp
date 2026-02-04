@@ -39,8 +39,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogCameraView, Log, All);
 
 // --------------------------------------------------------------------
 // Emergency fallbacks (legacy behavior):
-static Camera  emergency_cam;
-static SimScene emergency_scene;
+static Camera  emergency_vcam;
+static SimScene emergency_vscene;
 
 CameraView* CameraView::camera_view = nullptr;
 
@@ -54,10 +54,10 @@ CameraView::CameraView(Screen* InScreen, int ax, int ay, int aw, int ah, Camera*
     , projection_type(Video::PROJECTION_PERSPECTIVE)
 {
     if (!camera)
-        camera = &emergency_cam;
+        camera = &emergency_vcam;
 
     if (!scene)
-        scene = &emergency_scene;
+        scene = &emergency_vscene;
 
     width = aw;
     height = ah;
@@ -110,7 +110,7 @@ const Matrix& CameraView::Orientation() const
 
 void CameraView::UseCamera(Camera* cam)
 {
-    camera = cam ? cam : &emergency_cam;
+    camera = cam ? cam : &emergency_vcam;
 
     if (Projector)
         Projector->UseCamera(camera);
@@ -118,7 +118,7 @@ void CameraView::UseCamera(Camera* cam)
 
 void CameraView::UseScene(SimScene* s)
 {
-    scene = s ? s : &emergency_scene;
+    scene = s ? s : &emergency_vscene;
 }
 
 void CameraView::SetFieldOfView(double fov)
@@ -218,7 +218,7 @@ void CameraView::FindDepth(Graphic* g)
 void CameraView::Refresh()
 {
     // Disabled / emergency camera:
-    if (camera == &emergency_cam)
+    if (camera == &emergency_vcam)
         return;
 
     video = Video::GetInstance();

@@ -12,8 +12,8 @@
 
     UNREAL PORT:
     - Converted from FormWindow/AWEvent mapping to UBaseScreen (UUserWidget-derived).
-    - Preserves original member names and intent where applicable.
-    - Replaces legacy ListBox with UListView using UObject rows.
+    - Routed under UOptionsScreen (NOT GameScreen / MenuScreen).
+    - JoyDlg + KeyDlg route through ControlOptionsDlg (child overlays).
 */
 
 #pragma once
@@ -32,11 +32,12 @@ class UCheckBox;
 
 // Starshatter fwd:
 class Starshatter;
-class KeyDlg;
 class Ship;
 
-// Your legacy manager types (ported):
-class BaseScreen;   // legacy concept (your UE manager may differ)
+// New routing:
+class UOptionsScreen;
+class UJoyDlg;
+class UKeyDlg;
 
 // ------------------------------------------------------------
 // Row object for the two-column command list
@@ -79,12 +80,29 @@ public:
     virtual void Show();
     virtual void ExecFrame();
 
-    // Operations (AWEvent -> UFUNCTION handlers):
+    // ----------------------------------------------------------------
+    // Manager (ONLY OptionsScreen)
+    // ----------------------------------------------------------------
+    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
+    UOptionsScreen* GetManager() const { return Manager; }
+
+    // ----------------------------------------------------------------
+    // Child overlays (Joy/Key) routed through THIS dialog
+    // ----------------------------------------------------------------
+    void ShowJoyDlg();
+    void ShowKeyDlg(int32 KeyMapIndex);
+
+    // ----------------------------------------------------------------
+    // Category buttons
+    // ----------------------------------------------------------------
     UFUNCTION() void OnCategory0();
     UFUNCTION() void OnCategory1();
     UFUNCTION() void OnCategory2();
     UFUNCTION() void OnCategory3();
 
+    // ----------------------------------------------------------------
+    // Combo handlers
+    // ----------------------------------------------------------------
     UFUNCTION() void OnControlModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnJoySelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
@@ -92,22 +110,30 @@ public:
     UFUNCTION() void OnJoyRudderChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnJoySensitivityChanged(float NormalizedValue);
-    UFUNCTION() void OnJoyAxis();
+    UFUNCTION() void OnJoyAxis(); // opens JoyDlg (child)
 
     UFUNCTION() void OnMouseSelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnMouseSensitivityChanged(float NormalizedValue);
     UFUNCTION() void OnMouseInvertChanged(bool bIsChecked);
 
-    UFUNCTION() void OnApply();
-    UFUNCTION() void OnCancel();
+    // ----------------------------------------------------------------
+    // Apply/Cancel buttons (route up to OptionsScreen)
+    // ----------------------------------------------------------------
+    UFUNCTION() void OnApplyClicked();
+    UFUNCTION() void OnCancelClicked();
 
-    UFUNCTION() void OnAudio();
-    UFUNCTION() void OnVideo();
-    UFUNCTION() void OnOptions();
-    UFUNCTION() void OnControls();
-    UFUNCTION() void OnMod();
+    // ----------------------------------------------------------------
+    // Tabs (route up to OptionsScreen)
+    // ----------------------------------------------------------------
+    UFUNCTION() void OnAudioClicked();
+    UFUNCTION() void OnVideoClicked();
+    UFUNCTION() void OnOptionsClicked();
+    UFUNCTION() void OnControlsClicked();
+    UFUNCTION() void OnModClicked();
 
-    // Legacy apply/cancel actions:
+    // ----------------------------------------------------------------
+    // Legacy apply/cancel actions (used by OptionsScreen::ApplyOptions)
+    // ----------------------------------------------------------------
     virtual void Apply();
     virtual void Cancel();
 
@@ -117,9 +143,8 @@ protected:
 
     void SelectCategory(int32 InCategory);
 
-    // ListView selection/double click handling:
+    // List selection handling:
     UFUNCTION() void HandleCommandSelectionChanged(UObject* SelectedItem);
-    void HandleCommandDoubleClick(int32 ActionIndex);
 
     // Helpers for slider integer mapping:
     static int32 SliderToInt(float Normalized, int32 MinV, int32 MaxV);
@@ -131,10 +156,6 @@ protected:
     // ----------------------------------------------------------------
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
-
-public:
-    // Manager (your UE “options screen” / base screen controlling dialogs):
-    UPROPERTY() UObject* manager = nullptr; // keep loose; cast to your actual manager type when used
 
 protected:
     // ----------------------------------------------------------------
@@ -152,19 +173,19 @@ protected:
 
     // Combos:
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* control_model_combo = nullptr; // 210
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* joy_select_combo = nullptr; // 211
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* joy_throttle_combo = nullptr; // 212
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* joy_rudder_combo = nullptr; // 213
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* mouse_select_combo = nullptr; // 511
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* joy_select_combo = nullptr;    // 211
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* joy_throttle_combo = nullptr;  // 212
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* joy_rudder_combo = nullptr;    // 213
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* mouse_select_combo = nullptr;  // 511
 
     // Sliders:
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* joy_sensitivity_slider = nullptr; // 214 (0..10)
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* joy_sensitivity_slider = nullptr;   // 214 (0..10)
     UPROPERTY(meta = (BindWidgetOptional)) USlider* mouse_sensitivity_slider = nullptr; // 514 (0..50)
 
     // Buttons:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* joy_axis_button = nullptr; // 215 Setup...
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* apply_btn = nullptr;       // 1
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* cancel_btn = nullptr;      // 2
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;        // 1
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;       // 2
 
     // Tabs (901-905):
     UPROPERTY(meta = (BindWidgetOptional)) UButton* vid_btn = nullptr; // 901
@@ -173,7 +194,7 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* opt_btn = nullptr; // 904
     UPROPERTY(meta = (BindWidgetOptional)) UButton* mod_btn = nullptr; // 905
 
-    // Mouse invert checkbox (515) – use a real checkbox:
+    // Mouse invert checkbox (515):
     UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* mouse_invert_checkbox = nullptr; // 515
 
 protected:
@@ -183,7 +204,7 @@ protected:
     Starshatter* stars = nullptr;
 
     int32 selected_category = 0;
-    int32 command_index = 0;
+    int32 command_index = -1;
 
     int32 control_model = 0;
 
@@ -196,11 +217,21 @@ protected:
     int32 mouse_sensitivity = 0;
     int32 mouse_invert = 0;
 
-    bool closed = true;
+    bool bClosed = true;
 
     // Double click timing (ported):
     double command_click_time_sec = 0.0;
 
     // Cached row list (to keep indices stable):
     UPROPERTY(Transient) TArray<TObjectPtr<UControlBindingRow>> CommandRows;
+
+protected:
+    // ----------------------------------------------------------------
+    // New routing state
+    // ----------------------------------------------------------------
+    UPROPERTY(Transient) TObjectPtr<UOptionsScreen> Manager = nullptr;
+
+    // Child dialogs (ONLY know about ControlOptionsDlg):
+    UPROPERTY(Transient) TObjectPtr<UJoyDlg> JoyDlg = nullptr;
+    UPROPERTY(Transient) TObjectPtr<UKeyDlg> KeyDlg = nullptr;
 };

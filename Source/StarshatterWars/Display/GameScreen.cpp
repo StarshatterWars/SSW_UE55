@@ -6,17 +6,13 @@
     FILE:         GameScreen.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
     UGameScreen
-    - UMG UserWidget replacement for legacy GameScreen.
-    - Spawns dialog widgets and manages visibility instead of Screen/Window/FormDef.
-    - Keeps legacy game logic/tick flow in ExecFrame/CloseTopmost.
+    - In-game HUD + overlays only (Nav/Eng/Flt).
+    - Options moved to MenuScreen/OptionsScreen.
 */
+
 #include "GameScreen.h"
 
 // UMG:
@@ -24,17 +20,10 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
-// Dialog widget headers (your actual paths):
+// Overlay widget headers:
 #include "NavDlg.h"
 #include "EngineeringDlg.h"
 #include "FlightOpsDlg.h"
-#include "ControlOptionsDlg.h"
-#include "KeyDlg.h"
-#include "JoyDlg.h"
-#include "AudioDlg.h"
-#include "VideoDlg.h"
-#include "OptDlg.h"
-#include "QuitView.h"   
 
 // Legacy:
 #include "Sim.h"
@@ -64,6 +53,7 @@ UGameScreen::UGameScreen(const FObjectInitializer& ObjectInitializer)
 void UGameScreen::NativeDestruct()
 {
     TearDown();
+
     if (GameScreenInstance == this)
         GameScreenInstance = nullptr;
 
@@ -72,8 +62,11 @@ void UGameScreen::NativeDestruct()
 
 void UGameScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
+    Super::NativeTick(MyGeometry, InDeltaTime);
     ExecFrame(InDeltaTime);
 }
+
+// ------------------------------------------------------------
 
 UUserWidget* UGameScreen::MakeDlg(TSubclassOf<UUserWidget> Class, int32 ZOrder)
 {
@@ -107,7 +100,12 @@ bool UGameScreen::IsDlgVisible(const UUserWidget* W) const
     return W && W->GetVisibility() == ESlateVisibility::Visible;
 }
 
-// +--------------------------------------------------------------------+
+bool UGameScreen::IsOverlayShown() const
+{
+    return IsDlgVisible(NavDlg) || IsDlgVisible(EngDlg) || IsDlgVisible(FltDlg);
+}
+
+// ------------------------------------------------------------
 
 void UGameScreen::Setup()
 {
@@ -117,18 +115,13 @@ void UGameScreen::Setup()
     cam_dir = CameraManager::GetInstance();
     disp_view = DisplayView::GetInstance();
 
-    // Create dialogs (ZOrder: keep Quit highest/top-most):
+    // Spawn overlays:
     NavDlg = Cast<UNavDlg>(MakeDlg(NavDlgClass, 40));
     EngDlg = Cast<UEngineeringDlg>(MakeDlg(EngDlgClass, 40));
     FltDlg = Cast<UFlightOpsDlg>(MakeDlg(FltDlgClass, 40));
-    CtlDlg = Cast<UControlOptionsDlg>(MakeDlg(CtlDlgClass, 50));
-    KeyDlg = Cast<UKeyDlg>(MakeDlg(KeyDlgClass, 60));
-    JoyDlg = Cast<UJoyDlg>(MakeDlg(JoyDlgClass, 60));
-    AudioDlg = Cast<UAudioDlg>(MakeDlg(AudioDlgClass, 70));
-    VidDlg = Cast<UVideoDlg>(MakeDlg(VidDlgClass, 70));
-    OptDlg = Cast<UOptDlg>(MakeDlg(OptDlgClass, 70));
 
-    HideAll();
+    HideAllOverlays();
+
     bIsShown = false;
 }
 
@@ -145,17 +138,11 @@ void UGameScreen::TearDown()
 
     UUserWidget* W = nullptr;
 
-    W = NavDlg;   Kill(W); NavDlg = nullptr;
-    W = EngDlg;   Kill(W); EngDlg = nullptr;
-    W = FltDlg;   Kill(W); FltDlg = nullptr;
-    W = CtlDlg;   Kill(W); CtlDlg = nullptr;
-    W = KeyDlg;   Kill(W); KeyDlg = nullptr;
-    W = JoyDlg;   Kill(W); JoyDlg = nullptr;
-    W = AudioDlg; Kill(W); AudioDlg = nullptr;
-    W = VidDlg;   Kill(W); VidDlg = nullptr;
-    W = OptDlg;   Kill(W); OptDlg = nullptr;
+    W = NavDlg; Kill(W); NavDlg = nullptr;
+    W = EngDlg; Kill(W); EngDlg = nullptr;
+    W = FltDlg; Kill(W); FltDlg = nullptr;
 
-    // legacy pointers are not owned here; just clear:
+    // Clear raw legacy pointers (not owned here):
     sim = nullptr;
     cam_dir = nullptr;
     disp_view = nullptr;
@@ -164,17 +151,15 @@ void UGameScreen::TearDown()
     bIsShown = false;
 }
 
+// ------------------------------------------------------------
+
 void UGameScreen::Show()
 {
     if (bIsShown)
         return;
 
     bIsShown = true;
-
-    // In UMG, "show" usually means make root visible:
     SetVisibility(ESlateVisibility::Visible);
-
-    // Your legacy logic that was tied to Screen/Window attach would go here if needed.
 }
 
 void UGameScreen::Hide()
@@ -182,7 +167,7 @@ void UGameScreen::Hide()
     if (!bIsShown)
         return;
 
-    HideAll();
+    HideAllOverlays();
 
     // Stop HUD alert sound (legacy parity):
     HUDSounds::StopSound(HUDSounds::SND_RED_ALERT);
@@ -191,34 +176,16 @@ void UGameScreen::Hide()
     bIsShown = false;
 }
 
-void UGameScreen::HideAll()
+void UGameScreen::HideAllOverlays()
 {
     SetDlgVisible(NavDlg, false);
     SetDlgVisible(EngDlg, false);
     SetDlgVisible(FltDlg, false);
-    SetDlgVisible(CtlDlg, false);
-    SetDlgVisible(KeyDlg, false);
-    SetDlgVisible(JoyDlg, false);
-    SetDlgVisible(AudioDlg, false);
-    SetDlgVisible(VidDlg, false);
-    SetDlgVisible(OptDlg, false);
 }
 
-bool UGameScreen::IsFormShown() const
-{
-    return IsDlgVisible(NavDlg) ||
-        IsDlgVisible(EngDlg) ||
-        IsDlgVisible(FltDlg) ||
-        IsDlgVisible(AudioDlg) ||
-        IsDlgVisible(VidDlg) ||
-        IsDlgVisible(OptDlg) ||
-        IsDlgVisible(CtlDlg) ||
-        IsDlgVisible(KeyDlg) ||
-        IsDlgVisible(JoyDlg);
-}
-
-// +--------------------------------------------------------------------+
-// Dialog show/hide conversions (no Screen/Window; visibility only)
+// ------------------------------------------------------------
+// Nav / Eng / Flt overlays
+// ------------------------------------------------------------
 
 void UGameScreen::ShowNavDlg()
 {
@@ -227,13 +194,11 @@ void UGameScreen::ShowNavDlg()
 
     if (!IsDlgVisible(NavDlg))
     {
-        HideAll();
+        HideAllOverlays();
 
-        // Preserve legacy "assign data then show":
         sim = Sim::GetSim();
         if (sim)
         {
-            // If your UNavDlg keeps legacy-style setters:
             NavDlg->SetSystem(sim->GetStarSystem());
             NavDlg->SetShip(sim->GetPlayerShip());
         }
@@ -249,20 +214,16 @@ void UGameScreen::ShowNavDlg()
 
 void UGameScreen::HideNavDlg()
 {
-    if (!NavDlg)
-        return;
-
-    if (IsDlgVisible(NavDlg))
+    if (NavDlg && IsDlgVisible(NavDlg))
     {
         SetDlgVisible(NavDlg, false);
         Starshatter::GetInstance()->Pause(false);
     }
 }
 
-bool UGameScreen::IsNavShown() const
-{
-    return IsDlgVisible(NavDlg);
-}
+bool UGameScreen::IsNavShown() const { return IsDlgVisible(NavDlg); }
+
+// ------------------------------------------------------------
 
 void UGameScreen::ShowEngDlg()
 {
@@ -271,7 +232,7 @@ void UGameScreen::ShowEngDlg()
 
     if (!IsDlgVisible(EngDlg))
     {
-        HideAll();
+        HideAllOverlays();
 
         sim = Sim::GetSim();
         if (sim)
@@ -295,10 +256,9 @@ void UGameScreen::HideEngDlg()
     }
 }
 
-bool UGameScreen::IsEngShown() const
-{
-    return IsDlgVisible(EngDlg);
-}
+bool UGameScreen::IsEngShown() const { return IsDlgVisible(EngDlg); }
+
+// ------------------------------------------------------------
 
 void UGameScreen::ShowFltDlg()
 {
@@ -307,7 +267,7 @@ void UGameScreen::ShowFltDlg()
 
     if (!IsDlgVisible(FltDlg))
     {
-        HideAll();
+        HideAllOverlays();
 
         sim = Sim::GetSim();
         if (sim)
@@ -331,193 +291,46 @@ void UGameScreen::HideFltDlg()
     }
 }
 
-bool UGameScreen::IsFltShown() const
+bool UGameScreen::IsFltShown() const { return IsDlgVisible(FltDlg); }
+
+// ------------------------------------------------------------
+// Weapons overlay (WepView overlay mode)
+// ------------------------------------------------------------
+
+void UGameScreen::ShowWeaponsOverlay()
 {
-    return IsDlgVisible(FltDlg);
+    if (wep_view)
+        wep_view->CycleOverlayMode();
 }
 
-void UGameScreen::ShowWepDlg()
-{
-if (wep_view)
-       wep_view->CycleOverlayMode();
-}
-
-void
-UGameScreen::HideWepDlg()
+void UGameScreen::HideWeaponsOverlay()
 {
     if (wep_view)
         wep_view->SetOverlayMode(0);
 }
 
-void UGameScreen::ShowCtlDlg()
+// ------------------------------------------------------------
+// CloseTopmost
+// ------------------------------------------------------------
+
+bool UGameScreen::CloseTopmost()
 {
-    if (!CtlDlg)
-        return;;
+    if (NavDlg && IsDlgVisible(NavDlg)) { HideNavDlg(); return true; }
+    if (EngDlg && IsDlgVisible(EngDlg)) { HideEngDlg(); return true; }
+    if (FltDlg && IsDlgVisible(FltDlg)) { HideFltDlg(); return true; }
 
-    HideAll();
+    // Menu views (legacy):
+    if (quantum_view && quantum_view->IsMenuShown()) { quantum_view->CloseMenu(); return true; }
+    if (radio_view && radio_view->IsMenuShown()) { radio_view->CloseMenu();   return true; }
 
-    SetDlgVisible(CtlDlg, true);
-    Starshatter::GetInstance()->Pause(true);
+    return false;
 }
 
-void UGameScreen::HideCtlDlg()
-{
-    if (CtlDlg && IsDlgVisible(CtlDlg))
-    {
-        SetDlgVisible(CtlDlg, false);
-        Starshatter::GetInstance()->Pause(false);
-    }
-}
+// ------------------------------------------------------------
+// Camera/HUD helpers
+// ------------------------------------------------------------
 
-bool UGameScreen::IsCtlShown() const
-{
-    return IsDlgVisible(CtlDlg);
-}
-
-void UGameScreen::ShowKeyDlg()
-{
-    if (!KeyDlg)
-        return;
-
-    HideAll();
-
-    // Legacy: show control dlg under key dlg:
-    if (CtlDlg)
-        SetDlgVisible(CtlDlg, true);
-
-    SetDlgVisible(KeyDlg, true);
-    Starshatter::GetInstance()->Pause(true);
-}
-
-bool UGameScreen::IsKeyShown() const
-{
-    return IsDlgVisible(KeyDlg);
-}
-
-void UGameScreen::ShowJoyDlg()
-{
-    if (!JoyDlg)
-        return;
-
-    HideAll();
-
-    // Legacy: show control dlg under joy dlg:
-    if (CtlDlg)
-        SetDlgVisible(CtlDlg, true);
-
-    SetDlgVisible(JoyDlg, true);
-    Starshatter::GetInstance()->Pause(true);
-}
-
-bool UGameScreen::IsJoyShown() const
-{
-    return IsDlgVisible(JoyDlg);
-}
-
-void UGameScreen::ShowAudDlg()
-{
-    if (!AudioDlg)
-        return;
-
-    HideAll();
-    SetDlgVisible(AudioDlg, true);
-    Starshatter::GetInstance()->Pause(true);
-}
-
-void UGameScreen::HideAudDlg()
-{
-    if (AudioDlg && IsDlgVisible(AudioDlg))
-    {
-        SetDlgVisible(AudioDlg, false);
-        Starshatter::GetInstance()->Pause(false);
-    }
-}
-
-bool UGameScreen::IsAudShown() const
-{
-    return IsDlgVisible(AudioDlg);
-}
-
-void UGameScreen::ShowVidDlg()
-{
-    if (!VidDlg)
-        return;
-
-    HideAll();
-    SetDlgVisible(VidDlg, true);
-    Starshatter::GetInstance()->Pause(true);
-}
-
-void UGameScreen::HideVidDlg()
-{
-    if (VidDlg && IsDlgVisible(VidDlg))
-    {
-        SetDlgVisible(VidDlg, false);
-        Starshatter::GetInstance()->Pause(false);
-    }
-}
-
-bool UGameScreen::IsVidShown() const
-{
-    return IsDlgVisible(VidDlg);
-}
-
-void UGameScreen::ShowOptDlg()
-{
-    if (!OptDlg)
-        return;
-
-    HideAll();
-    SetDlgVisible(OptDlg, true);
-    Starshatter::GetInstance()->Pause(true);
-}
-
-void UGameScreen::HideOptDlg()
-{
-    if (OptDlg && IsDlgVisible(OptDlg))
-    {
-        SetDlgVisible(OptDlg, false);
-        Starshatter::GetInstance()->Pause(false);
-    }
-}
-
-bool UGameScreen::IsOptShown() const
-{
-    return IsDlgVisible(OptDlg);
-}
-
-// +--------------------------------------------------------------------+
-// Options apply/cancel (keep same logic; call into widget methods)
-
-void UGameScreen::ApplyOptions()
-{
-    if (CtlDlg)   CtlDlg->Apply();
-    if (OptDlg)   OptDlg->Apply();
-    if (AudioDlg) AudioDlg->Apply();
-    if (VidDlg)   VidDlg->ApplySettings();
-
-    HideAll();
-    Starshatter::GetInstance()->Pause(false);
-}
-
-void UGameScreen::CancelOptions()
-{
-    if (CtlDlg)   CtlDlg->Cancel();
-    if (OptDlg)   OptDlg->Cancel();
-    if (AudioDlg) AudioDlg->Cancel();
-    if (VidDlg)   VidDlg->CancelSettings();
-
-    HideAll();
-    Starshatter::GetInstance()->Pause(false);
-}
-
-// +--------------------------------------------------------------------+
-// Legacy camera/hud helpers
-
-void UGameScreen::FrameRate(double F)
-{
-    frame_rate = F;
-}
+void UGameScreen::FrameRate(double F) { frame_rate = F; }
 
 void UGameScreen::SetFieldOfView(double Fov)
 {
@@ -530,32 +343,14 @@ double UGameScreen::GetFieldOfView() const
     return cam_view ? cam_view->GetFieldOfView() : 0.0;
 }
 
-void UGameScreen::CycleMFDMode(int Mfd)
-{
-    if (hud_view)
-        hud_view->CycleMFDMode(Mfd);
-}
+void UGameScreen::CycleMFDMode(int Mfd) { if (hud_view) hud_view->CycleMFDMode(Mfd); }
+void UGameScreen::CycleHUDMode() { if (hud_view) hud_view->CycleHUDMode(); }
+void UGameScreen::CycleHUDColor() { if (hud_view) hud_view->CycleHUDColor(); }
+void UGameScreen::CycleHUDWarn() { if (hud_view) hud_view->CycleHUDWarn(); }
 
-void UGameScreen::CycleHUDMode()
-{
-    if (hud_view)
-        hud_view->CycleHUDMode();
-}
-
-void UGameScreen::CycleHUDColor()
-{
-    if (hud_view)
-        hud_view->CycleHUDColor();
-}
-
-void UGameScreen::CycleHUDWarn()
-{
-    if (hud_view)
-        hud_view->CycleHUDWarn();
-}
-
-// +--------------------------------------------------------------------+
-// ExecFrame: preserve your legacy logic (dialogs tick themselves; views tick when not blocked)
+// ------------------------------------------------------------
+// ExecFrame
+// ------------------------------------------------------------
 
 void UGameScreen::ExecFrame(float DeltaTime)
 {
@@ -567,8 +362,7 @@ void UGameScreen::ExecFrame(float DeltaTime)
     if (!player)
         return;
 
-    bool bDialogShowing =
-        IsFormShown();
+    const bool bOverlayShowing = IsOverlayShown();
 
     // HUD always updates:
     if (hud_view)
@@ -577,7 +371,7 @@ void UGameScreen::ExecFrame(float DeltaTime)
         hud_view->ExecFrame();
     }
 
-    // Dialog ticks (UMG-style):
+    // Overlay ticks:
     if (NavDlg && IsDlgVisible(NavDlg))
     {
         NavDlg->SetShip(player);
@@ -596,26 +390,8 @@ void UGameScreen::ExecFrame(float DeltaTime)
         FltDlg->ExecFrame();
     }
 
-    if (AudioDlg && IsDlgVisible(AudioDlg))
-        AudioDlg->ExecFrame(DeltaTime);
-
-    if (VidDlg && IsDlgVisible(VidDlg))
-        VidDlg->ExecFrame(DeltaTime);
-
-    if (OptDlg && IsDlgVisible(OptDlg))
-        //OptDlg->ExecFrame();
-
-    if (CtlDlg && IsDlgVisible(CtlDlg))
-        CtlDlg->ExecFrame();
-
-    if (KeyDlg && IsDlgVisible(KeyDlg))
-        KeyDlg->ExecFrame();
-
-    if (JoyDlg && IsDlgVisible(JoyDlg))
-        JoyDlg->ExecFrame();
-
-    // Only run these when no dialog is blocking:
-    if (!bDialogShowing)
+    // Only run these when no overlay is blocking:
+    if (!bOverlayShowing)
     {
         if (quantum_view) quantum_view->ExecFrame();
         if (radio_view)   radio_view->ExecFrame();
@@ -627,50 +403,19 @@ void UGameScreen::ExecFrame(float DeltaTime)
         disp_view->ExecFrame();
 }
 
-// +--------------------------------------------------------------------+
-
-bool UGameScreen::CloseTopmost()
-{
-    // Keep close priority similar to legacy:
-    if (NavDlg && IsDlgVisible(NavDlg)) { HideNavDlg(); return true; }
-    if (EngDlg && IsDlgVisible(EngDlg)) { HideEngDlg(); return true; }
-    if (FltDlg && IsDlgVisible(FltDlg)) { HideFltDlg(); return true; }
-
-    if (KeyDlg && IsDlgVisible(KeyDlg)) { ShowCtlDlg(); return true; }
-    if (JoyDlg && IsDlgVisible(JoyDlg)) { ShowCtlDlg(); return true; }
-
-    if (AudioDlg && IsDlgVisible(AudioDlg)) { CancelOptions(); return true; }
-    if (VidDlg && IsDlgVisible(VidDlg)) { CancelOptions(); return true; }
-    if (OptDlg && IsDlgVisible(OptDlg)) { CancelOptions(); return true; }
-    if (CtlDlg && IsDlgVisible(CtlDlg)) { CancelOptions(); return true; }
-
-    // Menu views:
-    if (quantum_view && quantum_view->IsMenuShown()) { quantum_view->CloseMenu(); return true; }
-    if (radio_view && radio_view->IsMenuShown()) { radio_view->CloseMenu();   return true; }
-
-    return false;
-}
+// ------------------------------------------------------------
+// External/Internal view toggles
+// ------------------------------------------------------------
 
 void UGameScreen::ShowExternal()
 {
     bExternalVisible = true;
-
-    // If your UI has panels, toggle them here (safe even if not implemented yet).
-    // Example:
-    // if (ExternalRoot) { ExternalRoot->SetVisibility(ESlateVisibility::Visible); }
-    // if (InternalRoot) { InternalRoot->SetVisibility(ESlateVisibility::Collapsed); }
-
     ApplyInputModeForScreen(true);
 }
 
 void UGameScreen::ShowInternal()
 {
     bExternalVisible = false;
-
-    // Example:
-    // if (ExternalRoot) { ExternalRoot->SetVisibility(ESlateVisibility::Collapsed); }
-    // if (InternalRoot) { InternalRoot->SetVisibility(ESlateVisibility::Visible); }
-
     ApplyInputModeForScreen(false);
 }
 
@@ -680,7 +425,6 @@ void UGameScreen::ApplyInputModeForScreen(bool bExternal)
     if (!PC)
         return;
 
-    // External view often behaved like "UI focus + mouse cursor".
     if (bExternal)
     {
         FInputModeGameAndUI Mode;
@@ -696,8 +440,3 @@ void UGameScreen::ApplyInputModeForScreen(bool bExternal)
         PC->bShowMouseCursor = false;
     }
 }
-
-
-
-
-

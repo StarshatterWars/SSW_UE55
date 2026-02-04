@@ -8,11 +8,10 @@
 
     OVERVIEW
     ========
-    UMenuScreen (C++ ONLY)
-    - Unreal replacement for legacy MenuScreen.
-    - Inherits from UBaseScreen.
-    - Owns dialog widgets as standard raw pointers (no TObjectPtr, no Transient UPROPERTY).
-    - Enter/Escape handled by UBaseScreen::NativeOnKeyDown -> HandleAccept/HandleCancel.
+    UMenuScreen (simplified)
+    - Owns top-level menu dialogs + mission editor dialogs.
+    - Owns a single UOptionsScreen that manages ALL options subdialogs (Audio/Video/Controls/etc).
+    - MenuScreen no longer knows about UAudioDlg/UVideoDlg/UOptDlg/UControlOptionsDlg/etc.
 */
 
 #pragma once
@@ -21,14 +20,8 @@
 #include "BaseScreen.h"
 #include "MenuScreen.generated.h"
 
-// Dialog forward declares (all should inherit from UBaseScreen)
+// Top-level dialogs:
 class UMenuDlg;
-class UAudioDlg;
-class UVideoDlg;
-class UOptDlg;
-class UControlOptionsDlg;
-class UJoyDlg;
-class UKeyDlg;
 class UExitDlg;
 class UConfirmDlg;
 
@@ -47,6 +40,9 @@ class UMissionEditorNavDlg;
 class ULoadDlg;
 class UTacRefDlg;
 
+// NEW: Options hub (manager of all option subdialogs)
+class UOptionsScreen;
+
 UCLASS()
 class STARSHATTERWARS_API UMenuScreen : public UBaseScreen
 {
@@ -55,7 +51,6 @@ class STARSHATTERWARS_API UMenuScreen : public UBaseScreen
 public:
     UMenuScreen(const FObjectInitializer& ObjectInitializer);
 
-    // Setup / teardown
     void Setup();
     void TearDown();
 
@@ -67,10 +62,15 @@ public:
 
     virtual void ExecFrame(float DeltaTime);
 
-    // Dialog routing
+    // ------------------------------------------------------------
+    // Primary routing
+    // ------------------------------------------------------------
+
     void ShowMenuDlg();
+
     void ShowCampaignSelectDlg();
     void ShowMissionSelectDlg();
+
     void ShowMissionEditorDlg();
 
     void ShowMsnElemDlg();
@@ -88,13 +88,6 @@ public:
     void ShowTacRefDlg();
     void ShowAwardDlg();
 
-    void ShowAudDlg();
-    void ShowVidDlg();
-    void ShowOptDlg();
-    void ShowCtlDlg();
-    void ShowJoyDlg();
-    void ShowKeyDlg();
-
     void ShowExitDlg();
 
     void ShowConfirmDlg();
@@ -103,27 +96,33 @@ public:
     void ShowLoadDlg();
     void HideLoadDlg();
 
-    void ApplyOptions();
-    void CancelOptions();
+    // ------------------------------------------------------------
+    // Options hub (single entry point)
+    // ------------------------------------------------------------
+    void ShowOptionsScreen();
+    void HideOptionsScreen();
 
-    // Getters
-    UMissionEditorDlg*      GetMsnEditDlg()  const { return MsnEditDlg; }
-    UMissionElementDlg*     GetMsnElemDlg()  const { return MsnElemDlg; }
-    UMissionEventDlg*       GetMsnEventDlg() const { return MsnEventDlg; }
-    UMissionEditorNavDlg*   GetNavDlg()      const { return MsnEditNavDlg; }
-    ULoadDlg*               GetLoadDlg()     const { return LoadDlg; }
+    // Optional: if OptionsScreen wants to return to menu:
+    void ReturnFromOptions();
+
+    // ------------------------------------------------------------
+    // Getters (used by other UI)
+    // ------------------------------------------------------------
+    UMissionEditorDlg* GetMsnEditDlg()  const { return MsnEditDlg; }
+    UMissionElementDlg* GetMsnElemDlg()  const { return MsnElemDlg; }
+    UMissionEventDlg* GetMsnEventDlg() const { return MsnEventDlg; }
+    UMissionEditorNavDlg* GetNavDlg()      const { return MsnEditNavDlg; }
+    ULoadDlg* GetLoadDlg()     const { return LoadDlg; }
 
 protected:
     virtual void NativeConstruct() override;
 
-    // BaseScreen dialog hooks
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
 private:
     void HideAll();
 
-    // “Topmost” via viewport Z-order
     void ShowDialog(UBaseScreen* Dialog, bool bTopMost);
     void HideDialog(UBaseScreen* Dialog);
 
@@ -131,15 +130,9 @@ private:
     TDialog* EnsureDialog(TSubclassOf<UBaseScreen> ClassToSpawn, TDialog*& Storage);
 
 private:
-    // Spawn classes (set in defaults or constructor)
+    // Spawn classes
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MenuDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ExitDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> AudDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> VidDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> OptDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> CtlDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> JoyDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> KeyDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ConfirmDlgClass;
 
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> FirstTimeDlgClass;
@@ -148,8 +141,6 @@ private:
 
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnSelectDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> CmpSelectDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ModDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ModInfoDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEditDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnElemDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEventDlgClass;
@@ -158,16 +149,13 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> LoadDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> TacRefDlgClass;
 
+    // NEW: Options hub class
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> OptionsScreenClass;
+
 private:
-    // Instances (standard raw pointers, NOT UPROPERTY, NOT TObjectPtr)
+    // Instances (raw pointers; rooted)
     UMenuDlg* MenuDlg = nullptr;
     UExitDlg* ExitDlg = nullptr;
-    UAudioDlg* AudDlg = nullptr;
-    UVideoDlg* VidDlg = nullptr;
-    UOptDlg* OptDlg = nullptr;
-    UControlOptionsDlg* CtlDlg = nullptr;
-    UJoyDlg* JoyDlg = nullptr;
-    UKeyDlg* KeyDlg = nullptr;
     UConfirmDlg* ConfirmDlg = nullptr;
 
     UFirstTimeDlg* FirstTimeDlg = nullptr;
@@ -176,6 +164,7 @@ private:
 
     UMissionSelectDlg* MissionSelectDlg = nullptr;
     UCampaignSelectDlg* CmpSelectDlg = nullptr;
+
     UMissionEditorDlg* MsnEditDlg = nullptr;
     UMissionElementDlg* MsnElemDlg = nullptr;
     UMissionEventDlg* MsnEventDlg = nullptr;
@@ -184,6 +173,10 @@ private:
     ULoadDlg* LoadDlg = nullptr;
     UTacRefDlg* TacRefDlg = nullptr;
 
+    // NEW: Options hub instance
+    UOptionsScreen* OptionsScreen = nullptr;
+
+    // Tracks active “front-most” dialog:
     UBaseScreen* CurrentDialog = nullptr;
 
     bool  bIsShown = false;

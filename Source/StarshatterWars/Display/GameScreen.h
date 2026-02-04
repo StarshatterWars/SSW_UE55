@@ -6,38 +6,29 @@
     FILE:         GameScreen.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
     UGameScreen
-    - Unreal port of legacy GameScreen.
+    - Unreal port of legacy GameScreen (IN-GAME HUD/OVERLAYS ONLY).
     - Implemented as a UMG UserWidget (inherits from UBaseScreen).
-    - Owns and spawns all in-game dialog widgets (Nav/Eng/Flt/Ctl/Key/Joy/Audio/Vid/Opt/Quit).
-    - Preserves legacy game logic flow (ExecFrame, CloseTopmost, Show/Hide, option apply/cancel).
-    - Legacy "views" (HUD/Wep/Quantum/Radio/Tactical) remain pure C++ systems and are ticked from ExecFrame.
+    - Owns only in-game overlays (Nav/Eng/Flt/Wep) that belong to the gameplay screen.
+    - DOES NOT own Options dialogs anymore (Audio/Video/Opt/Ctl/Key/Joy).
+      Those are managed by MenuScreen -> OptionsScreen -> sub-dialogs.
+    - Legacy "views" (HUD/Wep/Quantum/Radio/Tactical/etc.) remain pure C++ and are ticked from ExecFrame.
 */
+
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseScreen.h"   
+#include "BaseScreen.h"
 #include "CameraView.h"
 #include "GameScreen.generated.h"
 
-// Forward declares (UMG dialogs):
+// Forward declares (UMG overlays owned by GameScreen):
 class UNavDlg;
 class UEngineeringDlg;
 class UFlightOpsDlg;
-class UControlOptionsDlg;
-class UJoyDlg;
-class UKeyDlg;
 class UWepDlg;
-class UAudioDlg;
-class UVideoDlg;
-class UOptDlg;
-class QuitView;
 
 // Legacy systems (raw classes):
 class Sim;
@@ -48,12 +39,11 @@ class DisplayView;
 class HUDView;
 class WepView;
 class QuantumView;
-class CameraView;
 class RadioView;
 class TacticalView;
+class CameraView;
 class Bitmap;
 class DataLoader;
-class SystemFont;
 
 UCLASS()
 class STARSHATTERWARS_API UGameScreen : public UBaseScreen
@@ -63,7 +53,7 @@ class STARSHATTERWARS_API UGameScreen : public UBaseScreen
 public:
     UGameScreen(const FObjectInitializer& ObjectInitializer);
 
-    // Lifecycle (UE-style):
+    // Lifecycle:
     UFUNCTION() void Setup();
     UFUNCTION() void TearDown();
 
@@ -73,9 +63,8 @@ public:
     UFUNCTION() void Hide();
 
     UFUNCTION() bool IsShown() const { return bIsShown; }
-    UFUNCTION() bool IsFormShown() const;
 
-    // Dialog show/hide:
+    // Overlay show/hide:
     UFUNCTION() void ShowNavDlg();
     UFUNCTION() void HideNavDlg();
     UFUNCTION() bool IsNavShown() const;
@@ -88,41 +77,12 @@ public:
     UFUNCTION() void HideFltDlg();
     UFUNCTION() bool IsFltShown() const;
 
-    UFUNCTION() void ShowWepDlg();
-    UFUNCTION() void HideWepDlg();
-    UFUNCTION() bool IsWepShown() const;
-
-    UFUNCTION() void ShowCtlDlg();
-    UFUNCTION() void HideCtlDlg();
-    UFUNCTION() bool IsCtlShown() const;
-
-    UFUNCTION() void ShowKeyDlg();
-    UFUNCTION() bool IsKeyShown() const;
-
-    UFUNCTION() void ShowJoyDlg();
-    UFUNCTION() bool IsJoyShown() const;
-
-    UFUNCTION() void ShowAudDlg();
-    UFUNCTION() void HideAudDlg();
-    UFUNCTION() bool IsAudShown() const;
-
-    UFUNCTION() void ShowVidDlg();
-    UFUNCTION() void HideVidDlg();
-    UFUNCTION() bool IsVidShown() const;
-
-    UFUNCTION() void ShowOptDlg();
-    UFUNCTION() void HideOptDlg();
-    UFUNCTION() bool IsOptShown() const;
-
-    UFUNCTION() void ApplyOptions();
-    UFUNCTION() void CancelOptions();
-
+    // Weapons overlay (tied to WepView overlay mode):
     UFUNCTION() virtual void ShowWeaponsOverlay();
     UFUNCTION() virtual void HideWeaponsOverlay();
 
     // Legacy ops:
-    
-    void SetFieldOfView(double Fov);
+    void   SetFieldOfView(double Fov);
     double GetFieldOfView() const;
 
     void CycleMFDMode(int Mfd);
@@ -133,27 +93,15 @@ public:
     void FrameRate(double F);
     void ExecFrame(float DeltaTime);
 
-    // Legacy-compat entry points:
-    UFUNCTION()
-    void ShowExternal();
+    // External/Internal camera panel toggles (if you still use these in HUD):
+    UFUNCTION() void ShowExternal();
+    UFUNCTION() void ShowInternal();
+    UFUNCTION() bool IsExternalVisible() const { return bExternalVisible; }
 
-    UFUNCTION()
-    void ShowInternal();
-
-    UFUNCTION()
-    bool IsExternalVisible() const { return bExternalVisible; }
-
-    // Accessors (keep raw pointers):
-    UNavDlg* GetNavDlg()   const { return NavDlg; }
-    UEngineeringDlg*    GetEngDlg()   const { return EngDlg; }
-    UFlightOpsDlg*      GetFltDlg()   const { return FltDlg; }
-    UControlOptionsDlg* GetCtlDlg()   const { return CtlDlg; }
-    UKeyDlg* GetKeyDlg()   const { return KeyDlg; }
-    UJoyDlg* GetJoyDlg()   const { return JoyDlg; }
-    UAudioDlg* GetAudioDlg() const { return AudioDlg; }
-    UVideoDlg* GetVidDlg()   const { return VidDlg; }
-    UOptDlg* GetOptDlg()   const { return OptDlg; }
-    QuitView* GetQuitView() const { return QuitViewClass; }
+    // Accessors:
+    UNavDlg* GetNavDlg() const { return NavDlg; }
+    UEngineeringDlg* GetEngDlg() const { return EngDlg; }
+    UFlightOpsDlg* GetFltDlg() const { return FltDlg; }
 
     static UGameScreen* GetInstance() { return GameScreenInstance; }
 
@@ -164,36 +112,26 @@ protected:
 private:
     UUserWidget* MakeDlg(TSubclassOf<UUserWidget> Class, int32 ZOrder);
 
-    void HideAll();
+    void HideAllOverlays();
     void SetDlgVisible(UUserWidget* W, bool bVisible) const;
     bool IsDlgVisible(const UUserWidget* W) const;
 
+    bool IsOverlayShown() const;
+
+    void ApplyInputModeForScreen(bool bExternal);
+
 private:
-    // Spawnable widget classes (assign in defaults or BP):
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UNavDlg>   NavDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UEngineeringDlg>   EngDlgClass;
+    // Spawnable widget classes (assign in defaults/BP):
+    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UNavDlg>         NavDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UEngineeringDlg> EngDlgClass;
     UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UFlightOpsDlg>   FltDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UControlOptionsDlg>   CtlDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UKeyDlg>   KeyDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UJoyDlg>   JoyDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UAudioDlg> AudioDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UVideoDlg>   VidDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes") TSubclassOf<UOptDlg>   OptDlgClass;
-    QuitView*   QuitViewClass;
 
-    // Spawned dialog instances:
+    // Spawned overlay instances:
     UNavDlg* NavDlg = nullptr;
-    UEngineeringDlg*    EngDlg = nullptr;
-    UFlightOpsDlg*      FltDlg = nullptr;
-    UControlOptionsDlg* CtlDlg = nullptr;
-    UKeyDlg* KeyDlg = nullptr;
-    UJoyDlg* JoyDlg = nullptr;
-    UAudioDlg* AudioDlg = nullptr;
-    UVideoDlg* VidDlg = nullptr;
-    UWepDlg* WepDlg = nullptr;
-    UOptDlg* OptDlg = nullptr;
+    UEngineeringDlg* EngDlg = nullptr;
+    UFlightOpsDlg* FltDlg = nullptr;
 
-    // Legacy raw systems (keep logic; no UPROPERTY):
+    // Legacy raw systems (NOT UPROPERTY):
     Sim* sim = nullptr;
     CameraManager* cam_dir = nullptr;
     DisplayView* disp_view = nullptr;
@@ -203,9 +141,9 @@ private:
     RadioView* radio_view = nullptr;
     TacticalView* tac_view = nullptr;
     CameraView* cam_view = nullptr;
-    QuitView* quit_View = nullptr;
 
     DataLoader* loader = nullptr;
+
     Bitmap* flare1 = nullptr;
     Bitmap* flare2 = nullptr;
     Bitmap* flare3 = nullptr;
@@ -214,9 +152,7 @@ private:
     double frame_rate = 0.0;
     bool   bIsShown = false;
 
-    static UGameScreen* GameScreenInstance;
-
     bool bExternalVisible = false;
 
-    void ApplyInputModeForScreen(bool bExternal);
+    static UGameScreen* GameScreenInstance;
 };

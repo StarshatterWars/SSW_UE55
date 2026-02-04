@@ -11,30 +11,32 @@
     John DiCamillo / Destroyer Studios LLC
 
     UNREAL PORT:
-    - Converted from FormWindow/AWEvent mapping to UBaseScreen (UUserWidget-derived).
+    - ControlOptionsDlg routes under UOptionsScreen (NOT GameScreen / MenuScreen).
+    - JoyDlg + KeyDlg are child overlays routed through ControlOptionsDlg.
 */
 
 #include "ControlOptionsDlg.h"
 
-// Unreal:
+// UE:
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/ListView.h"
 #include "Components/Slider.h"
 #include "Components/CheckBox.h"
-#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Engine/World.h"
 
-// Starshatter (ported core):
+// Starshatter:
 #include "Starshatter.h"
 #include "Ship.h"
 #include "Game.h"
 #include "Keyboard.h"
 #include "Joystick.h"
-#include "KeyDlg.h"
-
-// NOTE: you referenced KeyMap / KEY_* in original.
-// Include whatever header defines KeyMap, KeyMapEntry, and KEY_* constants in your port:
 #include "KeyMap.h"
+
+// Routing:
+#include "OptionsScreen.h"
+#include "JoyDlg.h"
+#include "KeyDlg.h"
 
 UControlOptionsDlg::UControlOptionsDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -67,15 +69,12 @@ void UControlOptionsDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 
 void UControlOptionsDlg::BindFormWidgets()
 {
-    // Optional: if you are binding by legacy numeric IDs via BaseScreen’s mapping system,
-    // you can BindButton/BindList/etc here. This class uses BindWidgetOptional directly.
+    // If you are using BaseScreen numeric binding helpers, map them here.
+    // Otherwise BindWidgetOptional is sufficient.
 }
 
 FString UControlOptionsDlg::GetLegacyFormText() const
 {
-    // If you want BaseScreen to auto-apply form defaults for labels/buttons/colors/fonts,
-    // return the legacy FORM text here. You pasted MenuDlg.frm above; you can embed it
-    // verbatim as a raw string literal.
     return FString();
 }
 
@@ -85,65 +84,52 @@ FString UControlOptionsDlg::GetLegacyFormText() const
 
 void UControlOptionsDlg::RegisterControls()
 {
-    // Category tabs:
-    if (category_0) category_0->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory0);
-    if (category_1) category_1->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory1);
-    if (category_2) category_2->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory2);
-    if (category_3) category_3->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory3);
+    // Hook BaseScreen Enter/Escape routing:
+    ApplyButton = ApplyBtn;
+    CancelButton = CancelBtn;
+
+    // Categories:
+    if (category_0) { category_0->OnClicked.RemoveAll(this); category_0->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory0); }
+    if (category_1) { category_1->OnClicked.RemoveAll(this); category_1->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory1); }
+    if (category_2) { category_2->OnClicked.RemoveAll(this); category_2->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory2); }
+    if (category_3) { category_3->OnClicked.RemoveAll(this); category_3->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory3); }
 
     // Commands list:
+    // IMPORTANT: UListView::OnItemSelectionChanged() is NOT a dynamic multicast; use AddUObject.
     if (commands)
     {
+        commands->OnItemSelectionChanged().RemoveAll(this);
         commands->OnItemSelectionChanged().AddUObject(this, &UControlOptionsDlg::HandleCommandSelectionChanged);
-        // True "double click" is usually implemented in the entry widget; we emulate legacy
-        // by timing consecutive selection of the same item.
     }
 
     // Combos:
-    if (control_model_combo)
-        control_model_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnControlModelChanged);
-
-    if (joy_select_combo)
-        joy_select_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnJoySelectChanged);
-
-    if (joy_throttle_combo)
-        joy_throttle_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnJoyThrottleChanged);
-
-    if (joy_rudder_combo)
-        joy_rudder_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnJoyRudderChanged);
-
-    if (mouse_select_combo)
-        mouse_select_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnMouseSelectChanged);
+    if (control_model_combo) { control_model_combo->OnSelectionChanged.RemoveAll(this); control_model_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnControlModelChanged); }
+    if (joy_select_combo) { joy_select_combo->OnSelectionChanged.RemoveAll(this);    joy_select_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnJoySelectChanged); }
+    if (joy_throttle_combo) { joy_throttle_combo->OnSelectionChanged.RemoveAll(this);  joy_throttle_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnJoyThrottleChanged); }
+    if (joy_rudder_combo) { joy_rudder_combo->OnSelectionChanged.RemoveAll(this);    joy_rudder_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnJoyRudderChanged); }
+    if (mouse_select_combo) { mouse_select_combo->OnSelectionChanged.RemoveAll(this);  mouse_select_combo->OnSelectionChanged.AddDynamic(this, &UControlOptionsDlg::OnMouseSelectChanged); }
 
     // Sliders:
-    if (joy_sensitivity_slider)
-        joy_sensitivity_slider->OnValueChanged.AddDynamic(this, &UControlOptionsDlg::OnJoySensitivityChanged);
-
-    if (mouse_sensitivity_slider)
-        mouse_sensitivity_slider->OnValueChanged.AddDynamic(this, &UControlOptionsDlg::OnMouseSensitivityChanged);
+    if (joy_sensitivity_slider) { joy_sensitivity_slider->OnValueChanged.RemoveAll(this);   joy_sensitivity_slider->OnValueChanged.AddDynamic(this, &UControlOptionsDlg::OnJoySensitivityChanged); }
+    if (mouse_sensitivity_slider) { mouse_sensitivity_slider->OnValueChanged.RemoveAll(this); mouse_sensitivity_slider->OnValueChanged.AddDynamic(this, &UControlOptionsDlg::OnMouseSensitivityChanged); }
 
     // Checkbox:
-    if (mouse_invert_checkbox)
-        mouse_invert_checkbox->OnCheckStateChanged.AddDynamic(this, &UControlOptionsDlg::OnMouseInvertChanged);
+    if (mouse_invert_checkbox) { mouse_invert_checkbox->OnCheckStateChanged.RemoveAll(this); mouse_invert_checkbox->OnCheckStateChanged.AddDynamic(this, &UControlOptionsDlg::OnMouseInvertChanged); }
 
     // Buttons:
-    if (joy_axis_button)
-        joy_axis_button->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnJoyAxis);
+    if (joy_axis_button) { joy_axis_button->OnClicked.RemoveAll(this); joy_axis_button->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnJoyAxis); }
 
-    if (apply_btn)
-        apply_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnApply);
+    if (ApplyBtn) { ApplyBtn->OnClicked.RemoveAll(this);  ApplyBtn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnApplyClicked); }
+    if (CancelBtn) { CancelBtn->OnClicked.RemoveAll(this); CancelBtn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCancelClicked); }
 
-    if (cancel_btn)
-        cancel_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCancel);
+    // Tabs:
+    if (vid_btn) { vid_btn->OnClicked.RemoveAll(this); vid_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnVideoClicked); }
+    if (aud_btn) { aud_btn->OnClicked.RemoveAll(this); aud_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnAudioClicked); }
+    if (ctl_btn) { ctl_btn->OnClicked.RemoveAll(this); ctl_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnControlsClicked); }
+    if (opt_btn) { opt_btn->OnClicked.RemoveAll(this); opt_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnOptionsClicked); }
+    if (mod_btn) { mod_btn->OnClicked.RemoveAll(this); mod_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnModClicked); }
 
-    // Top tabs:
-    if (vid_btn) vid_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnVideo);
-    if (aud_btn) aud_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnAudio);
-    if (ctl_btn) ctl_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnControls);
-    if (opt_btn) opt_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnOptions);
-    if (mod_btn) mod_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnMod);
-
-    // Initialize:
+    // Initial paint:
     Show();
 }
 
@@ -153,27 +139,82 @@ void UControlOptionsDlg::RegisterControls()
 
 void UControlOptionsDlg::Show()
 {
-    // Classic: if (!IsShown()) FormWindow::Show();
-    // In UE, this is typically AddToViewport + SetVisibility elsewhere.
-    // This method refreshes the content/state.
-
-    if (closed)
+    if (bClosed)
         ShowCategory();
     else
         UpdateCategory();
 
-    // Tab highlight state is style-driven in UMG; keep logical intent:
-    // (Controls tab active)
-    // You can expose "selected" states in BP if you want.
-    closed = false;
+    bClosed = false;
+    SetVisibility(ESlateVisibility::Visible);
+    SetKeyboardFocus();
 }
 
 void UControlOptionsDlg::ExecFrame()
 {
     // Classic: Enter applies
-    if (Keyboard::KeyDown(VK_RETURN)) {
-        OnApply();
+    if (Keyboard::KeyDown(VK_RETURN))
+        OnApplyClicked();
+}
+
+// --------------------------------------------------------------------
+// Child overlays (Joy/Key routed through ControlOptionsDlg)
+// --------------------------------------------------------------------
+
+void UControlOptionsDlg::ShowJoyDlg()
+{
+    if (!JoyDlg)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            JoyDlg = CreateWidget<UJoyDlg>(World, UJoyDlg::StaticClass());
+            if (JoyDlg)
+            {
+                JoyDlg->AddToViewport(0);
+                JoyDlg->SetVisibility(ESlateVisibility::Collapsed);
+            }
+        }
     }
+
+    if (!JoyDlg)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ControlOptionsDlg: JoyDlg is null."));
+        return;
+    }
+
+    JoyDlg->SetManager(this);
+
+    SetVisibility(ESlateVisibility::Collapsed);
+    JoyDlg->SetVisibility(ESlateVisibility::Visible);
+    JoyDlg->SetKeyboardFocus();
+}
+
+void UControlOptionsDlg::ShowKeyDlg(int32 KeyMapIndex)
+{
+    if (!KeyDlg)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            KeyDlg = CreateWidget<UKeyDlg>(World, UKeyDlg::StaticClass());
+            if (KeyDlg)
+            {
+                KeyDlg->AddToViewport(0);
+                KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+            }
+        }
+    }
+
+    if (!KeyDlg)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ControlOptionsDlg: KeyDlg is null."));
+        return;
+    }
+
+    KeyDlg->SetManager(this);
+    KeyDlg->SetKeyMapIndex(KeyMapIndex);
+
+    SetVisibility(ESlateVisibility::Collapsed);
+    KeyDlg->SetVisibility(ESlateVisibility::Visible);
+    KeyDlg->SetKeyboardFocus();
 }
 
 // --------------------------------------------------------------------
@@ -196,20 +237,19 @@ void UControlOptionsDlg::ShowCategory()
     if (!commands || !stars)
         return;
 
-    // Visual "sticky" button state should be done in UMG; here we just refresh data.
-
     CommandRows.Reset();
     commands->ClearListItems();
 
-    Starshatter* S = stars;
-    KeyMap& keymap = S->GetKeyMap();
+    KeyMap& keymap = stars->GetKeyMap();
 
     // Map core options from KeyMap:
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++)
+    {
         KeyMapEntry* k = keymap.GetKeyMap(i);
         if (!k) continue;
 
-        switch (k->act) {
+        switch (k->act)
+        {
         case 0:
             break;
 
@@ -262,8 +302,8 @@ void UControlOptionsDlg::ShowCategory()
             break;
 
         default:
-            // Fill the command list by category:
-            if (keymap.GetCategory(i) == selected_category) {
+            if (keymap.GetCategory(i) == selected_category)
+            {
                 UControlBindingRow* Row = NewObject<UControlBindingRow>(this);
                 Row->ActionIndex = i;
                 Row->Command = UTF8_TO_TCHAR(keymap.DescribeAction(i));
@@ -290,12 +330,11 @@ void UControlOptionsDlg::UpdateCategory()
         Row->Key = UTF8_TO_TCHAR(keymap.DescribeKey(Row->ActionIndex));
     }
 
-    // Force list to refresh (UMG sometimes needs a nudge):
     commands->RequestRefresh();
 }
 
 // --------------------------------------------------------------------
-// Command list selection (legacy OnCommand)
+// Command selection
 // --------------------------------------------------------------------
 
 void UControlOptionsDlg::HandleCommandSelectionChanged(UObject* SelectedItem)
@@ -313,49 +352,37 @@ void UControlOptionsDlg::HandleCommandSelectionChanged(UObject* SelectedItem)
     // Legacy double-click: same item selected again within 350ms
     if (ListIndex == command_index && (NowSec - command_click_time_sec) < 0.35)
     {
-        HandleCommandDoubleClick(Row->ActionIndex);
+        // Open KeyDlg via ControlOptionsDlg routing:
+        ShowKeyDlg(Row->ActionIndex);
     }
 
     command_click_time_sec = NowSec;
     command_index = ListIndex;
 }
 
-void UControlOptionsDlg::HandleCommandDoubleClick(int32 ActionIndex)
-{
-    // Legacy:
-    // KeyDlg* key_dlg = manager->GetKeyDlg(); key_dlg->SetKeyMapIndex(ActionIndex); manager->ShowKeyDlg();
-
-    // Keep loose: your "manager" in UE will be some screen widget/controller class.
-    // Implement these calls on your manager and cast here.
-    UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: DoubleClick ActionIndex=%d"), ActionIndex);
-
-    // Example pattern:
-    // if (UYourOptionsScreen* M = Cast<UYourOptionsScreen>(manager)) { ... }
-}
-
 // --------------------------------------------------------------------
-// Combo handlers (legacy OnControlModel / OnJoy* / OnMouse*)
+// Combo handlers
 // --------------------------------------------------------------------
 
-void UControlOptionsDlg::OnControlModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UControlOptionsDlg::OnControlModelChanged(FString, ESelectInfo::Type)
 {
     if (control_model_combo)
         control_model = control_model_combo->GetSelectedIndex();
 }
 
-void UControlOptionsDlg::OnJoySelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UControlOptionsDlg::OnJoySelectChanged(FString, ESelectInfo::Type)
 {
     if (joy_select_combo)
         joy_select = joy_select_combo->GetSelectedIndex();
 }
 
-void UControlOptionsDlg::OnJoyThrottleChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UControlOptionsDlg::OnJoyThrottleChanged(FString, ESelectInfo::Type)
 {
     if (joy_throttle_combo)
         joy_throttle = joy_throttle_combo->GetSelectedIndex();
 }
 
-void UControlOptionsDlg::OnJoyRudderChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UControlOptionsDlg::OnJoyRudderChanged(FString, ESelectInfo::Type)
 {
     if (joy_rudder_combo)
         joy_rudder = joy_rudder_combo->GetSelectedIndex();
@@ -368,11 +395,10 @@ void UControlOptionsDlg::OnJoySensitivityChanged(float NormalizedValue)
 
 void UControlOptionsDlg::OnJoyAxis()
 {
-    // Legacy: manager->ShowJoyDlg();
-    UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: JoyAxis setup requested"));
+    ShowJoyDlg();
 }
 
-void UControlOptionsDlg::OnMouseSelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UControlOptionsDlg::OnMouseSelectChanged(FString, ESelectInfo::Type)
 {
     if (mouse_select_combo)
         mouse_select = mouse_select_combo->GetSelectedIndex();
@@ -389,36 +415,36 @@ void UControlOptionsDlg::OnMouseInvertChanged(bool bIsChecked)
 }
 
 // --------------------------------------------------------------------
-// Navigation tabs (legacy)
+// Tabs (route UP to OptionsScreen)
 // --------------------------------------------------------------------
 
-void UControlOptionsDlg::OnAudio() { UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Audio tab")); }
-void UControlOptionsDlg::OnVideo() { UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Video tab")); }
-void UControlOptionsDlg::OnOptions() { UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Options tab")); }
-void UControlOptionsDlg::OnControls() { UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Controls tab")); }
-void UControlOptionsDlg::OnMod() { UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Mod tab")); }
+void UControlOptionsDlg::OnAudioClicked() { if (Manager) Manager->ShowAudDlg(); }
+void UControlOptionsDlg::OnVideoClicked() { if (Manager) Manager->ShowVidDlg(); }
+void UControlOptionsDlg::OnOptionsClicked() { if (Manager) Manager->ShowOptDlg(); }
+void UControlOptionsDlg::OnControlsClicked() { /* already here */ }
+void UControlOptionsDlg::OnModClicked() { if (Manager) Manager->ShowModDlg(); }
 
 // --------------------------------------------------------------------
-// Apply / Cancel (legacy manager->ApplyOptions / CancelOptions)
+// Apply/Cancel callbacks (route UP to OptionsScreen)
 // --------------------------------------------------------------------
 
-void UControlOptionsDlg::OnApply()
+void UControlOptionsDlg::OnApplyClicked()
 {
-    Apply();
-
-    // Then notify manager in your UE architecture, if required:
-    UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Apply"));
+    if (Manager) Manager->ApplyOptions();
 }
 
-void UControlOptionsDlg::OnCancel()
+void UControlOptionsDlg::OnCancelClicked()
 {
-    Cancel();
-    UE_LOG(LogTemp, Verbose, TEXT("ControlOptionsDlg: Cancel"));
+    if (Manager) Manager->CancelOptions();
 }
+
+// --------------------------------------------------------------------
+// Legacy Apply / Cancel (called by OptionsScreen::ApplyOptions)
+// --------------------------------------------------------------------
 
 void UControlOptionsDlg::Apply()
 {
-    if (closed || !stars)
+    if (bClosed || !stars)
         return;
 
     KeyMap& keymap = stars->GetKeyMap();
@@ -439,12 +465,12 @@ void UControlOptionsDlg::Apply()
     stars->MapKeys();
     Ship::SetControlModel(control_model);
 
-    closed = true;
+    bClosed = true;
 }
 
 void UControlOptionsDlg::Cancel()
 {
-    closed = true;
+    bClosed = true;
 }
 
 // --------------------------------------------------------------------
