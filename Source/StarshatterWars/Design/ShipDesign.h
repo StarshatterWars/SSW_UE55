@@ -94,7 +94,7 @@ class ShipDebris
 public:
 	static const char* TYPENAME() { return "ShipDebris"; }
 
-	ShipDebris();
+	ShipDebris() = default;
 
 	SimModel*		  model;
 	int               count;
