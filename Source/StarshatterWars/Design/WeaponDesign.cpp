@@ -32,7 +32,10 @@
 
 #include "ParseUtil.h"
 
+// Static storage for WeaponDesign catalogs/state:
 List<WeaponDesign> WeaponDesign::catalog;
+List<WeaponDesign> WeaponDesign::mod_catalog;
+bool WeaponDesign::degrees = false;
 // +--------------------------------------------------------------------+
 
 WeaponDesign::WeaponDesign()

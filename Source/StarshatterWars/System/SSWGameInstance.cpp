@@ -83,18 +83,13 @@ FString USSWGameInstance::GetProjectPath()
 
 void USSWGameInstance::Print(const FString& A, const FString& B)
 {
-	const FString Msg = A + TEXT(" ") + B;
+	const FString Msg = B.IsEmpty() ? A : (A + TEXT(" ") + B);
 
 	UE_LOG(LogTemp, Log, TEXT("%s"), *Msg);
 
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.0f,
-			FColor::Cyan,
-			Msg
-		);
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, Msg);
 	}
 }
 

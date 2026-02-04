@@ -56,7 +56,7 @@ public:
 	virtual bool ChangeVideo();
 	virtual void GameState();
 	virtual void Exit();
-	virtual bool OnHelp();
+	virtual bool OnHelp() { return false; }
 
 	EMODE     GetGameMode() { return game_mode; }
 	void      SetGameMode(EMODE mode);
