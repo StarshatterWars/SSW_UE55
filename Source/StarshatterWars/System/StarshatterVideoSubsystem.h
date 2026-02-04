@@ -12,17 +12,19 @@
 
     OVERVIEW
     ========
-    Starshatter Video Subsystem
+    UStarshatterVideoSubsystem
 
     Unreal-native replacement for legacy video configuration handling.
     This subsystem owns:
       - video.cfg load/save
       - current video configuration state
       - pending video change requests
+      - runtime-apply hook (calls into your ported Starshatter core)
 
     The subsystem DOES NOT reset the renderer directly.
-    Instead, it signals intent and allows the legacy Starshatter
-    core or renderer layer to perform the actual reset.
+    Instead, it either:
+      - broadcasts intent (OnVideoChangeRequested), and/or
+      - calls into Starshatter core if available (ApplySettingsToRuntime)
 */
 
 #pragma once
@@ -35,11 +37,6 @@
 // Video Configuration Model
 // +--------------------------------------------------------------------+
 
-/*
-    Represents the full runtime video configuration.
-    This structure mirrors the legacy video.cfg fields
-    and can be expanded incrementally during the port.
-*/
 USTRUCT(BlueprintType)
 struct FStarshatterVideoConfig
 {
@@ -73,6 +70,9 @@ struct FStarshatterVideoConfig
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
     int32 MaxTexSize = 2048;
 
+    // Gamma mapping:
+    // Legacy uses 32..224 integer. We store 0..1 here by default.
+    // You can change this later; keep stable once shipped.
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
     float Gamma = 1.0f;
 
@@ -84,11 +84,6 @@ struct FStarshatterVideoConfig
 // Delegates
 // +--------------------------------------------------------------------+
 
-/*
-    Broadcast when a video change is requested.
-    The renderer or Starshatter core may subscribe
-    and perform the actual reset.
-*/
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
     FOnStarshatterVideoChangeRequested,
     const FStarshatterVideoConfig&,
@@ -99,22 +94,17 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 // Video Subsystem
 // +--------------------------------------------------------------------+
 
-/*
-    UStarshatterVideoSubsystem
-
-    GameInstance-level subsystem responsible for:
-      - loading/saving video.cfg
-      - storing current video settings
-      - managing deferred video changes
-
-    Designed to coexist with legacy Starshatter
-    ChangeVideo / ResizeVideo logic during migration.
-*/
 UCLASS()
-class STARSHATTERWARS_API UStarshatterVideoSubsystem
-    : public UGameInstanceSubsystem
+class STARSHATTERWARS_API UStarshatterVideoSubsystem : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
+
+public:
+    // +----------------------------------------------------------------
+    // Convenience Accessor
+    // +----------------------------------------------------------------
+
+    static UStarshatterVideoSubsystem* Get(const UObject* WorldContextObject);
 
 public:
     // +----------------------------------------------------------------
@@ -124,6 +114,7 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
 
+public:
     // +----------------------------------------------------------------
     // Configuration I/O
     // +----------------------------------------------------------------
@@ -137,6 +128,7 @@ public:
         const FString& InRelativeOrAbsolutePath = TEXT("video.cfg")
     ) const;
 
+public:
     // +----------------------------------------------------------------
     // Configuration Access
     // +----------------------------------------------------------------
@@ -144,6 +136,7 @@ public:
     const FStarshatterVideoConfig& GetConfig() const { return CurrentConfig; }
     void SetConfig(const FStarshatterVideoConfig& NewConfig);
 
+public:
     // +----------------------------------------------------------------
     // Deferred Change Handling
     // +----------------------------------------------------------------
@@ -153,6 +146,25 @@ public:
 
     bool ConsumePendingChange(FStarshatterVideoConfig& OutPending);
 
+public:
+    // +----------------------------------------------------------------
+    // Runtime Apply Hook
+    // +----------------------------------------------------------------
+
+    /*
+        ApplySettingsToRuntime()
+
+        Applies the CURRENT config to the runtime system.
+        During migration, this typically calls into:
+          Starshatter::GetInstance()->LoadVideoConfig(...)
+        or triggers:
+          Starshatter::GetInstance()->RequestChangeVideo()
+
+        Keep this method no-arg so UI callsites are simple.
+    */
+    void ApplySettingsToRuntime();
+
+public:
     // +----------------------------------------------------------------
     // Events
     // +----------------------------------------------------------------
@@ -160,6 +172,7 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Starshatter|Video")
     FOnStarshatterVideoChangeRequested OnVideoChangeRequested;
 
+public:
     // +----------------------------------------------------------------
     // Path Helpers
     // +----------------------------------------------------------------
@@ -191,3 +204,4 @@ private:
         const FString& Value
     );
 };
+

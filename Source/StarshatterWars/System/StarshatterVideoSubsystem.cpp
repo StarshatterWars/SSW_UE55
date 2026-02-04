@@ -11,13 +11,42 @@
     ========
     Implements Unreal-native video configuration handling
     while preserving the legacy Starshatter video pipeline.
+
+    Adds:
+      - ApplySettingsToRuntime() for UI + boot usage
+      - static Get(...) convenience accessor
 */
 
 #include "StarshatterVideoSubsystem.h"
 
+#include "Engine/GameInstance.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
+
+// If you have the ported Starshatter singleton available:
+#include "Starshatter.h"
+
+// +--------------------------------------------------------------------+
+// Convenience Accessor
+// +--------------------------------------------------------------------+
+
+UStarshatterVideoSubsystem* UStarshatterVideoSubsystem::Get(const UObject* WorldContextObject)
+{
+    if (!WorldContextObject)
+        return nullptr;
+
+    const UWorld* World = WorldContextObject->GetWorld();
+    if (!World)
+        return nullptr;
+
+    UGameInstance* GI = World->GetGameInstance();
+    if (!GI)
+        return nullptr;
+
+    return GI->GetSubsystem<UStarshatterVideoSubsystem>();
+}
 
 // +--------------------------------------------------------------------+
 // Subsystem Lifecycle
@@ -52,9 +81,7 @@ FString UStarshatterVideoSubsystem::GetDefaultConfigDir() const
     );
 }
 
-FString UStarshatterVideoSubsystem::ResolveConfigPath(
-    const FString& InRelativeOrAbsolutePath
-) const
+FString UStarshatterVideoSubsystem::ResolveConfigPath(const FString& InRelativeOrAbsolutePath) const
 {
     if (FPaths::IsRelative(InRelativeOrAbsolutePath))
     {
@@ -71,10 +98,7 @@ FString UStarshatterVideoSubsystem::ResolveConfigPath(
 // Load / Save
 // +--------------------------------------------------------------------+
 
-bool UStarshatterVideoSubsystem::LoadVideoConfig(
-    const FString& InRelativeOrAbsolutePath,
-    bool bCreateIfMissing
-)
+bool UStarshatterVideoSubsystem::LoadVideoConfig(const FString& InRelativeOrAbsolutePath, bool bCreateIfMissing)
 {
     const FString AbsPath = ResolveConfigPath(InRelativeOrAbsolutePath);
     const FString Dir = FPaths::GetPath(AbsPath);
@@ -107,30 +131,28 @@ bool UStarshatterVideoSubsystem::LoadVideoConfig(
             KV.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
     }
 
-    auto Get = [&](const TCHAR* K) -> const FString*
+    auto GetKV = [&](const TCHAR* K) -> const FString*
         {
             return KV.Find(FString(K));
         };
 
-    if (const FString* V = Get(TEXT("width")))        ParseInt(*V, CurrentConfig.Width);
-    if (const FString* V = Get(TEXT("height")))       ParseInt(*V, CurrentConfig.Height);
-    if (const FString* V = Get(TEXT("fullscreen")))   ParseBool(*V, CurrentConfig.bFullscreen);
+    if (const FString* V = GetKV(TEXT("width")))        ParseInt(*V, CurrentConfig.Width);
+    if (const FString* V = GetKV(TEXT("height")))       ParseInt(*V, CurrentConfig.Height);
+    if (const FString* V = GetKV(TEXT("fullscreen")))   ParseBool(*V, CurrentConfig.bFullscreen);
 
-    if (const FString* V = Get(TEXT("lens_flare")))   ParseBool(*V, CurrentConfig.bLensFlare);
-    if (const FString* V = Get(TEXT("corona")))       ParseBool(*V, CurrentConfig.bCorona);
-    if (const FString* V = Get(TEXT("nebula")))       ParseBool(*V, CurrentConfig.bNebula);
-    if (const FString* V = Get(TEXT("dust")))         ParseBool(*V, CurrentConfig.bDust);
+    if (const FString* V = GetKV(TEXT("lens_flare")))   ParseBool(*V, CurrentConfig.bLensFlare);
+    if (const FString* V = GetKV(TEXT("corona")))       ParseBool(*V, CurrentConfig.bCorona);
+    if (const FString* V = GetKV(TEXT("nebula")))       ParseBool(*V, CurrentConfig.bNebula);
+    if (const FString* V = GetKV(TEXT("dust")))         ParseBool(*V, CurrentConfig.bDust);
 
-    if (const FString* V = Get(TEXT("max_tex_size"))) ParseInt(*V, CurrentConfig.MaxTexSize);
-    if (const FString* V = Get(TEXT("gamma")))        ParseFloat(*V, CurrentConfig.Gamma);
-    if (const FString* V = Get(TEXT("depth_bias")))   ParseFloat(*V, CurrentConfig.DepthBias);
+    if (const FString* V = GetKV(TEXT("max_tex_size"))) ParseInt(*V, CurrentConfig.MaxTexSize);
+    if (const FString* V = GetKV(TEXT("gamma")))        ParseFloat(*V, CurrentConfig.Gamma);
+    if (const FString* V = GetKV(TEXT("depth_bias")))   ParseFloat(*V, CurrentConfig.DepthBias);
 
     return true;
 }
 
-bool UStarshatterVideoSubsystem::SaveVideoConfig(
-    const FString& InRelativeOrAbsolutePath
-) const
+bool UStarshatterVideoSubsystem::SaveVideoConfig(const FString& InRelativeOrAbsolutePath) const
 {
     const FString AbsPath = ResolveConfigPath(InRelativeOrAbsolutePath);
     const FString Dir = FPaths::GetPath(AbsPath);
@@ -165,12 +187,19 @@ bool UStarshatterVideoSubsystem::SaveVideoConfig(
 }
 
 // +--------------------------------------------------------------------+
+// Config Access
+// +--------------------------------------------------------------------+
+
+void UStarshatterVideoSubsystem::SetConfig(const FStarshatterVideoConfig& NewConfig)
+{
+    CurrentConfig = NewConfig;
+}
+
+// +--------------------------------------------------------------------+
 // Deferred Change Handling
 // +--------------------------------------------------------------------+
 
-void UStarshatterVideoSubsystem::RequestChangeVideo(
-    const FStarshatterVideoConfig& NewPendingConfig
-)
+void UStarshatterVideoSubsystem::RequestChangeVideo(const FStarshatterVideoConfig& NewPendingConfig)
 {
     PendingConfig = NewPendingConfig;
     bPendingChange = true;
@@ -178,9 +207,7 @@ void UStarshatterVideoSubsystem::RequestChangeVideo(
     OnVideoChangeRequested.Broadcast(PendingConfig);
 }
 
-bool UStarshatterVideoSubsystem::ConsumePendingChange(
-    FStarshatterVideoConfig& OutPending
-)
+bool UStarshatterVideoSubsystem::ConsumePendingChange(FStarshatterVideoConfig& OutPending)
 {
     if (!bPendingChange)
         return false;
@@ -193,42 +220,57 @@ bool UStarshatterVideoSubsystem::ConsumePendingChange(
 }
 
 // +--------------------------------------------------------------------+
+// Runtime Apply Hook
+// +--------------------------------------------------------------------+
+
+void UStarshatterVideoSubsystem::ApplySettingsToRuntime()
+{
+    // During migration, we keep it simple:
+    // 1) Save config to video.cfg
+    // 2) Ask the Starshatter core to reload / change video.
+
+    SaveVideoConfig(TEXT("video.cfg"));
+
+    // If you still drive video changes through Starshatter core:
+    if (Starshatter* Stars = Starshatter::GetInstance())
+    {
+        // Choose your migration behavior:
+        // - If resolution/fullscreen changed, request change:
+        //   Stars->RequestChangeVideo();
+        // - Otherwise just reload:
+        Stars->LoadVideoConfig("video.cfg");
+    }
+    else
+    {
+        // If no core exists yet, at least broadcast intent:
+        OnVideoChangeRequested.Broadcast(CurrentConfig);
+    }
+}
+
+// +--------------------------------------------------------------------+
 // Parsing Helpers
 // +--------------------------------------------------------------------+
 
-bool UStarshatterVideoSubsystem::ParseBool(
-    const FString& Value,
-    bool& OutBool
-)
+bool UStarshatterVideoSubsystem::ParseBool(const FString& Value, bool& OutBool)
 {
     const FString V = Value.ToLower();
     OutBool = (V == TEXT("1") || V == TEXT("true") || V == TEXT("yes") || V == TEXT("on"));
     return true;
 }
 
-bool UStarshatterVideoSubsystem::ParseInt(
-    const FString& Value,
-    int32& OutInt
-)
+bool UStarshatterVideoSubsystem::ParseInt(const FString& Value, int32& OutInt)
 {
     OutInt = FCString::Atoi(*Value);
     return true;
 }
 
-bool UStarshatterVideoSubsystem::ParseFloat(
-    const FString& Value,
-    float& OutFloat
-)
+bool UStarshatterVideoSubsystem::ParseFloat(const FString& Value, float& OutFloat)
 {
     OutFloat = FCString::Atof(*Value);
     return true;
 }
 
-void UStarshatterVideoSubsystem::WriteLine(
-    TArray<FString>& Lines,
-    const FString& Key,
-    const FString& Value
-)
+void UStarshatterVideoSubsystem::WriteLine(TArray<FString>& Lines, const FString& Key, const FString& Value)
 {
     Lines.Add(Key + TEXT("=") + Value);
 }

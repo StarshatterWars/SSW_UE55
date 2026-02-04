@@ -9,8 +9,9 @@
     OVERVIEW
     ========
     UVideoDlg
-    - Unreal replacement for legacy VidDlg (video options dialog).
-    - Inherits from UBaseScreen to use legacy FORM parsing / control-id binding.
+    - Video options dialog (UMG + legacy-form bridge via UBaseScreen).
+    - Refactored so the dialog only touches UStarshatterVideoSettings (config model).
+    - Runtime apply is delegated to UStarshatterVideoSettings::ApplyToRuntimeVideo(...).
     - Subscreen routing goes through UOptionsScreen (NOT GameScreen).
 */
 
@@ -25,11 +26,11 @@ class UComboBoxString;
 class USlider;
 class UButton;
 
-// Starshatter:
-class Starshatter;
-
 // Host/router:
 class UOptionsScreen;
+
+// Model:
+class UStarshatterVideoSettings;
 
 UCLASS()
 class STARSHATTERWARS_API UVideoDlg : public UBaseScreen
@@ -43,17 +44,22 @@ public:
     void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
     UOptionsScreen* GetManager() const { return Manager; }
 
-    // Legacy-ish surface:
-    virtual void Show();
-    virtual void ExecFrame(float DeltaTime);
+    // Surface:
+    void Show();
 
-    // These exist because older callsites expect them:
+    // IMPORTANT: match UBaseScreen signature (same as AudioDlg)
+    virtual void ExecFrame(double DeltaTime) override;
+
+    // Legacy callsites:
     void Apply();
     void Cancel();
 
-    // If you still want explicit names:
+    // Preferred names:
     void ApplySettings();
     void CancelSettings();
+
+    // UI -> Settings (Save + optional runtime apply):
+    void PushToModel(bool bApplyRuntimeToo);
 
 protected:
     virtual void NativeConstruct() override;
@@ -69,8 +75,16 @@ protected:
     virtual void HandleCancel() override;
 
 private:
+    UStarshatterVideoSettings* GetVideoSettings() const;
+
     void BuildModeList();
-    void RefreshSelectionsFromRuntime();
+    void RefreshFromModel();
+
+    static int32 TexSizeIndexFromPow2(int32 Pow2);
+    static int32 TexSizePow2FromIndex(int32 Index);
+
+    static float Gamma01FromLevel(int32 GammaLevel);
+    static int32 GammaLevelFrom01(float V01);
 
 private:
     // Combo handlers:
@@ -96,50 +110,58 @@ private:
     UPROPERTY(Transient)
     UOptionsScreen* Manager = nullptr;
 
-    // Starshatter singleton:
-    Starshatter* StarsInstance = nullptr;
+    bool bClosed = true;
 
-    bool  bClosed = true;
-    int32 OrigGamma = 128;
+    // Cached dialog state (mirrors settings):
+    int32 Width = 1920;
+    int32 Height = 1080;
+    bool  bFullscreen = true;
 
-    // Selections/state:
-    int32 SelectedTexSize = 0;   // 0..N (maps to pow2 sizes)
-    int32 SelectedMode = 0;   // index within ModeCombo
+    int32 SelectedTexSize = 5;   // index (maps to pow2)
+    int32 SelectedMode = 0;
     int32 SelectedDetail = 0;
-    int32 SelectedTexture = 0;
+    int32 SelectedTexture = 1;
+
+    bool bLensFlare = true;
+    bool bCorona = true;
+    bool bNebula = true;
+    int32 Dust = 0;
+
+    bool bShadows = true;
+    bool bSpecMaps = true;
+    bool bBumpMaps = true;
+
+    int32 GammaLevel = 128;
+    float DepthBias = 0.0f;
 
 protected:
-    // ------------------------------------------------------------
-    // UMG widget bindings (OPTIONAL) — must match UMG widget names
-    // ------------------------------------------------------------
-
     // Main combos:
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ModeCombo = nullptr; // frm id 203
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TexSizeCombo = nullptr; // frm id 204
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DetailCombo = nullptr; // frm id 205
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TextureCombo = nullptr; // frm id 206
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ModeCombo = nullptr;      // frm id 203
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TexSizeCombo = nullptr;  // frm id 204
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DetailCombo = nullptr;   // frm id 205
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TextureCombo = nullptr;  // frm id 206
 
     // Effects/toggles:
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* LensFlareCombo = nullptr; // 211
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CoronaCombo = nullptr; // 212
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* NebulaCombo = nullptr; // 213
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DustCombo = nullptr; // 214
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CoronaCombo = nullptr;    // 212
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* NebulaCombo = nullptr;    // 213
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DustCombo = nullptr;      // 214
 
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShadowsCombo = nullptr; // 222
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SpecMapsCombo = nullptr; // 223
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* BumpMapsCombo = nullptr; // 224
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShadowsCombo = nullptr;   // 222
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SpecMapsCombo = nullptr;  // 223
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* BumpMapsCombo = nullptr;  // 224
 
     // Slider:
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* GammaSlider = nullptr; // 215
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* GammaSlider = nullptr;            // 215
 
     // Apply/Cancel:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr; // id 1
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr; // id 2
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;               // id 1
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;              // id 2
 
     // Tabs:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr; // 901
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr; // 902
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr; // 903
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr; // 904
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr; // 905
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;           // 901
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;           // 902
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;           // 903
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr;           // 904
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;           // 905
 };

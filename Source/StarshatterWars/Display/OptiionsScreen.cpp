@@ -24,6 +24,10 @@
 #include "PlayerCharacter.h"
 #include "Starshatter.h"
 
+#include "StarshatterAudioSubsystem.h"
+#include "StarshatterVideoSubsystem.h"
+#include "Engine/GameInstance.h"
+
 UOptionsScreen::UOptionsScreen(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -256,8 +260,25 @@ void UOptionsScreen::ShowModDlg()
 void UOptionsScreen::ApplyOptions()
 {
     Apply();
-    if (AudDlg) AudDlg->Apply();
-    if (VidDlg) VidDlg->Apply();
+    // Now apply to runtime ONCE, centrally:
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
+        {
+            AudioSS->ApplySettingsToRuntime();   // no args
+        }
+
+        if (UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>())
+        {
+            VideoSS->ApplySettingsToRuntime();   // no args
+        }
+
+        // If you add a controls subsystem later, do it here too.
+        // if (UStarshatterControlsSubsystem* CtlSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
+        // {
+        //     CtlSS->ApplySettingsToRuntime();
+        // }
+    }
     if (CtlDlg) CtlDlg->Apply();
 
     bClosed = true;

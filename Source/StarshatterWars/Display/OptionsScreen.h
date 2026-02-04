@@ -14,6 +14,9 @@ class UVideoDlg;
 class UControlOptionsDlg;
 class UMenuScreen;
 
+class UStarshatterAudioSubsystem;
+class UStarshatterVideoSubsystem;
+
 UCLASS()
 class STARSHATTERWARS_API UOptionsScreen : public UBaseScreen
 {
