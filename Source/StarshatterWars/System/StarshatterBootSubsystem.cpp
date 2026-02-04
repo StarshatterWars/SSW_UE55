@@ -63,7 +63,7 @@ void UStarshatterBootSubsystem::BootAudio()
     if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
     {
         // This is the call that was failing for you:
-        //AudioSS->LoadAudioConfig();
+        AudioSS->LoadAudioConfig();
 
         // Optional (LoadAudioConfig already calls ApplyToRuntimeAudio in my implementation):
         // AudioSS->ApplyToRuntimeAudio();

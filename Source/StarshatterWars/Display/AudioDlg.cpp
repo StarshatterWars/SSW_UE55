@@ -153,7 +153,7 @@ void UAudioDlg::PushToModel(bool bApplyRuntimeToo)
     {
         if (UStarshatterAudioSubsystem* AudioSub = GetAudioSubsystem())
         {
-            AudioSub->ApplySettingsToRuntime(const_cast<UAudioDlg*>(this));
+            AudioSub->ApplySettingsToRuntime();
         }
     }
 }
