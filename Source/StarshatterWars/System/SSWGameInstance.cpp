@@ -32,6 +32,7 @@
 #include "Engine/Engine.h"
 #include "Engine/TextureRenderTarget2D.h" 
 #include "SystemOverview.h"
+#include "FontManager.h"
 
 #undef UpdateResource
 #undef PlaySound
@@ -318,6 +319,8 @@ void USSWGameInstance::Init()
 		Timer->OnUniverseMinute.AddUObject(this, &USSWGameInstance::HandleUniverseMinuteAutosave);
 		// optional: OnUniverseSecond for finer cadence, but minute is safer.
 	}
+
+	FontManager::RegisterAllFonts(this);
 }
 
 void USSWGameInstance::ReadCampaignData()

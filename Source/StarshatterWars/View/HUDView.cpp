@@ -684,8 +684,19 @@ HUDView::HUDView(Screen* InScreen)
 	SetTextColor(FColor::White);
 	SetStatusColor(SYSTEM_STATUS::NOMINAL);
 
-	HudFont = FontManager::Find("HUD");
-	BigFont = FontManager::Find("GUI");
+	FSlateFontInfo HudFontInfo;
+
+	if (!FontManager::Find("HUD", HudFontInfo))
+	{
+		HudFontInfo.Size = 16; // fallback
+	}
+
+	if (!FontManager::Find("GUI", HudFontInfo))
+	{
+		HudFontInfo.Size = 18; // fallback
+	}
+	//HudFont = FontManager::Find("HUD");
+	//BigFont = FontManager::Find("GUI");
 
 	for (i = 0; i < TXT_LAST; i++) {
 		hud_text[i].font = HudFont;
@@ -3244,7 +3255,13 @@ HUDView::SetHUDColorSet(int c)
 		mfd[i]->SetHUDColor(HudColor);
 	}
 
+	FSlateFontInfo HudFontInfo;
 	SystemFont* ffont = FontManager::Find("HUD");
+
+	if (!FontManager::Find("HUD", HudFontInfo))
+	{
+		HudFontInfo.Size = 18; // fallback
+	}
 	if (ffont)
 		ffont->SetColor(TextColor);
 
