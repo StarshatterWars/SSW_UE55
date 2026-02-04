@@ -1,3 +1,18 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
+
+    SUBSYSTEM:    Stars.exe (Unreal Port)
+    FILE:         AudioDlg.h
+    AUTHOR:       Carlos Bott
+
+    OVERVIEW
+    ========
+    UAudioDlg
+    - Audio options dialog (UE/UMG + legacy-form bridge via UBaseScreen).
+    - Refactored to use UStarshatterAudioSettings as the primary model.
+*/
+
 #pragma once
 
 #include "CoreMinimal.h"

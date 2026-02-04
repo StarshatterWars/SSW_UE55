@@ -1,3 +1,20 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
+
+    SUBSYSTEM:    Stars.exe (Unreal Port)
+    FILE:         AudioDlg.cpp
+    AUTHOR:       Carlos Bott
+
+    OVERVIEW
+    ========
+    UAudioDlg
+    - Audio options dialog (UE/UMG + legacy-form bridge via UBaseScreen).
+    - Refactored so the dialog only touches UStarshatterAudioSettings as the model.
+    - Runtime apply is delegated directly to UStarshatterAudioSettings::ApplyToRuntimeAudio(...)
+      (subsystem indirection removed to eliminate signature drift / compile errors).
+*/
+
 #include "AudioDlg.h"
 
 // UMG:
@@ -5,8 +22,7 @@
 #include "Components/ComboBoxString.h"
 #include "Components/Slider.h"
 
-// NEW:
-#include "StarshatterAudioSubsystem.h"
+// Model:
 #include "StarshatterAudioSettings.h"
 
 // Host/router:
@@ -90,13 +106,8 @@ void UAudioDlg::HandleAccept() { OnApplyClicked(); }
 void UAudioDlg::HandleCancel() { OnCancelClicked(); }
 
 // -------------------------
-// NEW: Correct accessors
+// Settings access
 // -------------------------
-
-UStarshatterAudioSubsystem* UAudioDlg::GetAudioSubsystem() const
-{
-    return UStarshatterAudioSubsystem::Get(const_cast<UAudioDlg*>(this));
-}
 
 UStarshatterAudioSettings* UAudioDlg::GetAudioSettings() const
 {
@@ -151,10 +162,8 @@ void UAudioDlg::PushToModel(bool bApplyRuntimeToo)
 
     if (bApplyRuntimeToo)
     {
-        if (UStarshatterAudioSubsystem* AudioSub = GetAudioSubsystem())
-        {
-            AudioSub->ApplySettingsToRuntime();
-        }
+        // Dialog only touches settings; settings owns the runtime apply hook.
+        S->ApplyToRuntimeAudio(const_cast<UAudioDlg*>(this));
     }
 }
 
@@ -167,6 +176,8 @@ void UAudioDlg::Apply()
 
 void UAudioDlg::Cancel()
 {
+    // Revert UI state back to config values (optional, but usually expected):
+    RefreshFromModel();
     bClosed = true;
 }
 
