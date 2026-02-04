@@ -41,7 +41,7 @@ public:
 
 	int operator == (const SimContact& c) const;
 
-	Ship* GetShip()   const { return ship; }
+	Ship*    GetShip()   const { return ship; }
 	SimShot* GetShot()   const { return shot; }
 	FVector  Location()  const { return loc; }
 

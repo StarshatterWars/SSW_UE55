@@ -124,7 +124,7 @@ public:
 	FString GetProjectPath();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void Print(FString Msg, FString File);
+	void Print(const FString& A, const FString& B);
 
 	// =====================================================================
 	// Boot / Startup

@@ -120,6 +120,21 @@ static FORCEINLINE FIntRect ToIntRect(const Rect& R)
 	return FIntRect(R.x, R.y, R.x + R.w, R.y + R.h);
 }
 
+static const char* GetContactDisplayName(SimContact* c)
+{
+	if (!c) return "CONTACT";
+
+	if (Ship* s = c->GetShip())
+		return s->Name();          // or s->DesignName() if you prefer
+
+	// If you have other accessors in your port, use them here:
+	// if (SimObject* o = c->GetObject()) return o->Name();
+
+	if (c->GetShot())
+		return "INCOMING";
+
+	return "CONTACT";
+}
 // -------------------------------------------------------------------------------------------------
 
 static Bitmap hud_left_air;
@@ -3540,3 +3555,552 @@ HUDView::DrawDiamond(int x, int y, int r, FColor c)
 
 	DrawPoly(4, (FVector*)diamond, c);
 }
+
+void HUDView::DrawBars()
+{
+	// Minimal tactical HUD text bars (speed, heading, paused)
+	if (!ship)
+		return;
+
+	char txt[128] = { 0 };
+
+	// SPEED (left)
+	{
+		const double speed = ship->Velocity().Size();
+		FormatNumber(txt, speed);
+
+		Rect r(20, height / 2 - 6, 120, 12);
+		if (tactical) r.y = height - 40;
+		DrawHUDText(TXT_SPEED, txt, r, DT_LEFT);
+	}
+
+	// HEADING (center top) — no Ship::Orientation() available
+	{
+		// Derive heading from velocity direction (XY plane).
+		// If nearly stopped, heading is undefined; show 000.
+		const FVector v = ship->Velocity();
+		const double vx = (double)v.X;
+		const double vy = (double)v.Y;
+
+		int headingDeg = 0;
+
+		const double v2 = vx * vx + vy * vy;
+		if (v2 > 1e-4) // moving enough to define a direction
+		{
+			const double headingRad = FMath::Atan2(vy, vx);
+			headingDeg = (int)FMath::RoundToInt((float)FMath::RadiansToDegrees((float)headingRad));
+			if (headingDeg < 0) headingDeg += 360;
+		}
+
+#if defined(_MSC_VER)
+		sprintf_s(txt, "HDG %03d", headingDeg);
+#else
+		snprintf(txt, sizeof(txt), "HDG %03d", headingDeg);
+#endif
+
+		Rect r(0, 10, width, 12);
+		if (tactical) r.y = 8;
+		DrawHUDText(TXT_HEADING, txt, r, DT_CENTER);
+	}
+
+	// PAUSED indicator
+	if (Game::Paused())
+	{
+		Rect r(0, height / 6, width, 20);
+		DrawHUDText(TXT_PAUSED, Game::GetText("HUDView.PAUSED"), r, DT_CENTER);
+	}
+}
+
+void HUDView::DrawContact(SimContact* c, int index)
+{
+	if (!c || !ship || !projector)
+		return;
+
+	// Contact position in world -> view -> screen
+	FVector p = c->Location();
+	projector->Transform(p);
+
+	// Clip to front of camera
+	if (p.Z <= 1.0f)
+		return;
+
+	projector->Project(p);
+
+	const int x = (int)p.X;
+	const int y = (int)p.Y;
+
+	// Screen clip
+	if (x <= 4 || x >= width - 4 || y <= 4 || y >= height - 4)
+		return;
+
+	const FColor mc = MarkerColor(c);
+
+	// Marker
+	DrawDiamond(x, y, 4, mc);
+
+	// Name/Info (avoid crowding)
+	if (tactical && index < MAX_CONTACT && !IsNameCrowded(x, y))
+	{
+		// ---------------------------
+		// NAME (SimContact has no Name())
+		// Prefer the underlying ship name; fall back to shot; then generic.
+		// ---------------------------
+		const char* contact_name = "CONTACT";
+
+		if (Ship* s = c->GetShip())
+		{
+			contact_name = s->Name(); // assumes legacy const char*
+		}
+		else if (c->GetShot())
+		{
+			contact_name = "INCOMING";
+		}
+		// NOTE: Remove c->GetObject() unless your SimContact actually has it.
+		// else if (SimObject* o = c->GetObject()) { contact_name = o->Name(); }
+
+		Rect name_rect(x + 10, y - 4, 200, 12);
+		DrawHUDText(TXT_CONTACT_NAME + index, contact_name, name_rect, DT_LEFT, HUD_MIXED_CASE);
+
+		// ---------------------------
+		// INFO (range)
+		// ---------------------------
+		char info[128] = { 0 };
+
+		double limit = 75e3;
+		if (ship && ship->GetSensor())
+			limit = ship->GetSensor()->GetBeamRange();
+
+		const double rng = c->Range(ship, limit);
+		FormatNumber(info, rng);
+
+		Rect info_rect(x + 10, y + 6, 200, 12);
+		DrawHUDText(TXT_CONTACT_INFO + index, info, info_rect, DT_LEFT, HUD_MIXED_CASE);
+	}
+
+	// Threat counting (for missile lock sound logic)
+	if (c->GetShot() && c->Threat(ship))
+		++threat;
+}
+
+void HUDView::DrawTrack(SimContact* c)
+{
+	if (!c || !projector)
+		return;
+
+	// Track ladder: draw the contact's stored track points, fading by age.
+	const int ctl = c->TrackLength();
+	if (ctl <= 0)
+		return;
+
+	FColor base = MarkerColor(c);
+
+	FVector t1 = c->TrackPoint(0);
+	FVector t0 = c->Location();
+
+	// Segment from current to first track point:
+	if (t0 != t1)
+		DrawTrackSegment(t0, t1, base);
+
+	for (int i = 0; i < ctl - 1; i++)
+	{
+		FVector a = c->TrackPoint(i);
+		FVector b = c->TrackPoint(i + 1);
+		if (a == b)
+			continue;
+
+		const float fade = (float)((double)(ctl - i) / (double)ctl);
+		DrawTrackSegment(a, b, ColorMul(base, fade));
+	}
+}
+
+void HUDView::DrawTrackSegment(FVector& t1, FVector& t2, FColor c)
+{
+	if (!projector)
+		return;
+
+	FVector a = t1;
+	FVector b = t2;
+
+	projector->Transform(a);
+	projector->Transform(b);
+
+	// Both behind camera
+	if (a.Z <= 1.0f && b.Z <= 1.0f)
+		return;
+
+	// Project what we can; if one is behind, still try to draw a short hint line.
+	if (a.Z > 1.0f) projector->Project(a);
+	if (b.Z > 1.0f) projector->Project(b);
+
+	const int ax = (int)a.X;
+	const int ay = (int)a.Y;
+	const int bx = (int)b.X;
+	const int by = (int)b.Y;
+
+	// Simple bounds reject
+	if ((ax < -1000 || ax > width + 1000) && (bx < -1000 || bx > width + 1000))
+		return;
+	if ((ay < -1000 || ay > height + 1000) && (by < -1000 || by > height + 1000))
+		return;
+
+	DrawLine(ax, ay, bx, by, c);
+}
+
+void HUDView::DrawRect(SimObject* targ)
+{
+	if (!targ || !targ->Rep())
+		return;
+
+	Graphic* g = targ->Rep();
+	Rect r = g->ScreenRect();
+
+	// Clamp and outline
+	if (r.w <= 0 || r.h <= 0)
+		return;
+
+	DrawRect(r, HudColor);
+}
+
+void HUDView::DrawLCOS(SimObject* targ, double dist)
+{
+	// LCOS: Lead-Computing Optical Sight (simplified).
+	// Legacy computed ballistic lead based on weapon/projectile speed, target motion, etc.
+	// Here we do a safe fallback: aim at the projected target (or subtarget mount) and use aim/lead sprite.
+
+	if (!ship || !targ || !projector)
+		return;
+
+	FVector p = targ->Location();
+	projector->Transform(p);
+
+	if (p.Z <= 1.0f)
+		return;
+
+	projector->Project(p);
+
+	const double x = p.X;
+	const double y = p.Y;
+
+	if (x <= 0 || x >= width - 1 || y <= 0 || y >= height - 1)
+		return;
+
+	// Choose sprite based on gunsight selection:
+	Sprite* s = (gunsight == 0) ? aim_sprite : lead_sprite;
+	if (!s)
+		return;
+
+	s->Show();
+	s->MoveTo(FVector((float)x, (float)y, 1));
+
+	// If you want a little “range cue”, draw a tiny box:
+	if (!arcade)
+	{
+		const int ix = (int)x;
+		const int iy = (int)y;
+		DrawRect(ix - 3, iy - 3, ix + 3, iy + 3, HudColor);
+	}
+}
+
+void HUDView::DrawFPM()
+{
+	// Flight Path Marker (simplified):
+	if (!ship || !projector || !fpm_sprite)
+		return;
+
+	// Best-effort: use velocity vector projected from ship origin.
+	FVector p = ship->Location() + ship->Velocity().GetSafeNormal() * 500.0f;
+	projector->Transform(p);
+
+	if (p.Z <= 1.0f)
+	{
+		// fallback to center
+		fpm_sprite->Show();
+		fpm_sprite->MoveTo(FVector((float)xcenter, (float)ycenter, 1));
+		return;
+	}
+
+	projector->Project(p);
+
+	fpm_sprite->Show();
+	fpm_sprite->MoveTo(FVector((float)p.X, (float)p.Y, 1));
+}
+
+void HUDView::DrawHPM()
+{
+	// Helm Path Marker (simplified, no Ship::Orientation()):
+	if (!ship || !projector || !hpm_sprite)
+		return;
+
+	// Use velocity direction as a forward proxy:
+	const FVector v = ship->Velocity();
+
+	// If we're basically not moving, just center it:
+	if (v.SizeSquared() < 1e-4f)
+	{
+		hpm_sprite->Show();
+		hpm_sprite->MoveTo(FVector((float)xcenter, (float)ycenter, 1));
+		return;
+	}
+
+	const FVector dir = v.GetSafeNormal();
+
+	// Project a point ahead of the ship along motion vector:
+	FVector p = ship->Location() + dir * 500.0f;
+
+	projector->Transform(p);
+
+	// If behind/too close to camera plane, center it:
+	if (p.Z <= 1.0f)
+	{
+		hpm_sprite->Show();
+		hpm_sprite->MoveTo(FVector((float)xcenter, (float)ycenter, 1));
+		return;
+	}
+
+	projector->Project(p);
+
+	hpm_sprite->Show();
+	hpm_sprite->MoveTo(FVector((float)p.X, (float)p.Y, 1));
+}
+
+void HUDView::DrawCompass()
+{
+	// Minimal 2D compass overlay (compile-safe)
+	if (!ship)
+		return;
+
+	// Compass center (top-middle of screen)
+	const int cx = width / 2;
+	const int cy = 50;
+
+	// Draw compass ring
+	DrawEllipse(cx - 28, cy - 28, cx + 28, cy + 28, HudColor);
+
+	// Use velocity as heading proxy
+	const FVector v = ship->Velocity();
+
+	// If nearly stationary, draw centered marker
+	if (v.SizeSquared() < 1e-4f)
+	{
+		DrawLine(cx, cy - 18, cx, cy + 18, HudColor);
+		return;
+	}
+
+	const FVector dir = v.GetSafeNormal();
+
+	// Heading angle in screen space
+	const float heading = FMath::Atan2(dir.Y, dir.X);
+
+	const float dx = FMath::Cos(heading) * 22.0f;
+	const float dy = FMath::Sin(heading) * 22.0f;
+
+	DrawLine(cx, cy, cx + (int)dx, cy + (int)dy, HudColor);
+
+	// Heading label
+	char txt[32] = {};
+	int headingDeg = (int)FMath::RoundToInt(FMath::RadiansToDegrees(heading));
+	if (headingDeg < 0)
+		headingDeg += 360;
+
+	snprintf(txt, sizeof(txt), "%03d", headingDeg);
+
+	Rect r(cx - 30, cy + 30, 60, 12);
+	DrawHUDText(TXT_COMPASS, txt, r, DT_CENTER);
+}
+
+void HUDView::HideCompass()
+{
+	// If you later wire az_ring/el_ring into the scene, detach/hide here.
+	// For now, compass is drawn 2D so nothing to do.
+}
+
+void HUDView::DrawPitchLadder()
+{
+	// Minimal pitch ladder (compile-safe fallback)
+	// Hide all ladder sprites, then show the zero mark near center.
+	for (int i = 0; i < 31; i++)
+	{
+		if (pitch_ladder[i])
+			pitch_ladder[i]->Hide();
+	}
+
+	if (!ship)
+		return;
+
+	// Fallback pitch source: velocity direction
+	const FVector v = ship->Velocity();
+
+	// If basically stationary, just show zero rung centered:
+	if (v.SizeSquared() < 1e-4f)
+	{
+		const int idxZero = 15;
+		if (pitch_ladder[idxZero])
+		{
+			pitch_ladder[idxZero]->Show();
+			pitch_ladder[idxZero]->MoveTo(FVector((float)xcenter, (float)ycenter, 1));
+		}
+		return;
+	}
+
+	const FVector dir = v.GetSafeNormal();
+
+	// Pitch from direction Z component:
+	const float pitchRad = FMath::Asin(FMath::Clamp(dir.Z, -1.0f, 1.0f));
+	const float pitchDeg = FMath::RadiansToDegrees(pitchRad);
+
+	// Map +-90 deg to +-120 px (screen Y is down, so invert sign)
+	const float yOff = FMath::Clamp(-pitchDeg / 90.0f, -1.0f, 1.0f) * 120.0f;
+
+	// Show “zero” rung (index 15) at offset center.
+	const int idxZero = 15;
+	if (pitch_ladder[idxZero])
+	{
+		pitch_ladder[idxZero]->Show();
+		pitch_ladder[idxZero]->MoveTo(FVector((float)xcenter, (float)(ycenter + yOff), 1));
+	}
+}
+
+
+void HUDView::DrawLine(int x1, int y1, int x2, int y2, FColor c)
+{
+	// Calls the View::DrawLine you imported with 'using View::DrawLine;'
+	View::DrawLine(x1, y1, x2, y2, c);
+}
+
+void HUDView::FillRect(int x1, int y1, int x2, int y2, FColor c)
+{
+	// Calls the View::FillRect you imported with 'using View::FillRect;'
+	View::FillRect(x1, y1, x2, y2, c);
+}
+
+void HUDView::DrawRect(int x1, int y1, int x2, int y2, FColor c)
+{
+	// Calls the View::DrawRect you imported with 'using View::DrawRect;'
+	View::DrawRect(x1, y1, x2, y2, c);
+}
+
+void HUDView::DrawEllipse(int x1, int y1, int x2, int y2, FColor c)
+{
+	// Calls the View::DrawEllipse you imported with 'using View::DrawEllipse;'
+	View::DrawEllipse(x1, y1, x2, y2, c);
+}
+
+
+void HUDView::DrawRect(const Rect& r, const FColor& c)
+{
+	const int x1 = r.x;
+	const int y1 = r.y;
+	const int x2 = r.x + r.w;
+	const int y2 = r.y + r.h;
+
+	// Outline rectangle using your existing DrawLine
+	DrawLine(x1, y1, x2, y1, c); // top
+	DrawLine(x2, y1, x2, y2, c); // right
+	DrawLine(x2, y2, x1, y2, c); // bottom
+	DrawLine(x1, y2, x1, y1, c); // left
+}
+
+void HUDView::DrawRect(const Rect& r, const FLinearColor& c)
+{
+	DrawRect(r, c.ToFColor(true));
+}
+
+
+#if HUDVIEW_WITH_UE
+void HUDView::DrawLine(const FVector2D& A, const FVector2D& B, const FLinearColor& C, float Thickness) const
+{
+	if (!paint_ctx || !paint_geo) return;
+
+	TArray<FVector2D> Pts;
+	Pts.Add(A);
+	Pts.Add(B);
+
+	FSlateDrawElement::MakeLines(
+		paint_ctx->OutDrawElements,
+		paint_layer,
+		paint_geo->ToPaintGeometry(),
+		Pts,
+		ESlateDrawEffect::None,
+		C,
+		true,
+		Thickness
+	);
+}
+
+void HUDView::DrawRectOutline(const FSlateRect& R, const FLinearColor& C, float Thickness) const
+{
+	DrawLine(FVector2D(R.Left, R.Top), FVector2D(R.Right, R.Top), C, Thickness);
+	DrawLine(FVector2D(R.Right, R.Top), FVector2D(R.Right, R.Bottom), C, Thickness);
+	DrawLine(FVector2D(R.Right, R.Bottom), FVector2D(R.Left, R.Bottom), C, Thickness);
+	DrawLine(FVector2D(R.Left, R.Bottom), FVector2D(R.Left, R.Top), C, Thickness);
+}
+
+void HUDView::FillRect(const FSlateRect& R, const FLinearColor& C) const
+{
+	if (!paint_ctx || !paint_geo) return;
+
+	const FVector2D Pos(R.Left, R.Top);
+	const FVector2D Size(R.Right - R.Left, R.Bottom - R.Top);
+
+	FSlateDrawElement::MakeBox(
+		paint_ctx->OutDrawElements,
+		paint_layer,
+		paint_geo->ToPaintGeometry(Pos, Size),
+		FCoreStyle::Get().GetBrush("WhiteBrush"),
+		ESlateDrawEffect::None,
+		C
+	);
+}
+
+void HUDView::DrawEllipseOutline(const FVector2D& Center, float Rx, float Ry, const FLinearColor& C, float Thickness, int32 Segments) const
+{
+	if (!paint_ctx || !paint_geo) return;
+	if (Segments < 8) Segments = 8;
+
+	TArray<FVector2D> Pts;
+	Pts.Reserve(Segments + 1);
+
+	for (int32 i = 0; i <= Segments; i++)
+	{
+		const float t = (2.0f * PI) * ((float)i / (float)Segments);
+		Pts.Add(Center + FVector2D(FMath::Cos(t) * Rx, FMath::Sin(t) * Ry));
+	}
+
+	FSlateDrawElement::MakeLines(
+		paint_ctx->OutDrawElements,
+		paint_layer,
+		paint_geo->ToPaintGeometry(),
+		Pts,
+		ESlateDrawEffect::None,
+		C,
+		true,
+		Thickness
+	);
+}
+
+void HUDView::DrawTextAt(const FVector2D& Pos, const FString& Text, const FSlateFontInfo& FontInfo, const FLinearColor& C) const
+{
+	if (!paint_ctx || !paint_geo) return;
+
+	FSlateDrawElement::MakeText(
+		paint_ctx->OutDrawElements,
+		paint_layer,
+		paint_geo->ToPaintGeometry(Pos, FVector2D(1, 1)),
+		Text,
+		FontInfo,
+		ESlateDrawEffect::None,
+		C
+	);
+}
+
+FLinearColor HUDView::ToLinear(const Color& C)
+{
+	// Legacy Color likely 0..255 channels
+	return FLinearColor((float)C.red / 255.0f, (float)C.green / 255.0f, (float)C.blue / 255.0f, 1.0f);
+}
+
+FSlateRect HUDView::ToSlateRect(const Rect& R)
+{
+	return FSlateRect((float)R.x, (float)R.y, (float)(R.x + R.w), (float)(R.y + R.h));
+}
+#endif

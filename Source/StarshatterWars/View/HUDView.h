@@ -67,11 +67,11 @@ public:
     HUDView(Screen* InScreen);
     virtual ~HUDView();
 
-    using View::DrawRect;
-    using View::FillRect;
-    using View::DrawLine;
+   //using View::DrawRect;
+    //using View::FillRect;
+    //using View::DrawLine;
     using View::DrawPoly;
-    using View::DrawEllipse;
+    //using View::DrawEllipse;
 
     // Operations:
     virtual void      Refresh();
@@ -164,6 +164,14 @@ public:
     virtual bool         Update(SimObject* obj);
     virtual const char* GetObserverName() const;
 
+    void DrawLine(int x1, int y1, int x2, int y2, FColor c);
+    void FillRect(int x1, int y1, int x2, int y2, FColor c);
+    void DrawRect(int x1, int y1, int x2, int y2, FColor c);
+    void DrawEllipse(int x1, int y1, int x2, int y2, FColor c);
+   
+    // Legacy-style draw helpers:
+    void DrawRect(const Rect& r, const FColor& c);
+    void DrawRect(const Rect& r, const FLinearColor& c);
     // ----------------------------------------------------------------
     // Unreal/Slate paint binding (optional)
     // Call BeginPaint(...) from your widget's NativePaint,

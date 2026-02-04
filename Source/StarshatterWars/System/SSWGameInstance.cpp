@@ -81,6 +81,23 @@ FString USSWGameInstance::GetProjectPath()
 	return ProjectPath;
 }
 
+void USSWGameInstance::Print(const FString& A, const FString& B)
+{
+	const FString Msg = A + TEXT(" ") + B;
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *Msg);
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Cyan,
+			Msg
+		);
+	}
+}
+
 void USSWGameInstance::SpawnGalaxy()
 {
 	/*UWorld* World = GetWorld();
