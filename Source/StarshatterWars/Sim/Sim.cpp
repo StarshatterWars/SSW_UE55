@@ -84,35 +84,6 @@
 // This translation unit does notxinclude Bitmap.h.
 
 // --------------------------------------------------------------------
-// UE logging bridge (replaces legacy Print debugging)
-// --------------------------------------------------------------------
-
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSim, Log, All);
-
-static void SSLogf(const char* Fmt, ...)
-{
-	if (!Fmt || !*Fmt)
-		return;
-
-	char Buffer[4096];
-
-	va_list Args;
-	va_start(Args, Fmt);
-#if defined(_MSC_VER)
-	vsnprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, Fmt, Args);
-#else
-	vsnprintf(Buffer, sizeof(Buffer), Fmt, Args);
-#endif
-	va_end(Args);
-
-	UE_LOG(LogStarshatterSim, Log, TEXT("%s"), ANSI_TO_TCHAR(Buffer));
-}
-
-#ifndef Print
-#define Print SSLogf
-#endif
-
-// --------------------------------------------------------------------
 // FVector helpers
 // --------------------------------------------------------------------
 

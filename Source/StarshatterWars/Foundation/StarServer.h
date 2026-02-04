@@ -44,9 +44,6 @@ class MultiController;
 class MouseController;
 class DataLoader;
 
-class NetServer;
-class NetLobbyServer;
-
 // +--------------------------------------------------------------------+
 
 class StarServer : public Game
@@ -60,13 +57,6 @@ public:
 	virtual bool      InitGame();
 	virtual void      GameState();
 	virtual bool      OnPaint();
-
-	// Game modes
-	enum MODE {
-		MENU_MODE,   // main menu
-		LOAD_MODE,   // loading mission into simulator
-		PLAY_MODE    // active simulation
-	};
 
 	// Accessors / mutators
 	EMODE             GetGameMode() const { return game_mode; }
@@ -89,8 +79,6 @@ protected:
 protected:
 	static StarServer* instance;
 
-	NetServer* admin_server;
-	NetLobbyServer* lobby_server;
 	DataLoader* loader;
 
 	EMODE               game_mode;

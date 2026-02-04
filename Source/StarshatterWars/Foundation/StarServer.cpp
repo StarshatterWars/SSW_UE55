@@ -54,27 +54,6 @@
 
 #include "Logging/LogMacros.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogStarServer, Log, All);
-
-static void SSLogf(const char* Fmt, ...)
-{
-	if (!Fmt || !*Fmt)
-		return;
-
-	char Buffer[4096];
-
-	va_list Args;
-	va_start(Args, Fmt);
-	vsnprintf(Buffer, sizeof(Buffer), Fmt, Args);
-	va_end(Args);
-
-	UE_LOG(LogStarServer, Log, TEXT("%s"), ANSI_TO_TCHAR(Buffer));
-}
-
-#ifndef Print
-#define Print SSLogf
-#endif
-
 // --------------------------------------------------------------------
 
 StarServer* StarServer::instance = nullptr;

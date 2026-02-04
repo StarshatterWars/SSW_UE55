@@ -67,6 +67,37 @@ static FVector RowAsVector(const FMatrix& M, int Row)
 
 // +--------------------------------------------------------------------+
 
+Sprite::Sprite()
+	: w(0), h(0), nframes(0), own_frames(0),
+	frames(0), frame_index(0), frame_time(67), loop(0), shade(1.0),
+	angle(0.0), blend_mode(4), filter(1), vset(4), poly(0)
+{
+	trans = true;
+	SetAnimation(nullptr, 0, 0, 0);
+
+	vset.space = VertexSet::WORLD_SPACE;
+	for (int i = 0; i < 4; i++) {
+		vset.diffuse[i] = FColor::White;
+	}
+
+	vset.tu[0] = 0.0f;
+	vset.tv[0] = 0.0f;
+	vset.tu[1] = 1.0f;
+	vset.tv[1] = 0.0f;
+	vset.tu[2] = 1.0f;
+	vset.tv[2] = 1.0f;
+	vset.tu[3] = 0.0f;
+	vset.tv[3] = 1.0f;
+
+	poly.nverts = 4;
+	poly.vertex_set = &vset;
+	poly.material = &mtl;
+	poly.verts[0] = 0;
+	poly.verts[1] = 1;
+	poly.verts[2] = 2;
+	poly.verts[3] = 3;
+}
+
 Sprite::Sprite(Bitmap* animation, int length, int repeat, int share)
 	: w(0), h(0), nframes(0), own_frames(0),
 	frames(0), frame_index(0), frame_time(67), loop(0), shade(1.0),
