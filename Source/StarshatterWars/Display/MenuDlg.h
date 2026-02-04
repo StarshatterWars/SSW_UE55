@@ -6,13 +6,11 @@
     FILE:         MenuDlg.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
     Main Menu dialog (legacy MenuDlg) adapted for Unreal UMG.
+    - Pure dialog widget: button wiring + hover description.
+    - Delegates navigation to UMenuScreen (the router/manager).
 */
 
 #pragma once
@@ -25,11 +23,12 @@
 class UButton;
 class UTextBlock;
 
+// Manager/router
 class UMenuScreen;
+
+// Legacy
 class Starshatter;
 class Campaign;
-
-// --------------------------------------------------------------------
 
 UCLASS()
 class STARSHATTERWARS_API UMenuDlg : public UBaseScreen
@@ -41,16 +40,19 @@ public:
 
     virtual void NativeConstruct() override;
 
+    // Manager wiring:
+    void SetManager(UMenuScreen* InManager) { Manager = InManager; }
+    UMenuScreen* GetManager() const { return Manager; }
+
     // Legacy parity:
     void RegisterControls();
-    void Show();         // semantic: you may call AddToViewport / SetVisibility externally
-    void ExecFrame();    // semantic: tick-driven in UMG; kept for parity
+    void Show();
+    void ExecFrame();
 
-    /** Legacy behavior: enable/disable all main menu buttons */
     UFUNCTION(BlueprintCallable)
     void EnableMenuButtons(bool bEnable);
 
-    // Operations (legacy event handlers):
+    // Click handlers:
     UFUNCTION() void OnStart();
     UFUNCTION() void OnCampaign();
     UFUNCTION() void OnMission();
@@ -59,12 +61,12 @@ public:
     UFUNCTION() void OnMod();
     UFUNCTION() void OnTacReference();
 
-    UFUNCTION() void OnVideo();
-    UFUNCTION() void OnOptions();
-    UFUNCTION() void OnControls();
+    UFUNCTION() void OnVideo();    // now routes to Options hub
+    UFUNCTION() void OnOptions();  // now routes to Options hub
+    UFUNCTION() void OnControls(); // now routes to Options hub
     UFUNCTION() void OnQuit();
 
-    // UMG hover callbacks:
+    // Hover handlers:
     UFUNCTION() void OnButtonEnter_Start();
     UFUNCTION() void OnButtonExit_Start();
 
@@ -90,15 +92,10 @@ public:
     UFUNCTION() void OnButtonExit_Quit();
 
 protected:
-    // ----------------------------------------------------------------
-    // External owner/screen (optional; depends on how you structured screens)
-    // ----------------------------------------------------------------
-    UPROPERTY()
-    UMenuScreen* Manager = nullptr;
+    UPROPERTY(Transient)
+    TObjectPtr<UMenuScreen> Manager = nullptr;
 
-    // ----------------------------------------------------------------
-    // Bound UMG widgets (match these names in your Widget Blueprint)
-    // ----------------------------------------------------------------
+    // Bound widgets:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnStart = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnCampaign = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnMission = nullptr;
@@ -115,15 +112,11 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* VersionText = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* DescriptionText = nullptr;
 
-    // ----------------------------------------------------------------
-    // Starshatter singletons (legacy)
-    // ----------------------------------------------------------------
+    // Legacy pointers:
     Starshatter* Stars = nullptr;
     Campaign* CampaignPtr = nullptr;
 
-    // ----------------------------------------------------------------
-    // Hover text (legacy "alt" strings)
-    // ----------------------------------------------------------------
+    // Hover text:
     FString AltStart;
     FString AltCampaign;
     FString AltMission;
@@ -136,6 +129,5 @@ protected:
 private:
     void ClearDescription();
     void SetDescription(const FString& Text);
-
     void SetButtonEnabled(UButton* Button, bool bEnable);
 };

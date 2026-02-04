@@ -2,21 +2,15 @@
 
 // UMG:
 #include "Components/Button.h"
-#include "Components/Slider.h"
 #include "Components/ComboBoxString.h"
+#include "Components/Slider.h"
 
-// Model:
+// NEW:
+#include "StarshatterAudioSubsystem.h"
 #include "StarshatterAudioSettings.h"
 
 // Host/router:
 #include "OptionsScreen.h"
-
-// UE:
-#include "Engine/World.h"
-#include "Engine/GameInstance.h"
-#include "Logging/LogMacros.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogAudioDlg, Log, All);
 
 UAudioDlg::UAudioDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -28,7 +22,6 @@ void UAudioDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Buttons:
     if (ApplyBtn)
     {
         ApplyBtn->OnClicked.RemoveAll(this);
@@ -42,69 +35,24 @@ void UAudioDlg::NativeConstruct()
     }
 
     // Tabs:
-    if (AudTabButton)
-    {
-        AudTabButton->OnClicked.RemoveAll(this);
-        AudTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnAudioClicked);
-    }
-
-    if (VidTabButton)
-    {
-        VidTabButton->OnClicked.RemoveAll(this);
-        VidTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnVideoClicked);
-    }
-
-    if (CtlTabButton)
-    {
-        CtlTabButton->OnClicked.RemoveAll(this);
-        CtlTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnControlsClicked);
-    }
-
-    if (OptTabButton)
-    {
-        OptTabButton->OnClicked.RemoveAll(this);
-        OptTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnOptionsClicked);
-    }
-
-    if (ModTabButton)
-    {
-        ModTabButton->OnClicked.RemoveAll(this);
-        ModTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnModClicked);
-    }
+    if (AudTabButton) { AudTabButton->OnClicked.RemoveAll(this); AudTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnAudioClicked); }
+    if (VidTabButton) { VidTabButton->OnClicked.RemoveAll(this); VidTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnVideoClicked); }
+    if (CtlTabButton) { CtlTabButton->OnClicked.RemoveAll(this); CtlTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnControlsClicked); }
+    if (OptTabButton) { OptTabButton->OnClicked.RemoveAll(this); OptTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnOptionsClicked); }
+    if (ModTabButton) { ModTabButton->OnClicked.RemoveAll(this); ModTabButton->OnClicked.AddDynamic(this, &UAudioDlg::OnModClicked); }
 
     // Sliders:
-    if (MasterSlider)
-    {
-        MasterSlider->OnValueChanged.RemoveAll(this);
-        MasterSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnMasterVolumeChanged);
-    }
+    if (MasterSlider) { MasterSlider->OnValueChanged.RemoveAll(this);  MasterSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnMasterVolumeChanged); }
+    if (MusicSlider) { MusicSlider->OnValueChanged.RemoveAll(this);   MusicSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnMusicVolumeChanged); }
+    if (EffectsSlider) { EffectsSlider->OnValueChanged.RemoveAll(this); EffectsSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnEffectsVolumeChanged); }
+    if (VoiceSlider) { VoiceSlider->OnValueChanged.RemoveAll(this);   VoiceSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnVoiceVolumeChanged); }
 
-    if (MusicSlider)
-    {
-        MusicSlider->OnValueChanged.RemoveAll(this);
-        MusicSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnMusicVolumeChanged);
-    }
-
-    if (EffectsSlider)
-    {
-        EffectsSlider->OnValueChanged.RemoveAll(this);
-        EffectsSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnEffectsVolumeChanged);
-    }
-
-    if (VoiceSlider)
-    {
-        VoiceSlider->OnValueChanged.RemoveAll(this);
-        VoiceSlider->OnValueChanged.AddDynamic(this, &UAudioDlg::OnVoiceVolumeChanged);
-    }
-
-    // Combo:
     if (QualityCombo)
     {
         QualityCombo->OnSelectionChanged.RemoveAll(this);
         QualityCombo->OnSelectionChanged.AddDynamic(this, &UAudioDlg::OnSoundQualityChanged);
     }
 
-    // Initial load:
     if (bClosed)
     {
         RefreshFromModel();
@@ -115,44 +63,58 @@ void UAudioDlg::NativeConstruct()
 void UAudioDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame(InDeltaTime);
+    ExecFrame((double)InDeltaTime);
 }
 
-void UAudioDlg::ExecFrame(float)
+// IMPORTANT: matches UBaseScreen::ExecFrame(double)
+void UAudioDlg::ExecFrame(double /*DeltaTime*/)
 {
-    // Optional: live preview hooks go here.
+    // Optional per-frame UI logic
 }
 
-void UAudioDlg::HandleAccept()
+void UAudioDlg::BindFormWidgets() {}
+FString UAudioDlg::GetLegacyFormText() const { return FString(); }
+
+void UAudioDlg::Show()
 {
-    OnApplyClicked();
+    SetVisibility(ESlateVisibility::Visible);
+
+    if (bClosed)
+    {
+        RefreshFromModel();
+        bClosed = false;
+    }
 }
 
-void UAudioDlg::HandleCancel()
+void UAudioDlg::HandleAccept() { OnApplyClicked(); }
+void UAudioDlg::HandleCancel() { OnCancelClicked(); }
+
+// -------------------------
+// NEW: Correct accessors
+// -------------------------
+
+UStarshatterAudioSubsystem* UAudioDlg::GetAudioSubsystem() const
 {
-    OnCancelClicked();
+    return UStarshatterAudioSubsystem::Get(const_cast<UAudioDlg*>(this));
 }
-
-// ------------------------------------------------------------
-// Model access / sync
-// ------------------------------------------------------------
 
 UStarshatterAudioSettings* UAudioDlg::GetAudioSettings() const
 {
-    if (UGameInstance* GI = GetGameInstance())
-        return GI->GetSubsystem<UStarshatterAudioSettings>();
-
-    return nullptr;
+    // Settings is a config-backed UObject (CDO pattern), not a subsystem:
+    return GetMutableDefault<UStarshatterAudioSettings>();
 }
+
+// -------------------------
+// Model -> UI
+// -------------------------
 
 void UAudioDlg::RefreshFromModel()
 {
     UStarshatterAudioSettings* S = GetAudioSettings();
-    if (!S)
-    {
-        UE_LOG(LogAudioDlg, Warning, TEXT("AudioDlg: AudioSettings subsystem not available."));
-        return;
-    }
+    if (!S) return;
+
+    S->ReloadConfig();
+    S->Sanitize();
 
     MasterVolume = S->GetMasterVolume();
     MusicVolume = S->GetMusicVolume();
@@ -169,11 +131,14 @@ void UAudioDlg::RefreshFromModel()
         QualityCombo->SetSelectedIndex(SoundQuality);
 }
 
+// -------------------------
+// UI -> Model
+// -------------------------
+
 void UAudioDlg::PushToModel(bool bApplyRuntimeToo)
 {
     UStarshatterAudioSettings* S = GetAudioSettings();
-    if (!S)
-        return;
+    if (!S) return;
 
     S->SetMasterVolume(MasterVolume);
     S->SetMusicVolume(MusicVolume);
@@ -181,49 +146,31 @@ void UAudioDlg::PushToModel(bool bApplyRuntimeToo)
     S->SetVoiceVolume(VoiceVolume);
     S->SetSoundQuality(SoundQuality);
 
-    // Save to config:
+    S->Sanitize();
     S->Save();
 
-    // Apply to UE audio runtime (optional but usually desired on Apply):
     if (bApplyRuntimeToo)
-        S->ApplyToRuntimeAudio();
-}
-
-// ------------------------------------------------------------
-// Show / Apply / Cancel (compat with your routing)
-// ------------------------------------------------------------
-
-void UAudioDlg::Show()
-{
-    SetVisibility(ESlateVisibility::Visible);
-
-    if (bClosed)
     {
-        RefreshFromModel();
-        bClosed = false;
+        if (UStarshatterAudioSubsystem* AudioSub = GetAudioSubsystem())
+        {
+            AudioSub->ApplySettingsToRuntime(const_cast<UAudioDlg*>(this));
+        }
     }
 }
 
 void UAudioDlg::Apply()
 {
-    if (bClosed)
-        return;
-
+    if (bClosed) return;
     PushToModel(true);
     bClosed = true;
 }
 
 void UAudioDlg::Cancel()
 {
-    // Revert UI to model values:
-    RefreshFromModel();
     bClosed = true;
 }
 
-// ------------------------------------------------------------
-// Handlers
-// ------------------------------------------------------------
-
+// Slider handlers:
 void UAudioDlg::OnMasterVolumeChanged(float V) { MasterVolume = V; }
 void UAudioDlg::OnMusicVolumeChanged(float V) { MusicVolume = V; }
 void UAudioDlg::OnEffectsVolumeChanged(float V) { EffectsVolume = V; }
@@ -238,19 +185,14 @@ void UAudioDlg::OnSoundQualityChanged(FString, ESelectInfo::Type)
 // Buttons:
 void UAudioDlg::OnApplyClicked()
 {
-    // If routed through OptionsScreen, let it coordinate Apply across dialogs.
-    if (Manager)
-        Manager->ApplyOptions();
-    else
-        Apply();
+    if (Manager) Manager->ApplyOptions();
+    else Apply();
 }
 
 void UAudioDlg::OnCancelClicked()
 {
-    if (Manager)
-        Manager->CancelOptions();
-    else
-        Cancel();
+    if (Manager) Manager->CancelOptions();
+    else Cancel();
 }
 
 // Tabs:

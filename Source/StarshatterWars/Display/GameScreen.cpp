@@ -24,6 +24,7 @@
 #include "NavDlg.h"
 #include "EngineeringDlg.h"
 #include "FlightOpsDlg.h"
+#include "OptionsScreen.h"
 
 // Legacy:
 #include "Sim.h"
@@ -439,4 +440,12 @@ void UGameScreen::ApplyInputModeForScreen(bool bExternal)
         PC->SetInputMode(Mode);
         PC->bShowMouseCursor = false;
     }
+}
+
+bool UGameScreen::IsFormShown() const
+{
+    return IsDlgVisible(NavDlg) ||
+        IsDlgVisible(EngDlg) ||
+        IsDlgVisible(FltDlg) ||
+        IsDlgVisible(OptDlg);
 }

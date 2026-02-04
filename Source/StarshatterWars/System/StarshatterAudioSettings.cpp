@@ -1,35 +1,57 @@
 #include "StarshatterAudioSettings.h"
 
 #include "Engine/Engine.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Kismet/GameplayStatics.h"
-#include "Sound/SoundMix.h"
-#include "Sound/SoundClass.h"
-// ------------------------------------------------------------
-// Singleton accessor
-// ------------------------------------------------------------
+
 UStarshatterAudioSettings* UStarshatterAudioSettings::Get()
 {
-    static UStarshatterAudioSettings* Instance = nullptr;
-
-    if (!Instance)
-    {
-        Instance = GetMutableDefault<UStarshatterAudioSettings>();
-    }
-
-    return Instance;
+    // Use class default object (always exists, config-backed)
+    return GetMutableDefault<UStarshatterAudioSettings>();
 }
 
-// ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
-float UStarshatterAudioSettings::Clamp01(float V)
+void UStarshatterAudioSettings::Load()
 {
-    return FMath::Clamp(V, 0.0f, 1.0f);
+    // CDO already loads config automatically, but this forces a reload
+    // if the ini changed during runtime.
+    ReloadConfig();
+    Sanitize();
 }
 
-// ------------------------------------------------------------
+void UStarshatterAudioSettings::Sanitize()
+{
+    MasterVolume = Clamp01(MasterVolume);
+    MusicVolume = Clamp01(MusicVolume);
+    EffectsVolume = Clamp01(EffectsVolume);
+    VoiceVolume = Clamp01(VoiceVolume);
+
+    // Keep quality index sane (adjust max as you like)
+    SoundQuality = FMath::Clamp(SoundQuality, 0, 3);
+}
+
+void UStarshatterAudioSettings::Save() const
+{
+    // Save current object values into config
+    const_cast<UStarshatterAudioSettings*>(this)->SaveConfig();
+}
+
+void UStarshatterAudioSettings::ApplyToRuntimeAudio(UObject* WorldContextObject) const
+{
+    // Stub: UE-native runtime routing goes here.
+    // Examples you might implement next:
+    // - Set SoundClass volumes (Master/Music/SFX/Voice)
+    // - Apply a SoundMix override
+    // - Apply Audio Modulation parameters
+    //
+    // Leaving this as a no-op is fine and compiles cleanly.
+
+    (void)WorldContextObject;
+}
+
+// -------------------------
 // Setters
-// ------------------------------------------------------------
+// -------------------------
+
 void UStarshatterAudioSettings::SetMasterVolume(float V)
 {
     MasterVolume = Clamp01(V);
@@ -40,9 +62,9 @@ void UStarshatterAudioSettings::SetMusicVolume(float V)
     MusicVolume = Clamp01(V);
 }
 
-void UStarshatterAudioSettings::SetSfxVolume(float V)
+void UStarshatterAudioSettings::SetEffectsVolume(float V)
 {
-    SfxVolume = Clamp01(V);
+    EffectsVolume = Clamp01(V);
 }
 
 void UStarshatterAudioSettings::SetVoiceVolume(float V)
@@ -50,27 +72,7 @@ void UStarshatterAudioSettings::SetVoiceVolume(float V)
     VoiceVolume = Clamp01(V);
 }
 
-void UStarshatterAudioSettings::SetQualityIndex(int32 Index)
+void UStarshatterAudioSettings::SetSoundQuality(int32 Index)
 {
-    QualityIndex = FMath::Clamp(Index, 0, 3);
+    SoundQuality = FMath::Clamp(Index, 0, 3);
 }
-
-// ------------------------------------------------------------
-// Save
-// ------------------------------------------------------------
-void UStarshatterAudioSettings::Save()
-{
-    SaveConfig();
-}
-
-void UStarshatterAudioSettings::ApplyToRuntimeAudio()
-{
-    // NOTE:
-    // This is a safe stub that compiles even if you haven't wired SoundMix/SoundClass assets yet.
-    // When you add assets, you can do:
-    // - Push a SoundMix modifier
-    // - Set SoundClass volumes (Master/Music/SFX/Voice)
-    //
-    // For now, no-op to unblock build.
-}
-

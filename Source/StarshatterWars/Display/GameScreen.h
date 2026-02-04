@@ -44,6 +44,7 @@ class TacticalView;
 class CameraView;
 class Bitmap;
 class DataLoader;
+class UOptionsScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UGameScreen : public UBaseScreen
@@ -97,6 +98,7 @@ public:
     UFUNCTION() void ShowExternal();
     UFUNCTION() void ShowInternal();
     UFUNCTION() bool IsExternalVisible() const { return bExternalVisible; }
+    UFUNCTION() bool IsFormShown() const;
 
     // Accessors:
     UNavDlg* GetNavDlg() const { return NavDlg; }
@@ -130,6 +132,7 @@ private:
     UNavDlg* NavDlg = nullptr;
     UEngineeringDlg* EngDlg = nullptr;
     UFlightOpsDlg* FltDlg = nullptr;
+    UOptionsScreen* OptDlg = nullptr;
 
     // Legacy raw systems (NOT UPROPERTY):
     Sim* sim = nullptr;
