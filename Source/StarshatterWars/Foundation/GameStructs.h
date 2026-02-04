@@ -774,6 +774,20 @@ enum class RadioMessageAction : uint8
 	NUM_ACTIONS
 };
 
+UENUM()
+enum class TacticalViewMenu : uint8 {
+	FORWARD = 1000,
+	CHASE,
+	PADLOCK,
+	ORBIT,
+	NAV,
+	WEP,
+	ENG,
+	FLT,
+	INS,
+	CMD
+};
+
 /*static enum ETXT : int32
 {
 	MAX_CONTACT = 50,
