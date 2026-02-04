@@ -60,10 +60,18 @@ public:
 
 	virtual void      Collect();
 
-	virtual bool      IsLightObscured(const FVector& obj_pos,
+	virtual bool IsLightObscured(
+		UWorld* World,
+		const FVector& obj_pos,
 		const FVector& light_pos,
-		double         obj_radius,
-		FVector* imp_point = 0) const;
+		double obj_radius,
+		FVector* impact_point = nullptr) const;
+
+	virtual bool IsLightObscured(
+		const FVector& obj_pos,
+		const FVector& light_pos,
+		double obj_radius,
+		FVector* impact_point = nullptr) const;
 
 	static SimScene* emergency_scene;
 

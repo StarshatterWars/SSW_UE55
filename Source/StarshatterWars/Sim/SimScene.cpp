@@ -19,6 +19,9 @@
 // Minimal Unreal includes:
 #include "Math/Vector.h"
 #include "Logging/LogMacros.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/World.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterSimScene, Log, All);
 
@@ -186,84 +189,58 @@ SimScene::Collect()
 
 // +--------------------------------------------------------------------+
 
-bool
-SimScene::IsLightObscured(const FVector& obj_pos,
+bool SimScene::IsLightObscured(
+	UWorld* World,
+	const FVector& obj_pos,
 	const FVector& light_pos,
-	double         obj_radius,
+	double obj_radius,
 	FVector* impact_point) const
 {
-	FVector dir = light_pos - obj_pos;
-	const double len = dir.Normalize();
+	if (!World)
+		return false;
 
-	SimScene* pThis = (SimScene*)this; // cast-away const
-	Graphic* g = 0;
-	bool      obscured = false;
+	const FVector Dir = (light_pos - obj_pos);
+	const double Len = Dir.Length();
 
-	ListIter<Graphic> g_iter = pThis->graphics;
-	while (++g_iter && !obscured) {
-		g = g_iter.value();
+	if (Len <= KINDA_SMALL_NUMBER)
+		return false;
 
-		if (g->CastsShadow() && !g->Hidden() && !g->IsInfinite()) {
-			const double gdist = (g->Location() - obj_pos).Size();
+	FHitResult Hit;
+	FCollisionQueryParams Params(
+		SCENE_QUERY_STAT(SimScene_LightObscured),
+		/*bTraceComplex=*/true
+	);
 
-			if (gdist > 0.1 &&                      // different than object being obscured
-				g->Radius() > obj_radius &&         // larger than object being obscured
-				(g->Radius() * 400) / gdist > 10) { // projects to a reasonable size
+	const bool bHit = World->LineTraceSingleByChannel(
+		Hit,
+		obj_pos,
+		light_pos,
+		ECC_Visibility,
+		Params
+	);
 
-				const FVector delta = (g->Location() - light_pos);
-
-				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
-					FVector impact = FVector::ZeroVector;
-					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
-
-					if (impact_point)
-						*impact_point = impact;
-				}
-			}
-
-			else if (obj_radius < 0 && gdist < 0.1) { // special case for camera (needed for cockpits)
-				const FVector delta = (g->Location() - light_pos);
-
-				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
-					FVector impact = FVector::ZeroVector;
-					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
-				}
-			}
-		}
+	if (bHit)
+	{
+		if (impact_point)
+			*impact_point = Hit.ImpactPoint;
+		return true;
 	}
 
-	g_iter.attach(pThis->foreground);
-	while (++g_iter && !obscured) {
-		g = g_iter.value();
+	return false;
+}
 
-		if (g->CastsShadow() && !g->Hidden()) {
-			const double gdist = (g->Location() - obj_pos).Size();
+bool SimScene::IsLightObscured(
+	const FVector& obj_pos,
+	const FVector& light_pos,
+	double obj_radius,
+	FVector* impact_point) const
+{
+	// Legacy bridge: try to obtain a valid UWorld automatically.
+	UWorld* World = nullptr;
 
-			if (gdist > 0.1 &&                      // different than object being obscured
-				g->Radius() > obj_radius &&         // larger than object being obscured
-				(g->Radius() * 400) / gdist > 10) { // projects to a reasonable size
+	if (GEngine && GEngine->GameViewport)
+		World = GEngine->GameViewport->GetWorld();
 
-				const FVector delta = (g->Location() - light_pos);
-
-				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
-					FVector impact = FVector::ZeroVector;
-					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
-
-					if (impact_point)
-						*impact_point = impact;
-				}
-			}
-
-			else if (obj_radius < 0 && gdist < 0.1) { // special case for camera (needed for cockpits)
-				const FVector delta = (g->Location() - light_pos);
-
-				if (delta.Size() > g->Radius() / 100) { // notxthe object that is emitting the light
-					FVector impact = FVector::ZeroVector;
-					obscured = g->CheckRayIntersection(obj_pos, dir, len, impact, false) ? true : false;
-				}
-			}
-		}
-	}
-
-	return obscured;
+	// If no world is available (early init, tools, etc.), return false safely.
+	return IsLightObscured(World, obj_pos, light_pos, obj_radius, impact_point);
 }
