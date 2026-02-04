@@ -2,7 +2,7 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026. All Rights Reserved.
 
-    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
+    SUBSYSTEM:    nGenEx.lib (legacy compatibility layer)
     FILE:         FontManager.cpp
     AUTHOR:       Carlos Bott
 
@@ -11,53 +11,106 @@
 */
 
 #include "FontManager.h"
+#include "FontManagerSubsystem.h"
+#include "SystemFont.h"
+
+#include "Kismet/GameplayStatics.h"
 #include "Logging/LogMacros.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFontManager, Log, All);
 
-TArray<FFontItem> FontManager::Fonts;
+// +--------------------------------------------------------------------+
+// Legacy backing store (only for bridge period)
+// - If you already had a static registry, keep it here.
+// - This avoids needing WorldContext in legacy call sites.
+// +--------------------------------------------------------------------+
 
+struct FLegacyFontEntry
+{
+    FString     Name;
+    SystemFont* Font = nullptr;
+};
+
+static TArray<FLegacyFontEntry> GLegacyFonts;
+
+// +--------------------------------------------------------------------+
+// Unreal subsystem helper
+// +--------------------------------------------------------------------+
+
+static UFontManagerSubsystem* GetFontManager(UObject* WorldContext)
+{
+    if (!WorldContext)
+        return nullptr;
+
+    if (UGameInstance* GI = UGameplayStatics::GetGameInstance(WorldContext))
+        return GI->GetSubsystem<UFontManagerSubsystem>();
+
+    return nullptr;
+}
+
+// +--------------------------------------------------------------------+
+// New UE API
+// +--------------------------------------------------------------------+
+
+void FontManager::Close(UObject* WorldContext)
+{
+    if (UFontManagerSubsystem* FM = GetFontManager(WorldContext))
+        FM->Close();
+}
+
+void FontManager::Register(UObject* WorldContext, const char* NameAnsi, const FSlateFontInfo& FontInfo)
+{
+    if (!NameAnsi || !*NameAnsi)
+        return;
+
+    if (UFontManagerSubsystem* FM = GetFontManager(WorldContext))
+        FM->RegisterFont(FName(UTF8_TO_TCHAR(NameAnsi)), FontInfo);
+}
+
+bool FontManager::Find(UObject* WorldContext, const char* NameAnsi, FSlateFontInfo& OutFontInfo)
+{
+    if (!NameAnsi || !*NameAnsi)
+        return false;
+
+    if (UFontManagerSubsystem* FM = GetFontManager(WorldContext))
+        return FM->FindFont(FName(UTF8_TO_TCHAR(NameAnsi)), OutFontInfo);
+
+    return false;
+}
+
+// +--------------------------------------------------------------------+
+// Legacy API (no WorldContext)
+// - Uses a small bridge registry storing SystemFont*.
+// - Later you can remove this once HUDView/MFDView are converted.
 // +--------------------------------------------------------------------+
 
 void FontManager::Close()
 {
-    // We do not own SystemFont memory here; just clear the registry.
-    Fonts.Reset();
+    GLegacyFonts.Reset();
 }
-
-// +--------------------------------------------------------------------+
 
 void FontManager::Register(const char* NameAnsi, SystemFont* Font)
 {
     if (!NameAnsi || !*NameAnsi || !Font)
-    {
-        UE_LOG(LogFontManager, Warning, TEXT("FontManager::Register called with invalid parameters."));
         return;
-    }
 
     const FString Name = UTF8_TO_TCHAR(NameAnsi);
 
-    // Prevent duplicates:
-    for (FFontItem& Item : Fonts)
+    for (FLegacyFontEntry& E : GLegacyFonts)
     {
-        if (Item.Name.Equals(Name, ESearchCase::IgnoreCase))
+        if (E.Name.Equals(Name, ESearchCase::IgnoreCase))
         {
-            Item.Font = Font;   // update existing
-            Item.Size = 0;
-            UE_LOG(LogFontManager, Verbose, TEXT("FontManager::Register updated existing font: %s"), *Name);
+            E.Font = Font;
             return;
         }
     }
 
-    FFontItem NewItem;
-    NewItem.Name = Name;
-    NewItem.Size = 0;
-    NewItem.Font = Font;
+    FLegacyFontEntry NewEntry;
+    NewEntry.Name = Name;
+    NewEntry.Font = Font;
 
-    Fonts.Add(MoveTemp(NewItem));
+    GLegacyFonts.Add(MoveTemp(NewEntry));
 }
-
-// +--------------------------------------------------------------------+
 
 SystemFont* FontManager::Find(const char* NameAnsi)
 {
@@ -66,10 +119,10 @@ SystemFont* FontManager::Find(const char* NameAnsi)
 
     const FString Name = UTF8_TO_TCHAR(NameAnsi);
 
-    for (const FFontItem& Item : Fonts)
+    for (const FLegacyFontEntry& E : GLegacyFonts)
     {
-        if (Item.Font && Item.Name.Equals(Name, ESearchCase::IgnoreCase))
-            return Item.Font;
+        if (E.Font && E.Name.Equals(Name, ESearchCase::IgnoreCase))
+            return E.Font;
     }
 
     return nullptr;

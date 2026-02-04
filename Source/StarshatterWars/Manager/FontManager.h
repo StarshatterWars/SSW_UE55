@@ -2,36 +2,23 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026. All Rights Reserved.
 
-    SUBSYSTEM:    nGenEx.lib (ported to Unreal)
+    SUBSYSTEM:    nGenEx.lib (legacy compatibility layer)
     FILE:         FontManager.h
     AUTHOR:       Carlos Bott
 
     ORIGINAL AUTHOR AND STUDIO:
     John DiCamillo / Destroyer Studios LLC
-
-    OVERVIEW
-    ========
-    Font Resource Manager class
-    - Unreal-friendly registry using TArray
-    - Keeps legacy method names: Close/Register/Find
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Fonts/SlateFontInfo.h"
 
-// Forward declarations:
 class SystemFont;
 
 // +--------------------------------------------------------------------+
-
-struct FFontItem
-{
-    FString     Name;
-    int32       Size = 0;
-    SystemFont* Font = nullptr;
-};
-
+// Legacy-Compatible Font Manager
 // +--------------------------------------------------------------------+
 
 class FontManager
@@ -39,10 +26,13 @@ class FontManager
 public:
     static const char* TYPENAME() { return "FontManager"; }
 
-    static void        Close();
+    // New UE-style API:
+    static void Close(UObject* WorldContext);
+    static void Register(UObject* WorldContext, const char* NameAnsi, const FSlateFontInfo& FontInfo);
+    static bool Find(UObject* WorldContext, const char* NameAnsi, FSlateFontInfo& OutFontInfo);
+
+    // Legacy API (minimal churn):
     static void        Register(const char* NameAnsi, SystemFont* Font);
     static SystemFont* Find(const char* NameAnsi);
-
-private:
-    static TArray<FFontItem> Fonts;
+    static void        Close();
 };
