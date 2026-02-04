@@ -2,17 +2,16 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
+    SUBSYSTEM:    Stars.exe (Unreal Port)
     FILE:         ControlOptionsDlg.cpp
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    UNREAL PORT:
-    - ControlOptionsDlg routes under UOptionsScreen (NOT GameScreen / MenuScreen).
-    - JoyDlg + KeyDlg are child overlays routed through ControlOptionsDlg.
+    OVERVIEW
+    ========
+    UControlOptionsDlg wired to the NEW controls system:
+      - UStarshatterControlsSettings (config-backed CDO) is the ONLY persistence model.
+      - UStarshatterControlsSubsystem performs runtime apply (legacy KeyMap/Ship wiring).
+      - Legacy KeyMap is used READ-ONLY for action/key descriptions and categories.
 */
 
 #include "ControlOptionsDlg.h"
@@ -25,66 +24,38 @@
 #include "Components/CheckBox.h"
 #include "Engine/World.h"
 
-// Starshatter:
+// Legacy (read-only describe/category):
 #include "Starshatter.h"
-#include "Ship.h"
+#include "KeyMap.h"
 #include "Game.h"
 #include "Keyboard.h"
-#include "Joystick.h"
-#include "KeyMap.h"
 
-// Routing:
+// Routing/overlays:
 #include "OptionsScreen.h"
 #include "JoyDlg.h"
 #include "KeyDlg.h"
 
+// NEW:
+#include "StarshatterControlsSubsystem.h"
+#include "StarshatterControlsSettings.h"
+
 UControlOptionsDlg::UControlOptionsDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    SetDialogInputEnabled(true);
 }
 
 void UControlOptionsDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
-
     stars = Starshatter::GetInstance();
-
-    RegisterControls();
 }
 
 void UControlOptionsDlg::NativeConstruct()
 {
     Super::NativeConstruct();
-}
 
-void UControlOptionsDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-    Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame();
-}
-
-// --------------------------------------------------------------------
-// UBaseScreen overrides
-// --------------------------------------------------------------------
-
-void UControlOptionsDlg::BindFormWidgets()
-{
-    // If you are using BaseScreen numeric binding helpers, map them here.
-    // Otherwise BindWidgetOptional is sufficient.
-}
-
-FString UControlOptionsDlg::GetLegacyFormText() const
-{
-    return FString();
-}
-
-// --------------------------------------------------------------------
-// Wiring
-// --------------------------------------------------------------------
-
-void UControlOptionsDlg::RegisterControls()
-{
-    // Hook BaseScreen Enter/Escape routing:
+    // BaseScreen Enter/Escape routing:
     ApplyButton = ApplyBtn;
     CancelButton = CancelBtn;
 
@@ -95,7 +66,6 @@ void UControlOptionsDlg::RegisterControls()
     if (category_3) { category_3->OnClicked.RemoveAll(this); category_3->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCategory3); }
 
     // Commands list:
-    // IMPORTANT: UListView::OnItemSelectionChanged() is NOT a dynamic multicast; use AddUObject.
     if (commands)
     {
         commands->OnItemSelectionChanged().RemoveAll(this);
@@ -118,9 +88,8 @@ void UControlOptionsDlg::RegisterControls()
 
     // Buttons:
     if (joy_axis_button) { joy_axis_button->OnClicked.RemoveAll(this); joy_axis_button->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnJoyAxis); }
-
-    if (ApplyBtn) { ApplyBtn->OnClicked.RemoveAll(this);  ApplyBtn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnApplyClicked); }
-    if (CancelBtn) { CancelBtn->OnClicked.RemoveAll(this); CancelBtn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCancelClicked); }
+    if (ApplyBtn) { ApplyBtn->OnClicked.RemoveAll(this);        ApplyBtn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnApplyClicked); }
+    if (CancelBtn) { CancelBtn->OnClicked.RemoveAll(this);       CancelBtn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnCancelClicked); }
 
     // Tabs:
     if (vid_btn) { vid_btn->OnClicked.RemoveAll(this); vid_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnVideoClicked); }
@@ -129,36 +98,292 @@ void UControlOptionsDlg::RegisterControls()
     if (opt_btn) { opt_btn->OnClicked.RemoveAll(this); opt_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnOptionsClicked); }
     if (mod_btn) { mod_btn->OnClicked.RemoveAll(this); mod_btn->OnClicked.AddDynamic(this, &UControlOptionsDlg::OnModClicked); }
 
-    // Initial paint:
-    Show();
+    if (bClosed)
+    {
+        RefreshFromModel();
+        bClosed = false;
+    }
 }
 
-// --------------------------------------------------------------------
-// Show / Tick
-// --------------------------------------------------------------------
+void UControlOptionsDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+    (void)MyGeometry;
+    (void)InDeltaTime;
+    ExecFrame();
+}
+
+// ---------------------------------------------------------------------
+// UBaseScreen overrides
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::BindFormWidgets() {}
+FString UControlOptionsDlg::GetLegacyFormText() const { return FString(); }
+
+void UControlOptionsDlg::HandleAccept() { OnApplyClicked(); }
+void UControlOptionsDlg::HandleCancel() { OnCancelClicked(); }
+
+// ---------------------------------------------------------------------
+// NEW: accessors
+// ---------------------------------------------------------------------
+
+UStarshatterControlsSubsystem* UControlOptionsDlg::GetControlsSubsystem() const
+{
+    // Matches the pattern you used for AudioSubsystem::Get(this)
+    return UStarshatterControlsSubsystem::Get(const_cast<UControlOptionsDlg*>(this));
+}
+
+UStarshatterControlsSettings* UControlOptionsDlg::GetControlsSettings() const
+{
+    return UStarshatterControlsSettings::Get();
+}
+
+KeyMap* UControlOptionsDlg::GetLegacyKeyMap() const
+{
+    if (!stars) return nullptr;
+    return &stars->GetKeyMap();
+}
+
+// ---------------------------------------------------------------------
+// Show / ExecFrame
+// ---------------------------------------------------------------------
 
 void UControlOptionsDlg::Show()
 {
-    if (bClosed)
-        ShowCategory();
-    else
-        UpdateCategory();
-
-    bClosed = false;
     SetVisibility(ESlateVisibility::Visible);
+
+    if (bClosed)
+    {
+        RefreshFromModel();
+        bClosed = false;
+    }
+
+    // Build list from current category each show
+    RebuildCommandList();
     SetKeyboardFocus();
 }
 
 void UControlOptionsDlg::ExecFrame()
 {
-    // Classic: Enter applies
+    // Optional: retain legacy Enter-to-apply behavior:
     if (Keyboard::KeyDown(VK_RETURN))
         OnApplyClicked();
 }
 
-// --------------------------------------------------------------------
-// Child overlays (Joy/Key routed through ControlOptionsDlg)
-// --------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// Model -> UI
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::RefreshFromModel()
+{
+    UStarshatterControlsSettings* S = GetControlsSettings();
+    if (!S) return;
+
+    S->Load(); // ReloadConfig + Sanitize
+
+    control_model = S->GetControlModel();
+    joy_select = S->GetJoySelect();
+    joy_throttle = S->GetJoyThrottle();
+    joy_rudder = S->GetJoyRudder();
+    joy_sensitivity = S->GetJoySensitivity();
+
+    mouse_select = S->GetMouseSelect();
+    mouse_sensitivity = S->GetMouseSensitivity();
+    mouse_invert = S->GetMouseInvert();
+
+    // Paint UI:
+    if (control_model_combo) control_model_combo->SetSelectedIndex(control_model);
+
+    if (joy_select_combo)    joy_select_combo->SetSelectedIndex(joy_select);
+    if (joy_throttle_combo)  joy_throttle_combo->SetSelectedIndex(joy_throttle);
+    if (joy_rudder_combo)    joy_rudder_combo->SetSelectedIndex(joy_rudder);
+    if (joy_sensitivity_slider) joy_sensitivity_slider->SetValue(IntToSlider(joy_sensitivity, 0, 10));
+
+    if (mouse_select_combo)  mouse_select_combo->SetSelectedIndex(mouse_select);
+    if (mouse_sensitivity_slider) mouse_sensitivity_slider->SetValue(IntToSlider(mouse_sensitivity, 0, 50));
+    if (mouse_invert_checkbox) mouse_invert_checkbox->SetIsChecked(mouse_invert != 0);
+}
+
+// ---------------------------------------------------------------------
+// UI -> Model (+ optional runtime apply)
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::PushToModel(bool bApplyRuntimeToo)
+{
+    UStarshatterControlsSettings* S = GetControlsSettings();
+    if (!S) return;
+
+    S->SetControlModel(control_model);
+
+    S->SetJoySelect(joy_select);
+    S->SetJoyThrottle(joy_throttle);
+    S->SetJoyRudder(joy_rudder);
+    S->SetJoySensitivity(joy_sensitivity);
+
+    S->SetMouseSelect(mouse_select);
+    S->SetMouseSensitivity(mouse_sensitivity);
+    S->SetMouseInvert(mouse_invert);
+
+    // NOTE: key bindings (ActionKeys[0..255]) are typically edited by KeyDlg/JoyDlg.
+    // This dialog only edits the “specials”.
+
+    S->Sanitize();
+    S->Save();
+
+    if (bApplyRuntimeToo)
+    {
+        if (UStarshatterControlsSubsystem* ControlsSS = GetControlsSubsystem())
+        {
+            // Subsystem owns applying the settings into legacy runtime (KeyMap/Ship/etc.)
+            ControlsSS->ApplySettingsToRuntime(const_cast<UControlOptionsDlg*>(this));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------
+// Apply / Cancel (called by OptionsScreen::ApplyOptions)
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::Apply()
+{
+    if (bClosed) return;
+    PushToModel(true);
+    bClosed = true;
+}
+
+void UControlOptionsDlg::Cancel()
+{
+    bClosed = true;
+}
+
+// ---------------------------------------------------------------------
+// Category + list (READ-ONLY legacy for names/categories)
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::SelectCategory(int32 InCategory)
+{
+    selected_category = FMath::Clamp(InCategory, 0, 3);
+    RebuildCommandList();
+}
+
+void UControlOptionsDlg::OnCategory0() { SelectCategory(0); }
+void UControlOptionsDlg::OnCategory1() { SelectCategory(1); }
+void UControlOptionsDlg::OnCategory2() { SelectCategory(2); }
+void UControlOptionsDlg::OnCategory3() { SelectCategory(3); }
+
+FString UControlOptionsDlg::DescribeAction(int32 ActionIndex) const
+{
+    if (KeyMap* KM = GetLegacyKeyMap())
+        return UTF8_TO_TCHAR(KM->DescribeAction(ActionIndex));
+    return FString::Printf(TEXT("ACTION %d"), ActionIndex);
+}
+
+FString UControlOptionsDlg::DescribeKeyFromAction(int32 ActionIndex) const
+{
+    // For now we show the legacy description (it will match once subsystem applied),
+    // but we *prefer* what’s stored in the Settings ActionKeys.
+    UStarshatterControlsSettings* S = GetControlsSettings();
+    if (!S) return FString();
+
+    const int32 KeyCode = S->GetActionKey(ActionIndex);
+
+    if (KeyMap* KM = GetLegacyKeyMap())
+        return UTF8_TO_TCHAR(KM->DescribeKey(KeyCode));
+
+    return FString::FromInt(KeyCode);
+}
+
+void UControlOptionsDlg::RebuildCommandList()
+{
+    if (!commands) return;
+
+    CommandRows.Reset();
+    commands->ClearListItems();
+
+    KeyMap* KM = GetLegacyKeyMap();
+    if (!KM) return;
+
+    // Build from legacy category table, but show keys from Settings
+    for (int32 i = 0; i < 256; ++i)
+    {
+        // Skip “specials” that are edited via combos/sliders:
+        // (Keep this list consistent with your KeyMap constants.)
+        KeyMapEntry* Entry = KM->GetKeyMap(i);
+        if (!Entry) continue;
+
+        // Legacy “specials” are handled by combos/slider/checkbox:
+        switch (Entry->act)
+        {
+        case KEY_CONTROL_MODEL:
+        case KEY_JOY_SELECT:
+        case KEY_JOY_RUDDER:
+        case KEY_JOY_THROTTLE:
+        case KEY_JOY_SENSE:
+        case KEY_MOUSE_SELECT:
+        case KEY_MOUSE_SENSE:
+        case KEY_MOUSE_INVERT:
+            continue;
+
+        default:
+            break;
+        }
+
+        if (KM->GetCategory(i) != selected_category)
+            continue;
+
+        UControlBindingRow* Row = NewObject<UControlBindingRow>(this);
+        Row->ActionIndex = i;
+        Row->Command = DescribeAction(i);
+        Row->Key = DescribeKeyFromAction(i);
+
+        CommandRows.Add(Row);
+        commands->AddItem(Row);
+    }
+
+    commands->RequestRefresh();
+}
+
+void UControlOptionsDlg::RefreshCommandKeysOnly()
+{
+    for (UControlBindingRow* Row : CommandRows)
+    {
+        if (!Row) continue;
+        Row->Key = DescribeKeyFromAction(Row->ActionIndex);
+    }
+
+    if (commands)
+        commands->RequestRefresh();
+}
+
+// ---------------------------------------------------------------------
+// List selection / double-click -> KeyDlg (KeyDlg should write into Settings)
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::HandleCommandSelectionChanged(UObject* SelectedItem)
+{
+    if (!commands || !SelectedItem)
+        return;
+
+    UControlBindingRow* Row = Cast<UControlBindingRow>(SelectedItem);
+    if (!Row)
+        return;
+
+    const int32 ListIndex = commands->GetIndexForItem(SelectedItem);
+    const double NowSec = Game::RealTime() / 1000.0;
+
+    // Legacy double-click: same item selected again within 350ms
+    if (ListIndex == command_index && (NowSec - command_click_time_sec) < 0.35)
+    {
+        ShowKeyDlg(Row->ActionIndex);
+    }
+
+    command_click_time_sec = NowSec;
+    command_index = ListIndex;
+}
+
+// ---------------------------------------------------------------------
+// Overlays
+// ---------------------------------------------------------------------
 
 void UControlOptionsDlg::ShowJoyDlg()
 {
@@ -176,10 +401,7 @@ void UControlOptionsDlg::ShowJoyDlg()
     }
 
     if (!JoyDlg)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ControlOptionsDlg: JoyDlg is null."));
         return;
-    }
 
     JoyDlg->SetManager(this);
 
@@ -188,7 +410,7 @@ void UControlOptionsDlg::ShowJoyDlg()
     JoyDlg->SetKeyboardFocus();
 }
 
-void UControlOptionsDlg::ShowKeyDlg(int32 KeyMapIndex)
+void UControlOptionsDlg::ShowKeyDlg(int32 ActionIndex)
 {
     if (!KeyDlg)
     {
@@ -204,165 +426,19 @@ void UControlOptionsDlg::ShowKeyDlg(int32 KeyMapIndex)
     }
 
     if (!KeyDlg)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ControlOptionsDlg: KeyDlg is null."));
         return;
-    }
 
     KeyDlg->SetManager(this);
-    KeyDlg->SetKeyMapIndex(KeyMapIndex);
+    KeyDlg->SetKeyMapIndex(ActionIndex);
 
     SetVisibility(ESlateVisibility::Collapsed);
     KeyDlg->SetVisibility(ESlateVisibility::Visible);
     KeyDlg->SetKeyboardFocus();
 }
 
-// --------------------------------------------------------------------
-// Category handling
-// --------------------------------------------------------------------
-
-void UControlOptionsDlg::SelectCategory(int32 InCategory)
-{
-    selected_category = FMath::Clamp(InCategory, 0, 3);
-    ShowCategory();
-}
-
-void UControlOptionsDlg::OnCategory0() { SelectCategory(0); }
-void UControlOptionsDlg::OnCategory1() { SelectCategory(1); }
-void UControlOptionsDlg::OnCategory2() { SelectCategory(2); }
-void UControlOptionsDlg::OnCategory3() { SelectCategory(3); }
-
-void UControlOptionsDlg::ShowCategory()
-{
-    if (!commands || !stars)
-        return;
-
-    CommandRows.Reset();
-    commands->ClearListItems();
-
-    KeyMap& keymap = stars->GetKeyMap();
-
-    // Map core options from KeyMap:
-    for (int i = 0; i < 256; i++)
-    {
-        KeyMapEntry* k = keymap.GetKeyMap(i);
-        if (!k) continue;
-
-        switch (k->act)
-        {
-        case 0:
-            break;
-
-        case KEY_CONTROL_MODEL:
-            control_model = k->key;
-            if (control_model_combo)
-                control_model_combo->SetSelectedIndex(control_model);
-            break;
-
-        case KEY_JOY_SELECT:
-            joy_select = k->key;
-            if (joy_select_combo)
-                joy_select_combo->SetSelectedIndex(joy_select);
-            break;
-
-        case KEY_JOY_RUDDER:
-            joy_rudder = k->key;
-            if (joy_rudder_combo)
-                joy_rudder_combo->SetSelectedIndex(joy_rudder);
-            break;
-
-        case KEY_JOY_THROTTLE:
-            joy_throttle = k->key;
-            if (joy_throttle_combo)
-                joy_throttle_combo->SetSelectedIndex(joy_throttle);
-            break;
-
-        case KEY_JOY_SENSE:
-            joy_sensitivity = k->key;
-            if (joy_sensitivity_slider)
-                joy_sensitivity_slider->SetValue(IntToSlider(joy_sensitivity, 0, 10));
-            break;
-
-        case KEY_MOUSE_SELECT:
-            mouse_select = k->key;
-            if (mouse_select_combo)
-                mouse_select_combo->SetSelectedIndex(mouse_select);
-            break;
-
-        case KEY_MOUSE_SENSE:
-            mouse_sensitivity = k->key;
-            if (mouse_sensitivity_slider)
-                mouse_sensitivity_slider->SetValue(IntToSlider(mouse_sensitivity, 0, 50));
-            break;
-
-        case KEY_MOUSE_INVERT:
-            mouse_invert = (k->key > 0) ? 1 : 0;
-            if (mouse_invert_checkbox)
-                mouse_invert_checkbox->SetIsChecked(mouse_invert > 0);
-            break;
-
-        default:
-            if (keymap.GetCategory(i) == selected_category)
-            {
-                UControlBindingRow* Row = NewObject<UControlBindingRow>(this);
-                Row->ActionIndex = i;
-                Row->Command = UTF8_TO_TCHAR(keymap.DescribeAction(i));
-                Row->Key = UTF8_TO_TCHAR(keymap.DescribeKey(i));
-
-                CommandRows.Add(Row);
-                commands->AddItem(Row);
-            }
-            break;
-        }
-    }
-}
-
-void UControlOptionsDlg::UpdateCategory()
-{
-    if (!commands || !stars)
-        return;
-
-    KeyMap& keymap = stars->GetKeyMap();
-
-    for (UControlBindingRow* Row : CommandRows)
-    {
-        if (!Row) continue;
-        Row->Key = UTF8_TO_TCHAR(keymap.DescribeKey(Row->ActionIndex));
-    }
-
-    commands->RequestRefresh();
-}
-
-// --------------------------------------------------------------------
-// Command selection
-// --------------------------------------------------------------------
-
-void UControlOptionsDlg::HandleCommandSelectionChanged(UObject* SelectedItem)
-{
-    if (!commands || !SelectedItem)
-        return;
-
-    UControlBindingRow* Row = Cast<UControlBindingRow>(SelectedItem);
-    if (!Row)
-        return;
-
-    const int32 ListIndex = commands->GetIndexForItem(SelectedItem);
-    const double NowSec = Game::RealTime() / 1000.0;
-
-    // Legacy double-click: same item selected again within 350ms
-    if (ListIndex == command_index && (NowSec - command_click_time_sec) < 0.35)
-    {
-        // Open KeyDlg via ControlOptionsDlg routing:
-        ShowKeyDlg(Row->ActionIndex);
-    }
-
-    command_click_time_sec = NowSec;
-    command_index = ListIndex;
-}
-
-// --------------------------------------------------------------------
-// Combo handlers
-// --------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// Combos/sliders/checkbox (update snapshot only)
+// ---------------------------------------------------------------------
 
 void UControlOptionsDlg::OnControlModelChanged(FString, ESelectInfo::Type)
 {
@@ -414,9 +490,25 @@ void UControlOptionsDlg::OnMouseInvertChanged(bool bIsChecked)
     mouse_invert = bIsChecked ? 1 : 0;
 }
 
-// --------------------------------------------------------------------
-// Tabs (route UP to OptionsScreen)
-// --------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// Apply/Cancel (route to OptionsScreen)
+// ---------------------------------------------------------------------
+
+void UControlOptionsDlg::OnApplyClicked()
+{
+    if (Manager) Manager->ApplyOptions();
+    else Apply();
+}
+
+void UControlOptionsDlg::OnCancelClicked()
+{
+    if (Manager) Manager->CancelOptions();
+    else Cancel();
+}
+
+// ---------------------------------------------------------------------
+// Tabs (route to OptionsScreen)
+// ---------------------------------------------------------------------
 
 void UControlOptionsDlg::OnAudioClicked() { if (Manager) Manager->ShowAudDlg(); }
 void UControlOptionsDlg::OnVideoClicked() { if (Manager) Manager->ShowVidDlg(); }
@@ -424,58 +516,9 @@ void UControlOptionsDlg::OnOptionsClicked() { if (Manager) Manager->ShowOptDlg()
 void UControlOptionsDlg::OnControlsClicked() { /* already here */ }
 void UControlOptionsDlg::OnModClicked() { if (Manager) Manager->ShowModDlg(); }
 
-// --------------------------------------------------------------------
-// Apply/Cancel callbacks (route UP to OptionsScreen)
-// --------------------------------------------------------------------
-
-void UControlOptionsDlg::OnApplyClicked()
-{
-    if (Manager) Manager->ApplyOptions();
-}
-
-void UControlOptionsDlg::OnCancelClicked()
-{
-    if (Manager) Manager->CancelOptions();
-}
-
-// --------------------------------------------------------------------
-// Legacy Apply / Cancel (called by OptionsScreen::ApplyOptions)
-// --------------------------------------------------------------------
-
-void UControlOptionsDlg::Apply()
-{
-    if (bClosed || !stars)
-        return;
-
-    KeyMap& keymap = stars->GetKeyMap();
-
-    keymap.Bind(KEY_CONTROL_MODEL, control_model, 0);
-
-    keymap.Bind(KEY_JOY_SELECT, joy_select, 0);
-    keymap.Bind(KEY_JOY_RUDDER, joy_rudder, 0);
-    keymap.Bind(KEY_JOY_THROTTLE, joy_throttle, 0);
-    keymap.Bind(KEY_JOY_SENSE, joy_sensitivity, 0);
-
-    keymap.Bind(KEY_MOUSE_SELECT, mouse_select, 0);
-    keymap.Bind(KEY_MOUSE_SENSE, mouse_sensitivity, 0);
-    keymap.Bind(KEY_MOUSE_INVERT, mouse_invert, 0);
-
-    keymap.SaveKeyMap("key.cfg", 256);
-
-    stars->MapKeys();
-    Ship::SetControlModel(control_model);
-
-    bClosed = true;
-}
-
-void UControlOptionsDlg::Cancel()
-{
-    bClosed = true;
-}
-
-// --------------------------------------------------------------------
+// ---------------------------------------------------------------------
 // Slider mapping helpers
-// --------------------------------------------------------------------
+// ---------------------------------------------------------------------
 
 int32 UControlOptionsDlg::SliderToInt(float Normalized, int32 MinV, int32 MaxV)
 {

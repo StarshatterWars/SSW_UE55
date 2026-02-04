@@ -26,6 +26,7 @@
 
 #include "StarshatterAudioSubsystem.h"
 #include "StarshatterVideoSubsystem.h"
+#include "StarshatterControlsSubsystem.h"
 #include "Engine/GameInstance.h"
 
 UOptionsScreen::UOptionsScreen(const FObjectInitializer& ObjectInitializer)
@@ -274,10 +275,10 @@ void UOptionsScreen::ApplyOptions()
         }
 
         // If you add a controls subsystem later, do it here too.
-        // if (UStarshatterControlsSubsystem* CtlSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
-        // {
-        //     CtlSS->ApplySettingsToRuntime();
-        // }
+        if (UStarshatterControlsSubsystem* CtlSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
+        {
+             CtlSS->ApplySettingsToRuntime(this);
+        }
     }
     if (CtlDlg) CtlDlg->Apply();
 

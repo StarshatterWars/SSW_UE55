@@ -2,7 +2,7 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
+    SUBSYSTEM:    Stars.exe (Unreal Port)
     FILE:         ControlOptionsDlg.h
     AUTHOR:       Carlos Bott
 
@@ -10,10 +10,22 @@
     ==========================
     John DiCamillo / Destroyer Studios LLC
 
-    UNREAL PORT:
-    - Converted from FormWindow/AWEvent mapping to UBaseScreen (UUserWidget-derived).
-    - Routed under UOptionsScreen (NOT GameScreen / MenuScreen).
-    - JoyDlg + KeyDlg route through ControlOptionsDlg (child overlays).
+    OVERVIEW
+    ========
+    UControlOptionsDlg (Controls Options Dialog)
+    - Refactored to the NEW settings pipeline:
+        * UI reads/writes ONLY UStarshatterControlsSettings (config-backed CDO)
+        * Runtime apply is delegated to UStarshatterControlsSubsystem
+    - Legacy KeyMap is used READ-ONLY for:
+        * DescribeAction(i)
+        * DescribeKey(i)
+        * GetCategory(i)
+      (So the UI list remains consistent with legacy naming during migration.)
+
+    IMPORTANT
+    =========
+    - No direct calls to KeyMap::Bind(), SaveKeyMap(), stars->MapKeys(), or Ship::SetControlModel()
+      from the dialog anymore. Those are the subsystem’s job.
 */
 
 #pragma once
@@ -22,22 +34,27 @@
 #include "BaseScreen.h"
 #include "ControlOptionsDlg.generated.h"
 
-// UMG fwd:
+// UMG:
 class UButton;
 class UComboBoxString;
 class UListView;
 class USlider;
-class UTextBlock;
 class UCheckBox;
 
-// Starshatter fwd:
+// Starshatter (read-only legacy describe/category):
 class Starshatter;
-class Ship;
+class KeyMap;
 
-// New routing:
+// Router:
 class UOptionsScreen;
+
+// Overlays:
 class UJoyDlg;
 class UKeyDlg;
+
+// NEW:
+class UStarshatterControlsSubsystem;
+class UStarshatterControlsSettings;
 
 // ------------------------------------------------------------
 // Row object for the two-column command list
@@ -51,7 +68,7 @@ class STARSHATTERWARS_API UControlBindingRow : public UObject
 public:
     UPROPERTY(BlueprintReadOnly) FString Command;
     UPROPERTY(BlueprintReadOnly) FString Key;
-    UPROPERTY(BlueprintReadOnly) int32   ActionIndex = 0;   // legacy keymap index / action id
+    UPROPERTY(BlueprintReadOnly) int32   ActionIndex = 0; // legacy keymap action index
 };
 
 // ------------------------------------------------------------
@@ -66,43 +83,65 @@ class STARSHATTERWARS_API UControlOptionsDlg : public UBaseScreen
 public:
     UControlOptionsDlg(const FObjectInitializer& ObjectInitializer);
 
-    // ----------------------------------------------------------------
-    // UUserWidget lifecycle
-    // ----------------------------------------------------------------
+    // Host/router (ONLY OptionsScreen):
+    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
+    UOptionsScreen* GetManager() const { return Manager; }
+
+    // Surface used by OptionsScreen:
+    virtual void Show();
+    virtual void ExecFrame();
+    virtual void Apply();
+    virtual void Cancel();
+
+    // Child overlays:
+    void ShowJoyDlg();
+    void ShowKeyDlg(int32 ActionIndex);
+
+protected:
+    // UUserWidget:
     virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-    // ----------------------------------------------------------------
-    // Legacy dialog surface (ported)
-    // ----------------------------------------------------------------
-    virtual void RegisterControls();
-    virtual void Show();
-    virtual void ExecFrame();
+    // UBaseScreen:
+    virtual void BindFormWidgets() override;
+    virtual FString GetLegacyFormText() const override;
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
 
-    // ----------------------------------------------------------------
-    // Manager (ONLY OptionsScreen)
-    // ----------------------------------------------------------------
-    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
-    UOptionsScreen* GetManager() const { return Manager; }
+private:
+    // NEW: accessors
+    UStarshatterControlsSubsystem* GetControlsSubsystem() const;
+    UStarshatterControlsSettings* GetControlsSettings() const;
 
-    // ----------------------------------------------------------------
-    // Child overlays (Joy/Key) routed through THIS dialog
-    // ----------------------------------------------------------------
-    void ShowJoyDlg();
-    void ShowKeyDlg(int32 KeyMapIndex);
+    // Legacy read-only helper:
+    KeyMap* GetLegacyKeyMap() const;
 
-    // ----------------------------------------------------------------
+    // Model <-> UI
+    void RefreshFromModel();
+    void PushToModel(bool bApplyRuntimeToo);
+
+    // Category + list rebuild
+    void SelectCategory(int32 InCategory);
+    void RebuildCommandList();
+    void RefreshCommandKeysOnly();
+
+    // Describe helper (read-only legacy; safe during migration)
+    FString DescribeAction(int32 ActionIndex) const;
+    FString DescribeKeyFromAction(int32 ActionIndex) const;
+
+    // Slider mapping:
+    static int32 SliderToInt(float Normalized, int32 MinV, int32 MaxV);
+    static float IntToSlider(int32 V, int32 MinV, int32 MaxV);
+
+private:
     // Category buttons
-    // ----------------------------------------------------------------
     UFUNCTION() void OnCategory0();
     UFUNCTION() void OnCategory1();
     UFUNCTION() void OnCategory2();
     UFUNCTION() void OnCategory3();
 
-    // ----------------------------------------------------------------
-    // Combo handlers
-    // ----------------------------------------------------------------
+    // Combos / sliders / checkbox
     UFUNCTION() void OnControlModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnJoySelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
@@ -110,57 +149,63 @@ public:
     UFUNCTION() void OnJoyRudderChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnJoySensitivityChanged(float NormalizedValue);
-    UFUNCTION() void OnJoyAxis(); // opens JoyDlg (child)
+    UFUNCTION() void OnJoyAxis();
 
     UFUNCTION() void OnMouseSelectChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnMouseSensitivityChanged(float NormalizedValue);
     UFUNCTION() void OnMouseInvertChanged(bool bIsChecked);
 
-    // ----------------------------------------------------------------
-    // Apply/Cancel buttons (route up to OptionsScreen)
-    // ----------------------------------------------------------------
+    // Apply/Cancel
     UFUNCTION() void OnApplyClicked();
     UFUNCTION() void OnCancelClicked();
 
-    // ----------------------------------------------------------------
-    // Tabs (route up to OptionsScreen)
-    // ----------------------------------------------------------------
+    // Tabs
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
     UFUNCTION() void OnOptionsClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
 
-    // ----------------------------------------------------------------
-    // Legacy apply/cancel actions (used by OptionsScreen::ApplyOptions)
-    // ----------------------------------------------------------------
-    virtual void Apply();
-    virtual void Cancel();
-
-protected:
-    void ShowCategory();
-    void UpdateCategory();
-
-    void SelectCategory(int32 InCategory);
-
-    // List selection handling:
+    // List selection
     UFUNCTION() void HandleCommandSelectionChanged(UObject* SelectedItem);
 
-    // Helpers for slider integer mapping:
-    static int32 SliderToInt(float Normalized, int32 MinV, int32 MaxV);
-    static float IntToSlider(int32 V, int32 MinV, int32 MaxV);
+private:
+    // Router:
+    UPROPERTY(Transient) TObjectPtr<UOptionsScreen> Manager = nullptr;
+
+    // Overlays:
+    UPROPERTY(Transient) TObjectPtr<UJoyDlg> JoyDlg = nullptr;
+    UPROPERTY(Transient) TObjectPtr<UKeyDlg> KeyDlg = nullptr;
+
+    // Legacy read-only:
+    Starshatter* stars = nullptr;
+
+    // State:
+    bool bClosed = true;
+
+    int32 selected_category = 0;
+    int32 command_index = -1;
+    double command_click_time_sec = 0.0;
+
+    // Cached rows:
+    UPROPERTY(Transient) TArray<TObjectPtr<UControlBindingRow>> CommandRows;
+
+    // Editable settings snapshot (mirrors ControlsSettings):
+    int32 control_model = 0;
+
+    int32 joy_select = 0;
+    int32 joy_throttle = 0;
+    int32 joy_rudder = 0;
+    int32 joy_sensitivity = 0;
+
+    int32 mouse_select = 0;
+    int32 mouse_sensitivity = 0;
+    int32 mouse_invert = 0;
 
 protected:
-    // ----------------------------------------------------------------
-    // UBaseScreen overrides
-    // ----------------------------------------------------------------
-    virtual void BindFormWidgets() override;
-    virtual FString GetLegacyFormText() const override;
-
-protected:
-    // ----------------------------------------------------------------
-    // Bound UMG controls (match FORM ids)
-    // ----------------------------------------------------------------
+    // ------------------------------------------------------------
+    // UMG widget bindings (OPTIONAL) — must match UMG widget names
+    // ------------------------------------------------------------
 
     // Category buttons (101-104):
     UPROPERTY(meta = (BindWidgetOptional)) UButton* category_0 = nullptr; // 101 Flight
@@ -196,42 +241,4 @@ protected:
 
     // Mouse invert checkbox (515):
     UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* mouse_invert_checkbox = nullptr; // 515
-
-protected:
-    // ----------------------------------------------------------------
-    // Legacy state (ported)
-    // ----------------------------------------------------------------
-    Starshatter* stars = nullptr;
-
-    int32 selected_category = 0;
-    int32 command_index = -1;
-
-    int32 control_model = 0;
-
-    int32 joy_select = 0;
-    int32 joy_throttle = 0;
-    int32 joy_rudder = 0;
-    int32 joy_sensitivity = 0;
-
-    int32 mouse_select = 0;
-    int32 mouse_sensitivity = 0;
-    int32 mouse_invert = 0;
-
-    bool bClosed = true;
-
-    // Double click timing (ported):
-    double command_click_time_sec = 0.0;
-
-    // Cached row list (to keep indices stable):
-    UPROPERTY(Transient) TArray<TObjectPtr<UControlBindingRow>> CommandRows;
-
-protected:
-    // ----------------------------------------------------------------
-    // New routing state
-    // ----------------------------------------------------------------
-    UPROPERTY(Transient) TObjectPtr<UOptionsScreen> Manager = nullptr;
-
-    // Child dialogs (ONLY know about ControlOptionsDlg):
-    UPROPERTY(Transient) TObjectPtr<UJoyDlg> JoyDlg = nullptr;
-    UPROPERTY(Transient) TObjectPtr<UKeyDlg> KeyDlg = nullptr;
 };
