@@ -1,6 +1,7 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026.
+    Copyright (C) 2025–2026.
+    All Rights Reserved.
 
     SUBSYSTEM:    StarshatterWars (Unreal Engine)
     FILE:         StarshatterBootSubsystem.h
@@ -8,9 +9,15 @@
 
     OVERVIEW
     ========
-    One-time game bootstrap (GameInstance subsystem)
-    - Centralizes init for legacy-to-UE migration
-    - Initializes global registries (fonts, audio, etc.)
+    Starshatter Boot Subsystem
+
+    Central bootstrapper for global subsystems that must initialize early:
+      - Font subsystem
+      - Audio subsystem
+      - Video subsystem
+
+    This subsystem should be lightweight and deterministic: it orchestrates
+    initialization order and calls “load/apply” routines on subsystems.
 */
 
 #pragma once
@@ -29,6 +36,7 @@ public:
     virtual void Deinitialize() override;
 
 private:
-    bool bBooted = false;
+    void BootFonts();
+    void BootAudio();
+    void BootVideo();
 };
-
