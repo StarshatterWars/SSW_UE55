@@ -13,6 +13,7 @@
     - Unreal-backed font state wrapper (UFont + size + tint + flags)
     - Maintains legacy-style method names used across the port
     - DOES NOT RENDER. Window/Video layer is responsible for drawing.
+    - Provides UE helpers for Slate/UMG migration (FSlateFontInfo + color)
 */
 
 #pragma once
@@ -41,6 +42,10 @@ class Text;
 // If Rect is a typedef/using alias, include the header that defines it instead of forward-declaring.
 struct Rect;
 
+// +--------------------------------------------------------------------+
+// SystemFont
+// +--------------------------------------------------------------------+
+
 class SystemFont
 {
 public:
@@ -60,6 +65,7 @@ public:
 
     // Legacy-style load. Recommended usage is a UFont asset path:
     // "/Game/UI/Fonts/MyFont.MyFont"
+    // For legacy names (non asset paths), this will accept the name but may not load a font.
     bool Load(const char* InName);
 
     // Legacy compatibility (renderer delegation if provided; otherwise no-op):
@@ -99,14 +105,18 @@ public:
     int    GetBlend() const;
     void   SetBlend(int InBlend);
 
-    // Useful for Slate drawing:
+    // Useful for UE/Slate drawing:
     FLinearColor   GetLinearColor() const;
     FSlateFontInfo MakeSlateFontInfo() const;
+
+    // One-call payload for Slate rendering migration:
+    void GetSlateDrawParams(FSlateFontInfo& OutFont, FLinearColor& OutColor) const;
 
     const char* GetName() const;
 
 private:
     void UpdateHeuristics();
+    bool LooksLikeAssetPath(const FString& Str) const;
 
 private:
     char  Name[64];

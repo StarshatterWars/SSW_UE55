@@ -12,6 +12,7 @@
 
 #include "Engine/Font.h"
 #include "Styling/CoreStyle.h"
+#include "Logging/LogMacros.h"
 
 // If you actually USE Text methods in the .cpp later, include its real definition:
 // #include "Text.h"
@@ -43,6 +44,19 @@ SystemFont::~SystemFont()
     // no heap allocations
 }
 
+// +--------------------------------------------------------------------+
+// Helpers
+// +--------------------------------------------------------------------+
+
+bool SystemFont::LooksLikeAssetPath(const FString& Str) const
+{
+    return Str.StartsWith(TEXT("/Game/")) || Str.StartsWith(TEXT("/Engine/"));
+}
+
+// +--------------------------------------------------------------------+
+// Load
+// +--------------------------------------------------------------------+
+
 bool SystemFont::Load(const char* InName)
 {
     if (!InName || !InName[0])
@@ -50,13 +64,21 @@ bool SystemFont::Load(const char* InName)
 
     FCStringAnsi::Strncpy(Name, InName, sizeof(Name));
 
-    // Accept UFont asset path:
-    const FString Path = UTF8_TO_TCHAR(InName);
+    const FString Str = UTF8_TO_TCHAR(InName);
 
-    UFont* Loaded = Cast<UFont>(StaticLoadObject(UFont::StaticClass(), nullptr, *Path));
+    // If this doesn't look like an Unreal asset path, accept as legacy name and continue.
+    // This avoids failing hard when legacy code passes names like "Arial12".
+    if (!LooksLikeAssetPath(Str))
+    {
+        UnrealFont = nullptr;
+        UpdateHeuristics();
+        return true;
+    }
+
+    UFont* Loaded = Cast<UFont>(StaticLoadObject(UFont::StaticClass(), nullptr, *Str));
     if (!Loaded)
     {
-        UE_LOG(LogTemp, Warning, TEXT("SystemFont::Load failed. Expected UFont asset path. Got: %s"), *Path);
+        UE_LOG(LogTemp, Warning, TEXT("SystemFont::Load failed. Expected UFont asset path. Got: %s"), *Str);
         UnrealFont = nullptr;
         return false;
     }
@@ -65,6 +87,10 @@ bool SystemFont::Load(const char* InName)
     UpdateHeuristics();
     return true;
 }
+
+// +--------------------------------------------------------------------+
+// Basic State
+// +--------------------------------------------------------------------+
 
 void SystemFont::SetUFont(UFont* InFont)
 {
@@ -137,6 +163,10 @@ void SystemFont::SetBlend(int InBlend)
     Blend = InBlend;
 }
 
+// +--------------------------------------------------------------------+
+// UE Helpers
+// +--------------------------------------------------------------------+
+
 FLinearColor SystemFont::GetLinearColor() const
 {
     FColor C = Color;
@@ -148,10 +178,17 @@ FSlateFontInfo SystemFont::MakeSlateFontInfo() const
 {
     if (UFont* UF = UnrealFont.Get())
     {
+        // Basic Slate font construction (works for migration; later you may move to FontFace assets).
         return FSlateFontInfo(UF, PointSize);
     }
 
     return FCoreStyle::GetDefaultFontStyle("Regular", PointSize);
+}
+
+void SystemFont::GetSlateDrawParams(FSlateFontInfo& OutFont, FLinearColor& OutColor) const
+{
+    OutFont = MakeSlateFontInfo();
+    OutColor = GetLinearColor();
 }
 
 const char* SystemFont::GetName() const
