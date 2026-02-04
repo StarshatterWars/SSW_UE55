@@ -154,6 +154,10 @@ public:
 	static double   DefaultTrackAge; // 10 seconds
 	static double   SensorThreshold;
 
+	static FString VersionInfo;
+	static FString AppName;
+	static FString TitleText;
+
 protected:
 	friend  bool      ProfileGameLoop(void);
 	
@@ -216,7 +220,7 @@ protected:
 
 	static char       panicbuf[256];
 
-	static FString    VersionInfo;
+
 };
 
 // +--------------------------------------------------------------------+

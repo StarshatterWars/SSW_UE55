@@ -1503,8 +1503,6 @@ PlayerCharacter::LoadAwardTables()
 
                                     if (!txt.contains(".pcx"))
                                         txt.append(".pcx");
-
-                                    loader->CacheBitmap(txt, award->large_insignia);
                                 }
 
                                 else if (pdef->name()->value().indexOf("small") == 0) {
@@ -1514,8 +1512,6 @@ PlayerCharacter::LoadAwardTables()
 
                                     if (!txt.contains(".pcx"))
                                         txt.append(".pcx");
-
-                                    loader->CacheBitmap(txt, award->small_insignia);
 
                                     if (award->small_insignia)
                                         award->small_insignia->AutoMask();

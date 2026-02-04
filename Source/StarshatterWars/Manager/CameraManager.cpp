@@ -949,3 +949,262 @@ CameraManager::Drop(double seconds)
 	camera.MoveTo(ship->TransitionLocation());
 	camera.LookAt(ship->Location());
 }
+
+// ---------------------------------------------------------------------
+// Static range limit accessors (legacy parity)
+// ---------------------------------------------------------------------
+
+double CameraManager::GetRangeLimit()
+{
+	return range_max_limit;
+}
+
+void CameraManager::SetRangeLimit(double r)
+{
+	if (r >= 1e3)
+		range_max_limit = r;
+}
+
+void CameraManager::SetRangeLimits(double min, double max)
+{
+	if (instance) {
+		instance->range_min = min;
+		instance->range_max = max;
+	}
+}
+
+// ---------------------------------------------------------------------
+// View centered check (legacy parity)
+// ---------------------------------------------------------------------
+
+bool CameraManager::IsViewCentered()
+{
+	if (instance) {
+		const double fvaz = FMath::Abs(instance->virt_az);
+		const double fvel = FMath::Abs(instance->virt_el);
+		return fvaz < 15 * DEGREES && fvel < 15 * DEGREES;
+	}
+
+	return true;
+}
+
+// ---------------------------------------------------------------------
+// Virtual head / padlock controls (legacy parity)
+// ---------------------------------------------------------------------
+
+void CameraManager::VirtualHead(double az, double el)
+{
+	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
+		const double alimit = 3 * PI / 4;
+		const double e_lo = PI / 8;
+		const double e_hi = PI / 3;
+		const double escale = e_hi;
+
+		virt_az = az * alimit;
+		virt_el = el * escale;
+
+		if (virt_az > alimit) virt_az = alimit;
+		if (virt_az < -alimit) virt_az = -alimit;
+
+		if (virt_el > e_hi)   virt_el = e_hi;
+		if (virt_el < -e_lo)   virt_el = -e_lo;
+	}
+}
+
+void CameraManager::VirtualHeadOffset(double x, double y, double z)
+{
+	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
+		virt_x = x;
+		virt_y = y;
+		virt_z = z;
+	}
+}
+
+void CameraManager::VirtualAzimuth(double delta)
+{
+	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
+		virt_az += delta;
+
+		const double alimit = 3 * PI / 4;
+		if (virt_az > alimit) virt_az = alimit;
+		if (virt_az < -alimit) virt_az = -alimit;
+	}
+}
+
+void CameraManager::VirtualElevation(double delta)
+{
+	if (mode == MODE_VIRTUAL || mode == MODE_TARGET || mode == MODE_COCKPIT) {
+		virt_el += delta;
+
+		const double e_lo = PI / 8;
+		const double e_hi = PI / 3;
+
+		if (virt_el > e_hi) virt_el = e_hi;
+		if (virt_el < -e_lo) virt_el = -e_lo;
+	}
+}
+
+// ---------------------------------------------------------------------
+// External orbit controls (legacy parity)
+// ---------------------------------------------------------------------
+
+void CameraManager::ExternalAzimuth(double delta)
+{
+	azimuth += delta;
+
+	if (azimuth > PI)  azimuth = -2 * PI + azimuth;
+	if (azimuth < -PI)  azimuth = 2 * PI + azimuth;
+}
+
+void CameraManager::ExternalElevation(double delta)
+{
+	elevation += delta;
+
+	const double limit = (0.43 * PI);
+
+	if (elevation > limit) elevation = limit;
+	if (elevation < -limit) elevation = -limit;
+}
+
+void CameraManager::ExternalRange(double delta)
+{
+	range *= delta;
+
+	if (ship && ship->IsAirborne())
+		range_max = 30e3;
+	else
+		range_max = range_max_limit;
+
+	if (range < range_min) range = range_min;
+	if (range > range_max) range = range_max;
+}
+
+void CameraManager::SetOrbitPoint(double a, double e, double r)
+{
+	azimuth = a;
+	elevation = e;
+	range = r;
+
+	if (external_body) {
+		const double r2 = external_body->Radius() * 2.0;
+		const double r6 = external_body->Radius() * 6.0;
+
+		if (range < r2) range = r2;
+		if (range > r6) range = r6;
+	}
+	else {
+		if (range < range_min) range = range_min;
+		if (range > range_max) range = range_max;
+	}
+}
+
+void CameraManager::SetOrbitRates(double ar, double er, double rr)
+{
+	az_rate = ar;
+	el_rate = er;
+	range_rate = rr;
+}
+
+// ---------------------------------------------------------------------
+// Group viewing (legacy parity)
+// ---------------------------------------------------------------------
+
+void CameraManager::SetViewObjectGroup(ListIter<Ship> group, bool quick)
+{
+	if (!ship)
+		return;
+
+	Starshatter* stars = Starshatter::GetInstance();
+
+	if (!stars->InCutscene()) {
+		// only view solid contacts:
+		while (++group) {
+			Ship* s = group.value();
+			if (!s)
+				return;
+
+			if (s->GetIFF() != ship->GetIFF()) {
+				SimContact* c = ship->FindContact(s);
+				if (!c || !c->ActLock())
+					return;
+			}
+
+			if (s->Life() == 0 || s->IsDying() || s->IsDead())
+				return;
+		}
+	}
+
+	group.reset();
+
+	if (external_group.size() > 1 &&
+		external_group.size() == group.size()) {
+
+		bool same = true;
+
+		for (int i = 0; same && i < external_group.size(); i++) {
+			if (external_group[i] != group.container()[i])
+				same = false;
+		}
+
+		if (same) {
+			SetMode(MODE_ZOOM);
+			return;
+		}
+	}
+
+	ClearGroup();
+
+	if (quick) {
+		mode = MODE_ORBIT;
+		transition = 0;
+	}
+	else {
+		SetMode(MODE_TRANSLATE);
+	}
+
+	external_group.append(group.container());
+
+	ListIter<Ship> iter = external_group;
+	while (++iter) {
+		Ship* s = iter.value();
+		if (!s) continue;
+
+		region = s->GetRegion();
+		Observe(s);
+	}
+}
+
+// ---------------------------------------------------------------------
+// Transition (legacy parity)
+// ---------------------------------------------------------------------
+
+void CameraManager::Transition(double seconds)
+{
+	if (transition > 0)
+		transition -= seconds * 1.5;
+
+	if (transition <= 0) {
+		transition = 0;
+
+		if (requested_mode && requested_mode != mode)
+			mode = requested_mode;
+
+		requested_mode = 0;
+
+		if (mode == MODE_TRANSLATE || mode == MODE_ZOOM) {
+			if (mode == MODE_ZOOM)
+				range = range_min;
+
+			mode = MODE_ORBIT;
+		}
+	}
+}
+
+// ---------------------------------------------------------------------
+// SimObserver name (legacy parity)
+// ---------------------------------------------------------------------
+
+const char* CameraManager::GetObserverName() const
+{
+	return "CameraManager";
+}

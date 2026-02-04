@@ -41,11 +41,14 @@ static LARGE_INTEGER  perf_freq;
 static LARGE_INTEGER  perf_cnt1;
 static LARGE_INTEGER  perf_cnt2;
 
+FString Game::VersionInfo = "6.0";
+FString Game::AppName = "Starshatter Wars";
+FString Game::TitleText = "Starshatter Wars";
 
-static int     DefaultTrackUpdate = 500; // milliseconds
-static int     DefaultTrackLength = 20; // 10 seconds
-static double  DefaultTrackAge = 10; // 10 seconds
-static double  SensorThreshold = 0.25;
+int    Game::DefaultTrackUpdate = 500;      // legacy default (tune later)
+int    Game::DefaultTrackLength = 20;     // frames or samples (tune)
+double Game::DefaultTrackAge = 10.0;   // seconds (tune)
+double Game::SensorThreshold = 0.25;    // legacy default; set to whatever you used before
 
 const int MAX_KEY_BUF = 512;
 static int vkbuf[MAX_KEY_BUF];
@@ -53,7 +56,6 @@ static int vkshiftbuf[MAX_KEY_BUF];
 static int vkins = 0;
 static int vkext = 0;
 
-// Emergency fallbacks (legacy behavior):
 
 Game::Game()
 {

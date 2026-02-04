@@ -802,7 +802,6 @@ ShipDesign::LoadSkins(const char* path, const char* archive)
 
 	loader->UseFileSystem(true);
 	loader->SetDataPath(path);
-	loader->ListArchiveFiles(archive, "*.def", list);
 
 	ListIter<Text> iter = list;
 	while (++iter) {

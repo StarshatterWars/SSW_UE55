@@ -1447,7 +1447,36 @@ Sim::FindNearestRegion(SimObject* object, int type)
 	return result;
 }
 
+SimRegion* Sim::FindNearestSpaceRegion(const Orbital* orb)
+{
+	if (!orb)
+		return nullptr;
 
+	return FindNearestSpaceRegionAt(orb->Location());
+}
+
+SimRegion* Sim::FindNearestSpaceRegionAt(const FVector& loc)
+{
+	SimRegion* result = nullptr;
+	double     distance = 1.0e40;
+
+	const FVector objloc = OtherHand(loc);
+
+	ListIter<SimRegion> rgn = regions;
+	while (++rgn) {
+		OrbitalRegion* orgn = rgn->GetOrbitalRegion();
+		if (!orgn)
+			continue;
+
+		const double test = FMath::Abs(VecLen(OtherHand(orgn->Location()) - objloc));
+		if (test < distance) {
+			result = rgn.value();
+			distance = test;
+		}
+	}
+
+	return result;
+}
 
 // +--------------------------------------------------------------------+
 

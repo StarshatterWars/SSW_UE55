@@ -24,9 +24,6 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogMenuDlg, Log, All);
 
-// Provided by your project somewhere (legacy code used extern):
-extern const char* versionInfo;
-
 UMenuDlg::UMenuDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -83,8 +80,7 @@ void UMenuDlg::RegisterControls()
     // Version text:
     if (VersionText)
     {
-        const char* Ver = versionInfo ? versionInfo : "";
-        VersionText->SetText(FText::FromString(UTF8_TO_TCHAR(Ver)));
+        VersionText->SetText(FText::FromString(Game::VersionInfo));
     }
 }
 

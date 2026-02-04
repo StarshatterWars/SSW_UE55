@@ -46,9 +46,6 @@ public:
     void        UseVideo(Video* v);
     void        EnableMedia(bool enable = true);
 
-    int         EnableDatafile(const char* name);
-    int         DisableDatafile(const char* name);
-
     void        SetDataPath(const char* path);
     const char* GetDataPath() const { return datapath; }
 
@@ -57,10 +54,9 @@ public:
 
     bool        FindFile(const char* fname);
     int         ListFiles(const char* filter, List<Text>& list, bool recurse = false);
-    int         ListArchiveFiles(const char* archive, const char* filter, List<Text>& list);
+
     int         LoadBuffer(const char* name, BYTE*& buf, bool null_terminate = false, bool optional = false);
     int         LoadGameBitmap(const char* name, Bitmap& bmp, int type = 0, bool optional = false);
-    int         CacheBitmap(const char* name, Bitmap*& bmp, int type = 0, bool optional = false);
     int         LoadTexture(const char* name, Bitmap*& bmp, int type = 0, bool preload_cache = false, bool optional = false);
     int         LoadSound(const char* fname, USound*& snd, DWORD flags = 0, bool optional = false);
 

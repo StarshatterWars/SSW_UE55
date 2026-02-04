@@ -160,29 +160,7 @@ Starshatter::Starshatter()
 	gamma = 128; // default - flat gamma ramp
 
 	if (!DataLoader::GetLoader())
-		DataLoader::Initialize();
-
-	loader = DataLoader::GetLoader();
-	int loadstat = loader->EnableDatafile("shatter.dat");
-
-	if (loadstat != DataLoader::DATAFILE_OK) {
-		const char* err_msg = loadstat == DataLoader::DATAFILE_INVALID ?
-			"The file 'shatter.dat' appears to have been damaged.  Please re-install Starshatter Wars." :
-			"Starshatter Wars cannotxopen the file 'shatter.dat'.  Please re-install Starshatter Wars.";
-
-		UE_LOG(LogStarshatterWars, Error, TEXT("%s"), UTF8_TO_TCHAR(err_msg));
-		UE_LOG(LogStarshatterWars, Error, TEXT("FATAL ERROR: EXIT."));
-		exit(-1);
-	}
-
-	if (loader->FindFile("vox.dat"))
-		loader->EnableDatafile("vox.dat");
-
-	if (loader->FindFile("start.dat"))
-		loader->EnableDatafile("start.dat");
-
-	if (loader->FindFile("content.dat"))
-		loader->EnableDatafile("content.dat");
+		DataLoader::Initialize();;
 
 	LoadVideoConfig("video.cfg");
 

@@ -104,15 +104,6 @@ StarServer::StarServer()
 	DataLoader::Initialize();
 	loader = DataLoader::GetLoader();
 
-	int loadstat = loader->EnableDatafile("shatter.dat");
-	if (loadstat != DataLoader::DATAFILE_OK) {
-		Print("FATAL ERROR: Unable to open shatter.dat\n");
-		exit(-1);
-	}
-
-	if (loader->FindFile("start.dat"))
-		loader->EnableDatafile("start.dat");
-
 	// server has no media
 	loader->EnableMedia(false);
 }
