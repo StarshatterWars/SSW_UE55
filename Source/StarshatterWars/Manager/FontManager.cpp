@@ -71,6 +71,12 @@ static const FFontBootstrapDef GDefaultFonts[] =
     { "HUD",       "/Game/UI/Fonts/Roboto.Roboto",            16,  0,    FColor::White },
     { "HUD_SMALL", "/Game/UI/Fonts/Roboto.Roboto",            12,  0,    FColor::White },
     { "HUD_BIG",   "/Game/UI/Fonts/Roboto.Roboto",            24,  0,    FColor::White },
+    { "Limerick12", "/Game/UI/Fonts/Roboto.Roboto",           12,  0,    FColor::White },
+    { "Limerick18", "/Game/UI/Fonts/Roboto.Roboto",           18,  0,    FColor::White },
+    { "Verdana",    "/Game/UI/Fonts/Roboto.Roboto",           18,  0,    FColor::White },
+    { "Terminal",   "/Game/UI/Fonts/Roboto.Roboto",           12,  0,    FColor::White },
+    { "OCRB",       "/Game/UI/Fonts/Roboto.Roboto",           12,  0,    FColor::White },
+    { "GUI",        "/Game/UI/Fonts/Roboto.Roboto",           18,  0,    FColor::White },
 };
 
 // +--------------------------------------------------------------------+
