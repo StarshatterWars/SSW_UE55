@@ -60,7 +60,7 @@ public:
     void Show();
     void Hide();
 
-    virtual void ExecFrame(float DeltaTime);
+    virtual void ExecFrame(double DeltaTime);
 
     // ------------------------------------------------------------
     // Primary routing

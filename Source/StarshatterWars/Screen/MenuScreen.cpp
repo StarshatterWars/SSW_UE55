@@ -217,7 +217,7 @@ void UMenuScreen::TearDown()
 
 // ------------------------------------------------------------
 
-void UMenuScreen::ExecFrame(float DeltaTime)
+void UMenuScreen::ExecFrame(double DeltaTime)
 {
     (void)DeltaTime;
 }
