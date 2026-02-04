@@ -186,7 +186,7 @@ void UTacRefDlg::SelectShip(const ShipDesign* design)
 
             sprintf_s(txt, "%s\t\t\t%s\n",
                 Game::GetText("tacref.type").data(),
-                Ship::ClassName(design->type));
+                Ship::GetShipClassName(design->type));
             desc += txt;
 
             sprintf_s(txt, "%s\t\t\t%s\n",

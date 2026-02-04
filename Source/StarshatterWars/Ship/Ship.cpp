@@ -1144,13 +1144,13 @@ Ship::DesignFileName() const
 }
 
 const char*
-Ship::ClassName() const
+Ship::GetShipClassName() const
 {
 	return ShipDesign::ClassName(design->type);
 }
 
 const char*
-Ship::ClassName(int c)
+Ship::GetShipClassName(int c)
 {
 	return ShipDesign::ClassName(c);
 }

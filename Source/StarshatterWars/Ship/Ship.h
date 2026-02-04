@@ -316,12 +316,12 @@ public:
     const char*       Abbreviation() const;
     const char*        DesignName() const;
     const char*        DesignFileName() const;
-    static const char* ClassName(int c);
-    static int        ClassForName(const char* name);
-    const char*       ClassName() const;
+    static const char* GetShipClassName(int c);
+    static int         ClassForName(const char* name);
+    const char*        GetShipClassName() const;
 
     // Add this:
-    static const char* GetShipClassName(CLASSIFICATION classification) { return ClassName(static_cast<int>(classification)); }
+    static const char* GetShipClassName(CLASSIFICATION classification) { return GetShipClassName(static_cast<int>(classification)); }
     CLASSIFICATION    Class() const;
     bool              IsGroundUnit() const;
     bool              IsStarship() const;

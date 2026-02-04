@@ -3358,8 +3358,9 @@ MapView::OnHide()
 bool
 MapView::IsEnabled() const
 {
-	if (active_window)
+	if (active_window) {
 		return active_window->IsEnabled();
+	}
 
 	return false;
 }
@@ -3367,8 +3368,9 @@ MapView::IsEnabled() const
 bool
 MapView::IsVisible() const
 {
-	if (active_window)
+	if (active_window) {
 		return active_window->IsVisible();
+	}
 
 	return false;
 }
@@ -3376,18 +3378,18 @@ MapView::IsVisible() const
 bool
 MapView::IsFormActive() const
 {
-	if (active_window)
+	if (active_window) {
 		return active_window->IsFormActive();
-
+	}
 	return false;
 }
 
 Rect
 MapView::TargetRect() const
 {
-	if (active_window)
+	if (active_window) {
 		return active_window->TargetRect();
-
+	}
 	return Rect();
 }
 

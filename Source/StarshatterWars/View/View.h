@@ -103,6 +103,9 @@ public:
     // Child view (auto-attaches to parent):
     View(View* InParent, int ax, int ay, int aw, int ah);
 
+    // New bridge ctor: lets callers provide both, no conditional needed:
+    View(Screen* InScreen, View* InParent, int ax, int ay, int aw, int ah);
+
     virtual ~View();
 
     // Identity compare (legacy idiom)

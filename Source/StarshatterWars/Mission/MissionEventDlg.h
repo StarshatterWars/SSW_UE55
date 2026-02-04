@@ -35,7 +35,7 @@ class STARSHATTERWARS_API UMissionEventDlg : public UBaseScreen
     GENERATED_BODY()
 
 public:
-    UMissionEventDlg();
+    UMissionEventDlg(const FObjectInitializer& ObjectInitializer);
     void InitializeDlg(UMenuScreen* InManager);
     void SetMission(Mission* InMission);
     void SetMissionEvent(MissionEvent* InEvent);

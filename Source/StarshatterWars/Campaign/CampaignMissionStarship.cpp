@@ -1537,7 +1537,7 @@ CampaignMissionStarship::DescribeMission()
     else if (prime_target) {
         const char* ClassName = "(unknown)";
         if (prime_target->GetDesign())
-            ClassName = Ship::ClassName(prime_target->GetDesign()->type);
+            ClassName = Ship::GetShipClassName(prime_target->GetDesign()->type);
 
         sprintf_s(name, sizeof(name), "MSN-%03d %s %s %s",
             mission->Identity(),

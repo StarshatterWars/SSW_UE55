@@ -1,59 +1,29 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
+    Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    nGenEx.lib
+    SUBSYSTEM:    Foundation
     FILE:         ActiveWindow.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
     OVERVIEW
     ========
-    Active Window class (a window that knows how to draw itself)
+    ActiveWindow (Unreal port)
+    - Compatibility façade for legacy UI code paths (MapView, dialogs, etc.)
+    - Does NOT implement old Layout/Poly/VertexSet/Material system
+    - Delegates drawing + visibility + input to View
+    - Keeps the old "client event" registration pattern
 */
 
 #pragma once
 
-#include <vector>
 #include "Types.h"
-#include "Geometry.h"
-#include "Bitmap.h"
-#include "EventTarget.h"
 #include "List.h"
-#include "Text.h"
 #include "View.h"
 
-// Unreal (minimal):
-#include "Math/Vector.h"               // FVector
-#include "Math/Color.h"                // FColor
-#include "Math/UnrealMathUtility.h"    // FMath
-
-// +--------------------------------------------------------------------+
-
-struct Poly;
-struct Material;
-struct VertexSet;
-class  Layout;
-class  Screen;
-class  SystemFont;
-
-// +--------------------------------------------------------------------+
-
-enum {
-    WIN_NO_FRAME = 0x0000,
-    WIN_BLACK_FRAME = 0x0001,
-    WIN_WHITE_FRAME = 0x0002,
-    WIN_THIN_FRAME = 0x0004,
-    WIN_THICK_FRAME = 0x0008,
-    WIN_RAISED_FRAME = 0x0010,
-    WIN_SUNK_FRAME = 0x0020,
-    WIN_TEXT_SHADOW = 0x0040,
-    WIN_FRAME_ONLY = 0x0080
-};
-
+// ---------------------------------------------------------------------
+// Legacy-style event IDs (keep same numeric meanings as old code)
+// ---------------------------------------------------------------------
 enum {
     EID_CREATE,
     EID_DESTROY,
@@ -81,28 +51,24 @@ enum {
     EID_NUM_EVENTS
 };
 
-// +--------------------------------------------------------------------+
-
 class ActiveWindow;
 
 struct AWEvent
 {
     static const char* TYPENAME() { return "AWEvent"; }
 
-    AWEvent() : window(0), eid(0), x(0), y(0) {}
+    AWEvent() : window(nullptr), eid(0), x(0), y(0) {}
     AWEvent(ActiveWindow* w, int e, int ax = 0, int ay = 0) : window(w), eid(e), x(ax), y(ay) {}
 
-    int operator == (const AWEvent& e) const {
-        return (window == e.window) &&
-            (eid == e.eid) &&
-            (x == e.x) &&
-            (y == e.y);
+    int operator==(const AWEvent& e) const
+    {
+        return window == e.window && eid == e.eid && x == e.x && y == e.y;
     }
 
     ActiveWindow* window;
-    int            eid;
-    int            x;
-    int            y;
+    int           eid;
+    int           x;
+    int           y;
 };
 
 typedef void (*PFVAWE)(ActiveWindow*, AWEvent*);
@@ -111,225 +77,96 @@ struct AWMap
 {
     static const char* TYPENAME() { return "AWMap"; }
 
-    AWMap() : eid(0), client(0), func(0) {}
+    AWMap() : eid(0), client(nullptr), func(nullptr) {}
     AWMap(int e, ActiveWindow* w, PFVAWE f) : eid(e), client(w), func(f) {}
 
-    int operator == (const AWMap& m) const {
-        return (eid == m.eid) &&
-            (client == m.client);
+    int operator==(const AWMap& m) const
+    {
+        return eid == m.eid && client == m.client;
     }
 
-    int            eid;
+    int           eid;
     ActiveWindow* client;
-    PFVAWE         func;
+    PFVAWE        func;
 };
 
-// +--------------------------------------------------------------------+
-
-class ActiveWindow : public View,
-    public EventTarget
+// ---------------------------------------------------------------------
+// ActiveWindow
+// ---------------------------------------------------------------------
+class ActiveWindow : public View
 {
 public:
     static const char* TYPENAME() { return "ActiveWindow"; }
 
-    ActiveWindow(Screen* s, int ax, int ay, int aw, int ah,
-        DWORD id = 0, DWORD style = 0, ActiveWindow* parent = 0);
+    ActiveWindow(class Screen* InScreen,
+        int ax, int ay, int aw, int ah,
+        uint32 InID = 0,
+        uint32 InStyle = 0,
+        ActiveWindow* InParent = nullptr);
+
     virtual ~ActiveWindow();
 
-    int operator == (const ActiveWindow& w) const { return id == w.id; }
+    // Identity compare (legacy idiom):
+    int operator==(const ActiveWindow& w) const { return id == w.id; }
 
-    // Operations:
-    virtual void      Paint();    // blt to screen
-    virtual void      Draw();     // refresh backing store
-    virtual void      Show();
-    virtual void      Hide();
-    virtual void      MoveTo(const Rect& r);
-    virtual void      UseLayout(const std::vector<DWORD>& min_x,
-        const std::vector<DWORD>& min_y,
-        const std::vector<float>& weight_x,
-        const std::vector<float>& weight_y);
-    virtual void      UseLayout(const std::vector<float>& min_x,
-        const std::vector<float>& min_y,
-        const std::vector<float>& weight_x,
-        const std::vector<float>& weight_y);
-    virtual void      UseLayout(int     ncols,
-        int     nrows,
-        int* min_x,
-        int* min_y,
-        float* weight_x,
-        float* weight_y);
-    virtual void      DoLayout();
+    // -----------------------------------------------------------------
+    // Compatibility surface expected by MapView and legacy UI
+    // -----------------------------------------------------------------
+    virtual void   Show() override;
+    virtual void   Hide() override;
+    virtual void   MoveTo(const Rect& r) override;
 
-    // Event Target Interface:
-    virtual bool      OnMouseMove(int32 x, int32 y);
-    virtual int       OnLButtonDown(int x, int y);
-    virtual int       OnLButtonUp(int x, int y);
-    virtual int       OnClick();
-    virtual int       OnSelect();
-    virtual int       OnRButtonDown(int x, int y);
-    virtual int       OnRButtonUp(int x, int y);
-    virtual int       OnMouseEnter(int x, int y);
-    virtual int       OnMouseExit(int x, int y);
-    virtual int       OnMouseWheel(int wheel);
+    // Legacy names:
+    bool           IsVisible() const { return IsShown(); }
+    virtual bool   IsFormActive() const;          // legacy "form context"
+    virtual Rect   TargetRect() const { return GetRect(); }
 
-    virtual int       OnKeyDown(int vk, int flags);
+    // Drawing:
+    void           DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags);
 
-    virtual const char* GetDescription() const { return desc; }
+    // Event interface expected by old callers:
+    virtual int    OnLButtonDown(int x, int y);
+    virtual int    OnLButtonUp(int x, int y);
+    virtual int    OnRButtonDown(int x, int y);
+    virtual int    OnRButtonUp(int x, int y);
+    virtual int    OnClick();
+    virtual int    OnSelect();
 
-    // pseudo-events:
-    virtual int       OnDragStart(int x, int y);
-    virtual int       OnDragDrop(int x, int y, ActiveWindow* source);
+    virtual void Draw();
+    
+    void SetEnabled(bool bInEnabled = true) { enabled = bInEnabled; }
+    bool IsEnabled() const { return enabled; }
 
-    virtual ActiveWindow* FindControl(int x, int y) { return 0; }
-    virtual Rect      TargetRect() const;
+    // Callback registration:
+    virtual void   RegisterClient(int EID, ActiveWindow* client, PFVAWE callback);
+    virtual void   UnregisterClient(int EID, ActiveWindow* client);
+    virtual void   ClientEvent(int EID, int x = 0, int y = 0);
 
-    virtual ActiveWindow* GetCapture();
-    virtual int       SetCapture();
-    virtual int       ReleaseCapture();
+    // Properties:
+    DWORD          GetID() const { return id; }
+    DWORD          GetStyle() const { return style; }
+    void           SetStyle(DWORD s) { style = s; }
 
-    // Property accessors:
-    virtual void      SetFocus();
-    virtual void      KillFocus();
-    virtual bool      HasFocus() const { return focus; }
+    void           SetForeColor(const FColor& c) { ForeColor = c; }
+    FColor         GetForeColor() const { return ForeColor; }
 
-    void              SetEnabled(bool e = true) { enabled = e; }
-    bool              IsEnabled() const { return enabled; }
-    bool              IsVisible() const { return shown; }
+    void           SetBackColor(const FColor& c) { BackColorLocal = c; }
+    FColor         GetBackColor() const { return BackColorLocal; }
 
-    DWORD             GetID() const { return id; }
-    void              SetStyle(DWORD s) { style = s; }
-    DWORD             GetStyle() const { return style; }
+private:
+    DWORD          id = 0;
+    DWORD          style = 0;
 
-    void              SetText(const char* t);
-    void              SetText(const Text& t);
-    void              AddText(const char* t);
-    void              AddText(const Text& t);
-    const             Text& GetText() const { return text; }
+    ActiveWindow* parent_aw = nullptr;
+    ActiveWindow* form_aw = nullptr;   // legacy "form" concept, optional
 
-    void              SetAltText(const char* t) { alt_text = t; }
-    void              SetAltText(const Text& t) { alt_text = t; }
-    const             Text& GetAltText() const { return alt_text; }
+    // Minimal color state used by some views:
+    FColor         ForeColor = FColor::White;
+    FColor         BackColorLocal = FColor::Black;
 
-    void              SetTexture(Bitmap* bmp) { texture = bmp; }
-    Bitmap*           GetTexture() { return texture; }
-    void              SetMargins(const Insets& m);
-    Insets&           GetMargins() { return margins; }
-    void              SetTextInsets(const Insets& t);
-    Insets&           GetTextInsets() { return text_insets; }
+    // Client callbacks:
+    List<AWMap>    clients;
+    AWEvent        event;
 
-    List<ActiveWindow>& GetChildren() { return children; }
-    void              SetCellInsets(const Insets& c);
-    Insets&           GetCellInsets() { return cell_insets; }
-    void              SetCells(int cx, int cy, int cw = 1, int ch = 1);
-    void              SetCells(const Rect& r) { cells = r; }
-    Rect&             GetCells() { return cells; }
-    void              SetFixedWidth(int w) { fixed_width = w; }
-    int               GetFixedWidth()  const { return fixed_width; }
-    void              SetFixedHeight(int h) { fixed_height = h; }
-    int               GetFixedHeight() const { return fixed_height; }
-
-    void              SetAlpha(double a);
-    double            GetAlpha()        const { return alpha; }
-    void              SetBackColor(FColor c) { back_color = c; }
-    FColor            GetBackColor()    const { return back_color; }
-    void              SetBaseColor(FColor c) { base_color = c; }
-    FColor            GetBaseColor()    const { return base_color; }
-    void              SetForeColor(FColor c) { fore_color = c; }
-    FColor            GetForeColor()    const { return fore_color; }
-    void              SetSingleLine(bool a) { single_line = a; }
-    bool              GetSingleLine()   const { return single_line; }
-    void              SetTextAlign(DWORD a);
-    DWORD             GetTextAlign()    const { return text_align; }
-    void              SetTransparent(bool t) { transparent = t; }
-    bool              GetTransparent()  const { return transparent; }
-    void              SetHidePartial(bool a) { hide_partial = a; }
-    bool              GetHidePartial()  const { return hide_partial; }
-
-    void              SetTabStop(int n, int x);
-    int               GetTabStop(int n) const;
-
-    void              DrawText(const char* txt, int count, Rect& txt_rect, DWORD flags);
-
-    // class properties:
-    static void       SetSystemFont(SystemFont* f);
-    static void       SetSystemBackColor(FColor c);
-    static void       SetSystemForeColor(FColor c);
-
-    // callback function registration:
-    virtual void      RegisterClient(int EID, ActiveWindow* client, PFVAWE callback);
-    virtual void      UnregisterClient(int EID, ActiveWindow* client);
-    virtual void      ClientEvent(int EID, int x = 0, int y = 0);
-
-    // form context:
-    virtual ActiveWindow* GetForm() { return form; }
-    virtual void          SetForm(ActiveWindow* f) { form = f; }
-    virtual bool          IsFormActive()     const;
-    virtual bool          IsTopMost()        const { return topmost; }
-    virtual void          SetTopMost(bool t) { topmost = t; }
-
-    virtual ActiveWindow* FindChild(DWORD id);
-    virtual ActiveWindow* FindChild(int x, int y);
-
-protected:
-    virtual FColor    ShadeColor(FColor c, double shade);
-    virtual void      AddChild(ActiveWindow* child);
-    virtual void      DrawStyleRect(const Rect& r, int style);
-    virtual void      DrawStyleRect(int x1, int y1, int x2, int y2, int style);
-    virtual void      DrawTabbedText();
-    virtual void      DrawTextureGrid();
-    virtual void      CalcGrid();
-
-    DWORD             id;
-    DWORD             style;
-    DWORD             text_align;
-    bool              single_line;
-    bool              focus;
-    bool              enabled;
-    bool              hide_partial;
-    float             alpha;
-    FColor            back_color;
-    FColor            base_color;
-    FColor            fore_color;
-    Text              text;
-    Text              alt_text;
-    Text              desc;
-    Bitmap* texture;
-    Insets            margins;
-    Insets            text_insets;
-    Insets            cell_insets;
-    Rect              cells;
-    int               fixed_width;
-    int               fixed_height;
-    int               tab[10];
-
-    ActiveWindow* parent;
-    ActiveWindow* form;
-    bool              transparent;
-    bool              topmost;
-
-    Layout* layout;
-    List<ActiveWindow>   children;
-    List<AWMap>          clients;
-    AWEvent              event;
-
-    int               rows;
-    int               cols;
-    Poly* polys;
-    VertexSet* vset;
-    Material* mtl;
-
-    static SystemFont* sys_font;
-    static FColor      sys_back_color;
-    static FColor      sys_fore_color;
+    bool enabled = true;
 };
-
-#define DEF_MAP_CLIENT(cname, fname) \
-    void Map##cname##fname(ActiveWindow* client, AWEvent* event) \
-    { cname* c = (cname*) client; c->fname(event); }
-
-#define REGISTER_CLIENT(eid, ctrl, cname, fname) \
-    if (ctrl) ctrl->RegisterClient(eid, this, Map##cname##fname);
-
-#define UNREGISTER_CLIENT(eid, ctrl, cname) \
-    if (ctrl) ctrl->UnregisterClient(eid, this);
-

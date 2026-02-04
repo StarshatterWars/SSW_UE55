@@ -61,6 +61,29 @@ View::View(View* inParent, int ax, int ay, int aw, int ah)
         parent->AddView(this);
 }
 
+View::View(Screen* InScreen, View* InParent, int ax, int ay, int aw, int ah)
+    : rect(ax, ay, aw, ah)
+    , ViewRectPx(ax, ay, aw, ah)
+    , screen(InScreen)
+    , window(nullptr)
+    , parent(InParent)
+    , shown(true)
+{
+    // Inherit render context from parent if present:
+    if (parent)
+    {
+        window = parent->GetWindow();   // your View stores window as View*
+        screen = parent->GetScreen();   // parent already knows screen
+        parent->AddView(this);
+    }
+    else
+    {
+        // Root view: render context will be resolved by Screen in your existing ctor,
+        // or you can leave window null and set it later.
+        // If your Screen has a root window/view, bind it here if you want.
+    }
+}
+
 View::~View()
 {
     // IMPORTANT:

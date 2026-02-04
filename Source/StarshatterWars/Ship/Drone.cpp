@@ -118,7 +118,7 @@ Drone::ACS() const
 const char*
 Drone::ClassName() const
 {
-	return Ship::ClassName(decoy_type);
+	return Ship::GetShipClassName(decoy_type);
 }
 
 int

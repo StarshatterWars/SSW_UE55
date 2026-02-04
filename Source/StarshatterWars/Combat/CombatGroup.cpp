@@ -1548,7 +1548,7 @@ SaveCombatUnit(FILE* f, CombatUnit* u)
 
 	fprintf(f, "\n unit: {");
 	fprintf(f, " name: \"%s\",", u->Name().data());
-	fprintf(f, " type: \"%s\",", Ship::ClassName(type));
+	fprintf(f, " type: \"%s\",", Ship::GetShipClassName(type));
 	fprintf(f, " design: \"%s\",", u->DesignName().data());
 
 	if (u->Count() > 1) {
