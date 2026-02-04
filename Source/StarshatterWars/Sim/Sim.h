@@ -155,6 +155,8 @@ public:
 
     SimRegion* FindRegion(const char* name);
     SimRegion* FindRegion(OrbitalRegion* rgn);
+    SimRegion* FindRegion(const FString& Name); 
+
     SimRegion* FindNearestSpaceRegion(SimObject* object);
     SimRegion* FindNearestTerrainRegion(SimObject* object);
     SimRegion* FindNearestRegion(SimObject* object, int type);

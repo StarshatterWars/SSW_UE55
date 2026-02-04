@@ -775,7 +775,7 @@ enum class RadioMessageAction : uint8
 };
 
 UENUM()
-enum class TacticalViewMenu : uint8 {
+enum class TacticalViewMenu : uint32 {
 	FORWARD = 1000,
 	CHASE,
 	PADLOCK,
@@ -785,7 +785,9 @@ enum class TacticalViewMenu : uint8 {
 	ENG,
 	FLT,
 	INS,
-	CMD
+	CMD, 
+	QUANTUM = 2000,
+	FARCAST = 2001
 };
 
 /*static enum ETXT : int32

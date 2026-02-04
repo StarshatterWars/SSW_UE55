@@ -32,6 +32,7 @@
 #include "WepView.h"
 #include "QuantumView.h"
 #include "RadioView.h"
+#include "MenuView.h"
 #include "RadioMessage.h"
 #include "RadioTraffic.h"
 #include "HUDSounds.h"
@@ -1170,5 +1171,183 @@ void TacticalView::SendAction()
     else
     {
         HUDSounds::PlaySound(HUDSounds::SND_TAC_REJECT);
+    }
+}
+
+void TacticalView::ProcessRadioAction(RadioMessageAction action)
+{
+    switch (action)
+    {
+    case RadioMessageAction::MOVE_PATROL:
+        show_move = true;
+        base_alt = 0;
+        move_alt = 0;
+
+        if (msg_ship)
+            base_alt = msg_ship->Location().Y; // UE FVector => .Y
+        break;
+
+    case RadioMessageAction::ATTACK:
+    case RadioMessageAction::BRACKET:
+    case RadioMessageAction::ESCORT:
+    case RadioMessageAction::IDENTIFY:
+    case RadioMessageAction::DOCK_WITH:
+        ShowRadioAction = action; // make show_action type RadioMessageAction (recommended)
+        break;
+
+    case RadioMessageAction::WEP_HOLD:
+    case RadioMessageAction::RESUME_MISSION:
+    case RadioMessageAction::RTB:
+    case RadioMessageAction::GO_DIAMOND:
+    case RadioMessageAction::GO_SPREAD:
+    case RadioMessageAction::GO_BOX:
+    case RadioMessageAction::GO_TRAIL:
+    case RadioMessageAction::GO_EMCON1:
+    case RadioMessageAction::GO_EMCON2:
+    case RadioMessageAction::GO_EMCON3:
+    case RadioMessageAction::LAUNCH_PROBE:
+        if (msg_ship)
+        {
+            SimElement* elem = msg_ship->GetElement();
+            RadioMessage* msg = new RadioMessage(elem, ship, action);
+            if (msg)
+                RadioTraffic::Transmit(msg);
+        }
+        else if (ship)
+        {
+            if (action == RadioMessageAction::GO_EMCON1)           ship->SetEMCON(1);
+            else if (action == RadioMessageAction::GO_EMCON2)      ship->SetEMCON(2);
+            else if (action == RadioMessageAction::GO_EMCON3)      ship->SetEMCON(3);
+            else if (action == RadioMessageAction::LAUNCH_PROBE)   ship->LaunchProbe();
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+
+void TacticalView::ProcessViewAction(TacticalViewMenu action)
+{
+    Starshatter* stars = Starshatter::GetInstance();
+
+    switch (action)
+    {
+    case TacticalViewMenu::FORWARD:
+        stars->PlayerCam(CameraManager::MODE_COCKPIT);
+        break;
+
+    case TacticalViewMenu::CHASE:
+        stars->PlayerCam(CameraManager::MODE_CHASE);
+        break;
+
+    case TacticalViewMenu::PADLOCK:
+        stars->PlayerCam(CameraManager::MODE_TARGET);
+        break;
+
+    case TacticalViewMenu::ORBIT:
+        stars->PlayerCam(CameraManager::MODE_ORBIT);
+        break;
+
+    case TacticalViewMenu::NAV:
+        gamescreen->ShowNavDlg();
+        break;
+
+    case TacticalViewMenu::WEP:
+        gamescreen->ShowWeaponsOverlay();
+        break;
+
+    case TacticalViewMenu::ENG:
+        gamescreen->ShowEngDlg();
+        break;
+
+    case TacticalViewMenu::INS:
+        HUDView::GetInstance()->CycleHUDInst();
+        break;
+
+    case TacticalViewMenu::FLT:
+        gamescreen->ShowFltDlg();
+        break;
+
+    case TacticalViewMenu::CMD:
+        if (ship && ship->IsStarship())
+            ship->CommandMode();
+        break;
+
+    case TacticalViewMenu::QUANTUM:
+        if (sim)
+        {
+            Ship* s = msg_ship ? msg_ship : ship;
+
+            if (s && s->GetQuantumDrive())
+            {
+                QuantumDrive* quantum = s->GetQuantumDrive();
+                if (quantum)
+                {
+                    MenuItem* menu_item = menu_view->GetMenuItem();
+                    const FString& rgn_name = menu_item->GetText();
+                    SimRegion* rgn = sim->FindRegion(rgn_name);
+
+                    if (rgn)
+                    {
+                        if (s == ship)
+                        {
+                            quantum->SetDestination(rgn, Point(0, 0, 0));
+                            quantum->Engage();
+                        }
+                        else if (msg_ship)
+                        {
+                            SimElement* elem = msg_ship->GetElement();
+                            RadioMessage* msg = new RadioMessage(elem, ship, RadioMessageAction::QUANTUM_TO);
+                            if (msg)
+                            {
+                                Text LegacyName(TCHAR_TO_ANSI(*rgn_name));
+                                msg->SetInfo(LegacyName); 
+                                RadioTraffic::Transmit(msg);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        break;
+
+    case TacticalViewMenu::FARCAST:
+        if (sim && msg_ship)
+        {
+            MenuItem* menu_item = menu_view->GetMenuItem();
+            const FString& rgn_name = menu_item->GetText();
+            Text legacyName(TCHAR_TO_ANSI(*rgn_name));
+            SimRegion* rgn = sim->FindRegion(legacyName);
+
+            if (rgn)
+            {
+                SimElement* elem = msg_ship->GetElement();
+                RadioMessage* msg = new RadioMessage(elem, ship, RadioMessageAction::FARCAST_TO);
+                if (msg)
+                {
+                    msg->SetInfo(Text(TCHAR_TO_ANSI(*rgn_name)));
+                    RadioTraffic::Transmit(msg);
+                }
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+void TacticalView::ProcessMenuItem(int32 action)
+{
+    // MapView dispatch rule:
+    if (action >= 1000)
+    {
+        ProcessViewAction(static_cast<TacticalViewMenu>(action));
+    }
+    else
+    {
+        ProcessRadioAction(static_cast<RadioMessageAction>(action));
     }
 }

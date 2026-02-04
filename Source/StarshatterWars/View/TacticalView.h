@@ -21,6 +21,7 @@
 #include "List.h"
 #include "View.h"
 #include "SimObject.h"
+#include "GameStructs.h"
 
 // Forward declarations (ported sim/UI types):
 class Ship;
@@ -84,7 +85,7 @@ protected:
     // Menu:
     virtual void BuildMenu();
     virtual void DrawMenu();
-    virtual void ProcessMenuItem(int32 Action);
+    virtual void ProcessMenuItem(int32 action);
 
     // Move/Action:
     virtual void DrawMove();
@@ -138,15 +139,32 @@ protected:
     MenuItem* MenuItemPtr = nullptr;
 
 protected:
-    static TacticalView* TacView;
+   
+   static TacticalView* TacView;
+   UGameScreen* gamescreen;
+   MenuView*    menu_view;
 
     // Colors (legacy had static Color hud_color/txt_color):
     static FColor HudColor;
     static FColor TxtColor;
+
+    int                        show_move;
+    RadioMessageAction         ShowRadioAction;
+
+    double      base_alt;
+    double      move_alt;
+
+    Sim*        sim;
+    Ship*       msg_ship;
+    Ship*       ship;
+
 
 private:
     TacticalView(const TacticalView&) = delete;
     TacticalView& operator=(const TacticalView&) = delete;
 
     MenuItem* MI;
+
+    void ProcessRadioAction(RadioMessageAction action);
+    void ProcessViewAction(TacticalViewMenu action);
 };

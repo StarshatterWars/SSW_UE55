@@ -76,9 +76,11 @@
 #include "GameStructs.h"
 
 // Minimal Unreal includes (logging + FVector):
+#include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
 #include "Math/Vector.h"
 #include "Math/RandomStream.h"
+#include "HAL/PlatformString.h"
 
 // NOTE: Render assets like Bitmap are handled as Unreal assets elsewhere (e.g., UTexture2D*).
 // This translation unit does notxinclude Bitmap.h.
@@ -1362,6 +1364,11 @@ Sim::FindRegion(const char* name)
 			return rgn.value();
 
 	return 0;
+}
+
+SimRegion* Sim::FindRegion(const FString& Name)
+{
+	return FindRegion(TCHAR_TO_ANSI(*Name));
 }
 
 SimRegion*
