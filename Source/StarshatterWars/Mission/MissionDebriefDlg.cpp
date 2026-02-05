@@ -467,9 +467,9 @@ void UMissionDebriefDlg::OnCloseClicked()
 
         Campaign* Camp = Campaign::GetCampaign();
         if (Camp && Camp->GetCampaignId() < Campaign::SINGLE_MISSIONS)
-            Stars->SetGameMode(EMODE::CMPN_MODE);
+            Stars->SetGameMode(EGameMode::CMPN);
         else
-            Stars->SetGameMode(EMODE::MENU_MODE);
+            Stars->SetGameMode(EGameMode::MENU);
     }
     else
     {

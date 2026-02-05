@@ -423,7 +423,7 @@ void UCmdMissionsDlg::OnAcceptClicked()
     Mouse::Show(false);
     CampaignPtr->SetMissionId(SelectedMission->Identity());
     CampaignPtr->StartMission();
-    Stars->SetGameMode(EMODE::PREP_MODE);
+    Stars->SetGameMode(EGameMode::PREP);
 }
 
 // --------------------------------------------------------------------
@@ -468,6 +468,6 @@ void UCmdMissionsDlg::OnExitClicked()
     if (Stars)
     {
         Mouse::Show(false);
-        Stars->SetGameMode(EMODE::MENU_MODE);
+        Stars->SetGameMode(EGameMode::MENU);
     }
 }

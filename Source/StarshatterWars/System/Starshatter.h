@@ -58,8 +58,8 @@ public:
 	virtual void Exit();
 	virtual bool OnHelp() { return false; }
 
-	EMODE     GetGameMode() { return game_mode; }
-	void      SetGameMode(EMODE mode);
+	EGameMode     GetGameMode() { return game_mode; }
+	void      SetGameMode(EGameMode mode);
 	void      RequestChangeVideo();
 	void      LoadVideoConfig(const char* filename);
 	void      SaveVideoConfig(const char* filename);
@@ -183,7 +183,7 @@ protected:
 	int                 mouse_dx;
 	int                 mouse_dy;
 
-	EMODE               game_mode;
+	EGameMode               game_mode;
 	int                 test_mode;
 	int                 req_change_video;
 	int                 video_changed;

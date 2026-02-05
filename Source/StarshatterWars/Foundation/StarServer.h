@@ -59,8 +59,8 @@ public:
 	virtual bool      OnPaint();
 
 	// Accessors / mutators
-	EMODE             GetGameMode() const { return game_mode; }
-	void              SetGameMode(EMODE mode);
+	EGameMode             GetGameMode() const { return game_mode; }
+	void              SetGameMode(EGameMode mode);
 	void              SetNextMission(const char* script);
 
 	// World control
@@ -81,7 +81,7 @@ protected:
 
 	DataLoader* loader;
 
-	EMODE               game_mode;
+	EGameMode               game_mode;
 	DWORD               time_mark;
 	DWORD               minutes;
 };

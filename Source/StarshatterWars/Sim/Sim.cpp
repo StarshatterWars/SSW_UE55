@@ -1570,7 +1570,7 @@ Sim::ExecFrame(double DeltaSeconds)
 	// setup music
 	if (!MusicManager::IsNoMusic()) {
 		Starshatter* Stars = Starshatter::GetInstance();
-		if (Stars && Stars->GetGameMode() == EMODE::PLAY_MODE) {
+		if (Stars && Stars->GetGameMode() == EGameMode::PLAY) {
 			Ship* PlayerShip = GetPlayerShip();
 			if (PlayerShip) {
 				const int32 Phase = PlayerShip->GetFlightPhase();

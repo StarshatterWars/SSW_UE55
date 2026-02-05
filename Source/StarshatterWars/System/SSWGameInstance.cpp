@@ -981,7 +981,7 @@ void USSWGameInstance::ToggleCampaignLoading(bool bVisible)
 	}
 }
 
-void USSWGameInstance::SetGameMode(EMODE gm)
+void USSWGameInstance::SetGameMode(EGameMode gm)
 {
 
 }

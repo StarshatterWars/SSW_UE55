@@ -1592,5 +1592,5 @@ CampaignMissionStarship::Exit()
 {
     Starshatter* stars = Starshatter::GetInstance();
     if (stars)
-        stars->SetGameMode(EMODE::MENU_MODE);
+        stars->SetGameMode(EGameMode::MENU);
 }

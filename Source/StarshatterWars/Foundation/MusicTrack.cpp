@@ -98,7 +98,7 @@ MusicTrack::ExecFrame()
 
     Starshatter* stars = Starshatter::GetInstance();
     if (stars) {
-        music_pause = (stars->GetGameMode() == EMODE::PLAY_MODE) && Game::Paused();
+        music_pause = (stars->GetGameMode() == EGameMode::PLAY) && Game::Paused();
     }
 
     if (sound && !music_pause) {

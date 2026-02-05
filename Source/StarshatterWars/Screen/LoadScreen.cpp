@@ -157,8 +157,8 @@ void ULoadScreen::ShowLoadDlg()
     // Show campaign load dialog if available and loading campaign:
     if (Stars && CmpLoadDlg)
     {
-        if (Stars->GetGameMode() == EMODE::CLOD_MODE ||
-            Stars->GetGameMode() == EMODE::CMPN_MODE)
+        if (Stars->GetGameMode() == EGameMode::CLOD ||
+            Stars->GetGameMode() == EGameMode::CMPN)
         {
             CmpLoadDlg->SetVisibility(ESlateVisibility::Visible);
 

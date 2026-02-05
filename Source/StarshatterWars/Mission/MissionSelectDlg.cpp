@@ -505,7 +505,7 @@ void UMissionSelectDlg::OnAcceptClicked()
                 Stars = Starshatter::GetInstance();
 
             if (Stars)
-                Stars->SetGameMode(EMODE::PREP_MODE);
+                Stars->SetGameMode(EGameMode::PREP);
 
             OnAccepted.Broadcast(MissionId);
         }

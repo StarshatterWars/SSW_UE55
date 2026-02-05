@@ -143,7 +143,7 @@ Starshatter::Starshatter()
 	field_of_view(2), time_mark(0), minutes(0),
 	player_ship(0),
 	spinning(false), tactical(false), mouse_x(0), mouse_y(0),
-	game_mode(EMODE::MENU_MODE), mouse_input(0),
+	game_mode(EGameMode::MENU), mouse_input(0),
 	terminal(0), verdana(0), limerick18(0), limerick12(0),
 	HUDfont(0), GUIfont(0), GUI_small_font(0), title_font(0),
 	ocrb(0), req_change_video(0), video_changed(0),
@@ -263,7 +263,7 @@ void
 Starshatter::Exit()
 {
 	MusicManager::SetMode(MusicManager::NONE);
-	SetGameMode(EMODE::EXIT_MODE);
+	SetGameMode(EGameMode::EXIT);
 }
 
 // +--------------------------------------------------------------------+
@@ -423,7 +423,7 @@ Starshatter::GetScreenHeight()
 void
 Starshatter::StartOrResumeGame()
 {
-	if (game_mode != EMODE::MENU_MODE && game_mode != EMODE::CMPN_MODE)
+	if (game_mode != EGameMode::MENU && game_mode != EGameMode::CMPN)
 		return;
 
 	PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
@@ -457,7 +457,7 @@ Starshatter::StartOrResumeGame()
 		Campaign::SelectCampaign(c->Name());
 
 	Mouse::Show(false);
-	SetGameMode(EMODE::CLOD_MODE);
+	SetGameMode(EGameMode::CLOD);
 }
 
 // +--------------------------------------------------------------------+
@@ -473,7 +473,7 @@ Starshatter::UseFileSystem()
 void
 Starshatter::OpenTacticalReference()
 {
-	if (menuscreen && game_mode == EMODE::MENU_MODE) {
+	if (menuscreen && game_mode == EGameMode::MENU) {
 		menuscreen->ShowLoadDlg();
 
 		ULoadDlg* load_dlg = menuscreen->GetLoadDlg();
@@ -492,7 +492,7 @@ Starshatter::OpenTacticalReference()
 // +--------------------------------------------------------------------+
 
 void
-Starshatter::SetGameMode(EMODE m)
+Starshatter::SetGameMode(EGameMode m)
 {
 	if (game_mode == m)
 		return;
@@ -512,21 +512,21 @@ Starshatter::SetGameMode(EMODE m)
 	if (mouse_con)
 		mouse_con->SetActive(false);
 
-	if (m == EMODE::CLOD_MODE || m == EMODE::PREP_MODE || m == EMODE::LOAD_MODE) {
+	if (m == EGameMode::CLOD || m == EGameMode::PREP || m == EGameMode::LOAD) {
 		load_step = 0;
 		load_progress = 0;
 		load_activity = Game::GetText("Starshatter.load.general");
 		paused = true;
 	}
 
-	else if (m == EMODE::CMPN_MODE) {
+	else if (m == EGameMode::CMPN) {
 		load_step = 0;
 		load_progress = 100;
 		load_activity = Game::GetText("Starshatter.load.complete");
 		paused = false;
 	}
 
-	else if (m == EMODE::PLAY_MODE) {
+	else if (m == EGameMode::PLAY) {
 		UE_LOG(LogStarshatterWars, Log, TEXT("Starting Game..."));
 
 		player_ship = 0;
@@ -550,8 +550,8 @@ Starshatter::SetGameMode(EMODE m)
 		UE_LOG(LogStarshatterWars, Log, TEXT("Stardate: %.1f"), StarSystem::GetBaseTime());
 	}
 
-	else if (m == EMODE::PLAN_MODE) {
-		if (game_mode == EMODE::PLAY_MODE) {
+	else if (m == EGameMode::PLAN) {
+		if (game_mode == EGameMode::PLAY) {
 			UE_LOG(LogStarshatterWars, Log, TEXT("Returning to Plan Mode..."));
 			if (soundcard)
 				soundcard->StopSoundEffects();
@@ -562,10 +562,10 @@ Starshatter::SetGameMode(EMODE m)
 		}
 	}
 
-	else if (m == EMODE::MENU_MODE) {
+	else if (m == EGameMode::MENU) {
 		UE_LOG(LogStarshatterWars, Log, TEXT("Returning to Main Menu..."));
 
-		if (game_mode == EMODE::PLAN_MODE || game_mode == EMODE::PLAY_MODE) {
+		if (game_mode == EGameMode::PLAN || game_mode == EGameMode::PLAY) {
 			if (soundcard)
 				soundcard->StopSoundEffects();
 
@@ -575,10 +575,10 @@ Starshatter::SetGameMode(EMODE m)
 		paused = true;
 	}
 
-	if (m == EMODE::EXIT_MODE) {
+	if (m == EGameMode::EXIT) {
 		UE_LOG(LogStarshatterWars, Log, TEXT("Shutting Down (Returning to Windows)..."));
 
-		if (game_mode == EMODE::PLAN_MODE || game_mode == EMODE::PLAY_MODE) {
+		if (game_mode == EGameMode::PLAN || game_mode == EGameMode::PLAY) {
 			if (soundcard)
 				soundcard->StopSoundEffects();
 		}
@@ -785,7 +785,7 @@ Starshatter::UpdateWorld()
 			world->ExecFrame(seconds);
 	}
 
-	if (game_mode == EMODE::PLAY_MODE || InCutscene()) {
+	if (game_mode == EGameMode::PLAY || InCutscene()) {
 		if (cam_dir) {
 			cam_dir->ExecFrame(gui_seconds);
 		}
@@ -845,7 +845,7 @@ Starshatter::GameState()
 		}
 	}
 
-	else if (game_mode == EMODE::MENU_MODE) {
+	else if (game_mode == EGameMode::MENU) {
 		bool campaign_select = false;
 
 		if (cmpnscreen) {
@@ -879,9 +879,9 @@ Starshatter::GameState()
 		DoMenuScreenFrame();
 	}
 
-	else if (game_mode == EMODE::CLOD_MODE ||
-		game_mode == EMODE::PREP_MODE ||
-		game_mode == EMODE::LOAD_MODE) {
+	else if (game_mode == EGameMode::CLOD ||
+		game_mode == EGameMode::PREP ||
+		game_mode == EGameMode::LOAD) {
 		if (menuscreen)
 			menuscreen->Hide();
 
@@ -896,7 +896,7 @@ Starshatter::GameState()
 		else
 			loadscreen->Show();
 
-		if (game_mode == EMODE::CLOD_MODE)
+		if (game_mode == EGameMode::CLOD)
 			MusicManager::SetMode(MusicManager::MENU);
 		else
 			MusicManager::SetMode(MusicManager::BRIEFING);
@@ -904,7 +904,7 @@ Starshatter::GameState()
 		DoLoadScreenFrame();
 	}
 
-	else if (game_mode == EMODE::PLAN_MODE) {
+	else if (game_mode == EGameMode::PLAN) {
 		if (menuscreen)
 			menuscreen->Hide();
 
@@ -945,7 +945,7 @@ Starshatter::GameState()
 		DoPlanScreenFrame();
 	}
 
-	else if (game_mode == EMODE::CMPN_MODE) {
+	else if (game_mode == EGameMode::CMPN) {
 		if (menuscreen)
 			menuscreen->Hide();
 
@@ -966,7 +966,7 @@ Starshatter::GameState()
 		DoCmpnScreenFrame();
 	}
 
-	else if (game_mode == EMODE::PLAY_MODE) {
+	else if (game_mode == EGameMode::PLAY) {
 		if (menuscreen)
 			menuscreen->Hide();
 
@@ -987,7 +987,7 @@ Starshatter::GameState()
 		DoGameScreenFrame();
 	}
 
-	if (game_mode == EMODE::EXIT_MODE) {
+	if (game_mode == EGameMode::EXIT) {
 		exit_time -= Game::GUITime();
 
 		if (exit_time <= 0)
@@ -1076,9 +1076,9 @@ Starshatter::DoPlanScreenFrame()
 			if (!exit_latch && !planscreen->CloseTopmost()) {
 				Campaign* campaign = Campaign::GetCampaign();
 				if (campaign && (campaign->IsDynamic() || campaign->IsTraining()))
-					SetGameMode(EMODE::CMPN_MODE);
+					SetGameMode(EGameMode::CMPN);
 				else
-					SetGameMode(EMODE::MENU_MODE);
+					SetGameMode(EGameMode::MENU);
 			}
 		}
 
@@ -1130,12 +1130,12 @@ Starshatter::DoCmpnScreenFrame()
 		time_til_change = 1;
 
 		if (!cmpnscreen || !cmpnscreen->CloseTopmost()) {
-			SetGameMode(EMODE::MENU_MODE);
+			SetGameMode(EGameMode::MENU);
 		}
 	}
 
 	// time control for campaign mode:
-	else if (game_mode == EMODE::CMPN_MODE) {
+	else if (game_mode == EGameMode::CMPN) {
 		if (time_til_change <= 0) {
 			if (KeyDown(KEY_PAUSE)) {
 				time_til_change = 1;
@@ -1180,7 +1180,7 @@ Starshatter::DoLoadScreenFrame()
 	Mouse::Show(false);
 	Mouse::SetCursor(Mouse::ARROW);
 
-	if (game_mode == EMODE::CLOD_MODE) {
+	if (game_mode == EGameMode::CLOD) {
 		UCmpLoadDlg* dlg = loadscreen->GetCmpLoadDlg();
 
 		switch (load_step) {
@@ -1219,7 +1219,7 @@ Starshatter::DoLoadScreenFrame()
 			else {
 				load_activity = Game::GetText("Starshatter.load.ready");
 				load_progress = 100;
-				SetGameMode(EMODE::CMPN_MODE);
+				SetGameMode(EGameMode::CMPN);
 			}
 			break;
 		}
@@ -1269,7 +1269,7 @@ Starshatter::DoLoadScreenFrame()
 			RadioView::Initialize();
 			TacticalView::Initialize();
 
-			if (!gamescreen && game_mode != EMODE::PREP_MODE)
+			if (!gamescreen && game_mode != EGameMode::PREP)
 				SetupGameScreen();
 
 			load_activity = Game::GetText("Starshatter.load.mission");
@@ -1277,10 +1277,10 @@ Starshatter::DoLoadScreenFrame()
 			break;
 
 		case 7:
-			if (game_mode == EMODE::PREP_MODE) {
+			if (game_mode == EGameMode::PREP) {
 				if (Campaign::GetCampaign())
 					Campaign::GetCampaign()->GetMission();
-				SetGameMode(EMODE::PLAN_MODE);
+				SetGameMode(EGameMode::PLAN);
 				load_activity = Game::GetText("Starshatter.load.loaded");
 				load_progress = 100;
 				UIButton::PlaySound(4);
@@ -1299,7 +1299,7 @@ Starshatter::DoLoadScreenFrame()
 			break;
 
 		default:
-			SetGameMode(EMODE::PLAY_MODE);
+			SetGameMode(EGameMode::PLAY);
 			load_activity = Game::GetText("Starshatter.load.ready");
 			load_progress = 100;
 			break;
@@ -1537,7 +1537,7 @@ Starshatter::DoGameKeys()
 				if (quit)
 					quit->ShowMenu();
 				else
-					SetGameMode(EMODE::PLAN_MODE);
+					SetGameMode(EGameMode::PLAN);
 			}
 		}
 
@@ -2675,7 +2675,7 @@ Starshatter::EndMission()
 		}
 	}
 
-	SetGameMode(EMODE::PLAN_MODE);
+	SetGameMode(EGameMode::PLAN);
 }
 
 Mission*

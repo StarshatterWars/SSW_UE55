@@ -323,9 +323,9 @@ void UMissionAwardDlg::OnCloseClicked()
 
     Campaign* Cmpn = Campaign::GetCampaign();
     if (Cmpn && Cmpn->GetCampaignId() < Campaign::SINGLE_MISSIONS)
-        Stars->SetGameMode(EMODE::CMPN_MODE);
+        Stars->SetGameMode(EGameMode::CMPN);
     else
-        Stars->SetGameMode(EMODE::MENU_MODE);
+        Stars->SetGameMode(EGameMode::MENU);
 
     // Close/hide widget:
     SetVisibility(ESlateVisibility::Hidden);

@@ -232,7 +232,7 @@ public:
 	// Game Mode / Campaign Selection
 	// =====================================================================
 	UFUNCTION()
-	void SetGameMode(EMODE gm);
+	void SetGameMode(EGameMode gm);
 
 	UFUNCTION()
 	void SetActiveCampaign(FS_Campaign campaign);
@@ -543,7 +543,7 @@ public:
 	bool RosterSelectionChanged;
 
 	UPROPERTY()
-	EMODE GameMode;
+	EGameMode GameMode;
 
 	// =====================================================================
 	// DataTables

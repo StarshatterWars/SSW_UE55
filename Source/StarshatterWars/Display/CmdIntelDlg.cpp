@@ -502,6 +502,6 @@ void UCmdIntelDlg::OnExitClicked()
     if (Stars)
     {
         Mouse::Show(false);
-        Stars->SetGameMode(EMODE::MENU_MODE);
+        Stars->SetGameMode(EGameMode::MENU);
     }
 }

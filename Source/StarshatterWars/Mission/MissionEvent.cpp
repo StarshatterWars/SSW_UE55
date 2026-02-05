@@ -749,7 +749,7 @@ MissionEvent::Execute(bool silent)
 			if (event_target.length())
 				server->SetNextMission(event_target);
 
-			server->SetGameMode(EMODE::MENU_MODE);
+			server->SetGameMode(EGameMode::MENU);
 		}
 	}
 }

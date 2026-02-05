@@ -69,7 +69,7 @@ StarServer::StarServer()
 	: loader(nullptr)
 	, time_mark(0)
 	, minutes(0)
-	, game_mode(EMODE::MENU_MODE)
+	, game_mode(EGameMode::MENU)
 {
 	if (!instance)
 		instance = this;
@@ -153,16 +153,16 @@ StarServer::InitGame()
 // --------------------------------------------------------------------
 
 void
-StarServer::SetGameMode(EMODE m)
+StarServer::SetGameMode(EGameMode m)
 {
 	if (game_mode == m)
 		return;
 
-	if (m == EMODE::LOAD_MODE) {
+	if (m == EGameMode::LOAD) {
 		Print("GameMode = LOAD\n");
 		paused = true;
 	}
-	else if (m == EMODE::PLAY_MODE) {
+	else if (m == EGameMode::PLAY) {
 		Print("GameMode = PLAY\n");
 
 		if (!world) {
@@ -296,10 +296,10 @@ void
 StarServer::GameState()
 {
 
-	if (game_mode == EMODE::LOAD_MODE) {
+	if (game_mode == EGameMode::LOAD) {
 		CreateWorld();
 		InstantiateMission();
-		SetGameMode(EMODE::PLAY_MODE);
+		SetGameMode(EGameMode::PLAY);
 	}
 }
 
