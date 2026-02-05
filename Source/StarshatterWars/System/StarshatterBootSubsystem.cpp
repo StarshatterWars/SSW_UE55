@@ -1,20 +1,8 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (C) 2025-2026.
-    All Rights Reserved.
-
-    SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         StarshatterBootSubsystem.cpp
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Central bootstrapper for global subsystems that must initialize early.
-*/
-
 #include "StarshatterBootSubsystem.h"
 
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 
 // Subsystems
 #include "FontManagerSubsystem.h"
@@ -27,153 +15,170 @@
 // SaveGame
 #include "StarshatterSettingsSaveGame.h"
 
-// ------------------------------------------------------------
+// World service actor
+#include "GameDataLoader.h"
+
+// --------------------------------------------------
 // UGameInstanceSubsystem
-// ------------------------------------------------------------
+// --------------------------------------------------
 
 void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-    BootSettings();
-    BootFonts();
-    BootAudio();
-    BootVideo();
-    BootControls();
-    BootKeyboard();
+    FBootContext Ctx;
+    if (BuildContext(Ctx))
+    {
+        BootFonts(Ctx);
+        BootAudio(Ctx);
+        BootVideo(Ctx);
+        BootControls(Ctx);
+        BootKeyboard(Ctx);
+    }
+
+    // World-dependent boot (actors, UWorld-only systems)
+    HookWorldBoot();
 }
 
 void UStarshatterBootSubsystem::Deinitialize()
 {
+    if (PostWorldInitHandle.IsValid())
+    {
+        FWorldDelegates::OnPostWorldInitialization.Remove(PostWorldInitHandle);
+        PostWorldInitHandle.Reset();
+    }
+
     Super::Deinitialize();
 }
 
-// ------------------------------------------------------------
-// Boot stages
-// ------------------------------------------------------------
+// --------------------------------------------------
+// GameInstance boot
+// --------------------------------------------------
 
-void UStarshatterBootSubsystem::BootSettings()
+bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
 {
-    UGameInstance* GI = GetGameInstance();
-    if (!GI)
-        return;
+    OutCtx.GI = GetGameInstance();
+    if (!OutCtx.GI)
+        return false;
 
-    if (UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>())
+    OutCtx.SaveSS = OutCtx.GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
+    if (OutCtx.SaveSS)
     {
-        SaveSS->LoadOrCreate();
+        OutCtx.SaveSS->LoadOrCreate();
+        OutCtx.SG = OutCtx.SaveSS->GetSettings();
     }
+
+    OutCtx.FontSS = OutCtx.GI->GetSubsystem<UFontManagerSubsystem>();
+    OutCtx.AudioSS = OutCtx.GI->GetSubsystem<UStarshatterAudioSubsystem>();
+    OutCtx.VideoSS = OutCtx.GI->GetSubsystem<UStarshatterVideoSubsystem>();
+    OutCtx.ControlsSS = OutCtx.GI->GetSubsystem<UStarshatterControlsSubsystem>();
+    OutCtx.KeyboardSS = OutCtx.GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
+
+    return true;
 }
 
-void UStarshatterBootSubsystem::BootFonts()
+void UStarshatterBootSubsystem::BootFonts(const FBootContext& Ctx)
 {
-    UGameInstance* GI = GetGameInstance();
-    if (!GI)
+    if (!Ctx.FontSS)
         return;
 
-    if (UFontManagerSubsystem* FontSS = GI->GetSubsystem<UFontManagerSubsystem>())
-    {
-        // Optional future hooks:
-        // FontSS->LoadFontConfig();
-        // FontSS->ApplyToRuntimeFonts();
-        (void)FontSS;
-    }
+    // Reserved for future font config hooks
 }
 
-void UStarshatterBootSubsystem::BootAudio()
+void UStarshatterBootSubsystem::BootAudio(const FBootContext& Ctx)
 {
-    UGameInstance* GI = GetGameInstance();
-    if (!GI)
+    if (!Ctx.AudioSS)
         return;
 
-    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
-    UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>();
+    if (Ctx.SG)
+        Ctx.AudioSS->LoadFromSaveGame(Ctx.SG);
 
-    if (!SaveSS || !AudioSS)
+    Ctx.AudioSS->ApplySettingsToRuntime();
+}
+
+void UStarshatterBootSubsystem::BootVideo(const FBootContext& Ctx)
+{
+    if (!Ctx.VideoSS)
         return;
 
-    SaveSS->LoadOrCreate();
-
-    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
-    {
-        AudioSS->LoadFromSaveGame(SG);
-        AudioSS->ApplySettingsToRuntime();
-    }
+    if (Ctx.SG)
+        Ctx.VideoSS->LoadFromSaveGame(Ctx.SG);
     else
-    {
-        AudioSS->ApplySettingsToRuntime();
-    }
+        Ctx.VideoSS->LoadVideoConfig(TEXT("video.cfg"), true);
+
+    Ctx.VideoSS->ApplySettingsToRuntime();
 }
 
-void UStarshatterBootSubsystem::BootVideo()
+void UStarshatterBootSubsystem::BootControls(const FBootContext& Ctx)
 {
-    UGameInstance* GI = GetGameInstance();
-    if (!GI)
+    if (!Ctx.ControlsSS)
         return;
 
-    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
-    UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>();
+    if (Ctx.SG)
+        Ctx.ControlsSS->LoadFromSaveGame(Ctx.SG);
 
-    if (!SaveSS || !VideoSS)
-        return;
-
-    SaveSS->LoadOrCreate();
-
-    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
-    {
-        VideoSS->LoadFromSaveGame(SG);
-        VideoSS->ApplySettingsToRuntime();
-    }
-    else
-    {
-        VideoSS->LoadVideoConfig(TEXT("video.cfg"), true);
-        VideoSS->ApplySettingsToRuntime();
-    }
+    Ctx.ControlsSS->ApplySettingsToRuntime(this);
 }
 
-void UStarshatterBootSubsystem::BootControls()
+void UStarshatterBootSubsystem::BootKeyboard(const FBootContext& Ctx)
 {
-    UGameInstance* GI = GetGameInstance();
-    if (!GI)
+    if (!Ctx.KeyboardSS)
         return;
 
-    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
-    UStarshatterControlsSubsystem* ControlsSS = GI->GetSubsystem<UStarshatterControlsSubsystem>();
-    if (!SaveSS || !ControlsSS)
-        return;
+    if (Ctx.SG)
+        Ctx.KeyboardSS->LoadFromSaveGame(Ctx.SG);
 
-    SaveSS->LoadOrCreate();
-
-    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
-    {
-        ControlsSS->LoadFromSaveGame(SG);
-        ControlsSS->ApplySettingsToRuntime(this);
-    }
-    else
-    {
-        ControlsSS->ApplySettingsToRuntime(this);
-    }
+    Ctx.KeyboardSS->ApplySettingsToRuntime(this);
 }
 
-void UStarshatterBootSubsystem::BootKeyboard()
+// --------------------------------------------------
+// World boot
+// --------------------------------------------------
+
+void UStarshatterBootSubsystem::HookWorldBoot()
 {
-    UGameInstance* GI = GetGameInstance();
-    if (!GI)
+    if (PostWorldInitHandle.IsValid())
         return;
 
-    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
-    UStarshatterKeyboardSubsystem* KeyboardSS = GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
-    if (!SaveSS || !KeyboardSS)
+    PostWorldInitHandle =
+        FWorldDelegates::OnPostWorldInitialization.AddUObject(
+            this, &UStarshatterBootSubsystem::OnPostWorldInit);
+}
+
+void UStarshatterBootSubsystem::OnPostWorldInit(
+    UWorld* World,
+    const UWorld::InitializationValues)
+{
+    if (bWorldBootDone || !World)
         return;
 
-    SaveSS->LoadOrCreate();
+    if (World->WorldType != EWorldType::Game &&
+        World->WorldType != EWorldType::PIE)
+        return;
 
-    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
+    BootGameData(World);
+    bWorldBootDone = true;
+}
+
+void UStarshatterBootSubsystem::BootGameData(UWorld* World)
+{
+    if (!World)
+        return;
+
+    // Reuse if already present
+    for (TActorIterator<AGameDataLoader> It(World); It; ++It)
     {
-        KeyboardSS->LoadFromSaveGame(SG);
-        KeyboardSS->ApplySettingsToRuntime(this);
+        return;
     }
-    else
-    {
-        KeyboardSS->ApplySettingsToRuntime(this);
-    }
+
+    FActorSpawnParameters Params;
+    Params.Name = TEXT("Game Data");
+    Params.SpawnCollisionHandlingOverride =
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    World->SpawnActor<AGameDataLoader>(
+        AGameDataLoader::StaticClass(),
+        FVector::ZeroVector,
+        FRotator::ZeroRotator,
+        Params);
 }
