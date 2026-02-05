@@ -110,4 +110,7 @@ public:
     /** Returns a consistent default user index for settings. */
     UFUNCTION(BlueprintPure, Category = "Starshatter|Settings")
     static int32 GetDefaultUserIndex();
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Settings")
+    FStarshatterKeyboardConfig KeyboardConfig;
 };

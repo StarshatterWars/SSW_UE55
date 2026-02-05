@@ -1,12 +1,24 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
+
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
+    FILE:         KeyDlg.cpp
+    AUTHOR:       Carlos Bott
+*/
+
 #include "KeyDlg.h"
 
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Engine/GameInstance.h"
+#include "Input/Reply.h"
+#include "InputCoreTypes.h"
+
+#include "OptionsScreen.h"
 
 #include "StarshatterKeyboardSettings.h"
 #include "StarshatterKeyboardSubsystem.h"
-
-#include "OptionsScreen.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogKeyDlg, Log, All);
 
@@ -21,7 +33,7 @@ void UKeyDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    // BaseScreen routing (if these exist in your BaseScreen):
+    // If BaseScreen exposes ApplyButton/CancelButton pointers, wire them:
     ApplyButton = ApplyBtn;
     CancelButton = CancelBtn;
 
@@ -49,8 +61,7 @@ void UKeyDlg::NativeConstruct()
     Super::NativeConstruct();
 
     bKeyClear = false;
-    bCapturing = true;
-    PendingKey = FKey();
+    BeginCapture();
 
     RefreshDisplayFromSettings();
 
@@ -79,6 +90,7 @@ FReply UKeyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& In
 
     const FKey PressedKey = InKeyEvent.GetKey();
 
+    // Escape cancels capture + returns
     if (PressedKey == EKeys::Escape)
     {
         OnCancelClicked();
@@ -88,6 +100,7 @@ FReply UKeyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& In
     if (!PressedKey.IsValid())
         return FReply::Handled();
 
+    // Ignore pure modifier keys
     if (PressedKey == EKeys::LeftShift || PressedKey == EKeys::RightShift ||
         PressedKey == EKeys::LeftControl || PressedKey == EKeys::RightControl ||
         PressedKey == EKeys::LeftAlt || PressedKey == EKeys::RightAlt ||
@@ -116,15 +129,22 @@ void UKeyDlg::SetManager(UOptionsScreen* InManager)
     Manager = InManager;
 }
 
+void UKeyDlg::BeginCapture()
+{
+    PendingKey = FKey();
+    bKeyClear = false;
+    bCapturing = true;
+
+    if (NewKeyText)
+        NewKeyText->SetText(FText::GetEmpty());
+}
+
 void UKeyDlg::SetEditingAction(EStarshatterInputAction InAction)
 {
     EditingAction = InAction;
     KeyIndex = (int32)InAction;
 
-    PendingKey = FKey();
-    bKeyClear = false;
-    bCapturing = true;
-
+    BeginCapture();
     RefreshDisplayFromSettings();
     SetKeyboardFocus();
 }
@@ -140,10 +160,7 @@ void UKeyDlg::SetKeyMapIndex(int i)
     else
         EditingAction = EStarshatterInputAction::Pause;
 
-    PendingKey = FKey();
-    bKeyClear = false;
-    bCapturing = true;
-
+    BeginCapture();
     RefreshDisplayFromSettings();
     SetKeyboardFocus();
 }
@@ -203,7 +220,6 @@ void UKeyDlg::CommitPendingToSettings()
     Cfg.RemappedKeys.Add(EditingAction, PendingKey);
 
     Settings->SetKeyboardConfig(Cfg);
-    Settings->Sanitize();
     Settings->Save();
 
     if (UStarshatterKeyboardSubsystem* KBSS = UStarshatterKeyboardSubsystem::Get(this))
@@ -225,7 +241,6 @@ void UKeyDlg::ClearFromSettings()
     Cfg.RemappedKeys.Remove(EditingAction);
 
     Settings->SetKeyboardConfig(Cfg);
-    Settings->Sanitize();
     Settings->Save();
 
     if (UStarshatterKeyboardSubsystem* KBSS = UStarshatterKeyboardSubsystem::Get(this))
@@ -266,13 +281,13 @@ FString UKeyDlg::ActionToDisplayString(EStarshatterInputAction Action)
     if (Enum)
         return Enum->GetDisplayNameTextByValue((int64)Action).ToString();
 
-    return FString("ACTION");
+    return FString(TEXT("ACTION"));
 }
 
 FString UKeyDlg::KeyToDisplayString(const FKey& Key)
 {
     if (!Key.IsValid())
-        return FString("UNBOUND");
+        return FString(TEXT("UNBOUND"));
 
     return Key.GetDisplayName().ToString();
 }

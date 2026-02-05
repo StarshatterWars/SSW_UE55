@@ -10,18 +10,19 @@
     OVERVIEW
     ========
     UStarshatterKeyboardSubsystem
-    - GameInstance subsystem for keyboard settings.
-    - Imports keyboard config from SaveGame via reflection.
-    - Applies settings to runtime through KeyboardSettings.
+    - GameInstanceSubsystem that owns keyboard settings lifecycle.
+    - Loads from SaveGame (UStarshatterSettingsSaveGame::KeyboardConfig).
+    - Writes into config-backed UStarshatterKeyboardSettings (CDO) and saves to ini.
+    - Applies runtime input mapping via Enhanced Input if available.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+
 #include "StarshatterKeyboardSubsystem.generated.h"
 
-class UObject;
 class UStarshatterSettingsSaveGame;
 
 UCLASS()
@@ -30,16 +31,15 @@ class STARSHATTERWARS_API UStarshatterKeyboardSubsystem : public UGameInstanceSu
     GENERATED_BODY()
 
 public:
-    // Convenience accessor
+    // Convenience accessor (mirrors your other subsystems)
     static UStarshatterKeyboardSubsystem* Get(UObject* WorldContextObject);
 
-    // UGameInstanceSubsystem
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-    virtual void Deinitialize() override;
+    // SaveGame import
+    void LoadFromSaveGame(const UStarshatterSettingsSaveGame* SaveGame);
 
-    // Runtime apply (called by BootSubsystem)
+    // Runtime apply (BootSubsystem calls this)
     void ApplySettingsToRuntime(UObject* WorldContextObject);
 
-    // SaveGame import (reflection-based, no hardcoded member name)
-    void LoadFromSaveGame(UStarshatterSettingsSaveGame* SaveGame);
+    // Optional helper: push current config-backed settings back into SaveGame
+    void SaveToSaveGame(UStarshatterSettingsSaveGame* SaveGame) const;
 };

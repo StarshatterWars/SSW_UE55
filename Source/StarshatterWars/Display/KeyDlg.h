@@ -27,7 +27,6 @@
 
 class UButton;
 class UTextBlock;
-
 class UOptionsScreen;
 
 UCLASS()

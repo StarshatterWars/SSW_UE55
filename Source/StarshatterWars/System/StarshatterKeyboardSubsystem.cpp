@@ -11,59 +11,47 @@
 #include "StarshatterKeyboardSubsystem.h"
 
 #include "Engine/GameInstance.h"
-#include "Engine/World.h"
-
-#include "UObject/Class.h"
-#include "UObject/UnrealType.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "StarshatterKeyboardSettings.h"
-#include "StarshatterSettingsSaveGame.h"
+#include "StarshatterSettingsSaveGame.h" // MUST define KeyboardConfig inside this SaveGame
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterKeyboardSubsystem, Log, All);
-
-// ------------------------------------------------------------
-// Static accessor
-// ------------------------------------------------------------
 
 UStarshatterKeyboardSubsystem* UStarshatterKeyboardSubsystem::Get(UObject* WorldContextObject)
 {
     if (!WorldContextObject)
         return nullptr;
 
-    UWorld* World = WorldContextObject->GetWorld();
-    if (!World)
-        return nullptr;
-
-    UGameInstance* GI = World->GetGameInstance();
+    UGameInstance* GI = UGameplayStatics::GetGameInstance(WorldContextObject);
     if (!GI)
         return nullptr;
 
     return GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
 }
 
-// ------------------------------------------------------------
-// Lifecycle
-// ------------------------------------------------------------
-
-void UStarshatterKeyboardSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+void UStarshatterKeyboardSubsystem::LoadFromSaveGame(const UStarshatterSettingsSaveGame* SaveGame)
 {
-    Super::Initialize(Collection);
-}
+    if (!SaveGame)
+        return;
 
-void UStarshatterKeyboardSubsystem::Deinitialize()
-{
-    Super::Deinitialize();
-}
+    UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
+    if (!Settings)
+        return;
 
-// ------------------------------------------------------------
-// Runtime apply
-// ------------------------------------------------------------
+    // IMPORTANT:
+    // This requires UStarshatterSettingsSaveGame to contain:
+    // UPROPERTY() FStarshatterKeyboardConfig KeyboardConfig;
+    Settings->Load();
+    Settings->SetKeyboardConfig(SaveGame->KeyboardConfig);
+    Settings->Sanitize();
+    Settings->Save();
+
+    UE_LOG(LogStarshatterKeyboardSubsystem, Log, TEXT("Loaded keyboard config from SaveGame"));
+}
 
 void UStarshatterKeyboardSubsystem::ApplySettingsToRuntime(UObject* WorldContextObject)
 {
-    if (!WorldContextObject)
-        return;
-
     UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
     if (!Settings)
         return;
@@ -71,71 +59,14 @@ void UStarshatterKeyboardSubsystem::ApplySettingsToRuntime(UObject* WorldContext
     Settings->ApplyToRuntimeKeyboard(WorldContextObject);
 }
 
-// ------------------------------------------------------------
-// SaveGame import (reflection-based)
-// ------------------------------------------------------------
-
-void UStarshatterKeyboardSubsystem::LoadFromSaveGame(UStarshatterSettingsSaveGame* SaveGame)
+void UStarshatterKeyboardSubsystem::SaveToSaveGame(UStarshatterSettingsSaveGame* SaveGame) const
 {
     if (!SaveGame)
-    {
-        UE_LOG(LogStarshatterKeyboardSubsystem, Warning, TEXT("LoadFromSaveGame: SaveGame is null"));
         return;
-    }
 
-    UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
+    const UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
     if (!Settings)
         return;
 
-    const UStruct* TargetStruct = FStarshatterKeyboardConfig::StaticStruct();
-    FStarshatterKeyboardConfig FoundConfig;
-    bool bFound = false;
-
-    UClass* SGClass = SaveGame->GetClass();
-    if (!SGClass)
-        return;
-
-    for (TFieldIterator<FProperty> It(SGClass); It; ++It)
-    {
-        FProperty* Prop = *It;
-        FStructProperty* StructProp = CastField<FStructProperty>(Prop);
-        if (!StructProp)
-            continue;
-
-        if (StructProp->Struct == TargetStruct)
-        {
-            void* ValuePtr = StructProp->ContainerPtrToValuePtr<void>(SaveGame);
-            if (ValuePtr)
-            {
-                const FStarshatterKeyboardConfig* Src =
-                    static_cast<const FStarshatterKeyboardConfig*>(ValuePtr);
-
-                FoundConfig = *Src;
-                bFound = true;
-
-                UE_LOG(
-                    LogStarshatterKeyboardSubsystem,
-                    Log,
-                    TEXT("Imported keyboard config from SaveGame property '%s'"),
-                    *StructProp->GetName()
-                );
-                break;
-            }
-        }
-    }
-
-    if (!bFound)
-    {
-        UE_LOG(
-            LogStarshatterKeyboardSubsystem,
-            Warning,
-            TEXT("No FStarshatterKeyboardConfig property found on SaveGame class '%s'"),
-            *SGClass->GetName()
-        );
-        return;
-    }
-
-    Settings->SetKeyboardConfig(FoundConfig);
-    Settings->Sanitize();
-    Settings->Save();
+    SaveGame->KeyboardConfig = Settings->GetKeyboardConfig();
 }

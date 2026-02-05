@@ -21,13 +21,9 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "InputCoreTypes.h"
-#include "GameStructs.h"
-#include "StarshatterKeyboardSettings.generated.h"
 
-// ------------------------------------------------------------
-// Keyboard configuration payload
-// (Stored in SaveGame and mirrored here)
-// ------------------------------------------------------------
+#include "GameStructs.h" // FStarshatterKeyboardConfig, EStarshatterInputAction
+#include "StarshatterKeyboardSettings.generated.h"
 
 UCLASS(Config = Game, DefaultConfig)
 class STARSHATTERWARS_API UStarshatterKeyboardSettings : public UObject
@@ -55,7 +51,7 @@ public:
     void SetKeyboardConfig(const FStarshatterKeyboardConfig& In);
 
 private:
-    // Enhanced Input hook (implementation detail)
+    // Enhanced Input hook (implementation detail, safely guarded)
     void ApplyToEnhancedInput(UObject* WorldContextObject);
 
 private:

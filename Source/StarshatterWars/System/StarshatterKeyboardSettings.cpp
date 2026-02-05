@@ -12,120 +12,75 @@
 
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
-#include "GameStructs.h"
+#include "Logging/LogMacros.h"
+
+#if __has_include("EnhancedInputSubsystems.h")
 #include "EnhancedInputSubsystems.h"
+#define SSW_HAS_ENHANCED_INPUT 1
+#else
+#define SSW_HAS_ENHANCED_INPUT 0
+#endif
 
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterKeyboardSettings, Log, All);
 
+// Keep this for naming consistency with your UI and any future binding tables.
 static FName InputActionToMappingName(EStarshatterInputAction Action)
 {
     switch (Action)
     {
         // Core
-    case EStarshatterInputAction::ExitGame:
-        return FName("ExitGame");
-
-    case EStarshatterInputAction::Pause:
-        return FName("Pause");
+    case EStarshatterInputAction::ExitGame:       return FName("ExitGame");
+    case EStarshatterInputAction::Pause:          return FName("Pause");
 
         // Time
-    case EStarshatterInputAction::TimeCompress:
-        return FName("TimeCompress");
-
-    case EStarshatterInputAction::TimeExpand:
-        return FName("TimeExpand");
-
-    case EStarshatterInputAction::TimeSkip:
-        return FName("TimeSkip");
+    case EStarshatterInputAction::TimeCompress:   return FName("TimeCompress");
+    case EStarshatterInputAction::TimeExpand:     return FName("TimeExpand");
+    case EStarshatterInputAction::TimeSkip:       return FName("TimeSkip");
 
         // Flight
-    case EStarshatterInputAction::ThrottleUp:
-        return FName("ThrottleUp");
-
-    case EStarshatterInputAction::ThrottleDown:
-        return FName("ThrottleDown");
-
-    case EStarshatterInputAction::ThrottleZero:
-        return FName("ThrottleZero");
-
-    case EStarshatterInputAction::ThrottleFull:
-        return FName("ThrottleFull");
+    case EStarshatterInputAction::ThrottleUp:     return FName("ThrottleUp");
+    case EStarshatterInputAction::ThrottleDown:   return FName("ThrottleDown");
+    case EStarshatterInputAction::ThrottleZero:   return FName("ThrottleZero");
+    case EStarshatterInputAction::ThrottleFull:   return FName("ThrottleFull");
 
         // Weapons
-    case EStarshatterInputAction::CyclePrimary:
-        return FName("CyclePrimary");
-
-    case EStarshatterInputAction::CycleSecondary:
-        return FName("CycleSecondary");
-
-    case EStarshatterInputAction::FirePrimary:
-        return FName("FirePrimary");
-
-    case EStarshatterInputAction::FireSecondary:
-        return FName("FireSecondary");
+    case EStarshatterInputAction::CyclePrimary:   return FName("CyclePrimary");
+    case EStarshatterInputAction::CycleSecondary: return FName("CycleSecondary");
+    case EStarshatterInputAction::FirePrimary:    return FName("FirePrimary");
+    case EStarshatterInputAction::FireSecondary:  return FName("FireSecondary");
 
         // Targeting
-    case EStarshatterInputAction::LockTarget:
-        return FName("LockTarget");
-
-    case EStarshatterInputAction::LockThreat:
-        return FName("LockThreat");
-
-    case EStarshatterInputAction::TargetNext:
-        return FName("TargetNext");
-
-    case EStarshatterInputAction::TargetPrevious:
-        return FName("TargetPrevious");
+    case EStarshatterInputAction::LockTarget:     return FName("LockTarget");
+    case EStarshatterInputAction::LockThreat:     return FName("LockThreat");
+    case EStarshatterInputAction::TargetNext:     return FName("TargetNext");
+    case EStarshatterInputAction::TargetPrevious: return FName("TargetPrevious");
 
         // Camera
-    case EStarshatterInputAction::CameraNextView:
-        return FName("CameraNextView");
-
-    case EStarshatterInputAction::CameraChase:
-        return FName("CameraChase");
-
-    case EStarshatterInputAction::CameraExternal:
-        return FName("CameraExternal");
-
-    case EStarshatterInputAction::CameraZoomIn:
-        return FName("CameraZoomIn");
-
-    case EStarshatterInputAction::CameraZoomOut:
-        return FName("CameraZoomOut");
+    case EStarshatterInputAction::CameraNextView: return FName("CameraNextView");
+    case EStarshatterInputAction::CameraChase:    return FName("CameraChase");
+    case EStarshatterInputAction::CameraExternal: return FName("CameraExternal");
+    case EStarshatterInputAction::CameraZoomIn:   return FName("CameraZoomIn");
+    case EStarshatterInputAction::CameraZoomOut:  return FName("CameraZoomOut");
 
         // UI
-    case EStarshatterInputAction::NavDialog:
-        return FName("NavDialog");
-
-    case EStarshatterInputAction::WeaponDialog:
-        return FName("WeaponDialog");
-
-    case EStarshatterInputAction::FlightDialog:
-        return FName("FlightDialog");
-
-    case EStarshatterInputAction::EngineDialog:
-        return FName("EngineDialog");
+    case EStarshatterInputAction::NavDialog:      return FName("NavDialog");
+    case EStarshatterInputAction::WeaponDialog:   return FName("WeaponDialog");
+    case EStarshatterInputAction::FlightDialog:   return FName("FlightDialog");
+    case EStarshatterInputAction::EngineDialog:   return FName("EngineDialog");
 
         // Comms
-    case EStarshatterInputAction::RadioMenu:
-        return FName("RadioMenu");
-
-    case EStarshatterInputAction::CommandMode:
-        return FName("CommandMode");
+    case EStarshatterInputAction::RadioMenu:      return FName("RadioMenu");
+    case EStarshatterInputAction::CommandMode:    return FName("CommandMode");
 
         // Debug
-    case EStarshatterInputAction::IncStardate:
-        return FName("IncStardate");
-
-    case EStarshatterInputAction::DecStardate:
-        return FName("DecStardate");
-
-    default:
-        break;
+    case EStarshatterInputAction::IncStardate:    return FName("IncStardate");
+    case EStarshatterInputAction::DecStardate:    return FName("DecStardate");
+    default:                                      break;
     }
 
     return NAME_None;
 }
+
 // ------------------------------------------------------------
 // Static accessor
 // ------------------------------------------------------------
@@ -159,21 +114,16 @@ void UStarshatterKeyboardSettings::SetKeyboardConfig(const FStarshatterKeyboardC
 // ------------------------------------------------------------
 // Validation
 // ------------------------------------------------------------
+
 void UStarshatterKeyboardSettings::Sanitize()
 {
-    Keyboard.KeyRepeatDelaySeconds =
-        FMath::Clamp(Keyboard.KeyRepeatDelaySeconds, 0.0f, 1.0f);
+    Keyboard.KeyRepeatDelaySeconds = FMath::Clamp(Keyboard.KeyRepeatDelaySeconds, 0.0f, 1.0f);
+    Keyboard.KeyRepeatRateSeconds = FMath::Clamp(Keyboard.KeyRepeatRateSeconds, 0.01f, 0.50f);
 
-    Keyboard.KeyRepeatRateSeconds =
-        FMath::Clamp(Keyboard.KeyRepeatRateSeconds, 0.01f, 0.50f);
-
-    // Remove invalid mappings
+    // Remove invalid keys (enum key itself is always present, so only validate the FKey)
     for (auto It = Keyboard.RemappedKeys.CreateIterator(); It; ++It)
     {
-        const EStarshatterInputAction Action = It.Key();
         const FKey& Key = It.Value();
-
-        // Remove invalid enum values or invalid keys
         if (!Key.IsValid())
         {
             It.RemoveCurrent();
@@ -193,6 +143,10 @@ void UStarshatterKeyboardSettings::ApplyToRuntimeKeyboard(UObject* WorldContextO
 
 void UStarshatterKeyboardSettings::ApplyToEnhancedInput(UObject* WorldContextObject)
 {
+#if !SSW_HAS_ENHANCED_INPUT
+    UE_LOG(LogStarshatterKeyboardSettings, Warning, TEXT("Enhanced Input headers not available. Skipping keyboard apply."));
+    return;
+#else
     if (!WorldContextObject)
         return;
 
@@ -200,32 +154,33 @@ void UStarshatterKeyboardSettings::ApplyToEnhancedInput(UObject* WorldContextObj
     if (!World)
         return;
 
+    // NOTE: Boot can run before a LocalPlayer exists.
     ULocalPlayer* LP = World->GetFirstLocalPlayerFromController();
     if (!LP)
-        return;
-
-    UEnhancedInputLocalPlayerSubsystem* InputSS =
-        LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-    if (!InputSS)
-        return;
-
-    if (!Keyboard.bKeyboardEnabled)
     {
-        UE_LOG(LogStarshatterKeyboardSettings, Log, TEXT("Keyboard disabled by settings"));
+        UE_LOG(LogStarshatterKeyboardSettings, Verbose, TEXT("No LocalPlayer yet. Keyboard apply deferred."));
         return;
     }
 
-    // NOTE:
-    // Actual remapping into Enhanced Input User Settings
-    // will be done when the Key Bindings UI is implemented.
-    // This hook intentionally exists now to keep architecture stable.
+    UEnhancedInputLocalPlayerSubsystem* InputSS = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+    if (!InputSS)
+    {
+        UE_LOG(LogStarshatterKeyboardSettings, Warning, TEXT("Enhanced Input subsystem not found on LocalPlayer."));
+        return;
+    }
 
-    UE_LOG(
-        LogStarshatterKeyboardSettings,
-        Log,
-        TEXT("Keyboard settings applied (Remaps=%d)"),
-        Keyboard.RemappedKeys.Num()
-    );
+    if (!Keyboard.bKeyboardEnabled)
+    {
+        UE_LOG(LogStarshatterKeyboardSettings, Log, TEXT("Keyboard disabled by settings."));
+        return;
+    }
+
+    // Architecture hook:
+    // - Boot-time: ensure mappings rebuild.
+    // - UI-time: when you implement per-action remap, you will apply Keyboard.RemappedKeys into
+    //   either a runtime mapping context or Enhanced Input user settings.
+    UE_LOG(LogStarshatterKeyboardSettings, Log, TEXT("Keyboard settings applied (Remaps=%d)."), Keyboard.RemappedKeys.Num());
 
     InputSS->RequestRebuildControlMappings();
+#endif
 }
