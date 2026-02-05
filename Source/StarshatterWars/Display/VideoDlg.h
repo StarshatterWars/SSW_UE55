@@ -11,7 +11,8 @@
     UVideoDlg
     - Video options dialog (UMG + legacy-form bridge via UBaseScreen).
     - Refactored so the dialog only touches UStarshatterVideoSettings (config model).
-    - Runtime apply is delegated to UStarshatterVideoSettings::ApplyToRuntimeVideo(...).
+    - Runtime apply is delegated to UStarshatterVideoSubsystem::ApplySettingsToRuntime()
+      to avoid signature drift.
     - Subscreen routing goes through UOptionsScreen (NOT GameScreen).
 */
 
@@ -19,6 +20,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "GameStructs.h"
 #include "VideoDlg.generated.h"
 
 // UMG:
@@ -32,6 +34,9 @@ class UOptionsScreen;
 // Model:
 class UStarshatterVideoSettings;
 
+// Runtime apply:
+class UStarshatterVideoSubsystem;
+
 UCLASS()
 class STARSHATTERWARS_API UVideoDlg : public UBaseScreen
 {
@@ -44,7 +49,6 @@ public:
     void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
     UOptionsScreen* GetManager() const { return Manager; }
 
-    // Surface:
     void Show();
 
     // IMPORTANT: match UBaseScreen signature (same as AudioDlg)
@@ -53,10 +57,6 @@ public:
     // Legacy callsites:
     void Apply();
     void Cancel();
-
-    // Preferred names:
-    void ApplySettings();
-    void CancelSettings();
 
     // UI -> Settings (Save + optional runtime apply):
     void PushToModel(bool bApplyRuntimeToo);
@@ -70,21 +70,25 @@ protected:
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
 
-    // Centralized Enter/Escape (UBaseScreen):
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
 private:
     UStarshatterVideoSettings* GetVideoSettings() const;
+    UStarshatterVideoSubsystem* GetVideoSubsystem() const;
 
-    void BuildModeList();
+    void BuildListsIfNeeded();
     void RefreshFromModel();
 
-    static int32 TexSizeIndexFromPow2(int32 Pow2);
-    static int32 TexSizePow2FromIndex(int32 Index);
-
+    // Helpers:
+    static int32 ClampGammaLevel(int32 InGamma) { return FMath::Clamp(InGamma, 32, 224); }
     static float Gamma01FromLevel(int32 GammaLevel);
     static int32 GammaLevelFrom01(float V01);
+
+    // Tex sizes:
+    static const TArray<int32>& GetTexSizeOptions();
+    static int32 TexSizeIndexFromPow2(int32 Pow2);
+    static int32 TexSizePow2FromIndex(int32 Index);
 
 private:
     // Combo handlers:
@@ -93,6 +97,15 @@ private:
     UFUNCTION() void OnDetailChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnTextureChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnGammaChanged(float Value);
+
+    UFUNCTION() void OnLensFlareChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void OnCoronaChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void OnNebulaChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void OnDustChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
+    UFUNCTION() void OnShadowsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void OnSpecMapsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void OnBumpMapsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     // Buttons:
     UFUNCTION() void OnApplyClicked();
@@ -106,33 +119,31 @@ private:
     UFUNCTION() void OnModClicked();
 
 private:
-    // Host/router:
     UPROPERTY(Transient)
     UOptionsScreen* Manager = nullptr;
 
     bool bClosed = true;
+    bool bListsBuilt = false;
 
-    // Cached dialog state (mirrors settings):
+    // Cached dialog state (mirrors FStarshatterVideoConfig):
     int32 Width = 1920;
     int32 Height = 1080;
-    bool  bFullscreen = true;
+    bool  bFullscreen = false;
 
-    int32 SelectedTexSize = 5;   // index (maps to pow2)
-    int32 SelectedMode = 0;
-    int32 SelectedDetail = 0;
-    int32 SelectedTexture = 1;
+    int32 MaxTextureSize = 2048;        // <-- FIX: was missing (caused your C2065)
+    int32 GammaLevel = 128;
+
+    bool bShadows = true;
+    bool bSpecularMaps = true;
+    bool bBumpMaps = true;
 
     bool bLensFlare = true;
     bool bCorona = true;
     bool bNebula = true;
-    int32 Dust = 0;
 
-    bool bShadows = true;
-    bool bSpecMaps = true;
-    bool bBumpMaps = true;
-
-    int32 GammaLevel = 128;
-    float DepthBias = 0.0f;
+    int32 DustLevel = 1;
+    int32 TerrainDetailIndex = 1;
+    bool  bTerrainTextures = true;      // <-- FIX: was missing (caused your C2065)
 
 protected:
     // Main combos:

@@ -6,32 +6,40 @@
     SUBSYSTEM:    StarshatterWars (Unreal Engine)
     FILE:         StarshatterVideoSubsystem.cpp
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Implements Unreal-native video configuration handling
-    while preserving the legacy Starshatter video pipeline.
-
-    Adds:
-      - ApplySettingsToRuntime() for UI + boot usage
-      - static Get(...) convenience accessor
 */
 
 #include "StarshatterVideoSubsystem.h"
 
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
-#include "GameStructs.h"
 #include "HAL/PlatformFilemanager.h"
+
+// Unified settings save:
+#include "StarshatterSettingsSaveGame.h"
+#include "GameStructs.h"
 
 // If you have the ported Starshatter singleton available:
 #include "Starshatter.h"
 
-// +--------------------------------------------------------------------+
-// Convenience Accessor
-// +--------------------------------------------------------------------+
+void UStarshatterVideoSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+    // Boot is orchestrated by StarshatterBootSubsystem (intentionally not auto-booting here)
+}
+
+void UStarshatterVideoSubsystem::Deinitialize()
+{
+    Super::Deinitialize();
+}
+
+void UStarshatterVideoSubsystem::Boot()
+{
+    LoadVideoConfig(TEXT("video.cfg"), true);
+    ApplySettingsToRuntime();
+}
 
 UStarshatterVideoSubsystem* UStarshatterVideoSubsystem::Get(const UObject* WorldContextObject)
 {
@@ -42,31 +50,12 @@ UStarshatterVideoSubsystem* UStarshatterVideoSubsystem::Get(const UObject* World
     if (!World)
         return nullptr;
 
-    UGameInstance* GI = World->GetGameInstance();
-    if (!GI)
-        return nullptr;
-
-    return GI->GetSubsystem<UStarshatterVideoSubsystem>();
+    return Get(World->GetGameInstance());
 }
 
-// +--------------------------------------------------------------------+
-// Subsystem Lifecycle
-// +--------------------------------------------------------------------+
-
-void UStarshatterVideoSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+UStarshatterVideoSubsystem* UStarshatterVideoSubsystem::Get(UGameInstance* GameInstance)
 {
-    Super::Initialize(Collection);
-
-    // Load video configuration on startup:
-    LoadVideoConfig(TEXT("video.cfg"), true);
-}
-
-void UStarshatterVideoSubsystem::Deinitialize()
-{
-    // Optional: persist settings on shutdown
-    // SaveVideoConfig(TEXT("video.cfg"));
-
-    Super::Deinitialize();
+    return GameInstance ? GameInstance->GetSubsystem<UStarshatterVideoSubsystem>() : nullptr;
 }
 
 // +--------------------------------------------------------------------+
@@ -86,17 +75,30 @@ FString UStarshatterVideoSubsystem::ResolveConfigPath(const FString& InRelativeO
 {
     if (FPaths::IsRelative(InRelativeOrAbsolutePath))
     {
-        return FPaths::Combine(
-            GetDefaultConfigDir(),
-            InRelativeOrAbsolutePath
-        );
+        return FPaths::Combine(GetDefaultConfigDir(), InRelativeOrAbsolutePath);
     }
 
     return InRelativeOrAbsolutePath;
 }
 
 // +--------------------------------------------------------------------+
-// Load / Save
+// Sanitize
+// +--------------------------------------------------------------------+
+
+void UStarshatterVideoSubsystem::SanitizeConfig(FStarshatterVideoConfig& C) const
+{
+    C.Width = FMath::Max(320, C.Width);
+    C.Height = FMath::Max(200, C.Height);
+
+    C.MaxTextureSize = FMath::Clamp(C.MaxTextureSize, 64, 16384);
+    C.GammaLevel = FMath::Clamp(C.GammaLevel, 32, 224);
+
+    C.DustLevel = FMath::Clamp(C.DustLevel, 0, 3);
+    C.TerrainDetailIndex = FMath::Clamp(C.TerrainDetailIndex, 0, 3);
+}
+
+// +--------------------------------------------------------------------+
+// Load / Save video.cfg
 // +--------------------------------------------------------------------+
 
 bool UStarshatterVideoSubsystem::LoadVideoConfig(const FString& InRelativeOrAbsolutePath, bool bCreateIfMissing)
@@ -111,8 +113,10 @@ bool UStarshatterVideoSubsystem::LoadVideoConfig(const FString& InRelativeOrAbso
     if (!FFileHelper::LoadFileToString(Text, *AbsPath))
     {
         if (bCreateIfMissing)
+        {
+            // Write defaults immediately so future loads succeed:
             SaveVideoConfig(InRelativeOrAbsolutePath);
-
+        }
         return false;
     }
 
@@ -127,56 +131,46 @@ bool UStarshatterVideoSubsystem::LoadVideoConfig(const FString& InRelativeOrAbso
         if (Line.IsEmpty())
             continue;
 
-        // Skip header lines like "VIDEO"
         if (Line.Equals(TEXT("VIDEO"), ESearchCase::IgnoreCase))
             continue;
 
-        // Skip comments
         if (Line.StartsWith(TEXT("#")) || Line.StartsWith(TEXT("//")))
             continue;
 
         FString Key, Value;
-
-        // Support BOTH "key=value" AND legacy "key: value"
         if (Line.Split(TEXT("="), &Key, &Value) || Line.Split(TEXT(":"), &Key, &Value))
         {
             KV.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
         }
     }
 
-    auto Get = [&](const TCHAR* K) -> const FString*
+    auto GetKV = [&](const TCHAR* K) -> const FString*
         {
             return KV.Find(FString(K));
         };
 
-    // ----------------------------------------------------------------
-    // Map config keys -> FStarshatterVideoConfig (GameStructs version)
-    // ----------------------------------------------------------------
+    // Map legacy keys -> CurrentConfig
+    if (const FString* V = GetKV(TEXT("width")))                  ParseInt(*V, CurrentConfig.Width);
+    if (const FString* V = GetKV(TEXT("height")))                 ParseInt(*V, CurrentConfig.Height);
+    if (const FString* V = GetKV(TEXT("fullscreen")))             ParseBool(*V, CurrentConfig.bFullscreen);
 
-    if (const FString* V = Get(TEXT("width")))                  ParseInt(*V, CurrentConfig.Width);
-    if (const FString* V = Get(TEXT("height")))                 ParseInt(*V, CurrentConfig.Height);
-    if (const FString* V = Get(TEXT("fullscreen")))             ParseBool(*V, CurrentConfig.bFullscreen);
+    if (const FString* V = GetKV(TEXT("max_tex")))                ParseInt(*V, CurrentConfig.MaxTextureSize);
+    if (const FString* V = GetKV(TEXT("gamma")))                  ParseInt(*V, CurrentConfig.GammaLevel);
 
-    if (const FString* V = Get(TEXT("max_tex")))                ParseInt(*V, CurrentConfig.MaxTextureSize);
-    if (const FString* V = Get(TEXT("gamma")))                  ParseInt(*V, CurrentConfig.GammaLevel);
+    if (const FString* V = GetKV(TEXT("shadows")))                ParseBool(*V, CurrentConfig.bShadows);
+    if (const FString* V = GetKV(TEXT("spec_maps")))              ParseBool(*V, CurrentConfig.bSpecularMaps);
+    if (const FString* V = GetKV(TEXT("bump_maps")))              ParseBool(*V, CurrentConfig.bBumpMaps);
 
-    if (const FString* V = Get(TEXT("shadows")))                ParseBool(*V, CurrentConfig.bShadows);
-    if (const FString* V = Get(TEXT("spec_maps")))              ParseBool(*V, CurrentConfig.bSpecularMaps);
-    if (const FString* V = Get(TEXT("bump_maps")))              ParseBool(*V, CurrentConfig.bBumpMaps);
+    if (const FString* V = GetKV(TEXT("flare")))                  ParseBool(*V, CurrentConfig.bLensFlare);
+    if (const FString* V = GetKV(TEXT("corona")))                 ParseBool(*V, CurrentConfig.bCorona);
+    if (const FString* V = GetKV(TEXT("nebula")))                 ParseBool(*V, CurrentConfig.bNebula);
 
-    if (const FString* V = Get(TEXT("flare")))                  ParseBool(*V, CurrentConfig.bLensFlare);
-    if (const FString* V = Get(TEXT("corona")))                 ParseBool(*V, CurrentConfig.bCorona);
-    if (const FString* V = Get(TEXT("nebula")))                 ParseBool(*V, CurrentConfig.bNebula);
+    if (const FString* V = GetKV(TEXT("dust")))                   ParseInt(*V, CurrentConfig.DustLevel);
 
-    if (const FString* V = Get(TEXT("dust")))                   ParseInt(*V, CurrentConfig.DustLevel);
+    if (const FString* V = GetKV(TEXT("terrain_detail_level")))   ParseInt(*V, CurrentConfig.TerrainDetailIndex);
+    if (const FString* V = GetKV(TEXT("terrain_texture_enable"))) ParseBool(*V, CurrentConfig.bTerrainTextures);
 
-    if (const FString* V = Get(TEXT("terrain_detail_level")))   ParseInt(*V, CurrentConfig.TerrainDetailIndex);
-    if (const FString* V = Get(TEXT("terrain_texture_enable"))) ParseBool(*V, CurrentConfig.bTerrainTextures);
-
-    // Sanitize a couple of known ranges:
-    CurrentConfig.GammaLevel = FMath::Clamp(CurrentConfig.GammaLevel, 32, 224);
-    CurrentConfig.DustLevel = FMath::Max(0, CurrentConfig.DustLevel);
-
+    SanitizeConfig(CurrentConfig);
     return true;
 }
 
@@ -188,42 +182,49 @@ bool UStarshatterVideoSubsystem::SaveVideoConfig(const FString& InRelativeOrAbso
     IPlatformFile& PF = FPlatformFileManager::Get().GetPlatformFile();
     PF.CreateDirectoryTree(*Dir);
 
+    // Work on a sanitized copy:
+    FStarshatterVideoConfig C = CurrentConfig;
+    // const method: sanitize via local copy logic:
+    C.Width = FMath::Max(320, C.Width);
+    C.Height = FMath::Max(200, C.Height);
+    C.MaxTextureSize = FMath::Clamp(C.MaxTextureSize, 64, 16384);
+    C.GammaLevel = FMath::Clamp(C.GammaLevel, 32, 224);
+    C.DustLevel = FMath::Clamp(C.DustLevel, 0, 3);
+    C.TerrainDetailIndex = FMath::Clamp(C.TerrainDetailIndex, 0, 3);
+
     TArray<FString> Lines;
 
     Lines.Add(TEXT("VIDEO"));
     Lines.Add(TEXT(""));
 
-    WriteLine(Lines, TEXT("width"), FString::FromInt(CurrentConfig.Width));
-    WriteLine(Lines, TEXT("height"), FString::FromInt(CurrentConfig.Height));
+    WriteLine(Lines, TEXT("width"), FString::FromInt(C.Width));
+    WriteLine(Lines, TEXT("height"), FString::FromInt(C.Height));
     WriteLine(Lines, TEXT("depth"), TEXT("32"));
     Lines.Add(TEXT(""));
 
-    WriteLine(Lines, TEXT("max_tex"), FString::FromInt(CurrentConfig.MaxTextureSize));
+    WriteLine(Lines, TEXT("max_tex"), FString::FromInt(C.MaxTextureSize));
     WriteLine(Lines, TEXT("primary3D"), TEXT("true"));
-    WriteLine(Lines, TEXT("gamma"), FString::FromInt(FMath::Clamp(CurrentConfig.GammaLevel, 32, 224)));
+    WriteLine(Lines, TEXT("gamma"), FString::FromInt(C.GammaLevel));
     Lines.Add(TEXT(""));
 
-    WriteLine(Lines, TEXT("terrain_detail_level"), FString::FromInt(CurrentConfig.TerrainDetailIndex));
-    WriteLine(Lines, TEXT("terrain_texture_enable"), CurrentConfig.bTerrainTextures ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("terrain_detail_level"), FString::FromInt(C.TerrainDetailIndex));
+    WriteLine(Lines, TEXT("terrain_texture_enable"), C.bTerrainTextures ? TEXT("true") : TEXT("false"));
     Lines.Add(TEXT(""));
 
-    WriteLine(Lines, TEXT("shadows"), CurrentConfig.bShadows ? TEXT("true") : TEXT("false"));
-    WriteLine(Lines, TEXT("spec_maps"), CurrentConfig.bSpecularMaps ? TEXT("true") : TEXT("false"));
-    WriteLine(Lines, TEXT("bump_maps"), CurrentConfig.bBumpMaps ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("shadows"), C.bShadows ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("spec_maps"), C.bSpecularMaps ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("bump_maps"), C.bBumpMaps ? TEXT("true") : TEXT("false"));
 
-    // Legacy supports bias but you removed it from your struct; keep a default:
+    // Legacy supports bias but your struct doesn't; keep a default:
     WriteLine(Lines, TEXT("bias"), TEXT("0.0"));
     Lines.Add(TEXT(""));
 
-    WriteLine(Lines, TEXT("flare"), CurrentConfig.bLensFlare ? TEXT("true") : TEXT("false"));
-    WriteLine(Lines, TEXT("corona"), CurrentConfig.bCorona ? TEXT("true") : TEXT("false"));
-    WriteLine(Lines, TEXT("nebula"), CurrentConfig.bNebula ? TEXT("true") : TEXT("false"));
-    WriteLine(Lines, TEXT("dust"), FString::FromInt(CurrentConfig.DustLevel));
+    WriteLine(Lines, TEXT("flare"), C.bLensFlare ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("corona"), C.bCorona ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("nebula"), C.bNebula ? TEXT("true") : TEXT("false"));
+    WriteLine(Lines, TEXT("dust"), FString::FromInt(C.DustLevel));
 
-    return FFileHelper::SaveStringToFile(
-        FString::Join(Lines, TEXT("\n")) + TEXT("\n"),
-        *AbsPath
-    );
+    return FFileHelper::SaveStringToFile(FString::Join(Lines, TEXT("\n")) + TEXT("\n"), *AbsPath);
 }
 
 // +--------------------------------------------------------------------+
@@ -233,13 +234,7 @@ bool UStarshatterVideoSubsystem::SaveVideoConfig(const FString& InRelativeOrAbso
 void UStarshatterVideoSubsystem::SetConfig(const FStarshatterVideoConfig& NewConfig)
 {
     CurrentConfig = NewConfig;
-
-    CurrentConfig.GammaLevel = FMath::Clamp(CurrentConfig.GammaLevel, 32, 224);
-    CurrentConfig.DustLevel = FMath::Max(0, CurrentConfig.DustLevel);
-
-    // Optional clamps if you want:
-    CurrentConfig.Width = FMath::Max(320, CurrentConfig.Width);
-    CurrentConfig.Height = FMath::Max(200, CurrentConfig.Height);
+    SanitizeConfig(CurrentConfig);
 }
 
 // +--------------------------------------------------------------------+
@@ -249,8 +244,9 @@ void UStarshatterVideoSubsystem::SetConfig(const FStarshatterVideoConfig& NewCon
 void UStarshatterVideoSubsystem::RequestChangeVideo(const FStarshatterVideoConfig& NewPendingConfig)
 {
     PendingConfig = NewPendingConfig;
-    bPendingChange = true;
+    SanitizeConfig(PendingConfig);
 
+    bPendingChange = true;
     OnVideoChangeRequested.Broadcast(PendingConfig);
 }
 
@@ -267,38 +263,53 @@ bool UStarshatterVideoSubsystem::ConsumePendingChange(FStarshatterVideoConfig& O
 }
 
 // +--------------------------------------------------------------------+
-// Runtime Apply Hook
+// Runtime Apply Hook (no-arg)
 // +--------------------------------------------------------------------+
 
 void UStarshatterVideoSubsystem::ApplySettingsToRuntime()
 {
-    // Persist:
+    // Persist current config to disk first:
     SaveVideoConfig(TEXT("video.cfg"));
 
     if (Starshatter* Stars = Starshatter::GetInstance())
     {
-        // If your core can tell current mode, compare it.
-        // For now, treat fullscreen/width/height as "mode change" triggers:
-        const bool bModeChange =
-            CurrentConfig.bFullscreen != Stars->GetVideo()->IsFullScreen() ||   // if you have this access
-            CurrentConfig.Width != Stars->GetVideo()->Width() ||
-            CurrentConfig.Height != Stars->GetVideo()->Height();
+        // Migration-safe behavior:
+        // - If your core has RequestChangeVideo(), call it when you're ready.
+        // - Otherwise just reload the config.
+        //
+        // Keep it conservative: reload cfg (stable) and optionally request a change if you want:
+        Stars->LoadVideoConfig("video.cfg");
 
-        if (bModeChange)
-        {
-            Stars->RequestChangeVideo();
-        }
-        else
-        {
-            Stars->LoadVideoConfig("video.cfg");
-        }
+        // If you DO have mode-change handling in core, flip this on later:
+        // Stars->RequestChangeVideo();
     }
     else
     {
+        // No core yet: broadcast intent for whoever cares (renderer/UI).
         OnVideoChangeRequested.Broadcast(CurrentConfig);
     }
 }
 
+// +--------------------------------------------------------------------+
+// SaveGame bridging
+// +--------------------------------------------------------------------+
+
+void UStarshatterVideoSubsystem::LoadFromSaveGame(const UStarshatterSettingsSaveGame* SaveGame)
+{
+    if (!SaveGame)
+        return;
+
+    CurrentConfig = SaveGame->Video;
+    SanitizeConfig(CurrentConfig);
+}
+
+void UStarshatterVideoSubsystem::WriteToSaveGame(UStarshatterSettingsSaveGame* SaveGame) const
+{
+    if (!SaveGame)
+        return;
+
+    SaveGame->Video = CurrentConfig;
+}
 
 // +--------------------------------------------------------------------+
 // Parsing Helpers

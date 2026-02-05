@@ -1,28 +1,41 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
     Copyright (c) 2025-2026.
+    All Rights Reserved.
 
-    SUBSYSTEM:    Stars.exe (Unreal Port)
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
     FILE:         StarshatterControlsSettings.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
     UStarshatterControlsSettings
-    - UE-native controls settings container (config-backed).
-    - Replaces legacy key.cfg persistence for the *new* UI/settings pipeline.
-    - Stores:
-        * Special control options (control model, joystick/mouse options)
-        * Full legacy action->key table (256 entries)
-    - Supports Load/Save/Sanitize.
-    - Runtime apply is handled by UStarshatterControlsSubsystem (NOT here).
+    - UE-native controls settings model (config-backed).
+    - Dialogs read/write ONLY this model.
+    - Runtime apply is performed HERE (Audio/Video style):
+        ApplyToRuntimeControls(WorldContextObject)
+
+    CONTROL MODEL
+    ============
+    Uses three Enhanced Input Mapping Contexts (IMC):
+    - Arcade
+    - FlightSim
+    - Hybrid
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+
+// Canonical enum + struct live here:
+#include "GameStructs.h"
+
 #include "StarshatterControlsSettings.generated.h"
+
+class UObject;
+class UInputMappingContext;
+class UEnhancedInputLocalPlayerSubsystem;
 
 UCLASS(Config = Game, DefaultConfig)
 class STARSHATTERWARS_API UStarshatterControlsSettings : public UObject
@@ -30,87 +43,61 @@ class STARSHATTERWARS_API UStarshatterControlsSettings : public UObject
     GENERATED_BODY()
 
 public:
-    // Singleton-like convenience accessor (CDO):
     static UStarshatterControlsSettings* Get();
 
-    // Force reload from ini:
     void Load();
-
-    // Clamp to sane ranges + fix array size:
+    void Save() const;
     void Sanitize();
 
-    // Save current values back to ini:
-    void Save() const;
+    // Audio/Video style runtime apply entry point:
+    void ApplyToRuntimeControls(UObject* WorldContextObject);
 
 public:
-    // -----------------------------
-    // Getters
-    // -----------------------------
-    int32 GetControlModel() const { return ControlModel; }
+    const FStarshatterControlsConfig& GetControlsConfig() const { return Controls; }
+    void SetControlsConfig(const FStarshatterControlsConfig& In) { Controls = In; Sanitize(); }
 
-    int32 GetJoySelect() const { return JoySelect; }
-    int32 GetJoyThrottle() const { return JoyThrottle; }
-    int32 GetJoyRudder() const { return JoyRudder; }
-    int32 GetJoySensitivity() const { return JoySensitivity; }
+    // Mapping contexts (soft, config-backed)
+    TSoftObjectPtr<UInputMappingContext> GetArcadeContext() const { return ArcadeContext; }
+    TSoftObjectPtr<UInputMappingContext> GetFlightSimContext() const { return FlightSimContext; }
+    TSoftObjectPtr<UInputMappingContext> GetHybridContext() const { return HybridContext; }
 
-    int32 GetMouseSelect() const { return MouseSelect; }
-    int32 GetMouseSensitivity() const { return MouseSensitivity; }
-    int32 GetMouseInvert() const { return MouseInvert; }
+    void SetArcadeContext(TSoftObjectPtr<UInputMappingContext> In) { ArcadeContext = In; }
+    void SetFlightSimContext(TSoftObjectPtr<UInputMappingContext> In) { FlightSimContext = In; }
+    void SetHybridContext(TSoftObjectPtr<UInputMappingContext> In) { HybridContext = In; }
 
-    // Full 0..255 action-key table:
-    const TArray<int32>& GetActionKeys() const { return ActionKeys; }
+    int32 GetMappingPriority() const { return MappingPriority; }
+    void  SetMappingPriority(int32 In) { MappingPriority = In; }
 
-    int32 GetActionKey(int32 ActionIndex) const;
-    void  SetActionKey(int32 ActionIndex, int32 KeyCode);
+    // Convenience setters (clamped)
+    void SetControlModelEnum(EStarshatterControlModel In);
 
-    // -----------------------------
-    // Setters (auto-sanitize)
-    // -----------------------------
-    void SetControlModel(int32 V);
+    void SetJoystickIndex(int32 V);
+    void SetThrottleAxis(int32 V);
+    void SetRudderAxis(int32 V);
+    void SetJoystickSensitivity(int32 V);
 
-    void SetJoySelect(int32 V);
-    void SetJoyThrottle(int32 V);
-    void SetJoyRudder(int32 V);
-    void SetJoySensitivity(int32 V);
-
-    void SetMouseSelect(int32 V);
     void SetMouseSensitivity(int32 V);
-    void SetMouseInvert(int32 V);
-
-    void SetActionKeys(const TArray<int32>& InKeys);
+    void SetMouseInvert(bool bV);
 
 private:
-    static void EnsureKeysSize(TArray<int32>& InOutKeys);
+    void ApplyToEnhancedInput(UObject* WorldContextObject);
+
+    UInputMappingContext* ResolveContextForModel() const;
+    void InstallOnlySelectedContext(UEnhancedInputLocalPlayerSubsystem* Subsystem, UInputMappingContext* Selected) const;
 
 private:
-    // Stored in DefaultGame.ini (+ user Saved/Config overrides)
-    // Keep property names stable once shipped.
+    UPROPERTY(Config, EditAnywhere, Category = "Controls")
+    FStarshatterControlsConfig Controls;
 
-    UPROPERTY(Config, EditAnywhere, Category = "Controls", meta = (ClampMin = "0", ClampMax = "3"))
-    int32 ControlModel = 0;
+    UPROPERTY(Config, EditAnywhere, Category = "Controls|EnhancedInput")
+    TSoftObjectPtr<UInputMappingContext> ArcadeContext;
 
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Joystick", meta = (ClampMin = "0", ClampMax = "64"))
-    int32 JoySelect = 0;
+    UPROPERTY(Config, EditAnywhere, Category = "Controls|EnhancedInput")
+    TSoftObjectPtr<UInputMappingContext> FlightSimContext;
 
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Joystick", meta = (ClampMin = "0", ClampMax = "64"))
-    int32 JoyThrottle = 0;
+    UPROPERTY(Config, EditAnywhere, Category = "Controls|EnhancedInput")
+    TSoftObjectPtr<UInputMappingContext> HybridContext;
 
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Joystick", meta = (ClampMin = "0", ClampMax = "64"))
-    int32 JoyRudder = 0;
-
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Joystick", meta = (ClampMin = "0", ClampMax = "10"))
-    int32 JoySensitivity = 5; // 0..10
-
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Mouse", meta = (ClampMin = "0", ClampMax = "16"))
-    int32 MouseSelect = 0;
-
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Mouse", meta = (ClampMin = "0", ClampMax = "50"))
-    int32 MouseSensitivity = 25; // 0..50
-
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Mouse", meta = (ClampMin = "0", ClampMax = "1"))
-    int32 MouseInvert = 0; // 0/1
-
-    // Legacy 256-entry table: action index -> key code
-    UPROPERTY(Config, EditAnywhere, Category = "Controls|Legacy")
-    TArray<int32> ActionKeys;
+    UPROPERTY(Config, EditAnywhere, Category = "Controls|EnhancedInput", meta = (ClampMin = "0", ClampMax = "10"))
+    int32 MappingPriority = 1;
 };

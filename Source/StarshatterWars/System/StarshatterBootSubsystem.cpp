@@ -78,12 +78,22 @@ void UStarshatterBootSubsystem::BootVideo()
     if (!GI)
         return;
 
-    if (UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>())
-    {
-        // You have this:
-        VideoSS->LoadVideoConfig(TEXT("video.cfg"), true);
+    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
+    UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>();
 
-        // And you have this as NO-ARG:
+    if (!SaveSS || !VideoSS)
+        return;
+
+    // BootSettings() already called LoadOrCreate(), so just use the cached settings:
+    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
+    {
+        VideoSS->LoadFromSaveGame(SG);
+        VideoSS->ApplySettingsToRuntime();
+    }
+    else
+    {
+        // fallback if something went sideways:
+        VideoSS->LoadVideoConfig(TEXT("video.cfg"), true);
         VideoSS->ApplySettingsToRuntime();
     }
 }
@@ -91,20 +101,21 @@ void UStarshatterBootSubsystem::BootVideo()
 void UStarshatterBootSubsystem::BootControls()
 {
     UGameInstance* GI = GetGameInstance();
-    if (!GI)
-        return;
+    if (!GI) return;
 
-    if (UStarshatterControlsSubsystem* ControlsSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
+    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
+    UStarshatterControlsSubsystem* ControlsSS = GI->GetSubsystem<UStarshatterControlsSubsystem>();
+    if (!SaveSS || !ControlsSS) return;
+
+    SaveSS->LoadOrCreate();
+
+    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
     {
-        // If you have a legacy load method, call it here.
-        // If you don't have one yet, skip loading and just apply defaults.
-        //
-        // Examples (COMMENTED OUT until your class actually has them):
-        // ControlsSS->LoadControlsConfig(TEXT("key.cfg"), true);
-        // ControlsSS->LoadKeyConfig();
-
-        // Your Controls Apply currently REQUIRES an argument.
-        // Pass a world context that always exists in subsystem:
+        ControlsSS->LoadFromSaveGame(SG);
+        ControlsSS->ApplySettingsToRuntime(this);
+    }
+    else
+    {
         ControlsSS->ApplySettingsToRuntime(this);
     }
 }

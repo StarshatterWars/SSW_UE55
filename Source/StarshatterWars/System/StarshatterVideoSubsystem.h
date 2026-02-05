@@ -7,24 +7,18 @@
     FILE:         StarshatterVideoSubsystem.h
     AUTHOR:       Carlos Bott
 
-    ORIGINAL DESIGN:
-    John DiCamillo / Destroyer Studios LLC (video.cfg handling)
-
     OVERVIEW
     ========
     UStarshatterVideoSubsystem
-
-    Unreal-native replacement for legacy video configuration handling.
-    This subsystem owns:
-      - video.cfg load/save
-      - current video configuration state
-      - pending video change requests
-      - runtime-apply hook (calls into your ported Starshatter core)
-
-    The subsystem DOES NOT reset the renderer directly.
-    Instead, it either:
-      - broadcasts intent (OnVideoChangeRequested), and/or
-      - calls into Starshatter core if available (ApplySettingsToRuntime)
+    - GameInstanceSubsystem that owns legacy video.cfg load/save and an in-memory config struct.
+    - Stable entrypoints used by UI dialogs + boot sequencing:
+        * Get(...)
+        * Boot()
+        * LoadVideoConfig()
+        * SaveVideoConfig()
+        * ApplySettingsToRuntime()
+        * LoadFromSaveGame() / WriteToSaveGame()
+    - Keeps UI + boot from directly parsing files.
 */
 
 #pragma once
@@ -33,6 +27,9 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "GameStructs.h"
 #include "StarshatterVideoSubsystem.generated.h"
+
+class UGameInstance;
+class UStarshatterSettingsSaveGame;
 
 // +--------------------------------------------------------------------+
 // Delegates
@@ -54,104 +51,116 @@ class STARSHATTERWARS_API UStarshatterVideoSubsystem : public UGameInstanceSubsy
     GENERATED_BODY()
 
 public:
-    // +----------------------------------------------------------------
-    // Convenience Accessor
-    // +----------------------------------------------------------------
-
-    static UStarshatterVideoSubsystem* Get(const UObject* WorldContextObject);
-
-public:
-    // +----------------------------------------------------------------
-    // UGameInstanceSubsystem Interface
-    // +----------------------------------------------------------------
-
+    // -----------------------------
+    // UGameInstanceSubsystem
+    // -----------------------------
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
 
-public:
-    // +----------------------------------------------------------------
-    // Configuration I/O
-    // +----------------------------------------------------------------
+    // -----------------------------
+    // Boot entrypoint
+    // -----------------------------
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    void Boot();
 
-    bool LoadVideoConfig(
-        const FString& InRelativeOrAbsolutePath = TEXT("video.cfg"),
-        bool bCreateIfMissing = true
-    );
+    // -----------------------------
+    // Stable API used by Boot + UI
+    // -----------------------------
 
-    bool SaveVideoConfig(
-        const FString& InRelativeOrAbsolutePath = TEXT("video.cfg")
-    ) const;
+    /** Loads video.cfg into CurrentConfig (optionally creates file if missing). */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    bool LoadVideoConfig(const FString& InRelativeOrAbsolutePath = TEXT("video.cfg"), bool bCreateIfMissing = true);
 
-public:
-    // +----------------------------------------------------------------
-    // Configuration Access
-    // +----------------------------------------------------------------
+    /** Saves CurrentConfig to video.cfg. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    bool SaveVideoConfig(const FString& InRelativeOrAbsolutePath = TEXT("video.cfg")) const;
 
-    const FStarshatterVideoConfig& GetConfig() const { return CurrentConfig; }
-    void SetConfig(const FStarshatterVideoConfig& NewConfig);
-
-public:
-    // +----------------------------------------------------------------
-    // Deferred Change Handling
-    // +----------------------------------------------------------------
-
-    void RequestChangeVideo(const FStarshatterVideoConfig& NewPendingConfig);
-    bool HasPendingChange() const { return bPendingChange; }
-
-    bool ConsumePendingChange(FStarshatterVideoConfig& OutPending);
-
-public:
-    // +----------------------------------------------------------------
-    // Runtime Apply Hook
-    // +----------------------------------------------------------------
-
-    /*
-        ApplySettingsToRuntime()
-
-        Applies the CURRENT config to the runtime system.
-        During migration, this typically calls into:
-          Starshatter::GetInstance()->LoadVideoConfig(...)
-        or triggers:
-          Starshatter::GetInstance()->RequestChangeVideo()
-
-        Keep this method no-arg so UI callsites are simple.
-    */
+    /** Applies CURRENT config to runtime (kept no-arg so UI callsites are simple). */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
     void ApplySettingsToRuntime();
 
-public:
-    // +----------------------------------------------------------------
-    // Events
-    // +----------------------------------------------------------------
+    // -----------------------------
+    // Current Config Access
+    // -----------------------------
 
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Video")
+    const FStarshatterVideoConfig& GetConfig() const { return CurrentConfig; }
+
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    void SetConfig(const FStarshatterVideoConfig& NewConfig);
+
+    // -----------------------------
+    // Deferred Change Handling
+    // -----------------------------
+
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    void RequestChangeVideo(const FStarshatterVideoConfig& NewPendingConfig);
+
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Video")
+    bool HasPendingChange() const { return bPendingChange; }
+
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    bool ConsumePendingChange(FStarshatterVideoConfig& OutPending);
+
+    // -----------------------------
+    // SaveGame bridging (unified settings file)
+    // -----------------------------
+
+    /** Pull Video struct from unified SaveGame into subsystem CurrentConfig. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    void LoadFromSaveGame(const UStarshatterSettingsSaveGame* SaveGame);
+
+    /** Push subsystem CurrentConfig into unified SaveGame’s Video struct. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Video")
+    void WriteToSaveGame(UStarshatterSettingsSaveGame* SaveGame) const;
+
+    // -----------------------------
+    // Convenience accessors
+    // -----------------------------
+    static UStarshatterVideoSubsystem* Get(const UObject* WorldContextObject);
+    static UStarshatterVideoSubsystem* Get(UGameInstance* GameInstance);
+
+public:
+    // -----------------------------
+    // Events
+    // -----------------------------
     UPROPERTY(BlueprintAssignable, Category = "Starshatter|Video")
     FOnStarshatterVideoChangeRequested OnVideoChangeRequested;
 
 public:
-    // +----------------------------------------------------------------
+    // -----------------------------
     // Path Helpers
-    // +----------------------------------------------------------------
-
+    // -----------------------------
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Video")
     FString GetDefaultConfigDir() const;
+
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Video")
     FString ResolveConfigPath(const FString& InRelativeOrAbsolutePath) const;
 
 private:
-    // +----------------------------------------------------------------
+    // -----------------------------
     // Internal State
-    // +----------------------------------------------------------------
-
+    // -----------------------------
+    UPROPERTY(Transient)
     FStarshatterVideoConfig CurrentConfig;
+
+    UPROPERTY(Transient)
     FStarshatterVideoConfig PendingConfig;
+
+    UPROPERTY(Transient)
     bool bPendingChange = false;
 
 private:
-    // +----------------------------------------------------------------
+    // -----------------------------
     // Parsing Helpers
-    // +----------------------------------------------------------------
-
+    // -----------------------------
     static bool ParseBool(const FString& Value, bool& OutBool);
     static bool ParseInt(const FString& Value, int32& OutInt);
     static bool ParseFloat(const FString& Value, float& OutFloat);
 
     static void WriteLine(TArray<FString>& Lines, const FString& Key, const FString& Value);
-};
 
+private:
+    // Centralized clamping/sanitize for safety:
+    void SanitizeConfig(FStarshatterVideoConfig& C) const;
+};

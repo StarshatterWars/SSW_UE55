@@ -1,6 +1,6 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (C) 2025–2026.
+    Copyright (c) 2025-2026.
     All Rights Reserved.
 
     SUBSYSTEM:    StarshatterWars (Unreal Engine)
@@ -10,9 +10,11 @@
     OVERVIEW
     ========
     UStarshatterControlsSubsystem
-    - GameInstance subsystem that applies control settings at runtime.
-    - Works with UStarshatterControlsSettings (config-backed CDO).
-    - Bridges to legacy Starshatter runtime (KeyMap / MapKeys / Ship control model).
+    - GameInstance subsystem entry point for controls.
+    - SaveGame pipeline:
+        LoadFromSaveGame(SG) imports data into UStarshatterControlsSettings (config-backed CDO)
+        ApplySettingsToRuntime(...) installs Enhanced Input mapping context for the selected model
+    - Also includes compatibility wrappers for old call sites.
 */
 
 #pragma once
@@ -22,11 +24,7 @@
 #include "StarshatterControlsSubsystem.generated.h"
 
 class UObject;
-class UStarshatterControlsSettings;
-
-// Legacy:
-class Starshatter;
-class KeyMap;
+class UStarshatterSettingsSaveGame;
 
 UCLASS()
 class STARSHATTERWARS_API UStarshatterControlsSubsystem : public UGameInstanceSubsystem
@@ -34,26 +32,21 @@ class STARSHATTERWARS_API UStarshatterControlsSubsystem : public UGameInstanceSu
     GENERATED_BODY()
 
 public:
-    // ------------------------------------------------------------
-    // Convenience accessor (matches your Audio pattern)
-    // ------------------------------------------------------------
+    // Convenience accessor
     static UStarshatterControlsSubsystem* Get(UObject* WorldContextObject);
 
-    // ------------------------------------------------------------
     // UGameInstanceSubsystem
-    // ------------------------------------------------------------
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
 
-    // ------------------------------------------------------------
-    // Runtime apply entry point
-    // ------------------------------------------------------------
+    // Preferred API
     void ApplySettingsToRuntime(UObject* WorldContextObject);
 
-private:
-    Starshatter* GetStars() const;
-    KeyMap* GetLegacyKeyMap() const;
+    // Compatibility no-arg wrapper (BootSubsystem currently calls this)
+    UFUNCTION()
+    void ApplySettingsToRuntime();
 
-    void ApplySpecialsToLegacy(KeyMap& KM, const UStarshatterControlsSettings& S) const;
-    void ApplyActionBindingsToLegacy(KeyMap& KM, const UStarshatterControlsSettings& S) const;
+    // SaveGame import (BootSubsystem calls this)
+    UFUNCTION()
+    void LoadFromSaveGame(UStarshatterSettingsSaveGame* SaveGame);
 };
