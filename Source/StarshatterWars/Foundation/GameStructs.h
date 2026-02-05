@@ -71,7 +71,8 @@ enum class EMODE : uint8 {
 	LOAD_MODE UMETA(DisplayName = "Loading Mission"), // loading mission into simulator
 	PLAY_MODE UMETA(DisplayName = "Active Simulation"),// active simulation
 	EXIT_MODE  UMETA(DisplayName = "Shutting Down"), // shutting down
-};
+	BOOT_MODE  UMETA(DisplayName = "Booting up"), // Booting Up
+	INIT_MODE  UMETA(DisplayName = "Game Initialization"), // Game Initialization
 
 UENUM(BlueprintType)
 enum EGAMESTATUS : uint8 

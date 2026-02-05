@@ -1,20 +1,3 @@
-#pragma once
-
-#include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
-#include "StarshatterBootSubsystem.generated.h"
-
-class UGameInstance;
-class UWorld;
-
-class UStarshatterSettingsSaveSubsystem;
-class UStarshatterSettingsSaveGame;
-class UFontManagerSubsystem;
-class UStarshatterAudioSubsystem;
-class UStarshatterVideoSubsystem;
-class UStarshatterControlsSubsystem;
-class UStarshatterKeyboardSubsystem;
-
 /*
     Project Starshatter Wars
     Fractal Dev Studios
@@ -45,6 +28,23 @@ class UStarshatterKeyboardSubsystem;
        - Runs once per game session
        - Safe to spawn world-bound service Actors
 */
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "StarshatterBootSubsystem.generated.h"
+
+class UGameInstance;
+class UWorld;
+
+class UStarshatterSettingsSaveSubsystem;
+class UStarshatterSettingsSaveGame;
+class UFontManagerSubsystem;
+class UStarshatterAudioSubsystem;
+class UStarshatterVideoSubsystem;
+class UStarshatterControlsSubsystem;
+class UStarshatterKeyboardSubsystem;
 
 DECLARE_MULTICAST_DELEGATE(FOnStarshatterBootComplete);
 

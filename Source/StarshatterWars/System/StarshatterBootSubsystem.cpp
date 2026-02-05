@@ -1,3 +1,34 @@
+/*
+    Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (C) 2025-2026.
+    All Rights Reserved.
+
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
+    FILE:         StarshatterBootSubsystem.h / .cpp
+    AUTHOR:       Carlos Bott
+
+    OVERVIEW
+    ========
+    Central bootstrap coordinator for Starshatter Wars.
+
+    Responsible for deterministic initialization of all
+    GameInstance-scoped systems and controlled boot of
+    world-dependent services.
+
+    BOOT PHASES
+    ==========
+    1) GameInstance Boot
+       - Runs during Initialize()
+       - No UWorld access
+       - No Actor spawning
+
+    2) World Boot
+       - Triggered via OnPostWorldInitialization
+       - Runs once per game session
+       - Safe to spawn world-bound service Actors
+*/
+
 #include "StarshatterBootSubsystem.h"
 
 #include "Engine/GameInstance.h"
