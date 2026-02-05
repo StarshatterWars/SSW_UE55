@@ -57,15 +57,18 @@ void UStarshatterBootSubsystem::BootAudio()
     if (!GI)
         return;
 
-    if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
+    if (UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>())
     {
-        // This one exists in your codebase:
-        AudioSS->LoadAudioConfig();
+        SaveSS->LoadOrCreate();
 
-        // If your Audio subsystem also has an apply method, call it here.
-        // (Leave commented if not present to avoid C2039.)
-        // AudioSS->ApplySettingsToRuntime();
-        // AudioSS->ApplyToRuntimeAudio();
+        if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
+        {
+            if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
+            {
+                AudioSS->LoadFromSaveGame(SG);
+                AudioSS->ApplySettingsToRuntime();
+            }
+        }
     }
 }
 

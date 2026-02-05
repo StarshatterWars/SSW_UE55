@@ -10,11 +10,13 @@
     ========
     UStarshatterAudioSubsystem
     - GameInstanceSubsystem wrapper around UStarshatterAudioSettings (config-backed CDO).
-    - Provides stable entrypoints used by UI dialogs and boot sequencing:
+    - Stable entrypoints used by UI dialogs and boot sequencing:
         * Get(...)
+        * Boot()
         * LoadAudioConfig()
+        * SaveAudioConfig()
         * ApplySettingsToRuntime()
-    - Keeps the rest of the codebase from directly poking config objects everywhere.
+        * LoadFromSaveGame() / WriteToSaveGame()
 */
 
 #pragma once
@@ -23,7 +25,9 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "StarshatterAudioSubsystem.generated.h"
 
+class UGameInstance;
 class UStarshatterAudioSettings;
+class UStarshatterSettingsSaveGame;
 
 UCLASS()
 class STARSHATTERWARS_API UStarshatterAudioSubsystem : public UGameInstanceSubsystem
@@ -40,28 +44,44 @@ public:
     // -----------------------------
     // Boot entrypoint
     // -----------------------------
-    UFUNCTION()
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
     void Boot();
 
     // -----------------------------
     // Stable API used by Boot + UI
     // -----------------------------
 
-    // Load settings from config (reload ini) and sanitize.
-    UFUNCTION()
+    /** Reload config from ini (CDO) and sanitize. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
     void LoadAudioConfig();
 
-    // Apply current settings to runtime audio.
-    UFUNCTION()
+    /** Persist config (CDO) to ini. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
+    void SaveAudioConfig();
+
+    /** Apply current settings to runtime audio (SoundMix/SoundClass, etc.). */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
     void ApplySettingsToRuntime();
 
-    // Optional legacy alias if any old code expects this name:
-    UFUNCTION()
+    /** Optional legacy alias if any old code expects this name. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
     void ApplySettingsToRuntimeAudio() { ApplySettingsToRuntime(); }
 
-    // Access underlying settings object (config-backed CDO).
-    UFUNCTION()
+    /** Access underlying settings object (config-backed CDO). */
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Audio")
     UStarshatterAudioSettings* GetSettings() const;
+
+    // -----------------------------
+    // SaveGame bridging (unified settings file)
+    // -----------------------------
+
+    /** Pull Audio struct from the unified SaveGame into the AudioSettings CDO. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
+    void LoadFromSaveGame(const UStarshatterSettingsSaveGame* SaveGame);
+
+    /** Push current AudioSettings CDO values into the unified SaveGame’s Audio struct. */
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|Audio")
+    void WriteToSaveGame(UStarshatterSettingsSaveGame* SaveGame) const;
 
     // -----------------------------
     // Convenience accessors

@@ -5,13 +5,6 @@
     SUBSYSTEM:    Stars.exe (Unreal Port)
     FILE:         StarshatterAudioSubsystem.cpp
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Implements UStarshatterAudioSubsystem:
-    - Boot() loads config + applies runtime.
-    - LoadAudioConfig() delegates to UStarshatterAudioSettings::Load().
-    - ApplySettingsToRuntime() delegates to UStarshatterAudioSettings::ApplyToRuntimeAudio().
 */
 
 #include "StarshatterAudioSubsystem.h"
@@ -21,12 +14,14 @@
 
 #include "StarshatterAudioSettings.h"
 
+// Unified settings save:
+#include "StarshatterSettingsSaveGame.h"
+#include "GameStructs.h"
+
 void UStarshatterAudioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
-
-    // Intentionally not auto-booting here unless you want it.
-    // Boot is usually orchestrated by StarshatterBootSubsystem.
+    // Boot orchestrated by StarshatterBootSubsystem (intentionally not auto-booting here)
 }
 
 void UStarshatterAudioSubsystem::Deinitialize()
@@ -65,17 +60,72 @@ UStarshatterAudioSettings* UStarshatterAudioSubsystem::GetSettings() const
 
 void UStarshatterAudioSubsystem::LoadAudioConfig()
 {
-    if (UStarshatterAudioSettings* Settings = UStarshatterAudioSettings::Get())
+    if (UStarshatterAudioSettings* Settings = GetSettings())
     {
-        Settings->Load();
+        Settings->Load();   // your CDO helper: ReloadConfig + Sanitize
+    }
+}
+
+void UStarshatterAudioSubsystem::SaveAudioConfig()
+{
+    if (UStarshatterAudioSettings* Settings = GetSettings())
+    {
+        Settings->Sanitize();
+        Settings->Save();   // your CDO helper: SaveConfig
     }
 }
 
 void UStarshatterAudioSubsystem::ApplySettingsToRuntime()
 {
-    if (UStarshatterAudioSettings* Settings = UStarshatterAudioSettings::Get())
+    if (UStarshatterAudioSettings* Settings = GetSettings())
     {
-        // Pass something that can resolve a World (the subsystem can).
-        Settings->ApplyToRuntimeAudio(this);
+        UObject* WorldContext = GetGameInstance();
+        if (!WorldContext)
+            WorldContext = this;
+
+        Settings->ApplyToRuntimeAudio(WorldContext);
     }
+}
+
+// ---------------------------------------------------------------------
+// SaveGame bridging
+// ---------------------------------------------------------------------
+
+void UStarshatterAudioSubsystem::LoadFromSaveGame(const UStarshatterSettingsSaveGame* SaveGame)
+{
+    if (!SaveGame)
+        return;
+
+    UStarshatterAudioSettings* Settings = GetSettings();
+    if (!Settings)
+        return;
+
+    // Copy SaveGame struct -> Settings CDO:
+    const FStarshatterAudioConfig& A = SaveGame->Audio;
+
+    Settings->SetMasterVolume(A.MasterVolume);
+    Settings->SetMusicVolume(A.MusicVolume);
+    Settings->SetEffectsVolume(A.EffectsVolume);
+    Settings->SetVoiceVolume(A.VoiceVolume);
+    Settings->SetSoundQuality(A.SoundQuality);
+
+    Settings->Sanitize();
+}
+
+void UStarshatterAudioSubsystem::WriteToSaveGame(UStarshatterSettingsSaveGame* SaveGame) const
+{
+    if (!SaveGame)
+        return;
+
+    const UStarshatterAudioSettings* Settings = GetSettings();
+    if (!Settings)
+        return;
+
+    FStarshatterAudioConfig& A = SaveGame->Audio;
+
+    A.MasterVolume = Settings->GetMasterVolume();
+    A.MusicVolume = Settings->GetMusicVolume();
+    A.EffectsVolume = Settings->GetEffectsVolume();
+    A.VoiceVolume = Settings->GetVoiceVolume();
+    A.SoundQuality = Settings->GetSoundQuality();
 }

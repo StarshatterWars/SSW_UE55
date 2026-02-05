@@ -5,14 +5,6 @@
     SUBSYSTEM:    Stars.exe (Unreal Port)
     FILE:         AudioDlg.cpp
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    UAudioDlg
-    - Audio options dialog (UE/UMG + legacy-form bridge via UBaseScreen).
-    - Refactored so the dialog only touches UStarshatterAudioSettings as the model.
-    - Runtime apply is delegated directly to UStarshatterAudioSettings::ApplyToRuntimeAudio(...)
-      (subsystem indirection removed to eliminate signature drift / compile errors).
 */
 
 #include "AudioDlg.h"
@@ -25,8 +17,16 @@
 // Model:
 #include "StarshatterAudioSettings.h"
 
+// Unified settings save:
+#include "StarshatterSettingsSaveSubsystem.h"
+#include "StarshatterSettingsSaveGame.h"
+#include "GameStructs.h"
+
 // Host/router:
 #include "OptionsScreen.h"
+
+// UE:
+#include "Engine/GameInstance.h"
 
 UAudioDlg::UAudioDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -82,7 +82,6 @@ void UAudioDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     ExecFrame((double)InDeltaTime);
 }
 
-// IMPORTANT: matches UBaseScreen::ExecFrame(double)
 void UAudioDlg::ExecFrame(double /*DeltaTime*/)
 {
     // Optional per-frame UI logic
@@ -111,8 +110,17 @@ void UAudioDlg::HandleCancel() { OnCancelClicked(); }
 
 UStarshatterAudioSettings* UAudioDlg::GetAudioSettings() const
 {
-    // Settings is a config-backed UObject (CDO pattern), not a subsystem:
+    // Config-backed UObject (CDO pattern)
     return GetMutableDefault<UStarshatterAudioSettings>();
+}
+
+UStarshatterSettingsSaveSubsystem* UAudioDlg::GetSettingsSaveSubsystem() const
+{
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        return GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
+    }
+    return nullptr;
 }
 
 // -------------------------
@@ -124,6 +132,7 @@ void UAudioDlg::RefreshFromModel()
     UStarshatterAudioSettings* S = GetAudioSettings();
     if (!S) return;
 
+    // Your current model source = config CDO
     S->ReloadConfig();
     S->Sanitize();
 
@@ -143,8 +152,37 @@ void UAudioDlg::RefreshFromModel()
 }
 
 // -------------------------
-// UI -> Model
+// UI -> Model (plus SaveGame)
 // -------------------------
+
+void UAudioDlg::SaveAudioToUnifiedSettings(UStarshatterAudioSettings* Settings)
+{
+    if (!Settings)
+        return;
+
+    UStarshatterSettingsSaveSubsystem* SaveSS = GetSettingsSaveSubsystem();
+    if (!SaveSS)
+        return;
+
+    // Ensure settings object exists
+    SaveSS->LoadOrCreate();
+
+    UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings();
+    if (!SG)
+        return;
+
+    // Write Settings -> SaveGame payload
+    SG->Audio.MasterVolume = Settings->GetMasterVolume();
+    SG->Audio.MusicVolume = Settings->GetMusicVolume();
+    SG->Audio.EffectsVolume = Settings->GetEffectsVolume();
+    SG->Audio.VoiceVolume = Settings->GetVoiceVolume();
+    SG->Audio.SoundQuality = Settings->GetSoundQuality();
+
+    SG->Sanitize();
+
+    SaveSS->MarkDirty();
+    SaveSS->Save();
+}
 
 void UAudioDlg::PushToModel(bool bApplyRuntimeToo)
 {
@@ -158,11 +196,16 @@ void UAudioDlg::PushToModel(bool bApplyRuntimeToo)
     S->SetSoundQuality(SoundQuality);
 
     S->Sanitize();
+
+    // Persist to ini (your current path)
     S->Save();
+
+    // ALSO persist to unified SaveGame
+    SaveAudioToUnifiedSettings(S);
 
     if (bApplyRuntimeToo)
     {
-        // Dialog only touches settings; settings owns the runtime apply hook.
+        // Runtime apply stays owned by settings class
         S->ApplyToRuntimeAudio(const_cast<UAudioDlg*>(this));
     }
 }
@@ -176,7 +219,6 @@ void UAudioDlg::Apply()
 
 void UAudioDlg::Cancel()
 {
-    // Revert UI state back to config values (optional, but usually expected):
     RefreshFromModel();
     bClosed = true;
 }

@@ -5,12 +5,6 @@
     SUBSYSTEM:    Stars.exe (Unreal Port)
     FILE:         AudioDlg.h
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    UAudioDlg
-    - Audio options dialog (UE/UMG + legacy-form bridge via UBaseScreen).
-    - Refactored to use UStarshatterAudioSettings as the primary model.
 */
 
 #pragma once
@@ -25,9 +19,9 @@ class UButton;
 
 class UOptionsScreen;
 
-// NEW:
-class UStarshatterAudioSubsystem;
 class UStarshatterAudioSettings;
+class UStarshatterSettingsSaveSubsystem;
+class UStarshatterSettingsSaveGame;
 
 UCLASS()
 class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
@@ -42,13 +36,12 @@ public:
 
     void Show();
 
-    // IMPORTANT: Match base signature if you want polymorphism
+    // IMPORTANT: Match base signature
     virtual void ExecFrame(double DeltaTime) override;
 
     void Apply();
     void Cancel();
 
-    // Optional: keep your existing helper
     void PushToModel(bool bApplyRuntimeToo);
 
 protected:
@@ -62,9 +55,12 @@ protected:
     virtual void HandleCancel() override;
 
 private:
-    // NEW: helpers
-    UStarshatterAudioSubsystem* GetAudioSubsystem() const;
+    // Settings model (config-backed CDO)
     UStarshatterAudioSettings* GetAudioSettings() const;
+
+    // Unified settings save subsystem
+    UStarshatterSettingsSaveSubsystem* GetSettingsSaveSubsystem() const;
+    void SaveAudioToUnifiedSettings(UStarshatterAudioSettings* Settings);
 
     void RefreshFromModel();
 
@@ -91,7 +87,7 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
 
-    // Tabs...
+    // Tabs
     UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;
