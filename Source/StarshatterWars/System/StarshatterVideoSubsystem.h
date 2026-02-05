@@ -31,54 +31,8 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "GameStructs.h"
 #include "StarshatterVideoSubsystem.generated.h"
-
-// +--------------------------------------------------------------------+
-// Video Configuration Model
-// +--------------------------------------------------------------------+
-
-USTRUCT(BlueprintType)
-struct FStarshatterVideoConfig
-{
-    GENERATED_BODY()
-
-    // Resolution:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    int32 Width = 1280;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    int32 Height = 720;
-
-    // Display mode:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    bool bFullscreen = false;
-
-    // Legacy effect toggles:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    bool bLensFlare = true;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    bool bCorona = true;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    bool bNebula = true;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    bool bDust = true;
-
-    // Quality parameters:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    int32 MaxTexSize = 2048;
-
-    // Gamma mapping:
-    // Legacy uses 32..224 integer. We store 0..1 here by default.
-    // You can change this later; keep stable once shipped.
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    float Gamma = 1.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
-    float DepthBias = 0.0f;
-};
 
 // +--------------------------------------------------------------------+
 // Delegates
@@ -198,10 +152,6 @@ private:
     static bool ParseInt(const FString& Value, int32& OutInt);
     static bool ParseFloat(const FString& Value, float& OutFloat);
 
-    static void WriteLine(
-        TArray<FString>& Lines,
-        const FString& Key,
-        const FString& Value
-    );
+    static void WriteLine(TArray<FString>& Lines, const FString& Key, const FString& Value);
 };
 

@@ -1,43 +1,40 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (C) 2025–2026.
-    All Rights Reserved.
-
-    SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         StarshatterBootSubsystem.cpp
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Implements early startup orchestration for Starshatter subsystems.
-
-    IMPORTANT
-    =========
-    Do NOT forward-declare subsystem classes here if you need to call methods.
-    Always include the subsystem headers so the compiler sees full declarations.
-*/
-
 #include "StarshatterBootSubsystem.h"
 
 #include "Engine/GameInstance.h"
 
-// IMPORTANT: include the actual subsystem headers (not forward declarations):
+// Include actual subsystem headers:
 #include "FontManagerSubsystem.h"
 #include "StarshatterAudioSubsystem.h"
 #include "StarshatterVideoSubsystem.h"
+#include "StarshatterControlsSubsystem.h"
+#include "StarshatterSettingsSaveSubsystem.h"
 
 void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    BootSettings();
     BootFonts();
     BootAudio();
     BootVideo();
+    BootControls();
 }
 
 void UStarshatterBootSubsystem::Deinitialize()
 {
     Super::Deinitialize();
+}
+
+void UStarshatterBootSubsystem::BootSettings()
+{
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    if (UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>())
+    {
+        SaveSS->LoadOrCreate();
+    }
 }
 
 void UStarshatterBootSubsystem::BootFonts()
@@ -48,7 +45,7 @@ void UStarshatterBootSubsystem::BootFonts()
 
     if (UFontManagerSubsystem* FontSS = GI->GetSubsystem<UFontManagerSubsystem>())
     {
-        // If your font subsystem has a load/apply method, call it here.
+        // Optional if/when you add methods:
         // FontSS->LoadFontConfig();
         // FontSS->ApplyToRuntimeFonts();
     }
@@ -62,10 +59,12 @@ void UStarshatterBootSubsystem::BootAudio()
 
     if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
     {
-        // This is the call that was failing for you:
+        // This one exists in your codebase:
         AudioSS->LoadAudioConfig();
 
-        // Optional (LoadAudioConfig already calls ApplyToRuntimeAudio in my implementation):
+        // If your Audio subsystem also has an apply method, call it here.
+        // (Leave commented if not present to avoid C2039.)
+        // AudioSS->ApplySettingsToRuntime();
         // AudioSS->ApplyToRuntimeAudio();
     }
 }
@@ -78,8 +77,31 @@ void UStarshatterBootSubsystem::BootVideo()
 
     if (UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>())
     {
-        // If your video subsystem has a load/apply method, call it here.
-        // VideoSS->LoadVideoConfig();
-        // VideoSS->ApplyToRuntimeVideo();
+        // You have this:
+        VideoSS->LoadVideoConfig(TEXT("video.cfg"), true);
+
+        // And you have this as NO-ARG:
+        VideoSS->ApplySettingsToRuntime();
+    }
+}
+
+void UStarshatterBootSubsystem::BootControls()
+{
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    if (UStarshatterControlsSubsystem* ControlsSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
+    {
+        // If you have a legacy load method, call it here.
+        // If you don't have one yet, skip loading and just apply defaults.
+        //
+        // Examples (COMMENTED OUT until your class actually has them):
+        // ControlsSS->LoadControlsConfig(TEXT("key.cfg"), true);
+        // ControlsSS->LoadKeyConfig();
+
+        // Your Controls Apply currently REQUIRES an argument.
+        // Pass a world context that always exists in subsystem:
+        ControlsSS->ApplySettingsToRuntime(this);
     }
 }

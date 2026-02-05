@@ -149,8 +149,9 @@ void UMissionEditorNavDlg::Show()
     // Name:
     if (UEditableTextBox* NameEdit = GetEdit(201))
     {
-        const Text& NameText = mission->Name();
-        NameEdit->SetText(FText::FromString(TextToFString(mission->Name())));
+        NameEdit->SetText(
+            FText::FromString(UTF8_TO_TCHAR(mission->Name()))
+        );
     }
 
     // Type:

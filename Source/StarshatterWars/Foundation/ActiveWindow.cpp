@@ -131,6 +131,7 @@ void ActiveWindow::ClientEvent(int EID, int x, int y)
     ListIter<AWMap> it = clients;
     while (++it)
     {
+
         if (it->eid == EID && it->func)
             it->func(it->client, &event);
     }

@@ -18,6 +18,7 @@
 #include "UObject/NoExportTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "Text.h"
+#include "InputCoreTypes.h"
 #include "GameStructs.generated.h"
 
 const double STARSHIP_TACTICAL_DROP_TIME = 15;
@@ -4235,7 +4236,210 @@ struct FCampaignMissionReq
 	UPROPERTY() EMissionPrimaryDomain Domain = EMissionPrimaryDomain::Fighter;
 };
 
-inline FString TextToFString(const Text& T)
+////////////////////////////////////////////////////////////////////////////////////////////////
+// AUDIO SETTINGS
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+USTRUCT(BlueprintType)
+struct FStarshatterAudioConfig
 {
-	return FString(ANSI_TO_TCHAR((const char*)T));
-}
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MasterVolume = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MusicVolume = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float EffectsVolume = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Audio", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float VoiceVolume = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Audio", meta = (ClampMin = "0", ClampMax = "3"))
+	int32 SoundQuality = 1;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// VIDEO SETTINGS
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+USTRUCT(BlueprintType)
+struct FStarshatterVideoConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	int32 Width = 1920;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	int32 Height = 1080;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bFullscreen = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	int32 MaxTextureSize = 2048;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video", meta = (ClampMin = "32", ClampMax = "224"))
+	int32 GammaLevel = 128;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bShadows = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bSpecularMaps = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bBumpMaps = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bLensFlare = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bCorona = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bNebula = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	int32 DustLevel = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	int32 TerrainDetailIndex = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Video")
+	bool bTerrainTextures = true;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// CONTROL SETTINGS (NON-KEY BINDINGS)
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+UENUM(BlueprintType)
+enum class EStarshatterControlModel : uint8
+{
+	Arcade     UMETA(DisplayName = "Arcade"),
+	FlightSim  UMETA(DisplayName = "Flight Simulator"),
+	Hybrid     UMETA(DisplayName = "Hybrid")
+};
+
+USTRUCT(BlueprintType)
+struct FStarshatterControlsConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls")
+	EStarshatterControlModel ControlModel = EStarshatterControlModel::FlightSim;
+
+	// Joystick
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls|Joystick")
+	int32 JoystickIndex = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls|Joystick")
+	int32 ThrottleAxis = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls|Joystick")
+	int32 RudderAxis = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls|Joystick", meta = (ClampMin = "0", ClampMax = "10"))
+	int32 JoystickSensitivity = 5;
+
+	// Mouse
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls|Mouse", meta = (ClampMin = "0", ClampMax = "50"))
+	int32 MouseSensitivity = 25;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Controls|Mouse")
+	bool bMouseInvert = false;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// INPUT ACTIONS (ENHANCED INPUT)
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+UENUM(BlueprintType)
+enum class EStarshatterInputAction : uint8
+{
+	// Core
+	ExitGame            UMETA(DisplayName = "Exit Game"),
+	Pause               UMETA(DisplayName = "Pause"),
+
+	// Time
+	TimeCompress        UMETA(DisplayName = "Time Compress"),
+	TimeExpand          UMETA(DisplayName = "Time Expand"),
+	TimeSkip            UMETA(DisplayName = "Time Skip"),
+
+	// Flight
+	ThrottleUp          UMETA(DisplayName = "Throttle Up"),
+	ThrottleDown        UMETA(DisplayName = "Throttle Down"),
+	ThrottleZero        UMETA(DisplayName = "Throttle Zero"),
+	ThrottleFull        UMETA(DisplayName = "Throttle Full"),
+
+	// Weapons
+	CyclePrimary        UMETA(DisplayName = "Cycle Primary Weapon"),
+	CycleSecondary      UMETA(DisplayName = "Cycle Secondary Weapon"),
+	FirePrimary         UMETA(DisplayName = "Fire Primary"),
+	FireSecondary       UMETA(DisplayName = "Fire Secondary"),
+
+	// Targeting
+	LockTarget          UMETA(DisplayName = "Lock Target"),
+	LockThreat          UMETA(DisplayName = "Lock Threat"),
+	TargetNext          UMETA(DisplayName = "Target Next"),
+	TargetPrevious      UMETA(DisplayName = "Target Previous"),
+
+	// Camera
+	CameraNextView      UMETA(DisplayName = "Next Camera View"),
+	CameraChase         UMETA(DisplayName = "Chase Camera"),
+	CameraExternal      UMETA(DisplayName = "External Camera"),
+	CameraZoomIn        UMETA(DisplayName = "Zoom In"),
+	CameraZoomOut       UMETA(DisplayName = "Zoom Out"),
+
+	// UI
+	NavDialog           UMETA(DisplayName = "Navigation Dialog"),
+	WeaponDialog        UMETA(DisplayName = "Weapon Dialog"),
+	FlightDialog        UMETA(DisplayName = "Flight Dialog"),
+	EngineDialog        UMETA(DisplayName = "Engine Dialog"),
+
+	// Comms
+	RadioMenu           UMETA(DisplayName = "Radio Menu"),
+	CommandMode         UMETA(DisplayName = "Command Mode"),
+
+	// Debug
+	IncStardate         UMETA(DisplayName = "Increase Stardate"),
+	DecStardate         UMETA(DisplayName = "Decrease Stardate")
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// INPUT BINDINGS (ENHANCED INPUT–FRIENDLY)
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+USTRUCT(BlueprintType)
+struct FStarshatterInputBinding
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Input")
+	EStarshatterInputAction Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Input")
+	FKey Key;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Input")
+	bool bShift = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Input")
+	bool bCtrl = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Input")
+	bool bAlt = false;
+};
+
+USTRUCT(BlueprintType)
+struct FStarshatterKeyMap
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Input")
+	TArray<FStarshatterInputBinding> Bindings;
+};
