@@ -62,19 +62,20 @@ enum class EMISSIONSTATUS : uint8 {
 };
 
 UENUM(BlueprintType)
-enum class EGameMode : uint8 {
-	BOOT		UMETA(DisplayName = "Booting up"), // Booting Up
-	INIT		UMETA(DisplayName = "Game Initialization"), // Game Initialization
-	
-	MENU		UMETA(DisplayName = "Main Menu"),// main menu
-	CLOD		UMETA(DisplayName = "Loading Campaign"), // loading campaign
-	CMPN		UMETA(DisplayName = "Operational Campaign"), // operational command for dynamic campaign
-	PREP		UMETA(DisplayName = "Loading Mission Info"), // loading mission info for planning
-	PLAN		UMETA(DisplayName = "Loading Briefing"),// mission briefing
-	LOAD		UMETA(DisplayName = "Loading Mission"), // loading mission into simulator
-	PLAY		UMETA(DisplayName = "Active Simulation"),// active simulation
-	EXIT		UMETA(DisplayName = "Shutting Down"), // shutting down
-};	
+enum class EGameMode : uint8
+{
+	BOOT    UMETA(DisplayName = "Booting up"),
+	INIT    UMETA(DisplayName = "Game Initialization"),
+
+	MENU    UMETA(DisplayName = "Main Menu"),
+	CLOD    UMETA(DisplayName = "Loading Campaign"),
+	CMPN    UMETA(DisplayName = "Operational Campaign"),
+	PREP    UMETA(DisplayName = "Loading Mission Info"),
+	PLAN    UMETA(DisplayName = "Loading Briefing"),
+	LOAD    UMETA(DisplayName = "Loading Mission"),
+	PLAY    UMETA(DisplayName = "Active Simulation"),
+	EXIT    UMETA(DisplayName = "Shutting Down"),
+};
 
 UENUM(BlueprintType)
 enum EGAMESTATUS : uint8 
