@@ -4410,6 +4410,24 @@ enum class EStarshatterInputAction : uint8
 	DecStardate         UMETA(DisplayName = "Decrease Stardate")
 };
 
+USTRUCT(BlueprintType)
+struct FStarshatterKeyboardConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Keyboard")
+	bool bKeyboardEnabled = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Keyboard", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float KeyRepeatDelaySeconds = 0.25f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Keyboard", meta = (ClampMin = "0.01", ClampMax = "0.50"))
+	float KeyRepeatRateSeconds = 0.05f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Starshatter|Keyboard")
+	TMap<EStarshatterInputAction, FKey> RemappedKeys;
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // INPUT BINDINGS (ENHANCED INPUT–FRIENDLY)
 ////////////////////////////////////////////////////////////////////////////////////////////////

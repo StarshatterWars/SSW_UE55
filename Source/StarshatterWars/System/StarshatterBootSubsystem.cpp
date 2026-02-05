@@ -1,13 +1,35 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (C) 2025-2026.
+    All Rights Reserved.
+
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
+    FILE:         StarshatterBootSubsystem.cpp
+    AUTHOR:       Carlos Bott
+
+    OVERVIEW
+    ========
+    Central bootstrapper for global subsystems that must initialize early.
+*/
+
 #include "StarshatterBootSubsystem.h"
 
 #include "Engine/GameInstance.h"
 
-// Include actual subsystem headers:
+// Subsystems
 #include "FontManagerSubsystem.h"
 #include "StarshatterAudioSubsystem.h"
 #include "StarshatterVideoSubsystem.h"
 #include "StarshatterControlsSubsystem.h"
+#include "StarshatterKeyboardSubsystem.h"
 #include "StarshatterSettingsSaveSubsystem.h"
+
+// SaveGame
+#include "StarshatterSettingsSaveGame.h"
+
+// ------------------------------------------------------------
+// UGameInstanceSubsystem
+// ------------------------------------------------------------
 
 void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -18,12 +40,17 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     BootAudio();
     BootVideo();
     BootControls();
+    BootKeyboard();
 }
 
 void UStarshatterBootSubsystem::Deinitialize()
 {
     Super::Deinitialize();
 }
+
+// ------------------------------------------------------------
+// Boot stages
+// ------------------------------------------------------------
 
 void UStarshatterBootSubsystem::BootSettings()
 {
@@ -45,9 +72,10 @@ void UStarshatterBootSubsystem::BootFonts()
 
     if (UFontManagerSubsystem* FontSS = GI->GetSubsystem<UFontManagerSubsystem>())
     {
-        // Optional if/when you add methods:
+        // Optional future hooks:
         // FontSS->LoadFontConfig();
         // FontSS->ApplyToRuntimeFonts();
+        (void)FontSS;
     }
 }
 
@@ -57,18 +85,22 @@ void UStarshatterBootSubsystem::BootAudio()
     if (!GI)
         return;
 
-    if (UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>())
-    {
-        SaveSS->LoadOrCreate();
+    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
+    UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>();
 
-        if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
-        {
-            if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
-            {
-                AudioSS->LoadFromSaveGame(SG);
-                AudioSS->ApplySettingsToRuntime();
-            }
-        }
+    if (!SaveSS || !AudioSS)
+        return;
+
+    SaveSS->LoadOrCreate();
+
+    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
+    {
+        AudioSS->LoadFromSaveGame(SG);
+        AudioSS->ApplySettingsToRuntime();
+    }
+    else
+    {
+        AudioSS->ApplySettingsToRuntime();
     }
 }
 
@@ -84,7 +116,8 @@ void UStarshatterBootSubsystem::BootVideo()
     if (!SaveSS || !VideoSS)
         return;
 
-    // BootSettings() already called LoadOrCreate(), so just use the cached settings:
+    SaveSS->LoadOrCreate();
+
     if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
     {
         VideoSS->LoadFromSaveGame(SG);
@@ -92,7 +125,6 @@ void UStarshatterBootSubsystem::BootVideo()
     }
     else
     {
-        // fallback if something went sideways:
         VideoSS->LoadVideoConfig(TEXT("video.cfg"), true);
         VideoSS->ApplySettingsToRuntime();
     }
@@ -101,11 +133,13 @@ void UStarshatterBootSubsystem::BootVideo()
 void UStarshatterBootSubsystem::BootControls()
 {
     UGameInstance* GI = GetGameInstance();
-    if (!GI) return;
+    if (!GI)
+        return;
 
     UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
     UStarshatterControlsSubsystem* ControlsSS = GI->GetSubsystem<UStarshatterControlsSubsystem>();
-    if (!SaveSS || !ControlsSS) return;
+    if (!SaveSS || !ControlsSS)
+        return;
 
     SaveSS->LoadOrCreate();
 
@@ -117,5 +151,29 @@ void UStarshatterBootSubsystem::BootControls()
     else
     {
         ControlsSS->ApplySettingsToRuntime(this);
+    }
+}
+
+void UStarshatterBootSubsystem::BootKeyboard()
+{
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    UStarshatterSettingsSaveSubsystem* SaveSS = GI->GetSubsystem<UStarshatterSettingsSaveSubsystem>();
+    UStarshatterKeyboardSubsystem* KeyboardSS = GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
+    if (!SaveSS || !KeyboardSS)
+        return;
+
+    SaveSS->LoadOrCreate();
+
+    if (UStarshatterSettingsSaveGame* SG = SaveSS->GetSettings())
+    {
+        KeyboardSS->LoadFromSaveGame(SG);
+        KeyboardSS->ApplySettingsToRuntime(this);
+    }
+    else
+    {
+        KeyboardSS->ApplySettingsToRuntime(this);
     }
 }

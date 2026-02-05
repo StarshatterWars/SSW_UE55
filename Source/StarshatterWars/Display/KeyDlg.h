@@ -2,40 +2,33 @@
     Fractal Dev Studios
     Copyright (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
     FILE:         KeyDlg.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    Key Binding dialog (legacy KeyDlg) adapted for Unreal UMG.
-
-    UPDATED ROUTING:
-    - KeyDlg now routes back to ControlOptionsDlg (NOT MenuScreen / OptionsScreen).
+    UE-only key binding dialog.
+    - Captures a key via NativeOnKeyDown.
+    - Writes to UStarshatterKeyboardSettings (config-backed CDO).
+    - Runtime apply via UStarshatterKeyboardSubsystem.
+    - Routes back to UOptionsScreen (Manager) on apply/cancel.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "InputCoreTypes.h"
 
-// Minimal Unreal includes requested for headers:
-#include "Math/UnrealMathUtility.h"
-#include "Math/Vector.h"
-#include "Math/Color.h"
+#include "GameStructs.h" // EStarshatterInputAction
 
 #include "KeyDlg.generated.h"
 
-// ------------------------------------------------------------
-// Forward declarations
-// ------------------------------------------------------------
 class UButton;
 class UTextBlock;
 
-// UPDATED: manager is now the Control Options dialog
-class UControlOptionsDlg;
-
-// ------------------------------------------------------------
+class UOptionsScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UKeyDlg : public UBaseScreen
@@ -49,55 +42,63 @@ public:
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-    // Legacy parity:
+    // Key capture:
+    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
+    // Keep legacy parity signature for now:
     void ExecFrame();
 
+    // Compatibility: treat this as enum index for EStarshatterInputAction
     int  GetKeyMapIndex() const { return KeyIndex; }
     void SetKeyMapIndex(int i);
 
-    // UPDATED:
-    void SetManager(UControlOptionsDlg* InManager);
+    // New preferred API:
+    void SetEditingAction(EStarshatterInputAction InAction);
+
+    // Manager:
+    void SetManager(UOptionsScreen* InManager);
+
+    // Capture flow:
+    void BeginCapture();
 
 protected:
-    UFUNCTION()
-    void OnApplyClicked();
-
-    UFUNCTION()
-    void OnCancelClicked();
-
-    UFUNCTION()
-    void OnClearClicked();
-
-protected:
-    // --------------------------------------------------------
-    // Bound UMG widgets (matching legacy IDs conceptually)
-    // --------------------------------------------------------
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* CommandText = nullptr;      // id 201
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* CurrentKeyText = nullptr;   // id 202
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* NewKeyText = nullptr;       // id 203
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UButton* ClearButton = nullptr;         // id 300
-
-protected:
-    // UPDATED manager type:
-    UPROPERTY(Transient)
-    TObjectPtr<UControlOptionsDlg> Manager = nullptr;
-
-    // Legacy fields:
-    int  KeyIndex = 0;
-    int  KeyKey = 0;
-    int  KeyShift = 0;
-    int  KeyJoy = 0;
-    bool bKeyClear = false;
+    UFUNCTION() void OnApplyClicked();
+    UFUNCTION() void OnCancelClicked();
+    UFUNCTION() void OnClearClicked();
 
 private:
-    void RefreshDisplayFromCurrentBinding();
-    void SetTextBlock(UTextBlock* Block, const char* AnsiText);
+    void RefreshDisplayFromSettings();
     void SetTextBlock(UTextBlock* Block, const FString& Text);
+
+    static FString ActionToDisplayString(EStarshatterInputAction Action);
+    static FString KeyToDisplayString(const FKey& Key);
+
+    void CommitPendingToSettings();
+    void ClearFromSettings();
+
+private:
+    UPROPERTY(Transient)
+    TObjectPtr<UOptionsScreen> Manager = nullptr;
+
+    // Compatibility:
+    int KeyIndex = 0;
+
+    // UE-only binding state:
+    EStarshatterInputAction EditingAction = EStarshatterInputAction::Pause;
+
+    FKey CurrentKey;
+    FKey PendingKey;
+
+    bool bCapturing = false;
+    bool bKeyClear = false;
+
+protected:
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* CommandText = nullptr;     // 201
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* CurrentKeyText = nullptr; // 202
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* NewKeyText = nullptr;     // 203
+
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ClearButton = nullptr;       // 300
+
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
 };

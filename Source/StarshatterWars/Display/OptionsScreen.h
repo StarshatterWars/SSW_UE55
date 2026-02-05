@@ -2,6 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
+// For EStarshatterInputAction
+#include "GameStructs.h"
+
 #include "OptionsScreen.generated.h"
 
 // Forward declares:
@@ -12,10 +16,14 @@ class UTextBlock;
 class UAudioDlg;
 class UVideoDlg;
 class UControlOptionsDlg;
+class UKeyDlg;
+
 class UMenuScreen;
 
 class UStarshatterAudioSubsystem;
 class UStarshatterVideoSubsystem;
+class UStarshatterControlsSubsystem;
+class UStarshatterKeyboardSubsystem;
 
 UCLASS()
 class STARSHATTERWARS_API UOptionsScreen : public UBaseScreen
@@ -37,17 +45,20 @@ public:
     void SetMenuManager(UMenuScreen* InManager) { MenuManager = InManager; }
     UMenuScreen* GetMenuManager() const { return MenuManager; }
 
-    // Page routing (used by tabs + subdialogs if you want):
+    // Page routing
     void ShowOptDlg();   // this page
     void ShowAudDlg();
     void ShowVidDlg();
     void ShowCtlDlg();
     void ShowModDlg();   // stub
 
+    // NEW: keyboard remap dialog
+    void ShowKeyDlg(EStarshatterInputAction Action);
+
     void ApplyOptions();
     void CancelOptions();
 
-    // Legacy apply/cancel for THIS page’s values:
+    // Legacy apply/cancel for THIS page values:
     UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
     void Apply();
 
@@ -55,7 +66,6 @@ public:
     void Cancel();
 
 protected:
-    // Helpers you were calling but didn’t declare:
     void EnsureSubDialogs();
     void HideAllPages();
 
@@ -84,7 +94,7 @@ protected:
 
 protected:
     // ------------------------------------------------------------
-    // Subdialog classes (you referenced these in .cpp)
+    // Subdialog classes
     // ------------------------------------------------------------
     UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
     TSubclassOf<UAudioDlg> AudioDlgClass;
@@ -95,9 +105,12 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
     TSubclassOf<UControlOptionsDlg> ControlDlgClass;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
+    TSubclassOf<UKeyDlg> KeyDlgClass;
+
 protected:
     // ------------------------------------------------------------
-    // Subdialogs (you referenced these in .cpp)
+    // Subdialogs
     // ------------------------------------------------------------
     UPROPERTY(Transient)
     TObjectPtr<UAudioDlg> AudDlg = nullptr;
@@ -108,13 +121,16 @@ protected:
     UPROPERTY(Transient)
     TObjectPtr<UControlOptionsDlg> CtlDlg = nullptr;
 
+    UPROPERTY(Transient)
+    TObjectPtr<UKeyDlg> KeyDlg = nullptr;
+
 protected:
-    // MenuScreen owner (tiny setter requested)
+    // MenuScreen owner
     UPROPERTY(Transient)
     TObjectPtr<UMenuScreen> MenuManager = nullptr;
 
 protected:
-    // Main options widgets (BindWidgetOptional)
+    // Main options widgets
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* flight_model = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* flying_start = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* landings = nullptr;

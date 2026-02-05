@@ -3,6 +3,7 @@
 // UE:
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/GameInstance.h"
 
 // UMG:
 #include "Components/Button.h"
@@ -17,6 +18,7 @@
 #include "AudioDlg.h"
 #include "VideoDlg.h"
 #include "ControlOptionsDlg.h"
+#include "KeyDlg.h"
 
 // Starshatter core:
 #include "Ship.h"
@@ -24,10 +26,11 @@
 #include "PlayerCharacter.h"
 #include "Starshatter.h"
 
+// Subsystems:
 #include "StarshatterAudioSubsystem.h"
 #include "StarshatterVideoSubsystem.h"
 #include "StarshatterControlsSubsystem.h"
-#include "Engine/GameInstance.h"
+#include "StarshatterKeyboardSubsystem.h"
 
 UOptionsScreen::UOptionsScreen(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -40,7 +43,6 @@ void UOptionsScreen::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Create children once:
     EnsureSubDialogs();
 
     // Apply/Cancel
@@ -84,31 +86,59 @@ void UOptionsScreen::NativeConstruct()
 
     // Combo handlers (optional)
     if (flight_model)
+    {
+        flight_model->OnSelectionChanged.RemoveAll(this);
         flight_model->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnFlightModelChanged);
+    }
     if (flying_start)
+    {
+        flying_start->OnSelectionChanged.RemoveAll(this);
         flying_start->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnFlyingStartChanged);
+    }
     if (landings)
+    {
+        landings->OnSelectionChanged.RemoveAll(this);
         landings->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnLandingsChanged);
+    }
     if (ai_difficulty)
+    {
+        ai_difficulty->OnSelectionChanged.RemoveAll(this);
         ai_difficulty->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnAIDifficultyChanged);
+    }
     if (hud_mode)
+    {
+        hud_mode->OnSelectionChanged.RemoveAll(this);
         hud_mode->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnHudModeChanged);
+    }
     if (hud_color)
+    {
+        hud_color->OnSelectionChanged.RemoveAll(this);
         hud_color->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnHudColorChanged);
+    }
     if (ff_mode)
+    {
+        ff_mode->OnSelectionChanged.RemoveAll(this);
         ff_mode->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnFfModeChanged);
+    }
     if (grid_mode)
+    {
+        grid_mode->OnSelectionChanged.RemoveAll(this);
         grid_mode->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnGridModeChanged);
+    }
     if (gunsight)
+    {
+        gunsight->OnSelectionChanged.RemoveAll(this);
         gunsight->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnGunsightChanged);
+    }
 
-    // Default to options page
     ShowOptDlg();
 }
 
 void UOptionsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
+    (void)MyGeometry;
+    (void)InDeltaTime;
 }
 
 FReply UOptionsScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
@@ -131,7 +161,7 @@ FReply UOptionsScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEv
 }
 
 // ---------------------------------------------------------------------
-// Internal helpers (these are the missing symbols from your errors)
+// Subdialog creation
 // ---------------------------------------------------------------------
 
 void UOptionsScreen::EnsureSubDialogs()
@@ -147,7 +177,7 @@ void UOptionsScreen::EnsureSubDialogs()
         {
             AudDlg->AddToViewport(0);
             AudDlg->SetVisibility(ESlateVisibility::Collapsed);
-            AudDlg->SetManager(this); // AudioDlg manager should be UOptionsScreen
+            AudDlg->SetManager(this);
         }
     }
 
@@ -169,10 +199,20 @@ void UOptionsScreen::EnsureSubDialogs()
         {
             CtlDlg->AddToViewport(0);
             CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
+        }
+    }
 
-            // ControlOptionsDlg manager should be UMenuScreen (for JoyDlg/KeyDlg routing),
-            // but it also needs to be able to return to OptionsScreen if you built it that way.
-            // For now: don’t set anything here unless your ControlOptionsDlg has a setter.
+    // NEW: KeyDlg spawned once, like the others
+    if (!KeyDlg && KeyDlgClass)
+    {
+        KeyDlg = CreateWidget<UKeyDlg>(World, KeyDlgClass);
+        if (KeyDlg)
+        {
+            KeyDlg->AddToViewport(0);
+            KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+
+            // KeyDlg routes back here
+            KeyDlg->SetManager(this);
         }
     }
 }
@@ -182,8 +222,8 @@ void UOptionsScreen::HideAllPages()
     if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
     if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
     if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
+    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
 
-    // Show this page by default when “not hidden”:
     SetVisibility(ESlateVisibility::Collapsed);
 }
 
@@ -198,6 +238,7 @@ void UOptionsScreen::ShowOptDlg()
     if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
     if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
     if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
+    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
 
     SetVisibility(ESlateVisibility::Visible);
     SetDialogInputEnabled(true);
@@ -228,6 +269,8 @@ void UOptionsScreen::ShowAudDlg()
     if (!AudDlg) return;
 
     SetVisibility(ESlateVisibility::Collapsed);
+    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+
     AudDlg->SetManager(this);
     AudDlg->Show();
 }
@@ -238,6 +281,8 @@ void UOptionsScreen::ShowVidDlg()
     if (!VidDlg) return;
 
     SetVisibility(ESlateVisibility::Collapsed);
+    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+
     VidDlg->SetManager(this);
     VidDlg->Show();
 }
@@ -247,9 +292,9 @@ void UOptionsScreen::ShowCtlDlg()
     EnsureSubDialogs();
     if (!CtlDlg) return;
 
-    // Control options is special: JoyDlg/KeyDlg route through it to MenuScreen.
-    // So *show it* but do not make it depend on OptionsScreen.
     SetVisibility(ESlateVisibility::Collapsed);
+    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+
     CtlDlg->Show();
 }
 
@@ -258,28 +303,48 @@ void UOptionsScreen::ShowModDlg()
     UE_LOG(LogTemp, Warning, TEXT("OptionsScreen: Mod page not implemented."));
 }
 
+// NEW: open KeyDlg from OptionsScreen
+void UOptionsScreen::ShowKeyDlg(EStarshatterInputAction Action)
+{
+    EnsureSubDialogs();
+    if (!KeyDlg) return;
+
+    // Hide other pages
+    SetVisibility(ESlateVisibility::Collapsed);
+    if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
+    if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
+    if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
+
+    KeyDlg->SetManager(this);
+    KeyDlg->SetEditingAction(Action); // you implement this in KeyDlg
+    KeyDlg->SetVisibility(ESlateVisibility::Visible);
+    KeyDlg->SetKeyboardFocus();
+}
+
+// ---------------------------------------------------------------------
+// Apply / Cancel orchestration
+// ---------------------------------------------------------------------
+
 void UOptionsScreen::ApplyOptions()
 {
     Apply();
-    // Now apply to runtime ONCE, centrally:
+
     if (UGameInstance* GI = GetGameInstance())
     {
         if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
-        {
-            AudioSS->ApplySettingsToRuntime();   // no args
-        }
+            AudioSS->ApplySettingsToRuntime();
 
         if (UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>())
-        {
-            VideoSS->ApplySettingsToRuntime();   // no args
-        }
+            VideoSS->ApplySettingsToRuntime();
 
-        // If you add a controls subsystem later, do it here too.
         if (UStarshatterControlsSubsystem* CtlSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
-        {
-             CtlSS->ApplySettingsToRuntime(this);
-        }
+            CtlSS->ApplySettingsToRuntime(this);
+
+        // NEW: keyboard apply (matches your BootKeyboard pattern)
+        if (UStarshatterKeyboardSubsystem* KeyboardSS = GI->GetSubsystem<UStarshatterKeyboardSubsystem>())
+            KeyboardSS->ApplySettingsToRuntime(this);
     }
+
     if (CtlDlg) CtlDlg->Apply();
 
     bClosed = true;
@@ -289,9 +354,12 @@ void UOptionsScreen::ApplyOptions()
 void UOptionsScreen::CancelOptions()
 {
     Cancel();
+
     if (AudDlg) AudDlg->Cancel();
     if (VidDlg) VidDlg->Cancel();
     if (CtlDlg) CtlDlg->Cancel();
+
+    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
 
     bClosed = true;
     ShowOptDlg();
@@ -316,7 +384,7 @@ void UOptionsScreen::OnCancelClicked() { CancelOptions(); }
 
 // ---------------------------------------------------------------------
 // Combo handlers (optional)
- // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
 
 void UOptionsScreen::OnFlightModelChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Flight model changed."))); }
 void UOptionsScreen::OnFlyingStartChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Flying start changed."))); }

@@ -1,56 +1,29 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         KeyDlg.cpp
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Key Binding dialog (legacy KeyDlg) implementation for Unreal UMG.
-
-    UPDATED ROUTING:
-    - Returns to ControlOptionsDlg (Manager) on apply/cancel.
-*/
-
 #include "KeyDlg.h"
 
-// Unreal
-#include "Logging/LogMacros.h"
-
-// UMG
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 
-// Starshatter
-#include "KeyMap.h"
-#include "Starshatter.h"
-#include "Joystick.h"
+#include "StarshatterKeyboardSettings.h"
+#include "StarshatterKeyboardSubsystem.h"
 
-// UPDATED:
-#include "ControlOptionsDlg.h"
-
-#if PLATFORM_WINDOWS
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include <Windows.h>
-#include "Windows/HideWindowsPlatformTypes.h"
-#endif
+#include "OptionsScreen.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogKeyDlg, Log, All);
-
-// --------------------------------------------------------------------
 
 UKeyDlg::UKeyDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    SetDialogInputEnabled(true);
+    bIsFocusable = true;
 }
-
-// --------------------------------------------------------------------
 
 void UKeyDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
+
+    // BaseScreen routing (if these exist in your BaseScreen):
+    ApplyButton = ApplyBtn;
+    CancelButton = CancelBtn;
 
     if (ClearButton)
     {
@@ -58,7 +31,6 @@ void UKeyDlg::NativeOnInitialized()
         ClearButton->OnClicked.AddDynamic(this, &UKeyDlg::OnClearClicked);
     }
 
-    // NOTE: ApplyButton / CancelButton come from UBaseScreen:
     if (ApplyButton)
     {
         ApplyButton->OnClicked.RemoveAll(this);
@@ -72,221 +44,237 @@ void UKeyDlg::NativeOnInitialized()
     }
 }
 
-// --------------------------------------------------------------------
-
 void UKeyDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Mirror legacy Show():
-    RefreshDisplayFromCurrentBinding();
-
     bKeyClear = false;
+    bCapturing = true;
+    PendingKey = FKey();
+
+    RefreshDisplayFromSettings();
+
     if (NewKeyText)
         NewKeyText->SetText(FText::GetEmpty());
-}
 
-// --------------------------------------------------------------------
+    SetKeyboardFocus();
+}
 
 void UKeyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
+    (void)MyGeometry;
+    (void)InDeltaTime;
+
+    // UE-only: no polling required. Keep ExecFrame for legacy signature parity.
     ExecFrame();
 }
 
-// --------------------------------------------------------------------
+FReply UKeyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+    (void)InGeometry;
 
-void UKeyDlg::SetManager(UControlOptionsDlg* InManager)
+    if (!bCapturing)
+        return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+
+    const FKey PressedKey = InKeyEvent.GetKey();
+
+    if (PressedKey == EKeys::Escape)
+    {
+        OnCancelClicked();
+        return FReply::Handled();
+    }
+
+    if (!PressedKey.IsValid())
+        return FReply::Handled();
+
+    if (PressedKey == EKeys::LeftShift || PressedKey == EKeys::RightShift ||
+        PressedKey == EKeys::LeftControl || PressedKey == EKeys::RightControl ||
+        PressedKey == EKeys::LeftAlt || PressedKey == EKeys::RightAlt ||
+        PressedKey == EKeys::LeftCommand || PressedKey == EKeys::RightCommand)
+    {
+        return FReply::Handled();
+    }
+
+    PendingKey = PressedKey;
+    bKeyClear = false;
+    bCapturing = false;
+
+    if (NewKeyText)
+        SetTextBlock(NewKeyText, KeyToDisplayString(PendingKey));
+
+    return FReply::Handled();
+}
+
+void UKeyDlg::ExecFrame()
+{
+    // UE-only: do nothing.
+}
+
+void UKeyDlg::SetManager(UOptionsScreen* InManager)
 {
     Manager = InManager;
 }
 
-// --------------------------------------------------------------------
+void UKeyDlg::SetEditingAction(EStarshatterInputAction InAction)
+{
+    EditingAction = InAction;
+    KeyIndex = (int32)InAction;
+
+    PendingKey = FKey();
+    bKeyClear = false;
+    bCapturing = true;
+
+    RefreshDisplayFromSettings();
+    SetKeyboardFocus();
+}
 
 void UKeyDlg::SetKeyMapIndex(int i)
 {
     KeyIndex = i;
-    KeyKey = 0;
-    KeyShift = 0;
-    KeyJoy = 0;
+
+    const int64 Value = (int64)i;
+    const UEnum* Enum = StaticEnum<EStarshatterInputAction>();
+    if (Enum && Enum->IsValidEnumValue(Value))
+        EditingAction = (EStarshatterInputAction)i;
+    else
+        EditingAction = EStarshatterInputAction::Pause;
+
+    PendingKey = FKey();
     bKeyClear = false;
+    bCapturing = true;
 
-    RefreshDisplayFromCurrentBinding();
-
-    if (NewKeyText)
-        NewKeyText->SetText(FText::GetEmpty());
+    RefreshDisplayFromSettings();
+    SetKeyboardFocus();
 }
-
-// --------------------------------------------------------------------
-// Legacy parity (ExecFrame)
-// --------------------------------------------------------------------
-
-void UKeyDlg::ExecFrame()
-{
-    int key = 0;
-    int shift = 0;
-    int joy = 0;
-
-    Joystick* joystick = Joystick::GetInstance();
-    if (joystick)
-        joystick->Acquire();
-
-    for (int i = 0; i < 256; i++)
-    {
-        const int vk = KeyMap::GetMappableVKey(i);
-
-        if (vk >= KEY_JOY_1 && vk <= KEY_JOY_16)
-        {
-            if (joystick && joystick->KeyDown(vk))
-                joy = vk;
-        }
-        else if (vk >= KEY_POV_0_UP && vk <= KEY_POV_3_RIGHT)
-        {
-            if (joystick && joystick->KeyDown(vk))
-                joy = vk;
-        }
-        else
-        {
-#if PLATFORM_WINDOWS
-            if (GetAsyncKeyState(vk))
-            {
-                if (vk == VK_SHIFT || vk == VK_MENU)
-                    shift = vk;
-                else
-                    key = vk;
-            }
-#endif
-        }
-    }
-
-    if (key)
-    {
-        KeyKey = key;
-        KeyShift = shift;
-        KeyJoy = joy; // keep any joy detected this frame
-
-        if (NewKeyText)
-        {
-            const char* desc = KeyMap::DescribeKey(key, shift, joy);
-            SetTextBlock(NewKeyText, desc ? desc : "");
-        }
-    }
-    else if (joy)
-    {
-        KeyJoy = joy;
-
-        if (NewKeyText)
-        {
-            const char* desc = KeyMap::DescribeKey(0, 0, joy);
-            SetTextBlock(NewKeyText, desc ? desc : "");
-        }
-    }
-}
-
-// --------------------------------------------------------------------
 
 void UKeyDlg::OnClearClicked()
 {
     bKeyClear = true;
-    KeyKey = 0;
-    KeyShift = 0;
-    KeyJoy = 0;
+    PendingKey = FKey();
+    bCapturing = false;
 
     if (NewKeyText)
         NewKeyText->SetText(FText::GetEmpty());
 }
 
-// --------------------------------------------------------------------
-
 void UKeyDlg::OnApplyClicked()
 {
-    Starshatter* stars = Starshatter::GetInstance();
-
-    if (stars)
+    if (bKeyClear)
     {
-        KeyMap& keymap = stars->GetKeyMap();
-        KeyMapEntry* map = keymap.GetKeyMap(KeyIndex);
-
-        if (map)
-        {
-            if (bKeyClear)
-            {
-                map->key = 0;
-                map->alt = 0;
-                map->joy = 0;
-            }
-
-            if (KeyKey)
-            {
-                map->key = KeyKey;
-                map->alt = KeyShift;
-            }
-
-            if (KeyJoy)
-            {
-                map->joy = KeyJoy;
-            }
-        }
+        ClearFromSettings();
     }
-    else
+    else if (PendingKey.IsValid())
     {
-        UE_LOG(LogKeyDlg, Warning, TEXT("Starshatter instance not available."));
+        CommitPendingToSettings();
     }
 
-    // Hide this dialog and return to Controls page:
     SetVisibility(ESlateVisibility::Collapsed);
 
     if (Manager)
     {
         Manager->SetVisibility(ESlateVisibility::Visible);
-        Manager->Show();          // refresh list / selection text
+        Manager->ShowOptDlg();
         Manager->SetKeyboardFocus();
     }
 }
-
-// --------------------------------------------------------------------
 
 void UKeyDlg::OnCancelClicked()
 {
-    // Hide this dialog and return to Controls page:
     SetVisibility(ESlateVisibility::Collapsed);
 
     if (Manager)
     {
         Manager->SetVisibility(ESlateVisibility::Visible);
-        Manager->Show();
+        Manager->ShowOptDlg();
         Manager->SetKeyboardFocus();
     }
 }
 
-// --------------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------------
-
-void UKeyDlg::RefreshDisplayFromCurrentBinding()
+void UKeyDlg::CommitPendingToSettings()
 {
-    Starshatter* stars = Starshatter::GetInstance();
-    if (!stars)
+    UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
+    if (!Settings)
         return;
 
-    KeyMap& keymap = stars->GetKeyMap();
+    Settings->Load();
 
-    if (CommandText)
-        SetTextBlock(CommandText, keymap.DescribeAction(KeyIndex));
+    FStarshatterKeyboardConfig Cfg = Settings->GetKeyboardConfig();
+    Cfg.RemappedKeys.Add(EditingAction, PendingKey);
 
-    if (CurrentKeyText)
-        SetTextBlock(CurrentKeyText, keymap.DescribeKey(KeyIndex));
+    Settings->SetKeyboardConfig(Cfg);
+    Settings->Sanitize();
+    Settings->Save();
+
+    if (UStarshatterKeyboardSubsystem* KBSS = UStarshatterKeyboardSubsystem::Get(this))
+        KBSS->ApplySettingsToRuntime(this);
+
+    CurrentKey = PendingKey;
+    PendingKey = FKey();
 }
 
-void UKeyDlg::SetTextBlock(UTextBlock* Block, const char* AnsiText)
+void UKeyDlg::ClearFromSettings()
 {
-    if (!Block)
+    UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
+    if (!Settings)
         return;
 
-    if (!AnsiText)
-        AnsiText = "";
+    Settings->Load();
 
-    Block->SetText(FText::FromString(UTF8_TO_TCHAR(AnsiText)));
+    FStarshatterKeyboardConfig Cfg = Settings->GetKeyboardConfig();
+    Cfg.RemappedKeys.Remove(EditingAction);
+
+    Settings->SetKeyboardConfig(Cfg);
+    Settings->Sanitize();
+    Settings->Save();
+
+    if (UStarshatterKeyboardSubsystem* KBSS = UStarshatterKeyboardSubsystem::Get(this))
+        KBSS->ApplySettingsToRuntime(this);
+
+    CurrentKey = FKey();
+    PendingKey = FKey();
+    bKeyClear = false;
+}
+
+void UKeyDlg::RefreshDisplayFromSettings()
+{
+    UStarshatterKeyboardSettings* Settings = UStarshatterKeyboardSettings::Get();
+    if (!Settings)
+        return;
+
+    Settings->Load();
+
+    const FStarshatterKeyboardConfig& Cfg = Settings->GetKeyboardConfig();
+    if (const FKey* Found = Cfg.RemappedKeys.Find(EditingAction))
+        CurrentKey = *Found;
+    else
+        CurrentKey = FKey();
+
+    if (CommandText)
+        SetTextBlock(CommandText, ActionToDisplayString(EditingAction));
+
+    if (CurrentKeyText)
+        SetTextBlock(CurrentKeyText, KeyToDisplayString(CurrentKey));
+
+    if (NewKeyText)
+        NewKeyText->SetText(FText::GetEmpty());
+}
+
+FString UKeyDlg::ActionToDisplayString(EStarshatterInputAction Action)
+{
+    const UEnum* Enum = StaticEnum<EStarshatterInputAction>();
+    if (Enum)
+        return Enum->GetDisplayNameTextByValue((int64)Action).ToString();
+
+    return FString("ACTION");
+}
+
+FString UKeyDlg::KeyToDisplayString(const FKey& Key)
+{
+    if (!Key.IsValid())
+        return FString("UNBOUND");
+
+    return Key.GetDisplayName().ToString();
 }
 
 void UKeyDlg::SetTextBlock(UTextBlock* Block, const FString& Text)
