@@ -46,6 +46,8 @@ class UStarshatterKeyboardSubsystem;
        - Safe to spawn world-bound service Actors
 */
 
+DECLARE_MULTICAST_DELEGATE(FOnStarshatterBootComplete);
+
 UCLASS()
 class STARSHATTERWARS_API UStarshatterBootSubsystem : public UGameInstanceSubsystem
 {
@@ -54,6 +56,10 @@ class STARSHATTERWARS_API UStarshatterBootSubsystem : public UGameInstanceSubsys
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
+    
+    bool IsBootComplete() const { return bBootComplete; }
+    FOnStarshatterBootComplete OnBootComplete;
+
 
 private:
     // --------------------------------------------------
@@ -94,4 +100,7 @@ private:
 private:
     FDelegateHandle PostWorldInitHandle;
     bool bWorldBootDone = false;
+
+    void MarkBootComplete();
+    bool bBootComplete = false;   
 };

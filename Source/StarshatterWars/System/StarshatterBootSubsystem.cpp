@@ -158,6 +158,9 @@ void UStarshatterBootSubsystem::OnPostWorldInit(
 
     BootGameData(World);
     bWorldBootDone = true;
+
+    // Boot is now fully complete (GI boot + first real world boot)
+    MarkBootComplete();
 }
 
 void UStarshatterBootSubsystem::BootGameData(UWorld* World)
@@ -165,7 +168,7 @@ void UStarshatterBootSubsystem::BootGameData(UWorld* World)
     if (!World)
         return;
 
-    // Reuse if already present
+    // If already present (placed in map or spawned elsewhere), do nothing:
     for (TActorIterator<AGameDataLoader> It(World); It; ++It)
     {
         return;
@@ -181,4 +184,17 @@ void UStarshatterBootSubsystem::BootGameData(UWorld* World)
         FVector::ZeroVector,
         FRotator::ZeroRotator,
         Params);
+}
+
+// --------------------------------------------------
+// Boot completion
+// --------------------------------------------------
+
+void UStarshatterBootSubsystem::MarkBootComplete()
+{
+    if (bBootComplete)
+        return;
+
+    bBootComplete = true;
+    OnBootComplete.Broadcast();
 }
