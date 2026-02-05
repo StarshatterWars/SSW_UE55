@@ -58,7 +58,7 @@ public:
 	virtual void Exit();
 	virtual bool OnHelp() { return false; }
 
-	EGameMode     GetGameMode() { return game_mode; }
+	EGameMode GetGameMode() { return game_mode; }
 	void      SetGameMode(EGameMode mode);
 	void      RequestChangeVideo();
 	void      LoadVideoConfig(const char* filename);

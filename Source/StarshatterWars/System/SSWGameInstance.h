@@ -235,6 +235,9 @@ public:
 	void SetGameMode(EGameMode gm);
 
 	UFUNCTION()
+	EGameMode GetGameMode();
+
+	UFUNCTION()
 	void SetActiveCampaign(FS_Campaign campaign);
 
 	UFUNCTION()

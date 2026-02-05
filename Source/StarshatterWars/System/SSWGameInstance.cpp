@@ -983,7 +983,12 @@ void USSWGameInstance::ToggleCampaignLoading(bool bVisible)
 
 void USSWGameInstance::SetGameMode(EGameMode gm)
 {
+	GameMode = gm;
+}
 
+EGameMode USSWGameInstance::GetGameMode()
+{
+	return GameMode;
 }
 
 void USSWGameInstance::SetActiveCampaign(FS_Campaign campaign)
