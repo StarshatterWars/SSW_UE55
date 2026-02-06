@@ -7,6 +7,7 @@
 
 #include "TimerSubsystem.h"
 #include "SSWGameInstance.h"
+#include "StarshatterPlayerSubsystem.h"
 #include "CampaignSave.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -18,14 +19,25 @@ void UCampaignScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	UGameInstance* GI = GetGameInstance();
 	if (!GI)
 	{
 		return;
 	}
 
-	// Load player profile / selection
-	GI->LoadGame(GI->PlayerSaveName, GI->PlayerSaveSlot);
+	UStarshatterPlayerSubsystem* PlayerSS = GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+	if (!PlayerSS)
+	{
+		return;
+	}
+
+	// Player save should already be loaded by Boot, but allow a safe fallback:
+	if (!PlayerSS->HasLoaded())
+	{
+		PlayerSS->LoadPlayer();
+	}
+
+	const FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetPlayerInfo();
 
 	if (TitleText)
 	{
@@ -79,8 +91,8 @@ void UCampaignScreen::NativeConstruct()
 	// Player name
 	if (PlayerNameText)
 	{
-		PlayerNameText->SetText(FText::FromString(GI->PlayerInfo.Name));
-		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *GI->PlayerInfo.Name);
+		PlayerNameText->SetText(FText::FromString(PlayerInfo.Name));
+		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
 	}
 
 	// Build dropdown options
@@ -88,9 +100,9 @@ void UCampaignScreen::NativeConstruct()
 
 	// Restore selection: PlayerInfo.Campaign is ALWAYS 1-based campaign index
 	int32 SelectedOptionIndex = 0;
-	if (GI->PlayerInfo.Campaign > 0)
+	if (PlayerInfo.Campaign > 0)
 	{
-		const int32 Found = CampaignIndexByOptionIndex.IndexOfByKey(GI->PlayerInfo.Campaign);
+		const int32 Found = CampaignIndexByOptionIndex.IndexOfByKey(PlayerInfo.Campaign);
 		if (Found != INDEX_NONE)
 		{
 			SelectedOptionIndex = Found;
@@ -113,6 +125,7 @@ void UCampaignScreen::NativeConstruct()
 	SetSelectedData(Selected);
 	UpdateCampaignButtons();
 }
+
 
 UTexture2D* UCampaignScreen::LoadTextureFromFile()
 {
@@ -138,7 +151,17 @@ void UCampaignScreen::OnPlayButtonClicked()
 {
 	PlayUISound(this, AcceptSound);
 
-	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	UGameInstance* GIBase = GetGameInstance();
+	if (!GIBase)
+		return;
+
+	// Player save subsystem (authoritative for PlayerInfo persistence)
+	UStarshatterPlayerSubsystem* PlayerSS = GIBase->GetSubsystem<UStarshatterPlayerSubsystem>();
+	if (!PlayerSS)
+		return;
+
+	// Campaign runtime / legacy routing (still on GI in current architecture)
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GIBase);
 	if (!GI)
 		return;
 
@@ -151,12 +174,22 @@ void UCampaignScreen::OnPlayButtonClicked()
 
 	// Build selection metadata FIRST (authoritative)
 	GI->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
-	GI->SelectedCampaignIndex = CampaignIndex1Based;                 // 1-based
+	GI->SelectedCampaignIndex = CampaignIndex1Based; // 1-based
 	GI->SelectedCampaignRowName = PickedRowName;
 
-	// Persist selection: PlayerInfo.Campaign is 1-based stable id
-	GI->PlayerInfo.Campaign = CampaignIndex1Based;
-	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
+	// Persist selection: PlayerInfo.Campaign is 1-based stable id (SUBSYSTEM ONLY)
+	{
+		// Boot should have loaded already; safe fallback:
+		if (!PlayerSS->HasLoaded())
+		{
+			PlayerSS->LoadPlayer();
+		}
+
+		FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetMutablePlayerInfo();
+		PlayerInfo.Campaign = CampaignIndex1Based;
+		PlayerInfo.CampaignRowName = PickedRowName; // keep consistent with your struct
+		PlayerSS->SavePlayer(true);
+	}
 
 	// Check save existence using RowName slot convention
 	const bool bHasSave = DoesSelectedCampaignSaveExist();
@@ -176,7 +209,7 @@ void UCampaignScreen::OnPlayButtonClicked()
 	}
 
 	// Point timer at active save
-	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
+	if (UTimerSubsystem* Timer = GIBase->GetSubsystem<UTimerSubsystem>())
 	{
 		Timer->SetCampaignSave(GI->CampaignSave);
 
@@ -194,7 +227,17 @@ void UCampaignScreen::OnRestartButtonClicked()
 {
 	PlayUISound(this, AcceptSound);
 
-	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	UGameInstance* GIBase = GetGameInstance();
+	if (!GIBase)
+		return;
+
+	// Player save subsystem (authoritative for PlayerInfo persistence)
+	UStarshatterPlayerSubsystem* PlayerSS = GIBase->GetSubsystem<UStarshatterPlayerSubsystem>();
+	if (!PlayerSS)
+		return;
+
+	// Keep campaign restart flow where it currently lives (GI) for now
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GIBase);
 	if (!GI)
 		return;
 
@@ -205,16 +248,20 @@ void UCampaignScreen::OnRestartButtonClicked()
 	const int32 CampaignIndex1Based =
 		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
 
-	// Authoritative selection metadata
+	// Authoritative selection metadata (still on GI in your current architecture)
 	GI->SelectedCampaignDisplayName = CampaignSelectDD ? CampaignSelectDD->GetSelectedOption() : TEXT("");
 	GI->SelectedCampaignIndex = CampaignIndex1Based;
 	GI->SelectedCampaignRowName = PickedRowName;
 
-	// Persist selection (1-based)
-	GI->PlayerInfo.Campaign = CampaignIndex1Based;
-	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
+	// Persist selection (1-based) via PlayerSubsystem ONLY
+	{
+		FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetMutablePlayerInfo();
+		PlayerInfo.Campaign = CampaignIndex1Based;
+		PlayerInfo.CampaignRowName = PickedRowName; // optional but consistent with your model
+		PlayerSS->SavePlayer(true);
+	}
 
-	// Overwrite/create save FIRST
+	// Overwrite/create campaign save FIRST
 	GI->CreateNewCampaignSave(
 		GI->SelectedCampaignIndex,
 		GI->SelectedCampaignRowName,
@@ -222,16 +269,16 @@ void UCampaignScreen::OnRestartButtonClicked()
 	);
 
 	// Restart campaign clock on the new save
-	if (UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>())
+	if (UTimerSubsystem* Timer = GIBase->GetSubsystem<UTimerSubsystem>())
 	{
 		Timer->SetCampaignSave(GI->CampaignSave);
 		Timer->RestartCampaignClock(true);
 	}
 
 	// Restart campaign runtime
-
 	GI->ShowCampaignLoading();
 }
+
 
 void UCampaignScreen::OnPlayButtonHovered()
 {
@@ -302,8 +349,18 @@ void UCampaignScreen::SetCampaignDDList()
 
 void UCampaignScreen::SetSelectedData(int32 OptionIndex)
 {
-	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	UGameInstance* GIBase = GetGameInstance();
+	if (!GIBase)
+		return;
+
+	// Campaign data currently lives on GI in your architecture
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GIBase);
 	if (!GI)
+		return;
+
+	// Player persistence lives in PlayerSubsystem
+	UStarshatterPlayerSubsystem* PlayerSS = GIBase->GetSubsystem<UStarshatterPlayerSubsystem>();
+	if (!PlayerSS)
 		return;
 
 	// OptionIndex is dropdown option index (0-based)
@@ -372,8 +429,19 @@ void UCampaignScreen::SetSelectedData(int32 OptionIndex)
 	const int32 CampaignIndex1Based =
 		CampaignIndexByOptionIndex.IsValidIndex(Selected) ? CampaignIndexByOptionIndex[Selected] : (Selected + 1);
 
-	GI->PlayerInfo.Campaign = CampaignIndex1Based;
-	GI->SaveGame(GI->PlayerSaveName, GI->PlayerSaveSlot, GI->PlayerInfo);
+	// Boot should have loaded already; safe fallback:
+	if (!PlayerSS->HasLoaded())
+	{
+		PlayerSS->LoadPlayer();
+	}
+
+	// SUBSYSTEM ONLY persistence
+	{
+		FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetMutablePlayerInfo();
+		PlayerInfo.Campaign = CampaignIndex1Based;
+		PlayerInfo.CampaignRowName = PickedRowName; // keep consistent with your struct intent
+		PlayerSS->SavePlayer(true);
+	}
 }
 
 void UCampaignScreen::OnSetSelected(FString SelectedItem, ESelectInfo::Type Type)

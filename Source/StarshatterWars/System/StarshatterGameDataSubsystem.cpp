@@ -44,31 +44,7 @@
 #include "FormattingUtils.h"
 
 #include "SimComponent.h"
-
-static const char* ShipDesignClassName[32] =
-{
-    "Drone",          "Fighter",
-    "Attack",         "LCA",
-    "Courier",        "Cargo",
-    "Corvette",       "Freighter",
-
-    "Frigate",        "Destroyer",
-    "Cruiser",        "Battleship",
-    "Carrier",        "Dreadnaught",
-
-    "Station",        "Farcaster",
-
-    "Mine",           "DEFSAT",
-    "COMSAT",         "SWACS",
-
-    "Building",       "Factory",
-    "SAM",            "EWR",
-    "C3I",            "Starbase",
-
-    "0x04000000",     "0x08000000",
-    "0x10000000",     "0x20000000",
-    "0x40000000",     "0x80000000"
-};
+#include "PlayerSaveGame.h"
 
 template<typename TEnum>
 static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
@@ -175,6 +151,66 @@ void UStarshatterGameDataSubsystem::InitializeDT(const FObjectInitializer& Objec
 	}
 	GalaxyDataTable->EmptyTable();
 	//OrderOfBattleDataTable->EmptyTable();
+}
+
+FS_Campaign UStarshatterGameDataSubsystem::GetActiveCampaign()
+{
+	return ActiveCampaign;
+}
+
+
+void UStarshatterGameDataSubsystem::SetActiveCampaign(FS_Campaign campaign)
+{
+	ActiveCampaign = campaign;
+}
+
+void UStarshatterGameDataSubsystem::ReadCampaignData()
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ReadCampaignData()"));
+	static const FString ContextString(TEXT("ReadDataTable"));
+	TArray<FS_Campaign*> AllRows;
+	CampaignDataTable->GetAllRows<FS_Campaign>(ContextString, AllRows);
+
+	int index = 0;
+	for (FS_Campaign* Row : AllRows)
+	{
+		if (Row)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
+			UE_LOG(LogTemp, Log, TEXT("Campaign Available: %s"), (Row->bAvailable ? TEXT("true") : TEXT("false")));
+			CampaignDataArray[index] = *Row;
+			CampaignDataArray[index].Orders.SetNum(4);
+			index++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to load Campaign!"));
+		}
+	}
+	SetActiveCampaign(CampaignDataArray[PlayerInfo.Campaign]);
+	FString NewCampaign = GetActiveCampaign().Name;
+	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
+}
+
+void UStarshatterGameDataSubsystem::ReadCombatRosterData() {
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ReadCombatRosterData()"));
+	static const FString ContextString(TEXT("ReadDataTable"));
+	TArray<FS_CombatGroup*> AllRows;
+	CombatGroupDataTable->GetAllRows<FS_CombatGroup>(ContextString, AllRows);
+	CombatRosterData.Empty();
+	for (FS_CombatGroup* Row : AllRows)
+	{
+		if (Row)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Group Name: %s"), *Row->Name);
+
+			CombatRosterData.Add(*Row);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to load Combat Roster!"));
+		}
+	}
 }
 
 void UStarshatterGameDataSubsystem::CreateOrderOfBattleTable()
@@ -981,6 +1017,14 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	if (!SSWInstance)
 		return;
 
+	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
+		LoadGame(PlayerSaveName, PlayerSaveSlot);
+		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
+
+		if (PlayerInfo.Campaign >= 0) {
+			ReadCampaignData();
+		}
+	}
 	// Same sequence as legacy BeginPlay():
 	LoadContentBundle();
 	LoadForms();
@@ -1003,6 +1047,36 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 
 	// USystemDesign::Initialize(SystemDesignTable);
 }
+
+void UStarshatterGameDataSubsystem::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerData)
+{
+	UPlayerSaveGame* SaveInstance = Cast<UPlayerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlayerSaveGame::StaticClass()));
+
+	if (SaveInstance)
+	{
+		SaveInstance->PlayerInfo = PlayerData;
+
+		UGameplayStatics::SaveGameToSlot(SaveInstance, SlotName, UserIndex);
+	}
+}
+
+void UStarshatterGameDataSubsystem::LoadGame(FString SlotName, int32 UserIndex)
+{
+	if (UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+	{
+		UPlayerSaveGame* LoadedGame = Cast<UPlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
+		PlayerInfo = LoadedGame->PlayerInfo;
+	}
+}
+
+bool UStarshatterGameDataSubsystem::SavePlayer(bool bForce)
+{
+	// call your existing SaveGame(PlayerSaveName, PlayerSaveSlot) here
+	// return success/failure from your SaveGame implementation
+	SaveGame(PlayerSaveName, PlayerSaveSlot, PlayerInfo);
+	return true; // replace if your SaveGame returns a bool
+}
+
 
 void UStarshatterGameDataSubsystem::InitializeCampaignData() {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::InitializeCampaignData()"));
@@ -5673,25 +5747,25 @@ UStarshatterGameDataSubsystem::LoadShipDesign(const char* fn)
 				else if (def->name()->value() == "spin") {
 					GetDefVec(spin, def, fn);
 					NewShipDesign.Spin = FVector(spin.X, spin.Y, spin.Z);
-					//spin_rates.append(new Point(spin));
+					//spin_rates.append(new FVector(spin));
 				}
 
 				else if (def->name()->value() == "offset_0") {
 					GetDefVec(off_loc, def, fn);
 					NewShipDesign.Offset[0] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
-					//offset[0].append(new Point(off_loc));
+					//offset[0].append(new FVector(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_1") {
 					GetDefVec(off_loc, def, fn);
 					NewShipDesign.Offset[1] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
-					//offset[1].append(new Point(off_loc));
+					//offset[1].append(new FVector(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_2") {
 					GetDefVec(off_loc, def, fn);
 					NewShipDesign.Offset[2] = FVector(off_loc.X, off_loc.Y, off_loc.Z);
-					//offset[2].append(new Point(off_loc));
+					//offset[2].append(new FVector(off_loc));
 				}
 
 				else if (def->name()->value() == "offset_3") {
@@ -5716,16 +5790,16 @@ UStarshatterGameDataSubsystem::LoadShipDesign(const char* fn)
 						if (!GetDefText(BeautyName, def, fn))
 							Print("WARNING: invalid or missing beauty in '%s'\n", filename);
 
-						//DataLoader* loader = DataLoader::GetLoader();
-						//loader->LoadBitmap(beauty_name, beauty);
+						DataLoader* loader = DataLoader::GetLoader();
+						//loader->LoadGameBitmap(beauty_name, beauty);
 					}
 				}
 
 				else if (def->name()->value() == "hud_icon") {
 					GetDefText(HudIconName, def, fn);
 					NewShipDesign.HudIconName = FString(HudIconName);
-					//DataLoader* loader = DataLoader::GetLoader();
-					//loader->LoadBitmap(hud_icon_name, hud_icon);
+					DataLoader* loader = DataLoader::GetLoader();
+					//loader->LoadGameBitmap(hud_icon_name, hud_icon);
 				}
 
 				else if (def->name()->value() == "feature_0") {

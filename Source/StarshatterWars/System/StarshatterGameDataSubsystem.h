@@ -91,6 +91,7 @@ explicit, deterministic, and easy to reason about.
 
 #include "GameStructs.h"
 #include "SSWGameInstance.h"
+#include "PlayerSaveGame.h"
 
 #include "StarshatterGameDataSubsystem.generated.h"
 
@@ -110,6 +111,7 @@ class MissionInfo;
 class AStarSystem;
 class SystemDesign;
 class ComponentDesign;
+class UPlayerSaveGame;
 
 UCLASS()
 class STARSHATTERWARS_API UStarshatterGameDataSubsystem : public UGameInstanceSubsystem
@@ -173,6 +175,9 @@ public:
     void LoadSystemDesigns();
     void LoadOrderOfBattle(const char* filename, int team);
 
+    void SetActiveCampaign(FS_Campaign campaign);
+    FS_Campaign GetActiveCampaign();
+
     CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 
     void CreateOrderOfBattleTable();
@@ -188,6 +193,9 @@ public:
 
     void ParseCombatUnit();
     void LoadShipDesign(const char* fn);
+
+    void ReadCampaignData();
+    void ReadCombatRosterData();
 
     void ParsePower(TermStruct* val, const char* fn);
     void ParseDrive(TermStruct* val, const char* fn);
@@ -207,8 +215,16 @@ public:
     bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
     bool IsLoaded() const { return bLoaded; }
 
-    UPROPERTY()
-    TArray<FS_CombatGroup> CombatRosterData;
+// =====================================================================
+// SaveGame (Player)
+// =====================================================================
+    UFUNCTION(BlueprintCallable, Category = "SaveGame")
+    void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
+
+    UFUNCTION(BlueprintCallable, Category = "SaveGame")
+    void LoadGame(FString SlotName, int32 UserIndex);
+
+    bool SavePlayer(bool bForce = false);   
 
     UPROPERTY()
     TArray<FS_CampaignMissionList> MissionList;
@@ -260,6 +276,12 @@ public:
     CombatUnit*          player_unit;
     bool                 bClearTables;
 
+    FString              PlayerSaveName;
+    int                  PlayerSaveSlot;
+
+    FS_PlayerGameInfo    PlayerInfo;
+    FS_Campaign          ActiveCampaign;
+
     int                  mission_id;
     Mission*             mission;
     Mission*             net_mission;
@@ -293,6 +315,9 @@ protected:
 
     FS_Combatant NewCombatUnit;
     FS_CombatantGroup NewGroupUnit;
+
+    TArray<FS_Campaign> CampaignDataArray;
+    TArray<FS_CombatGroup> CombatRosterData;
 
     FS_Campaign CampaignData;
     FS_Galaxy GalaxyData;

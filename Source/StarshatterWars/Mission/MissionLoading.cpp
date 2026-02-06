@@ -2,6 +2,7 @@
 
 
 #include "MissionLoading.h"
+#include "StarshatterPlayerSubsystem.h"
 #include "FormatUtil.h"
 
 void UMissionLoading::GetSelectedMissionData()
@@ -12,106 +13,163 @@ void UMissionLoading::GetSelectedMissionData()
 
 void UMissionLoading::NativeConstruct()
 {
-	Super::NativeConstruct();
+    Super::NativeConstruct();
 
-	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GetGameInstance());
-	if (!SSWInstance) return;
+    UGameInstance* GIBase = GetGameInstance();
+    if (!GIBase)
+        return;
 
-	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
+    // Player profile (subsystem authoritative)
+    UStarshatterPlayerSubsystem* PlayerSS = GIBase->GetSubsystem<UStarshatterPlayerSubsystem>();
+    if (!PlayerSS)
+        return;
 
-	// -------------------------------
-	// PUB/SUB SUBSCRIBE	// -------------------------------
+    // Campaign runtime / active campaign (still on GI in current architecture)
+    USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GIBase);
+    if (!SSWInstance)
+        return;
 
-	UTimerSubsystem* Timer = GetGameInstance()->GetSubsystem<UTimerSubsystem>();
+    // Boot should have loaded already; safe fallback:
+    if (!PlayerSS->HasLoaded())
+    {
+        PlayerSS->LoadPlayer();
+    }
 
-	if (Timer)
-	{
-		Timer->OnUniverseSecond.AddUObject(this, &UMissionLoading::HandleUniverseSecondTick);
-		Timer->OnUniverseMinute.AddUObject(this, &UMissionLoading::HandleUniverseMinuteTick);
+    const FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetPlayerInfo();
 
-		// Initial push:
-		const uint64 Now = Timer->GetUniverseTimeSeconds();
-		HandleUniverseSecondTick(Now);
+    // -------------------------------
+    // PUB/SUB SUBSCRIBE
+    // -------------------------------
+    UTimerSubsystem* Timer = GIBase->GetSubsystem<UTimerSubsystem>();
+    if (Timer)
+    {
+        Timer->OnUniverseSecond.AddUObject(this, &UMissionLoading::HandleUniverseSecondTick);
+        Timer->OnUniverseMinute.AddUObject(this, &UMissionLoading::HandleUniverseMinuteTick);
 
-		// If campaign T+ depends on universe seconds, keep this:
-		if (SSWInstance && SSWInstance->CampaignSave)
-		{
-			HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
-		}
-	}
+        // Initial push:
+        const uint64 Now = Timer->GetUniverseTimeSeconds();
+        HandleUniverseSecondTick(Now);
 
-	if (TitleText)
-		TitleText->SetText(FText::FromString("Mission Briefing").ToUpper());
+        // If campaign T+ depends on universe seconds, keep this:
+        if (SSWInstance->CampaignSave)
+        {
+            HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
+        }
+    }
 
-	if (CancelButton) {
-		CancelButton->OnClicked.AddDynamic(this, &UMissionLoading::OnCancelButtonClicked);
-		CancelButton->OnHovered.AddDynamic(this, &UMissionLoading::OnCancelButtonHovered);
-		CancelButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnCancelButtonUnHovered);
-	}
+    if (TitleText)
+        TitleText->SetText(FText::FromString("Mission Briefing").ToUpper());
 
-	if (CancelButtonText) {
-		CancelButtonText->SetText(FText::FromString("BACK"));
-	}
+    if (CancelButton)
+    {
+        CancelButton->OnClicked.AddDynamic(this, &UMissionLoading::OnCancelButtonClicked);
+        CancelButton->OnHovered.AddDynamic(this, &UMissionLoading::OnCancelButtonHovered);
+        CancelButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnCancelButtonUnHovered);
+    }
 
-	if (SelectButton) {
-		SelectButton->OnClicked.AddDynamic(this, &UMissionLoading::OnSelectButtonClicked);
-		SelectButton->OnHovered.AddDynamic(this, &UMissionLoading::OnSelectButtonHovered);
-		SelectButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnSelectButtonUnHovered);
-	}
+    if (CancelButtonText)
+    {
+        CancelButtonText->SetText(FText::FromString("BACK"));
+    }
 
-	if (SituationButton) {
-		SituationButton->OnClicked.AddDynamic(this, &UMissionLoading::OnSituationButtonClicked);
-		SituationButton->OnHovered.AddDynamic(this, &UMissionLoading::OnSituationButtonHovered);
-		SituationButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnSituationButtonUnHovered);
-	}
+    if (SelectButton)
+    {
+        SelectButton->OnClicked.AddDynamic(this, &UMissionLoading::OnSelectButtonClicked);
+        SelectButton->OnHovered.AddDynamic(this, &UMissionLoading::OnSelectButtonHovered);
+        SelectButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnSelectButtonUnHovered);
+    }
 
-	if (PackageButton) {
-		PackageButton->OnClicked.AddDynamic(this, &UMissionLoading::OnPackageButtonClicked);
-		PackageButton->OnHovered.AddDynamic(this, &UMissionLoading::OnPackageButtonHovered);
-		PackageButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnPackageButtonUnHovered);
-	}
+    if (SituationButton)
+    {
+        SituationButton->OnClicked.AddDynamic(this, &UMissionLoading::OnSituationButtonClicked);
+        SituationButton->OnHovered.AddDynamic(this, &UMissionLoading::OnSituationButtonHovered);
+        SituationButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnSituationButtonUnHovered);
+    }
 
-	if (MapButton) {
-		MapButton->OnClicked.AddDynamic(this, &UMissionLoading::OnMapButtonClicked);
-		MapButton->OnHovered.AddDynamic(this, &UMissionLoading::OnMapButtonHovered);
-		MapButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnMapButtonUnHovered);
-	}
+    if (PackageButton)
+    {
+        PackageButton->OnClicked.AddDynamic(this, &UMissionLoading::OnPackageButtonClicked);
+        PackageButton->OnHovered.AddDynamic(this, &UMissionLoading::OnPackageButtonHovered);
+        PackageButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnPackageButtonUnHovered);
+    }
 
-	if (WeaponsButton) {
-		WeaponsButton->OnClicked.AddDynamic(this, &UMissionLoading::OnWeaponsButtonClicked);
-		WeaponsButton->OnHovered.AddDynamic(this, &UMissionLoading::OnWeaponsButtonHovered);
-		WeaponsButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnWeaponsButtonUnHovered);
-	}
-	if (PlayButtonText) {
-		PlayButtonText->SetText(FText::FromString("PLAY"));
-	}
+    if (MapButton)
+    {
+        MapButton->OnClicked.AddDynamic(this, &UMissionLoading::OnMapButtonClicked);
+        MapButton->OnHovered.AddDynamic(this, &UMissionLoading::OnMapButtonHovered);
+        MapButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnMapButtonUnHovered);
+    }
 
-	if (MissionScreenSwitcher) {
-		MissionScreenSwitcher->SetActiveWidgetIndex(0);
-	}
+    if (WeaponsButton)
+    {
+        WeaponsButton->OnClicked.AddDynamic(this, &UMissionLoading::OnWeaponsButtonClicked);
+        WeaponsButton->OnHovered.AddDynamic(this, &UMissionLoading::OnWeaponsButtonHovered);
+        WeaponsButton->OnUnhovered.AddDynamic(this, &UMissionLoading::OnWeaponsButtonUnHovered);
+    }
 
-	if(CampaignNameText) {
-		CampaignNameText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().Name));
-	}
-	if (MissionNameText) {
-		MissionNameText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Name));
-	}
+    if (PlayButtonText)
+    {
+        PlayButtonText->SetText(FText::FromString("PLAY"));
+    }
 
-	if (SystemLocationText) {
-		SystemLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].System));
-	}
+    if (MissionScreenSwitcher)
+    {
+        MissionScreenSwitcher->SetActiveWidgetIndex(0);
+    }
 
-	if (RegionLocationText) {
-		RegionLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Region));
-	}
-	if (MissionStartTimeText) {
-		MissionStartTimeText->SetText(FText::FromString(FormatDayFromString(SSWInstance->GetActiveCampaign().MissionList[SSWInstance->PlayerInfo.Mission].Start)));
-	}
+    // -------------------------------
+    // Campaign + mission lookup
+    // -------------------------------
+    const auto& ActiveCampaign = SSWInstance->GetActiveCampaign();
 
-	if (PlayerNameText) {
-		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
-	}
+    const int32 MissionIndex = PlayerInfo.Mission;
+
+    if (CampaignNameText)
+    {
+        CampaignNameText->SetText(FText::FromString(ActiveCampaign.Name));
+    }
+
+    // Guard MissionIndex bounds; your previous code assumed it was always valid
+    if (ActiveCampaign.MissionList.IsValidIndex(MissionIndex))
+    {
+        const auto& Mission = ActiveCampaign.MissionList[MissionIndex];
+
+        if (MissionNameText)
+        {
+            MissionNameText->SetText(FText::FromString(Mission.Name));
+        }
+
+        if (SystemLocationText)
+        {
+            SystemLocationText->SetText(FText::FromString(Mission.System));
+        }
+
+        if (RegionLocationText)
+        {
+            RegionLocationText->SetText(FText::FromString(Mission.Region));
+        }
+
+        if (MissionStartTimeText)
+        {
+            MissionStartTimeText->SetText(FText::FromString(FormatDayFromString(Mission.Start)));
+        }
+    }
+    else
+    {
+        // Defensive UI fallback
+        if (MissionNameText)        MissionNameText->SetText(FText::FromString(TEXT("UNKNOWN MISSION")));
+        if (SystemLocationText)    SystemLocationText->SetText(FText::FromString(TEXT("UNKNOWN")));
+        if (RegionLocationText)    RegionLocationText->SetText(FText::FromString(TEXT("UNKNOWN")));
+        if (MissionStartTimeText)  MissionStartTimeText->SetText(FText::FromString(TEXT("")));
+    }
+
+    // Player name from subsystem
+    if (PlayerNameText)
+    {
+        PlayerNameText->SetText(FText::FromString(PlayerInfo.Name));
+    }
 }
+
 
 void UMissionLoading::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {

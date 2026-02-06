@@ -291,11 +291,11 @@ public:
 	// =====================================================================
 	// SaveGame (Player)
 	// =====================================================================
-	UFUNCTION(BlueprintCallable, Category = "SaveGame")
-	void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
+	//UFUNCTION(BlueprintCallable, Category = "SaveGame")
+	//void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
 
-	UFUNCTION(BlueprintCallable, Category = "SaveGame")
-	void LoadGame(FString SlotName, int32 UserIndex);
+	//UFUNCTION(BlueprintCallable, Category = "SaveGame")
+	//void LoadGame(FString SlotName, int32 UserIndex);
 
 	// =====================================================================
 	// Utilities
@@ -340,9 +340,6 @@ public:
 	// Campaign / OOB / Data helpers
 	// =====================================================================
 	void GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type);
-	void CreateOOBTable();
-	void ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName);
-	void SetActiveOOBForce(FS_OOBForce& Force);
 
 	TArray<FS_Combatant> GetCombatantList();
 
@@ -407,7 +404,7 @@ public:
 	void SetUniverseSaveContext(const FString& SlotName, int32 UserIndex, UUniverseSaveGame* LoadedSave);
 
 	bool SaveUniverse();
-	bool SavePlayer(bool bForce = false);   // optional wrapper for your existing SaveGame()
+	//bool SavePlayer(bool bForce = false);   // optional wrapper for your existing SaveGame()
 	void RequestUniverseAutosave();         // optional (sets a flag)
 
 	bool SaveCampaign();
@@ -625,9 +622,6 @@ public:
 protected:
 	virtual void Init() override;
 	virtual void Shutdown() override;
-
-	void ReadCampaignData();
-	void ReadCombatRosterData();
 
 	virtual bool InitContent();
 	virtual bool InitGame();
