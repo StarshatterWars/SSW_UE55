@@ -48,8 +48,6 @@
 
 #include "Logging/LogMacros.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterGameData, Log, All);
-
 template<typename TEnum>
 static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
 {
@@ -152,177 +150,6 @@ void UStarshatterGameDataSubsystem::InitializeDT(const FObjectInitializer& Objec
 		CombatGroupDataTable->EmptyTable();
 		OrderOfBattleDataTable->EmptyTable();
 		GalaxyDataTable->EmptyTable();
-	}
-}
-
-// ---------------------------------------------------------------------
-// Active Campaign
-// ---------------------------------------------------------------------
-
-void UStarshatterGameDataSubsystem::SetActiveCampaign(const FS_Campaign& Campaign)
-{
-	ActiveCampaign = Campaign;
-}
-
-FS_Campaign UStarshatterGameDataSubsystem::GetActiveCampaign() const
-{
-	return ActiveCampaign;
-}
-
-// ---------------------------------------------------------------------
-// Campaign lookup helpers
-// ---------------------------------------------------------------------
-
-bool UStarshatterGameDataSubsystem::TryGetCampaignByRowName(FName RowName, FS_Campaign& OutCampaign) const
-{
-	if (RowName.IsNone())
-		return false;
-
-	// Preferred: DataTable lookup
-	if (CampaignDataTable)
-	{
-		static const FString Context(TEXT("TryGetCampaignByRowName"));
-		const FS_Campaign* Row = CampaignDataTable->FindRow<FS_Campaign>(RowName, Context, true);
-		if (Row)
-		{
-			OutCampaign = *Row;
-			return true;
-		}
-	}
-
-	// Fallback: if you already hydrate CampaignDataArray in runtime
-	// Try to find by matching RowName (only works if FS_Campaign stores it)
-	// If FS_Campaign doesn't store RowName, this fallback will be skipped.
-	// (No-op safe.)
-#if 1
-	for (const FS_Campaign& C : CampaignDataArray)
-	{
-		// If you have a RowName field, use it here.
-		// Example: if (C.RowName == RowName) { OutCampaign = C; return true; }
-		// Unknown in your snippet, so we can't safely compare.
-	}
-#endif
-
-	UE_LOG(LogStarshatterGameData, Warning,
-		TEXT("[GameData] Campaign RowName '%s' not found in CampaignDataTable."),
-		*RowName.ToString());
-
-	return false;
-}
-
-bool UStarshatterGameDataSubsystem::TryGetCampaignByIndex1Based(
-	int32 CampaignIndex1Based,
-	FS_Campaign& OutCampaign) const
-{
-	if (CampaignIndex1Based <= 0)
-		return false;
-
-	const int32 ZeroBased = CampaignIndex1Based - 1;
-
-	// Preferred: stable ordering you control
-	if (CampaignDataArray.IsValidIndex(ZeroBased))
-	{
-		OutCampaign = CampaignDataArray[ZeroBased];
-		return true;
-	}
-
-	// Fallback: DataTable row order (NOT guaranteed stable)
-	if (CampaignDataTable)
-	{
-		const TArray<FName> RowNames = CampaignDataTable->GetRowNames();
-
-		if (RowNames.IsValidIndex(ZeroBased))
-		{
-			return TryGetCampaignByRowName(RowNames[ZeroBased], OutCampaign);
-		}
-	}
-
-	UE_LOG(LogStarshatterGameData, Warning,
-		TEXT("[GameData] Campaign index %d not found (array size=%d)."),
-		CampaignIndex1Based,
-		CampaignDataArray.Num());
-
-	return false;
-}
-
-// ---------------------------------------------------------------------
-// Campaign resolution from PlayerInfo
-// ---------------------------------------------------------------------
-
-bool UStarshatterGameDataSubsystem::ResolveCampaignForPlayer(const FS_PlayerGameInfo& PlayerInfoIn, FS_Campaign& OutCampaign) const
-{
-	// 1) Preferred stable key: CampaignRowName
-	if (!PlayerInfoIn.CampaignRowName.IsNone())
-	{
-		if (TryGetCampaignByRowName(PlayerInfoIn.CampaignRowName, OutCampaign))
-			return true;
-
-		UE_LOG(LogStarshatterGameData, Warning,
-			TEXT("[GameData] ResolveCampaignForPlayer: CampaignRowName '%s' invalid; falling back to Campaign index."),
-			*PlayerInfoIn.CampaignRowName.ToString());
-	}
-
-	// 2) Fallback: 1-based index (legacy UI convention)
-	if (PlayerInfoIn.Campaign > 0)
-	{
-		if (TryGetCampaignByIndex1Based(PlayerInfoIn.Campaign, OutCampaign))
-			return true;
-
-		UE_LOG(LogStarshatterGameData, Warning,
-			TEXT("[GameData] ResolveCampaignForPlayer: Campaign index %d invalid."),
-			PlayerInfoIn.Campaign);
-	}
-
-	// 3) No selection or invalid selection
-	return false;
-}
-
-void UStarshatterGameDataSubsystem::ReadCampaignData()
-{
-	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ReadCampaignData()"));
-	static const FString ContextString(TEXT("ReadDataTable"));
-	TArray<FS_Campaign*> AllRows;
-	CampaignDataTable->GetAllRows<FS_Campaign>(ContextString, AllRows);
-
-	int index = 0;
-	for (FS_Campaign* Row : AllRows)
-	{
-		if (Row)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
-			UE_LOG(LogTemp, Log, TEXT("Campaign Available: %s"), (Row->bAvailable ? TEXT("true") : TEXT("false")));
-			CampaignDataArray[index] = *Row;
-			CampaignDataArray[index].Orders.SetNum(4);
-			index++;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to load Campaign!"));
-		}
-	}
-	SetActiveCampaign(CampaignDataArray[PlayerInfo.Campaign]);
-	FString NewCampaign = GetActiveCampaign().Name;
-	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
-}
-
-void UStarshatterGameDataSubsystem::ReadCombatRosterData() {
-	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ReadCombatRosterData()"));
-	static const FString ContextString(TEXT("ReadDataTable"));
-	TArray<FS_CombatGroup*> AllRows;
-	CombatGroupDataTable->GetAllRows<FS_CombatGroup>(ContextString, AllRows);
-	CombatRosterData.Empty();
-	for (FS_CombatGroup* Row : AllRows)
-	{
-		if (Row)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Group Name: %s"), *Row->Name);
-
-			CombatRosterData.Add(*Row);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to load Combat Roster!"));
-		}
 	}
 }
 
@@ -1130,14 +957,6 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	if (!SSWInstance)
 		return;
 
-	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
-		LoadGame(PlayerSaveName, PlayerSaveSlot);
-		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
-
-		if (PlayerInfo.Campaign >= 0) {
-			ReadCampaignData();
-		}
-	}
 	// Same sequence as legacy BeginPlay():
 	LoadContentBundle();
 	LoadForms();
@@ -1160,36 +979,6 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 
 	// USystemDesign::Initialize(SystemDesignTable);
 }
-
-void UStarshatterGameDataSubsystem::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerData)
-{
-	UPlayerSaveGame* SaveInstance = Cast<UPlayerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlayerSaveGame::StaticClass()));
-
-	if (SaveInstance)
-	{
-		SaveInstance->PlayerInfo = PlayerData;
-
-		UGameplayStatics::SaveGameToSlot(SaveInstance, SlotName, UserIndex);
-	}
-}
-
-void UStarshatterGameDataSubsystem::LoadGame(FString SlotName, int32 UserIndex)
-{
-	if (UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
-	{
-		UPlayerSaveGame* LoadedGame = Cast<UPlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
-		PlayerInfo = LoadedGame->PlayerInfo;
-	}
-}
-
-bool UStarshatterGameDataSubsystem::SavePlayer(bool bForce)
-{
-	// call your existing SaveGame(PlayerSaveName, PlayerSaveSlot) here
-	// return success/failure from your SaveGame implementation
-	SaveGame(PlayerSaveName, PlayerSaveSlot, PlayerInfo);
-	return true; // replace if your SaveGame returns a bool
-}
-
 
 void UStarshatterGameDataSubsystem::InitializeCampaignData() {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::InitializeCampaignData()"));
@@ -8469,28 +8258,6 @@ UStarshatterGameDataSubsystem::CloneOver(CombatGroup* force, CombatGroup* clone,
 // +--------------------------------------------------------------------+
 
 void
-UStarshatterGameDataSubsystem::Unload()
-{
-	SetCampaignStatus(ECampaignStatus::INIT);
-
-	Game::ResetGameTime();
-	StarSystem::SetBaseTime(0);
-
-	startTime = Stardate();
-	loadTime = startTime;
-	lockout = 0;
-
-	//for (int i = 0; i < NUM_IMAGES; i++)
-	//	image[i].ClearImage();
-
-	Clear();
-
-	//zones.destroy();
-}
-
-// +--------------------------------------------------------------------+
-
-void
 UStarshatterGameDataSubsystem::SetCampaignStatus(ECampaignStatus s)
 {
 	CampaignStatus = s;
@@ -8513,21 +8280,6 @@ double
 UStarshatterGameDataSubsystem::Stardate()
 {
 	return StarSystem::Stardate();
-}
-
-void
-UStarshatterGameDataSubsystem::Clear()
-{
-	missions.destroy();
-	//planners.destroy();
-	combatants.destroy();
-	events.destroy();
-	actions.destroy();
-
-	player_group = 0;
-	player_unit = 0;
-
-	updateTime = time;
 }
 
 Combatant*

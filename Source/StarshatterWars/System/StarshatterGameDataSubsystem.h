@@ -1,12 +1,11 @@
-/*
-    Project Starshatter Wars
-    Fractal Dev Games
-    Copyright (C) 2024-2026.
-    All Rights Reserved.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Games
+    Copyright:      (C) 2024-2026. All Rights Reserved.
 
-    SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         StarshatterGameDataSubsystem.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    FILE:           StarshatterGameDataSubsystem.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
@@ -23,13 +22,13 @@
     ================
     - Load and parse legacy data files (cfg, def, script, text)
     - Generate and populate Unreal DataTables
-    - Build runtime registries for:
+    - Build registries for:
         * Galaxy and star systems
         * Campaigns and order-of-battle data
         * Missions, templates, and scripted scenarios
         * Ship, system, and component designs
         * Awards, forms, and UI layout definitions
-    - Provide read-only access to loaded data
+    - Provide read-only access to loaded data (DT-first)
 
     NON-GOALS
     =========
@@ -37,38 +36,17 @@
     - No Tick()
     - No Transform or spatial behavior
     - No UI or presentation logic
+    - No player persistence
+    - No runtime “active campaign” state
 
-    LIFECYCLE
-    =========
-    - GameInstance scoped
-    - Created with the GameInstance
-    - Loaded explicitly during EGameMode::INIT
-    - Persists across map loads
-    - Remains available for the entire game session
+    RUNTIME SEPARATION
+    ==================
+    Player save + active session state belong in:
+      - UStarshatterPlayerSubsystem
+      - UStarshatterDataRuntimeSubsystem
 
-    BOOT ORDER
-    ==========
-    1) StarshatterBootSubsystem
-       - Engine and settings initialization
-
-    2) StarshatterGameInitSubsystem
-       - Runtime initialization
-       - Triggers LoadAll() on this subsystem
-
-    3) Gameplay systems
-       - Consume loaded data
-
-    OWNERSHIP RULES
-    ===============
-    - This subsystem is the sole owner of static game data
-    - No other system may load or parse core data files
-    - UI and gameplay systems may read but not mutate data
-    - Reloading is explicit and controlled
-
-    This file is intentionally verbose in documentation.
-    Game data initialization is foundational and must remain
-    explicit, deterministic, and easy to reason about.
-*/
+    This subsystem is STATIC DATA ONLY.
+=============================================================================*/
 
 #pragma once
 
@@ -92,8 +70,6 @@
 
 // Project types
 #include "GameStructs.h"
-#include "SSWGameInstance.h"
-#include "PlayerSaveGame.h"
 
 #include "StarshatterGameDataSubsystem.generated.h"
 
@@ -116,7 +92,12 @@ class MissionInfo;
 class AStarSystem;
 class SystemDesign;
 class ComponentDesign;
-class UPlayerSaveGame;
+
+// Cached GI (optional)
+class USSWGameInstance;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterGameData, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterGameDataCampaign, Log, All);
 
 // ---------------------------------------------------------------------
 // UStarshatterGameDataSubsystem
@@ -135,6 +116,9 @@ public:
 
     void GetSSWInstance();
 
+    UDataTable* GetCampaignDataTable() const { return CampaignDataTable; }
+    const TArray<FS_Campaign>& GetCampaignDataArray() const { return CampaignDataArray; }
+
     // =====================================================================
     // Primary entry point
     // =====================================================================
@@ -150,23 +134,17 @@ public:
     bool GetRegionTypeFromString(const FString& InString, EOrbitalType& OutValue);
 
     // =====================================================================
-    // Campaigns (legacy load + DT hydration)
+    // Campaigns (static load + DT hydration)
     // =====================================================================
     void LoadCampaignData(const char* FileName, bool full = false);
 
-    // DT hydration methods (read-only runtime usage)
+    // DT hydration methods (static -> DT/arrays)
     void ReadCampaignData();
     void ReadCombatRosterData();
 
-    // Active campaign (runtime)
-    void SetActiveCampaign(const FS_Campaign& Campaign);
-    FS_Campaign GetActiveCampaign() const;
-
+    // Static campaign lookup (DT-first)
     bool TryGetCampaignByRowName(FName RowName, FS_Campaign& OutCampaign) const;
-
     bool TryGetCampaignByIndex1Based(int32 CampaignIndex1Based, FS_Campaign& OutCampaign) const;
-
-    bool ResolveCampaignForPlayer(const FS_PlayerGameInfo& PlayerInfoIn, FS_Campaign& OutCampaign) const;
 
     // =====================================================================
     // Missions / templates
@@ -265,18 +243,7 @@ public:
     bool IsLoaded() const { return bLoaded; }
 
     // =====================================================================
-    // SaveGame (Player)  (kept for now; migrate later)
-    // =====================================================================
-    UFUNCTION(BlueprintCallable, Category = "SaveGame")
-    void SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerInfo);
-
-    UFUNCTION(BlueprintCallable, Category = "SaveGame")
-    void LoadGame(FString SlotName, int32 UserIndex);
-
-    bool SavePlayer(bool bForce = false);
-
-    // =====================================================================
-    // Public read lists used by UI
+    // Public read lists used by UI (static data)
     // =====================================================================
     UPROPERTY()
     TArray<FS_CampaignMissionList> MissionList;
@@ -336,30 +303,25 @@ public:
     List<CombatAction>   actions;
     List<CombatEvent>    events;
 
-    // Runtime pointers / state
-    CombatGroup* player_group;
-    CombatUnit* player_unit;
+    // -----------------------------------------------------------------
+    // REMOVED (moved to UStarshatterDataRuntimeSubsystem / PlayerSubsystem)
+    // -----------------------------------------------------------------
+    // FString              PlayerSaveName;
+    // int                  PlayerSaveSlot;
+    // FS_PlayerGameInfo    PlayerInfo;
+    // FS_Campaign          ActiveCampaign;
+    // CombatGroup*         player_group;
+    // CombatUnit*          player_unit;
+    // int                  mission_id;
+    // Mission*             mission;
+    // Mission*             net_mission;
+    // double               time;
+    // double               loadTime;
+    // double               startTime;
+    // double               updateTime;
+    // int                  lockout;
+
     bool                 bClearTables;
-
-    // Save (legacy coupling kept)
-    FString              PlayerSaveName;
-    int                  PlayerSaveSlot;
-    FS_PlayerGameInfo    PlayerInfo;
-
-    // Active campaign (runtime)
-    FS_Campaign          ActiveCampaign;
-
-    // Mission runtime
-    int                  mission_id;
-    Mission* mission;
-    Mission* net_mission;
-
-    // Timing / simulation state
-    double               time;
-    double               loadTime;
-    double               startTime;
-    double               updateTime;
-    int                  lockout;
 
 protected:
     // =====================================================================
@@ -388,21 +350,21 @@ protected:
     // =====================================================================
     // DT row scratch + arrays (kept intact)
     // =====================================================================
-    FS_Combatant       NewCombatUnit;
-    FS_CombatantGroup  NewGroupUnit;
+    FS_Combatant        NewCombatUnit;
+    FS_CombatantGroup   NewGroupUnit;
 
-    TArray<FS_Campaign>   CampaignDataArray;
+    TArray<FS_Campaign>    CampaignDataArray;
     TArray<FS_CombatGroup> CombatRosterData;
 
-    FS_Campaign       CampaignData;
-    FS_Galaxy         GalaxyData;
-    FS_StarSystem     StarSystemData;
-    FS_ShipDesign     ShipDesignData;
-    FS_SystemDesign   SystemDesignData;
-    FS_AwardInfo      AwardData;
+    FS_Campaign        CampaignData;
+    FS_Galaxy          GalaxyData;
+    FS_StarSystem      StarSystemData;
+    FS_ShipDesign      ShipDesignData;
+    FS_SystemDesign    SystemDesignData;
+    FS_AwardInfo       AwardData;
     FS_CombatGroupUnit CombatGroupUnit;
-    FS_CombatGroup    CombatGroupData;
-    FS_OOBForce       ForceData;
+    FS_CombatGroup     CombatGroupData;
+    FS_OOBForce        ForceData;
 
     // =====================================================================
     // Large working arrays (kept intact)
