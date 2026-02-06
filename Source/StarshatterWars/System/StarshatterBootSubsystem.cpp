@@ -30,23 +30,31 @@
 #include "StarshatterControlsSubsystem.h"
 #include "StarshatterKeyboardSubsystem.h"
 #include "StarshatterSettingsSaveSubsystem.h"
+#include "DataLoader.h"
 
 // SaveGame
 #include "StarshatterSettingsSaveGame.h"
 
-// Game data subsystem (replaces AGameDataLoader actor)
 #include "StarshatterGameDataSubsystem.h"
-
-// NEW: player save subsystem
 #include "StarshatterPlayerSubsystem.h"
 
 // --------------------------------------------------
 // UGameInstanceSubsystem
 // --------------------------------------------------
 
+#include "Logging/LogMacros.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterBoot, Log, All);
+
 void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+
+
+    if (!DataLoader::GetLoader())
+        DataLoader::Initialize();
+
+    DataLoader::GetLoader();
 
     // --------------------------------------------------
     // Establish BOOT lifecycle state immediately
@@ -59,6 +67,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     FBootContext Ctx;
     if (BuildContext(Ctx))
     {
+        BootLegacyDataLoader(Ctx);
         BootFonts(Ctx);
         BootAudio(Ctx);
         BootVideo(Ctx);
@@ -216,4 +225,23 @@ void UStarshatterBootSubsystem::MarkBootComplete()
 
     bBootComplete = true;
     OnBootComplete.Broadcast();
+}
+
+void UStarshatterBootSubsystem::BootLegacyDataLoader(const FBootContext& Ctx)
+{
+    // DataLoader is legacy singleton; make sure it exists early.
+    if (!DataLoader::GetLoader())
+    {
+        UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] Initializing legacy DataLoader..."));
+        DataLoader::Initialize();
+    }
+
+    if (!DataLoader::GetLoader())
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] DataLoader::Initialize failed; loader still null."));
+    }
+    else
+    {
+        UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] DataLoader ready."));
+    }
 }

@@ -956,10 +956,20 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	CacheSSWInstance();
 	if (!SSWInstance)
 		return;
-
-	// Same sequence as legacy BeginPlay():
+	
 	LoadContentBundle();
-	LoadForms();
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UStarshatterGameDataSubsystem* GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>())
+		{
+			//GD->LoadForms();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("GameData subsystem is NULL at LoadForms call site"));
+		}
+	}
+
 	LoadGalaxyMap();
 	LoadSystemDesigns();
 	LoadShipDesigns();
@@ -1001,14 +1011,24 @@ void UStarshatterGameDataSubsystem::InitializeCampaignData() {
 void UStarshatterGameDataSubsystem::LoadCampaignData(const char* FileName, bool full)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::LoadCampaignData"));
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(FileName);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->SetDataPath(FileName);
 
 	FString fs = FString(ANSI_TO_TCHAR(FileName));
 	FString FileString;
 	BYTE* block = 0;
 
-	SSWInstance->loader->LoadBuffer(FileName, block, true);
+	if (!Loader)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+    Loader->LoadBuffer(FileName, block, true);
 
 	UE_LOG(LogTemp, Log, TEXT("Loading Campaign Data: %s"), *fs);
 
@@ -1565,7 +1585,12 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* FileName, bool 
 	SSWInstance->CampaignDataTable->AddRow(RowName, NewCampaignData);
 	CampaignData = NewCampaignData;
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	if (!Loader)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 }
 
 void UStarshatterGameDataSubsystem::LoadZones(FString Path)
@@ -1579,12 +1604,17 @@ void UStarshatterGameDataSubsystem::LoadZones(FString Path)
 
 	const char* fn = TCHAR_TO_ANSI(*FileName);
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
 
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -1639,7 +1669,13 @@ void UStarshatterGameDataSubsystem::LoadZones(FString Path)
 
 	} while (term);
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 }
 
 // +--------------------------------------------------------------------+
@@ -1663,12 +1699,24 @@ UStarshatterGameDataSubsystem::LoadMissionList(FString Path)
 		return;
 	}
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->GetLoader();
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
 
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -1778,7 +1826,13 @@ UStarshatterGameDataSubsystem::LoadMissionList(FString Path)
 		}
 	} while (term);
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 }
 
 // +--------------------------------------------------------------------+
@@ -1802,12 +1856,24 @@ UStarshatterGameDataSubsystem::LoadTemplateList(FString Path)
 		return;
 	}
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->GetLoader();
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
 
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -1934,7 +2000,13 @@ UStarshatterGameDataSubsystem::LoadTemplateList(FString Path)
 		}
 	} while (term);
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 }
 
 // +--------------------------------------------------------------------+
@@ -2019,11 +2091,17 @@ UStarshatterGameDataSubsystem::ParseMission(const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseMission()"));
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->GetLoader();
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -2168,7 +2246,13 @@ UStarshatterGameDataSubsystem::ParseMission(const char* fn)
 		}        // term
 	} while (term);
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 	MissionArray.Add(NewMission);
 }
 
@@ -3002,11 +3086,16 @@ UStarshatterGameDataSubsystem::ParseScriptedTemplate(const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseMissionTemplate()"));
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -3169,7 +3258,13 @@ UStarshatterGameDataSubsystem::ParseScriptedTemplate(const char* fn)
 		}        // term
 	} while (term);
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 	ScriptedMissionArray.Add(NewTemplateMission);
 }
 
@@ -3180,11 +3275,16 @@ UStarshatterGameDataSubsystem::ParseMissionTemplate(const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseMissionTemplate()"));
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -3345,7 +3445,13 @@ UStarshatterGameDataSubsystem::ParseMissionTemplate(const char* fn)
 		}        // term
 	} while (term);
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 	TemplateMissionArray.Add(NewTemplateMission);
 }
 
@@ -3576,12 +3682,17 @@ UStarshatterGameDataSubsystem::LoadGalaxyMap()
 	FileName.Append("Galaxy.def");
 	const char* fn = TCHAR_TO_ANSI(*FileName);
 
-	SSWInstance->loader->GetLoader();
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
 
 	FString FileString;
 	BYTE* block = 0;
 
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 	SSWInstance->GalaxyData.Empty();
 	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy: %s"), *FileName);
 
@@ -3802,7 +3913,13 @@ UStarshatterGameDataSubsystem::LoadGalaxyMap()
 			UE_LOG(LogTemp, Log, TEXT("------------------------------------------------------------"));
 		}
 	} while (term);
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 
 	UGalaxyManager::Get(this)->LoadGalaxy(SSWInstance->GalaxyData);
 }
@@ -4834,7 +4951,12 @@ void UStarshatterGameDataSubsystem::LoadStarsystems()
 
 void UStarshatterGameDataSubsystem::ParseStarSystem(const char* fn)
 {
-	SSWInstance->loader->GetLoader();
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
 
 	FString fs = FString(ANSI_TO_TCHAR(fn));
 	FString FileString;
@@ -4845,7 +4967,7 @@ void UStarshatterGameDataSubsystem::ParseStarSystem(const char* fn)
 		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
 	}
 
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	if (!block) {
 		UE_LOG(LogTemp, Log, TEXT("ERROR: invalid star system file '%s'"), *FString(fn));
@@ -4975,7 +5097,13 @@ void UStarshatterGameDataSubsystem::ParseStarSystem(const char* fn)
 	} while (term);
 	// define our data table struct
 
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 }
 
 // +-------------------------------------------------------------------+
@@ -5073,11 +5201,16 @@ void UStarshatterGameDataSubsystem::LoadOrderOfBattle(const char* fn, int team)
 {
 	UE_LOG(LogTemp, Log, TEXT("Loading Order of Battle Data: %s"), *FString(fn));
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -5337,18 +5470,29 @@ void UStarshatterGameDataSubsystem::LoadOrderOfBattle(const char* fn, int team)
 			}           // def
 		}             // term
 	} while (term);
-	SSWInstance->loader->ReleaseBuffer(block);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	}
+	Loader->ReleaseBuffer(block);
 }
 void
 UStarshatterGameDataSubsystem::LoadShipDesign(const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("Loading Ship Design Data: %s"), *FString(filename));
 
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
+	DataLoader* Loader = DataLoader::GetLoader();
+	if (!Loader)
+	{
+		UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+		return;
+	};
+	Loader->SetDataPath(fn);
 
 	BYTE* block = 0;
-	SSWInstance->loader->LoadBuffer(fn, block, true);
+	Loader->LoadBuffer(fn, block, true);
 
 	Parser parser(new BlockReader((const char*)block));
 	Term* term = parser.ParseTerm();
@@ -5692,8 +5836,13 @@ UStarshatterGameDataSubsystem::LoadShipDesign(const char* fn)
 						if (!GetDefText(BeautyName, def, fn))
 							Print("WARNING: invalid or missing beauty in '%s'\n", filename);
 
-						DataLoader* loader = DataLoader::GetLoader();
-						//loader->LoadGameBitmap(beauty_name, beauty);
+						DataLoader* Loader = DataLoader::GetLoader();
+						if (!Loader)
+						{
+							UE_LOG(LogStarshatterBoot, Error, TEXT("DataLoader::GetLoader() is null"));
+							return;
+						}
+						//Loader->LoadGameBitmap(beauty_name, beauty);
 					}
 				}
 

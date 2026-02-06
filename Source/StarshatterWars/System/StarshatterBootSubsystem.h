@@ -116,10 +116,14 @@ private:
     void BootPlayerSave(const FBootContext& Ctx);
 
     void MarkBootComplete();
+    
+    void BootLegacyDataLoader(const FBootContext& Ctx);
 
 private:
     bool bBootComplete = false;
 
     // NEW:
     bool bNeedsFirstRun = false;
+
+
 };

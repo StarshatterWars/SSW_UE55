@@ -276,9 +276,6 @@ void USSWGameInstance::Init()
 
 	CampaignData.SetNum(5); // number of campaigns
 
-	if (!DataLoader::GetLoader())
-		DataLoader::Initialize();
-
 	loader = DataLoader::GetLoader();
 
 	Status = EGAMESTATUS::OK;
