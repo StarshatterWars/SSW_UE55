@@ -79,6 +79,9 @@ private:
     void BeginAfterBoot();
     void RunGameInit();
 
+    UPROPERTY(Transient)
+    TArray<FName> CampaignRowOrder;
+
 private:
     bool bGameInitComplete = false;
 };

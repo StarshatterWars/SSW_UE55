@@ -5,7 +5,7 @@
     All Rights Reserved.
 
     SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         StarshatterBootSubsystem.h / .cpp
+    FILE:         StarshatterBootSubsystem.h
     AUTHOR:       Carlos Bott
 
     OVERVIEW
@@ -21,6 +21,7 @@
       - Video apply
       - Controls apply
       - Keyboard apply
+      - Player Save load (FirstRun detection)
       - Fonts (optional)
 
     IMPORTANT
@@ -58,6 +59,9 @@ class UStarshatterControlsSubsystem;
 class UStarshatterKeyboardSubsystem;
 class UStarshatterGameDataSubsystem;
 
+// NEW: Player save subsystem
+class UStarshatterPlayerSubsystem;
+
 DECLARE_MULTICAST_DELEGATE(FOnStarshatterBootComplete);
 
 UCLASS()
@@ -71,6 +75,9 @@ public:
 
     bool IsBootComplete() const { return bBootComplete; }
     FOnStarshatterBootComplete OnBootComplete;
+
+    // If true, no player save existed when boot tried to load.
+    bool NeedsFirstRun() const { return bNeedsFirstRun; }
 
     // Optional helper: triggers the GameData subsystem loader.
     // Recommended usage: call this from GameInitSubsystem during EGameMode::INIT.
@@ -92,6 +99,9 @@ private:
         UStarshatterVideoSubsystem* VideoSS = nullptr;
         UStarshatterControlsSubsystem* ControlsSS = nullptr;
         UStarshatterKeyboardSubsystem* KeyboardSS = nullptr;
+
+        // NEW:
+        UStarshatterPlayerSubsystem* PlayerSS = nullptr;
     };
 
     bool BuildContext(FBootContext& OutCtx);
@@ -102,8 +112,14 @@ private:
     void BootControls(const FBootContext& Ctx);
     void BootKeyboard(const FBootContext& Ctx);
 
+    // NEW:
+    void BootPlayerSave(const FBootContext& Ctx);
+
     void MarkBootComplete();
 
 private:
     bool bBootComplete = false;
+
+    // NEW:
+    bool bNeedsFirstRun = false;
 };

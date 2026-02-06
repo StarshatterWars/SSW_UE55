@@ -497,17 +497,6 @@ Starshatter::SetGameMode(EGameMode m)
 	if (game_mode == m)
 		return;
 
-	const char* mode_name[] = {
-		"MENU_MODE",  // main menu
-		"CLOD_MODE",  // loading campaign
-		"CMPN_MODE",  // operational command for dynamic campaign
-		"PREP_MODE",  // loading mission info for planning
-		"PLAN_MODE",  // mission briefing
-		"LOAD_MODE",  // loading mission into simulator
-		"PLAY_MODE",  // active simulation
-		"EXIT_MODE"   // shutting down
-	};
-
 	MouseController* mouse_con = MouseController::GetInstance();
 	if (mouse_con)
 		mouse_con->SetActive(false);

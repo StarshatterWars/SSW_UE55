@@ -37,6 +37,9 @@
 // Game data subsystem (replaces AGameDataLoader actor)
 #include "StarshatterGameDataSubsystem.h"
 
+// NEW: player save subsystem
+#include "StarshatterPlayerSubsystem.h"
+
 // --------------------------------------------------
 // UGameInstanceSubsystem
 // --------------------------------------------------
@@ -61,11 +64,13 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootVideo(Ctx);
         BootControls(Ctx);
         BootKeyboard(Ctx);
+
+        // NEW: player save load + first-run detection
+        BootPlayerSave(Ctx);
     }
 
     // Do NOT auto-load heavy content here unless you explicitly want boot-time generation.
     // Recommended: call BootGameDataLoader() from GameInitSubsystem during INIT.
-    //
     BootGameDataLoader(true);
 
     MarkBootComplete();
@@ -117,6 +122,9 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.VideoSS = OutCtx.GI->GetSubsystem<UStarshatterVideoSubsystem>();
     OutCtx.ControlsSS = OutCtx.GI->GetSubsystem<UStarshatterControlsSubsystem>();
     OutCtx.KeyboardSS = OutCtx.GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
+
+    // NEW:
+    OutCtx.PlayerSS = OutCtx.GI->GetSubsystem<UStarshatterPlayerSubsystem>();
 
     return true;
 }
@@ -173,6 +181,28 @@ void UStarshatterBootSubsystem::BootKeyboard(const FBootContext& Ctx)
         Ctx.KeyboardSS->LoadFromSaveGame(Ctx.SG);
 
     Ctx.KeyboardSS->ApplySettingsToRuntime(this);
+}
+
+// NEW ------------------------------------------------
+
+void UStarshatterBootSubsystem::BootPlayerSave(const FBootContext& Ctx)
+{
+    bNeedsFirstRun = false;
+
+    if (!Ctx.PlayerSS)
+        return;
+
+    // LoadFromBoot() sets HadExistingSaveOnLoad internally.
+    const bool bOk = Ctx.PlayerSS->LoadFromBoot();
+
+    // If load failed, treat as first-run to keep the game recoverable:
+    if (!bOk)
+    {
+        bNeedsFirstRun = true;
+        return;
+    }
+
+    bNeedsFirstRun = !Ctx.PlayerSS->HadExistingSaveOnLoad();
 }
 
 // --------------------------------------------------
