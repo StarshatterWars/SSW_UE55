@@ -3,77 +3,88 @@
     Copyright (C) 2025-2026.
     All Rights Reserved.
 
-    MODULE:        StarshatterWars (Unreal Engine)
-    FILE:          FormattingUtils.h
-    AUTHOR:        Carlos Bott
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
+    FILE:         FormattingUtils.h
+    AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
     FormattingUtils
+    - Central place for display/formatting helpers (enum display names, prefixes, empire names).
+    - Keeps USSWGameInstance lean (no generic helper clutter).
+    - Safe to call from C++ anywhere.
+    - Also exposed to Blueprints via UBlueprintFunctionLibrary where possible.
 
-    Stateless helper utilities for:
-      - Enum display name formatting
-      - Enum index/value conversions
-      - Combat unit/group string helpers
-      - Empire display name resolution
-      - Shared string formatting logic
-
-    This class replaces duplicated formatting helpers previously
-    located in USSWGameInstance and related systems.
-
-    DESIGN NOTES
-    ============
-    - Static-only utility class (no instances)
-    - Header-safe templates for enum display helpers
-    - No engine lifecycle dependencies
-    - May be used by UI, subsystems, loaders, and gameplay code
+    NOTES
+    =====
+    - EnumToDisplayString<TEnum>() is a header-only template (not a UFUNCTION).
+    - Blueprint-callable wrappers exist for your common UENUM types.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameStructs.h"   // ECOMBATUNIT_TYPE, ECOMBATGROUP_TYPE, EEMPIRE_NAME
+#include "Kismet/BlueprintFunctionLibrary.h"
 
-class STARSHATTERWARS_API FormattingUtils
+#include "GameStructs.h" // ECOMBATGROUP_TYPE, ECOMBATUNIT_TYPE, EEMPIRE_NAME
+#include "FormattingUtils.generated.h"
+
+// -----------------------------------------------------------------------------
+// Header-only generic enum display helper (C++ only)
+// -----------------------------------------------------------------------------
+template <typename TEnum>
+FORCEINLINE FString EnumToDisplayString(TEnum EnumValue)
 {
-public:
+    static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayString only works with enums.");
 
-    // ------------------------------------------------------------
-    // Generic enum helpers
-    // ------------------------------------------------------------
-
-    template <typename TEnum>
-    static FString EnumToDisplayString(TEnum EnumValue)
+    UEnum* EnumPtr = StaticEnum<TEnum>();
+    if (!EnumPtr)
     {
-        static_assert(TIsEnum<TEnum>::Value,
-            "EnumToDisplayString only works with UENUM types.");
-
-        const UEnum* EnumPtr = StaticEnum<TEnum>();
-        if (!EnumPtr)
-        {
-            return TEXT("Invalid");
-        }
-
-        return EnumPtr
-            ->GetDisplayNameTextByValue(static_cast<int64>(EnumValue))
-            .ToString();
+        return TEXT("Invalid");
     }
 
-    // ------------------------------------------------------------
-    // Combat group / unit helpers
-    // ------------------------------------------------------------
+    return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
+}
 
-    static FString GetGroupDisplayName(ECOMBATGROUP_TYPE Type);
-    static FString GetUnitDisplayName(ECOMBATUNIT_TYPE Type);
-    static FString GetUnitPrefix(ECOMBATUNIT_TYPE Type);
+// -----------------------------------------------------------------------------
+// FormattingUtils (Blueprint + C++ static utility)
+// -----------------------------------------------------------------------------
+UCLASS()
+class STARSHATTERWARS_API UFormattingUtils : public UBlueprintFunctionLibrary
+{
+    GENERATED_BODY()
 
-    // ------------------------------------------------------------
+public:
+    // -------------------------------------------------------------------------
+    // Enum display name wrappers (Blueprint-friendly)
+    // -------------------------------------------------------------------------
+    UFUNCTION(BlueprintPure, Category = "Formatting")
+    static FString GetGroupTypeDisplayName(ECOMBATGROUP_TYPE Type);
+
+    UFUNCTION(BlueprintPure, Category = "Formatting")
+    static FString GetUnitTypeDisplayName(ECOMBATUNIT_TYPE Type);
+
+    // -------------------------------------------------------------------------
     // Empire helpers
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    UFUNCTION(BlueprintPure, Category = "Formatting|Empire")
+    static EEMPIRE_NAME GetEmpireTypeFromIndex(int32 Index);
 
+    UFUNCTION(BlueprintPure, Category = "Formatting|Empire")
+    static int32 GetIndexFromEmpireType(EEMPIRE_NAME Type);
+
+    UFUNCTION(BlueprintPure, Category = "Formatting|Empire")
+    static FString GetEmpireTypeNameByIndex(int32 Index);
+
+    UFUNCTION(BlueprintPure, Category = "Formatting|Empire")
     static FString GetEmpireDisplayName(EEMPIRE_NAME Empire);
-    static FString GetEmpireNameLong(EEMPIRE_NAME Empire);
 
-    static EEMPIRE_NAME GetEmpireFromIndex(int32 Index);
-    static int32 GetEmpireIndex(EEMPIRE_NAME Empire);
+    UFUNCTION(BlueprintPure, Category = "Formatting|Empire")
+    static FString GetEmpireNameFromType(EEMPIRE_NAME Empire);
+
+    // -------------------------------------------------------------------------
+    // Unit naming helpers
+    // -------------------------------------------------------------------------
+    UFUNCTION(BlueprintPure, Category = "Formatting|Units")
+    static FString GetUnitPrefixFromType(ECOMBATUNIT_TYPE Type);
 };

@@ -8,6 +8,7 @@
 #include "DataLoader.h"
 #include "Sim.h"
 #include "GameDataLoader.h"
+#include "FormattingUtils.h"
 
 #include "MenuDlg.h"
 #include "QuitDlg.h"
@@ -37,16 +38,6 @@
 #undef UpdateResource
 #undef PlaySound
 
-template <typename TEnum>
-FString EnumToDisplayString(TEnum EnumValue)
-{
-	static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayNameString only works with UENUMS.");
-
-	UEnum* EnumPtr = StaticEnum<TEnum>();
-	if (!EnumPtr) return TEXT("Invalid");
-
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
-}
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
@@ -453,55 +444,6 @@ bool USSWGameInstance::InitGame()
 }
 
 
-FString
-USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
-{
-	FString empire_name;
-
-	switch (emp)
-	{
-	case EEMPIRE_NAME::Terellian:
-		empire_name = "Terellian Alliance";
-		break;
-	case EEMPIRE_NAME::Marakan:
-		empire_name = "Marakan Hegemony";
-		break;
-	case EEMPIRE_NAME::Independent:
-		empire_name = "Independent System";
-		break;
-	case EEMPIRE_NAME::Dantari:
-		empire_name = "Dantari Separatists";
-		break;
-	case EEMPIRE_NAME::Zolon:
-		empire_name = "Zolon Empire";
-		break;
-	case EEMPIRE_NAME::Other:
-		empire_name = "Other";
-		break;
-	case EEMPIRE_NAME::Pirate:
-		empire_name = "Brotherhood of Iron";
-		break;
-	case EEMPIRE_NAME::Neutral:
-		empire_name = "Neutral";
-		break;
-	case EEMPIRE_NAME::Unknown:
-		empire_name = "Unknown";
-		break;
-	case EEMPIRE_NAME::Silessian:
-		empire_name = "Silessian Confederacy";
-		break;
-	case EEMPIRE_NAME::Solus:
-		empire_name = "Independent System of Solus";
-		break;
-	case EEMPIRE_NAME::Haiche:
-		empire_name = "Haiche Protectorate";
-		break;
-	default:
-		empire_name = "Unknown";
-		break;
-	}
-	return empire_name;
-}
 
 void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
 {
@@ -1214,91 +1156,6 @@ void USSWGameInstance::PlayAcceptSound(UObject* Context)
 	PlayUISound(Context, AcceptSound);
 }
 
-FString USSWGameInstance::GetNameFromType(ECOMBATGROUP_TYPE nt)
-{
-	return EnumToDisplayString(nt);
-}
-
-FString USSWGameInstance::GetUnitFromType(ECOMBATUNIT_TYPE nt)
-{
-	return EnumToDisplayString(nt);
-}
-
-EEMPIRE_NAME USSWGameInstance::GetEmpireTypeFromIndex(int32 Index)
-{
-	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	if (EnumPtr && Index >= 0 && Index < EnumPtr->NumEnums())
-	{
-		int64 RawValue = EnumPtr->GetValueByIndex(Index);
-		return static_cast<EEMPIRE_NAME>(RawValue);
-	}
-
-	// Optional: Print a warning if index is invalid
-	UE_LOG(LogTemp, Warning, TEXT("Invalid index passed to GetEmpireTypeFromIndex: %d"), Index);
-
-	// Return NONE if out of range
-	return EEMPIRE_NAME::Terellian;
-}
-
-int32 USSWGameInstance::GetIndexFromEmpireType(EEMPIRE_NAME Type)
-{
-	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	int EmpireIndex = 8; 
-	if (EnumPtr)
-	{
-		int64 Value = static_cast<int64>(Type);
-		int32 Index = EnumPtr->GetIndexByValue(Value);
-		if (Index != INDEX_NONE)
-		{
-			EmpireIndex = Index;
-		}
-	}
-	return EmpireIndex;
-}
-
-FString USSWGameInstance::GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt)
-{
-	FString Prefix;
-	switch (nt) {
-		case ECOMBATUNIT_TYPE::CRUISER: 
-			Prefix = "CA-";
-			break;
-		case ECOMBATUNIT_TYPE::CARRIER:
-			Prefix = "CV-";
-			break;
-		case ECOMBATUNIT_TYPE::FRIGATE:
-			Prefix = "FF-";
-			break;
-		case ECOMBATUNIT_TYPE::DESTROYER:
-			Prefix = "DD-";
-			break;
-		default:
-			Prefix = "UNK-";
-			break;
-	} 
-	return Prefix;
-}
-
-FString USSWGameInstance::GetEmpireTypeNameByIndex(int32 Index)
-{
-	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	if (!EnumPtr) return FString("Invalid");
-
-	// Get value by index
-	int64 EnumValue = EnumPtr->GetValueByIndex(Index);
-
-	// Get display name from value
-	return EnumPtr->GetDisplayNameTextByValue(EnumValue).ToString();
-}
-
-FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
-{
-	const UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	if (!EnumPtr) return FString("Invalid");
-
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
-}
-
 
 void USSWGameInstance::GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type) {
 // Filters Table by Active in campaign
@@ -1573,7 +1430,7 @@ void USSWGameInstance::CreateOOBTable() {
 				else if (UnitItem.UnitClass == "Carrier") {
 					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
 				}
-				NewCarrier.Unit[Index].DisplayName = GetUnitPrefixFromType(NewCarrier.Unit[Index].Type) + UnitItem.UnitRegnum + " "+ UnitItem.UnitName;
+				NewCarrier.Unit[Index].DisplayName = UFormattingUtils::GetUnitPrefixFromType(NewCarrier.Unit[Index].Type) + UnitItem.UnitRegnum + " "+ UnitItem.UnitName;
 
 				NewCarrier.Unit[Index].Design = UnitItem.UnitDesign;
 				++Index;
@@ -1620,7 +1477,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
 				}
 
-				NewDestroyer.Unit[Index].DisplayName = GetUnitPrefixFromType(NewDestroyer.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
+				NewDestroyer.Unit[Index].DisplayName = UFormattingUtils::GetUnitPrefixFromType(NewDestroyer.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				NewDestroyer.Unit[Index].Design = UnitItem.UnitDesign;
 				++Index;
@@ -1666,7 +1523,7 @@ void USSWGameInstance::CreateOOBTable() {
 					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
 				}
 
-				NewBattle.Unit[Index].DisplayName = GetUnitPrefixFromType(NewBattle.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
+				NewBattle.Unit[Index].DisplayName = UFormattingUtils::GetUnitPrefixFromType(NewBattle.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				NewBattle.Unit[Index].Design = UnitItem.UnitDesign;
 				++Index;

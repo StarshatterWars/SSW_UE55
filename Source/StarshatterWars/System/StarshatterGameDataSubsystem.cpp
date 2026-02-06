@@ -499,7 +499,7 @@ void UStarshatterGameDataSubsystem::CreateOrderOfBattleTable()
 					NewCarrier.Unit[UnitIndex].Type = ECOMBATUNIT_TYPE::CARRIER;
 
 				NewCarrier.Unit[UnitIndex].DisplayName =
-					FormattingUtils::GetUnitPrefix(NewCarrier.Unit[UnitIndex].Type) +
+					UFormattingUtils::GetUnitPrefixFromType(NewCarrier.Unit[UnitIndex].Type) +
 					UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				++UnitIndex;
@@ -547,7 +547,7 @@ void UStarshatterGameDataSubsystem::CreateOrderOfBattleTable()
 					NewDestroyer.Unit[UnitIndex].Type = ECOMBATUNIT_TYPE::CARRIER;
 
 				NewDestroyer.Unit[UnitIndex].DisplayName =
-					FormattingUtils::GetUnitPrefix(NewDestroyer.Unit[UnitIndex].Type) +
+					UFormattingUtils::GetUnitPrefixFromType(NewDestroyer.Unit[UnitIndex].Type) +
 					UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				++UnitIndex;
@@ -595,7 +595,7 @@ void UStarshatterGameDataSubsystem::CreateOrderOfBattleTable()
 					NewBattle.Unit[UnitIndex].Type = ECOMBATUNIT_TYPE::CARRIER;
 
 				NewBattle.Unit[UnitIndex].DisplayName =
-					FormattingUtils::GetUnitPrefix(NewBattle.Unit[UnitIndex].Type) +
+					UFormattingUtils::GetUnitPrefixFromType(NewBattle.Unit[UnitIndex].Type) +
 					UnitItem.UnitRegnum + " " + UnitItem.UnitName;
 
 				++UnitIndex;
@@ -3693,7 +3693,7 @@ UStarshatterGameDataSubsystem::LoadGalaxyMap()
 								else if (pdef->name()->value() == ("empire"))
 								{
 									GetDefNumber(EmpireId, pdef, fn);
-									NewGalaxyData.Empire = SSWInstance->GetEmpireTypeFromIndex(EmpireId);
+									NewGalaxyData.Empire = UFormattingUtils::GetEmpireTypeFromIndex(EmpireId);
 								}
 								else if (pdef->name()->value() == "link") {
 									GetDefText(Link, pdef, filename);
@@ -5224,7 +5224,7 @@ void UStarshatterGameDataSubsystem::LoadOrderOfBattle(const char* fn, int team)
 							else if (pdef->name()->value() == ("empire_id"))
 							{
 								GetDefNumber(EmpireId, pdef, fn);
-								NewCombatGroup.EmpireId = SSWInstance->GetEmpireTypeFromIndex(EmpireId);
+								NewCombatGroup.EmpireId = UFormattingUtils::GetEmpireTypeFromIndex(EmpireId);
 							}
 							else if (pdef->name()->value() == ("iff"))
 							{

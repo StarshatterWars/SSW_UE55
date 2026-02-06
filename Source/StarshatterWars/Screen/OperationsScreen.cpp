@@ -7,6 +7,7 @@
 #include "RosterTVElement.h"
 #include "Components/ListView.h"
 #include "MenuButton.h"
+#include "FormattingUtils.h"
 
 #include "OOBForceItem.h"
 #include "OOBFleetItem.h"
@@ -267,7 +268,7 @@ void UOperationsScreen::NativeConstruct()
 	PopulateEmpireDDList();
 	PopulateIntelList();
 	SetCampaignMissions();
-	LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
+	LoadForces(UFormattingUtils::GetEmpireTypeFromIndex(0));
 	CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
 
 	const FS_OOBWing* Wing = FindWingForCarrierGroup(CurrentCarrierGroup, LoadedForces);
@@ -842,7 +843,7 @@ void UOperationsScreen::HandleUnitClicked()
 
 	if (GroupTypeText)
 	{
-		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(Display.Type)));
+		GroupTypeText->SetText(FText::FromString(UFormattingUtils::GetGroupTypeDisplayName(Display.Type)));
 	}
 
 	if (GroupLocationText)
@@ -852,7 +853,7 @@ void UOperationsScreen::HandleUnitClicked()
 
 	if (GroupEmpireText)
 	{
-		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
+		GroupEmpireText->SetText(FText::FromString(UFormattingUtils::GetEmpireDisplayName(Display.Empire)));
 	}
 	SSWInstance->bIsDisplayUnitChanged = false;
 	SSWInstance->bIsDisplayElementChanged = false;
@@ -880,7 +881,7 @@ void UOperationsScreen::HandleElementClicked()
 
 	if (GroupTypeText)
 	{
-		GroupTypeText->SetText(FText::FromString(SSWInstance->GetUnitFromType(Display.Type)));
+		GroupTypeText->SetText(FText::FromString(UFormattingUtils::GetUnitTypeDisplayName(Display.Type)));
 	}
 
 	if (GroupLocationText)
@@ -890,7 +891,7 @@ void UOperationsScreen::HandleElementClicked()
 
 	if (GroupEmpireText)
 	{
-		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
+		GroupEmpireText->SetText(FText::FromString(UFormattingUtils::GetEmpireDisplayName(Display.Empire)));
 	}
 	SSWInstance->bIsDisplayUnitChanged = false;
 	SSWInstance->bIsDisplayElementChanged = false;

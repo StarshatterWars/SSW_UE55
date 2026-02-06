@@ -34,6 +34,7 @@
 #include "Engine/TimerHandle.h"
 #include "TimerManager.h"
 #include "SimComponent.h"
+#include "FormattingUtils.h"
 
 const char* ShipDesignClassName[32] = {
 	"Drone",          "Fighter",
@@ -2912,7 +2913,7 @@ AGameDataLoader::LoadGalaxyMap()
 								else if (pdef->name()->value() == ("empire"))
 								{
 									GetDefNumber(EmpireId, pdef, fn);
-									NewGalaxyData.Empire = SSWInstance->GetEmpireTypeFromIndex(EmpireId);
+									NewGalaxyData.Empire = UFormattingUtils::GetEmpireTypeFromIndex(EmpireId);
 								}
 								else if (pdef->name()->value() == "link") {
 									GetDefText(Link, pdef, filename);
@@ -4443,7 +4444,7 @@ void AGameDataLoader::LoadOrderOfBattle(const char* fn, int team)
 							else if (pdef->name()->value() == ("empire_id"))
 							{
 								GetDefNumber(EmpireId, pdef, fn);
-								NewCombatGroup.EmpireId = SSWInstance->GetEmpireTypeFromIndex(EmpireId);	
+								NewCombatGroup.EmpireId = UFormattingUtils::GetEmpireTypeFromIndex(EmpireId);	
 							}
 							else if (pdef->name()->value() == ("iff"))
 							{

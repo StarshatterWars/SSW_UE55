@@ -337,21 +337,6 @@ public:
 	void PlayAcceptSound(UObject* Context);
 
 	// =====================================================================
-	// Naming / Enums / Helpers
-	// =====================================================================
-	UFUNCTION()
-	FString GetNameFromType(ECOMBATGROUP_TYPE nt);
-
-	FString GetUnitFromType(ECOMBATUNIT_TYPE nt);
-	EEMPIRE_NAME GetEmpireTypeFromIndex(int32 Index);
-	int32 GetIndexFromEmpireType(EEMPIRE_NAME Type);
-	FString GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt);
-	FString GetEmpireTypeNameByIndex(int32 Index);
-	FString GetEmpireDisplayName(EEMPIRE_NAME EnumValue);
-
-	FString GetEmpireNameFromType(EEMPIRE_NAME emp);
-
-	// =====================================================================
 	// Campaign / OOB / Data helpers
 	// =====================================================================
 	void GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type);
