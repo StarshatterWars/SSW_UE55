@@ -173,7 +173,6 @@ public:
     void LoadSystemDesigns();
     void LoadOrderOfBattle(const char* filename, int team);
 
-    EEMPIRE_NAME GetEmpireName(int32 emp);
     CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 
     void CreateOrderOfBattleTable();
@@ -194,12 +193,6 @@ public:
     void ParseDrive(TermStruct* val, const char* fn);
 
     void LoadSystemDesign(const char* fn);
-
-    int ClassForName(const char* name);
-    const char* ClassName(int type);
-
-    FString GetOrdinal(int id);
-    FString GetNameFromType(ECOMBATGROUP_TYPE name);
 
     Text GetContentBundleText(const char* key) const;
 

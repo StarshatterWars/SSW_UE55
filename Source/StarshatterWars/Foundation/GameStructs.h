@@ -460,43 +460,46 @@ enum EOrbitalType : uint8
 };
 
 UENUM()
-enum class CLASSIFICATION  : uint32
+enum class CLASSIFICATION : uint32
 {
-	EMPTY, 
-	DRONE = 0x0001,
-	FIGHTER = 0x0002,
-	ATTACK = 0x0004,
-	LCA = 0x0008,
-	COURIER = 0x0010,
-	CARGO = 0x0020,
-	CORVETTE = 0x0040,
-	FREIGHTER = 0x0080,
-	FRIGATE = 0x0100,
-	DESTROYER = 0x0200,
-	CRUISER = 0x0400,
-	BATTLESHIP = 0x0800,
-	CARRIER = 0x1000,
-	DREADNAUGHT = 0x2000,
+	EMPTY					UMETA(DisplayName = "None"),
 
-	STATION = 0x4000,
-	FARCASTER = 0x8000,
+	DRONE = 0x0001			UMETA(DisplayName = "Drone"),
+	FIGHTER = 0x0002		UMETA(DisplayName = "Fighter"),
+	ATTACK = 0x0004			UMETA(DisplayName = "Attack"),
+	LCA = 0x0008			UMETA(DisplayName = "Landing Craft"),
 
-	MINE = 0x00010000,
-	COMSAT = 0x00020000,
-	DEFSAT = 0x00040000,
-	SWACS = 0x00080000,
+	COURIER = 0x0010		UMETA(DisplayName = "Courier"),
+	CARGO = 0x0020			UMETA(DisplayName = "Cargo"),
 
-	BUILDING = 0x00100000,
-	FACTORY = 0x00200000,
-	SAM = 0x00400000,
-	EWR = 0x00800000,
-	C3I = 0x01000000,
-	STARBASE = 0x02000000,
+	CORVETTE = 0x0040      UMETA(DisplayName = "Corvette"),
+	FREIGHTER = 0x0080      UMETA(DisplayName = "Freighter"),
+	FRIGATE = 0x0100      UMETA(DisplayName = "Frigate"),
+	DESTROYER = 0x0200      UMETA(DisplayName = "Destroyer"),
+	CRUISER = 0x0400      UMETA(DisplayName = "Cruiser"),
+	BATTLESHIP = 0x0800      UMETA(DisplayName = "Battleship"),
+	CARRIER = 0x1000      UMETA(DisplayName = "Carrier"),
+	DREADNAUGHT = 0x2000      UMETA(DisplayName = "Dreadnaught"),
 
-	DROPSHIPS = 0x0000000f,
-	STARSHIPS = 0x0000fff0,
-	SPACE_UNITS = 0x000f0000,
-	GROUND_UNITS = 0xfff00000
+	STATION = 0x4000      UMETA(DisplayName = "Station"),
+	FARCASTER = 0x8000      UMETA(DisplayName = "Farcaster"),
+
+	MINE = 0x00010000  UMETA(DisplayName = "Mine"),
+	COMSAT = 0x00020000  UMETA(DisplayName = "Comsat"),
+	DEFSAT = 0x00040000  UMETA(DisplayName = "Defense Satellite"),
+	SWACS = 0x00080000  UMETA(DisplayName = "SWACS"),
+
+	BUILDING = 0x00100000  UMETA(DisplayName = "Building"),
+	FACTORY = 0x00200000  UMETA(DisplayName = "Factory"),
+	SAM = 0x00400000  UMETA(DisplayName = "SAM Site"),
+	EWR = 0x00800000  UMETA(DisplayName = "Early Warning Radar"),
+	C3I = 0x01000000  UMETA(DisplayName = "C3I"),
+	STARBASE = 0x02000000  UMETA(DisplayName = "Starbase"),
+
+	DROPSHIPS = 0x0000000f  UMETA(Hidden),
+	STARSHIPS = 0x0000fff0  UMETA(Hidden),
+	SPACE_UNITS = 0x000f0000  UMETA(Hidden),
+	GROUND_UNITS = 0xfff00000  UMETA(Hidden)
 };
 
 UENUM(BlueprintType)

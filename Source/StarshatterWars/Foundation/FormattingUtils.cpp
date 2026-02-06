@@ -18,6 +18,34 @@
 #include "Logging/LogMacros.h"
 
 // -----------------------------------------------------------------------------
+// Legacy design class table (matches original Starshatter ordering)
+// -----------------------------------------------------------------------------
+static const char* GShipDesignClassName[32] =
+{
+    "Drone",          "Fighter",
+    "Attack",         "LCA",
+    "Courier",        "Cargo",
+
+    "Corvette",       "Freighter",
+    "Frigate",        "Destroyer",
+    "Cruiser",        "Battleship",
+
+    "Carrier",        "Dreadnaught",
+    "Station",        "Farcaster",
+
+    "Mine",           "DEFSAT",
+    "COMSAT",         "SWACS",
+
+    "Building",       "Factory",
+    "SAM",            "EWR",
+    "C3I",            "Starbase",
+
+    "0x04000000",     "0x08000000",
+    "0x10000000",     "0x20000000",
+    "0x40000000",     "0x80000000"
+};
+
+// -----------------------------------------------------------------------------
 // Enum display wrappers
 // -----------------------------------------------------------------------------
 FString UFormattingUtils::GetGroupTypeDisplayName(ECOMBATGROUP_TYPE Type)
@@ -28,6 +56,31 @@ FString UFormattingUtils::GetGroupTypeDisplayName(ECOMBATGROUP_TYPE Type)
 FString UFormattingUtils::GetUnitTypeDisplayName(ECOMBATUNIT_TYPE Type)
 {
     return EnumToDisplayString(Type);
+}
+
+// -----------------------------------------------------------------------------
+// Ordinals
+// -----------------------------------------------------------------------------
+FString UFormattingUtils::GetOrdinal(int32 Id)
+{
+    // Keep behavior deterministic for <= 0 too
+    const int32 AbsId = FMath::Abs(Id);
+    const int32 LastTwo = AbsId % 100;
+
+    const FString Num = FString::FromInt(Id);
+
+    if (LastTwo >= 11 && LastTwo <= 13)
+    {
+        return Num + TEXT("th");
+    }
+
+    switch (AbsId % 10)
+    {
+    case 1:  return Num + TEXT("st");
+    case 2:  return Num + TEXT("nd");
+    case 3:  return Num + TEXT("rd");
+    default: return Num + TEXT("th");
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -43,8 +96,6 @@ EEMPIRE_NAME UFormattingUtils::GetEmpireTypeFromIndex(int32 Index)
     }
 
     UE_LOG(LogTemp, Warning, TEXT("GetEmpireTypeFromIndex: Invalid Index=%d"), Index);
-
-    // Fallback: pick a sane default for your game
     return EEMPIRE_NAME::Terellian;
 }
 
@@ -124,4 +175,150 @@ FString UFormattingUtils::GetUnitPrefixFromType(ECOMBATUNIT_TYPE Type)
     case ECOMBATUNIT_TYPE::DESTROYER: return TEXT("DD-");
     default:                          return TEXT("UNK-");
     }
+}
+
+// -----------------------------------------------------------------------------
+// Design class helpers (GetDesignClass / GetDesignClassName / Display mask)
+// -----------------------------------------------------------------------------
+int32 UFormattingUtils::GetDesignClassFromName(const char* ClassName)
+{
+    if (!ClassName || !ClassName[0])
+        return 0;
+
+    for (int32 i = 0; i < 32; ++i)
+    {
+        if (GShipDesignClassName[i] && !_stricmp(ClassName, GShipDesignClassName[i]))
+        {
+            return (1 << i);
+        }
+    }
+
+    return 0;
+}
+
+const char* UFormattingUtils::GetDesignClassName(int32 Mask)
+{
+    if (Mask != 0)
+    {
+        int32 Index = 0;
+        int32 Temp = Mask;
+
+        // Find first set bit
+        while ((Temp & 1) == 0)
+        {
+            Temp >>= 1;
+            ++Index;
+            if (Index >= 32)
+            {
+                return "Unknown";
+            }
+        }
+
+        if (Index >= 0 && Index < 32)
+        {
+            return GShipDesignClassName[Index] ? GShipDesignClassName[Index] : "Unknown";
+        }
+    }
+
+    return "Unknown";
+}
+
+FString UFormattingUtils::GetDesignClassMaskDisplayString(int32 Mask)
+{
+    if (Mask == 0)
+    {
+        return TEXT("None");
+    }
+
+    TArray<FString> Parts;
+    Parts.Reserve(8);
+
+    for (int32 i = 0; i < 32; ++i)
+    {
+        const int32 Bit = (1 << i);
+        if ((Mask & Bit) != 0)
+        {
+            const char* Name = GShipDesignClassName[i];
+            Parts.Add(Name ? FString(Name) : TEXT("Unknown"));
+        }
+    }
+
+    return FString::Join(Parts, TEXT(" | "));
+}
+
+// -----------------------------------------------------------------------------
+// CLASSIFICATION helpers
+// -----------------------------------------------------------------------------
+static int32 ClassificationToMask(CLASSIFICATION V)
+{
+    return static_cast<int32>(static_cast<uint32>(V));
+}
+
+FString UFormattingUtils::GetClassificationName(CLASSIFICATION Value)
+{
+    // Prefer UENUM DisplayName if you add UMETA(DisplayName="...") in GameStructs.h
+    const UEnum* EnumPtr = StaticEnum<CLASSIFICATION>();
+    if (EnumPtr)
+    {
+        // If you pass combined flags, UE will not have a single display name.
+        // This function is intended for a single enumerator.
+        const int64 Raw = static_cast<int64>(static_cast<uint32>(Value));
+        return EnumPtr->GetDisplayNameTextByValue(Raw).ToString();
+    }
+
+    // Fallback (should not hit if CLASSIFICATION is a UENUM)
+    return TEXT("Unknown");
+}
+
+FString UFormattingUtils::GetClassificationMaskDisplayString(int32 Mask)
+{
+    if (Mask == 0)
+    {
+        return TEXT("None");
+    }
+
+    // Build from enum values, not hardcoded strings.
+    // Note: this assumes each leaf enumerator is a single bit (which yours are).
+    TArray<FString> Parts;
+    Parts.Reserve(8);
+
+    const UEnum* EnumPtr = StaticEnum<CLASSIFICATION>();
+    if (!EnumPtr)
+    {
+        return TEXT("Invalid");
+    }
+
+    // Walk all enum entries, include only single-bit leaf flags (skip EMPTY and category masks)
+    const int32 Num = EnumPtr->NumEnums();
+    for (int32 i = 0; i < Num; ++i)
+    {
+        const int64 Raw = EnumPtr->GetValueByIndex(i);
+        const uint32 V = static_cast<uint32>(Raw);
+
+        if (V == 0)
+        {
+            continue; // EMPTY
+        }
+
+        // leaf = exactly one bit set
+        const bool bSingleBit = (V & (V - 1)) == 0;
+
+        // skip your category masks (multi-bit)
+        if (!bSingleBit)
+        {
+            continue;
+        }
+
+        if ((static_cast<uint32>(Mask) & V) != 0)
+        {
+            Parts.Add(EnumPtr->GetDisplayNameTextByValue(Raw).ToString());
+        }
+    }
+
+    if (Parts.Num() == 0)
+    {
+        return TEXT("None");
+    }
+
+    return FString::Join(Parts, TEXT(" | "));
 }

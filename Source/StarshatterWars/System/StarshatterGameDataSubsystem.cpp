@@ -5342,10 +5342,10 @@ void UStarshatterGameDataSubsystem::LoadOrderOfBattle(const char* fn, int team)
 								NewCombatGroup.Unit = NewCombatUnitArray;
 							}
 
-							FName RowName = FName(GetOrdinal(Id) + " " + FString(Name) + " " + FString(GetNameFromType(EType)));
+							FName RowName = FName(UFormattingUtils::GetOrdinal(Id) + " " + FString(Name) + " " + FString(UFormattingUtils::GetGroupTypeDisplayName(EType)));
 							// call AddRow to insert the record
 
-							FString DisplayName = GetOrdinal(Id) + " " + FString(GetNameFromType(EType)) + " [" + FString(Name) + "]";
+							FString DisplayName = UFormattingUtils::GetOrdinal(Id) + " " + FString(UFormattingUtils::GetGroupTypeDisplayName(EType)) + " [" + FString(Name) + "]";
 
 							NewCombatGroup.DisplayName = RowName.ToString();
 
@@ -5491,7 +5491,7 @@ UStarshatterGameDataSubsystem::LoadShipDesign(const char* fn)
 					GetDefText(ShipClass, def, fn);
 					NewShipDesign.ShipClass = FString(ShipClass);
 
-					ShipType = ClassForName(ShipClass);
+					ShipType = UFormattingUtils::GetDesignClassFromName(ShipClass);
 
 					if (ShipType <= (int)CLASSIFICATION::LCA) {
 						repair_auto = false;
@@ -5754,7 +5754,7 @@ UStarshatterGameDataSubsystem::LoadShipDesign(const char* fn)
 					GetDefText(ShipClass, def, fn);
 					NewShipDesign.ShipClass = FString(ShipClass);
 
-					ShipType = ClassForName(ShipClass);
+					ShipType = UFormattingUtils::GetDesignClassFromName(ShipClass);
 
 					if (ShipType <= (int)CLASSIFICATION::LCA) {
 						repair_auto = false;
@@ -8249,123 +8249,6 @@ UStarshatterGameDataSubsystem::LoadSystemDesign(const char* fn)
 	} while (term);
 
 	SSWInstance->loader->ReleaseBuffer(block);
-}
-
-int
-UStarshatterGameDataSubsystem::ClassForName(const char* cls)
-{
-	if (!cls || !cls[0])
-		return 0;
-
-	for (int i = 0; i < 32; i++) {
-		if (!_stricmp(name, ShipDesignClassName[i])) {
-			return 1 << i;
-		}
-	}
-
-	return 0;
-}
-
-const char*
-UStarshatterGameDataSubsystem::ClassName(int type)
-{
-	if (type != 0) {
-		int index = 0;
-
-		while (!(type & 1)) {
-			type >>= 1;
-			index++;
-		}
-
-		if (index >= 0 && index < 32) {
-			return ShipDesignClassName[index];
-		}
-	}
-
-	return "Unknown";
-}
-
-FString
-UStarshatterGameDataSubsystem::GetOrdinal(int id)
-{
-	FString ordinal;
-
-	int last_two_digits = id % 100;
-
-	if (last_two_digits > 10 && last_two_digits < 20) {
-		ordinal = FString::FormatAsNumber(id) + "th";
-	}
-	else {
-		int last_digit = last_two_digits % 10;
-
-		if (last_digit == 1)
-			ordinal = FString::FormatAsNumber(id) + "st";
-		else if (last_digit == 2)
-			ordinal = FString::FormatAsNumber(id) + "nd";
-		else if (last_digit == 3)
-			ordinal = FString::FormatAsNumber(id) + "rd";
-		else
-			ordinal = FString::FormatAsNumber(id) + "th";
-	}
-
-	return ordinal;
-}
-
-FString UStarshatterGameDataSubsystem::GetNameFromType(ECOMBATGROUP_TYPE nt)
-{
-	return EnumToDisplayNameString(nt);
-}
-
-// +--------------------------------------------------------------------+
-
-EEMPIRE_NAME
-UStarshatterGameDataSubsystem::GetEmpireName(int32 emp)
-{
-	EEMPIRE_NAME empire_name;
-
-	switch (emp)
-	{
-	case 0:
-		empire_name = EEMPIRE_NAME::Terellian;
-		break;
-	case 1:
-		empire_name = EEMPIRE_NAME::Marakan;
-		break;
-	case 2:
-		empire_name = EEMPIRE_NAME::Independent;
-		break;
-	case 3:
-		empire_name = EEMPIRE_NAME::Dantari;
-		break;
-	case 4:
-		empire_name = EEMPIRE_NAME::Zolon;
-		break;
-	case 5:
-		empire_name = EEMPIRE_NAME::Other;
-		break;
-	case 6:
-		empire_name = EEMPIRE_NAME::Pirate;
-		break;
-	case 7:
-		empire_name = EEMPIRE_NAME::Neutral;
-		break;
-	case 8:
-		empire_name = EEMPIRE_NAME::Unknown;
-		break;
-	case 9:
-		empire_name = EEMPIRE_NAME::Silessian;
-		break;
-	case 10:
-		empire_name = EEMPIRE_NAME::Solus;
-		break;
-	case 11:
-		empire_name = EEMPIRE_NAME::Haiche;
-		break;
-	default:
-		empire_name = EEMPIRE_NAME::Unknown;
-		break;
-	}
-	return empire_name;
 }
 
 // +--------------------------------------------------------------------+
