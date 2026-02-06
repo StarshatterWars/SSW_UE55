@@ -81,7 +81,22 @@ static FString EnumToDisplayNameString(TEnum EnumValue)
     return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
 }
 
+static uint8 ToByteClamp(double v)
+{
+	// Legacy files sometimes store 0..255, sometimes 0..1.
+	// Heuristic: if <= 1.0, treat as normalized.
+	if (v <= 1.0)
+	{
+		v = v * 255.0;
+	}
+	v = FMath::Clamp(v, 0.0, 255.0);
+	return (uint8)FMath::RoundToInt(v);
+}
 
+static FColor Vec3ToColor255(const Vec3& a)
+{
+	return FColor(ToByteClamp(a.X), ToByteClamp(a.Y), ToByteClamp(a.Z), 255);
+}
 // +--------------------------------------------------------------------+
 void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -3622,253 +3637,213 @@ UStarshatterGameDataSubsystem::ParseOptional(TermStruct* val, const char* fn)
 
 // +--------------------------------------------------------------------+
 
-void
-UStarshatterGameDataSubsystem::LoadGalaxyMap()
+// ------------------------------------------------------------
+// FIXED: LoadGalaxyMap
+// - UE-native file load (no DataLoader / no ReleaseBuffer)
+// - Correct per-system reset (system scratch arrays cleared once per system)
+// - Removes undefined fn/filename usage; uses a single Fn derived from FileName
+// - Uses your ParseStarMap -> ParsePlanetMap -> ParseMoonMap chain
+// ------------------------------------------------------------
+
+void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::LoadGalaxyMap()"));
 
-	ProjectPath = FPaths::ProjectContentDir();
+	const FString Dir = FPaths::ProjectContentDir() / TEXT("GameData/Galaxy/");
+	const FString FileName = Dir / TEXT("Galaxy.def");
 
-	ProjectPath.Append(TEXT("GameData/Galaxy/"));
-	FString FileName = ProjectPath;
-	FileName.Append("Galaxy.def");
-	const char* fn = TCHAR_TO_ANSI(*FileName);
-
-	DataLoader* Loader = DataLoader::GetLoader();
-	if (!Loader)
-	{
-		UE_LOG(LogTemp, Error, TEXT("DataLoader::GetLoader() is null"));
-		return;
-	}
-
-	FString FileString;
-	BYTE* block = 0;
-
-	Loader->LoadBuffer(fn, block, true);
-	SSWInstance->GalaxyData.Empty();
 	UE_LOG(LogTemp, Log, TEXT("Loading Galaxy: %s"), *FileName);
 
-	if (FFileHelper::LoadFileToString(FileString, *FileName, FFileHelper::EHashOptions::None))
+	if (!FPaths::FileExists(FileName))
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s"), *FileString);
-	}
-
-	Parser parser(new BlockReader((const char*)block));
-
-	Term* term = parser.ParseTerm();
-
-	if (!term) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: could notxparse '%s'"), *FileName);
+		UE_LOG(LogTemp, Error, TEXT("Galaxy file not found: %s"), *FileName);
 		return;
 	}
-	else {
-		TermText* file_type = term->isText();
-		if (!file_type || file_type->value() != "GALAXY") {
-			UE_LOG(LogTemp, Log, TEXT("WARNING: invalid galaxy file '%s'"), *FileName);
-			return;
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("Galaxy file '%s'"), *FileName);
-		}
+
+	TArray<uint8> Bytes;
+	if (!FFileHelper::LoadFileToArray(Bytes, *FileName))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to read galaxy file: %s"), *FileName);
+		return;
+	}
+	Bytes.Add(0); // null-terminate for BlockReader
+
+	const char* Fn = TCHAR_TO_ANSI(*FileName);
+
+	if (SSWInstance)
+	{
+		SSWInstance->GalaxyData.Empty();
 	}
 
-	FS_Galaxy NewGalaxyData;
+	// Global scratch (we will reset per system below):
+	StarMapArray.Empty();
+	PlanetMapArray.Empty();
+	MoonMapArray.Empty();
+	RegionMapArray.Empty();
 
-	// parse the galaxy:
-	do {
+	Parser parser(new BlockReader((const char*)Bytes.GetData()));
+	Term* term = parser.ParseTerm();
+
+	if (!term)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WARNING: could not parse '%s'"), *FileName);
+		return;
+	}
+
+	TermText* file_type = term->isText();
+	if (!file_type || file_type->value() != "GALAXY")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WARNING: invalid galaxy file '%s'"), *FileName);
+		delete term;
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Galaxy file OK: %s"), *FileName);
+
+	double GalaxyRadius = 0.0;
+
+	while (true)
+	{
 		delete term;
 		term = parser.ParseTerm();
-		FVector fv;
+		if (!term)
+			break;
 
-		StarMapArray.Empty();
-		PlanetMapArray.Empty();
-		double Radius;
+		TermDef* def = term->isDef();
+		if (!def)
+			continue;
 
-		if (term) {
-			TermDef* def = term->isDef();
-			if (def) {
-				if (def->name()->value() == "radius") {
-					GetDefNumber(Radius, def, fn);
+		// radius (global)
+		if (def->name()->value() == "radius")
+		{
+			GetDefNumber(GalaxyRadius, def, Fn);
+			continue;
+		}
+
+		// system
+		if (def->name()->value() == "system")
+		{
+			if (!def->term() || !def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: system struct missing in '%s'"), *FileName);
+				continue;
+			}
+
+			// RESET PER SYSTEM (critical):
+			StarMapArray.Empty();
+			PlanetMapArray.Empty();
+			MoonMapArray.Empty();
+			RegionMapArray.Empty();
+
+			FS_Galaxy NewGalaxyData;
+			NewGalaxyData.Link.Empty();
+
+			TermStruct* sys = def->term()->isStruct();
+
+			Text  SystemName;
+			Text  ClassName;
+			Text  Link;
+			Text  StarName;
+
+			Vec3  SystemLocation;
+			int   SystemIff = 0;
+			int   EmpireId = 0;
+
+			ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
+
+			for (int i = 0; i < sys->elements()->size(); i++)
+			{
+				TermDef* pdef = sys->elements()->at(i)->isDef();
+				if (!pdef) continue;
+
+				const Text& Key = pdef->name()->value();
+
+				if (Key == "name")
+				{
+					GetDefText(SystemName, pdef, Fn);
+					NewGalaxyData.Name = FString(SystemName);
 				}
-
-				else if (def->name()->value() == "system") {
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: system struct missing in '%s'"), *FString(fn));
-					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-
-						UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
-						Text  SystemName;
-						Text  ClassName;
-						Text  Link;
-						Text  Star;
-						Text  Planet;
-						Vec3  SystemLocation;
-						int   SystemIff = 0;
-						int   EmpireId = 0;
-						ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
-						EEMPIRE_NAME EEmpireType = EEMPIRE_NAME::Terellian;
-
-						NewGalaxyData.Link.Empty();
-
-						for (int i = 0; i < val->elements()->size(); i++) {
-							TermDef* pdef = val->elements()->at(i)->isDef();
-							if (pdef) {
-								if (pdef->name()->value() == "name") {
-									GetDefText(SystemName, pdef, fn);
-									NewGalaxyData.Name = FString(SystemName);
-								}
-								else if (pdef->name()->value() == "loc") {
-
-									GetDefVec(SystemLocation, pdef, fn);
-									fv = FVector(SystemLocation.X, SystemLocation.Y, SystemLocation.Z);
-									NewGalaxyData.Location = fv;
-								}
-								else if (pdef->name()->value() == "iff") {
-									GetDefNumber(SystemIff, pdef, fn);
-									NewGalaxyData.Iff = SystemIff;
-								}
-								else if (pdef->name()->value() == ("empire"))
-								{
-									GetDefNumber(EmpireId, pdef, fn);
-									NewGalaxyData.Empire = UFormattingUtils::GetEmpireTypeFromIndex(EmpireId);
-								}
-								else if (pdef->name()->value() == "link") {
-									GetDefText(Link, pdef, filename);
-									NewGalaxyData.Link.Add(FString(Link));
-								}
-								else if (pdef->name()->value() == "stellar") {
-									if (!pdef->term() || !pdef->term()->isStruct()) {
-										UE_LOG(LogTemp, Log, TEXT("WARNING: star struct missing in '%s'"), *FString(fn));
-									}
-									else {
-										ParseStarMap(pdef->term()->isStruct(), fn);
-										NewGalaxyData.Stellar = StarMapArray;
-
-									}
-								}
-								else if (pdef->name()->value() == "star") {
-									GetDefText(Star, pdef, filename);
-									NewGalaxyData.Star = FString(Star);
-								}
-								else if (pdef->name()->value() == "class") {
-									GetDefText(ClassName, pdef, fn);
-
-									switch (ClassName[0]) {
-									case 'B':
-										StarClass = ESPECTRAL_CLASS::B;
-										break;
-									case 'A':
-										StarClass = ESPECTRAL_CLASS::A;
-										break;
-									case 'F':
-										StarClass = ESPECTRAL_CLASS::F;
-										break;
-									case 'G':
-										StarClass = ESPECTRAL_CLASS::G;
-										break;
-									case 'K':
-										StarClass = ESPECTRAL_CLASS::K;
-										break;
-									case 'M':
-										StarClass = ESPECTRAL_CLASS::M;
-										break;
-									case 'R':
-										StarClass = ESPECTRAL_CLASS::RED_GIANT;
-										break;
-									case 'W':
-										StarClass = ESPECTRAL_CLASS::WHITE_DWARF;
-										break;
-									case 'Z':
-										StarClass = ESPECTRAL_CLASS::BLACK_HOLE;
-										break;
-									}
-									NewGalaxyData.Class = StarClass;
-								}
-							}
-						}
-
-						// define our data table struct
-						FName RowName = FName(FString(SystemName));
-
-						// call AddRow to insert the record
-						SSWInstance->GalaxyDataTable->AddRow(RowName, NewGalaxyData);
-						SSWInstance->GalaxyData.Add(NewGalaxyData);
-					}
+				else if (Key == "loc")
+				{
+					GetDefVec(SystemLocation, pdef, Fn);
+					NewGalaxyData.Location = FVector(SystemLocation.X, SystemLocation.Y, SystemLocation.Z);
 				}
+				else if (Key == "iff")
+				{
+					GetDefNumber(SystemIff, pdef, Fn);
+					NewGalaxyData.Iff = SystemIff;
+				}
+				else if (Key == "empire")
+				{
+					GetDefNumber(EmpireId, pdef, Fn);
+					NewGalaxyData.Empire = UFormattingUtils::GetEmpireTypeFromIndex(EmpireId);
+				}
+				else if (Key == "link")
+				{
+					GetDefText(Link, pdef, Fn);
+					NewGalaxyData.Link.Add(FString(Link));
+				}
+				else if (Key == "star")
+				{
+					GetDefText(StarName, pdef, Fn);
+					NewGalaxyData.Star = FString(StarName);
+				}
+				else if (Key == "class")
+				{
+					GetDefText(ClassName, pdef, Fn);
 
-				else if (def->name()->value() == "star") {
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: star struct missing in '%s'"), *FString(fn));
+					switch (ClassName[0])
+					{
+					case 'B': StarClass = ESPECTRAL_CLASS::B;           break;
+					case 'A': StarClass = ESPECTRAL_CLASS::A;           break;
+					case 'F': StarClass = ESPECTRAL_CLASS::F;           break;
+					case 'G': StarClass = ESPECTRAL_CLASS::G;           break;
+					case 'K': StarClass = ESPECTRAL_CLASS::K;           break;
+					case 'M': StarClass = ESPECTRAL_CLASS::M;           break;
+					case 'R': StarClass = ESPECTRAL_CLASS::RED_GIANT;   break;
+					case 'W': StarClass = ESPECTRAL_CLASS::WHITE_DWARF; break;
+					case 'Z': StarClass = ESPECTRAL_CLASS::BLACK_HOLE;  break;
+					default:  StarClass = ESPECTRAL_CLASS::G;           break;
 					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-						UE_LOG(LogTemp, Log, TEXT("%s"), *FString(def->name()->value()));
-						char  star_name[32];
-						char  classname[32];
-						Vec3  star_loc;
-						ESPECTRAL_CLASS  star_class = ESPECTRAL_CLASS::G;
-
-						star_name[0] = 0;
-
-						for (int i = 0; i < val->elements()->size(); i++) {
-							TermDef* pdef = val->elements()->at(i)->isDef();
-							if (pdef) {
-								if (pdef->name()->value() == "name")
-									GetDefText(star_name, pdef, fn);
-
-								else if (pdef->name()->value() == "loc")
-									GetDefVec(star_loc, pdef, fn);
-
-								else if (pdef->name()->value() == "class") {
-									GetDefText(classname, pdef, fn);
-
-									switch (classname[0]) {
-									case 'O':
-										star_class = ESPECTRAL_CLASS::O;
-										break;
-									case 'B':
-										star_class = ESPECTRAL_CLASS::B;
-										break;
-									case 'A':
-										star_class = ESPECTRAL_CLASS::A;
-										break;
-									case 'F':
-										star_class = ESPECTRAL_CLASS::F;
-										break;
-									case 'G':
-										star_class = ESPECTRAL_CLASS::G;
-										break;
-									case 'K':
-										star_class = ESPECTRAL_CLASS::K;
-										break;
-									case 'M':
-										star_class = ESPECTRAL_CLASS::M;
-										break;
-									case 'R':
-										star_class = ESPECTRAL_CLASS::RED_GIANT;
-										break;
-									case 'W':
-										star_class = ESPECTRAL_CLASS::WHITE_DWARF;
-										break;
-									case 'Z':
-										star_class = ESPECTRAL_CLASS::BLACK_HOLE;
-										break;
-									}
-								}
-							}
-						}
+					NewGalaxyData.Class = StarClass;
+				}
+				else if (Key == "stellar")
+				{
+					if (!pdef->term() || !pdef->term()->isStruct())
+					{
+						UE_LOG(LogTemp, Warning, TEXT("WARNING: stellar struct missing in '%s'"), *FileName);
+					}
+					else
+					{
+						// This call populates StarMapArray (and planets/moons beneath it)
+						ParseStarMap(pdef->term()->isStruct(), Fn);
+						NewGalaxyData.Stellar = StarMapArray;
 					}
 				}
 			}
+
+			// Persist system record
+			if (SSWInstance && SSWInstance->GalaxyDataTable)
+			{
+				const FName RowName = FName(NewGalaxyData.Name);
+				SSWInstance->GalaxyDataTable->AddRow(RowName, NewGalaxyData);
+			}
+
+			if (SSWInstance)
+			{
+				SSWInstance->GalaxyData.Add(NewGalaxyData);
+			}
+
 			UE_LOG(LogTemp, Log, TEXT("------------------------------------------------------------"));
 		}
-	} while (term);
-	
-	Loader->ReleaseBuffer(block);
+	}
 
-	UGalaxyManager::Get(this)->LoadGalaxy(SSWInstance->GalaxyData);
+	delete term; // defensive
+
+	if (SSWInstance)
+	{
+		UGalaxyManager::Get(this)->LoadGalaxy(SSWInstance->GalaxyData);
+	}
 }
 
 // +--------------------------------------------------------------------+
@@ -4333,6 +4308,7 @@ bool UStarshatterGameDataSubsystem::GetRegionTypeFromString(const FString& InStr
 
 // +--------------------------------------------------------------------+
 
+
 void UStarshatterGameDataSubsystem::ParseMoonMap(TermStruct* val, const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseMoonMap()"));
@@ -4350,79 +4326,97 @@ void UStarshatterGameDataSubsystem::ParseMoonMap(TermStruct* val, const char* fn
 	double Tilt = 0.0;
 	bool   Retro = false;
 
-	FColor AtmosColor = FColor::Black;
-
 	FS_MoonMap NewMoonMap;
+
+	// Reset per-moon:
 	RegionMapArray.Empty();
 
-	for (int i = 0; i < val->elements()->size(); i++) {
+	for (int i = 0; i < val->elements()->size(); i++)
+	{
 		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "name") {
-				GetDefText(MoonName, pdef, fn);
-				NewMoonMap.Name = FString(MoonName);
+		if (!pdef) continue;
+
+		const Text& Key = pdef->name()->value();
+
+		if (Key == "name")
+		{
+			GetDefText(MoonName, pdef, fn);
+			NewMoonMap.Name = FString(MoonName);
+		}
+		else if (Key == "icon")
+		{
+			GetDefText(MoonIcon, pdef, fn);
+			NewMoonMap.Icon = FString(MoonIcon);
+		}
+		else if (Key == "texture")
+		{
+			GetDefText(MoonTexture, pdef, fn);
+			NewMoonMap.Texture = FString(MoonTexture);
+		}
+		else if (Key == "mass")
+		{
+			GetDefNumber(Mass, pdef, fn);
+			NewMoonMap.Mass = Mass;
+		}
+		else if (Key == "orbit")
+		{
+			GetDefNumber(Orbit, pdef, fn);
+			NewMoonMap.Orbit = Orbit;
+		}
+		else if (Key == "inclination")
+		{
+			GetDefNumber(Inclination, pdef, fn);
+			NewMoonMap.Inclination = Inclination;
+		}
+		else if (Key == "rotation")
+		{
+			GetDefNumber(Rot, pdef, fn);
+			NewMoonMap.Rot = Rot;
+		}
+		else if (Key == "retro")
+		{
+			GetDefBool(Retro, pdef, fn);
+			NewMoonMap.Retro = Retro;
+		}
+		else if (Key == "radius")
+		{
+			GetDefNumber(Radius, pdef, fn);
+			NewMoonMap.Radius = Radius;
+		}
+		else if (Key == "tscale")
+		{
+			GetDefNumber(Tscale, pdef, fn);
+			NewMoonMap.Tscale = Tscale;
+		}
+		else if (Key == "tilt") // FIXED (was mistakenly "inclination" again)
+		{
+			GetDefNumber(Tilt, pdef, fn);
+			NewMoonMap.Tilt = Tilt;
+		}
+		else if (Key == "atmosphere")
+		{
+			Vec3 a;
+			GetDefVec(a, pdef, fn);
+			NewMoonMap.Atmos = Vec3ToColor255(a);
+		}
+		else if (Key == "region")
+		{
+			if (!pdef->term() || !pdef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
 			}
-			else if (pdef->name()->value() == "icon") {
-				GetDefText(MoonIcon, pdef, fn);
-				NewMoonMap.Icon = FString(MoonIcon);
-			}
-			else if (pdef->name()->value() == "texture") {
-				GetDefText(MoonTexture, pdef, fn);
-				NewMoonMap.Texture = FString(MoonTexture);
-			}
-			else if (pdef->name()->value() == "mass") {
-				GetDefNumber(Mass, pdef, fn);
-				NewMoonMap.Mass = Mass;
-			}
-			else if (pdef->name()->value() == "orbit") {
-				GetDefNumber(Orbit, pdef, fn);
-				NewMoonMap.Orbit = Orbit;
-			}
-			else if (pdef->name()->value() == "inclination") {
-				GetDefNumber(Inclination, pdef, fn);
-				NewMoonMap.Inclination = Inclination;
-			}
-			else if (pdef->name()->value() == "rotation") {
-				GetDefNumber(Rot, pdef, fn);
-				NewMoonMap.Rot = Rot;
-			}
-			else if (pdef->name()->value() == "retro") {
-				GetDefBool(Retro, pdef, fn);
-				NewMoonMap.Retro = Retro;
-			}
-			else if (pdef->name()->value() == "radius") {
-				GetDefNumber(Radius, pdef, fn);
-				NewMoonMap.Radius = Radius;
-			}
-			else if (pdef->name()->value() == "tscale") {
-				GetDefNumber(Tscale, pdef, fn);
-				NewMoonMap.Tscale = Tscale;
-			}
-			else if (pdef->name()->value() == "inclination") {
-				GetDefNumber(Tilt, pdef, fn);
-				NewMoonMap.Tilt = Tilt;
-			}
-			else if (pdef->name()->value() == "atmosphere") {
-				Vec3 a;
-				GetDefVec(a, pdef, fn);
-				AtmosColor = FColor(a.X, a.Y, a.Z, 1);
-				NewMoonMap.Atmos = AtmosColor;
-			}
-			else if (pdef->name()->value() == "region") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
-				}
-				else {
-					ParseRegion(pdef->term()->isStruct(), fn);
-					NewMoonMap.Region = RegionMapArray;
-				}
+			else
+			{
+				ParseRegion(pdef->term()->isStruct(), fn);
+				NewMoonMap.Region = RegionMapArray;
 			}
 		}
 	}
+
 	MoonMapArray.Add(NewMoonMap);
 }
-void
-UStarshatterGameDataSubsystem::ParseStarMap(TermStruct* val, const char* fn)
+
+void UStarshatterGameDataSubsystem::ParseStarMap(TermStruct* val, const char* fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseStarMap()"));
 
@@ -4430,7 +4424,8 @@ UStarshatterGameDataSubsystem::ParseStarMap(TermStruct* val, const char* fn)
 	Text  SystemName = "";
 	Text  ImgName = "";
 	Text  MapName = "";
-	Text  ClassName;
+	Text  ClassName = "";
+
 	double Light = 0.0;
 	double Radius = 0.0;
 	double Rot = 0.0;
@@ -4438,125 +4433,136 @@ UStarshatterGameDataSubsystem::ParseStarMap(TermStruct* val, const char* fn)
 	double Orbit = 0.0;
 	double Tscale = 1.0;
 	bool   Retro = false;
+
 	ESPECTRAL_CLASS StarClass = ESPECTRAL_CLASS::G;
 
 	FS_StarMap NewStarMap;
+
+	// Reset per-star:
 	PlanetMapArray.Empty();
 	RegionMapArray.Empty();
 
-	for (int i = 0; i < val->elements()->size(); i++) {
+	for (int i = 0; i < val->elements()->size(); i++)
+	{
 		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "name") {
-				GetDefText(StarName, pdef, fn);
-				NewStarMap.Name = FString(StarName);
-			}
-			else if (pdef->name()->value() == "system") {
-				GetDefText(SystemName, pdef, fn);
-				NewStarMap.SystemName = FString(MapName);
-			}
-			else if (pdef->name()->value() == "map") {
-				GetDefText(MapName, pdef, fn);
-				NewStarMap.Map = FString(MapName);
-			}
-			else if (pdef->name()->value() == "image") {
-				GetDefText(ImgName, pdef, fn);
-				NewStarMap.Image = FString(ImgName);
-			}
-			else if (pdef->name()->value() == "mass") {
-				GetDefNumber(Mass, pdef, fn);
-				NewStarMap.Mass = Mass;
-			}
-			else if (pdef->name()->value() == "orbit") {
-				GetDefNumber(Orbit, pdef, fn);
-				NewStarMap.Orbit = Orbit;
-			}
-			else if (pdef->name()->value() == "radius") {
-				GetDefNumber(Radius, pdef, fn);
-				NewStarMap.Radius = Radius;
-			}
-			else if (pdef->name()->value() == "rotation") {
-				GetDefNumber(Rot, pdef, fn);
-				NewStarMap.Rot = Rot;
-			}
-			else if (pdef->name()->value() == "tscale") {
-				GetDefNumber(Tscale, pdef, fn);
-				NewStarMap.Tscale = Tscale;
-			}
-			else if (pdef->name()->value() == "light") {
-				GetDefNumber(Light, pdef, fn);
-				NewStarMap.Light = Light;
-			}
-			else if (pdef->name()->value() == "retro") {
-				GetDefBool(Retro, pdef, fn);
-				NewStarMap.Retro = Retro;
-			}
-			else if (pdef->name()->value() == "color") {
-				Vec3 a;
-				GetDefVec(a, pdef, fn);
-				NewStarMap.Color = FColor(a.X, a.Y, a.Z, 1);
+		if (!pdef) continue;
+
+		const Text& Key = pdef->name()->value();
+
+		if (Key == "name")
+		{
+			GetDefText(StarName, pdef, fn);
+			NewStarMap.Name = FString(StarName);
+		}
+		else if (Key == "system")
+		{
+			GetDefText(SystemName, pdef, fn);
+			NewStarMap.SystemName = FString(SystemName); // FIXED
+		}
+		else if (Key == "map")
+		{
+			GetDefText(MapName, pdef, fn);
+			NewStarMap.Map = FString(MapName);
+		}
+		else if (Key == "image")
+		{
+			GetDefText(ImgName, pdef, fn);
+			NewStarMap.Image = FString(ImgName);
+		}
+		else if (Key == "mass")
+		{
+			GetDefNumber(Mass, pdef, fn);
+			NewStarMap.Mass = Mass;
+		}
+		else if (Key == "orbit")
+		{
+			GetDefNumber(Orbit, pdef, fn);
+			NewStarMap.Orbit = Orbit;
+		}
+		else if (Key == "radius")
+		{
+			GetDefNumber(Radius, pdef, fn);
+			NewStarMap.Radius = Radius;
+		}
+		else if (Key == "rotation")
+		{
+			GetDefNumber(Rot, pdef, fn);
+			NewStarMap.Rot = Rot;
+		}
+		else if (Key == "tscale")
+		{
+			GetDefNumber(Tscale, pdef, fn);
+			NewStarMap.Tscale = Tscale;
+		}
+		else if (Key == "light")
+		{
+			GetDefNumber(Light, pdef, fn);
+			NewStarMap.Light = Light;
+		}
+		else if (Key == "retro")
+		{
+			GetDefBool(Retro, pdef, fn);
+			NewStarMap.Retro = Retro;
+		}
+		else if (Key == "color")
+		{
+			Vec3 a;
+			GetDefVec(a, pdef, fn);
+			NewStarMap.Color = Vec3ToColor255(a);
+		}
+		else if (Key == "back" || Key == "back_color")
+		{
+			Vec3 a;
+			GetDefVec(a, pdef, fn);
+			NewStarMap.Back = Vec3ToColor255(a);
+		}
+		else if (Key == "class")
+		{
+			GetDefText(ClassName, pdef, fn);
+
+			switch (ClassName[0])
+			{
+			case 'B': StarClass = ESPECTRAL_CLASS::B;           break;
+			case 'A': StarClass = ESPECTRAL_CLASS::A;           break;
+			case 'F': StarClass = ESPECTRAL_CLASS::F;           break;
+			case 'G': StarClass = ESPECTRAL_CLASS::G;           break;
+			case 'K': StarClass = ESPECTRAL_CLASS::K;           break;
+			case 'M': StarClass = ESPECTRAL_CLASS::M;           break;
+			case 'R': StarClass = ESPECTRAL_CLASS::RED_GIANT;   break;
+			case 'W': StarClass = ESPECTRAL_CLASS::WHITE_DWARF; break;
+			case 'Z': StarClass = ESPECTRAL_CLASS::BLACK_HOLE;  break;
+			default:  StarClass = ESPECTRAL_CLASS::G;           break;
 			}
 
-			else if (pdef->name()->value() == "back" || pdef->name()->value() == "back_color") {
-				Vec3 a;
-				GetDefVec(a, pdef, fn);
-				NewStarMap.Back = FColor(a.X, a.Y, a.Z, 1);
+			NewStarMap.Class = StarClass;
+		}
+		else if (Key == "region")
+		{
+			if (!pdef->term() || !pdef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
 			}
-			else if (pdef->name()->value() == "class") {
-				GetDefText(ClassName, pdef, fn);
-
-				switch (ClassName[0]) {
-				case 'B':
-					StarClass = ESPECTRAL_CLASS::B;
-					break;
-				case 'A':
-					StarClass = ESPECTRAL_CLASS::A;
-					break;
-				case 'F':
-					StarClass = ESPECTRAL_CLASS::F;
-					break;
-				case 'G':
-					StarClass = ESPECTRAL_CLASS::G;
-					break;
-				case 'K':
-					StarClass = ESPECTRAL_CLASS::K;
-					break;
-				case 'M':
-					StarClass = ESPECTRAL_CLASS::M;
-					break;
-				case 'R':
-					StarClass = ESPECTRAL_CLASS::RED_GIANT;
-					break;
-				case 'W':
-					StarClass = ESPECTRAL_CLASS::WHITE_DWARF;
-					break;
-				case 'Z':
-					StarClass = ESPECTRAL_CLASS::BLACK_HOLE;
-					break;
-				}
-				NewStarMap.Class = StarClass;
+			else
+			{
+				ParseRegion(pdef->term()->isStruct(), fn);
+				NewStarMap.Region = RegionMapArray;
 			}
-			else if (pdef->name()->value() == "region") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
-				}
-				else {
-					ParseRegion(pdef->term()->isStruct(), fn);
-					NewStarMap.Region = RegionMapArray;
-				}
+		}
+		else if (Key == "planet")
+		{
+			if (!pdef->term() || !pdef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: planet struct missing in '%s'"), *FString(fn));
 			}
-			else if (pdef->name()->value() == "planet") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: planet struct missing in '%s'"), *FString(fn));
-				}
-				else {
-					ParsePlanetMap(pdef->term()->isStruct(), fn);
-					NewStarMap.Planet = PlanetMapArray;
-				}
+			else
+			{
+				// ParsePlanetMap appends to PlanetMapArray (and moons inside it)
+				ParsePlanetMap(pdef->term()->isStruct(), fn);
+				NewStarMap.Planet = PlanetMapArray;
 			}
-
 		}
 	}
+
 	StarMapArray.Add(NewStarMap);
 }
 
@@ -4570,6 +4576,7 @@ void UStarshatterGameDataSubsystem::ParsePlanetMap(TermStruct* val, const char* 
 	Text   PlanetTexture = "";
 	Text   PlanetGloss = "";
 	Text   PlanetLights = "";
+
 	double Mass = 0.0;
 	double Orbit = 0.0;
 	double Inclination = 0.0;
@@ -4584,120 +4591,148 @@ void UStarshatterGameDataSubsystem::ParsePlanetMap(TermStruct* val, const char* 
 	double Tilt = 0.0;
 
 	bool Retro = false;
-	FColor AtmosColor = FColor::Black;
 
 	FS_PlanetMap NewPlanetMap;
+
+	// Reset per-planet:
 	MoonMapArray.Empty();
 	RegionMapArray.Empty();
 
-	for (int i = 0; i < val->elements()->size(); i++) {
+	for (int i = 0; i < val->elements()->size(); i++)
+	{
 		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "name") {
-				GetDefText(PlanetName, pdef, fn);
-				NewPlanetMap.Name = FString(PlanetName);
-			}
-			else if (pdef->name()->value() == "icon") {
-				GetDefText(PlanetIcon, pdef, fn);
-				NewPlanetMap.Icon = FString(PlanetIcon);
-			}
-			else if (pdef->name()->value() == "texture") {
-				GetDefText(PlanetTexture, pdef, fn);
-				NewPlanetMap.Texture = FString(PlanetTexture);
-			}
-			else if (pdef->name()->value() == "gloss") {
-				GetDefText(PlanetGloss, pdef, fn);
-				NewPlanetMap.Gloss = FString(PlanetGloss);
-			}
-			else if (pdef->name()->value() == "lights") {
-				GetDefText(PlanetLights, pdef, fn);
-				NewPlanetMap.Lights = FString(PlanetLights);
-			}
-			else if (pdef->name()->value() == "ring") {
-				GetDefText(PlanetRing, pdef, fn);
-				NewPlanetMap.Ring = FString(PlanetRing);
-			}
-			else if (pdef->name()->value() == "mass") {
-				GetDefNumber(Mass, pdef, fn);
-				NewPlanetMap.Mass = Mass;
-			}
-			else if (pdef->name()->value() == "orbit") {
-				GetDefNumber(Orbit, pdef, fn);
-				NewPlanetMap.Orbit = Orbit;
-			}
-			else if (pdef->name()->value() == "inclination") {
-				GetDefNumber(Inclination, pdef, fn);
-				NewPlanetMap.Inclination = Inclination;
-			}
-			else if (pdef->name()->value() == "aphelion") {
-				GetDefNumber(Aphelion, pdef, fn);
-				NewPlanetMap.Aphelion = Aphelion;
-			}
-			else if (pdef->name()->value() == "perihelion") {
-				GetDefNumber(Perihelion, pdef, fn);
-				NewPlanetMap.Perihelion = Perihelion;
-			}
-			else if (pdef->name()->value() == "eccentricity") {
-				GetDefNumber(Eccentricity, pdef, fn);
-				NewPlanetMap.Eccentricity = Eccentricity;
-			}
-			else if (pdef->name()->value() == "retro") {
-				GetDefBool(Retro, pdef, fn);
-				NewPlanetMap.Retro = Retro;
-			}
+		if (!pdef) continue;
 
-			else if (pdef->name()->value() == "rotation") {
-				GetDefNumber(Rot, pdef, fn);
-				NewPlanetMap.Rot = Rot;
-			}
-			else if (pdef->name()->value() == "radius") {
-				GetDefNumber(Radius, pdef, fn);
-				NewPlanetMap.Radius = Radius;
-			}
-			else if (pdef->name()->value() == "minrad") {
-				GetDefNumber(Minrad, pdef, fn);
-				NewPlanetMap.Minrad = Minrad;
-			}
-			else if (pdef->name()->value() == "maxrad") {
-				GetDefNumber(Maxrad, pdef, fn);
-				NewPlanetMap.Maxrad = Maxrad;
-			}
-			else if (pdef->name()->value() == "tscale") {
-				GetDefNumber(Tscale, pdef, fn);
-				NewPlanetMap.Tscale = Tscale;
-			}
-			else if (pdef->name()->value() == "tilt") {
-				GetDefNumber(Tilt, pdef, fn);
-				NewPlanetMap.Tilt = Tilt;
-			}
-			else if (pdef->name()->value() == "atmosphere") {
-				Vec3 a;
-				GetDefVec(a, pdef, fn);
-				AtmosColor = FColor(a.X, a.Y, a.Z, 1);
-				NewPlanetMap.Atmos = AtmosColor;
-			}
+		const Text& Key = pdef->name()->value();
 
-			else if (pdef->name()->value() == "moon") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: moon struct missing in '%s'"), *FString(fn));
-				}
-				else {
-					ParseMoonMap(pdef->term()->isStruct(), fn);
-					NewPlanetMap.Moon = MoonMapArray;
-				}
+		if (Key == "name")
+		{
+			GetDefText(PlanetName, pdef, fn);
+			NewPlanetMap.Name = FString(PlanetName);
+		}
+		else if (Key == "icon")
+		{
+			GetDefText(PlanetIcon, pdef, fn);
+			NewPlanetMap.Icon = FString(PlanetIcon);
+		}
+		else if (Key == "texture")
+		{
+			GetDefText(PlanetTexture, pdef, fn);
+			NewPlanetMap.Texture = FString(PlanetTexture);
+		}
+		else if (Key == "gloss")
+		{
+			GetDefText(PlanetGloss, pdef, fn);
+			NewPlanetMap.Gloss = FString(PlanetGloss);
+		}
+		else if (Key == "lights")
+		{
+			GetDefText(PlanetLights, pdef, fn);
+			NewPlanetMap.Lights = FString(PlanetLights);
+		}
+		else if (Key == "ring")
+		{
+			GetDefText(PlanetRing, pdef, fn);
+			NewPlanetMap.Ring = FString(PlanetRing);
+		}
+		else if (Key == "mass")
+		{
+			GetDefNumber(Mass, pdef, fn);
+			NewPlanetMap.Mass = Mass;
+		}
+		else if (Key == "orbit")
+		{
+			GetDefNumber(Orbit, pdef, fn);
+			NewPlanetMap.Orbit = Orbit;
+		}
+		else if (Key == "inclination")
+		{
+			GetDefNumber(Inclination, pdef, fn);
+			NewPlanetMap.Inclination = Inclination;
+		}
+		else if (Key == "aphelion")
+		{
+			GetDefNumber(Aphelion, pdef, fn);
+			NewPlanetMap.Aphelion = Aphelion;
+		}
+		else if (Key == "perihelion")
+		{
+			GetDefNumber(Perihelion, pdef, fn);
+			NewPlanetMap.Perihelion = Perihelion;
+		}
+		else if (Key == "eccentricity")
+		{
+			GetDefNumber(Eccentricity, pdef, fn);
+			NewPlanetMap.Eccentricity = Eccentricity;
+		}
+		else if (Key == "retro")
+		{
+			GetDefBool(Retro, pdef, fn);
+			NewPlanetMap.Retro = Retro;
+		}
+		else if (Key == "rotation")
+		{
+			GetDefNumber(Rot, pdef, fn);
+			NewPlanetMap.Rot = Rot;
+		}
+		else if (Key == "radius")
+		{
+			GetDefNumber(Radius, pdef, fn);
+			NewPlanetMap.Radius = Radius;
+		}
+		else if (Key == "minrad")
+		{
+			GetDefNumber(Minrad, pdef, fn);
+			NewPlanetMap.Minrad = Minrad;
+		}
+		else if (Key == "maxrad")
+		{
+			GetDefNumber(Maxrad, pdef, fn);
+			NewPlanetMap.Maxrad = Maxrad;
+		}
+		else if (Key == "tscale")
+		{
+			GetDefNumber(Tscale, pdef, fn);
+			NewPlanetMap.Tscale = Tscale;
+		}
+		else if (Key == "tilt")
+		{
+			GetDefNumber(Tilt, pdef, fn);
+			NewPlanetMap.Tilt = Tilt;
+		}
+		else if (Key == "atmosphere")
+		{
+			Vec3 a;
+			GetDefVec(a, pdef, fn);
+			NewPlanetMap.Atmos = Vec3ToColor255(a);
+		}
+		else if (Key == "moon")
+		{
+			if (!pdef->term() || !pdef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: moon struct missing in '%s'"), *FString(fn));
 			}
-
-			else if (pdef->name()->value() == "region") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
-				}
-				else {
-					ParseRegion(pdef->term()->isStruct(), fn);
-					NewPlanetMap.Region = RegionMapArray;
-				}
+			else
+			{
+				// ParseMoonMap appends to MoonMapArray
+				ParseMoonMap(pdef->term()->isStruct(), fn);
+				NewPlanetMap.Moon = MoonMapArray;
+			}
+		}
+		else if (Key == "region")
+		{
+			if (!pdef->term() || !pdef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: region struct missing in '%s'"), *FString(fn));
+			}
+			else
+			{
+				ParseRegion(pdef->term()->isStruct(), fn);
+				NewPlanetMap.Region = RegionMapArray;
 			}
 		}
 	}
+
 	PlanetMapArray.Add(NewPlanetMap);
 }
 
