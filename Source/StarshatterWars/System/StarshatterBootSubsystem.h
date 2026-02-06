@@ -13,20 +13,27 @@
     Central bootstrap coordinator for Starshatter Wars.
 
     Responsible for deterministic initialization of all
-    GameInstance-scoped systems and controlled boot of
-    world-dependent services.
+    GameInstance-scoped systems at startup.
 
-    BOOT PHASES
-    ==========
-    1) GameInstance Boot
-       - Runs during Initialize()
-       - No UWorld access
-       - No Actor spawning
+    This subsystem performs early boot tasks only:
+      - Settings load
+      - Audio apply
+      - Video apply
+      - Controls apply
+      - Keyboard apply
+      - Fonts (optional)
 
-    2) World Boot
-       - Triggered via OnPostWorldInitialization
-       - Runs once per game session
-       - Safe to spawn world-bound service Actors
+    IMPORTANT
+    =========
+    This subsystem does NOT spawn Actors and does NOT require UWorld.
+    Any heavy game data parsing/generation should be triggered after
+    boot (typically during EGameMode::INIT) via the GameInit subsystem.
+
+    BOOT COMPLETE
+    =============
+    BootComplete is broadcast once the boot sequence finishes.
+    Systems that require a completed boot (ex: GameInitSubsystem)
+    should subscribe to OnBootComplete.
 */
 
 #pragma once
@@ -36,7 +43,6 @@
 #include "StarshatterBootSubsystem.generated.h"
 
 class UGameInstance;
-class UWorld;
 
 class UStarshatterSettingsSaveSubsystem;
 class UStarshatterSettingsSaveGame;
@@ -45,6 +51,7 @@ class UStarshatterAudioSubsystem;
 class UStarshatterVideoSubsystem;
 class UStarshatterControlsSubsystem;
 class UStarshatterKeyboardSubsystem;
+class UStarshatterGameDataSubsystem;
 
 DECLARE_MULTICAST_DELEGATE(FOnStarshatterBootComplete);
 
@@ -56,10 +63,13 @@ class STARSHATTERWARS_API UStarshatterBootSubsystem : public UGameInstanceSubsys
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
-    
+
     bool IsBootComplete() const { return bBootComplete; }
     FOnStarshatterBootComplete OnBootComplete;
 
+    // Optional helper: triggers the GameData subsystem loader.
+    // Recommended usage: call this from GameInitSubsystem during EGameMode::INIT.
+    void BootGameDataLoader(bool bFull = false);
 
 private:
     // --------------------------------------------------
@@ -79,9 +89,6 @@ private:
         UStarshatterKeyboardSubsystem* KeyboardSS = nullptr;
     };
 
-    // --------------------------------------------------
-    // GameInstance boot
-    // --------------------------------------------------
     bool BuildContext(FBootContext& OutCtx);
 
     void BootFonts(const FBootContext& Ctx);
@@ -90,17 +97,8 @@ private:
     void BootControls(const FBootContext& Ctx);
     void BootKeyboard(const FBootContext& Ctx);
 
-    // --------------------------------------------------
-    // World boot
-    // --------------------------------------------------
-    void HookWorldBoot();
-    void OnPostWorldInit(UWorld* World, const UWorld::InitializationValues IVS);
-    void BootGameData(UWorld* World);
+    void MarkBootComplete();
 
 private:
-    FDelegateHandle PostWorldInitHandle;
-    bool bWorldBootDone = false;
-
-    void MarkBootComplete();
-    bool bBootComplete = false;   
+    bool bBootComplete = false;
 };

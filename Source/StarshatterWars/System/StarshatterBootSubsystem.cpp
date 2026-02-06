@@ -5,35 +5,19 @@
     All Rights Reserved.
 
     SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         StarshatterBootSubsystem.h / .cpp
+    FILE:         StarshatterBootSubsystem.cpp
     AUTHOR:       Carlos Bott
 
     OVERVIEW
     ========
-    Central bootstrap coordinator for Starshatter Wars.
+    Boot sequence coordinator for GameInstance-scoped systems.
 
-    Responsible for deterministic initialization of all
-    GameInstance-scoped systems and controlled boot of
-    world-dependent services.
-
-    BOOT PHASES
-    ==========
-    1) GameInstance Boot
-       - Runs during Initialize()
-       - No UWorld access
-       - No Actor spawning
-
-    2) World Boot
-       - Triggered via OnPostWorldInitialization
-       - Runs once per game session
-       - Safe to spawn world-bound service Actors
+    No world boot is performed here. No actors are spawned.
 */
 
 #include "StarshatterBootSubsystem.h"
 
 #include "Engine/GameInstance.h"
-#include "Engine/World.h"
-#include "EngineUtils.h"
 
 // Subsystems
 #include "FontManagerSubsystem.h"
@@ -46,8 +30,8 @@
 // SaveGame
 #include "StarshatterSettingsSaveGame.h"
 
-// World service actor
-#include "GameDataLoader.h"
+// Game data subsystem (replaces AGameDataLoader actor)
+#include "StarshatterGameDataSubsystem.h"
 
 // --------------------------------------------------
 // UGameInstanceSubsystem
@@ -67,23 +51,40 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootKeyboard(Ctx);
     }
 
-    // World-dependent boot (actors, UWorld-only systems)
-    HookWorldBoot();
+    // Do NOT auto-load heavy content here unless you explicitly want boot-time generation.
+    // Recommended: call BootGameDataLoader() from GameInitSubsystem during INIT.
+    //
+    // BootGameDataLoader(false);
+
+    MarkBootComplete();
 }
 
 void UStarshatterBootSubsystem::Deinitialize()
 {
-    if (PostWorldInitHandle.IsValid())
-    {
-        FWorldDelegates::OnPostWorldInitialization.Remove(PostWorldInitHandle);
-        PostWorldInitHandle.Reset();
-    }
-
     Super::Deinitialize();
 }
 
 // --------------------------------------------------
-// GameInstance boot
+// Optional loader hook
+// --------------------------------------------------
+
+void UStarshatterBootSubsystem::BootGameDataLoader(bool bFull)
+{
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    UStarshatterGameDataSubsystem* DataSS =
+        GI->GetSubsystem<UStarshatterGameDataSubsystem>();
+
+    if (!DataSS)
+        return;
+
+    DataSS->LoadAll(bFull);
+}
+
+// --------------------------------------------------
+// Boot stages
 // --------------------------------------------------
 
 bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
@@ -160,61 +161,6 @@ void UStarshatterBootSubsystem::BootKeyboard(const FBootContext& Ctx)
         Ctx.KeyboardSS->LoadFromSaveGame(Ctx.SG);
 
     Ctx.KeyboardSS->ApplySettingsToRuntime(this);
-}
-
-// --------------------------------------------------
-// World boot
-// --------------------------------------------------
-
-void UStarshatterBootSubsystem::HookWorldBoot()
-{
-    if (PostWorldInitHandle.IsValid())
-        return;
-
-    PostWorldInitHandle =
-        FWorldDelegates::OnPostWorldInitialization.AddUObject(
-            this, &UStarshatterBootSubsystem::OnPostWorldInit);
-}
-
-void UStarshatterBootSubsystem::OnPostWorldInit(
-    UWorld* World,
-    const UWorld::InitializationValues)
-{
-    if (bWorldBootDone || !World)
-        return;
-
-    if (World->WorldType != EWorldType::Game &&
-        World->WorldType != EWorldType::PIE)
-        return;
-
-    BootGameData(World);
-    bWorldBootDone = true;
-
-    // Boot is now fully complete (GI boot + first real world boot)
-    MarkBootComplete();
-}
-
-void UStarshatterBootSubsystem::BootGameData(UWorld* World)
-{
-    if (!World)
-        return;
-
-    // If already present (placed in map or spawned elsewhere), do nothing:
-    for (TActorIterator<AGameDataLoader> It(World); It; ++It)
-    {
-        return;
-    }
-
-    FActorSpawnParameters Params;
-    Params.Name = TEXT("Game Data");
-    Params.SpawnCollisionHandlingOverride =
-        ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    World->SpawnActor<AGameDataLoader>(
-        AGameDataLoader::StaticClass(),
-        FVector::ZeroVector,
-        FRotator::ZeroRotator,
-        Params);
 }
 
 // --------------------------------------------------
