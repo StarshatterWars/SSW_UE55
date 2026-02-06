@@ -127,6 +127,9 @@ public:
     void LoadAll(bool bFull = false);
     bool GetRegionTypeFromString(const FString& InString, EOrbitalType& OutValue);
 
+    void SetProjectPath();
+    FString GetProjectPath();
+
     // Legacy API retained (rename later if desired)
     void LoadCampaignData(const char* FileName, bool full = false);
     void LoadZones(FString Path);
@@ -173,6 +176,11 @@ public:
     EEMPIRE_NAME GetEmpireName(int32 emp);
     CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
 
+    void CreateOrderOfBattleTable();
+    void ExportDataToCSV(UDataTable* DataTable, const FString& FileName);
+
+    void InitializeDT(const FObjectInitializer& ObjectInitializer);
+
     void Unload();
     void SetCampaignStatus(ECampaignStatus s);
     double Stardate();
@@ -206,6 +214,15 @@ public:
     bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
     bool IsLoaded() const { return bLoaded; }
 
+    UPROPERTY()
+    TArray<FS_CombatGroup> CombatRosterData;
+
+    UPROPERTY()
+    TArray<FS_CampaignMissionList> MissionList;
+
+    UPROPERTY()
+    TArray<FS_OOBForce> ForceList;
+
 private:
     void CacheSSWInstance();
 
@@ -216,8 +233,8 @@ public:
     // Keep your existing fields exactly for now (minimize migration risk)
     FS_LayoutDef LayoutDef;
 
-    Text              ContentName;
-    Dictionary<Text>  ContentValues;
+    Text                 ContentName;
+    Dictionary<Text>     ContentValues;
 
     int                  campaign_id;
     ECampaignStatus      CampaignStatus;
@@ -246,12 +263,13 @@ public:
     List<TemplateList>   templates;
     List<CombatAction>   actions;
     List<CombatEvent>    events;
-    CombatGroup* player_group;
-    CombatUnit* player_unit;
+    CombatGroup*         player_group;
+    CombatUnit*          player_unit;
+    bool                 bClearTables;
 
     int                  mission_id;
-    Mission* mission;
-    Mission* net_mission;
+    Mission*             mission;
+    Mission*             net_mission;
 
     double               time;
     double               loadTime;
@@ -270,6 +288,15 @@ protected:
     Text CombatantName;
     Text CombatantType;
     int CombatantId;
+
+    // =====================================================================
+    // DataTables
+    // =====================================================================
+    class UDataTable* CampaignDataTable;
+    class UDataTable* CombatGroupDataTable;
+    class UDataTable* OrderOfBattleDataTable;
+    class UDataTable* CampaignOOBDataTable;
+    class UDataTable* GalaxyDataTable;
 
     FS_Combatant NewCombatUnit;
     FS_CombatantGroup NewGroupUnit;
@@ -434,6 +461,9 @@ protected:
     bool     Ceremony;
 
     USSWGameInstance* SSWInstance = nullptr;
+
+    FString ProjectPath;
+    FString FilePath;
 };
 
 
