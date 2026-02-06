@@ -1,65 +1,61 @@
 /*
-Project Starshatter Wars
-Fractal Dev Studios
-Copyright (C) 2025-2026.
-All Rights Reserved.
+    Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (C) 2025-2026.
+    All Rights Reserved.
 
-SUBSYSTEM:    StarshatterWars (Unreal Engine)
-FILE:         StarshatterGameInitSubsystem.h / .cpp
-AUTHOR:       Carlos Bott
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
+    FILE:         StarshatterGameInitSubsystem.h / .cpp
+    AUTHOR:       Carlos Bott
 
-OVERVIEW
-========
-Post-boot game initialization coordinator.
+    OVERVIEW
+    ========
+    Post-boot game initialization coordinator.
 
-This subsystem executes AFTER the StarshatterBootSubsystem
-has completed all startup phases, including GameInstance
-boot and first valid world initialization.
+    This subsystem executes AFTER the StarshatterBootSubsystem
+    completes early GameInstance boot tasks (settings + runtime apply).
 
-It is responsible for initializing runtime game systems
-that require:
-  - Settings to be loaded and applied
-  - Core subsystems to be active
-  - A valid UWorld
-  - GameDataLoader to be present
+    It is responsible for runtime initialization that must occur after:
+      - Settings have been loaded and applied (audio/video/input)
+      - Core subsystems are active
+      - Game data has been loaded/generated (via GameData subsystem)
 
-This subsystem intentionally does NOT perform:
-  - SaveGame loading
-  - Audio, video, or input configuration
-  - Boot-time service actor spawning
+    This subsystem intentionally does NOT perform:
+      - SaveGame creation/loading (BootSubsystem owns this)
+      - Audio, video, or input configuration (BootSubsystem owns this)
+      - Any UI boot logic
 
-BOOT ORDER
-==========
-1) StarshatterBootSubsystem
-   - GameInstance boot
-   - World boot
-   - GameDataLoader spawn
-   - BootComplete broadcast
+    BOOT ORDER
+    ==========
+    1) StarshatterBootSubsystem
+       - Loads/creates settings SaveGame
+       - Applies audio/video/input settings
+       - Broadcasts BootComplete
 
-2) StarshatterGameInitSubsystem (this)
-   - Subscribes to BootComplete
-   - Executes once per game session
-   - Performs runtime game initialization
+    2) StarshatterGameInitSubsystem (this)
+       - Subscribes to BootComplete
+       - Executes once per game session
+       - Triggers GameData load
+       - Performs runtime initialization
+       - Transitions to MENU state
 
-DESIGN GOALS
-============
-- Clear separation between BOOT and GAME INIT
-- Deterministic initialization order
-- No startup logic in UI code
-- No hidden dependencies or race conditions
-- Centralized ownership of runtime initialization
+    DESIGN GOALS
+    ============
+    - Clear separation between BOOT and GAME INIT
+    - Deterministic initialization order
+    - No startup logic in UI code
+    - No hidden dependencies or race conditions
+    - Centralized ownership of runtime initialization
 
-OWNERSHIP RULES
-===============
-- BootSubsystem is the sole authority for startup
-- GameInitSubsystem assumes Boot is complete
-- Gameplay systems may rely on GameInit completion
-- No other system may perform game initialization
+    OWNERSHIP RULES
+    ===============
+    - BootSubsystem is the sole authority for early startup
+    - GameInitSubsystem assumes Boot is complete
+    - Gameplay systems may rely on GameInit completion
+    - No other system may perform runtime initialization
 
-This file is intentionally verbose in documentation.
-Runtime initialization order is critical and must
-remain explicit and well-defined.
-
+    This file is intentionally verbose in documentation.
+    Runtime initialization order is critical and must remain explicit.
 */
 
 #pragma once
@@ -86,4 +82,3 @@ private:
 private:
     bool bGameInitComplete = false;
 };
-

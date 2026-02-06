@@ -19,6 +19,10 @@
 
 #include "Engine/GameInstance.h"
 
+// Game mode:
+#include "GameStructs.h"
+#include "SSWGameInstance.h"
+
 // Subsystems
 #include "FontManagerSubsystem.h"
 #include "StarshatterAudioSubsystem.h"
@@ -41,6 +45,14 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    // --------------------------------------------------
+    // Establish BOOT lifecycle state immediately
+    // --------------------------------------------------
+    if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
+    {
+        SSWGI->SetGameMode(EGameMode::BOOT);
+    }
+
     FBootContext Ctx;
     if (BuildContext(Ctx))
     {
@@ -54,7 +66,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     // Do NOT auto-load heavy content here unless you explicitly want boot-time generation.
     // Recommended: call BootGameDataLoader() from GameInitSubsystem during INIT.
     //
-    // BootGameDataLoader(false);
+    BootGameDataLoader(true);
 
     MarkBootComplete();
 }

@@ -29,6 +29,11 @@
     Any heavy game data parsing/generation should be triggered after
     boot (typically during EGameMode::INIT) via the GameInit subsystem.
 
+    GAME MODE OWNERSHIP
+    ===================
+    BootSubsystem sets EGameMode::BOOT at the start of Initialize().
+    It does not advance beyond BOOT.
+
     BOOT COMPLETE
     =============
     BootComplete is broadcast once the boot sequence finishes.

@@ -1,75 +1,37 @@
 /*
-Project Starshatter Wars
-Fractal Dev Studios
-Copyright (C) 2025-2026.
-All Rights Reserved.
+    Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (C) 2025-2026.
+    All Rights Reserved.
 
-SUBSYSTEM:    StarshatterWars (Unreal Engine)
-FILE:         StarshatterGameInitSubsystem.h / .cpp
-AUTHOR:       Carlos Bott
+    SUBSYSTEM:    StarshatterWars (Unreal Engine)
+    FILE:         StarshatterGameInitSubsystem.cpp
+    AUTHOR:       Carlos Bott
 
-OVERVIEW
-========
-Post-boot game initialization coordinator.
+    OVERVIEW
+    ========
+    Implementation for post-boot game initialization.
 
-This subsystem executes AFTER the StarshatterBootSubsystem
-has completed all startup phases, including GameInstance
-boot and first valid world initialization.
-
-It is responsible for initializing runtime game systems
-that require:
-  - Settings to be loaded and applied
-  - Core subsystems to be active
-  - A valid UWorld
-  - GameDataLoader to be present
-
-This subsystem intentionally does NOT perform:
-  - SaveGame loading
-  - Audio, video, or input configuration
-  - Boot-time service actor spawning
-
-BOOT ORDER
-==========
-1) StarshatterBootSubsystem
-   - GameInstance boot
-   - World boot
-   - GameDataLoader spawn
-   - BootComplete broadcast
-
-2) StarshatterGameInitSubsystem (this)
-   - Subscribes to BootComplete
-   - Executes once per game session
-   - Performs runtime game initialization
-
-DESIGN GOALS
-============
-- Clear separation between BOOT and GAME INIT
-- Deterministic initialization order
-- No startup logic in UI code
-- No hidden dependencies or race conditions
-- Centralized ownership of runtime initialization
-
-OWNERSHIP RULES
-===============
-- BootSubsystem is the sole authority for startup
-- GameInitSubsystem assumes Boot is complete
-- Gameplay systems may rely on GameInit completion
-- No other system may perform game initialization
-
-This file is intentionally verbose in documentation.
-Runtime initialization order is critical and must
-remain explicit and well-defined.
-
+    This subsystem gates itself behind BootSubsystem completion,
+    then triggers game data loading and performs runtime init.
 */
+
 #include "StarshatterGameInitSubsystem.h"
 
 #include "Engine/GameInstance.h"
+
+// Boot coordinator:
 #include "StarshatterBootSubsystem.h"
+
+// Game data subsystem (replacement for AGameDataLoader actor):
+#include "StarshatterGameDataSubsystem.h"
+
+// Optional: if you want to set EGameMode here and your GI owns it:
+#include "SSWGameInstance.h"
 
 void UStarshatterGameInitSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
-
     BeginAfterBoot();
 }
 
@@ -94,7 +56,6 @@ void UStarshatterGameInitSubsystem::BeginAfterBoot()
         return;
     }
 
-    // Delay until boot completes
     BootSS->OnBootComplete.AddUObject(this, &UStarshatterGameInitSubsystem::RunGameInit);
 }
 
@@ -105,21 +66,43 @@ void UStarshatterGameInitSubsystem::RunGameInit()
 
     bGameInitComplete = true;
 
-    // ----------------------------------------------------
-    // GAME INIT STAGE
-    // ----------------------------------------------------
-    // Put any logic here that must occur AFTER:
-    // - settings loaded/applied
-    // - world exists
-    // - GameDataLoader ensured/spawned
-    //
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    // --------------------------------------------------
+    // OPTIONAL: Set EGameMode to INIT here if GI owns it
+    // --------------------------------------------------
+    if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GI))
+    {
+        SSWGI->SetGameMode(EGameMode::INIT);
+    }
+
+    // --------------------------------------------------
+    // 1) Trigger Game Data Load (Subsystem)
+    // --------------------------------------------------
+    if (UStarshatterGameDataSubsystem* DataSS = GI->GetSubsystem<UStarshatterGameDataSubsystem>())
+    {
+        // Use true only if you want "full generation" behavior:
+        DataSS->LoadAll(true);
+    }
+
+    // --------------------------------------------------
+    // 2) Runtime Initialization (your real init hooks)
+    // --------------------------------------------------
     // Examples:
-    // - Call into Starshatter core runtime init
-    // - Build galaxy caches, mission lists, campaign registry
-    // - Kick off async asset preload
-    // - Register global UI routers that need runtime ready
-    // - Validate config and report to log
+    // - Starshatter core runtime init
+    // - Build registries/caches from loaded data
+    // - Validate data and emit logs
+    // - Initialize gameplay managers
     //
     // Keep this phase pure: do not duplicate Boot work.
-    // ----------------------------------------------------
+
+    // --------------------------------------------------
+    // OPTIONAL: Transition to MENU when ready
+    // --------------------------------------------------
+    if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GI))
+    {
+         SSWGI->SetGameMode(EGameMode::MENU);
+    }
 }
