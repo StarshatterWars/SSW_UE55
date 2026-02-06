@@ -126,6 +126,11 @@ protected:
     FString AltTac;
     FString AltQuit;
 
+    bool bFirstRun_NoPlayerSave = false;
+    bool bHasCampaignSelected = false;
+
+    void ApplyMenuGating();
+
 private:
     void ClearDescription();
     void SetDescription(const FString& Text);

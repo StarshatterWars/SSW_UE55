@@ -21,6 +21,7 @@
 #include "Starshatter.h"
 #include "Campaign.h"
 #include "MenuScreen.h"
+#include "StarshatterPlayerSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMenuDlg, Log, All);
 
@@ -37,6 +38,46 @@ void UMenuDlg::NativeConstruct()
     CampaignPtr = Campaign::GetCampaign();
 
     RegisterControls();
+
+    // Default assumptions
+    bFirstRun_NoPlayerSave = false;
+    bHasCampaignSelected = true;
+
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        if (UStarshatterPlayerSubsystem* PlayerSS = GI->GetSubsystem<UStarshatterPlayerSubsystem>())
+        {
+            if (!PlayerSS->HasLoaded())
+            {
+                PlayerSS->LoadFromBoot();
+            }
+
+            const bool bHasPlayerSave = PlayerSS->HadExistingSaveOnLoad();
+            bFirstRun_NoPlayerSave = !bHasPlayerSave;
+
+            if (bHasPlayerSave)
+            {
+                const FS_PlayerGameInfo& Info = PlayerSS->GetPlayerInfo();
+                bHasCampaignSelected = (Info.Campaign > 0) && (!Info.CampaignRowName.IsNone());
+            }
+            else
+            {
+                bHasCampaignSelected = false;
+            }
+        }
+    }
+
+    ApplyMenuGating();
+
+    // First run routing AFTER gating
+    if (bFirstRun_NoPlayerSave)
+    {
+        if (Manager)
+        {
+            Manager->ShowFirstTimeDlg();
+        }
+    }
+
     Show();
 }
 
@@ -250,4 +291,36 @@ void UMenuDlg::EnableMenuButtons(bool bEnable)
     SetButtonEnabled(BtnMod, bEnable);
     SetButtonEnabled(BtnTac, bEnable);
     SetButtonEnabled(BtnQuit, bEnable);
+}
+
+void UMenuDlg::ApplyMenuGating()
+{
+    // FIRST RUN: disable everything, no exceptions
+    if (bFirstRun_NoPlayerSave)
+    {
+        EnableMenuButtons(false);
+        return;
+    }
+
+    // Default: enable everything (subject to multiplayer rule inside EnableMenuButtons)
+    EnableMenuButtons(true);
+
+    // NO CAMPAIGN SELECTED: only Exit/Tac/Options/Campaign enabled
+    if (!bHasCampaignSelected)
+    {
+        EnableMenuButtons(false);
+
+        SetButtonEnabled(BtnQuit, true);
+        SetButtonEnabled(BtnTac, true);
+        SetButtonEnabled(BtnCampaign, true);
+
+        // Options hub buttons (your implementation routes these all to OptionsScreen)
+        SetButtonEnabled(BtnOptions, true);
+        SetButtonEnabled(BtnVideo, true);
+        SetButtonEnabled(BtnControls, true);
+
+        // Preserve legacy multiplayer filesystem rule
+        if (BtnMulti && Starshatter::UseFileSystem())
+            SetButtonEnabled(BtnMulti, false);
+    }
 }

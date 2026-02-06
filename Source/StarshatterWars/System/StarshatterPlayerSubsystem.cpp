@@ -9,15 +9,19 @@
 
     IMPLEMENTATION
     ==============
-    Centralized player save/load manager with SaveVersion support.
+    Player profile persistence with SaveVersion and migration.
 
-    - Loads UPlayerSaveGame
-    - Extracts SaveVersion + PlayerInfo
-    - Migrates older saves forward (in memory)
-    - Optionally resaves after migration to repair the slot
+    Load behavior:
+    - Records whether a save existed (bHadExistingSave)
+    - Loads if present, migrates if needed
+    - If absent, leaves defaults in memory and expects FirstRun to save
+
+    Save behavior:
+    - Writes UPlayerSaveGame { SaveVersion, PlayerInfo } to slot
 =============================================================================*/
 
 #include "StarshatterPlayerSubsystem.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Logging/LogMacros.h"
 
@@ -27,6 +31,9 @@ void UStarshatterPlayerSubsystem::Initialize(FSubsystemCollectionBase& Collectio
 
     bLoaded = false;
     bDirty = false;
+    bHadExistingSave = false;
+
+    // PlayerInfo is default-constructed (FS_PlayerGameInfo ctor).
 }
 
 void UStarshatterPlayerSubsystem::Deinitialize()
@@ -49,18 +56,23 @@ bool UStarshatterPlayerSubsystem::LoadFromBoot()
 
 bool UStarshatterPlayerSubsystem::LoadPlayer()
 {
-    if (UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+    // FIRST-RUN flag: did a save exist before we loaded?
+    bHadExistingSave = UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex);
+
+    if (bHadExistingSave)
     {
         FS_PlayerGameInfo LoadedInfo;
         int32 LoadedVersion = 0;
 
         if (!LoadGameInternal(SlotName, UserIndex, LoadedInfo, LoadedVersion))
         {
-            UE_LOG(LogTemp, Error, TEXT("[PlayerSubsystem] Failed to load save slot."));
+            UE_LOG(LogTemp, Error, TEXT("[PlayerSubsystem] Failed to load save slot. Slot=%s UserIndex=%d"),
+                *SlotName, UserIndex);
             bLoaded = false;
             return false;
         }
 
+        // Version handling
         if (LoadedVersion < CURRENT_SAVE_VERSION)
         {
             UE_LOG(LogTemp, Warning, TEXT("[PlayerSubsystem] Migrating save from v%d to v%d..."),
@@ -73,21 +85,19 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
                 return false;
             }
 
-            // Adopt migrated data
             PlayerInfo = LoadedInfo;
             bLoaded = true;
-            bDirty = true; // mark dirty so we can write repaired save
+            bDirty = true;
 
-            // Repair the slot immediately
+            // Repair slot immediately after migration
             SavePlayer(true);
 
             UE_LOG(LogTemp, Log, TEXT("[PlayerSubsystem] Migration complete; slot repaired."));
         }
         else if (LoadedVersion > CURRENT_SAVE_VERSION)
         {
-            // Save from a newer build; accept but warn
             UE_LOG(LogTemp, Warning,
-                TEXT("[PlayerSubsystem] SaveVersion v%d is newer than build supports (v%d). Attempting to load anyway."),
+                TEXT("[PlayerSubsystem] SaveVersion v%d is newer than build supports (v%d). Loading anyway."),
                 LoadedVersion, CURRENT_SAVE_VERSION);
 
             PlayerInfo = LoadedInfo;
@@ -96,7 +106,6 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
         }
         else
         {
-            // Normal load
             PlayerInfo = LoadedInfo;
             bLoaded = true;
             bDirty = false;
@@ -108,15 +117,12 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
         return true;
     }
 
-    // No save exists — keep defaults (FS_PlayerGameInfo ctor) and create slot
+    // No save exists: keep default-constructed PlayerInfo in memory.
+    // DO NOT auto-create a save here; FirstRun is expected to do that.
     bLoaded = true;
     bDirty = true;
 
-    SavePlayer(true);
-
-    UE_LOG(LogTemp, Log, TEXT("[PlayerSubsystem] No save found. Created default player (SaveVersion=%d)."),
-        CURRENT_SAVE_VERSION);
-
+    UE_LOG(LogTemp, Log, TEXT("[PlayerSubsystem] No player save found. FirstRun required."));
     return true;
 }
 
@@ -194,26 +200,19 @@ bool UStarshatterPlayerSubsystem::LoadGameInternal(
 
 bool UStarshatterPlayerSubsystem::MigratePlayerSave(int32 FromVersion, int32 ToVersion, FS_PlayerGameInfo& InOutPlayerInfo)
 {
-    // IMPORTANT:
-    // This is a stub designed for incremental migrations.
-    // Add cases as you bump CURRENT_SAVE_VERSION.
-
+    // Stepwise migration framework
     if (FromVersion <= 0)
-    {
-        // If you ever had “unversioned” saves, normalize here:
         FromVersion = 1;
-    }
 
-    // Stepwise migrate:
     while (FromVersion < ToVersion)
     {
         switch (FromVersion)
         {
         case 1:
-            // v1 -> v2 example (not currently used since CURRENT_SAVE_VERSION is 1)
-            // Add new fields defaults here when you bump to v2.
+            // v1 -> v2 example (not active yet)
+            // When CURRENT_SAVE_VERSION becomes 2, implement defaults/transform here.
             // Example:
-            // if (InOutPlayerInfo.NewField == 0) InOutPlayerInfo.NewField = 123;
+            // if (InOutPlayerInfo.CampaignRowName.IsNone()) InOutPlayerInfo.CampaignRowName = TEXT("Operation Live Fire");
             FromVersion = 2;
             break;
 
