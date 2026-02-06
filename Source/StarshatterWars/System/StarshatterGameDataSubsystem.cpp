@@ -46,6 +46,10 @@
 #include "SimComponent.h"
 #include "PlayerSaveGame.h"
 
+#include "Logging/LogMacros.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterGameData, Log, All);
+
 template<typename TEnum>
 static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
 {
@@ -149,19 +153,128 @@ void UStarshatterGameDataSubsystem::InitializeDT(const FObjectInitializer& Objec
 		OrderOfBattleDataTable->EmptyTable();
 		GalaxyDataTable->EmptyTable();
 	}
-	GalaxyDataTable->EmptyTable();
-	//OrderOfBattleDataTable->EmptyTable();
 }
 
-FS_Campaign UStarshatterGameDataSubsystem::GetActiveCampaign()
+// ---------------------------------------------------------------------
+// Active Campaign
+// ---------------------------------------------------------------------
+
+void UStarshatterGameDataSubsystem::SetActiveCampaign(const FS_Campaign& Campaign)
+{
+	ActiveCampaign = Campaign;
+}
+
+FS_Campaign UStarshatterGameDataSubsystem::GetActiveCampaign() const
 {
 	return ActiveCampaign;
 }
 
+// ---------------------------------------------------------------------
+// Campaign lookup helpers
+// ---------------------------------------------------------------------
 
-void UStarshatterGameDataSubsystem::SetActiveCampaign(FS_Campaign campaign)
+bool UStarshatterGameDataSubsystem::TryGetCampaignByRowName(FName RowName, FS_Campaign& OutCampaign) const
 {
-	ActiveCampaign = campaign;
+	if (RowName.IsNone())
+		return false;
+
+	// Preferred: DataTable lookup
+	if (CampaignDataTable)
+	{
+		static const FString Context(TEXT("TryGetCampaignByRowName"));
+		const FS_Campaign* Row = CampaignDataTable->FindRow<FS_Campaign>(RowName, Context, true);
+		if (Row)
+		{
+			OutCampaign = *Row;
+			return true;
+		}
+	}
+
+	// Fallback: if you already hydrate CampaignDataArray in runtime
+	// Try to find by matching RowName (only works if FS_Campaign stores it)
+	// If FS_Campaign doesn't store RowName, this fallback will be skipped.
+	// (No-op safe.)
+#if 1
+	for (const FS_Campaign& C : CampaignDataArray)
+	{
+		// If you have a RowName field, use it here.
+		// Example: if (C.RowName == RowName) { OutCampaign = C; return true; }
+		// Unknown in your snippet, so we can't safely compare.
+	}
+#endif
+
+	UE_LOG(LogStarshatterGameData, Warning,
+		TEXT("[GameData] Campaign RowName '%s' not found in CampaignDataTable."),
+		*RowName.ToString());
+
+	return false;
+}
+
+bool UStarshatterGameDataSubsystem::TryGetCampaignByIndex1Based(
+	int32 CampaignIndex1Based,
+	FS_Campaign& OutCampaign) const
+{
+	if (CampaignIndex1Based <= 0)
+		return false;
+
+	const int32 ZeroBased = CampaignIndex1Based - 1;
+
+	// Preferred: stable ordering you control
+	if (CampaignDataArray.IsValidIndex(ZeroBased))
+	{
+		OutCampaign = CampaignDataArray[ZeroBased];
+		return true;
+	}
+
+	// Fallback: DataTable row order (NOT guaranteed stable)
+	if (CampaignDataTable)
+	{
+		const TArray<FName> RowNames = CampaignDataTable->GetRowNames();
+
+		if (RowNames.IsValidIndex(ZeroBased))
+		{
+			return TryGetCampaignByRowName(RowNames[ZeroBased], OutCampaign);
+		}
+	}
+
+	UE_LOG(LogStarshatterGameData, Warning,
+		TEXT("[GameData] Campaign index %d not found (array size=%d)."),
+		CampaignIndex1Based,
+		CampaignDataArray.Num());
+
+	return false;
+}
+
+// ---------------------------------------------------------------------
+// Campaign resolution from PlayerInfo
+// ---------------------------------------------------------------------
+
+bool UStarshatterGameDataSubsystem::ResolveCampaignForPlayer(const FS_PlayerGameInfo& PlayerInfoIn, FS_Campaign& OutCampaign) const
+{
+	// 1) Preferred stable key: CampaignRowName
+	if (!PlayerInfoIn.CampaignRowName.IsNone())
+	{
+		if (TryGetCampaignByRowName(PlayerInfoIn.CampaignRowName, OutCampaign))
+			return true;
+
+		UE_LOG(LogStarshatterGameData, Warning,
+			TEXT("[GameData] ResolveCampaignForPlayer: CampaignRowName '%s' invalid; falling back to Campaign index."),
+			*PlayerInfoIn.CampaignRowName.ToString());
+	}
+
+	// 2) Fallback: 1-based index (legacy UI convention)
+	if (PlayerInfoIn.Campaign > 0)
+	{
+		if (TryGetCampaignByIndex1Based(PlayerInfoIn.Campaign, OutCampaign))
+			return true;
+
+		UE_LOG(LogStarshatterGameData, Warning,
+			TEXT("[GameData] ResolveCampaignForPlayer: Campaign index %d invalid."),
+			PlayerInfoIn.Campaign);
+	}
+
+	// 3) No selection or invalid selection
+	return false;
 }
 
 void UStarshatterGameDataSubsystem::ReadCampaignData()
