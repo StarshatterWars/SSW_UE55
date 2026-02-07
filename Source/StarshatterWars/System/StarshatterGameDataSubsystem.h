@@ -221,7 +221,7 @@ public:
 
     void LoadContentBundle();
     void LoadForms();
-    void ParseCtrlDef(TermStruct* val, const char* fn);
+    void ParseCtrlDef(TermStruct* val, const char* fn, FS_UIControlDef& Out);
     void ParseLayoutDef(TermStruct* val, const char* fn);
     void LoadForm(const char* fname);
     void LoadAwardTables();
@@ -418,7 +418,10 @@ protected:
     UDataTable* RegionsDataTable;
     UDataTable* ShipDesignDataTable;
     UDataTable* SystemDesignDataTable;
-    UDataTable* FormDefDataTable;
+    
+    UPROPERTY()
+    UDataTable* FormDefDataTable = nullptr;
+    
     UDataTable* AwardsDataTable;
 
     // CampaignAction parse scratch

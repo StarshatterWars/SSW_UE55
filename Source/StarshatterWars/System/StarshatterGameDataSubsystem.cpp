@@ -43,6 +43,9 @@
 #include "TimerManager.h"
 #include "FormattingUtils.h"
 
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+
 #include "SimComponent.h"
 #include "PlayerSaveGame.h"
 
@@ -97,6 +100,24 @@ static FColor Vec3ToColor255(const Vec3& a)
 {
 	return FColor(ToByteClamp(a.X), ToByteClamp(a.Y), ToByteClamp(a.Z), 255);
 }
+
+static FColor ToFColor(const Color& c)
+{
+	// Assuming legacy Color uses 0..255 channels. Adjust if your Color is 0..1 floats.
+	return FColor((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), (uint8)c.Alpha());
+}
+
+static FIntRect ToFIntRect(const Rect& r)
+{
+	// Adjust if Rect is (x,y,w,h) instead of (l,t,r,b).
+	return FIntRect((int32)r.x, (int32)r.y, (int32)(r.x + r.w), (int32)(r.y + r.h));
+}
+
+static FMargin ToFMargin(const Insets& in)
+{
+	return FMargin((float)in.left, (float)in.top, (float)in.right, (float)in.bottom);
+}
+
 // +--------------------------------------------------------------------+
 void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -944,7 +965,7 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	if (!SSWInstance)
 		return;
 	
-	//LoadContentBundle();
+	LoadContentBundle();
 	if (UGameInstance* GI = GetGameInstance())
 	{
 		if (UStarshatterGameDataSubsystem* GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>())
@@ -8434,72 +8455,139 @@ UStarshatterGameDataSubsystem::GetContentBundleText(const char* key) const
 
 // +--------------------------------------------------------------------+
 
-void
-UStarshatterGameDataSubsystem::LoadContentBundle() {
-	ProjectPath = FPaths::ProjectContentDir();
-	ProjectPath.Append(TEXT("GameData/Content/content.txt"));
+void UStarshatterGameDataSubsystem::LoadContentBundle()
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::LoadContentBundle()"));
 
-	char* fn = TCHAR_TO_ANSI(*ProjectPath);
+	const FString ContentFilePath =
+		FPaths::ProjectContentDir() / TEXT("GameData/Content/content.txt");
 
-	SSWInstance->loader->GetLoader();
-	if (SSWInstance->loader->GetLoader()) {
-		BYTE* buffer = 0;
-		BYTE* block = 0;
-		SSWInstance->loader->LoadBuffer(fn, buffer, true, true);
-		if (buffer && *buffer) {
+	UE_LOG(LogTemp, Log, TEXT("Loading Content Bundle: %s"), *ContentFilePath);
 
-			Text key;
-			Text val;
+	if (!FPaths::FileExists(ContentFilePath))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Content bundle not found: %s"), *ContentFilePath);
+		return;
+	}
 
-			char* p = (char*)buffer;
-			int   s = 0;
+	TArray<uint8> Bytes;
+	if (!FFileHelper::LoadFileToArray(Bytes, *ContentFilePath))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to read content bundle: %s"), *ContentFilePath);
+		return;
+	}
+
+	Bytes.Add(0); // null terminate
+
+	const char* buffer = reinterpret_cast<const char*>(Bytes.GetData());
+	if (!buffer || !*buffer)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Content bundle empty: %s"), *ContentFilePath);
+		return;
+	}
+
+	// Clear previous content (Dictionary<Text> does NOT have Destroy() in your build)
+	// Use the legacy Dictionary API:
+	ContentValues.Clear();      // <-- if your Dictionary uses destroy(), change to: ContentValues.destroy();
+
+	Text key;
+	Text val;
+
+	const char* p = buffer;
+	int s = 0; // 0=key, 1=after '=', waiting for first value char, 2=value, -1=comment
+	key = "";
+	val = "";
+
+	int32 InsertedCount = 0;
+
+	auto FlushPair = [&]()
+		{
+			if (key != "" && val != "")
+			{
+				Text k = Text(key).trim();
+				Text v = Text(val).trim();
+
+				ContentValues.Insert(k, v);
+				++InsertedCount;
+
+				const FString KStr(ANSI_TO_TCHAR(k.data()));
+				const FString VStr(ANSI_TO_TCHAR(v.data()));
+				UE_LOG(LogTemp, Log, TEXT("Inserted- %s: %s"), *KStr, *VStr);
+			}
 
 			key = "";
 			val = "";
+			s = 0;
+		};
 
-			while (*p) {
-				if (*p == '=') {
-					s = 1;
-				}
-				else if (*p == '\n' || *p == '\r') {
-					if (key != "" && val != "") {
-						ContentValues.Insert(Text(key).trim(), Text(val).trim());
-						UE_LOG(LogTemp, Log, TEXT("Inserted- %s: %s"), *FString(Text(key).trim()), *FString(Text(val).trim()));
-					}
-					s = 0;
-
-					key = "";
-					val = "";
-				}
-				else if (s == 0) {
-					if (!key[0]) {
-						if (*p == '#') {
-							s = -1; // comment
-						}
-						else if (!isspace(*p)) {
-							key.append(*p);
-						}
-					}
-					else {
-						key.append(*p);
-					}
-				}
-				else if (s == 1) {
-					if (!isspace(*p)) {
-						s = 2;
-						val.append(*p);
-					}
-				}
-				else if (s == 2) {
-					val.append(*p);
-				}
-
-				p++;
-
+	while (*p)
+	{
+		if (*p == '\n' || *p == '\r')
+		{
+			// newline ends a line (and ends comment mode)
+			if (s != -1)
+			{
+				FlushPair();
 			}
-			SSWInstance->loader->ReleaseBuffer(buffer);
+			else
+			{
+				// comment line ended
+				s = 0;
+				key = "";
+				val = "";
+			}
 		}
+		else if (s == -1)
+		{
+			// comment: ignore until newline
+		}
+		else if (*p == '=')
+		{
+			s = 1;
+		}
+		else if (s == 0)
+		{
+			// key parse (legacy behavior)
+			if (!key[0])
+			{
+				if (*p == '#')
+				{
+					s = -1; // comment
+				}
+				else if (!isspace((unsigned char)*p))
+				{
+					key.append(*p);
+				}
+			}
+			else
+			{
+				key.append(*p);
+			}
+		}
+		else if (s == 1)
+		{
+			// first non-space begins value
+			if (!isspace((unsigned char)*p))
+			{
+				s = 2;
+				val.append(*p);
+			}
+		}
+		else if (s == 2)
+		{
+			val.append(*p);
+		}
+
+		++p;
 	}
+
+	// Handle EOF without trailing newline
+	if (s != -1)
+	{
+		FlushPair();
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Content bundle loaded. Entries=%d"), InsertedCount);
 }
 
 // +--------------------------------------------------------------------+
@@ -8507,356 +8595,581 @@ UStarshatterGameDataSubsystem::LoadContentBundle() {
 void UStarshatterGameDataSubsystem::LoadForms()
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::LoadForms()"));
-	ProjectPath = FPaths::ProjectContentDir();
-	ProjectPath.Append(TEXT("GameData/Screens/"));
-	FString PathName = ProjectPath;
 
-	TArray<FString> output;
-	output.Empty();
+	const FString FormsDir = FPaths::ProjectContentDir() / TEXT("GameData/Screens/");
+	const FString Wildcard = FormsDir / TEXT("*.frm");
 
-	FString Path = PathName + "*.frm";
-	FFileManagerGeneric::Get().FindFiles(output, *Path, true, false);
+	TArray<FString> Files;
+	Files.Empty();
 
-	for (int i = 0; i < output.Num(); i++) {
+	// Prefer IFileManager over FFileManagerGeneric:
+	IFileManager::Get().FindFiles(Files, *Wildcard, /*Files*/true, /*Directories*/false);
 
-		FString FileName = ProjectPath;
-		FileName.Append(output[i]);
+	UE_LOG(LogTemp, Log, TEXT("Found %d .frm files in %s"), Files.Num(), *FormsDir);
 
-		char* fn = TCHAR_TO_ANSI(*FileName);
+	for (const FString& Leaf : Files)
+	{
+		const FString FullPath = FormsDir / Leaf;
+		const char* Fn = TCHAR_TO_ANSI(*FullPath);
 
-		LoadForm(fn);
+		LoadForm(Fn); // next target: remove DataLoader inside LoadForm if it uses it
 	}
 }
 
-void UStarshatterGameDataSubsystem::ParseCtrlDef(TermStruct* val, const char* fn)
+
+void UStarshatterGameDataSubsystem::ParseCtrlDef(TermStruct* Val, const char* Fn, FS_UIControlDef& OutCtrl)
 {
+	if (!Val)
+		return;
+
 	Text buf;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			if (pdef->name()->value() == "text" ||
-				pdef->name()->value() == "caption") {
-				GetDefText(buf, pdef, fn);
+	auto SetRectXYWH = [](FIntRect& Out, int32 X, int32 Y, int32 W, int32 H)
+		{
+			Out.Min.X = X;
+			Out.Min.Y = Y;
+			Out.Max.X = X + W;
+			Out.Max.Y = Y + H;
+		};
+
+	auto SetMargin = [](FMargin& Out, const Insets& In)
+		{
+			Out.Left = (float)In.left;
+			Out.Top = (float)In.top;
+			Out.Right = (float)In.right;
+			Out.Bottom = (float)In.bottom;
+		};
+
+	for (int i = 0; i < Val->elements()->size(); i++)
+	{
+		TermDef* pdef = Val->elements()->at(i)->isDef();
+		if (!pdef)
+			continue;
+
+		const Text& Key = pdef->name()->value();
+
+		// --- strings ---
+		if (Key == "text")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Text = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "caption")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Caption = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "alt")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Alt = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "font")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Font = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "texture")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Texture = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "standard_image")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.StandardImage = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "activated_image")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.ActivatedImage = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "transition_image")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.TransitionImage = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "picture")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Picture = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "item")
+		{
+			GetDefText(buf, pdef, Fn);
+			OutCtrl.Item = ANSI_TO_TCHAR(buf);
+		}
+		else if (Key == "password")
+		{
+			Text pw;
+			GetDefText(pw, pdef, Fn);
+			OutCtrl.Password = ANSI_TO_TCHAR(pw);
+		}
+
+		// --- ids ---
+		else if (Key == "id")
+		{
+			DWORD id = 0;
+			GetDefNumber(id, pdef, Fn);
+			OutCtrl.Id = (int32)id;
+		}
+		else if (Key == "pid")
+		{
+			DWORD pid = 0;
+			GetDefNumber(pid, pdef, Fn);
+			OutCtrl.ParentId = (int32)pid;
+		}
+
+		// --- type ---
+		else if (Key == "type")
+		{
+			GetDefText(buf, pdef, Fn);
+			Text type_name(buf);
+
+			if (type_name == "button")      OutCtrl.Type = EUIControlType::Button;
+			else if (type_name == "combo")  OutCtrl.Type = EUIControlType::Combo;
+			else if (type_name == "edit")   OutCtrl.Type = EUIControlType::Edit;
+			else if (type_name == "image")  OutCtrl.Type = EUIControlType::Image;
+			else if (type_name == "slider") OutCtrl.Type = EUIControlType::Slider;
+			else if (type_name == "list")   OutCtrl.Type = EUIControlType::List;
+			else if (type_name == "rich" || type_name == "text" || type_name == "rich_text")
+				OutCtrl.Type = EUIControlType::RichText;
+			else
+				OutCtrl.Type = EUIControlType::Label;
+		}
+
+		// --- geometry ---
+		else if (Key == "rect")
+		{
+			Rect r{};
+			GetDefRect(r, pdef, Fn);
+			SetRectXYWH(OutCtrl.Rect, (int32)r.x, (int32)r.y, (int32)r.w, (int32)r.h);
+		}
+		else if (Key == "margins")
+		{
+			Insets m{};
+			GetDefInsets(m, pdef, Fn);
+			SetMargin(OutCtrl.Margins, m);
+		}
+		else if (Key == "text_insets")
+		{
+			Insets t{};
+			GetDefInsets(t, pdef, Fn);
+			SetMargin(OutCtrl.TextInsets, t);
+		}
+		else if (Key == "cell_insets")
+		{
+			Insets ci{};
+			GetDefInsets(ci, pdef, Fn);
+			SetMargin(OutCtrl.CellInsets, ci);
+		}
+		else if (Key == "cells")
+		{
+			Rect c{};
+			GetDefRect(c, pdef, Fn);
+			SetRectXYWH(OutCtrl.Cells, (int32)c.x, (int32)c.y, (int32)c.w, (int32)c.h);
+		}
+		else if (Key == "fixed_width")
+		{
+			int fixed_width = 0;
+			GetDefNumber(fixed_width, pdef, Fn);
+			OutCtrl.FixedWidth = fixed_width;
+		}
+		else if (Key == "fixed_height")
+		{
+			int fixed_height = 0;
+			GetDefNumber(fixed_height, pdef, Fn);
+			OutCtrl.FixedHeight = fixed_height;
+		}
+
+		else if (Key == "active_color")
+		{
+			FVector v;
+			GetDefVec(v, pdef, Fn);
+
+			OutCtrl.ActiveColor = FColor(
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.X), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Y), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Z), 0, 255),
+				255
+			);
+			}
+		else if (Key == "back_color")
+		{
+			FVector v;
+			GetDefVec(v, pdef, Fn);
+
+			OutCtrl.BackColor = FColor(
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.X), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Y), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Z), 0, 255),
+				255
+			);
+			}
+		else if (Key == "base_color")
+		{
+			FVector v;
+			GetDefVec(v, pdef, Fn);
+
+			OutCtrl.BaseColor = FColor(
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.X), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Y), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Z), 0, 255),
+				255
+			);
+			}
+		else if (Key == "border_color")
+		{
+			FVector v;
+			GetDefVec(v, pdef, Fn);
+
+			OutCtrl.BorderColor = FColor(
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.X), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Y), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Z), 0, 255),
+				255
+			);
+			}
+		else if (Key == "fore_color")
+		{
+			FVector v;
+			GetDefVec(v, pdef, Fn);
+
+			OutCtrl.ForeColor = FColor(
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.X), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Y), 0, 255),
+				(uint8)FMath::Clamp(FMath::RoundToInt(v.Z), 0, 255),
+				255
+			);
+		}
+
+		// --- bools ---
+		else if (Key == "enabled") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bEnabled = b; }
+		else if (Key == "smooth_scroll") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bSmoothScroll = b; }
+		else if (Key == "single_line") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bSingleLine = b; }
+		else if (Key == "active") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bActive = b; }
+		else if (Key == "animated") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bAnimated = b; }
+		else if (Key == "border") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bBorder = b; }
+		else if (Key == "drop_shadow") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bDropShadow = b; }
+		else if (Key == "show_headings") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bShowHeadings = b; }
+		else if (Key == "sticky") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bSticky = b; }
+		else if (Key == "transparent") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bTransparent = b; }
+		else if (Key == "hide_partial") { bool b = false; GetDefBool(b, pdef, Fn); OutCtrl.bHidePartial = b; }
+
+		// --- ints ---
+		else if (Key == "tab") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.Tab = n; }
+		else if (Key == "orientation") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.Orientation = n; }
+		else if (Key == "leading") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.Leading = n; }
+		else if (Key == "line_height") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.LineHeight = n; }
+		else if (Key == "multiselect") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.MultiSelect = n; }
+		else if (Key == "dragdrop") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.DragDrop = n; }
+		else if (Key == "scroll_bar") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.ScrollBar = n; }
+		else if (Key == "picture_loc") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.PictureLoc = n; }
+		else if (Key == "picture_type") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.PictureType = n; }
+		else if (Key == "num_leds") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.NumLeds = n; }
+		else if (Key == "item_style") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.ItemStyle = n; }
+		else if (Key == "selected_style") { int n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.SelectedStyle = n; }
+
+		// --- raw legacy bits ---
+		else if (Key == "style") { DWORD n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.Style = (int32)n; }
+		else if (Key == "bevel_width") { DWORD n = 0; GetDefNumber(n, pdef, Fn); OutCtrl.BevelWidth = (int32)n; }
+
+		else if (Key == "align" || Key == "text_align")
+		{
+			DWORD a = DT_LEFT;
+
+			if (GetDefText(buf, pdef, Fn))
+			{
+				if (!_stricmp(buf, "left"))        a = DT_LEFT;
+				else if (!_stricmp(buf, "right"))  a = DT_RIGHT;
+				else if (!_stricmp(buf, "center")) a = DT_CENTER;
+			}
+			else
+			{
+				GetDefNumber(a, pdef, Fn);
 			}
 
-			else if (pdef->name()->value() == "id") {
-				DWORD id;
+			OutCtrl.Align = (int32)a;
+		}
+	}
+}
+
+void UStarshatterGameDataSubsystem::LoadForm(const char* fn)
+{
+	if (!fn || !*fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LoadForm called with null/empty filename"));
+		return;
+	}
+
+	const FString FormFilePath = ANSI_TO_TCHAR(fn);
+
+	if (!FPaths::FileExists(FormFilePath))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Form file not found: %s"), *FormFilePath);
+		return;
+	}
+
+	TArray<uint8> Bytes;
+	if (!FFileHelper::LoadFileToArray(Bytes, *FormFilePath))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to read form file: %s"), *FormFilePath);
+		return;
+	}
+	Bytes.Add(0); // null terminate for BlockReader
+
+	Parser parser(new BlockReader((const char*)Bytes.GetData()));
+	Term* term = parser.ParseTerm();
+
+	if (!term)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to parse form file (no terms): %s"), *FormFilePath);
+		return;
+	}
+
+	TermText* file_type = term->isText();
+	if (!file_type || file_type->value() != "FORM")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid Form File: %s"), *FormFilePath);
+		delete term;
+		return;
+	}
+
+	FS_FormDesign NewForm;
+
+	// FormName: Content/GameData/Screens/Foo.frm -> Foo
+	FString FormName = FormFilePath;
+	FormName.ReplaceInline(TEXT("\\"), TEXT("/"));
+
+	FString Root = (FPaths::ProjectContentDir() / TEXT("GameData/Screens/"));
+	Root.ReplaceInline(TEXT("\\"), TEXT("/"));
+
+	FormName.RemoveFromStart(Root);
+	FormName.RemoveFromEnd(TEXT(".frm"));
+
+	NewForm.Name = FormName;
+
+	auto SetRectXYWH = [](FIntRect& Out, int32 X, int32 Y, int32 W, int32 H)
+		{
+			Out.Min.X = X;
+			Out.Min.Y = Y;
+			Out.Max.X = X + W;
+			Out.Max.Y = Y + H;
+		};
+
+	auto SetMargin = [](FMargin& Out, const Insets& In)
+		{
+			Out.Left = (float)In.left;
+			Out.Top = (float)In.top;
+			Out.Right = (float)In.right;
+			Out.Bottom = (float)In.bottom;
+		};
+
+	// Parse
+	while (true)
+	{
+		delete term;
+		term = parser.ParseTerm();
+		if (!term)
+			break;
+
+		TermDef* def = term->isDef();
+		if (!def)
+			continue;
+
+		if (def->name()->value() != "form")
+			continue;
+
+		if (!def->term() || !def->term()->isStruct())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("WARNING: form structure missing in '%s'"), *FormFilePath);
+			continue;
+		}
+
+		TermStruct* formStruct = def->term()->isStruct();
+
+		for (int i = 0; i < formStruct->elements()->size(); i++)
+		{
+			TermDef* pdef = formStruct->elements()->at(i)->isDef();
+			if (!pdef)
+				continue;
+
+			const Text& Key = pdef->name()->value();
+			Text buf;
+
+			if (Key == "text" || Key == "caption")
+			{
+				GetDefText(buf, pdef, fn);
+				NewForm.Caption = ANSI_TO_TCHAR(buf);
+			}
+			else if (Key == "id")
+			{
+				DWORD id = 0;
 				GetDefNumber(id, pdef, fn);
+				NewForm.Id = (int32)id;
 			}
-
-			else if (pdef->name()->value() == "pid") {
-				DWORD id;
-				GetDefNumber(id, pdef, fn);
+			else if (Key == "pid")
+			{
+				DWORD pid = 0;
+				GetDefNumber(pid, pdef, fn);
+				NewForm.PId = (int32)pid;
 			}
-
-			else if (pdef->name()->value() == "alt") {
-				GetDefText(buf, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "type") {
-				DWORD type = (int8)EControlType::WINDEF_LABEL;
-
-				GetDefText(buf, pdef, fn);
-				Text type_name(buf);
-
-				if (type_name == "button")
-					type = (int8)EControlType::WINDEF_BUTTON;
-
-				else if (type_name == "combo")
-					type = (int8)EControlType::WINDEF_COMBO;
-
-				else if (type_name == "edit")
-					type = (int8)EControlType::WINDEF_EDIT;
-
-				else if (type_name == "image")
-					type = (int8)EControlType::WINDEF_IMAGE;
-
-				else if (type_name == "slider")
-					type = (int8)EControlType::WINDEF_SLIDER;
-
-				else if (type_name == "list")
-					type = (int8)EControlType::WINDEF_LIST;
-
-				else if (type_name == "rich" || type_name == "text" || type_name == "rich_text")
-					type = (int8)EControlType::WINDEF_RICH;
-			}
-
-			else if (pdef->name()->value() == "rect") {
-				Rect r;
+			else if (Key == "rect")
+			{
+				Rect r{};
 				GetDefRect(r, pdef, fn);
+				SetRectXYWH(NewForm.Rect, (int32)r.x, (int32)r.y, (int32)r.w, (int32)r.h);
 			}
-
-			else if (pdef->name()->value() == "font") {
+			else if (Key == "font")
+			{
 				GetDefText(buf, pdef, fn);
+				NewForm.Font = ANSI_TO_TCHAR(buf);
 			}
-
-			else if (pdef->name()->value() == "active_color") {
-				Color c;
-				GetDefColor(c, pdef, fn);
+			else if (Key == "back_color")
+			{
+				Vec3 c{};
+				GetDefVec(c, pdef, fn);
+				NewForm.BackColor = FColor((uint8)c.X, (uint8)c.Y, (uint8)c.Z, 255);
 			}
-
-			else if (pdef->name()->value() == "back_color") {
-				Color c;
-				GetDefColor(c, pdef, fn);
+			else if (Key == "base_color")
+			{
+				Vec3 c{};
+				GetDefVec(c, pdef, fn);
+				NewForm.BaseColor = FColor((uint8)c.X, (uint8)c.Y, (uint8)c.Z, 255);
 			}
-
-			else if (pdef->name()->value() == "base_color") {
-				Color c;
-				GetDefColor(c, pdef, fn);
+			else if (Key == "fore_color")
+			{
+				Vec3 c{};
+				GetDefVec(c, pdef, fn);
+				NewForm.ForeColor = FColor((uint8)c.X, (uint8)c.Y, (uint8)c.Z, 255);
 			}
-
-			else if (pdef->name()->value() == "border_color") {
-				Color c;
-				GetDefColor(c, pdef, fn);
+			else if (Key == "margins")
+			{
+				Insets m{};
+				GetDefInsets(m, pdef, fn);
+				SetMargin(NewForm.Insets, m);
 			}
-
-			else if (pdef->name()->value() == "fore_color") {
-				Color c;
-				GetDefColor(c, pdef, fn);
+			else if (Key == "text_insets")
+			{
+				Insets t{};
+				GetDefInsets(t, pdef, fn);
+				SetMargin(NewForm.TextInsets, t);
 			}
-
-			else if (pdef->name()->value() == "texture") {
+			else if (Key == "cell_insets")
+			{
+				Insets ci{};
+				GetDefInsets(ci, pdef, fn);
+				SetMargin(NewForm.CellInsets, ci);
+			}
+			else if (Key == "cells")
+			{
+				Rect c{};
+				GetDefRect(c, pdef, fn);
+				SetRectXYWH(NewForm.Cells, (int32)c.x, (int32)c.y, (int32)c.w, (int32)c.h);
+			}
+			else if (Key == "texture")
+			{
 				GetDefText(buf, pdef, fn);
-
-				if (buf.length() > 0 && !buf.contains('.'))
-					buf.append(".pcx");
+				NewForm.Texture = ANSI_TO_TCHAR(buf);
 			}
-
-			else if (pdef->name()->value() == "margins") {
-				Insets margins;
-				GetDefInsets(margins, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "text_insets") {
-				Insets text_insets;
-				GetDefInsets(text_insets, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "cell_insets") {
-				Insets cell_insets;
-				GetDefInsets(cell_insets, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "cells") {
-				Rect cells;
-				GetDefRect(cells, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "fixed_width") {
-				int fixed_width;
-				GetDefNumber(fixed_width, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "fixed_height") {
-				int fixed_height;
-				GetDefNumber(fixed_height, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "standard_image") {
-				GetDefText(buf, pdef, fn);
-
-				if (buf.length() > 0 && !buf.contains('.'))
-					buf.append(".pcx");
-			}
-
-			else if (pdef->name()->value() == "activated_image") {
-				GetDefText(buf, pdef, fn);
-
-				if (buf.length() > 0 && !buf.contains('.'))
-					buf.append(".pcx");
-			}
-
-			else if (pdef->name()->value() == "transition_image") {
-				GetDefText(buf, pdef, fn);
-
-				if (buf.length() > 0 && !buf.contains('.'))
-					buf.append(".pcx");
-			}
-
-			else if (pdef->name()->value() == "picture") {
-				GetDefText(buf, pdef, fn);
-
-				if (buf.length() > 0 && !buf.contains('.'))
-					buf.append(".pcx");
-
-			}
-
-			else if (pdef->name()->value() == "enabled") {
-				bool e;
-				GetDefBool(e, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "item") {
-				GetDefText(buf, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "tab") {
-				int tab = 0;
-				GetDefNumber(tab, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "column") {
-
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: column structure missing in '%s'"), *FString(fn));
-				}
-				else {
-					TermStruct* val = pdef->term()->isStruct();
-				}
-			}
-
-			else if (pdef->name()->value() == "orientation") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "leading") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "line_height") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "multiselect") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "dragdrop") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "scroll_bar") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "smooth_scroll") {
-				bool b;
+			else if (Key == "transparent")
+			{
+				bool b = false;
 				GetDefBool(b, pdef, fn);
+				NewForm.bTransparent = b;
 			}
-
-			else if (pdef->name()->value() == "picture_loc") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "picture_type") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "style") {
-				DWORD s;
+			else if (Key == "style")
+			{
+				DWORD s = 0;
 				GetDefNumber(s, pdef, fn);
+				NewForm.Style = (int32)s;
 			}
-
-			else if (pdef->name()->value() == "align" ||
-				pdef->name()->value() == "text_align") {
+			else if (Key == "align" || Key == "text_align")
+			{
 				DWORD a = DT_LEFT;
 
-				if (GetDefText(buf, pdef, fn)) {
-					if (!_stricmp(buf, "left"))
-						a = DT_LEFT;
-					else if (!_stricmp(buf, "right"))
-						a = DT_RIGHT;
-					else if (!_stricmp(buf, "center"))
-						a = DT_CENTER;
+				if (GetDefText(buf, pdef, fn))
+				{
+					if (!_stricmp(buf, "left"))        a = DT_LEFT;
+					else if (!_stricmp(buf, "right"))  a = DT_RIGHT;
+					else if (!_stricmp(buf, "center")) a = DT_CENTER;
 				}
-
-				else {
+				else
+				{
 					GetDefNumber(a, pdef, fn);
 				}
+
+				NewForm.Align = (int32)a;
 			}
-
-			else if (pdef->name()->value() == "single_line") {
-				bool single = false;
-				GetDefBool(single, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "bevel_width") {
-				DWORD s;
-				GetDefNumber(s, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "active") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "animated") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "border") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "drop_shadow") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "show_headings") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "sticky") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "transparent") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "hide_partial") {
-				bool b;
-				GetDefBool(b, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "num_leds") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "item_style") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "selected_style") {
-				int n;
-				GetDefNumber(n, pdef, fn);
-			}
-
-			else if (pdef->name()->value() == "password") {
-				Text password;
-				GetDefText(password, pdef, fn);
-			}
-
-			// layout constraints:
-
-			else if (pdef->name()->value() == "layout") {
-
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					UE_LOG(LogTemp, Log, TEXT("WARNING: layout structure missing in '%s'"), *FString(fn));
+			else if (Key == "layout")
+			{
+				if (!pdef->term() || !pdef->term()->isStruct())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("WARNING: layout structure missing in '%s'"), *FormFilePath);
 				}
-				else {
+				else
+				{
 					ParseLayoutDef(pdef->term()->isStruct(), fn);
+					NewForm.LayoutDef = LayoutDef;
+				}
+			}
+			else if (Key == "defctrl")
+			{
+				if (!pdef->term() || !pdef->term()->isStruct())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("WARNING: defctrl structure missing in '%s'"), *FormFilePath);
+				}
+				else
+				{
+					// Start from a clean default each time
+					NewForm.DefaultCtrl = FS_UIControlDef{};
+					ParseCtrlDef(pdef->term()->isStruct(), fn, NewForm.DefaultCtrl);
+				}
+			}
+			else if (Key == "ctrl")
+			{
+				if (!pdef->term() || !pdef->term()->isStruct())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("WARNING: ctrl structure missing in '%s'"), *FormFilePath);
+				}
+				else
+				{
+					FS_UIControlDef Ctrl = NewForm.DefaultCtrl; // inherit defaults
+					ParseCtrlDef(pdef->term()->isStruct(), fn, Ctrl);
+					NewForm.Controls.Add(Ctrl);
 				}
 			}
 		}
 	}
+
+	// AddRow ONCE (after parse)
+	if (!FormDefDataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FormDefDataTable is null; form '%s' not added"), *FormName);
+		return;
+	}
+
+	// AddRow ONCE after parsing completes
+	if (!FormDefDataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FormDefDataTable is null"));
+		return;
+	}
+
+	if (FormDefDataTable->GetRowStruct() != FS_FormDesign::StaticStruct())
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("FormDefDataTable RowStruct mismatch. Expected %s, got %s"),
+			*FS_FormDesign::StaticStruct()->GetName(),
+			*FormDefDataTable->GetRowStruct()->GetName()
+		);
+		return;
+	}
+
+	//FormDefDataTable->AddRow(
+	//	FName(*FormName),
+	//	reinterpret_cast<uint8*>(&NewForm)
+	//);
 }
 
 void UStarshatterGameDataSubsystem::ParseLayoutDef(TermStruct* val, const char* fn)
@@ -8908,238 +9221,6 @@ void UStarshatterGameDataSubsystem::ParseLayoutDef(TermStruct* val, const char* 
 		}
 	}
 	LayoutDef = NewLayoutDef;
-}
-
-void
-UStarshatterGameDataSubsystem::LoadForm(const char* fn)
-{
-	SSWInstance->loader->GetLoader();
-	SSWInstance->loader->SetDataPath(fn);
-
-	BYTE* block = 0;
-	SSWInstance->loader->LoadBuffer(fn, block, true);
-
-	Parser parser(new BlockReader((const char*)block));
-	Term* term = parser.ParseTerm();
-
-	if (!term) {
-		return;
-	}
-	else {
-		TermText* file_type = term->isText();
-		if (!file_type || file_type->value() != "FORM") {
-			UE_LOG(LogTemp, Log, TEXT("Invalid Form File: %s"), *FString(fn));
-			return;
-		}
-	}
-
-	FS_FormDesign NewForm;
-	FString FormName = FString(fn);
-	FormName.RemoveFromStart(FPaths::ProjectContentDir() + "GameData/Screens/");
-	FormName.RemoveFromEnd(".frm");
-	NewForm.Name = FormName;
-
-	do {
-		delete term;
-		term = parser.ParseTerm();
-
-		if (term) {
-			TermDef* def = term->isDef();
-			if (def) {
-				if (def->name()->value() == "form") {
-
-					if (!def->term() || !def->term()->isStruct()) {
-						UE_LOG(LogTemp, Log, TEXT("WARNING: form structure missing in '%s'"), *FString(fn));
-					}
-					else {
-						TermStruct* val = def->term()->isStruct();
-
-						for (int i = 0; i < val->elements()->size(); i++) {
-							Text buf;
-
-							TermDef* pdef = val->elements()->at(i)->isDef();
-							if (pdef) {
-								if (pdef->name()->value() == "text" ||
-									pdef->name()->value() == "caption") {
-
-									GetDefText(buf, pdef, fn);
-									NewForm.Caption = FString(buf);
-								}
-
-								else if (pdef->name()->value() == "id") {
-									DWORD id;
-									GetDefNumber(id, pdef, fn);
-									NewForm.Id = id;
-								}
-
-								else if (pdef->name()->value() == "pid") {
-									DWORD id;
-									GetDefNumber(id, pdef, fn);
-									NewForm.PId = id;
-								}
-
-								else if (pdef->name()->value() == "rect") {
-									Rect r;
-									GetDefRect(r, pdef, fn);
-									NewForm.Rect.X = r.x;
-									NewForm.Rect.Y = r.y;
-									NewForm.Rect.Z = r.h;
-									NewForm.Rect.W = r.w;
-								}
-
-								else if (pdef->name()->value() == "font") {
-									GetDefText(buf, pdef, fn);
-									NewForm.Font = FString(buf);
-
-								}
-
-								else if (pdef->name()->value() == "back_color") {
-									Vec3 c;
-									GetDefVec(c, pdef, fn);
-									NewForm.BackColor = FColor(c.X, c.Y, c.Z, 1);
-								}
-
-								else if (pdef->name()->value() == "base_color") {
-									Vec3 c;
-									GetDefVec(c, pdef, fn);
-									NewForm.BaseColor = FColor(c.X, c.Y, c.Z, 1);
-								}
-
-								else if (pdef->name()->value() == "fore_color") {
-									Vec3 c;
-									GetDefVec(c, pdef, fn);
-									NewForm.ForeColor = FColor(c.X, c.Y, c.Z, 1);
-								}
-
-								else if (pdef->name()->value() == "margins") {
-									Insets m;
-									GetDefInsets(m, pdef, fn);
-									NewForm.Insets.X = m.left;
-									NewForm.Insets.Y = m.right;
-									NewForm.Insets.Z = m.top;
-									NewForm.Insets.W = m.bottom;
-								}
-
-								else if (pdef->name()->value() == "text_insets") {
-									Insets t;
-									GetDefInsets(t, pdef, fn);
-									NewForm.TextInsets.X = t.left;
-									NewForm.TextInsets.Y = t.right;
-									NewForm.TextInsets.Z = t.top;
-									NewForm.TextInsets.W = t.bottom;
-								}
-
-								else if (pdef->name()->value() == "cell_insets") {
-									Insets c;
-									GetDefInsets(c, pdef, fn);
-									NewForm.CellInsets.X = c.left;
-									NewForm.CellInsets.Y = c.right;
-									NewForm.CellInsets.Z = c.top;
-									NewForm.CellInsets.W = c.bottom;
-								}
-
-								else if (pdef->name()->value() == "cells") {
-									Rect c;
-									GetDefRect(c, pdef, fn);
-									NewForm.Cells.X = c.x;
-									NewForm.Cells.Y = c.y;
-									NewForm.Cells.Z = c.h;
-									NewForm.Cells.W = c.w;
-								}
-
-								else if (pdef->name()->value() == "texture") {
-									GetDefText(buf, pdef, fn);
-									NewForm.Texture = FString(buf);
-								}
-
-								else if (pdef->name()->value() == "transparent") {
-									bool b;
-									GetDefBool(b, pdef, fn);
-									NewForm.Transparent = b;
-								}
-
-								else if (pdef->name()->value() == "style") {
-									DWORD s;
-									GetDefNumber(s, pdef, fn);
-									NewForm.Style = s;
-								}
-
-								else if (pdef->name()->value() == "align" ||
-									pdef->name()->value() == "text_align") {
-									DWORD a = DT_LEFT;
-
-									if (GetDefText(buf, pdef, fn)) {
-										if (!_stricmp(buf, "left"))
-											a = DT_LEFT;
-										else if (!_stricmp(buf, "right"))
-											a = DT_RIGHT;
-										else if (!_stricmp(buf, "center"))
-											a = DT_CENTER;
-										NewForm.Align = a;
-									}
-
-									else {
-										GetDefNumber(a, pdef, fn);
-										NewForm.Align = a;
-									}
-
-								}
-
-								// layout constraints:
-
-								else if (pdef->name()->value() == "layout") {
-
-									if (!pdef->term() || !pdef->term()->isStruct()) {
-										UE_LOG(LogTemp, Log, TEXT("WARNING: layout structure missing in '%s'"), *FString(fn));
-									}
-									else {
-										ParseLayoutDef(pdef->term()->isStruct(), fn);
-										NewForm.LayoutDef = LayoutDef;
-									}
-								}
-
-								// controls:
-
-								else if (pdef->name()->value() == "defctrl") {
-
-									if (!pdef->term() || !pdef->term()->isStruct()) {
-										UE_LOG(LogTemp, Log, TEXT("WARNING: defctrl structure missing in '%s'"), *FString(fn));
-									}
-									else {
-										TermStruct* dval = pdef->term()->isStruct();
-										ParseCtrlDef(pdef->term()->isStruct(), fn);
-									}
-								}
-
-								else if (pdef->name()->value() == "ctrl") {
-
-									if (!pdef->term() || !pdef->term()->isStruct()) {
-										UE_LOG(LogTemp, Log, TEXT("WARNING: ctrl structure missing in '%s'"), *FString(fn));
-									}
-									else {
-										TermStruct* cval = pdef->term()->isStruct();
-
-										//form->AddCtrl(ctrl);
-										//*ctrl = form->defctrl;  // copy default params
-
-										//ParseCtrlDef(ctrl, val);
-									}
-								}
-
-								// end of controls.
-							}
-						}     // end form params
-					}        // end form struct
-				}           // end form
-
-				// call AddRow to insert the record
-				FormDefDataTable->AddRow(FName(FormName), NewForm);
-			}
-		}
-	} while (term);
-
-	SSWInstance->loader->ReleaseBuffer(block);
-	//SSWInstance->loader->SetDataPath(0);
 }
 
 void

@@ -136,8 +136,6 @@ public:
 
 	FString GetOrdinal(int id);
 	FString GetNameFromType(ECOMBATGROUP_TYPE name);
-
-	FS_LayoutDef LayoutDef;
 	
 	Text GetContentBundleText(const char* key)   const;
 	void GetSSWInstance();
@@ -146,10 +144,6 @@ public:
 	USSWGameInstance* SSWInstance;
 
 	void LoadContentBundle();
-	void LoadForms();
-	void ParseCtrlDef(TermStruct* val, const char* fn);
-	void ParseLayoutDef(TermStruct* val, const char* fn);
-	void LoadForm(const char* fname);
 	void LoadAwardTables();
 	bool IsContentBundleLoaded() const { return !ContentValues.IsEmpty(); }
 
