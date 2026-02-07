@@ -40,6 +40,8 @@ bool GetDefVec(Vec3& dst, TermDef* def, const char* file)
 	return false;
 }
 
+
+
 bool GetDefRect(Rect& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {

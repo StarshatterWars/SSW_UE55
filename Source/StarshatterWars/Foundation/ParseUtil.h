@@ -20,7 +20,8 @@
 #include "Reader.h"
 #include "Token.h"
 
-
+#include "Math/Vector.h"
+#include "Math/Color.h"
 /**
  * 
  */
@@ -35,6 +36,7 @@ bool GetDefNumber(DWORD& dst, TermDef* def, const char* file);
 bool GetDefNumber(float& dst, TermDef* def, const char* file);
 bool GetDefNumber(double& dst, TermDef* def, const char* file);
 bool GetDefVec(Vec3& dst, TermDef* def, const char* file);
+
 bool GetDefColor(Color& dst, TermDef* def, const char* file);
 bool GetDefColor(ColorValue& dst, TermDef* def, const char* file);
 bool GetDefFColor(FColor& dst, TermDef* def, const char* file);

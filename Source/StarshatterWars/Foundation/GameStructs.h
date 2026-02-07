@@ -798,6 +798,18 @@ enum class TacticalViewMenu : uint32 {
 	FARCAST = 2001
 };
 
+UENUM(BlueprintType)
+enum class EPowerSource : uint8
+{
+	NONE        UMETA(DisplayName = "None"),
+
+	BATTERY     UMETA(DisplayName = "Battery"),
+	AUXILIARY   UMETA(DisplayName = "Auxiliary"),
+	FUSION      UMETA(DisplayName = "Fusion"),
+
+	MAX         UMETA(Hidden)
+};
+
 /*static enum ETXT : int32
 {
 	MAX_CONTACT = 50,
@@ -3718,6 +3730,8 @@ struct FS_ShipPower : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString PAbrv;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EPowerSource Type;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int   SType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int   EType;
@@ -3727,6 +3741,8 @@ struct FS_ShipPower : public FTableRowBase {
 	int   Emcon2;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int   Emcon3;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int   ExplosionType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	float Output;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -3742,19 +3758,20 @@ struct FS_ShipPower : public FTableRowBase {
 		DesignName = "";
 		PName = "";
 		PAbrv = "";
-
+		Type = EPowerSource::NONE;
 		SType = 0;
 		EType = 0;
 		Emcon1 = -1;
 		Emcon2 = -1;
 		Emcon3 = -1;
+		ExplosionType = 0;
+
 
 		Output = 1000.0f;
 		Fuel = 0.0f;
 		Size = 0.0f;
 		Hull = 0.5f;
 		Loc = FVector::ZeroVector;
-
 	}
 };
 

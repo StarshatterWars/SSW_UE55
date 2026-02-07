@@ -1,4 +1,4 @@
-/*=============================================================================
+Ôªø/*=============================================================================
     Project:        Starshatter Wars
     Studio:         Fractal Dev Games
     Copyright:      (C) 2024-2026. All Rights Reserved.
@@ -37,7 +37,7 @@
     - No Transform or spatial behavior
     - No UI or presentation logic
     - No player persistence
-    - No runtime ìactive campaignî state
+    - No runtime ‚Äúactive campaign‚Äù state
 
     RUNTIME SEPARATION
     ==================
@@ -301,24 +301,6 @@ public:
     List<CombatAction>   actions;
     List<CombatEvent>    events;
 
-    // -----------------------------------------------------------------
-    // REMOVED (moved to UStarshatterDataRuntimeSubsystem / PlayerSubsystem)
-    // -----------------------------------------------------------------
-    // FString              PlayerSaveName;
-    // int                  PlayerSaveSlot;
-    // FS_PlayerGameInfo    PlayerInfo;
-    // FS_Campaign          ActiveCampaign;
-    // CombatGroup*         player_group;
-    // CombatUnit*          player_unit;
-    // int                  mission_id;
-    // Mission*             mission;
-    // Mission*             net_mission;
-    // double               time;
-    // double               loadTime;
-    // double               startTime;
-    // double               updateTime;
-    // int                  lockout;
-
     bool                 bClearTables;
 
 protected:
@@ -354,6 +336,7 @@ protected:
     TArray<FS_Campaign>    CampaignDataArray;
     TArray<FS_CombatGroup> CombatRosterData;
     TArray<FS_Galaxy>      GalaxyDataArray;
+    TArray<TArray<uint8>> SystemDesignStringStorage;
 
     FS_Campaign        CampaignData;
     FS_Galaxy          GalaxyData;
@@ -395,6 +378,7 @@ protected:
 
     TArray<FS_ShipPower> NewShipPowerArray;
 
+
     TArray<FS_Star> StarDataArray;
     TArray<FS_Planet> PlanetDataArray;
     TArray<FS_Moon> MoonDataArray;
@@ -425,13 +409,13 @@ protected:
     UDataTable* AwardsDataTable;
 
     // CampaignAction parse scratch
-    int   ActionId;
-    Text  ActionType;
-    int   ActionSubtype;
-    int   OppType;
-    int   ActionTeam;
-    Text  ActionSource;
-    Vec3  ActionLocation;
+    int      ActionId;
+    Text     ActionType;
+    int      ActionSubtype;
+    int      OppType;
+    int      ActionTeam;
+    Text     ActionSource;
+    FVector  ActionLocation;
     Text  ActionSystem;
     Text  ActionRegion;
     Text  ActionFile;
@@ -483,46 +467,13 @@ protected:
     Text UnitClass;
     Text UnitDesign;
     Text UnitSkin;
-    Vec3 UnitLoc;
-    int  UnitCount;
-    int  UnitDamage;
-    int  UnitDead;
-    int  UnitHeading;
-
-    // Awards scratch
-    int      AwardId;
-    int      AwardGrant;
-
-    Text     AwardType;
-    Text     AwardName;
-    Text     AwardAbrv;
-    Text     AwardDesc;
-    Text     AwardText;
-
-    Text     DescSound;
-    Text     GrantSound;
-
-    Text     LargeImage;
-    Text     SmallImage;
-
-    int      RequiredAwards;
-    int      Lottery;
-    int      MinShipClass;
-    int      MaxShipClass;
-    int      GrantedShipClasses;
-
-    int      TotalPoints;
-    int      MissionPoints;
-    int      TotalMissions;
-
-    int      Kills;
-    int      Lost;
-    int      Collision;
-    int      CampaignId;
-
-    bool     CampaignComplete;
-    bool     DynamicCampaign;
-    bool     Ceremony;
+    FVector  UnitLoc;
+    int     UnitCount;
+    int     UnitDamage;
+    int     UnitDead;
+    int     UnitHeading;
+    
+    float    CurrentShipScale = 1.0f;
 
     // Cached GI (kept)
     USSWGameInstance* SSWInstance = nullptr;
