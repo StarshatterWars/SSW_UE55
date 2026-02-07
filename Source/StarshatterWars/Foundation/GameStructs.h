@@ -1066,6 +1066,63 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FS_TerrainRegion : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString Name;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString PatchTexture;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString DetailTexture0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString DetailTexture1;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString ApronName;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString ApronTexture;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString WaterTexture;
+
+	// These are FILE NAMES in the legacy data, so keep them as strings:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString EnvPosX;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString EnvNegX;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString EnvPosY;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString EnvNegY;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString EnvPosZ;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString EnvNegZ;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString HazeName;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString SkyName;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString CloudsHigh;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString CloudsLow;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString ShadesHigh;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FString ShadesLow;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double Size = 1.0e6;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double Grid = 25000.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double Inclination = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double Scale = 1.0e4;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double MountainScale = 1.0e3;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double FogDensity = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double FogScale = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double HazeFade = 0.0;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double CloudsAltHigh = 0.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double CloudsAltLow = 0.0;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) double WeatherPeriod = 0.0;
+
+	// Chances are numeric weights (double), indexed by EWEATHER_STATE:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<double> WeatherChances;
+
+	FS_TerrainRegion()
+	{
+		WeatherChances.SetNumZeroed((int32)EWEATHER_STATE::NUM_STATES);
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FS_RegionMap : public FTableRowBase {
 	GENERATED_BODY()
 

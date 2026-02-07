@@ -116,4 +116,9 @@ public:
     // Multi-bit mask -> display string ("Fighter | Cruiser | Carrier")
     UFUNCTION(BlueprintPure, Category = "Formatting|Classification")
     static FString GetClassificationMaskDisplayString(int32 Mask);
+
+    static FString SanitizeEnumToken(const FString& In);
+
+    static bool GetRegionTypeFromString(const FString& InString, EOrbitalType& OutValue);
 };
+

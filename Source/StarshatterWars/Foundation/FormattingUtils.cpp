@@ -322,3 +322,85 @@ FString UFormattingUtils::GetClassificationMaskDisplayString(int32 Mask)
 
     return FString::Join(Parts, TEXT(" | "));
 }
+
+FString UFormattingUtils::SanitizeEnumToken(const FString& In)
+{
+    FString S = In;
+    S.TrimStartAndEndInline();
+
+    // Unify separators:
+    S.ReplaceInline(TEXT("\t"), TEXT(" "));
+    S.ReplaceInline(TEXT("-"), TEXT("_"));
+    S.ReplaceInline(TEXT(" "), TEXT("_"));
+
+    // Collapse repeated underscores:
+    while (S.Contains(TEXT("__")))
+    {
+        S.ReplaceInline(TEXT("__"), TEXT("_"));
+    }
+
+    // Optional: remove quotes
+    S.ReplaceInline(TEXT("\""), TEXT(""));
+
+    // Some legacy files might use lowercase:
+    S = S.ToUpper();
+
+    return S;
+}
+
+bool UFormattingUtils::GetRegionTypeFromString(const FString& InString, EOrbitalType& OutValue)
+{
+    const UEnum* Enum = StaticEnum<EOrbitalType>();
+    if (!Enum)
+        return false;
+
+    const FString Key = SanitizeEnumToken(InString);
+
+    // 0) Numeric (legacy sometimes stores ints)
+    {
+        int32 AsInt = 0;
+        if (LexTryParseString(AsInt, *Key))
+        {
+            // Validate the int is a real enumerator value:
+            const int32 Idx = Enum->GetIndexByValue((int64)AsInt);
+            if (Idx != INDEX_NONE)
+            {
+                OutValue = static_cast<EOrbitalType>(Enum->GetValueByIndex(Idx));
+                return true;
+            }
+        }
+    }
+
+    // 1) Name match (try raw, then try EnumName::Value)
+    {
+        // Try "PLANET"
+        int64 Val = Enum->GetValueByNameString(Key);
+        if (Val != INDEX_NONE)
+        {
+            OutValue = static_cast<EOrbitalType>(Val);
+            return true;
+        }
+
+        // Try "EOrbitalType::PLANET"
+        const FString Prefixed = FString::Printf(TEXT("%s::%s"), *Enum->GetName(), *Key);
+        Val = Enum->GetValueByNameString(Prefixed);
+        if (Val != INDEX_NONE)
+        {
+            OutValue = static_cast<EOrbitalType>(Val);
+            return true;
+        }
+    }
+
+    // 2) DisplayName match fallback
+    for (int32 i = 0; i < Enum->NumEnums() - 1; ++i)
+    {
+        const FString Display = SanitizeEnumToken(Enum->GetDisplayNameTextByIndex(i).ToString());
+        if (Display.Equals(Key, ESearchCase::IgnoreCase))
+        {
+            OutValue = static_cast<EOrbitalType>(Enum->GetValueByIndex(i));
+            return true;
+        }
+    }
+
+    return false;
+}
