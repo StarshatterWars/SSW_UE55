@@ -102,7 +102,24 @@ void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collect
 {
 	Super::Initialize(Collection);
 
-	// Intentionally empty. LoadAll() is called explicitly from GameInitSubsystem.
+	CampaignDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_Campaign.DT_Campaign"));
+	CampaignOOBDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_CampaignOOB.DT_CampaignOOB"));
+	CombatGroupDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_CombatGroup.DT_CombatGroup"));
+	GalaxyDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_GalaxyMap.DT_GalaxyMap"));
+	OrderOfBattleDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle"));
+
+	UE_LOG(LogTemp, Warning, TEXT("DT Campaign=%s Galaxy=%s"),
+		*GetNameSafe(CampaignDataTable),
+		*GetNameSafe(GalaxyDataTable));
+
+	if (bClearTables)
+	{
+		if (CampaignDataTable)      CampaignDataTable->EmptyTable();
+		if (CampaignOOBDataTable)   CampaignOOBDataTable->EmptyTable();
+		if (CombatGroupDataTable)   CombatGroupDataTable->EmptyTable();
+		if (OrderOfBattleDataTable) OrderOfBattleDataTable->EmptyTable();
+		if (GalaxyDataTable)        GalaxyDataTable->EmptyTable();
+	}
 }
 
 void UStarshatterGameDataSubsystem::Deinitialize()
@@ -121,51 +138,6 @@ void UStarshatterGameDataSubsystem::SetProjectPath()
 FString UStarshatterGameDataSubsystem::GetProjectPath()
 {
 	return ProjectPath;
-}
-
-void UStarshatterGameDataSubsystem::InitializeDT(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignDataTableObject(TEXT("DataTable'/Game/Game/DT_Campaign.DT_Campaign'"));
-
-	if (CampaignDataTableObject.Succeeded())
-	{
-		CampaignDataTable = CampaignDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignOOBDataTableObject(TEXT("DataTable'/Game/Game/DT_CampaignOOB.DT_CampaignOOB'"));
-
-	if (CampaignOOBDataTableObject.Succeeded())
-	{
-		CampaignOOBDataTable = CampaignOOBDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
-
-	if (CombatGroupDataTableObject.Succeeded())
-	{
-		CombatGroupDataTable = CombatGroupDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_GalaxyMap.DT_GalaxyMap'"));
-
-	if (GalaxyDataTableObject.Succeeded())
-	{
-		GalaxyDataTable = GalaxyDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> OrderOfBattleDataTableObject(TEXT("DataTable'/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle'"));
-
-	if (OrderOfBattleDataTableObject.Succeeded())
-	{
-		OrderOfBattleDataTable = OrderOfBattleDataTableObject.Object;
-	}
-
-	if (bClearTables) {
-		CampaignDataTable->EmptyTable();
-		CombatGroupDataTable->EmptyTable();
-		OrderOfBattleDataTable->EmptyTable();
-		GalaxyDataTable->EmptyTable();
-	}
 }
 
 void UStarshatterGameDataSubsystem::CreateOrderOfBattleTable()
@@ -972,7 +944,7 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	if (!SSWInstance)
 		return;
 	
-	LoadContentBundle();
+	//LoadContentBundle();
 	if (UGameInstance* GI = GetGameInstance())
 	{
 		if (UStarshatterGameDataSubsystem* GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>())
@@ -986,18 +958,18 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	}
 
 	LoadGalaxyMap();
-	LoadSystemDesigns();
-	LoadShipDesigns();
-	LoadStarsystems();
-	LoadAwardTables();
+	//LoadSystemDesigns();
+	//LoadShipDesigns();
+	//LoadStarsystems();
+	//LoadAwardTables();
 
 	if (SSWInstance->bClearTables)
 	{
-		InitializeCampaignData();
-		InitializeCombatRoster();
+		//InitializeCampaignData();
+		//InitializeCombatRoster();
 	}
 
-	LoadSystemDesignsFromDT();
+	//LoadSystemDesignsFromDT();
 
 	// This can stay in GameInstance if it is truly "global timers"
 	SSWInstance->StartGameTimers();
@@ -3670,12 +3642,38 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 
 	const char* Fn = TCHAR_TO_ANSI(*FileName);
 
-	if (SSWInstance)
+	if (!SSWInstance)
 	{
-		SSWInstance->GalaxyData.Empty();
+		UE_LOG(LogTemp, Error, TEXT("SSWInstance is null in LoadGalaxyMap()"));
+		return;
 	}
 
-	// Global scratch (we will reset per system below):
+	// Ensure we actually have a data table to fill:
+	if (!GalaxyDataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("GalaxyDataTable is null. Assign a DT asset with RowStruct=FS_Galaxy in defaults."));
+		return;
+	}
+
+	// Ensure RowStruct is correct:
+	if (GalaxyDataTable->GetRowStruct() == nullptr)
+	{
+		GalaxyDataTable->RowStruct = FS_Galaxy::StaticStruct();
+	}
+	else if (GalaxyDataTable->GetRowStruct() != FS_Galaxy::StaticStruct())
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("GalaxyDataTable RowStruct mismatch. Expected %s, got %s"),
+			*FS_Galaxy::StaticStruct()->GetName(),
+			*GalaxyDataTable->GetRowStruct()->GetName());
+		return;
+	}
+
+	// Clear output containers:
+	GalaxyDataArray.Empty();
+	GalaxyDataTable->EmptyTable();
+
+	// Scratch arrays:
 	StarMapArray.Empty();
 	PlanetMapArray.Empty();
 	MoonMapArray.Empty();
@@ -3693,7 +3691,7 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 	TermText* file_type = term->isText();
 	if (!file_type || file_type->value() != "GALAXY")
 	{
-		UE_LOG(LogTemp, Warning, TEXT("WARNING: invalid galaxy file '%s'"), *FileName);
+		UE_LOG(LogTemp, Warning, TEXT("WARNING: invalid galaxy file '%s' (missing GALAXY header)"), *FileName);
 		delete term;
 		return;
 	}
@@ -3701,6 +3699,7 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 	UE_LOG(LogTemp, Log, TEXT("Galaxy file OK: %s"), *FileName);
 
 	double GalaxyRadius = 0.0;
+	int32 SystemsParsed = 0;
 
 	while (true)
 	{
@@ -3713,15 +3712,17 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 		if (!def)
 			continue;
 
-		// radius (global)
-		if (def->name()->value() == "radius")
+		const Text& DefName = def->name()->value();
+
+		// global radius:
+		if (DefName == "radius")
 		{
 			GetDefNumber(GalaxyRadius, def, Fn);
 			continue;
 		}
 
-		// system
-		if (def->name()->value() == "system")
+		// system:
+		if (DefName == "system")
 		{
 			if (!def->term() || !def->term()->isStruct())
 			{
@@ -3729,7 +3730,7 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 				continue;
 			}
 
-			// RESET PER SYSTEM (critical):
+			// Reset per system (scratch):
 			StarMapArray.Empty();
 			PlanetMapArray.Empty();
 			MoonMapArray.Empty();
@@ -3740,12 +3741,11 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 
 			TermStruct* sys = def->term()->isStruct();
 
-			Text  SystemName;
-			Text  ClassName;
-			Text  Link;
-			Text  StarName;
-
-			Vec3  SystemLocation;
+			Text  SystemName = "";
+			Text  ClassName = "";
+			Text  Link = "";
+			Text  StarName = "";
+			Vec3  SystemLocation{};
 			int   SystemIff = 0;
 			int   EmpireId = 0;
 
@@ -3815,36 +3815,51 @@ void UStarshatterGameDataSubsystem::LoadGalaxyMap()
 					}
 					else
 					{
-						// This call populates StarMapArray (and planets/moons beneath it)
 						ParseStarMap(pdef->term()->isStruct(), Fn);
 						NewGalaxyData.Stellar = StarMapArray;
 					}
 				}
 			}
 
-			// Persist system record
-			if (SSWInstance && SSWInstance->GalaxyDataTable)
+			// HARD VALIDATION before adding:
+			if (NewGalaxyData.Name.IsEmpty())
 			{
-				const FName RowName = FName(NewGalaxyData.Name);
-				SSWInstance->GalaxyDataTable->AddRow(RowName, NewGalaxyData);
+				UE_LOG(LogTemp, Error, TEXT("Parsed a system with empty name. Skipping row."));
+				continue;
 			}
 
-			if (SSWInstance)
+			// Ensure unique row names (duplicates overwrite in many workflows):
+			FString BaseRow = NewGalaxyData.Name;
+			FString RowStr = BaseRow;
+			int32 Suffix = 1;
+
+			while (GalaxyDataTable->FindRow<FS_Galaxy>(*RowStr, TEXT("LoadGalaxyMap"), false) != nullptr)
 			{
-				SSWInstance->GalaxyData.Add(NewGalaxyData);
+				RowStr = FString::Printf(TEXT("%s_%d"), *BaseRow, Suffix++);
 			}
 
-			UE_LOG(LogTemp, Log, TEXT("------------------------------------------------------------"));
+			const FName RowName(*RowStr);
+
+			GalaxyDataTable->AddRow(RowName, NewGalaxyData);
+			GalaxyDataArray.Add(NewGalaxyData);
+
+			SystemsParsed++;
+
+			UE_LOG(LogTemp, Log, TEXT("Added system row: %s | Stars=%d"),
+				*RowStr, NewGalaxyData.Stellar.Num());
 		}
 	}
 
 	delete term; // defensive
 
-	if (SSWInstance)
-	{
-		UGalaxyManager::Get(this)->LoadGalaxy(SSWInstance->GalaxyData);
-	}
+	UE_LOG(LogTemp, Log, TEXT("Galaxy parse complete. SystemsParsed=%d  GalaxyData.Num=%d  DataTableRows=%d"),
+		SystemsParsed,
+		GalaxyDataArray.Num(),
+		GalaxyDataTable->GetRowMap().Num());
+
+	UGalaxyManager::Get(this)->LoadGalaxy(GalaxyDataArray);
 }
+
 
 // +--------------------------------------------------------------------+
 

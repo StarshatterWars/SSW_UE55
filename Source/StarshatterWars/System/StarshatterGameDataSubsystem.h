@@ -214,8 +214,6 @@ public:
     void CreateOrderOfBattleTable();
     void ExportDataToCSV(UDataTable* DataTable, const FString& FileName);
 
-    void InitializeDT(const FObjectInitializer& ObjectInitializer);
-
     // =====================================================================
     // Content bundles / forms / awards
     // =====================================================================
@@ -355,6 +353,7 @@ protected:
 
     TArray<FS_Campaign>    CampaignDataArray;
     TArray<FS_CombatGroup> CombatRosterData;
+    TArray<FS_Galaxy>      GalaxyDataArray;
 
     FS_Campaign        CampaignData;
     FS_Galaxy          GalaxyData;
