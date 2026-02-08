@@ -64,6 +64,7 @@
 #include "FormatUtil.h"
 #include "Text.h"
 #include "Term.h"
+#include "List.h"
 #include "GameLoader.h"
 
 #include "GameStructs_System.h"

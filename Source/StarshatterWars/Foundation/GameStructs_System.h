@@ -74,6 +74,45 @@ enum class ENavLightType : uint8
 };
 
 USTRUCT(BlueprintType)
+struct FComponentDesign
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Abbrev;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RepairTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ReplaceTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Spares = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Affects = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FSystemDesign : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FComponentDesign> Components;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FString SourceFile;
+};
+
+USTRUCT(BlueprintType)
 struct FNavLightBeacon
 {
 	GENERATED_BODY()

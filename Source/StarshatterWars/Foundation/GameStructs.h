@@ -3708,48 +3708,6 @@ struct FS_AwardInfo : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
-struct FS_ComponentDesign : public FTableRowBase {
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Name;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Abrv;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int RepairTime;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int ReplaceTime;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int Spares;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	int Affects;
-
-	FS_ComponentDesign() {
-		Name = "";
-		Abrv = "";
-		RepairTime = 0;
-		ReplaceTime = 0,
-			Spares = 1;
-		Affects = 0;
-	}
-};
-
-USTRUCT(BlueprintType)
-struct FS_SystemDesign : public FTableRowBase {
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString Name;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray<FS_ComponentDesign> Component;
-
-	FS_SystemDesign() {
-		Name = "";
-	}
-};
-
-
-USTRUCT(BlueprintType)
 struct FSystemState
 {
 	GENERATED_BODY()

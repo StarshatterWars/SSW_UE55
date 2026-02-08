@@ -196,13 +196,9 @@ public:
     void InitializeCampaignData();
     void InitializeCombatRoster();
 
-    void LoadSystemDesignsFromDT();
-    void LoadSystemDesigns();
     void LoadOrderOfBattle(const char* InFilename, int32 Team);
 
     void ParseCombatUnit();
-   
-    void LoadSystemDesign(const char* fn);
 
     // OOB helpers
     CombatGroup* CloneOver(CombatGroup* force, CombatGroup* clone, CombatGroup* group);
@@ -333,7 +329,7 @@ protected:
     FS_StarSystem      StarSystemData;
     
     FShipDesign        ShipDesignData;
-    FS_SystemDesign    SystemDesignData;
+
     FS_AwardInfo       AwardData;
     FS_CombatGroupUnit CombatGroupUnit;
     FS_CombatGroup     CombatGroupData;
@@ -363,9 +359,6 @@ protected:
     TArray<FS_MissionInstruction> MissionNavpointArray;
 
     TArray<FS_CombatGroupUnit> NewCombatUnitArray;
-    TArray<FS_SystemDesign> NewSystemArray;
-    TArray<FS_ComponentDesign> NewComponentArray;
-    TArray<FS_SystemDesign*> SystemDesignTable;
 
     TArray<FS_Star> StarDataArray;
     TArray<FS_Planet> PlanetDataArray;
