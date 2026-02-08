@@ -526,6 +526,7 @@ protected:
     int32 CurrentShipProbeWeaponIndex = INDEX_NONE;
     FString CurrentShipDecoyWeaponType;
     FString CurrentShipProbeWeaponType;
+    FString CurrentShipSourceFile;
 };
 
 static FSkinMtlCell ParseSkinMtlCell(TermStruct* Val, const char* Fn);

@@ -8349,6 +8349,19 @@ static void ResolveWeaponMuzzlesInPlace(FShipWeapon& Weapon, const FWeaponDesign
 	Weapon.bMuzzlesWereAuthoredInShipSpace = !Meta.bIsTurret;
 }
 
+static int32 FindWeaponIndexByType(const TArray<FShipWeapon>& Weapons, const FString& WantedType)
+{
+	if (WantedType.IsEmpty())
+		return INDEX_NONE;
+
+	for (int32 i = 0; i < Weapons.Num(); ++i)
+	{
+		if (Weapons[i].WeaponType.Equals(WantedType, ESearchCase::IgnoreCase))
+			return i;
+	}
+	return INDEX_NONE;
+}
+
 void UStarshatterGameDataSubsystem::ParseWeapon(TermStruct* Val, const char* Fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseWeapon()"));
@@ -8552,22 +8565,24 @@ void UStarshatterGameDataSubsystem::ResolveWeaponsForCurrentShip()
 {
 	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
 
+	// Reset per-ship resolved indices
+	CurrentShipDecoyWeaponIndex = INDEX_NONE;
+	CurrentShipProbeWeaponIndex = INDEX_NONE;
+
+	// ----------------------------------------------------
+	// PASS 1: resolve muzzles + legacy meta fallback
+	// ----------------------------------------------------
 	for (int32 i = 0; i < NewShipWeaponArray.Num(); ++i)
 	{
 		FShipWeapon& Wpn = NewShipWeaponArray[i];
 
 		const FWeaponDesignMeta* Meta = WeaponMetaByType.Find(Wpn.WeaponType);
 		if (!Meta)
-		{
-			UE_LOG(LogTemp, Warning,
-				TEXT("ResolveWeaponsForCurrentShip: missing meta for WeaponType='%s' (file='%s')"),
-				*Wpn.WeaponType, *Wpn.SourceFile);
 			continue;
-		}
 
 		ResolveWeaponMuzzlesInPlace(Wpn, *Meta, ShipScale);
 
-		// Legacy: first decoy/probe wins:
+		// Legacy behavior: first meta-marked decoy/probe wins
 		if (Meta->bIsDecoy && CurrentShipDecoyWeaponIndex == INDEX_NONE)
 		{
 			CurrentShipDecoyWeaponIndex = i;
@@ -8576,6 +8591,56 @@ void UStarshatterGameDataSubsystem::ResolveWeaponsForCurrentShip()
 		{
 			CurrentShipProbeWeaponIndex = i;
 		}
+	}
+
+	// ----------------------------------------------------
+	// PASS 2: explicit ship-level override + validation
+	// ----------------------------------------------------
+	auto FindWeaponIndexByType =
+		[](const TArray<FShipWeapon>& Weapons, const FString& WantedType) -> int32
+		{
+			if (WantedType.IsEmpty())
+				return INDEX_NONE;
+
+			for (int32 i = 0; i < Weapons.Num(); ++i)
+			{
+				if (Weapons[i].WeaponType.Equals(WantedType, ESearchCase::IgnoreCase))
+					return i;
+			}
+			return INDEX_NONE;
+		};
+
+	// ---- DEC0Y ----
+	const int32 ExplicitDecoy =
+		FindWeaponIndexByType(NewShipWeaponArray, CurrentShipDecoyWeaponType);
+
+	if (CurrentShipDecoyWeaponType.Len() && ExplicitDecoy == INDEX_NONE)
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("Ship declares decoy='%s' but no weapon with that WeaponType exists (file='%s')"),
+			*CurrentShipDecoyWeaponType,
+			*CurrentShipSourceFile);
+	}
+	else if (ExplicitDecoy != INDEX_NONE)
+	{
+		CurrentShipDecoyWeaponIndex = ExplicitDecoy;
+	}
+
+	// ---- PROBE ----
+	const int32 ExplicitProbe =
+		FindWeaponIndexByType(NewShipWeaponArray, CurrentShipProbeWeaponType);
+
+	if (CurrentShipProbeWeaponType.Len() && ExplicitProbe == INDEX_NONE)
+	{
+		const FString FileForLog = CurrentShipSourceFile.Len() ? CurrentShipSourceFile : TEXT("UNKNOWN");
+		UE_LOG(LogTemp, Warning,
+			TEXT("Ship declares decoy='%s' but no weapon with that WeaponType exists (file='%s')"),
+			*CurrentShipDecoyWeaponType,
+			*FileForLog);
+	}
+	else if (ExplicitProbe != INDEX_NONE)
+	{
+		CurrentShipProbeWeaponIndex = ExplicitProbe;
 	}
 }
 
