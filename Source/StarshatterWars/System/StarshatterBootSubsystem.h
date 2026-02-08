@@ -62,6 +62,9 @@ class UStarshatterGameDataSubsystem;
 // NEW: Player save subsystem
 class UStarshatterPlayerSubsystem;
 
+// NEW: Forms subsystem
+class UStarshatterFormSubsystem;
+
 DECLARE_MULTICAST_DELEGATE(FOnStarshatterBootComplete);
 
 UCLASS()
@@ -87,6 +90,7 @@ private:
     // --------------------------------------------------
     // Boot context (shared startup state)
     // --------------------------------------------------
+private:
     struct FBootContext
     {
         UGameInstance* GI = nullptr;
@@ -100,8 +104,9 @@ private:
         UStarshatterControlsSubsystem* ControlsSS = nullptr;
         UStarshatterKeyboardSubsystem* KeyboardSS = nullptr;
 
-        // NEW:
         UStarshatterPlayerSubsystem* PlayerSS = nullptr;
+
+        UStarshatterFormSubsystem* FormSS = nullptr; 
     };
 
     bool BuildContext(FBootContext& OutCtx);
@@ -115,8 +120,11 @@ private:
     // NEW:
     void BootPlayerSave(const FBootContext& Ctx);
 
+    // NEW:
+    void BootForms(const FBootContext& Ctx);
+
     void MarkBootComplete();
-    
+
     void BootLegacyDataLoader(const FBootContext& Ctx);
 
 private:
@@ -124,6 +132,4 @@ private:
 
     // NEW:
     bool bNeedsFirstRun = false;
-
-
 };

@@ -220,10 +220,6 @@ public:
     Text GetContentBundleText(const char* key) const;
 
     void LoadContentBundle();
-    void LoadForms();
-    void ParseCtrlDef(TermStruct* val, const char* fn, FS_UIControlDef& Out);
-    void ParseLayoutDef(TermStruct* val, const char* fn);
-    void LoadForm(const char* fname);
     void LoadAwardTables();
 
     // =====================================================================
@@ -266,8 +262,6 @@ public:
     // Legacy fields (kept intact; grouped for readability)
     // =====================================================================
 
-    // UI layout / content bundle
-    FS_LayoutDef          LayoutDef;
     Text                 ContentName;
     Dictionary<Text>     ContentValues;
 
@@ -402,9 +396,6 @@ protected:
     UDataTable* RegionsDataTable;
     UDataTable* ShipDesignDataTable;
     UDataTable* SystemDesignDataTable;
-    
-    UPROPERTY()
-    UDataTable* FormDefDataTable = nullptr;
     
     UDataTable* AwardsDataTable;
 

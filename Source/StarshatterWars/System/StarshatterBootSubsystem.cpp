@@ -37,10 +37,7 @@
 
 #include "StarshatterGameDataSubsystem.h"
 #include "StarshatterPlayerSubsystem.h"
-
-// --------------------------------------------------
-// UGameInstanceSubsystem
-// --------------------------------------------------
+#include "StarshatterFormSubsystem.h"
 
 #include "Logging/LogMacros.h"
 
@@ -50,22 +47,19 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-
     if (!DataLoader::GetLoader())
         DataLoader::Initialize();
 
     DataLoader::GetLoader();
 
-    // --------------------------------------------------
     // Establish BOOT lifecycle state immediately
-    // --------------------------------------------------
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
     {
         SSWGI->SetGameMode(EGameMode::BOOT);
     }
 
     FBootContext Ctx;
-    if (BuildContext(Ctx))
+    if(BuildContext(Ctx))
     {
         BootLegacyDataLoader(Ctx);
         BootFonts(Ctx);
@@ -74,12 +68,12 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootControls(Ctx);
         BootKeyboard(Ctx);
 
-        // NEW: player save load + first-run detection
+        BootForms(Ctx);        
+
         BootPlayerSave(Ctx);
     }
 
-    // Do NOT auto-load heavy content here unless you explicitly want boot-time generation.
-    // Recommended: call BootGameDataLoader() from GameInitSubsystem during INIT.
+    // Keep existing behavior
     BootGameDataLoader(true);
 
     MarkBootComplete();
@@ -89,10 +83,6 @@ void UStarshatterBootSubsystem::Deinitialize()
 {
     Super::Deinitialize();
 }
-
-// --------------------------------------------------
-// Optional loader hook
-// --------------------------------------------------
 
 void UStarshatterBootSubsystem::BootGameDataLoader(bool bFull)
 {
@@ -108,10 +98,6 @@ void UStarshatterBootSubsystem::BootGameDataLoader(bool bFull)
 
     DataSS->LoadAll(bFull);
 }
-
-// --------------------------------------------------
-// Boot stages
-// --------------------------------------------------
 
 bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
 {
@@ -131,9 +117,10 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.VideoSS = OutCtx.GI->GetSubsystem<UStarshatterVideoSubsystem>();
     OutCtx.ControlsSS = OutCtx.GI->GetSubsystem<UStarshatterControlsSubsystem>();
     OutCtx.KeyboardSS = OutCtx.GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
-
-    // NEW:
     OutCtx.PlayerSS = OutCtx.GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+    UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"),
+        OutCtx.FormSS ? TEXT("VALID") : TEXT("NULL"));
+    OutCtx.FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
 
     return true;
 }
@@ -142,8 +129,6 @@ void UStarshatterBootSubsystem::BootFonts(const FBootContext& Ctx)
 {
     if (!Ctx.FontSS)
         return;
-
-    // Reserved for future font config hooks
 }
 
 void UStarshatterBootSubsystem::BootAudio(const FBootContext& Ctx)
@@ -192,7 +177,15 @@ void UStarshatterBootSubsystem::BootKeyboard(const FBootContext& Ctx)
     Ctx.KeyboardSS->ApplySettingsToRuntime(this);
 }
 
-// NEW ------------------------------------------------
+void UStarshatterBootSubsystem::BootForms(const FBootContext& Ctx)
+{
+    if (!Ctx.FormSS)
+        return;
+
+    // IMPORTANT: call the real method name you implemented.
+    // If your subsystem has LoadForms() or LoadAll(), replace this line accordingly.
+    Ctx.FormSS->BootLoadForms();
+}
 
 void UStarshatterBootSubsystem::BootPlayerSave(const FBootContext& Ctx)
 {
@@ -201,10 +194,8 @@ void UStarshatterBootSubsystem::BootPlayerSave(const FBootContext& Ctx)
     if (!Ctx.PlayerSS)
         return;
 
-    // LoadFromBoot() sets HadExistingSaveOnLoad internally.
     const bool bOk = Ctx.PlayerSS->LoadFromBoot();
 
-    // If load failed, treat as first-run to keep the game recoverable:
     if (!bOk)
     {
         bNeedsFirstRun = true;
@@ -213,10 +204,6 @@ void UStarshatterBootSubsystem::BootPlayerSave(const FBootContext& Ctx)
 
     bNeedsFirstRun = !Ctx.PlayerSS->HadExistingSaveOnLoad();
 }
-
-// --------------------------------------------------
-// Boot completion
-// --------------------------------------------------
 
 void UStarshatterBootSubsystem::MarkBootComplete()
 {
@@ -229,7 +216,6 @@ void UStarshatterBootSubsystem::MarkBootComplete()
 
 void UStarshatterBootSubsystem::BootLegacyDataLoader(const FBootContext& Ctx)
 {
-    // DataLoader is legacy singleton; make sure it exists early.
     if (!DataLoader::GetLoader())
     {
         UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] Initializing legacy DataLoader..."));
