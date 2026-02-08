@@ -51,6 +51,14 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         DataLoader::Initialize();
 
     DataLoader::GetLoader();
+     // Force creation order (and guarantee non-null during BOOT):
+    Collection.InitializeDependency(UFontManagerSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterAudioSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterVideoSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterControlsSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterKeyboardSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterPlayerSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterFormSubsystem::StaticClass());
 
     // Establish BOOT lifecycle state immediately
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
@@ -118,9 +126,14 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.ControlsSS = OutCtx.GI->GetSubsystem<UStarshatterControlsSubsystem>();
     OutCtx.KeyboardSS = OutCtx.GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
     OutCtx.PlayerSS = OutCtx.GI->GetSubsystem<UStarshatterPlayerSubsystem>();
-    UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"),
-        OutCtx.FormSS ? TEXT("VALID") : TEXT("NULL"));
-    OutCtx.FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
+   
+   UStarshatterFormSubsystem* FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
+    UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"), FormSS ? TEXT("OK") : TEXT("NULL"));
+
+    if (FormSS)
+    {
+        FormSS->BootLoadForms();
+    }
 
     return true;
 }
@@ -182,8 +195,6 @@ void UStarshatterBootSubsystem::BootForms(const FBootContext& Ctx)
     if (!Ctx.FormSS)
         return;
 
-    // IMPORTANT: call the real method name you implemented.
-    // If your subsystem has LoadForms() or LoadAll(), replace this line accordingly.
     Ctx.FormSS->BootLoadForms();
 }
 

@@ -245,16 +245,14 @@ void UStarshatterFormSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-#if WITH_EDITOR
+    UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Initialize()"));
+
     FormDefDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_FormDef.DT_FormDef"));
-    if (FormDefDataTable)
+
+    if (!FormDefDataTable)
     {
-        UE_LOG(LogTemp, Log, TEXT("Loaded Form DT asset: %s"), *FormDefDataTable->GetPathName());
+        UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] DT_FormDef not found (ok). Using in-memory cache only."));
     }
-#else
-    FormDefDataTable = NewObject<UDataTable>(this);
-    FormDefDataTable->RowStruct = FS_FormDesign::StaticStruct();
-#endif
 }
 
 void UStarshatterFormSubsystem::Deinitialize()
@@ -278,290 +276,36 @@ const FS_FormDesign* UStarshatterFormSubsystem::FindFormByName(const FName& Form
     return FormsByName.Find(FormName);
 }
 
-void UStarshatterFormSubsystem::LoadForm(const char* InFilename)
+void UStarshatterFormSubsystem::LoadForms()
 {
-    if (!InFilename || !*InFilename)
+    if (bFormsLoaded)
     {
-        UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] LoadForm called with null/empty filename"));
+        UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] LoadForms() skipped (already loaded)"));
         return;
     }
 
-    // NOTE: InFilename should be UTF-8 in your pipeline (FTCHARToUTF8::Get()).
-    const FString FormFilePath = UTF8_TO_TCHAR(InFilename);
+    bFormsLoaded = true;
+    FormsByName.Empty();
 
-    if (!FPaths::FileExists(FormFilePath))
+    const FString FormsDir = FPaths::ProjectContentDir() / TEXT("GameData/Screens/");
+    const FString Wildcard = FormsDir / TEXT("*.frm");
+
+    TArray<FString> Files;
+    IFileManager::Get().FindFiles(Files, *Wildcard, /*Files*/true, /*Directories*/false);
+
+    UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Found %d .frm files in %s"), Files.Num(), *FormsDir);
+
+    for (const FString& Leaf : Files)
     {
-        UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] Form file not found: %s"), *FormFilePath);
-        return;
+        const FString FullPath = FormsDir / Leaf;
+        UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Parsing: %s"), *FullPath);
+
+        const FTCHARToUTF8 Utf8Path(*FullPath);
+        LoadForm(Utf8Path.Get());
     }
 
-    TArray<uint8> Bytes;
-    if (!FFileHelper::LoadFileToArray(Bytes, *FormFilePath))
-    {
-        UE_LOG(LogStarshatterForms, Error, TEXT("[FORMS] Failed to read form file: %s"), *FormFilePath);
-        return;
-    }
-
-    Bytes.Add(0); // null terminate for BlockReader
-
-    // Stable UTF-8 filename for legacy GetDef* helpers:
-    const FTCHARToUTF8 FnUtf8(*FormFilePath);
-    const char* Fn = FnUtf8.Get();
-
-    Parser ParserObj(new BlockReader(reinterpret_cast<const char*>(Bytes.GetData())));
-    Term* TermPtr = ParserObj.ParseTerm();
-
-    if (!TermPtr)
-    {
-        UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] Failed to parse form file (no terms): %s"), *FormFilePath);
-        return;
-    }
-
-    // Header check: first token must be FORM
-    {
-        TermText* FileType = TermPtr->isText();
-        if (!FileType || FileType->value() != "FORM")
-        {
-            UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] Invalid form header (expected FORM): %s"), *FormFilePath);
-            delete TermPtr;
-            return;
-        }
-    }
-
-    FS_FormDesign NewForm;
-
-    // FormName: Content/GameData/Screens/Foo.frm -> Foo
-    FString FormName = FormFilePath;
-    FormName.ReplaceInline(TEXT("\\"), TEXT("/"));
-
-    FString Root = (FPaths::ProjectContentDir() / TEXT("GameData/Screens/"));
-    Root.ReplaceInline(TEXT("\\"), TEXT("/"));
-
-    FormName.RemoveFromStart(Root);
-    FormName.RemoveFromEnd(TEXT(".frm"));
-
-    NewForm.Name = FormName;
-
-    FS_LayoutDef LocalLayout; // per-form scratch
-
-    // Parse remaining terms:
-    while (true)
-    {
-        delete TermPtr;
-        TermPtr = ParserObj.ParseTerm();
-        if (!TermPtr)
-            break;
-
-        TermDef* Def = TermPtr->isDef();
-        if (!Def)
-            continue;
-
-        if (Def->name()->value() != "form")
-            continue;
-
-        if (!Def->term() || !Def->term()->isStruct())
-        {
-            UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] form structure missing in '%s'"), *FormFilePath);
-            continue;
-        }
-
-        TermStruct* FormStruct = Def->term()->isStruct();
-
-        for (int32 i = 0; i < (int32)FormStruct->elements()->size(); ++i)
-        {
-            TermDef* PDef = FormStruct->elements()->at(i)->isDef();
-            if (!PDef)
-                continue;
-
-            const Text& Key = PDef->name()->value();
-            Text Buf;
-
-            if (Key == "text" || Key == "caption")
-            {
-                GetDefText(Buf, PDef, Fn);
-                NewForm.Caption = ANSI_TO_TCHAR(Buf);
-            }
-            else if (Key == "id")
-            {
-                DWORD id = 0;
-                GetDefNumber(id, PDef, Fn);
-                NewForm.Id = (int32)id;
-            }
-            else if (Key == "pid")
-            {
-                DWORD pid = 0;
-                GetDefNumber(pid, PDef, Fn);
-                NewForm.PId = (int32)pid;
-            }
-            else if (Key == "rect")
-            {
-                Rect r{};
-                GetDefRect(r, PDef, Fn);
-                SetRectXYWH(NewForm.Rect, (int32)r.x, (int32)r.y, (int32)r.w, (int32)r.h);
-            }
-            else if (Key == "font")
-            {
-                GetDefText(Buf, PDef, Fn);
-                NewForm.Font = ANSI_TO_TCHAR(Buf);
-            }
-            else if (Key == "back_color")
-            {
-                FVector c{};
-                GetDefVec(c, PDef, Fn);
-                NewForm.BackColor = ColorFromVec3_255(c);
-            }
-            else if (Key == "base_color")
-            {
-                FVector c{};
-                GetDefVec(c, PDef, Fn);
-                NewForm.BaseColor = ColorFromVec3_255(c);
-            }
-            else if (Key == "fore_color")
-            {
-                FVector c{};
-                GetDefVec(c, PDef, Fn);
-                NewForm.ForeColor = ColorFromVec3_255(c);
-            }
-            else if (Key == "margins")
-            {
-                Insets m{};
-                GetDefInsets(m, PDef, Fn);
-                SetMargin(NewForm.Insets, m);
-            }
-            else if (Key == "text_insets")
-            {
-                Insets t{};
-                GetDefInsets(t, PDef, Fn);
-                SetMargin(NewForm.TextInsets, t);
-            }
-            else if (Key == "cell_insets")
-            {
-                Insets ci{};
-                GetDefInsets(ci, PDef, Fn);
-                SetMargin(NewForm.CellInsets, ci);
-            }
-            else if (Key == "cells")
-            {
-                Rect c{};
-                GetDefRect(c, PDef, Fn);
-                SetRectXYWH(NewForm.Cells, (int32)c.x, (int32)c.y, (int32)c.w, (int32)c.h);
-            }
-            else if (Key == "texture")
-            {
-                GetDefText(Buf, PDef, Fn);
-                NewForm.Texture = ANSI_TO_TCHAR(Buf);
-            }
-            else if (Key == "transparent")
-            {
-                bool b = false;
-                GetDefBool(b, PDef, Fn);
-                NewForm.bTransparent = b;
-            }
-            else if (Key == "style")
-            {
-                DWORD s = 0;
-                GetDefNumber(s, PDef, Fn);
-                NewForm.Style = (int32)s;
-            }
-            else if (Key == "align" || Key == "text_align")
-            {
-                DWORD a = DT_LEFT;
-
-                if (GetDefText(Buf, PDef, Fn))
-                {
-                    if (!_stricmp(Buf, "left"))        a = DT_LEFT;
-                    else if (!_stricmp(Buf, "right"))  a = DT_RIGHT;
-                    else if (!_stricmp(Buf, "center")) a = DT_CENTER;
-                }
-                else
-                {
-                    GetDefNumber(a, PDef, Fn);
-                }
-
-                NewForm.Align = (int32)a;
-            }
-            else if (Key == "layout")
-            {
-                if (PDef->term() && PDef->term()->isStruct())
-                {
-                    ParseLayoutDef_Internal(PDef->term()->isStruct(), Fn, LocalLayout);
-                    NewForm.LayoutDef = LocalLayout;
-                }
-                else
-                {
-                    UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] layout structure missing in '%s'"), *FormFilePath);
-                }
-            }
-            else if (Key == "defctrl")
-            {
-                if (PDef->term() && PDef->term()->isStruct())
-                {
-                    NewForm.DefaultCtrl = FS_UIControlDef{};
-                    ParseCtrlDef_Internal(PDef->term()->isStruct(), Fn, NewForm.DefaultCtrl);
-                }
-                else
-                {
-                    UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] defctrl structure missing in '%s'"), *FormFilePath);
-                }
-            }
-            else if (Key == "ctrl")
-            {
-                if (PDef->term() && PDef->term()->isStruct())
-                {
-                    FS_UIControlDef Ctrl = NewForm.DefaultCtrl; // inherit defaults
-                    ParseCtrlDef_Internal(PDef->term()->isStruct(), Fn, Ctrl);
-                    NewForm.Controls.Add(Ctrl);
-                }
-                else
-                {
-                    UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] ctrl structure missing in '%s'"), *FormFilePath);
-                }
-            }
-        }
-    }
-
-    if (TermPtr)
-    {
-        delete TermPtr;
-        TermPtr = nullptr;
-    }
-
-    // ------------------------------------------------------------
-    // Authoritative in-memory cache
-    // ------------------------------------------------------------
-    const FName RowName(*FormName);
-    FormsByName.Add(RowName, NewForm);
-
-    // ------------------------------------------------------------
-    // Optional DT mirror (runtime-friendly; persistence is editor-only)
-    // ------------------------------------------------------------
-    if (!FormDefDataTable)
-    {
-        UE_LOG(LogStarshatterForms, Verbose, TEXT("[FORMS] No DT loaded; cached '%s' only"), *FormName);
-        return;
-    }
-
-    if (FormDefDataTable->GetRowStruct() != FS_FormDesign::StaticStruct())
-    {
-        UE_LOG(LogStarshatterForms, Error,
-            TEXT("[FORMS] DT RowStruct mismatch. Expected '%s' got '%s' (form '%s' not written)"),
-            *FS_FormDesign::StaticStruct()->GetName(),
-            FormDefDataTable->GetRowStruct() ? *FormDefDataTable->GetRowStruct()->GetName() : TEXT("NULL"),
-            *FormName);
-        return;
-    }
-
-    // Overwrite-safe:
-    if (FormDefDataTable->FindRow<FS_FormDesign>(RowName, TEXT("LoadForm"), false))
-    {
-        FormDefDataTable->RemoveRow(RowName);
-    }
-
-    FormDefDataTable->AddRow(RowName, NewForm);
-
-    UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Wrote DT row '%s'"), *RowName.ToString());
+    UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] LoadForms complete. Cached=%d"), FormsByName.Num());
 }
-
 
 // ------------------------------------------------------------
 // Per-file parsing
@@ -850,3 +594,4 @@ void UStarshatterFormSubsystem::LoadForm(const char* InFilename)
 
     UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Wrote DT row '%s'"), *RowName.ToString());
 }
+
