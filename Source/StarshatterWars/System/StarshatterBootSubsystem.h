@@ -86,6 +86,7 @@ public:
     // Optional helper: triggers the GameData subsystem loader.
     // Recommended usage: call this from GameInitSubsystem during EGameMode::INIT.
     void BootGameDataLoader(bool bFull = false);
+   
 
 private:
     // --------------------------------------------------
@@ -108,6 +109,7 @@ private:
         UStarshatterPlayerSubsystem* PlayerSS = nullptr;
 
         UStarshatterFormSubsystem* FormSS = nullptr; 
+        UStarshatterShipDesignSubsystem* ShipDesignSS = nullptr;
     };
 
     bool BuildContext(FBootContext& OutCtx);
@@ -117,6 +119,9 @@ private:
     void BootVideo(const FBootContext& Ctx);
     void BootControls(const FBootContext& Ctx);
     void BootKeyboard(const FBootContext& Ctx);
+
+    //Game Data
+    void BootShipDesignLoader(const FBootContext& Ctx);
 
     // NEW:
     void BootPlayerSave(const FBootContext& Ctx);

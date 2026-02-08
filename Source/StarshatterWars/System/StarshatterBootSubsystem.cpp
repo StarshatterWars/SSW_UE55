@@ -36,6 +36,7 @@
 #include "StarshatterSettingsSaveGame.h"
 
 #include "StarshatterGameDataSubsystem.h"
+#include "StarshatterShipDesignSubsystem.h"
 #include "StarshatterPlayerSubsystem.h"
 #include "StarshatterFormSubsystem.h"
 
@@ -59,6 +60,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     Collection.InitializeDependency(UStarshatterKeyboardSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterPlayerSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterFormSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterShipDesignSubsystem::StaticClass());
 
     // Establish BOOT lifecycle state immediately
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
@@ -79,11 +81,11 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootForms(Ctx);        
 
         BootPlayerSave(Ctx);
+        BootShipDesignLoader(Ctx);
     }
 
     // Keep existing behavior
     BootGameDataLoader(true);
-
     MarkBootComplete();
 }
 
@@ -107,6 +109,14 @@ void UStarshatterBootSubsystem::BootGameDataLoader(bool bFull)
     DataSS->LoadAll(bFull);
 }
 
+void UStarshatterBootSubsystem::BootShipDesignLoader(const FBootContext& Ctx)
+{
+    if (!Ctx.ShipDesignSS)
+        return;
+
+    Ctx.ShipDesignSS->LoadAll(true);
+}
+
 bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
 {
     OutCtx.GI = GetGameInstance();
@@ -126,6 +136,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.ControlsSS = OutCtx.GI->GetSubsystem<UStarshatterControlsSubsystem>();
     OutCtx.KeyboardSS = OutCtx.GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
     OutCtx.PlayerSS = OutCtx.GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+    OutCtx.ShipDesignSS = OutCtx.GI->GetSubsystem<UStarshatterShipDesignSubsystem>();
    
    UStarshatterFormSubsystem* FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
     UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"), FormSS ? TEXT("OK") : TEXT("NULL"));
