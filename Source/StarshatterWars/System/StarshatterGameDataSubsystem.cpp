@@ -2832,9 +2832,9 @@ void UStarshatterGameDataSubsystem::ParseShip(TermStruct* Val, const char* Fn)
 
 // +--------------------------------------------------------------------+
 
-void UStarshatterGameDataSubsystem::ParseLoadout(TermStruct* val, const char* fn)
+void UStarshatterGameDataSubsystem::ParseMissionLoadout(TermStruct* val, const char* fn)
 {
-	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseLoadout()"));
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseMissionLoadout()"));
 
 	if (!val || !fn || !*fn)
 	{
@@ -3339,7 +3339,7 @@ void UStarshatterGameDataSubsystem::ParseElement(TermStruct* Eval, const char* F
 			}
 			else
 			{
-				ParseLoadout(PDef->term()->isStruct(), Fn);
+				ParseMissionLoadout(PDef->term()->isStruct(), Fn);
 			}
 		}
 	}
@@ -6325,6 +6325,23 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 	FShipDesign NewShipDesign;
 	NewShipPowerArray.Empty();
 	NewShipDriveArray.Empty();
+	NewShipQuantumArray.Empty();
+	NewShipFarcasterArray.Empty();
+	NewShipThrusterArray.Empty();
+	NewShipNavLightArray.Empty();
+	NewShipFlightDeckArray.Empty();
+	NewShipLandingGearArray.Empty();
+	NewShipWeaponArray.Empty();
+	NewShipHardPointArray.Empty();
+	NewShipLoadoutArray.Empty();
+	NewShipSensorArray.Empty();
+	NewShipNavSystemArray.Empty();
+	NewShipComputerArray.Empty();
+	NewShipShieldArray.Empty();
+	NewShipSquadronArray.Empty();
+	NewShipDeathSpiralArray.Empty();
+	NewShipMapSpriteArray.Empty();
+	NewShipSkinArray.Empty();
 
 	// ------------------------------------------------------------
 	// Parse terms
@@ -6691,22 +6708,224 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 				NewShipDesign.Drive = NewShipDriveArray;
 			}
 		}
-		else if (Key == "quantum" || Key == "quantum_drive" ||
-			Key == "sender" || Key == "farcaster" ||
-			Key == "thruster" || Key == "navlight" ||
-			Key == "flightdeck" || Key == "gear" ||
-			Key == "weapon" || Key == "hardpoint" ||
-			Key == "loadout" || Key == "decoy" ||
-			Key == "probe" || Key == "sensor" ||
-			Key == "nav" || Key == "computer" ||
-			Key == "shield" || Key == "death_spiral" ||
-			Key == "map" || Key == "squadron" ||
-			Key == "skin")
+		else if (Key == "quantum" || Key == "quantum_drive")
 		{
 			if (!Def->term() || !Def->term()->isStruct())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("WARNING: %s struct missing in '%s'"),
-					*FString(ANSI_TO_TCHAR(Key.data())), *ShipFilePath);
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: quantum struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseQuantumDrive(Def->term()->isStruct(), fn);
+				NewShipDesign.Quantum = NewShipQuantumArray;
+			}
+		}
+		else if (Key == "sender" || Key == "farcaster")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: farcaster struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseFarcaster(Def->term()->isStruct(), fn);
+				NewShipDesign.Farcaster = NewShipFarcasterArray;
+			}
+		}
+		else if (Key == "thruster")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: thruster struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseThruster(Def->term()->isStruct(), fn);
+				NewShipDesign.Thruster = NewShipThrusterArray;
+			}
+		}
+		else if (Key == "navlight")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: navlight struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseNavlight(Def->term()->isStruct(), fn);
+				NewShipDesign.Navlight = NewShipNavLightArray;
+			}
+		}
+		else if (Key == "flightdeck")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: flightdeck struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseFlightDeck(Def->term()->isStruct(), fn);
+				NewShipDesign.FlightDeck = NewShipFlightDeckArray;
+			}
+		}
+		else if (Key == "gear")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: landing gear struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseLandingGear(Def->term()->isStruct(), fn);
+				NewShipDesign.LandingGear = NewShipLandingGearArray;
+			}
+		}
+		else if (Key == "weapon")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: weapon struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseLandingGear(Def->term()->isStruct(), fn);
+				NewShipDesign.Weapon = NewShipWeaponArray;
+			}
+		}
+		else if (Key == "decoy")
+		{
+			Text Buf;
+			if (GetDefText(Buf, Def, fn))
+			{
+				CurrentShipDecoyWeaponType = FString(Buf);
+			}
+		}
+		else if (Key == "probe")
+		{
+			Text Buf;
+			if (GetDefText(Buf, Def, fn))
+			{
+				CurrentShipProbeWeaponType = FString(Buf);
+			}
+		}
+		else if (Key == "hardpoint")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: hardpoint struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseHardPoint(Def->term()->isStruct(), fn);
+				NewShipDesign.Hardpoint = NewShipHardPointArray;
+			}
+		}
+		else if (Key == "loadout")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: loadout struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseLoadout(Def->term()->isStruct(), fn);
+				NewShipDesign.Loadout = NewShipLoadoutArray;
+			}
+		}
+		else if (Key == "sensor")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: sensor struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseSensor(Def->term()->isStruct(), fn);
+				NewShipDesign.Sensor = NewShipSensorArray;
+			}
+		}
+		else if (Key == "nav")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: nav struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseNavsys(Def->term()->isStruct(), fn);
+				NewShipDesign.NavSys = NewShipNavSystemArray;
+			}
+		}
+		else if (Key == "computer")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: computer struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseComputer(Def->term()->isStruct(), fn);
+				NewShipDesign.Computer = NewShipComputerArray;
+			}
+		}
+		else if (Key == "shield")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: shield struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseShield(Def->term()->isStruct(), fn);
+				NewShipDesign.Shield = NewShipShieldArray;
+			}
+		}
+		else if (Key == "squadron")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: squadron struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseSquadron(Def->term()->isStruct(), fn);
+				NewShipDesign.Squadron = NewShipSquadronArray;
+			}
+		}
+		else if (Key == "death_spiral")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: death spiral struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseDeathSpiral(Def->term()->isStruct(), fn);
+				NewShipDesign.DeathSpiral = NewShipDeathSpiralArray;
+			}
+		}
+		else if (Key == "map")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: map struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseMap(Def->term()->isStruct(), fn);
+				NewShipDesign.Map = NewShipMapSpriteArray;
+			}
+		}
+		else if (Key == "skin")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: skin struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseSkin(Def->term()->isStruct(), fn);
+				NewShipDesign.Skin = NewShipSkinArray;
 			}
 		}
 		else
@@ -7120,1882 +7339,2497 @@ void UStarshatterGameDataSubsystem::ParseDrive(TermStruct* Val, const char* Fn)
 
 // +--------------------------------------------------------------------+
 
-/*void
-ShipDesign::ParseQuantumDrive(TermStruct* val)
+static EQuantumDriveType QuantumDriveTypeFromText(const Text& InType)
 {
-	double   capacity = 250e3;
-	double   consumption = 1e3;
-	Vec3     loc(0.0f, 0.0f, 0.0f);
-	float    size = 0.0f;
-	float    hull = 0.5f;
-	float    countdown = 5.0f;
-	Text     design_name;
-	Text     type_name;
-	Text     abrv;
-	int      subtype = QuantumDrive::QUANTUM;
-	int      emcon_1 = -1;
-	int      emcon_2 = -1;
-	int      emcon_3 = -1;
+	FString S = FString(ANSI_TO_TCHAR(InType.data()));
+	S.TrimStartAndEndInline();
+	S.ToLowerInline();
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-			else if (defname == "abrv") {
-				GetDefText(abrv, pdef, filename);
-			}
-			else if (defname == "type") {
-				GetDefText(type_name, pdef, filename);
-				type_name.setSensitive(false);
-
-				if (type_name.contains("hyper")) {
-					subtype = QuantumDrive::HYPER;
-				}
-			}
-			else if (defname == "capacity") {
-				GetDefNumber(capacity, pdef, filename);
-			}
-			else if (defname == "consumption") {
-				GetDefNumber(consumption, pdef, filename);
-			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "jump_time") {
-				GetDefNumber(countdown, pdef, filename);
-			}
-			else if (defname == "countdown") {
-				GetDefNumber(countdown, pdef, filename);
-			}
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-		}
-	}
-
-	QuantumDrive* drive = new  QuantumDrive((QuantumDrive::SUBTYPE)subtype, capacity, consumption);
-	drive->SetSourceIndex(reactors.size() - 1);
-	drive->Mount(loc, size, hull);
-	drive->SetCountdown(countdown);
-
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			drive->SetDesign(sd);
-	}
-
-	if (abrv.length())
-		drive->SetAbbreviation(abrv);
-
-	if (emcon_1 >= 0 && emcon_1 <= 100)
-		drive->SetEMCONPower(1, emcon_1);
-
-	if (emcon_2 >= 0 && emcon_2 <= 100)
-		drive->SetEMCONPower(1, emcon_2);
-
-	if (emcon_3 >= 0 && emcon_3 <= 100)
-		drive->SetEMCONPower(1, emcon_3);
-
-	quantum_drive = drive;
+	// Legacy: contains("hyper")
+	return S.Contains(TEXT("hyper")) ? EQuantumDriveType::HYPER : EQuantumDriveType::QUANTUM;
 }
 
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseFarcaster(TermStruct* val)
+static int32 ClampEmcon(int32 V)
 {
-	Text     design_name;
-	double   capacity = 300e3;
-	double   consumption = 15e3;  // twenty second recharge
-	int      napproach = 0;
-	Vec3     approach[Farcaster::NUM_APPROACH_PTS];
-	Vec3     loc(0.0f, 0.0f, 0.0f);
-	Vec3     start(0.0f, 0.0f, 0.0f);
-	Vec3     end(0.0f, 0.0f, 0.0f);
-	float    size = 0.0f;
-	float    hull = 0.5f;
-	int      emcon_1 = -1;
-	int      emcon_2 = -1;
-	int      emcon_3 = -1;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-			else if (defname == "capacity") {
-				GetDefNumber(capacity, pdef, filename);
-			}
-			else if (defname == "consumption") {
-				GetDefNumber(consumption, pdef, filename);
-			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-
-			else if (defname == "start") {
-				GetDefVec(start, pdef, filename);
-				start *= (float)scale;
-			}
-			else if (defname == "end") {
-				GetDefVec(end, pdef, filename);
-				end *= (float)scale;
-			}
-			else if (defname == "approach") {
-				if (napproach < Farcaster::NUM_APPROACH_PTS) {
-					GetDefVec(approach[napproach], pdef, filename);
-					approach[napproach++] *= (float)scale;
-				}
-				else {
-					Print("WARNING: farcaster approach point ignored in '%s' (max=%d)\n",
-						filename, Farcaster::NUM_APPROACH_PTS);
-				}
-			}
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-		}
-	}
-
-	Farcaster* caster = new  Farcaster(capacity, consumption);
-	caster->SetSourceIndex(reactors.size() - 1);
-	caster->Mount(loc, size, hull);
-
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			caster->SetDesign(sd);
-	}
-
-	caster->SetStartPoint(start);
-	caster->SetEndPoint(end);
-
-	for (int i = 0; i < napproach; i++)
-		caster->SetApproachPoint(i, approach[i]);
-
-	if (emcon_1 >= 0 && emcon_1 <= 100)
-		caster->SetEMCONPower(1, emcon_1);
-
-	if (emcon_2 >= 0 && emcon_2 <= 100)
-		caster->SetEMCONPower(1, emcon_2);
-
-	if (emcon_3 >= 0 && emcon_3 <= 100)
-		caster->SetEMCONPower(1, emcon_3);
-
-	farcaster = caster;
+	return (V >= 0 && V <= 100) ? V : -1;
 }
 
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseThruster(TermStruct* val)
+void UStarshatterGameDataSubsystem::ParseQuantumDrive(TermStruct* Val, const char* Fn)
 {
-	if (thruster) {
-		Print("WARNING: additional thruster ignored in '%s'\n", filename);
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseQuantumDrive()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseQuantumDrive called with null args"));
 		return;
 	}
 
-	double thrust = 100;
+	// Match ParsePower/ParseDrive behavior:
+	const float Scale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
 
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	Text  design_name;
-	float tscale = 1.0f;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-	int   dtype = 0;
+	// Legacy defaults:
+	double  Capacity = 250000.0;
+	double  Consumption = 1000.0;
+	FVector Loc = FVector::ZeroVector;
+	float   Size = 0.0f;
+	float   Hull = 0.5f;
+	float   Countdown = 5.0f;
 
-	Thruster* drive = 0;
+	Text    DesignName = "";
+	Text    TypeName = "";
+	Text    Abrv = "";
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+	int32   Emcon1 = -1;
+	int32   Emcon2 = -1;
+	int32   Emcon3 = -1;
 
+	EQuantumDriveType QType = EQuantumDriveType::QUANTUM;
 
-			if (defname == "type") {
-				TermText* tname = pdef->term()->isText();
+	FShipQuantum NewQuantum;
+	NewQuantum.SourceFile = FString(ANSI_TO_TCHAR(Fn));
 
-				if (tname) {
-					Text tval = tname->value();
-					tval.setSensitive(false);
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
 
-					if (tval == "Plasma")       dtype = Drive::PLASMA;
-					else if (tval == "Fusion")  dtype = Drive::FUSION;
-					else if (tval == "Alien")   dtype = Drive::GREEN;
-					else if (tval == "Green")   dtype = Drive::GREEN;
-					else if (tval == "Red")     dtype = Drive::RED;
-					else if (tval == "Blue")    dtype = Drive::BLUE;
-					else if (tval == "Yellow")  dtype = Drive::YELLOW;
-					else if (tval == "Stealth") dtype = Drive::STEALTH;
+		const Text& Key = PDef->name()->value();
 
-					else Print("WARNING: unknown thruster type '%s' in '%s'\n", tname->value().data(), filename);
-				}
+		if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewQuantum.DesignName = FString(DesignName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(Abrv, PDef, Fn);
+			NewQuantum.Abbrev = FString(Abrv);
+		}
+		else if (Key == "type")
+		{
+			if (GetDefText(TypeName, PDef, Fn))
+			{
+				QType = QuantumDriveTypeFromText(TypeName);
+				NewQuantum.Type = QType;
 			}
+		}
+		else if (Key == "capacity")
+		{
+			GetDefNumber(Capacity, PDef, Fn);
+			NewQuantum.Capacity = Capacity;
+		}
+		else if (Key == "consumption")
+		{
+			GetDefNumber(Consumption, PDef, Fn);
+			NewQuantum.Consumption = Consumption;
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
 
-			else if (defname == "thrust") {
-				GetDefNumber(thrust, pdef, filename);
-			}
+			Loc = V;
+			NewQuantum.Location = Loc;
+		}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= Scale;
 
-			else if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "scale") {
-				GetDefNumber(tscale, pdef, filename);
-			}
-			else if (defname.contains("port") && pdef->term()) {
-				Vec3  port;
-				float port_scale = 0;
-				DWORD fire = 0;
-
-				if (pdef->term()->isArray()) {
-					GetDefVec(port, pdef, filename);
-					port *= scale;
-					port_scale = tscale;
-				}
-
-				else if (pdef->term()->isStruct()) {
-					TermStruct* val = pdef->term()->isStruct();
-
-					for (int i = 0; i < val->elements()->size(); i++) {
-						TermDef* pdef2 = val->elements()->at(i)->isDef();
-						if (pdef2) {
-							if (pdef2->name()->value() == "loc") {
-								GetDefVec(port, pdef2, filename);
-								port *= scale;
-							}
-
-							else if (pdef2->name()->value() == "fire") {
-								GetDefNumber(fire, pdef2, filename);
-							}
-
-							else if (pdef2->name()->value() == "scale") {
-								GetDefNumber(port_scale, pdef2, filename);
-							}
-						}
-					}
-
-					if (port_scale <= 0)
-						port_scale = tscale;
-				}
-
-				if (!drive)
-					drive = new  Thruster(dtype, thrust, tscale);
-
-				if (defname == "port" || defname == "port_bottom")
-					drive->AddPort(Thruster::BOTTOM, port, fire, port_scale);
-
-				else if (defname == "port_top")
-					drive->AddPort(Thruster::TOP, port, fire, port_scale);
-
-				else if (defname == "port_left")
-					drive->AddPort(Thruster::LEFT, port, fire, port_scale);
-
-				else if (defname == "port_right")
-					drive->AddPort(Thruster::RIGHT, port, fire, port_scale);
-
-				else if (defname == "port_fore")
-					drive->AddPort(Thruster::FORE, port, fire, port_scale);
-
-				else if (defname == "port_aft")
-					drive->AddPort(Thruster::AFT, port, fire, port_scale);
-			}
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
+			NewQuantum.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewQuantum.HullFactor = Hull;
+		}
+		else if (Key == "jump_time" || Key == "countdown")
+		{
+			GetDefNumber(Countdown, PDef, Fn);
+			NewQuantum.Countdown = Countdown;
+		}
+		else if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewQuantum.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewQuantum.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewQuantum.Emcon3 = ClampEmcon(Emcon3);
 		}
 	}
 
-	if (!drive)
-		drive = new  Thruster(dtype, thrust, tscale);
-	drive->SetSourceIndex(reactors.size() - 1);
-	drive->Mount(loc, size, hull);
+	// Legacy: drive->SetSourceIndex(reactors.size() - 1);
+	// Here: store what the runtime builder should use.
+	// If you have NewShipReactorArray or similar, use that count:
+	NewQuantum.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
 
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			drive->SetDesign(sd);
-	}
-
-	if (emcon_1 >= 0 && emcon_1 <= 100)
-		drive->SetEMCONPower(1, emcon_1);
-
-	if (emcon_2 >= 0 && emcon_2 <= 100)
-		drive->SetEMCONPower(1, emcon_2);
-
-	if (emcon_3 >= 0 && emcon_3 <= 100)
-		drive->SetEMCONPower(1, emcon_3);
-
-	thruster = drive;
+	// Store like your other parse helpers:
+	NewShipQuantumArray.Add(NewQuantum);
 }
-
 // +--------------------------------------------------------------------+
 
-void
-ShipDesign::ParseNavlight(TermStruct* val)
+void UStarshatterGameDataSubsystem::ParseFarcaster(TermStruct* Val, const char* Fn)
 {
-	Text  dname;
-	Text  dabrv;
-	Text  design_name;
-	int   nlights = 0;
-	float dscale = 1.0f;
-	float period = 10.0f;
-	Vec3  bloc[NavLight::MAX_LIGHTS];
-	int   btype[NavLight::MAX_LIGHTS];
-	DWORD pattern[NavLight::MAX_LIGHTS];
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseFarcaster()"));
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseFarcaster called with null args"));
+		return;
+	}
 
-			if (defname == "name")
-				GetDefText(dname, pdef, filename);
-			else if (defname == "abrv")
-				GetDefText(dabrv, pdef, filename);
+	const float Scale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
 
-			else if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
+	// Legacy defaults:
+	Text    DesignName = "";
+	double  Capacity = 300000.0;
+	double  Consumption = 15000.0;
+	FVector Loc = FVector::ZeroVector;
+	FVector Start = FVector::ZeroVector;
+	FVector End = FVector::ZeroVector;
+	float   Size = 0.0f;
+	float   Hull = 0.5f;
+	int32   Emcon1 = -1;
+	int32   Emcon2 = -1;
+	int32   Emcon3 = -1;
 
-			else if (defname == "scale") {
-				GetDefNumber(dscale, pdef, filename);
-			}
-			else if (defname == "period") {
-				GetDefNumber(period, pdef, filename);
-			}
-			else if (defname == "light") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					Print("WARNING: light struct missing for ship '%s' in '%s'\n", name, filename);
-				}
-				else {
-					TermStruct* val = pdef->term()->isStruct();
+	FShipFarcaster NewCaster;
+	NewCaster.SourceFile = FString(ANSI_TO_TCHAR(Fn));
 
-					Vec3  loc;
-					int   t = 0;
-					DWORD ptn = 0;
+	// If you still want a legacy cap (NUM_APPROACH_PTS), set it here:
+	const int32 MaxApproachPts = 8; // TODO: match Farcaster::NUM_APPROACH_PTS from legacy
+	NewCaster.ApproachPoints.Reserve(MaxApproachPts);
 
-					for (int i = 0; i < val->elements()->size(); i++) {
-						TermDef* pdef = val->elements()->at(i)->isDef();
-						if (pdef) {
-							Text defname = pdef->name()->value();
-							defname.setSensitive(false);
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
 
-							if (defname == "type") {
-								GetDefNumber(t, pdef, filename);
-							}
-							else if (defname == "loc") {
-								GetDefVec(loc, pdef, filename);
-							}
-							else if (defname == "pattern") {
-								GetDefNumber(ptn, pdef, filename);
-							}
-						}
-					}
+		const Text& Key = PDef->name()->value();
 
-					if (t < 1 || t > 4)
-						t = 1;
-
-					if (nlights < NavLight::MAX_LIGHTS) {
-						bloc[nlights] = loc * scale;
-						btype[nlights] = t - 1;
-						pattern[nlights] = ptn;
-						nlights++;
-					}
-					else {
-						Print("WARNING: Too many lights ship '%s' in '%s'\n", name, filename);
-					}
-				}
-			}
+		if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewCaster.DesignName = FString(DesignName);
 		}
-	}
-
-	NavLight* nav = new  NavLight(period, dscale);
-	if (dname.length()) nav->SetName(dname);
-	if (dabrv.length()) nav->SetAbbreviation(dabrv);
-
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			nav->SetDesign(sd);
-	}
-
-	for (int i = 0; i < nlights; i++)
-		nav->AddBeacon(bloc[i], pattern[i], btype[i]);
-
-	navlights.append(nav);
-}
-
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseFlightDeck(TermStruct* val)
-{
-	Text  dname;
-	Text  dabrv;
-	Text  design_name;
-	float dscale = 1.0f;
-	float az = 0.0f;
-	int   etype = 0;
-
-	bool  launch = false;
-	bool  recovery = false;
-	int   nslots = 0;
-	int   napproach = 0;
-	int   nrunway = 0;
-	DWORD filters[10];
-	Vec3  spots[10];
-	Vec3  approach[FlightDeck::NUM_APPROACH_PTS];
-	Vec3  runway[2];
-	Vec3  loc(0, 0, 0);
-	Vec3  start(0, 0, 0);
-	Vec3  end(0, 0, 0);
-	Vec3  cam(0, 0, 0);
-	Vec3  box(0, 0, 0);
-	float cycle_time = 0.0f;
-	float size = 0.0f;
-	float hull = 0.5f;
-
-	float light = 0.0f;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "name")
-				GetDefText(dname, pdef, filename);
-			else if (defname == "abrv")
-				GetDefText(dabrv, pdef, filename);
-			else if (defname == "design")
-				GetDefText(design_name, pdef, filename);
-
-			else if (defname == "start") {
-				GetDefVec(start, pdef, filename);
-				start *= (float)scale;
-			}
-			else if (defname == "end") {
-				GetDefVec(end, pdef, filename);
-				end *= (float)scale;
-			}
-			else if (defname == "cam") {
-				GetDefVec(cam, pdef, filename);
-				cam *= (float)scale;
-			}
-			else if (defname == "box" || defname == "bounding_box") {
-				GetDefVec(box, pdef, filename);
-				box *= (float)scale;
-			}
-			else if (defname == "approach") {
-				if (napproach < FlightDeck::NUM_APPROACH_PTS) {
-					GetDefVec(approach[napproach], pdef, filename);
-					approach[napproach++] *= (float)scale;
-				}
-				else {
-					Print("WARNING: flight deck approach point ignored in '%s' (max=%d)\n",
-						filename, FlightDeck::NUM_APPROACH_PTS);
-				}
-			}
-			else if (defname == "runway") {
-				GetDefVec(runway[nrunway], pdef, filename);
-				runway[nrunway++] *= (float)scale;
-			}
-			else if (defname == "spot") {
-				if (pdef->term()->isStruct()) {
-					TermStruct* s = pdef->term()->isStruct();
-					for (int i = 0; i < s->elements()->size(); i++) {
-						TermDef* d = s->elements()->at(i)->isDef();
-						if (d) {
-							if (d->name()->value() == "loc") {
-								GetDefVec(spots[nslots], d, filename);
-								spots[nslots] *= (float)scale;
-							}
-							else if (d->name()->value() == "filter") {
-								GetDefNumber(filters[nslots], d, filename);
-							}
-						}
-					}
-
-					nslots++;
-				}
-
-				else if (pdef->term()->isArray()) {
-					GetDefVec(spots[nslots], pdef, filename);
-					spots[nslots] *= (float)scale;
-					filters[nslots++] = 0xf;
-				}
-			}
-
-			else if (defname == "light") {
-				GetDefNumber(light, pdef, filename);
-			}
-
-			else if (defname == "cycle_time") {
-				GetDefNumber(cycle_time, pdef, filename);
-			}
-
-			else if (defname == "launch") {
-				GetDefBool(launch, pdef, filename);
-			}
-
-			else if (defname == "recovery") {
-				GetDefBool(recovery, pdef, filename);
-			}
-
-			else if (defname == "azimuth") {
-				GetDefNumber(az, pdef, filename);
-				if (degrees) az *= (float)DEGREES;
-			}
-
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "explosion") {
-				GetDefNumber(etype, pdef, filename);
-			}
+		else if (Key == "capacity")
+		{
+			GetDefNumber(Capacity, PDef, Fn);
+			NewCaster.Capacity = Capacity;
 		}
-	}
-
-	FlightDeck* deck = new  FlightDeck();
-	deck->Mount(loc, size, hull);
-	if (dname.length()) deck->SetName(dname);
-	if (dabrv.length()) deck->SetAbbreviation(dabrv);
-
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			deck->SetDesign(sd);
-	}
-
-	if (launch)
-		deck->SetLaunchDeck();
-	else if (recovery)
-		deck->SetRecoveryDeck();
-
-	deck->SetAzimuth(az);
-	deck->SetBoundingBox(box);
-	deck->SetStartPoint(start);
-	deck->SetEndPoint(end);
-	deck->SetCamLoc(cam);
-	deck->SetExplosionType(etype);
-
-	if (light > 0)
-		deck->SetLight(light);
-
-	for (int i = 0; i < napproach; i++)
-		deck->SetApproachPoint(i, approach[i]);
-
-	for (int i = 0; i < nrunway; i++)
-		deck->SetRunwayPoint(i, runway[i]);
-
-	for (int i = 0; i < nslots; i++)
-		deck->AddSlot(spots[i], filters[i]);
-
-	if (cycle_time > 0)
-		deck->SetCycleTime(cycle_time);
-
-	flight_decks.append(deck);
-}
-
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseLandingGear(TermStruct* val)
-{
-	Text  dname;
-	Text  dabrv;
-	Text  design_name;
-	int   ngear = 0;
-	Vec3  start[LandingGear::MAX_GEAR];
-	Vec3  end[LandingGear::MAX_GEAR];
-	SimModel* model[LandingGear::MAX_GEAR];
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "name")
-				GetDefText(dname, pdef, filename);
-			else if (defname == "abrv")
-				GetDefText(dabrv, pdef, filename);
-
-			else if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-
-			else if (defname == "gear") {
-				if (!pdef->term() || !pdef->term()->isStruct()) {
-					Print("WARNING: gear struct missing for ship '%s' in '%s'\n", name, filename);
-				}
-				else {
-					TermStruct* val = pdef->term()->isStruct();
-
-					Vec3  v1, v2;
-					char  mod_name[256];
-
-					ZeroMemory(mod_name, sizeof(mod_name));
-
-					for (int i = 0; i < val->elements()->size(); i++) {
-						TermDef* pdef = val->elements()->at(i)->isDef();
-						if (pdef) {
-							defname = pdef->name()->value();
-							defname.setSensitive(false);
-
-							if (defname == "model") {
-								GetDefText(mod_name, pdef, filename);
-							}
-							else if (defname == "start") {
-								GetDefVec(v1, pdef, filename);
-							}
-							else if (defname == "end") {
-								GetDefVec(v2, pdef, filename);
-							}
-						}
-					}
-
-					if (ngear < LandingGear::MAX_GEAR) {
-						SimModel* m = new  Model;
-						if (!m->Load(mod_name, scale)) {
-							Print("WARNING: Could notxload landing gear model '%s'\n", mod_name);
-							delete m;
-							m = 0;
-						}
-						else {
-							model[ngear] = m;
-							start[ngear] = v1 * scale;
-							end[ngear] = v2 * scale;
-							ngear++;
-						}
-					}
-					else {
-						Print("WARNING: Too many landing gear ship '%s' in '%s'\n", name, filename);
-					}
-				}
-			}
+		else if (Key == "consumption")
+		{
+			GetDefNumber(Consumption, PDef, Fn);
+			NewCaster.Consumption = Consumption;
 		}
-	}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
 
-	gear = new  LandingGear();
-	if (dname.length()) gear->SetName(dname);
-	if (dabrv.length()) gear->SetAbbreviation(dabrv);
-
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			gear->SetDesign(sd);
-	}
-
-	for (int i = 0; i < ngear; i++)
-		gear->AddGear(model[i], start[i], end[i]);
-}
-
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseWeapon(TermStruct* val)
-{
-	Text  wtype;
-	Text  wname;
-	Text  wabrv;
-	Text  design_name;
-	Text  group_name;
-	int   nmuz = 0;
-	Vec3  muzzles[Weapon::MAX_BARRELS];
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	float az = 0.0f;
-	float el = 0.0f;
-	float az_max = 1e6f;
-	float az_min = 1e6f;
-	float el_max = 1e6f;
-	float el_min = 1e6f;
-	float az_rest = 1e6f;
-	float el_rest = 1e6f;
-	int   etype = 0;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "type")
-				GetDefText(wtype, pdef, filename);
-			else if (defname == "name")
-				GetDefText(wname, pdef, filename);
-			else if (defname == "abrv")
-				GetDefText(wabrv, pdef, filename);
-			else if (defname == "design")
-				GetDefText(design_name, pdef, filename);
-			else if (defname == "group")
-				GetDefText(group_name, pdef, filename);
-
-			else if (defname == "muzzle") {
-				if (nmuz < Weapon::MAX_BARRELS) {
-					GetDefVec(muzzles[nmuz], pdef, filename);
-					nmuz++;
-				}
-				else {
-					Print("WARNING: too many muzzles (max=%d) for weapon in '%s'\n", filename, Weapon::MAX_BARRELS);
-				}
-			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "azimuth") {
-				GetDefNumber(az, pdef, filename);
-				if (degrees) az *= (float)DEGREES;
-			}
-			else if (defname == "elevation") {
-				GetDefNumber(el, pdef, filename);
-				if (degrees) el *= (float)DEGREES;
-			}
-
-			else if (defname == ("aim_az_max")) {
-				GetDefNumber(az_max, pdef, filename);
-				if (degrees) az_max *= (float)DEGREES;
-				az_min = 0.0f - az_max;
-			}
-
-			else if (defname == ("aim_el_max")) {
-				GetDefNumber(el_max, pdef, filename);
-				if (degrees) el_max *= (float)DEGREES;
-				el_min = 0.0f - el_max;
-			}
-
-			else if (defname == ("aim_az_min")) {
-				GetDefNumber(az_min, pdef, filename);
-				if (degrees) az_min *= (float)DEGREES;
-			}
-
-			else if (defname == ("aim_el_min")) {
-				GetDefNumber(el_min, pdef, filename);
-				if (degrees) el_min *= (float)DEGREES;
-			}
-
-			else if (defname == ("aim_az_rest")) {
-				GetDefNumber(az_rest, pdef, filename);
-				if (degrees) az_rest *= (float)DEGREES;
-			}
-
-			else if (defname == ("aim_el_rest")) {
-				GetDefNumber(el_rest, pdef, filename);
-				if (degrees) el_rest *= (float)DEGREES;
-			}
-
-			else if (defname == "rest_azimuth") {
-				GetDefNumber(az_rest, pdef, filename);
-				if (degrees) az_rest *= (float)DEGREES;
-			}
-			else if (defname == "rest_elevation") {
-				GetDefNumber(el_rest, pdef, filename);
-				if (degrees) el_rest *= (float)DEGREES;
-			}
-			else if (defname == "explosion") {
-				GetDefNumber(etype, pdef, filename);
-			}
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-			else {
-				Print("WARNING: unknown weapon parameter '%s' in '%s'\n",
-					defname.data(), filename);
-			}
+			Loc = V;
+			NewCaster.Location = Loc;
 		}
-	}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= Scale;
 
-	WeaponDesign* meta = WeaponDesign::Find(wtype);
-	if (!meta) {
-		Print("WARNING: unusual weapon name '%s' in '%s'\n", (const char*)wtype, filename);
-	}
-	else {
-		// non-turret weapon muzzles are relative to ship scale:
-		if (meta->turret_model == 0) {
-			for (int i = 0; i < nmuz; i++)
-				muzzles[i] *= (float)scale;
+			NewCaster.Size = Size;
 		}
-
-		// turret weapon muzzles are relative to weapon scale:
-		else {
-			for (int i = 0; i < nmuz; i++)
-				muzzles[i] *= (float)meta->scale;
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewCaster.HullFactor = Hull;
 		}
+		else if (Key == "start")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
 
-		Weapon* gun = new  Weapon(meta, nmuz, muzzles, az, el);
-		gun->SetSourceIndex(reactors.size() - 1);
-		gun->Mount(loc, size, hull);
-
-		if (az_max < 1e6)    gun->SetAzimuthMax(az_max);
-		if (az_min < 1e6)    gun->SetAzimuthMin(az_min);
-		if (az_rest < 1e6)   gun->SetRestAzimuth(az_rest);
-
-		if (el_max < 1e6)    gun->SetElevationMax(el_max);
-		if (el_min < 1e6)    gun->SetElevationMin(el_min);
-		if (el_rest < 1e6)   gun->SetRestElevation(el_rest);
-
-		if (emcon_1 >= 0 && emcon_1 <= 100)
-			gun->SetEMCONPower(1, emcon_1);
-
-		if (emcon_2 >= 0 && emcon_2 <= 100)
-			gun->SetEMCONPower(1, emcon_2);
-
-		if (emcon_3 >= 0 && emcon_3 <= 100)
-			gun->SetEMCONPower(1, emcon_3);
-
-		if (wname.length()) gun->SetName(wname);
-		if (wabrv.length()) gun->SetAbbreviation(wabrv);
-
-		if (design_name.length()) {
-			SystemDesign* sd = SystemDesign::Find(design_name);
-			if (sd)
-				gun->SetDesign(sd);
+			Start = V;
+			NewCaster.StartPoint = Start;
 		}
+		else if (Key == "end")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
 
-		if (group_name.length()) {
-			gun->SetGroup(group_name);
+			End = V;
+			NewCaster.EndPoint = End;
 		}
+		else if (Key == "approach")
+		{
+			if (NewCaster.ApproachPoints.Num() < MaxApproachPts)
+			{
+				FVector V = FVector::ZeroVector;
+				GetDefVec(V, PDef, Fn);
+				V *= Scale;
 
-		gun->SetExplosionType(etype);
-
-		if (meta->decoy_type && !decoy)
-			decoy = gun;
-		else if (meta->probe && !probe)
-			probe = gun;
-		else
-			weapons.append(gun);
-	}
-
-	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(path_name);
-}
-
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseHardPoint(TermStruct* val)
-{
-	Text  wtypes[8];
-	Text  wname;
-	Text  wabrv;
-	Text  design;
-	Vec3  muzzle;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	float az = 0.0f;
-	float el = 0.0f;
-	int   ntypes = 0;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "type")
-				GetDefText(wtypes[ntypes++], pdef, filename);
-			else if (defname == "name")
-				GetDefText(wname, pdef, filename);
-			else if (defname == "abrv")
-				GetDefText(wabrv, pdef, filename);
-			else if (defname == "design")
-				GetDefText(design, pdef, filename);
-
-			else if (defname == "muzzle") {
-				GetDefVec(muzzle, pdef, filename);
-				muzzle *= (float)scale;
+				NewCaster.ApproachPoints.Add(V);
 			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "azimuth") {
-				GetDefNumber(az, pdef, filename);
-				if (degrees) az *= (float)DEGREES;
-			}
-			else if (defname == "elevation") {
-				GetDefNumber(el, pdef, filename);
-				if (degrees) el *= (float)DEGREES;
-			}
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-			else {
-				Print("WARNING: unknown weapon parameter '%s' in '%s'\n",
-					defname.data(), filename);
-			}
-		}
-	}
-
-	HardPoint* hp = new  HardPoint(muzzle, az, el);
-	if (hp) {
-		for (int i = 0; i < ntypes; i++) {
-			WeaponDesign* meta = WeaponDesign::Find(wtypes[i]);
-			if (!meta) {
-				Print("WARNING: unusual weapon name '%s' in '%s'\n", (const char*)wtypes[i], filename);
-			}
-			else {
-				hp->AddDesign(meta);
-			}
-		}
-
-		hp->Mount(loc, size, hull);
-		if (wname.length())  hp->SetName(wname);
-		if (wabrv.length())  hp->SetAbbreviation(wabrv);
-		if (design.length()) hp->SetDesign(design);
-
-		hard_points.append(hp);
-	}
-
-	DataLoader* loader = DataLoader::GetLoader();
-	loader->SetDataPath(path_name);
-}
-
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseLoadout(TermStruct* val)
-{
-	ShipLoad* load = new  ShipLoad;
-
-	if (!load) return;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "name")
-				GetDefText(load->name, pdef, filename);
-
-			else if (defname == "stations")
-				GetDefArray(load->load, 16, pdef, filename);
-
 			else
-				Print("WARNING: unknown loadout parameter '%s' in '%s'\n",
-					defname.data(), filename);
+			{
+				UE_LOG(LogTemp, Warning,
+					TEXT("ParseFarcaster: approach point ignored in '%s' (max=%d)"),
+					*NewCaster.SourceFile, MaxApproachPts);
+			}
+		}
+		else if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewCaster.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewCaster.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewCaster.Emcon3 = ClampEmcon(Emcon3);
 		}
 	}
 
-	loadouts.append(load);
+	// Legacy: caster->SetSourceIndex(reactors.size() - 1)
+	NewCaster.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	// Store like your other parse helpers:
+	NewShipFarcasterArray.Add(NewCaster);
 }
 
 // +--------------------------------------------------------------------+
 
-void
-ShipDesign::ParseSensor(TermStruct* val)
+static bool TryGetThrusterPortDirFromKey(const Text& Key, EThrusterPortDir& OutDir)
 {
-	Text  design_name;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	int   nranges = 0;
-	float ranges[8];
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-
-	ZeroMemory(ranges, sizeof(ranges));
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "range") {
-				GetDefNumber(ranges[nranges++], pdef, filename);
-			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				size *= (float)scale;
-				GetDefNumber(size, pdef, filename);
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-		}
-	}
-
-	if (!sensor) {
-		sensor = new  Sensor();
-
-		if (design_name.length()) {
-			SystemDesign* sd = SystemDesign::Find(design_name);
-			if (sd)
-				sensor->SetDesign(sd);
-		}
-
-		for (int i = 0; i < nranges; i++)
-			sensor->AddRange(ranges[i]);
-
-		if (emcon_1 >= 0 && emcon_1 <= 100)
-			sensor->SetEMCONPower(1, emcon_1);
-
-		if (emcon_2 >= 0 && emcon_2 <= 100)
-			sensor->SetEMCONPower(1, emcon_2);
-
-		if (emcon_3 >= 0 && emcon_3 <= 100)
-			sensor->SetEMCONPower(1, emcon_3);
-
-		sensor->Mount(loc, size, hull);
-		sensor->SetSourceIndex(reactors.size() - 1);
-	}
-	else {
-		Print("WARNING: additional sensor ignored in '%s'\n", filename);
-	}
+	// Keys in legacy:
+	// port, port_bottom, port_top, port_left, port_right, port_fore, port_aft
+	// NOTE: `Text` comparisons are case-insensitive in legacy by setSensitive(false),
+	// but your pipeline uses exact Text keys. Keep it literal to match your other parsers.
+	if (Key == "port" || Key == "port_bottom") { OutDir = EThrusterPortDir::BOTTOM; return true; }
+	if (Key == "port_top") { OutDir = EThrusterPortDir::TOP; return true; }
+	if (Key == "port_left") { OutDir = EThrusterPortDir::LEFT; return true; }
+	if (Key == "port_right") { OutDir = EThrusterPortDir::RIGHT; return true; }
+	if (Key == "port_fore") { OutDir = EThrusterPortDir::FORE; return true; }
+	if (Key == "port_aft") { OutDir = EThrusterPortDir::AFT; return true; }
+	return false;
 }
 
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseNavsys(TermStruct* val)
+void UStarshatterGameDataSubsystem::ParseThruster(TermStruct* Val, const char* Fn)
 {
-	Text  design_name;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
+	NewThrusterPortArray.Empty();
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseThruster()"));
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				size *= (float)scale;
-				GetDefNumber(size, pdef, filename);
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-			else if (defname == "design")
-				GetDefText(design_name, pdef, filename);
-		}
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseThruster called with null args"));
+		return;
 	}
 
-	if (!navsys) {
-		navsys = new  NavSystem;
-
-		if (design_name.length()) {
-			SystemDesign* sd = SystemDesign::Find(design_name);
-			if (sd)
-				navsys->SetDesign(sd);
-		}
-
-		navsys->Mount(loc, size, hull);
-		navsys->SetSourceIndex(reactors.size() - 1);
-	}
-	else {
-		Print("WARNING: additional nav system ignored in '%s'\n", filename);
-	}
-}
-
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseComputer(TermStruct* val)
-{
-	Text  comp_name("Computer");
-	Text  comp_abrv("Comp");
-	Text  design_name;
-	int   comp_type = 1;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "name") {
-				GetDefText(comp_name, pdef, filename);
-			}
-			else if (defname == "abrv") {
-				GetDefText(comp_abrv, pdef, filename);
-			}
-			else if (defname == "design") {
-				GetDefText(design_name, pdef, filename);
-			}
-			else if (defname == "type") {
-				GetDefNumber(comp_type, pdef, filename);
-			}
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				size *= (float)scale;
-				GetDefNumber(size, pdef, filename);
-			}
-			else if (defname == "hull_factor") {
-				GetDefNumber(hull, pdef, filename);
-			}
-		}
+	// Legacy: only one thruster allowed
+	if (NewShipThrusterArray.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseThruster: additional thruster ignored in '%s'"), ANSI_TO_TCHAR(Fn));
+		return;
 	}
 
-	Computer* comp = new  Computer(comp_type, comp_name);
-	comp->Mount(loc, size, hull);
-	comp->SetAbbreviation(comp_abrv);
-	comp->SetSourceIndex(reactors.size() - 1);
+	const float Scale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
 
-	if (design_name.length()) {
-		SystemDesign* sd = SystemDesign::Find(design_name);
-		if (sd)
-			comp->SetDesign(sd);
-	}
+	// Legacy defaults:
+	double  Thrust = 100.0;
+	FVector Loc = FVector::ZeroVector;
+	float   Size = 0.0f;
+	float   Hull = 0.5f;
+	Text    DesignName = "";
+	float   TScale = 1.0f;
+	int32   Emcon1 = -1;
+	int32   Emcon2 = -1;
+	int32   Emcon3 = -1;
 
-	computers.append(comp);
-}
+	EDriveType DriveType = EDriveType::UNKNOWN;
 
-// +--------------------------------------------------------------------+
+	FShipThruster NewThruster;
+	NewThruster.Ports.Empty();
+	NewThruster.SourceFile = FString(ANSI_TO_TCHAR(Fn));
 
-void
-ShipDesign::ParseShield(TermStruct* val)
-{
-	Text     dname;
-	Text     dabrv;
-	Text     design_name;
-	Text     model_name;
-	double   factor = 0;
-	double   capacity = 0;
-	double   consumption = 0;
-	double   cutoff = 0;
-	double   curve = 0;
-	double   def_cost = 1;
-	int      shield_type = 0;
-	Vec3     loc(0.0f, 0.0f, 0.0f);
-	float    size = 0.0f;
-	float    hull = 0.5f;
-	int      etype = 0;
-	bool     shield_capacitor = false;
-	bool     shield_bubble = false;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+		const Text& Key = PDef->name()->value();
 
-			if (defname == "type") {
-				GetDefNumber(shield_type, pdef, filename);
-			}
-			else if (defname == "name")
-				GetDefText(dname, pdef, filename);
-			else if (defname == "abrv")
-				GetDefText(dabrv, pdef, filename);
-			else if (defname == "design")
-				GetDefText(design_name, pdef, filename);
-			else if (defname == "model")
-				GetDefText(model_name, pdef, filename);
+		if (Key == "type")
+		{
+			TermText* TName = PDef->term() ? PDef->term()->isText() : nullptr;
+			if (TName)
+			{
+				const FString TypeStr = FString(ANSI_TO_TCHAR(TName->value().data()));
+				DriveType = ParseDriveTypeString(TypeStr);
+				NewThruster.Type = DriveType;
 
-			else if (defname == "loc") {
-				GetDefVec(loc, pdef, filename);
-				loc *= (float)scale;
-			}
-			else if (defname == "size") {
-				GetDefNumber(size, pdef, filename);
-				size *= (float)scale;
-			}
-			else if (defname == "hull_factor")
-				GetDefNumber(hull, pdef, filename);
-
-			else if (defname.contains("factor"))
-				GetDefNumber(factor, pdef, filename);
-			else if (defname.contains("cutoff"))
-				GetDefNumber(cutoff, pdef, filename);
-			else if (defname.contains("curve"))
-				GetDefNumber(curve, pdef, filename);
-			else if (defname.contains("capacitor"))
-				GetDefBool(shield_capacitor, pdef, filename);
-			else if (defname.contains("bubble"))
-				GetDefBool(shield_bubble, pdef, filename);
-			else if (defname == "capacity")
-				GetDefNumber(capacity, pdef, filename);
-			else if (defname == "consumption")
-				GetDefNumber(consumption, pdef, filename);
-			else if (defname == "deflection_cost")
-				GetDefNumber(def_cost, pdef, filename);
-			else if (defname == "explosion")
-				GetDefNumber(etype, pdef, filename);
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-
-			else if (defname == "bolt_hit_sound") {
-				GetDefText(bolt_hit_sound, pdef, filename);
-			}
-
-			else if (defname == "beam_hit_sound") {
-				GetDefText(beam_hit_sound, pdef, filename);
-			}
-		}
-	}
-
-	if (!shield) {
-		if (shield_type) {
-			shield = new  Shield((Shield::SUBTYPE)shield_type);
-			shield->SetSourceIndex(reactors.size() - 1);
-			shield->Mount(loc, size, hull);
-			if (dname.length()) shield->SetName(dname);
-			if (dabrv.length()) shield->SetAbbreviation(dabrv);
-
-			if (design_name.length()) {
-				SystemDesign* sd = SystemDesign::Find(design_name);
-				if (sd)
-					shield->SetDesign(sd);
-			}
-
-			shield->SetExplosionType(etype);
-			shield->SetShieldCapacitor(shield_capacitor);
-			shield->SetShieldBubble(shield_bubble);
-
-			if (factor > 0) shield->SetShieldFactor(factor);
-			if (capacity > 0) shield->SetCapacity(capacity);
-			if (cutoff > 0) shield->SetShieldCutoff(cutoff);
-			if (consumption > 0) shield->SetConsumption(consumption);
-			if (def_cost > 0) shield->SetDeflectionCost(def_cost);
-			if (curve > 0) shield->SetShieldCurve(curve);
-
-			if (emcon_1 >= 0 && emcon_1 <= 100)
-				shield->SetEMCONPower(1, emcon_1);
-
-			if (emcon_2 >= 0 && emcon_2 <= 100)
-				shield->SetEMCONPower(1, emcon_2);
-
-			if (emcon_3 >= 0 && emcon_3 <= 100)
-				shield->SetEMCONPower(1, emcon_3);
-
-			if (model_name.length()) {
-				shield_model = new  Model;
-				if (!shield_model->Load(model_name, scale)) {
-					Print("ERROR: Could notxload shield model '%s'\n", model_name.data());
-					delete shield_model;
-					shield_model = 0;
-					valid = false;
-				}
-				else {
-					shield_model->SetDynamic(true);
-					shield_model->SetLuminous(true);
-				}
-			}
-
-			DataLoader* loader = DataLoader::GetLoader();
-			DWORD       SOUND_FLAGS = USound::LOCALIZED | USound::LOC_3D;
-
-			if (bolt_hit_sound.length()) {
-				if (!loader->LoadSound(bolt_hit_sound, bolt_hit_sound_resource, SOUND_FLAGS, true)) {
-					loader->SetDataPath("Sounds/");
-					loader->LoadSound(bolt_hit_sound, bolt_hit_sound_resource, SOUND_FLAGS);
-					loader->SetDataPath(path_name);
-				}
-			}
-
-			if (beam_hit_sound.length()) {
-				if (!loader->LoadSound(beam_hit_sound, beam_hit_sound_resource, SOUND_FLAGS, true)) {
-					loader->SetDataPath("Sounds/");
-					loader->LoadSound(beam_hit_sound, beam_hit_sound_resource, SOUND_FLAGS);
-					loader->SetDataPath(path_name);
+				if (DriveType == EDriveType::UNKNOWN)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("ParseThruster: unknown thruster type '%s' in '%s'"),
+						*TypeStr, *NewThruster.SourceFile);
 				}
 			}
 		}
-		else {
-			Print("WARNING: invalid shield type in '%s'\n", filename);
+		else if (Key == "thrust")
+		{
+			GetDefNumber(Thrust, PDef, Fn);
+			NewThruster.Thrust = Thrust;
 		}
-	}
-	else {
-		Print("WARNING: additional shield ignored in '%s'\n", filename);
-	}
-}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewThruster.DesignName = FString(DesignName);
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
 
-// +--------------------------------------------------------------------+
+			Loc = V;
+			NewThruster.Location = Loc;
+		}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= Scale;
 
-void
-ShipDesign::ParseDeathSpiral(TermStruct* val)
-{
-	int   exp_index = -1;
-	int   debris_index = -1;
-	int   fire_index = -1;
+			NewThruster.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewThruster.HullFactor = Hull;
+		}
+		else if (Key == "scale")
+		{
+			GetDefNumber(TScale, PDef, Fn);
+			NewThruster.ThrusterScale = TScale;
+		}
+		else
+		{
+			// Port keys are name-driven: port, port_top, etc.
+			
+			EThrusterPortDir Dir;
+			if (TryGetThrusterPortDirFromKey(Key, Dir) && PDef->term())
+			{
+				FThrusterPort Port;
+				Port.Direction = Dir;
+				Port.Location = FVector::ZeroVector;
+				Port.Fire = 0;
+				Port.PortScale = (NewThruster.ThrusterScale > 0.0f) ? NewThruster.ThrusterScale : 1.0f;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* def = val->elements()->at(i)->isDef();
-		if (def) {
-			Text defname = def->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "time") {
-				GetDefNumber(death_spiral_time, def, filename);
-			}
-
-			else if (defname == "explosion") {
-				if (!def->term() || !def->term()->isStruct()) {
-					Print("WARNING: explosion struct missing in '%s'\n", filename);
+				if (PDef->term()->isArray())
+				{
+					FVector PV = FVector::ZeroVector;
+					if (GetDefVec(PV, PDef, Fn))
+					{
+						PV *= Scale;
+						Port.Location = PV;
+						// PortScale default already TScale
+						NewThruster.Ports.Add(Port);
+					}
 				}
-				else {
-					TermStruct* val = def->term()->isStruct();
-					ParseExplosion(val, ++exp_index);
-				}
-			}
+				else if (PDef->term()->isStruct())
+				{
+					TermStruct* PortStruct = PDef->term()->isStruct();
 
-			// BACKWARD COMPATIBILITY:
-			else if (defname == "explosion_type") {
-				GetDefNumber(explosion[++exp_index].type, def, filename);
-			}
+					FVector PV = FVector::ZeroVector;
+					float PortScale = 0.0f;
+					DWORD Fire = 0;
 
-			else if (defname == "explosion_time") {
-				GetDefNumber(explosion[exp_index].time, def, filename);
-			}
+					const int32 PortCount = (int32)PortStruct->elements()->size();
+					for (int32 j = 0; j < PortCount; ++j)
+					{
+						TermDef* P2 = PortStruct->elements()->at(j)->isDef();
+						if (!P2) continue;
 
-			else if (defname == "explosion_loc") {
-				GetDefVec(explosion[exp_index].loc, def, filename);
-				explosion[exp_index].loc *= (float)scale;
-			}
+						const Text& PKey = P2->name()->value();
 
-			else if (defname == "final_type") {
-				GetDefNumber(explosion[++exp_index].type, def, filename);
-				explosion[exp_index].final = true;
-			}
-
-			else if (defname == "final_loc") {
-				GetDefVec(explosion[exp_index].loc, def, filename);
-				explosion[exp_index].loc *= (float)scale;
-			}
-
-
-			else if (defname == "debris") {
-				if (def->term() && def->term()->isText()) {
-					Text model_name;
-					GetDefText(model_name, def, filename);
-					SimModel* model = new  Model;
-					if (!model->Load(model_name, scale)) {
-						Print("Could notxload debris model '%s'\n", model_name.data());
-						delete model;
-						return;
+						if (PKey == "loc")
+						{
+							GetDefVec(PV, P2, Fn);
+						}
+						else if (PKey == "fire")
+						{
+							GetDefNumber(Fire, P2, Fn);
+						}
+						else if (PKey == "scale")
+						{
+							GetDefNumber(PortScale, P2, Fn);
+						}
 					}
 
-					PrepareModel(*model);
-					debris[++debris_index].model = model;
-					fire_index = -1;
+					PV *= Scale;
+
+					if (PortScale <= 0.0f)
+						PortScale = (NewThruster.ThrusterScale > 0.0f) ? NewThruster.ThrusterScale : 1.0f;
+
+					Port.Location = PV;
+					Port.Fire = (int32)Fire;
+					Port.PortScale = PortScale;
+
+					NewThruster.Ports.Add(Port);
 				}
-				else if (!def->term() || !def->term()->isStruct()) {
-					Print("WARNING: debris struct missing in '%s'\n", filename);
-				}
-				else {
-					TermStruct* val = def->term()->isStruct();
-					ParseDebris(val, ++debris_index);
-				}
-			}
-
-			else if (defname == "debris_mass") {
-				GetDefNumber(debris[debris_index].mass, def, filename);
-			}
-
-			else if (defname == "debris_speed") {
-				GetDefNumber(debris[debris_index].speed, def, filename);
-			}
-
-			else if (defname == "debris_drag") {
-				GetDefNumber(debris[debris_index].drag, def, filename);
-			}
-
-			else if (defname == "debris_loc") {
-				GetDefVec(debris[debris_index].loc, def, filename);
-				debris[debris_index].loc *= (float)scale;
-			}
-
-			else if (defname == "debris_count") {
-				GetDefNumber(debris[debris_index].count, def, filename);
-			}
-
-			else if (defname == "debris_life") {
-				GetDefNumber(debris[debris_index].life, def, filename);
-			}
-
-			else if (defname == "debris_fire") {
-				if (++fire_index < 5) {
-					GetDefVec(debris[debris_index].fire_loc[fire_index], def, filename);
-					debris[debris_index].fire_loc[fire_index] *= (float)scale;
-				}
-			}
-
-			else if (defname == "debris_fire_type") {
-				GetDefNumber(debris[debris_index].fire_type, def, filename);
 			}
 		}
+
+		if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewThruster.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewThruster.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewThruster.Emcon3 = ClampEmcon(Emcon3);
+		}
 	}
+
+	// Legacy: drive->SetSourceIndex(reactors.size()-1)
+	NewThruster.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	// Store like your other parse helpers:
+	NewShipThrusterArray.Add(NewThruster);
+}
+// +--------------------------------------------------------------------+
+
+static ENavLightType NavLightTypeFromLegacyInt(int32 InT)
+{
+	// Legacy: if t < 1 || t > 4 -> t = 1
+	int32 T = InT;
+	if (T < 1 || T > 4) T = 1;
+
+	switch (T)
+	{
+	case 1: return ENavLightType::TYPE_1;
+	case 2: return ENavLightType::TYPE_2;
+	case 3: return ENavLightType::TYPE_3;
+	case 4: return ENavLightType::TYPE_4;
+	default: return ENavLightType::TYPE_1;
+	}
+}
+
+void UStarshatterGameDataSubsystem::ParseNavlight(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseNavlight()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseNavlight called with null args"));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	// Legacy defaults:
+	Text  DName = "";
+	Text  DAbrv = "";
+	Text  DesignName = "";
+
+	float DScale = 1.0f;  // navlight scale param
+	float Period = 10.0f;
+
+	FShipNavLight NewNav;
+	NewNav.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	// If you want an explicit cap like legacy MAX_LIGHTS:
+	const int32 MaxLights = 16; // TODO: set to NavLight::MAX_LIGHTS value from legacy
+	NewNav.Beacons.Reserve(MaxLights);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "name")
+		{
+			GetDefText(DName, PDef, Fn);
+			NewNav.Name = FString(DName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(DAbrv, PDef, Fn);
+			NewNav.Abbrev = FString(DAbrv);
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewNav.DesignName = FString(DesignName);
+		}
+		else if (Key == "scale")
+		{
+			GetDefNumber(DScale, PDef, Fn);
+			NewNav.Scale = DScale;
+		}
+		else if (Key == "period")
+		{
+			GetDefNumber(Period, PDef, Fn);
+			NewNav.Period = Period;
+		}
+		else if (Key == "light")
+		{
+			if (!PDef->term() || !PDef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseNavlight: light struct missing in '%s'"), *NewNav.SourceFile);
+				continue;
+			}
+
+			if (NewNav.Beacons.Num() >= MaxLights)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseNavlight: too many lights in '%s' (max=%d)"),
+					*NewNav.SourceFile, MaxLights);
+				continue;
+			}
+
+			TermStruct* LightStruct = PDef->term()->isStruct();
+
+			FVector Loc = FVector::ZeroVector;
+			int32   T = 1;      // legacy default before clamp
+			DWORD   Pattern = 0;
+
+			const int32 LightElemCount = (int32)LightStruct->elements()->size();
+			for (int32 j = 0; j < LightElemCount; ++j)
+			{
+				TermDef* P2 = LightStruct->elements()->at(j)->isDef();
+				if (!P2)
+					continue;
+
+				const Text& LKey = P2->name()->value();
+
+				if (LKey == "type")
+				{
+					GetDefNumber(T, P2, Fn);
+				}
+				else if (LKey == "loc")
+				{
+					GetDefVec(Loc, P2, Fn);
+				}
+				else if (LKey == "pattern")
+				{
+					GetDefNumber(Pattern, P2, Fn);
+				}
+			}
+
+			FNavLightBeacon Beacon;
+			Beacon.Type = NavLightTypeFromLegacyInt(T);
+
+			// Legacy: bloc[n] = loc * scale (ship scale, not navlight dscale)
+			Beacon.Location = Loc * ShipScale;
+
+			Beacon.Pattern = (int32)Pattern;
+
+			NewNav.Beacons.Add(Beacon);
+		}
+	}
+
+	// Store like your other parse helpers:
+	NewShipNavLightArray.Add(NewNav);
 }
 
 // +--------------------------------------------------------------------+
 
-void
-ShipDesign::ParseExplosion(TermStruct* val, int index)
+void UStarshatterGameDataSubsystem::ParseFlightDeck(TermStruct* Val, const char* Fn)
 {
-	ShipExplosion* exp = &explosion[index];
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseFlightDeck()"));
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* def = val->elements()->at(i)->isDef();
-		if (def) {
-			Text defname = def->name()->value();
-			defname.setSensitive(false);
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseFlightDeck called with null args"));
+		return;
+	}
 
-			if (defname == "time") {
-				GetDefNumber(exp->time, def, filename);
+	const float Scale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	// Legacy defaults:
+	Text  DName = "";
+	Text  DAbrv = "";
+	Text  DesignName = "";
+
+	float Az = 0.0f;
+	int32 ExplosionType = 0;
+
+	bool  bLaunch = false;
+	bool  bRecovery = false;
+
+	FVector Loc = FVector::ZeroVector;
+	FVector Start = FVector::ZeroVector;
+	FVector End = FVector::ZeroVector;
+	FVector Cam = FVector::ZeroVector;
+	FVector Box = FVector::ZeroVector;
+
+	float CycleTime = 0.0f;
+	float Size = 0.0f;
+	float Hull = 0.5f;
+	float Light = 0.0f;
+
+	FShipFlightDeck NewDeck;
+	NewDeck.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	// Caps (legacy uses fixed arrays: slots[10], filters[10], runway[2], approach[NUM_APPROACH_PTS])
+	const int32 MaxSlots = 10;
+	const int32 MaxRunwayPts = 2;
+	const int32 MaxApproachPts = 8; // TODO: set to FlightDeck::NUM_APPROACH_PTS from legacy
+
+	NewDeck.Slots.Reserve(MaxSlots);
+	NewDeck.RunwayPoints.Reserve(MaxRunwayPts);
+	NewDeck.ApproachPoints.Reserve(MaxApproachPts);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+		Text Buf;
+
+		if (Key == "name")
+		{
+			GetDefText(DName, PDef, Fn);
+			NewDeck.Name = FString(DName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(DAbrv, PDef, Fn);
+			NewDeck.Abbrev = FString(DAbrv);
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewDeck.DesignName = FString(DesignName);
+		}
+		else if (Key == "start")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
+			NewDeck.StartPoint = V;
+		}
+		else if (Key == "end")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
+			NewDeck.EndPoint = V;
+		}
+		else if (Key == "cam")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
+			NewDeck.CamLocation = V;
+		}
+		else if (Key == "box" || Key == "bounding_box")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
+			NewDeck.BoundingBox = V;
+		}
+		else if (Key == "approach")
+		{
+			if (NewDeck.ApproachPoints.Num() < MaxApproachPts)
+			{
+				FVector V = FVector::ZeroVector;
+				GetDefVec(V, PDef, Fn);
+				V *= Scale;
+				NewDeck.ApproachPoints.Add(V);
 			}
-
-			else if (defname == "type") {
-				GetDefNumber(exp->type, def, filename);
-			}
-
-			else if (defname == "loc") {
-				GetDefVec(exp->loc, def, filename);
-				exp->loc *= (float)scale;
-			}
-
-			else if (defname == "final") {
-				GetDefBool(exp->final, def, filename);
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseFlightDeck: approach point ignored in '%s' (max=%d)"),
+					*NewDeck.SourceFile, MaxApproachPts);
 			}
 		}
+		else if (Key == "runway")
+		{
+			if (NewDeck.RunwayPoints.Num() < MaxRunwayPts)
+			{
+				FVector V = FVector::ZeroVector;
+				GetDefVec(V, PDef, Fn);
+				V *= Scale;
+				NewDeck.RunwayPoints.Add(V);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseFlightDeck: extra runway point ignored in '%s' (max=%d)"),
+					*NewDeck.SourceFile, MaxRunwayPts);
+			}
+		}
+		else if (Key == "spot")
+		{
+			if (NewDeck.Slots.Num() >= MaxSlots)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseFlightDeck: too many slots in '%s' (max=%d)"),
+					*NewDeck.SourceFile, MaxSlots);
+				continue;
+			}
+
+			FFlightDeckSlot Slot;
+
+			if (PDef->term() && PDef->term()->isStruct())
+			{
+				TermStruct* S = PDef->term()->isStruct();
+
+				FVector SpotLoc = FVector::ZeroVector;
+				DWORD Filter = 0xF;
+
+				const int32 SCnt = (int32)S->elements()->size();
+				for (int32 j = 0; j < SCnt; ++j)
+				{
+					TermDef* D = S->elements()->at(j)->isDef();
+					if (!D) continue;
+
+					const Text& SKey = D->name()->value();
+
+					if (SKey == "loc")
+					{
+						GetDefVec(SpotLoc, D, Fn);
+					}
+					else if (SKey == "filter")
+					{
+						GetDefNumber(Filter, D, Fn);
+					}
+				}
+
+				SpotLoc *= Scale;
+
+				Slot.Location = SpotLoc;
+				Slot.FilterMask = (int32)Filter;
+				NewDeck.Slots.Add(Slot);
+			}
+			else if (PDef->term() && PDef->term()->isArray())
+			{
+				FVector SpotLoc = FVector::ZeroVector;
+				GetDefVec(SpotLoc, PDef, Fn);
+				SpotLoc *= Scale;
+
+				Slot.Location = SpotLoc;
+				Slot.FilterMask = 0xF; // legacy default
+				NewDeck.Slots.Add(Slot);
+			}
+		}
+		else if (Key == "light")
+		{
+			GetDefNumber(Light, PDef, Fn);
+			NewDeck.Light = Light;
+		}
+		else if (Key == "cycle_time")
+		{
+			GetDefNumber(CycleTime, PDef, Fn);
+			NewDeck.CycleTime = CycleTime;
+		}
+		else if (Key == "launch")
+		{
+			GetDefBool(bLaunch, PDef, Fn);
+			NewDeck.bLaunchDeck = bLaunch;
+		}
+		else if (Key == "recovery")
+		{
+			GetDefBool(bRecovery, PDef, Fn);
+			NewDeck.bRecoveryDeck = bRecovery;
+		}
+		else if (Key == "azimuth")
+		{
+			GetDefNumber(Az, PDef, Fn);
+
+			// If you have a legacy "degrees" flag, apply it here.
+			// Otherwise leave in radians.
+			// if (bLegacyAnglesAreDegrees) Az = FMath::DegreesToRadians(Az);
+
+			NewDeck.AzimuthRadians = Az;
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= Scale;
+			NewDeck.Location = V;
+		}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= Scale;
+			NewDeck.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewDeck.HullFactor = Hull;
+		}
+		else if (Key == "explosion")
+		{
+			GetDefNumber(ExplosionType, PDef, Fn);
+			NewDeck.ExplosionType = ExplosionType;
+		}
 	}
+
+	// Legacy mutually exclusive behavior:
+	// if (launch) SetLaunchDeck(); else if (recovery) SetRecoveryDeck();
+	if (NewDeck.bLaunchDeck && NewDeck.bRecoveryDeck)
+	{
+		// Keep legacy priority: launch wins
+		NewDeck.bRecoveryDeck = false;
+	}
+
+	NewShipFlightDeckArray.Add(NewDeck);
 }
 
 // +--------------------------------------------------------------------+
 
-void
-ShipDesign::ParseDebris(TermStruct* val, int index)
+void UStarshatterGameDataSubsystem::ParseLandingGear(TermStruct* Val, const char* Fn)
 {
-	char        model_name[NAMELEN];
-	int         fire_index = 0;
-	ShipDebris* deb = &debris[index];
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseLandingGear()"));
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* def = val->elements()->at(i)->isDef();
-		if (def) {
-			Text defname = def->name()->value();
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseLandingGear called with null args"));
+		return;
+	}
 
-			if (defname == "model") {
-				GetDefText(model_name, def, filename);
-				SimModel* model = new  Model;
-				if (!model->Load(model_name, scale)) {
-					Print("Could notxload debris model '%s'\n", model_name);
-					delete model;
-					return;
+	const float Scale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	Text DName = "";
+	Text DAbrv = "";
+	Text DesignName = "";
+
+	FShipLandingGear NewGear;
+	NewGear.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	// Legacy cap:
+	const int32 MaxGear = 8; // TODO: set to LandingGear::MAX_GEAR from legacy
+	NewGear.GearItems.Reserve(MaxGear);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "name")
+		{
+			GetDefText(DName, PDef, Fn);
+			NewGear.Name = FString(DName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(DAbrv, PDef, Fn);
+			NewGear.Abbrev = FString(DAbrv);
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewGear.DesignName = FString(DesignName);
+		}
+		else if (Key == "gear")
+		{
+			if (!PDef->term() || !PDef->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseLandingGear: gear struct missing in '%s'"), *NewGear.SourceFile);
+				continue;
+			}
+
+			if (NewGear.GearItems.Num() >= MaxGear)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseLandingGear: too many gear entries in '%s' (max=%d)"),
+					*NewGear.SourceFile, MaxGear);
+				continue;
+			}
+
+			TermStruct* GearStruct = PDef->term()->isStruct();
+
+			Text ModelName = "";
+			FVector V1 = FVector::ZeroVector;
+			FVector V2 = FVector::ZeroVector;
+
+			const int32 GearElemCount = (int32)GearStruct->elements()->size();
+			for (int32 j = 0; j < GearElemCount; ++j)
+			{
+				TermDef* GDef = GearStruct->elements()->at(j)->isDef();
+				if (!GDef)
+					continue;
+
+				const Text& GKey = GDef->name()->value();
+
+				if (GKey == "model")
+				{
+					GetDefText(ModelName, GDef, Fn);
 				}
-
-				PrepareModel(*model);
-				deb->model = model;
-			}
-
-			else if (defname == "mass") {
-				GetDefNumber(deb->mass, def, filename);
-			}
-
-			else if (defname == "speed") {
-				GetDefNumber(deb->speed, def, filename);
-			}
-
-			else if (defname == "drag") {
-				GetDefNumber(deb->drag, def, filename);
-			}
-
-			else if (defname == "loc") {
-				GetDefVec(deb->loc, def, filename);
-				deb->loc *= (float)scale;
-			}
-
-			else if (defname == "count") {
-				GetDefNumber(deb->count, def, filename);
-			}
-
-			else if (defname == "life") {
-				GetDefNumber(deb->life, def, filename);
-			}
-
-			else if (defname == "fire") {
-				if (fire_index < 5) {
-					GetDefVec(deb->fire_loc[fire_index], def, filename);
-					deb->fire_loc[fire_index] *= (float)scale;
-					fire_index++;
+				else if (GKey == "start")
+				{
+					GetDefVec(V1, GDef, Fn);
+				}
+				else if (GKey == "end")
+				{
+					GetDefVec(V2, GDef, Fn);
 				}
 			}
 
-			else if (defname == "fire_type") {
-				GetDefNumber(deb->fire_type, def, filename);
+			FLandingGearItem Item;
+			Item.ModelName = FString(ModelName);
+
+			// Legacy: start/end scaled
+			Item.Start = V1 * Scale;
+			Item.End = V2 * Scale;
+
+			// In legacy, if model fails to load, it skips the gear entry.
+			// Since we are parsing-only, we keep it but warn if model name missing:
+			if (Item.ModelName.IsEmpty())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseLandingGear: gear entry missing model name in '%s'"), *NewGear.SourceFile);
 			}
+
+			NewGear.GearItems.Add(Item);
 		}
 	}
+
+	// Store like your other parse helpers:
+	NewShipLandingGearArray.Add(NewGear);
 }
 
 // +--------------------------------------------------------------------+
 
-void
-ShipDesign::ParseMap(TermStruct* val)
+static void SetAimIfValid(float InVal, bool& bHas, float& Out)
 {
-	char  sprite_name[NAMELEN];
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "sprite") {
-				GetDefText(sprite_name, pdef, filename);
-
-				Bitmap* sprite = new  Bitmap();
-				DataLoader* loader = DataLoader::GetLoader();
-				loader->LoadBitmap(sprite_name, *sprite, Bitmap::BMP_TRANSLUCENT);
-
-				map_sprites.append(sprite);
-			}
-		}
-	}
+	bHas = true;
+	Out = InVal;
 }
 
-// +--------------------------------------------------------------------+
-
-void
-ShipDesign::ParseSquadron(TermStruct* val)
+static void ResolveWeaponMuzzlesInPlace(FShipWeapon& Weapon, const FWeaponDesignMeta& Meta, const float ShipScale)
 {
-	char  name[NAMELEN];
-	char  design[NAMELEN];
-	int   count = 4;
-	int   avail = 4;
-
-	name[0] = 0;
-	design[0] = 0;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "name") {
-				GetDefText(name, pdef, filename);
-			}
-			else if (defname == "design") {
-				GetDefText(design, pdef, filename);
-			}
-			else if (defname == "count") {
-				GetDefNumber(count, pdef, filename);
-			}
-			else if (defname == "avail") {
-				GetDefNumber(avail, pdef, filename);
-			}
-		}
-	}
-
-	ShipSquadron* s = new  ShipSquadron;
-	strcpy_s(s->name, name);
-
-	s->design = Get(design);
-	s->count = count;
-	s->avail = avail;
-
-	squadrons.append(s);
-}
-
-// +--------------------------------------------------------------------+
-
-Skin*
-ShipDesign::ParseSkin(TermStruct* val)
-{
-	Skin* skin = 0;
-	char  name[NAMELEN];
-
-	name[0] = 0;
-
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* def = val->elements()->at(i)->isDef();
-		if (def) {
-			Text defname = def->name()->value();
-			defname.setSensitive(false);
-
-			if (defname == "name") {
-				GetDefText(name, def, filename);
-
-				skin = new  Skin(name);
-			}
-			else if (defname == "material" || defname == "mtl") {
-				if (!def->term() || !def->term()->isStruct()) {
-					Print("WARNING: skin struct missing in '%s'\n", filename);
-				}
-				else {
-					TermStruct* val = def->term()->isStruct();
-					ParseSkinMtl(val, skin);
-				}
-			}
-		}
-	}
-
-	if (skin && skin->NumCells()) {
-		skins.append(skin);
-	}
-
-	else if (skin) {
-		delete skin;
-		skin = 0;
-	}
-
-	return skin;
-}
-
-void
-ShipDesign::ParseSkinMtl(TermStruct* val, Skin* skin)
-{
-	Material* mtl = new  Material;
-	if (mtl == nullptr)
+	if (Weapon.bMuzzlesResolved)
 		return;
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* def = val->elements()->at(i)->isDef();
-		if (def) {
-			Text defname = def->name()->value();
-			defname.setSensitive(false);
+	const float ScaleToApply = Meta.bIsTurret ? Meta.WeaponScale : ShipScale;
 
-			if (defname == "name") {
-				GetDefText(mtl->name, def, filename);
-			}
-			else if (defname == "Ka") {
-				GetDefColor(mtl->Ka, def, filename);
-			}
-			else if (defname == "Kd") {
-				GetDefColor(mtl->Kd, def, filename);
-			}
-			else if (defname == "Ks") {
-				GetDefColor(mtl->Ks, def, filename);
-			}
-			else if (defname == "Ke") {
-				GetDefColor(mtl->Ke, def, filename);
-			}
-			else if (defname == "Ns" || defname == "power") {
-				GetDefNumber(mtl->power, def, filename);
-			}
-			else if (defname == "bump") {
-				GetDefNumber(mtl->bump, def, filename);
-			}
-			else if (defname == "luminous") {
-				GetDefBool(mtl->luminous, def, filename);
-			}
+	for (FVector& M : Weapon.Muzzles)
+	{
+		M *= ScaleToApply;
+	}
 
-			else if (defname == "blend") {
-				if (def->term() && def->term()->isNumber())
-					GetDefNumber(mtl->blend, def, filename);
+	Weapon.bMuzzlesResolved = true;
+	Weapon.bMuzzlesAreInShipSpace = !Meta.bIsTurret;
+	Weapon.bMuzzlesWereAuthoredInShipSpace = !Meta.bIsTurret;
+}
 
-				else if (def->term() && def->term()->isText()) {
-					Text val;
-					GetDefText(val, def, filename);
-					val.setSensitive(false);
+void UStarshatterGameDataSubsystem::ParseWeapon(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseWeapon()"));
 
-					if (val == "alpha" || val == "translucent")
-						mtl->blend = Material::MTL_TRANSLUCENT;
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseWeapon called with null args"));
+		return;
+	}
 
-					else if (val == "additive")
-						mtl->blend = Material::MTL_ADDITIVE;
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
 
-					else
-						mtl->blend = Material::MTL_SOLID;
+	// Legacy locals/defaults:
+	Text WType = "";
+	Text WName = "";
+	Text WAbrv = "";
+	Text DesignName = "";
+	Text GroupName = "";
+
+	FVector Loc = FVector::ZeroVector;
+	float   Size = 0.0f;
+	float   Hull = 0.5f;
+
+	float   Az = 0.0f;
+	float   El = 0.0f;
+
+	float   AzMax = 1e6f;
+	float   AzMin = 1e6f;
+	float   ElMax = 1e6f;
+	float   ElMin = 1e6f;
+	float   AzRest = 1e6f;
+	float   ElRest = 1e6f;
+
+	int32   ExplosionType = 0;
+	int32   Emcon1 = -1;
+	int32   Emcon2 = -1;
+	int32   Emcon3 = -1;
+
+	FShipWeapon NewWpn;
+	NewWpn.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 MaxBarrels = 8; // TODO: replace with Weapon::MAX_BARRELS from legacy
+	NewWpn.Muzzles.Reserve(MaxBarrels);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "type")
+		{
+			GetDefText(WType, PDef, Fn);
+			NewWpn.WeaponType = FString(WType);
+		}
+		else if (Key == "name")
+		{
+			GetDefText(WName, PDef, Fn);
+			NewWpn.Name = FString(WName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(WAbrv, PDef, Fn);
+			NewWpn.Abbrev = FString(WAbrv);
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewWpn.DesignName = FString(DesignName);
+		}
+		else if (Key == "group")
+		{
+			GetDefText(GroupName, PDef, Fn);
+			NewWpn.GroupName = FString(GroupName);
+		}
+		else if (Key == "muzzle")
+		{
+			if (NewWpn.Muzzles.Num() < MaxBarrels)
+			{
+				FVector M = FVector::ZeroVector;
+				GetDefVec(M, PDef, Fn);
+
+				// IMPORTANT: stored raw; scaled in ResolveWeaponsForCurrentShip based on meta:
+				NewWpn.Muzzles.Add(M);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseWeapon: too many muzzles in '%s' (max=%d)"),
+					*NewWpn.SourceFile, MaxBarrels);
+			}
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewWpn.Location = V;
+		}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= ShipScale;
+			NewWpn.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewWpn.HullFactor = Hull;
+		}
+		else if (Key == "azimuth")
+		{
+			GetDefNumber(Az, PDef, Fn);
+			// if (bAnglesInDegrees) Az = FMath::DegreesToRadians(Az);
+			NewWpn.AzimuthRadians = Az;
+		}
+		else if (Key == "elevation")
+		{
+			GetDefNumber(El, PDef, Fn);
+			// if (bAnglesInDegrees) El = FMath::DegreesToRadians(El);
+			NewWpn.ElevationRadians = El;
+		}
+		else if (Key == "aim_az_max")
+		{
+			GetDefNumber(AzMax, PDef, Fn);
+			// if (bAnglesInDegrees) AzMax = FMath::DegreesToRadians(AzMax);
+			AzMin = 0.0f - AzMax; // legacy
+		}
+		else if (Key == "aim_el_max")
+		{
+			GetDefNumber(ElMax, PDef, Fn);
+			// if (bAnglesInDegrees) ElMax = FMath::DegreesToRadians(ElMax);
+			ElMin = 0.0f - ElMax; // legacy
+		}
+		else if (Key == "aim_az_min")
+		{
+			GetDefNumber(AzMin, PDef, Fn);
+			// if (bAnglesInDegrees) AzMin = FMath::DegreesToRadians(AzMin);
+		}
+		else if (Key == "aim_el_min")
+		{
+			GetDefNumber(ElMin, PDef, Fn);
+			// if (bAnglesInDegrees) ElMin = FMath::DegreesToRadians(ElMin);
+		}
+		else if (Key == "aim_az_rest" || Key == "rest_azimuth")
+		{
+			GetDefNumber(AzRest, PDef, Fn);
+			// if (bAnglesInDegrees) AzRest = FMath::DegreesToRadians(AzRest);
+		}
+		else if (Key == "aim_el_rest" || Key == "rest_elevation")
+		{
+			GetDefNumber(ElRest, PDef, Fn);
+			// if (bAnglesInDegrees) ElRest = FMath::DegreesToRadians(ElRest);
+		}
+		else if (Key == "explosion")
+		{
+			GetDefNumber(ExplosionType, PDef, Fn);
+			NewWpn.ExplosionType = ExplosionType;
+		}
+		else if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewWpn.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewWpn.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewWpn.Emcon3 = ClampEmcon(Emcon3);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ParseWeapon: unknown weapon parameter '%s' in '%s'"),
+				ANSI_TO_TCHAR(Key.data()), ANSI_TO_TCHAR(Fn));
+		}
+	}
+
+	// Aim sentinel -> flags:
+	if (AzMax < 1e6f) { SetAimIfValid(AzMax, NewWpn.Aim.bHasAzMax, NewWpn.Aim.AzMax); }
+	if (AzMin < 1e6f) { SetAimIfValid(AzMin, NewWpn.Aim.bHasAzMin, NewWpn.Aim.AzMin); }
+	if (AzRest < 1e6f) { SetAimIfValid(AzRest, NewWpn.Aim.bHasAzRest, NewWpn.Aim.AzRest); }
+
+	if (ElMax < 1e6f) { SetAimIfValid(ElMax, NewWpn.Aim.bHasElMax, NewWpn.Aim.ElMax); }
+	if (ElMin < 1e6f) { SetAimIfValid(ElMin, NewWpn.Aim.bHasElMin, NewWpn.Aim.ElMin); }
+	if (ElRest < 1e6f) { SetAimIfValid(ElRest, NewWpn.Aim.bHasElRest, NewWpn.Aim.ElRest); }
+
+	// Reactor index:
+	NewWpn.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	// Store parsed:
+	NewShipWeaponArray.Add(NewWpn);
+}
+
+void UStarshatterGameDataSubsystem::ResolveWeaponsForCurrentShip()
+{
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	for (int32 i = 0; i < NewShipWeaponArray.Num(); ++i)
+	{
+		FShipWeapon& Wpn = NewShipWeaponArray[i];
+
+		const FWeaponDesignMeta* Meta = WeaponMetaByType.Find(Wpn.WeaponType);
+		if (!Meta)
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("ResolveWeaponsForCurrentShip: missing meta for WeaponType='%s' (file='%s')"),
+				*Wpn.WeaponType, *Wpn.SourceFile);
+			continue;
+		}
+
+		ResolveWeaponMuzzlesInPlace(Wpn, *Meta, ShipScale);
+
+		// Legacy: first decoy/probe wins:
+		if (Meta->bIsDecoy && CurrentShipDecoyWeaponIndex == INDEX_NONE)
+		{
+			CurrentShipDecoyWeaponIndex = i;
+		}
+		else if (Meta->bIsProbe && CurrentShipProbeWeaponIndex == INDEX_NONE)
+		{
+			CurrentShipProbeWeaponIndex = i;
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseHardPoint(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseHardPoint()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseHardPoint called with null args"));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	// Legacy locals/defaults:
+	Text  WName = "";
+	Text  WAbrv = "";
+	Text  Design = "";
+
+	FVector Muzzle = FVector::ZeroVector;
+	FVector Loc = FVector::ZeroVector;
+	float   Size = 0.0f;
+	float   Hull = 0.5f;
+	float   Az = 0.0f;
+	float   El = 0.0f;
+
+	int32   Emcon1 = -1;
+	int32   Emcon2 = -1;
+	int32   Emcon3 = -1;
+
+	FShipHardPoint NewHP;
+	NewHP.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	// Legacy cap:
+	const int32 MaxTypes = 8;
+	NewHP.AllowedWeaponTypes.Reserve(MaxTypes);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "type")
+		{
+			if (NewHP.AllowedWeaponTypes.Num() < MaxTypes)
+			{
+				Text WType = "";
+				if (GetDefText(WType, PDef, Fn))
+				{
+					NewHP.AllowedWeaponTypes.Add(FString(WType));
 				}
 			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseHardPoint: too many weapon types in '%s' (max=%d)"),
+					*NewHP.SourceFile, MaxTypes);
+			}
+		}
+		else if (Key == "name")
+		{
+			GetDefText(WName, PDef, Fn);
+			NewHP.Name = FString(WName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(WAbrv, PDef, Fn);
+			NewHP.Abbrev = FString(WAbrv);
+		}
+		else if (Key == "design")
+		{
+			GetDefText(Design, PDef, Fn);
+			NewHP.DesignName = FString(Design);
+		}
+		else if (Key == "muzzle")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewHP.Muzzle = V;
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewHP.Location = V;
+		}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= ShipScale;
+			NewHP.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewHP.HullFactor = Hull;
+		}
+		else if (Key == "azimuth")
+		{
+			GetDefNumber(Az, PDef, Fn);
+			// if (bAnglesInDegrees) Az = FMath::DegreesToRadians(Az);
+			NewHP.AzimuthRadians = Az;
+		}
+		else if (Key == "elevation")
+		{
+			GetDefNumber(El, PDef, Fn);
+			// if (bAnglesInDegrees) El = FMath::DegreesToRadians(El);
+			NewHP.ElevationRadians = El;
+		}
+		else if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewHP.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewHP.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewHP.Emcon3 = ClampEmcon(Emcon3);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ParseHardPoint: unknown parameter '%s' in '%s'"),
+				ANSI_TO_TCHAR(Key.data()), ANSI_TO_TCHAR(Fn));
+		}
+	}
 
-			else if (defname.indexOf("tex_d") == 0) {
-				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_diffuse in '%s'\n", filename);
+	NewShipHardPointArray.Add(NewHP);
+}
 
-				DataLoader* loader = DataLoader::GetLoader();
-				loader->LoadTexture(tex_name, mtl->tex_diffuse);
+void UStarshatterGameDataSubsystem::ValidateLoadoutsForCurrentShip() const
+{
+	for (const FShipLoadout& L : NewShipLoadoutArray)
+	{
+		if (L.Stations.Num() > 16)
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("Loadout '%s' has %d stations (max=16)"),
+				*L.Name, L.Stations.Num());
+		}
+	}
+}
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseLoadout(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseLoadout()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseLoadout called with null args"));
+		return;
+	}
+
+	FShipLoadout NewLoadout;
+	NewLoadout.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 MaxStations = 16;
+	NewLoadout.Stations.Reserve(MaxStations);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "name")
+		{
+			Text NameBuf;
+			if (GetDefText(NameBuf, PDef, Fn))
+			{
+				NewLoadout.Name = FString(NameBuf);
+			}
+		}
+		else if (Key == "stations")
+		{
+			// Legacy: GetDefArray(int*, max, ...)
+			// We emulate this safely using a temp buffer.
+			int32 Temp[MaxStations];
+			FMemory::Memzero(Temp, sizeof(Temp));
+
+			const int32 Count = GetDefArray(Temp, MaxStations, PDef, Fn);
+			for (int32 i = 0; i < Count; ++i)
+			{
+				NewLoadout.Stations.Add(Temp[i]);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("ParseLoadout: unknown parameter '%s' in '%s'"),
+				ANSI_TO_TCHAR(Key.data()), ANSI_TO_TCHAR(Fn));
+		}
+	}
+
+	NewShipLoadoutArray.Add(NewLoadout);
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseSensor(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseSensor()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseSensor called with null args"));
+		return;
+	}
+
+	// Legacy: only one sensor
+	if (NewShipSensorArray.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseSensor: additional sensor ignored in '%s'"), ANSI_TO_TCHAR(Fn));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	Text DesignName = "";
+	float Size = 0.0f;
+	float Hull = 0.5f;
+	int32 Emcon1 = -1;
+	int32 Emcon2 = -1;
+	int32 Emcon3 = -1;
+
+	FShipSensor NewSensor;
+	NewSensor.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 MaxRanges = 8;
+	NewSensor.Ranges.Reserve(MaxRanges);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "range")
+		{
+			if (NewSensor.Ranges.Num() < MaxRanges)
+			{
+				float R = 0.0f;
+				GetDefNumber(R, PDef, Fn);
+				NewSensor.Ranges.Add(R);
+			}
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewSensor.Location = V;
+		}
+		else if (Key == "size")
+		{
+			// Fix legacy ordering: read then scale
+			GetDefNumber(Size, PDef, Fn);
+			Size *= ShipScale;
+			NewSensor.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewSensor.HullFactor = Hull;
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewSensor.DesignName = FString(DesignName);
+		}
+		else if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewSensor.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewSensor.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewSensor.Emcon3 = ClampEmcon(Emcon3);
+		}
+	}
+
+	NewSensor.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	NewShipSensorArray.Add(NewSensor);
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseNavsys(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseNavsys()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseNavsys called with null args"));
+		return;
+	}
+
+	// Legacy: only one nav system
+	if (NewShipNavSystemArray.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseNavsys: additional nav system ignored in '%s'"), ANSI_TO_TCHAR(Fn));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	Text DesignName = "";
+	float Size = 0.0f;
+	float Hull = 0.5f;
+
+	FShipNavSystem NewNav;
+	NewNav.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewNav.Location = V;
+		}
+		else if (Key == "size")
+		{
+			// Fix legacy ordering: read then scale
+			GetDefNumber(Size, PDef, Fn);
+			Size *= ShipScale;
+			NewNav.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewNav.HullFactor = Hull;
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewNav.DesignName = FString(DesignName);
+		}
+	}
+
+	NewNav.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	NewShipNavSystemArray.Add(NewNav);
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseComputer(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseComputer()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseComputer called with null args"));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	// Legacy defaults:
+	Text CompName("Computer");
+	Text CompAbrv("Comp");
+	Text DesignName;
+	int32 CompType = 1;
+
+	float Size = 0.0f;
+	float Hull = 0.5f;
+
+	FShipComputer NewComp;
+	NewComp.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "name")
+		{
+			if (GetDefText(CompName, PDef, Fn))
+			{
+				NewComp.Name = FString(CompName);
+			}
+		}
+		else if (Key == "abrv")
+		{
+			if (GetDefText(CompAbrv, PDef, Fn))
+			{
+				NewComp.Abbrev = FString(CompAbrv);
+			}
+		}
+		else if (Key == "design")
+		{
+			if (GetDefText(DesignName, PDef, Fn))
+			{
+				NewComp.DesignName = FString(DesignName);
+			}
+		}
+		else if (Key == "type")
+		{
+			GetDefNumber(CompType, PDef, Fn);
+			NewComp.Type = CompType;
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewComp.Location = V;
+		}
+		else if (Key == "size")
+		{
+			// Fix legacy ordering: read then scale
+			GetDefNumber(Size, PDef, Fn);
+			Size *= ShipScale;
+			NewComp.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewComp.HullFactor = Hull;
+		}
+	}
+
+	NewComp.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	NewShipComputerArray.Add(NewComp);
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseShield(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseShield()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseShield called with null args"));
+		return;
+	}
+
+	// Legacy: only one shield allowed
+	if (NewShipShieldArray.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseShield: additional shield ignored in '%s'"), ANSI_TO_TCHAR(Fn));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	// Legacy defaults:
+	Text DName;
+	Text DAbrv;
+	Text DesignName;
+	Text ModelName;
+
+	double Factor = 0.0;
+	double Capacity = 0.0;
+	double Consumption = 0.0;
+	double Cutoff = 0.0;
+	double Curve = 0.0;
+	double DefCost = 1.0;
+
+	int32 ShieldType = 0;
+
+	FVector Loc = FVector::ZeroVector;
+	float Size = 0.0f;
+	float Hull = 0.5f;
+
+	int32 ExplosionType = 0;
+	bool bCapacitor = false;
+	bool bBubble = false;
+
+	int32 Emcon1 = -1;
+	int32 Emcon2 = -1;
+	int32 Emcon3 = -1;
+
+	Text BoltHitSound;
+	Text BeamHitSound;
+
+	FShipShield NewShield;
+	NewShield.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		// We need "contains" behavior -> convert to FString (lowered)
+		const FString Key = ANSI_TO_TCHAR(PDef->name()->value().data());
+
+		if (Key.Equals(TEXT("type"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(ShieldType, PDef, Fn);
+			NewShield.ShieldType = ShieldType;
+		}
+		else if (Key.Equals(TEXT("name"), ESearchCase::IgnoreCase))
+		{
+			GetDefText(DName, PDef, Fn);
+			NewShield.Name = FString(DName);
+		}
+		else if (Key.Equals(TEXT("abrv"), ESearchCase::IgnoreCase))
+		{
+			GetDefText(DAbrv, PDef, Fn);
+			NewShield.Abbrev = FString(DAbrv);
+		}
+		else if (Key.Equals(TEXT("design"), ESearchCase::IgnoreCase))
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewShield.DesignName = FString(DesignName);
+		}
+		else if (Key.Equals(TEXT("model"), ESearchCase::IgnoreCase))
+		{
+			GetDefText(ModelName, PDef, Fn);
+			NewShield.ModelName = FString(ModelName);
+		}
+		else if (Key.Equals(TEXT("loc"), ESearchCase::IgnoreCase))
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, PDef, Fn);
+			V *= ShipScale;
+			NewShield.Location = V;
+		}
+		else if (Key.Equals(TEXT("size"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= ShipScale;
+			NewShield.Size = Size;
+		}
+		else if (Key.Equals(TEXT("hull_factor"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Hull, PDef, Fn);
+			NewShield.HullFactor = Hull;
+		}
+		// Legacy: defname.contains("factor"/"cutoff"/"curve"/"capacitor"/"bubble")
+		else if (Key.Contains(TEXT("factor"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Factor, PDef, Fn);
+			NewShield.Factor = Factor;
+		}
+		else if (Key.Contains(TEXT("cutoff"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Cutoff, PDef, Fn);
+			NewShield.Cutoff = Cutoff;
+		}
+		else if (Key.Contains(TEXT("curve"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Curve, PDef, Fn);
+			NewShield.Curve = Curve;
+		}
+		else if (Key.Contains(TEXT("capacitor"), ESearchCase::IgnoreCase))
+		{
+			GetDefBool(bCapacitor, PDef, Fn);
+			NewShield.bShieldCapacitor = bCapacitor;
+		}
+		else if (Key.Contains(TEXT("bubble"), ESearchCase::IgnoreCase))
+		{
+			GetDefBool(bBubble, PDef, Fn);
+			NewShield.bShieldBubble = bBubble;
+		}
+		else if (Key.Equals(TEXT("capacity"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Capacity, PDef, Fn);
+			NewShield.Capacity = Capacity;
+		}
+		else if (Key.Equals(TEXT("consumption"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Consumption, PDef, Fn);
+			NewShield.Consumption = Consumption;
+		}
+		else if (Key.Equals(TEXT("deflection_cost"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(DefCost, PDef, Fn);
+			NewShield.DeflectionCost = DefCost;
+		}
+		else if (Key.Equals(TEXT("explosion"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(ExplosionType, PDef, Fn);
+			NewShield.ExplosionType = ExplosionType;
+		}
+		else if (Key.Equals(TEXT("emcon_1"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewShield.Emcon1 = ClampEmcon(Emcon1);
+		}
+		else if (Key.Equals(TEXT("emcon_2"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewShield.Emcon2 = ClampEmcon(Emcon2);
+		}
+		else if (Key.Equals(TEXT("emcon_3"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewShield.Emcon3 = ClampEmcon(Emcon3);
+		}
+		else if (Key.Equals(TEXT("bolt_hit_sound"), ESearchCase::IgnoreCase))
+		{
+			GetDefText(BoltHitSound, PDef, Fn);
+			NewShield.BoltHitSound = FString(BoltHitSound);
+		}
+		else if (Key.Equals(TEXT("beam_hit_sound"), ESearchCase::IgnoreCase))
+		{
+			GetDefText(BeamHitSound, PDef, Fn);
+			NewShield.BeamHitSound = FString(BeamHitSound);
+		}
+	}
+
+	// Source index from last reactor:
+	NewShield.SourceIndex = (NewShipPowerArray.Num() > 0) ? (NewShipPowerArray.Num() - 1) : INDEX_NONE;
+
+	// Legacy validation: shield_type must be non-zero
+	if (NewShield.ShieldType <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseShield: invalid shield type in '%s'"), *NewShield.SourceFile);
+		return;
+	}
+
+	NewShipShieldArray.Add(NewShield);
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseSquadron(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseSquadron()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseSquadron called with null args"));
+		return;
+	}
+
+	// Legacy defaults:
+	Text NameBuf = "";
+	Text DesignBuf = "";
+	int32 Count = 4;
+	int32 Avail = 4;
+
+	FShipSquadron NewSq;
+	NewSq.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "name")
+		{
+			if (GetDefText(NameBuf, PDef, Fn))
+			{
+				NewSq.Name = FString(NameBuf);
+			}
+		}
+		else if (Key == "design")
+		{
+			if (GetDefText(DesignBuf, PDef, Fn))
+			{
+				NewSq.DesignName = FString(DesignBuf);
+			}
+		}
+		else if (Key == "count")
+		{
+			GetDefNumber(Count, PDef, Fn);
+			NewSq.Count = Count;
+		}
+		else if (Key == "avail")
+		{
+			GetDefNumber(Avail, PDef, Fn);
+			NewSq.Avail = Avail;
+		}
+	}
+
+	// Optional safety (legacy doesn’t clamp, but this prevents garbage):
+	if (NewSq.Count < 0) NewSq.Count = 0;
+	if (NewSq.Avail < 0) NewSq.Avail = 0;
+	if (NewSq.Avail > NewSq.Count) NewSq.Avail = NewSq.Count;
+
+	NewShipSquadronArray.Add(NewSq);
+}
+
+static void EnsureExplosionIndex(TArray<FExplosion>& Arr, int32 Index)
+{
+	while (Arr.Num() <= Index)
+	{
+		Arr.Add(FExplosion{});
+	}
+}
+
+static void EnsureDebrisIndex(TArray<FDebris>& Arr, int32 Index)
+{
+	while (Arr.Num() <= Index)
+	{
+		Arr.Add(FDebris{});
+	}
+}
+
+void UStarshatterGameDataSubsystem::ParseDeathSpiral(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseDeathSpiral()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseDeathSpiral called with null args"));
+		return;
+	}
+
+	// Legacy: one block (usually). Enforce if you want:
+	if (NewShipDeathSpiralArray.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseDeathSpiral: additional block ignored in '%s'"), ANSI_TO_TCHAR(Fn));
+		return;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	FShipDeathSpiral NewDS;
+	NewDS.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	// ----------------------------
+	// Backward compat: explosion
+	// ----------------------------
+	bool bHasCompatExplosion = false;
+	FExplosion CompatExp;
+
+	// ----------------------------
+	// Backward compat: debris
+	// ----------------------------
+	bool bHasCompatDebris = false;
+	FDebris CompatDeb;
+	CompatDeb.FireLocations.Reserve(5);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* Def = Val->elements()->at(ElemIdx)->isDef();
+		if (!Def)
+			continue;
+
+		const FString Key = ANSI_TO_TCHAR(Def->name()->value().data());
+
+		// --------------------------------------------------------------------
+		// time
+		// --------------------------------------------------------------------
+		if (Key.Equals(TEXT("time"), ESearchCase::IgnoreCase))
+		{
+			GetDefNumber(NewDS.Time, Def, Fn);
+		}
+
+		// --------------------------------------------------------------------
+		// explosion (new format)
+		// --------------------------------------------------------------------
+		else if (Key.Equals(TEXT("explosion"), ESearchCase::IgnoreCase))
+		{
+			if (Def->term() && Def->term()->isStruct())
+			{
+				FExplosion Step = ParseExplosion(Def->term()->isStruct(), Fn);
+				NewDS.Explosions.Add(Step);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseDeathSpiral: explosion struct missing in '%s'"), *NewDS.SourceFile);
+			}
+		}
+
+		// --------------------------------------------------------------------
+		// explosion (backward compat fields)
+		// --------------------------------------------------------------------
+		else if (Key.Equals(TEXT("explosion_type"), ESearchCase::IgnoreCase))
+		{
+			if (bHasCompatExplosion)
+			{
+				NewDS.Explosions.Add(CompatExp);
+				CompatExp = FExplosion{};
 			}
 
-			else if (defname.indexOf("tex_s") == 0) {
-				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_specular in '%s'\n", filename);
+			bHasCompatExplosion = true;
+			GetDefNumber(CompatExp.Type, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("explosion_time"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatExplosion = true;
+			GetDefNumber(CompatExp.Time, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("explosion_loc"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatExplosion = true;
 
-				DataLoader* loader = DataLoader::GetLoader();
-				loader->LoadTexture(tex_name, mtl->tex_specular);
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, Def, Fn);
+			V *= ShipScale;
+
+			CompatExp.Location = V;
+		}
+		else if (Key.Equals(TEXT("final_type"), ESearchCase::IgnoreCase))
+		{
+			if (bHasCompatExplosion)
+			{
+				NewDS.Explosions.Add(CompatExp);
+				CompatExp = FExplosion{};
 			}
 
-			else if (defname.indexOf("tex_b") == 0) {
-				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_bumpmap in '%s'\n", filename);
+			bHasCompatExplosion = true;
+			GetDefNumber(CompatExp.Type, Def, Fn);
+			CompatExp.bFinal = true;
+		}
+		else if (Key.Equals(TEXT("final_loc"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatExplosion = true;
 
-				DataLoader* loader = DataLoader::GetLoader();
-				loader->LoadTexture(tex_name, mtl->tex_bumpmap);
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, Def, Fn);
+			V *= ShipScale;
+
+			CompatExp.Location = V;
+		}
+
+		// --------------------------------------------------------------------
+		// debris (new format): debris { ... } OR debris "ModelName"
+		// --------------------------------------------------------------------
+		else if (Key.Equals(TEXT("debris"), ESearchCase::IgnoreCase))
+		{
+			// If we were building a compat debris, commit it before starting a new debris record:
+			if (bHasCompatDebris)
+			{
+				NewDS.Debris.Add(CompatDeb);
+				CompatDeb = FDebris{};
+				CompatDeb.FireLocations.Reserve(5);
+				bHasCompatDebris = false;
 			}
 
-			else if (defname.indexOf("tex_e") == 0) {
-				char tex_name[64];
-				if (!GetDefText(tex_name, def, filename))
-					Print("WARNING: invalid or missing tex_emissive in '%s'\n", filename);
+			if (Def->term() && Def->term()->isStruct())
+			{
+				FDebris Step = ParseDebris(Def->term()->isStruct(), Fn);
+				NewDS.Debris.Add(Step);
+			}
+			else if (Def->term() && Def->term()->isText())
+			{
+				// Text form: debris "ModelName"
+				FDebris Step;
+				Text ModelBuf;
+				GetDefText(ModelBuf, Def, Fn);
+				Step.ModelName = FString(ModelBuf);
+				NewDS.Debris.Add(Step);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseDeathSpiral: debris struct missing in '%s'"), *NewDS.SourceFile);
+			}
+		}
 
-				DataLoader* loader = DataLoader::GetLoader();
+		// --------------------------------------------------------------------
+		// debris (backward compat fields)
+		// These apply to the most recently-started debris entry.
+		// We'll build CompatDeb and commit it at end (or when a new debris starts).
+		// --------------------------------------------------------------------
+		else if (Key.Equals(TEXT("debris_mass"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+			GetDefNumber(CompatDeb.Mass, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("debris_speed"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+			GetDefNumber(CompatDeb.Speed, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("debris_drag"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+			GetDefNumber(CompatDeb.Drag, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("debris_loc"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
 
-				loader->LoadTexture(tex_name, mtl->tex_emissive);
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, Def, Fn);
+			V *= ShipScale;
+
+			CompatDeb.Location = V;
+		}
+		else if (Key.Equals(TEXT("debris_count"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+			GetDefNumber(CompatDeb.Count, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("debris_life"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+			GetDefNumber(CompatDeb.Life, Def, Fn);
+		}
+		else if (Key.Equals(TEXT("debris_fire"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+
+			if (CompatDeb.FireLocations.Num() < 5)
+			{
+				FVector V = FVector::ZeroVector;
+				GetDefVec(V, Def, Fn);
+				V *= ShipScale;
+				CompatDeb.FireLocations.Add(V);
+			}
+		}
+		else if (Key.Equals(TEXT("debris_fire_type"), ESearchCase::IgnoreCase))
+		{
+			bHasCompatDebris = true;
+			GetDefNumber(CompatDeb.FireType, Def, Fn);
+		}
+	}
+
+	// Commit compat explosion if in progress:
+	if (bHasCompatExplosion)
+	{
+		NewDS.Explosions.Add(CompatExp);
+	}
+
+	// Commit compat debris if in progress:
+	if (bHasCompatDebris)
+	{
+		NewDS.Debris.Add(CompatDeb);
+	}
+
+	NewShipDeathSpiralArray.Add(NewDS);
+}
+
+// +--------------------------------------------------------------------+
+
+FExplosion UStarshatterGameDataSubsystem::ParseExplosion(TermStruct* Val, const char* Fn)
+{
+	FExplosion NewExp;
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseExplosion called with null args"));
+		return NewExp;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* Def = Val->elements()->at(ElemIdx)->isDef();
+		if (!Def)
+			continue;
+
+		const Text& Key = Def->name()->value();
+
+		if (Key == "time")
+		{
+			GetDefNumber(NewExp.Time, Def, Fn);
+		}
+		else if (Key == "type")
+		{
+			GetDefNumber(NewExp.Type, Def, Fn);
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, Def, Fn);
+			V *= ShipScale;
+			NewExp.Location = V;
+		}
+		else if (Key == "final")
+		{
+			bool b = false;
+			GetDefBool(b, Def, Fn);
+			NewExp.bFinal = b;
+		}
+	}
+
+	return NewExp;
+}
+
+// +--------------------------------------------------------------------+
+
+FDebris UStarshatterGameDataSubsystem::ParseDebris(TermStruct* Val, const char* Fn)
+{
+	FDebris NewDeb;
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseDebris called with null args"));
+		return NewDeb;
+	}
+
+	const float ShipScale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
+
+	// Legacy: fire_index < 5
+	NewDeb.FireLocations.Reserve(5);
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* Def = Val->elements()->at(ElemIdx)->isDef();
+		if (!Def)
+			continue;
+
+		const Text& Key = Def->name()->value();
+
+		if (Key == "model")
+		{
+			Text ModelBuf;
+			if (GetDefText(ModelBuf, Def, Fn))
+			{
+				NewDeb.ModelName = FString(ModelBuf);
+			}
+		}
+		else if (Key == "mass")
+		{
+			GetDefNumber(NewDeb.Mass, Def, Fn);
+		}
+		else if (Key == "speed")
+		{
+			GetDefNumber(NewDeb.Speed, Def, Fn);
+		}
+		else if (Key == "drag")
+		{
+			GetDefNumber(NewDeb.Drag, Def, Fn);
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			GetDefVec(V, Def, Fn);
+			V *= ShipScale;
+			NewDeb.Location = V;
+		}
+		else if (Key == "count")
+		{
+			GetDefNumber(NewDeb.Count, Def, Fn);
+		}
+		else if (Key == "life")
+		{
+			GetDefNumber(NewDeb.Life, Def, Fn);
+		}
+		else if (Key == "fire")
+		{
+			if (NewDeb.FireLocations.Num() < 5)
+			{
+				FVector V = FVector::ZeroVector;
+				GetDefVec(V, Def, Fn);
+				V *= ShipScale;
+				NewDeb.FireLocations.Add(V);
+			}
+		}
+		else if (Key == "fire_type")
+		{
+			GetDefNumber(NewDeb.FireType, Def, Fn);
+		}
+	}
+
+	// Optional safety (legacy doesn’t clamp, but prevents nonsense):
+	if (NewDeb.Count < 0) NewDeb.Count = 0;
+
+	return NewDeb;
+}
+
+// +--------------------------------------------------------------------+
+
+void UStarshatterGameDataSubsystem::ParseMap(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseMap()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseMap called with null args"));
+		return;
+	}
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "sprite")
+		{
+			Text SpriteText;
+			if (GetDefText(SpriteText, PDef, Fn))
+			{
+				FShipMapSprite NewSprite;
+				NewSprite.SpriteName = FString(SpriteText);
+				NewSprite.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+				NewShipMapSpriteArray.Add(NewSprite);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseMap: invalid/missing sprite in '%s'"), ANSI_TO_TCHAR(Fn));
+			}
+		}
+	}
+}
+
+// +--------------------------------------------------------------------+
+
+static FSkinMtlCell ParseSkinMtlCell(TermStruct* Val, const char* Fn)
+{
+	FSkinMtlCell Out;
+
+	if (!Val || !Fn || !*Fn)
+	{
+		return Out;
+	}
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* Def = Val->elements()->at(ElemIdx)->isDef();
+		if (!Def)
+			continue;
+
+		const Text& Key = Def->name()->value();
+
+		if (Key == "index" || Key == "cell" || Key == "id")
+		{
+			GetDefNumber(Out.CellIndex, Def, Fn);
+		}
+		else if (Key == "material" || Key == "mtl" || Key == "name")
+		{
+			Text Buf;
+			if (GetDefText(Buf, Def, Fn))
+			{
+				Out.MaterialName = FString(Buf);
+			}
+		}
+		else if (Key == "texture" || Key == "bitmap" || Key == "diffuse" || Key == "map")
+		{
+			Text Buf;
+			if (GetDefText(Buf, Def, Fn))
+			{
+				Out.TextureName = FString(Buf);
+			}
+		}
+		else if (Key == "aux" || Key == "normal" || Key == "spec" || Key == "specular")
+		{
+			Text Buf;
+			if (GetDefText(Buf, Def, Fn))
+			{
+				Out.AuxTextureName = FString(Buf);
 			}
 		}
 	}
 
-	if (skin && mtl)
-		skin->AddMaterial(mtl);
+	return Out;
 }
-*/
+
+void UStarshatterGameDataSubsystem::ParseSkin(TermStruct* Val, const char* Fn)
+{
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseSkin()"));
+
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseSkin called with null args"));
+		return;
+	}
+
+	FShipSkin NewSkin;
+	NewSkin.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	bool bHasName = false;
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* Def = Val->elements()->at(ElemIdx)->isDef();
+		if (!Def)
+			continue;
+
+		const Text& Key = Def->name()->value();
+
+		if (Key == "name")
+		{
+			Text NameBuf;
+			if (GetDefText(NameBuf, Def, Fn))
+			{
+				NewSkin.Name = FString(NameBuf);
+				bHasName = true;
+			}
+		}
+		else if (Key == "material" || Key == "mtl")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseSkin: skin material struct missing in '%s'"), ANSI_TO_TCHAR(Fn));
+				continue;
+			}
+
+			FSkinMtlCell Cell = ParseSkinMtlCell(Def->term()->isStruct(), Fn);
+			NewSkin.Cells.Add(Cell);
+		}
+	}
+
+	// Legacy: if (skin && skin->NumCells()) skins.append(skin);
+	if (!bHasName)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseSkin: missing name in '%s' (skin ignored)"), ANSI_TO_TCHAR(Fn));
+		return;
+	}
+
+	if (NewSkin.Cells.Num() <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseSkin: skin '%s' has no materials in '%s' (ignored)"), *NewSkin.Name, ANSI_TO_TCHAR(Fn));
+		return;
+	}
+
+	NewShipSkinArray.Add(NewSkin);
+}
+
 void
 UStarshatterGameDataSubsystem::LoadSystemDesign(const char* fn)
 {

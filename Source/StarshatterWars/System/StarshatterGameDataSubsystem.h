@@ -164,7 +164,7 @@ public:
     void ParseObjective(TermStruct* val, const char* fn);
     void ParseInstruction(TermStruct* val, const char* fn);
     void ParseShip(TermStruct* val, const char* fn);
-    void ParseLoadout(TermStruct* val, const char* fn);
+    void ParseMissionLoadout(TermStruct* val, const char* fn);
     void ParseEvent(TermStruct* val, const char* fn);
     void ParseElement(TermStruct* val, const char* fn);
     void ParseScriptedTemplate(const char* fn);
@@ -199,14 +199,37 @@ public:
     void LoadShipDesigns();
     void LoadSystemDesignsFromDT();
     void LoadSystemDesigns();
-    void LoadOrderOfBattle(const char* filename, int team);
+    void LoadOrderOfBattle(const char* InFilename, int32 Team);
 
     void ParseCombatUnit();
     void LoadShipDesign(const char* fn);
 
     void ParsePower(TermStruct* val, const char* fn);
     void ParseDrive(TermStruct* val, const char* fn);
+    void ParseQuantumDrive(TermStruct* Val, const char* Fn);
+    void ParseFarcaster(TermStruct* Val, const char* Fn);
+    void ParseThruster(TermStruct* Val, const char* Fn);
+    void ParseNavlight(TermStruct* Val, const char* Fn);
+    void ParseFlightDeck(TermStruct* Val, const char* Fn);
+    void ParseLandingGear(TermStruct* Val, const char* Fn);
+    void ParseWeapon(TermStruct* Val, const char* Fn);
+    void ParseHardPoint(TermStruct* Val, const char* Fn);
+    void ParseLoadout(TermStruct* val, const char* fn);
+    void ParseSensor(TermStruct* Val, const char* Fn);
+    void ParseNavsys(TermStruct* Val, const char* Fn);
+    void ParseComputer(TermStruct* Val, const char* Fn);
+    void ParseShield(TermStruct* Val, const char* Fn);
+    void ParseSquadron(TermStruct* Val, const char* Fn);
+    void ParseDeathSpiral(TermStruct* Val, const char* Fn);
+    void ParseMap(TermStruct* Val, const char* Fn);
+    void ParseSkin(TermStruct* Val, const char* Fn);
 
+    FExplosion ParseExplosion(TermStruct* Val, const char* Fn);
+    FDebris ParseDebris(TermStruct* Val, const char* Fn);
+
+    void ResolveWeaponsForCurrentShip();
+    void ValidateLoadoutsForCurrentShip() const;
+   
     void LoadSystemDesign(const char* fn);
 
     // OOB helpers
@@ -374,6 +397,24 @@ protected:
 
     TArray<FShipPower> NewShipPowerArray;
     TArray<FShipDrive> NewShipDriveArray;
+    TArray<FShipQuantum> NewShipQuantumArray;
+    TArray<FShipFarcaster> NewShipFarcasterArray;
+    TArray<FShipThruster> NewShipThrusterArray;
+    TArray<FThrusterPort> NewThrusterPortArray; 
+    TArray<FShipNavLight> NewShipNavLightArray;
+    TArray<FShipFlightDeck> NewShipFlightDeckArray;
+    TArray<FShipLandingGear> NewShipLandingGearArray;
+    TArray<FShipWeapon> NewShipWeaponArray;
+    TArray<FShipHardPoint> NewShipHardPointArray;
+    TArray<FShipLoadout> NewShipLoadoutArray;
+    TArray<FShipSensor> NewShipSensorArray;
+    TArray<FShipNavSystem> NewShipNavSystemArray;
+    TArray<FShipComputer> NewShipComputerArray;
+    TArray<FShipShield> NewShipShieldArray;
+    TArray<FShipSquadron> NewShipSquadronArray;
+    TArray<FShipDeathSpiral> NewShipDeathSpiralArray;
+    TArray<FShipMapSprite> NewShipMapSpriteArray;
+    TArray<FShipSkin> NewShipSkinArray;
 
     TArray<FS_Star> StarDataArray;
     TArray<FS_Planet> PlanetDataArray;
@@ -474,4 +515,17 @@ protected:
     // Paths
     FString ProjectPath;
     FString FilePath;
+
+    UPROPERTY()
+    TMap<FString, FWeaponDesignMeta> WeaponMetaByType;
+
+    // ------------------------------------------------------------
+    // Per-ship selection results (reset each time you start a ship)
+    // ------------------------------------------------------------
+    int32 CurrentShipDecoyWeaponIndex = INDEX_NONE;
+    int32 CurrentShipProbeWeaponIndex = INDEX_NONE;
+    FString CurrentShipDecoyWeaponType;
+    FString CurrentShipProbeWeaponType;
 };
+
+static FSkinMtlCell ParseSkinMtlCell(TermStruct* Val, const char* Fn);
