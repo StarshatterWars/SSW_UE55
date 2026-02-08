@@ -6357,7 +6357,7 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 		}
 
 		const Text& Key = Def->name()->value();
-
+		
 		if (Key == "name")
 		{
 			GetDefText(LocalShipName, Def, fn);
@@ -6962,6 +6962,8 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 	}
 
 	ShipDesignDataTable->AddRow(RowName, NewShipDesign);
+
+
 }
 
 // +--------------------------------------------------------------------+

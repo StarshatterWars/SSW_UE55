@@ -58,6 +58,7 @@ class UStarshatterVideoSubsystem;
 class UStarshatterControlsSubsystem;
 class UStarshatterKeyboardSubsystem;
 class UStarshatterGameDataSubsystem;
+class UStarshatterShipDesignSubsystem;
 
 // NEW: Player save subsystem
 class UStarshatterPlayerSubsystem;
