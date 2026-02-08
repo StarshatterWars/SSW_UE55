@@ -132,7 +132,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
 
     if (FormSS)
     {
-        FormSS->BootLoadForms();
+        //FormSS->BootLoadForms();
     }
 
     return true;

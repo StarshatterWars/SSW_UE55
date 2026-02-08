@@ -138,9 +138,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void SpawnGalaxy();
 
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void GetGameData();
-
 	// =====================================================================
 	// Screen / Level Loading
 	// =====================================================================

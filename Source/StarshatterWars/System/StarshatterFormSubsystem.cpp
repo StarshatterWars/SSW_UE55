@@ -24,6 +24,13 @@
 #include "Logging/LogMacros.h"
 #include "Engine/DataTable.h"
 
+#if WITH_EDITOR
+#include "Editor.h"
+#include "DataTableEditorUtils.h"
+#include "UObject/Package.h"
+#include "Misc/ScopedSlowTask.h"
+#endif
+
 // Legacy parser stack:
 #include "DataLoader.h"
 #include "Parser.h"
@@ -284,7 +291,6 @@ void UStarshatterFormSubsystem::LoadForms()
         return;
     }
 
-    bFormsLoaded = true;
     FormsByName.Empty();
 
     const FString FormsDir = FPaths::ProjectContentDir() / TEXT("GameData/Screens/");
@@ -298,11 +304,13 @@ void UStarshatterFormSubsystem::LoadForms()
     for (const FString& Leaf : Files)
     {
         const FString FullPath = FormsDir / Leaf;
-        UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Parsing: %s"), *FullPath);
+        UE_LOG(LogStarshatterForms, Verbose, TEXT("[FORMS] Parsing: %s"), *FullPath);
 
         const FTCHARToUTF8 Utf8Path(*FullPath);
-        LoadForm(Utf8Path.Get());
+        LoadForm(Utf8Path.Get()); // IMPORTANT: LoadForm must only cache, not write DT
     }
+
+    bFormsLoaded = true;
 
     UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] LoadForms complete. Cached=%d"), FormsByName.Num());
 }
@@ -583,6 +591,7 @@ void UStarshatterFormSubsystem::LoadForm(const char* InFilename)
             *FormName);
         return;
     }
+    // Your RemoveRow/AddRow block here
 
     // Overwrite-safe:
     if (FormDefDataTable->FindRow<FS_FormDesign>(RowName, TEXT("LoadForm"), false))
@@ -593,5 +602,77 @@ void UStarshatterFormSubsystem::LoadForm(const char* InFilename)
     FormDefDataTable->AddRow(RowName, NewForm);
 
     UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Wrote DT row '%s'"), *RowName.ToString());
+
 }
 
+void UStarshatterFormSubsystem::RebuildFormDefDataTable_EditorOnly()
+{
+#if WITH_EDITOR
+    UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] RebuildFormDefDataTable_EditorOnly()"));
+
+    if (!FormDefDataTable)
+    {
+        UE_LOG(LogStarshatterForms, Error, TEXT("[FORMS] DT_FormDef is null"));
+        return;
+    }
+
+    if (FormDefDataTable->GetRowStruct() != FS_FormDesign::StaticStruct())
+    {
+        UE_LOG(LogStarshatterForms, Error,
+            TEXT("[FORMS] DT RowStruct mismatch. Expected '%s' got '%s'"),
+            *FS_FormDesign::StaticStruct()->GetName(),
+            FormDefDataTable->GetRowStruct() ? *FormDefDataTable->GetRowStruct()->GetName() : TEXT("NULL"));
+        return;
+    }
+
+    // Do not mutate asset DT during PIE:
+    if (GEditor && GEditor->PlayWorld)
+    {
+        UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] Refusing to rebuild DT during PIE. Stop play first."));
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // Build authoritative cache (parse all .frm)
+    // ------------------------------------------------------------
+    bFormsLoaded = false;     // force LoadForms() to run
+    FormsByName.Reset();
+
+    LoadForms();             // IMPORTANT: LoadForms/LoadForm must ONLY cache, not write DT
+
+    // ------------------------------------------------------------
+    // Clear + rebuild DT asset (editor-safe)
+    // ------------------------------------------------------------
+    FormDefDataTable->Modify();
+
+    // Clear all rows:
+    {
+        const TArray<FName> Existing = FormDefDataTable->GetRowNames();
+        for (const FName& Row : Existing)
+        {
+            FDataTableEditorUtils::RemoveRow(FormDefDataTable, Row);
+        }
+    }
+
+    // Add rows from cache:
+    for (const TPair<FName, FS_FormDesign>& It : FormsByName)
+    {
+        const FName RowName = It.Key;
+        const FS_FormDesign& RowData = It.Value;
+
+        FDataTableEditorUtils::AddRow(FormDefDataTable, RowName);
+
+        uint8* DestRow = FormDefDataTable->FindRowUnchecked(RowName);
+        check(DestRow);
+
+        FS_FormDesign::StaticStruct()->CopyScriptStruct(DestRow, &RowData);
+    }
+
+    FormDefDataTable->MarkPackageDirty();
+    FormDefDataTable->PostEditChange();
+
+    UE_LOG(LogStarshatterForms, Log, TEXT("[FORMS] Rebuilt DT_FormDef: %d rows"), FormsByName.Num());
+#else
+    UE_LOG(LogStarshatterForms, Warning, TEXT("[FORMS] RebuildFormDefDataTable_EditorOnly called in non-editor build"));
+#endif
+}

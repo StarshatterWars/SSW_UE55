@@ -7,7 +7,6 @@
 #include "Galaxy.h"
 #include "DataLoader.h"
 #include "Sim.h"
-#include "GameDataLoader.h"
 #include "FormattingUtils.h"
 
 #include "MenuDlg.h"
@@ -115,38 +114,6 @@ void USSWGameInstance::SpawnGalaxy()
 	//} else {
 	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
 	//}	*/	
-}
-
-void USSWGameInstance::GetGameData()
-{
-	UWorld* World = GetWorld();
-
-	FVector location = FVector::ZeroVector;
-	FRotator rotate = FRotator::ZeroRotator;
-
-	FActorSpawnParameters SpawnInfo;
-	FName Name("Game Data");
-	SpawnInfo.Name = Name;
-
-	if (GameData == nullptr) {
-		GameData = GetWorld()->SpawnActor<AGameDataLoader>(AGameDataLoader::StaticClass(), location, rotate, SpawnInfo);
-
-
-		if (GameData)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Game Data Loader Spawned"));
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Game Data Loader"));
-		}
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Game Data Loader  already exists"));
-	}
-
-	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
-	//}		
 }
 
 void USSWGameInstance::StartGame()

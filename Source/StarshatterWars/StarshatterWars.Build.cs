@@ -78,5 +78,17 @@ public class StarshatterWars : ModuleRules
             Path.Combine(ModuleDirectory, "Combat"),
             Path.Combine(ModuleDirectory, "Mission"),
         });
+
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(new[]
+            {
+                "UnrealEd",
+                "DataTableEditor",   // depending on UE version; safe to include
+                "EditorSubsystem",
+                "AssetRegistry",
+                "Projects"
+            });
+        }
     }
 }

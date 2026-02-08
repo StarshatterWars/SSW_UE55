@@ -45,6 +45,9 @@ public:
     // Public load (BootLoadForms calls this)
     void LoadForms();
 
+    UFUNCTION(CallInEditor)
+    void RebuildFormDefDataTable_EditorOnly();
+
 private:
     // Private per-file loader
     void LoadForm(const char* InFilename);

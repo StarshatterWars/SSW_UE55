@@ -38,7 +38,7 @@ static inline FVector OtherHand(const FVector& V)
 
  // +--------------------------------------------------------------------+
 
-class AGameDataLoader;
+class UStarshatterGameDataSubsystem;
 class Locale;
 class SimUniverse;
 class USound;
@@ -161,7 +161,7 @@ public:
 protected:
 	friend  bool      ProfileGameLoop(void);
 	
-	AGameDataLoader* content;
+	UStarshatterGameDataSubsystem* content;
 	SimUniverse* world;
 	VideoFactory* video_factory;
 	Video* video;

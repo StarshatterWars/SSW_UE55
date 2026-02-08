@@ -129,7 +129,7 @@ void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collect
 	GalaxyDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_GalaxyMap.DT_GalaxyMap"));
 	OrderOfBattleDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle"));
 	AwardsDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_AwardInfo.DT_AwardInfo"));
-	
+	ShipDesignDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_ShipDesign.DT_ShipDesign"));
 	UE_LOG(LogTemp, Warning, TEXT("DT Campaign=%s Galaxy=%s"),
 		*GetNameSafe(CampaignDataTable),
 		*GetNameSafe(GalaxyDataTable));
@@ -141,6 +141,7 @@ void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collect
 		if (CombatGroupDataTable)   CombatGroupDataTable->EmptyTable();
 		if (OrderOfBattleDataTable) OrderOfBattleDataTable->EmptyTable();
 		if (GalaxyDataTable)        GalaxyDataTable->EmptyTable();
+		if (ShipDesignDataTable)    ShipDesignDataTable->EmptyTable();
 	}
 }
 
@@ -6321,7 +6322,9 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 	FVector LocalChaseVec = FVector(0.f, -100.f, 20.f);
 	FVector LocalBridgeVec = FVector::ZeroVector;
 
-	FS_ShipDesign NewShipDesign;
+	FShipDesign NewShipDesign;
+	NewShipPowerArray.Empty();
+	NewShipDriveArray.Empty();
 
 	// ------------------------------------------------------------
 	// Parse terms
@@ -6673,10 +6676,22 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 			else
 			{
 				ParsePower(Def->term()->isStruct(), fn);
+				NewShipDesign.Power = NewShipPowerArray;
 			}
 		}
-		else if (Key == "main_drive" || Key == "drive" ||
-			Key == "quantum" || Key == "quantum_drive" ||
+		else if (Key == "main_drive" || Key == "drive")
+		{
+			if (!Def->term() || !Def->term()->isStruct())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WARNING: drive struct missing in '%s'"), *ShipFilePath);
+			}
+			else
+			{
+				ParseDrive(Def->term()->isStruct(), fn);
+				NewShipDesign.Drive = NewShipDriveArray;
+			}
+		}
+		else if (Key == "quantum" || Key == "quantum_drive" ||
 			Key == "sender" || Key == "farcaster" ||
 			Key == "thruster" || Key == "navlight" ||
 			Key == "flightdeck" || Key == "gear" ||
@@ -6692,11 +6707,6 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("WARNING: %s struct missing in '%s'"),
 					*FString(ANSI_TO_TCHAR(Key.data())), *ShipFilePath);
-			}
-			else
-			{
-				// TermStruct* Val = Def->term()->isStruct();
-				// ParseDrive(Val); etc...
 			}
 		}
 		else
@@ -6727,7 +6737,7 @@ void UStarshatterGameDataSubsystem::LoadShipDesign(const char* InFilename)
 	const FName RowName(*FString(LocalShipName));
 
 	// Optional overwrite:
-	if (ShipDesignDataTable->FindRow<FS_ShipDesign>(RowName, TEXT("LoadShipDesign"), false))
+	if (ShipDesignDataTable->FindRow<FShipDesign>(RowName, TEXT("LoadShipDesign"), false))
 	{
 		ShipDesignDataTable->RemoveRow(RowName);
 	}
@@ -6781,7 +6791,7 @@ void UStarshatterGameDataSubsystem::ParsePower(TermStruct* Val, const char* Fn)
 	int32   Emcon2 = -1;
 	int32   Emcon3 = -1;
 
-	FS_ShipPower NewShipPower;
+	FShipPower NewShipPower;
 
 	const int32 ElemCount = (int32)Val->elements()->size();
 	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
@@ -6879,160 +6889,234 @@ void UStarshatterGameDataSubsystem::ParsePower(TermStruct* Val, const char* Fn)
 	NewShipPowerArray.Add(NewShipPower);
 }
 
+static EDriveType ParseDriveTypeString(FString In)
+{
+	In.TrimStartAndEndInline();
+	In.ToLowerInline();
+
+	if (In == TEXT("plasma"))  return EDriveType::PLASMA;
+	if (In == TEXT("fusion"))  return EDriveType::FUSION;
+	if (In == TEXT("alien"))   return EDriveType::GREEN;
+	if (In == TEXT("green"))   return EDriveType::GREEN;
+	if (In == TEXT("red"))     return EDriveType::RED;
+	if (In == TEXT("blue"))    return EDriveType::BLUE;
+	if (In == TEXT("yellow"))  return EDriveType::YELLOW; 
+	if (In == TEXT("stealth")) return EDriveType::STEALTH;
+
+	return EDriveType::UNKNOWN;
+}
 // +--------------------------------------------------------------------+
 
-/*void
-UStarshatterGameDataSubsystem::ParseDrive(TermStruct* val, const char* fn)
+void UStarshatterGameDataSubsystem::ParseDrive(TermStruct* Val, const char* Fn)
 {
-	Text  dname;
-	Text  dabrv;
-	int   dtype = 0;
-	int   etype = 0;
-	float dthrust = 1.0f;
-	float daug = 0.0f;
-	float dscale = 1.0f;
-	Vec3  loc(0.0f, 0.0f, 0.0f);
-	float size = 0.0f;
-	float hull = 0.5f;
-	Text  design_name;
-	int   emcon_1 = -1;
-	int   emcon_2 = -1;
-	int   emcon_3 = -1;
-	bool  trail = true;
-	Drive* drive = 0;
+	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseDrive()"));
 
-	for (int i = 0; i < val->elements()->size(); i++) {
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (pdef) {
-			Text defname = pdef->name()->value();
-			defname.setSensitive(false);
+	if (!Val || !Fn || !*Fn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ParseDrive called with null args"));
+		return;
+	}
 
-			if (defname == "type") {
-				TermText* tname = pdef->term()->isText();
+	// Match ParsePower behavior:
+	const float Scale = (CurrentShipScale > 0.0f) ? CurrentShipScale : 1.0f;
 
-				if (tname) {
-					Text tval = tname->value();
-					tval.setSensitive(false);
+	// Legacy defaults (local mirrors for clarity):
+	Text    DName = "";
+	Text    DAbrv = "";
+	Text    DesignName = "";
+	Text    TypeName = "";
 
-					if (tval == "Plasma")       dtype = Drive::PLASMA;
-					else if (tval == "Fusion")  dtype = Drive::FUSION;
-					else if (tval == "Alien")   dtype = Drive::GREEN;
-					else if (tval == "Green")   dtype = Drive::GREEN;
-					else if (tval == "Red")     dtype = Drive::RED;
-					else if (tval == "Blue")    dtype = Drive::BLUE;
-					else if (tval == "Yellow")  dtype = Drive::YELLOW;
-					else if (tval == "Stealth") dtype = Drive::STEALTH;
+	float   Thrust = 1.0f;
+	float   Augmenter = 0.0f;
+	float   DriveScale = 1.0f;
 
-					else Print("WARNING: unknown drive type '%s' in '%s'\n", tname->value().data(), filename);
+	FVector Loc = FVector::ZeroVector;
+	float   Size = 0.0f;
+	float   HullFactor = 0.5f;
+
+	int32   ExplosionType = 0;
+	int32   Emcon1 = -1;
+	int32   Emcon2 = -1;
+	int32   Emcon3 = -1;
+
+	bool    bTrail = true;
+
+	FShipDrive NewDrive;
+	NewDrive.SourceFile = FString(ANSI_TO_TCHAR(Fn));
+
+	const int32 ElemCount = (int32)Val->elements()->size();
+	for (int32 ElemIdx = 0; ElemIdx < ElemCount; ++ElemIdx)
+	{
+		TermDef* PDef = Val->elements()->at(ElemIdx)->isDef();
+		if (!PDef)
+			continue;
+
+		const Text& Key = PDef->name()->value();
+
+		if (Key == "type")
+		{
+			if (GetDefText(TypeName, PDef, Fn))
+			{
+				const FString TypeStr = FString(ANSI_TO_TCHAR(TypeName.data()));
+				NewDrive.Type = ParseDriveTypeString(TypeStr);
+
+				if (NewDrive.Type == EDriveType::UNKNOWN)
+				{
+					UE_LOG(LogTemp, Warning,
+						TEXT("ParseDrive: unknown drive type '%s' in '%s'"),
+						*TypeStr,
+						*FString(ANSI_TO_TCHAR(Fn)));
 				}
-			}
-			else if (defname == "name") {
-				if (!GetDefText(dname, pdef, filename))
-					Print("WARNING: invalid or missing name for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "abrv") {
-				if (!GetDefText(dabrv, pdef, filename))
-					Print("WARNING: invalid or missing abrv for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "design") {
-				if (!GetDefText(design_name, pdef, filename))
-					Print("WARNING: invalid or missing design for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "thrust") {
-				if (!GetDefNumber(dthrust, pdef, filename))
-					Print("WARNING: invalid or missing thrust for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "augmenter") {
-				if (!GetDefNumber(daug, pdef, filename))
-					Print("WARNING: invalid or missing augmenter for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "scale") {
-				if (!GetDefNumber(dscale, pdef, filename))
-					Print("WARNING: invalid or missing scale for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "port") {
-				Vec3  port;
-				float flare_scale = 0;
-
-				if (pdef->term()->isArray()) {
-					GetDefVec(port, pdef, filename);
-					port *= scale;
-					flare_scale = dscale;
-				}
-
-				else if (pdef->term()->isStruct()) {
-					TermStruct* val = pdef->term()->isStruct();
-
-					for (int i = 0; i < val->elements()->size(); i++) {
-						TermDef* pdef2 = val->elements()->at(i)->isDef();
-						if (pdef2) {
-							if (pdef2->name()->value() == "loc") {
-								GetDefVec(port, pdef2, filename);
-								port *= scale;
-							}
-
-							else if (pdef2->name()->value() == "scale") {
-								GetDefNumber(flare_scale, pdef2, filename);
-							}
-						}
-					}
-
-					if (flare_scale <= 0)
-						flare_scale = dscale;
-				}
-
-				if (!drive)
-					drive = new  Drive((Drive::SUBTYPE)dtype, dthrust, daug, trail);
-
-				drive->AddPort(port, flare_scale);
-			}
-
-			else if (defname == "loc") {
-				if (!GetDefVec(loc, pdef, filename))
-					Print("WARNING: invalid or missing loc for drive in '%s'\n", filename);
-				loc *= (float)scale;
-			}
-
-			else if (defname == "size") {
-				if (!GetDefNumber(size, pdef, filename))
-					Print("WARNING: invalid or missing size for drive in '%s'\n", filename);
-				size *= (float)scale;
-			}
-
-			else if (defname == "hull_factor") {
-				if (!GetDefNumber(hull, pdef, filename))
-					Print("WARNING: invalid or missing hull_factor for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "explosion") {
-				if (!GetDefNumber(etype, pdef, filename))
-					Print("WARNING: invalid or missing explosion for drive in '%s'\n", filename);
-			}
-
-			else if (defname == "emcon_1") {
-				GetDefNumber(emcon_1, pdef, filename);
-			}
-
-			else if (defname == "emcon_2") {
-				GetDefNumber(emcon_2, pdef, filename);
-			}
-
-			else if (defname == "emcon_3") {
-				GetDefNumber(emcon_3, pdef, filename);
-			}
-
-			else if (defname == "trail" || defname == "show_trail") {
-				GetDefBool(trail, pdef, filename);
 			}
 		}
+		else if (Key == "name")
+		{
+			GetDefText(DName, PDef, Fn);
+			NewDrive.Name = FString(DName);
+		}
+		else if (Key == "abrv")
+		{
+			GetDefText(DAbrv, PDef, Fn);
+			NewDrive.Abbrev = FString(DAbrv);
+		}
+		else if (Key == "design")
+		{
+			GetDefText(DesignName, PDef, Fn);
+			NewDrive.DesignName = FString(DesignName);
+		}
+		else if (Key == "thrust")
+		{
+			GetDefNumber(Thrust, PDef, Fn);
+			NewDrive.Thrust = Thrust;
+		}
+		else if (Key == "augmenter")
+		{
+			GetDefNumber(Augmenter, PDef, Fn);
+			NewDrive.Augmenter = Augmenter;
+		}
+		else if (Key == "scale")
+		{
+			GetDefNumber(DriveScale, PDef, Fn);
+			NewDrive.DriveScale = DriveScale;
+		}
+		else if (Key == "port")
+		{
+			// Matches legacy behavior:
+			// - location is multiplied by global Scale
+			// - flare scale defaults to drive's dscale unless overridden
+			FDrivePort Port;
+			Port.Location = FVector::ZeroVector;
+			Port.FlareScale = (NewDrive.DriveScale > 0.0f) ? NewDrive.DriveScale : 1.0f;
+
+			if (PDef->term()->isArray())
+			{
+				FVector PV = FVector::ZeroVector;
+				if (GetDefVec(PV, PDef, Fn))
+				{
+					PV *= Scale;
+					Port.Location = PV;
+					// flare scale already defaulted
+					NewDrive.Ports.Add(Port);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("ParseDrive: invalid port array in '%s'"), *NewDrive.SourceFile);
+				}
+			}
+			else if (PDef->term()->isStruct())
+			{
+				TermStruct* PortStruct = PDef->term()->isStruct();
+
+				FVector PV = FVector::ZeroVector;
+				float FlareScale = 0.0f;
+
+				const int32 PortCount = (int32)PortStruct->elements()->size();
+				for (int32 j = 0; j < PortCount; ++j)
+				{
+					TermDef* P2 = PortStruct->elements()->at(j)->isDef();
+					if (!P2)
+						continue;
+
+					const Text& PKey = P2->name()->value();
+
+					if (PKey == "loc")
+					{
+						GetDefVec(PV, P2, Fn);
+					}
+					else if (PKey == "scale")
+					{
+						GetDefNumber(FlareScale, P2, Fn);
+					}
+				}
+
+				PV *= Scale;
+
+				if (FlareScale <= 0.0f)
+					FlareScale = (NewDrive.DriveScale > 0.0f) ? NewDrive.DriveScale : 1.0f;
+
+				Port.Location = PV;
+				Port.FlareScale = FlareScale;
+				NewDrive.Ports.Add(Port);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseDrive: invalid port term type in '%s'"), *NewDrive.SourceFile);
+			}
+		}
+		else if (Key == "loc")
+		{
+			FVector V = FVector::ZeroVector;
+			if (GetDefVec(V, PDef, Fn))
+			{
+				V *= Scale;
+				Loc = V;
+				NewDrive.Location = Loc;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ParseDrive: invalid loc in '%s'"), *NewDrive.SourceFile);
+			}
+		}
+		else if (Key == "size")
+		{
+			GetDefNumber(Size, PDef, Fn);
+			Size *= Scale;
+			NewDrive.Size = Size;
+		}
+		else if (Key == "hull_factor")
+		{
+			GetDefNumber(HullFactor, PDef, Fn);
+			NewDrive.HullFactor = HullFactor;
+		}
+		else if (Key == "explosion")
+		{
+			GetDefNumber(ExplosionType, PDef, Fn);
+			NewDrive.ExplosionType = ExplosionType;
+		}
+		else if (Key == "emcon_1")
+		{
+			GetDefNumber(Emcon1, PDef, Fn);
+			NewDrive.Emcon1 = Emcon1;
+		}
+		else if (Key == "emcon_2")
+		{
+			GetDefNumber(Emcon2, PDef, Fn);
+			NewDrive.Emcon2 = Emcon2;
+		}
+		else if (Key == "emcon_3")
+		{
+			GetDefNumber(Emcon3, PDef, Fn);
+			NewDrive.Emcon3 = Emcon3;
+		}
+		else if (Key == "trail" || Key == "show_trail")
+		{
+			GetDefBool(bTrail, PDef, Fn);
+			NewDrive.bShowTrail = bTrail;
+		}
 	}
-}*/
+
+	NewShipDriveArray.Add(NewDrive);
+}
 
 // +--------------------------------------------------------------------+
 

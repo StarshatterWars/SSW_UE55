@@ -8,12 +8,11 @@
 */
 
 
-
 #include "Game.h"
 #include "Screen.h"
 #include "Video.h"
 #include "Keyboard.h"
-#include "GameDataLoader.h"	
+#include "StarshatterGameDataSubsystem.h"
 
 Game* game = 0;
 

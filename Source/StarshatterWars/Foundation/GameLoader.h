@@ -26,7 +26,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Loader")
 	void LoadGalaxy();
 
-	void GetGameData();
 	void InitializeGame();
 	void LoadMainMenu();
 

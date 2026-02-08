@@ -24,7 +24,6 @@ void AGameLoader::BeginPlay()
 	InitializeGame();
 	
 	LoadOrCreateUniverse();
-	GetGameData();
 	LoadMainMenu();
 	//LoadGalaxy();
 }
@@ -52,12 +51,6 @@ void AGameLoader::LoadGalaxy()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->SpawnGalaxy();
-}
-
-void AGameLoader::GetGameData()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->GetGameData();
 }
 
 void AGameLoader::InitializeGame()

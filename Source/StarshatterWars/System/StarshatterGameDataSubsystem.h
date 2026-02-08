@@ -70,6 +70,7 @@
 
 // Project types
 #include "GameStructs.h"
+#include "GameStructs_System.h"
 
 #include "StarshatterGameDataSubsystem.generated.h"
 
@@ -335,7 +336,8 @@ protected:
     FS_Campaign        CampaignData;
     FS_Galaxy          GalaxyData;
     FS_StarSystem      StarSystemData;
-    FS_ShipDesign      ShipDesignData;
+    
+    FShipDesign        ShipDesignData;
     FS_SystemDesign    SystemDesignData;
     FS_AwardInfo       AwardData;
     FS_CombatGroupUnit CombatGroupUnit;
@@ -370,8 +372,8 @@ protected:
     TArray<FS_ComponentDesign> NewComponentArray;
     TArray<FS_SystemDesign*> SystemDesignTable;
 
-    TArray<FS_ShipPower> NewShipPowerArray;
-
+    TArray<FShipPower> NewShipPowerArray;
+    TArray<FShipDrive> NewShipDriveArray;
 
     TArray<FS_Star> StarDataArray;
     TArray<FS_Planet> PlanetDataArray;
