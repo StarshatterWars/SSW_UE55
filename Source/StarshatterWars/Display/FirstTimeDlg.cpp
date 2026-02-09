@@ -192,3 +192,9 @@ void UFirstTimeDlg::OnApplyClicked()
     if (Manager)
         Manager->ShowMenuDlg();
 }
+
+FReply UFirstTimeDlg::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    UE_LOG(LogTemp, Warning, TEXT("FirstTimeDlg: MOUSE DOWN RECEIVED"));
+    return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}

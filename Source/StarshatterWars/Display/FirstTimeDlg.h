@@ -82,4 +82,6 @@ protected:
     // Owning menu screen
     // --------------------------------------------------------
     UMenuScreen* Manager = nullptr;
+
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 };
