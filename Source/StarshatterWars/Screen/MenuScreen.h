@@ -118,7 +118,7 @@ protected:
     template<typename TDialog>
     TDialog* EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr<TDialog>& Storage);
 
-    void ShowDialog(UBaseScreen* Dialog, bool bTopMost);
+    void ShowDialog(UBaseScreen* Dialog, int32 ZOrder);
     void HideDialog(UBaseScreen* Dialog);
     void HideAll();
 

@@ -25,6 +25,15 @@
 
 // ------------------------------------------------------------
 
+enum EMenuZOrder : int32
+{
+    Z_MENU_BASE = 100,
+    Z_MENU_OVERLAY = 200,
+    Z_MODAL = 500,
+    Z_CONFIRM = 600,
+    Z_DEBUG = 900
+};
+
 static void ApplyUIFocus(APlayerController* PC, UUserWidget* FocusWidget)
 {
     if (!PC || !FocusWidget)
@@ -92,32 +101,34 @@ TDialog* UMenuScreen::EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr
 // Show/Hide helpers
 // ------------------------------------------------------------
 
-void UMenuScreen::ShowDialog(UBaseScreen* Dialog, bool bTopMost)
+void UMenuScreen::ShowDialog(UBaseScreen* Dialog, int32 ZOrder)
 {
-    if (!Dialog)
+    if (!Dialog) {
         return;
+    }
 
-    // Bring to front
     if (Dialog->IsInViewport())
         Dialog->RemoveFromParent();
 
-    int32 Z = 0;
-    if (bTopMost)
-    {
-        ++ZCounter;
-        Z = ZCounter;
-    }
-
-    Dialog->AddToViewport(Z);
+    Dialog->AddToViewport(ZOrder);
     Dialog->SetVisibility(ESlateVisibility::Visible);
     Dialog->SetIsEnabled(true);
     Dialog->SetIsFocusable(true);
 
     CurrentDialog = Dialog;
 
+    // Always restore UI input to the visible dialog
     if (APlayerController* PC = GetOwningPlayer())
     {
-        ApplyUIFocus(PC, Dialog);
+        PC->bShowMouseCursor = true;
+        PC->bEnableClickEvents = true;
+        PC->bEnableMouseOverEvents = true;
+
+        FInputModeGameAndUI Mode;
+        Mode.SetWidgetToFocus(Dialog->TakeWidget());
+        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        Mode.SetHideCursorDuringCapture(false);
+        PC->SetInputMode(Mode);
     }
 }
 
@@ -462,29 +473,23 @@ void UMenuScreen::ShowFirstTimeDlg()
     EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
     EnsureDialog<UFirstTimeDlg>(FirstTimeDlgClass, FirstTimeDlg);
 
+    // Menu underneath (disabled)
     if (MenuDlg)
     {
         MenuDlg->Manager = this;
-        ShowDialog(MenuDlg, false);
-
-        // underlying menu must NOT eat input
+        ShowDialog(MenuDlg, Z_MENU_BASE);
         MenuDlg->SetIsEnabled(false);
     }
 
+    // First-run modal on top
     if (FirstTimeDlg)
     {
-        ShowDialog(FirstTimeDlg, true);
+        ShowDialog(FirstTimeDlg, Z_MODAL);
         FirstTimeDlg->SetIsEnabled(true);
         FirstTimeDlg->SetIsFocusable(true);
-
         CurrentDialog = FirstTimeDlg;
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("ShowFirstTimeDlg: FirstTimeDlg failed to create (class not set / wrong parent)"));
-    }
 }
-
 
 void UMenuScreen::ShowPlayerDlg()
 {
