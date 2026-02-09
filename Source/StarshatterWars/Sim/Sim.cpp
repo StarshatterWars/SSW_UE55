@@ -152,10 +152,16 @@ public:
 static bool first_frame = true;
 Sim* Sim::sim = 0;
 
-Sim::Sim(MotionController* c)
-	: ctrl(c), test_mode(false), grid_shown(false), dust(0),
-	star_system(0), active_region(0), mission(0),
-	start_time(0)
+Sim::Sim(MotionController* InCtrl)
+	: ctrl(InCtrl)
+	, test_mode(false)
+	, grid_shown(false)
+	, dust(nullptr)
+	, star_system(nullptr)
+	, active_region(nullptr)
+	, mission(nullptr)
+	, start_time(0)
+	, cam_dir(nullptr)
 {
 	Drive::Initialize();
 	Explosion::Initialize();
@@ -165,10 +171,22 @@ Sim::Sim(MotionController* c)
 	MFDView::Initialize();
 	Asteroid::Initialize();
 
+	// Singleton hookup:
 	if (!sim)
+	{
 		sim = this;
+		UE_LOG(LogTemp, Log, TEXT("Sim singleton set (Sim::sim = this)."));
+	}
+	else if (sim != this)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Sim singleton already set; new Sim instance created but not assigned."));
+	}
 
 	cam_dir = CameraManager::GetInstance();
+	if (!cam_dir)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CameraManager::GetInstance() returned null."));
+	}
 }
 
 Sim::~Sim()
