@@ -59,6 +59,7 @@ class UStarshatterControlsSubsystem;
 class UStarshatterKeyboardSubsystem;
 class UStarshatterGameDataSubsystem;
 class UStarshatterShipDesignSubsystem;
+class UStarshatterSystemDesignSubsystem;
 
 // NEW: Player save subsystem
 class UStarshatterPlayerSubsystem;
@@ -110,6 +111,7 @@ private:
 
         UStarshatterFormSubsystem* FormSS = nullptr; 
         UStarshatterShipDesignSubsystem* ShipDesignSS = nullptr;
+        UStarshatterSystemDesignSubsystem* SystemDesignSS = nullptr;
     };
 
     bool BuildContext(FBootContext& OutCtx);
@@ -122,6 +124,7 @@ private:
 
     //Game Data
     void BootShipDesignLoader(const FBootContext& Ctx);
+    void BootSystemDesignLoader(const FBootContext& Ctx);
 
     // NEW:
     void BootPlayerSave(const FBootContext& Ctx);

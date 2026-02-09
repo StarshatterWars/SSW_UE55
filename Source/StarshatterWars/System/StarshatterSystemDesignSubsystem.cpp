@@ -43,13 +43,22 @@ void UStarshatterSystemDesignSubsystem::Deinitialize()
     Super::Deinitialize();
 }
 
+void UStarshatterSystemDesignSubsystem::LoadAll(bool bLoaded)
+{
+    UE_LOG(LogTemp, Log, TEXT("UStarshatterShipDesignSubsystem::LoadAll()"));
+    if (!bLoaded)
+        return;
+
+    LoadSystemDesigns();
+    bLoaded = true;
+}
+
 void UStarshatterSystemDesignSubsystem::LoadSystemDesigns()
 {
     const FString SysDefPath = FPaths::ProjectContentDir() / TEXT("GameData/Systems/sys.def");
     const FTCHARToUTF8 Utf8(*SysDefPath);
     LoadSystemDesign(Utf8.Get());
 }
-
 
 void UStarshatterSystemDesignSubsystem::LoadSystemDesign(const char* Filename)
 {

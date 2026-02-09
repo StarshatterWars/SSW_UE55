@@ -39,6 +39,7 @@
 #include "StarshatterShipDesignSubsystem.h"
 #include "StarshatterPlayerSubsystem.h"
 #include "StarshatterFormSubsystem.h"
+#include "StarshatterSystemDesignSubsystem.h"
 
 #include "Logging/LogMacros.h"
 
@@ -61,6 +62,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     Collection.InitializeDependency(UStarshatterPlayerSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterFormSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterShipDesignSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterSystemDesignSubsystem::StaticClass());
 
     // Establish BOOT lifecycle state immediately
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
@@ -82,6 +84,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
         BootPlayerSave(Ctx);
         BootShipDesignLoader(Ctx);
+        BootSystemDesignLoader(Ctx);
     }
 
     // Keep existing behavior
@@ -117,6 +120,14 @@ void UStarshatterBootSubsystem::BootShipDesignLoader(const FBootContext& Ctx)
     Ctx.ShipDesignSS->LoadAll(true);
 }
 
+void UStarshatterBootSubsystem::BootSystemDesignLoader(const FBootContext& Ctx)
+{
+    if (!Ctx.SystemDesignSS)
+        return;
+
+    Ctx.SystemDesignSS->LoadAll(true);
+}
+
 bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
 {
     OutCtx.GI = GetGameInstance();
@@ -137,6 +148,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.KeyboardSS = OutCtx.GI->GetSubsystem<UStarshatterKeyboardSubsystem>();
     OutCtx.PlayerSS = OutCtx.GI->GetSubsystem<UStarshatterPlayerSubsystem>();
     OutCtx.ShipDesignSS = OutCtx.GI->GetSubsystem<UStarshatterShipDesignSubsystem>();
+    OutCtx.SystemDesignSS = OutCtx.GI->GetSubsystem<UStarshatterSystemDesignSubsystem>();
    
    UStarshatterFormSubsystem* FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
     UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"), FormSS ? TEXT("OK") : TEXT("NULL"));

@@ -64,6 +64,7 @@ public:
 
     // Monolithic parse method (legacy-style):
     void LoadSystemDesign(const char* Filename);
+    void LoadAll(bool bFull = false);
 
     // Authoritative cache
     const TMap<FName, FSystemDesign>& GetDesignsByName() const { return DesignsByName; }
