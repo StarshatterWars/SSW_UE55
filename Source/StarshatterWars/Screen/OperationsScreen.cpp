@@ -442,7 +442,7 @@ void UOperationsScreen::OnCancelButtonClicked()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
 
-	SSWInstance->LoadMainMenuScreen();
+	SSWInstance->ShowMainMenuScreen();
 }
 
 void UOperationsScreen::OnCancelButtonHovered()

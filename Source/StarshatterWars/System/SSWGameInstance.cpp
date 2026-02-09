@@ -11,7 +11,7 @@
 
 #include "MenuDlg.h"
 #include "QuitDlg.h"
-#include "FirstRun.h"
+#include "FirstTimeDlg.h"
 #include "CampaignScreen.h"
 #include "OperationsScreen.h"
 #include "MissionLoading.h"
@@ -122,19 +122,64 @@ void USSWGameInstance::StartGame()
 	//SpawnGalaxy();
 }
 
-void USSWGameInstance::LoadMainMenuScreen()
+void USSWGameInstance::ShowMainMenuScreen()
 {
+	RemoveScreens();
+
 	UWorld* World = GetWorld();
-	if (World)
+	if (!World) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: World is NULL")); return; }
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+	if (!PC) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: PC is NULL")); return; }
+
+	if (!MenuScreenWidgetClass)
 	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(false);
-			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "MainMenu");
-		}
+		UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: MenuScreenWidgetClass is NULL"));
+		return;
+	}
+
+	MenuScreen = CreateWidget<UMenuScreen>(PC, MenuScreenWidgetClass);
+	if (!MenuScreen) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: Failed to create MenuScreen")); return; }
+
+	UMenuScreen* Screen = MenuScreen.Get();
+	Screen->AddToViewport(100);
+	Screen->SetVisibility(ESlateVisibility::Visible);
+
+	Screen->Setup();
+	Screen->ShowMenuDlg();
+
+	// FIRST RUN / FIRST LOAD gating:
+	const bool bHasSave = UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot);
+	if (!bHasSave)
+	{
+		Screen->ShowFirstTimeDlg();
+	}
+
+	// Focus the topmost visible dialog:
+	UUserWidget* FocusWidget = nullptr;
+
+	if (!bHasSave)
+	{
+		// Prefer focusing FirstTimeDlg if shown
+		if (UBaseScreen* Top = Screen->GetCurrentDialog()) // add getter (below)
+			FocusWidget = Cast<UUserWidget>(Top);
+	}
+
+	// Fallback focus: MenuDlg
+	if (!FocusWidget)
+		FocusWidget = Screen->GetMenuDlg();
+
+	if (FocusWidget)
+	{
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(FocusWidget->TakeWidget());
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(InputMode);
+		PC->SetShowMouseCursor(true);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShowMainMenuScreen: Nothing focusable to focus (MenuDlg/FirstTimeDlg missing?)"));
 	}
 }
 
@@ -413,16 +458,23 @@ void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitial
 
 void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<UFirstRun>FirstRunDlgWidget(TEXT("/Game/Screens/Main/WB_FirstRunDlg"));
-	if (!ensure(FirstRunDlgWidget.Class != nullptr))
+	static ConstructorHelpers::FClassFinder<UFirstTimeDlg>FirstTimeDlgWidget(TEXT("/Game/Screens/Main/WB_FirstRunDlg"));
+	if (!ensure(FirstTimeDlgWidget.Class != nullptr))
 	{
 		return;
 	}
-	FirstRunDlgWidgetClass = FirstRunDlgWidget.Class;
+	FirstTimeDlgWidgetClass = FirstTimeDlgWidget.Class;
 }
 
 void USSWGameInstance::RemoveScreens()
 {
+	if (MenuScreen)
+	{
+		MenuScreen->TearDown();
+		MenuScreen->RemoveFromParent();
+		MenuScreen = nullptr;
+	}
+	
 	if (CampaignScreen) {
 		//RemoveCampaignScreen();
 	}
@@ -445,41 +497,6 @@ void USSWGameInstance::OnGameTimerTick()
 	SetGameTime(GetGameTime() + 1);
 	SetCampaignTime(GetCampaignTime() + 1);
 	UE_LOG(LogTemp, Log, TEXT("Campaign Timer: %d"), GetCampaignTime());
-}
-
-void USSWGameInstance::ShowMainMenuScreen()
-{
-	//MusicController->PlayMusic(MenuMusic); 
-	RemoveScreens();
-
-	// Create widget
-	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
-	// Add it to viewport
-	MainMenuDlg->AddToViewport(100);
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(MainMenuDlg->TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
-		}
-	}
-	ShowQuitDlg();
-	ShowFirstRunDlg();
-
-	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
-		ToggleFirstRunDlg(false);
-	}
-	else
-	{
-		ToggleFirstRunDlg(true);
-	}
 }
 
 void USSWGameInstance::ShowCampaignScreen()
@@ -622,9 +639,9 @@ void USSWGameInstance::ShowQuitDlg()
 void USSWGameInstance::ShowFirstRunDlg()
 {
 	// Create widget
-	FirstRunDlg = CreateWidget<UFirstRun>(this, FirstRunDlgWidgetClass);
+	FirstTimeDlg = CreateWidget<UFirstTimeDlg>(this, FirstTimeDlgWidgetClass);
 	// Add it to viewport
-	FirstRunDlg->AddToViewport(102);
+	FirstTimeDlg->AddToViewport(102);
 
 	UWorld* World = GetWorld();
 	if (World)
@@ -633,7 +650,7 @@ void USSWGameInstance::ShowFirstRunDlg()
 		if (PlayerController)
 		{
 			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(FirstRunDlg->TakeWidget());
+			InputModeData.SetWidgetToFocus(FirstTimeDlg->TakeWidget());
 			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 			PlayerController->SetInputMode(InputModeData);
 			PlayerController->SetShowMouseCursor(true);
@@ -655,12 +672,12 @@ void USSWGameInstance::ToggleQuitDlg(bool bVisible)
 
 void USSWGameInstance::ToggleFirstRunDlg(bool bVisible)
 {
-	if (FirstRunDlg) {
+	if (FirstTimeDlg) {
 		if (bVisible) {
-			FirstRunDlg->SetVisibility(ESlateVisibility::Visible);
+			FirstTimeDlg->SetVisibility(ESlateVisibility::Visible);
 		}
 		else {
-			FirstRunDlg->SetVisibility(ESlateVisibility::Collapsed);
+			FirstTimeDlg->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 	//if (MainMenuDlg) {
@@ -670,9 +687,9 @@ void USSWGameInstance::ToggleFirstRunDlg(bool bVisible)
 
 void USSWGameInstance::ToggleMenuButtons(bool bVisible)
 {
-	if (MainMenuDlg) {
-		MainMenuDlg->EnableMenuButtons(bVisible);
-	}
+	//if (MainMenuDlg) {
+	//	MainMenuDlg->EnableMenuButtons(bVisible);
+	//}
 }
 
 void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {

@@ -63,6 +63,7 @@
 // =========================================================================
 
 #include "TimerSubsystem.h"
+#include "MenuScreen.h"
 // =========================================================================
 // Generated
 // =========================================================================
@@ -85,7 +86,7 @@ class AMusicController;
 class ACombatGroupLoader;
 class UQuitDlg;
 class UMenuDlg;
-class UFirstRun;
+class UFirstTimeDlg;
 class UCampaignScreen;
 class UOperationsScreen;
 class UCampaignLoading;
@@ -141,8 +142,6 @@ public:
 	// =====================================================================
 	// Screen / Level Loading
 	// =====================================================================
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void LoadMainMenuScreen();
 
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void LoadTransitionScreen();
@@ -454,7 +453,7 @@ public:
 	UCampaignLoading* CampaignLoading;
 	UMissionLoading* MissionLoadingScreen;
 	UQuitDlg* QuitDlg;
-	UFirstRun* FirstRunDlg;
+	UFirstTimeDlg* FirstTimeDlg;
 
 	UPROPERTY()
 	AMusicController* MusicController;
@@ -670,6 +669,14 @@ protected:
 
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 
+	// Assign this in your GameInstance Blueprint defaults:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UMenuScreen> MenuScreenWidgetClass;
+
+	// Instance
+	UPROPERTY()
+	TObjectPtr<UMenuScreen> MenuScreen;
+
 private:
 	UPROPERTY()
 	int64 GameTime;
@@ -718,7 +725,7 @@ private:
 	TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;
 	TSubclassOf<class UMissionLoading> MissionLoadingWidgetClass;
 	TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
-	TSubclassOf<class UFirstRun> FirstRunDlgWidgetClass;
+	TSubclassOf<class UFirstTimeDlg> FirstTimeDlgWidgetClass;
 
 	void HandleUniverseMinuteAutosave(uint64 UniverseSecondsNow);
 

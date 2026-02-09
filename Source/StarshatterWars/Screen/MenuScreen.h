@@ -1,26 +1,13 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         MenuScreen.h
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    UMenuScreen (simplified)
-    - Owns top-level menu dialogs + mission editor dialogs.
-    - Owns a single UOptionsScreen that manages ALL options subdialogs (Audio/Video/Controls/etc).
-    - MenuScreen no longer knows about UAudioDlg/UVideoDlg/UOptDlg/UControlOptionsDlg/etc.
-*/
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 #include "MenuScreen.generated.h"
 
-// Top-level dialogs:
+// ------------------------------------------------------------
+// Forward declarations (dialogs)
+// ------------------------------------------------------------
+
 class UMenuDlg;
 class UExitDlg;
 class UConfirmDlg;
@@ -40,8 +27,9 @@ class UMissionEditorNavDlg;
 class ULoadDlg;
 class UTacRefDlg;
 
-// NEW: Options hub (manager of all option subdialogs)
 class UOptionsScreen;
+
+// ------------------------------------------------------------
 
 UCLASS()
 class STARSHATTERWARS_API UMenuScreen : public UBaseScreen
@@ -51,26 +39,33 @@ class STARSHATTERWARS_API UMenuScreen : public UBaseScreen
 public:
     UMenuScreen(const FObjectInitializer& ObjectInitializer);
 
+    // ------------------------------------------------------------
+    // UUserWidget / BaseScreen overrides
+    // ------------------------------------------------------------
+
+    virtual void NativeConstruct() override;
+    virtual void ExecFrame(double DeltaTime) override;
+
+    virtual void Show() override;
+    virtual void Hide() override;
+
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
+
+    // ------------------------------------------------------------
+    // Setup / teardown
+    // ------------------------------------------------------------
+
     void Setup();
     void TearDown();
 
-    bool CloseTopmost();
-
-    bool IsShown() const { return bIsShown; }
-    void Show();
-    void Hide();
-
-    virtual void ExecFrame(double DeltaTime);
-
     // ------------------------------------------------------------
-    // Primary routing
+    // Dialog routing API (called by dialogs)
     // ------------------------------------------------------------
 
     void ShowMenuDlg();
-
     void ShowCampaignSelectDlg();
     void ShowMissionSelectDlg();
-
     void ShowMissionEditorDlg();
 
     void ShowMsnElemDlg();
@@ -89,96 +84,154 @@ public:
     void ShowAwardDlg();
 
     void ShowExitDlg();
-
     void ShowConfirmDlg();
     void HideConfirmDlg();
 
     void ShowLoadDlg();
     void HideLoadDlg();
 
-    // ------------------------------------------------------------
-    // Options hub (single entry point)
-    // ------------------------------------------------------------
+    // Options hub
     void ShowOptionsScreen();
     void HideOptionsScreen();
-
-    // Optional: if OptionsScreen wants to return to menu:
     void ReturnFromOptions();
 
+    UTacRefDlg* GetTacRefDlg() const { return TacRefDlg; }
+    UOptionsScreen* GetOptionsScreen() const { return OptionsScreen; }
+    UMissionEditorDlg* GetMsnEditDlg() const { return MsnEditDlg; }
+
+    UBaseScreen* GetCurrentDialog() const { return CurrentDialog; }
+
+    UMenuDlg* GetMenuDlg() const { return MenuDlg; }
+    ULoadDlg* GetLoadDlg() const { return LoadDlg; }
+
     // ------------------------------------------------------------
-    // Getters (used by other UI)
+    // Close / back navigation
     // ------------------------------------------------------------
-    UMissionEditorDlg* GetMsnEditDlg()  const { return MsnEditDlg; }
-    UMissionElementDlg* GetMsnElemDlg()  const { return MsnElemDlg; }
-    UMissionEventDlg* GetMsnEventDlg() const { return MsnEventDlg; }
-    UMissionEditorNavDlg* GetNavDlg()      const { return MsnEditNavDlg; }
-    ULoadDlg* GetLoadDlg()     const { return LoadDlg; }
+
+    bool CloseTopmost();
 
 protected:
-    virtual void NativeConstruct() override;
+    // ------------------------------------------------------------
+    // Internal helpers
+    // ------------------------------------------------------------
 
-    virtual void HandleAccept() override;
-    virtual void HandleCancel() override;
-
-private:
-    void HideAll();
+    template<typename TDialog>
+    TDialog* EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr<TDialog>& Storage);
 
     void ShowDialog(UBaseScreen* Dialog, bool bTopMost);
     void HideDialog(UBaseScreen* Dialog);
+    void HideAll();
 
-    template<typename TDialog>
-    TDialog* EnsureDialog(TSubclassOf<UBaseScreen> ClassToSpawn, TDialog*& Storage);
+protected:
+    // ------------------------------------------------------------
+    // Class references (set in MenuScreen BP)
+    // ------------------------------------------------------------
 
-private:
-    // Spawn classes
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MenuDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ExitDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> ConfirmDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UMenuDlg> MenuDlgClass;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> FirstTimeDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> PlayerDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> AwardDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UExitDlg> ExitDlgClass;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnSelectDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> CmpSelectDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEditDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnElemDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEventDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> MsnEditNavDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UConfirmDlg> ConfirmDlgClass;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> LoadDlgClass;
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> TacRefDlgClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UFirstTimeDlg> FirstTimeDlgClass;
 
-    // NEW: Options hub class
-    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes") TSubclassOf<UBaseScreen> OptionsScreenClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UPlayerDlg> PlayerDlgClass;
 
-private:
-    // Instances (raw pointers; rooted)
-    UMenuDlg* MenuDlg = nullptr;
-    UExitDlg* ExitDlg = nullptr;
-    UConfirmDlg* ConfirmDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UAwardShowDlg> AwardDlgClass;
 
-    UFirstTimeDlg* FirstTimeDlg = nullptr;
-    UPlayerDlg* PlayerDlg = nullptr;
-    UAwardShowDlg* AwardDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UMissionSelectDlg> MsnSelectDlgClass;
 
-    UMissionSelectDlg* MissionSelectDlg = nullptr;
-    UCampaignSelectDlg* CmpSelectDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UCampaignSelectDlg> CmpSelectDlgClass;
 
-    UMissionEditorDlg* MsnEditDlg = nullptr;
-    UMissionElementDlg* MsnElemDlg = nullptr;
-    UMissionEventDlg* MsnEventDlg = nullptr;
-    UMissionEditorNavDlg* MsnEditNavDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UMissionEditorDlg> MsnEditDlgClass;
 
-    ULoadDlg* LoadDlg = nullptr;
-    UTacRefDlg* TacRefDlg = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UMissionElementDlg> MsnElemDlgClass;
 
-    // NEW: Options hub instance
-    UOptionsScreen* OptionsScreen = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UMissionEventDlg> MsnEventDlgClass;
 
-    // Tracks active “front-most” dialog:
-    UBaseScreen* CurrentDialog = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UMissionEditorNavDlg> MsnEditNavDlgClass;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<ULoadDlg> LoadDlgClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UTacRefDlg> TacRefDlgClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
+    TSubclassOf<UOptionsScreen> OptionsScreenClass;
+
+protected:
+    // ------------------------------------------------------------
+    // Dialog instances (GC-safe)
+    // ------------------------------------------------------------
+
+    UPROPERTY()
+    TObjectPtr<UMenuDlg> MenuDlg;
+
+    UPROPERTY()
+    TObjectPtr<UExitDlg> ExitDlg;
+
+    UPROPERTY()
+    TObjectPtr<UConfirmDlg> ConfirmDlg;
+
+    UPROPERTY()
+    TObjectPtr<UFirstTimeDlg> FirstTimeDlg;
+
+    UPROPERTY()
+    TObjectPtr<UPlayerDlg> PlayerDlg;
+
+    UPROPERTY()
+    TObjectPtr<UAwardShowDlg> AwardDlg;
+
+    UPROPERTY()
+    TObjectPtr<UMissionSelectDlg> MissionSelectDlg;
+
+    UPROPERTY()
+    TObjectPtr<UCampaignSelectDlg> CmpSelectDlg;
+
+    UPROPERTY()
+    TObjectPtr<UMissionEditorDlg> MsnEditDlg;
+
+    UPROPERTY()
+    TObjectPtr<UMissionElementDlg> MsnElemDlg;
+
+    UPROPERTY()
+    TObjectPtr<UMissionEventDlg> MsnEventDlg;
+
+    UPROPERTY()
+    TObjectPtr<UMissionEditorNavDlg> MsnEditNavDlg;
+
+    UPROPERTY()
+    TObjectPtr<ULoadDlg> LoadDlg;
+
+    UPROPERTY()
+    TObjectPtr<UTacRefDlg> TacRefDlg;
+
+    UPROPERTY()
+    TObjectPtr<UOptionsScreen> OptionsScreen;
+
+
+
+protected:
+    // ------------------------------------------------------------
+    // State
+    // ------------------------------------------------------------
+
+    UPROPERTY()
+    TObjectPtr<UBaseScreen> CurrentDialog;
+
+    int32 ZCounter = 0;
     bool  bIsShown = false;
-    int32 ZCounter = 100;
 };

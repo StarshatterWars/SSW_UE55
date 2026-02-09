@@ -5,10 +5,6 @@
     SUBSYSTEM:    Stars.exe
     FILE:         MenuDlg.cpp
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Main Menu dialog (legacy MenuDlg) implementation for Unreal UMG.
 */
 
 #include "MenuDlg.h"
@@ -30,15 +26,105 @@ UMenuDlg::UMenuDlg(const FObjectInitializer& ObjectInitializer)
 {
 }
 
+void UMenuDlg::NativeOnInitialized()
+{
+    Super::NativeOnInitialized();
+
+    // Static strings (only need to set once)
+    AltStart = TEXT("Start a new game, or resume your current game");
+    AltCampaign = TEXT("Start a new dynamic campaign, or load a saved game");
+    AltMission = TEXT("Play or create a scripted mission exercise");
+    AltMulti = TEXT("Start or join a multiplayer scenario");
+    AltPlayer = TEXT("Manage your logbook and player preferences");
+    AltOptions = TEXT("Audio, Video, Gameplay, Control, and Mod configuration options");
+    AltTac = TEXT("View ship and weapon stats and mission roles");
+    AltQuit = TEXT("Exit Starshatter and return to Windows");
+
+    BindUMGDelegates();
+}
+
 void UMenuDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    // Cache legacy singletons (fine to do here)
     Stars = Starshatter::GetInstance();
     CampaignPtr = Campaign::GetCampaign();
 
-    RegisterControls();
+    // Version text
+    if (VersionText)
+    {
+        VersionText->SetText(FText::FromString(Game::VersionInfo));
+    }
+    else
+    {
+        UE_LOG(LogMenuDlg, Warning, TEXT("VersionText is not bound (BindWidgetOptional)."));
+    }
 
+    RefreshFromPlayerState();
+    ApplyMenuGating();
+
+    // First run routing AFTER gating
+    if (bFirstRun_NoPlayerSave)
+    {
+        if (Manager)
+        {
+            Manager->ShowFirstTimeDlg();
+        }
+        else
+        {
+            UE_LOG(LogMenuDlg, Warning, TEXT("First run detected, but Manager is null (ExposeOnSpawn not set?)."));
+        }
+    }
+
+    Show();
+}
+
+void UMenuDlg::BindUMGDelegates()
+{
+    if (bDelegatesBound)
+        return;
+
+    // Click bindings:
+    if (BtnStart)    BtnStart->OnClicked.AddDynamic(this, &UMenuDlg::OnStart);
+    if (BtnCampaign) BtnCampaign->OnClicked.AddDynamic(this, &UMenuDlg::OnCampaign);
+    if (BtnMission)  BtnMission->OnClicked.AddDynamic(this, &UMenuDlg::OnMission);
+    if (BtnPlayer)   BtnPlayer->OnClicked.AddDynamic(this, &UMenuDlg::OnPlayer);
+    if (BtnMulti)    BtnMulti->OnClicked.AddDynamic(this, &UMenuDlg::OnMultiplayer);
+
+    if (BtnVideo)    BtnVideo->OnClicked.AddDynamic(this, &UMenuDlg::OnVideo);
+    if (BtnOptions)  BtnOptions->OnClicked.AddDynamic(this, &UMenuDlg::OnOptions);
+    if (BtnControls) BtnControls->OnClicked.AddDynamic(this, &UMenuDlg::OnControls);
+
+    if (BtnMod)      BtnMod->OnClicked.AddDynamic(this, &UMenuDlg::OnMod);
+    if (BtnTac)      BtnTac->OnClicked.AddDynamic(this, &UMenuDlg::OnTacReference);
+    if (BtnQuit)     BtnQuit->OnClicked.AddDynamic(this, &UMenuDlg::OnQuit);
+
+    // Hover bindings:
+    if (BtnStart) { BtnStart->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Start);      BtnStart->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Start); }
+    if (BtnCampaign) { BtnCampaign->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Campaign); BtnCampaign->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Campaign); }
+    if (BtnMission) { BtnMission->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Mission);  BtnMission->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Mission); }
+    if (BtnPlayer) { BtnPlayer->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Player);   BtnPlayer->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Player); }
+    if (BtnMulti) { BtnMulti->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Multi);     BtnMulti->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Multi); }
+    if (BtnOptions) { BtnOptions->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Options); BtnOptions->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Options); }
+    if (BtnTac) { BtnTac->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Tac);         BtnTac->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Tac); }
+    if (BtnQuit) { BtnQuit->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Quit);       BtnQuit->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Quit); }
+
+    // If *everything* is null, your BP widget names don’t match, or they’re not marked “Is Variable”
+    const bool bAny =
+        (BtnStart || BtnCampaign || BtnMission || BtnPlayer || BtnMulti ||
+            BtnVideo || BtnOptions || BtnControls || BtnMod || BtnTac || BtnQuit);
+
+    if (!bAny)
+    {
+        UE_LOG(LogMenuDlg, Error, TEXT("NO BUTTON WIDGETS ARE BOUND. Check BP widget names match C++ (BtnStart, BtnCampaign, etc) and are variables."));
+    }
+
+    bDelegatesBound = true;
+}
+
+void UMenuDlg::RefreshFromPlayerState()
+{
     // Default assumptions
     bFirstRun_NoPlayerSave = false;
     bHasCampaignSelected = true;
@@ -66,63 +152,6 @@ void UMenuDlg::NativeConstruct()
             }
         }
     }
-
-    ApplyMenuGating();
-
-    // First run routing AFTER gating
-    if (bFirstRun_NoPlayerSave)
-    {
-        if (Manager)
-        {
-            Manager->ShowFirstTimeDlg();
-        }
-    }
-
-    Show();
-}
-
-void UMenuDlg::RegisterControls()
-{
-    // Click bindings:
-    if (BtnStart)    BtnStart->OnClicked.AddDynamic(this, &UMenuDlg::OnStart);
-    if (BtnCampaign) BtnCampaign->OnClicked.AddDynamic(this, &UMenuDlg::OnCampaign);
-    if (BtnMission)  BtnMission->OnClicked.AddDynamic(this, &UMenuDlg::OnMission);
-    if (BtnPlayer)   BtnPlayer->OnClicked.AddDynamic(this, &UMenuDlg::OnPlayer);
-    if (BtnMulti)    BtnMulti->OnClicked.AddDynamic(this, &UMenuDlg::OnMultiplayer);
-
-    if (BtnVideo)    BtnVideo->OnClicked.AddDynamic(this, &UMenuDlg::OnVideo);
-    if (BtnOptions)  BtnOptions->OnClicked.AddDynamic(this, &UMenuDlg::OnOptions);
-    if (BtnControls) BtnControls->OnClicked.AddDynamic(this, &UMenuDlg::OnControls);
-
-    if (BtnMod)      BtnMod->OnClicked.AddDynamic(this, &UMenuDlg::OnMod);
-    if (BtnTac)      BtnTac->OnClicked.AddDynamic(this, &UMenuDlg::OnTacReference);
-    if (BtnQuit)     BtnQuit->OnClicked.AddDynamic(this, &UMenuDlg::OnQuit);
-
-    // Hover “alt text”:
-    AltStart = TEXT("Start a new game, or resume your current game");
-    AltCampaign = TEXT("Start a new dynamic campaign, or load a saved game");
-    AltMission = TEXT("Play or create a scripted mission exercise");
-    AltMulti = TEXT("Start or join a multiplayer scenario");
-    AltPlayer = TEXT("Manage your logbook and player preferences");
-    AltOptions = TEXT("Audio, Video, Gameplay, Control, and Mod configuration options");
-    AltTac = TEXT("View ship and weapon stats and mission roles");
-    AltQuit = TEXT("Exit Starshatter and return to Windows");
-
-    // Hover bindings:
-    if (BtnStart) { BtnStart->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Start);   BtnStart->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Start); }
-    if (BtnCampaign) { BtnCampaign->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Campaign); BtnCampaign->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Campaign); }
-    if (BtnMission) { BtnMission->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Mission);  BtnMission->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Mission); }
-    if (BtnPlayer) { BtnPlayer->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Player);   BtnPlayer->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Player); }
-    if (BtnMulti) { BtnMulti->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Multi);     BtnMulti->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Multi); }
-    if (BtnOptions) { BtnOptions->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Options); BtnOptions->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Options); }
-    if (BtnTac) { BtnTac->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Tac);        BtnTac->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Tac); }
-    if (BtnQuit) { BtnQuit->OnHovered.AddDynamic(this, &UMenuDlg::OnButtonEnter_Quit);      BtnQuit->OnUnhovered.AddDynamic(this, &UMenuDlg::OnButtonExit_Quit); }
-
-    // Version text:
-    if (VersionText)
-    {
-        VersionText->SetText(FText::FromString(Game::VersionInfo));
-    }
 }
 
 void UMenuDlg::Show()
@@ -134,7 +163,7 @@ void UMenuDlg::Show()
     ClearDescription();
 }
 
-void UMenuDlg::ExecFrame()
+void UMenuDlg::ExecFrame(double DeltaTime)
 {
     // Legacy was empty.
 }
@@ -146,34 +175,52 @@ void UMenuDlg::ExecFrame()
 void UMenuDlg::OnStart()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnStart()"));
+
     if (Stars)
         Stars->StartOrResumeGame();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Stars is null in OnStart()."));
 }
 
 void UMenuDlg::OnCampaign()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnCampaign()"));
+
     if (Manager)
         Manager->ShowCampaignSelectDlg();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnCampaign()."));
 }
 
 void UMenuDlg::OnMission()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnMission()"));
+
     if (Manager)
         Manager->ShowMissionSelectDlg();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnMission()."));
 }
 
 void UMenuDlg::OnPlayer()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnPlayer()"));
+
     if (Manager)
         Manager->ShowPlayerDlg();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnPlayer()."));
 }
 
 void UMenuDlg::OnMultiplayer()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnMultiplayer()"));
+
     // Hook this up when you implement multiplayer lobby routing
     // if (Manager) Manager->ShowMultiplayerDlg();
 }
@@ -181,45 +228,63 @@ void UMenuDlg::OnMultiplayer()
 void UMenuDlg::OnMod()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnMod()"));
     // Hook later
 }
 
 void UMenuDlg::OnVideo()
 {
     ClearDescription();
-    // NEW: MenuScreen no longer exposes ShowVidDlg; everything goes through Options hub
+    UE_LOG(LogMenuDlg, Log, TEXT("OnVideo()"));
+
     if (Manager)
         Manager->ShowOptionsScreen();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnVideo()."));
 }
 
 void UMenuDlg::OnOptions()
 {
     ClearDescription();
-    // NEW: route to Options hub
+    UE_LOG(LogMenuDlg, Log, TEXT("OnOptions()"));
+
     if (Manager)
         Manager->ShowOptionsScreen();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnOptions()."));
 }
 
 void UMenuDlg::OnControls()
 {
     ClearDescription();
-    // NEW: route to Options hub
+    UE_LOG(LogMenuDlg, Log, TEXT("OnControls()"));
+
     if (Manager)
         Manager->ShowOptionsScreen();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnControls()."));
 }
 
 void UMenuDlg::OnTacReference()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnTacReference()"));
+
     if (Stars)
         Stars->OpenTacticalReference();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Stars is null in OnTacReference()."));
 }
 
 void UMenuDlg::OnQuit()
 {
     ClearDescription();
+    UE_LOG(LogMenuDlg, Log, TEXT("OnQuit()"));
+
     if (Manager)
         Manager->ShowExitDlg();
+    else
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnQuit()."));
 }
 
 // --------------------------------------------------------------------
@@ -290,6 +355,8 @@ void UMenuDlg::EnableMenuButtons(bool bEnable)
 
     SetButtonEnabled(BtnMod, bEnable);
     SetButtonEnabled(BtnTac, bEnable);
+
+    // Quit is always allowed in your legacy logic
     SetButtonEnabled(BtnQuit, true);
 }
 
@@ -314,7 +381,7 @@ void UMenuDlg::ApplyMenuGating()
         SetButtonEnabled(BtnTac, true);
         SetButtonEnabled(BtnCampaign, true);
 
-        // Options hub buttons (your implementation routes these all to OptionsScreen)
+        // Options hub buttons
         SetButtonEnabled(BtnOptions, true);
         SetButtonEnabled(BtnVideo, true);
         SetButtonEnabled(BtnControls, true);

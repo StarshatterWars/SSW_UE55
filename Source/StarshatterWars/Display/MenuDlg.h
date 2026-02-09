@@ -8,9 +8,9 @@
 
     OVERVIEW
     ========
-    Main Menu dialog (legacy MenuDlg) adapted for Unreal UMG.
-    - Pure dialog widget: button wiring + hover description.
-    - Delegates navigation to UMenuScreen (the router/manager).
+    Main Menu dialog (legacy MenuDlg) implementation for Unreal UMG.
+    - 100% UMG-driven input (OnClicked/OnHovered)
+    - UFUNCTION bindings for dynamic delegates
 */
 
 #pragma once
@@ -19,16 +19,13 @@
 #include "BaseScreen.h"
 #include "MenuDlg.generated.h"
 
-// Forward declarations (UMG)
 class UButton;
 class UTextBlock;
 
-// Manager/router
-class UMenuScreen;
-
-// Legacy
+// Legacy forward decls:
 class Starshatter;
 class Campaign;
+class UMenuScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UMenuDlg : public UBaseScreen
@@ -38,35 +35,141 @@ class STARSHATTERWARS_API UMenuDlg : public UBaseScreen
 public:
     UMenuDlg(const FObjectInitializer& ObjectInitializer);
 
+protected:
+    // Bind once (preferred for delegates)
+    virtual void NativeOnInitialized() override;
+
+    // Use for per-show refresh / gating re-eval
     virtual void NativeConstruct() override;
 
-    // Manager wiring:
-    void SetManager(UMenuScreen* InManager) { Manager = InManager; }
-    UMenuScreen* GetManager() const { return Manager; }
+public:
+    virtual void ExecFrame(double DeltaTime) override;
 
-    // Legacy parity:
-    void RegisterControls();
-    void Show();
-    void ExecFrame();
+    // Manager/router (set this when you create the widget)
+    UPROPERTY(BlueprintReadWrite, Category = "Menu", meta = (ExposeOnSpawn = "true"))
+    TObjectPtr<UMenuScreen> Manager = nullptr;
 
-    UFUNCTION(BlueprintCallable)
+protected:
+    // ------------------------------------------------------------
+    // UMG Widgets (names must match Blueprint widget names exactly)
+    // ------------------------------------------------------------
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnStart;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnCampaign;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnMission;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnPlayer;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnMulti;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnVideo;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnOptions;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnControls;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnMod;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnTac;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> BtnQuit;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> DescriptionText;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> VersionText;
+
+    // ------------------------------------------------------------
+    // Runtime state
+    // ------------------------------------------------------------
+
+    Starshatter* Stars = nullptr;
+    Campaign* CampaignPtr = nullptr;
+
+    bool bFirstRun_NoPlayerSave = false;
+    bool bHasCampaignSelected = true;
+    bool bDelegatesBound = false;
+
+    // Hover “alt text”
+    FString AltStart;
+    FString AltCampaign;
+    FString AltMission;
+    FString AltMulti;
+    FString AltPlayer;
+    FString AltOptions;
+    FString AltTac;
+    FString AltQuit;
+
+protected:
+    // ------------------------------------------------------------
+    // Binding + lifecycle helpers
+    // ------------------------------------------------------------
+
+    void BindUMGDelegates();
+    void RefreshFromPlayerState();
+    void ApplyMenuGating();
     void EnableMenuButtons(bool bEnable);
+    void SetButtonEnabled(UButton* Button, bool bEnable);
+    void Show();
 
-    // Click handlers:
-    UFUNCTION() void OnStart();
-    UFUNCTION() void OnCampaign();
-    UFUNCTION() void OnMission();
-    UFUNCTION() void OnPlayer();
-    UFUNCTION() void OnMultiplayer();
-    UFUNCTION() void OnMod();
-    UFUNCTION() void OnTacReference();
+    void ClearDescription();
+    void SetDescription(const FString& Text);
 
-    UFUNCTION() void OnVideo();    // now routes to Options hub
-    UFUNCTION() void OnOptions();  // now routes to Options hub
-    UFUNCTION() void OnControls(); // now routes to Options hub
-    UFUNCTION() void OnQuit();
+    // ------------------------------------------------------------
+    // Click handlers (MUST be UFUNCTION for AddDynamic)
+    // ------------------------------------------------------------
 
-    // Hover handlers:
+    UFUNCTION()
+    void OnStart();
+
+    UFUNCTION()
+    void OnCampaign();
+
+    UFUNCTION()
+    void OnMission();
+
+    UFUNCTION()
+    void OnPlayer();
+
+    UFUNCTION()
+    void OnMultiplayer();
+
+    UFUNCTION()
+    void OnMod();
+
+    UFUNCTION()
+    void OnVideo();
+
+    UFUNCTION()
+    void OnOptions();
+
+    UFUNCTION()
+    void OnControls();
+
+    UFUNCTION()
+    void OnTacReference();
+
+    UFUNCTION()
+    void OnQuit();
+
+    // ------------------------------------------------------------
+    // Hover handlers (MUST be UFUNCTION for AddDynamic)
+    // ------------------------------------------------------------
+
     UFUNCTION() void OnButtonEnter_Start();
     UFUNCTION() void OnButtonExit_Start();
 
@@ -90,49 +193,4 @@ public:
 
     UFUNCTION() void OnButtonEnter_Quit();
     UFUNCTION() void OnButtonExit_Quit();
-
-protected:
-    UPROPERTY(Transient)
-    TObjectPtr<UMenuScreen> Manager = nullptr;
-
-    // Bound widgets:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnStart = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnCampaign = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnMission = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnPlayer = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnMulti = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnMod = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnTac = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnVideo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnOptions = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnControls = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnQuit = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* VersionText = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* DescriptionText = nullptr;
-
-    // Legacy pointers:
-    Starshatter* Stars = nullptr;
-    Campaign* CampaignPtr = nullptr;
-
-    // Hover text:
-    FString AltStart;
-    FString AltCampaign;
-    FString AltMission;
-    FString AltPlayer;
-    FString AltMulti;
-    FString AltOptions;
-    FString AltTac;
-    FString AltQuit;
-
-    bool bFirstRun_NoPlayerSave = false;
-    bool bHasCampaignSelected = false;
-
-    void ApplyMenuGating();
-
-private:
-    void ClearDescription();
-    void SetDescription(const FString& Text);
-    void SetButtonEnabled(UButton* Button, bool bEnable);
 };

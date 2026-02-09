@@ -70,7 +70,7 @@ void AGameLoader::InitializeGame()
 void AGameLoader::LoadMainMenu()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->LoadMainMenuScreen();
+	SSWInstance->ShowMainMenuScreen();
 }
 
 void AGameLoader::LoadOrCreateUniverse()

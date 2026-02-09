@@ -81,6 +81,7 @@
 #include "Math/Vector.h"
 #include "Math/RandomStream.h"
 #include "HAL/PlatformString.h"
+#include "Containers/StringConv.h"
 
 // NOTE: Render assets like Bitmap are handled as Unreal assets elsewhere (e.g., UTexture2D*).
 // This translation unit does notxinclude Bitmap.h.
@@ -1737,7 +1738,10 @@ Sim::ResolveHyperList()
 
 					// if using farcaster:
 					if (jump->fc_src) {
-						Print(TEXT("Ship '%s' farcast to '%s'\n"), jumpship->Name(), dest->GetName());
+						UE_LOG(LogTemp, Log, TEXT("Ship '%s' farcast to '%s'"),
+							UTF8_TO_TCHAR(jumpship->Name()),
+							UTF8_TO_TCHAR(dest->GetName())
+						);
 						CreateExplosion(jumpship->Location(), FVector::ZeroVector, Explosion::QUANTUM_FLASH, 1.0f, 0.0f, dest);
 
 						if (jump->fc_dst) {

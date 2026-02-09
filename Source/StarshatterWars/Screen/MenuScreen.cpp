@@ -2,27 +2,24 @@
 
 // UE:
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 
 // Dialogs:
 #include "MenuDlg.h"
 #include "ExitDlg.h"
 #include "ConfirmDlg.h"
-
 #include "FirstTimeDlg.h"
 #include "PlayerDlg.h"
 #include "AwardShowDlg.h"
-
 #include "MissionSelectDlg.h"
 #include "CampaignSelectDlg.h"
-
 #include "MissionEditorDlg.h"
 #include "MissionElementDlg.h"
 #include "MissionEventDlg.h"
 #include "MissionEditorNavDlg.h"
-
 #include "LoadDlg.h"
 #include "TacRefDlg.h"
-
+#include "Blueprint/UserWidget.h"
 // NEW:
 #include "OptionsScreen.h"
 
@@ -36,15 +33,17 @@ UMenuScreen::UMenuScreen(const FObjectInitializer& ObjectInitializer)
 void UMenuScreen::NativeConstruct()
 {
     Super::NativeConstruct();
-    // Setup(); // optional
+
+    // Optional: eagerly build everything once
+    // Setup();
 }
 
 // ------------------------------------------------------------
-// Dialog creation (raw pointers + AddToRoot to prevent GC)
+// Dialog creation (GC-safe via UPROPERTY storage)
 // ------------------------------------------------------------
 
 template<typename TDialog>
-TDialog* UMenuScreen::EnsureDialog(TSubclassOf<UBaseScreen> ClassToSpawn, TDialog*& Storage)
+TDialog* UMenuScreen::EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr<TDialog>& Storage)
 {
     if (Storage)
         return Storage;
@@ -52,20 +51,21 @@ TDialog* UMenuScreen::EnsureDialog(TSubclassOf<UBaseScreen> ClassToSpawn, TDialo
     if (!ClassToSpawn)
         return nullptr;
 
-    UWorld* World = GetWorld();
-    if (!World)
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("EnsureDialog: OwningPlayer is null (%s)"), *GetName());
+        return nullptr;
+    }
+
+    Storage = CreateWidget<TDialog>(PC, ClassToSpawn);
+    if (!Storage)
         return nullptr;
 
-    UBaseScreen* Created = CreateWidget<UBaseScreen>(World, ClassToSpawn);
-    Storage = Cast<TDialog>(Created);
-
-    if (Storage)
-    {
-        Storage->AddToRoot();
-        Storage->AddToViewport(0);
-        Storage->SetVisibility(ESlateVisibility::Hidden);
-        Storage->SetDialogInputEnabled(false);
-    }
+    // Keep it around; hide until needed
+    Storage->AddToViewport(0);
+    Storage->SetVisibility(ESlateVisibility::Hidden);
+    Storage->SetDialogInputEnabled(false);
 
     return Storage;
 }
@@ -79,15 +79,15 @@ void UMenuScreen::ShowDialog(UBaseScreen* Dialog, bool bTopMost)
     if (!Dialog)
         return;
 
-    if (Dialog->IsInViewport())
-        Dialog->RemoveFromParent();
-
     int32 Z = 0;
     if (bTopMost)
     {
         ++ZCounter;
         Z = ZCounter;
     }
+
+    if (Dialog->IsInViewport())
+        Dialog->RemoveFromParent();
 
     Dialog->AddToViewport(Z);
     Dialog->SetVisibility(ESlateVisibility::Visible);
@@ -129,7 +129,6 @@ void UMenuScreen::HideAll()
     HideDialog(LoadDlg);
     HideDialog(TacRefDlg);
 
-    // NEW: hide options hub
     HideDialog(OptionsScreen);
 
     CurrentDialog = nullptr;
@@ -160,12 +159,10 @@ void UMenuScreen::Setup()
     EnsureDialog<ULoadDlg>(LoadDlgClass, LoadDlg);
     EnsureDialog<UTacRefDlg>(TacRefDlgClass, TacRefDlg);
 
-    // NEW: options hub
     EnsureDialog<UOptionsScreen>(OptionsScreenClass, OptionsScreen);
     if (OptionsScreen)
     {
-        // OptionsScreen needs to return to menu and/or quit confirm sometimes
-        OptionsScreen->SetMenuManager(this); // implement this on OptionsScreen (tiny method)
+        OptionsScreen->SetMenuManager(this);
     }
 
     ShowMenuDlg();
@@ -175,41 +172,38 @@ void UMenuScreen::TearDown()
 {
     HideAll();
 
-    auto Unroot = [](UBaseScreen*& W)
+    // If you truly want to destroy them, RemoveFromParent and null them.
+    // Usually unnecessary; a menu screen lifetime is short.
+    auto Destroy = [](UBaseScreen*& W)
         {
             if (W)
             {
                 if (W->IsInViewport())
                     W->RemoveFromParent();
-
-                if (W->IsRooted())
-                    W->RemoveFromRoot();
-
                 W = nullptr;
             }
         };
 
-    Unroot(reinterpret_cast<UBaseScreen*&>(MenuDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(ExitDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(ConfirmDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(MenuDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(ExitDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(ConfirmDlg));
 
-    Unroot(reinterpret_cast<UBaseScreen*&>(FirstTimeDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(PlayerDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(AwardDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(FirstTimeDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(PlayerDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(AwardDlg));
 
-    Unroot(reinterpret_cast<UBaseScreen*&>(MissionSelectDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(CmpSelectDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(MissionSelectDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(CmpSelectDlg));
 
-    Unroot(reinterpret_cast<UBaseScreen*&>(MsnEditDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(MsnElemDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(MsnEventDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(MsnEditNavDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(MsnEditDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(MsnElemDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(MsnEventDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(MsnEditNavDlg));
 
-    Unroot(reinterpret_cast<UBaseScreen*&>(LoadDlg));
-    Unroot(reinterpret_cast<UBaseScreen*&>(TacRefDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(LoadDlg));
+    Destroy(reinterpret_cast<UBaseScreen*&>(TacRefDlg));
 
-    // NEW:
-    Unroot(reinterpret_cast<UBaseScreen*&>(OptionsScreen));
+    Destroy(reinterpret_cast<UBaseScreen*&>(OptionsScreen));
 
     CurrentDialog = nullptr;
     bIsShown = false;
@@ -228,24 +222,24 @@ void UMenuScreen::ExecFrame(double DeltaTime)
 
 bool UMenuScreen::CloseTopmost()
 {
-    // Mission editor overlays
-    if (MsnElemDlg && MsnElemDlg->IsVisible()) { HideMsnElemDlg(); return true; }
-    if (MsnEventDlg && MsnEventDlg->IsVisible()) { HideMsnEventDlg(); return true; }
+    // Mission editor overlays (top-most first)
+    if (MsnElemDlg && MsnElemDlg->GetVisibility() == ESlateVisibility::Visible) { HideMsnElemDlg(); return true; }
+    if (MsnEventDlg && MsnEventDlg->GetVisibility() == ESlateVisibility::Visible) { HideMsnEventDlg(); return true; }
 
     // Options hub
-    if (OptionsScreen && OptionsScreen->IsVisible())
+    if (OptionsScreen && OptionsScreen->GetVisibility() == ESlateVisibility::Visible)
     {
         ReturnFromOptions();
         return true;
     }
 
-    if (CmpSelectDlg && CmpSelectDlg->IsVisible())
+    if (CmpSelectDlg && CmpSelectDlg->GetVisibility() == ESlateVisibility::Visible)
     {
         ShowMenuDlg();
         return true;
     }
 
-    if (MenuDlg && !MenuDlg->IsVisible())
+    if (MenuDlg && MenuDlg->GetVisibility() != ESlateVisibility::Visible)
     {
         ShowMenuDlg();
         return true;
@@ -294,10 +288,53 @@ void UMenuScreen::Hide()
 
 void UMenuScreen::ShowMenuDlg()
 {
+    // Optional: single-dialog policy
     HideAll();
-    EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
-    ShowDialog(MenuDlg, true);
+
+    if (!MenuDlgClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("UMenuScreen::ShowMenuDlg: MenuDlgClass is NULL (set it in WBP_MenuScreen defaults)"));
+        return;
+    }
+
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("UMenuScreen::ShowMenuDlg: OwningPlayer is NULL"));
+        return;
+    }
+
+    // Lazy create once
+    if (!MenuDlg)
+    {
+        MenuDlg = CreateWidget<UMenuDlg>(PC, MenuDlgClass);
+        if (!MenuDlg)
+        {
+            UE_LOG(LogTemp, Error, TEXT("UMenuScreen::ShowMenuDlg: Failed to create MenuDlg"));
+            return;
+        }
+
+        MenuDlg->Manager = this;
+        MenuDlg->AddToViewport(0);                    // added once; Z handled below
+        MenuDlg->SetDialogInputEnabled(false);
+        MenuDlg->SetVisibility(ESlateVisibility::Hidden);
+    }
+
+    // Always re-assert manager in case of re-instancing
+    MenuDlg->Manager = this;
+
+    // Bring to front (no SetZOrderInViewport dependency)
+    ++ZCounter;
+    if (MenuDlg->IsInViewport())
+        MenuDlg->RemoveFromParent();
+    MenuDlg->AddToViewport(ZCounter);
+
+    MenuDlg->SetVisibility(ESlateVisibility::Visible);
+    MenuDlg->SetDialogInputEnabled(true);
+
+    CurrentDialog = MenuDlg;
 }
+
 
 void UMenuScreen::ShowCampaignSelectDlg()
 {
@@ -325,10 +362,11 @@ void UMenuScreen::ShowMsnElemDlg()
     EnsureDialog<UMissionElementDlg>(MsnElemDlgClass, MsnElemDlg);
     if (!MsnElemDlg) return;
 
-    if (MsnEditDlg && MsnEditDlg->IsVisible())
+    // Keep editor + nav visible behind it (non-topmost)
+    if (MsnEditDlg && MsnEditDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditDlg, false);
 
-    if (MsnEditNavDlg && MsnEditNavDlg->IsVisible())
+    if (MsnEditNavDlg && MsnEditNavDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditNavDlg, false);
 
     ShowDialog(MsnElemDlg, true);
@@ -338,10 +376,10 @@ void UMenuScreen::HideMsnElemDlg()
 {
     HideDialog(MsnElemDlg);
 
-    if (MsnEditDlg && MsnEditDlg->IsVisible())
+    if (MsnEditDlg && MsnEditDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditDlg, true);
 
-    if (MsnEditNavDlg && MsnEditNavDlg->IsVisible())
+    if (MsnEditNavDlg && MsnEditNavDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditNavDlg, true);
 }
 
@@ -350,10 +388,10 @@ void UMenuScreen::ShowMissionEventDlg()
     EnsureDialog<UMissionEventDlg>(MsnEventDlgClass, MsnEventDlg);
     if (!MsnEventDlg) return;
 
-    if (MsnEditDlg && MsnEditDlg->IsVisible())
+    if (MsnEditDlg && MsnEditDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditDlg, false);
 
-    if (MsnEditNavDlg && MsnEditNavDlg->IsVisible())
+    if (MsnEditNavDlg && MsnEditNavDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditNavDlg, false);
 
     ShowDialog(MsnEventDlg, true);
@@ -363,10 +401,10 @@ void UMenuScreen::HideMsnEventDlg()
 {
     HideDialog(MsnEventDlg);
 
-    if (MsnEditDlg && MsnEditDlg->IsVisible())
+    if (MsnEditDlg && MsnEditDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditDlg, true);
 
-    if (MsnEditNavDlg && MsnEditNavDlg->IsVisible())
+    if (MsnEditNavDlg && MsnEditNavDlg->GetVisibility() == ESlateVisibility::Visible)
         ShowDialog(MsnEditNavDlg, true);
 }
 
@@ -375,7 +413,7 @@ void UMenuScreen::ShowNavDlg()
     EnsureDialog<UMissionEditorNavDlg>(MsnEditNavDlgClass, MsnEditNavDlg);
     if (!MsnEditNavDlg) return;
 
-    if (!MsnEditNavDlg->IsVisible())
+    if (MsnEditNavDlg->GetVisibility() != ESlateVisibility::Visible)
     {
         HideAll();
         ShowDialog(MsnEditNavDlg, true);
@@ -389,7 +427,7 @@ void UMenuScreen::HideNavDlg()
 
 bool UMenuScreen::IsNavShown() const
 {
-    return (MsnEditNavDlg && MsnEditNavDlg->IsVisible());
+    return (MsnEditNavDlg && MsnEditNavDlg->GetVisibility() == ESlateVisibility::Visible);
 }
 
 void UMenuScreen::ShowFirstTimeDlg()
@@ -398,8 +436,14 @@ void UMenuScreen::ShowFirstTimeDlg()
     EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
     EnsureDialog<UFirstTimeDlg>(FirstTimeDlgClass, FirstTimeDlg);
 
-    if (MenuDlg)      ShowDialog(MenuDlg, false);
-    if (FirstTimeDlg) ShowDialog(FirstTimeDlg, true);
+    if (MenuDlg)
+    {
+        MenuDlg->Manager = this;
+        ShowDialog(MenuDlg, false);
+    }
+
+    if (FirstTimeDlg)
+        ShowDialog(FirstTimeDlg, true);
 }
 
 void UMenuScreen::ShowPlayerDlg()
@@ -430,8 +474,14 @@ void UMenuScreen::ShowExitDlg()
     EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
     EnsureDialog<UExitDlg>(ExitDlgClass, ExitDlg);
 
-    if (MenuDlg) ShowDialog(MenuDlg, false);
-    if (ExitDlg) ShowDialog(ExitDlg, true);
+    if (MenuDlg)
+    {
+        MenuDlg->Manager = this;
+        ShowDialog(MenuDlg, false);
+    }
+
+    if (ExitDlg)
+        ShowDialog(ExitDlg, true);
 }
 
 void UMenuScreen::ShowConfirmDlg()
@@ -439,7 +489,6 @@ void UMenuScreen::ShowConfirmDlg()
     EnsureDialog<UConfirmDlg>(ConfirmDlgClass, ConfirmDlg);
     if (!ConfirmDlg) return;
 
-    // Overlay confirm on top of whatever is visible
     ShowDialog(ConfirmDlg, true);
 }
 
@@ -462,7 +511,7 @@ void UMenuScreen::HideLoadDlg()
 }
 
 // ------------------------------------------------------------
-// NEW: Options hub
+// Options hub
 // ------------------------------------------------------------
 
 void UMenuScreen::ShowOptionsScreen()
@@ -476,8 +525,8 @@ void UMenuScreen::ShowOptionsScreen()
     OptionsScreen->SetMenuManager(this);
     ShowDialog(OptionsScreen, true);
 
-    // Default tab/page inside OptionsScreen:
-    OptionsScreen->ShowOptDlg(); // or ShowVidDlg(), your choice
+    // Default tab/page:
+    OptionsScreen->ShowOptDlg();
 }
 
 void UMenuScreen::HideOptionsScreen()
@@ -487,7 +536,6 @@ void UMenuScreen::HideOptionsScreen()
 
 void UMenuScreen::ReturnFromOptions()
 {
-    // OptionsScreen should have already applied/canceled internally.
     ShowMenuDlg();
 }
 
@@ -513,3 +561,5 @@ void UMenuScreen::HandleCancel()
 
     Super::HandleCancel();
 }
+
+
