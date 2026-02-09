@@ -663,10 +663,6 @@ protected:
 
 	void InitializeDT(const FObjectInitializer& ObjectInitializer);
 
-	// Assign this in your GameInstance Blueprint defaults:
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UMenuScreen> MenuScreenWidgetClass;
-
 	// Instance
 	UPROPERTY()
 	TObjectPtr<UMenuScreen> MenuScreen;
@@ -712,8 +708,9 @@ private:
 	void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
 	void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
 
+
 	// Widget classes
-	TSubclassOf<class UMenuDlg> MainMenuScreenWidgetClass;
+	TSubclassOf<class UMenuScreen> MenuScreenWidgetClass;
 	TSubclassOf<class UCampaignScreen> CampaignScreenWidgetClass;
 	TSubclassOf<class UOperationsScreen> OperationsScreenWidgetClass;
 	TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;

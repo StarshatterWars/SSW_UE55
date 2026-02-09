@@ -142,44 +142,40 @@ void USSWGameInstance::ShowMainMenuScreen()
 	if (!MenuScreen) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: Failed to create MenuScreen")); return; }
 
 	UMenuScreen* Screen = MenuScreen.Get();
+
 	Screen->AddToViewport(100);
 	Screen->SetVisibility(ESlateVisibility::Visible);
 
+	// Create dialogs (do NOT route inside Setup)
 	Screen->Setup();
-	Screen->ShowMenuDlg();
 
-	// FIRST RUN / FIRST LOAD gating:
-	const bool bHasSave = UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot);
-	if (!bHasSave)
-	{
-		Screen->ShowFirstTimeDlg();
-	}
+	// SINGLE source of truth: MenuScreen decides Menu vs FirstRun
+	Screen->Show();
 
-	// Focus the topmost visible dialog:
-	UUserWidget* FocusWidget = nullptr;
-
-	if (!bHasSave)
-	{
-		// Prefer focusing FirstTimeDlg if shown
-		if (UBaseScreen* Top = Screen->GetCurrentDialog()) // add getter (below)
-			FocusWidget = Cast<UUserWidget>(Top);
-	}
-
-	// Fallback focus: MenuDlg
-	if (!FocusWidget)
-		FocusWidget = Screen->GetMenuDlg();
-
-	if (FocusWidget)
+	// Focus whatever MenuScreen decided is current
+	if (UBaseScreen* Top = Screen->GetCurrentDialog())
 	{
 		FInputModeUIOnly InputMode;
-		InputMode.SetWidgetToFocus(FocusWidget->TakeWidget());
+		InputMode.SetWidgetToFocus(Top->TakeWidget());
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		PC->SetInputMode(InputMode);
 		PC->SetShowMouseCursor(true);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ShowMainMenuScreen: Nothing focusable to focus (MenuDlg/FirstTimeDlg missing?)"));
+		// fallback
+		if (UUserWidget* Fallback = Screen->GetMenuDlg())
+		{
+			FInputModeUIOnly InputMode;
+			InputMode.SetWidgetToFocus(Fallback->TakeWidget());
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PC->SetInputMode(InputMode);
+			PC->SetShowMouseCursor(true);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ShowMainMenuScreen: No CurrentDialog and MenuDlg is null"));
+		}
 	}
 }
 
@@ -398,12 +394,11 @@ bool USSWGameInstance::InitGame()
 
 void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<UMenuDlg> MainMenuScreenWidget(TEXT("/Game/Screens/WB_MainMenu"));
-	if (!ensure(MainMenuScreenWidget.Class != nullptr))
+	static ConstructorHelpers::FClassFinder<UMenuScreen> MenuScreenBP(TEXT("/Game/Screens/WBP_MenuScreen"));
+	if (MenuScreenBP.Class)
 	{
-		return;
+		MenuScreenWidgetClass = MenuScreenBP.Class;
 	}
-	MainMenuScreenWidgetClass = MainMenuScreenWidget.Class;
 }
 
 void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& ObjectInitializer)

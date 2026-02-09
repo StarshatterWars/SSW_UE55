@@ -19,7 +19,9 @@
 #include "MissionEditorNavDlg.h"
 #include "LoadDlg.h"
 #include "TacRefDlg.h"
+#include "StarshatterPlayerSubsystem.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 // NEW:
 #include "OptionsScreen.h"
 
@@ -290,18 +292,39 @@ bool UMenuScreen::CloseTopmost()
 
 // ------------------------------------------------------------
 
+/* --------------------------------------------------------------------
+   Show
+   -------------------------------------------------------------------- */
+
 void UMenuScreen::Show()
 {
-    if (bIsShown)
+   UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] UMenuScreen::Show()"));
+   if (bIsShown)
         return;
 
-    const bool bHasPlayerConfig = true;
+    bool bHasSaveNow = false;
 
-    if (CurrentDialog == MissionSelectDlg)
+    if (UGameInstance* GI = GetGameInstance())
     {
-        ShowMissionSelectDlg();
+        if (UStarshatterPlayerSubsystem* PlayerSS =
+            GI->GetSubsystem<UStarshatterPlayerSubsystem>())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] UStarshatterPlayerSubsystem"));
+           
+           if (!PlayerSS->HasLoaded())
+            {
+                PlayerSS->LoadFromBoot();
+            }
+
+            bHasSaveNow = PlayerSS->DoesSaveExistNow();
+
+            UE_LOG(LogTemp, Warning,
+                TEXT("[MenuScreen] SaveExistsNow=%d"),
+                bHasSaveNow ? 1 : 0);
+        }
     }
-    else if (bHasPlayerConfig)
+
+    if (bHasSaveNow)
     {
         ShowMenuDlg();
     }

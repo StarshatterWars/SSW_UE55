@@ -90,6 +90,8 @@ public:
     UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
     FS_PlayerGameInfo GetPlayerInfoCopy() const { return PlayerInfo; }
 
+    bool DoesSaveExistNow() const;
+
     // ------------------------------------------------------------------
     // Save / Load
     // ------------------------------------------------------------------

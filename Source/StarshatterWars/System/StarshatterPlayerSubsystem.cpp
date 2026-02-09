@@ -54,6 +54,12 @@ bool UStarshatterPlayerSubsystem::LoadFromBoot()
     return bOk;
 }
 
+
+bool UStarshatterPlayerSubsystem::DoesSaveExistNow() const
+{
+    return UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex);
+}
+
 bool UStarshatterPlayerSubsystem::LoadPlayer()
 {
     // FIRST-RUN flag: did a save exist before we loaded?
