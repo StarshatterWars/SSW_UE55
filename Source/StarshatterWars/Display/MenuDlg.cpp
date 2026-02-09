@@ -290,7 +290,7 @@ void UMenuDlg::EnableMenuButtons(bool bEnable)
 
     SetButtonEnabled(BtnMod, bEnable);
     SetButtonEnabled(BtnTac, bEnable);
-    SetButtonEnabled(BtnQuit, bEnable);
+    SetButtonEnabled(BtnQuit, true);
 }
 
 void UMenuDlg::ApplyMenuGating()

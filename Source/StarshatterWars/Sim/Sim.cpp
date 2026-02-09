@@ -231,8 +231,9 @@ Sim::CommitMission()
 			ShipStats* s = ShipStats::GetStats(i);
 			s->Summarize();
 
-			Print(TEXT("%-16s  %5d  %5d  %5d  %5d  %6d  %6d\n"),
-				s->GetName(),
+			UE_LOG(LogTemp, Log,
+				TEXT("%-16s  %5d  %5d  %5d  %5d  %6d  %6d"),
+				ANSI_TO_TCHAR(s->GetName()),
 				s->GetGunKills(),
 				s->GetMissileKills(),
 				s->GetDeaths(),
@@ -272,8 +273,11 @@ Sim::CommitMission()
 			}
 		}
 
-		Print(TEXT("--------------------------------------------\n"));
-		Print(TEXT("TOTAL             %5d  %5d  %5d  %5d\n\n"), tk1, tk2, td, tc);
+		UE_LOG(LogTemp, Verbose, TEXT("--------------------------------------------"));
+
+		UE_LOG(LogTemp, Verbose,
+			TEXT("TOTAL             %5d  %5d  %5d  %5d"),
+			tk1, tk2, td, tc);
 
 		ShipStats::Initialize();
 	}
@@ -1775,7 +1779,10 @@ Sim::ResolveHyperList()
 
 					// hyper jump:
 					else {
-						Print(TEXT("Ship '%s' quantum to '%s'\n"), jumpship->Name(), dest->GetName());
+						UE_LOG(LogTemp, Log,
+							TEXT("Ship '%s' quantum to '%s'"),
+							ANSI_TO_TCHAR(jumpship->Name()),
+							ANSI_TO_TCHAR(dest->GetName()));
 
 						if (jump->hyperdrive)
 							CreateExplosion(jumpship->Location(), FVector::ZeroVector, Explosion::HYPER_FLASH, 1.0f, 1.0f, dest);
