@@ -45,6 +45,10 @@ protected:
 public:
     virtual void ExecFrame(double DeltaTime) override;
 
+    void RefreshFromPlayerState();
+    void ApplyMenuGating();
+    void EnableMenuButtons(bool bEnable);
+
     // Manager/router (set this when you create the widget)
     UPROPERTY(BlueprintReadWrite, Category = "Menu", meta = (ExposeOnSpawn = "true"))
     TObjectPtr<UMenuScreen> Manager = nullptr;
@@ -120,9 +124,8 @@ protected:
     // ------------------------------------------------------------
 
     void BindUMGDelegates();
-    void RefreshFromPlayerState();
-    void ApplyMenuGating();
-    void EnableMenuButtons(bool bEnable);
+
+
     void SetButtonEnabled(UButton* Button, bool bEnable);
     void Show();
 
