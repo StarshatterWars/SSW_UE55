@@ -8,7 +8,6 @@ void UQuitDlg::OnApplyClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
-	SSWInstance->ToggleQuitDlg(false);
 	SSWInstance->ExitGame(this);
 }
 
@@ -16,7 +15,6 @@ void UQuitDlg::OnCancelClicked()
 {
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
-	SSWInstance->ToggleQuitDlg(false);
 }
 
 void UQuitDlg::OnApplyHovered() 

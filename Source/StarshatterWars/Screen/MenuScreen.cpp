@@ -542,19 +542,21 @@ void UMenuScreen::ShowAwardDlg()
 
 void UMenuScreen::ShowExitDlg()
 {
-    HideAll();
-
     EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
     EnsureDialog<UExitDlg>(ExitDlgClass, ExitDlg);
 
-    if (MenuDlg)
-    {
-        MenuDlg->Manager = this;
-        ShowDialog(MenuDlg, (int32) EMenuZOrder::Z_MENU_BASE);
-    }
+    if (!MenuDlg || !ExitDlg) return;
 
-    if (ExitDlg)
-        ShowDialog(ExitDlg, (int32)EMenuZOrder::Z_MODAL);
+    MenuDlg->SetMenuManager(this);
+    ExitDlg->SetMenuManager(this);
+
+    // Menu behind, inert:
+    MenuDlg->SetDialogInputEnabled(false);
+    ShowDialog(MenuDlg, 100);
+
+    // ExitDlg on top, interactive:
+    ExitDlg->SetDialogInputEnabled(true);
+    ShowDialog(ExitDlg, 200);
 }
 
 void UMenuScreen::ShowConfirmDlg()

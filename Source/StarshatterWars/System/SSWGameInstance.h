@@ -176,17 +176,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowMissionBriefingScreen();
 
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void ShowQuitDlg();
-
 	// =====================================================================
 	// Toggle / Remove Screens
-	// =====================================================================
-	UFUNCTION()
-	void ToggleQuitDlg(bool bVisible);
-
-	UFUNCTION()
-	void ToggleMenuButtons(bool bVisible);
+	// ====================================================================
 
 	UFUNCTION()
 	void ToggleCampaignScreen(bool bVisible);

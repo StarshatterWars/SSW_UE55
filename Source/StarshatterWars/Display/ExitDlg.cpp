@@ -1,37 +1,67 @@
+/*=============================================================================
+    Project:        Starshatter Wars (Unreal Port)
+    Studio:         Fractal Dev Studios
+    FILE:           ExitDlg.cpp
+    AUTHOR:         Carlos Bott
+=============================================================================*/
+
 #include "ExitDlg.h"
 
-#include "MenuScreen.h"
+// UMG
+#include "Components/Button.h"
+#include "Components/ScrollBox.h"
+#include "Components/RichTextBlock.h"
 
+// UE
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-// ------------------------------------------------------------
-// Construction
-// ------------------------------------------------------------
+// Router
+#include "MenuScreen.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogExitDlg, Log, All);
+
+/* --------------------------------------------------------------------
+   Construction
+   -------------------------------------------------------------------- */
 
 UExitDlg::UExitDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    // Constructor = defaults only
-    bIsFocusable = true;
+    SetIsFocusable(true);
 }
 
-// ------------------------------------------------------------
-// Setup / lifecycle
-// ------------------------------------------------------------
-
-void UExitDlg::SetManager(UMenuScreen* InManager)
-{
-    Manager = InManager;
-}
+/* --------------------------------------------------------------------
+   NativeConstruct
+   -------------------------------------------------------------------- */
 
 void UExitDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    RegisterControls();
+    // Avoid duplicate delegate binding if widget rebuilds:
+    if (ExitBtn)
+    {
+        ExitBtn->OnClicked.RemoveAll(this);
+        ExitBtn->OnClicked.AddDynamic(this, &UExitDlg::OnExitClicked);
+    }
+    else
+    {
+        UE_LOG(LogExitDlg, Warning, TEXT("ExitBtn is null (BindWidgetOptional mismatch or not IsVariable)."));
+    }
 
+    if (CancelBtn)
+    {
+        CancelBtn->OnClicked.RemoveAll(this);
+        CancelBtn->OnClicked.AddDynamic(this, &UExitDlg::OnCancelClicked);
+    }
+    else
+    {
+        UE_LOG(LogExitDlg, Warning, TEXT("CancelBtn is null (BindWidgetOptional mismatch or not IsVariable)."));
+    }
+
+    // Credits
     bExitLatch = true;
     ScrollOffset = 0.0f;
 
@@ -42,86 +72,98 @@ void UExitDlg::NativeConstruct()
     }
 }
 
+/* --------------------------------------------------------------------
+   NativeTick
+   -------------------------------------------------------------------- */
+
 void UExitDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame(InDeltaTime);
+    TickCredits(InDeltaTime);
 }
 
-// ------------------------------------------------------------
-// Legacy form integration
-// ------------------------------------------------------------
+/* --------------------------------------------------------------------
+   Input handling
+   -------------------------------------------------------------------- */
 
-void UExitDlg::BindFormWidgets()
+void UExitDlg::HandleAccept()
 {
-    if (ApplyButton)  BindButton(1, ApplyButton);
-    if (CancelButton) BindButton(2, CancelButton);
-
-    if (CreditsText)  BindText(201, CreditsText);
+    Super::HandleAccept();
+    OnExitClicked();
 }
 
-FString UExitDlg::GetLegacyFormText() const
+void UExitDlg::HandleCancel()
 {
-    return FString(TEXT(R"FRM(
-form: {
-   rect:       (0,0,440,320)
-   back_color: (0,0,0)
-   fore_color: (255,255,255)
-   font:       Limerick12
-
-   texture:    "Message.pcx"
-   margins:    (50,40,48,40)
-
-   layout: {
-      x_mins:     (20, 40, 100, 100, 20)
-      x_weights:  ( 0,  0,   1,   1,  0)
-
-      y_mins:     (44,  30, 30, 80, 35)
-      y_weights:  ( 0,   0,  0,  1,  0)
-   }
-
-   ctrl: { id:100 type:label text:"Exit Starshatter?" align:center font:Limerick18 }
-   ctrl: { id:101 type:label text:"Are you sure you want to exit Starshatter and return to Windows?" }
-   ctrl: { id:201 type:text }
-
-   ctrl: { id:1 type:button text:"Exit" }
-   ctrl: { id:2 type:button text:"Cancel" }
-}
-)FRM"));
-}
-
-// ------------------------------------------------------------
-// Control binding
-// ------------------------------------------------------------
-
-void UExitDlg::RegisterControls()
-{
-    if (ApplyButton)
+    // Legacy latch: swallow the very first cancel after opening
+    if (bExitLatch)
     {
-        ApplyButton->OnClicked.RemoveAll(this);
-        ApplyButton->OnClicked.AddDynamic(this, &UExitDlg::HandleApplyClicked);
+        bExitLatch = false;
+        return;
     }
 
-    if (CancelButton)
+    Super::HandleCancel();
+    OnCancelClicked();
+}
+
+/* --------------------------------------------------------------------
+   Button handlers
+   -------------------------------------------------------------------- */
+
+void UExitDlg::OnExitClicked()
+{
+    UE_LOG(LogExitDlg, Log, TEXT("Exit confirmed."));
+
+    // MenuScreen owns modal state + Z-order; we just request exit:
+    UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, true);
+}
+
+void UExitDlg::OnCancelClicked()
+{
+    UE_LOG(LogExitDlg, Log, TEXT("Exit canceled. Returning to menu."));
+
+    // Hide ourselves so we don't eat input:
+    SetVisibility(ESlateVisibility::Collapsed);
+    SetDialogInputEnabled(false);
+
+    if (MenuManager)
     {
-        CancelButton->OnClicked.RemoveAll(this);
-        CancelButton->OnClicked.AddDynamic(this, &UExitDlg::HandleCancelClicked);
+        MenuManager->ShowMenuDlg();
+    }
+    else
+    {
+        UE_LOG(LogExitDlg, Warning, TEXT("MenuManager is null (MenuScreen didn't assign it)."));
     }
 }
 
-// ------------------------------------------------------------
-// Dialog control
-// ------------------------------------------------------------
+/* --------------------------------------------------------------------
+   Credits helpers
+   -------------------------------------------------------------------- */
 
-void UExitDlg::Show()
+bool UExitDlg::LoadCreditsFile(FString& OutText) const
 {
-    bExitLatch = true;
-    ScrollOffset = 0.0f;
+    const TArray<FString> Paths =
+    {
+        FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data/credits.txt")),
+        FPaths::Combine(FPaths::ProjectDir(),        TEXT("Data/credits.txt")),
+    };
 
-    SetVisibility(ESlateVisibility::Visible);
+    for (const FString& Path : Paths)
+    {
+        if (FPaths::FileExists(Path) && FFileHelper::LoadFileToString(OutText, *Path))
+        {
+            return true;
+        }
+    }
 
-    // Unreal modal behavior
-    SetDialogInputEnabled(true);
+    return false;
+}
+
+void UExitDlg::ApplyCredits(const FString& Text)
+{
+    if (CreditsText)
+    {
+        CreditsText->SetText(FText::FromString(Text));
+    }
 
     if (CreditsScroll)
     {
@@ -129,9 +171,9 @@ void UExitDlg::Show()
     }
 }
 
-void UExitDlg::ExecFrame(float DeltaTime)
+void UExitDlg::TickCredits(float DeltaTime)
 {
-    if (!CreditsScroll)
+    if (!CreditsScroll || !IsVisible())
         return;
 
     ScrollOffset += ScrollPixelsPerSecond * DeltaTime;
@@ -145,90 +187,4 @@ void UExitDlg::ExecFrame(float DeltaTime)
         CreditsScroll->SetScrollOffset(0.0f);
     }
 #endif
-}
-
-// ------------------------------------------------------------
-// Input handling
-// ------------------------------------------------------------
-
-void UExitDlg::HandleAccept()
-{
-    Super::HandleAccept();
-    OnApply();
-}
-
-void UExitDlg::HandleCancel()
-{
-    if (bExitLatch)
-    {
-        bExitLatch = false;
-        return;
-    }
-
-    Super::HandleCancel();
-    OnCancel();
-}
-
-void UExitDlg::HandleApplyClicked()
-{
-    OnApply();
-}
-
-void UExitDlg::HandleCancelClicked()
-{
-    OnCancel();
-}
-
-// ------------------------------------------------------------
-// Actions
-// ------------------------------------------------------------
-
-void UExitDlg::OnApply()
-{
-    SetDialogInputEnabled(false);
-    UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, true);
-}
-
-void UExitDlg::OnCancel()
-{
-    SetDialogInputEnabled(false);
-
-    if (Manager)
-    {
-        Manager->ShowMenuDlg();
-    }
-
-    SetVisibility(ESlateVisibility::Hidden);
-}
-
-// ------------------------------------------------------------
-// Credits helpers
-// ------------------------------------------------------------
-
-bool UExitDlg::LoadCreditsFile(FString& OutText) const
-{
-    const TArray<FString> Paths =
-    {
-        FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data/credits.txt")),
-        FPaths::Combine(FPaths::ProjectDir(),        TEXT("Data/credits.txt"))
-    };
-
-    for (const FString& Path : Paths)
-    {
-        if (FPaths::FileExists(Path) &&
-            FFileHelper::LoadFileToString(OutText, *Path))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void UExitDlg::ApplyCredits(const FString& Text)
-{
-    if (URichTextBlock* T = GetText(201))
-    {
-        T->SetText(FText::FromString(Text));
-    }
 }

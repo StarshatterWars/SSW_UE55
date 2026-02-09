@@ -10,7 +10,7 @@
 #include "FormattingUtils.h"
 
 #include "MenuDlg.h"
-#include "QuitDlg.h"
+#include "ExitDlg.h"
 #include "FirstTimeDlg.h"
 #include "CampaignScreen.h"
 #include "OperationsScreen.h"
@@ -445,12 +445,11 @@ void USSWGameInstance::InitializeCampaignLoadingScreen(const FObjectInitializer&
 
 void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<UQuitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
-	if (!ensure(QuitDlgWidget.Class != nullptr))
+	static ConstructorHelpers::FClassFinder<UExitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
+	if (QuitDlgWidget.Class)
 	{
-		return;
+		QuitDlgWidgetClass = QuitDlgWidget.Class;
 	}
-	QuitDlgWidgetClass = QuitDlgWidget.Class;
 }
 
 void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer)
@@ -608,47 +607,6 @@ void USSWGameInstance::ShowMissionBriefingScreen()
 		}
 	}
 	ToggleMissionBriefingScreen(true);
-}
-
-void USSWGameInstance::ShowQuitDlg()
-{
-	// Create widget
-	QuitDlg = CreateWidget<UQuitDlg>(this, QuitDlgWidgetClass);
-	// Add it to viewport
-	QuitDlg->AddToViewport(101);
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(QuitDlg->TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
-		}
-	}
-	ToggleQuitDlg(false);
-}
-
-void USSWGameInstance::ToggleQuitDlg(bool bVisible)
-{
-	if(QuitDlg) {
-		if(bVisible) {
-			QuitDlg->SetVisibility(ESlateVisibility::Visible);
-		} else {
-			QuitDlg->SetVisibility(ESlateVisibility::Collapsed);
-		}	
-	}
-}
-
-void USSWGameInstance::ToggleMenuButtons(bool bVisible)
-{
-	//if (MainMenuDlg) {
-	//	MainMenuDlg->EnableMenuButtons(bVisible);
-	//}
 }
 
 void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {

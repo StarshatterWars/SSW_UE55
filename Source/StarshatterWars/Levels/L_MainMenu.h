@@ -21,7 +21,6 @@ protected:
 
 public:	
 	void ShowMainMenu();
-	void ShowQuitDlg();
 	
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* MenuMusic;

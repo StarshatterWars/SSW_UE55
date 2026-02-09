@@ -1,105 +1,98 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars (Unreal Port)
+    Studio:         Fractal Dev Studios
+    Copyright:      (C) 2025–2026.
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         ExitDlg.h
-    AUTHOR:       Carlos Bott
+    DIALOG:         ExitDlg
+    FILE:           ExitDlg.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
-    ExitDlg (Unreal)
-    - Unreal UMG replacement for legacy ExitDlg FormWindow
-    - Maintains original method names and semantics
-*/
+    UExitDlg
+    - Unreal UMG replacement for legacy ExitDlg.frm
+    - Pure UMG (no FormDef bridge)
+    - MenuScreen owns Z-order + modal policy
+    - ExitDlg owns only: bind buttons, scroll credits, quit/cancel actions
+=============================================================================*/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-
-#include "Components/ScrollBox.h"
-#include "Components/RichTextBlock.h"
-
 #include "ExitDlg.generated.h"
 
+class UButton;
+class UScrollBox;
+class URichTextBlock;
 class UMenuScreen;
 
-UCLASS()
+UCLASS(BlueprintType, Blueprintable)
 class STARSHATTERWARS_API UExitDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
-    // Unreal-style constructor
     UExitDlg(const FObjectInitializer& ObjectInitializer);
 
-    // ------------------------------------------------------------
-    // Legacy API (preserved)
-    // ------------------------------------------------------------
-    virtual void RegisterControls();
-    virtual void Show();
-    virtual void ExecFrame(float DeltaTime);
-
-    virtual void OnApply();
-    virtual void OnCancel();
-
-    void SetManager(UMenuScreen* InManager);
+    /* --------------------------------------------------------------------
+       Manager wiring
+       -------------------------------------------------------------------- */
+    void SetMenuManager(UMenuScreen* InManager) { MenuManager = InManager; }
 
 protected:
-    // ------------------------------------------------------------
-    // UBaseScreen overrides
-    // ------------------------------------------------------------
-    virtual void BindFormWidgets() override;
-    virtual FString GetLegacyFormText() const override;
-
+    /* --------------------------------------------------------------------
+       UUserWidget
+       -------------------------------------------------------------------- */
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+    /* --------------------------------------------------------------------
+       Input (keyboard/controller)
+       -------------------------------------------------------------------- */
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
 protected:
-    // ------------------------------------------------------------
-    // Button handlers (NO lambdas)
-    // ------------------------------------------------------------
+    /* --------------------------------------------------------------------
+       UMG Events
+       -------------------------------------------------------------------- */
     UFUNCTION()
-    void HandleApplyClicked();
+    void OnExitClicked();
 
     UFUNCTION()
-    void HandleCancelClicked();
+    void OnCancelClicked();
 
 protected:
-    // ------------------------------------------------------------
-    // Optional UMG bindings
-    // ------------------------------------------------------------
-    UPROPERTY(meta = (BindWidgetOptional))
-    UScrollBox* CreditsScroll = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    URichTextBlock* CreditsText = nullptr;
+    /* --------------------------------------------------------------------
+       Credits
+       -------------------------------------------------------------------- */
+    bool LoadCreditsFile(FString& OutText) const;
+    void ApplyCredits(const FString& Text);
+    void TickCredits(float DeltaTime);
 
 protected:
-    // ------------------------------------------------------------
-    // State
-    // ------------------------------------------------------------
-    UPROPERTY(Transient)
-    TObjectPtr<UMenuScreen> Manager = nullptr;
+    /* --------------------------------------------------------------------
+       Widgets (BindWidgetOptional)
+       Names must match WBP_ExitDlg variables
+       -------------------------------------------------------------------- */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> ExitBtn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> CancelBtn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UScrollBox> CreditsScroll;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<URichTextBlock> CreditsText;
+
+protected:
 
     bool  bExitLatch = false;
     float ScrollOffset = 0.0f;
 
     UPROPERTY(EditAnywhere, Category = "ExitDlg")
     float ScrollPixelsPerSecond = 22.0f;
-
-protected:
-    // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
-    bool LoadCreditsFile(FString& OutText) const;
-    void ApplyCredits(const FString& Text);
 };
