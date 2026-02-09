@@ -1,38 +1,40 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026.
+    Copyright (c) 2025–2026.
 
-    SUBSYSTEM:    Stars.exe
-    FILE:         FirstTimeDlg.h
-    AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    DIALOG:      FirstTimeDlg
+    FILE:        FirstTimeDlg.h
+    AUTHOR:      Carlos Bott
 
     OVERVIEW
     ========
-    First-time player setup screen.
-    Unreal UMG version of the legacy FirstTimeDlg FormWindow.
+    First-time player setup dialog.
+
+    Unreal UMG replacement for legacy FirstTimeDlg.frm.
+    Handles:
+      - Player name creation
+      - Play style selection (Arcade / Standard)
+      - Experience level (Cadet / Admiral)
+      - Initial key bindings
+      - Player save
 */
 
-#pragma once
+#pragma once 
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 #include "FirstTimeDlg.generated.h"
 
-// ------------------------------------------------------------
-// Forward declarations (keep header light)
-// ------------------------------------------------------------
 class UButton;
 class UEditableTextBox;
 class UComboBoxString;
 class UMenuScreen;
 
-// ------------------------------------------------------------
-
-UCLASS()
+/**
+ * UFirstTimeDlg
+ * Unreal UMG replacement for legacy FirstTimeDlg (FirstTimeDlg.frm + OnApply).
+ */
+UCLASS(BlueprintType, Blueprintable)
 class STARSHATTERWARS_API UFirstTimeDlg : public UBaseScreen
 {
     GENERATED_BODY()
@@ -40,48 +42,20 @@ class STARSHATTERWARS_API UFirstTimeDlg : public UBaseScreen
 public:
     UFirstTimeDlg(const FObjectInitializer& ObjectInitializer);
 
-    // --------------------------------------------------------
-    // UUserWidget lifecycle
-    // --------------------------------------------------------
-    virtual void NativeOnInitialized() override;
+    // Set by MenuScreen after CreateWidget (like MenuDlg->Manager)
+    UPROPERTY() TObjectPtr<UMenuScreen> Manager;
+
+protected:
     virtual void NativeConstruct() override;
-    virtual void NativeTick(
-        const FGeometry& MyGeometry,
-        float InDeltaTime
-    ) override;
 
-    // --------------------------------------------------------
-    // Legacy parity
-    // --------------------------------------------------------
-    void ExecFrame();
-
-    void SetManager(UMenuScreen* InManager);
-
-protected:
-    // --------------------------------------------------------
-    // Button handlers
-    // --------------------------------------------------------
     UFUNCTION()
-    void OnApplyClicked();
+    void OnAcceptClicked();
 
-protected:
-    // --------------------------------------------------------
-    // Bound UMG widgets
-    // --------------------------------------------------------
-    UPROPERTY(meta = (BindWidgetOptional))
-    UEditableTextBox* NameEdit = nullptr;      // id 200
+    void PopulateDefaultsIfNeeded();
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UComboBoxString* PlaystyleCombo = nullptr; // id 201
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UComboBoxString* ExperienceCombo = nullptr; // id 202
-
-protected:
-    // --------------------------------------------------------
-    // Owning menu screen
-    // --------------------------------------------------------
-    UMenuScreen* Manager = nullptr;
-
-    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    // --- BindWidget controls (must match names in WBP_FirstTimeDlg) ---
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UEditableTextBox> NameEdit;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString>  PlayStyleCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString>  ExperienceCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton>          AcceptBtn;
 };

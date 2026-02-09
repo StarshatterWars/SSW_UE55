@@ -1,200 +1,210 @@
+
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright (c) 2025-2026.
+    Copyright (c) 2025–2026.
 
-    SUBSYSTEM:    Stars.exe
-    FILE:         FirstTimeDlg.cpp
-    AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
+    DIALOG:      FirstTimeDlg
+    FILE:        FirstTimeDlg.h
+    AUTHOR:      Carlos Bott
 
     OVERVIEW
     ========
-    First-time player setup screen implementation.
+    First-time player setup dialog.
+
+    Unreal UMG replacement for legacy FirstTimeDlg.frm.
+    Handles:
+      - Player name creation
+      - Play style selection (Arcade / Standard)
+      - Experience level (Cadet / Admiral)
+      - Initial key bindings
+      - Player save
 */
 
 #include "FirstTimeDlg.h"
-
-#include "GameStructs.h"
-
-// Unreal
-#include "Logging/LogMacros.h"
-#include "Math/UnrealMathUtility.h"
-
-// UMG
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ComboBoxString.h"
 
-// Starshatter
-#include "PlayerCharacter.h"
-#include "MenuScreen.h"
-#include "Ship.h"
+// Legacy core
 #include "Starshatter.h"
+#include "PlayerCharacter.h"
+#include "Ship.h"
 #include "KeyMap.h"
-#include "Random.h"
+
+// Router
+#include "MenuScreen.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFirstTimeDlg, Log, All);
-
-// ------------------------------------------------------------
 
 UFirstTimeDlg::UFirstTimeDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    SetIsFocusable(true);
 }
-
-// ------------------------------------------------------------
-
-void UFirstTimeDlg::NativeOnInitialized()
-{
-    Super::NativeOnInitialized();
-
-    if (ApplyButton)
-    {
-        ApplyButton->OnClicked.AddDynamic(
-            this,
-            &UFirstTimeDlg::OnApplyClicked
-        );
-    }
-}
-
-// ------------------------------------------------------------
 
 void UFirstTimeDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (NameEdit)
+    PopulateDefaultsIfNeeded();
+
+    if (AcceptBtn)
     {
-        NameEdit->SetText(FText::FromString(TEXT("Noobie")));
+        AcceptBtn->OnClicked.AddDynamic(this, &UFirstTimeDlg::OnAcceptClicked);
+    }
+    else
+    {
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("AcceptBtn is null (BindWidget name mismatch or not marked 'Is Variable' in BP)."));
     }
 }
 
-// ------------------------------------------------------------
-
-void UFirstTimeDlg::NativeTick(
-    const FGeometry& MyGeometry,
-    float InDeltaTime
-)
+void UFirstTimeDlg::PopulateDefaultsIfNeeded()
 {
-    Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame();
-}
-
-// ------------------------------------------------------------
-
-void UFirstTimeDlg::SetManager(UMenuScreen* InManager)
-{
-    Manager = InManager;
-}
-
-// ------------------------------------------------------------
-
-void UFirstTimeDlg::ExecFrame()
-{
-    // Legacy dialog had no per-frame logic
-}
-
-// ------------------------------------------------------------
-
-void UFirstTimeDlg::OnApplyClicked()
-{
-    Starshatter* stars = Starshatter::GetInstance();
-    PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-
-    if (!player)
+    // Populate combo items once (avoid duplicates on rebuild)
+    if (PlayStyleCombo)
     {
-        UE_LOG(LogFirstTimeDlg, Warning, TEXT("No current player."));
-        if (Manager)
-            Manager->ShowMenuDlg();
+        if (PlayStyleCombo->GetOptionCount() == 0)
+        {
+            PlayStyleCombo->AddOption(TEXT("Arcade Style"));
+            PlayStyleCombo->AddOption(TEXT("Standard Model"));
+        }
+
+        // Legacy default: index 0 (Arcade)
+        PlayStyleCombo->SetSelectedIndex(0);
+    }
+    else
+    {
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("PlayStyleCombo is null (BindWidget mismatch)."));
+    }
+
+    if (ExperienceCombo)
+    {
+        if (ExperienceCombo->GetOptionCount() == 0)
+        {
+            ExperienceCombo->AddOption(TEXT("Cadet (First timer)"));
+            ExperienceCombo->AddOption(TEXT("Admiral (Experienced)"));
+        }
+
+        // Legacy default: index 0 (Cadet)
+        ExperienceCombo->SetSelectedIndex(0);
+    }
+    else
+    {
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("ExperienceCombo is null (BindWidget mismatch)."));
+    }
+
+    // Optional: give a reasonable default name placeholder
+    if (NameEdit && NameEdit->GetText().IsEmpty())
+    {
+        NameEdit->SetHintText(FText::FromString(TEXT("Enter player name")));
+    }
+}
+
+void UFirstTimeDlg::OnAcceptClicked()
+{
+    Starshatter* Stars = Starshatter::GetInstance();
+    PlayerCharacter* PlayerObj = PlayerCharacter::GetCurrentPlayer();
+
+    if (!PlayerObj)
+    {
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("OnAcceptClicked: Player::GetCurrentPlayer() returned null"));
         return;
     }
 
-    // --------------------------------------------------------
-    // Player name & password
-    // --------------------------------------------------------
+    // -----------------------------
+    // NAME + PASSWORD (legacy)
+    // -----------------------------
     if (NameEdit)
     {
-        const FString PlayerName = NameEdit->GetText().ToString();
-
-        const uint32 PassValue =
-            (uint32)FMath::RandRange(0, 2000000000);
-
-        const FString Password =
-            FString::Printf(TEXT("%08x"), PassValue);
-
-        FTCHARToUTF8 NameUtf8(*PlayerName);
-        FTCHARToUTF8 PassUtf8(*Password);
-
-        player->SetName(NameUtf8.Get());
-        player->SetPassword(PassUtf8.Get());
-    }
-
-    // --------------------------------------------------------
-    // Play style
-    // --------------------------------------------------------
-    if (PlaystyleCombo)
-    {
-        const int32 Sel = PlaystyleCombo->GetSelectedIndex();
-
-        // ARCADE
-        if (Sel == 0)
+        const FString PlayerName = NameEdit->GetText().ToString().TrimStartAndEnd();
+        if (!PlayerName.IsEmpty())
         {
-            player->SetFlightModel(2);
-            player->SetLandingModel(1);
-            player->SetHUDMode(0);
-            player->SetGunsight(1);
+            // Legacy: sprintf_s("%08x", (DWORD) Random(0, 2e9));
+            const int32 RandVal = FMath::RandRange(0, 2000000000);
+            const FString Password = FString::Printf(TEXT("%08x"), RandVal);
 
-            if (stars)
-            {
-                KeyMap& keymap = stars->GetKeyMap();
-                keymap.Bind(KEY_CONTROL_MODEL, 1, 0);
-                keymap.SaveKeyMap("key.cfg", 256);
-                stars->MapKeys();
-            }
-
-            Ship::SetControlModel(1);
-        }
-        // STANDARD / HARDCORE
-        else
-        {
-            player->SetFlightModel(0);
-            player->SetLandingModel(0);
-            player->SetHUDMode(0);
-            player->SetGunsight(0);
-
-            if (stars)
-            {
-                KeyMap& keymap = stars->GetKeyMap();
-                keymap.Bind(KEY_CONTROL_MODEL, 0, 0);
-                keymap.SaveKeyMap("key.cfg", 256);
-                stars->MapKeys();
-            }
-
-            Ship::SetControlModel(0);
+            // Legacy Player likely expects const char* (ANSI/UTF-8). Use UTF-8.
+            PlayerObj->SetName(TCHAR_TO_UTF8(*PlayerName));
+            PlayerObj->SetPassword(TCHAR_TO_UTF8(*Password));
         }
     }
 
-    // --------------------------------------------------------
-    // Experience level
-    // --------------------------------------------------------
-    if (ExperienceCombo &&
-        ExperienceCombo->GetSelectedIndex() > 0)
+    // -----------------------------
+    // PLAY STYLE (legacy)
+    // -----------------------------
+    int32 PlayStyleIndex = 0;
+    if (PlayStyleCombo)
     {
-        player->SetRank(2);        // Lieutenant
-        player->SetTrained(255);   // Fully trained
+        PlayStyleIndex = PlayStyleCombo->GetSelectedIndex();
+        if (PlayStyleIndex < 0)
+            PlayStyleIndex = 0;
+    }
+
+    // 0 = Arcade, else = Standard/Hardcore
+    if (PlayStyleIndex == 0)
+    {
+        // ARCADE:
+        PlayerObj->SetFlightModel(2);
+        PlayerObj->SetLandingModel(1);
+        PlayerObj->SetHUDMode(0);
+        PlayerObj->SetGunsight(1);
+
+        if (Stars)
+        {
+            KeyMap& Keymap = Stars->GetKeyMap();
+            Keymap.Bind(KEY_CONTROL_MODEL, 1, 0);
+            Keymap.SaveKeyMap("key.cfg", 256);
+            Stars->MapKeys();
+        }
+
+        Ship::SetControlModel(1);
+    }
+    else
+    {
+        // STANDARD/HARDCORE:
+        PlayerObj->SetFlightModel(0);
+        PlayerObj->SetLandingModel(0);
+        PlayerObj->SetHUDMode(0);
+        PlayerObj->SetGunsight(0);
+
+        if (Stars)
+        {
+            KeyMap& Keymap = Stars->GetKeyMap();
+            Keymap.Bind(KEY_CONTROL_MODEL, 0, 0);
+            Keymap.SaveKeyMap("key.cfg", 256);
+            Stars->MapKeys();
+        }
+
+        Ship::SetControlModel(0);
+    }
+
+    // -----------------------------
+    // EXPERIENCE (legacy)
+    // -----------------------------
+    int32 ExpIndex = 0;
+    if (ExperienceCombo)
+    {
+        ExpIndex = ExperienceCombo->GetSelectedIndex();
+        if (ExpIndex < 0)
+            ExpIndex = 0;
+    }
+
+    // Legacy: if (cmb_experience && selectedIndex > 0) -> experienced
+    if (ExpIndex > 0)
+    {
+        PlayerObj->SetRank(2);       // Lieutenant
+        PlayerObj->SetTrained(255);  // Fully Trained
     }
 
     PlayerCharacter::Save();
 
+    // Return to menu through router
     if (Manager)
+    {
         Manager->ShowMenuDlg();
-}
-
-FReply UFirstTimeDlg::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-    UE_LOG(LogTemp, Warning, TEXT("FirstTimeDlg: MOUSE DOWN RECEIVED"));
-    return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+    }
+    else
+    {
+        UE_LOG(LogFirstTimeDlg, Warning, TEXT("OnAcceptClicked: Manager is null (MenuScreen didn't assign it)."));
+    }
 }
