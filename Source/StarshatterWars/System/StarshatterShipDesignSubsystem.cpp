@@ -917,7 +917,6 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 
 	ShipDesignDataTable->AddRow(RowName, NewShipDesign);
 
-
 }
 
 // +--------------------------------------------------------------------+

@@ -21,6 +21,10 @@
 #include "Engine/DataTable.h"
 #include "GameStructs_System.generated.h"
 
+#ifndef SSW_MAX_STORES
+#define SSW_MAX_STORES 16
+#endif
+
 UENUM(BlueprintType)
 enum class EPowerSource : uint8
 {
@@ -71,6 +75,347 @@ enum class ENavLightType : uint8
 	TYPE_2 UMETA(DisplayName = "Type 2"),
 	TYPE_3 UMETA(DisplayName = "Type 3"),
 	TYPE_4 UMETA(DisplayName = "Type 4"),
+};
+
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	Primary UMETA(DisplayName = "PRIMARY"),
+	Missile UMETA(DisplayName = "MISSILE"),
+	Drone   UMETA(DisplayName = "DRONE"),
+	Beam    UMETA(DisplayName = "BEAM"),
+	Unknown UMETA(DisplayName = "UNKNOWN")
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponDesign : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// -------------------------
+	// Identity / classification
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Type = 0;                 // legacy: design->type (auto-increment)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EWeaponType Kind = EWeaponType::Unknown; // primary/missile/drone/beam
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Name;                   // legacy: design->name (unique key you will likely use as row name)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Group;                  // legacy: design->group
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Description;            // legacy: design->description (already localized in legacy)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bSecret = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bDrone = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bPrimary = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bBeam = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bFlak = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Guided = 0;               // legacy int
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bSelfAiming = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bSyncro = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Value = 0;
+
+	// legacy: "decoy" string resolved to ShipDesign::ClassForName -> int
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 DecoyType = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bProbe = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 TargetType = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bVisibleStores = false;
+
+	// -------------------------
+	// Stores / barrels
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 NStores = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 NBarrels = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVector> MuzzlePoints;   // legacy muzzle_pts[MAX_STORES]
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVector> Attachments;    // legacy attachments[MAX_STORES]
+
+	// -------------------------
+	// Timing / ammo / energy
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RechargeRate = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RefireDelay = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SalvoDelay = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Charge = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MinCharge = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Ammo = -1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 RippleCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Capacity = 100.0f;
+
+	// -------------------------
+	// Carry / damage
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CarryMass = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CarryResist = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Damage = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 DamageType = 0;           // legacy DMG_NORMAL/EMP/POWER
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Penetration = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float LethalRadius = 500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Integrity = 100.0f;
+
+	// -------------------------
+	// Ballistics / flight
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Speed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Life = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Mass = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Drag = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Thrust = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RollRate = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PitchRate = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float YawRate = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RollDrag = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PitchDrag = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float YawDrag = 0.0f;
+
+	// Computed/constraints (legacy also computed max_range/max_track if 0)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MinRange = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MaxRange = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MaxTrack = 0.0f;
+
+	// -------------------------
+	// Visuals / sizes / scaling
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 GraphicType = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Width = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Length = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Scale = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ExplosionScale = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Light = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FColor LightColor = FColor::White;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FlashScale = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FlareScale = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TrailLength = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TrailWidth = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TrailDim = 0.0f;
+
+	// Legacy asset ids (strings). You can later resolve in a runtime loader.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Beauty;        // design->beauty (texture)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Bitmap;        // design->bitmap or first animation frame (texture)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Turret;        // turret model path
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString TurretBase;    // turret base model path
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Model;         // shot model path
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Trail;         // trail texture
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Flash;         // flash texture
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Flare;         // flare texture
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Sound;         // sound id/path
+
+	// Animation frames (legacy up to 16; UE only used first)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FString> AnimFrames;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 AnimLength = 0;
+
+	// -------------------------
+	// Aiming / turret
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FiringCone = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AimAzMax = 1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AimAzMin = -1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AimAzRest = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AimElMax = 1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AimElMin = -1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AimElRest = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SlewRate = 0.0f;      // legacy default 60*DEGREES
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 TurretAxis = 0;
+
+	// -------------------------
+	// Spread
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SpreadAz = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SpreadEl = 0.0f;
+
+	// -------------------------
+	// Detonation / children
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DetRange = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 DetCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DetSpread = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString DetChild; // legacy design->det_child
+
+	// -------------------------
+	// Eject vector
+	// -------------------------
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector Eject = FVector(0.0f, -100.0f, 0.0f);
+
+	// -------------------------
+	// Provenance
+	// -------------------------
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FString SourceFile;
+
+	// -------------------------
+	// Helpers (optional)
+	// -------------------------
+	void NormalizeFixedArrays()
+	{
+		// Legacy behavior: fixed MAX_STORES arrays.
+		// Keep counters sane:
+		NBarrels = FMath::Clamp(NBarrels, 0, SSW_MAX_STORES);
+		NStores = FMath::Clamp(NStores, 0, SSW_MAX_STORES);
+
+		// Force fixed size:
+		MuzzlePoints.SetNum(SSW_MAX_STORES);
+		Attachments.SetNum(SSW_MAX_STORES);
+	}
 };
 
 USTRUCT(BlueprintType)

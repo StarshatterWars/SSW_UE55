@@ -40,6 +40,7 @@
 #include "StarshatterPlayerSubsystem.h"
 #include "StarshatterFormSubsystem.h"
 #include "StarshatterSystemDesignSubsystem.h"
+#include "StarshatterWeaponDesignSubsystem.h"
 
 #include "Logging/LogMacros.h"
 
@@ -63,6 +64,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     Collection.InitializeDependency(UStarshatterFormSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterShipDesignSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterSystemDesignSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterWeaponDesignSubsystem::StaticClass());
 
     // Establish BOOT lifecycle state immediately
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
@@ -85,6 +87,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootPlayerSave(Ctx);
         BootShipDesignLoader(Ctx);
         BootSystemDesignLoader(Ctx);
+        BootWeaponDesignLoader(Ctx);
     }
 
     // Keep existing behavior
@@ -128,6 +131,15 @@ void UStarshatterBootSubsystem::BootSystemDesignLoader(const FBootContext& Ctx)
     Ctx.SystemDesignSS->LoadAll(true);
 }
 
+void UStarshatterBootSubsystem::BootWeaponDesignLoader(const FBootContext& Ctx)
+{
+    if (!Ctx.WeaponDesignSS)
+        return;
+
+    Ctx.WeaponDesignSS->LoadAll(true);
+}
+
+
 bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
 {
     OutCtx.GI = GetGameInstance();
@@ -149,6 +161,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.PlayerSS = OutCtx.GI->GetSubsystem<UStarshatterPlayerSubsystem>();
     OutCtx.ShipDesignSS = OutCtx.GI->GetSubsystem<UStarshatterShipDesignSubsystem>();
     OutCtx.SystemDesignSS = OutCtx.GI->GetSubsystem<UStarshatterSystemDesignSubsystem>();
+    OutCtx.WeaponDesignSS = OutCtx.GI->GetSubsystem<UStarshatterWeaponDesignSubsystem>();
    
    UStarshatterFormSubsystem* FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
     UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"), FormSS ? TEXT("OK") : TEXT("NULL"));
