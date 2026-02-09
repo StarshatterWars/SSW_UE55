@@ -194,9 +194,15 @@ Sim::CommitMission()
 		regions[i]->CommitMission();
 
 	if (ShipStats::NumStats() > 0) {
-		Print(TEXT("\n\nFINAL SCORE '%s'\n"), (const char*)mission->Name());
-		Print(TEXT("Name              Kill1  Kill2  Died   Colls  Points  Cmd Pts\n"));
-		Print(TEXT("----------------  -----  -----  -----  -----  ------  ------\n"));
+		UE_LOG(LogTemp, Log,
+			TEXT("\n\nFINAL SCORE '%s'"),
+			ANSI_TO_TCHAR(mission->Name()));
+
+		UE_LOG(LogTemp, Log,
+			TEXT("Name              Kill1  Kill2  Died   Colls  Points  Cmd Pts"));
+
+		UE_LOG(LogTemp, Log,
+			TEXT("----------------  -----  -----  -----  -----  ------  ------"));
 
 		int tk1 = 0;
 		int tk2 = 0;
