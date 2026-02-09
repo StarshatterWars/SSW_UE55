@@ -360,34 +360,36 @@ void UMenuDlg::EnableMenuButtons(bool bEnable)
     SetButtonEnabled(BtnQuit, true);
 }
 
+/* --------------------------------------------------------------------
+   ApplyMenuGating
+   - MenuDlg gating is based on state, not "first run overlay"
+   - First run overlay disabling is handled by MenuScreen
+   -------------------------------------------------------------------- */
 void UMenuDlg::ApplyMenuGating()
 {
-    // FIRST RUN: disable everything, no exceptions
-    if (bFirstRun_NoPlayerSave)
-    {
-        EnableMenuButtons(false);
-        return;
-    }
-
-    // Default: enable everything (subject to multiplayer rule inside EnableMenuButtons)
+    // Default: enable everything (except multiplayer rule inside EnableMenuButtons)
     EnableMenuButtons(true);
 
-    // NO CAMPAIGN SELECTED: only Exit/Tac/Options/Campaign enabled
+    // NO CAMPAIGN SELECTED:
+    // Enable: Campaign, Mission, Options/Video/Controls, Tac, Quit
+    // Disable: Start, Player, Multi, Mod
     if (!bHasCampaignSelected)
     {
         EnableMenuButtons(false);
 
-        SetButtonEnabled(BtnQuit, true);
-        SetButtonEnabled(BtnTac, true);
         SetButtonEnabled(BtnCampaign, true);
+        SetButtonEnabled(BtnMission, true);
 
-        // Options hub buttons
         SetButtonEnabled(BtnOptions, true);
         SetButtonEnabled(BtnVideo, true);
         SetButtonEnabled(BtnControls, true);
+
+        SetButtonEnabled(BtnTac, true);
+        SetButtonEnabled(BtnQuit, true);
 
         // Preserve legacy multiplayer filesystem rule
         if (BtnMulti && Starshatter::UseFileSystem())
             SetButtonEnabled(BtnMulti, false);
     }
 }
+

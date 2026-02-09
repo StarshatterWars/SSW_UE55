@@ -392,6 +392,8 @@ void UMenuScreen::ShowMenuDlg()
         MenuDlg->RemoveFromParent();
     MenuDlg->AddToViewport(ZCounter);
 
+    MenuDlg->SetIsEnabled(true);
+    MenuDlg->SetIsFocusable(true);
     MenuDlg->SetVisibility(ESlateVisibility::Visible);
     MenuDlg->SetDialogInputEnabled(true);
 
