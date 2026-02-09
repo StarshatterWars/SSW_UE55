@@ -34,6 +34,7 @@
 
 // Router:
 #include "MenuScreen.h"
+#include "MenuDlg.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFirstTimeDlg, Log, All);
 
@@ -267,13 +268,16 @@ void UFirstTimeDlg::OnAcceptClicked()
     // Return to menu via router
     // ------------------------------------------------------------
 
+    // Return to menu through router
     if (MenuManager)
     {
         MenuManager->ShowMenuDlg();
-    }
-    else
-    {
-        UE_LOG(LogFirstTimeDlg, Warning,
-            TEXT("OnAcceptClicked: MenuManager is NULL (MenuScreen didn't assign it)."));
+
+        if (UMenuDlg* MenuDlg = MenuManager->GetMenuDlg())
+        {
+            MenuDlg->RefreshFromPlayerState();
+            MenuDlg->ApplyMenuGating();
+            MenuDlg->SetDialogInputEnabled(true);
+        }
     }
 }
