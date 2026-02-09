@@ -77,6 +77,16 @@ enum class EGameMode : uint8
 	EXIT    UMETA(DisplayName = "Shutting Down"),
 };
 
+UENUM()
+enum class EMenuZOrder : int32
+{
+	Z_MENU_BASE = 100,
+	Z_MENU_OVERLAY = 200,
+	Z_MODAL = 500,
+	Z_CONFIRM = 600,
+	Z_DEBUG = 900
+};
+
 UENUM(BlueprintType)
 enum EGAMESTATUS : uint8 
 {

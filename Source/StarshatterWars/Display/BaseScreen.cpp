@@ -1284,3 +1284,19 @@ void UBaseScreen::ApplyLegacyFormDefaults(const FParsedForm& Parsed)
     }
 }
 
+void UBaseScreen::SetDialogInputEnabled(bool bEnable)
+{
+    bDialogInputEnabled = bEnable;
+
+    // IMPORTANT:
+    // Never SetIsEnabled(false) here. That disables the entire widget tree,
+    // makes everything look grey, and overrides per-button SetIsEnabled(true).
+    SetIsEnabled(true);
+
+    // Visible but non-interactive when disabled (modal background behavior)
+    SetVisibility(bEnable ? ESlateVisibility::Visible : ESlateVisibility::HitTestInvisible);
+
+    // Focus should track interactivity
+    SetIsFocusable(bEnable);
+}
+

@@ -22,19 +22,11 @@
 #include "StarshatterPlayerSubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameStructs.h"
 // NEW:
 #include "OptionsScreen.h"
 
 // ------------------------------------------------------------
-
-enum EMenuZOrder : int32
-{
-    Z_MENU_BASE = 100,
-    Z_MENU_OVERLAY = 200,
-    Z_MODAL = 500,
-    Z_CONFIRM = 600,
-    Z_DEBUG = 900
-};
 
 static void ApplyUIFocus(APlayerController* PC, UUserWidget* FocusWidget)
 {
@@ -95,7 +87,7 @@ TDialog* UMenuScreen::EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr
     Created->SetMenuManager(this);
 
     // Park hidden; real Z-order is applied by ShowDialog(...)
-    Created->AddToViewport(0);
+    Created->AddToViewport(10);
     Created->SetVisibility(ESlateVisibility::Hidden);
     Created->SetIsEnabled(false);
 
@@ -118,8 +110,7 @@ void UMenuScreen::ShowDialog(UBaseScreen* Dialog, int32 ZOrder)
 
     Dialog->AddToViewport(ZOrder);
     Dialog->SetVisibility(ESlateVisibility::Visible);
-    Dialog->SetIsEnabled(true);
-    Dialog->SetIsFocusable(true);
+    Dialog->SetDialogInputEnabled(true);
 
     CurrentDialog = Dialog;
 
@@ -143,8 +134,9 @@ void UMenuScreen::HideDialog(UBaseScreen* Dialog)
     if (!Dialog)
         return;
 
-    Dialog->SetIsEnabled(false);
-    Dialog->SetVisibility(ESlateVisibility::Hidden);
+    Dialog->SetDialogInputEnabled(false);
+    Dialog->SetVisibility(ESlateVisibility::Collapsed);
+
 
     if (CurrentDialog == Dialog)
         CurrentDialog = nullptr;
@@ -378,7 +370,7 @@ void UMenuScreen::ShowMenuDlg()
         }
 
         MenuDlg->Manager = this;
-        MenuDlg->AddToViewport(0);                    // added once; Z handled below
+        MenuDlg->AddToViewport((int32) EMenuZOrder::Z_MENU_BASE);                    // added once; Z handled below
         MenuDlg->SetDialogInputEnabled(false);
         MenuDlg->SetVisibility(ESlateVisibility::Hidden);
     }
@@ -390,7 +382,7 @@ void UMenuScreen::ShowMenuDlg()
     ++ZCounter;
     if (MenuDlg->IsInViewport())
         MenuDlg->RemoveFromParent();
-    MenuDlg->AddToViewport(ZCounter);
+    MenuDlg->AddToViewport((int32)EMenuZOrder::Z_MENU_BASE);
 
     MenuDlg->SetIsEnabled(true);
     MenuDlg->SetIsFocusable(true);
@@ -497,27 +489,34 @@ bool UMenuScreen::IsNavShown() const
 
 void UMenuScreen::ShowFirstTimeDlg()
 {
-    HideAll();
+    // Ensure Menu exists
+    if (!MenuDlg)
+        ShowMenuDlg();
 
-    EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
-    EnsureDialog<UFirstTimeDlg>(FirstTimeDlgClass, FirstTimeDlg);
-
-    // Menu underneath (disabled)
-    if (MenuDlg)
+    // Ensure FirstTimeDlg exists
+    if (!FirstTimeDlg && FirstTimeDlgClass)
     {
-        MenuDlg->Manager = this;
-        ShowDialog(MenuDlg, Z_MENU_BASE);
-        MenuDlg->SetIsEnabled(false);
+        FirstTimeDlg = CreateWidget<UFirstTimeDlg>(GetOwningPlayer(), FirstTimeDlgClass);
+        if (!FirstTimeDlg)
+            return;
+
+        FirstTimeDlg->SetMenuManager(this);
+        FirstTimeDlg->AddToViewport((int32)EMenuZOrder::Z_MODAL);
     }
 
-    // First-run modal on top
-    if (FirstTimeDlg)
-    {
-        ShowDialog(FirstTimeDlg, Z_MODAL);
-        FirstTimeDlg->SetIsEnabled(true);
-        FirstTimeDlg->SetIsFocusable(true);
-        CurrentDialog = FirstTimeDlg;
-    }
+    // ----------------------------------------------------
+    // Z-ORDER + INPUT CONTROL
+    // ----------------------------------------------------
+
+    // Menu stays visible but cannot receive input
+    ShowDialog(MenuDlg, (int32)EMenuZOrder::Z_MENU_BASE);
+    MenuDlg->SetDialogInputEnabled(false);
+
+    // FirstTimeDlg is modal and interactive
+    ShowDialog(FirstTimeDlg, (int32)EMenuZOrder::Z_MODAL);
+    FirstTimeDlg->SetDialogInputEnabled(true);
+
+    CurrentDialog = FirstTimeDlg;
 }
 
 void UMenuScreen::ShowPlayerDlg()
@@ -551,11 +550,11 @@ void UMenuScreen::ShowExitDlg()
     if (MenuDlg)
     {
         MenuDlg->Manager = this;
-        ShowDialog(MenuDlg, false);
+        ShowDialog(MenuDlg, (int32) EMenuZOrder::Z_MENU_BASE);
     }
 
     if (ExitDlg)
-        ShowDialog(ExitDlg, true);
+        ShowDialog(ExitDlg, (int32)EMenuZOrder::Z_MODAL);
 }
 
 void UMenuScreen::ShowConfirmDlg()

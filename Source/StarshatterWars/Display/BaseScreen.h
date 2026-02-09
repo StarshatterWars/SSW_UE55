@@ -364,7 +364,7 @@ public:
     virtual void HandleCancel();
 
     UFUNCTION(BlueprintCallable, Category = "Dialog")
-    void SetDialogInputEnabled(bool bEnabled) { bDialogInputEnabled = bEnabled; }
+    void SetDialogInputEnabled(bool bEnabled);
 
     // ----------------------------------------------------------------
     // Fonts: LegacyName -> UFont (+ optional size override)
@@ -484,11 +484,22 @@ public:
     UOptionsScreen* GetOptionsManager() const { return OptionsManager; }
     UGameScreen* GetGameManager() const { return GameManager; }
 
+    /* --------------------------------------------------------------------
+      Dialog Input
+      - Enabled:   Visible + hit-testable
+      - Disabled:  Visible but NOT hit-testable (so overlays can sit above it)
+      NOTE: Never disables widget tree (avoids greying out everything).
+      -------------------------------------------------------------------- */
+
+    UFUNCTION(BlueprintCallable, Category = "Screen")
+    bool IsDialogInputEnabled() const { return bDialogInputEnabled; }
+
 protected:
     // ----------------------------------------------------------------
     // Centralized key handling (Enter/Escape)
     // ----------------------------------------------------------------
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
 
 protected:
     // ----------------------------------------------------------------

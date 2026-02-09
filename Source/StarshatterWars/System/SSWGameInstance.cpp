@@ -171,6 +171,8 @@ void USSWGameInstance::ShowMainMenuScreen()
 			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 			PC->SetInputMode(InputMode);
 			PC->SetShowMouseCursor(true);
+			PC->bEnableClickEvents = true;
+			PC->bEnableMouseOverEvents = true;
 		}
 		else
 		{
