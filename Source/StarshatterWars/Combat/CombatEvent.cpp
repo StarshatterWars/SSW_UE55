@@ -132,7 +132,7 @@ CombatEvent::Load()
 
             if (player) {
                 info = FormatTextReplace(info, "$NAME", player->Name().data());
-                info = FormatTextReplace(info, "$RANK", PlayerCharacter::RankName(player->Rank()));
+                info = FormatTextReplace(info, "$RANK", PlayerCharacter::RankName(player->GetRank()));
             }
 
             if (group) {

@@ -621,7 +621,7 @@ MissionEvent::Execute(bool silent)
 
 						if (user) {
 							event_message = FormatTextReplace(event_message, "$NAME", user->Name().data());
-							event_message = FormatTextReplace(event_message, "$RANK", PlayerCharacter::RankName(user->Rank()));
+							event_message = FormatTextReplace(event_message, "$RANK", PlayerCharacter::RankName(user->GetRank()));
 						}
 
 						if (group) {

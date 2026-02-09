@@ -17,11 +17,6 @@
     ========
     - SaveVersion: format version for forward-compatible migrations
     - PlayerInfo:  FS_PlayerGameInfo payload (profile + progress)
-
-    NOTES
-    =====
-    - SaveVersion is stored inside the save file and is used by the
-      loading code to detect old formats and migrate if needed.
 =============================================================================*/
 
 #pragma once
@@ -40,11 +35,17 @@ public:
     UPlayerSaveGame();
 
 public:
-    // Save format version (increment when the save schema changes)
-    UPROPERTY(VisibleAnywhere, Category = "SaveGame Data")
+    /* --------------------------------------------------------------------
+       Save format version
+       -------------------------------------------------------------------- */
+
+    UPROPERTY(BlueprintReadOnly, SaveGame, Category = "SaveGame Data")
     int32 SaveVersion = 1;
 
-    // Authoritative player payload
-    UPROPERTY(VisibleAnywhere, Category = "SaveGame Data")
+    /* --------------------------------------------------------------------
+       Authoritative player payload
+       -------------------------------------------------------------------- */
+
+    UPROPERTY(BlueprintReadWrite, SaveGame, Category = "SaveGame Data")
     FS_PlayerGameInfo PlayerInfo;
 };

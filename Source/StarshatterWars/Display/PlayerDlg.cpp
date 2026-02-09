@@ -261,7 +261,7 @@ void UPlayerDlg::ShowPlayer()
 
     if (lbl_rank)
     {
-        const int32 RankVal = (int32)player->Rank();
+        const int32 RankVal = (int32)player->   GetRank();
         lbl_rank->SetText(FText::AsNumber(RankVal));
     }
 

@@ -298,10 +298,10 @@ CampaignSituationReport::MissionSituation()
 	PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
 
 	if (p) {
-		if (p->Rank() > 6)
+		if (p->GetRank() > 6)
 			rank = ", Admiral";
 		else
-			rank = Text(", ") + PlayerCharacter::RankName(p->Rank());
+			rank = Text(", ") + PlayerCharacter::RankName(p->GetRank());
 
 		name = Text(", ") + p->Name();
 	}

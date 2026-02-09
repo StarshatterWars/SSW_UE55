@@ -257,7 +257,11 @@ void UFirstTimeDlg::OnAcceptClicked()
     // Save
     // ------------------------------------------------------------
 
-    PlayerCharacter::Save();
+    if (!PlayerCharacter::SaveToSubsystem(this))
+    {
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("SaveToSubsystem failed"));
+        return;
+    }
 
     // ------------------------------------------------------------
     // Return to menu via router

@@ -1012,6 +1012,18 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 	int PlayerForce;
 	UPROPERTY(BlueprintReadWrite)
 	TArray<bool> CampaignComplete;
+	UPROPERTY(BlueprintReadWrite)
+	int32 Trained;
+	UPROPERTY(BlueprintReadWrite)
+	int32 AILevel;
+	UPROPERTY(BlueprintReadWrite)
+	int32 ForceFeedbackLevel;
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FString> ChatMacros;     // 10
+	UPROPERTY(BlueprintReadWrite)
+	TArray<int32> MfdModes;         // 3
+	UPROPERTY(BlueprintReadWrite)
+	FString Signature;              // optional (legacy had signature string)
 
 	FS_PlayerGameInfo()
 	{
@@ -1058,10 +1070,21 @@ struct FS_PlayerGameInfo : public FTableRowBase {
 		FlightTime = 0;
 		CampaignRowName = NAME_None;
 
+		Trained = 0;
+		AILevel = 0;
+		ForceFeedbackLevel = 0;
+		Signature = "";
+
 		CampaignComplete.SetNum(5);
 		for (int i = 0; i < CampaignComplete.Num(); i++) {
 			CampaignComplete[i] = false;
 		}
+
+		ChatMacros.SetNum(10);
+		for (int i = 0; i < ChatMacros.Num(); ++i) ChatMacros[i] = "";
+
+		MfdModes.SetNum(3);
+		for (int i = 0; i < MfdModes.Num(); ++i) MfdModes[i] = -1;
 	}
 };
 

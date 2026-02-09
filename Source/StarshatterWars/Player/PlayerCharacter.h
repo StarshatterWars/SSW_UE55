@@ -51,7 +51,7 @@ public:
     const Text& Signature()       const { return signature; }
     const Text& ChatMacro(int n)  const;
     int            CreateDate()      const { return create_date; }
-    int            Rank()            const;
+    int            GetRank()         const;
     int            Medal(int n)      const;
     int            Points()          const { return points; }
     int            Medals()          const { return medals; }
@@ -154,6 +154,7 @@ public:
     bool                          ConfigExists() const;
     static void                   Load();
     static void                   Save();
+    static bool                   SaveToSubsystem(UObject* WorldContext);
     static void                   LoadAwardTables();
 
     static PlayerCharacter* CreateDefault();
@@ -186,7 +187,7 @@ protected:
     int            losses;
     int            campaigns;     // bitmap of completed campaigns
     int            trained;       // id of highest training mission completed
-
+    int            rank;
     // gameplay options:
     int            flight_model;
     int            flying_start;

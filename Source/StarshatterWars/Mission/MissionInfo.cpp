@@ -83,10 +83,10 @@ bool MissionInfo::IsAvailable()
     if (region.length() && player_group->GetRegion() != region)
         return false;
 
-    if (min_rank && player->Rank() < min_rank)
+    if (min_rank && player->GetRank() < min_rank)
         return false;
 
-    if (max_rank && player->Rank() > max_rank)
+    if (max_rank && player->GetRank() > max_rank)
         return false;
 
     // One-shot mission handling:

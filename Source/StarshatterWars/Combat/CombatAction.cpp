@@ -79,7 +79,7 @@ bool CombatAction::IsAvailable() const
         if (!player)
             return false;
 
-        if (player->Rank() < (int)min_rank || player->Rank() > (int)max_rank)
+        if (player->GetRank() < (int)min_rank || player->GetRank() > (int)max_rank)
             return false;
     }
 

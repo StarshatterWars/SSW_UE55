@@ -510,7 +510,7 @@ CampaignMissionStarship::CreateElements(CombatGroup* g)
 
                 if (player_group && player_group->GetIFF() == g->GetIFF()) {
                     PlayerCharacter* playerc = PlayerCharacter::GetCurrentPlayer();
-                    if (playerc && playerc->Rank() >= 10) {
+                    if (playerc && playerc->GetRank() >= 10) {
                         elem->SetCommander(player_group->Name());
                     }
                 }

@@ -58,7 +58,7 @@ void UPlayerRosterEntry::RefreshFromPlayer(PlayerCharacter* player)
         // txt_rank->SetText(FText::FromString(ANSI_TO_TCHAR(player->Rank())));
 
         // If Rank() returns int:
-        const int32 RankVal = (int32)player->Rank();
+        const int32 RankVal = (int32)player->GetRank();
         txt_rank->SetText(FText::AsNumber(RankVal));
     }
 

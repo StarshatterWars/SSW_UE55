@@ -32,6 +32,10 @@
 #include "Engine/Texture2D.h"
 #include "Game.h"
 
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
+#include "StarshatterPlayerSubsystem.h"
+
 // +-------------------------------------------------------------------+
 
 static PlayerCharacter* GCurrentPlayer = nullptr;
@@ -562,7 +566,7 @@ PlayerCharacter::RankFromName(const char* name)
 }
 
 int32
-PlayerCharacter::Rank() const
+PlayerCharacter::GetRank() const
 {
     const int32 RankCount = rank_table.size();
 
@@ -589,7 +593,7 @@ PlayerCharacter::SetRank(int32 RankId)
             points = Award->total_points;
             return;
         }
-    }
+    } 
 }
 
 int
@@ -734,7 +738,7 @@ PlayerCharacter::ProcessStats(ShipStats* s, DWORD start_time)
 {
     if (!s) return;
 
-    int old_rank = Rank();
+    int old_rank = GetRank();
     int pts = GetMissionPoints(s, start_time);
 
     AddPoints(pts);
@@ -746,7 +750,7 @@ PlayerCharacter::ProcessStats(ShipStats* s, DWORD start_time)
     AddMissions(1);
     AddFlightTime((Game::GameTime() - start_time) / 1000);
 
-    int rank = Rank();
+    rank = GetRank();
 
     // did the player earn a promotion?
     if (old_rank != rank) {
@@ -787,7 +791,7 @@ PlayerCharacter::EarnedAward(AwardInfo* a, ShipStats* s)
         return false;
 
     // eligible for this medal?
-    int rank = Rank();
+    rank = GetRank();
     if (a->min_rank > rank || a->max_rank < rank)
         return false;
 
@@ -1329,6 +1333,81 @@ PlayerCharacter::Save()
     }
 }
 
+bool PlayerCharacter::SaveToSubsystem(UObject* WorldContext)
+{
+    if (!WorldContext)
+        return false;
+
+    UWorld* World = WorldContext->GetWorld();
+    if (!World)
+        return false;
+
+    UGameInstance* GI = World->GetGameInstance();
+    if (!GI)
+        return false;
+
+    UStarshatterPlayerSubsystem* PlayerSS = GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+    if (!PlayerSS)
+        return false;
+
+    PlayerCharacter* P = PlayerCharacter::GetCurrentPlayer();
+    if (!P)
+        return false;
+
+    // --- legacy: capture MFD modes from HUD into player object ---
+    HUDView* hud = HUDView::GetInstance();
+    if (hud)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            MFDView* mfd = hud->GetMFD(i);
+            if (mfd)
+                P->mfd[i] = mfd->GetMode();
+        }
+    }
+
+    // --- write into subsystem struct ---
+    FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
+
+    // Identity
+    Info.Id = P->uid;
+    Info.Name = UTF8_TO_TCHAR(P->name.data());
+    // Optional: treat Nickname like legacy "squadron/callsign" if you want:
+    // Info.Nickname = UTF8_TO_TCHAR(P->squadron.data());
+    Info.Signature = UTF8_TO_TCHAR(P->signature.data());
+
+    // Gameplay prefs
+    Info.Rank = P->GetRank();          // if you have it; otherwise leave as-is
+    Info.Trained = P->trained;
+    Info.FlightModel = P->flight_model;
+    Info.LandingMode = P->landing_model;
+    Info.FlyingStart = (P->flying_start != 0);
+
+    Info.AILevel = P->ai_level;
+    Info.HudMode = P->hud_mode;
+    Info.HudColor = P->hud_color;
+    Info.ForceFeedbackLevel = P->ff_level;
+
+    Info.GridMode = (P->grid != 0);
+    Info.GunSightMode = (P->gunsight != 0);
+
+    // Chat macros
+    Info.ChatMacros.SetNum(10);
+    for (int i = 0; i < 10; i++)
+    {
+        Info.ChatMacros[i] = UTF8_TO_TCHAR(P->chat_macros[i].data());
+    }
+
+    // MFD modes
+    Info.MfdModes.SetNum(3);
+    for (int i = 0; i < 3; i++)
+    {
+        Info.MfdModes[i] = (int32)P->mfd[i];
+    }
+
+    // Persist
+    return PlayerSS->SavePlayer(true);
+}
 // +-------------------------------------------------------------------+
 
 static char stat_buf[280];
