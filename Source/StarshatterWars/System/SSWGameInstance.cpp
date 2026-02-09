@@ -636,29 +636,6 @@ void USSWGameInstance::ShowQuitDlg()
 	ToggleQuitDlg(false);
 }
 
-void USSWGameInstance::ShowFirstRunDlg()
-{
-	// Create widget
-	FirstTimeDlg = CreateWidget<UFirstTimeDlg>(this, FirstTimeDlgWidgetClass);
-	// Add it to viewport
-	FirstTimeDlg->AddToViewport(102);
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(FirstTimeDlg->TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
-		}
-	}
-	ToggleFirstRunDlg(false);
-}
-
 void USSWGameInstance::ToggleQuitDlg(bool bVisible)
 {
 	if(QuitDlg) {
@@ -668,21 +645,6 @@ void USSWGameInstance::ToggleQuitDlg(bool bVisible)
 			QuitDlg->SetVisibility(ESlateVisibility::Collapsed);
 		}	
 	}
-}
-
-void USSWGameInstance::ToggleFirstRunDlg(bool bVisible)
-{
-	if (FirstTimeDlg) {
-		if (bVisible) {
-			FirstTimeDlg->SetVisibility(ESlateVisibility::Visible);
-		}
-		else {
-			FirstTimeDlg->SetVisibility(ESlateVisibility::Collapsed);
-		}
-	}
-	//if (MainMenuDlg) {
-	//	MainMenuDlg->EnableMenuButtons(!bVisible);
-	//}
 }
 
 void USSWGameInstance::ToggleMenuButtons(bool bVisible)

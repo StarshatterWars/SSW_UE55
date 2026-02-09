@@ -179,17 +179,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Variables")
 	void ShowQuitDlg();
 
-	UFUNCTION(BlueprintCallable, Category = "Game Variables")
-	void ShowFirstRunDlg();
-
 	// =====================================================================
 	// Toggle / Remove Screens
 	// =====================================================================
 	UFUNCTION()
 	void ToggleQuitDlg(bool bVisible);
-
-	UFUNCTION()
-	void ToggleFirstRunDlg(bool bVisible);
 
 	UFUNCTION()
 	void ToggleMenuButtons(bool bVisible);

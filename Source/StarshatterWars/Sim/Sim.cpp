@@ -1854,13 +1854,16 @@ Sim::ResolveSplashList()
 					// then delete the ship:
 					if (ship_destroyed) {
 						//NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
+						const FString KillerName = UTF8_TO_TCHAR(splash->owner_name);
+						const FString ShipName = ship->Name();
+						const FString TimeStr = FormatGameTime();
+
 						Print(
 							TEXT("    %s Killed %s (%s)\n"),
-							*FString(splash->owner_name),
-							*ship->Name(),
-							*FormatGameTime()
+							*KillerName,
+							*ShipName,
+							*TimeStr
 						);
-
 						// record the kill
 						ShipStats* killer = ShipStats::Find(splash->owner_name);
 						if (killer) {
