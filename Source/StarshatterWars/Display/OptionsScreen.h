@@ -125,11 +125,6 @@ protected:
     TObjectPtr<UKeyDlg> KeyDlg = nullptr;
 
 protected:
-    // MenuScreen owner
-    UPROPERTY(Transient)
-    TObjectPtr<UMenuScreen> MenuManager = nullptr;
-
-protected:
     // Main options widgets
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* flight_model = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* flying_start = nullptr;

@@ -140,8 +140,12 @@ public:
     static int           CommandRankRequired(int ship_class);
 
     static List<PlayerCharacter>& GetRoster();
-    static PlayerCharacter* GetCurrentPlayer();
+    static PlayerCharacter*       GetCurrentPlayer();
     static void                   SelectPlayer(PlayerCharacter* p);
+    static void                   SetCurrentPlayer(PlayerCharacter* NewPlayer);
+
+    static PlayerCharacter*       EnsureCurrentPlayer();
+
     static PlayerCharacter* Create(const char* name);
     static void                   Destroy(PlayerCharacter* p);
     static PlayerCharacter* Find(const char* name);
@@ -160,6 +164,7 @@ protected:
     PlayerCharacter();
 
     void           CreateUniqueID();
+
 
     int            uid;
     Text           name;

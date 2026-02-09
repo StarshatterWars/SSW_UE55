@@ -19,16 +19,16 @@
       - Player save
 */
 
-#pragma once 
+#pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 #include "FirstTimeDlg.generated.h"
 
+// UMG forward declarations:
 class UButton;
 class UEditableTextBox;
 class UComboBoxString;
-class UMenuScreen;
 
 /**
  * UFirstTimeDlg
@@ -42,20 +42,40 @@ class STARSHATTERWARS_API UFirstTimeDlg : public UBaseScreen
 public:
     UFirstTimeDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Set by MenuScreen after CreateWidget (like MenuDlg->Manager)
-    UPROPERTY() TObjectPtr<UMenuScreen> Manager;
-
 protected:
+    /* --------------------------------------------------------------------
+       UUserWidget
+       -------------------------------------------------------------------- */
+
     virtual void NativeConstruct() override;
+
+    /* --------------------------------------------------------------------
+       Events
+       -------------------------------------------------------------------- */
 
     UFUNCTION()
     void OnAcceptClicked();
 
+    /* --------------------------------------------------------------------
+       Helpers
+       -------------------------------------------------------------------- */
+
     void PopulateDefaultsIfNeeded();
 
-    // --- BindWidget controls (must match names in WBP_FirstTimeDlg) ---
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UEditableTextBox> NameEdit;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString>  PlayStyleCombo;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString>  ExperienceCombo;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton>          AcceptBtn;
+protected:
+    /* --------------------------------------------------------------------
+       BindWidget controls (must match names in WBP_FirstTimeDlg)
+       -------------------------------------------------------------------- */
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UEditableTextBox> NameEdit;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UComboBoxString> PlayStyleCombo;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UComboBoxString> ExperienceCombo;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> AcceptBtn;
 };

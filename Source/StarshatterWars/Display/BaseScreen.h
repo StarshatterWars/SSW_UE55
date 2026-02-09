@@ -49,6 +49,8 @@
 //  LEGACY FORM PARSE TYPES
 // ====================================================================
 
+class UMenuScreen;
+
 USTRUCT(BlueprintType)
 struct FFormFontMapEntry
 {
@@ -440,6 +442,47 @@ protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Screen")
+    TObjectPtr<class UMenuScreen> MenuManager;
+
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Screen")
+    TObjectPtr<class UOptionsScreen> OptionsManager;
+
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Screen")
+    TObjectPtr<class UGameScreen> GameManager;
+
+
+public:
+    /* ----------------------------------------------------------------
+       Setters
+       ---------------------------------------------------------------- */
+
+    UFUNCTION(BlueprintCallable, Category = "Screen")
+    void SetMenuManager(class UMenuScreen* InManager)
+    {
+        MenuManager = InManager;
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "Screen")
+    void SetOptionsManager(class UOptionsScreen* InManager)
+    {
+        OptionsManager = InManager;
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "Screen")
+    void SetGameManager(class UGameScreen* InManager)
+    {
+        GameManager = InManager;
+    }
+
+    /* ----------------------------------------------------------------
+       Getters (optional)
+       ---------------------------------------------------------------- */
+
+    UMenuScreen* GetMenuManager() const { return MenuManager; }
+    UOptionsScreen* GetOptionsManager() const { return OptionsManager; }
+    UGameScreen* GetGameManager() const { return GameManager; }
 
 protected:
     // ----------------------------------------------------------------

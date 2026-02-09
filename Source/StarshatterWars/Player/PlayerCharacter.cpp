@@ -34,6 +34,8 @@
 
 // +-------------------------------------------------------------------+
 
+static PlayerCharacter* GCurrentPlayer = nullptr;
+
 class AwardInfo
 {
 public:
@@ -857,7 +859,18 @@ PlayerCharacter::GetRoster()
 PlayerCharacter*
 PlayerCharacter::GetCurrentPlayer()
 {
-    return current_player;
+    return GCurrentPlayer;;
+}
+
+void PlayerCharacter::SetCurrentPlayer(PlayerCharacter* NewPlayer)
+{
+    if (GCurrentPlayer == NewPlayer)
+        return;
+
+    // Optional: clean up previous player if ownership is clear
+    // delete GCurrentPlayer;
+
+    GCurrentPlayer = NewPlayer;
 }
 
 void
@@ -1663,4 +1676,16 @@ PlayerCharacter::CreateUniqueID()
 
     if (uid < 1)
         uid = 1;
+}
+
+PlayerCharacter* PlayerCharacter::EnsureCurrentPlayer()
+{
+    PlayerCharacter* P = PlayerCharacter::GetCurrentPlayer();
+    if (P)
+        return P;
+
+    // Create a default player object (whatever your class expects)
+    P = new PlayerCharacter();
+    PlayerCharacter::SetCurrentPlayer(P); // implement if you don't have it
+    return P;
 }

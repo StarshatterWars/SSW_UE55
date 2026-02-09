@@ -31,9 +31,6 @@ class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
 public:
     UAudioDlg(const FObjectInitializer& ObjectInitializer);
 
-    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
-    UOptionsScreen* GetManager() const { return Manager; }
-
     void Show();
 
     // IMPORTANT: Match base signature
@@ -65,9 +62,6 @@ private:
     void RefreshFromModel();
 
 private:
-    UPROPERTY(Transient)
-    UOptionsScreen* Manager = nullptr;
-
     bool bClosed = true;
 
     float MasterVolume = 1.0f;

@@ -73,7 +73,7 @@ template<typename TDialog>
 TDialog* UMenuScreen::EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr<TDialog>& Storage)
 {
     if (Storage)
-        return Storage;
+        return Storage.Get();
 
     if (!ClassToSpawn)
         return nullptr;
@@ -85,16 +85,20 @@ TDialog* UMenuScreen::EnsureDialog(TSubclassOf<TDialog> ClassToSpawn, TObjectPtr
         return nullptr;
     }
 
-    Storage = CreateWidget<TDialog>(PC, ClassToSpawn);
-    if (!Storage)
+    TDialog* Created = CreateWidget<TDialog>(PC, ClassToSpawn);
+    if (!Created)
         return nullptr;
 
-    // Keep it around; hide until needed
-    Storage->AddToViewport(0);
-    Storage->SetVisibility(ESlateVisibility::Hidden);
-    Storage->SetDialogInputEnabled(false);
+    // Router assignment (BaseScreen owns MenuManager)
+    Created->SetMenuManager(this);
 
-    return Storage;
+    // Park hidden; real Z-order is applied by ShowDialog(...)
+    Created->AddToViewport(0);
+    Created->SetVisibility(ESlateVisibility::Hidden);
+    Created->SetIsEnabled(false);
+
+    Storage = Created;
+    return Created;
 }
 
 // ------------------------------------------------------------

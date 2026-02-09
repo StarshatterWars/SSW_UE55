@@ -238,19 +238,19 @@ void UAudioDlg::OnSoundQualityChanged(FString, ESelectInfo::Type)
 // Buttons:
 void UAudioDlg::OnApplyClicked()
 {
-    if (Manager) Manager->ApplyOptions();
+    if (OptionsManager) OptionsManager->ApplyOptions();
     else Apply();
 }
 
 void UAudioDlg::OnCancelClicked()
 {
-    if (Manager) Manager->CancelOptions();
+    if (OptionsManager) OptionsManager->CancelOptions();
     else Cancel();
 }
 
 // Tabs:
-void UAudioDlg::OnAudioClicked() { if (Manager) Manager->ShowAudDlg(); }
-void UAudioDlg::OnVideoClicked() { if (Manager) Manager->ShowVidDlg(); }
-void UAudioDlg::OnOptionsClicked() { if (Manager) Manager->ShowOptDlg(); }
-void UAudioDlg::OnControlsClicked() { if (Manager) Manager->ShowCtlDlg(); }
-void UAudioDlg::OnModClicked() { if (Manager) Manager->ShowModDlg(); }
+void UAudioDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
+void UAudioDlg::OnVideoClicked() { if (OptionsManager) OptionsManager->ShowVidDlg(); }
+void UAudioDlg::OnOptionsClicked() { if (OptionsManager) OptionsManager->ShowOptDlg(); }
+void UAudioDlg::OnControlsClicked() { if (OptionsManager) OptionsManager->ShowCtlDlg(); }
+void UAudioDlg::OnModClicked() { if (OptionsManager) OptionsManager->ShowModDlg(); }

@@ -164,59 +164,87 @@ FReply UOptionsScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEv
 // Subdialog creation
 // ---------------------------------------------------------------------
 
+/* --------------------------------------------------------------------
+   EnsureSubDialogs (OptionsScreen)
+   -------------------------------------------------------------------- */
+
 void UOptionsScreen::EnsureSubDialogs()
 {
-    UWorld* World = GetWorld();
-    if (!World)
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("OptionsScreen::EnsureSubDialogs: OwningPlayer is NULL"));
         return;
+    }
+
+    // ------------------------------------------------------------
+    // Audio
+    // ------------------------------------------------------------
 
     if (!AudDlg && AudioDlgClass)
     {
-        AudDlg = CreateWidget<UAudioDlg>(World, AudioDlgClass);
+        AudDlg = CreateWidget<UAudioDlg>(PC, AudioDlgClass);
         if (AudDlg)
         {
             AudDlg->AddToViewport(0);
             AudDlg->SetVisibility(ESlateVisibility::Collapsed);
-            AudDlg->SetManager(this);
+            AudDlg->SetIsEnabled(false);
+
+            AudDlg->SetOptionsManager(this);
         }
     }
 
+    // ------------------------------------------------------------
+    // Video
+    // ------------------------------------------------------------
+
     if (!VidDlg && VideoDlgClass)
     {
-        VidDlg = CreateWidget<UVideoDlg>(World, VideoDlgClass);
+        VidDlg = CreateWidget<UVideoDlg>(PC, VideoDlgClass);
         if (VidDlg)
         {
             VidDlg->AddToViewport(0);
             VidDlg->SetVisibility(ESlateVisibility::Collapsed);
-            VidDlg->SetManager(this);
+            VidDlg->SetIsEnabled(false);
+
+            VidDlg->SetOptionsManager(this);
         }
     }
 
+    // ------------------------------------------------------------
+    // Controls
+    // ------------------------------------------------------------
+
     if (!CtlDlg && ControlDlgClass)
     {
-        CtlDlg = CreateWidget<UControlOptionsDlg>(World, ControlDlgClass);
+        CtlDlg = CreateWidget<UControlOptionsDlg>(PC, ControlDlgClass);
         if (CtlDlg)
         {
             CtlDlg->AddToViewport(0);
             CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
+            CtlDlg->SetIsEnabled(false);
+
+            CtlDlg->SetOptionsManager(this);
         }
     }
 
-    // NEW: KeyDlg spawned once, like the others
+    // ------------------------------------------------------------
+    // Key Binding Dialog
+    // ------------------------------------------------------------
+
     if (!KeyDlg && KeyDlgClass)
     {
-        KeyDlg = CreateWidget<UKeyDlg>(World, KeyDlgClass);
+        KeyDlg = CreateWidget<UKeyDlg>(PC, KeyDlgClass);
         if (KeyDlg)
         {
             KeyDlg->AddToViewport(0);
             KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+            KeyDlg->SetIsEnabled(false);
 
-            // KeyDlg routes back here
-            KeyDlg->SetManager(this);
+            KeyDlg->SetOptionsManager(this);
         }
     }
 }
-
 void UOptionsScreen::HideAllPages()
 {
     if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
@@ -263,16 +291,34 @@ void UOptionsScreen::ShowOptDlg()
     }
 }
 
+/* --------------------------------------------------------------------
+   ShowAudDlg
+   -------------------------------------------------------------------- */
+
 void UOptionsScreen::ShowAudDlg()
 {
     EnsureSubDialogs();
-    if (!AudDlg) return;
+    if (!AudDlg)
+        return;
 
-    SetVisibility(ESlateVisibility::Collapsed);
-    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+    // Hide/disable subdialogs
+    if (VidDlg) { VidDlg->SetVisibility(ESlateVisibility::Collapsed); VidDlg->SetIsEnabled(false); }
+    if (CtlDlg) { CtlDlg->SetVisibility(ESlateVisibility::Collapsed); CtlDlg->SetIsEnabled(false); }
+    if (KeyDlg) { KeyDlg->SetVisibility(ESlateVisibility::Collapsed); KeyDlg->SetIsEnabled(false); }
 
-    AudDlg->SetManager(this);
-    AudDlg->Show();
+    // Keep OptionsScreen itself visible as the router/background
+    SetVisibility(ESlateVisibility::Visible);
+    SetIsEnabled(true);
+
+    // Wire router + show
+    AudDlg->SetOptionsManager(this);
+    AudDlg->SetVisibility(ESlateVisibility::Visible);
+    AudDlg->SetIsEnabled(true);
+
+    // Optional: bring to front deterministically (no SetZOrderInViewport needed)
+    if (AudDlg->IsInViewport())
+        AudDlg->RemoveFromParent();
+    AudDlg->AddToViewport(500); // Z_MODAL or Z_OPTIONS_MODAL
 }
 
 void UOptionsScreen::ShowVidDlg()
