@@ -1021,13 +1021,13 @@ CombatGroup::LoadOrderOfBattle(const char* filename, int team, Combatant* combat
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could notxparse order of battle '%s'\n", filename);
+		Print(TEXT("ERROR: could not parse order of battle '%s'\n"), filename);
 		return 0;
 	}
 	else {
 		TermText* file_type = term->isText();
 		if (!file_type || file_type->value() != "ORDER_OF_BATTLE") {
-			Print("ERROR: invalid Order of Battle file '%s'\n", filename);
+			Print(TEXT("ERROR: invalid Order of Battle file '%s'\n"), filename);
 			term->print(10);
 			return 0;
 		}
@@ -1042,7 +1042,7 @@ CombatGroup::LoadOrderOfBattle(const char* filename, int team, Combatant* combat
 			if (def) {
 				if (def->name()->value() == "group") {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: group struct missing in '%s'\n", filename);
+						Print(TEXT("WARNING: group struct missing in '%s'\n"), filename);
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
@@ -1104,7 +1104,7 @@ else GET_DEF_NUM(id);
 
 								else if ((iff == team || team < 0) && pdef->name()->value() == "unit") {
 									if (!pdef->term() || !pdef->term()->isStruct()) {
-										Print("WARNING: unit struct missing for group '%s' in '%s'\n", name, filename);
+										Print(TEXT("WARNING: unit struct missing for group '%s' in '%s'\n"), name, filename);
 									}
 									else {
 										TermStruct* valx = pdef->term()->isStruct();
@@ -1161,7 +1161,7 @@ else GET_DEF_NUM(id);
 										}
 
 										if (!ShipDesign::CheckName(unit_design)) {
-											Print("ERROR: invalid design '%s' for unit '%s' in '%s'\n", unit_design, unit_name, filename);
+											Print(TEXT("ERROR: invalid design '%s' for unit '%s' in '%s'\n"), unit_design, unit_name, filename);
 											return 0;
 										}
 
@@ -1246,7 +1246,7 @@ else GET_DEF_NUM(id);
 	} while (term);
 
 	loader->ReleaseBuffer(block);
-	Print("Order of Battle Loaded (%s).\n", force ? force->Name().data() : "unknown force");
+	Print(TEXT("Order of Battle Loaded (%s).\n"), force ? force->Name().data() : "unknown force");
 
 	if (force)
 		force->CalcValue();
@@ -1265,13 +1265,13 @@ CombatGroup::MergeOrderOfBattle(BYTE* block, const char* filename, int team, Com
 	Term* term = parser.ParseTerm();
 
 	if (!term) {
-		Print("ERROR: could notxparse order of battle '%s'\n", filename);
+		Print(TEXT("ERROR: could notxparse order of battle '%s'\n"), filename);
 		return;
 	}
 	else {
 		TermText* file_type = term->isText();
 		if (!file_type || file_type->value() != "SAVEGAME") {
-			Print("ERROR: invalid Save Game file '%s'\n", filename);
+			Print(TEXT("ERROR: invalid Save Game file '%s'\n"), filename);
 			term->print(10);
 			return;
 		}
@@ -1286,7 +1286,7 @@ CombatGroup::MergeOrderOfBattle(BYTE* block, const char* filename, int team, Com
 			if (def) {
 				if (def->name()->value() == "group") {
 					if (!def->term() || !def->term()->isStruct()) {
-						Print("WARNING: group struct missing in '%s'\n", filename);
+						Print(TEXT("WARNING: group struct missing in '%s'\n"), filename);
 					}
 					else {
 						TermStruct* val = def->term()->isStruct();
@@ -1352,7 +1352,7 @@ else GET_DEF_NUM(id);
 
 								else if ((iff == team || team < 0) && pdef->name()->value() == "unit") {
 									if (!pdef->term() || !pdef->term()->isStruct()) {
-										Print("WARNING: unit struct missing for group '%s' in '%s'\n", name, filename);
+										Print(TEXT("WARNING: unit struct missing for group '%s' in '%s'\n"), name, filename);
 									}
 									else {
 										TermStruct* valu = pdef->term()->isStruct();
@@ -1406,7 +1406,7 @@ else GET_DEF_NUM(id);
 										}
 
 										if (!ShipDesign::CheckName(unit_design)) {
-											Print("ERROR: invalid design '%s' for unit '%s' in '%s'\n", unit_design, unit_name, filename);
+											Print(TEXT("ERROR: invalid design '%s' for unit '%s' in '%s'\n"), unit_design, unit_name, filename);
 											return;
 										}
 
@@ -1450,7 +1450,7 @@ else GET_DEF_NUM(id);
 							CombatGroup* g = force->FindGroup(TypeFromName(type), id);
 
 							if (!g) {
-								::Print("WARNING: unexpected combat group %s %d '%s' in '%s'\n", type, id, name, filename);
+								::Print(TEXT("WARNING: unexpected combat group %s %d '%s' in '%s'\n"), type, id, name, filename);
 								continue;
 							}
 
@@ -1468,7 +1468,7 @@ else GET_DEF_NUM(id);
 									g->SetZoneLock(zone_locked);
 								}
 								else {
-									::Print("WARNING: could notxfind combat zone '%s' for group %s %d '%s' in '%s'\n", zone, type, id, name, filename);
+									::Print(TEXT("WARNING: could notxfind combat zone '%s' for group %s %d '%s' in '%s'\n"), zone, type, id, name, filename);
 								}
 							}
 							else if (*system) {
@@ -1512,7 +1512,7 @@ else GET_DEF_NUM(id);
 		}              // term
 	} while (term);
 
-	Print("Order of Battle Loaded (%s).\n", force ? force->Name().data() : "unknown force");
+	Print(TEXT("Order of Battle Loaded (%s).\n"), force ? force->Name().data() : "unknown force");
 
 	if (force)
 		force->CalcValue();

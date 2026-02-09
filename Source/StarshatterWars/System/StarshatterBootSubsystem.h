@@ -138,6 +138,7 @@ private:
     void MarkBootComplete();
 
     void BootLegacyDataLoader(const FBootContext& Ctx);
+    void IngestAllDesignData(bool bForceReimport);
 
 private:
     bool bBootComplete = false;

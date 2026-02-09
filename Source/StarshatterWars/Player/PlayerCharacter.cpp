@@ -1028,7 +1028,10 @@ void PlayerCharacter::Load()
 
     if (!term)
     {
-        Print("ERROR: could not parse '%s'.\n", filename);
+        UE_LOG(LogTemp, Error,
+            TEXT("ERROR: could not parse '%s'."),
+            ANSI_TO_TCHAR(filename));
+
         delete[] block;
         return;
     }
@@ -1037,7 +1040,10 @@ void PlayerCharacter::Load()
         TermText* file_type = term->isText();
         if (!file_type || file_type->value() != "PLAYER_CONFIG")
         {
-            Print("WARNING: invalid '%s' file.  Using defaults\n", filename);
+            UE_LOG(LogTemp, Warning,
+                TEXT("WARNING: invalid '%s' file. Using defaults"),
+                ANSI_TO_TCHAR(filename));
+
             delete term;
             delete[] block;
             return;
@@ -1076,21 +1082,29 @@ void PlayerCharacter::Load()
         TermDef* def = term->isDef();
         if (!def)
         {
-            Print("WARNING: term ignored in '%s'\n", filename);
+            UE_LOG(LogTemp, Warning,
+                TEXT("WARNING: term ignored in '%s'"),
+                ANSI_TO_TCHAR(filename));
             term->print();
             continue;
         }
 
         if (!DefNameEquals(def, "player"))
         {
-            Print("WARNING: unknown label '%s' in '%s'\n",
-                def->name()->value().data(), filename);
+            UE_LOG(LogTemp, Warning,
+                TEXT("WARNING: unknown label '%s' in '%s'"),
+                ANSI_TO_TCHAR(def->name()->value().data()),
+                ANSI_TO_TCHAR(filename));
+
             continue;
         }
 
         if (!def->term() || !def->term()->isStruct())
         {
-            Print("WARNING: player structure missing in '%s'\n", filename);
+            UE_LOG(LogTemp, Warning,
+                TEXT("WARNING: player structure missing in '%s'"),
+                ANSI_TO_TCHAR(filename));
+
             continue;
         }
 
@@ -1342,7 +1356,9 @@ PlayerCharacter::DecodeStats(const char* stats)
     ZeroMemory(code_buf, 280);
 
     if (!stats || !*stats) {
-        Print("PlayerCharacter::DecodeStats() invalid or missing stats\n");
+        UE_LOG(LogTemp, Warning,
+            TEXT("PlayerCharacter::DecodeStats() invalid or missing stats"));
+
         return;
     }
 
@@ -1361,7 +1377,12 @@ PlayerCharacter::DecodeStats(const char* stats)
     }
 
     else {
-        Print("PlayerCharacter::DecodeStats() invalid plain text length %d\n", plain.length());
+        const int32 PlainLen = static_cast<int32>(plain.length());
+
+        UE_LOG(LogTemp, Warning,
+            TEXT("PlayerCharacter::DecodeStats() invalid plain text length %d"),
+            PlainLen);
+
         return;
     }
 
@@ -1413,7 +1434,9 @@ PlayerCharacter::DecodeStats(const char* stats)
     }
 
     if (create_date == 0) {
-        ::Print("WARNING - loaded player with zero stats '%s'\n", name.data());
+        UE_LOG(LogTemp, Warning,
+            TEXT("WARNING - loaded player with zero stats '%s'"),
+            ANSI_TO_TCHAR(name.data()));
     }
 }
 
@@ -1447,7 +1470,8 @@ PlayerCharacter::LoadAwardTables()
     rank_table.destroy();
     medal_table.destroy();
 
-    ::Print("Loading Ranks and Medals\n");
+    UE_LOG(LogTemp, Log,
+        TEXT("Loading Ranks and Medals"));
 
     do {
         delete term; term = 0;
@@ -1459,7 +1483,9 @@ PlayerCharacter::LoadAwardTables()
                 if (def->name()->value() == "award") {
 
                     if (!def->term() || !def->term()->isStruct()) {
-                        Print("WARNING: award structure missing in '%s'\n", filename);
+                        UE_LOG(LogTemp, Warning,
+                            TEXT("WARNING: award structure missing in '%s'"),
+                            ANSI_TO_TCHAR(filename));
                     }
                     else {
                         AwardInfo* award = new  AwardInfo;
@@ -1603,13 +1629,17 @@ PlayerCharacter::LoadAwardTables()
                     }
                 }
                 else {
-                    Print("WARNING: unknown label '%s' in '%s'\n",
-                        def->name()->value().data(), filename);
+                    UE_LOG(LogTemp, Warning,
+                        TEXT("WARNING: unknown label '%s' in '%s'"),
+                        ANSI_TO_TCHAR(def->name()->value().data()),
+                        ANSI_TO_TCHAR(filename));
                 }
             }
             else {
-                Print("WARNING: term ignored in '%s'\n", filename);
-                term->print();
+                UE_LOG(LogTemp, Warning,
+                    TEXT("WARNING: term ignored in '%s'"),
+                    ANSI_TO_TCHAR(filename));
+                    term->print();
             }
         }
     } while (term);

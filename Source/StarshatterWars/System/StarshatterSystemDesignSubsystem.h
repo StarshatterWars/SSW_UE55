@@ -65,6 +65,7 @@ public:
     // Monolithic parse method (legacy-style):
     void LoadSystemDesign(const char* Filename);
     void LoadAll(bool bFull = false);
+    bool                 bClearTables;
 
     // Authoritative cache
     const TMap<FName, FSystemDesign>& GetDesignsByName() const { return DesignsByName; }
@@ -82,5 +83,5 @@ private:
     UPROPERTY()
     TMap<FName, FSystemDesign> DesignsByName;
 
-    bool                 bClearTables;
+  
 };

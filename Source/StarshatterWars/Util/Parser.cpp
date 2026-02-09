@@ -18,7 +18,7 @@
 
 enum KEYS { KEY_TRUE, KEY_FALSE, KEY_DEF, KEY_MINUS };
 
-void Print(const char* fmt, ...);
+void Print(const TCHAR* Fmt, ...);
 
 static int dump_tokens = 0;
 
@@ -137,7 +137,7 @@ Parser::ParseTermBase()
     switch (t.type()) {
     case Token::IntLiteral: {
         if (dump_tokens)
-            Print("%s", t.symbol().data());
+            Print(TEXT("%s"), t.symbol().data());
 
         char nstr[256], * p = nstr;
         for (int i = 0; i < (int)t.symbol().length(); i++)
@@ -157,7 +157,7 @@ Parser::ParseTermBase()
 
     case Token::FloatLiteral: {
         if (dump_tokens)
-            Print("%s", t.symbol().data());
+            Print(TEXT("%s"), t.symbol().data());
 
         char nstr[256], * p = nstr;
         for (int i = 0; i < (int)t.symbol().length(); i++)
@@ -171,19 +171,19 @@ Parser::ParseTermBase()
 
     case Token::StringLiteral:
         if (dump_tokens)
-            Print("%s", t.symbol().data());
+            Print(TEXT("%s"), t.symbol().data());
 
         return new TermText(t.symbol()(1, t.symbol().length() - 2));
 
     case Token::AlphaIdent:
         if (dump_tokens)
-            Print("%s", t.symbol().data());
+            Print(TEXT("%s"), t.symbol().data());
 
         return new TermText(t.symbol());
 
     case Token::Keyword:
         if (dump_tokens)
-            Print("%s", t.symbol().data());
+            Print(TEXT("%s"), t.symbol().data());
 
         switch (t.key()) {
         case KEY_FALSE:   return new TermBool(0);
@@ -193,7 +193,7 @@ Parser::ParseTermBase()
             Token next = lexer->Get();
             if (next.type() == Token::IntLiteral) {
                 if (dump_tokens)
-                    Print("%s", next.symbol().data());
+                    Print(TEXT("%s"), next.symbol().data());
 
                 char nstr[256], * p = nstr;
                 for (int i = 0; i < (int)next.symbol().length(); i++)
@@ -206,7 +206,7 @@ Parser::ParseTermBase()
             }
             else if (next.type() == Token::FloatLiteral) {
                 if (dump_tokens)
-                    Print("%s", next.symbol().data());
+                    Print(TEXT("%s"), next.symbol().data());
 
                 char nstr[256], * p = nstr;
                 for (int i = 0; i < (int)next.symbol().length(); i++)

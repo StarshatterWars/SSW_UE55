@@ -21,11 +21,23 @@ FILE* ErrLog = 0;
 int      ErrLine = 0;
 char     ErrBuf[1024];
 
-void Print(const char* fmt, ...)
+void Print(const TCHAR* Fmt, ...)
 {
-    FString Fs = FString(ANSI_TO_TCHAR(fmt));
+    TCHAR Buffer[2048];
 
-    UE_LOG(LogTemp, Log, TEXT("%s"), *Fs);
+    va_list Args;
+    va_start(Args, Fmt);
+
+    FCString::GetVarArgs(
+        Buffer,
+        UE_ARRAY_COUNT(Buffer),
+        Fmt,
+        Args
+    );
+
+    va_end(Args);
+
+    UE_LOG(LogTemp, Log, TEXT("%s"), Buffer);
 }
 
 bool ProfileGameLoop(void)
@@ -75,7 +87,10 @@ FileReader::more()
     std::fstream fin(filename, std::fstream::in);
 
     if (!fin) {
-        Print("ERROR(Parse): Could notxopen file '%s'\n", filename.data());
+        UE_LOG(LogTemp, Error,
+            TEXT("ERROR(Parse): Could not open file '%s'"),
+            ANSI_TO_TCHAR(filename.data()));
+
         return Text();
     }
 

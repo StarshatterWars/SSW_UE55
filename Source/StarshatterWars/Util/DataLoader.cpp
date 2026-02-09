@@ -164,7 +164,7 @@ DataLoader::LoadBuffer(const char* name, BYTE*& buf, bool null_terminate, bool o
 	}
 
 	if (!optional)
-		Print("WARNING - DataLoader could not load buffer '%s'\n", filename);
+		Print(TEXT("WARNING - DataLoader could not load buffer '%s'\n"), filename);
 	return 0;
 }
 

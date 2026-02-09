@@ -1,70 +1,94 @@
 /*  Project Starshatter Wars
 	Fractal Dev Games
-	Copyright (C) 2024. All Rights Reserved.
+	Copyright (C) 2024.
+	All Rights Reserved.
 
 	SUBSYSTEM:    Foundation
-	FILE:         ParseUtil.h
+	FILE:         ParseUtil.cpp
 	AUTHOR:       Carlos Bott
+
+	OVERVIEW
+	========
+	Legacy DEF parsing helpers ported to Unreal-native logging.
+	- Replaces legacy Print()/printf-style output with UE_LOG.
+	- Keeps original parsing behavior and return semantics.
+	- Uses ANSI_TO_TCHAR for const char* file/name inputs.
 */
 
 #include "ParseUtil.h"
 
+#include "CoreMinimal.h"
+#include "Math/UnrealMathUtility.h"
 
+// +--------------------------------------------------------------------+
+// Helpers
 // +--------------------------------------------------------------------+
 
 bool GetDefVec(Vec3& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing VEC3 TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing VEC3 TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
 		if (val->elements()->size() != 3) {
-			UE_LOG(LogTemp, Log, TEXT("WARNING: malformed vector in '%s'"), *FString(file));
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: malformed vector in '%s'"),
+				ANSI_TO_TCHAR(file));
 		}
 		else {
 			dst.X = (float)(val->elements()->at(0)->isNumber()->value());
 			dst.Y = (float)(val->elements()->at(1)->isNumber()->value());
 			dst.Z = (float)(val->elements()->at(2)->isNumber()->value());
 
-			UE_LOG(LogTemp, Log, TEXT("%s: [ %f,%f,%f ]"), *FString(def->name()->value()), dst.X, dst.Y, dst.Z);
+			UE_LOG(LogTemp, Log,
+				TEXT("%s: [ %f,%f,%f ]"),
+				ANSI_TO_TCHAR(def->name()->value()),
+				dst.X, dst.Y, dst.Z);
 			return true;
 		}
 	}
 	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: vector expected in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: vector expected in '%s'"),
+			ANSI_TO_TCHAR(file));
 	}
 
 	return false;
 }
 
-
-
 bool GetDefRect(Rect& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing RECT TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing RECT TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
 		if (val->elements()->size() != 4) {
-			UE_LOG(LogTemp, Log, TEXT("WARNING: malformed rect in '%s'"), *FString(file));
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: malformed rect in '%s'"),
+				ANSI_TO_TCHAR(file));
 		}
 		else {
 			dst.x = (int)(val->elements()->at(0)->isNumber()->value());
 			dst.y = (int)(val->elements()->at(1)->isNumber()->value());
 			dst.w = (int)(val->elements()->at(2)->isNumber()->value());
 			dst.h = (int)(val->elements()->at(3)->isNumber()->value());
-
 			return true;
 		}
 	}
-	else {		
-		UE_LOG(LogTemp, Log, TEXT("WARNING: rect expected in '%s'"), *FString(file));
+	else {
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: rect expected in '%s'"),
+			ANSI_TO_TCHAR(file));
 	}
 
 	return false;
@@ -73,42 +97,54 @@ bool GetDefRect(Rect& dst, TermDef* def, const char* file)
 bool GetDefInsets(Insets& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing Insets TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing Insets TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
 		if (val->elements()->size() != 4) {
-			UE_LOG(LogTemp, Log, TEXT("WARNING: malformed Insets in '%s'"), *FString(file));
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: malformed Insets in '%s'"),
+				ANSI_TO_TCHAR(file));
 		}
 		else {
 			dst.left = (WORD)(val->elements()->at(0)->isNumber()->value());
 			dst.right = (WORD)(val->elements()->at(1)->isNumber()->value());
 			dst.top = (WORD)(val->elements()->at(2)->isNumber()->value());
 			dst.bottom = (WORD)(val->elements()->at(3)->isNumber()->value());
-
 			return true;
 		}
 	}
 	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: Insets expected in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: Insets expected in '%s'"),
+			ANSI_TO_TCHAR(file));
 	}
 
 	return false;
 }
 
+// ---------------------------------------------------------------------
+// Legacy Color overload (Color type is legacy, NOT FColor)
+// ---------------------------------------------------------------------
 bool GetDefColor(Color& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing COLOR TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing COLOR TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
 		if (val->elements()->size() != 3) {
-			Print("WARNING: malformed color in '%s'\n", file);
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: malformed color in '%s'"),
+				ANSI_TO_TCHAR(file));
 		}
 		else {
 			BYTE r, g, b;
@@ -123,7 +159,6 @@ bool GetDefColor(Color& dst, TermDef* def, const char* file)
 				r = (BYTE)(v0 * 255);
 				g = (BYTE)(v1 * 255);
 				b = (BYTE)(v2 * 255);
-
 			}
 			else {
 				r = (BYTE)v0;
@@ -136,14 +171,18 @@ bool GetDefColor(Color& dst, TermDef* def, const char* file)
 		}
 	}
 	else {
-		Print("WARNING: color expected in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: color expected in '%s'"),
+			ANSI_TO_TCHAR(file));
 	}
 
 	return false;
 }
 
-bool
-GetDefFColor(FColor& dst, TermDef* def, const char* file)
+// ---------------------------------------------------------------------
+// Unreal Color overload (FColor)
+// ---------------------------------------------------------------------
+bool GetDefFColor(FColor& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
 		UE_LOG(LogTemp, Warning,
@@ -205,17 +244,24 @@ GetDefFColor(FColor& dst, TermDef* def, const char* file)
 	return false;
 }
 
+// ---------------------------------------------------------------------
+// ColorValue overload (legacy float RGBA container)
+// ---------------------------------------------------------------------
 bool GetDefColor(ColorValue& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing COLOR TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing COLOR TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
 		if (val->elements()->size() < 3 || val->elements()->size() > 4) {
-			Print("WARNING: malformed color in '%s'\n", file);
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: malformed color in '%s'"),
+				ANSI_TO_TCHAR(file));
 		}
 		else {
 			double r = (val->elements()->at(0)->isNumber()->value());
@@ -231,36 +277,41 @@ bool GetDefColor(ColorValue& dst, TermDef* def, const char* file)
 		}
 	}
 	else {
-		Print("WARNING: color expected in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: color expected in '%s'"),
+			ANSI_TO_TCHAR(file));
 	}
 
 	return false;
 }
 
 // +--------------------------------------------------------------------+
+// Arrays
+// +--------------------------------------------------------------------+
 
 bool GetDefArray(int* dst, int size, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing ARRAY TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing ARRAY TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
-		int nelem = val->elements()->size();
-
-		if (nelem > size)
-			nelem = size;
+		int nelem = (int)val->elements()->size();
+		if (nelem > size) nelem = size;
 
 		for (int i = 0; i < nelem; i++)
 			*dst++ = (int)(val->elements()->at(i)->isNumber()->value());
 
 		return true;
 	}
-	else {
-		Print("WARNING: array expected in '%s'\n", file);
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: array expected in '%s'"),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -268,25 +319,26 @@ bool GetDefArray(int* dst, int size, TermDef* def, const char* file)
 bool GetDefArray(float* dst, int size, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing ARRAY TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing ARRAY TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
-		int nelem = val->elements()->size();
-
-		if (nelem > size)
-			nelem = size;
+		int nelem = (int)val->elements()->size();
+		if (nelem > size) nelem = size;
 
 		for (int i = 0; i < nelem; i++)
 			*dst++ = (float)(val->elements()->at(i)->isNumber()->value());
 
 		return true;
 	}
-	else {
-		Print("WARNING: array expected in '%s'\n", file);
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: array expected in '%s'"),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -294,52 +346,51 @@ bool GetDefArray(float* dst, int size, TermDef* def, const char* file)
 bool GetDefArray(double* dst, int size, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing ARRAY TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing ARRAY TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
-		int nelem = val->elements()->size();
-
-		if (nelem > size)
-			nelem = size;
+		int nelem = (int)val->elements()->size();
+		if (nelem > size) nelem = size;
 
 		for (int i = 0; i < nelem; i++)
 			*dst++ = (double)(val->elements()->at(i)->isNumber()->value());
 
 		return true;
 	}
-	else {
-		Print("WARNING: array expected in '%s'\n", file);
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: array expected in '%s'"),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
 
-// +--------------------------------------------------------------------+
-
 bool GetDefArray(std::vector<DWORD>& array, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing ARRAY TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing ARRAY TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
-		int nelem = val->elements()->size();
-
+		int nelem = (int)val->elements()->size();
 		array.clear();
-
 		for (int i = 0; i < nelem; i++)
 			array.push_back((DWORD)(val->elements()->at(i)->isNumber()->value()));
-
 		return true;
 	}
-	else {
-		Print("WARNING: integer array expected in '%s'\n", file);
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: integer array expected in '%s'"),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -347,44 +398,44 @@ bool GetDefArray(std::vector<DWORD>& array, TermDef* def, const char* file)
 bool GetDefArray(std::vector<float>& array, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing ARRAY TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing ARRAY TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermArray* val = def->term()->isArray();
 	if (val) {
-		int nelem = val->elements()->size();
-
+		int nelem = (int)val->elements()->size();
 		array.clear();
-
 		for (int i = 0; i < nelem; i++)
 			array.push_back((float)(val->elements()->at(i)->isNumber()->value()));
-
 		return true;
 	}
-	else {
-		Print("WARNING: float array expected in '%s'\n", file);
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: float array expected in '%s'"),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
 
 // +--------------------------------------------------------------------+
+// Time / Bool / Text / Number
+// +--------------------------------------------------------------------+
 
 bool GetDefTime(int& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		Print("WARNING: missing TIME TermDef in '%s'\n", file);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing TIME TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermText* tn = def->term()->isText();
-
 	if (tn) {
-		int d = 0;
-		int h = 0;
-		int m = 0;
-		int s = 0;
+		int d = 0, h = 0, m = 0, s = 0;
 
 		char buf[64];
 		strcpy_s(buf, tn->value());
@@ -401,8 +452,11 @@ bool GetDefTime(int& dst, TermDef* def, const char* file)
 
 		return true;
 	}
-	else
-		Print("WARNING: invalid TIME %s in '%s'\n", def->name()->value().data(), file);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid TIME %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -410,7 +464,9 @@ bool GetDefTime(int& dst, TermDef* def, const char* file)
 bool GetDefBool(bool& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing BOOL TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing BOOL TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
@@ -419,35 +475,37 @@ bool GetDefBool(bool& dst, TermDef* def, const char* file)
 		dst = tn->value();
 		return true;
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid bool %s in '%s'.  value = "), *FString(def->name()->value().data()), *FString(file));
-		def->term()->print(10);
-		Print("\n");
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid BOOL %s in '%s' (dumping term)"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
+
+	// Keep legacy debug dump (writes to legacy output stream, not UE log):
+	def->term()->print(10);
 
 	return false;
 }
 
 bool GetDefText(Text& dst, TermDef* def, const char* file)
 {
-
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing TEXT TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing TEXT TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermText* tn = def->term()->isText();
-
 	if (tn) {
-		
 		dst = tn->value();
-		//UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(def->name()->value()), *FString(def->name()->value().data()));
 		return true;
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid TEXT %s in '%s'"), *FString(def->name()->value().data()), *FString(file));
 
-	}
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid TEXT %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -455,19 +513,22 @@ bool GetDefText(Text& dst, TermDef* def, const char* file)
 bool GetDefText(char* dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing TEXT TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing TEXT TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermText* tn = def->term()->isText();
 	if (tn) {
-		strcpy(dst, tn->value());
-		//UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(def->name()->value()), *FString(dst));
+		strcpy(dst, tn->value()); // keep legacy behavior
 		return true;
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid TEXT %s in '%s'"), *FString(def->name()->value().data()) ,*FString(file));
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid TEXT %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -475,19 +536,22 @@ bool GetDefText(char* dst, TermDef* def, const char* file)
 bool GetDefNumber(int& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing NUMBER TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing NUMBER TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (int)tr->value();
-		//UE_LOG(LogTemp, Log, TEXT("%s: %i"), *FString(def->name()->value()), dst);
 		return true;
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid NUMBER %s in '%s'"), *FString(def->name()->value().data()), *FString(file));
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid NUMBER %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -495,19 +559,22 @@ bool GetDefNumber(int& dst, TermDef* def, const char* file)
 bool GetDefNumber(DWORD& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing NUMBER TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing NUMBER TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (DWORD)tr->value();
-		//UE_LOG(LogTemp, Log, TEXT("%s: %lu"), *FString(def->name()->value()), dst);
 		return true;
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid NUMBER %s in '%s'"), *FString(def->name()->value().data()), *FString(file));
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid NUMBER %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -515,19 +582,22 @@ bool GetDefNumber(DWORD& dst, TermDef* def, const char* file)
 bool GetDefNumber(float& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing NUMBER TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing NUMBER TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (float)tr->value();
-		//UE_LOG(LogTemp, Log, TEXT("%s: %f"), *FString(def->name()->value()), dst);
 		return true;
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid NUMBER %s in '%s'"), *FString(def->name()->value().data()), *FString(file));
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid NUMBER %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }
@@ -535,20 +605,22 @@ bool GetDefNumber(float& dst, TermDef* def, const char* file)
 bool GetDefNumber(double& dst, TermDef* def, const char* file)
 {
 	if (!def || !def->term()) {
-		UE_LOG(LogTemp, Log, TEXT("WARNING: missing NUMBER TermDef in '%s'"), *FString(file));
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: missing NUMBER TermDef in '%s'"),
+			ANSI_TO_TCHAR(file));
 		return false;
 	}
 
 	TermNumber* tr = def->term()->isNumber();
 	if (tr) {
 		dst = (double)tr->value();
-		//UE_LOG(LogTemp, Log, TEXT("%s: %lf"), *FString(def->name()->value()), dst);
 		return true;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("WARNING: invalid NUMBER %s in '%s'"), *FString(def->name()->value().data()), *FString(file));
-	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("WARNING: invalid NUMBER %s in '%s'"),
+		ANSI_TO_TCHAR(def->name()->value().data()),
+		ANSI_TO_TCHAR(file));
 
 	return false;
 }

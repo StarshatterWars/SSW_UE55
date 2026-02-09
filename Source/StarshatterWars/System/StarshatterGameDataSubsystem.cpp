@@ -5485,7 +5485,9 @@ void UStarshatterGameDataSubsystem::ParseTerrain(TermStruct* val, const char* fn
 
 			else if (pdef->name()->value() == "layer") {
 				if (!pdef->term() || !pdef->term()->isStruct()) {
-					Print("WARNING: terrain layer struct missing in '%s'\n", fn);
+					UE_LOG(LogTemp, Warning,
+						TEXT("WARNING: terrain layer struct missing in '%s'"),
+						ANSI_TO_TCHAR(fn));
 				}
 				else {
 

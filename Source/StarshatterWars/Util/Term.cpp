@@ -9,17 +9,26 @@
 
 #include "Term.h"
 
-void Print(const char* fmt, ...);
+void Print(const TCHAR* Fmt, ...);
 
 // +-------------------------------------------------------------------+
 
 Term*
 error(char* s1, char* s2)
 {
-	Print("ERROR: ");
-	if (s1) Print(s1);
-	if (s2) Print(s2);
-	Print("\n\n");
+	FString Msg(TEXT("ERROR: "));
+
+	if (s1)
+	{
+		Msg += ANSI_TO_TCHAR(s1);
+	}
+
+	if (s2)
+	{
+		Msg += ANSI_TO_TCHAR(s2);
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("%s"), *Msg);
 	return 0;
 }
 
@@ -27,20 +36,40 @@ error(char* s1, char* s2)
 
 void TermBool::print(int level)
 {
-	if (level > 0) Print(val ? "true" : "false");
-	else           Print("...");
+	if (level > 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), val ? TEXT("true") : TEXT("false"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("..."));
+	}
 }
 
 void TermNumber::print(int level)
 {
-	if (level > 0) Print("%g", val);
-	else           Print("...");
+	if (level > 0)
+	{
+		// %g expects a floating type; keep it explicit
+		UE_LOG(LogTemp, Log, TEXT("%g"), static_cast<double>(val));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("..."));
+	}
 }
 
 void TermText::print(int level)
 {
-	if (level > 0) Print("\"%s\"", val.data());
-	else           Print("...");
+	if (level > 0)
+	{
+		// val.data() is (likely) const char*. Convert to TCHAR*.
+		UE_LOG(LogTemp, Log, TEXT("\"%s\""), ANSI_TO_TCHAR(val.data()));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("..."));
+	}
 }
 
 // +-------------------------------------------------------------------+
@@ -61,7 +90,7 @@ void
 TermArray::print(int level)
 {
 	if (level > 1) {
-		Print("(");
+		Print(TEXT("("));
 
 		if (elems) {
 			const int32 Count = elems->size();
@@ -71,19 +100,19 @@ TermArray::print(int level)
 					Elem->print(level - 1);
 				}
 				else {
-					Print("null");
+					Print(TEXT("null"));
 				}
 
 				if (Index < Count - 1) {
-					Print(", ");
+					Print(TEXT(", "));
 				}
 			}
 		}
 
-		Print(") ");
+		Print(TEXT(") "));
 	}
 	else {
-		Print("(...) ");
+		Print(TEXT("(...) "));
 	}
 }
 
@@ -105,7 +134,7 @@ void
 TermStruct::print(int level)
 {
 	if (level > 1) {
-		Print("{");
+		Print(TEXT("{"));
 
 		if (elems) {
 			const int32 Count = elems->size();
@@ -115,19 +144,19 @@ TermStruct::print(int level)
 					Elem->print(level - 1);
 				}
 				else {
-					Print("null");
+					Print(TEXT("null"));
 				}
 
 				if (Index < Count - 1) {
-					Print(", ");
+					Print(TEXT(", "));
 				}
 			}
 		}
 
-		Print("} ");
+		Print(TEXT("} "));
 	}
 	else {
-		Print("{...} ");
+		Print(TEXT("{...} "));
 	}
 }
 
@@ -147,15 +176,15 @@ TermDef::print(int level)
 {
 	if (level >= 0) {
 		if (mname) mname->print(level);
-		else       Print("null");
+		else       Print(TEXT("null"));
 
-		Print(": ");
+		Print(TEXT(": "));
 
 		if (mval)  mval->print(level - 1);
-		else       Print("null");
+		else       Print(TEXT("null"));
 	}
 	else {
-		Print("...");
+		Print(TEXT("..."));
 	}
 }
 

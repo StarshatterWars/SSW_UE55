@@ -194,9 +194,9 @@ Sim::CommitMission()
 		regions[i]->CommitMission();
 
 	if (ShipStats::NumStats() > 0) {
-		Print("\n\nFINAL SCORE '%s'\n", (const char*)mission->Name());
-		Print("Name              Kill1  Kill2  Died   Colls  Points  Cmd Pts\n");
-		Print("----------------  -----  -----  -----  -----  ------  ------\n");
+		Print(TEXT("\n\nFINAL SCORE '%s'\n"), (const char*)mission->Name());
+		Print(TEXT("Name              Kill1  Kill2  Died   Colls  Points  Cmd Pts\n"));
+		Print(TEXT("----------------  -----  -----  -----  -----  ------  ------\n"));
 
 		int tk1 = 0;
 		int tk2 = 0;
@@ -207,7 +207,7 @@ Sim::CommitMission()
 			ShipStats* s = ShipStats::GetStats(i);
 			s->Summarize();
 
-			Print("%-16s  %5d  %5d  %5d  %5d  %6d  %6d\n",
+			Print(TEXT("%-16s  %5d  %5d  %5d  %5d  %6d  %6d\n"),
 				s->GetName(),
 				s->GetGunKills(),
 				s->GetMissileKills(),
@@ -248,8 +248,8 @@ Sim::CommitMission()
 			}
 		}
 
-		Print("--------------------------------------------\n");
-		Print("TOTAL             %5d  %5d  %5d  %5d\n\n", tk1, tk2, td, tc);
+		Print(TEXT("--------------------------------------------\n"));
+		Print(TEXT("TOTAL             %5d  %5d  %5d  %5d\n\n"), tk1, tk2, td, tc);
 
 		ShipStats::Initialize();
 	}
@@ -367,18 +367,22 @@ void
 Sim::ExecMission()
 {
 	cam_dir = CameraManager::GetInstance();
-
 	if (!mission) {
-		Print("Sim::ExecMission() - No mission to execute.\n");
+		UE_LOG(LogTemp, Warning,
+			TEXT("Sim::ExecMission() - No mission to execute."));
 		return;
 	}
 
 	if (elements.size() || finished.size()) {
-		Print("Sim::ExecMission(%s) mission is already executing.\n", mission->Name());
+		UE_LOG(LogTemp, Warning,
+			TEXT("Sim::ExecMission(%s) mission is already executing."),
+			ANSI_TO_TCHAR(mission->Name()));
 		return;
 	}
 
-	Print("\nExec Mission: '%s'\n", (const char*)mission->Name());
+	UE_LOG(LogTemp, Log,
+		TEXT("Exec Mission: '%s'"),
+		ANSI_TO_TCHAR(mission->Name()));
 
 	if (cam_dir)
 		cam_dir->Reset();
@@ -719,7 +723,9 @@ Sim::CreateElements()
 										AlertShip->GetRegion()->SetPlayerShip(AlertShip);
 									}
 									else {
-										Print("WARNING: alert ship '%s' region is null\n", AlertShip->Name());
+										UE_LOG(LogTemp, Warning,
+											TEXT("WARNING: alert ship '%s' region is null"),
+											ANSI_TO_TCHAR(AlertShip->Name()));
 									}
 								}
 							}
@@ -1004,7 +1010,9 @@ Ship*
 Sim::CreateShip(const char* name, const char* reg_num, ShipDesign* design, const char* rgn_name, const FVector& loc, int IFF, int cmd_ai, const int* loadout)
 {
 	if (!design) {
-		Print("WARNING: CreateShip(%s): invalid design\n", name);
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: CreateShip(%s): invalid design"),
+			ANSI_TO_TCHAR(name));
 		return 0;
 	}
 
@@ -1018,7 +1026,12 @@ Sim::CreateShip(const char* name, const char* reg_num, ShipDesign* design, const
 	ship->MoveTo(OtherHand(loc));
 
 	if (rgn) {
-		Print("Inserting Ship(%s) into Region(%s) (%s)\n", ship->Name(), rgn->GetName(), FormatGameTime());
+		UE_LOG(LogTemp, Log,
+			TEXT("Inserting Ship(%s) into Region(%s) (%s)"),
+			ANSI_TO_TCHAR(ship->Name()),
+			ANSI_TO_TCHAR(rgn->GetName()),
+			ANSI_TO_TCHAR(FormatGameTime()));
+
 		rgn->InsertObject(ship);
 
 		if (ship->IsAirborne() && ship->AltitudeAGL() > 25)
@@ -1478,7 +1491,9 @@ Sim::ActivateRegion(SimRegion* rgn)
 			star_system->SetActiveRegion(active_region->orbital_region);
 		}
 		else {
-			Print("WARNING: Sim::ActivateRegion() No star system found for rgn '%s'", rgn->GetName());
+			UE_LOG(LogTemp, Warning,
+				TEXT("Sim::ActivateRegion() No star system found for rgn '%s'"),
+				ANSI_TO_TCHAR(rgn->GetName()));
 		}
 
 		active_region->Activate();
@@ -1694,7 +1709,7 @@ Sim::ResolveHyperList()
 
 					// if using farcaster:
 					if (jump->fc_src) {
-						Print("Ship '%s' farcast to '%s'\n", jumpship->Name(), dest->GetName());
+						Print(TEXT("Ship '%s' farcast to '%s'\n"), jumpship->Name(), dest->GetName());
 						CreateExplosion(jumpship->Location(), FVector::ZeroVector, Explosion::QUANTUM_FLASH, 1.0f, 0.0f, dest);
 
 						if (jump->fc_dst) {
@@ -1712,21 +1727,31 @@ Sim::ResolveHyperList()
 
 					// break orbit:
 					else if (jump->type == Ship::TRANSITION_DROP_ORBIT) {
-						Print("Ship '%s' broke orbit to '%s'\n", jumpship->Name(), dest->GetName());
+						
+						UE_LOG(LogTemp, Log,
+							TEXT("Ship '%s' broke orbit to '%s'"),
+							ANSI_TO_TCHAR(jumpship->Name()),
+							ANSI_TO_TCHAR(dest->GetName()));
+
 						jumpship->SetAbsoluteOrientation(0, PI / 4, 0);
 						jumpship->SetVelocity(jumpship->Heading() * 1.0e3);
 					}
 
 					// make orbit:
 					else if (jump->type == Ship::TRANSITION_MAKE_ORBIT) {
-						Print("Ship '%s' achieved orbit '%s'\n", jumpship->Name(), dest->GetName());
+						
+						UE_LOG(LogTemp, Log,
+							TEXT("Ship '%s' achieved orbit '%s'"),
+							ANSI_TO_TCHAR(jumpship->Name()),
+							ANSI_TO_TCHAR(dest->GetName()));
+
 						jumpship->LookAt(FVector::ZeroVector);
 						jumpship->SetVelocity(jumpship->Heading() * 500.0);
 					}
 
 					// hyper jump:
 					else {
-						Print("Ship '%s' quantum to '%s'\n", jumpship->Name(), dest->GetName());
+						Print(TEXT("Ship '%s' quantum to '%s'\n"), jumpship->Name(), dest->GetName());
 
 						if (jump->hyperdrive)
 							CreateExplosion(jumpship->Location(), FVector::ZeroVector, Explosion::HYPER_FLASH, 1.0f, 1.0f, dest);
@@ -1741,7 +1766,11 @@ Sim::ResolveHyperList()
 				}
 
 				else if (regions.size() > 1) {
-					Print("Warning: Unusual jump request for ship '%s'\n", jumpship->Name());
+					
+					UE_LOG(LogTemp, Warning,
+						TEXT("Warning: Unusual jump request for ship '%s'"),
+						ANSI_TO_TCHAR(jumpship->Name()));
+
 					regions[1]->InsertObject(jumpship);
 				}
 
@@ -1790,7 +1819,12 @@ Sim::ResolveSplashList()
 					// then delete the ship:
 					if (ship_destroyed) {
 						//NetUtil::SendObjKill(ship, 0, NetObjKill::KILL_MISC);
-						Print("    %s Killed %s (%s)\n", (const char*)splash->owner_name, ship->Name(), FormatGameTime());
+						Print(
+							TEXT("    %s Killed %s (%s)\n"),
+							*FString(splash->owner_name),
+							*ship->Name(),
+							*FormatGameTime()
+						);
 
 						// record the kill
 						ShipStats* killer = ShipStats::Find(splash->owner_name);

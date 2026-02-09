@@ -159,11 +159,11 @@ StarServer::SetGameMode(EGameMode m)
 		return;
 
 	if (m == EGameMode::LOAD) {
-		Print("GameMode = LOAD\n");
+		UE_LOG(LogTemp, Log, TEXT("GameMode = LOAD"));
 		paused = true;
 	}
 	else if (m == EGameMode::PLAY) {
-		Print("GameMode = PLAY\n");
+		UE_LOG(LogTemp, Log, TEXT("GameMode = PLAY"));
 
 		if (!world) {
 			CreateWorld();
@@ -174,7 +174,7 @@ StarServer::SetGameMode(EGameMode m)
 		Pause(true);
 	}
 	else {
-		Print("GameMode = MENU\n");
+		UE_LOG(LogTemp, Log, TEXT("GameMode = MENU"));
 		paused = true;
 
 		Sim* sim = static_cast<Sim*>(world);
@@ -203,7 +203,7 @@ StarServer::CreateWorld()
 
 	if (!world) {
 		world = new Sim(nullptr);
-		Print("World created\n");
+		UE_LOG(LogTemp, Log, TEXT("World created"));
 	}
 }
 
@@ -225,10 +225,10 @@ StarServer::InstantiateMission()
 		sim->LoadMission(current_mission);
 		sim->ExecMission();
 		sim->SetTestMode(false);
-		Print("Mission instantiated\n");
+		UE_LOG(LogTemp, Log, TEXT("Mission instantiated"));
 	}
 	else {
-		Print("WARNING: No mission selected\n");
+		UE_LOG(LogTemp, Warning, TEXT("WARNING: No mission selected"));
 	}
 }
 
@@ -316,6 +316,9 @@ StarServer::OnPaint()
 void
 StarServer::Shutdown(bool restart)
 {
-	Print("Server shutdown requested (restart=%d)\n", restart ? 1 : 0);
+	UE_LOG(LogTemp, Log,
+		TEXT("Server shutdown requested (restart=%d)"),
+		restart ? 1 : 0);
+
 	Exit();
 }

@@ -108,14 +108,19 @@ SimObject::Notify()
 		}
 
 		if (nobservers != nupdate) {
-			Print("WARNING: incomplete notify sim object '%s' - %d of %d notified\n",
-				Name(), nupdate, nobservers);
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: incomplete notify sim object '%s' - %d of %d notified"),
+				ANSI_TO_TCHAR(Name()),
+				nupdate,
+				nobservers);
 		}
 
 		notifying = false;
 	}
 	else {
-		Print("WARNING: double notify on sim object '%s'\n", Name());
+		UE_LOG(LogTemp, Warning,
+			TEXT("WARNING: double notify on sim object '%s'"),
+			ANSI_TO_TCHAR(Name()));
 	}
 }
 

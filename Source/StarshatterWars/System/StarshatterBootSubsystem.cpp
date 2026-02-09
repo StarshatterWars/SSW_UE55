@@ -85,9 +85,10 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootForms(Ctx);        
 
         BootPlayerSave(Ctx);
-        BootShipDesignLoader(Ctx);
+       
         BootSystemDesignLoader(Ctx);
         BootWeaponDesignLoader(Ctx);
+        BootShipDesignLoader(Ctx);
     }
 
     // Keep existing behavior
@@ -278,3 +279,45 @@ void UStarshatterBootSubsystem::BootLegacyDataLoader(const FBootContext& Ctx)
         UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] DataLoader ready."));
     }
 }
+
+void UStarshatterBootSubsystem::IngestAllDesignData(bool bForceReimport)
+{
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    auto* SysSS = GI->GetSubsystem<UStarshatterSystemDesignSubsystem>();
+    auto* WepSS = GI->GetSubsystem<UStarshatterWeaponDesignSubsystem>();
+    auto* ShipSS = GI->GetSubsystem<UStarshatterShipDesignSubsystem>();
+
+    if (!SysSS || !WepSS || !ShipSS)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[INGEST] Missing required subsystem(s)."));
+        return;
+    }
+
+    // Optional: clear-only when forcing full rebuild
+    SysSS->bClearTables = bForceReimport;
+    WepSS->bClearTables = bForceReimport;
+    ShipSS->bClearTables = bForceReimport;
+
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] ------------------------------"));
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] START FULL DESIGN INGESTION"));
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] ForceReimport = %s"), bForceReimport ? TEXT("TRUE") : TEXT("FALSE"));
+
+    // 1) SYSTEMS
+    SysSS->LoadSystemDesigns();
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] SYSTEMS: %d"), SysSS->GetDesignsByName().Num());
+
+    // 2) WEAPONS
+    WepSS->LoadWeaponDesigns();
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] WEAPONS: %d"), WepSS->GetDesignsByName().Num());
+
+    // 3) SHIPS
+    ShipSS->LoadShipDesigns(); // your existing scan + parse
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] SHIPS: %d"), ShipSS->GetDesignsByName().Num());
+
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] END FULL DESIGN INGESTION"));
+    UE_LOG(LogTemp, Log, TEXT("[INGEST] ------------------------------"));
+}
+

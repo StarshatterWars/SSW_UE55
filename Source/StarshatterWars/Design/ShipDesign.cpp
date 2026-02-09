@@ -1221,8 +1221,11 @@ ShipDesign::ParseShip(TermDef* def)
 		}
 		else {
 			char beauty_name[64];
-			if (!GetDefText(beauty_name, def, filename))
-				Print("WARNING: invalid or missing beauty in '%s'\n", filename);
+			if (!GetDefText(beauty_name, def, filename)) {
+				UE_LOG(LogTemp, Warning,
+					TEXT("WARNING: invalid or missing beauty in '%s'"),
+					ANSI_TO_TCHAR(filename));
+			}
 
 			DataLoader* loader = DataLoader::GetLoader();
 			loader->LoadGameBitmap(beauty_name, beauty);
@@ -1231,8 +1234,12 @@ ShipDesign::ParseShip(TermDef* def)
 
 	else if (defname == "hud_icon") {
 		char hud_icon_name[64];
-		if (!GetDefText(hud_icon_name, def, filename))
-			Print("WARNING: invalid or missing hud_icon in '%s'\n", filename);
+		if (!GetDefText(hud_icon_name, def, filename)) {
+			
+			UE_LOG(LogTemp, Warning,
+				TEXT("WARNING: invalid or missing hud_icon in '%s'"),
+				ANSI_TO_TCHAR(filename));
+		}
 
 		DataLoader* loader = DataLoader::GetLoader();
 		loader->LoadGameBitmap(hud_icon_name, hud_icon);
