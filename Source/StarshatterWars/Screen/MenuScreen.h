@@ -29,6 +29,8 @@ class UTacRefDlg;
 
 class UOptionsScreen;
 
+class UStarshatterAssetRegistrySubsystem;
+
 // ------------------------------------------------------------
 
 UCLASS()
@@ -37,6 +39,8 @@ class STARSHATTERWARS_API UMenuScreen : public UBaseScreen
     GENERATED_BODY()
 
 public:
+    
+    void Initialize(UGameInstance* InGI);
     UMenuScreen(const FObjectInitializer& ObjectInitializer);
 
     // ------------------------------------------------------------
@@ -171,6 +175,8 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
     TSubclassOf<UOptionsScreen> OptionsScreenClass;
+    
+    TSubclassOf<UUserWidget> ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id);
 
 protected:
     // ------------------------------------------------------------
@@ -234,4 +240,10 @@ protected:
 
     int32 ZCounter = 0;
     bool  bIsShown = false;
+
+    TSubclassOf<UUserWidget> MenuScreenWidgetClass;
+    TSubclassOf<UUserWidget> FirstTimeDlgWidgetClass;
+    TSubclassOf<UUserWidget> QuitDlgWidgetClass;
 };
+
+

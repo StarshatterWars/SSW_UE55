@@ -25,8 +25,23 @@
 #include "GameStructs.h"
 // NEW:
 #include "OptionsScreen.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 
 // ------------------------------------------------------------
+
+void UMenuScreen::Initialize(UGameInstance* InGI)
+{
+    if (!InGI) return;
+
+    UStarshatterAssetRegistrySubsystem* Assets =
+        InGI->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+    if (!ensure(Assets)) return;
+
+    // ? Put your three lines here:
+    MenuScreenWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.MenuScreenClass"));
+    FirstTimeDlgWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.FirstRunDlgClass"));
+    QuitDlgWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.ExitDlgClass"));
+}
 
 static void ApplyUIFocus(APlayerController* PC, UUserWidget* FocusWidget)
 {
@@ -635,6 +650,21 @@ void UMenuScreen::HandleCancel()
         return;
 
     Super::HandleCancel();
+}
+
+TSubclassOf<UUserWidget> UMenuScreen::ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id)
+{
+    if (!Assets)
+        return nullptr;
+
+    TSubclassOf<UUserWidget> Cls = Assets->GetWidgetClass(Id, true);
+    if (!Cls)
+    {
+        UE_LOG(LogStarshatterAssetRegistry, Error,
+            TEXT("[UI] ResolveWidgetOrLog failed for AssetId=%s (check Project Settings -> Asset Registry)"),
+            *Id.ToString());
+    }
+    return Cls;
 }
 
 

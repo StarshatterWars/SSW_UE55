@@ -351,6 +351,11 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("Data.WeaponDesignTable"),
     TEXT("Data.SystemDesignTable"),
     TEXT("Data.ShipDesignTable"),
+
+    TEXT("UI.MenuScreenClass"),
+    //TEXT("UI.CampaignScreenClass"),
+    TEXT("UI.ExitDlgClass"),
+    TEXT("UI.FirstRunDlgClass"), 
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))
@@ -358,4 +363,15 @@ bool UStarshatterBootSubsystem::BootAssets()
 
     UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] BootAssets: OK"));
         return true;
+}
+
+bool UStarshatterBootSubsystem::BootUI()
+{
+    USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance());
+    if (!SSWGI)
+        return false;
+
+    // BootAssets already called Assets->InitRegistry() + ValidateRequired(...)
+   // SSWGI->InitializeGameScreens();
+    return true;
 }

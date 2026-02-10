@@ -142,6 +142,8 @@ private:
     void IngestAllDesignData(bool bForceReimport);
     bool BootAssets();
 
+    bool BootUI();
+
 private:
     bool bBootComplete = false;
 

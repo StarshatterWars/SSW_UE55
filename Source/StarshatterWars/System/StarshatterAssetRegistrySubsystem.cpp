@@ -85,6 +85,7 @@ UObject* UStarshatterAssetRegistrySubsystem::GetAsset(FName AssetId, bool bLoadN
 
     return ResolveSoftObject(*Found, AssetId, bLoadNow);
 }
+
 bool UStarshatterAssetRegistrySubsystem::InitRegistry()
 {
     Cache.Reset();

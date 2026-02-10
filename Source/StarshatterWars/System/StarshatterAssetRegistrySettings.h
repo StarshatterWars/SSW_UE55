@@ -94,4 +94,13 @@ public:
 
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
     TSoftObjectPtr<UDataTable> SystemDesignTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI")
+    TSoftClassPtr<UUserWidget> MenuScreenClass;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI")
+    TSoftClassPtr<UUserWidget> FirstRunScreenClass;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI")
+    TSoftClassPtr<UUserWidget> ExitDlgClass;
 };
