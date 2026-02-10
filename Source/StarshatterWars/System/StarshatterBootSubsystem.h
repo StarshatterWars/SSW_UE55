@@ -61,6 +61,7 @@ class UStarshatterGameDataSubsystem;
 class UStarshatterShipDesignSubsystem;
 class UStarshatterSystemDesignSubsystem;
 class UStarshatterWeaponDesignSubsystem;
+class UStarshatterAssetRegistrySubsystem;
 
 // NEW: Player save subsystem
 class UStarshatterPlayerSubsystem;
@@ -139,6 +140,7 @@ private:
 
     void BootLegacyDataLoader(const FBootContext& Ctx);
     void IngestAllDesignData(bool bForceReimport);
+    bool BootAssets();
 
 private:
     bool bBootComplete = false;

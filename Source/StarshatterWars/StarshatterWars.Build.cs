@@ -30,7 +30,8 @@ public class StarshatterWars : ModuleRules
             "Niagara",
             "NiagaraCore",
             "RenderCore",
-            "RHI"
+            "RHI",
+            "DeveloperSettings",
         });
 
         // Vorbis rules token exists in UE 5.6:

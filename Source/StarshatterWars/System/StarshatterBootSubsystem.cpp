@@ -41,6 +41,7 @@
 #include "StarshatterFormSubsystem.h"
 #include "StarshatterSystemDesignSubsystem.h"
 #include "StarshatterWeaponDesignSubsystem.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 
 #include "Logging/LogMacros.h"
 
@@ -55,6 +56,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
     DataLoader::GetLoader();
      // Force creation order (and guarantee non-null during BOOT):
+    Collection.InitializeDependency(UStarshatterAssetRegistrySubsystem::StaticClass());
     Collection.InitializeDependency(UFontManagerSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterAudioSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterVideoSubsystem::StaticClass());
@@ -70,6 +72,13 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
     {
         SSWGI->SetGameMode(EGameMode::BOOT);
+    }
+
+    // NEW: assets first (tables/widgets/etc.)
+    if (!BootAssets())
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets failed; aborting boot"));
+        return;
     }
 
     FBootContext Ctx;
@@ -164,13 +173,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.SystemDesignSS = OutCtx.GI->GetSubsystem<UStarshatterSystemDesignSubsystem>();
     OutCtx.WeaponDesignSS = OutCtx.GI->GetSubsystem<UStarshatterWeaponDesignSubsystem>();
    
-   UStarshatterFormSubsystem* FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
-    UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] FormSS=%s"), FormSS ? TEXT("OK") : TEXT("NULL"));
-
-    if (FormSS)
-    {
-        //FormSS->BootLoadForms();
-    }
+    OutCtx.FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
 
     return true;
 }
@@ -321,3 +324,46 @@ void UStarshatterBootSubsystem::IngestAllDesignData(bool bForceReimport)
     UE_LOG(LogTemp, Log, TEXT("[INGEST] ------------------------------"));
 }
 
+bool UStarshatterBootSubsystem::BootAssets()
+{
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets: No GameInstance"));
+        return false;
+    }
+
+    UStarshatterAssetRegistrySubsystem* Assets =
+        GI->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+
+    if (!Assets)
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets: AssetRegistry subsystem missing"));
+        return false;
+    }
+
+    if (!Assets->InitRegistry())
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets: InitRegistry failed"));
+        return false;
+    }
+
+    static const TArray<FName> RequiredAssets =
+    {
+        TEXT("Data.CampaignTable"),
+        TEXT("Data.GalaxyTable"),
+        TEXT("Data.OrderOfBattleTable"),
+        TEXT("UI.MainMenu"),
+        TEXT("UI.FirstRunDlg"),
+        TEXT("UI.ExitDlg"),
+    };
+
+    if (!Assets->ValidateRequired(RequiredAssets, /*bLoadNow=*/true))
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets: Required assets validation failed"));
+        return false;
+    }
+
+    UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] BootAssets: OK"));
+    return true;
+}
