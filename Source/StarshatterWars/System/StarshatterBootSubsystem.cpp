@@ -90,7 +90,6 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootVideo(Ctx);
         BootControls(Ctx);
         BootKeyboard(Ctx);
-
         BootForms(Ctx);        
 
         BootPlayerSave(Ctx);
@@ -235,7 +234,7 @@ void UStarshatterBootSubsystem::BootForms(const FBootContext& Ctx)
     if (!Ctx.FormSS)
         return;
 
-    Ctx.FormSS->BootLoadForms();
+    //Ctx.FormSS->BootLoadForms();
 }
 
 void UStarshatterBootSubsystem::BootPlayerSave(const FBootContext& Ctx)
@@ -348,22 +347,15 @@ bool UStarshatterBootSubsystem::BootAssets()
         return false;
     }
 
-    static const TArray<FName> RequiredAssets =
-    {
-        TEXT("Data.CampaignTable"),
-        TEXT("Data.GalaxyTable"),
-        TEXT("Data.OrderOfBattleTable"),
-        TEXT("UI.MainMenu"),
-        TEXT("UI.FirstRunDlg"),
-        TEXT("UI.ExitDlg"),
+    const TArray<FName> Required = {
+    TEXT("Data.WeaponDesignTable"),
+    TEXT("Data.SystemDesignTable"),
+    TEXT("Data.ShipDesignTable"),
     };
 
-    if (!Assets->ValidateRequired(RequiredAssets, /*bLoadNow=*/true))
-    {
-        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets: Required assets validation failed"));
+    if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))
         return false;
-    }
 
     UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] BootAssets: OK"));
-    return true;
+        return true;
 }

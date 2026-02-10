@@ -11,20 +11,19 @@
     ========
     UStarshatterAssetRegistrySubsystem
 
-    Unreal-native central asset binding and resolution layer.
+    Centralized runtime asset binding and resolution layer.
 
     Responsibilities:
       - Read config-backed bindings from UStarshatterAssetRegistrySettings
       - Cache AssetId -> Soft reference mappings in memory
-      - Validate required AssetIds during BootAssets()
+      - Validate required assets during BootAssets()
       - Resolve assets on demand (optional synchronous load)
 
     NOTES
     =====
-    - No hard paths outside of this registry/settings layer.
-    - Widget references should be stored as generated class references:
-        /Game/.../WB_MainMenu.WB_MainMenu_C
-      so they resolve to a UClass at runtime (no editor-only UWidgetBlueprint).
+    - No hard-coded paths outside of the settings layer.
+    - Widget references should use generated class paths (..._C) so they load as UClass.
+    - This subsystem owns no gameplay state. It is a pure lookup/resolution service.
 
 =============================================================================*/
 
@@ -32,13 +31,10 @@
 
 #include "StarshatterAssetRegistrySettings.h"
 
-#include "Engine/GameInstance.h"
 #include "Engine/DataTable.h"
 #include "Blueprint/UserWidget.h"
 
-#include "Logging/LogMacros.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogStarshatterAssetRegistry, Log, All);
+DEFINE_LOG_CATEGORY(LogStarshatterAssetRegistry);
 
 void UStarshatterAssetRegistrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -47,6 +43,7 @@ void UStarshatterAssetRegistrySubsystem::Initialize(FSubsystemCollectionBase& Co
     Cache.Reset();
     bReady = false;
 
+    InitRegistry();
     UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Initialize()"));
 }
 
@@ -60,39 +57,103 @@ void UStarshatterAssetRegistrySubsystem::Deinitialize()
     Super::Deinitialize();
 }
 
+UObject* UStarshatterAssetRegistrySubsystem::GetAsset(FName AssetId, bool bLoadNow)
+{
+    if (!bReady)
+    {
+        UE_LOG(LogStarshatterAssetRegistry, Warning,
+            TEXT("[ASSETS] GetAsset: Registry not ready (%s) - attempting InitRegistry()"),
+            *AssetId.ToString());
+
+        if (!InitRegistry())
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Error,
+                TEXT("[ASSETS] GetAsset: InitRegistry failed; cannot resolve %s"),
+                *AssetId.ToString());
+            return nullptr;
+        }
+    }
+
+    const TSoftObjectPtr<UObject>* Found = Cache.Find(AssetId);
+    if (!Found)
+    {
+        UE_LOG(LogStarshatterAssetRegistry, Error,
+            TEXT("[ASSETS] GetAsset: Missing AssetId=%s"),
+            *AssetId.ToString());
+        return nullptr;
+    }
+
+    return ResolveSoftObject(*Found, AssetId, bLoadNow);
+}
 bool UStarshatterAssetRegistrySubsystem::InitRegistry()
 {
     Cache.Reset();
     bReady = false;
 
-    const UStarshatterAssetRegistrySettings* Settings =
-        GetDefault<UStarshatterAssetRegistrySettings>();
-
+    const UStarshatterAssetRegistrySettings* Settings = GetDefault<UStarshatterAssetRegistrySettings>();
     if (!Settings)
     {
         UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] InitRegistry: Settings missing"));
         return false;
     }
 
-    // 1) Copy generic AssetId -> SoftObject map
+    // 1) Copy generic map (AssetId -> SoftObject)
     Cache = Settings->Assets;
 
-    // 2) Example: add Weapon Design DataTable convenience binding
-    //    (This keeps your typed field usable even if the user does not populate the Assets map.)
-    if (!Settings->WeaponDesignTable.IsNull())
-    {
-        Cache.Add(
-            TEXT("Data.WeaponDesignTable"),
-            TSoftObjectPtr<UObject>(Settings->WeaponDesignTable.ToSoftObjectPath())
-        );
+    // 2) Inject typed design tables (do not overwrite explicit map entries)
 
-        UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bound Data.WeaponDesignTable -> %s"),
-            *Settings->WeaponDesignTable.ToSoftObjectPath().ToString());
-    }
-    else
+    // Data.WeaponDesignTable
+    if (!Cache.Contains(TEXT("Data.WeaponDesignTable")))
     {
-        UE_LOG(LogStarshatterAssetRegistry, Warning,
-            TEXT("[ASSETS] WeaponDesignTable not set in Project Settings"));
+        if (!Settings->WeaponDesignTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->WeaponDesignTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.WeaponDesignTable"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.WeaponDesignTable -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] WeaponDesignTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.ShipDesignTable
+    if (!Cache.Contains(TEXT("Data.ShipDesignTable")))
+    {
+        if (!Settings->ShipDesignTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->ShipDesignTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.ShipDesignTable"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.ShipDesignTable -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] ShipDesignTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.SystemDesignTable
+    if (!Cache.Contains(TEXT("Data.SystemDesignTable")))
+    {
+        if (!Settings->SystemDesignTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->SystemDesignTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.SystemDesignTable"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.SystemDesignTable -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] SystemDesignTable is not set in Project Settings"));
+        }
     }
 
     UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] InitRegistry: Loaded %d entries"), Cache.Num());
@@ -101,7 +162,7 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
     return true;
 }
 
-bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& Required, bool bLoadNow)
+bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& RequiredIds, bool bLoadNow)
 {
     if (!bReady)
     {
@@ -109,16 +170,15 @@ bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& R
         return false;
     }
 
-    const UStarshatterAssetRegistrySettings* Settings =
-        GetDefault<UStarshatterAssetRegistrySettings>();
-
+    const UStarshatterAssetRegistrySettings* Settings = GetDefault<UStarshatterAssetRegistrySettings>();
     const bool bFailHard = Settings ? Settings->bFailOnMissingRequired : true;
 
     bool bAllOk = true;
 
-    for (const FName& Id : Required)
+    for (const FName& Id : RequiredIds)
     {
-        if (!Cache.Contains(Id))
+        const TSoftObjectPtr<UObject>* Found = Cache.Find(Id);
+        if (!Found)
         {
             UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] Missing required AssetId: %s"), *Id.ToString());
             bAllOk = false;
@@ -129,7 +189,7 @@ bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& R
 
         if (bLoadNow)
         {
-            UObject* Obj = GetAsset(Id, true);
+            UObject* Obj = ResolveSoftObject(*Found, Id, true);
             if (!Obj)
             {
                 UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] Failed to load required AssetId: %s"), *Id.ToString());
@@ -143,33 +203,27 @@ bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& R
     return bAllOk;
 }
 
-UObject* UStarshatterAssetRegistrySubsystem::GetAsset(FName AssetId, bool bLoadNow)
+UObject* UStarshatterAssetRegistrySubsystem::ResolveSoftObject(const TSoftObjectPtr<UObject>& SoftPtr, FName AssetId, bool bLoadNow)
 {
-    if (!bReady)
+    if (SoftPtr.IsNull())
     {
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Registry not ready (%s)"), *AssetId.ToString());
-        return nullptr;
-    }
-
-    const TSoftObjectPtr<UObject>* Found = Cache.Find(AssetId);
-    if (!Found)
-    {
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Unknown AssetId: %s"), *AssetId.ToString());
+        UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] ResolveSoftObject: Null soft reference for %s"),
+            *AssetId.ToString());
         return nullptr;
     }
 
     if (bLoadNow)
     {
-        UObject* Loaded = Found->LoadSynchronous();
+        UObject* Loaded = SoftPtr.LoadSynchronous();
         if (!Loaded)
         {
-            UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] GetAsset: Load failed: %s (%s)"),
-                *AssetId.ToString(), *Found->ToSoftObjectPath().ToString());
+            UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] ResolveSoftObject: Load failed for %s (%s)"),
+                *AssetId.ToString(), *SoftPtr.ToSoftObjectPath().ToString());
         }
         return Loaded;
     }
 
-    return Found->Get();
+    return SoftPtr.Get();
 }
 
 UDataTable* UStarshatterAssetRegistrySubsystem::GetDataTable(FName AssetId, bool bLoadNow)
@@ -183,13 +237,11 @@ TSubclassOf<UUserWidget> UStarshatterAssetRegistrySubsystem::GetWidgetClass(FNam
     if (!Obj)
         return nullptr;
 
-    // Runtime-safe widget reference must be a UClass (generated blueprint class),
-    // e.g. "/Game/Screens/WB_MainMenu.WB_MainMenu_C"
     UClass* AsClass = Cast<UClass>(Obj);
     if (!AsClass)
     {
         UE_LOG(LogStarshatterAssetRegistry, Error,
-            TEXT("[ASSETS] GetWidgetClass: AssetId %s is not a UClass. Use generated class path (..._C)."),
+            TEXT("[ASSETS] GetWidgetClass: %s is not a UClass. Use generated class path (..._C)."),
             *AssetId.ToString());
         return nullptr;
     }
@@ -197,7 +249,7 @@ TSubclassOf<UUserWidget> UStarshatterAssetRegistrySubsystem::GetWidgetClass(FNam
     if (!AsClass->IsChildOf(UUserWidget::StaticClass()))
     {
         UE_LOG(LogStarshatterAssetRegistry, Error,
-            TEXT("[ASSETS] GetWidgetClass: AssetId %s class is not a UUserWidget subclass (%s)"),
+            TEXT("[ASSETS] GetWidgetClass: %s is not a UUserWidget subclass (%s)"),
             *AssetId.ToString(), *AsClass->GetName());
         return nullptr;
     }

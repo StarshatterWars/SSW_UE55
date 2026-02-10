@@ -59,22 +59,44 @@
 
 #include "Engine/DataTable.h"
 #include "FormattingUtils.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 
 void UStarshatterShipDesignSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 	UE_LOG(LogTemp, Log, TEXT("[SHIP DESIGN] Initialize()"));
 
-	ShipDesignDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_ShipDesign.DT_ShipDesign"));
+	/*------------------------------------------------------------------
+	Resolve Ship Design DataTable via Asset Registry
+------------------------------------------------------------------*/
+
+	UStarshatterAssetRegistrySubsystem* Assets =
+		GetGameInstance()->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+
+	if (!Assets)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SHIPDESIGN] Asset Registry missing"));
+		return;
+	}
+
+	ShipDesignDataTable =
+		Assets->GetDataTable(TEXT("Data.ShipDesignTable"), true);
+
+	if (!ShipDesignDataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SHIPDESIGN] ShipDesignTable not found"));
+		return;
+	}
+
 	if (bClearTables)
 	{
-		if (ShipDesignDataTable)    ShipDesignDataTable->EmptyTable();
+		ShipDesignDataTable->EmptyTable();
 	}
 }
 
 void UStarshatterShipDesignSubsystem::Deinitialize()
 {
-	UE_LOG(LogTemp, Log, TEXT("[SHIP DESIGN] Deinitialize()"));
+	UE_LOG(LogTemp, Log, TEXT("[SHIPDESIGN] Deinitialize()"));
 	DesignsByName.Empty();
 	Super::Deinitialize();
 }
@@ -84,7 +106,7 @@ void UStarshatterShipDesignSubsystem::SetProjectPath()
 	ProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/"));
 
-	UE_LOG(LogTemp, Log, TEXT("Setting Ship Design Directory %s"), *ProjectPath);
+	UE_LOG(LogTemp, Log, TEXT("Setting [SHIPDESIGN] Directory %s"), *ProjectPath);
 }
 
 FString UStarshatterShipDesignSubsystem::GetProjectPath()
@@ -121,7 +143,7 @@ void UStarshatterShipDesignSubsystem::FinalizeDesignParse()
 
 void UStarshatterShipDesignSubsystem::LoadAll(bool bLoaded)
 {
-	UE_LOG(LogTemp, Log, TEXT("UStarshatterShipDesignSubsystem::LoadAll()"));
+	UE_LOG(LogTemp, Log, TEXT("[SHIPDESIGN] LoadAll()"));
 	if (!bLoaded)
 		return;
 
@@ -131,7 +153,7 @@ void UStarshatterShipDesignSubsystem::LoadAll(bool bLoaded)
 
 void UStarshatterShipDesignSubsystem::LoadShipDesigns()
 {
-	UE_LOG(LogTemp, Log, TEXT("UStarshatterShipDesignSubsystem::LoadShipDesigns()"));
+	UE_LOG(LogTemp, Log, TEXT("[SHIPDESIGN] LoadShipDesigns()"));
 
 	// Content/GameData/Ships/
 	ProjectPath = FPaths::ProjectContentDir();
@@ -916,7 +938,7 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 	}
 
 	ShipDesignDataTable->AddRow(RowName, NewShipDesign);
-
+	UE_LOG(LogTemp, Warning, TEXT("[SHIPDESIGN] Data table filling complete"));
 }
 
 // +--------------------------------------------------------------------+

@@ -20,6 +20,8 @@
 #include "Misc/FileHelper.h"
 #include "Engine/DataTable.h"
 
+#include "StarshatterAssetRegistrySubsystem.h"
+
 // If you have constants like DEGREES (rad-per-degree), include where defined:
 #include "FormatUtil.h" // for DEGREES if that’s where you defined it; otherwise move include appropriately.
 
@@ -68,18 +70,33 @@ static void ClampStores(FWeaponDesign& W)
 void UStarshatterWeaponDesignSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
-    UE_LOG(LogTemp, Log, TEXT("[WEAPON DESIGN] Initialize()"));
+    UE_LOG(LogTemp, Log, TEXT("[WEAPONDESIGN] Initialize()"));
 
-    // Optional: auto-load DT asset like you did for systems
-    // Update the path to your DT:
-    WeaponDesignDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_WeaponDesign.DT_WeaponDesign"));
+    /*------------------------------------------------------------------
+    Resolve Ship Design DataTable via Asset Registry
+------------------------------------------------------------------*/
+
+    UStarshatterAssetRegistrySubsystem* Assets =
+        GetGameInstance()->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+
+    if (!Assets)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[WEAPONDESIGN] Asset Registry missing"));
+        return;
+    }
+
+    WeaponDesignDataTable =
+        Assets->GetDataTable(TEXT("Data.WeaponDesignTable"), true);
+
+    if (!WeaponDesignDataTable)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[WEAPONDESIGN] WeaponDesignTable not found"));
+        return;
+    }
 
     if (bClearTables)
     {
-        if (WeaponDesignDataTable)
-        {
-            WeaponDesignDataTable->EmptyTable();
-        }
+        WeaponDesignDataTable->EmptyTable();
     }
 }
 

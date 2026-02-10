@@ -38,6 +38,8 @@
 
 #include "StarshatterAssetRegistrySubsystem.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterAssetRegistry, Log, All);
+
 UCLASS()
 class STARSHATTERWARS_API UStarshatterAssetRegistrySubsystem
     : public UGameInstanceSubsystem

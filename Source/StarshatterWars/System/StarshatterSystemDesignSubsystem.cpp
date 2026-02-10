@@ -22,6 +22,7 @@
 
 #include "Engine/DataTable.h"
 #include "FormattingUtils.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 
 
 void UStarshatterSystemDesignSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -29,10 +30,31 @@ void UStarshatterSystemDesignSubsystem::Initialize(FSubsystemCollectionBase& Col
     Super::Initialize(Collection);
     UE_LOG(LogTemp, Log, TEXT("[SYSTEM DESIGN] Initialize()"));
 
-    SystemDesignDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_SystemDesign.DT_SystemDesign"));
+ /*------------------------------------------------------------------
+     Resolve System Design DataTable via Asset Registry
+ ------------------------------------------------------------------*/
+
+    UStarshatterAssetRegistrySubsystem* Assets =
+        GetGameInstance()->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+
+    if (!Assets)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[SYSTEMDESIGN] Asset Registry missing"));
+        return;
+    }
+
+    SystemDesignDataTable =
+        Assets->GetDataTable(TEXT("Data.SystemDesignTable"), true);
+
+    if (!SystemDesignDataTable)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[SYSTEMDESIGN] SystemDesignTable not found"));
+        return;
+    }
+
     if (bClearTables)
     {
-        if (SystemDesignDataTable)    SystemDesignDataTable->EmptyTable();
+        SystemDesignDataTable->EmptyTable();
     }
 }
 
