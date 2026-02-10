@@ -9,35 +9,51 @@
 
     OVERVIEW
     ========
-    Runtime asset registry implementation.
+    UStarshatterAssetRegistrySubsystem
 
-    Loads the AssetId -> SoftObject mapping from
-    UStarshatterAssetRegistrySettings and provides:
-      - GetAsset
-      - GetDataTable
-      - GetWidgetClass
-      - ValidateRequired
+    Unreal-native central asset binding and resolution layer.
 
-    Editor-only types are intentionally not used here.
+    Responsibilities:
+      - Read config-backed bindings from UStarshatterAssetRegistrySettings
+      - Cache AssetId -> Soft reference mappings in memory
+      - Validate required AssetIds during BootAssets()
+      - Resolve assets on demand (optional synchronous load)
+
+    NOTES
+    =====
+    - No hard paths outside of this registry/settings layer.
+    - Widget references should be stored as generated class references:
+        /Game/.../WB_MainMenu.WB_MainMenu_C
+      so they resolve to a UClass at runtime (no editor-only UWidgetBlueprint).
 
 =============================================================================*/
 
 #include "StarshatterAssetRegistrySubsystem.h"
+
 #include "StarshatterAssetRegistrySettings.h"
 
+#include "Engine/GameInstance.h"
 #include "Engine/DataTable.h"
 #include "Blueprint/UserWidget.h"
-#include "Engine/Blueprint.h"
 
-DEFINE_LOG_CATEGORY(LogStarshatterAssetRegistry);
+#include "Logging/LogMacros.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogStarshatterAssetRegistry, Log, All);
 
 void UStarshatterAssetRegistrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+
+    Cache.Reset();
+    bReady = false;
+
+    UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Initialize()"));
 }
 
 void UStarshatterAssetRegistrySubsystem::Deinitialize()
 {
+    UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Deinitialize()"));
+
     Cache.Reset();
     bReady = false;
 
@@ -49,14 +65,35 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
     Cache.Reset();
     bReady = false;
 
-    const UStarshatterAssetRegistrySettings* Settings = GetDefault<UStarshatterAssetRegistrySettings>();
+    const UStarshatterAssetRegistrySettings* Settings =
+        GetDefault<UStarshatterAssetRegistrySettings>();
+
     if (!Settings)
     {
         UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] InitRegistry: Settings missing"));
         return false;
     }
 
+    // 1) Copy generic AssetId -> SoftObject map
     Cache = Settings->Assets;
+
+    // 2) Example: add Weapon Design DataTable convenience binding
+    //    (This keeps your typed field usable even if the user does not populate the Assets map.)
+    if (!Settings->WeaponDesignTable.IsNull())
+    {
+        Cache.Add(
+            TEXT("Data.WeaponDesignTable"),
+            TSoftObjectPtr<UObject>(Settings->WeaponDesignTable.ToSoftObjectPath())
+        );
+
+        UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bound Data.WeaponDesignTable -> %s"),
+            *Settings->WeaponDesignTable.ToSoftObjectPath().ToString());
+    }
+    else
+    {
+        UE_LOG(LogStarshatterAssetRegistry, Warning,
+            TEXT("[ASSETS] WeaponDesignTable not set in Project Settings"));
+    }
 
     UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] InitRegistry: Loaded %d entries"), Cache.Num());
 
@@ -64,35 +101,69 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
     return true;
 }
 
-UObject* UStarshatterAssetRegistrySubsystem::GetAsset(FName AssetId, bool bLoadSync)
+bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& Required, bool bLoadNow)
 {
     if (!bReady)
     {
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Registry not ready (id=%s)"),
-            *AssetId.ToString());
+        UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] ValidateRequired: Registry not ready"));
+        return false;
+    }
+
+    const UStarshatterAssetRegistrySettings* Settings =
+        GetDefault<UStarshatterAssetRegistrySettings>();
+
+    const bool bFailHard = Settings ? Settings->bFailOnMissingRequired : true;
+
+    bool bAllOk = true;
+
+    for (const FName& Id : Required)
+    {
+        if (!Cache.Contains(Id))
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] Missing required AssetId: %s"), *Id.ToString());
+            bAllOk = false;
+            if (bFailHard)
+                return false;
+            continue;
+        }
+
+        if (bLoadNow)
+        {
+            UObject* Obj = GetAsset(Id, true);
+            if (!Obj)
+            {
+                UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] Failed to load required AssetId: %s"), *Id.ToString());
+                bAllOk = false;
+                if (bFailHard)
+                    return false;
+            }
+        }
+    }
+
+    return bAllOk;
+}
+
+UObject* UStarshatterAssetRegistrySubsystem::GetAsset(FName AssetId, bool bLoadNow)
+{
+    if (!bReady)
+    {
+        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Registry not ready (%s)"), *AssetId.ToString());
         return nullptr;
     }
 
     const TSoftObjectPtr<UObject>* Found = Cache.Find(AssetId);
     if (!Found)
     {
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Unknown id '%s'"), *AssetId.ToString());
+        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Unknown AssetId: %s"), *AssetId.ToString());
         return nullptr;
     }
 
-    if (Found->IsNull())
-    {
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GetAsset: Null soft reference for id '%s'"),
-            *AssetId.ToString());
-        return nullptr;
-    }
-
-    if (bLoadSync)
+    if (bLoadNow)
     {
         UObject* Loaded = Found->LoadSynchronous();
         if (!Loaded)
         {
-            UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] GetAsset: Failed to load '%s' (%s)"),
+            UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] GetAsset: Load failed: %s (%s)"),
                 *AssetId.ToString(), *Found->ToSoftObjectPath().ToString());
         }
         return Loaded;
@@ -101,74 +172,35 @@ UObject* UStarshatterAssetRegistrySubsystem::GetAsset(FName AssetId, bool bLoadS
     return Found->Get();
 }
 
-UDataTable* UStarshatterAssetRegistrySubsystem::GetDataTable(FName AssetId, bool bLoadSync)
+UDataTable* UStarshatterAssetRegistrySubsystem::GetDataTable(FName AssetId, bool bLoadNow)
 {
-    UObject* Obj = GetAsset(AssetId, bLoadSync);
-    if (!Obj)
-        return nullptr;
-
-    UDataTable* DT = Cast<UDataTable>(Obj);
-    if (!DT)
-    {
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] '%s' is not a DataTable (type=%s)"),
-            *AssetId.ToString(), *Obj->GetClass()->GetName());
-    }
-
-    return DT;
+    return Cast<UDataTable>(GetAsset(AssetId, bLoadNow));
 }
 
-TSubclassOf<UUserWidget> UStarshatterAssetRegistrySubsystem::GetWidgetClass(FName AssetId, bool bLoadSync)
+TSubclassOf<UUserWidget> UStarshatterAssetRegistrySubsystem::GetWidgetClass(FName AssetId, bool bLoadNow)
 {
-    UObject* Obj = GetAsset(AssetId, bLoadSync);
+    UObject* Obj = GetAsset(AssetId, bLoadNow);
     if (!Obj)
         return nullptr;
 
-    // Case 1: direct class reference
-    if (UClass* Cls = Cast<UClass>(Obj))
+    // Runtime-safe widget reference must be a UClass (generated blueprint class),
+    // e.g. "/Game/Screens/WB_MainMenu.WB_MainMenu_C"
+    UClass* AsClass = Cast<UClass>(Obj);
+    if (!AsClass)
     {
-        if (Cls->IsChildOf(UUserWidget::StaticClass()))
-            return Cls;
-
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] '%s' is a UClass but not a UUserWidget class (%s)"),
-            *AssetId.ToString(), *Cls->GetName());
-        return nullptr;
-    }
-
-    // Case 2: blueprint asset (runtime-safe)
-    if (UBlueprint* BP = Cast<UBlueprint>(Obj))
-    {
-        UClass* Gen = BP->GeneratedClass;
-        if (Gen && Gen->IsChildOf(UUserWidget::StaticClass()))
-            return Gen;
-
-        UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] '%s' Blueprint has no valid GeneratedClass"),
+        UE_LOG(LogStarshatterAssetRegistry, Error,
+            TEXT("[ASSETS] GetWidgetClass: AssetId %s is not a UClass. Use generated class path (..._C)."),
             *AssetId.ToString());
         return nullptr;
     }
 
-    UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] '%s' is not a widget class/blueprint (type=%s)"),
-        *AssetId.ToString(), *Obj->GetClass()->GetName());
-
-    return nullptr;
-}
-
-bool UStarshatterAssetRegistrySubsystem::ValidateRequired(const TArray<FName>& RequiredIds, bool bLoadNow)
-{
-    const UStarshatterAssetRegistrySettings* Settings = GetDefault<UStarshatterAssetRegistrySettings>();
-    const bool bFail = Settings ? Settings->bFailOnMissingRequired : true;
-
-    for (const FName& Id : RequiredIds)
+    if (!AsClass->IsChildOf(UUserWidget::StaticClass()))
     {
-        UObject* Obj = GetAsset(Id, bLoadNow);
-        if (!Obj)
-        {
-            UE_LOG(LogStarshatterAssetRegistry, Error, TEXT("[ASSETS] Missing required asset id: %s"),
-                *Id.ToString());
-
-            if (bFail)
-                return false;
-        }
+        UE_LOG(LogStarshatterAssetRegistry, Error,
+            TEXT("[ASSETS] GetWidgetClass: AssetId %s class is not a UUserWidget subclass (%s)"),
+            *AssetId.ToString(), *AsClass->GetName());
+        return nullptr;
     }
 
-    return true;
+    return AsClass;
 }

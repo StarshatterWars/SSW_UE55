@@ -15,8 +15,3 @@
 
 #include "StarshatterAssetRegistrySettings.h"
 
-UStarshatterAssetRegistrySettings::UStarshatterAssetRegistrySettings(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-{
-    bFailOnMissingRequired = true;
-}

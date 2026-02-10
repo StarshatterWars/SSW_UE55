@@ -11,19 +11,21 @@
     ========
     UStarshatterAssetRegistrySubsystem
 
-    Runtime soft-reference registry for game assets:
-      - DataTables
-      - Widget classes
-      - Audio, textures, etc.
+    Centralized runtime asset resolver.
 
-    Goals:
-      - Remove scattered ConstructorHelpers usage
-      - Centralize asset IDs and references
-      - Boot-time validation via BootAssets()
+    Responsibilities:
+    - Reads config-backed bindings from UStarshatterAssetRegistrySettings
+    - Caches AssetId -> SoftObjectPath mappings at boot
+    - Validates required assets during BootAssets()
+    - Loads assets synchronously on demand (boot-safe)
+    - Provides typed accessors for common asset classes
 
-    Notes:
-      - This subsystem is runtime-safe (no editor-only headers)
-      - Uses UDeveloperSettings (config-backed) as the source of truth
+    DESIGN RULES
+    ============
+    - NO hard-coded paths
+    - NO ConstructorHelpers
+    - NO asset loads outside this subsystem
+    - Boot subsystem controls ordering
 
 =============================================================================*/
 
@@ -31,49 +33,60 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "UObject/SoftObjectPtr.h"
+#include "Engine/DataTable.h"
+#include "Blueprint/UserWidget.h"
+
 #include "StarshatterAssetRegistrySubsystem.generated.h"
 
-class UDataTable;
-class UUserWidget;
-
-DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterAssetRegistry, Log, All);
-
 UCLASS()
-class STARSHATTERWARS_API UStarshatterAssetRegistrySubsystem : public UGameInstanceSubsystem
+class STARSHATTERWARS_API UStarshatterAssetRegistrySubsystem
+    : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
 public:
+    // ------------------------------------------------------------------
     // Subsystem lifecycle
+    // ------------------------------------------------------------------
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
 
-    // Build internal cache from settings
+    // ------------------------------------------------------------------
+    // Boot entry
+    // ------------------------------------------------------------------
     UFUNCTION(BlueprintCallable, Category = "Starshatter|Assets")
     bool InitRegistry();
 
-    // Resolve an asset by ID (optionally load sync)
-    UFUNCTION(BlueprintCallable, Category = "Starshatter|Assets")
-    UObject* GetAsset(FName AssetId, bool bLoadSync = false);
-
-    // Typed helpers
-    UFUNCTION(BlueprintCallable, Category = "Starshatter|Assets")
-    UDataTable* GetDataTable(FName AssetId, bool bLoadSync = false);
-
-    UFUNCTION(BlueprintCallable, Category = "Starshatter|Assets")
-    TSubclassOf<UUserWidget> GetWidgetClass(FName AssetId, bool bLoadSync = false);
-
-    // Validate required asset IDs exist and (optionally) load
-    UFUNCTION(BlueprintCallable, Category = "Starshatter|Assets")
-    bool ValidateRequired(const TArray<FName>& RequiredIds, bool bLoadNow);
-
-    // Quick state
     UFUNCTION(BlueprintPure, Category = "Starshatter|Assets")
     bool IsReady() const { return bReady; }
 
+    // ------------------------------------------------------------------
+    // Validation
+    // ------------------------------------------------------------------
+    bool ValidateRequired(const TArray<FName>& RequiredIds, bool bLoadNow);
+
+    // ------------------------------------------------------------------
+    // Generic access
+    // ------------------------------------------------------------------
+    UObject* GetAsset(FName AssetId, bool bLoadNow = true);
+
+    // ------------------------------------------------------------------
+    // Typed helpers
+    // ------------------------------------------------------------------
+    UDataTable* GetDataTable(FName AssetId, bool bLoadNow = true);
+
+    TSubclassOf<UUserWidget> GetWidgetClass(FName AssetId, bool bLoadNow = true);
+
 private:
-    // Internal cache of AssetId -> soft pointer
+    // ------------------------------------------------------------------
+    // Internal helpers
+    // ------------------------------------------------------------------
+    UObject* ResolveSoftObject(const TSoftObjectPtr<UObject>& SoftPtr, FName AssetId, bool bLoadNow);
+
+private:
+    // ------------------------------------------------------------------
+    // Cached registry
+    // ------------------------------------------------------------------
     TMap<FName, TSoftObjectPtr<UObject>> Cache;
 
     bool bReady = false;
