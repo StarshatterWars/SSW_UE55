@@ -84,16 +84,25 @@ private:
 
 // +-------------------------------------------------------------------+
 
-template <class T> class DictionaryCell
+template <class T>
+class DictionaryCell
 {
 public:
-	DictionaryCell(const Text& k) : key(k), value(), next(0) { }
-	DictionaryCell(const Text& k, const T& v) : key(k), value(v), next(0) { }
-	~DictionaryCell() { }
+	DictionaryCell(const Text& InKey)
+		: key(InKey), value(), next(nullptr)
+	{
+	}
 
-	Text                 key;
-	T                    value;
-	DictionaryCell<T>* next;
+	DictionaryCell(const Text& InKey, const T& InValue)
+		: key(InKey), value(InValue), next(nullptr)
+	{
+	}
+
+	~DictionaryCell() = default;
+
+	Text key;
+	T value;
+	DictionaryCell<T>* next = nullptr;
 };
 
 #include "Dictionary.inl"

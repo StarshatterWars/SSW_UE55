@@ -933,168 +933,331 @@ struct FGroupData : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
-struct FS_PlayerGameInfo : public FTableRowBase {
-
+struct FS_PlayerGameInfo : public FTableRowBase
+{
 	GENERATED_BODY()
 
+	// ------------------------------------------------------------
+	// Identity / profile
+	// ------------------------------------------------------------
 	UPROPERTY(BlueprintReadWrite)
-	int32 Id;
+	int32 Id = 0;
+
 	UPROPERTY(BlueprintReadWrite)
 	FString Name;
+
+	// Legacy "squadron"/callsign-ish (you were using this already)
 	UPROPERTY(BlueprintReadWrite)
 	FString Nickname;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 Campaign;
+	FString Signature;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Avatar = -1;
+
+	// ------------------------------------------------------------
+	// Campaign / progression routing (runtime pointers)
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 Campaign = 0;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName CampaignRowName;
-	UPROPERTY(BlueprintReadWrite)
-	int32 Avatar;
-	UPROPERTY(BlueprintReadWrite)
-	int32 Mission;
-	UPROPERTY(BlueprintReadWrite)
-	int32 Rank;
-	UPROPERTY(BlueprintReadWrite)
-	int32 Empire;
-	UPROPERTY(BlueprintReadWrite)
-	int32 ShipColor;
-	UPROPERTY(BlueprintReadWrite)
-	int32 HudMode;
-	UPROPERTY(BlueprintReadWrite)
-	int32 GunMode;
-	UPROPERTY(BlueprintReadWrite)
-	int32 HudColor;
-	UPROPERTY(BlueprintReadWrite)
-	int32 FlightModel;
-	UPROPERTY(BlueprintReadWrite)
-	int32 LandingMode;
-	UPROPERTY(BlueprintReadWrite)
-	bool FlyingStart;
-	UPROPERTY(BlueprintReadWrite)
-	bool GridMode;
-	UPROPERTY(BlueprintReadWrite)
-	bool TrainingMode;
-	UPROPERTY(BlueprintReadWrite)
-	bool GunSightMode;
-	UPROPERTY(BlueprintReadWrite)
-	int64 CreateTime;
+	FName CampaignRowName = NAME_None;
 
 	UPROPERTY(BlueprintReadWrite)
-	int64 GameTime;
+	int32 Mission = -1;
+
+	// ------------------------------------------------------------
+	// Rank / faction
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 Rank = 0;
 
 	UPROPERTY(BlueprintReadWrite)
-	int64 CampaignTime;
+	int32 Empire = 0;
+
+	// ------------------------------------------------------------
+	// Visual / HUD / controls prefs
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 ShipColor = 0;
 
 	UPROPERTY(BlueprintReadWrite)
-	int64 FlightTime;
+	int32 HudMode = 0;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 PlayerKills;
+	int32 GunMode = 0;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 PlayerWins;
+	int32 HudColor = 0;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 PlayerLosses;
+	int32 FlightModel = 0;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 PlayerPoints;
+	int32 LandingMode = 0;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 PlayerLevel;
+	bool FlyingStart = false;
+
 	UPROPERTY(BlueprintReadWrite)
-	int32 PlayerExperience;
+	bool GridMode = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool TrainingMode = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool GunSightMode = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 AILevel = 0;
+
+	// Legacy ff_level mapping
+	UPROPERTY(BlueprintReadWrite)
+	int32 ForceFeedbackLevel = 0;
+
+	// ------------------------------------------------------------
+	// Time
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int64 CreateTime = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int64 GameTime = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int64 CampaignTime = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int64 FlightTime = 0;
+
+	// ------------------------------------------------------------
+	// Career / logbook stats
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerKills = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerWins = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerLosses = 0;
+
+	// Added: legacy had Deaths separate from Losses
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerDeaths = 0;
+
+	// Added: legacy had Missions lifetime counter
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerMissions = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerPoints = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerLevel = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerExperience = 0;
+
 	UPROPERTY(BlueprintReadWrite)
 	FString PlayerStatus;
+
 	UPROPERTY(BlueprintReadWrite)
 	FString PlayerShip;
+
 	UPROPERTY(BlueprintReadWrite)
 	FString PlayerRegion;
+
 	UPROPERTY(BlueprintReadWrite)
 	FString PlayerSystem;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerSquadron;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerWing;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerDesronGroup;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerBattleGroup;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerCarrier;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerFleet;
-	UPROPERTY(BlueprintReadWrite)
-	int PlayerForce;
-	UPROPERTY(BlueprintReadWrite)
-	TArray<bool> CampaignComplete;
-	UPROPERTY(BlueprintReadWrite)
-	int32 Trained;
-	UPROPERTY(BlueprintReadWrite)
-	int32 AILevel;
-	UPROPERTY(BlueprintReadWrite)
-	int32 ForceFeedbackLevel;
-	UPROPERTY(BlueprintReadWrite)
-	TArray<FString> ChatMacros;     // 10
-	UPROPERTY(BlueprintReadWrite)
-	TArray<int32> MfdModes;         // 3
-	UPROPERTY(BlueprintReadWrite)
-	FString Signature;              // optional (legacy had signature string)
 
+	// ------------------------------------------------------------
+	// OOB / unit selection (keep names for compatibility)
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerSquadron = -1;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerWing = -1;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerDesronGroup = -1;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerBattleGroup = -1;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerCarrier = -1;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerFleet = -1;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PlayerForce = 1;
+
+	// ------------------------------------------------------------
+	// Campaign completion (REVISED)
+	// - Replaces TArray<bool> CampaignComplete (was fixed size 5)
+	// - Mask supports up to 64 campaigns
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int64 CampaignCompleteMask = 0;
+
+	// Optional: keep an array mirror for Blueprint UI lists.
+	// This is a normal bool array (not TArray<bool>) to avoid proxy refs.
+	// If you do not need it, remove it.
+	UPROPERTY(BlueprintReadWrite)
+	TArray<uint8> CampaignComplete; // 0/1 flags
+
+	// ------------------------------------------------------------
+	// Training (REVISED)
+	// Legacy trained used both mask and "highest" integer.
+	// We store both explicitly.
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 HighestTrainingMission = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int64 TrainingMask = 0;
+
+	// Keep your old field for drop-in compatibility.
+	// Recommended: treat this as "HighestTrainingMission" going forward.
+	UPROPERTY(BlueprintReadWrite)
+	int32 Trained = 0;
+
+	// ------------------------------------------------------------
+	// Awards / medals (ADDED)
+	// Legacy medals was a bitmask. Keep it here.
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	int32 MedalsMask = 0;
+
+	// ------------------------------------------------------------
+	// Chat / MFD
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FString> ChatMacros; // 10
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<int32> MfdModes;     // 3
+
+	// ------------------------------------------------------------
+	// Construction defaults
+	// ------------------------------------------------------------
 	FS_PlayerGameInfo()
 	{
-		Id = 0;
-		Name = "";
-		Nickname = "";
-		Campaign = 0;
-		Avatar = -1;
-		Mission = -1;
-		Rank = 0;
-		Empire = 0;
-		ShipColor = 0;
-		HudMode = 0;
-		GunMode = 0;
-		HudColor = 0;
-		FlightModel = 0;
-		LandingMode = 0;
-		FlyingStart = false;
-		GridMode = false;
-		TrainingMode = false;
-		GunSightMode = false;
-		CreateTime = 0;
-		FlightTime = 0;
-		PlayerKills = 0;
-		PlayerWins = 0;
-		PlayerLosses = 0;
-		PlayerPoints = 0;
-		PlayerLevel = 0;
-		PlayerExperience = 0;
-		PlayerStatus = "";
-		PlayerShip = "";
-		PlayerSystem = "";
-		PlayerRegion = "";
-		PlayerForce = 1;
-		PlayerFleet = -1;
-		PlayerWing = -1;
-		PlayerCarrier = - 1;
-		PlayerBattleGroup = -1;
-		PlayerDesronGroup = -1;
-		PlayerSquadron = -1;
-		
-		GameTime = 0;
-		CampaignTime = 0;
-		FlightTime = 0;
-		CampaignRowName = NAME_None;
+		// Match your prior defaults closely:
+		Name = TEXT("");
+		Nickname = TEXT("");
+		Signature = TEXT("");
 
-		Trained = 0;
-		AILevel = 0;
-		ForceFeedbackLevel = 0;
-		Signature = "";
+		PlayerStatus = TEXT("");
+		PlayerShip = TEXT("");
+		PlayerSystem = TEXT("");
+		PlayerRegion = TEXT("");
 
-		CampaignComplete.SetNum(5);
-		for (int i = 0; i < CampaignComplete.Num(); i++) {
-			CampaignComplete[i] = false;
+		// Chat macros
+		ChatMacros.SetNum(10);
+		for (int32 i = 0; i < ChatMacros.Num(); ++i)
+		{
+			ChatMacros[i] = TEXT("");
 		}
 
-		ChatMacros.SetNum(10);
-		for (int i = 0; i < ChatMacros.Num(); ++i) ChatMacros[i] = "";
-
+		// MFD modes
 		MfdModes.SetNum(3);
-		for (int i = 0; i < MfdModes.Num(); ++i) MfdModes[i] = -1;
+		for (int32 i = 0; i < MfdModes.Num(); ++i)
+		{
+			MfdModes[i] = -1;
+		}
+
+		// CampaignComplete mirror array (optional)
+		CampaignComplete.SetNum(0); // leave empty until you decide a UI size
+	}
+
+	// ------------------------------------------------------------
+	// Helpers (safe for BP + C++)
+	// ------------------------------------------------------------
+	FORCEINLINE bool IsCampaignComplete(int32 CampaignId) const
+	{
+		if (CampaignId < 0 || CampaignId >= 64) return false;
+		const int64 Bit = (int64)1 << CampaignId;
+		return (CampaignCompleteMask & Bit) != 0;
+	}
+
+	FORCEINLINE void SetCampaignComplete(int32 CampaignId, bool bComplete)
+	{
+		if (CampaignId < 0 || CampaignId >= 64) return;
+
+		const int64 Bit = (int64)1 << CampaignId;
+		if (bComplete) CampaignCompleteMask |= Bit;
+		else           CampaignCompleteMask &= ~Bit;
+
+		// Optional mirror update if array is sized to include this index
+		if (CampaignComplete.Num() > CampaignId)
+		{
+			CampaignComplete[CampaignId] = bComplete ? 1 : 0;
+		}
+	}
+
+	FORCEINLINE bool HasTrainedMission(int32 MissionId1Based) const
+	{
+		// Treat 1..64 as mask bits
+		if (MissionId1Based <= 0 || MissionId1Based > 64) return false;
+
+		const int64 Bit = (int64)1 << (MissionId1Based - 1);
+		return (TrainingMask & Bit) != 0;
+	}
+
+	FORCEINLINE void MarkTrainedMission(int32 MissionId1Based)
+	{
+		if (MissionId1Based <= 0 || MissionId1Based > 64) return;
+
+		const int64 Bit = (int64)1 << (MissionId1Based - 1);
+		TrainingMask |= Bit;
+
+		if (MissionId1Based > HighestTrainingMission)
+		{
+			HighestTrainingMission = MissionId1Based;
+			Trained = HighestTrainingMission; // keep legacy-compatible
+		}
+	}
+
+	FORCEINLINE void SyncTrainingLegacyField()
+	{
+		// If some loader wrote Trained directly, reflect it.
+		// Assume it means "highest mission completed" going forward.
+		HighestTrainingMission = FMath::Max(HighestTrainingMission, Trained);
+		if (HighestTrainingMission > 0 && HighestTrainingMission <= 64)
+		{
+			const int64 Bit = (int64)1 << (HighestTrainingMission - 1);
+			TrainingMask |= Bit;
+		}
+	}
+
+	FORCEINLINE void SyncCampaignCompleteArrayFromMask(int32 DesiredSize)
+	{
+		if (DesiredSize < 0) DesiredSize = 0;
+		CampaignComplete.SetNum(DesiredSize);
+
+		for (int32 i = 0; i < DesiredSize; ++i)
+		{
+			CampaignComplete[i] = IsCampaignComplete(i) ? 1 : 0;
+		}
+	}
+
+	FORCEINLINE void SyncCampaignMaskFromArray()
+	{
+		int64 NewMask = 0;
+		for (int32 i = 0; i < CampaignComplete.Num() && i < 64; ++i)
+		{
+			if (CampaignComplete[i] != 0)
+			{
+				NewMask |= ((int64)1 << i);
+			}
+		}
+		CampaignCompleteMask = NewMask;
 	}
 };
 

@@ -217,6 +217,16 @@ public:
     void LoadContentBundle();
     void LoadAwardTables();
 
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Awards")
+    UDataTable* GetRanksTable() const { return DT_Ranks; }
+
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Awards")
+    UDataTable* GetMedalsTable() const { return DT_Medals; }
+
+    // Optional: unified view
+    UFUNCTION(BlueprintPure, Category = "Starshatter|Awards")
+    UDataTable* GetAllAwardsTable() const { return DT_AwardsAll; }
+
     // =====================================================================
     // Lifetime / state
     // =====================================================================
@@ -476,6 +486,18 @@ protected:
     FString CurrentShipDecoyWeaponType;
     FString CurrentShipProbeWeaponType;
     FString CurrentShipSourceFile;
+
+    // NOTE: these should be constructed somewhere (Initialize or on-demand)
+    UPROPERTY(Transient)
+    TObjectPtr<UDataTable> DT_Ranks = nullptr;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UDataTable> DT_Medals = nullptr;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UDataTable> DT_AwardsAll = nullptr;
+
+    void EnsureAwardTables();
 };
 
 static FSkinMtlCell ParseSkinMtlCell(TermStruct* Val, const char* Fn);
