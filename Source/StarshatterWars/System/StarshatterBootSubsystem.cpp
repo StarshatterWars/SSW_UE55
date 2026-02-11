@@ -81,6 +81,12 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         return;
     }
 
+    if (!BootUI())
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootUI failed; aborting boot"));
+        return;
+    }
+
     FBootContext Ctx;
     if(BuildContext(Ctx))
     {
@@ -353,9 +359,8 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("Data.ShipDesignTable"),
 
     TEXT("UI.MenuScreenClass"),
-    //TEXT("UI.CampaignScreenClass"),
     TEXT("UI.ExitDlgClass"),
-    TEXT("UI.FirstRunDlgClass"), 
+    TEXT("UI.FirstTimeDlgClass"), 
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))
@@ -371,7 +376,6 @@ bool UStarshatterBootSubsystem::BootUI()
     if (!SSWGI)
         return false;
 
-    // BootAssets already called Assets->InitRegistry() + ValidateRequired(...)
-   // SSWGI->InitializeGameScreens();
+    SSWGI->InitializeScreens();
     return true;
 }

@@ -37,6 +37,8 @@ enum class EUIControlType : uint8
 	Slider     UMETA(DisplayName = "Slider"),
 	List       UMETA(DisplayName = "List"),
 	RichText   UMETA(DisplayName = "RichText"),
+	Panel      UMETA(DisplayName = "Panel"),       
+	Background UMETA(DisplayName = "Background"),  
 };
 
 // ------------------------------------------------------------

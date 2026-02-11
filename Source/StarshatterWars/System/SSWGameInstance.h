@@ -84,7 +84,7 @@ class AGameDataLoader;
 class AAwardInfoLoader;
 class AMusicController;
 class ACombatGroupLoader;
-class UQuitDlg;
+class UExitDlg;
 class UMenuDlg;
 class UFirstTimeDlg;
 class UCampaignScreen;
@@ -97,6 +97,7 @@ class UPlayerSaveGame;
 class ASystemOverview;
 class UTextureRenderTarget2D;
 
+class UStarshatterAssetRegistrySubsystem;
 
 // =========================================================================
 // GameInstance
@@ -438,7 +439,7 @@ public:
 	UOperationsScreen* OperationsScreen;
 	UCampaignLoading* CampaignLoading;
 	UMissionLoading* MissionLoadingScreen;
-	UQuitDlg* QuitDlg;
+	UExitDlg* QuitDlg;
 	UFirstTimeDlg* FirstTimeDlg;
 
 	UPROPERTY()
@@ -601,12 +602,16 @@ public:
 	bool bIsDisplayUnitChanged;
 	bool bIsDisplayElementChanged;
 
+	void InitializeScreens();
+
 protected:
 	virtual void Init() override;
 	virtual void Shutdown() override;
 
 	virtual bool InitContent();
 	virtual bool InitGame();
+
+
 
 	UPROPERTY()
 	FString AppName;
@@ -653,8 +658,6 @@ protected:
 
 	EGAMESTATUS Status;
 
-	void InitializeDT(const FObjectInitializer& ObjectInitializer);
-
 	// Instance
 	UPROPERTY()
 	TObjectPtr<UMenuScreen> MenuScreen;
@@ -692,14 +695,10 @@ private:
 	void EnsureOverviewRT(int32 Resolution);
 	void EnsureOverviewActor(UWorld* World);
 
-	void InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer);
 	void InitializeCampaignScreen(const FObjectInitializer& ObjectInitializer);
 	void InitializeCampaignLoadingScreen(const FObjectInitializer& ObjectInitializer);
 	void InitializeOperationsScreen(const FObjectInitializer& ObjectInitializer);
 	void InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer);
-	void InitializeQuitDlg(const FObjectInitializer& ObjectInitializer);
-	void InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer);
-
 
 	// Widget classes
 	TSubclassOf<class UMenuScreen> MenuScreenWidgetClass;
@@ -707,7 +706,7 @@ private:
 	TSubclassOf<class UOperationsScreen> OperationsScreenWidgetClass;
 	TSubclassOf<class UCampaignLoading> CampaignLoadingWidgetClass;
 	TSubclassOf<class UMissionLoading> MissionLoadingWidgetClass;
-	TSubclassOf<class UQuitDlg> QuitDlgWidgetClass;
+	TSubclassOf<class UExitDlg> ExitDlgWidgetClass;
 	TSubclassOf<class UFirstTimeDlg> FirstTimeDlgWidgetClass;
 
 	void HandleUniverseMinuteAutosave(uint64 UniverseSecondsNow);

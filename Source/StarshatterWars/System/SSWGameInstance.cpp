@@ -34,6 +34,7 @@
 #include "SystemOverview.h"
 #include "FontManager.h"
 #include "StarshatterGameDataSubsystem.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 
 #undef UpdateResource
 #undef PlaySound
@@ -41,13 +42,10 @@
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
-	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
 	InitializeCampaignLoadingScreen(ObjectInitializer);
 	InitializeOperationsScreen(ObjectInitializer);
 	InitializeMissionBriefingScreen(ObjectInitializer);
-	InitializeQuitDlg(ObjectInitializer);
-	InitializeFirstRunDlg(ObjectInitializer);
 }
 
 void USSWGameInstance::SetProjectPath()
@@ -394,12 +392,44 @@ bool USSWGameInstance::InitGame()
 	return false;
 }
 
-void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
+void USSWGameInstance::InitializeScreens()
 {
-	static ConstructorHelpers::FClassFinder<UMenuScreen> MenuScreenBP(TEXT("/Game/Screens/WBP_MenuScreen"));
-	if (MenuScreenBP.Class)
+	UStarshatterAssetRegistrySubsystem* Assets =
+		GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+
+	if (!ensure(Assets))
 	{
-		MenuScreenWidgetClass = MenuScreenBP.Class;
+		return;
+	}
+
+	// MenuScreen
+	MenuScreenWidgetClass = Assets->GetWidgetClass(TEXT("UI.MenuScreenClass"), true);
+	if (!ensureMsgf(MenuScreenWidgetClass,
+		TEXT("[UI] UI.MenuScreenClass not bound or not a widget class")))
+	{
+		return;
+	}
+
+	// FirstRunDlg
+	FirstTimeDlgWidgetClass = Assets->GetWidgetClass(TEXT("UI.FirstTimeDlgClass"), true);
+	if (!ensureMsgf(FirstTimeDlgWidgetClass,
+		TEXT("[UI] UI.FirstTimeDlgClass not bound or not a widget class")))
+	{
+		return;
+	}
+
+	// Exit/Quit dialog
+	ExitDlgWidgetClass = Assets->GetWidgetClass(TEXT("UI.ExitDlgClass"), /*bLoadNow=*/true);
+
+	if (!ExitDlgWidgetClass)
+	{
+		// This is almost always because Project Settings is bound to WB_QuitDlg (WidgetBlueprint)
+		// instead of WB_QuitDlg_C (GeneratedClass).
+		UE_LOG(LogTemp, Error,
+			TEXT("[UI] UI.ExitDlgClass invalid. Bind the GENERATED CLASS (…_C) in Project Settings. "
+				"Example: /Game/Screens/WB_QuitDlg.WB_QuitDlg_C"));
+
+		return;
 	}
 }
 
@@ -410,7 +440,7 @@ void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& Obje
 	{
 		return;
 	}
-	OperationsScreenWidgetClass = OperationsScreenWidget.Class;
+	OperationsScreenWidgetClass = OperationsScreenWidget.Class; 
 }
 
 void USSWGameInstance::InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer)
@@ -441,25 +471,6 @@ void USSWGameInstance::InitializeCampaignLoadingScreen(const FObjectInitializer&
 		return;
 	}
 	CampaignLoadingWidgetClass = CampaignLoadingWidget.Class;
-}
-
-void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FClassFinder<UExitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
-	if (QuitDlgWidget.Class)
-	{
-		QuitDlgWidgetClass = QuitDlgWidget.Class;
-	}
-}
-
-void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FClassFinder<UFirstTimeDlg>FirstTimeDlgWidget(TEXT("/Game/Screens/Main/WB_FirstRunDlg"));
-	if (!ensure(FirstTimeDlgWidget.Class != nullptr))
-	{
-		return;
-	}
-	FirstTimeDlgWidgetClass = FirstTimeDlgWidget.Class;
 }
 
 void USSWGameInstance::RemoveScreens()

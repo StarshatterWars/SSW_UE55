@@ -101,7 +101,9 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
     // 1) Copy generic map (AssetId -> SoftObject)
     Cache = Settings->Assets;
 
+    // ------------------------------------------------------------------
     // 2) Inject typed design tables (do not overwrite explicit map entries)
+    // ------------------------------------------------------------------
 
     // Data.WeaponDesignTable
     if (!Cache.Contains(TEXT("Data.WeaponDesignTable")))
@@ -154,6 +156,66 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
         {
             UE_LOG(LogStarshatterAssetRegistry, Warning,
                 TEXT("[ASSETS] SystemDesignTable is not set in Project Settings"));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 3) Inject typed UI widget classes (do not overwrite explicit map entries)
+    //    NOTE: We store them in the generic Cache as UObject soft refs so the
+    //    existing GetWidgetClass() path works unchanged.
+    // ------------------------------------------------------------------
+
+    // UI.MenuScreenClass
+    if (!Cache.Contains(TEXT("UI.MenuScreenClass")))
+    {
+        if (!Settings->MenuScreenClass.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->MenuScreenClass.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.MenuScreenClass"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.MenuScreenClass -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] MenuScreenClass is not set in Project Settings"));
+        }
+    }
+
+    // UI.FirstRunDlgClass (property name: FirstRunScreenClass)
+    if (!Cache.Contains(TEXT("UI.FirstTimeDlgClass")))
+    {
+        if (!Settings->FirstTimeScreenClass.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->FirstTimeScreenClass.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.FirstTimeDlgClass"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.FirstTimeDlgClass -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] FirstTimeScreenClass is not set in Project Settings"));
+        }
+    }
+
+    // UI.ExitDlgClass
+    if (!Cache.Contains(TEXT("UI.ExitDlgClass")))
+    {
+        if (!Settings->ExitDlgClass.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->ExitDlgClass.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.ExitDlgClass"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.ExitDlgClass -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] ExitDlgClass is not set in Project Settings"));
         }
     }
 
@@ -242,8 +304,10 @@ TSubclassOf<UUserWidget> UStarshatterAssetRegistrySubsystem::GetWidgetClass(FNam
     if (!AsClass)
     {
         UE_LOG(LogStarshatterAssetRegistry, Error,
-            TEXT("[ASSETS] GetWidgetClass: %s is not a UClass. Use generated class path (..._C)."),
-            *AssetId.ToString());
+            TEXT("[ASSETS] GetWidgetClass: %s resolved to object '%s' of type '%s'. Bind the generated class (..._C)."),
+            *AssetId.ToString(),
+            *GetNameSafe(Obj),
+            Obj ? *Obj->GetClass()->GetName() : TEXT("NULL"));
         return nullptr;
     }
 

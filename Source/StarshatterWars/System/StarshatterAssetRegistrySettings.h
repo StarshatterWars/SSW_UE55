@@ -33,6 +33,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "Engine/DataTable.h"
 #include "UObject/SoftObjectPtr.h"
+#include "Blueprint/UserWidget.h"
 
 #include "StarshatterAssetRegistrySettings.generated.h"
 
@@ -95,12 +96,12 @@ public:
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
     TSoftObjectPtr<UDataTable> SystemDesignTable;
 
-    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI")
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
     TSoftClassPtr<UUserWidget> MenuScreenClass;
 
-    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI")
-    TSoftClassPtr<UUserWidget> FirstRunScreenClass;
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
+    TSoftClassPtr<UUserWidget> FirstTimeScreenClass;
 
-    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI")
-    TSoftClassPtr<UUserWidget> ExitDlgClass;
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
+    TSoftClassPtr<UUserWidget> ExitDlgClass;;
 };
