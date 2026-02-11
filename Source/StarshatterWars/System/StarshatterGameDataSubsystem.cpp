@@ -6294,7 +6294,7 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 	FString AwardsPath = FPaths::ProjectContentDir();
 	AwardsPath /= TEXT("GameData/Awards/awards.def");
 
-	UE_LOG(LogTemp, Log, TEXT("Loading Award Info Data: %s"), *AwardsPath);
+	UE_LOG(LogTemp, Log, TEXT("Loading Awards file: %s"), *AwardsPath);
 
 	if (!FPaths::FileExists(AwardsPath))
 	{
@@ -6302,8 +6302,27 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 		return;
 	}
 
+	if (!RanksDataTable || !MedalsDataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: RanksDataTable or MedalsDataTable is null."));
+		return;
+	}
+
+	// Optional safety: verify row structs are correct
+	if (RanksDataTable->GetRowStruct() != FRankInfo::StaticStruct())
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: RanksDataTable RowStruct mismatch (expected FS_RankInfo)."));
+		return;
+	}
+
+	if (MedalsDataTable->GetRowStruct() != FMedalInfo::StaticStruct())
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: MedalsDataTable RowStruct mismatch (expected FS_MedalInfo)."));
+		return;
+	}
+
 	// ------------------------------------------------------------
-	// UE-native raw byte load
+	// Load file bytes (UE-native)
 	// ------------------------------------------------------------
 	TArray<uint8> Bytes;
 	if (!FFileHelper::LoadFileToArray(Bytes, *AwardsPath))
@@ -6311,16 +6330,13 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: failed to read: %s"), *AwardsPath);
 		return;
 	}
-
 	Bytes.Add(0); // null terminate
 
-	// IMPORTANT: do NOT name this "filename"
 	const FTCHARToUTF8 Utf8Path(*AwardsPath);
 	const char* FileNameAnsi = Utf8Path.Get();
 
 	Parser ParserObj(new BlockReader(reinterpret_cast<const char*>(Bytes.GetData())));
 	Term* TermPtr = ParserObj.ParseTerm();
-
 	if (!TermPtr)
 		return;
 
@@ -6330,15 +6346,15 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 	TermText* FileType = TermPtr->isText();
 	if (!FileType || FileType->value() != "AWARDS")
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid Awards file: %s"), *AwardsPath);
+		UE_LOG(LogTemp, Warning, TEXT("Invalid Awards file header: %s"), *AwardsPath);
 		delete TermPtr;
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Loading Ranks and Medals"));
+	UE_LOG(LogTemp, Log, TEXT("Parsing awards.def into Rank + Medal tables..."));
 
 	// ------------------------------------------------------------
-	// Parse awards
+	// Parse entries
 	// ------------------------------------------------------------
 	do
 	{
@@ -6358,22 +6374,40 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 		}
 
 		TermStruct* Val = Def->term()->isStruct();
-		FS_AwardInfo NewAwardData;
 
 		// --------------------------------------------------------
-		// Local scratch (no shadowing)
+		// Local scratch (full schema)
 		// --------------------------------------------------------
-		int32  LocalAwardId = 0;
-		Text   LocalAwardType = "";
-		Text   LocalAwardName = "";
-		Text   LocalAwardAbrv = "";
-		Text   LocalAwardDesc = "";
+		Text   LocalType = "";
+		Text   LocalName = "";
+		Text   LocalAbrv = "";
+		Text   LocalDesc = "";
 		Text   LocalAwardText = "";
 
 		Text   LocalDescSound = "";
 		Text   LocalGrantSound = "";
-		Text   LocalLargeImage = "";
-		Text   LocalSmallImage = "";
+		Text   LocalSmall = "";
+		Text   LocalLarge = "";
+
+		int32  LocalId = 0;
+
+		int32  LocalGrant = 0;              // rank: grant bitmask
+		int32  LocalGrantedShipClasses = 0; // rank: (you may want to map grant->this)
+		int32  LocalTotalPoints = 0;         // rank threshold
+
+		int32  LocalMissionPoints = 0;
+		int32  LocalTotalMissions = 0;
+		int32  LocalKills = 0;
+		int32  LocalLost = 0;
+		int32  LocalCollision = 0;
+
+		int32  LocalCampaignId = 0;
+		bool   bLocalCampaignComplete = false;
+		bool   bLocalDynamicCampaign = false;
+		bool   bLocalCeremony = true;
+
+		int32  LocalRequiredAwards = 0;
+		int32  LocalLottery = 0;
 
 		int32  LocalMinRank = 0;
 		int32  LocalMaxRank = 0;
@@ -6391,64 +6425,124 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 
 			const Text& Key = PDef->name()->value();
 
-			if (Key == "name")
-			{
-				GetDefText(LocalAwardName, PDef, FileNameAnsi);
-				NewAwardData.AwardName = FString(LocalAwardName);
-			}
-			else if (Key == "desc")
-				GetDefText(LocalAwardDesc, PDef, FileNameAnsi);
-			else if (Key == "award")
-				GetDefText(LocalAwardText, PDef, FileNameAnsi);
-			else if (Key == "desc_sound")
-				GetDefText(LocalDescSound, PDef, FileNameAnsi);
-			else if (Key == "award_sound")
-				GetDefText(LocalGrantSound, PDef, FileNameAnsi);
-			else if (Key == "type")
-				GetDefText(LocalAwardType, PDef, FileNameAnsi);
-			else if (Key == "abrv")
-				GetDefText(LocalAwardAbrv, PDef, FileNameAnsi);
-			else if (Key == "id")
-				GetDefNumber(LocalAwardId, PDef, FileNameAnsi);
-			else if (Key == "min_rank")
-				GetDefNumber(LocalMinRank, PDef, FileNameAnsi);
-			else if (Key == "max_rank")
-				GetDefNumber(LocalMaxRank, PDef, FileNameAnsi);
+			if (Key == "type") { GetDefText(LocalType, PDef, FileNameAnsi); }
+			else if (Key == "id") { GetDefNumber(LocalId, PDef, FileNameAnsi); }
+			else if (Key == "name") { GetDefText(LocalName, PDef, FileNameAnsi); }
+			else if (Key == "abrv") { GetDefText(LocalAbrv, PDef, FileNameAnsi); }
+			else if (Key == "desc") { GetDefText(LocalDesc, PDef, FileNameAnsi); }
+			else if (Key == "award") { GetDefText(LocalAwardText, PDef, FileNameAnsi); }
+
+			else if (Key == "desc_sound") { GetDefText(LocalDescSound, PDef, FileNameAnsi); }
+			else if (Key == "award_sound") { GetDefText(LocalGrantSound, PDef, FileNameAnsi); }
+
+			else if (Key == "small") { GetDefText(LocalSmall, PDef, FileNameAnsi); }
+			else if (Key == "large") { GetDefText(LocalLarge, PDef, FileNameAnsi); }
+
+			// Rank fields
+			else if (Key == "grant") { GetDefNumber(LocalGrant, PDef, FileNameAnsi); }
+			else if (Key == "total_points") { GetDefNumber(LocalTotalPoints, PDef, FileNameAnsi); }
+
+			// Medal / generic award gating fields (some may appear on both)
+			else if (Key == "required_awards") { GetDefNumber(LocalRequiredAwards, PDef, FileNameAnsi); }
+			else if (Key == "lottery") { GetDefNumber(LocalLottery, PDef, FileNameAnsi); }
+			else if (Key == "min_rank") { GetDefNumber(LocalMinRank, PDef, FileNameAnsi); }
+			else if (Key == "max_rank") { GetDefNumber(LocalMaxRank, PDef, FileNameAnsi); }
+
 			else if (Key == "min_ship_class")
 			{
-				Text classname;
-				GetDefText(classname, PDef, FileNameAnsi);
-				LocalMinShipClass = Ship::ClassForName(classname);
+				Text ClassName;
+				GetDefText(ClassName, PDef, FileNameAnsi);
+				LocalMinShipClass = Ship::ClassForName(ClassName);
 			}
 			else if (Key == "max_ship_class")
 			{
-				Text classname;
-				GetDefText(classname, PDef, FileNameAnsi);
-				LocalMaxShipClass = Ship::ClassForName(classname);
+				Text ClassName;
+				GetDefText(ClassName, PDef, FileNameAnsi);
+				LocalMaxShipClass = Ship::ClassForName(ClassName);
 			}
+
+			else if (Key == "mission_points") { GetDefNumber(LocalMissionPoints, PDef, FileNameAnsi); }
+			else if (Key == "total_missions") { GetDefNumber(LocalTotalMissions, PDef, FileNameAnsi); }
+			else if (Key == "kills") { GetDefNumber(LocalKills, PDef, FileNameAnsi); }
+			else if (Key == "lost") { GetDefNumber(LocalLost, PDef, FileNameAnsi); }
+			else if (Key == "collision") { GetDefNumber(LocalCollision, PDef, FileNameAnsi); }
+
+			else if (Key == "campaign_id") { GetDefNumber(LocalCampaignId, PDef, FileNameAnsi); }
+			else if (Key == "campaign_complete") { GetDefBool(bLocalCampaignComplete, PDef, FileNameAnsi); }
+			else if (Key == "dynamic_campaign") { GetDefBool(bLocalDynamicCampaign, PDef, FileNameAnsi); }
+			else if (Key == "ceremony") { GetDefBool(bLocalCeremony, PDef, FileNameAnsi); }
+		}
+
+		// Normalize
+		LocalType.setSensitive(false);
+		LocalName.setSensitive(false);
+
+		const FString TypeStr = FString(LocalType).ToLower();
+		const FString NameStr = FString(LocalName);
+
+		if (NameStr.IsEmpty())
+			continue;
+
+		const FName RowName(*NameStr);
+
+		// --------------------------------------------------------
+		// Route -> Rank table
+		// --------------------------------------------------------
+		if (TypeStr == TEXT("rank"))
+		{
+			FRankInfo RankRow;
+			RankRow.RankId = LocalId;
+			RankRow.RankName = NameStr;
+			RankRow.RankAbrv = FString(LocalAbrv);
+			RankRow.RankDesc = FString(LocalDesc);
+			RankRow.RankAwardText = FString(LocalAwardText);
+
+			RankRow.SmallImage = FString(LocalSmall);
+			RankRow.LargeImage = FString(LocalLarge);
+			RankRow.GrantSound = FString(LocalGrantSound);
+
+			// Legacy: "grant" is the granted ship classes bitmask
+			RankRow.GrantedShipClasses = LocalGrant;
+			RankRow.TotalPoints = LocalTotalPoints;
+
+			// Upsert
+			if (RanksDataTable->FindRow<FRankInfo>(RowName, TEXT("LoadAwardTables"), false))
+				RanksDataTable->RemoveRow(RowName);
+
+			RanksDataTable->AddRow(RowName, RankRow);
+			continue;
 		}
 
 		// --------------------------------------------------------
-		// Finalize struct
+		// Route -> Medal table
 		// --------------------------------------------------------
-		NewAwardData.AwardId = LocalAwardId;
-		NewAwardData.AwardType = FString(LocalAwardType);
-		NewAwardData.AwardAbrv = FString(LocalAwardAbrv);
-		NewAwardData.AwardDesc = FString(LocalAwardDesc);
-		NewAwardData.AwardText = FString(LocalAwardText);
-		NewAwardData.DescSound = FString(LocalDescSound);
-		NewAwardData.GrantSound = FString(LocalGrantSound);
-		NewAwardData.LargeImage = FString(LocalLargeImage);
-		NewAwardData.SmallImage = FString(LocalSmallImage);
-		NewAwardData.MinRank = LocalMinRank;
-		NewAwardData.MaxRank = LocalMaxRank;
-		NewAwardData.MinShipClass = LocalMinShipClass;
-		NewAwardData.MaxShipClass = LocalMaxShipClass;
+		if (TypeStr == TEXT("medal"))
+		{
+			FMedalInfo MedalRow;
+			MedalRow.MedalId = LocalId; // bitmask id
+			MedalRow.MedalName = NameStr;
+			MedalRow.MedalDesc = FString(LocalDesc);
+			MedalRow.MedalAwardText = FString(LocalAwardText);
 
-		const FName RowName(*FString(LocalAwardName));
-		AwardsDataTable->AddRow(RowName, NewAwardData);
+			MedalRow.SmallImage = FString(LocalSmall);
+			MedalRow.LargeImage = FString(LocalLarge);
+			MedalRow.GrantSound = FString(LocalGrantSound);
 
-		AwardData = NewAwardData;
+			MedalRow.CampaignId = LocalCampaignId;
+			MedalRow.bCampaignCompleteRequired = bLocalCampaignComplete;
+			MedalRow.bDynamicCampaignOnly = bLocalDynamicCampaign;
+			MedalRow.bCeremony = bLocalCeremony;
+
+			if (MedalsDataTable->FindRow<FMedalInfo>(RowName, TEXT("LoadAwardTables"), false))
+				MedalsDataTable->RemoveRow(RowName);
+
+			MedalsDataTable->AddRow(RowName, MedalRow);
+			continue;
+		}
+
+		// Unknown type
+		UE_LOG(LogTemp, Warning, TEXT("LoadAwardTables: unknown award type '%s' for '%s'"),
+			*TypeStr, *NameStr);
 
 	} while (TermPtr);
 
@@ -6457,4 +6551,8 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 		delete TermPtr;
 		TermPtr = nullptr;
 	}
+
+	UE_LOG(LogTemp, Log, TEXT("LoadAwardTables: complete. Ranks=%d Medals=%d"),
+		RanksDataTable ? RanksDataTable->GetRowMap().Num() : 0,
+		MedalsDataTable ? MedalsDataTable->GetRowMap().Num() : 0);
 }
