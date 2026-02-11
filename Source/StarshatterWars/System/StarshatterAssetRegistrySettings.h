@@ -85,7 +85,7 @@ public:
     bool bFailOnMissingRequired = true;
 
     // ------------------------------------------------------------------
-    // Optional convenience bindings (config-backed)
+    // Optional data table  bindings (config-backed)
     // ------------------------------------------------------------------
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
     TSoftObjectPtr<UDataTable> WeaponDesignTable;
@@ -95,6 +95,31 @@ public:
 
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
     TSoftObjectPtr<UDataTable> SystemDesignTable;
+
+    // ------------------------------------------------------------------
+    // Optional run time table  bindings (config-backed)
+    // ------------------------------------------------------------------
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> CampaignTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> CampaignOOBTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> CombatGroupTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> GalaxyMapTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> OrderOfBattleTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> AwardsTable;
+
+    // ------------------------------------------------------------------
+    // Optional UI bindings (config-backed)
+    // ------------------------------------------------------------------
 
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
     TSoftClassPtr<UUserWidget> MenuScreenClass;

@@ -51,6 +51,8 @@
 
 #include "Logging/LogMacros.h"
 
+#include "StarshatterAssetRegistrySubsystem.h"
+
 template<typename TEnum>
 static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
 {
@@ -118,30 +120,52 @@ static FMargin ToFMargin(const Insets& in)
 	return FMargin((float)in.left, (float)in.top, (float)in.right, (float)in.bottom);
 }
 
-// +--------------------------------------------------------------------+
 void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	CampaignDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_Campaign.DT_Campaign"));
-	CampaignOOBDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_CampaignOOB.DT_CampaignOOB"));
-	CombatGroupDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_CombatGroup.DT_CombatGroup"));
-	GalaxyDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_GalaxyMap.DT_GalaxyMap"));
-	OrderOfBattleDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle"));
-	AwardsDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Game/DT_AwardInfo.DT_AwardInfo"));
-	UE_LOG(LogTemp, Warning, TEXT("DT Campaign=%s Galaxy=%s"),
+	UGameInstance* GI = GetGameInstance();
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[GAMEDATA] Initialize: GameInstance is null"));
+		return;
+	}
+
+	UStarshatterAssetRegistrySubsystem* Assets = GI->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+	if (!Assets)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[GAMEDATA] Initialize: AssetRegistry subsystem missing"));
+		return;
+	}
+
+	// Resolve DataTables via Asset Registry (Project Settings bindings)
+	CampaignDataTable = Assets->GetDataTable(TEXT("Data.CampaignTable"), true);
+	CampaignOOBDataTable = Assets->GetDataTable(TEXT("Data.CampaignOOBTable"), true);
+	CombatGroupDataTable = Assets->GetDataTable(TEXT("Data.CombatGroupTable"), true);
+	GalaxyDataTable = Assets->GetDataTable(TEXT("Data.GalaxyMapTable"), true);
+	OrderOfBattleDataTable = Assets->GetDataTable(TEXT("Data.OrderOfBattleTable"), true);
+	AwardsDataTable = Assets->GetDataTable(TEXT("Data.AwardsTable"), true);
+
+	UE_LOG(LogTemp, Log, TEXT("[GAMEDATA] DT Campaign=%s Galaxy=%s"),
 		*GetNameSafe(CampaignDataTable),
 		*GetNameSafe(GalaxyDataTable));
 
+	// IMPORTANT:
+	// Do NOT EmptyTable() in runtime. DataTables are cooked assets in packaged builds.
+	// Clearing/regenerating must be editor-only tooling, not part of game boot.
+#if WITH_EDITOR
 	if (bClearTables)
 	{
-		if (CampaignDataTable)      CampaignDataTable->EmptyTable();
-		if (CampaignOOBDataTable)   CampaignOOBDataTable->EmptyTable();
-		if (CombatGroupDataTable)   CombatGroupDataTable->EmptyTable();
-		if (OrderOfBattleDataTable) OrderOfBattleDataTable->EmptyTable();
-		if (GalaxyDataTable)        GalaxyDataTable->EmptyTable();
-		if (ShipDesignDataTable)    ShipDesignDataTable->EmptyTable();
+		UE_LOG(LogTemp, Warning, TEXT("[GAMEDATA] bClearTables is TRUE (Editor). Runtime table mutation is discouraged."));
+		// Leave this disabled to avoid PIE crash / asset mutation issues:
+		// if (CampaignDataTable)      CampaignDataTable->EmptyTable();
+		// if (CampaignOOBDataTable)   CampaignOOBDataTable->EmptyTable();
+		// if (CombatGroupDataTable)   CombatGroupDataTable->EmptyTable();
+		// if (OrderOfBattleDataTable) OrderOfBattleDataTable->EmptyTable();
+		// if (GalaxyDataTable)        GalaxyDataTable->EmptyTable();
+		// if (ShipDesignDataTable)    ShipDesignDataTable->EmptyTable();
 	}
+#endif
 }
 
 void UStarshatterGameDataSubsystem::Deinitialize()

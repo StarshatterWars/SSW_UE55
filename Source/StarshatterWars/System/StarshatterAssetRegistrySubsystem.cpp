@@ -159,6 +159,95 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
         }
     }
 
+    // Data.CampaignTable
+    if (!Cache.Contains(TEXT("Data.CampaignTable")))
+    {
+        if (!Settings->CampaignTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->CampaignTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.CampaignTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.CampaignTable -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] CampaignTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.CampaignOOBTable
+    if (!Cache.Contains(TEXT("Data.CampaignOOBTable")))
+    {
+        if (!Settings->CampaignOOBTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->CampaignOOBTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.CampaignOOBTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.CampaignOOBTable -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] CampaignOOBTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.CombatGroupTable
+    if (!Cache.Contains(TEXT("Data.CombatGroupTable")))
+    {
+        if (!Settings->CombatGroupTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->CombatGroupTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.CombatGroupTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.CombatGroupTable -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] CombatGroupTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.GalaxyMapTable
+    if (!Cache.Contains(TEXT("Data.GalaxyMapTable")))
+    {
+        if (!Settings->GalaxyMapTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->GalaxyMapTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.GalaxyMapTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.GalaxyMapTable -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] GalaxyMapTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.OrderOfBattleTable
+    if (!Cache.Contains(TEXT("Data.OrderOfBattleTable")))
+    {
+        if (!Settings->OrderOfBattleTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->OrderOfBattleTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.OrderOfBattleTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.OrderOfBattleTable -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] OrderOfBattleTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.AwardsTable
+    if (!Cache.Contains(TEXT("Data.AwardsTable")))
+    {
+        if (!Settings->AwardsTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->AwardsTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.AwardsTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.AwardsTable -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] AwardsTable is not set in Project Settings"));
+        }
+    }
     // ------------------------------------------------------------------
     // 3) Inject typed UI widget classes (do not overwrite explicit map entries)
     //    NOTE: We store them in the generic Cache as UObject soft refs so the

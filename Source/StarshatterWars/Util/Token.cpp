@@ -44,16 +44,19 @@ Token::Token(int t)
     mSymbol[0] = '\0';
 }
 
-Token::Token(const char* s, int t, int k, int l, int c)
-    : mType(t), mKey(k), mLine(l), mColumn(c)
+Token::Token(const char* s, int t, int InKey, int l, int c)
+    : mType(t), mKey(InKey), mLine(l), mColumn(c)
 {
-    mLength = strlen(s);
-    if (mLength < 8) {
+    mLength = (int)strlen(s);
+
+    if (mLength < 8)
+    {
         strcpy_s(mSymbol, s);
     }
-    else {
-        mFullSymbol = new(char[mLength + 1]);
-        strcpy(mFullSymbol, s);
+    else
+    {
+        mFullSymbol = new char[mLength + 1];
+        strcpy_s(mFullSymbol, mLength + 1, s);
     }
 }
 

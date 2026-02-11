@@ -358,9 +358,16 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("Data.SystemDesignTable"),
     TEXT("Data.ShipDesignTable"),
 
+    TEXT("Data.CampaignTable"),
+    TEXT("Data.CampaignOOBTable"),
+    TEXT("Data.CombatGroupTable"),
+    TEXT("Data.GalaxyMapTable"),
+    TEXT("Data.OrderOfBattleTable"),
+    TEXT("Data.AwardsTable"),
+
     TEXT("UI.MenuScreenClass"),
     TEXT("UI.ExitDlgClass"),
-    TEXT("UI.FirstTimeDlgClass"), 
+    TEXT("UI.FirstRunDlgClass"),
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))
