@@ -363,7 +363,7 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("Data.CombatGroupTable"),
     TEXT("Data.GalaxyMapTable"),
     TEXT("Data.OrderOfBattleTable"),
-    TEXT("Data.AwardsTable"),
+    TEXT("Data.MedalsTable"),
     TEXT("Data.RanksTable"),
 
     TEXT("Data.RegionsTable"),

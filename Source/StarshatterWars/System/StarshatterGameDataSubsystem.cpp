@@ -144,7 +144,7 @@ void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collect
 	CombatGroupDataTable = Assets->GetDataTable(TEXT("Data.CombatGroupTable"), true);
 	GalaxyDataTable = Assets->GetDataTable(TEXT("Data.GalaxyMapTable"), true);
 	OrderOfBattleDataTable = Assets->GetDataTable(TEXT("Data.OrderOfBattleTable"), true);
-	AwardsDataTable = Assets->GetDataTable(TEXT("Data.AwardsTable"), true);
+	MedalsDataTable = Assets->GetDataTable(TEXT("Data.MedalsTable"), true);
 	RanksDataTable = Assets->GetDataTable(TEXT("Data.RanksTable"), true);
 	
 	RegionsDataTable = Assets->GetDataTable(TEXT("Data.RegionsTable"), true);

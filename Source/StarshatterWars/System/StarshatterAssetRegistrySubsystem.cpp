@@ -235,17 +235,17 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
     }
 
     // Data.AwardsTable
-    if (!Cache.Contains(TEXT("Data.AwardsTable")))
+    if (!Cache.Contains(TEXT("Data.MedalsTable")))
     {
         if (!Settings->AwardsTable.IsNull())
         {
             const FSoftObjectPath Path = Settings->AwardsTable.ToSoftObjectPath();
-            Cache.Add(TEXT("Data.AwardsTable"), TSoftObjectPtr<UObject>(Path));
-            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.AwardsTable -> %s"), *Path.ToString());
+            Cache.Add(TEXT("Data.MedalsTable"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.MedalsTable -> %s"), *Path.ToString());
         }
         else
         {
-            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] AwardsTable is not set in Project Settings"));
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] MedalsTable is not set in Project Settings"));
         }
     }
 
