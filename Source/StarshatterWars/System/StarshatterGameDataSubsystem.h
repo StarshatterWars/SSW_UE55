@@ -150,7 +150,10 @@ public:
     // =====================================================================
     // Missions / templates
     // =====================================================================
-    void LoadZones(FString Path);
+    void LoadZones(
+        const FString& Path,
+        const FString& CampaignId);
+
     void LoadMissionList(FString Path);
     void LoadTemplateList(FString Path);
 
@@ -260,7 +263,8 @@ public:
     // Campaign header / metadata scratch
     int                  campaign_id;
     ECampaignStatus      CampaignStatus;
-    int                  Index;
+    int                  CampaignIndex;
+    FString              CurrentCampaignId;
     char                 filename[64];
     Text                 path[64];
     Text                 name;
@@ -381,6 +385,7 @@ protected:
     UDataTable* PlanetsDataTable;
     UDataTable* MoonsDataTable;
     UDataTable* RegionsDataTable;
+    UDataTable* ZonesDataTable;
     UDataTable* ShipDesignDataTable;
     UDataTable* SystemDesignDataTable;
     

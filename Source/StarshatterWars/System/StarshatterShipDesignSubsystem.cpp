@@ -929,16 +929,41 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 		return;
 	}
 
-	const FName RowName(*FString(LocalShipName));
-
-	// Optional overwrite:
-	if (ShipDesignDataTable->FindRow<FShipDesign>(RowName, TEXT("LoadShipDesign"), false))
+	const FString ShipName = NewShipDesign.ShipName.TrimStartAndEnd();
+	if (ShipName.IsEmpty())
 	{
-		ShipDesignDataTable->RemoveRow(RowName);
+		UE_LOG(LogTemp, Warning, TEXT("LoadShipDesign: missing 'name' in '%s'"), *ShipFilePath);
+		return;
 	}
+	const FName CleanRowName(*ShipName);
 
-	ShipDesignDataTable->AddRow(RowName, NewShipDesign);
-	UE_LOG(LogTemp, Warning, TEXT("[SHIPDESIGN] Data table filling complete"));
+	// ------------------------------------------------------------------
+	// DataTable UPSERT (same pattern as systems)
+	// ------------------------------------------------------------------
+	if (ShipDesignDataTable)
+	{
+		if (FShipDesign* Existing =
+			ShipDesignDataTable->FindRow<FShipDesign>(
+				CleanRowName,
+				TEXT("LoadShipDesign"),
+				/*bWarnIfRowMissing=*/false))
+		{
+			*Existing = NewShipDesign;   // overwrite in place
+		}
+		else
+		{
+			ShipDesignDataTable->AddRow(CleanRowName, NewShipDesign);
+		}
+
+		UE_LOG(LogTemp, Log,
+			TEXT("[SHIPDESIGN] Upsert OK: %s"),
+			*CleanRowName.ToString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("[SHIPDESIGN] ShipDesignDataTable is null"));
+	}
 }
 
 // +--------------------------------------------------------------------+

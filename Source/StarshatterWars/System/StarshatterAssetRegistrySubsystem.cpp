@@ -248,6 +248,45 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
             UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] AwardsTable is not set in Project Settings"));
         }
     }
+
+    // Data.RegionsTable
+    if (!Cache.Contains(TEXT("Data.RegionsTable")))
+    {
+        if (!Settings->RegionsDataTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->RegionsDataTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.RegionsTable"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log,
+                TEXT("[ASSETS] Bind Data.RegionsTable -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] RegionsDataTable is not set in Project Settings"));
+        }
+    }
+
+    // Data.ZonesTable
+    if (!Cache.Contains(TEXT("Data.ZonesTable")))
+    {
+        if (!Settings->ZonesDataTable.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->ZonesDataTable.ToSoftObjectPath();
+            Cache.Add(TEXT("Data.ZonesTable"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log,
+                TEXT("[ASSETS] Bind Data.ZonesTable -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] ZonesDataTable is not set in Project Settings"));
+        }
+    }
+
     // ------------------------------------------------------------------
     // 3) Inject typed UI widget classes (do not overwrite explicit map entries)
     //    NOTE: We store them in the generic Cache as UObject soft refs so the

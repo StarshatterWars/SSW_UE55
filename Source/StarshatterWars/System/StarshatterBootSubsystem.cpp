@@ -365,6 +365,9 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("Data.OrderOfBattleTable"),
     TEXT("Data.AwardsTable"),
 
+    TEXT("Data.RegionsTable"),
+    TEXT("Data.ZonesTable"),
+
     TEXT("UI.MenuScreenClass"),
     TEXT("UI.ExitDlgClass"),
     TEXT("UI.FirstRunDlgClass"),

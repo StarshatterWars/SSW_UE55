@@ -117,6 +117,13 @@ public:
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
     TSoftObjectPtr<UDataTable> AwardsTable;
 
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> RegionsDataTable;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|DataTables")
+    TSoftObjectPtr<UDataTable> ZonesDataTable;
+
     // ------------------------------------------------------------------
     // Optional UI bindings (config-backed)
     // ------------------------------------------------------------------

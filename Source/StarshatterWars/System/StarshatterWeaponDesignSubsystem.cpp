@@ -547,21 +547,26 @@ void UStarshatterWeaponDesignSubsystem::LoadWeaponDesign(const char* Filename)
                 continue;
             }
 
-            const FName RowName(*W.Name);
+            FString CleanName = W.Name;
+            CleanName.TrimStartAndEndInline();
+
+            const FName RowName(*CleanName);
 
             // Cache:
             DesignsByName.Add(RowName, W);
 
-            // Optional DT write:
             if (WeaponDesignDataTable)
-            {
-                if (WeaponDesignDataTable->FindRow<FWeaponDesign>(RowName, TEXT("LoadWeaponDesign"), false))
-                {
-                    WeaponDesignDataTable->RemoveRow(RowName);
-                }
-                WeaponDesignDataTable->AddRow(RowName, W);
-            }
-
+{   
+    if (FWeaponDesign* Existing =
+        WeaponDesignDataTable->FindRow<FWeaponDesign>(RowName, TEXT("LoadWeaponDesign"), /*bWarnIfRowMissing=*/false))
+    {
+        *Existing = W; // overwrite row data in place (safe)
+    }
+    else
+    {
+        WeaponDesignDataTable->AddRow(RowName, W);
+    }
+}
             ++ParsedWeapons;
         }
         else

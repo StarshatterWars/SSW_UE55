@@ -145,6 +145,9 @@ void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collect
 	GalaxyDataTable = Assets->GetDataTable(TEXT("Data.GalaxyMapTable"), true);
 	OrderOfBattleDataTable = Assets->GetDataTable(TEXT("Data.OrderOfBattleTable"), true);
 	AwardsDataTable = Assets->GetDataTable(TEXT("Data.AwardsTable"), true);
+	
+	RegionsDataTable = Assets->GetDataTable(TEXT("Data.RegionsTable"), true);
+	ZonesDataTable = Assets->GetDataTable(TEXT("Data.ZonesTable"), true);
 
 	UE_LOG(LogTemp, Log, TEXT("[GAMEDATA] DT Campaign=%s Galaxy=%s"),
 		*GetNameSafe(CampaignDataTable),
@@ -1007,15 +1010,9 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 	LoadStarsystems();
 	LoadAwardTables();
 
-	if (bClearTables)
-	{
-		InitializeCampaignData();
-		InitializeCombatRoster();
-	}
+	InitializeCampaignData();
+	InitializeCombatRoster();
 
-	//LoadSystemDesignsFromDT();
-
-	// This can stay in GameInstance if it is truly "global timers"
 	SSWInstance->StartGameTimers();
 
 	// USystemDesign::Initialize(SystemDesignTable);
@@ -1073,6 +1070,7 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 	MissionArray.Empty();
 	TemplateMissionArray.Empty();
 	ScriptedMissionArray.Empty();
+	ZoneArray.Empty();
 
 	do {
 		delete term;
@@ -1091,8 +1089,8 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 					NewCampaignData.Description = FString(description);
 				}
 				else if (def->name()->value() == "index") {
-					GetDefNumber(Index, def, filename);
-					NewCampaignData.Index = Index;
+					GetDefNumber(CampaignIndex, def, filename);
+					NewCampaignData.Index = CampaignIndex;
 				}
 				else if (def->name()->value() == "situation") {
 					GetDefText(situation, def, filename);
@@ -1582,7 +1580,7 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 
 	} while (term);
 
-	LoadZones(CampaignPath);
+	LoadZones(CampaignPath, FString(name));
 	LoadMissionList(CampaignPath);
 	LoadTemplateList(CampaignPath);
 	LoadMission(CampaignPath);
@@ -1600,11 +1598,13 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 
 	// define our data table struct
 	FName RowName = FName(FString(name));
-	SSWInstance->CampaignDataTable->AddRow(RowName, NewCampaignData);
+	CampaignDataTable->AddRow(RowName, NewCampaignData);
 	CampaignData = NewCampaignData;
 }
 
-void UStarshatterGameDataSubsystem::LoadZones(FString Path)
+void UStarshatterGameDataSubsystem::LoadZones(
+	const FString& Path,
+	const FString& CampaignId)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::LoadZones()"));
 
@@ -1619,83 +1619,99 @@ void UStarshatterGameDataSubsystem::LoadZones(FString Path)
 		return;
 	}
 
-	// Keep legacy char* for GetDef* helpers:
 	const char* fn = TCHAR_TO_ANSI(*FileName);
 
-	// ------------------------------------------------------------
-	// REPLACEMENT FOR DataLoader::LoadBuffer
-	// ------------------------------------------------------------
 	TArray<uint8> Bytes;
 	if (!FFileHelper::LoadFileToArray(Bytes, *FileName))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to read zones file: %s"), *FileName);
 		return;
 	}
-	Bytes.Add(0); // null-terminate for BlockReader/Parser
+	Bytes.Add(0);
 
 	Parser parser(new BlockReader(reinterpret_cast<const char*>(Bytes.GetData())));
 	Term* term = parser.ParseTerm();
 
-	ZoneArray.Empty();
-
 	if (!term)
-	{
 		return;
-	}
-	else
+
 	{
 		TermText* file_type = term->isText();
 		if (!file_type || file_type->value() != "ZONES")
 		{
-			UE_LOG(LogTemp, Log, TEXT("Invalid Zone File %s"), *FileName);
+			UE_LOG(LogTemp, Warning, TEXT("Invalid Zone File %s"), *FileName);
 			delete term;
 			return;
 		}
 	}
+
+	int32 ZoneIndex = 0;
 
 	do
 	{
 		delete term;
 		term = parser.ParseTerm();
 
-		if (term)
+		if (!term)
+			break;
+
+		TermDef* def = term->isDef();
+		if (!def || def->name()->value() != "zone")
+			continue;
+
+		if (!def->term() || !def->term()->isStruct())
 		{
-			TermDef* def = term->isDef();
-			if (def && def->name()->value() == "zone")
+			UE_LOG(LogTemp, Warning, TEXT("zone struct missing in '%s'"), *FileName);
+			continue;
+		}
+
+		TermStruct* val = def->term()->isStruct();
+
+		// Reset per-zone
+		Text ParsedZoneRegion = "";
+		Text ParsedZoneSystem = "";
+
+		FS_CampaignZone NewCampaignZone;
+
+		for (int i = 0; i < val->elements()->size(); i++)
+		{
+			TermDef* pdef = val->elements()->at(i)->isDef();
+			if (!pdef)
+				continue;
+
+			const Text& Key = pdef->name()->value();
+
+			if (Key == "region")
 			{
-				if (!def->term() || !def->term()->isStruct())
-				{
-					UE_LOG(LogTemp, Log, TEXT("WARNING: zone struct missing in '%s'"), *FileName);
-				}
-				else
-				{
-					TermStruct* val = def->term()->isStruct();
-
-					FS_CampaignZone NewCampaignZone;
-
-					for (int i = 0; i < val->elements()->size(); i++)
-					{
-						TermDef* pdef = val->elements()->at(i)->isDef();
-						if (pdef)
-						{
-							if (pdef->name()->value() == "region")
-							{
-								GetDefText(ZoneRegion, pdef, fn);
-								NewCampaignZone.Region = FString(ZoneRegion);
-							}
-							else if (pdef->name()->value() == "system")
-							{
-								GetDefText(ZoneSystem, pdef, fn);
-								NewCampaignZone.System = FString(ZoneSystem);
-							}
-						}
-					}
-
-					ZoneArray.Add(NewCampaignZone);
-				}
+				GetDefText(ParsedZoneRegion, pdef, fn);
+				NewCampaignZone.Region = FString(ANSI_TO_TCHAR(ParsedZoneRegion.data())).TrimStartAndEnd();
+			}
+			else if (Key == "system")
+			{
+				GetDefText(ParsedZoneSystem, pdef, fn);
+				NewCampaignZone.System = FString(ANSI_TO_TCHAR(ParsedZoneSystem.data())).TrimStartAndEnd();
 			}
 		}
 
+		ZoneArray.Add(NewCampaignZone);
+		// If you are building DT_Zones here:
+		if (ZonesDataTable)
+		{
+			const FString RowCampaignId = CampaignId.IsEmpty() ? TEXT("Default") : CampaignId;
+
+			const FName RowName(*FString::Printf(TEXT("%s.Zone%03d"), *RowCampaignId, ZoneIndex));
+
+			if (!ZonesDataTable->GetRowMap().Contains(RowName))
+			{
+				ZonesDataTable->AddRow(RowName, NewCampaignZone);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("DT_Zones already has row '%s' - skipping duplicate"), *RowName.ToString());
+			}
+		}
+
+		ZoneIndex++;
 	} while (term);
 
 	delete term; // defensive
@@ -4797,125 +4813,130 @@ void UStarshatterGameDataSubsystem::ParseMoon(TermStruct* val, const char* fn)
 }
 
 
-void UStarshatterGameDataSubsystem::ParseRegion(TermStruct* val, const char* fn)
+void UStarshatterGameDataSubsystem::ParseRegion(TermStruct* Val, const char* Fn)
 {
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::ParseRegion()"));
 
-	if (!val || !fn || !*fn)
+	if (!Val || !Fn || !*Fn)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ParseRegion called with invalid args"));
 		return;
 	}
 
-	Text  RegionName = "";
-	Text  RegionParent = "";
-	Text  LinkName = "";
-	Text  ParentType = "";
+	Text RegionName;
+	Text RegionParent;
+	Text LinkName;
+	Text ParentType;
 
 	double Size = 1.0e6;
 	double Orbit = 0.0;
-	double Grid = 25000;
+	double Grid = 25000.0;
 	double Inclination = 0.0;
 	int    Asteroids = 0;
 
 	EOrbitalType ParsedType = EOrbitalType::NOTHING;
 
 	TArray<FString> LinksName;
-	LinksName.Empty();
-
-	// Maintain legacy List usage:
-	List<Text> links;
+	LinksName.Reserve(8);
 
 	FS_RegionMap NewRegionData;
 
-	for (int i = 0; i < val->elements()->size(); i++)
+	// ----------------------------
+	// Parse fields (order-independent)
+	// ----------------------------
+	for (int i = 0; i < Val->elements()->size(); i++)
 	{
-		TermDef* pdef = val->elements()->at(i)->isDef();
-		if (!pdef)
+		TermDef* PDef = Val->elements()->at(i)->isDef();
+		if (!PDef)
 			continue;
 
-		const Text& Key = pdef->name()->value();
+		const Text& Key = PDef->name()->value();
 
 		if (Key == "name")
 		{
-			GetDefText(RegionName, pdef, fn);
-			NewRegionData.Name = FString(ANSI_TO_TCHAR(RegionName.data()));
+			GetDefText(RegionName, PDef, Fn);
+			NewRegionData.Name = FString(ANSI_TO_TCHAR(RegionName.data())).TrimStartAndEnd();
 		}
 		else if (Key == "parent")
 		{
-			GetDefText(RegionParent, pdef, fn);
-			NewRegionData.Parent = FString(ANSI_TO_TCHAR(RegionParent.data()));
+			GetDefText(RegionParent, PDef, Fn);
+			NewRegionData.Parent = FString(ANSI_TO_TCHAR(RegionParent.data())).TrimStartAndEnd();
 		}
 		else if (Key == "type")
 		{
-			GetDefText(ParentType, pdef, fn);
+			GetDefText(ParentType, PDef, Fn);
 
-			const FString RegionNameStr = FString(ANSI_TO_TCHAR(RegionName.data()));
-			const FString RawTypeStr = FString(ANSI_TO_TCHAR(ParentType.data()));
-
-			UE_LOG(LogTemp, Warning, TEXT("%s Region type raw: '%s'"), *RegionNameStr, *RawTypeStr);
+			const FString RawTypeStr = FString(ANSI_TO_TCHAR(ParentType.data())).TrimStartAndEnd();
 
 			ParsedType = EOrbitalType::NOTHING;
-			const bool bOk = UFormattingUtils::GetRegionTypeFromString(*RawTypeStr, ParsedType);
-			if (bOk)
+			if (UFormattingUtils::GetRegionTypeFromString(*RawTypeStr, ParsedType))
 			{
 				NewRegionData.Type = ParsedType;
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s Region type parse failed. Raw='%s'"), *RegionNameStr, *RawTypeStr);
+				UE_LOG(LogTemp, Warning, TEXT("Region type parse failed. Raw='%s' (file=%s)"),
+					*RawTypeStr, *FString(Fn));
 				NewRegionData.Type = EOrbitalType::NOTHING;
 			}
 		}
 		else if (Key == "link")
 		{
-			GetDefText(LinkName, pdef, fn);
+			GetDefText(LinkName, PDef, Fn);
 
 			if (LinkName.length() > 0)
 			{
-				// Keep legacy list:
-				links.append(new Text(LinkName));
-
-				LinksName.Add(FString(ANSI_TO_TCHAR(LinkName.data())));
-				NewRegionData.Link = LinksName;
+				LinksName.Add(FString(ANSI_TO_TCHAR(LinkName.data())).TrimStartAndEnd());
 			}
 		}
 		else if (Key == "orbit")
 		{
-			GetDefNumber(Orbit, pdef, fn);
+			GetDefNumber(Orbit, PDef, Fn);
 			NewRegionData.Orbit = Orbit;
 		}
 		else if (Key == "size" || Key == "radius")
 		{
-			GetDefNumber(Size, pdef, fn);
+			GetDefNumber(Size, PDef, Fn);
 			NewRegionData.Size = Size;
 		}
 		else if (Key == "grid")
 		{
-			GetDefNumber(Grid, pdef, fn);
+			GetDefNumber(Grid, PDef, Fn);
 			NewRegionData.Grid = Grid;
 		}
 		else if (Key == "inclination")
 		{
-			GetDefNumber(Inclination, pdef, fn);
+			GetDefNumber(Inclination, PDef, Fn);
 			NewRegionData.Inclination = Inclination;
 		}
 		else if (Key == "asteroids")
 		{
-			GetDefNumber(Asteroids, pdef, fn);
+			// If you only have GetDefNumber, keep this:
+			double Temp = 0.0;
+			GetDefNumber(Temp, PDef, Fn);
+			Asteroids = (int)Temp;
+
 			NewRegionData.Asteroids = Asteroids;
 		}
 	}
 
-	// Add row ONCE (after parsing):
-	if (RegionName.length() > 0 && RegionsDataTable)
-	{
-		const FName RowName(*FString(ANSI_TO_TCHAR(RegionName.data())));
+	// Assign links once
+	NewRegionData.Link = LinksName;
 
-		// Avoid duplicate row asserts if file repeats names:
+	// Log using resolved name if available:
+	if (!NewRegionData.Name.IsEmpty())
+	{
+		UE_LOG(LogTemp, Log, TEXT("Parsed Region: %s (parent=%s links=%d)"),
+			*NewRegionData.Name, *NewRegionData.Parent, NewRegionData.Link.Num());
+	}
+	// Add to DT_Regions
+	if (!NewRegionData.Name.IsEmpty() && RegionsDataTable)
+	{
+		const FName RowName(*NewRegionData.Name);
+
 		if (RegionsDataTable->GetRowMap().Contains(RowName))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("RegionsDataTable already has row '%s' - skipping duplicate"), *RowName.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("DT_Regions already has row '%s' - skipping duplicate"), *RowName.ToString());
 		}
 		else
 		{
@@ -4924,11 +4945,10 @@ void UStarshatterGameDataSubsystem::ParseRegion(TermStruct* val, const char* fn)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ParseRegion: missing RegionName or RegionsDataTable is null"));
-	}
-
-	RegionMapArray.Add(NewRegionData);
+		UE_LOG(LogTemp, Warning, TEXT("ParseRegion: missing Name or RegionsDataTable is null"));
+	}	RegionMapArray.Add(NewRegionData);
 }
+
 
 void UStarshatterGameDataSubsystem::ParseMoonMap(TermStruct* val, const char* fn)
 {

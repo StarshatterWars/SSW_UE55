@@ -22,6 +22,7 @@
 
 #include "Engine/DataTable.h"
 #include "FormattingUtils.h"
+#include "DataTableUtils.h"
 #include "StarshatterAssetRegistrySubsystem.h"
 
 
@@ -99,16 +100,34 @@ void UStarshatterSystemDesignSubsystem::LoadSystemDesign(const char* Filename)
         return;
     }
 
-    // Optional clear:
+    // ------------------------------------------------------------------
+    // DataTable safety: ensure DT exists and row struct matches
+    // ------------------------------------------------------------------
+    if (SystemDesignDataTable)
+    {
+        const UScriptStruct* Actual = SystemDesignDataTable->GetRowStruct();
+        const UScriptStruct* Expected = FSystemDesign::StaticStruct();
+
+        if (!ensureMsgf(Actual == Expected,
+            TEXT("[SYSTEM] DT row struct mismatch. Expected=%s Actual=%s  (DT=%s)"),
+            *GetNameSafe(Expected), *GetNameSafe(Actual), *GetNameSafe(SystemDesignDataTable)))
+        {
+            // Disable DT writes to avoid crashes
+            SystemDesignDataTable = nullptr;
+        }
+    }
+
+    // Optional clear (cache always safe):
     if (bClearTables)
     {
         DesignsByName.Empty();
-        // NOTE: We can't safely clear a DataTable without editor helpers unless we know row names.
-        // We'll overwrite existing rows as we parse (RemoveRow/AddRow per system).
-        UE_LOG(LogTemp, Log, TEXT("[SYSTEM] bClearTables=true: cleared in-memory cache (DT rows will be overwritten as parsed)"));
+        UE_LOG(LogTemp, Log, TEXT("[SYSTEM] bClearTables=true: cleared in-memory cache"));
+        // If you want to also clear DT in editor-only workflows, do it explicitly elsewhere.
     }
 
-    // Load file into bytes for legacy parser (char* buffer expected)
+    // ------------------------------------------------------------------
+    // Load file bytes for legacy parser
+    // ------------------------------------------------------------------
     TArray<uint8> Bytes;
     if (!FFileHelper::LoadFileToArray(Bytes, *FilePath))
     {
@@ -117,7 +136,7 @@ void UStarshatterSystemDesignSubsystem::LoadSystemDesign(const char* Filename)
     }
     Bytes.Add(0);
 
-    // Stable UTF-8 filename for legacy helpers
+    // Stable UTF-8 filename for legacy helpers:
     const FTCHARToUTF8 Utf8Path(*FilePath);
     const char* fn = Utf8Path.Get();
 
@@ -130,7 +149,9 @@ void UStarshatterSystemDesignSubsystem::LoadSystemDesign(const char* Filename)
         return;
     }
 
+    // ------------------------------------------------------------------
     // Header check
+    // ------------------------------------------------------------------
     {
         TermText* FileType = TermObj->isText();
         if (!FileType || FileType->value() != "SYSTEM")
@@ -143,7 +164,7 @@ void UStarshatterSystemDesignSubsystem::LoadSystemDesign(const char* Filename)
 
     int32 ParsedSystems = 0;
 
-    do
+    while (true)
     {
         delete TermObj;
         TermObj = ParserObj.ParseTerm();
@@ -156,152 +177,132 @@ void UStarshatterSystemDesignSubsystem::LoadSystemDesign(const char* Filename)
             continue;
 
         const Text& DefName = Def->name()->value();
+        if (DefName != "system")
+            continue;
 
-        if (DefName == "system")
+        TermStruct* SystemStruct = (Def->term() ? Def->term()->isStruct() : nullptr);
+        if (!SystemStruct)
         {
-            if (!Def->term() || !Def->term()->isStruct())
-            {
-                UE_LOG(LogTemp, Warning, TEXT("[SYSTEM] WARNING: system structure missing in '%s'"), *FilePath);
+            UE_LOG(LogTemp, Warning, TEXT("[SYSTEM] WARNING: system structure missing in '%s'"), *FilePath);
+            continue;
+        }
+
+        FSystemDesign NewSystem;
+        NewSystem.SourceFile = FilePath;
+        NewSystem.Components.Reset();
+
+        Text SystemNameText = "";
+
+        // Parse system { ... }
+        for (int32 i = 0; i < (int32)SystemStruct->elements()->size(); ++i)
+        {
+            TermDef* ParamDef = SystemStruct->elements()->at(i)->isDef();
+            if (!ParamDef)
                 continue;
-            }
 
-            TermStruct* SystemStruct = Def->term()->isStruct();
+            const Text& Key = ParamDef->name()->value();
 
-            FSystemDesign NewSystem;
-            NewSystem.SourceFile = FilePath;
-            NewSystem.Components.Empty();
-
-            Text SystemNameText = "";
-
-            // Parse system { ... }
-            for (int32 i = 0; i < (int32)SystemStruct->elements()->size(); ++i)
+            if (Key == "name")
             {
-                TermDef* ParamDef = SystemStruct->elements()->at(i)->isDef();
-                if (!ParamDef)
+                GetDefText(SystemNameText, ParamDef, fn);
+                NewSystem.Name = FString(ANSI_TO_TCHAR(SystemNameText.data())).TrimStartAndEnd();
+            }
+            else if (Key == "component")
+            {
+                TermStruct* CompStruct = (ParamDef->term() ? ParamDef->term()->isStruct() : nullptr);
+                if (!CompStruct)
+                {
+                    UE_LOG(LogTemp, Warning,
+                        TEXT("[SYSTEM] WARNING: component struct missing in system '%s' in '%s'"),
+                        *NewSystem.Name, *FilePath);
                     continue;
-
-                const Text& Key = ParamDef->name()->value();
-
-                if (Key == "name")
-                {
-                    GetDefText(SystemNameText, ParamDef, fn);
-                    NewSystem.Name = FString(SystemNameText);
                 }
-                else if (Key == "component")
+
+                FComponentDesign NewComp;
+
+                Text  CompNameText = "";
+                Text  CompAbrvText = "";
+                double RepairTime = 0.0;
+                double ReplaceTime = 0.0;
+                int   Spares = 0;
+                int   Affects = 0;
+
+                for (int32 j = 0; j < (int32)CompStruct->elements()->size(); ++j)
                 {
-                    if (!ParamDef->term() || !ParamDef->term()->isStruct())
-                    {
-                        UE_LOG(LogTemp, Warning,
-                            TEXT("[SYSTEM] WARNING: component struct missing in system '%s' in '%s'"),
-                            *NewSystem.Name, *FilePath);
+                    TermDef* CDef = CompStruct->elements()->at(j)->isDef();
+                    if (!CDef)
                         continue;
-                    }
 
-                    TermStruct* CompStruct = ParamDef->term()->isStruct();
+                    const Text& CKey = CDef->name()->value();
 
-                    FComponentDesign NewComp;
-
-                    Text  CompNameText = "";
-                    Text  CompAbrvText = "";
-                    float RepairTime = 0.0f;
-                    float ReplaceTime = 0.0f;
-                    int   Spares = 0;
-                    int   Affects = 0;
-
-                    // Parse component { ... }
-                    for (int32 j = 0; j < (int32)CompStruct->elements()->size(); ++j)
+                    if (CKey == "name")
                     {
-                        TermDef* CDef = CompStruct->elements()->at(j)->isDef();
-                        if (!CDef)
-                            continue;
-
-                        const Text& CKey = CDef->name()->value();
-
-                        if (CKey == "name")
-                        {
-                            GetDefText(CompNameText, CDef, fn);
-                            NewComp.Name = FString(CompNameText);
-                        }
-                        else if (CKey == "abrv")
-                        {
-                            GetDefText(CompAbrvText, CDef, fn);
-                            NewComp.Abbrev = FString(CompAbrvText);
-                        }
-                        else if (CKey == "repair_time")
-                        {
-                            GetDefNumber(RepairTime, CDef, fn);
-                            NewComp.RepairTime = RepairTime;
-                        }
-                        else if (CKey == "replace_time")
-                        {
-                            GetDefNumber(ReplaceTime, CDef, fn);
-                            NewComp.ReplaceTime = ReplaceTime;
-                        }
-                        else if (CKey == "spares")
-                        {
-                            GetDefNumber(Spares, CDef, fn);
-                            NewComp.Spares = (int32)Spares;
-                        }
-                        else if (CKey == "affects")
-                        {
-                            GetDefNumber(Affects, CDef, fn);
-                            NewComp.Affects = (int32)Affects;
-                        }
-                        else
-                        {
-                            UE_LOG(LogTemp, Verbose,
-                                TEXT("[SYSTEM] component param '%s' ignored in '%s'"),
-                                ANSI_TO_TCHAR(CKey.data()), *FilePath);
-                        }
+                        GetDefText(CompNameText, CDef, fn);
+                        NewComp.Name = FString(ANSI_TO_TCHAR(CompNameText.data())).TrimStartAndEnd();
                     }
+                    else if (CKey == "abrv")
+                    {
+                        GetDefText(CompAbrvText, CDef, fn);
+                        NewComp.Abbrev = FString(ANSI_TO_TCHAR(CompAbrvText.data())).TrimStartAndEnd();
+                    }
+                    else if (CKey == "repair_time")
+                    {
+                        GetDefNumber(RepairTime, CDef, fn);
+                        NewComp.RepairTime = (float)RepairTime;
+                    }
+                    else if (CKey == "replace_time")
+                    {
+                        GetDefNumber(ReplaceTime, CDef, fn);
+                        NewComp.ReplaceTime = (float)ReplaceTime;
+                    }
+                    else if (CKey == "spares")
+                    {
+                        GetDefNumber(Spares, CDef, fn);
+                        NewComp.Spares = (int32)Spares;
+                    }
+                    else if (CKey == "affects")
+                    {
+                        GetDefNumber(Affects, CDef, fn);
+                        NewComp.Affects = (int32)Affects;
+                    }
+                }
 
+                // Optional: skip empty components
+                if (!NewComp.Name.IsEmpty())
+                {
                     NewSystem.Components.Add(NewComp);
                 }
-                else
-                {
-                    UE_LOG(LogTemp, Verbose,
-                        TEXT("[SYSTEM] system param '%s' ignored in '%s'"),
-                        ANSI_TO_TCHAR(Key.data()), *FilePath);
-                }
             }
+        }
 
-            if (NewSystem.Name.IsEmpty())
+        if (NewSystem.Name.IsEmpty())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[SYSTEM] WARNING: system with missing name ignored in '%s'"), *FilePath);
+            continue;
+        }
+
+        const FName RowName(*NewSystem.Name);
+
+        // Cache (authoritative)
+        DesignsByName.Add(RowName, NewSystem);
+
+        // DT write (optional)
+        if (SystemDesignDataTable)
+        {
+            if (FSystemDesign* Existing = SystemDesignDataTable->FindRow<FSystemDesign>(RowName, TEXT("LoadSystemDesign"), false))
             {
-                UE_LOG(LogTemp, Warning, TEXT("[SYSTEM] WARNING: system with missing name ignored in '%s'"), *FilePath);
-                continue;
+                *Existing = NewSystem;   // overwrite row data in place
             }
-
-            const FName RowName(*NewSystem.Name);
-
-            // Cache:
-            DesignsByName.Add(RowName, NewSystem);
-
-            // Optional DT write:
-            if (SystemDesignDataTable)
+            else
             {
-                if (SystemDesignDataTable->FindRow<FSystemDesign>(RowName, TEXT("LoadSystemDesign"), false))
-                {
-                    SystemDesignDataTable->RemoveRow(RowName);
-                }
                 SystemDesignDataTable->AddRow(RowName, NewSystem);
             }
-
-            ++ParsedSystems;
-        }
-        else
-        {
-            UE_LOG(LogTemp, Verbose,
-                TEXT("[SYSTEM] WARNING: unknown definition '%s' in '%s'"),
-                ANSI_TO_TCHAR(DefName.data()), *FilePath);
         }
 
-    } while (TermObj);
-
-    if (TermObj)
-    {
-        delete TermObj;
-        TermObj = nullptr;
+        ++ParsedSystems;
     }
+
+    delete TermObj;
 
     UE_LOG(LogTemp, Log, TEXT("[SYSTEM] Loaded %d system designs (cache=%d) from '%s'"),
         ParsedSystems, DesignsByName.Num(), *FilePath);

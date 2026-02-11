@@ -59,20 +59,24 @@ Token::Token(const char* s, int t, int InKey, int l, int c)
         strcpy_s(mFullSymbol, mLength + 1, s);
     }
 }
-
-Token::Token(const Text& s, int t, int k, int l, int c)
-    : mType(t), mKey(k), mLine(l), mColumn(c)
+Token::Token(const Text& s, int t, int keyValue, int lineValue, int columnValue)
+    : mType(t)
+    , mKey(keyValue)
+    , mLine(lineValue)
+    , mColumn(columnValue)
 {
     mLength = s.length();
-    if (mLength < 8) {
-        strcpy_s(mSymbol, s.data());
+
+    if (mLength < 8)
+    {
+        strcpy_s(mSymbol, sizeof(mSymbol), s.data());
     }
-    else {
-        mFullSymbol = new(char[mLength + 1]);
-        strcpy(mFullSymbol, s.data());
+    else
+    {
+        mFullSymbol = new char[mLength + 1];
+        strcpy_s(mFullSymbol, mLength + 1, s.data());
     }
 }
-
 Token::~Token()
 {
     if (mLength >= 8)
@@ -149,12 +153,10 @@ Token::symbol() const
 
 // +-------------------------------------------------------------------+
 
-void
-Token::addKey(const Text& k, int v)
+void Token::addKey(const Text& keyText, int value)
 {
-    keymap.Insert(k, v);
+    keymap.Insert(keyText, value);
 }
-
 // +-------------------------------------------------------------------+
 
 void
@@ -167,15 +169,15 @@ Token::addKeys(Dictionary<int>& keys)
 
 // +-------------------------------------------------------------------+
 
-bool
-Token::findKey(const Text& k, int& v)
+bool Token::findKey(const Text& keyText, int& outValue)
 {
-    if (keymap.Contains(k)) {
-        v = keymap.Find(k, 0);
+    if (keymap.Contains(keyText))
+    {
+        outValue = keymap.Find(keyText, 0);
         return true;
     }
-    else
-        return false;
+
+    return false;
 }
 
 // +-------------------------------------------------------------------+
