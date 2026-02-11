@@ -211,53 +211,95 @@ bool UCampaignSelectDlg::CanClose()
 
 // +--------------------------------------------------------------------+
 
+#include "CampaignSelectDlg.h"
+
+#include "Campaign.h"
+#include "Game.h"
+#include "Bitmap.h"
+
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
+#include "StarshatterPlayerSubsystem.h"
+
 void UCampaignSelectDlg::ShowNewCampaigns()
 {
     AutoThreadSync a(sync);
 
-    if (loading && description) {
+    if (loading && description)
+    {
         description->SetText(FText::FromString(UTF8_TO_TCHAR(Game::GetText("CmpSelectDlg.already-loading").data())));
-        // Button::PlaySound(Button::SND_REJECT); // classic UI sound; hook into your UE sound layer
         return;
     }
-
-    // UMG button visual state is handled by styles; we keep logical intent only.
 
     if (btn_delete)
         btn_delete->SetIsEnabled(false);
 
-    if (lst_campaigns) {
+    // ------------------------------------------------------------
+    // Resolve player info (no PlayerCharacter)
+    // ------------------------------------------------------------
+    UStarshatterPlayerSubsystem* PlayerSS = nullptr;
+
+    if (UWorld* World = GetWorld())
+    {
+        if (UGameInstance* GI = World->GetGameInstance())
+        {
+            PlayerSS = GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+        }
+    }
+
+    if (!PlayerSS)
+    {
+        // No subsystem yet (boot timing). Safest behavior is "no unlocks".
+        if (description)
+            description->SetText(FText::FromString(TEXT("PLAYER PROFILE NOT AVAILABLE.")));
+
+        if (btn_accept)
+            btn_accept->SetIsEnabled(false);
+
+        show_saved = false;
+        return;
+    }
+
+    const FS_PlayerGameInfo& Info = PlayerSS->GetPlayerInfo();
+
+    auto IsCampaignUnlocked = [&Info](int32 CampaignId) -> bool
+        {
+            // Your legacy logic uses cid-1, which implies campaign ids are 1-based in data.
+            const int32 BitIndex = CampaignId - 1;
+            return Info.IsCampaignComplete(BitIndex);
+        };
+
+    // ------------------------------------------------------------
+    // Populate list (legacy bitmap list retained)
+    // ------------------------------------------------------------
+    if (lst_campaigns)
+    {
         images.destroy();
 
-        // UListView population is UObject-driven; you will create item objects for each entry.
-        // We keep legacy Bitmap generation here for later entry widgets to reference.
-
-        PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-        if (!player)
-            return;
-
         ListIter<Campaign> iter = Campaign::GetAllCampaigns();
-        while (++iter) {
+        while (++iter)
+        {
             Campaign* c = iter.value();
+            if (!c)
+                continue;
 
-            if (c->GetCampaignId() < Campaign::SINGLE_MISSIONS) {
+            const int cid = c->GetCampaignId();
+
+            if (cid < Campaign::SINGLE_MISSIONS)
+            {
                 Bitmap* bmp = new Bitmap;
                 bmp->CopyBitmap(*c->GetImage(0));
                 images.append(bmp);
 
-                // ListView item creation is TODO: create a UObject item holding name + bmp index.
-                // Example: UCampaignSelectItem* Item = NewObject<UCampaignSelectItem>(this); ...
-                // lst_campaigns->AddItem(Item);
-
                 // FULL GAME CRITERIA (based on player record):
-                const int cid = c->GetCampaignId();
                 const bool locked_full =
-                    (cid > 2 && cid < 10 && !player->HasCompletedCampaign(cid - 1));
+                    (cid > 2 && cid < 10 && !IsCampaignUnlocked(cid - 1));
 
                 const bool locked_extra =
-                    (cid >= 10 && cid < 30 && (cid % 10) != 0 && !player->HasCompletedCampaign(cid - 1));
+                    (cid >= 10 && cid < 30 && (cid % 10) != 0 && !IsCampaignUnlocked(cid - 1));
 
-                if (locked_full || locked_extra) {
+                if (locked_full || locked_extra)
+                {
                     const int n = images.size() - 1;
                     images[n]->CopyBitmap(*c->GetImage(2));
                 }
@@ -276,28 +318,54 @@ void UCampaignSelectDlg::ShowNewCampaigns()
 
 // +--------------------------------------------------------------------+
 
+#include "CampaignSelectDlg.h"
+
+#include "Game.h"
+#include "CampaignSaveGame.h"
+
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
+#include "StarshatterPlayerSubsystem.h"
+
 void UCampaignSelectDlg::ShowSavedCampaigns()
 {
     AutoThreadSync a(sync);
 
-    if (loading && description) {
+    if (loading && description)
+    {
         description->SetText(FText::FromString(UTF8_TO_TCHAR(Game::GetText("CmpSelectDlg.already-loading").data())));
-        // Button::PlaySound(Button::SND_REJECT);
         return;
     }
 
     if (btn_delete)
         btn_delete->SetIsEnabled(false);
 
-    if (lst_campaigns) {
-        // UListView population is UObject-driven. Build save list here:
+    // Resolve PlayerId (no PlayerCharacter)
+    int32 PlayerId = 0;
+    if (UWorld* World = GetWorld())
+    {
+        if (UGameInstance* GI = World->GetGameInstance())
+        {
+            if (UStarshatterPlayerSubsystem* PlayerSS = GI->GetSubsystem<UStarshatterPlayerSubsystem>())
+            {
+                PlayerId = PlayerSS->GetPlayerInfo().Id;
+            }
+        }
+    }
+
+    if (lst_campaigns)
+    {
         List<Text> save_list;
 
+        // If you implement player-scoped overload:
+        // CampaignSaveGame::GetSaveGameList(PlayerId, save_list);
+
+        // If not yet implemented, fall back to global:
         CampaignSaveGame::GetSaveGameList(save_list);
+
         save_list.sort();
 
-        // TODO: create UObjects for each save entry and set as list items.
-        // for (int i=0; i<save_list.size(); ++i) { ... }
+        // TODO (UMG): Convert to list items
 
         save_list.destroy();
     }
@@ -310,6 +378,7 @@ void UCampaignSelectDlg::ShowSavedCampaigns()
 
     show_saved = true;
 }
+
 
 // +--------------------------------------------------------------------+
 

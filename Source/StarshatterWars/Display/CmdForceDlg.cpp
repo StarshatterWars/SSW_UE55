@@ -41,6 +41,8 @@
 
 // Your campaign screen:
 #include "CmpnScreen.h"
+#include "AwardInfoRegistry.h"
+#include "StarshatterPlayerSubsystem.h"
 
 namespace
 {
@@ -70,6 +72,24 @@ namespace
 
         return nullptr;
     }
+}
+
+static FString GetRankNameSafe(int32 RankId)
+{
+    // Option A: registry exposes FindRank(RankId) -> const FRankInfo*
+    if (const FRankInfo* RankRow = UAwardInfoRegistry::FindRank(RankId))
+    {
+        if (!RankRow->RankName.IsEmpty())
+            return RankRow->RankName;
+    }
+
+    // Fallback
+    return TEXT("Conscript");
+}
+
+static int32 GetRequiredCommandRankIdSafe(int32 CmdClass)
+{
+    return UAwardInfoRegistry::CommandRankRequired(CmdClass);
 }
 
 UCmdForceDlg::UCmdForceDlg(const FObjectInitializer& ObjectInitializer)

@@ -149,34 +149,34 @@ void UAwardShowDlg::ShowAward()
     {
         if (lbl_name)
         {
-            FString TitleText = FString(TEXT("Rank of ")) + PlayerCharacter::RankName(Rank);
+            const FString TitleText = FString(TEXT("Rank of ")) + FAwardInfo::RankName(Rank);
             lbl_name->SetText(FText::FromString(TitleText));
         }
 
         if (lbl_info)
         {
-            // Assuming RankDescription returns FString/Text-compatible.
-            lbl_info->SetText(FText::FromString(PlayerCharacter::RankDescription(Rank)));
+            lbl_info->SetText(FText::FromString(FAwardInfo::RankDescription(Rank)));
         }
 
         if (img_rank)
         {
-            // Legacy: img_rank->SetPicture(*Player::RankInsignia(rank, 1));
-            // Unreal: you need to convert that to a UTexture2D/brush update.
             img_rank->SetVisibility(ESlateVisibility::Visible);
         }
     }
     else if (Medal >= 0)
     {
         if (lbl_name)
-            lbl_name->SetText(FText::FromString(PlayerCharacter::MedalName(Medal)));
+        {
+            lbl_name->SetText(FText::FromString(FAwardInfo::MedalName(Medal)));
+        }
 
         if (lbl_info)
-            lbl_info->SetText(FText::FromString(PlayerCharacter::MedalDescription(Medal)));
+        {
+            lbl_info->SetText(FText::FromString(FAwardInfo::MedalDescription(Medal)));
+        }
 
         if (img_rank)
         {
-            // Legacy: img_rank->SetPicture(*Player::MedalInsignia(medal, 1));
             img_rank->SetVisibility(ESlateVisibility::Visible);
         }
     }

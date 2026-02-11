@@ -1,209 +1,271 @@
-/*=============================================================================
-    Project:        Starshatter Wars (nGenEx Unreal Port)
-    Studio:         Fractal Dev Games
-    Copyright:      (C) 2024–2026. All Rights Reserved.
-
-    SUBSYSTEM:      AwardInfoRegistry
-    FILE:           AwardInfoRegistry.cpp
-    AUTHOR:         Carlos Bott
-
-    OVERVIEW
-    ========
-    UAwardInfoRegistry
-
-    Unreal-native runtime registry for award, rank, and medal definitions.
-
-    This class replaces legacy:
-        - AwardInfo
-        - rank_table
-        - medal_table
-        - LoadAwardTables()
-        - static rank/medal lookup functions
-
-    The registry loads and indexes FS_AwardInfo rows from a DataTable
-    (typically DT_Awards) and provides fast, centralized lookup services
-    for rank titles, medal names, descriptions, and progression logic.
-
-    RESPONSIBILITIES
-    ================
-    - Load award definitions from UDataTable
-    - Separate rank entries from medal entries
-    - Provide rank lookup (RankName, RankDescription, RankAbrv)
-    - Provide medal lookup (MedalName, MedalDescription)
-    - Compute command eligibility by ship class
-    - Determine rank progression by TotalPoints
-    - Provide clean runtime API for UI and gameplay systems
-
-    ARCHITECTURAL ROLE
-    ==================
-    FS_AwardInfo:
-        Data-only struct (row definition)
-
-    UAwardInfoRegistry:
-        Runtime logic + indexing + lookup layer
-
-    UStarshatterPlayerSubsystem:
-        Owns player state (FS_PlayerGameInfo)
-        Uses this registry for rank/award display and evaluation
-
-    DESIGN NOTES
-    ============
-    - No persistence logic lives here.
-    - No player state is owned here.
-    - No gameplay mutation occurs here.
-    - Pure lookup + evaluation layer.
-    - Safe for UI use.
-    - Safe for subsystem injection.
-
-    FUTURE EXTENSIONS
-    =================
-    - Cached TMap<int32, const FS_AwardInfo*> for O(1) lookups
-    - Rank progression evaluation by PlayerPoints
-    - Medal eligibility evaluation helpers
-    - Async asset loading for insignia images
-=============================================================================*/
-
-
-
 #include "AwardInfoRegistry.h"
-
 #include "Logging/LogMacros.h"
 
-TWeakObjectPtr<UDataTable> UAwardInfoRegistry::AwardsTable;
-TMap<int32, const FS_AwardInfo*> UAwardInfoRegistry::RankById;
-TMap<int32, const FS_AwardInfo*> UAwardInfoRegistry::MedalById;
+TWeakObjectPtr<UDataTable> UAwardInfoRegistry::RanksTable;
+TWeakObjectPtr<UDataTable> UAwardInfoRegistry::MedalsTable;
 
-void UAwardInfoRegistry::Initialize(UDataTable* InAwardsTable)
+TMap<int32, const FRankInfo*>  UAwardInfoRegistry::RankById;
+TMap<int32, const FMedalInfo*> UAwardInfoRegistry::MedalById;
+
+TArray<const FRankInfo*> UAwardInfoRegistry::RanksSortedByPoints;
+
+// ============================================================
+// Initialization
+// ============================================================
+
+void UAwardInfoRegistry::Initialize(UDataTable* InRanksTable, UDataTable* InMedalsTable)
 {
-    AwardsTable = InAwardsTable;
+    RanksTable = InRanksTable;
+    MedalsTable = InMedalsTable;
+
     BuildCaches();
 }
 
 bool UAwardInfoRegistry::IsInitialized()
 {
-    return AwardsTable.IsValid() && (RankById.Num() > 0 || MedalById.Num() > 0);
+    return (RankById.Num() > 0 || MedalById.Num() > 0);
 }
 
 void UAwardInfoRegistry::Reset()
 {
-    AwardsTable.Reset();
+    RanksTable.Reset();
+    MedalsTable.Reset();
+
     RankById.Reset();
     MedalById.Reset();
+    RanksSortedByPoints.Reset();
 }
 
-const TCHAR* UAwardInfoRegistry::SafeStr(const FString& S, const TCHAR* Fallback)
-{
-    return S.IsEmpty() ? Fallback : *S;
-}
-
-const FS_AwardInfo* UAwardInfoRegistry::FindById(const TMap<int32, const FS_AwardInfo*>& Map, int32 Id)
-{
-    if (const FS_AwardInfo* const* Found = Map.Find(Id))
-    {
-        return *Found;
-    }
-    return nullptr;
-}
+// ============================================================
+// Cache Builder
+// ============================================================
 
 void UAwardInfoRegistry::BuildCaches()
 {
     RankById.Reset();
     MedalById.Reset();
+    RanksSortedByPoints.Reset();
 
-    UDataTable* DT = AwardsTable.Get();
-    if (!DT)
+    // -------------------------
+    // Ranks
+    // -------------------------
+    if (UDataTable* DT = RanksTable.Get())
     {
-        UE_LOG(LogTemp, Warning, TEXT("[AwardInfoRegistry] Initialize called with null DataTable."));
-        return;
+        const TMap<FName, uint8*>& RowMap = DT->GetRowMap();
+
+        for (const TPair<FName, uint8*>& Pair : RowMap)
+        {
+            const FRankInfo* Row =
+                reinterpret_cast<const FRankInfo*>(Pair.Value);
+
+            if (!Row)
+                continue;
+
+            RankById.Add(Row->RankId, Row);
+            RanksSortedByPoints.Add(Row);
+        }
+
+        // Sort by promotion threshold ascending
+        RanksSortedByPoints.Sort([](const FRankInfo& A, const FRankInfo& B)
+            {
+                if (A.TotalPoints != B.TotalPoints)
+                    return A.TotalPoints < B.TotalPoints;
+
+                return A.RankId < B.RankId;
+            });
+
+        UE_LOG(LogTemp, Log,
+            TEXT("[AwardInfoRegistry] Cached %d ranks."),
+            RankById.Num());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[AwardInfoRegistry] RanksTable is null."));
     }
 
-    // NOTE: Row pointers are stable while DT is loaded.
-    const TMap<FName, uint8*>& RowMap = DT->GetRowMap();
-    for (const TPair<FName, uint8*>& Pair : RowMap)
+    // -------------------------
+    // Medals
+    // -------------------------
+    if (UDataTable* DT = MedalsTable.Get())
     {
-        const FS_AwardInfo* Row = reinterpret_cast<const FS_AwardInfo*>(Pair.Value);
-        if (!Row)
-            continue;
+        const TMap<FName, uint8*>& RowMap = DT->GetRowMap();
 
-        // Normalize type text (be forgiving)
-        const FString TypeLower = Row->AwardType.ToLower();
+        for (const TPair<FName, uint8*>& Pair : RowMap)
+        {
+            const FMedalInfo* Row =
+                reinterpret_cast<const FMedalInfo*>(Pair.Value);
 
-        if (TypeLower == TEXT("rank"))
-        {
-            RankById.Add(Row->AwardId, Row);
+            if (!Row)
+                continue;
+
+            MedalById.Add(Row->MedalId, Row);
         }
-        else if (TypeLower == TEXT("medal"))
-        {
-            MedalById.Add(Row->AwardId, Row);
-        }
+
+        UE_LOG(LogTemp, Log,
+            TEXT("[AwardInfoRegistry] Cached %d medals."),
+            MedalById.Num());
     }
-
-    UE_LOG(LogTemp, Log, TEXT("[AwardInfoRegistry] Cached %d ranks, %d medals from DataTable '%s'."),
-        RankById.Num(), MedalById.Num(), *DT->GetName());
+    else
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[AwardInfoRegistry] MedalsTable is null."));
+    }
 }
 
-// ------------------------------------------------------------
-// Legacy lookups: Ranks
-// ------------------------------------------------------------
+// ============================================================
+// Rank Lookups
+// ============================================================
 
-const FS_AwardInfo* UAwardInfoRegistry::FindRank(int32 RankId)
+const FRankInfo* UAwardInfoRegistry::FindRank(int32 RankId)
 {
-    return FindById(RankById, RankId);
+    if (const FRankInfo* const* Found = RankById.Find(RankId))
+        return *Found;
+
+    return nullptr;
 }
 
-const TCHAR* UAwardInfoRegistry::RankName(int32 RankId)
+FString UAwardInfoRegistry::RankName(int32 RankId)
 {
-    if (const FS_AwardInfo* Row = FindRank(RankId))
-        return SafeStr(Row->AwardName, TEXT("Conscript"));
+    if (const FRankInfo* Row = FindRank(RankId))
+        return Row->RankName;
 
     return TEXT("Conscript");
 }
 
-const TCHAR* UAwardInfoRegistry::RankAbrv(int32 RankId)
+FString UAwardInfoRegistry::RankAbrv(int32 RankId)
 {
-    if (const FS_AwardInfo* Row = FindRank(RankId))
-        return SafeStr(Row->AwardAbrv, TEXT(""));
+    if (const FRankInfo* Row = FindRank(RankId))
+        return Row->RankAbrv;
 
     return TEXT("");
 }
 
-const TCHAR* UAwardInfoRegistry::RankDescription(int32 RankId)
+FString UAwardInfoRegistry::RankDescription(int32 RankId)
 {
-    if (const FS_AwardInfo* Row = FindRank(RankId))
-        return SafeStr(Row->AwardDesc, TEXT(""));
+    if (const FRankInfo* Row = FindRank(RankId))
+        return Row->RankDesc;
 
     return TEXT("");
 }
 
-// ------------------------------------------------------------
-// Legacy lookups: Medals
-// ------------------------------------------------------------
-
-const FS_AwardInfo* UAwardInfoRegistry::FindMedal(int32 MedalId)
+FString UAwardInfoRegistry::RankAwardText(int32 RankId)
 {
-    return FindById(MedalById, MedalId);
-}
-
-const TCHAR* UAwardInfoRegistry::MedalName(int32 MedalId)
-{
-    if (const FS_AwardInfo* Row = FindMedal(MedalId))
-        return SafeStr(Row->AwardName, TEXT(""));
+    if (const FRankInfo* Row = FindRank(RankId))
+        return Row->RankAwardText;
 
     return TEXT("");
 }
 
-const TCHAR* UAwardInfoRegistry::MedalAbrv(int32 MedalId)
+int32 UAwardInfoRegistry::RankFromName(const FString& InRankName)
 {
-    if (const FS_AwardInfo* Row = FindMedal(MedalId))
-        return SafeStr(Row->AwardAbrv, TEXT(""));
+    if (InRankName.IsEmpty())
+        return 0;
+
+    for (const TPair<int32, const FRankInfo*>& Pair : RankById)
+    {
+        const FRankInfo* Row = Pair.Value;
+        if (!Row)
+            continue;
+
+        if (Row->RankName.Equals(InRankName, ESearchCase::IgnoreCase) ||
+            Row->RankAbrv.Equals(InRankName, ESearchCase::IgnoreCase))
+        {
+            return Row->RankId;
+        }
+    }
+
+    return 0;
+}
+
+int32 UAwardInfoRegistry::RankIdFromName(const FString& RankName)
+{
+    return RankFromName(RankName);
+}
+
+// ============================================================
+// Progression / Command
+// ============================================================
+
+int32 UAwardInfoRegistry::RankForTotalPoints(int32 TotalPoints)
+{
+    if (RanksSortedByPoints.Num() == 0)
+        return 0;
+
+    int32 BestRankId = RanksSortedByPoints[0]->RankId;
+
+    for (const FRankInfo* Rank : RanksSortedByPoints)
+    {
+        if (!Rank)
+            continue;
+
+        if (TotalPoints >= Rank->TotalPoints)
+            BestRankId = Rank->RankId;
+        else
+            break;
+    }
+
+    return BestRankId;
+}
+
+int32 UAwardInfoRegistry::CommandRankRequired(int32 ShipClassMask)
+{
+    if (ShipClassMask <= 0 || RanksSortedByPoints.Num() == 0)
+        return 0;
+
+    for (const FRankInfo* Rank : RanksSortedByPoints)
+    {
+        if (!Rank)
+            continue;
+
+        if ((ShipClassMask & Rank->GrantedShipClasses) != 0)
+            return Rank->RankId;
+    }
+
+    return RanksSortedByPoints.Last()->RankId;
+}
+
+bool UAwardInfoRegistry::CanCommand(int32 ShipClassMask, int32 PlayerRankId)
+{
+    const FRankInfo* Rank = FindRank(PlayerRankId);
+    if (!Rank)
+        return false;
+
+    return (ShipClassMask & Rank->GrantedShipClasses) != 0;
+}
+
+// ============================================================
+// Medal Lookups
+// ============================================================
+
+const FMedalInfo* UAwardInfoRegistry::FindMedal(int32 MedalId)
+{
+    if (const FMedalInfo* const* Found = MedalById.Find(MedalId))
+        return *Found;
+
+    return nullptr;
+}
+
+FString UAwardInfoRegistry::MedalName(int32 MedalId)
+{
+    if (const FMedalInfo* Row = FindMedal(MedalId))
+        return Row->MedalName;
 
     return TEXT("");
 }
 
-const TCHAR* UAwardInfoRegistry::MedalDescription(int32 MedalId)
+FString UAwardInfoRegistry::MedalDescription(int32 MedalId)
 {
-    if (const FS_AwardInfo* Row = FindMedal(MedalId))
-        return SafeStr(Row->AwardDesc, TEXT(""));
+    if (const FMedalInfo* Row = FindMedal(MedalId))
+        return Row->MedalDesc;
+
+    return TEXT("");
+}
+
+FString UAwardInfoRegistry::MedalAwardText(int32 MedalId)
+{
+    if (const FMedalInfo* Row = FindMedal(MedalId))
+        return Row->MedalAwardText;
 
     return TEXT("");
 }

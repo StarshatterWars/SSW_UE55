@@ -36,6 +36,8 @@
 #include "Random.h"
 #include "PlayerCharacter.h"
 #include "GameStructs.h"
+#include "StarshatterPlayerSubsystem.h"
+#include "AwardInfoRegistry.h"
 
 #include "Logging/LogMacros.h"
 
@@ -114,218 +116,245 @@ CampaignSituationReport::GlobalSituation()
 void
 CampaignSituationReport::MissionSituation()
 {
-	if (mission) {
-		MissionElement* player = mission->GetPlayer();
-		MissionElement* target = mission->GetTarget();
-		MissionElement* ward = mission->GetWard();
-		MissionElement* escort = FindEscort(player);
-		Text            threat = GetThreatInfo();
-		Text            sector = mission->GetRegion();
+    if (mission) {
+        MissionElement* player = mission->GetPlayer();
+        MissionElement* target = mission->GetTarget();
+        MissionElement* ward = mission->GetWard();
+        MissionElement* escort = FindEscort(player);
+        Text            threat = GetThreatInfo();
+        Text            sector = mission->GetRegion();
 
-		(void)escort; // currently unused in original code
+        (void)escort; // currently unused in original code
 
-		sector += " sector.";
+        sector += " sector.";
 
-		switch (mission->Type()) {
-		case Mission::PATROL:
-		case Mission::AIR_PATROL:
-			sitrep += "\n\nThis mission is a routine patrol of the ";
-			sitrep += sector;
-			break;
+        switch (mission->Type()) {
+        case Mission::PATROL:
+        case Mission::AIR_PATROL:
+            sitrep += "\n\nThis mission is a routine patrol of the ";
+            sitrep += sector;
+            break;
 
-		case Mission::SWEEP:
-		case Mission::AIR_SWEEP:
-			sitrep += "\n\nFor this mission, you will be performing a fighter sweep of the ";
-			sitrep += sector;
-			break;
+        case Mission::SWEEP:
+        case Mission::AIR_SWEEP:
+            sitrep += "\n\nFor this mission, you will be performing a fighter sweep of the ";
+            sitrep += sector;
+            break;
 
-		case Mission::INTERCEPT:
-		case Mission::AIR_INTERCEPT:
-			sitrep += "\n\nWe have detected hostile elements inbound.  ";
-			sitrep += "Your mission is to intercept them before they are able to engage their targets.";
-			break;
+        case Mission::INTERCEPT:
+        case Mission::AIR_INTERCEPT:
+            sitrep += "\n\nWe have detected hostile elements inbound.  ";
+            sitrep += "Your mission is to intercept them before they are able to engage their targets.";
+            break;
 
-		case Mission::STRIKE:
-			sitrep += "\n\nThe goal of this mission is to perform a strike on preplanned targets in the ";
-			sitrep += sector;
+        case Mission::STRIKE:
+            sitrep += "\n\nThe goal of this mission is to perform a strike on preplanned targets in the ";
+            sitrep += sector;
 
-			if (target) {
-				sitrep += "  Your package has been assigned to strike the ";
+            if (target) {
+                sitrep += "  Your package has been assigned to strike the ";
 
-				if (target->GetCombatGroup())
-					sitrep += target->GetCombatGroup()->GetDescription();
-				else
-					sitrep += target->Name();
+                if (target->GetCombatGroup())
+                    sitrep += target->GetCombatGroup()->GetDescription();
+                else
+                    sitrep += target->Name();
 
-				sitrep += ".";
-			}
-			break;
+                sitrep += ".";
+            }
+            break;
 
-		case Mission::ASSAULT:
-			sitrep += "\n\nThis mission is to assault preplanned targets in the ";
-			sitrep += sector;
+        case Mission::ASSAULT:
+            sitrep += "\n\nThis mission is to assault preplanned targets in the ";
+            sitrep += sector;
 
-			if (target) {
-				sitrep += "  Your package has been assigned to strike the ";
+            if (target) {
+                sitrep += "  Your package has been assigned to strike the ";
 
-				if (target->GetCombatGroup())
-					sitrep += target->GetCombatGroup()->GetDescription();
-				else
-					sitrep += target->Name();
+                if (target->GetCombatGroup())
+                    sitrep += target->GetCombatGroup()->GetDescription();
+                else
+                    sitrep += target->Name();
 
-				sitrep += ".";
-			}
-			break;
+                sitrep += ".";
+            }
+            break;
 
-		case Mission::DEFEND:
-			if (ward) {
-				sitrep += "\n\nFor this mission, you will need to defend ";
-				sitrep += ward->Name();
-				sitrep += " in the ";
-				sitrep += sector;
-			}
-			else {
-				sitrep += "\n\nThis is a defensive patrol mission in the ";
-				sitrep += sector;
-			}
-			break;
+        case Mission::DEFEND:
+            if (ward) {
+                sitrep += "\n\nFor this mission, you will need to defend ";
+                sitrep += ward->Name();
+                sitrep += " in the ";
+                sitrep += sector;
+            }
+            else {
+                sitrep += "\n\nThis is a defensive patrol mission in the ";
+                sitrep += sector;
+            }
+            break;
 
-		case Mission::ESCORT:
-			if (ward) {
-				sitrep += "\n\nFor this mission, you will need to escort the ";
-				sitrep += ward->Name();
-				sitrep += " in the ";
-				sitrep += sector;
-			}
-			else {
-				sitrep += "\n\nThis is an escort mission in the ";
-				sitrep += sector;
-			}
-			break;
+        case Mission::ESCORT:
+            if (ward) {
+                sitrep += "\n\nFor this mission, you will need to escort the ";
+                sitrep += ward->Name();
+                sitrep += " in the ";
+                sitrep += sector;
+            }
+            else {
+                sitrep += "\n\nThis is an escort mission in the ";
+                sitrep += sector;
+            }
+            break;
 
-		case Mission::ESCORT_FREIGHT:
-			if (ward) {
-				sitrep += "\n\nFor this mission, you will need to escort the freighter ";
-				sitrep += ward->Name();
-				sitrep += ".";
-			}
-			else {
-				sitrep += "\n\nThis is a freight escort mission in the ";
-				sitrep += sector;
-			}
-			break;
+        case Mission::ESCORT_FREIGHT:
+            if (ward) {
+                sitrep += "\n\nFor this mission, you will need to escort the freighter ";
+                sitrep += ward->Name();
+                sitrep += ".";
+            }
+            else {
+                sitrep += "\n\nThis is a freight escort mission in the ";
+                sitrep += sector;
+            }
+            break;
 
-		case Mission::ESCORT_SHUTTLE:
-			if (ward) {
-				sitrep += "\n\nFor this mission, you will need to escort the shuttle ";
-				sitrep += ward->Name();
-				sitrep += ".";
-			}
-			else {
-				sitrep += "\n\nThis is a shuttle escort mission in the ";
-				sitrep += sector;
-			}
-			break;
+        case Mission::ESCORT_SHUTTLE:
+            if (ward) {
+                sitrep += "\n\nFor this mission, you will need to escort the shuttle ";
+                sitrep += ward->Name();
+                sitrep += ".";
+            }
+            else {
+                sitrep += "\n\nThis is a shuttle escort mission in the ";
+                sitrep += sector;
+            }
+            break;
 
-		case Mission::ESCORT_STRIKE:
-			if (ward) {
-				sitrep += "\n\nFor this mission, you will need to protect the ";
-				sitrep += ward->Name();
-				sitrep += " strike package from hostile interceptors.";
-			}
-			else {
-				sitrep += "\n\nFor this mission, you will be responsible for strike escort duty.";
-			}
-			break;
+        case Mission::ESCORT_STRIKE:
+            if (ward) {
+                sitrep += "\n\nFor this mission, you will need to protect the ";
+                sitrep += ward->Name();
+                sitrep += " strike package from hostile interceptors.";
+            }
+            else {
+                sitrep += "\n\nFor this mission, you will be responsible for strike escort duty.";
+            }
+            break;
 
-		case Mission::INTEL:
-		case Mission::SCOUT:
-		case Mission::RECON:
-			sitrep += "\n\nThis is an intelligence gathering mission in the ";
-			sitrep += sector;
-			break;
+        case Mission::INTEL:
+        case Mission::SCOUT:
+        case Mission::RECON:
+            sitrep += "\n\nThis is an intelligence gathering mission in the ";
+            sitrep += sector;
+            break;
 
-		case Mission::BLOCKADE:
-			sitrep += "\n\nThis mission is part of the blockade operation in the ";
-			sitrep += sector;
-			break;
+        case Mission::BLOCKADE:
+            sitrep += "\n\nThis mission is part of the blockade operation in the ";
+            sitrep += sector;
+            break;
 
-		case Mission::FLEET:
-			sitrep += "\n\nThis mission is a routine fleet patrol of the ";
-			sitrep += sector;
-			break;
+        case Mission::FLEET:
+            sitrep += "\n\nThis mission is a routine fleet patrol of the ";
+            sitrep += sector;
+            break;
 
-		case Mission::BOMBARDMENT:
-			sitrep += "\n\nOur goal for this mission is to engage and destroy preplanned targets in the ";
-			sitrep += sector;
-			break;
+        case Mission::BOMBARDMENT:
+            sitrep += "\n\nOur goal for this mission is to engage and destroy preplanned targets in the ";
+            sitrep += sector;
+            break;
 
-		case Mission::FLIGHT_OPS:
-			sitrep += "\n\nFor this mission, the ";
-			if (player)
-				sitrep += player->Name();
-			else
-				sitrep += "(unknown package)";
+        case Mission::FLIGHT_OPS:
+            sitrep += "\n\nFor this mission, the ";
+            if (player)
+                sitrep += player->Name();
+            else
+                sitrep += "(unknown package)";
 
-			sitrep += " will be conducting combat flight operations in the ";
-			sitrep += sector;
-			break;
+            sitrep += " will be conducting combat flight operations in the ";
+            sitrep += sector;
+            break;
 
-		case Mission::TRAINING:
-			sitrep += "\n\nThis will be a training mission.";
-			break;
+        case Mission::TRAINING:
+            sitrep += "\n\nThis will be a training mission.";
+            break;
 
-		case Mission::TRANSPORT:
-		case Mission::CARGO:
-		case Mission::OTHER:
-		default:
-			break;
-		}
+        case Mission::TRANSPORT:
+        case Mission::CARGO:
+        case Mission::OTHER:
+        default:
+            break;
+        }
 
-		if (threat.length()) {
-			sitrep += "  ";
-			sitrep += threat;
-			sitrep += "\n\n";
-		}
-	}
-	else {
-		sitrep += "\n\n";
-	}
+        if (threat.length()) {
+            sitrep += "  ";
+            sitrep += threat;
+            sitrep += "\n\n";
+        }
+    }
+    else {
+        sitrep += "\n\n";
+    }
 
-	Text rank;
-	Text name;
+    // ------------------------------------------------------------
+    // Player signature (replaces PlayerCharacter usage)
+    // ------------------------------------------------------------
+    Text rank;
+    Text name;
 
-	PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
+    // If this class can reach a UWorld, use it. If not, I can give you a
+    // WorldContext injection pattern like we did elsewhere.
+    UWorld* World = nullptr;
 
-	if (p) {
-		if (p->GetRank() > 6)
-			rank = ", Admiral";
-		else
-			rank = Text(", ") + PlayerCharacter::RankName(p->GetRank());
+    // Option A: if you are inside something that can provide it:
+    // World = GetWorld();
 
-		name = Text(", ") + p->Name();
-	}
+    // Option B: if you have access via Game singleton:
+    // World = Game::GetWorld();
 
-	sitrep += "You have a mission to perform.  ";
+    if (World) {
+        if (UGameInstance* GI = World->GetGameInstance()) {
+            if (UStarshatterPlayerSubsystem* PlayerSS = GI->GetSubsystem<UStarshatterPlayerSubsystem>()) {
+                const FS_PlayerGameInfo& Info = PlayerSS->GetPlayerInfo();
 
-	switch (RandomIndex()) {
-	case  0: sitrep += "You'd better go get to it!";                     break;
-	case  1: sitrep += "And let's be careful out there!";                break;
-	case  2: sitrep += "Good luck, sir!";                                break;
-	case  3: sitrep += "Let's keep up the good work out there.";         break;
-	case  4: sitrep += "Don't lose your focus.";                         break;
-	case  5: sitrep += "Good luck out there.";                           break;
-	case  6: sitrep += "What are you waiting for, cocktail hour?";       break;
-	case  7: sitrep += Text("Godspeed") + rank + "!";                    break;
-	case  8: sitrep += Text("Good luck") + rank + "!";                   break;
-	case  9: sitrep += Text("Good luck") + name + "!";                   break;
-	case 10: sitrep += "If everything is clear, get your team ready and get underway."; break;
-	case 11: sitrep += Text("Go get to it") + rank + "!";                break;
-	case 12: sitrep += "The clock is ticking, so let's move it!";        break;
-	case 13: sitrep += "Stay sharp out there!";                          break;
-	case 14: sitrep += Text("Go get 'em") + rank + "!";                  break;
-	case 15: sitrep += "Now get out of here and get to work!";           break;
-	}
+                const int32 PlayerRank = Info.Rank;
+
+                if (PlayerRank > 6) {
+                    rank = ", Admiral";
+                }
+                else
+                {
+                    if (const FRankInfo* RankInfo = UAwardInfoRegistry::FindRank(PlayerRank))
+                    {
+                        rank = Text(", ") + TCHAR_TO_ANSI(*RankInfo->RankName);
+                    }
+                }
+                // FS_PlayerGameInfo uses FString Name
+                if (!Info.Name.IsEmpty()) {
+                    name = Text(", ") + TCHAR_TO_ANSI(*Info.Name);
+                }
+            }
+        }
+    }
+
+    sitrep += "You have a mission to perform.  ";
+
+    switch (RandomIndex()) {
+    case  0: sitrep += "You'd better go get to it!";                     break;
+    case  1: sitrep += "And let's be careful out there!";                break;
+    case  2: sitrep += "Good luck, sir!";                                break;
+    case  3: sitrep += "Let's keep up the good work out there.";         break;
+    case  4: sitrep += "Don't lose your focus.";                         break;
+    case  5: sitrep += "Good luck out there.";                           break;
+    case  6: sitrep += "What are you waiting for, cocktail hour?";       break;
+    case  7: sitrep += Text("Godspeed") + rank + "!";                    break;
+    case  8: sitrep += Text("Good luck") + rank + "!";                   break;
+    case  9: sitrep += Text("Good luck") + name + "!";                   break;
+    case 10: sitrep += "If everything is clear, get your team ready and get underway."; break;
+    case 11: sitrep += Text("Go get to it") + rank + "!";                break;
+    case 12: sitrep += "The clock is ticking, so let's move it!";        break;
+    case 13: sitrep += "Stay sharp out there!";                          break;
+    case 14: sitrep += Text("Go get 'em") + rank + "!";                  break;
+    case 15: sitrep += "Now get out of here and get to work!";           break;
+    }
 }
 
 // +--------------------------------------------------------------------+

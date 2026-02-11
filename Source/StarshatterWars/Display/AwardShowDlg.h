@@ -28,6 +28,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "AwardInfo.h"
 
 #include "AwardShowDlg.generated.h"
 

@@ -47,6 +47,7 @@ class Mission;
 class MissionTemplate;
 class StarSystem;
 class TermStruct;
+class UStarshatterPlayerSubsystem;
 
 // +--------------------------------------------------------------------+
 
@@ -89,7 +90,11 @@ public:
     int operator == (const Campaign& s) const { return name == s.name; }
     int operator <  (const Campaign& s) const { return campaign_id < s.campaign_id; }
 
-    // operations:
+    void SetPlayerSubsystem(UStarshatterPlayerSubsystem* InPlayerSS) { PlayerSS = InPlayerSS; }
+    void SetCampaignStatus(ECampaignStatus s);
+    void SetCampaignStatus(UObject* WorldContextObject, ECampaignStatus s);
+   
+   // operations:
     virtual void         Load();
     virtual void         Prep();
     virtual void         Start();
@@ -175,7 +180,7 @@ public:
     bool                 IsActive()        const { return campaign_status == ECampaignStatus::ACTIVE; }
     bool                 IsComplete()      const { return campaign_status == ECampaignStatus::SUCCESS; }
     bool                 IsFailed()        const { return campaign_status == ECampaignStatus::FAILED; }
-    void                 SetCampaignStatus(ECampaignStatus s);
+
     ECampaignStatus      GetCampaignStatus()       const { return campaign_status; }
 
     int                  GetAllCombatUnits(int iff, List<CombatUnit>& units);
@@ -189,6 +194,8 @@ public:
     static Campaign* CreateCustomCampaign(const char* name, const char* path);
 
     static double        Stardate();
+    void                 SetPlayerId(int32 InPlayerId);
+    int32                GetPlayerId() const;
 
 protected:
     void                 LoadCampaign(DataLoader* loader, bool full = false);
@@ -249,4 +256,8 @@ protected:
     double               startTime;
     double               updateTime;
     int                  lockout;
+    int32                PlayerId = 0;
+
+    UStarshatterPlayerSubsystem* PlayerSS = nullptr; // non-owning
+
 };

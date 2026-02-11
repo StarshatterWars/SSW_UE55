@@ -23,6 +23,7 @@
 #include "StarshatterPlayerSubsystem.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 #include "Logging/LogMacros.h"
 
 void UStarshatterPlayerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -230,4 +231,25 @@ bool UStarshatterPlayerSubsystem::MigratePlayerSave(int32 FromVersion, int32 ToV
     }
 
     return true;
+}
+
+UStarshatterPlayerSubsystem* UStarshatterPlayerSubsystem::Get(const UObject* WorldContextObject)
+{
+    if (!WorldContextObject)
+        return nullptr;
+
+    const UWorld* World = WorldContextObject->GetWorld();
+    return Get(World);
+}
+
+UStarshatterPlayerSubsystem* UStarshatterPlayerSubsystem::Get(const UWorld* World)
+{
+    if (!World)
+        return nullptr;
+
+    UGameInstance* GI = World->GetGameInstance();
+    if (!GI)
+        return nullptr;
+
+    return GI->GetSubsystem<UStarshatterPlayerSubsystem>();
 }

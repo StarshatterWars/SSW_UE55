@@ -39,6 +39,7 @@
 #include "GameStructs.h"
 
 #include "StarshatterWarsLog.h"
+#include "StarshatterPlayerSubsystem.h"
 
 // Unreal:
 #include "Math/Vector.h"               // FVector
@@ -493,35 +494,48 @@ CampaignMissionStarship::CreatePlayer()
 
 // +--------------------------------------------------------------------+
 
-void
-CampaignMissionStarship::CreateElements(CombatGroup* g)
+void CampaignMissionStarship::CreateElements(CombatGroup* g, UStarshatterPlayerSubsystem* PlayerSS)
 {
     MissionElement* elem = 0;
     List<CombatUnit>& units = g->GetUnits();
 
     CombatUnit* cmdr = 0;
 
-    for (int i = 0; i < units.size(); i++) {
+    int32 PlayerRankId = 0;
+    if (PlayerSS)
+    {
+        const FS_PlayerGameInfo& Info = PlayerSS->GetPlayerInfo();
+        PlayerRankId = Info.Rank; // must be maintained in FS_PlayerGameInfo
+    }
+
+    for (int i = 0; i < units.size(); i++)
+    {
         elem = CreateSingleElement(g, units[i]);
 
-        if (elem) {
-            if (!cmdr) {
+        if (elem)
+        {
+            if (!cmdr)
+            {
                 cmdr = units[i];
 
-                if (player_group && player_group->GetIFF() == g->GetIFF()) {
-                    PlayerCharacter* playerc = PlayerCharacter::GetCurrentPlayer();
-                    if (playerc && playerc->GetRank() >= 10) {
+                if (player_group && player_group->GetIFF() == g->GetIFF())
+                {
+                    if (PlayerRankId >= 10)
+                    {
                         elem->SetCommander(player_group->Name());
                     }
                 }
             }
-            else {
+            else
+            {
                 elem->SetCommander(cmdr->Name());
 
                 if (g->GetType() == ECOMBATGROUP_TYPE::CARRIER_GROUP &&
-                    elem->MissionRole() == Mission::ESCORT) {
+                    elem->MissionRole() == Mission::ESCORT)
+                {
                     Instruction* obj = new Instruction(INSTRUCTION_ACTION::ESCORT, cmdr->Name());
-                    if (obj) {
+                    if (obj)
+                    {
                         obj->SetTargetDesc(Text("the ") + g->GetDescription());
                         elem->AddObjective(obj);
                     }

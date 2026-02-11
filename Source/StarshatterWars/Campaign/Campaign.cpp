@@ -44,11 +44,14 @@
 #include "ParseUtil.h"
 #include "FormatUtil.h"
 #include "GameScreen.h"
+#include "AwardInfoRegistry.h"
+#include "StarshatterPlayerSubsystem.h"
 
 // Unreal minimal support:
 #include "CoreMinimal.h"
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
+
 
 DEFINE_LOG_CATEGORY_STATIC(LogCampaign, Log, All);
 
@@ -715,7 +718,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                 else {
                     char rank_name[64];
                     GetDefText(rank_name, pdef, SourceFilename);
-                    min_rank = PlayerCharacter::RankFromName(rank_name);
+                    int32 rank = UAwardInfoRegistry::RankFromName(rank_name);
                 }
             }
             else if (pdef->name()->value() == "max_rank") {
@@ -725,7 +728,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                 else {
                     char rank_name[64];
                     GetDefText(rank_name, pdef, SourceFilename);
-                    max_rank = PlayerCharacter::RankFromName(rank_name);
+                    max_rank = UAwardInfoRegistry::RankFromName(rank_name);
                 }
             }
             else if (pdef->name()->value() == "delay") {
@@ -1932,7 +1935,10 @@ Campaign::ExecFrame()
         // Auto save AFTER planners have run:
         if (completed) {
             CampaignSaveGame save(this);
-            save.SaveAuto();
+            if (completed) {
+                CampaignSaveGame save(this);
+                save.SaveAuto(PlayerId);   
+            }
         }
     }
     else {
@@ -2220,24 +2226,30 @@ Campaign::GetPlayerTeamScore()
 
 // +--------------------------------------------------------------------+
 
-void
-Campaign::SetCampaignStatus(ECampaignStatus s)
+void Campaign::SetCampaignStatus(UObject* WorldContextObject, ECampaignStatus s)
 {
     campaign_status = s;
 
-    // record the win in player profile:
-    if (campaign_status == ECampaignStatus::SUCCESS) {
-        PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-        if (player)
-            player->SetCampaignComplete(campaign_id);
+    if (campaign_status == ECampaignStatus::SUCCESS)
+    {
+        if (UStarshatterPlayerSubsystem* PlayerSSW = UStarshatterPlayerSubsystem::Get(WorldContextObject))
+        {
+            FS_PlayerGameInfo& Info = PlayerSSW->GetMutablePlayerInfo();
+
+            // legacy campaign_id is usually 1-based:
+            const int32 CampaignBitIndex = campaign_id - 1;
+            Info.SetCampaignComplete(CampaignBitIndex, true);
+
+            PlayerSS->SavePlayer(true);
+        }
     }
 
-    if (campaign_status > ECampaignStatus::ACTIVE) {
+    if (campaign_status > ECampaignStatus::ACTIVE)
+    {
         UE_LOG(LogCampaign, Log, TEXT("Campaign::SetStatus() destroying mission list at campaign end"));
         missions.destroy();
     }
 }
-
 // +--------------------------------------------------------------------+
 
 static void GetCombatUnits(CombatGroup* g, List<CombatUnit>& units)

@@ -40,7 +40,7 @@ class Mission;
 class MissionElement;
 class MissionInfo;
 class MissionTemplate;
-
+class UStarshatterPlayerSubsystem;
 // +--------------------------------------------------------------------+
 
 class CampaignMissionStarship
@@ -60,6 +60,7 @@ protected:
     virtual void      GenerateStandardElements();
     virtual void      GenerateMissionElements();
     virtual void      CreateElements(CombatGroup* g);
+    void              CreateElements(CombatGroup* g, UStarshatterPlayerSubsystem* PlayerSS);
     virtual void      CreateSquadron(CombatGroup* g);
     virtual void      CreatePlayer();
 

@@ -52,6 +52,9 @@ public:
     // ------------------------------------------------------------------
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
+   
+    static UStarshatterPlayerSubsystem* Get(const UObject* WorldContextObject);
+    static UStarshatterPlayerSubsystem* Get(const UWorld* World);
 
     // ------------------------------------------------------------------
     // Boot entry point
