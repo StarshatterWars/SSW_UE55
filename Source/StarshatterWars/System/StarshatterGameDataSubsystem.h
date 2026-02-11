@@ -400,6 +400,7 @@ protected:
     UDataTable* SystemDesignDataTable;
     
     UDataTable* AwardsDataTable;
+    UDataTable* RanksDataTable;
 
     // CampaignAction parse scratch
     int      ActionId;

@@ -364,6 +364,7 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("Data.GalaxyMapTable"),
     TEXT("Data.OrderOfBattleTable"),
     TEXT("Data.AwardsTable"),
+    TEXT("Data.RanksTable"),
 
     TEXT("Data.RegionsTable"),
     TEXT("Data.ZonesTable"),

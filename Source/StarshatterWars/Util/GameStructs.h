@@ -3805,6 +3805,116 @@ struct FS_CombatGroup : public FTableRowBase {
 };
 
 USTRUCT(BlueprintType)
+struct FRankInfo : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// ------------------------------------------------------------
+	// Identity
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	int32 RankId = 0;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString RankName;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString RankAbrv;
+
+	// ------------------------------------------------------------
+	// Display text
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString RankDesc;
+
+	// Ceremony / promotion text
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString RankAwardText;
+
+	// ------------------------------------------------------------
+	// Assets
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString GrantSound;
+
+	// Legacy image keys or asset references (your pipeline decides)
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString LargeImage;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	FString SmallImage;
+
+	// ------------------------------------------------------------
+	// Gameplay
+	// ------------------------------------------------------------
+	// Ship command permissions mask (legacy "grant")
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	int32 GrantedShipClasses = 0;
+
+	// Promotion threshold (legacy "total_points")
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
+	int32 TotalPoints = 0;
+
+	FRankInfo() = default;
+};
+
+USTRUCT(BlueprintType)
+struct FMedalInfo : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// ------------------------------------------------------------
+	// Identity
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	int32 MedalId = 0;   // legacy bitmask value (e.g. 0x0001)
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	FString MedalName;
+
+	// ------------------------------------------------------------
+	// Display text
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	FString MedalDesc;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	FString MedalAwardText;
+
+	// ------------------------------------------------------------
+	// Assets
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	FString LargeImage;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	FString SmallImage;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	FString GrantSound;
+
+	// ------------------------------------------------------------
+	// Campaign gating
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	int32 CampaignId = 0;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	bool bCampaignCompleteRequired = false;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	bool bDynamicCampaignOnly = false;
+
+	// ------------------------------------------------------------
+	// Presentation
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
+	bool bCeremony = true;
+
+	FMedalInfo() = default;
+};
+
+USTRUCT(BlueprintType)
 struct FS_AwardInfo : public FTableRowBase {
 	GENERATED_BODY()
 	
