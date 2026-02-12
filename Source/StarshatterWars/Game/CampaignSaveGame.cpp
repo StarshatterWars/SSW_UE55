@@ -664,7 +664,7 @@ CampaignSaveGame::Save(const char* name)
 
         fprintf(f, "action: { id:%4d, stat:%d", a->Identity(), a->Status());
 
-        if (a->Status() == CombatAction::PENDING) {
+        if (a->Status() == ECombatActionStatus::PENDING) {
             if (a->Count())
                 fprintf(f, ", count:%d", a->Count());
 

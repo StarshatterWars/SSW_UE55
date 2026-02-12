@@ -151,7 +151,7 @@ CampaignPlanMission::PlanCampaignMission()
     while (++iter && !request) {
         CombatAction* action = iter.value();
 
-        if (action->Type() != CombatAction::MISSION_TEMPLATE)
+        if (action->Type() != ECombatActionType::MISSION_TEMPLATE)
             continue;
 
         if (action->IsAvailable()) {

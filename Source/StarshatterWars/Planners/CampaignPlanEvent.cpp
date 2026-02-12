@@ -95,7 +95,7 @@ CampaignPlanEvent::ExecScriptedEvents()
             if (action->IsAvailable()) {
 
                 switch (action->Type()) {
-                case CombatAction::COMBAT_EVENT:
+                case ECombatActionType::COMBAT_EVENT:
                 {
                     CombatEvent* event = new CombatEvent(campaign,
                         action->Subtype(),
@@ -142,7 +142,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::STRATEGIC_DIRECTIVE:
+                case ECombatActionType::STRATEGIC_DIRECTIVE:
                 {
                     CombatGroup* g = campaign->FindGroup(action->GetIFF(),
                         action->AssetType(),
@@ -160,7 +160,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::CAMPAIGN_SITUATION:
+                case ECombatActionType::CAMPAIGN_SITUATION:
                 {
                     campaign->SetSituation(action->GetText());
                     action->FireAction();
@@ -168,7 +168,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::CAMPAIGN_ORDERS:
+                case ECombatActionType::CAMPAIGN_ORDERS:
                 {
                     campaign->SetOrders(action->GetText());
                     action->FireAction();
@@ -176,7 +176,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::INTEL_EVENT:
+                case ECombatActionType::INTEL_EVENT:
                 {
                     CombatGroup* g = campaign->FindGroup(action->GetIFF(),
                         action->AssetType(),
@@ -201,7 +201,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::ZONE_ASSIGNMENT:
+                case ECombatActionType::ZONE_ASSIGNMENT:
                 {
                     CombatGroup* g = campaign->FindGroup(action->GetIFF(),
                         action->AssetType(),
@@ -290,7 +290,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::SYSTEM_ASSIGNMENT:
+                case ECombatActionType::SYSTEM_ASSIGNMENT:
                 {
                     CombatGroup* g = campaign->FindGroup(action->GetIFF(),
                         action->AssetType(),
@@ -378,7 +378,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                 }
                 break;
 
-                case CombatAction::NO_ACTION:
+                case ECombatActionType::NO_ACTION:
                     action->FireAction();
                     scripted_event = true;
                     break;

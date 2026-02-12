@@ -193,30 +193,30 @@ enum ECOMMAND_MODE : uint8 {
 	NUM_MODES 
 };
 
-UENUM(BlueprintType)
-enum ECOMBATACTION_TYPE : uint8
+UENUM()
+enum ECombatActionType : uint8
 {
-	NO_ACTION UMETA(DisplayName = "No Action"),
-	STRATEGIC_DIRECTIVE UMETA(DisplayName = "Strategic Directive"),
-	ZONE_ASSIGNMENT UMETA(DisplayName = "Zone Assignment"),
-	SYSTEM_ASSIGNMENT UMETA(DisplayName = "System Assignment"),
-	MISSION_TEMPLATE UMETA(DisplayName = "Mission Template"),
-	COMBAT_EVENT UMETA(DisplayName = "Combat Event0"), 
-	INTEL_EVENT UMETA(DisplayName = "Intel Event"), 
-	CAMPAIGN_SITUATION UMETA(DisplayName = "Campaign Situation"), 
-	CAMPAIGN_ORDERS UMETA(DisplayName = "Campaign Orders"),
+	NO_ACTION				UMETA(DisplayName = "No Action"),
+	STRATEGIC_DIRECTIVE		UMETA(DisplayName = "Strategic Directive"),
+	ZONE_ASSIGNMENT			UMETA(DisplayName = "Zone Assignment"),
+	SYSTEM_ASSIGNMENT		UMETA(DisplayName = "System Assignment"),
+	MISSION_TEMPLATE		UMETA(DisplayName = "Mission Template"),
+	COMBAT_EVENT			UMETA(DisplayName = "Combat Event0"), 
+	INTEL_EVENT				UMETA(DisplayName = "Intel Event"), 
+	CAMPAIGN_SITUATION		UMETA(DisplayName = "Campaign Situation"), 
+	CAMPAIGN_ORDERS			UMETA(DisplayName = "Campaign Orders"),
 };
 
 UENUM()
-enum ECOMBATACTION_STATUS : uint8
+enum ECombatActionStatus : uint8
 {
-	UNKNOWN UMETA(DisplayName = "Unknown"),
-	PENDING UMETA(DisplayName = "Pending"), 
-	ACTIVE UMETA(DisplayName = "Active"), 
-	SKIPPED UMETA(DisplayName = "Skipped"),
-	FAILED UMETA(DisplayName = "Failed"), 
-	COMPLETE UMETA(DisplayName = "Complete"),
-	INCOMPLETE UMETA(DisplayName = "Incomplete"),
+	UNKNOWN					UMETA(DisplayName = "Unknown"),
+	PENDING					UMETA(DisplayName = "Pending"), 
+	ACTIVE					UMETA(DisplayName = "Active"), 
+	SKIPPED					UMETA(DisplayName = "Skipped"),
+	FAILED					UMETA(DisplayName = "Failed"), 
+	COMPLETE				UMETA(DisplayName = "Complete"),
+	INCOMPLETE				UMETA(DisplayName = "Incomplete"),
 };
 
 UENUM()

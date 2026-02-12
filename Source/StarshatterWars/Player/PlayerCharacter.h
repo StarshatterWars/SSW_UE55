@@ -155,7 +155,6 @@ public:
     static void                   Load();
     static void                   Save();
     static bool                   SaveToSubsystem(UObject* WorldContext);
-    static void                   LoadAwardTables();
 
     static PlayerCharacter* CreateDefault();
     static void AddToRoster(PlayerCharacter* P);

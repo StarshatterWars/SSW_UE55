@@ -44,6 +44,7 @@
 #include "ParseUtil.h"
 #include "FormatUtil.h"
 #include "GameScreen.h"
+#include "GameStructs.h"
 
 // Unreal minimal support:
 #include "CoreMinimal.h"
@@ -659,11 +660,11 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                     char txt[64];
                     GetDefText(txt, pdef, SourceFilename);
 
-                    if (type == CombatAction::MISSION_TEMPLATE)
+                    if (type == ECombatActionType::MISSION_TEMPLATE)
                         subtype = Mission::TypeFromName(txt);
-                    else if (type == CombatAction::COMBAT_EVENT)
+                    else if (type == ECombatActionType::COMBAT_EVENT)
                         subtype = (int) CombatEvent::GetTypeFromName(txt);
-                    else if (type == CombatAction::INTEL_EVENT)
+                    else if (type == ECombatActionType::INTEL_EVENT)
                         subtype = Intel::IntelFromName(txt);
                 }
             }
@@ -675,7 +676,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                     char txt[64];
                     GetDefText(txt, pdef, SourceFilename);
 
-                    if (type == CombatAction::MISSION_TEMPLATE)
+                    if (type == ECombatActionType::MISSION_TEMPLATE)
                         opp_type = Mission::TypeFromName(txt);
                 }
             }
@@ -807,7 +808,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                     TermStruct* val2 = pdef->term()->isStruct();
 
                     int  act = 0;
-                    int  stat = CombatAction::COMPLETE;
+                    int  stat = ECombatActionStatus::COMPLETE;
                     bool not_flag = false;
 
                     Combatant* c1 = 0;
@@ -2183,7 +2184,7 @@ Campaign::CommitExpiredActions()
         CombatAction* a = iter.value();
 
         if (a->IsAvailable())
-            a->SetStatus(CombatAction::COMPLETE);
+            a->SetStatus(ECombatActionStatus::COMPLETE);
     }
 
     updateTime = time;

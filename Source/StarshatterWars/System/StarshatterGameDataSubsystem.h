@@ -441,7 +441,7 @@ protected:
     Text ZoneSystem;
 
     int  Action;
-    ECOMBATACTION_STATUS ActionStatus;
+    ECombatActionStatus ActionStatus;
     bool NotAction;
 
     Text Combatant1;

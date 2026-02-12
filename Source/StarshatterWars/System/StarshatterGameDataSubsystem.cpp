@@ -1215,13 +1215,13 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 									char txt[64];
 									GetDefText(txt, pdef, filename);
 
-									if (ActionType == ECOMBATACTION_TYPE::MISSION_TEMPLATE) {
+									if (ActionType == ECombatActionType::MISSION_TEMPLATE) {
 										ActionSubtype = Mission::TypeFromName(txt);
 									}
-									else if (ActionType == ECOMBATACTION_TYPE::COMBAT_EVENT) {
+									else if (ActionType == ECombatActionType::COMBAT_EVENT) {
 										ActionSubtype = (int) CombatEvent::GetTypeFromName(txt);
 									}
-									if (ActionType == ECOMBATACTION_TYPE::INTEL_EVENT) {
+									if (ActionType == ECombatActionType::INTEL_EVENT) {
 										ActionSubtype = Intel::IntelFromName(txt);
 									}
 									NewCampaignAction.Subtype = ActionSubtype;
@@ -1238,7 +1238,7 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 									char txt[64];
 									GetDefText(txt, pdef, filename);
 
-									if (ActionType == ECOMBATACTION_TYPE::MISSION_TEMPLATE) {
+									if (ActionType == ECombatActionType::MISSION_TEMPLATE) {
 										OppType = Mission::TypeFromName(txt);
 									}
 								}
@@ -1393,7 +1393,7 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 								TermStruct* val2 = pdef->term()->isStruct();
 								CampaignActionReqArray.Empty();
 								Action = 0;
-								ActionStatus = ECOMBATACTION_STATUS::COMPLETE;
+								ActionStatus = ECombatActionStatus::COMPLETE;
 								NotAction = false;
 
 								Combatant1 = "";
@@ -1406,7 +1406,7 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 								gid = 0;
 
 								FS_CampaignReq NewCampaignReq;
-								ECOMBATACTION_STATUS AStatus = ECOMBATACTION_STATUS::UNKNOWN;
+								ECombatActionStatus AStatus = ECombatActionStatus::UNKNOWN;
 								for (int index = 0; index < val2->elements()->size(); index++) {
 									TermDef* pdef2 = val2->elements()->at(index)->isDef();
 
@@ -1419,8 +1419,8 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 											Text Buf;
 											GetDefText(Buf, pdef2, filename);
 
-											ECOMBATACTION_STATUS AcStatus = ECOMBATACTION_STATUS::UNKNOWN;
-											if (FStringToEnum<ECOMBATACTION_STATUS>(FString(ANSI_TO_TCHAR(Buf)).ToUpper(), AcStatus, false))
+											ECombatActionStatus AcStatus = ECombatActionStatus::UNKNOWN;
+											if (FStringToEnum<ECombatActionStatus>(FString(ANSI_TO_TCHAR(Buf)).ToUpper(), AcStatus, false))
 											{
 												UE_LOG(LogTemp, Log, TEXT("Converted to enum: %d"), (int32)AcStatus);
 											}
