@@ -1127,6 +1127,50 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	UPROPERTY(BlueprintReadWrite)
 	int32 Trained = 0;
 
+	static constexpr int32 MAX_TRAINING_BITS = 64;
+
+	bool HasTrained(int32 MissionId) const
+	{
+		if (MissionId < 0)
+			return false;
+
+		// Legacy behavior: some code treated "Trained" as highest completed.
+		// If Trained/HighestTrainingMission is set, honor it.
+		const int32 Highest = (HighestTrainingMission > 0) ? HighestTrainingMission : Trained;
+		if (Highest > 0 && MissionId <= Highest)
+			return true;
+
+		// Bitmask check (0..63)
+		if (MissionId >= MAX_TRAINING_BITS)
+			return false;
+
+		const int64 Bit = (int64)1 << (int64)MissionId;
+		return (TrainingMask & Bit) != 0;
+	}
+
+	void SetTrained(int32 MissionId, bool bValue)
+	{
+		if (MissionId < 0)
+			return;
+
+		// Maintain highest tracking
+		if (bValue)
+		{
+			if (MissionId > HighestTrainingMission)
+				HighestTrainingMission = MissionId;
+
+			if (MissionId > Trained)
+				Trained = MissionId;
+		}
+
+		// Maintain mask (0..63)
+		if (MissionId < MAX_TRAINING_BITS)
+		{
+			const int64 Bit = (int64)1 << (int64)MissionId;
+			if (bValue) TrainingMask |= Bit;
+			else        TrainingMask &= ~Bit;
+		}
+	}
 	// ------------------------------------------------------------
 	// Awards / medals (ADDED)
 	// Legacy medals was a bitmask. Keep it here.

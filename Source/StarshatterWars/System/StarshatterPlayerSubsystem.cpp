@@ -24,6 +24,8 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
+#include "AwardInfoRegistry.h"
+#include "PlayerProgression.h"
 #include "Logging/LogMacros.h"
 
 void UStarshatterPlayerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -93,6 +95,7 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
             }
 
             PlayerInfo = LoadedInfo;
+            PlayerProgression::SetCurrentRankId(PlayerInfo.Rank)
             bLoaded = true;
             bDirty = true;
 
@@ -252,4 +255,276 @@ UStarshatterPlayerSubsystem* UStarshatterPlayerSubsystem::Get(const UWorld* Worl
         return nullptr;
 
     return GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+}
+void UStarshatterPlayerSubsystem::MarkDirty()
+{
+    bDirty = true;
+}
+
+int32 UStarshatterPlayerSubsystem::GetPlayerIdSafe(const UObject* WorldContextObject, int32 DefaultId)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->GetPlayerInfo().Id;
+
+    return DefaultId;
+}
+
+int32 UStarshatterPlayerSubsystem::GetRankIdSafe(const UObject* WorldContextObject, int32 DefaultRankId)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->GetPlayerInfo().Rank;
+
+    return DefaultRankId;
+}
+
+FString UStarshatterPlayerSubsystem::GetPlayerNameSafe(const UObject* WorldContextObject)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->GetPlayerInfo().Name;
+
+    return FString();
+}
+
+FString UStarshatterPlayerSubsystem::GetRankNameSafe(const UObject* WorldContextObject, int32 RankId)
+{
+    // WorldContextObject is unused right now, but keeping it consistent
+    // lets you later validate initialization, log warnings, etc.
+    (void)WorldContextObject;
+
+    return UAwardInfoRegistry::RankName(RankId);
+}
+
+FString UStarshatterPlayerSubsystem::GetRankDescSafe(const UObject* WorldContextObject, int32 RankId)
+{
+    (void)WorldContextObject;
+    return UAwardInfoRegistry::RankDescription(RankId);
+}
+
+// ------------------------------------------------------------
+// Training helpers
+// FS_PlayerGameInfo has: TrainingMask, HighestTrainingMission, Trained
+// ------------------------------------------------------------
+
+bool UStarshatterPlayerSubsystem::HasTrained(int32 TrainingMissionId) const
+{
+    if (TrainingMissionId <= 0 || TrainingMissionId > 63)
+        return false;
+
+    const int64 Bit = (int64)1 << TrainingMissionId;
+    return (PlayerInfo.TrainingMask & Bit) != 0;
+}
+
+void UStarshatterPlayerSubsystem::SetTrained(int32 TrainingMissionId, bool bTrained)
+{
+    if (TrainingMissionId <= 0 || TrainingMissionId > 63)
+        return;
+
+    const int64 Bit = (int64)1 << TrainingMissionId;
+
+    if (bTrained)
+    {
+        PlayerInfo.TrainingMask |= Bit;
+        PlayerInfo.HighestTrainingMission = FMath::Max(PlayerInfo.HighestTrainingMission, TrainingMissionId);
+        PlayerInfo.Trained = FMath::Max(PlayerInfo.Trained, TrainingMissionId);
+    }
+    else
+    {
+        PlayerInfo.TrainingMask &= ~Bit;
+        // do not try to recompute HighestTrainingMission here (not worth it)
+    }
+
+    bDirty = true;
+}
+
+bool UStarshatterPlayerSubsystem::HasTrainedSafe(const UObject* WorldContextObject, int32 TrainingMissionId)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->HasTrained(TrainingMissionId);
+
+    return false;
+}
+
+// ------------------------------------------------------------
+// Campaign completion (bit index 0..63)
+// ------------------------------------------------------------
+
+bool UStarshatterPlayerSubsystem::HasCompletedCampaign(int32 CampaignBitIndex) const
+{
+    if (CampaignBitIndex < 0 || CampaignBitIndex > 63)
+        return false;
+
+    const int64 Bit = (int64)1 << CampaignBitIndex;
+    return (PlayerInfo.CampaignCompleteMask & Bit) != 0;
+}
+
+void UStarshatterPlayerSubsystem::SetCampaignComplete(int32 CampaignBitIndex, bool bComplete)
+{
+    if (CampaignBitIndex < 0 || CampaignBitIndex > 63)
+        return;
+
+    const int64 Bit = (int64)1 << CampaignBitIndex;
+
+    if (bComplete)
+        PlayerInfo.CampaignCompleteMask |= Bit;
+    else
+        PlayerInfo.CampaignCompleteMask &= ~Bit;
+
+    bDirty = true;
+}
+
+bool UStarshatterPlayerSubsystem::HasCompletedCampaignSafe(const UObject* WorldContextObject, int32 CampaignBitIndex)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->HasCompletedCampaign(CampaignBitIndex);
+
+    return false;
+}
+
+void UStarshatterPlayerSubsystem::SetCampaignCompleteSafe(
+    const UObject* WorldContextObject,
+    int32 CampaignBitIndex,
+    bool bComplete,
+    bool bSave)
+{
+    UStarshatterPlayerSubsystem* SS = Get(WorldContextObject);
+    if (!SS)
+        return;
+
+    SS->SetCampaignComplete(CampaignBitIndex, bComplete);
+
+    if (bSave)
+        SS->SavePlayer(true);
+}
+
+// ------------------------------------------------------------
+// Command eligibility
+// Uses rank row GrantedShipClasses mask.
+// CmdClass should map to a bit position (legacy behavior).
+// ------------------------------------------------------------
+
+bool UStarshatterPlayerSubsystem::CanCommand(int32 CmdClass) const
+{
+    const int32 RankId = PlayerInfo.Rank;
+    const FRankInfo* RankRow = UAwardInfoRegistry::FindRank(RankId);
+    if (!RankRow)
+        return false;
+
+    // Legacy pattern was "grant" bitmask check.
+    // You are already storing GrantedShipClasses on FRankInfo.
+    const int32 Mask = RankRow->GrantedShipClasses;
+
+    if (CmdClass < 0 || CmdClass >= 31)
+        return false;
+
+    const int32 Bit = 1 << CmdClass;
+    return (Mask & Bit) != 0;
+}
+
+bool UStarshatterPlayerSubsystem::CanCommandSafe(const UObject* WorldContextObject, int32 CmdClass)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->CanCommand(CmdClass);
+
+    return false;
+}
+int32 UStarshatterPlayerSubsystem::GetPlayerId(const UObject* WorldContextObject)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->GetPlayerInfo().Id;
+    return 0;
+}
+
+FString UStarshatterPlayerSubsystem::GetPlayerName(const UObject* WorldContextObject)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->GetPlayerInfo().Name;
+    return TEXT("");
+}
+
+int32 UStarshatterPlayerSubsystem::GetPlayerRankId(const UObject* WorldContextObject)
+{
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+        return SS->GetPlayerInfo().Rank;
+    return 0;
+}
+
+bool UStarshatterPlayerSubsystem::HasTrainedMission(const UObject* WorldContextObject, int32 MissionId)
+{
+    if (MissionId <= 0)
+        return false;
+
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+    {
+        const FS_PlayerGameInfo& Info = SS->GetPlayerInfo();
+
+        // Legacy style: treat TrainingMask as bitset (MissionId assumed 0..63 or 1..64)
+        // If your mission ids are 1-based, convert here:
+        const int32 BitIndex = MissionId; // change to (MissionId - 1) if needed
+
+        if (BitIndex < 0 || BitIndex >= 64)
+            return false;
+
+        const int64 Mask = (1ll << BitIndex);
+        return (Info.TrainingMask & Mask) != 0;
+    }
+
+    return false;
+}
+
+void UStarshatterPlayerSubsystem::MarkTrainedMission(const UObject* WorldContextObject, int32 MissionId)
+{
+    if (MissionId <= 0)
+        return;
+
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+    {
+        FS_PlayerGameInfo& Info = SS->GetMutablePlayerInfo();
+
+        const int32 BitIndex = MissionId; // change to (MissionId - 1) if needed
+        if (BitIndex < 0 || BitIndex >= 64)
+            return;
+
+        const int64 Mask = (1ll << BitIndex);
+        Info.TrainingMask |= Mask;
+
+        Info.HighestTrainingMission = FMath::Max(Info.HighestTrainingMission, MissionId);
+        Info.Trained = Info.HighestTrainingMission; // keep legacy field aligned
+
+        SS->SavePlayer(false);
+        SS->SyncLegacySnapshot();
+    }
+}
+
+bool UStarshatterPlayerSubsystem::IsCampaignComplete(const UObject* WorldContextObject, int32 CampaignIndex0Based)
+{
+    if (CampaignIndex0Based < 0 || CampaignIndex0Based >= 64)
+        return false;
+
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+    {
+        const FS_PlayerGameInfo& Info = SS->GetPlayerInfo();
+        const int64 Mask = (1ll << CampaignIndex0Based);
+        return (Info.CampaignCompleteMask & Mask) != 0;
+    }
+
+    return false;
+}
+
+void UStarshatterPlayerSubsystem::SetCampaignComplete(
+    const UObject* WorldContextObject, int32 CampaignIndex0Based, bool bComplete)
+{
+    if (CampaignIndex0Based < 0 || CampaignIndex0Based >= 64)
+        return;
+
+    if (UStarshatterPlayerSubsystem* SS = Get(WorldContextObject))
+    {
+        FS_PlayerGameInfo& Info = SS->GetMutablePlayerInfo();
+
+        const int64 Mask = (1ll << CampaignIndex0Based);
+        if (bComplete) Info.CampaignCompleteMask |= Mask;
+        else           Info.CampaignCompleteMask &= ~Mask;
+
+        SS->SavePlayer(false);
+        SS->SyncLegacySnapshot();
+    }
 }

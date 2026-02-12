@@ -7,6 +7,8 @@
 #include "AwardInfoRegistry.h"
 #include "GameStructs.h"
 
+int PlayerProgression::GCurrentRankId = 0;
+
 UStarshatterPlayerSubsystem* PlayerProgression::GetPlayerSubsystem(UWorld* World)
 {
     if (!World)
@@ -59,4 +61,14 @@ void PlayerProgression::GrantMedal(UWorld* World, int32 MedalId)
     Info.MedalsMask |= MedalId;
 
     PlayerSS->SavePlayer(true);
+}
+
+int PlayerProgression::GetCurrentRankId()
+{
+    return GCurrentRankId;
+}
+
+void PlayerProgression::SetCurrentRankId(int InRankId)
+{
+    GCurrentRankId = InRankId;
 }

@@ -110,6 +110,46 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Starshatter|PlayerSave")
     FOnPlayerSaveLoaded OnPlayerSaveLoaded;
 
+    // Read-only convenience:
+    static int32 GetPlayerIdSafe(const UObject* WorldContextObject, int32 DefaultId = 0);
+    static int32 GetRankIdSafe(const UObject* WorldContextObject, int32 DefaultRankId = 0);
+    static FString GetPlayerNameSafe(const UObject* WorldContextObject);
+
+    // Rank display (routes to AwardInfoRegistry):
+    static FString GetRankNameSafe(const UObject* WorldContextObject, int32 RankId);
+    static FString GetRankDescSafe(const UObject* WorldContextObject, int32 RankId);
+
+    // Training:
+    bool HasTrained(int32 TrainingMissionId) const;
+    void SetTrained(int32 TrainingMissionId, bool bTrained);
+    static bool HasTrainedSafe(const UObject* WorldContextObject, int32 TrainingMissionId);
+
+    // Campaign completion:
+    bool HasCompletedCampaign(int32 CampaignBitIndex) const;
+    void SetCampaignComplete(int32 CampaignBitIndex, bool bComplete);
+    static bool HasCompletedCampaignSafe(const UObject* WorldContextObject, int32 CampaignBitIndex);
+    static void SetCampaignCompleteSafe(const UObject* WorldContextObject, int32 CampaignBitIndex, bool bComplete, bool bSave = true);
+
+    // Command eligibility (rank -> permissions):
+    bool CanCommand(int32 CmdClass) const;
+    static bool CanCommandSafe(const UObject* WorldContextObject, int32 CmdClass);
+
+    static int32 GetPlayerId(const UObject* WorldContextObject);
+    static FString GetPlayerName(const UObject* WorldContextObject);
+    static int32 GetPlayerRankId(const UObject* WorldContextObject);
+
+    // Training helpers
+    static bool HasTrainedMission(const UObject* WorldContextObject, int32 MissionId);
+    static void MarkTrainedMission(const UObject* WorldContextObject, int32 MissionId);
+
+    // Campaign completion helpers
+    static bool IsCampaignComplete(const UObject* WorldContextObject, int32 CampaignIndex0Based);
+    static void SetCampaignComplete(const UObject* WorldContextObject, int32 CampaignIndex0Based, bool bComplete);
+
+
+    // Utility:
+    void MarkDirty();
+
 private:
     // ------------------------------------------------------------------
     // Internal helpers
@@ -139,6 +179,8 @@ private:
 
     // First-run detection:
     bool bHadExistingSave = false;
+
+    void SyncLegacySnapshot() const;
 
 private:
     // Increment when the save schema changes

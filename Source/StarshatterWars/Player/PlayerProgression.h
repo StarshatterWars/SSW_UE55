@@ -38,6 +38,15 @@ public:
     // Medal (bitmask id)
     static void  GrantMedal(UWorld* World, int32 MedalId);
 
+    // Returns current player rank id. Never requires UWorld.
+    static int GetCurrentRankId();
+
+    // Optional: allow forcing a rank during early boot / tests
+    static void SetCurrentRankId(int InRankId);
+
+
 private:
     static UStarshatterPlayerSubsystem* GetPlayerSubsystem(UWorld* World);
+
+    static int GCurrentRankId;
 };
