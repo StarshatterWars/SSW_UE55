@@ -66,12 +66,16 @@ void UAwardInfoRegistry::BuildCaches()
         }
 
         // Sort by promotion threshold ascending
-        RanksSortedByPoints.Sort([](const FRankInfo& A, const FRankInfo& B)
+        RanksSortedByPoints.Sort([](const FRankInfo* A, const FRankInfo* B)
             {
-                if (A.TotalPoints != B.TotalPoints)
-                    return A.TotalPoints < B.TotalPoints;
+                if (!A) return false;
+                if (!B) return true;
 
-                return A.RankId < B.RankId;
+                if (A->TotalPoints != B->TotalPoints) {
+                    return A->TotalPoints < B->TotalPoints;
+                }
+
+                return A->RankId < B->RankId;
             });
 
         UE_LOG(LogTemp, Log,

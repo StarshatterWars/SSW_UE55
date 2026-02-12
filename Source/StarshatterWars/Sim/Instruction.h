@@ -107,7 +107,7 @@ public:
 	void         ClearTarget();
 
 	virtual bool        Update(SimObject* s);
-	virtual const char* GetObserverName() const;
+	virtual FString     GetObserverName() const override;
 
 protected:
 	Text       rgn_name;

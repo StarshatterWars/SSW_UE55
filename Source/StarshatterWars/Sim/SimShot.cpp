@@ -636,12 +636,10 @@ SimShot::MarkerColor() const
 
 // +--------------------------------------------------------------------+
 
-const char*
-SimShot::GetObserverName() const
+FString SimShot::GetObserverName() const
 {
-	return name;
+	return name;   
 }
-
 // +--------------------------------------------------------------------+
 
 bool

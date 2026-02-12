@@ -231,10 +231,9 @@ Instruction::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-Instruction::GetObserverName() const
+FString Instruction::GetObserverName() const
 {
-	return "Instruction";
+	return TEXT("Instruction");
 }
 
 // +----------------------------------------------------------------------+

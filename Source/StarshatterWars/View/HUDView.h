@@ -162,7 +162,7 @@ public:
     static void       ShowFPS(bool f) { show_fps = f; }
 
     virtual bool         Update(SimObject* obj);
-    virtual const char* GetObserverName() const;
+    virtual FString      GetObserverName() const override;
 
     void DrawLine(int x1, int y1, int x2, int y2, FColor c);
     void FillRect(int x1, int y1, int x2, int y2, FColor c);

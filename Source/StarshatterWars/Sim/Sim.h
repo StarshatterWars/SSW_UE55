@@ -1,23 +1,14 @@
 /*  Project Starshatter Wars
     Fractal Dev Studios
-    Copyright © 2025–2026. All Rights Reserved.
+    Copyright © 2025–2026.
 
-    ORIGINAL WORK:
-    Starshatter 4.5
-    Copyright © 1997–2004 Destroyer Studios LLC
-    Original Author: John DiCamillo
-
-    SUBSYSTEM:    StarshatterWars
     FILE:         Sim.h
     AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Simulation Universe (UE-compliant, non-UObject)
-    NOTE: SimRegion is defined in SimRegion.h / SimRegion.cpp
 */
 
 #pragma once
+
+#include "CoreMinimal.h"
 
 #include "Types.h"
 #include "SimUniverse.h"
@@ -26,14 +17,9 @@
 #include "List.h"
 #include "Text.h"
 
-#include "SimRegion.h"     // MOVED OUT: SimRegion now lives here
+#include "SimRegion.h"
 
-// Minimal Unreal includes required for FVector / FColor:
-#include "Math/Vector.h"
-#include "Math/Color.h"
-
-// +--------------------------------------------------------------------+
-
+// Forward decls (keep light):
 class SimObject;
 class SimObserver;
 class SimHyper;
@@ -72,15 +58,9 @@ class TerrainPatch;
 
 class SimModel;
 
-// +--------------------------------------------------------------------+
-
 class Sim : public SimUniverse
 {
 public:
-    // NOTE: Keep only if Sim uses these directly.
-    // Otherwise, prefer SimRegion::REAL_SPACE / SimRegion::AIR_SPACE.
-    enum { REAL_SPACE, AIR_SPACE };
-
     Sim(MotionController* ctrl);
     virtual ~Sim();
 
@@ -143,9 +123,6 @@ public:
 
     void DestroyShip(Ship* ship);
 
-    // NETWORKING REMOVED: you will add UE networking later.
-    // void NetDockShip(Ship* ship, Ship* carrier, FlightDeck* deck);
-
     virtual Ship* FindShipByObjID(uint32 objid);
     virtual SimShot* FindShotByObjID(uint32 objid);
 
@@ -155,7 +132,7 @@ public:
 
     SimRegion* FindRegion(const char* name);
     SimRegion* FindRegion(OrbitalRegion* rgn);
-    SimRegion* FindRegion(const FString& Name); 
+    SimRegion* FindRegion(const FString& Name);
 
     SimRegion* FindNearestSpaceRegion(SimObject* object);
     SimRegion* FindNearestTerrainRegion(SimObject* object);
@@ -227,7 +204,10 @@ protected:
 
     SimRegion* active_region = nullptr;
     StarSystem* star_system = nullptr;
+
+    // IMPORTANT: own a real scene instance:
     SimScene* scene = nullptr;
+
     Dust* dust = nullptr;
     CameraManager* cam_dir = nullptr;
 
@@ -242,8 +222,8 @@ protected:
 
     MotionController* ctrl = nullptr;
 
-    bool        test_mode = false;
-    bool        grid_shown = false;
+    bool   test_mode = false;
+    bool   grid_shown = false;
     Mission* mission = nullptr;
-    uint32      start_time = 0;
+    uint32  start_time = 0;
 };

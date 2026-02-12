@@ -1,20 +1,36 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-    All Rights Reserved.
+/*=============================================================================
+    Project:        Starshatter Wars (nGenEx Unreal Port)
+    Studio:         Fractal Dev Games
+    Copyright:      (C) 2025-2026. All Rights Reserved.
 
     ORIGINAL AUTHOR AND STUDIO
     ==========================
     John DiCamillo / Destroyer Studios LLC
 
-    SUBSYSTEM:    Stars.exe
-    FILE:         PlayerDlg.cpp
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      Stars.exe
+    FILE:           PlayerDlg.cpp
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
     Player dialog (UE port) implementation
-*/
+
+    PORT NOTE
+    =========
+    Legacy UI depended on PlayerCharacter for:
+      - roster list (GetRoster/AddToRoster/RemoveFromRoster)
+      - persistence (Save)
+      - profile fields (Name/Rank/Kills/Deaths/Missions/etc.)
+
+    Unreal port replaces PlayerCharacter with:
+      - UStarshatterPlayerSubsystem (persistence + authoritative state)
+      - FS_PlayerGameInfo (profile model)
+
+    CURRENT MODEL
+    =============
+    Single-profile save slot.
+    ListView shows one row (the active profile).
+=============================================================================*/
 
 #include "PlayerDlg.h"
 
@@ -27,22 +43,30 @@
 #include "Input/Reply.h"
 #include "InputCoreTypes.h"
 
-#include "PlayerRosterItem.h"
-#include "PlayerCharacter.h"
-#include "MenuScreen.h"
+#include "Kismet/GameplayStatics.h"
 
+#include "PlayerRosterItem.h"
+#include "MenuScreen.h"
+#include "StarshatterPlayerSubsystem.h"
+
+// +--------------------------------------------------------------------+
+// Construction
 // +--------------------------------------------------------------------+
 
 UPlayerDlg::UPlayerDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    // defaults only
+    // Defaults only
 }
 
 void UPlayerDlg::InitializeDlg(UMenuScreen* InManager)
 {
     manager = InManager;
 }
+
+// +--------------------------------------------------------------------+
+// UUserWidget lifecycle
+// +--------------------------------------------------------------------+
 
 void UPlayerDlg::NativeConstruct()
 {
@@ -62,14 +86,18 @@ void UPlayerDlg::NativeDestruct()
     if (btn_add) btn_add->OnClicked.RemoveAll(this);
     if (btn_del) btn_del->OnClicked.RemoveAll(this);
 
-    if (apply) apply->OnClicked.RemoveAll(this);
+    if (apply)  apply->OnClicked.RemoveAll(this);
     if (cancel) cancel->OnClicked.RemoveAll(this);
 
-    if (ApplyButton) ApplyButton->OnClicked.RemoveAll(this);
+    if (ApplyButton)  ApplyButton->OnClicked.RemoveAll(this);
     if (CancelButton) CancelButton->OnClicked.RemoveAll(this);
 
     Super::NativeDestruct();
 }
+
+// +--------------------------------------------------------------------+
+// Input
+// +--------------------------------------------------------------------+
 
 FReply UPlayerDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
@@ -89,6 +117,10 @@ FReply UPlayerDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent&
 
     return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
+
+// +--------------------------------------------------------------------+
+// Dialog visibility
+// +--------------------------------------------------------------------+
 
 void UPlayerDlg::ShowDlg()
 {
@@ -153,7 +185,16 @@ void UPlayerDlg::RegisterControls()
 }
 
 // +--------------------------------------------------------------------+
-// Roster list
+// Subsystem accessor (local helper)
+// +--------------------------------------------------------------------+
+
+UStarshatterPlayerSubsystem* UPlayerDlg::GetPlayerSubsystem() const
+{
+    return UStarshatterPlayerSubsystem::Get(GetWorld());
+}
+
+// +--------------------------------------------------------------------+
+// Roster list (single-profile model)
 // +--------------------------------------------------------------------+
 
 void UPlayerDlg::BuildRoster()
@@ -162,60 +203,44 @@ void UPlayerDlg::BuildRoster()
         return;
 
     lst_roster->ClearListItems();
+    selected_item = nullptr;
 
-    List<PlayerCharacter>& roster = PlayerCharacter::GetRoster();
-    if (roster.size() < 1)
+    UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSubsystem();
+    if (!PlayerSS || !PlayerSS->HasLoaded())
     {
-        selected_item = nullptr;
         ShowPlayer();
         return;
     }
 
-    for (int i = 0; i < roster.size(); ++i)
-    {
-        PlayerCharacter* player = roster[i];
-        if (!player)
-            continue;
+    const FS_PlayerGameInfo Info = PlayerSS->GetPlayerInfoCopy();
 
-        UPlayerRosterItem* item = NewObject<UPlayerRosterItem>(this);
-        item->Initialize(player);
+    UPlayerRosterItem* Item = NewObject<UPlayerRosterItem>(this);
+    Item->Initialize(Info);
 
-        lst_roster->AddItem(item);
+    lst_roster->AddItem(Item);
 
-        // Default selection: first item if none selected:
-        if (!selected_item)
-            selected_item = item;
-    }
-
-    if (selected_item)
-        lst_roster->SetSelectedItem(selected_item);
+    selected_item = Item;
+    lst_roster->SetSelectedItem(Item);
 }
 
 void UPlayerDlg::RefreshRoster()
 {
-    // Simple approach (safe): rebuild.
     BuildRoster();
 }
 
 void UPlayerDlg::OnRosterSelectionChanged(UObject* SelectedItem)
 {
-    // If you are using a UObject item wrapper:
-    UPlayerRosterItem* Item = Cast<UPlayerRosterItem>(SelectedItem);
-    PlayerCharacter* player = Item ? Item->GetPlayer() : nullptr;
+    selected_item = Cast<UPlayerRosterItem>(SelectedItem);
 
-    // Store selection however you do it:
-    SelectedPlayer = player;
-
+    // In single-profile model, selection is trivial, but we keep the method
+    // for forward compatibility with multi-profile.
     UpdatePlayer();
     ShowPlayer();
 }
 
-PlayerCharacter* UPlayerDlg::GetSelectedPlayer() const
+const UPlayerRosterItem* UPlayerDlg::GetSelectedItem() const
 {
-    if (!selected_item)
-        return nullptr;
-
-    return selected_item->GetPlayer();
+    return selected_item;
 }
 
 // +--------------------------------------------------------------------+
@@ -224,27 +249,31 @@ PlayerCharacter* UPlayerDlg::GetSelectedPlayer() const
 
 void UPlayerDlg::UpdatePlayer()
 {
-    PlayerCharacter* player = GetSelectedPlayer();
-    if (!player)
+    UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSubsystem();
+    if (!PlayerSS || !PlayerSS->HasLoaded())
         return;
+
+    FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
 
     // Name:
     if (edt_name)
     {
         const FString NewName = edt_name->GetText().ToString();
         if (!NewName.IsEmpty())
-            player->SetName(TCHAR_TO_ANSI(*NewName));
+            Info.Name = NewName;
     }
 
-    // Add more fields here if you expose them in UMG.
+    // Keep aliases consistent (if your gameplay writes PlayerKills etc.):
+    Info.SyncRosterAliasesFromPlayerStats();
+
+    PlayerSS->MarkDirty();
 }
 
 void UPlayerDlg::ShowPlayer()
 {
-    PlayerCharacter* player = GetSelectedPlayer();
+    UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSubsystem();
 
-    // Clear UI if no selection:
-    if (!player)
+    if (!PlayerSS || !PlayerSS->HasLoaded())
     {
         if (edt_name)        edt_name->SetText(FText::GetEmpty());
         if (lbl_rank)        lbl_rank->SetText(FText::GetEmpty());
@@ -256,29 +285,28 @@ void UPlayerDlg::ShowPlayer()
         return;
     }
 
+    const FS_PlayerGameInfo Info = PlayerSS->GetPlayerInfoCopy();
+
     if (edt_name)
-        edt_name->SetText(FText::FromString(ANSI_TO_TCHAR(player->Name())));
+        edt_name->SetText(FText::FromString(Info.Name));
 
     if (lbl_rank)
-    {
-        const int32 RankVal = (int32)player->   GetRank();
-        lbl_rank->SetText(FText::AsNumber(RankVal));
-    }
+        lbl_rank->SetText(FText::AsNumber(Info.Rank));
 
     if (lbl_flighttime)
-        lbl_flighttime->SetText(FText::FromString(FormatTimeHMS(player->FlightTime())));
+        lbl_flighttime->SetText(FText::FromString(FormatTimeHMS((double)Info.FlightTime)));
 
     if (lbl_createdate)
-        lbl_createdate->SetText(FText::FromString(FormatDateFromUnixSeconds((int64)player->CreateDate())));
+        lbl_createdate->SetText(FText::FromString(FormatDateFromUnixSeconds((int64)Info.CreateTime)));
 
     if (lbl_kills)
-        lbl_kills->SetText(FText::AsNumber((int32)player->Kills()));
+        lbl_kills->SetText(FText::AsNumber(Info.Kills));
 
     if (lbl_deaths)
-        lbl_deaths->SetText(FText::AsNumber((int32)player->Deaths()));
+        lbl_deaths->SetText(FText::AsNumber(Info.Deaths));
 
     if (lbl_missions)
-        lbl_missions->SetText(FText::AsNumber((int32)player->Missions()));
+        lbl_missions->SetText(FText::AsNumber(Info.Missions));
 
     // Rank/medal images: assign brushes here when your texture pipeline is ready.
     // img_rank->SetBrushFromTexture(...)
@@ -291,36 +319,65 @@ void UPlayerDlg::ShowPlayer()
 
 void UPlayerDlg::OnAdd()
 {
+    UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSubsystem();
+    if (!PlayerSS)
+        return;
+
     // Commit current edits:
     UpdatePlayer();
 
-    PlayerCharacter* new_player = PlayerCharacter::CreateDefault();
-    if (!new_player)
-        return;
+    // Single-profile model: reset to a new default profile
+    FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
+    Info = FS_PlayerGameInfo();
 
-    PlayerCharacter::AddToRoster(new_player);
-    PlayerCharacter::Save();
+    // Minimal identity defaults:
+    Info.Id = FMath::Rand(); // replace with your real id generator
+    Info.CreateTime = FDateTime::UtcNow().ToUnixTimestamp();
+
+    // Ensure alias fields reflect the current Player* stats:
+    Info.SyncRosterAliasesFromPlayerStats();
+
+    PlayerSS->MarkDirty();
+    PlayerSS->SavePlayer(true);
 
     RefreshRoster();
+    ShowPlayer();
 }
 
 void UPlayerDlg::OnDel()
 {
-    PlayerCharacter* player = GetSelectedPlayer();
-    if (!player)
+    UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSubsystem();
+    if (!PlayerSS)
         return;
 
-    PlayerCharacter::RemoveFromRoster(player);
-    PlayerCharacter::Save();
+    // Delete the save slot:
+    const FString SlotX = PlayerSS->GetSlotName();
+    const int32   User = PlayerSS->GetUserIndex();
+
+    UGameplayStatics::DeleteGameInSlot(SlotX, User);
+
+    // Reset in-memory profile:
+    FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
+    Info = FS_PlayerGameInfo();
+    Info.SyncRosterAliasesFromPlayerStats();
+
+    PlayerSS->MarkDirty();
+    PlayerSS->SavePlayer(true);
 
     selected_item = nullptr;
+
     RefreshRoster();
+    ShowPlayer();
 }
 
 void UPlayerDlg::OnApply()
 {
+    UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSubsystem();
+
     UpdatePlayer();
-    PlayerCharacter::Save();
+
+    if (PlayerSS)
+        PlayerSS->SavePlayer(false);
 
     if (manager)
         manager->ShowMenuDlg(); // adjust to your actual API
@@ -340,7 +397,7 @@ void UPlayerDlg::OnCancel()
 }
 
 // +--------------------------------------------------------------------+
-// Formatting helpers (replaces missing FormatTime / FormatTimeString)
+// Formatting helpers
 // +--------------------------------------------------------------------+
 
 FString UPlayerDlg::FormatTimeHMS(double Seconds)
@@ -358,7 +415,6 @@ FString UPlayerDlg::FormatTimeHMS(double Seconds)
 
 FString UPlayerDlg::FormatDateFromUnixSeconds(int64 UnixSeconds)
 {
-    // If legacy CreateDate() is not Unix seconds, replace this mapping here.
     if (UnixSeconds <= 0)
         return TEXT("");
 

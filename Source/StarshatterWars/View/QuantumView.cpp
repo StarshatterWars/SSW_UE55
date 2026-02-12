@@ -125,9 +125,9 @@ bool QuantumView::Update(SimObject* Obj)
     return SimObserver::Update(Obj);
 }
 
-const char* QuantumView::GetObserverName() const
+FString QuantumView::GetObserverName() const
 {
-    return "QuantumView";
+    return TEXT("QuantumView");
 }
 
 void QuantumView::Refresh()

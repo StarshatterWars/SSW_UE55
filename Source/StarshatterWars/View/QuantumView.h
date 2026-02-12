@@ -57,7 +57,7 @@ public:
 
     // SimObserver:
     virtual bool        Update(SimObject* Obj) override;
-    virtual const char* GetObserverName() const override;
+    virtual FString     GetObserverName() const override;
 
     // Static color sync:
     void   SetColor(const FColor& InColor);

@@ -70,7 +70,7 @@ public:
 	FVector  TrackPoint(int i) const;
 
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 private:
 	Ship* ship = nullptr;

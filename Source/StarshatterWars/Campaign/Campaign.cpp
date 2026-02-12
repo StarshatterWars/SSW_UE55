@@ -617,7 +617,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
     int     subtype = 0;
     int     opp_type = -1;
     int     team = 0;
-    int     source = 0;
+    ECombatEventSource source = ECombatEventSource::NONE;
     FVector loc(0.0f, 0.0f, 0.0f);
 
     Text    system;
@@ -665,7 +665,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                     if (type == CombatAction::MISSION_TEMPLATE)
                         subtype = Mission::TypeFromName(txt);
                     else if (type == CombatAction::COMBAT_EVENT)
-                        subtype = CombatEvent::TypeFromName(txt);
+                        subtype = (int) CombatEvent::GetTypeFromName(FString(txt));
                     else if (type == CombatAction::INTEL_EVENT)
                         subtype = Intel::IntelFromName(txt);
                 }
@@ -889,7 +889,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
         action = new CombatAction(id, type, subtype, team);
 
     if (action) {
-        action->SetSource(source);
+        action->SetSource(ECombatEventSource::NONE);
         action->SetOpposingType(opp_type);
         action->SetLocation(loc);
         action->SetSystem(system);
@@ -1765,7 +1765,7 @@ Campaign::FindMissionTemplate(int mission_type, CombatGroup* in_player_group)
         if (info) {
             if (info->action_id) {
                 CombatAction* a = FindAction(info->action_id);
-                if (a && a->Status() != info->action_status)
+                if (a && a->GetStatus() != info->action_status)
                     info = 0;
             }
 

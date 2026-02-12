@@ -74,7 +74,7 @@ public:
 
 	// SimObserver:
 	virtual bool        Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString     GetObserverName() const override;
 
 protected:
 	void              ProcessContact(Ship* contact, double az1, double az2);

@@ -27,9 +27,10 @@
 #include "InputCoreTypes.h"
 
 // Starshatter core:
-#include "PlayerCharacter.h"
 #include "Campaign.h"
 #include "Starshatter.h"
+
+#include "StarshatterPlayerSubsystem.h"
 
 // If you have a sound wrapper, include it here.
 // #include "Sound.h"
@@ -263,35 +264,32 @@ void UMissionAwardDlg::ShowDialog()
 
 void UMissionAwardDlg::ShowPlayer()
 {
-    PlayerCharacter* P = PlayerCharacter::GetCurrentPlayer();
+    const UObject* WorldCtx = this;
 
-    if (P)
+    const bool bShow =
+        UStarshatterPlayerSubsystem::GetCachedShowAward(WorldCtx, false);
+
+    if (lbl_name)
     {
-        if (lbl_name)
-            lbl_name->SetText(FText::FromString(P->AwardName()));
-
-        if (lbl_info)
-            lbl_info->SetText(FText::FromString(P->AwardDesc()));
-
-        if (img_rank)
-        {
-            // NOTE:
-            // Legacy: img_rank->SetPicture(*p->AwardImage());
-            // Unreal: you need a UTexture2D/brush pipeline.
-            // This is intentionally left minimal and non-assumptive.
-            img_rank->SetVisibility(ESlateVisibility::Visible);
-        }
-
-        // Legacy: play award sound
-        // if (USound* Congrats = P->AwardSound()) Congrats->Play();
+        lbl_name->SetText(
+            bShow
+            ? FText::FromString(UStarshatterPlayerSubsystem::GetCachedAwardTitle(WorldCtx))
+            : FText::GetEmpty()
+        );
     }
-    else
-    {
-        if (lbl_info)
-            lbl_info->SetText(FText::GetEmpty());
 
-        if (img_rank)
-            img_rank->SetVisibility(ESlateVisibility::Hidden);
+    if (lbl_info)
+    {
+        lbl_info->SetText(
+            bShow
+            ? FText::FromString(UStarshatterPlayerSubsystem::GetCachedAwardBody(WorldCtx))
+            : FText::GetEmpty()
+        );
+    }
+
+    if (img_rank)
+    {
+        img_rank->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     }
 }
 
@@ -301,13 +299,8 @@ void UMissionAwardDlg::ShowPlayer()
 
 void UMissionAwardDlg::OnCloseClicked()
 {
-    // Legacy behavior:
-    // Player::ClearShowAward(); then switch Starshatter mode based on campaign id.
-
-    if (PlayerCharacter* P = PlayerCharacter::GetCurrentPlayer())
-    {
-        P->ClearShowAward();
-    }
+    // Clear award state via player subsystem:
+    UStarshatterPlayerSubsystem::ClearPendingAward(this, true);
 
     Starshatter* Stars = Starshatter::GetInstance();
     if (!Stars)
@@ -317,16 +310,11 @@ void UMissionAwardDlg::OnCloseClicked()
         return;
     }
 
-    // Legacy hides mouse:
-    // Mouse::Show(false);
-    // (Implement in your input layer if needed.)
-
     Campaign* Cmpn = Campaign::GetCampaign();
     if (Cmpn && Cmpn->GetCampaignId() < Campaign::SINGLE_MISSIONS)
         Stars->SetGameMode(EGameMode::CMPN);
     else
         Stars->SetGameMode(EGameMode::MENU);
 
-    // Close/hide widget:
     SetVisibility(ESlateVisibility::Hidden);
 }

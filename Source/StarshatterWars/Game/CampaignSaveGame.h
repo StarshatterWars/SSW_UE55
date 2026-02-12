@@ -22,6 +22,7 @@
 #include "term.h"
 #include "List.h"
 #include "Text.h"
+#include "GameStructs.h"
 
 // Minimal Unreal includes (per port rules):
 #include "Math/Vector.h"               // FVector
@@ -65,7 +66,7 @@ public:
 
 private:
     static  Text      GetSaveDirectory();
-    static  Text      GetSaveDirectory(PlayerCharacter* p);
+    static FString    GetSaveDirectory(const FS_PlayerGameInfo& Info);
     static  void      CreateSaveDirectory();
 
     Campaign* campaign;

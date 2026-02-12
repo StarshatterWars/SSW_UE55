@@ -119,22 +119,37 @@ SimContact::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-SimContact::GetObserverName() const
+FString SimContact::GetObserverName() const
 {
-	static char name[128];
+	if (ship)
+	{
+		const FString ShipName = ship->Name()
+			? UTF8_TO_TCHAR(ship->Name())
+			: TEXT("null");
 
-	if (ship) {
-		sprintf_s(name, "SimContact Ship='%s'", ship->Name());
-	}
-	else if (shot) {
-		sprintf_s(name, "SimContact Shot='%s' %s", shot->Name(), shot->DesignName());
-	}
-	else {
-		sprintf_s(name, "SimContact (unknown)");
+		return FString::Printf(TEXT("SimContact Ship='%s'"), *ShipName);
 	}
 
-	return name;
+	if (shot)
+	{
+		const FString ShotName = shot->Name()
+			? UTF8_TO_TCHAR(shot->Name())
+			: TEXT("null");
+
+		const FString DesignName = shot->DesignName()
+			? UTF8_TO_TCHAR(shot->DesignName())
+			: TEXT("");
+
+		// Matches legacy shape: "SimContact Shot='X' Y"
+		if (!DesignName.IsEmpty())
+		{
+			return FString::Printf(TEXT("SimContact Shot='%s' %s"), *ShotName, *DesignName);
+		}
+
+		return FString::Printf(TEXT("SimContact Shot='%s'"), *ShotName);
+	}
+
+	return TEXT("SimContact (unknown)");
 }
 
 // +----------------------------------------------------------------------+

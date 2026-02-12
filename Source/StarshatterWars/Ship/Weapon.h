@@ -131,7 +131,7 @@ public:
     Solid* GetVisibleStore(int i);
 
     virtual bool          Update(SimObject* obj);
-    virtual const char* GetObserverName() const;
+    virtual FString       GetObserverName() const override;
 
 protected:
     SimShot* FireBarrel(int n);

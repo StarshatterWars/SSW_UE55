@@ -9,14 +9,17 @@
     UNREAL PORT:
     - Preserves original logic and flow.
     - Uses FMath::RandRange for probability roll (0..99).
-    - Assumes Campaign::GetCampaign(), Player::GetCurrentPlayer(), Combatant/CombatGroup APIs remain as in Starshatter.
+    - String name parsing uses FString (case-insensitive Equals), no _stricmp.
+    - Player rank gating routes through UStarshatterPlayerSubsystem (not PlayerCharacter).
 */
 
 #include "CombatAction.h"
 #include "Campaign.h"
 #include "Combatant.h"
 #include "CombatGroup.h"
-#include "PlayerCharacter.h"
+
+// Player profile (rank)
+#include "StarshatterPlayerSubsystem.h"
 
 #include "Math/UnrealMathUtility.h"
 
@@ -25,16 +28,26 @@ static int32 Rand0_99()
     return FMath::RandRange(0, 99);
 }
 
-CombatAction::CombatAction(int32 InId, int32 InType, int32 InSubtype, int32 InTeam)
+static FString ToFStringSafe(const char* In)
+{
+    return In ? FString(UTF8_TO_TCHAR(In)) : FString();
+}
+
+static bool EqualsI(const FString& A, const TCHAR* B)
+{
+    return A.Equals(B, ESearchCase::IgnoreCase);
+}
+
+CombatAction::CombatAction(int32 InId, int32 InType, int InSubtype, int32 InTeam)
     : id(InId)
     , type((uint8)InType)
-    , subtype((uint8)InSubtype)
+    , subtype(InSubtype)
     , opp_type((uint8)0xFF) // -1 in uint8
     , team((uint8)InTeam)
     , status((uint8)PENDING)
     , min_rank(0)
     , max_rank(100)
-    , source(0)
+    , source(ECombatEventSource::NONE)
     , count(0)
     , start_before((int32)1e9)
     , start_after(0)
@@ -73,13 +86,18 @@ bool CombatAction::IsAvailable() const
     if (status != PENDING)
         return false;
 
+    // ------------------------------------------------------------
+    // Rank gate (migrated from PlayerCharacter -> PlayerSubsystem)
+    // ------------------------------------------------------------
     if (min_rank > 0 || max_rank < 100)
     {
-        PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-        if (!player)
-            return false;
+        // NOTE:
+        // CombatAction is legacy-core and usually doesn't have a UObject context.
+        // This safe accessor returns DefaultRankId if it can't resolve a subsystem.
+        // If you later thread a proper WorldContextObject into CombatAction, swap it here.
+        const int32 PlayerRank = UStarshatterPlayerSubsystem::GetRankIdSafe(nullptr, /*DefaultRankId=*/0);
 
-        if (player->GetRank() < (int)min_rank || player->GetRank() > (int)max_rank)
+        if (PlayerRank < (int)min_rank || PlayerRank >(int)max_rank)
             return false;
     }
 
@@ -113,12 +131,12 @@ bool CombatAction::IsAvailable() const
                     {
                         if (r->notx)
                         {
-                            if (a->Status() == r->stat)
+                            if (a->GetStatus() == r->stat)
                                 return false;
                         }
                         else
                         {
-                            if (a->Status() != r->stat)
+                            if (a->GetStatus() != r->stat)
                                 return false;
                         }
                     }
@@ -150,9 +168,9 @@ bool CombatAction::IsAvailable() const
 
                         switch (r->comp)
                         {
-                        case CombatActionReq::LT: ok = (test < comp); break;
+                        case CombatActionReq::LT: ok = (test < comp);  break;
                         case CombatActionReq::LE: ok = (test <= comp); break;
-                        case CombatActionReq::GT: ok = (test > comp); break;
+                        case CombatActionReq::GT: ok = (test > comp);  break;
                         case CombatActionReq::GE: ok = (test >= comp); break;
                         case CombatActionReq::EQ: ok = (test == comp); break;
                         default:                  ok = false;          break;
@@ -175,9 +193,9 @@ bool CombatAction::IsAvailable() const
 
                         switch (r->comp)
                         {
-                        case CombatActionReq::LT: ok = (test < r->score); break;
+                        case CombatActionReq::LT: ok = (test < r->score);  break;
                         case CombatActionReq::LE: ok = (test <= r->score); break;
-                        case CombatActionReq::GT: ok = (test > r->score); break;
+                        case CombatActionReq::GT: ok = (test > r->score);  break;
                         case CombatActionReq::GE: ok = (test >= r->score); break;
                         case CombatActionReq::EQ: ok = (test == r->score); break;
                         default:                  ok = false;             break;
@@ -192,9 +210,9 @@ bool CombatAction::IsAvailable() const
 
                         switch (r->comp)
                         {
-                        case CombatActionReq::RLT: ok = (test < r->score); break;
+                        case CombatActionReq::RLT: ok = (test < r->score);  break;
                         case CombatActionReq::RLE: ok = (test <= r->score); break;
-                        case CombatActionReq::RGT: ok = (test > r->score); break;
+                        case CombatActionReq::RGT: ok = (test > r->score);  break;
                         case CombatActionReq::RGE: ok = (test >= r->score); break;
                         case CombatActionReq::REQ: ok = (test == r->score); break;
                         default:                   ok = false;             break;
@@ -243,12 +261,12 @@ void CombatAction::FailAction()
 
 void CombatAction::AddRequirement(int action, int stat, bool not_req)
 {
-    requirements.append(new  CombatActionReq(action, stat, not_req));
+    requirements.append(new CombatActionReq(action, stat, not_req));
 }
 
 void CombatAction::AddRequirement(Combatant* c1, Combatant* c2, int comp, int score)
 {
-    requirements.append(new  CombatActionReq(c1, c2, comp, score));
+    requirements.append(new CombatActionReq(c1, c2, comp, score));
 }
 
 void CombatAction::AddRequirement(Combatant* c1, ECOMBATGROUP_TYPE group_type, int group_id, int comp, int score, int intel)
@@ -258,69 +276,72 @@ void CombatAction::AddRequirement(Combatant* c1, ECOMBATGROUP_TYPE group_type, i
 
 int CombatAction::TypeFromName(const char* n)
 {
-    if (!n || !*n)
+    const FString N = ToFStringSafe(n);
+    if (N.IsEmpty())
         return 0;
 
-    if (!_stricmp(n, "NO_ACTION"))             return NO_ACTION;
-    if (!_stricmp(n, "MARKER"))                return NO_ACTION;
+    if (EqualsI(N, TEXT("NO_ACTION")))             return NO_ACTION;
+    if (EqualsI(N, TEXT("MARKER")))                return NO_ACTION;
 
-    if (!_stricmp(n, "STRATEGIC_DIRECTIVE"))   return STRATEGIC_DIRECTIVE;
-    if (!_stricmp(n, "STRATEGIC"))             return STRATEGIC_DIRECTIVE;
+    if (EqualsI(N, TEXT("STRATEGIC_DIRECTIVE")))   return STRATEGIC_DIRECTIVE;
+    if (EqualsI(N, TEXT("STRATEGIC")))             return STRATEGIC_DIRECTIVE;
 
-    if (!_stricmp(n, "ZONE_ASSIGNMENT"))       return ZONE_ASSIGNMENT;
-    if (!_stricmp(n, "ZONE"))                  return ZONE_ASSIGNMENT;
+    if (EqualsI(N, TEXT("ZONE_ASSIGNMENT")))       return ZONE_ASSIGNMENT;
+    if (EqualsI(N, TEXT("ZONE")))                  return ZONE_ASSIGNMENT;
 
-    if (!_stricmp(n, "SYSTEM_ASSIGNMENT"))     return SYSTEM_ASSIGNMENT;
-    if (!_stricmp(n, "SYSTEM"))                return SYSTEM_ASSIGNMENT;
+    if (EqualsI(N, TEXT("SYSTEM_ASSIGNMENT")))     return SYSTEM_ASSIGNMENT;
+    if (EqualsI(N, TEXT("SYSTEM")))                return SYSTEM_ASSIGNMENT;
 
-    if (!_stricmp(n, "MISSION_TEMPLATE"))      return MISSION_TEMPLATE;
-    if (!_stricmp(n, "MISSION"))               return MISSION_TEMPLATE;
+    if (EqualsI(N, TEXT("MISSION_TEMPLATE")))      return MISSION_TEMPLATE;
+    if (EqualsI(N, TEXT("MISSION")))               return MISSION_TEMPLATE;
 
-    if (!_stricmp(n, "COMBAT_EVENT"))          return COMBAT_EVENT;
-    if (!_stricmp(n, "EVENT"))                 return COMBAT_EVENT;
+    if (EqualsI(N, TEXT("COMBAT_EVENT")))          return COMBAT_EVENT;
+    if (EqualsI(N, TEXT("EVENT")))                 return COMBAT_EVENT;
 
-    if (!_stricmp(n, "INTEL_EVENT"))           return INTEL_EVENT;
-    if (!_stricmp(n, "INTEL"))                 return INTEL_EVENT;
+    if (EqualsI(N, TEXT("INTEL_EVENT")))           return INTEL_EVENT;
+    if (EqualsI(N, TEXT("INTEL")))                 return INTEL_EVENT;
 
-    if (!_stricmp(n, "CAMPAIGN_SITUATION"))    return CAMPAIGN_SITUATION;
-    if (!_stricmp(n, "SITREP"))                return CAMPAIGN_SITUATION;
+    if (EqualsI(N, TEXT("CAMPAIGN_SITUATION")))    return CAMPAIGN_SITUATION;
+    if (EqualsI(N, TEXT("SITREP")))                return CAMPAIGN_SITUATION;
 
-    if (!_stricmp(n, "CAMPAIGN_ORDERS"))       return CAMPAIGN_ORDERS;
-    if (!_stricmp(n, "ORDERS"))                return CAMPAIGN_ORDERS;
+    if (EqualsI(N, TEXT("CAMPAIGN_ORDERS")))       return CAMPAIGN_ORDERS;
+    if (EqualsI(N, TEXT("ORDERS")))                return CAMPAIGN_ORDERS;
 
     return 0;
 }
 
 int CombatAction::StatusFromName(const char* n)
 {
-    if (!n || !*n)
+    const FString N = ToFStringSafe(n);
+    if (N.IsEmpty())
         return 0;
 
-    if (!_stricmp(n, "PENDING"))   return PENDING;
-    if (!_stricmp(n, "ACTIVE"))    return ACTIVE;
-    if (!_stricmp(n, "SKIPPED"))   return SKIPPED;
-    if (!_stricmp(n, "FAILED"))    return FAILED;
-    if (!_stricmp(n, "COMPLETE"))  return COMPLETE;
+    if (EqualsI(N, TEXT("PENDING")))   return PENDING;
+    if (EqualsI(N, TEXT("ACTIVE")))    return ACTIVE;
+    if (EqualsI(N, TEXT("SKIPPED")))   return SKIPPED;
+    if (EqualsI(N, TEXT("FAILED")))    return FAILED;
+    if (EqualsI(N, TEXT("COMPLETE")))  return COMPLETE;
 
     return 0;
 }
 
 int CombatActionReq::CompFromName(const char* n)
 {
-    if (!n || !*n)
+    const FString N = ToFStringSafe(n);
+    if (N.IsEmpty())
         return 0;
 
-    if (!_stricmp(n, "LT"))   return LT;
-    if (!_stricmp(n, "LE"))   return LE;
-    if (!_stricmp(n, "GT"))   return GT;
-    if (!_stricmp(n, "GE"))   return GE;
-    if (!_stricmp(n, "EQ"))   return EQ;
+    if (EqualsI(N, TEXT("LT")))   return LT;
+    if (EqualsI(N, TEXT("LE")))   return LE;
+    if (EqualsI(N, TEXT("GT")))   return GT;
+    if (EqualsI(N, TEXT("GE")))   return GE;
+    if (EqualsI(N, TEXT("EQ")))   return EQ;
 
-    if (!_stricmp(n, "RLT"))  return RLT;
-    if (!_stricmp(n, "RLE"))  return RLE;
-    if (!_stricmp(n, "RGT"))  return RGT;
-    if (!_stricmp(n, "RGE"))  return RGE;
-    if (!_stricmp(n, "REQ"))  return REQ;
+    if (EqualsI(N, TEXT("RLT")))  return RLT;
+    if (EqualsI(N, TEXT("RLE")))  return RLE;
+    if (EqualsI(N, TEXT("RGT")))  return RGT;
+    if (EqualsI(N, TEXT("RGE")))  return RGE;
+    if (EqualsI(N, TEXT("REQ")))  return REQ;
 
     return 0;
 }

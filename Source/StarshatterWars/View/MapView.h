@@ -145,7 +145,10 @@ public:
 
     // SimObserver:
     virtual bool         Update(SimObject* obj) override;
-    virtual const char* GetObserverName() const { return "MapWin"; }
+    virtual FString GetObserverName() const override
+    {
+        return TEXT("MapWin");
+    }
 
     bool              GetEditorMode() const { return editor; }
     void              SetEditorMode(bool b) { editor = b; }

@@ -27,6 +27,7 @@
 // Unreal minimal support:
 #include "CoreMinimal.h"
 #include "GameStructs.h"
+#include "StarshatterPlayerSubsystem.h"
 
 // --------------------------------------------------------------------
 // Constants
@@ -83,10 +84,13 @@ bool MissionInfo::IsAvailable()
     if (region.length() && player_group->GetRegion() != region)
         return false;
 
-    if (min_rank && player->GetRank() < min_rank)
+    const int32 PlayerRank =
+        UStarshatterPlayerSubsystem::GetCachedRankId(0);
+
+    if (min_rank > 0 && PlayerRank < min_rank)
         return false;
 
-    if (max_rank && player->GetRank() > max_rank)
+    if (max_rank > 0 && PlayerRank > max_rank)
         return false;
 
     // One-shot mission handling:

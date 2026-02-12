@@ -164,9 +164,9 @@ bool TacticalView::Update(SimObject* Obj)
     return SimObserver::Update(Obj);
 }
 
-const char* TacticalView::GetObserverName() const
+FString TacticalView::GetObserverName() const
 {
-    return "TacticalView";
+    return TEXT("TacticalView");
 }
 
 void TacticalView::UseProjector(SimProjector* InProjector)

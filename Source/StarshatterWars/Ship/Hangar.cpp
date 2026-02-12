@@ -287,15 +287,15 @@ Hangar::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-Hangar::GetObserverName() const
+FString Hangar::GetObserverName() const
 {
-	static char name[64];
-	if (ship)
-		sprintf_s(name, "Hangar(%s)", ship->Name());
-	else
-		sprintf_s(name, "Hangar");
-	return name;
+	if (ship && ship->Name() && *ship->Name())
+	{
+		const FString ShipName = UTF8_TO_TCHAR(ship->Name());
+		return FString::Printf(TEXT("Hangar(%s)"), *ShipName);
+	}
+
+	return TEXT("Hangar");
 }
 
 // +--------------------------------------------------------------------+

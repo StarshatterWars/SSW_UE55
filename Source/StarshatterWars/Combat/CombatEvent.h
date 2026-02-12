@@ -21,37 +21,16 @@ class CombatEvent
 public:
     static const char* TYPENAME() { return "CombatEvent"; }
 
-    enum EVENT_TYPE {
-        ATTACK,
-        DEFEND,
-        MOVE_TO,
-        CAPTURE,
-        STRATEGY,
-
-        CAMPAIGN_START,
-        STORY,
-        CAMPAIGN_END,
-        CAMPAIGN_FAIL
-    };
-
-    enum EVENT_SOURCE {
-        FORCOM,
-        TACNET,
-        INTEL,
-        MAIL,
-        NEWS
-    };
-
-    CombatEvent(Campaign* c, int type, int time, int team, int source, const char* rgn);
+    CombatEvent(Campaign* c, int type, int time, int team, ECombatEventSource source, const char* rgn);
 
     int operator==(const CombatEvent& u) const { return this == &u; }
 
     // accessors:
-    int                  Type()         const { return type; }
+    int                  GetType()      const { return type; }
     int                  Time()         const { return time; }
     int                  GetIFF()       const { return team; }
     const FVector&       GetPoints()    const { return points; }
-    int                  Source()       const { return source; }
+    ECombatEventSource   GetSource()    const { return source; }
     FVector              Location()     const { return loc; }
     const char* Region()       const { return region; }
     const char* Title()        const { return title; }
@@ -70,7 +49,7 @@ public:
     void SetTime(int t) { time = t; }
     void SetIFF(int t) { team = t; }
     void SetPoints(const FVector& p) { points = p; }
-    void SetSource(int s) { source = s; }
+    void SetSource(ECombatEventSource s) { source = s; }
     void SetLocation(const FVector& p) { loc = p; }
     void SetRegion(Text rgn) { region = rgn; }
     void SetTitle(Text t) { title = t; }
@@ -83,11 +62,11 @@ public:
     // operations:
     void Load();
 
-    // utilities:
-    static int           TypeFromName(const char* n);
-    static int           SourceFromName(const char* n);
-    static const char* TypeName(int n);
-    static const char* SourceName(int n);
+    // utilitie
+    static FString TypeName(ECombatEventType Type);
+    static ECombatEventSource SourceFromName(const FString& Name);
+    static ECombatEventType GetTypeFromName(const FString& Name);
+    static FString SourceName(ECombatEventSource Source);
 
 private:
     Campaign* campaign;
@@ -95,7 +74,7 @@ private:
     int                  type;
     int                  time;
     int                  team;
-    int                  source;
+    ECombatEventSource   source;
     bool                 visited;
 
     FVector              loc;

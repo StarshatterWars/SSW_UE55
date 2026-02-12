@@ -28,6 +28,7 @@
 #include "Math/Vector.h"               // FVector
 #include "Math/Color.h"                // FColor
 #include "Math/UnrealMathUtility.h"    // Math
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 

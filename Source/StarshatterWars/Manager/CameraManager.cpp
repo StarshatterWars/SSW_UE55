@@ -1204,7 +1204,7 @@ void CameraManager::Transition(double seconds)
 // SimObserver name (legacy parity)
 // ---------------------------------------------------------------------
 
-const char* CameraManager::GetObserverName() const
+FString CameraManager::GetObserverName() const
 {
-	return "CameraManager";
+	return TEXT("CameraManager");
 }

@@ -101,7 +101,7 @@ public:
 
 	// SimObserver interface:
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 	int operator == (const SimShot& s) const { return id == s.id; }
 

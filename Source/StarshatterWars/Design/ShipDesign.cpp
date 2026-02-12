@@ -2709,7 +2709,7 @@ ShipDesign::ParseWeapon(TermStruct* val)
 	Text    wname;
 	Text    wabrv;
 	Text    design_name;
-	Text    group_name;
+	Text    wgroup_name;
 	int     nmuz = 0;
 	FVector muzzles[Weapon::MAX_BARRELS];
 	FVector loc(0.0f, 0.0f, 0.0f);
@@ -2747,7 +2747,7 @@ ShipDesign::ParseWeapon(TermStruct* val)
 				GetDefText(design_name, pdef, filename);
 
 			else if (defname == "group")
-				GetDefText(group_name, pdef, filename);
+				GetDefText(wgroup_name, pdef, filename);
 
 			else if (defname == "muzzle") {
 				if (nmuz < Weapon::MAX_BARRELS) {
@@ -2900,8 +2900,8 @@ ShipDesign::ParseWeapon(TermStruct* val)
 				gun->SetDesign(sd);
 		}
 
-		if (group_name.length())
-			gun->SetGroup(group_name);
+		if (wgroup_name.length())
+			gun->SetGroup(wgroup_name);
 
 		gun->SetExplosionType(etype);
 

@@ -161,9 +161,9 @@ bool Sensor::Update(SimObject* obj)
     return SimObserver::Update(obj);
 }
 
-const char* Sensor::GetObserverName() const
+FString Sensor::GetObserverName() const
 {
-    return "Sensor";
+    return TEXT("Sensor");
 }
 
 // +--------------------------------------------------------------------+

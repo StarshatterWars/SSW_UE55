@@ -57,7 +57,7 @@ public:
 
 	// SimObserver:
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 	// accessors:
 	const Ship* GetShip()      const { return ship; }

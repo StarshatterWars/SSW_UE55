@@ -169,7 +169,7 @@ CampaignPlanMission::PlanCampaignMission()
                     player_group->FindGroup(g->GetType(), g->GetID())))) {
 
                 request = new CampaignMissionRequest(campaign,
-                    action->Subtype(),
+                    (int)action->Subtype(),
                     start,
                     g);
 

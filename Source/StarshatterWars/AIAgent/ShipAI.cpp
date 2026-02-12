@@ -47,12 +47,33 @@
 #include "Game.h"
 #include "Random.h"
 
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
+
+#include "StarshatterPlayerSubsystem.h"
+
 // +----------------------------------------------------------------------+
 
 // If your project already defines a central log category, replace this with it.
 DEFINE_LOG_CATEGORY_STATIC(LogStarshatterWarsAI, Log, All);
 
 // +--------------------------------------------------------------------+
+
+static UStarshatterPlayerSubsystem* GetPlayerSS_FromWorld(const UObject* WorldContext)
+{
+	if (!WorldContext)
+		return nullptr;
+
+	const UWorld* World = WorldContext->GetWorld();
+	if (!World)
+		return nullptr;
+
+	UGameInstance* GI = World->GetGameInstance();
+	if (!GI)
+		return nullptr;
+
+	return GI->GetSubsystem<UStarshatterPlayerSubsystem>();
+}
 
 ShipAI::ShipAI(SimObject* s)
 	: SteerAI(s),
@@ -87,16 +108,14 @@ ShipAI::ShipAI(SimObject* s)
 
 	if (pship)
 		player_team = pship->GetIFF();
+	
+	ai_level = 1;
 
-	PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-	if (player) {
-		if (ship && ship->GetIFF() && ship->GetIFF() != player_team) {
-			ai_level = player->AILevel();
-		}
-		else if (player->AILevel() == 0) {
-			ai_level = 1;
-		}
-	}
+	//if (UStarshatterPlayerSubsystem* PlayerSS =
+	//	UStarshatterPlayerSubsystem::Get(GEngine->GetWorldFromContextObjectChecked(WorldContextObject)))
+	//{
+	//	ai_level = PlayerSS->GetAILevel();
+	//}
 
 	// evil alien ships are *always* smart:
 	if (ship && ship->GetIFF() > 1 && ship->Design()->auto_roll > 1) {
@@ -231,12 +250,13 @@ ShipAI::Update(SimObject* obj)
 	return SteerAI::Update(obj);
 }
 
-const char*
-ShipAI::GetObserverName() const
+FString ShipAI::GetObserverName() const
 {
-	static char name[64];
-	sprintf_s(name, "ShipAI(%s)", self->Name());
-	return name;
+	const FString SelfName = self
+		? UTF8_TO_TCHAR(self->Name())
+		: TEXT("null");
+
+	return FString::Printf(TEXT("ShipAI(%s)"), *SelfName);
 }
 
 // +--------------------------------------------------------------------+
@@ -1395,4 +1415,9 @@ ShipAI::CheckTarget()
 				target = 0;
 		}
 	}
+}
+
+void ShipAI::SetPlayerAILevel(int32 InLevel)
+{
+	PlayerAILevel = InLevel;
 }

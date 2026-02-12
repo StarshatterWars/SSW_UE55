@@ -73,17 +73,16 @@ CampaignSaveGame::GetSaveDirectory()
     return GetSaveDirectory(PlayerCharacter::GetCurrentPlayer());
 }
 
-Text
-CampaignSaveGame::GetSaveDirectory(PlayerCharacter* player)
+FString CampaignSaveGame::GetSaveDirectory(const FS_PlayerGameInfo& Info)
 {
-    if (player) {
-        char save_dir[32];
-        sprintf_s(save_dir, "%s/%02d", SAVE_DIR, player->Identity());
+    const FString Base = TEXT(SAVE_DIR);
 
-        return save_dir;
+    if (Info.Id > 0)
+    {
+        return FString::Printf(TEXT("%s/%02d"), *Base, Info.Id);
     }
 
-    return SAVE_DIR;
+    return Base;
 }
 
 void
@@ -420,7 +419,7 @@ CampaignSaveGame::Load(const char* SourceFilename)
 
                             CombatEvent* event = new CombatEvent(
                                 campaign,
-                                CombatEvent::TypeFromName(type),
+                                (int) CombatEvent::GetTypeFromName(type),
                                 ev_time,
                                 team,
                                 CombatEvent::SourceFromName(source),
@@ -662,9 +661,9 @@ CampaignSaveGame::Save(const char* name)
         CombatAction* a = a_iter.value();
         if (!a) continue;
 
-        fprintf(f, "action: { id:%4d, stat:%d", a->Identity(), a->Status());
+        fprintf(f, "action: { id:%4d, stat:%d", a->Identity(), a->GetStatus());
 
-        if (a->Status() == CombatAction::PENDING) {
+        if (a->GetStatus() == CombatAction::PENDING) {
             if (a->Count())
                 fprintf(f, ", count:%d", a->Count());
 

@@ -35,11 +35,29 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "PlayerSaveGame.h"
+
 #include "GameStructs.h"
+#include "PlayerSaveGame.h"
+
 #include "StarshatterPlayerSubsystem.generated.h"
 
+class ShipStats;
+
+// ------------------------------------------------------------
+// Events
+// ------------------------------------------------------------
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSaveLoaded, bool, bSuccess);
+
+// ------------------------------------------------------------
+// Pending award typing (UI routing)
+// ------------------------------------------------------------
+UENUM(BlueprintType)
+enum class EPendingAwardType : uint8
+{
+    None  UMETA(DisplayName = "None"),
+    Rank  UMETA(DisplayName = "Rank"),
+    Medal UMETA(DisplayName = "Medal"),
+};
 
 UCLASS()
 class STARSHATTERWARS_API UStarshatterPlayerSubsystem : public UGameInstanceSubsystem
@@ -52,7 +70,7 @@ public:
     // ------------------------------------------------------------------
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
-   
+
     static UStarshatterPlayerSubsystem* Get(const UObject* WorldContextObject);
     static UStarshatterPlayerSubsystem* Get(const UWorld* World);
 
@@ -84,6 +102,22 @@ public:
     UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
     bool HadExistingSaveOnLoad() const { return bHadExistingSave; }
 
+    UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
+    bool IsInitialized() const { return bLoaded; }
+
+    static bool IsInitialized(const UObject* WorldContextObject);
+    static bool IsInitialized(const UWorld* World);
+
+    // Cached scalar read-through:
+    int32 GetAILevel() const;
+
+    void SetAILevel(int32 InLevel);
+
+    int32 GetGridMode() const;
+
+    void SetGridMode(int32 InMode);
+
+
     // ------------------------------------------------------------------
     // Player data access
     // ------------------------------------------------------------------
@@ -110,54 +144,125 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Starshatter|PlayerSave")
     FOnPlayerSaveLoaded OnPlayerSaveLoaded;
 
-    // Read-only convenience:
-    static int32 GetPlayerIdSafe(const UObject* WorldContextObject, int32 DefaultId = 0);
-    static int32 GetRankIdSafe(const UObject* WorldContextObject, int32 DefaultRankId = 0);
+    // ------------------------------------------------------------------
+    // Safe getters (static convenience)
+    // ------------------------------------------------------------------
+    static int32   GetPlayerIdSafe(const UObject* WorldContextObject, int32 DefaultId = 0);
+    static int32   GetRankIdSafe(const UObject* WorldContextObject, int32 DefaultRankId = 0);
     static FString GetPlayerNameSafe(const UObject* WorldContextObject);
 
-    // Rank display (routes to AwardInfoRegistry):
     static FString GetRankNameSafe(const UObject* WorldContextObject, int32 RankId);
     static FString GetRankDescSafe(const UObject* WorldContextObject, int32 RankId);
 
-    // Training:
+    // ------------------------------------------------------------------
+    // Training
+    // ------------------------------------------------------------------
     bool HasTrained(int32 TrainingMissionId) const;
     void SetTrained(int32 TrainingMissionId, bool bTrained);
     static bool HasTrainedSafe(const UObject* WorldContextObject, int32 TrainingMissionId);
 
-    // Campaign completion:
+    // ------------------------------------------------------------------
+    // Campaign completion
+    // ------------------------------------------------------------------
     bool HasCompletedCampaign(int32 CampaignBitIndex) const;
     void SetCampaignComplete(int32 CampaignBitIndex, bool bComplete);
-    static bool HasCompletedCampaignSafe(const UObject* WorldContextObject, int32 CampaignBitIndex);
-    static void SetCampaignCompleteSafe(const UObject* WorldContextObject, int32 CampaignBitIndex, bool bComplete, bool bSave = true);
 
-    // Command eligibility (rank -> permissions):
+    static bool HasCompletedCampaignSafe(const UObject* WorldContextObject, int32 CampaignBitIndex);
+    static void SetCampaignCompleteSafe(
+        const UObject* WorldContextObject,
+        int32 CampaignBitIndex,
+        bool bComplete,
+        bool bSave = true
+    );
+
+    // ------------------------------------------------------------------
+    // Command eligibility (rank -> permissions)
+    // ------------------------------------------------------------------
     bool CanCommand(int32 CmdClass) const;
     static bool CanCommandSafe(const UObject* WorldContextObject, int32 CmdClass);
 
-    static int32 GetPlayerId(const UObject* WorldContextObject);
+    // ------------------------------------------------------------------
+    // Legacy-style wrappers (drop-in callsites)
+    // NOTE: Keep these names distinct from real instance methods.
+    // ------------------------------------------------------------------
+    static int32   GetPlayerId(const UObject* WorldContextObject);
     static FString GetPlayerName(const UObject* WorldContextObject);
-    static int32 GetPlayerRankId(const UObject* WorldContextObject);
+    static int32   GetPlayerRankId(const UObject* WorldContextObject);
 
-    // Training helpers
     static bool HasTrainedMission(const UObject* WorldContextObject, int32 MissionId);
     static void MarkTrainedMission(const UObject* WorldContextObject, int32 MissionId);
 
-    // Campaign completion helpers
     static bool IsCampaignComplete(const UObject* WorldContextObject, int32 CampaignIndex0Based);
     static void SetCampaignComplete(const UObject* WorldContextObject, int32 CampaignIndex0Based, bool bComplete);
 
+    // ------------------------------------------------------------------
+    // Cached settings helpers (used by legacy ports)
+    // ------------------------------------------------------------------
+    static int32 GetCachedAILevel(int32 DefaultValue = 1);
+    static bool  GetCachedGunSightMode(bool DefaultValue = false);
 
-    // Utility:
+    // ------------------------------------------------------------------
+    // Awards (pending award state lives in PlayerInfo)
+    // ------------------------------------------------------------------
+    bool  GetShowAward() const;
+    int32 GetPendingAwardType() const;     // EPendingAwardType as int32 for older code
+    int32 GetPendingAwardId() const;
+
+    EPendingAwardType GetPendingAwardTypeEnum() const;
+
+    FString GetCachedAwardTitle() const;
+    FString GetCachedAwardBody() const;
+
+    void SetPendingAward(const UObject* WorldContextObject, EPendingAwardType InType, int32 InId, bool bShow, bool bSave);
+
+    static bool    GetCachedShowAward(const UObject* WorldContextObject, bool DefaultValue = false);
+    static FString GetCachedAwardTitle(const UObject* WorldContextObject, const FString& DefaultValue = TEXT(""));
+    static FString GetCachedAwardBody(const UObject* WorldContextObject, const FString& DefaultValue = TEXT(""));
+
+    void ClearPendingAward(bool bSave = true);
+    static void ClearPendingAwardSafe(const UObject* WorldContextObject, bool bSave = true);
+    static void ClearPendingAward(const UObject* WorldContextObject, bool bSave = true);
+
+    // ------------------------------------------------------------------
+    // Cached identity shortcuts
+    // ------------------------------------------------------------------
+    static FString GetCachedPlayerName(const FString& DefaultValue = TEXT(""));
+    static int32   GetCachedRankId(int32 DefaultValue = 0);
+
+    // ------------------------------------------------------------------
+    // Mission-end stats (replacement for PlayerCharacter::ProcessStats)
+    // ------------------------------------------------------------------
+    void ProcessStats(ShipStats* Stats, uint32 StartTimeMs);
+
+    void SetTrained(int32 TrainingIdentity);
+
+    void SavePlayer();
+
+    // ------------------------------------------------------------------
+    // Utility
+    // ------------------------------------------------------------------
     void MarkDirty();
 
 private:
     // ------------------------------------------------------------------
     // Internal helpers
     // ------------------------------------------------------------------
-    bool SaveGameInternal(const FString& InSlotName, int32 InUserIndex, const FS_PlayerGameInfo& InPlayerData, int32 InSaveVersion);
-    bool LoadGameInternal(const FString& InSlotName, int32 InUserIndex, FS_PlayerGameInfo& OutPlayerData, int32& OutSaveVersion);
+    bool SaveGameInternal(
+        const FString& InSlotName,
+        int32 InUserIndex,
+        const FS_PlayerGameInfo& InPlayerData,
+        int32 InSaveVersion
+    );
+
+    bool LoadGameInternal(
+        const FString& InSlotName,
+        int32 InUserIndex,
+        FS_PlayerGameInfo& OutPlayerData,
+        int32& OutSaveVersion
+    );
 
     bool MigratePlayerSave(int32 FromVersion, int32 ToVersion, FS_PlayerGameInfo& InOutPlayerInfo);
+    void SaveIfRequested(bool bSave);
 
 private:
     // ------------------------------------------------------------------
@@ -165,6 +270,8 @@ private:
     // ------------------------------------------------------------------
     FString SlotName = TEXT("PlayerSave");
     int32   UserIndex = 0;
+    int32   AILevel = 1;
+    int32   GridMode = 0;
 
     // ------------------------------------------------------------------
     // Authoritative in-memory player state
@@ -180,7 +287,22 @@ private:
     // First-run detection:
     bool bHadExistingSave = false;
 
-    void SyncLegacySnapshot() const;
+    // Cached scalar values (read-through from PlayerInfo):
+    static int32 CachedAILevel;
+    static bool  CachedGunSightMode;
+
+private:
+    // ------------------------------------------------------------------
+    // Awards (transient UI cache)
+    // ------------------------------------------------------------------
+    UPROPERTY(Transient)
+    bool bShowAward = false;
+
+    UPROPERTY(Transient)
+    EPendingAwardType PendingAwardType = EPendingAwardType::None;
+
+    UPROPERTY(Transient)
+    int32 PendingAwardId = 0;
 
 private:
     // Increment when the save schema changes

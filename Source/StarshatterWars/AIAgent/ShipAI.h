@@ -76,8 +76,8 @@ public:
 
 	virtual void		SetFormationDelta(const FVector& point);
 
-	virtual bool			Update(SimObject* obj);
-	virtual const char*		GetObserverName() const;
+	virtual bool		Update(SimObject* obj);
+	virtual FString     GetObserverName() const override;
 
 	virtual int			GetAILevel() const { return ai_level; }
 
@@ -117,6 +117,8 @@ protected:
 
 	virtual void      CheckTarget();
 
+	void			  SetPlayerAILevel(int32 InLevel);
+
 	Ship*			ship;
 	Ship*			support;
 	Ship*			rumor;
@@ -150,5 +152,7 @@ protected:
 	int              patrol;
 	FVector          patrol_loc;
 	int              ai_level;
+private: 
+	int32 PlayerAILevel = 1;
 };
 

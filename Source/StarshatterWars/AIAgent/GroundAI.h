@@ -43,7 +43,7 @@ public:
     virtual int         Type() const;
 
     virtual bool        Update(SimObject* obj) override;
-    virtual const char* GetObserverName() const override;
+    virtual FString     GetObserverName() const override;
 
 protected:
     virtual void      SelectTarget();

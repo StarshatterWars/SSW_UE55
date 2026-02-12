@@ -108,8 +108,8 @@ public:
 	virtual void       Transition(double s);
 
 	// SimObserver:
-	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual bool       Update(SimObject* obj);
+	virtual FString    GetObserverName() const override;
 
 protected:
 	virtual void       Cockpit(double s);

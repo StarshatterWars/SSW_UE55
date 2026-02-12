@@ -231,8 +231,9 @@ enum class EINTEL_TYPE : uint8 {
 };
 
 UENUM()
-enum class ECOMBATEVENT_TYPE : uint8 
+enum class ECombatEventType : uint8 
 {
+	NONE			UMETA(DisplayName = "None"),
 	ATTACK			UMETA(DisplayName = "Attack"),
 	DEFEND			UMETA(DisplayName = "Defend"), 
 	MOVE_TO			UMETA(DisplayName = "Move to"), 
@@ -245,8 +246,9 @@ enum class ECOMBATEVENT_TYPE : uint8
 };
 
 UENUM()
-enum class ECOMBATEVENT_SOURCE : uint8
+enum class ECombatEventSource : uint8
 {
+	NONE			UMETA(DisplayName = "NONE"),
 	FORCOM			UMETA(DisplayName = "FORCOM"), 
 	TACNET			UMETA(DisplayName = "TACNET"),
 	INTEL			UMETA(DisplayName = "Intel"),
@@ -578,6 +580,12 @@ enum class SYSTEM_STATUS : uint8 {
 	REPLACE			UMETA(DisplayName = "Replace"),
 	MAINT			UMETA(DisplayName = "Maintanence"),
 	UNKNOWN			UMETA(DisplayName = "Unknown"),
+};
+
+UENUM()
+enum class ESimType : uint8 {
+	REAL_SPACE		UMETA(DisplayName = "Real Space"), 
+	AIR_SPACE		UMETA(DisplayName = "Air Space"),
 };
 
 UENUM()
@@ -946,7 +954,6 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	UPROPERTY(BlueprintReadWrite)
 	FString Name;
 
-	// Legacy "squadron"/callsign-ish (you were using this already)
 	UPROPERTY(BlueprintReadWrite)
 	FString Nickname;
 
@@ -1013,7 +1020,6 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	UPROPERTY(BlueprintReadWrite)
 	int32 AILevel = 0;
 
-	// Legacy ff_level mapping
 	UPROPERTY(BlueprintReadWrite)
 	int32 ForceFeedbackLevel = 0;
 
@@ -1044,11 +1050,9 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	UPROPERTY(BlueprintReadWrite)
 	int32 PlayerLosses = 0;
 
-	// Added: legacy had Deaths separate from Losses
 	UPROPERTY(BlueprintReadWrite)
 	int32 PlayerDeaths = 0;
 
-	// Added: legacy had Missions lifetime counter
 	UPROPERTY(BlueprintReadWrite)
 	int32 PlayerMissions = 0;
 
@@ -1074,7 +1078,27 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	FString PlayerSystem;
 
 	// ------------------------------------------------------------
-	// OOB / unit selection (keep names for compatibility)
+	// Legacy roster aliases (ADDED)
+	// ------------------------------------------------------------
+	// These are compatibility fields for older UI / code that expects:
+	//   - Missions()
+	//   - Kills()
+	//   - Deaths()
+	//
+	// Keep them synchronized with PlayerMissions / PlayerKills / PlayerDeaths.
+	// If you want to avoid save bloat later, you can remove these and switch
+	// callsites to use Player* fields directly.
+	UPROPERTY(BlueprintReadWrite)
+	int32 Missions = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Kills = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Deaths = 0;
+
+	// ------------------------------------------------------------
+	// OOB / unit selection
 	// ------------------------------------------------------------
 	UPROPERTY(BlueprintReadWrite)
 	int32 PlayerSquadron = -1;
@@ -1098,23 +1122,28 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	int32 PlayerForce = 1;
 
 	// ------------------------------------------------------------
-	// Campaign completion (REVISED)
-	// - Replaces TArray<bool> CampaignComplete (was fixed size 5)
-	// - Mask supports up to 64 campaigns
+	// Awards (stored in PlayerInfo)
+	// ------------------------------------------------------------
+	UPROPERTY(BlueprintReadWrite)
+	bool bShowAward = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PendingAwardType = 0; // 0=None, 1=Rank, 2=Medal
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 PendingAwardId = 0;   // RankId or MedalId
+
+	// ------------------------------------------------------------
+	// Campaign completion
 	// ------------------------------------------------------------
 	UPROPERTY(BlueprintReadWrite)
 	int64 CampaignCompleteMask = 0;
 
-	// Optional: keep an array mirror for Blueprint UI lists.
-	// This is a normal bool array (not TArray<bool>) to avoid proxy refs.
-	// If you do not need it, remove it.
 	UPROPERTY(BlueprintReadWrite)
 	TArray<uint8> CampaignComplete; // 0/1 flags
 
 	// ------------------------------------------------------------
-	// Training (REVISED)
-	// Legacy trained used both mask and "highest" integer.
-	// We store both explicitly.
+	// Training
 	// ------------------------------------------------------------
 	UPROPERTY(BlueprintReadWrite)
 	int32 HighestTrainingMission = 0;
@@ -1122,58 +1151,13 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	UPROPERTY(BlueprintReadWrite)
 	int64 TrainingMask = 0;
 
-	// Keep your old field for drop-in compatibility.
-	// Recommended: treat this as "HighestTrainingMission" going forward.
 	UPROPERTY(BlueprintReadWrite)
 	int32 Trained = 0;
 
 	static constexpr int32 MAX_TRAINING_BITS = 64;
 
-	bool HasTrained(int32 MissionId) const
-	{
-		if (MissionId < 0)
-			return false;
-
-		// Legacy behavior: some code treated "Trained" as highest completed.
-		// If Trained/HighestTrainingMission is set, honor it.
-		const int32 Highest = (HighestTrainingMission > 0) ? HighestTrainingMission : Trained;
-		if (Highest > 0 && MissionId <= Highest)
-			return true;
-
-		// Bitmask check (0..63)
-		if (MissionId >= MAX_TRAINING_BITS)
-			return false;
-
-		const int64 Bit = (int64)1 << (int64)MissionId;
-		return (TrainingMask & Bit) != 0;
-	}
-
-	void SetTrained(int32 MissionId, bool bValue)
-	{
-		if (MissionId < 0)
-			return;
-
-		// Maintain highest tracking
-		if (bValue)
-		{
-			if (MissionId > HighestTrainingMission)
-				HighestTrainingMission = MissionId;
-
-			if (MissionId > Trained)
-				Trained = MissionId;
-		}
-
-		// Maintain mask (0..63)
-		if (MissionId < MAX_TRAINING_BITS)
-		{
-			const int64 Bit = (int64)1 << (int64)MissionId;
-			if (bValue) TrainingMask |= Bit;
-			else        TrainingMask &= ~Bit;
-		}
-	}
 	// ------------------------------------------------------------
-	// Awards / medals (ADDED)
-	// Legacy medals was a bitmask. Keep it here.
+	// Awards / medals
 	// ------------------------------------------------------------
 	UPROPERTY(BlueprintReadWrite)
 	int32 MedalsMask = 0;
@@ -1192,7 +1176,6 @@ struct FS_PlayerGameInfo : public FTableRowBase
 	// ------------------------------------------------------------
 	FS_PlayerGameInfo()
 	{
-		// Match your prior defaults closely:
 		Name = TEXT("");
 		Nickname = TEXT("");
 		Signature = TEXT("");
@@ -1216,8 +1199,27 @@ struct FS_PlayerGameInfo : public FTableRowBase
 			MfdModes[i] = -1;
 		}
 
-		// CampaignComplete mirror array (optional)
-		CampaignComplete.SetNum(0); // leave empty until you decide a UI size
+		CampaignComplete.SetNum(0);
+
+		// Keep legacy aliases in sync with Player* fields
+		SyncRosterAliasesFromPlayerStats();
+	}
+
+	// ------------------------------------------------------------
+	// Roster alias sync (ADDED)
+	// ------------------------------------------------------------
+	FORCEINLINE void SyncRosterAliasesFromPlayerStats()
+	{
+		Missions = PlayerMissions;
+		Kills = PlayerKills;
+		Deaths = PlayerDeaths;
+	}
+
+	FORCEINLINE void SyncPlayerStatsFromRosterAliases()
+	{
+		PlayerMissions = Missions;
+		PlayerKills = Kills;
+		PlayerDeaths = Deaths;
 	}
 
 	// ------------------------------------------------------------
@@ -1238,7 +1240,6 @@ struct FS_PlayerGameInfo : public FTableRowBase
 		if (bComplete) CampaignCompleteMask |= Bit;
 		else           CampaignCompleteMask &= ~Bit;
 
-		// Optional mirror update if array is sized to include this index
 		if (CampaignComplete.Num() > CampaignId)
 		{
 			CampaignComplete[CampaignId] = bComplete ? 1 : 0;
@@ -1247,9 +1248,7 @@ struct FS_PlayerGameInfo : public FTableRowBase
 
 	FORCEINLINE bool HasTrainedMission(int32 MissionId1Based) const
 	{
-		// Treat 1..64 as mask bits
 		if (MissionId1Based <= 0 || MissionId1Based > 64) return false;
-
 		const int64 Bit = (int64)1 << (MissionId1Based - 1);
 		return (TrainingMask & Bit) != 0;
 	}
@@ -1264,14 +1263,12 @@ struct FS_PlayerGameInfo : public FTableRowBase
 		if (MissionId1Based > HighestTrainingMission)
 		{
 			HighestTrainingMission = MissionId1Based;
-			Trained = HighestTrainingMission; // keep legacy-compatible
+			Trained = HighestTrainingMission;
 		}
 	}
 
 	FORCEINLINE void SyncTrainingLegacyField()
 	{
-		// If some loader wrote Trained directly, reflect it.
-		// Assume it means "highest mission completed" going forward.
 		HighestTrainingMission = FMath::Max(HighestTrainingMission, Trained);
 		if (HighestTrainingMission > 0 && HighestTrainingMission <= 64)
 		{
@@ -1302,6 +1299,48 @@ struct FS_PlayerGameInfo : public FTableRowBase
 			}
 		}
 		CampaignCompleteMask = NewMask;
+	}
+
+	// ------------------------------------------------------------
+	// Training mask helpers already in your original code...
+	// (kept as-is below this point)
+	// ------------------------------------------------------------
+	bool HasTrained(int32 MissionId) const
+	{
+		if (MissionId < 0)
+			return false;
+
+		const int32 Highest = (HighestTrainingMission > 0) ? HighestTrainingMission : Trained;
+		if (Highest > 0 && MissionId <= Highest)
+			return true;
+
+		if (MissionId >= MAX_TRAINING_BITS)
+			return false;
+
+		const int64 Bit = (int64)1 << (int64)MissionId;
+		return (TrainingMask & Bit) != 0;
+	}
+
+	void SetTrained(int32 MissionId, bool bValue)
+	{
+		if (MissionId < 0)
+			return;
+
+		if (bValue)
+		{
+			if (MissionId > HighestTrainingMission)
+				HighestTrainingMission = MissionId;
+
+			if (MissionId > Trained)
+				Trained = MissionId;
+		}
+
+		if (MissionId < MAX_TRAINING_BITS)
+		{
+			const int64 Bit = (int64)1 << (int64)MissionId;
+			if (bValue) TrainingMask |= Bit;
+			else        TrainingMask &= ~Bit;
+		}
 	}
 };
 

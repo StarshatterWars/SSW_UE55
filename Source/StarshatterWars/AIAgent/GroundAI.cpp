@@ -13,6 +13,12 @@
     OVERVIEW
     ========
     Low-Level Artificial Intelligence class for Ground Units
+
+    UNREAL PORT NOTES
+    =================
+    - Removed PlayerCharacter dependency.
+    - AI level sourced from UStarshatterPlayerSubsystem (cached snapshot).
+    - Uses FString for observer naming (stable UTF-8 buffer).
 */
 
 #include "GroundAI.h"
@@ -23,7 +29,6 @@
 #include "ShipDesign.h"
 #include "Shield.h"
 #include "Sim.h"
-#include "PlayerCharacter.h"
 #include "CarrierAI.h"
 #include "SimContact.h"
 #include "Weapon.h"
@@ -33,62 +38,66 @@
 #include "Physical.h"
 #include "GameStructs.h"
 
-#include "CoreMinimal.h" // UE_LOG
-
-// NOTE:
-// - Removed MemDebug.h (not supported in UE builds).
-// - Replaced sprintf_s debug naming with UE-safe snprintf variants.
-// - Kept core Starshatter types (ListIter, etc.) intact.
+#include "CoreMinimal.h"
+#include "StarshatterPlayerSubsystem.h"
 
 // +----------------------------------------------------------------------+
 
 GroundAI::GroundAI(SimObject* s)
-    : ship((Ship*)s),
-    target(0),
-    subtarget(0),
-    exec_time(0.0),
-    carrier_ai(0)
+    : ship((Ship*)s)
+    , target(nullptr)
+    , subtarget(nullptr)
+    , exec_time(0.0)
+    , carrier_ai(nullptr)
 {
     Sim* sim = Sim::GetSim();
     Ship* pship = sim ? sim->GetPlayerShip() : nullptr;
-    int   player_team = 1;
-    int   ai_level = 1;
+
+    int player_team = 1;
+    int ai_level = 1;
 
     if (pship)
         player_team = pship->GetIFF();
 
-    PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-    if (player) {
-        if (ship && ship->GetIFF() && ship->GetIFF() != player_team) {
-            ai_level = player->AILevel();
-        }
-        else if (player->AILevel() == 0) {
+    // Pull AI level from subsystem snapshot
+    const int32 ProfileAILevel =
+        UStarshatterPlayerSubsystem::GetCachedAILevel(1);
+
+    if (ship && ship->GetIFF() && ship->GetIFF() != player_team)
+    {
+        ai_level = (ProfileAILevel > 0) ? ProfileAILevel : 1;
+    }
+    else
+    {
+        if (ProfileAILevel == 0)
             ai_level = 1;
-        }
     }
 
-    // evil alien ships are *always* smart:
-    if (ship && ship->GetIFF() > 1 && ship->Design()->auto_roll > 1) {
+    // Evil alien ships are *always* smart:
+    if (ship && ship->GetIFF() > 1 &&
+        ship->Design() &&
+        ship->Design()->auto_roll > 1)
+    {
         ai_level = 2;
     }
 
     if (ship && ship->GetHangar() && ship->GetCommandAILevel() > 0)
-        carrier_ai = new  CarrierAI(ship, ai_level);
+        carrier_ai = new CarrierAI(ship, ai_level);
 }
 
-// +--------------------------------------------------------------------+
+// +----------------------------------------------------------------------+
 
 GroundAI::~GroundAI()
 {
     delete carrier_ai;
 }
 
-// +--------------------------------------------------------------------+
+// +----------------------------------------------------------------------+
 
-void
-GroundAI::SetTarget(SimObject* targ, SimSystem* sub)
+void GroundAI::SetTarget(SimObject* targ, SimSystem* sub)
 {
-    if (target != targ) {
+    if (target != targ)
+    {
         target = targ;
 
         if (target)
@@ -98,47 +107,41 @@ GroundAI::SetTarget(SimObject* targ, SimSystem* sub)
     subtarget = sub;
 }
 
-// +--------------------------------------------------------------------+
+// +----------------------------------------------------------------------+
 
-bool
-GroundAI::Update(SimObject* obj)
+bool GroundAI::Update(SimObject* obj)
 {
-    if (obj == target) {
-        target = 0;
-        subtarget = 0;
+    if (obj == target)
+    {
+        target = nullptr;
+        subtarget = nullptr;
     }
 
     return SimObserver::Update(obj);
 }
 
-const char*
-GroundAI::GetObserverName() const
+// +----------------------------------------------------------------------+
+
+FString GroundAI::GetObserverName() const
 {
-    static thread_local char NameBuf[64];
+    const FString ShipName = ship
+        ? UTF8_TO_TCHAR(ship->Name())
+        : TEXT("null");
 
-#if PLATFORM_WINDOWS
-    _snprintf_s(NameBuf, sizeof(NameBuf), _TRUNCATE, "GroundAI(%s)", ship ? ship->Name() : "null");
-#else
-    snprintf(NameBuf, sizeof(NameBuf), "GroundAI(%s)", ship ? ship->Name() : "null");
-#endif
-
-    return NameBuf;
+    return FString::Printf(TEXT("GroundAI(%s)"), *ShipName);
 }
 
-// +--------------------------------------------------------------------+
+// +----------------------------------------------------------------------+
 
-void
-GroundAI::SelectTarget()
+void GroundAI::SelectTarget()
 {
-    SimObject* potential_target = 0;
-
-    // pick the closest combatant ship with a different IFF code:
+    SimObject* potential_target = nullptr;
     double target_dist = 1.0e15;
-
-    Ship* current_ship_target = 0;
+    Ship* current_ship_target = nullptr;
 
     ListIter<SimContact> c_iter = ship->ContactList();
-    while (++c_iter) {
+    while (++c_iter)
+    {
         SimContact* contact = c_iter.value();
         int      c_iff = contact->GetIFF(ship);
         Ship* c_ship = contact->GetShip();
@@ -150,13 +153,19 @@ GroundAI::SelectTarget()
         if (c_ship)
             rogue = c_ship->IsRogue();
 
-        if (rogue || (c_iff > 0 && c_iff != ship->GetIFF() && c_iff < 1000)) {
-            if (c_ship && !c_ship->InTransition()) {
-                // found an enemy, check distance:
-                const double dist = (ship->Location() - c_ship->Location()).Length();
+        if (rogue || (c_iff > 0 &&
+            c_iff != ship->GetIFF() &&
+            c_iff < 1000))
+        {
+            if (c_ship && !c_ship->InTransition())
+            {
+                const double dist =
+                    (ship->Location() - c_ship->Location()).Length();
 
                 if (!current_ship_target ||
-                    (c_ship->Class() <= current_ship_target->Class() && dist < target_dist)) {
+                    (c_ship->Class() <= current_ship_target->Class() &&
+                        dist < target_dist))
+                {
                     current_ship_target = c_ship;
                     target_dist = dist;
                 }
@@ -169,41 +178,49 @@ GroundAI::SelectTarget()
     SetTarget(potential_target);
 }
 
-// +--------------------------------------------------------------------+
+// +----------------------------------------------------------------------+
 
-int
-GroundAI::Type() const
+int GroundAI::Type() const
 {
     return SteerAI::GROUND;
 }
 
-// +--------------------------------------------------------------------+
+// +----------------------------------------------------------------------+
 
-void
-GroundAI::ExecFrame(double secs)
+void GroundAI::ExecFrame(double secs)
 {
     const double exec_period_ms = 1000.0;
 
-    // Game::GameTime() is assumed to be milliseconds (legacy Starshatter behavior).
-    if ((double)Game::GameTime() - exec_time > exec_period_ms) {
+    if ((double)Game::GameTime() - exec_time > exec_period_ms)
+    {
         exec_time = (double)Game::GameTime();
         SelectTarget();
     }
 
-    if (ship) {
+    if (ship)
+    {
         Shield* shield = ship->GetShield();
 
         if (shield)
             shield->SetPowerLevel(100);
 
         ListIter<WeaponGroup> iter = ship->GetWeapons();
-        while (++iter) {
-            WeaponGroup* group = (WeaponGroup*)iter.value();
+        while (++iter)
+        {
+            WeaponGroup* group =
+                (WeaponGroup*)iter.value();
 
-            if (group->NumWeapons() > 1 && group->CanTarget((int)CLASSIFICATION::DROPSHIPS))
-                group->SetFiringOrders(WeaponsOrders::POINT_DEFENSE);
+            if (group->NumWeapons() > 1 &&
+                group->CanTarget((int)CLASSIFICATION::DROPSHIPS))
+            {
+                group->SetFiringOrders(
+                    WeaponsOrders::POINT_DEFENSE);
+            }
             else
-                group->SetFiringOrders(WeaponsOrders::AUTO);
+            {
+                group->SetFiringOrders(
+                    WeaponsOrders::AUTO);
+            }
 
             group->SetTarget((Ship*)target, 0);
         }

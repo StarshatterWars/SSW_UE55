@@ -17,6 +17,12 @@
       - Experience level (Cadet / Admiral)
       - Initial key bindings
       - Player save
+
+    IMPLEMENTATION NOTES
+    ====================
+    - Authoritative profile state is FS_PlayerGameInfo in UStarshatterPlayerSubsystem.
+    - This dialog does NOT call legacy PlayerCharacter mutators (not present in your port).
+    - Runtime control model + key bindings are applied through Starshatter/KeyMap/Ship.
 */
 
 #include "FirstTimeDlg.h"
@@ -26,15 +32,17 @@
 #include "Components/EditableTextBox.h"
 #include "Components/ComboBoxString.h"
 
-// Legacy core:
+// Legacy runtime hooks:
 #include "Starshatter.h"
-#include "PlayerCharacter.h"
 #include "Ship.h"
 #include "KeyMap.h"
 
 // Router:
 #include "MenuScreen.h"
 #include "MenuDlg.h"
+
+// Save model:
+#include "StarshatterPlayerSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFirstTimeDlg, Log, All);
 
@@ -58,10 +66,6 @@ void UFirstTimeDlg::NativeConstruct()
 
     PopulateDefaultsIfNeeded();
 
-    // ------------------------------------------------------------
-    // Accept button binding (idempotent)
-    // ------------------------------------------------------------
-
     if (AcceptBtn)
     {
         AcceptBtn->OnClicked.RemoveAll(this);
@@ -80,10 +84,7 @@ void UFirstTimeDlg::NativeConstruct()
 
 void UFirstTimeDlg::PopulateDefaultsIfNeeded()
 {
-    // ------------------------------------------------------------
     // Play Style
-    // ------------------------------------------------------------
-
     if (PlayStyleCombo)
     {
         if (PlayStyleCombo->GetOptionCount() == 0)
@@ -93,19 +94,14 @@ void UFirstTimeDlg::PopulateDefaultsIfNeeded()
         }
 
         if (PlayStyleCombo->GetSelectedIndex() < 0)
-        {
             PlayStyleCombo->SetSelectedIndex(0);
-        }
     }
     else
     {
         UE_LOG(LogFirstTimeDlg, Error, TEXT("PlayStyleCombo is NULL (BindWidget mismatch)."));
     }
 
-    // ------------------------------------------------------------
     // Experience
-    // ------------------------------------------------------------
-
     if (ExperienceCombo)
     {
         if (ExperienceCombo->GetOptionCount() == 0)
@@ -115,25 +111,18 @@ void UFirstTimeDlg::PopulateDefaultsIfNeeded()
         }
 
         if (ExperienceCombo->GetSelectedIndex() < 0)
-        {
             ExperienceCombo->SetSelectedIndex(0);
-        }
     }
     else
     {
         UE_LOG(LogFirstTimeDlg, Error, TEXT("ExperienceCombo is NULL (BindWidget mismatch)."));
     }
 
-    // ------------------------------------------------------------
     // Name hint
-    // ------------------------------------------------------------
-
     if (NameEdit)
     {
         if (NameEdit->GetHintText().IsEmpty())
-        {
             NameEdit->SetHintText(FText::FromString(TEXT("Enter player name")));
-        }
     }
     else
     {
@@ -147,53 +136,45 @@ void UFirstTimeDlg::PopulateDefaultsIfNeeded()
 
 void UFirstTimeDlg::OnAcceptClicked()
 {
-    UE_LOG(LogFirstTimeDlg, Warning, TEXT("UFirstTimeDlg::OnAcceptClicked()"));
+    UE_LOG(LogFirstTimeDlg, Log, TEXT("UFirstTimeDlg::OnAcceptClicked()"));
 
     Starshatter* Stars = Starshatter::GetInstance();
 
     // ------------------------------------------------------------
-    // Ensure legacy player exists
+    // Acquire authoritative save model
     // ------------------------------------------------------------
 
-    // Preferred (add this to PlayerCharacter):
-    // PlayerObj = PlayerCharacter::EnsureCurrentPlayer();
-
-    // Fallback if you don't have EnsureCurrentPlayer yet:
-    PlayerCharacter* PlayerObj = PlayerCharacter::EnsureCurrentPlayer();
-    if (!PlayerObj)
+    UStarshatterPlayerSubsystem* PlayerSS = UStarshatterPlayerSubsystem::Get(this);
+    if (!PlayerSS)
     {
-        UE_LOG(LogFirstTimeDlg, Warning, TEXT("No current player; creating a default PlayerCharacter"));
-        PlayerCharacter::SetCurrentPlayer(new PlayerCharacter("Ready Player One"));
-    }
-
-    if (!PlayerObj)
-    {
-        UE_LOG(LogFirstTimeDlg, Error, TEXT("OnAcceptClicked: Failed to acquire PlayerCharacter"));
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("OnAcceptClicked: PlayerSubsystem is null"));
         return;
     }
 
+    FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
+
     // ------------------------------------------------------------
-    // Name + Password
+    // Name / identity
     // ------------------------------------------------------------
 
+    FString PlayerName;
     if (NameEdit)
-    {
-        const FString PlayerName = NameEdit->GetText().ToString().TrimStartAndEnd();
-        if (!PlayerName.IsEmpty())
-        {
-            const int32 RandVal = FMath::RandRange(0, 2000000000);
-            const FString Password = FString::Printf(TEXT("%08x"), RandVal);
+        PlayerName = NameEdit->GetText().ToString().TrimStartAndEnd();
 
-            PlayerObj->SetName(TCHAR_TO_UTF8(*PlayerName));
-            PlayerObj->SetPassword(TCHAR_TO_UTF8(*Password));
-        }
-    }
+    if (!PlayerName.IsEmpty())
+        Info.Name = PlayerName;
+    else if (Info.Name.IsEmpty())
+        Info.Name = TEXT("Ready Player One");
+
+    // Optional: stamp create time if you want (campaign time uses sim clock)
+    if (Info.CreateTime == 0)
+        Info.CreateTime = FDateTime::UtcNow().ToUnixTimestamp();
 
     // ------------------------------------------------------------
-    // Play Style
+    // Play Style -> profile prefs + runtime control model
     // ------------------------------------------------------------
 
-    int32 PlayStyleIndex = 0;
+    int32 PlayStyleIndex = 0; // 0=Arcade, 1=Standard
     if (PlayStyleCombo)
     {
         PlayStyleIndex = PlayStyleCombo->GetSelectedIndex();
@@ -202,12 +183,14 @@ void UFirstTimeDlg::OnAcceptClicked()
 
     if (PlayStyleIndex == 0)
     {
-        // ARCADE
-        PlayerObj->SetFlightModel(2);
-        PlayerObj->SetLandingModel(1);
-        PlayerObj->SetHUDMode(0);
-        PlayerObj->SetGunsight(1);
+        // ARCADE (mirrors your legacy intent)
+        Info.FlightModel = 2;
+        Info.LandingMode = 1;
+        Info.HudMode = 0;
+        Info.GunSightMode = true;
+        Info.TrainingMode = true;  // optional, but matches "first time" vibe
 
+        // Runtime key/control model
         if (Stars)
         {
             KeyMap& Keymap = Stars->GetKeyMap();
@@ -221,10 +204,11 @@ void UFirstTimeDlg::OnAcceptClicked()
     else
     {
         // STANDARD/HARDCORE
-        PlayerObj->SetFlightModel(0);
-        PlayerObj->SetLandingModel(0);
-        PlayerObj->SetHUDMode(0);
-        PlayerObj->SetGunsight(0);
+        Info.FlightModel = 0;
+        Info.LandingMode = 0;
+        Info.HudMode = 0;
+        Info.GunSightMode = false;
+        Info.TrainingMode = false;
 
         if (Stars)
         {
@@ -238,10 +222,10 @@ void UFirstTimeDlg::OnAcceptClicked()
     }
 
     // ------------------------------------------------------------
-    // Experience
+    // Experience -> rank + training completion
     // ------------------------------------------------------------
 
-    int32 ExpIndex = 0;
+    int32 ExpIndex = 0; // 0=Cadet, 1=Admiral
     if (ExperienceCombo)
     {
         ExpIndex = ExperienceCombo->GetSelectedIndex();
@@ -250,17 +234,40 @@ void UFirstTimeDlg::OnAcceptClicked()
 
     if (ExpIndex > 0)
     {
-        PlayerObj->SetRank(2);       // Lieutenant
-        PlayerObj->SetTrained(255);  // Fully trained
+        // "Experienced" defaults
+        Info.Rank = 2;   // Lieutenant (adjust if your rank table differs)
+
+        // Your FS_PlayerGameInfo already has helpers; use them.
+        // Legacy "fully trained" was 255; your struct treats Trained/Highest as "highest mission".
+        // We will mark all bits 0..63 and set HighestTrainingMission accordingly.
+        Info.HighestTrainingMission = 63;
+        Info.Trained = Info.HighestTrainingMission;
+        Info.TrainingMask = ~0ll; // all 64 bits set (int64)
+        Info.TrainingMode = false;
+    }
+    else
+    {
+        // Cadet defaults
+        Info.Rank = 0;
+        Info.TrainingMode = true;
+
+        // Ensure mask is consistent with "no training yet"
+        // (Leave as-is if you want to preserve any pre-existing partial progress.)
+        if (Info.TrainingMask == 0)
+        {
+            Info.HighestTrainingMission = 0;
+            Info.Trained = 0;
+        }
     }
 
     // ------------------------------------------------------------
     // Save
     // ------------------------------------------------------------
 
-    if (!PlayerCharacter::SaveToSubsystem(this))
+    PlayerSS->MarkDirty();
+    if (!PlayerSS->SavePlayer(true))
     {
-        UE_LOG(LogFirstTimeDlg, Error, TEXT("SaveToSubsystem failed"));
+        UE_LOG(LogFirstTimeDlg, Error, TEXT("SavePlayer failed"));
         return;
     }
 
@@ -268,7 +275,6 @@ void UFirstTimeDlg::OnAcceptClicked()
     // Return to menu via router
     // ------------------------------------------------------------
 
-    // Return to menu through router
     if (MenuManager)
     {
         MenuManager->ShowMenuDlg();

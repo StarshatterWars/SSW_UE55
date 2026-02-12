@@ -66,7 +66,7 @@ DropShipAI::FindObjective()
 		return;
 
 	// If making orbit, go up:
-	if (self_rgn->GetType() == Sim::AIR_SPACE) {
+	if (self_rgn->GetType() == (int) ESimType::AIR_SPACE) {
 		obj_w = self->Location() + FVector(0.0f, 1.0e3f, 0.0f);
 	}
 

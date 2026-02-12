@@ -29,7 +29,6 @@
 #include "Combatant.h"
 #include "CombatGroup.h"
 #include "CombatUnit.h"
-#include "PlayerCharacter.h"
 #include "Ship.h"
 #include "ShipDesign.h"
 #include "Weapon.h"
@@ -41,6 +40,8 @@
 
 // Your campaign screen:
 #include "CmpnScreen.h"
+
+// Player profile + rank registry:
 #include "AwardInfoRegistry.h"
 #include "StarshatterPlayerSubsystem.h"
 
@@ -327,7 +328,7 @@ void UCmdForceDlg::SetModeAndHighlight(ECOMMAND_MODE InMode)
     case ECOMMAND_MODE::MODE_FORCES:   Manager->ShowCmdForceDlg();    break;
     case ECOMMAND_MODE::MODE_INTEL:    Manager->ShowCmdIntelDlg();    break;
     case ECOMMAND_MODE::MODE_MISSIONS: Manager->ShowCmdMissionsDlg(); break;
-    default:                               Manager->ShowCmdOrdersDlg();   break;
+    default:                           Manager->ShowCmdOrdersDlg();   break;
     }
 }
 
@@ -581,8 +582,9 @@ void UCmdForceDlg::OnTransferClicked()
     if (!CampaignPtr || !CurrentGroup || !Manager)
         return;
 
-    PlayerCharacter* PlayerPtr = PlayerCharacter::GetCurrentPlayer();
-    if (!PlayerPtr)
+    // Player profile lives in the PlayerSubsystem now (not PlayerCharacter):
+    UStarshatterPlayerSubsystem* PlayerSS = UStarshatterPlayerSubsystem::Get(this);
+    if (!PlayerSS)
         return;
 
     int CmdClass = (int)CLASSIFICATION::FIGHTER;
@@ -623,15 +625,19 @@ void UCmdForceDlg::OnTransferClicked()
     if (!MsgDlg)
         return;
 
-    if (PlayerPtr->CanCommand(CmdClass))
+    const int32 RankId = PlayerSS->GetPlayerInfo().Rank;
+    const FString RankStr = UStarshatterPlayerSubsystem::GetRankNameSafe(this, RankId);
+    const FString PlayerName = PlayerSS->GetPlayerInfo().Name;
+
+    if (PlayerSS->CanCommand(CmdClass))
     {
         if (CurrentUnit)
         {
             CampaignPtr->SetPlayerUnit(CurrentUnit);
             TransferInfo = FString::Printf(
                 TEXT("Your transfer request has been approved, %s %s.  You are now assigned to the %s.  Good luck.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
-                UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->GetRank())),
-                UTF8_TO_TCHAR(PlayerPtr->Name().data()),
+                *RankStr,
+                *PlayerName,
                 UTF8_TO_TCHAR(CurrentUnit->GetDescription()));
         }
         else
@@ -639,8 +645,8 @@ void UCmdForceDlg::OnTransferClicked()
             CampaignPtr->SetPlayerGroup(CurrentGroup);
             TransferInfo = FString::Printf(
                 TEXT("Your transfer request has been approved, %s %s.  You are now assigned to the %s.  Good luck.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
-                UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->GetRank())),
-                UTF8_TO_TCHAR(PlayerPtr->Name().data()),
+                *RankStr,
+                *PlayerName,
                 UTF8_TO_TCHAR(CurrentGroup->GetDescription()));
         }
 
@@ -654,13 +660,15 @@ void UCmdForceDlg::OnTransferClicked()
     {
         UIButton::PlaySound(UIButton::SND_REJECT);
 
-        const char* Required = PlayerCharacter::RankName(PlayerCharacter::CommandRankRequired(CmdClass));
+        const int32 RequiredRankId = UAwardInfoRegistry::CommandRankRequired(CmdClass);
+        const FString RequiredRankStr = UStarshatterPlayerSubsystem::GetRankNameSafe(this, RequiredRankId);
+
         TransferInfo = FString::Printf(
             TEXT("Your transfer request has been denied, %s %s.  The %s requires a command rank of %s.  Please return to your unit and your duties.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
-            UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->GetRank())),
-            UTF8_TO_TCHAR(PlayerPtr->Name().data()),
+            *RankStr,
+            *PlayerName,
             UTF8_TO_TCHAR(CurrentGroup->GetDescription()),
-            UTF8_TO_TCHAR(Required));
+            *RequiredRankStr);
 
         MsgDlg->SetTitleText(TEXT("Transfer Denied"));
         MsgDlg->SetMessageText(TransferInfo);

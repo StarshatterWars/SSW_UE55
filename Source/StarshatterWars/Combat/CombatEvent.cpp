@@ -6,15 +6,17 @@
     FILE:         CombatEvent.cpp
     AUTHOR:       John DiCamillo
 
-    OVERVIEW
-    ========
-    A significant (newsworthy) event in the dynamic campaign.
+    UNREAL PORT:
+    - Preserves original logic and flow.
+    - Uses FString for name lookups (case-insensitive), no _stricmp.
+    - Player substitutions ($NAME / $RANK) route through UStarshatterPlayerSubsystem.
+    - DataLoader usage preserved (until you finish full GameData -> Subsystem migration).
+    - Bitmap loading intentionally removed (legacy Bitmap disabled); keep image_file for later UTexture2D path.
 */
 
 #include "CombatEvent.h"
 #include "CombatGroup.h"
 #include "Campaign.h"
-#include "PlayerCharacter.h"
 #include "ShipDesign.h"
 #include "Ship.h"
 #include "Term.h"
@@ -22,94 +24,137 @@
 #include "FormatUtil.h"
 #include "DataLoader.h"
 
-#include "Engine/Texture2D.h"
+#include "StarshatterPlayerSubsystem.h"
 
-// +----------------------------------------------------------------------+
+#include "Math/UnrealMathUtility.h"
 
-CombatEvent::CombatEvent(Campaign* c, int typ, int tim, int tem,
-    int src, const char* rgn)
-    : campaign(c), type(typ), time(tim), team(tem), source(src),
-    visited(false), loc(FVector::ZeroVector), points(FVector::ZeroVector),
-    region(rgn)
+// ----------------------------------------------------------------------
+
+static FString ToFStringSafe(const char* In)
+{
+    return In ? FString(UTF8_TO_TCHAR(In)) : FString();
+}
+
+static bool EqualsI(const FString& A, const TCHAR* B)
+{
+    return A.Equals(B, ESearchCase::IgnoreCase);
+}
+
+// ----------------------------------------------------------------------
+
+CombatEvent::CombatEvent(Campaign* c, int typ, int tim, int tem, ECombatEventSource src, const char* rgn)
+    : campaign(c)
+    , type(typ)
+    , time(tim)
+    , team(tem)
+    , source(src)
+    , visited(false)
+    , loc(FVector::ZeroVector)
+    , points(FVector::ZeroVector)
+    , region(rgn)
 {
 }
 
-// +----------------------------------------------------------------------+
+// ----------------------------------------------------------------------
 
-const char*
-CombatEvent::SourceName() const
+FString CombatEvent::TypeName(ECombatEventType Type)
 {
-    return SourceName(source);
-}
-
-// +----------------------------------------------------------------------+
-
-const char*
-CombatEvent::TypeName() const
-{
-    return TypeName(type);
-}
-
-// +----------------------------------------------------------------------+
-
-const char*
-CombatEvent::SourceName(int n)
-{
-    switch (n) {
-    case FORCOM:      return "FORCOM";
-    case TACNET:      return "TACNET";
-    case INTEL:       return "SECURE";
-    case MAIL:        return "Mail";
-    case NEWS:        return "News";
+    switch (Type)
+    {
+    case ECombatEventType::ATTACK:         return TEXT("ATTACK");
+    case ECombatEventType::DEFEND:         return TEXT("DEFEND");
+    case ECombatEventType::MOVE_TO:        return TEXT("MOVE_TO");
+    case ECombatEventType::CAPTURE:        return TEXT("CAPTURE");
+    case ECombatEventType::STRATEGY:       return TEXT("STRATEGY");
+    case ECombatEventType::STORY:          return TEXT("STORY");
+    case ECombatEventType::CAMPAIGN_START: return TEXT("CAMPAIGN_START");
+    case ECombatEventType::CAMPAIGN_END:   return TEXT("CAMPAIGN_END");
+    case ECombatEventType::CAMPAIGN_FAIL:  return TEXT("CAMPAIGN_FAIL");
+    default:                               return TEXT("Unknown");
     }
-
-    return "Unknown";
 }
 
-int
-CombatEvent::SourceFromName(const char* n)
+// ----------------------------------------------------------------------
+
+FString CombatEvent::SourceName(ECombatEventSource Source)
 {
-    for (int i = FORCOM; i <= NEWS; i++)
-        if (!_stricmp(n, SourceName(i)))
-            return i;
-
-    return -1;
-}
-
-// +----------------------------------------------------------------------+
-
-const char*
-CombatEvent::TypeName(int n)
-{
-    switch (n) {
-    case ATTACK:            return "ATTACK";
-    case DEFEND:            return "DEFEND";
-    case MOVE_TO:           return "MOVE_TO";
-    case CAPTURE:           return "CAPTURE";
-    case STRATEGY:          return "STRATEGY";
-    case STORY:             return "STORY";
-    case CAMPAIGN_START:    return "CAMPAIGN_START";
-    case CAMPAIGN_END:      return "CAMPAIGN_END";
-    case CAMPAIGN_FAIL:     return "CAMPAIGN_FAIL";
+    switch (Source)
+    {
+    case ECombatEventSource::FORCOM:  return TEXT("FORCOM");
+    case ECombatEventSource::TACNET:  return TEXT("TACNET");
+    case ECombatEventSource::INTEL:   return TEXT("SECURE");
+    case ECombatEventSource::MAIL:    return TEXT("Mail");
+    case ECombatEventSource::NEWS:    return TEXT("News");
+    default:                          return TEXT("Unknown");
     }
-
-    return "Unknown";
 }
 
-int
-CombatEvent::TypeFromName(const char* n)
+ECombatEventSource CombatEvent::SourceFromName(const FString& Name)
 {
-    for (int i = ATTACK; i <= CAMPAIGN_FAIL; i++)
-        if (!_stricmp(n, TypeName(i)))
-            return i;
+    const FString N = Name.TrimStartAndEnd();
 
-    return -1;
+    if (N.IsEmpty())
+        return ECombatEventSource::NONE;   // <-- define this in your enum
+
+    if (N.Equals(TEXT("FORCOM"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::FORCOM;
+
+    if (N.Equals(TEXT("TACNET"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::TACNET;
+
+    if (N.Equals(TEXT("SECURE"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::INTEL;
+
+    if (N.Equals(TEXT("Mail"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::MAIL;
+
+    if (N.Equals(TEXT("News"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::NEWS;
+
+    return ECombatEventSource::NONE;
 }
 
-// +----------------------------------------------------------------------+
+// ----------------------------------------------------------------------
+ECombatEventType CombatEvent::GetTypeFromName(const FString& Name)
+{
+    const FString N = Name.TrimStartAndEnd();
 
-void
-CombatEvent::Load()
+    if (N.IsEmpty())
+        return ECombatEventType::NONE; // add Unknown to the enum
+
+    if (N.Equals(TEXT("ATTACK"), ESearchCase::IgnoreCase))
+        return ECombatEventType::ATTACK;
+
+    if (N.Equals(TEXT("DEFEND"), ESearchCase::IgnoreCase))
+        return ECombatEventType::DEFEND;
+
+    if (N.Equals(TEXT("MOVE_TO"), ESearchCase::IgnoreCase))
+        return ECombatEventType::MOVE_TO;
+
+    if (N.Equals(TEXT("CAPTURE"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAPTURE;
+
+    if (N.Equals(TEXT("STRATEGY"), ESearchCase::IgnoreCase))
+        return ECombatEventType::STRATEGY;
+
+    if (N.Equals(TEXT("STORY"), ESearchCase::IgnoreCase))
+        return ECombatEventType::STORY;
+
+    if (N.Equals(TEXT("CAMPAIGN_START"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAMPAIGN_START;
+
+    if (N.Equals(TEXT("CAMPAIGN_END"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAMPAIGN_END;
+
+    if (N.Equals(TEXT("CAMPAIGN_FAIL"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAMPAIGN_FAIL;
+
+    return ECombatEventType::NONE;
+}
+
+// ----------------------------------------------------------------------
+
+void CombatEvent::Load()
 {
     DataLoader* loader = DataLoader::GetLoader();
 
@@ -118,7 +163,8 @@ CombatEvent::Load()
 
     loader->SetDataPath(campaign->Path());
 
-    if (file.length() > 0) {
+    if (file.length() > 0)
+    {
         const char* filename = file.data();
         BYTE* block = 0;
 
@@ -126,20 +172,28 @@ CombatEvent::Load()
         info = (const char*)block;
         loader->ReleaseBuffer(block);
 
-        if (info.contains('$')) {
-            PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
+        if (info.contains('$'))
+        {
             CombatGroup* group = campaign->GetPlayerGroup();
 
-            if (player) {
-                info = FormatTextReplace(info, "$NAME", player->Name().data());
-                info = FormatTextReplace(info, "$RANK", PlayerCharacter::RankName(player->GetRank()));
-            }
+            // Player substitutions migrated to PlayerSubsystem:
+            const FString PlayerName = UStarshatterPlayerSubsystem::GetPlayerNameSafe(/*WorldContext*/ nullptr);
+            const int32  RankId = UStarshatterPlayerSubsystem::GetRankIdSafe(/*WorldContext*/ nullptr, /*Default*/ 0);
+            const FString RankName = UStarshatterPlayerSubsystem::GetRankNameSafe(/*WorldContext*/ nullptr, RankId);
 
-            if (group) {
+            if (!PlayerName.IsEmpty())
+                info = FormatTextReplace(info, "$NAME", TCHAR_TO_UTF8(*PlayerName));
+
+            if (!RankName.IsEmpty())
+                info = FormatTextReplace(info, "$RANK", TCHAR_TO_UTF8(*RankName));
+
+            if (group)
+            {
+                // Group description is legacy const char*; preserve
                 info = FormatTextReplace(info, "$GROUP", group->GetDescription());
             }
 
-            char timestr[32];
+            char timestr[32] = { 0 };
             FormatDayTime(timestr, campaign->GetTime(), true);
             info = FormatTextReplace(info, "$TIME", timestr);
         }

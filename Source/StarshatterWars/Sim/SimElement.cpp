@@ -372,13 +372,14 @@ SimElement::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-SimElement::GetObserverName() const
+FString SimElement::GetObserverName() const
 {
-	// Preserve original API (const char*) without pointer truncation:
-	static char Buf[128];
-	std::snprintf(Buf, sizeof(Buf), "SimElement %s", Name().data());
-	return Buf;
+	const FString ElemName = UTF8_TO_TCHAR(Name().data());
+
+	return FString::Printf(
+		TEXT("SimElement %s"),
+		*ElemName
+	);
 }
 
 // +----------------------------------------------------------------------+

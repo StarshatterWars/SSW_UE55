@@ -186,10 +186,9 @@ InboundSlot::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-InboundSlot::GetObserverName() const
+FString InboundSlot::GetObserverName() const
 {
-	return "InboundSlot";
+	return TEXT("InboundSlot");
 }
 
 // +======================================================================+
@@ -1364,10 +1363,11 @@ FlightDeck::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-FlightDeck::GetObserverName() const
+FString FlightDeck::GetObserverName() const
 {
-	return Name();
+	return Name()
+		? UTF8_TO_TCHAR(Name())
+		: TEXT("FlightDeck");
 }
 
 // +----------------------------------------------------------------------+

@@ -64,7 +64,7 @@ CampaignMissionStarship::CampaignMissionStarship(Campaign* c)
     escort(0),
     ownside(0),
     enemy(-1),
-    mission_type(0)
+    mission_type((int)ECombatEventType::NONE)
 {
     if (!campaign || !campaign->GetPlayerGroup()) {
         UE_LOG(LogStarshatterWars, Error,
@@ -89,7 +89,7 @@ CampaignMissionStarship::CreateMission(CampaignMissionRequest* req)
         return;
     UE_LOG(LogStarshatterWars, Log, TEXT("-----------------------------------------------"));
 
-    const TCHAR* RoleT = ANSI_TO_TCHAR(Mission::RoleName(req->Type()));
+    const TCHAR* RoleT = ANSI_TO_TCHAR(Mission::RoleName((int)req->GetType()));
 
     if (req->Script().Len() > 0)
     {
@@ -219,7 +219,7 @@ CampaignMissionStarship::GenerateMission(int id)
     // CASE 2: Use a campaign mission template (campaign provides script)
     // ------------------------------------------------------------
     else {
-        mission_info = campaign->FindMissionTemplate(mission_type, player_group);
+        mission_info = campaign->FindMissionTemplate((int)mission_type, player_group);
         found = (mission_info != nullptr);
 
         if (found) {
@@ -314,7 +314,7 @@ void
 CampaignMissionStarship::SelectType()
 {
     if (request)
-        mission_type = request->Type();
+        mission_type = (int) request->GetType();
     else
         mission_type = Mission::PATROL;
 

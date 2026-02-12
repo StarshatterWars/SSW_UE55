@@ -1,31 +1,26 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-    All Rights Reserved.
+/*=============================================================================
+    Project:        Starshatter Wars (nGenEx Unreal Port)
+    Studio:         Fractal Dev Games
+    Copyright:      (C) 2025–2026. All Rights Reserved.
 
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         PlayerRosterItem.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      UI / Player
+    FILE:           PlayerRosterItem.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
-    Player roster list item (data model)
-    - UObject-based ListView item
-    - Wraps legacy PlayerCharacter*
-    - Used by UPlayerDlg roster ListView
-*/
+    UPlayerRosterItem
+
+    Lightweight UObject wrapper used by UListView.
+
+    - Holds a copy of FS_PlayerGameInfo
+    - Provides read-only access to row widgets
+=============================================================================*/
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
-
-class PlayerCharacter;
-
+#include "GameStructs.h"              // FS_PlayerGameInfo
 #include "PlayerRosterItem.generated.h"
 
 // +--------------------------------------------------------------------+
@@ -36,16 +31,22 @@ class STARSHATTERWARS_API UPlayerRosterItem : public UObject
     GENERATED_BODY()
 
 public:
-    void Initialize(PlayerCharacter* InPlayer)
-    {
-        player = InPlayer;
-    }
 
-    PlayerCharacter* GetPlayer() const
-    {
-        return player;
-    }
+    // ------------------------------------------------------------
+    // Initialization
+    // ------------------------------------------------------------
+
+    void Initialize(const FS_PlayerGameInfo& InInfo);
+
+    // ------------------------------------------------------------
+    // Accessors
+    // ------------------------------------------------------------
+
+    const FS_PlayerGameInfo& GetInfo() const;
 
 private:
-    PlayerCharacter* player = nullptr;
+
+    // Stored player data snapshot
+    UPROPERTY()
+    FS_PlayerGameInfo PlayerInfo;
 };

@@ -13,6 +13,12 @@
     OVERVIEW
     ========
     UCmdMissionsDlg implementation (Unreal port)
+
+    NOTES (Unreal Port)
+    ===================
+    - Legacy PlayerCharacter training flags have been migrated to UStarshatterPlayerSubsystem:
+        UStarshatterPlayerSubsystem::HasTrainedSafe(WorldCtx, MissionId)
+    - Therefore, this dialog does NOT depend on PlayerCharacter for training completion.
 */
 
 #include "CmdMissionsDlg.h"
@@ -27,15 +33,17 @@
 #include "Starshatter.h"
 #include "Campaign.h"
 #include "Mission.h"
-#include "PlayerCharacter.h"
 #include "Game.h"
 #include "Mouse.h"
 #include "FormatUtil.h"
 #include "CombatGroup.h"
-#include "GameSTructs.h"
+#include "GameStructs.h" // (Fix casing; your paste had GameSTructs.h)
 
 // Your campaign screen
 #include "CmpnScreen.h"
+
+// Player profile persistence (training bits)
+#include "StarshatterPlayerSubsystem.h"
 
 UCmdMissionsDlg::UCmdMissionsDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -86,6 +94,7 @@ void UCmdMissionsDlg::SetManager(UCmpnScreen* InManager)
 void UCmdMissionsDlg::BindFormWidgets()
 {
     // Intentionally empty if you are using BindWidgetOptional.
+    // If you are using legacy FRM binding, bind here.
 }
 
 void UCmdMissionsDlg::ShowMissionsDlg()
@@ -166,9 +175,6 @@ void UCmdMissionsDlg::RebuildMissionList()
     ClearDescription();
     SelectedMission = nullptr;
 
-    PlayerCharacter* PlayerPtr = PlayerCharacter::GetCurrentPlayer();
-    PlayerCharacter* LegacyPlayer = PlayerCharacter::GetCurrentPlayer(); // if still available in your port
-
     List<MissionInfo>& Missions = CampaignPtr->GetMissionList();
 
     for (int32 i = 0; i < Missions.size(); ++i)
@@ -188,14 +194,10 @@ void UCmdMissionsDlg::RebuildMissionList()
         {
             bool bTrained = false;
 
-            if (LegacyPlayer && M->Type() == Mission::TRAINING)
+            if (M->Type() == Mission::TRAINING)
             {
-                bTrained = LegacyPlayer->HasTrained(M->Identity());
-            }
-            else if (PlayerPtr && M->Type() == Mission::TRAINING)
-            {
-                // If your PlayerCharacter supports it, use it here instead of LegacyPlayer
-                // bTrained = PlayerPtr->HasTrained(M->Identity());
+                // Training completion migrated to PlayerSubsystem (bitmask)
+                bTrained = UStarshatterPlayerSubsystem::HasTrainedSafe(this, M->Identity());
             }
 
             if (M->Type() == Mission::TRAINING && bTrained)
@@ -255,7 +257,6 @@ void UCmdMissionsDlg::AppendNewMissionsIfAny()
     }
 
     // Append new missions
-    PlayerCharacter* LegacyPlayer = PlayerCharacter::GetCurrentPlayer();
     List<MissionInfo>& ListRef = CampaignPtr->GetMissionList();
 
     for (int32 i = Existing; i < Total; ++i)
@@ -271,10 +272,15 @@ void UCmdMissionsDlg::AppendNewMissionsIfAny()
         Mission* M = Info->mission;
         if (M)
         {
-            if (M->Type() == Mission::TRAINING && LegacyPlayer && LegacyPlayer->HasTrained(M->Identity()))
+            if (M->Type() == Mission::TRAINING &&
+                UStarshatterPlayerSubsystem::HasTrainedSafe(this, M->Identity()))
+            {
                 Item->MissionType = UTF8_TO_TCHAR(Game::GetText("CmdMissionsDlg.training"));
+            }
             else
+            {
                 Item->MissionType = UTF8_TO_TCHAR(M->TypeName());
+            }
         }
 
         char StartTime[64] = { 0 };
@@ -447,7 +453,7 @@ void UCmdMissionsDlg::SetModeAndRoute(ECOMMAND_MODE InMode)
     case ECOMMAND_MODE::MODE_FORCES:   Manager->ShowCmdForceDlg();    break;
     case ECOMMAND_MODE::MODE_INTEL:    Manager->ShowCmdIntelDlg();    break;
     case ECOMMAND_MODE::MODE_MISSIONS: Manager->ShowCmdMissionsDlg(); break;
-    default:                               Manager->ShowCmdOrdersDlg();   break;
+    default:                           Manager->ShowCmdOrdersDlg();   break;
     }
 }
 

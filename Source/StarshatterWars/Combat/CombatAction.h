@@ -80,11 +80,11 @@ public:
     // accessors/mutators:
     int         Identity()     const { return id; }
     int         Type()         const { return type; }
-    int         Subtype()      const { return subtype; }
-    int         OpposingType() const { return opp_type; }
-    int         GetIFF()       const { return team; }
-    int         Status()       const { return status; }
-    int         Source()       const { return source; }
+    int         Subtype() const { return subtype; }
+    int                OpposingType() const { return opp_type; }
+    int                GetIFF()       const { return team; }
+    int                GetStatus()    const { return status; }
+    ECombatEventSource Source()       const { return source; }
     FVector     Location()     const { return loc; }
     const char* System()       const { return system.data(); }
     const char* Region()       const { return region.data(); }
@@ -109,11 +109,11 @@ public:
     const char* GetText()      const { return text.data(); }
 
     void SetType(int t) { type = (char)t; }
-    void SetSubtype(int s) { subtype = (char)s; }
+    void SetSubtype(int s) { subtype = s; }
     void SetOpposingType(int t) { opp_type = (char)t; }
     void SetIFF(int t) { team = (char)t; }
     void SetStatus(int s) { status = (char)s; }
-    void SetSource(int s) { source = s; }
+    void SetSource(ECombatEventSource s) { source = s; }
     void SetLocation(const FVector& p) { loc = p; }
     void SetSystem(Text sys) { system = sys; }
     void SetRegion(Text rgn) { region = rgn; }
@@ -138,14 +138,14 @@ public:
 private:
     int     id = 0;
     char    type = 0;
-    char    subtype = 0;
+    int     subtype = 0;
     char    opp_type = 0;
     char    team = 0;
     char    status = PENDING;
     char    min_rank = 0;
     char    max_rank = 100;
 
-    int     source = 0;
+    ECombatEventSource source = ECombatEventSource::NONE;
     FVector loc;
 
     Text    system;

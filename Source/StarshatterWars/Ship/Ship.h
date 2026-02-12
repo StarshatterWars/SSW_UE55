@@ -250,7 +250,12 @@ public:
     void              DropThreat(SimShot* s);
 
     virtual bool         Update(SimObject* obj);
-    virtual const char* GetObserverName() const { return name; }
+    FString GetObserverName() const override
+    {
+        return name
+            ? UTF8_TO_TCHAR(name)
+            : TEXT("Unnamed");
+    }
 
     virtual int       GetMissileEta(int index) const;
     virtual void      SetMissileEta(int id, int eta);

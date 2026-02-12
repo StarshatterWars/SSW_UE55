@@ -47,8 +47,8 @@ public:
     virtual void      SetDelay(double d) { delay = d; }
     virtual double    GetDelay() const { return delay; }
 
-    virtual bool         Update(SimObject* obj) override;
-    virtual const char* GetObserverName() const override;
+    virtual bool       Update(SimObject* obj) override;
+    virtual FString    GetObserverName() const override;
 
 protected:
     // behaviors:

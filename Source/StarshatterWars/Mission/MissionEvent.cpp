@@ -51,6 +51,8 @@
 #include "Random.h"
 #include "Video.h"
 #include "GameStructs.h"
+#include "StarshatterPlayerSubsystem.h"
+#include "AwardInfoRegistry.h"
 
 // Minimal Unreal logging support:
 #include "Logging/LogMacros.h"
@@ -603,70 +605,108 @@ MissionEvent::Execute(bool silent)
 		break;
 
 	case DISPLAY:
-		if (stars->InCutscene()) {
+	{
+		if (stars && stars->InCutscene())
+		{
 			DisplayView* disp_view = DisplayView::GetInstance();
+			if (disp_view)
+			{
+				// color must be in scope for both AddText/AddImage
+				const FColor Color = FColor(event_param[0]);
 
-			if (disp_view) {
-				FColor color;
-				if (disp_view) {
-					color = FColor(event_param[0]);
-				}
+				// ------------------------------------------------------------
+				// TEXT DISPLAY PATH
+				// ------------------------------------------------------------
+				if (event_message.length() > 0 && event_source.length() > 0)
+				{
+					// Convert legacy Text -> FString for UE string ops
+					FString Msg = UTF8_TO_TCHAR(event_message.data());
+					const FString SourceFont = UTF8_TO_TCHAR(event_source.data());
 
-				if (event_message.length() && event_source.length()) {
-
-					if (event_message.contains('$')) {
+					if (Msg.Contains(TEXT("$"), ESearchCase::IgnoreCase))
+					{
 						Campaign* campaign = Campaign::GetCampaign();
-						PlayerCharacter* user = PlayerCharacter::GetCurrentPlayer();
-						CombatGroup* group = campaign->GetPlayerGroup();
+						CombatGroup* group = campaign ? campaign->GetPlayerGroup() : nullptr;
 
-						if (user) {
-							event_message = FormatTextReplace(event_message, "$NAME", user->Name().data());
-							event_message = FormatTextReplace(event_message, "$RANK", PlayerCharacter::RankName(user->GetRank()));
+						// NOTE: your current subsystem helpers (as written) take a WorldContextObject.
+						// Use 'this' if MissionEvent is a UObject; if not, use a better context (sim/world)
+						// For now, safest is to call the non-context cached accessors ONLY if you actually have them.
+						// If you DO have context-based versions, pass a real UObject* context.
+						const FString PlayerName = UStarshatterPlayerSubsystem::GetCachedPlayerName(TEXT(""));
+						const int32 PlayerRankId = UStarshatterPlayerSubsystem::GetCachedRankId(0);
+						const FString PlayerRankName = UAwardInfoRegistry::RankName(PlayerRankId);
+
+						if (!PlayerName.IsEmpty())
+						{
+							Msg = Msg.Replace(TEXT("$NAME"), *PlayerName, ESearchCase::IgnoreCase);
 						}
 
-						if (group) {
-							event_message = FormatTextReplace(event_message, "$GROUP", group->GetDescription());
+						if (!PlayerRankName.IsEmpty())
+						{
+							Msg = Msg.Replace(TEXT("$RANK"), *PlayerRankName, ESearchCase::IgnoreCase);
 						}
 
-						if (event_message.contains("$TIME")) {
-							char timestr[32];
-							FormatDayTime(timestr, campaign->GetTime(), true);
-							event_message = FormatTextReplace(event_message, "$TIME", timestr);
+						if (group)
+						{
+							const FString GroupDesc = ANSI_TO_TCHAR(group->GetDescription());
+							Msg = Msg.Replace(TEXT("$GROUP"), *GroupDesc, ESearchCase::IgnoreCase);
+						}
+
+						if (campaign && Msg.Contains(TEXT("$TIME"), ESearchCase::IgnoreCase))
+						{
+							char TimeStr[32] = { 0 };
+							FormatDayTime(TimeStr, campaign->GetTime(), true);
+
+							const FString TimeFStr = ANSI_TO_TCHAR(TimeStr);
+							Msg = Msg.Replace(TEXT("$TIME"), *TimeFStr, ESearchCase::IgnoreCase);
 						}
 					}
 
-					disp_view->AddText(event_message,
-						FontManager::Find(event_source),
-						color,
+					// Convert back to legacy Text if AddText expects Text
+					const Text MsgText(TCHAR_TO_UTF8(*Msg));
+					const Text FontText(TCHAR_TO_UTF8(*SourceFont));
+
+					disp_view->AddText(
+						MsgText,
+						FontManager::Find(FontText),
+						Color,
 						event_rect,
 						event_point.Y,
 						event_point.X,
-						event_point.Z);
-
+						event_point.Z
+					);
 				}
-				else if (event_target.length()) {
+
+				// ------------------------------------------------------------
+				// IMAGE DISPLAY PATH
+				// ------------------------------------------------------------
+				else if (event_target.length() > 0)
+				{
 					DataLoader* loader = DataLoader::GetLoader();
 
-					// Legacy bitmap loading path retained; image now is a UTexture2D* in the header.
-					// The DataLoader interface must be ported accordingly elsewhere.
-					if (loader) {
+					if (loader)
+					{
 						loader->SetDataPath(0);
 						loader->LoadGameBitmap(event_target, *image, 0, true);
 					}
 
-					if (image) {
-						disp_view->AddImage(image,
-							color,
+					if (image)
+					{
+						disp_view->AddImage(
+							image,
+							Color,
 							Video::BLEND_ALPHA,
 							event_rect,
 							event_point.Y,
 							event_point.X,
-							event_point.Z);
+							event_point.Z
+						);
 					}
 				}
 			}
 		}
-		break;
+	}
+	break;
 
 	case FIRE_WEAPON:
 		if (ship) {

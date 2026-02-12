@@ -20,10 +20,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "StarshatterPlayerSubsystem.h"
 
 // Forward declares only (do NOT include heavy headers here)
 class UWorld;
-class UStarshatterPlayerSubsystem;
+class ShipStats;
 
 class PlayerProgression
 {
@@ -43,6 +44,8 @@ public:
 
     // Optional: allow forcing a rank during early boot / tests
     static void SetCurrentRankId(int InRankId);
+
+    static int32 ComputeMissionPoints(const ShipStats* Stats, int32 MissionStartTime);
 
 
 private:

@@ -23,10 +23,13 @@
 #include "SimElement.h"
 #include "Instruction.h"
 #include "FormatUtil.h"
-#include "PlayerCharacter.h"
 #include "SimEvent.h"
 #include "ShipDesign.h"
 #include "GameStructs.h"
+
+// Player state:
+#include "StarshatterPlayerSubsystem.h"
+#include "PlayerProgression.h"
 
 // Legacy helpers:
 #include "Game.h"
@@ -66,10 +69,6 @@ void UMissionDebriefDlg::NativeConstruct()
     {
         UnitListWidget->OnItemSelectionChanged().AddUObject(this, &UMissionDebriefDlg::OnUnitSelectionChanged);
     }
-
-    // Default hidden unless you show it:
-    // (Optional) leave as-is if your UI manages visibility elsewhere.
-    // SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UMissionDebriefDlg::NativeDestruct()
@@ -93,9 +92,6 @@ void UMissionDebriefDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 
 void UMissionDebriefDlg::BindFormWidgets()
 {
-    // Clear the map (optional safety):
-    // FormMap.Reset(); // FormMap is protected in UBaseScreen; if you keep it private, remove this.
-
     // IDs come from legacy DebriefDlg.frm mapping:
     if (MissionNameWidget)      BindLabel(200, MissionNameWidget);
     if (MissionSystemWidget)    BindLabel(202, MissionSystemWidget);
@@ -259,15 +255,23 @@ void UMissionDebriefDlg::Show()
                 {
                     Stats->Summarize();
 
-                    PlayerCharacter* PlayerObj = PlayerCharacter::GetCurrentPlayer();
-                    int Points = Stats->GetPoints() + Stats->GetCommandPoints();
+                    int32 Points = Stats->GetPoints() + Stats->GetCommandPoints();
 
-                    if (PlayerObj && SimPtr)
-                        Points = PlayerObj->GetMissionPoints(Stats, SimPtr->StartTime()) + Stats->GetCommandPoints();
+                    if (SimPtr)
+                    {
+                        // Replace the old PlayerCharacter::GetMissionPoints(Stats, SimPtr->StartTime())
+                        // with a progression helper that does NOT depend on PlayerCharacter.
+                        Points = PlayerProgression::ComputeMissionPoints(Stats, SimPtr->StartTime())
+                            + Stats->GetCommandPoints();
+                    }
 
-                    char ScoreTxt[64] = { 0 };
-                    sprintf_s(ScoreTxt, "%d %s", Points, Game::GetText("DebriefDlg.points").data());
-                    MissionScore->SetText(FText::FromString(ANSI_TO_TCHAR(ScoreTxt)));
+                    const FString ScoreStr = FString::Printf(
+                        TEXT("%d %s"),
+                        Points,
+                        ANSI_TO_TCHAR(Game::GetText("DebriefDlg.points").data())
+                    );
+
+                    MissionScore->SetText(FText::FromString(ScoreStr));
                     break;
                 }
             }
@@ -279,8 +283,7 @@ void UMissionDebriefDlg::Show()
 
     if (bNeedRefresh)
     {
-        // Optional: force selection behavior or first row selection.
-        // (Handled in ExecFrame)
+        // Optional refresh behavior
     }
 }
 
@@ -339,7 +342,6 @@ void UMissionDebriefDlg::DrawUnits()
         if (Stats->GetIFF() == MissionPtr->Team() &&
             !strcmp(Stats->GetRegion(), MissionPtr->GetRegion()))
         {
-            // Col0 unused in original (space), keep for compatibility:
             UDebriefListItem* Row = UDebriefListItem::Make(
                 this,
                 TEXT(" "),
@@ -393,13 +395,12 @@ void UMissionDebriefDlg::DrawSelectedUnit(int32 StatsIndex)
     // Summary:
     auto AddSummary = [&](const char* Label, int Value)
         {
-            char Buf[64] = { 0 };
-            sprintf_s(Buf, "%d", Value);
+            const FString ValStr = FString::Printf(TEXT("%d"), Value);
 
             SummaryList->AddItem(UDebriefListItem::Make(
                 this,
                 ANSI_TO_TCHAR(Label),
-                ANSI_TO_TCHAR(Buf)
+                *ValStr
             ));
         };
 
@@ -450,8 +451,7 @@ void UMissionDebriefDlg::OnCloseClicked()
     LocalSim->CommitMission();
     LocalSim->UnloadMission();
 
-    PlayerCharacter* PlayerObj = PlayerCharacter::GetCurrentPlayer();
-    if (PlayerObj && PlayerObj->ShowAward())
+    if (UStarshatterPlayerSubsystem::GetCachedShowAward(this, false))
     {
         if (Manager)
         {

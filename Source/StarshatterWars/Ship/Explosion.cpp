@@ -204,23 +204,17 @@ Explosion::Update(SimObject* obj)
     return SimObserver::Update(obj);
 }
 
-const char*
-Explosion::GetObserverName() const
+FString Explosion::GetObserverName() const
 {
-    static char NameBuffer[128];
-
-    if (source && source->Name()) {
-        // UE-safe formatting, no __FILE__/__LINE__, no wide chars
-        snprintf(NameBuffer, sizeof(NameBuffer),
-            "Explosion(%s)", source->Name());
-    }
-    else {
-        snprintf(NameBuffer, sizeof(NameBuffer), "Explosion");
+    if (source && source->Name() && *source->Name())
+    {
+        // source->Name() is assumed to be UTF-8 / ANSI (legacy Starshatter)
+        const FString SourceName = UTF8_TO_TCHAR(source->Name());
+        return FString::Printf(TEXT("Explosion(%s)"), *SourceName);
     }
 
-    return NameBuffer;
+    return TEXT("Explosion");
 }
-
 
 // +--------------------------------------------------------------------+
 

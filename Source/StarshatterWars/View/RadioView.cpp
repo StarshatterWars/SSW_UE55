@@ -241,9 +241,9 @@ bool RadioView::Update(SimObject* obj)
     return SimObserver::Update(obj);
 }
 
-const char* RadioView::GetObserverName() const
+FString RadioView::GetObserverName() const
 {
-    return "RadioView";
+    return TEXT("RadioView");
 }
 
 // ---------------------------------------------------------------------

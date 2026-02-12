@@ -78,7 +78,7 @@ public:
     virtual int        Type() const { return ai_type; }
 
     virtual bool       Update(SimObject* obj);
-    virtual const char* GetObserverName() const;
+    virtual FString    GetObserverName() const override;
 
     // debug:
     virtual FVector     GetObjective() const { return obj_w; }

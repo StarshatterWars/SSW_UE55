@@ -318,8 +318,9 @@ Farcaster::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-Farcaster::GetObserverName() const
+FString Farcaster::GetObserverName() const
 {
-	return Name();
+	return Name()
+		? UTF8_TO_TCHAR(Name())
+		: TEXT("Farcaster");
 }

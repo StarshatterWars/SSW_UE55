@@ -62,20 +62,12 @@ SimObserver::Update(SimObject* obj)
 	return true;
 }
 
-const char*
-SimObserver::GetObserverName() const
+FString SimObserver::GetObserverName() const
 {
-	static char name[32];
-
-	// uintptr_t is guaranteed to hold a pointer on 32/64-bit
-	std::snprintf(
-		name,
-		sizeof(name),
-		"SimObserver %p",
-		static_cast<const void*>(this)
+	return FString::Printf(
+		TEXT("SimObserver %p"),
+		this
 	);
-
-	return name;
 }
 
 // +--------------------------------------------------------------------+

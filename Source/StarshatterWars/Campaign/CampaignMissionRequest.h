@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameStructs.h"
 
 // Forward declarations (match your port style: plain C++ classes, notxUObjects)
 class Campaign;
@@ -24,15 +25,15 @@ public:
 
 	CampaignMissionRequest(
 		Campaign* InCampaign,
-		int32 InType,
+		int InType,
 		int32 InStart,
 		CombatGroup* InPrimary,
 		CombatGroup* InTarget = nullptr
 	);
 
 	// Accessors (mirror)
-	Campaign* GetCampaign()       const { return CampaignObj; }
-	int32        Type()              const { return MissionType; }
+	Campaign*    GetCampaign()       const { return CampaignObj; }
+	int32	     GetType()			 const { return MissionType; }
 	int32        OpposingType()      const { return OppType; }
 	int32        StartTime()         const { return Start; }
 
@@ -46,7 +47,7 @@ public:
 	const FString& Script()          const { return ScriptName; }
 
 	// Mutators (mirror)
-	void SetType(int32 T) { MissionType = T; }
+	void SetType(int T) { MissionType = T; }
 	void SetOpposingType(int32 T) { OppType = T; }
 	void SetStartTime(int32 S) { Start = S; }
 
@@ -62,7 +63,7 @@ public:
 private:
 	Campaign* CampaignObj = nullptr;
 
-	int32 MissionType = 0;          // type of mission
+	int MissionType = 0;          // type of mission
 	int32 OppType = -1;         // opposing mission type
 	int32 Start = 0;          // start time (campaign seconds, same unit as original)
 

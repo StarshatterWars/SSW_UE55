@@ -84,7 +84,7 @@ public:
 	virtual void      SetAllIFF(int iff);
 
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 	// accessors:
 	int               NumSquadrons()          const { return nsquadrons; }

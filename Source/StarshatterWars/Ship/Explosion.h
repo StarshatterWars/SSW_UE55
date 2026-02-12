@@ -79,7 +79,7 @@ public:
 
     // SimObserver interface:
     virtual bool         Update(SimObject* obj);
-    virtual const char* GetObserverName() const;
+    virtual FString      GetObserverName() const override;
 
 protected:
     int               type;

@@ -1,9 +1,42 @@
+/*=============================================================================
+    Project:        Starshatter Wars (nGenEx Unreal Port)
+    Studio:         Fractal Dev Games
+    Copyright:      (C) 2025–2026. All Rights Reserved.
+
+    SUBSYSTEM:      UI / Options
+    FILE:           OptionsScreen.cpp
+    AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    UOptionsScreen
+
+    Unreal UMG Options router + page implementation.
+
+    PORT NOTES
+    ==========
+    Legacy OptionsScreen used PlayerCharacter for profile persistence:
+      - FlyingStart / AILevel / GridMode / Gunsight
+      - Setter methods like SetAILevel(), SetGunsight(), etc.
+      - PlayerCharacter::Save()
+
+    Unreal port replaces PlayerCharacter with:
+      - UStarshatterPlayerSubsystem (persistence manager)
+      - FS_PlayerGameInfo (authoritative profile model)
+
+    Runtime-apply still routes to:
+      - Ship (flight model, landing model, friendly fire)
+      - HUDView (arcade mode, hud colors)
+      - Subsystems (audio/video/controls/keyboard)
+=============================================================================*/
+
 #include "OptionsScreen.h"
 
 // UE:
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/GameInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 // UMG:
 #include "Components/Button.h"
@@ -20,10 +53,9 @@
 #include "ControlOptionsDlg.h"
 #include "KeyDlg.h"
 
-// Starshatter core:
+// Starshatter core (runtime state):
 #include "Ship.h"
 #include "HUDView.h"
-#include "PlayerCharacter.h"
 #include "Starshatter.h"
 
 // Subsystems:
@@ -32,12 +64,24 @@
 #include "StarshatterControlsSubsystem.h"
 #include "StarshatterKeyboardSubsystem.h"
 
+// Player persistence:
+#include "StarshatterPlayerSubsystem.h"
+#include "GameStructs.h"
+
+/* --------------------------------------------------------------------
+   Construction
+   -------------------------------------------------------------------- */
+
 UOptionsScreen::UOptionsScreen(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     bClosed = true;
     SetDialogInputEnabled(true);
 }
+
+/* --------------------------------------------------------------------
+   NativeConstruct
+   -------------------------------------------------------------------- */
 
 void UOptionsScreen::NativeConstruct()
 {
@@ -134,12 +178,20 @@ void UOptionsScreen::NativeConstruct()
     ShowOptDlg();
 }
 
+/* --------------------------------------------------------------------
+   NativeTick
+   -------------------------------------------------------------------- */
+
 void UOptionsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
     (void)MyGeometry;
     (void)InDeltaTime;
 }
+
+/* --------------------------------------------------------------------
+   Input
+   -------------------------------------------------------------------- */
 
 FReply UOptionsScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
@@ -245,6 +297,11 @@ void UOptionsScreen::EnsureSubDialogs()
         }
     }
 }
+
+/* --------------------------------------------------------------------
+   HideAllPages
+   -------------------------------------------------------------------- */
+
 void UOptionsScreen::HideAllPages()
 {
     if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
@@ -258,6 +315,10 @@ void UOptionsScreen::HideAllPages()
 // ---------------------------------------------------------------------
 // Page routing
 // ---------------------------------------------------------------------
+
+/* --------------------------------------------------------------------
+   ShowOptDlg
+   -------------------------------------------------------------------- */
 
 void UOptionsScreen::ShowOptDlg()
 {
@@ -273,18 +334,42 @@ void UOptionsScreen::ShowOptDlg()
 
     if (bClosed)
     {
+        // ------------------------------------------------------------
+        // Runtime state (Ship/HUDView)
+        // ------------------------------------------------------------
+
         if (flight_model)  flight_model->SetSelectedIndex(Ship::GetFlightModel());
         if (landings)      landings->SetSelectedIndex(Ship::GetLandingModel());
         if (hud_mode)      hud_mode->SetSelectedIndex(HUDView::IsArcade() ? 1 : 0);
         if (hud_color)     hud_color->SetSelectedIndex(HUDView::DefaultColorSet());
         if (ff_mode)       ff_mode->SetSelectedIndex((int32)(Ship::GetFriendlyFireLevel() * 4.0f));
 
-        if (PlayerCharacter* Player = PlayerCharacter::GetCurrentPlayer())
+        // ------------------------------------------------------------
+        // Player profile state (PlayerSubsystem)
+        // ------------------------------------------------------------
+
+        if (UStarshatterPlayerSubsystem* PlayerSS = UStarshatterPlayerSubsystem::Get(GetWorld()))
         {
-            if (flying_start)  flying_start->SetSelectedIndex(Player->FlyingStart());
-            if (ai_difficulty) ai_difficulty->SetSelectedIndex(ai_difficulty->GetOptionCount() - Player->AILevel() - 1);
-            if (grid_mode)     grid_mode->SetSelectedIndex(Player->GridMode());
-            if (gunsight)      gunsight->SetSelectedIndex(Player->Gunsight());
+            if (PlayerSS->HasLoaded())
+            {
+                const FS_PlayerGameInfo& Info = PlayerSS->GetPlayerInfo();
+
+                if (flying_start)
+                    flying_start->SetSelectedIndex(Info.FlyingStart ? 1 : 0);
+
+                if (ai_difficulty)
+                {
+                    const int32 OptionCount = ai_difficulty->GetOptionCount();
+                    const int32 ClampedAI = FMath::Clamp(Info.AILevel, 0, FMath::Max(0, OptionCount - 1));
+                    ai_difficulty->SetSelectedIndex(OptionCount - ClampedAI - 1);
+                }
+
+                if (grid_mode)
+                    grid_mode->SetSelectedIndex(Info.GridMode ? 1 : 0);
+
+                if (gunsight)
+                    gunsight->SetSelectedIndex(Info.GunSightMode ? 1 : 0);
+            }
         }
 
         bClosed = false;
@@ -301,24 +386,20 @@ void UOptionsScreen::ShowAudDlg()
     if (!AudDlg)
         return;
 
-    // Hide/disable subdialogs
     if (VidDlg) { VidDlg->SetVisibility(ESlateVisibility::Collapsed); VidDlg->SetIsEnabled(false); }
     if (CtlDlg) { CtlDlg->SetVisibility(ESlateVisibility::Collapsed); CtlDlg->SetIsEnabled(false); }
     if (KeyDlg) { KeyDlg->SetVisibility(ESlateVisibility::Collapsed); KeyDlg->SetIsEnabled(false); }
 
-    // Keep OptionsScreen itself visible as the router/background
     SetVisibility(ESlateVisibility::Visible);
     SetIsEnabled(true);
 
-    // Wire router + show
     AudDlg->SetOptionsManager(this);
     AudDlg->SetVisibility(ESlateVisibility::Visible);
     AudDlg->SetIsEnabled(true);
 
-    // Optional: bring to front deterministically (no SetZOrderInViewport needed)
     if (AudDlg->IsInViewport())
         AudDlg->RemoveFromParent();
-    AudDlg->AddToViewport(500); // Z_MODAL or Z_OPTIONS_MODAL
+    AudDlg->AddToViewport(500);
 }
 
 void UOptionsScreen::ShowVidDlg()
@@ -349,20 +430,22 @@ void UOptionsScreen::ShowModDlg()
     UE_LOG(LogTemp, Warning, TEXT("OptionsScreen: Mod page not implemented."));
 }
 
-// NEW: open KeyDlg from OptionsScreen
+/* --------------------------------------------------------------------
+   ShowKeyDlg
+   -------------------------------------------------------------------- */
+
 void UOptionsScreen::ShowKeyDlg(EStarshatterInputAction Action)
 {
     EnsureSubDialogs();
     if (!KeyDlg) return;
 
-    // Hide other pages
     SetVisibility(ESlateVisibility::Collapsed);
     if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
     if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
     if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
 
     KeyDlg->SetManager(this);
-    KeyDlg->SetEditingAction(Action); // you implement this in KeyDlg
+    KeyDlg->SetEditingAction(Action);
     KeyDlg->SetVisibility(ESlateVisibility::Visible);
     KeyDlg->SetKeyboardFocus();
 }
@@ -386,7 +469,6 @@ void UOptionsScreen::ApplyOptions()
         if (UStarshatterControlsSubsystem* CtlSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
             CtlSS->ApplySettingsToRuntime(this);
 
-        // NEW: keyboard apply (matches your BootKeyboard pattern)
         if (UStarshatterKeyboardSubsystem* KeyboardSS = GI->GetSubsystem<UStarshatterKeyboardSubsystem>())
             KeyboardSS->ApplySettingsToRuntime(this);
     }
@@ -429,18 +511,53 @@ void UOptionsScreen::OnApplyClicked() { ApplyOptions(); }
 void UOptionsScreen::OnCancelClicked() { CancelOptions(); }
 
 // ---------------------------------------------------------------------
-// Combo handlers (optional)
+// Combo handlers (optional UI feedback)
 // ---------------------------------------------------------------------
 
-void UOptionsScreen::OnFlightModelChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Flight model changed."))); }
-void UOptionsScreen::OnFlyingStartChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Flying start changed."))); }
-void UOptionsScreen::OnLandingsChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Landings changed."))); }
-void UOptionsScreen::OnAIDifficultyChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("AI difficulty changed."))); }
-void UOptionsScreen::OnHudModeChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("HUD mode changed."))); }
-void UOptionsScreen::OnHudColorChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("HUD color changed."))); }
-void UOptionsScreen::OnFfModeChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Friendly fire changed."))); }
-void UOptionsScreen::OnGridModeChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Grid mode changed."))); }
-void UOptionsScreen::OnGunsightChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Gunsight changed."))); }
+void UOptionsScreen::OnFlightModelChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("Flight model changed.")));
+}
+
+void UOptionsScreen::OnFlyingStartChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("Flying start changed.")));
+}
+
+void UOptionsScreen::OnLandingsChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("Landings changed.")));
+}
+
+void UOptionsScreen::OnAIDifficultyChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("AI difficulty changed.")));
+}
+
+void UOptionsScreen::OnHudModeChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("HUD mode changed.")));
+}
+
+void UOptionsScreen::OnHudColorChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("HUD color changed.")));
+}
+
+void UOptionsScreen::OnFfModeChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("Friendly fire changed.")));
+}
+
+void UOptionsScreen::OnGridModeChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("Grid mode changed.")));
+}
+
+void UOptionsScreen::OnGunsightChanged(FString, ESelectInfo::Type)
+{
+    if (description) description->SetText(FText::FromString(TEXT("Gunsight changed.")));
+}
 
 // ---------------------------------------------------------------------
 // Legacy Apply/Cancel for THIS page values
@@ -451,23 +568,44 @@ void UOptionsScreen::Apply()
     if (bClosed)
         return;
 
-    if (PlayerCharacter* Player = PlayerCharacter::GetCurrentPlayer())
+    // ------------------------------------------------------------
+    // Persist player-side options (PlayerSubsystem)
+    // ------------------------------------------------------------
+
+    if (UStarshatterPlayerSubsystem* PlayerSS = UStarshatterPlayerSubsystem::Get(GetWorld()))
     {
-        if (flight_model)  Player->SetFlightModel(flight_model->GetSelectedIndex());
-        if (flying_start)  Player->SetFlyingStart(flying_start->GetSelectedIndex());
-        if (landings)      Player->SetLandingModel(landings->GetSelectedIndex());
+        if (PlayerSS->HasLoaded())
+        {
+            FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
 
-        if (ai_difficulty)
-            Player->SetAILevel(ai_difficulty->GetOptionCount() - ai_difficulty->GetSelectedIndex() - 1);
+            if (flight_model)  Info.FlightModel = flight_model->GetSelectedIndex();
+            if (landings)      Info.LandingMode = landings->GetSelectedIndex();
+            if (hud_mode)      Info.HudMode = hud_mode->GetSelectedIndex();
+            if (hud_color)     Info.HudColor = hud_color->GetSelectedIndex();
 
-        if (hud_mode)      Player->SetHUDMode(hud_mode->GetSelectedIndex());
-        if (hud_color)     Player->SetHUDColor(hud_color->GetSelectedIndex());
-        if (ff_mode)       Player->SetFriendlyFire(ff_mode->GetSelectedIndex());
-        if (grid_mode)     Player->SetGridMode(grid_mode->GetSelectedIndex());
-        if (gunsight)      Player->SetGunsight(gunsight->GetSelectedIndex());
+            if (flying_start)  Info.FlyingStart = (flying_start->GetSelectedIndex() != 0);
+            if (grid_mode)     Info.GridMode = (grid_mode->GetSelectedIndex() != 0);
+            if (gunsight)      Info.GunSightMode = (gunsight->GetSelectedIndex() != 0);
 
-        PlayerCharacter::Save();
+            if (ai_difficulty)
+            {
+                const int32 OptionCount = ai_difficulty->GetOptionCount();
+                const int32 Selected = ai_difficulty->GetSelectedIndex();
+                const int32 NewAI = OptionCount - Selected - 1;
+                Info.AILevel = FMath::Clamp(NewAI, 0, FMath::Max(0, OptionCount - 1));
+            }
+
+            // Keep alias fields consistent if you rely on them elsewhere:
+            Info.SyncRosterAliasesFromPlayerStats();
+
+            PlayerSS->MarkDirty();
+            PlayerSS->SavePlayer(false);
+        }
     }
+
+    // ------------------------------------------------------------
+    // Apply runtime settings (Ship/HUDView)
+    // ------------------------------------------------------------
 
     if (flight_model) Ship::SetFlightModel(flight_model->GetSelectedIndex());
     if (landings)     Ship::SetLandingModel(landings->GetSelectedIndex());
@@ -478,7 +616,10 @@ void UOptionsScreen::Apply()
         Ship::SetFriendlyFireLevel((float)ff_mode->GetSelectedIndex() / 4.0f);
 
     if (HUDView* Hud = HUDView::GetInstance())
-        if (hud_color) Hud->SetHUDColorSet(hud_color->GetSelectedIndex());
+    {
+        if (hud_color)
+            Hud->SetHUDColorSet(hud_color->GetSelectedIndex());
+    }
 
     bClosed = true;
 }

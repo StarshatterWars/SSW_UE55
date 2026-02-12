@@ -68,12 +68,16 @@
 #include "DataLoader.h"
 #include "ParseUtil.h"
 #include "MouseController.h"
-#include "PlayerCharacter.h"
 #include "Random.h"
 #include "SimModel.h"
 #include "Video.h"
 #include "Graphic.h"
 #include "GameStructs.h"
+
+#include "StarshatterPlayerSubsystem.h"
+#include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
 
 // Minimal Unreal includes (logging + FVector):
 #include "CoreMinimal.h"
@@ -108,6 +112,41 @@ static FORCEINLINE double NormalizeRetLen(FVector& V)
 		V = FVector::ZeroVector;
 	}
 	return Len;
+}
+
+static UStarshatterPlayerSubsystem* GetPlayerSS()
+{
+	if (!GEngine)
+		return nullptr;
+
+	// Prefer a Game world (PIE/Standalone)
+	for (const FWorldContext& Ctx : GEngine->GetWorldContexts())
+	{
+		UWorld* World = Ctx.World();
+		if (!World)
+			continue;
+
+		if (World->WorldType == EWorldType::Game ||
+			World->WorldType == EWorldType::PIE ||
+			World->WorldType == EWorldType::GamePreview)
+		{
+			UGameInstance* GI = World->GetGameInstance();
+			return GI ? GI->GetSubsystem<UStarshatterPlayerSubsystem>() : nullptr;
+		}
+	}
+
+	// Fallback: first context with a world
+	for (const FWorldContext& Ctx : GEngine->GetWorldContexts())
+	{
+		UWorld* World = Ctx.World();
+		if (!World)
+			continue;
+
+		UGameInstance* GI = World->GetGameInstance();
+		return GI ? GI->GetSubsystem<UStarshatterPlayerSubsystem>() : nullptr;
+	}
+
+	return nullptr;
 }
 
 const char* FormatGameTime();
@@ -263,14 +302,18 @@ Sim::CommitMission()
 			}
 
 			if (s->IsPlayer()) {
-				PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
-				p->ProcessStats(s, start_time);
+				if (UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSS())
+				{
+					PlayerSS->ProcessStats(s, start_time);
 
-				if (mission && mission->Type() == Mission::TRAINING &&
-					s->GetDeaths() == 0 && s->GetColls() == 0)
-					p->SetTrained(mission->Identity());
+					if (mission && mission->Type() == Mission::TRAINING &&
+						s->GetDeaths() == 0 && s->GetColls() == 0)
+					{
+						PlayerSS->SetTrained(mission->Identity());
+					}
 
-				PlayerCharacter::Save(); // save training state right now before we forget!
+					PlayerSS->SavePlayer(TEXT("CommitMission training/stat update"));
+				}
 			}
 		}
 
@@ -1262,11 +1305,13 @@ Sim::CreateSplashDamage(SimShot* shot)
 void
 Sim::ShowGrid(int show)
 {
-	PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-
-	if (player && player->GridMode() == 0) {
-		show = 0;
-		grid_shown = false;
+	if (UStarshatterPlayerSubsystem* PlayerSS = GetPlayerSS())
+	{
+		if (PlayerSS->GetGridMode() == 0)
+		{
+			show = 0;
+			grid_shown = false;
+		}
 	}
 
 	ListIter<SimRegion> rgn = regions;
@@ -1429,13 +1474,13 @@ Sim::FindRegion(OrbitalRegion* orgn)
 SimRegion*
 Sim::FindNearestSpaceRegion(SimObject* object)
 {
-	return FindNearestRegion(object, REAL_SPACE);
+	return FindNearestRegion(object, (int) ESimType::REAL_SPACE);
 }
 
 SimRegion*
 Sim::FindNearestTerrainRegion(SimObject* object)
 {
-	return FindNearestRegion(object, AIR_SPACE);
+	return FindNearestRegion(object, (int) ESimType::AIR_SPACE);
 }
 
 SimRegion*

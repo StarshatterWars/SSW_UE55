@@ -61,7 +61,7 @@ public:
     static void       ClearMessages();
 
     virtual bool         Update(SimObject* obj) override;
-    virtual const char* GetObserverName() const override;
+    virtual FString     GetObserverName() const override;
 
     static void       SetColor(FColor c);
 

@@ -281,16 +281,11 @@ SeekerAI::Update(SimObject* obj)
     return SteerAI::Update(obj);
 }
 
-const char*
-SeekerAI::GetObserverName() const
+FString SeekerAI::GetObserverName() const
 {
-    static thread_local char NameBuf[64];
+    const FString SelfName = self
+        ? UTF8_TO_TCHAR(self->Name())
+        : TEXT("null");
 
-#if PLATFORM_WINDOWS
-    _snprintf_s(NameBuf, sizeof(NameBuf), _TRUNCATE, "SeekerAI(%s)", self ? self->Name() : "null");
-#else
-    snprintf(NameBuf, sizeof(NameBuf), "SeekerAI(%s)", self ? self->Name() : "null");
-#endif
-
-    return NameBuf;
+    return FString::Printf(TEXT("SeekerAI(%s)"), *SelfName);
 }

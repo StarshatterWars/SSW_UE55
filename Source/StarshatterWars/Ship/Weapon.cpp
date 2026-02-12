@@ -411,11 +411,13 @@ bool Weapon::Update(SimObject* obj)
     return SimObserver::Update(obj);
 }
 
-const char* Weapon::GetObserverName() const
+FString Weapon::GetObserverName() const
 {
-    static char iname[256];
-    sprintf_s(iname, "Weapon %s", design->name.data());
-    return iname;
+    const FString DesignName = design
+        ? UTF8_TO_TCHAR(design->name.data())
+        : TEXT("Unknown");
+
+    return FString::Printf(TEXT("Weapon %s"), *DesignName);
 }
 
 // +--------------------------------------------------------------------+

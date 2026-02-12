@@ -6,6 +6,7 @@
 #include "StarshatterPlayerSubsystem.h"
 #include "AwardInfoRegistry.h"
 #include "GameStructs.h"
+#include "ShipStats.h" 
 
 int PlayerProgression::GCurrentRankId = 0;
 
@@ -71,4 +72,15 @@ int PlayerProgression::GetCurrentRankId()
 void PlayerProgression::SetCurrentRankId(int InRankId)
 {
     GCurrentRankId = InRankId;
+}
+
+int32 PlayerProgression::ComputeMissionPoints(const ShipStats* Stats, int32 /*MissionStartTime*/)
+{
+    if (!Stats)
+        return 0;
+
+    // Minimal faithful behavior:
+    // Legacy often did additional time-based or award-based tweaks.
+    // Start with the canonical stats score.
+    return Stats->GetPoints();
 }

@@ -84,7 +84,7 @@ public:
 
 	virtual void         ExecFrame(double seconds);
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 	// OBJECTIVES:
 	void              ClearObjectives();

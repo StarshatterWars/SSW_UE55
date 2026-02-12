@@ -53,7 +53,7 @@ public:
 
 	// SimObserver:
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 	Ship* GetShip() { return ship; }
 	FlightDeck* GetDeck() { return deck; }
@@ -143,7 +143,7 @@ public:
 
 	// SimObserver:
 	virtual bool         Update(SimObject* obj);
-	virtual const char* GetObserverName() const;
+	virtual FString      GetObserverName() const override;
 
 	// accessors:
 	int            NumSlots()                 const { return num_slots; }

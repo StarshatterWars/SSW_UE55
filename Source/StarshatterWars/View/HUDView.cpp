@@ -60,7 +60,6 @@
 #include "QuantumDrive.h"
 #include "KeyMap.h"
 #include "AudioConfig.h"
-#include "PlayerCharacter.h"
 #include "GameStructs.h"
 #include "FontManager.h" 
 #include "OrbitalBody.h" 
@@ -79,6 +78,7 @@
 #include "Bitmap.h"
 #include "Game.h"
 #include "SimModel.h"
+#include "StarshatterPlayerSubsystem.h"
 
 
 // -------------------------------------------------------------------------------------------------
@@ -941,10 +941,9 @@ HUDView::Update(SimObject* obj)
 	return SimObserver::Update(obj);
 }
 
-const char*
-HUDView::GetObserverName() const
+FString HUDView::GetObserverName() const
 {
-	return "HUDView";
+	return TEXT("HUDView");
 }
 
 // +--------------------------------------------------------------------+
@@ -2856,17 +2855,23 @@ HUDView::ExecFrame()
 	// part of the 3D scene (like fpm and lcos sprites)
 	HideCompass();
 
-	if (ship && !transition && !docking && mode != EHUDMode::Off) {
-		PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
-		gunsight = p->Gunsight();
+	if (ship && !transition && !docking && mode != EHUDMode::Off)
+	{
+		// ------------------------------------------------------------
+		// Removed PlayerCharacter dependency:
+		// gunsight now comes from PlayerSubsystem cached snapshot
+		// ------------------------------------------------------------
+		gunsight = UStarshatterPlayerSubsystem::GetCachedGunSightMode(false);
 
-		if (ship->IsStarship()) {
-			if (tactical) {
+		if (ship->IsStarship())
+		{
+			if (tactical)
+			{
 				hud_left_sprite->Hide();
 				hud_right_sprite->Hide();
 			}
-
-			else if (hud_left_sprite->Frame() != &hud_left_starship) {
+			else if (hud_left_sprite->Frame() != &hud_left_starship)
+			{
 				hud_left_sprite->SetAnimation(&hud_left_starship);
 				hud_right_sprite->SetAnimation(&hud_right_starship);
 
@@ -2874,21 +2879,24 @@ HUDView::ExecFrame()
 				hud_right_sprite->MoveTo(FVector((float)(width / 2 + 128), (float)(height / 2), 1));
 			}
 		}
-
-		else if (!ship->IsStarship()) {
-			if (ship->IsAirborne() && hud_left_sprite->Frame() != &hud_left_air) {
+		else // !ship->IsStarship()
+		{
+			if (ship->IsAirborne() && hud_left_sprite->Frame() != &hud_left_air)
+			{
 				hud_left_sprite->SetAnimation(&hud_left_air);
 				hud_right_sprite->SetAnimation(&hud_right_air);
 			}
-
-			else if (!ship->IsAirborne() && hud_left_sprite->Frame() != &hud_left_fighter) {
+			else if (!ship->IsAirborne() && hud_left_sprite->Frame() != &hud_left_fighter)
+			{
 				hud_left_sprite->SetAnimation(&hud_left_fighter);
 				hud_right_sprite->SetAnimation(&hud_right_fighter);
 			}
 		}
 
-		if (!tactical) {
-			if (Game::MaxTexSize() > 128) {
+		if (!tactical)
+		{
+			if (Game::MaxTexSize() > 128)
+			{
 				hud_left_sprite->Show();
 				hud_right_sprite->Show();
 			}
@@ -2901,22 +2909,25 @@ HUDView::ExecFrame()
 			else if (!arcade)
 				DrawPitchLadder();
 		}
-
-		else {
+		else
+		{
 			if (ship->IsStarship() && ship->GetFLCSMode() == Ship::FLCS_HELM)
 				DrawCompass();
 		}
 
-		if (mode == EHUDMode::Tactical) {
+		if (mode == EHUDMode::Tactical)
+		{
 			DrawSight();
 			DrawDesignators();
 		}
 
-		if (width > 640 || (!show_inst && !show_warn)) {
+		if (width > 640 || (!show_inst && !show_warn))
+		{
 			icon_ship_sprite->Show();
 			icon_target_sprite->Show();
 		}
-		else {
+		else
+		{
 			icon_ship_sprite->Hide();
 			icon_target_sprite->Hide();
 		}
@@ -2924,7 +2935,8 @@ HUDView::ExecFrame()
 
 	// if the hud is off or prohibited,
 	// hide all of the sprites:
-	else {
+	else
+	{
 		hud_left_sprite->Hide();
 		hud_right_sprite->Hide();
 		instr_left_sprite->Hide();
@@ -2952,8 +2964,6 @@ HUDView::ExecFrame()
 		DrawILS();
 	}
 }
-
-
 
 // +--------------------------------------------------------------------+
 // Local helpers
