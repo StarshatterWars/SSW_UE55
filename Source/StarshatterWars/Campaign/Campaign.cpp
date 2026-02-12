@@ -614,7 +614,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
     int     subtype = 0;
     int     opp_type = -1;
     int     team = 0;
-    int     source = 0;
+    ECombatEventSource     source = ECombatEventSource::NONE;
     FVector loc(0.0f, 0.0f, 0.0f);
 
     Text    system;
@@ -662,7 +662,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
                     if (type == CombatAction::MISSION_TEMPLATE)
                         subtype = Mission::TypeFromName(txt);
                     else if (type == CombatAction::COMBAT_EVENT)
-                        subtype = CombatEvent::TypeFromName(txt);
+                        subtype = (int) CombatEvent::GetTypeFromName(txt);
                     else if (type == CombatAction::INTEL_EVENT)
                         subtype = Intel::IntelFromName(txt);
                 }
@@ -682,7 +682,7 @@ Campaign::ParseAction(TermStruct* val, const char* SourceFilename)
             else if (pdef->name()->value() == "source") {
                 char txt[64];
                 GetDefText(txt, pdef, SourceFilename);
-                source = CombatEvent::SourceFromName(txt);
+                source = CombatEvent::GetSourceFromName(txt);
             }
             else if (pdef->name()->value() == "team" || pdef->name()->value() == "iff") {
                 GetDefNumber(team, pdef, SourceFilename);

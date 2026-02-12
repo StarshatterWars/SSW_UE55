@@ -84,7 +84,7 @@ public:
     int         OpposingType() const { return opp_type; }
     int         GetIFF()       const { return team; }
     int         Status()       const { return status; }
-    int         Source()       const { return source; }
+    ECombatEventSource  GetSource()   const { return source; }
     FVector     Location()     const { return loc; }
     const char* System()       const { return system.data(); }
     const char* Region()       const { return region.data(); }
@@ -113,7 +113,7 @@ public:
     void SetOpposingType(int t) { opp_type = (char)t; }
     void SetIFF(int t) { team = (char)t; }
     void SetStatus(int s) { status = (char)s; }
-    void SetSource(int s) { source = s; }
+    void SetSource(ECombatEventSource s) { source = s; }
     void SetLocation(const FVector& p) { loc = p; }
     void SetSystem(Text sys) { system = sys; }
     void SetRegion(Text rgn) { region = rgn; }
@@ -145,7 +145,7 @@ private:
     char    min_rank = 0;
     char    max_rank = 100;
 
-    int     source = 0;
+    ECombatEventSource  source = ECombatEventSource::NONE;
     FVector loc;
 
     Text    system;

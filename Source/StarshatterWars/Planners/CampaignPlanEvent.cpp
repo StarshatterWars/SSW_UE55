@@ -101,7 +101,7 @@ CampaignPlanEvent::ExecScriptedEvents()
                         action->Subtype(),
                         (int)campaign->GetTime(),
                         action->GetIFF(),
-                        action->Source(),
+                        action->GetSource(),
                         action->Region());
 
                     if (!event)
@@ -126,14 +126,14 @@ CampaignPlanEvent::ExecScriptedEvents()
                     action->FireAction();
                     scripted_event = true;
 
-                    if (action->Subtype() == CombatEvent::CAMPAIGN_END) {
+                    if (action->Subtype() == (int) ECombatEventType::CAMPAIGN_END) {
                         UE_LOG(LogStarshatterWars, Log,
                             TEXT(">>>>> CAMPAIGN %d END  (Action %03d) <<<<<"),
                             campaign->GetCampaignId(), action->Identity());
                         campaign->SetCampaignStatus(ECampaignStatus::SUCCESS);
                     }
 
-                    else if (action->Subtype() == CombatEvent::CAMPAIGN_FAIL) {
+                    else if (action->Subtype() == (int) ECombatEventType::CAMPAIGN_FAIL) {
                         UE_LOG(LogStarshatterWars, Log,
                             TEXT(">>>>> CAMPAIGN %d FAIL (Action %03d) <<<<<"),
                             campaign->GetCampaignId(), action->Identity());
@@ -223,10 +223,10 @@ CampaignPlanEvent::ExecScriptedEvents()
                                     FCStringAnsi::Stricmp(action->GetText(), "do-not-display") != 0) {
 
                                     CombatEvent* event = new CombatEvent(campaign,
-                                        CombatEvent::MOVE_TO,
+                                        (int)ECombatEventType::MOVE_TO,
                                         (int)campaign->GetTime(),
                                         action->GetIFF(),
-                                        CombatEvent::FORCOM,
+                                        ECombatEventSource::FORCOM,
                                         action->Region());
 
                                     if (!event)
@@ -311,10 +311,10 @@ CampaignPlanEvent::ExecScriptedEvents()
                                     FCStringAnsi::Stricmp(action->GetText(), "do-not-display") != 0) {
 
                                     CombatEvent* event = new CombatEvent(campaign,
-                                        CombatEvent::MOVE_TO,
+                                        (int) ECombatEventType::MOVE_TO,
                                         (int)campaign->GetTime(),
                                         action->GetIFF(),
-                                        CombatEvent::FORCOM,
+                                        ECombatEventSource::FORCOM,
                                         action->Region());
 
                                     if (!event)
@@ -641,10 +641,10 @@ CampaignPlanEvent::CreateEventDefend(CombatAssignment* a)
     Text info;
 
     event = new CombatEvent(campaign,
-        CombatEvent::DEFEND,
+        (int) ECombatEventType::DEFEND,
         event_time,
         group->GetIFF(),
-        CombatEvent::TACNET,
+        ECombatEventSource::TACNET,
         rgn);
 
     if (!event)
@@ -712,10 +712,10 @@ CampaignPlanEvent::CreateEventFighterAssault(CombatAssignment* a)
     Text info;
 
     event = new CombatEvent(campaign,
-        CombatEvent::ATTACK,
+        (int) ECombatEventType::ATTACK,
         event_time,
         group->GetIFF(),
-        CombatEvent::TACNET,
+        ECombatEventSource::TACNET,
         rgn);
 
     if (!event)
@@ -840,10 +840,10 @@ CampaignPlanEvent::CreateEventFighterStrike(CombatAssignment* a)
     Text info;
 
     event = new CombatEvent(campaign,
-        CombatEvent::ATTACK,
+        (int) ECombatEventType::ATTACK,
         event_time,
         group->GetIFF(),
-        CombatEvent::TACNET,
+        ECombatEventSource::TACNET,
         rgn);
 
     if (!event)
@@ -981,10 +981,10 @@ CampaignPlanEvent::CreateEventFighterSweep(CombatAssignment* a)
     Text info;
 
     event = new CombatEvent(campaign,
-        CombatEvent::ATTACK,
+        (int) ECombatEventType::ATTACK,
         event_time,
         group->GetIFF(),
-        CombatEvent::TACNET,
+        ECombatEventSource::TACNET,
         rgn);
 
     if (!event)
@@ -1127,10 +1127,10 @@ CampaignPlanEvent::CreateEventStarship(CombatAssignment* a)
     Text info;
 
     event = new CombatEvent(campaign,
-        CombatEvent::ATTACK,
+        (int) ECombatEventType::ATTACK,
         event_time,
         group->GetIFF(),
-        CombatEvent::TACNET,
+        ECombatEventSource::TACNET,
         group->GetRegion());
 
     if (!event)

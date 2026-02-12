@@ -420,10 +420,10 @@ CampaignSaveGame::Load(const char* SourceFilename)
 
                             CombatEvent* event = new CombatEvent(
                                 campaign,
-                                CombatEvent::TypeFromName(type),
+                                (int) CombatEvent::GetTypeFromName(type),
                                 ev_time,
                                 team,
-                                CombatEvent::SourceFromName(source),
+                                CombatEvent::GetSourceFromName(source),
                                 region);
 
                             if (event) {
@@ -683,14 +683,18 @@ CampaignSaveGame::Save(const char* name)
         if (!e) continue;
 
         fprintf(f, "event: {");
-        fprintf(f, " type:%-18s,", e->TypeName());
+        fprintf(f, " type:%-18s,",
+            TCHAR_TO_UTF8(*e->GetTypeName())
+        );
         fprintf(f, " time:0x%08x,", e->Time());
         fprintf(f, " team:%d,", e->GetIFF());
        
         const FVector& P = e->GetPoints();
         fprintf(f, " points:{ x:%f, y:%f, z:%f },", P.X, P.Y, P.Z);
 
-        fprintf(f, " source:\"%s\",", e->SourceName());
+        fprintf(f, " source:\"%s\",",
+            TCHAR_TO_UTF8(*e->GetEventSourceName())
+        );
         fprintf(f, " region:\"%s\",", e->Region());
         fprintf(f, " title:\"%s\",", e->Title());
 

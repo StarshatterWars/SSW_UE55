@@ -1219,7 +1219,7 @@ void UStarshatterGameDataSubsystem::LoadCampaignData(const char* fs, bool full)
 										ActionSubtype = Mission::TypeFromName(txt);
 									}
 									else if (ActionType == ECOMBATACTION_TYPE::COMBAT_EVENT) {
-										ActionSubtype = CombatEvent::TypeFromName(txt);
+										ActionSubtype = (int) CombatEvent::GetTypeFromName(txt);
 									}
 									if (ActionType == ECOMBATACTION_TYPE::INTEL_EVENT) {
 										ActionSubtype = Intel::IntelFromName(txt);

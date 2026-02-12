@@ -34,7 +34,7 @@ CombatAction::CombatAction(int32 InId, int32 InType, int32 InSubtype, int32 InTe
     , status((uint8)PENDING)
     , min_rank(0)
     , max_rank(100)
-    , source(0)
+    , source(ECombatEventSource::NONE)
     , count(0)
     , start_before((int32)1e9)
     , start_after(0)

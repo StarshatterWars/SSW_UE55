@@ -240,7 +240,11 @@ void UCmdIntelDlg::AppendNewEventsIfAny()
 
             Item->Title = UTF8_TO_TCHAR(Info->Title());
             Item->Loc = UTF8_TO_TCHAR(Info->Region());
-            Item->Source = UTF8_TO_TCHAR(Game::GetText(Info->SourceName()));
+            Item->Source = UTF8_TO_TCHAR(
+                Game::GetText(
+                    TCHAR_TO_UTF8(*Info->GetEventSourceName())
+                )
+            );
             Item->EventPtr = Info;
 
             lst_news->AddItem(Item);
@@ -273,7 +277,11 @@ void UCmdIntelDlg::AppendNewEventsIfAny()
 
             Item->Title = UTF8_TO_TCHAR(Info->Title());
             Item->Loc = UTF8_TO_TCHAR(Info->Region());
-            Item->Source = UTF8_TO_TCHAR(Game::GetText(Info->SourceName()));
+            Item->Source = UTF8_TO_TCHAR(
+                Game::GetText(
+                    TCHAR_TO_UTF8(*Info->GetEventSourceName())
+                )
+            );
             Item->EventPtr = Info;
 
             lst_news->AddItem(Item);

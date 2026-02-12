@@ -21,13 +21,14 @@
 #include "ParseUtil.h"
 #include "FormatUtil.h"
 #include "DataLoader.h"
+#include "GameStructs.h"
 
 #include "Engine/Texture2D.h"
 
 // +----------------------------------------------------------------------+
 
 CombatEvent::CombatEvent(Campaign* c, int typ, int tim, int tem,
-    int src, const char* rgn)
+    ECombatEventSource src, const char* rgn)
     : campaign(c), type(typ), time(tim), team(tem), source(src),
     visited(false), loc(FVector::ZeroVector), points(FVector::ZeroVector),
     region(rgn)
@@ -36,74 +37,105 @@ CombatEvent::CombatEvent(Campaign* c, int typ, int tim, int tem,
 
 // +----------------------------------------------------------------------+
 
-const char*
-CombatEvent::SourceName() const
+FString
+CombatEvent::GetEventSourceName() const
 {
-    return SourceName(source);
+    return GetSourceName(source);
+}
+
+FString
+CombatEvent::GetTypeName() const
+{
+    //return GetTypeName(type);
+    return FString("");
 }
 
 // +----------------------------------------------------------------------+
-
-const char*
-CombatEvent::TypeName() const
+FString CombatEvent::GetTypeName(ECombatEventType InType)
 {
-    return TypeName(type);
-}
-
-// +----------------------------------------------------------------------+
-
-const char*
-CombatEvent::SourceName(int n)
-{
-    switch (n) {
-    case FORCOM:      return "FORCOM";
-    case TACNET:      return "TACNET";
-    case INTEL:       return "SECURE";
-    case MAIL:        return "Mail";
-    case NEWS:        return "News";
+    const UEnum* EnumPtr = StaticEnum<ECombatEventType>();
+    if (!EnumPtr)
+    {
+        return TEXT("Unknown");
     }
 
-    return "Unknown";
+    return EnumPtr->GetDisplayNameTextByValue((int64)InType).ToString();
 }
 
-int
-CombatEvent::SourceFromName(const char* n)
+// ----------------------------------------------------------------------
+
+FString CombatEvent::GetSourceName(ECombatEventSource InSource)
 {
-    for (int i = FORCOM; i <= NEWS; i++)
-        if (!_stricmp(n, SourceName(i)))
-            return i;
-
-    return -1;
-}
-
-// +----------------------------------------------------------------------+
-
-const char*
-CombatEvent::TypeName(int n)
-{
-    switch (n) {
-    case ATTACK:            return "ATTACK";
-    case DEFEND:            return "DEFEND";
-    case MOVE_TO:           return "MOVE_TO";
-    case CAPTURE:           return "CAPTURE";
-    case STRATEGY:          return "STRATEGY";
-    case STORY:             return "STORY";
-    case CAMPAIGN_START:    return "CAMPAIGN_START";
-    case CAMPAIGN_END:      return "CAMPAIGN_END";
-    case CAMPAIGN_FAIL:     return "CAMPAIGN_FAIL";
+    const UEnum* EnumPtr = StaticEnum<ECombatEventSource>();
+    if (!EnumPtr)
+    {
+        return TEXT("Unknown");
     }
 
-    return "Unknown";
+    return EnumPtr->GetDisplayNameTextByValue((int64)InSource).ToString();
 }
 
-int
-CombatEvent::TypeFromName(const char* n)
+ECombatEventSource CombatEvent::GetSourceFromName(const FString& Name)
 {
-    for (int i = ATTACK; i <= CAMPAIGN_FAIL; i++)
-        if (!_stricmp(n, TypeName(i)))
-            return i;
+    const FString N = Name.TrimStartAndEnd();
 
-    return -1;
+    if (N.IsEmpty())
+        return ECombatEventSource::NONE;   // <-- define this in your enum
+
+    if (N.Equals(TEXT("FORCOM"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::FORCOM;
+
+    if (N.Equals(TEXT("TACNET"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::TACNET;
+
+    if (N.Equals(TEXT("SECURE"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::INTEL;
+
+    if (N.Equals(TEXT("Mail"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::MAIL;
+
+    if (N.Equals(TEXT("News"), ESearchCase::IgnoreCase))
+        return ECombatEventSource::NEWS;
+
+    return ECombatEventSource::NONE;
+}
+
+// ----------------------------------------------------------------------
+ECombatEventType CombatEvent::GetTypeFromName(const FString& Name)
+{
+    const FString N = Name.TrimStartAndEnd();
+
+    if (N.IsEmpty())
+        return ECombatEventType::NONE; // add Unknown to the enum
+
+    if (N.Equals(TEXT("ATTACK"), ESearchCase::IgnoreCase))
+        return ECombatEventType::ATTACK;
+
+    if (N.Equals(TEXT("DEFEND"), ESearchCase::IgnoreCase))
+        return ECombatEventType::DEFEND;
+
+    if (N.Equals(TEXT("MOVE_TO"), ESearchCase::IgnoreCase))
+        return ECombatEventType::MOVE_TO;
+
+    if (N.Equals(TEXT("CAPTURE"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAPTURE;
+
+    if (N.Equals(TEXT("STRATEGY"), ESearchCase::IgnoreCase))
+        return ECombatEventType::STRATEGY;
+
+    if (N.Equals(TEXT("STORY"), ESearchCase::IgnoreCase))
+        return ECombatEventType::STORY;
+
+    if (N.Equals(TEXT("CAMPAIGN_START"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAMPAIGN_START;
+
+    if (N.Equals(TEXT("CAMPAIGN_END"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAMPAIGN_END;
+
+    if (N.Equals(TEXT("CAMPAIGN_FAIL"), ESearchCase::IgnoreCase))
+        return ECombatEventType::CAMPAIGN_FAIL;
+
+    return ECombatEventType::NONE;
 }
 
 // +----------------------------------------------------------------------+
