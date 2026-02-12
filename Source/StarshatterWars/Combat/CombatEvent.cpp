@@ -23,6 +23,10 @@
 #include "DataLoader.h"
 #include "GameStructs.h"
 
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "HAL/PlatformFilemanager.h"
+
 #include "Engine/Texture2D.h"
 
 // +----------------------------------------------------------------------+
@@ -149,47 +153,68 @@ ECombatEventType CombatEvent::GetTypeFromName(const FString& Name)
 
 // +----------------------------------------------------------------------+
 
-void
-CombatEvent::Load()
+void CombatEvent::Load()
 {
-    DataLoader* loader = DataLoader::GetLoader();
-
-    if (!campaign || !loader)
+    if (!campaign)
+    {
         return;
-
-    loader->SetDataPath(campaign->Path());
-
-    if (file.length() > 0) {
-        const char* filename = file.data();
-        BYTE* block = 0;
-
-        loader->LoadBuffer(filename, block, true);
-        info = (const char*)block;
-        loader->ReleaseBuffer(block);
-
-        if (info.contains('$')) {
-            PlayerCharacter* player = PlayerCharacter::GetCurrentPlayer();
-            CombatGroup* group = campaign->GetPlayerGroup();
-
-            if (player) {
-                info = FormatTextReplace(info, "$NAME", player->Name().data());
-                info = FormatTextReplace(info, "$RANK", PlayerCharacter::RankName(player->GetRank()));
-            }
-
-            if (group) {
-                info = FormatTextReplace(info, "$GROUP", group->GetDescription());
-            }
-
-            char timestr[32];
-            FormatDayTime(timestr, campaign->GetTime(), true);
-            info = FormatTextReplace(info, "$TIME", timestr);
-        }
     }
 
-    // Bitmap loading removed/commented to match template header (Bitmap disabled):
-    // if (type < CAMPAIGN_END && image_file.length() > 0) {
-    //     loader->LoadBitmap(image_file, image);
-    // }
+    // If your legacy member is std::string file; adjust as needed:
+    if (file.length() <= 0)
+    {
+        return;
+    }
 
-    loader->SetDataPath("");
+    const FString CampaignPath = UTF8_TO_TCHAR(campaign->Path());      // folder
+    const FString RelativeFile = UTF8_TO_TCHAR(file);          // file name / relative path
+    const FString FullPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(CampaignPath, RelativeFile));
+
+    FString LoadedText;
+    if (!FFileHelper::LoadFileToString(LoadedText, *FullPath))
+    {
+        // Keep it silent like legacy, or add logging:
+        // UE_LOG(LogTemp, Warning, TEXT("CombatEvent::Load failed: %s"), *FullPath);
+        return;
+    }
+
+    // Store into your member (prefer FString in UE):
+    // If your member 'info' is std::string, convert back at the end.
+    FString InfoText = LoadedText;
+
+    // Token replacement (only if needed)
+    if (InfoText.Contains(TEXT("$")))
+    {
+        PlayerCharacter* Player = PlayerCharacter::GetCurrentPlayer();
+        CombatGroup* Group = campaign->GetPlayerGroup();
+
+        if (Player)
+        {
+            // These look legacy-returning const char*; convert as needed:
+            InfoText.ReplaceInline(TEXT("$NAME"), UTF8_TO_TCHAR(Player->Name().data()));
+            InfoText.ReplaceInline(TEXT("$RANK"), UTF8_TO_TCHAR(PlayerCharacter::RankName(Player->GetRank())));
+        }
+
+        if (Group)
+        {
+            // If GetDescription() returns const char*:
+            InfoText.ReplaceInline(TEXT("$GROUP"), UTF8_TO_TCHAR(Group->GetDescription()));
+        }
+
+        // Time formatting: adapt to your campaign time representation.
+        // If campaign->GetTime() is "seconds since campaign start":
+        const double CampaignSeconds = campaign->GetTime();
+
+        const int32 TotalSeconds = (int32)FMath::Max(0.0, CampaignSeconds);
+        const int32 Hours = (TotalSeconds / 3600) % 24;
+        const int32 Minutes = (TotalSeconds / 60) % 60;
+
+        const FString TimeStr = FString::Printf(TEXT("%02d:%02d"), Hours, Minutes);
+        InfoText.ReplaceInline(TEXT("$TIME"), *TimeStr);
+    }
+
+    // Assign back to your storage:
+    // Preferred: make 'info' an FString in the UE port.
+    info = TCHAR_TO_UTF8(*InfoText); // if 'info' is std::string
+    // If 'info' is FString already: info = InfoText;
 }
