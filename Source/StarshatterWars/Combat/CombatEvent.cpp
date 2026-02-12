@@ -43,11 +43,20 @@ CombatEvent::GetEventSourceName() const
     return GetSourceName(source);
 }
 
-FString
-CombatEvent::GetTypeName() const
+FString CombatEvent::GetEventTypeName() const
 {
-    //return GetTypeName(type);
-    return FString("");
+    const UEnum* EnumPtr = StaticEnum<ECombatEventType>();
+    if (!EnumPtr)
+    {
+        return TEXT("Unknown");
+    }
+
+    if (!EnumPtr->IsValidEnumValue(type))
+    {
+        return TEXT("Unknown");
+    }
+
+    return EnumPtr->GetDisplayNameTextByValue(type).ToString();
 }
 
 // +----------------------------------------------------------------------+

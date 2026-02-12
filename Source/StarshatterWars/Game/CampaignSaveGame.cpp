@@ -684,7 +684,7 @@ CampaignSaveGame::Save(const char* name)
 
         fprintf(f, "event: {");
         fprintf(f, " type:%-18s,",
-            TCHAR_TO_UTF8(*e->GetTypeName())
+            TCHAR_TO_UTF8(*e->GetEventTypeName())
         );
         fprintf(f, " time:0x%08x,", e->Time());
         fprintf(f, " team:%d,", e->GetIFF());

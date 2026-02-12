@@ -42,7 +42,7 @@ public:
     bool                 Visited()      const { return visited; }
 
     FString GetEventSourceName()   const;
-    FString GetTypeName()     const;
+    FString GetEventTypeName()     const;
 
     // mutators:
     void SetType(int t) { type = t; }
