@@ -1,489 +1,278 @@
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+
+    SUBSYSTEM:      Stars.exe
+    FILE:           OptionsScreen.cpp
+    AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    UOptionsScreen
+
+    Central Options Hub for Starshatter Wars.
+
+    - Owns all options sub-screens (Audio/Video/Controls/Keyboard/Joystick/Game/Mods)
+    - Uses a WidgetSwitcher to swap sub-dialogs
+    - Tab buttons behave like radio buttons (selected tab stays highlighted)
+    - Save applies settings; Cancel/ESC returns to menu
+    - Uses AddUniqueDynamic for safe delegate binding
+
+    Option B (recommended):
+      - Selected tab == disabled state.
+      - Style in BP:
+          * Normal (unselected): background alpha = 0
+          * Disabled (selected): STEEL GRAY background
+
+=============================================================================*/
+
 #include "OptionsScreen.h"
 
-// UE:
-#include "Engine/World.h"
-#include "Blueprint/UserWidget.h"
-#include "Engine/GameInstance.h"
-
-// UMG:
+// UMG
 #include "Components/Button.h"
-#include "Components/ComboBoxString.h"
-#include "Components/TextBlock.h"
+#include "Components/Border.h"
+#include "Components/WidgetSwitcher.h"
+#include "Blueprint/UserWidget.h"
 
-// Input:
-#include "Input/Reply.h"
-#include "InputCoreTypes.h"
-
-// Subdialogs:
+// IMPORTANT: include subwidget headers so C++ knows inheritance
 #include "AudioDlg.h"
 #include "VideoDlg.h"
 #include "ControlOptionsDlg.h"
 #include "KeyDlg.h"
+#include "JoyDlg.h"
+#include "GameOptionsDlg.h"
+#include "ModsDlg.h"
 
-// Starshatter core:
-#include "Ship.h"
-#include "HUDView.h"
-#include "PlayerCharacter.h"
-#include "Starshatter.h"
+// Menu routing
+#include "MenuScreen.h"
 
-// Subsystems:
-#include "StarshatterAudioSubsystem.h"
-#include "StarshatterVideoSubsystem.h"
-#include "StarshatterControlsSubsystem.h"
-#include "StarshatterKeyboardSubsystem.h"
+DEFINE_LOG_CATEGORY_STATIC(LogOptionsScreen, Log, All);
 
 UOptionsScreen::UOptionsScreen(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    bClosed = true;
-    SetDialogInputEnabled(true);
+}
+
+void UOptionsScreen::NativeOnInitialized()
+{
+    Super::NativeOnInitialized();
+    BindDelegates();
 }
 
 void UOptionsScreen::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    EnsureSubDialogs();
+    bIsFocusable = true;
+    BindDelegates();
 
-    // Apply/Cancel
-    if (ApplyBtn)
-    {
-        ApplyBtn->OnClicked.RemoveAll(this);
-        ApplyBtn->OnClicked.AddDynamic(this, &UOptionsScreen::OnApplyClicked);
-    }
-    if (CancelBtn)
-    {
-        CancelBtn->OnClicked.RemoveAll(this);
-        CancelBtn->OnClicked.AddDynamic(this, &UOptionsScreen::OnCancelClicked);
-    }
+    // Wire managers so subpages route back through OptionsScreen:
+    if (AudioDlg)    AudioDlg->SetOptionsManager(this);      // your AudioDlg uses OptionsManager
+    if (VideoDlg)    VideoDlg->SetOptionsManager(this);
+    if (ControlsDlg) ControlsDlg->SetOptionsManager(this);
+    if (KeyboardDlg) KeyboardDlg->SetOptionsManager(this);
+    if (JoystickDlg) JoystickDlg->SetOptionsManager(this);
+    if (GameDlg) GameDlg->SetOptionsManager(this);
+    //if (ModsDlg) ModsDlg->SetOptionsManager(this);
+    // JoystickDlg/GameDlg/ModsDlg can be wired when you add Manager APIs.
 
-    // Tabs
-    if (vid_btn)
+    // Default landing page:
+    if (AudioDlg)        ShowAudDlg();
+    else if (ControlsDlg)ShowCtlDlg();
+    else if (GameDlg)    ShowGameDlg();
+    else if (VideoDlg)   ShowVidDlg();
+    else
     {
-        vid_btn->OnClicked.RemoveAll(this);
-        vid_btn->OnClicked.AddDynamic(this, &UOptionsScreen::OnVideoClicked);
+        UE_LOG(LogOptionsScreen, Warning,
+            TEXT("[Options] No subwidgets bound. Check WBP variable names match (AudioDlg, ControlsDlg, etc) and are in the WidgetSwitcher."));
     }
-    if (aud_btn)
-    {
-        aud_btn->OnClicked.RemoveAll(this);
-        aud_btn->OnClicked.AddDynamic(this, &UOptionsScreen::OnAudioClicked);
-    }
-    if (ctl_btn)
-    {
-        ctl_btn->OnClicked.RemoveAll(this);
-        ctl_btn->OnClicked.AddDynamic(this, &UOptionsScreen::OnControlsClicked);
-    }
-    if (opt_btn)
-    {
-        opt_btn->OnClicked.RemoveAll(this);
-        opt_btn->OnClicked.AddDynamic(this, &UOptionsScreen::OnOptionsClicked);
-    }
-    if (mod_btn)
-    {
-        mod_btn->OnClicked.RemoveAll(this);
-        mod_btn->OnClicked.AddDynamic(this, &UOptionsScreen::OnModClicked);
-    }
-
-    // Combo handlers (optional)
-    if (flight_model)
-    {
-        flight_model->OnSelectionChanged.RemoveAll(this);
-        flight_model->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnFlightModelChanged);
-    }
-    if (flying_start)
-    {
-        flying_start->OnSelectionChanged.RemoveAll(this);
-        flying_start->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnFlyingStartChanged);
-    }
-    if (landings)
-    {
-        landings->OnSelectionChanged.RemoveAll(this);
-        landings->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnLandingsChanged);
-    }
-    if (ai_difficulty)
-    {
-        ai_difficulty->OnSelectionChanged.RemoveAll(this);
-        ai_difficulty->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnAIDifficultyChanged);
-    }
-    if (hud_mode)
-    {
-        hud_mode->OnSelectionChanged.RemoveAll(this);
-        hud_mode->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnHudModeChanged);
-    }
-    if (hud_color)
-    {
-        hud_color->OnSelectionChanged.RemoveAll(this);
-        hud_color->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnHudColorChanged);
-    }
-    if (ff_mode)
-    {
-        ff_mode->OnSelectionChanged.RemoveAll(this);
-        ff_mode->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnFfModeChanged);
-    }
-    if (grid_mode)
-    {
-        grid_mode->OnSelectionChanged.RemoveAll(this);
-        grid_mode->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnGridModeChanged);
-    }
-    if (gunsight)
-    {
-        gunsight->OnSelectionChanged.RemoveAll(this);
-        gunsight->OnSelectionChanged.AddDynamic(this, &UOptionsScreen::OnGunsightChanged);
-    }
-
-    ShowOptDlg();
 }
 
-void UOptionsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UOptionsScreen::BindDelegates()
 {
-    Super::NativeTick(MyGeometry, InDeltaTime);
-    (void)MyGeometry;
-    (void)InDeltaTime;
+    if (bDelegatesBound)
+        return;
+
+    // Tabs (alphabetical)
+    if (BtnAudio)    BtnAudio->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnAudioClicked);
+    if (BtnControls) BtnControls->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnControlsClicked);
+    if (BtnGame)     BtnGame->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnGameClicked);
+    if (BtnJoystick) BtnJoystick->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnJoystickClicked);
+    if (BtnKeyboard) BtnKeyboard->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnKeyboardClicked);
+    if (BtnMods)     BtnMods->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnModsClicked);
+    if (BtnVideo)    BtnVideo->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnVideoClicked);
+
+    // Bottom buttons
+    if (BtnSave)   BtnSave->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnSaveClicked);
+    if (BtnCancel) BtnCancel->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnCancelClicked);
+
+    bDelegatesBound = true;
 }
 
-FReply UOptionsScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+void UOptionsScreen::HandleCancel()
 {
-    const FKey Key = InKeyEvent.GetKey();
-
-    if (Key == EKeys::Enter || Key == EKeys::Virtual_Accept)
-    {
-        OnApplyClicked();
-        return FReply::Handled();
-    }
-
-    if (Key == EKeys::Escape || Key == EKeys::Virtual_Back)
-    {
-        OnCancelClicked();
-        return FReply::Handled();
-    }
-
-    return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+    // ESC routed through BaseScreen -> CancelOptions
+    CancelOptions();
 }
 
-// ---------------------------------------------------------------------
-// Subdialog creation
-// ---------------------------------------------------------------------
+// ------------------------------------------------------------
+// Tab visual state (Option B)
+// ------------------------------------------------------------
 
-/* --------------------------------------------------------------------
-   EnsureSubDialogs (OptionsScreen)
-   -------------------------------------------------------------------- */
-
-void UOptionsScreen::EnsureSubDialogs()
+void UOptionsScreen::SetActiveTab(UButton* ActiveButton)
 {
-    APlayerController* PC = GetOwningPlayer();
-    if (!PC)
+    const FLinearColor SelectedColor = FLinearColor(0.45f, 0.45f, 0.5f, 1.0f); // Steel gray
+    const FLinearColor NotSelectedColor = FLinearColor(1, 1, 1, 0.0f);        // Transparent
+
+    auto SetBorder = [&](UBorder* Border, UButton* Button)
+        {
+            if (!Border || !Button) return;
+
+            Border->SetBrushColor(Button == ActiveButton ? SelectedColor : NotSelectedColor);
+        };
+
+    SetBorder(BorderAudio, BtnAudio);
+    SetBorder(BorderControls, BtnControls);
+    SetBorder(BorderGame, BtnGame);
+    SetBorder(BorderJoystick, BtnJoystick);
+    SetBorder(BorderKeyboard, BtnKeyboard);
+    SetBorder(BorderMods, BtnMods);
+    SetBorder(BorderVideo, BtnVideo);
+}
+
+void UOptionsScreen::SwitchToWidget(UWidget* Widget)
+{
+    if (!OptionsSwitcher)
     {
-        UE_LOG(LogTemp, Warning, TEXT("OptionsScreen::EnsureSubDialogs: OwningPlayer is NULL"));
+        UE_LOG(LogOptionsScreen, Error, TEXT("[Options] OptionsSwitcher is NULL (BindWidgetOptional missing in WBP)."));
         return;
     }
 
-    // ------------------------------------------------------------
-    // Audio
-    // ------------------------------------------------------------
-
-    if (!AudDlg && AudioDlgClass)
+    if (!Widget)
     {
-        AudDlg = CreateWidget<UAudioDlg>(PC, AudioDlgClass);
-        if (AudDlg)
-        {
-            AudDlg->AddToViewport(0);
-            AudDlg->SetVisibility(ESlateVisibility::Collapsed);
-            AudDlg->SetIsEnabled(false);
-
-            AudDlg->SetOptionsManager(this);
-        }
+        UE_LOG(LogOptionsScreen, Warning, TEXT("[Options] SwitchToWidget: Widget is NULL."));
+        return;
     }
 
-    // ------------------------------------------------------------
-    // Video
-    // ------------------------------------------------------------
-
-    if (!VidDlg && VideoDlgClass)
-    {
-        VidDlg = CreateWidget<UVideoDlg>(PC, VideoDlgClass);
-        if (VidDlg)
-        {
-            VidDlg->AddToViewport(0);
-            VidDlg->SetVisibility(ESlateVisibility::Collapsed);
-            VidDlg->SetIsEnabled(false);
-
-            VidDlg->SetOptionsManager(this);
-        }
-    }
-
-    // ------------------------------------------------------------
-    // Controls
-    // ------------------------------------------------------------
-
-    if (!CtlDlg && ControlDlgClass)
-    {
-        CtlDlg = CreateWidget<UControlOptionsDlg>(PC, ControlDlgClass);
-        if (CtlDlg)
-        {
-            CtlDlg->AddToViewport(0);
-            CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
-            CtlDlg->SetIsEnabled(false);
-
-            CtlDlg->SetOptionsManager(this);
-        }
-    }
-
-    // ------------------------------------------------------------
-    // Key Binding Dialog
-    // ------------------------------------------------------------
-
-    if (!KeyDlg && KeyDlgClass)
-    {
-        KeyDlg = CreateWidget<UKeyDlg>(PC, KeyDlgClass);
-        if (KeyDlg)
-        {
-            KeyDlg->AddToViewport(0);
-            KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
-            KeyDlg->SetIsEnabled(false);
-
-            KeyDlg->SetOptionsManager(this);
-        }
-    }
-}
-void UOptionsScreen::HideAllPages()
-{
-    if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
-
-    SetVisibility(ESlateVisibility::Collapsed);
+    OptionsSwitcher->SetActiveWidget(Widget);
 }
 
-// ---------------------------------------------------------------------
-// Page routing
-// ---------------------------------------------------------------------
+// ------------------------------------------------------------
+// Tab click handlers
+// ------------------------------------------------------------
 
-void UOptionsScreen::ShowOptDlg()
-{
-    EnsureSubDialogs();
+void UOptionsScreen::OnAudioClicked() { ShowAudDlg(); }
+void UOptionsScreen::OnControlsClicked() { ShowCtlDlg(); }
+void UOptionsScreen::OnGameClicked() { ShowGameDlg(); }
+void UOptionsScreen::OnJoystickClicked() { ShowJoyDlg(); }
+void UOptionsScreen::OnKeyboardClicked() { ShowKeyDlg(); }
+void UOptionsScreen::OnModsClicked() { ShowModDlg(); }
+void UOptionsScreen::OnVideoClicked() { ShowVidDlg(); }
 
-    if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
-
-    SetVisibility(ESlateVisibility::Visible);
-    SetDialogInputEnabled(true);
-
-    if (bClosed)
-    {
-        if (flight_model)  flight_model->SetSelectedIndex(Ship::GetFlightModel());
-        if (landings)      landings->SetSelectedIndex(Ship::GetLandingModel());
-        if (hud_mode)      hud_mode->SetSelectedIndex(HUDView::IsArcade() ? 1 : 0);
-        if (hud_color)     hud_color->SetSelectedIndex(HUDView::DefaultColorSet());
-        if (ff_mode)       ff_mode->SetSelectedIndex((int32)(Ship::GetFriendlyFireLevel() * 4.0f));
-
-        if (PlayerCharacter* Player = PlayerCharacter::GetCurrentPlayer())
-        {
-            if (flying_start)  flying_start->SetSelectedIndex(Player->FlyingStart());
-            if (ai_difficulty) ai_difficulty->SetSelectedIndex(ai_difficulty->GetOptionCount() - Player->AILevel() - 1);
-            if (grid_mode)     grid_mode->SetSelectedIndex(Player->GridMode());
-            if (gunsight)      gunsight->SetSelectedIndex(Player->Gunsight());
-        }
-
-        bClosed = false;
-    }
-}
-
-/* --------------------------------------------------------------------
-   ShowAudDlg
-   -------------------------------------------------------------------- */
+// ------------------------------------------------------------
+// Public routing
+// ------------------------------------------------------------
 
 void UOptionsScreen::ShowAudDlg()
 {
-    EnsureSubDialogs();
-    if (!AudDlg)
-        return;
-
-    // Hide/disable subdialogs
-    if (VidDlg) { VidDlg->SetVisibility(ESlateVisibility::Collapsed); VidDlg->SetIsEnabled(false); }
-    if (CtlDlg) { CtlDlg->SetVisibility(ESlateVisibility::Collapsed); CtlDlg->SetIsEnabled(false); }
-    if (KeyDlg) { KeyDlg->SetVisibility(ESlateVisibility::Collapsed); KeyDlg->SetIsEnabled(false); }
-
-    // Keep OptionsScreen itself visible as the router/background
-    SetVisibility(ESlateVisibility::Visible);
-    SetIsEnabled(true);
-
-    // Wire router + show
-    AudDlg->SetOptionsManager(this);
-    AudDlg->SetVisibility(ESlateVisibility::Visible);
-    AudDlg->SetIsEnabled(true);
-
-    // Optional: bring to front deterministically (no SetZOrderInViewport needed)
-    if (AudDlg->IsInViewport())
-        AudDlg->RemoveFromParent();
-    AudDlg->AddToViewport(500); // Z_MODAL or Z_OPTIONS_MODAL
-}
-
-void UOptionsScreen::ShowVidDlg()
-{
-    EnsureSubDialogs();
-    if (!VidDlg) return;
-
-    SetVisibility(ESlateVisibility::Collapsed);
-    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
-
-    VidDlg->SetManager(this);
-    VidDlg->Show();
+    SetActiveTab(BtnAudio.Get());
+    SwitchToWidget(AudioDlg.Get());
 }
 
 void UOptionsScreen::ShowCtlDlg()
 {
-    EnsureSubDialogs();
-    if (!CtlDlg) return;
+    SetActiveTab(BtnControls.Get());
+    SwitchToWidget(ControlsDlg.Get());
+}
 
-    SetVisibility(ESlateVisibility::Collapsed);
-    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
+void UOptionsScreen::ShowGameDlg()
+{
+    SetActiveTab(BtnGame.Get());
+    SwitchToWidget(GameDlg.Get());
+}
 
-    CtlDlg->Show();
+void UOptionsScreen::ShowJoyDlg()
+{
+    SetActiveTab(BtnJoystick.Get());
+    SwitchToWidget(JoystickDlg.Get());
+}
+
+void UOptionsScreen::ShowKeyDlg()
+{
+    SetActiveTab(BtnKeyboard.Get());
+    SwitchToWidget(KeyboardDlg.Get());
+
+    // If KeyDlg is a capture screen, ensure focus:
+    if (KeyboardDlg)
+    {
+        KeyboardDlg->SetKeyboardFocus();
+        KeyboardDlg->BeginCapture();
+    }
 }
 
 void UOptionsScreen::ShowModDlg()
 {
-    UE_LOG(LogTemp, Warning, TEXT("OptionsScreen: Mod page not implemented."));
+    SetActiveTab(BtnMods.Get());
+    SwitchToWidget(ModsDlg.Get());
 }
 
-// NEW: open KeyDlg from OptionsScreen
-void UOptionsScreen::ShowKeyDlg(EStarshatterInputAction Action)
+void UOptionsScreen::ShowVidDlg()
 {
-    EnsureSubDialogs();
-    if (!KeyDlg) return;
-
-    // Hide other pages
-    SetVisibility(ESlateVisibility::Collapsed);
-    if (AudDlg) AudDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (VidDlg) VidDlg->SetVisibility(ESlateVisibility::Collapsed);
-    if (CtlDlg) CtlDlg->SetVisibility(ESlateVisibility::Collapsed);
-
-    KeyDlg->SetManager(this);
-    KeyDlg->SetEditingAction(Action); // you implement this in KeyDlg
-    KeyDlg->SetVisibility(ESlateVisibility::Visible);
-    KeyDlg->SetKeyboardFocus();
+    SetActiveTab(BtnVideo.Get());
+    SwitchToWidget(VideoDlg.Get());
 }
 
-// ---------------------------------------------------------------------
-// Apply / Cancel orchestration
-// ---------------------------------------------------------------------
+// ------------------------------------------------------------
+// Save / Cancel
+// ------------------------------------------------------------
+
+void UOptionsScreen::OnSaveClicked()
+{
+    ApplyOptions();
+}
+
+void UOptionsScreen::OnCancelClicked()
+{
+    CancelOptions();
+}
 
 void UOptionsScreen::ApplyOptions()
 {
-    Apply();
+    UE_LOG(LogOptionsScreen, Log, TEXT("[Options] ApplyOptions()"));
 
-    if (UGameInstance* GI = GetGameInstance())
-    {
-        if (UStarshatterAudioSubsystem* AudioSS = GI->GetSubsystem<UStarshatterAudioSubsystem>())
-            AudioSS->ApplySettingsToRuntime();
+    // Centralized apply pattern:
+    if (AudioDlg)    AudioDlg->Apply();
+    if (VideoDlg)    VideoDlg->Apply();
+    if (ControlsDlg) ControlsDlg->Apply();
+    // GameDlg/JoystickDlg/ModsDlg as you implement them.
 
-        if (UStarshatterVideoSubsystem* VideoSS = GI->GetSubsystem<UStarshatterVideoSubsystem>())
-            VideoSS->ApplySettingsToRuntime();
-
-        if (UStarshatterControlsSubsystem* CtlSS = GI->GetSubsystem<UStarshatterControlsSubsystem>())
-            CtlSS->ApplySettingsToRuntime(this);
-
-        // NEW: keyboard apply (matches your BootKeyboard pattern)
-        if (UStarshatterKeyboardSubsystem* KeyboardSS = GI->GetSubsystem<UStarshatterKeyboardSubsystem>())
-            KeyboardSS->ApplySettingsToRuntime(this);
-    }
-
-    if (CtlDlg) CtlDlg->Apply();
-
-    bClosed = true;
-    ShowOptDlg();
+    // Stay on current tab after save (legacy-friendly)
 }
 
 void UOptionsScreen::CancelOptions()
 {
-    Cancel();
+    UE_LOG(LogOptionsScreen, Log, TEXT("[Options] CancelOptions()"));
 
-    if (AudDlg) AudDlg->Cancel();
-    if (VidDlg) VidDlg->Cancel();
-    if (CtlDlg) CtlDlg->Cancel();
+    // Optional revert:
+    if (AudioDlg)    AudioDlg->Cancel();
+    if (VideoDlg)    VideoDlg->Cancel();
+    if (ControlsDlg) ControlsDlg->Cancel();
 
-    if (KeyDlg) KeyDlg->SetVisibility(ESlateVisibility::Collapsed);
-
-    bClosed = true;
-    ShowOptDlg();
-}
-
-// ---------------------------------------------------------------------
-// Tabs
-// ---------------------------------------------------------------------
-
-void UOptionsScreen::OnAudioClicked() { ShowAudDlg(); }
-void UOptionsScreen::OnVideoClicked() { ShowVidDlg(); }
-void UOptionsScreen::OnOptionsClicked() { ShowOptDlg(); }
-void UOptionsScreen::OnControlsClicked() { ShowCtlDlg(); }
-void UOptionsScreen::OnModClicked() { ShowModDlg(); }
-
-// ---------------------------------------------------------------------
-// Apply/Cancel buttons
-// ---------------------------------------------------------------------
-
-void UOptionsScreen::OnApplyClicked() { ApplyOptions(); }
-void UOptionsScreen::OnCancelClicked() { CancelOptions(); }
-
-// ---------------------------------------------------------------------
-// Combo handlers (optional)
-// ---------------------------------------------------------------------
-
-void UOptionsScreen::OnFlightModelChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Flight model changed."))); }
-void UOptionsScreen::OnFlyingStartChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Flying start changed."))); }
-void UOptionsScreen::OnLandingsChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Landings changed."))); }
-void UOptionsScreen::OnAIDifficultyChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("AI difficulty changed."))); }
-void UOptionsScreen::OnHudModeChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("HUD mode changed."))); }
-void UOptionsScreen::OnHudColorChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("HUD color changed."))); }
-void UOptionsScreen::OnFfModeChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Friendly fire changed."))); }
-void UOptionsScreen::OnGridModeChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Grid mode changed."))); }
-void UOptionsScreen::OnGunsightChanged(FString, ESelectInfo::Type) { if (description) description->SetText(FText::FromString(TEXT("Gunsight changed."))); }
-
-// ---------------------------------------------------------------------
-// Legacy Apply/Cancel for THIS page values
-// ---------------------------------------------------------------------
-
-void UOptionsScreen::Apply()
-{
-    if (bClosed)
-        return;
-
-    if (PlayerCharacter* Player = PlayerCharacter::GetCurrentPlayer())
+    // Return to menu (MenuScreen owns showing MenuDlg)
+    if (UMenuScreen* Menu = GetMenuManager())
     {
-        if (flight_model)  Player->SetFlightModel(flight_model->GetSelectedIndex());
-        if (flying_start)  Player->SetFlyingStart(flying_start->GetSelectedIndex());
-        if (landings)      Player->SetLandingModel(landings->GetSelectedIndex());
-
-        if (ai_difficulty)
-            Player->SetAILevel(ai_difficulty->GetOptionCount() - ai_difficulty->GetSelectedIndex() - 1);
-
-        if (hud_mode)      Player->SetHUDMode(hud_mode->GetSelectedIndex());
-        if (hud_color)     Player->SetHUDColor(hud_color->GetSelectedIndex());
-        if (ff_mode)       Player->SetFriendlyFire(ff_mode->GetSelectedIndex());
-        if (grid_mode)     Player->SetGridMode(grid_mode->GetSelectedIndex());
-        if (gunsight)      Player->SetGunsight(gunsight->GetSelectedIndex());
-
-        PlayerCharacter::Save();
+        Menu->ReturnFromOptions();
     }
-
-    if (flight_model) Ship::SetFlightModel(flight_model->GetSelectedIndex());
-    if (landings)     Ship::SetLandingModel(landings->GetSelectedIndex());
-    if (hud_mode)     HUDView::SetArcade(hud_mode->GetSelectedIndex() > 0);
-    if (hud_color)    HUDView::SetDefaultColorSet(hud_color->GetSelectedIndex());
-
-    if (ff_mode)
-        Ship::SetFriendlyFireLevel((float)ff_mode->GetSelectedIndex() / 4.0f);
-
-    if (HUDView* Hud = HUDView::GetInstance())
-        if (hud_color) Hud->SetHUDColorSet(hud_color->GetSelectedIndex());
-
-    bClosed = true;
+    else
+    {
+        UE_LOG(LogOptionsScreen, Warning, TEXT("[Options] CancelOptions: MenuManager is NULL"));
+        SetVisibility(ESlateVisibility::Collapsed);
+    }
 }
 
-void UOptionsScreen::Cancel()
+void UOptionsScreen::ReturnFromKeyDlg()
 {
-    bClosed = true;
+    // KeyDlg asked to return: route back to the Keyboard page and keep it highlighted
+    ShowKeyDlg();
 }

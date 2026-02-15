@@ -81,6 +81,7 @@ UENUM()
 enum class EMenuZOrder : int32
 {
 	Z_MENU_BASE = 100,
+	Z_MENU_SCREEN = 150,
 	Z_MENU_OVERLAY = 200,
 	Z_MODAL = 500,
 	Z_CONFIRM = 600,

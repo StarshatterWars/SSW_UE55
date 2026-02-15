@@ -1,29 +1,56 @@
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+
+    SUBSYSTEM:      Stars.exe
+    FILE:           OptionsScreen.h
+    AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    UOptionsScreen
+
+    Central Options Hub for Starshatter Wars.
+
+    Responsibilities:
+      - Owns all options sub-screens
+      - Uses a WidgetSwitcher to swap sub-dialogs
+      - Manages tab buttons (radio-style behavior)
+      - Handles Save / Cancel
+      - ESC returns to MenuScreen
+      - No routing logic lives in MenuDlg anymore
+
+    Tabs (alphabetical order):
+      - Audio
+      - Controls
+      - Game
+      - Joystick
+      - Keyboard
+      - Mods
+      - Video
+
+=============================================================================*/
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-
-// For EStarshatterInputAction
-#include "GameStructs.h"
-
 #include "OptionsScreen.generated.h"
 
-// Forward declares:
 class UButton;
-class UComboBoxString;
-class UTextBlock;
+class UBorder;
+class UWidget;
+class UWidgetSwitcher;
 
+// Sub-widgets
 class UAudioDlg;
 class UVideoDlg;
 class UControlOptionsDlg;
 class UKeyDlg;
-
-class UMenuScreen;
-
-class UStarshatterAudioSubsystem;
-class UStarshatterVideoSubsystem;
-class UStarshatterControlsSubsystem;
-class UStarshatterKeyboardSubsystem;
+class UJoyDlg;
+class UGameOptionsDlg;
+class UModsDlg;
 
 UCLASS()
 class STARSHATTERWARS_API UOptionsScreen : public UBaseScreen
@@ -33,122 +60,112 @@ class STARSHATTERWARS_API UOptionsScreen : public UBaseScreen
 public:
     UOptionsScreen(const FObjectInitializer& ObjectInitializer);
 
-    virtual void NativeConstruct() override;
-    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
 protected:
-    virtual bool NativeSupportsKeyboardFocus() const override { return true; }
-    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+    virtual void NativeOnInitialized() override;
+    virtual void NativeConstruct() override;
 
 public:
-    // MenuScreen hook:
-    void SetMenuManager(UMenuScreen* InManager) { MenuManager = InManager; }
-    UMenuScreen* GetMenuManager() const { return MenuManager; }
+    // ESC should behave like Cancel (return to menu)
+    virtual void HandleCancel() override;
 
-    // Page routing
-    void ShowOptDlg();   // this page
-    void ShowAudDlg();
-    void ShowVidDlg();
-    void ShowCtlDlg();
-    void ShowModDlg();   // stub
-
-    // NEW: keyboard remap dialog
-    void ShowKeyDlg(EStarshatterInputAction Action);
-
+    // Apply / Cancel orchestration
     void ApplyOptions();
     void CancelOptions();
 
-    // Legacy apply/cancel for THIS page values:
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Apply();
+    // KeyDlg returns here (KeyDlg does NOT route itself)
+    void ReturnFromKeyDlg();
 
-    UFUNCTION(BlueprintCallable, Category = "StarshatterWars|UI")
-    void Cancel();
+    // Sub-screen routing (legacy compatibility)
+    void ShowAudDlg();
+    void ShowCtlDlg();
+    void ShowGameDlg();
+    void ShowJoyDlg();
+    void ShowKeyDlg();
+    void ShowModDlg();
+    void ShowVidDlg();
 
 protected:
-    void EnsureSubDialogs();
-    void HideAllPages();
+    // ------------------------------------------------------------
+    // Core container
+    // ------------------------------------------------------------
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidgetSwitcher> OptionsSwitcher;
+
+    // ------------------------------------------------------------
+    // Tab Buttons (alphabetical)
+    // ------------------------------------------------------------
+
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnAudio;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnControls;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnGame;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnJoystick;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnKeyboard;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnMods;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnVideo;
+
+    // ------------------------------------------------------------
+    // Bottom Buttons
+    // ------------------------------------------------------------
+
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnSave;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnCancel;
+
+    // ------------------------------------------------------------
+    // Sub Widgets (must be in the WidgetSwitcher and named exactly)
+    // ------------------------------------------------------------
+
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UAudioDlg>         AudioDlg;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UControlOptionsDlg> ControlsDlg;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UGameOptionsDlg>   GameDlg;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UJoyDlg>           JoystickDlg;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UKeyDlg>           KeyboardDlg;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UModsDlg>          ModsDlg;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UVideoDlg>         VideoDlg;
+
+    // Borders (for highlight)
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderAudio;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderControls;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderGame;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderJoystick;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderKeyboard;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderMods;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBorder> BorderVideo;
 
 protected:
-    // Buttons
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
+    void BindDelegates();
+    bool bDelegatesBound = false;
 
-    // Combo handlers
-    UFUNCTION() void OnFlightModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnFlyingStartChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnLandingsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnAIDifficultyChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnHudModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnHudColorChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnFfModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnGridModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnGunsightChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    // Option B: selected tab = disabled state (BP Disabled style = STEEL GRAY)
+    void SetActiveTab(UButton* ActiveButton);
 
-    // Tabs
+    // FIX: take UWidget* (WidgetSwitcher uses UWidget)
+    void SwitchToWidget(UWidget* Widget);
+
+protected:
+    // Tab handlers
     UFUNCTION() void OnAudioClicked();
-    UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnOptionsClicked();
     UFUNCTION() void OnControlsClicked();
-    UFUNCTION() void OnModClicked();
+    UFUNCTION() void OnGameClicked();
+    UFUNCTION() void OnJoystickClicked();
+    UFUNCTION() void OnKeyboardClicked();
+    UFUNCTION() void OnModsClicked();
+    UFUNCTION() void OnVideoClicked();
 
-protected:
-    // ------------------------------------------------------------
-    // Subdialog classes
-    // ------------------------------------------------------------
-    UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
-    TSubclassOf<UAudioDlg> AudioDlgClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
-    TSubclassOf<UVideoDlg> VideoDlgClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
-    TSubclassOf<UControlOptionsDlg> ControlDlgClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Options|Classes")
-    TSubclassOf<UKeyDlg> KeyDlgClass;
-
-protected:
-    // ------------------------------------------------------------
-    // Subdialogs
-    // ------------------------------------------------------------
-    UPROPERTY(Transient)
-    TObjectPtr<UAudioDlg> AudDlg = nullptr;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UVideoDlg> VidDlg = nullptr;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UControlOptionsDlg> CtlDlg = nullptr;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UKeyDlg> KeyDlg = nullptr;
-
-protected:
-    // Main options widgets
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* flight_model = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* flying_start = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* landings = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ai_difficulty = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* hud_mode = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* hud_color = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ff_mode = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* grid_mode = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* gunsight = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* description = nullptr;
-
-    // Nav buttons
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* aud_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* vid_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* opt_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ctl_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* mod_btn = nullptr;
-
-    // Apply/Cancel buttons
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
-
-protected:
-    bool bClosed = true;
+    // Bottom handlers
+    UFUNCTION() void OnSaveClicked();
+    UFUNCTION() void OnCancelClicked();
 };

@@ -1,10 +1,12 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+    All Rights Reserved.
 
-    SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         KeyDlg.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    FILE:           KeyDlg.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
@@ -13,7 +15,12 @@
     - Writes to UStarshatterKeyboardSettings (config-backed CDO).
     - Runtime apply via UStarshatterKeyboardSubsystem.
     - Routes back to UOptionsScreen (Manager) on apply/cancel.
-*/
+
+    IMPORTANT
+    =========
+    - Uses AddUniqueDynamic (NO RemoveAll) to prevent delegate ensure failures.
+    - KeyDlg never manipulates page visibility directly; OptionsScreen owns routing.
+=============================================================================*/
 
 #pragma once
 
@@ -22,7 +29,6 @@
 #include "InputCoreTypes.h"
 
 #include "GameStructs.h" // EStarshatterInputAction
-
 #include "KeyDlg.generated.h"
 
 class UButton;
@@ -44,28 +50,28 @@ public:
     // Key capture:
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
-    // Keep legacy parity signature for now:
+    // Legacy parity:
     void ExecFrame();
 
     // Compatibility: treat this as enum index for EStarshatterInputAction
     int  GetKeyMapIndex() const { return KeyIndex; }
     void SetKeyMapIndex(int i);
 
-    // New preferred API:
+    // Preferred:
     void SetEditingAction(EStarshatterInputAction InAction);
 
     // Manager:
-    void SetManager(UOptionsScreen* InManager);
+    void SetOptionsManager(UOptionsScreen* InManager);
 
     // Capture flow:
     void BeginCapture();
 
 protected:
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
-    UFUNCTION() void OnClearClicked();
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
 
 private:
+    void BindDelegatesOnce();
     void RefreshDisplayFromSettings();
     void SetTextBlock(UTextBlock* Block, const FString& Text);
 
@@ -76,8 +82,8 @@ private:
     void ClearFromSettings();
 
 private:
-    UPROPERTY(Transient)
-    TObjectPtr<UOptionsScreen> Manager = nullptr;
+
+    bool bDelegatesBound = false;
 
     // Compatibility:
     int KeyIndex = 0;
@@ -92,12 +98,16 @@ private:
     bool bKeyClear = false;
 
 protected:
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* CommandText = nullptr;     // 201
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* CurrentKeyText = nullptr; // 202
-    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* NewKeyText = nullptr;     // 203
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> CommandText;     // 201
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> CurrentKeyText; // 202
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> NewKeyText;     // 203
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ClearButton = nullptr;       // 300
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ClearButton;       // 300
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+private:
+    UFUNCTION() void OnApplyClicked();
+    UFUNCTION() void OnCancelClicked();
+    UFUNCTION() void OnClearClicked();
 };

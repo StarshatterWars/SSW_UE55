@@ -10,18 +10,22 @@
     ========
     UVideoDlg
     - Video options dialog (UMG + legacy-form bridge via UBaseScreen).
-    - Refactored so the dialog only touches UStarshatterVideoSettings (config model).
+    - Dialog reads/writes ONLY UStarshatterVideoSettings (config model).
     - Runtime apply is delegated to UStarshatterVideoSubsystem::ApplySettingsToRuntime()
       to avoid signature drift.
-    - Subscreen routing goes through UOptionsScreen (NOT GameScreen).
+    - Subscreen routing goes through UOptionsScreen (NOT MenuDlg).
+    - Implements UOptionsPage so OptionsScreen can Apply/Cancel uniformly.
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "GameStructs.h"
+#include "OptionsPage.h"
+
 #include "VideoDlg.generated.h"
+
+// Options hub page interface (used by OptionsScreen Apply/Cancel orchestration):
 
 // UMG:
 class UComboBoxString;
@@ -38,7 +42,7 @@ class UStarshatterVideoSettings;
 class UStarshatterVideoSubsystem;
 
 UCLASS()
-class STARSHATTERWARS_API UVideoDlg : public UBaseScreen
+class STARSHATTERWARS_API UVideoDlg : public UBaseScreen, public IOptionsPage
 {
     GENERATED_BODY()
 
@@ -46,8 +50,8 @@ public:
     UVideoDlg(const FObjectInitializer& ObjectInitializer);
 
     // Host/router:
-    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
-    UOptionsScreen* GetManager() const { return Manager; }
+    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
+    UOptionsScreen* GetOptionsManager() const { return OptionsManager.Get(); }
 
     void Show();
 
@@ -72,6 +76,15 @@ protected:
 
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
+
+public:
+    // ------------------------------------------------------------
+    // IOptionsPage (OptionsScreen orchestration)
+    // ------------------------------------------------------------
+    virtual void LoadFromSettings_Implementation() override;
+    virtual void ApplySettings_Implementation() override;
+    virtual void SaveSettings_Implementation() override;
+    virtual void CancelChanges_Implementation() override;
 
 private:
     UStarshatterVideoSettings* GetVideoSettings() const;
@@ -114,13 +127,11 @@ private:
     // Tabs:
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnOptionsClicked();
+    UFUNCTION() void OnGameClicked();     // was OnOptionsClicked
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
 
 private:
-    UPROPERTY(Transient)
-    UOptionsScreen* Manager = nullptr;
 
     bool bClosed = true;
     bool bListsBuilt = false;
@@ -130,7 +141,7 @@ private:
     int32 Height = 1080;
     bool  bFullscreen = false;
 
-    int32 MaxTextureSize = 2048;        // <-- FIX: was missing (caused your C2065)
+    int32 MaxTextureSize = 2048;
     int32 GammaLevel = 128;
 
     bool bShadows = true;
@@ -143,7 +154,7 @@ private:
 
     int32 DustLevel = 1;
     int32 TerrainDetailIndex = 1;
-    bool  bTerrainTextures = true;      // <-- FIX: was missing (caused your C2065)
+    bool  bTerrainTextures = true;
 
 protected:
     // Main combos:
@@ -169,10 +180,10 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;               // id 1
     UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;              // id 2
 
-    // Tabs:
+    // Tabs (legacy IDs kept, but routed to new OptionsScreen tabs):
     UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;           // 901
     UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;           // 902
     UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;           // 903
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr;           // 904
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr;           // 904 (NOW = GAME)
     UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;           // 905
 };

@@ -1,3 +1,19 @@
+/*  Project Starshatter Wars
+    Fractal Dev Studios
+    Copyright (c) 2025-2026.
+
+    SUBSYSTEM:    Stars.exe (Unreal Port)
+    FILE:         VideoDlg.cpp
+    AUTHOR:       Carlos Bott
+
+    IMPLEMENTATION
+    ==============
+    UVideoDlg
+    - Video options subpage for OptionsScreen.
+    - Routes tabs through OptionsScreen.
+    - Implements OptionsPage so OptionsScreen can Apply/Cancel uniformly.
+*/
+
 #include "VideoDlg.h"
 
 // UMG:
@@ -40,23 +56,23 @@ void UVideoDlg::NativeConstruct()
     if (AudTabButton) { AudTabButton->OnClicked.RemoveAll(this); AudTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnAudioClicked); }
     if (VidTabButton) { VidTabButton->OnClicked.RemoveAll(this); VidTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnVideoClicked); }
     if (CtlTabButton) { CtlTabButton->OnClicked.RemoveAll(this); CtlTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnControlsClicked); }
-    if (OptTabButton) { OptTabButton->OnClicked.RemoveAll(this); OptTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnOptionsClicked); }
+    if (OptTabButton) { OptTabButton->OnClicked.RemoveAll(this); OptTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnGameClicked); } // NOW = GAME
     if (ModTabButton) { ModTabButton->OnClicked.RemoveAll(this); ModTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnModClicked); }
 
     // Combos:
-    if (ModeCombo) { ModeCombo->OnSelectionChanged.RemoveAll(this);     ModeCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnModeChanged); }
-    if (TexSizeCombo) { TexSizeCombo->OnSelectionChanged.RemoveAll(this);  TexSizeCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnTexSizeChanged); }
-    if (DetailCombo) { DetailCombo->OnSelectionChanged.RemoveAll(this);   DetailCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnDetailChanged); }
-    if (TextureCombo) { TextureCombo->OnSelectionChanged.RemoveAll(this);  TextureCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnTextureChanged); }
+    if (ModeCombo) { ModeCombo->OnSelectionChanged.RemoveAll(this);       ModeCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnModeChanged); }
+    if (TexSizeCombo) { TexSizeCombo->OnSelectionChanged.RemoveAll(this);    TexSizeCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnTexSizeChanged); }
+    if (DetailCombo) { DetailCombo->OnSelectionChanged.RemoveAll(this);     DetailCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnDetailChanged); }
+    if (TextureCombo) { TextureCombo->OnSelectionChanged.RemoveAll(this);    TextureCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnTextureChanged); }
 
-    if (LensFlareCombo) { LensFlareCombo->OnSelectionChanged.RemoveAll(this); LensFlareCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnLensFlareChanged); }
-    if (CoronaCombo) { CoronaCombo->OnSelectionChanged.RemoveAll(this);    CoronaCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnCoronaChanged); }
-    if (NebulaCombo) { NebulaCombo->OnSelectionChanged.RemoveAll(this);    NebulaCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnNebulaChanged); }
-    if (DustCombo) { DustCombo->OnSelectionChanged.RemoveAll(this);      DustCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnDustChanged); }
+    if (LensFlareCombo) { LensFlareCombo->OnSelectionChanged.RemoveAll(this);  LensFlareCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnLensFlareChanged); }
+    if (CoronaCombo) { CoronaCombo->OnSelectionChanged.RemoveAll(this);     CoronaCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnCoronaChanged); }
+    if (NebulaCombo) { NebulaCombo->OnSelectionChanged.RemoveAll(this);     NebulaCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnNebulaChanged); }
+    if (DustCombo) { DustCombo->OnSelectionChanged.RemoveAll(this);       DustCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnDustChanged); }
 
-    if (ShadowsCombo) { ShadowsCombo->OnSelectionChanged.RemoveAll(this);   ShadowsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnShadowsChanged); }
-    if (SpecMapsCombo) { SpecMapsCombo->OnSelectionChanged.RemoveAll(this);  SpecMapsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnSpecMapsChanged); }
-    if (BumpMapsCombo) { BumpMapsCombo->OnSelectionChanged.RemoveAll(this);  BumpMapsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnBumpMapsChanged); }
+    if (ShadowsCombo) { ShadowsCombo->OnSelectionChanged.RemoveAll(this);    ShadowsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnShadowsChanged); }
+    if (SpecMapsCombo) { SpecMapsCombo->OnSelectionChanged.RemoveAll(this);   SpecMapsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnSpecMapsChanged); }
+    if (BumpMapsCombo) { BumpMapsCombo->OnSelectionChanged.RemoveAll(this);   BumpMapsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnBumpMapsChanged); }
 
     // Slider:
     if (GammaSlider)
@@ -104,6 +120,34 @@ void UVideoDlg::Show()
     }
 }
 
+// ------------------------------------------------------------
+// IOptionsPage (OptionsScreen orchestration)
+// ------------------------------------------------------------
+
+void UVideoDlg::LoadFromSettings_Implementation()
+{
+    BuildListsIfNeeded();
+    RefreshFromModel();
+    bClosed = false;
+}
+
+void UVideoDlg::ApplySettings_Implementation()
+{
+    // “Apply” meaning runtime apply too:
+    if (!bClosed)
+        Apply();
+}
+
+void UVideoDlg::SaveSettings_Implementation()
+{
+    // Settings already saved in Apply(). Keep as no-op or call Apply(false) if you split semantics later.
+}
+
+void UVideoDlg::CancelChanges_Implementation()
+{
+    Cancel();
+}
+
 // -------------------------
 // Settings / subsystem access
 // -------------------------
@@ -135,6 +179,7 @@ int32 UVideoDlg::TexSizeIndexFromPow2(int32 Pow2)
     {
         if (Opt[i] == Pow2) return i;
     }
+
     // Fallback: closest
     int32 BestIdx = 0;
     int32 BestDist = INT32_MAX;
@@ -175,12 +220,10 @@ void UVideoDlg::BuildListsIfNeeded()
     {
         TexSizeCombo->ClearOptions();
         for (int32 Pow2 : GetTexSizeOptions())
-        {
             TexSizeCombo->AddOption(FString::FromInt(Pow2));
-        }
     }
 
-    // Detail levels (0..3):
+    // Detail levels:
     if (DetailCombo)
     {
         DetailCombo->ClearOptions();
@@ -190,7 +233,7 @@ void UVideoDlg::BuildListsIfNeeded()
         DetailCombo->AddOption(TEXT("ULTRA"));
     }
 
-    // Terrain textures (on/off):
+    // Terrain textures:
     if (TextureCombo)
     {
         TextureCombo->ClearOptions();
@@ -223,7 +266,7 @@ void UVideoDlg::BuildListsIfNeeded()
         DustCombo->AddOption(TEXT("3"));
     }
 
-    // Mode list is project-specific; keep it minimal/stable:
+    // Mode list (keep minimal/stable):
     if (ModeCombo)
     {
         ModeCombo->ClearOptions();
@@ -245,7 +288,6 @@ void UVideoDlg::RefreshFromModel()
     if (!S) return;
 
     S->Load();
-
     const FStarshatterVideoConfig& C = S->GetConfig();
 
     Width = C.Width;
@@ -267,7 +309,6 @@ void UVideoDlg::RefreshFromModel()
     TerrainDetailIndex = C.TerrainDetailIndex;
     bTerrainTextures = C.bTerrainTextures;
 
-    // Widgets reflect cached state:
     if (GammaSlider)
         GammaSlider->SetValue(Gamma01FromLevel(GammaLevel));
 
@@ -282,8 +323,7 @@ void UVideoDlg::RefreshFromModel()
 
     auto SetOnOff = [](UComboBoxString* Combo, bool bOn)
         {
-            if (!Combo) return;
-            Combo->SetSelectedIndex(bOn ? 1 : 0);
+            if (Combo) Combo->SetSelectedIndex(bOn ? 1 : 0);
         };
 
     SetOnOff(ShadowsCombo, bShadows);
@@ -336,11 +376,8 @@ void UVideoDlg::PushToModel(bool bApplyRuntimeToo)
 
     if (bApplyRuntimeToo)
     {
-        // Runtime apply via subsystem (no-arg, stable signature):
         if (UStarshatterVideoSubsystem* VideoSS = GetVideoSubsystem())
-        {
             VideoSS->ApplySettingsToRuntime();
-        }
     }
 }
 
@@ -361,11 +398,10 @@ void UVideoDlg::Cancel()
 // Handlers
 // -------------------------
 
-void UVideoDlg::OnModeChanged(FString, ESelectInfo::Type)
+void UVideoDlg::OnModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!ModeCombo) return;
 
-    // Parse "WxH"
     FString Opt = ModeCombo->GetSelectedOption();
     FString L, R;
     if (Opt.Split(TEXT("x"), &L, &R))
@@ -375,19 +411,19 @@ void UVideoDlg::OnModeChanged(FString, ESelectInfo::Type)
     }
 }
 
-void UVideoDlg::OnTexSizeChanged(FString, ESelectInfo::Type)
+void UVideoDlg::OnTexSizeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!TexSizeCombo) return;
     MaxTextureSize = TexSizePow2FromIndex(TexSizeCombo->GetSelectedIndex());
 }
 
-void UVideoDlg::OnDetailChanged(FString, ESelectInfo::Type)
+void UVideoDlg::OnDetailChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!DetailCombo) return;
     TerrainDetailIndex = DetailCombo->GetSelectedIndex();
 }
 
-void UVideoDlg::OnTextureChanged(FString, ESelectInfo::Type)
+void UVideoDlg::OnTextureChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!TextureCombo) return;
     bTerrainTextures = (TextureCombo->GetSelectedIndex() == 1);
@@ -403,14 +439,14 @@ static bool ComboOn(UComboBoxString* Combo)
     return Combo && Combo->GetSelectedIndex() == 1;
 }
 
-void UVideoDlg::OnLensFlareChanged(FString, ESelectInfo::Type) { bLensFlare = ComboOn(LensFlareCombo); }
-void UVideoDlg::OnCoronaChanged(FString, ESelectInfo::Type) { bCorona = ComboOn(CoronaCombo); }
-void UVideoDlg::OnNebulaChanged(FString, ESelectInfo::Type) { bNebula = ComboOn(NebulaCombo); }
-void UVideoDlg::OnShadowsChanged(FString, ESelectInfo::Type) { bShadows = ComboOn(ShadowsCombo); }
-void UVideoDlg::OnSpecMapsChanged(FString, ESelectInfo::Type) { bSpecularMaps = ComboOn(SpecMapsCombo); }
-void UVideoDlg::OnBumpMapsChanged(FString, ESelectInfo::Type) { bBumpMaps = ComboOn(BumpMapsCombo); }
+void UVideoDlg::OnLensFlareChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bLensFlare = ComboOn(LensFlareCombo); }
+void UVideoDlg::OnCoronaChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bCorona = ComboOn(CoronaCombo); }
+void UVideoDlg::OnNebulaChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bNebula = ComboOn(NebulaCombo); }
+void UVideoDlg::OnShadowsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bShadows = ComboOn(ShadowsCombo); }
+void UVideoDlg::OnSpecMapsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bSpecularMaps = ComboOn(SpecMapsCombo); }
+void UVideoDlg::OnBumpMapsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bBumpMaps = ComboOn(BumpMapsCombo); }
 
-void UVideoDlg::OnDustChanged(FString, ESelectInfo::Type)
+void UVideoDlg::OnDustChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!DustCombo) return;
     DustLevel = FMath::Clamp(DustCombo->GetSelectedIndex(), 0, 3);
@@ -419,19 +455,19 @@ void UVideoDlg::OnDustChanged(FString, ESelectInfo::Type)
 // Buttons:
 void UVideoDlg::OnApplyClicked()
 {
-    if (Manager) Manager->ApplyOptions();
+    if (OptionsManager) OptionsManager->ApplyOptions();
     else Apply();
 }
 
 void UVideoDlg::OnCancelClicked()
 {
-    if (Manager) Manager->CancelOptions();
+    if (OptionsManager) OptionsManager->CancelOptions();
     else Cancel();
 }
 
-// Tabs:
-void UVideoDlg::OnAudioClicked() { if (Manager) Manager->ShowAudDlg(); }
-void UVideoDlg::OnVideoClicked() { if (Manager) Manager->ShowVidDlg(); }
-void UVideoDlg::OnOptionsClicked() { if (Manager) Manager->ShowOptDlg(); }
-void UVideoDlg::OnControlsClicked() { if (Manager) Manager->ShowCtlDlg(); }
-void UVideoDlg::OnModClicked() { if (Manager) Manager->ShowModDlg(); }
+// Tabs (route to OptionsScreen):
+void UVideoDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
+void UVideoDlg::OnVideoClicked() { if (OptionsManager) OptionsManager->ShowVidDlg(); }
+void UVideoDlg::OnControlsClicked() { if (OptionsManager) OptionsManager->ShowCtlDlg(); }
+void UVideoDlg::OnGameClicked() { if (OptionsManager) OptionsManager->ShowGameDlg(); } // NEW
+void UVideoDlg::OnModClicked() { if (OptionsManager) OptionsManager->ShowModDlg(); }

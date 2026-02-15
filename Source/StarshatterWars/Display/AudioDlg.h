@@ -1,11 +1,20 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe (Unreal Port)
-    FILE:         AudioDlg.h
-    AUTHOR:       Carlos Bott
-*/
+    SUBSYSTEM:      Stars.exe (Unreal Port)
+    FILE:           AudioDlg.h
+    AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    Audio settings subpage used inside OptionsScreen hub.
+    - Config-backed model (UStarshatterAudioSettings CDO)
+    - Unified SaveGame persistence
+    - Runtime apply via AudioSettings
+    - Routed through OptionsScreen (Apply/Cancel/Tabs)
+=============================================================================*/
 
 #pragma once
 
@@ -16,7 +25,6 @@
 class UComboBoxString;
 class USlider;
 class UButton;
-
 class UOptionsScreen;
 
 class UStarshatterAudioSettings;
@@ -32,16 +40,16 @@ public:
     UAudioDlg(const FObjectInitializer& ObjectInitializer);
 
     void Show();
-
-    // IMPORTANT: Match base signature
     virtual void ExecFrame(double DeltaTime) override;
 
     void Apply();
     void Cancel();
-
     void PushToModel(bool bApplyRuntimeToo);
 
+    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
+
 protected:
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
@@ -52,17 +60,17 @@ protected:
     virtual void HandleCancel() override;
 
 private:
-    // Settings model (config-backed CDO)
-    UStarshatterAudioSettings* GetAudioSettings() const;
+    void BindDelegates();
 
-    // Unified settings save subsystem
+    UStarshatterAudioSettings* GetAudioSettings() const;
     UStarshatterSettingsSaveSubsystem* GetSettingsSaveSubsystem() const;
     void SaveAudioToUnifiedSettings(UStarshatterAudioSettings* Settings);
-
     void RefreshFromModel();
 
 private:
+
     bool bClosed = true;
+    bool bDelegatesBound = false;
 
     float MasterVolume = 1.0f;
     float MusicVolume = 1.0f;
@@ -71,29 +79,28 @@ private:
     int32 SoundQuality = 1;
 
 protected:
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* MasterSlider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* MusicSlider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* EffectsSlider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* VoiceSlider = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> MasterSlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> MusicSlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> EffectsSlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> VoiceSlider;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* QualityCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> QualityCombo;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
 
-    // Tabs
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;
+    // Optional legacy tab buttons (safe if present in BP)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> VidTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AudTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CtlTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> OptTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ModTabButton;
 
 private:
     UFUNCTION() void OnMasterVolumeChanged(float V);
     UFUNCTION() void OnMusicVolumeChanged(float V);
     UFUNCTION() void OnEffectsVolumeChanged(float V);
     UFUNCTION() void OnVoiceVolumeChanged(float V);
-
     UFUNCTION() void OnSoundQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnApplyClicked();
@@ -101,7 +108,7 @@ private:
 
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnOptionsClicked();
+    UFUNCTION() void OnOptionsClicked();   // maps to Game tab now
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
 };

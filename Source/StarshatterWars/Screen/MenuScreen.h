@@ -176,7 +176,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
     TSubclassOf<UOptionsScreen> OptionsScreenClass;
     
-    //TSubclassOf<UUserWidget> ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id);
     template<typename TWidget>
     TSubclassOf<TWidget> ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id)
     {

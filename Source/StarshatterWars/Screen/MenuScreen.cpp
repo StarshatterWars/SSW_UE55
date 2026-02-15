@@ -17,14 +17,14 @@
 #include "MissionElementDlg.h"
 #include "MissionEventDlg.h"
 #include "MissionEditorNavDlg.h"
+#include "OptionsScreen.h"
 #include "LoadDlg.h"
 #include "TacRefDlg.h"
 #include "StarshatterPlayerSubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameStructs.h"
-// NEW:
-#include "OptionsScreen.h"
+
 #include "StarshatterAssetRegistrySubsystem.h"
 
 // ------------------------------------------------------------
@@ -33,33 +33,28 @@ void UMenuScreen::Initialize(UGameInstance* InGI)
 {
     if (!InGI) return;
 
-    UStarshatterAssetRegistrySubsystem* Assets =
-        InGI->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
-    if (!ensure(Assets)) return;
+    UStarshatterAssetRegistrySubsystem* Assets = InGI->GetSubsystem<UStarshatterAssetRegistrySubsystem>();
+    if (!Assets) return;
 
-    // ? Put your three lines here:
-    //MenuScreenWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.MenuScreenClass"));
-    MenuDlgClass = ResolveWidgetOrLog<UMenuDlg>(Assets, TEXT("UI.MenuScreenClass"));
+    // Only assign if currently unset (preserve BP defaults):
+    if (!OptionsScreenClass)
+        OptionsScreenClass = Assets->GetWidgetClass(TEXT("UI.OptionsScreenClass"), true);
 
-    FirstTimeDlgClass = ResolveWidgetOrLog<UFirstTimeDlg>(Assets, TEXT("UI.FirstRunDlgClass"));
-    ExitDlgClass = ResolveWidgetOrLog<UExitDlg>(Assets, TEXT("UI.ExitDlgClass"));
+    if (!FirstTimeDlgClass)
+        FirstTimeDlgClass = Assets->GetWidgetClass(TEXT("UI.FirstTimeDlgClass"), true);
 
-    PlayerDlgClass = ResolveWidgetOrLog<UPlayerDlg>(Assets, TEXT("UI.PlayerDlgClass"));
-    AwardDlgClass = ResolveWidgetOrLog<UAwardShowDlg>(Assets, TEXT("UI.AwardDlgClass"));
+    if (!ExitDlgClass)
+        ExitDlgClass = Assets->GetWidgetClass(TEXT("UI.ExitDlgClass"), true);
 
-    MsnSelectDlgClass = ResolveWidgetOrLog<UMissionSelectDlg>(Assets, TEXT("UI.MissionSelectDlgClass"));
-    CmpSelectDlgClass = ResolveWidgetOrLog<UCampaignSelectDlg>(Assets, TEXT("UI.CampaignSelectDlgClass"));
+    // IMPORTANT: do NOT touch MenuDlgClass unless you actually bind it in registry:
+    // if (!MenuDlgClass)
+    //     MenuDlgClass = Assets->GetWidgetClass(TEXT("UI.MenuDlgClass"), true);
 
-    MsnEditDlgClass = ResolveWidgetOrLog<UMissionEditorDlg>(Assets, TEXT("UI.MissionEditorDlgClass"));
-    MsnElemDlgClass = ResolveWidgetOrLog<UMissionElementDlg>(Assets, TEXT("UI.MissionElementDlgClass"));
-    MsnEventDlgClass = ResolveWidgetOrLog<UMissionEventDlg>(Assets, TEXT("UI.MissionEventDlgClass"));
-    MsnEditNavDlgClass = ResolveWidgetOrLog<UMissionEditorNavDlg>(Assets, TEXT("UI.MissionEditorNavDlgClass"));
-
-    LoadDlgClass = ResolveWidgetOrLog<ULoadDlg>(Assets, TEXT("UI.LoadDlgClass"));
-    TacRefDlgClass = ResolveWidgetOrLog<UTacRefDlg>(Assets, TEXT("UI.TacRefDlgClass"));
-
-    // THE ONE YOU ASKED FOR:
-    OptionsScreenClass = ResolveWidgetOrLog<UOptionsScreen>(Assets, TEXT("UI.OptionsScreenClass"));
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] Initialize: MenuDlgClass=%s Options=%s FirstTime=%s Exit=%s"),
+        *GetNameSafe(MenuDlgClass.Get()),
+        *GetNameSafe(OptionsScreenClass.Get()),
+        *GetNameSafe(FirstTimeDlgClass.Get()),
+        *GetNameSafe(ExitDlgClass.Get()));
 }
 
 static void ApplyUIFocus(APlayerController* PC, UUserWidget* FocusWidget)
@@ -89,8 +84,10 @@ void UMenuScreen::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Optional: eagerly build everything once
-    // Setup();
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        Initialize(GI);
+    }
 }
 
 // ------------------------------------------------------------
@@ -210,6 +207,8 @@ void UMenuScreen::Setup()
 {
     EnsureDialog<UMenuDlg>(MenuDlgClass, MenuDlg);
     EnsureDialog<UExitDlg>(ExitDlgClass, ExitDlg);
+
+    EnsureDialog<UOptionsScreen>(OptionsScreenClass, OptionsScreen);
     EnsureDialog<UConfirmDlg>(ConfirmDlgClass, ConfirmDlg);
 
     EnsureDialog<UFirstTimeDlg>(FirstTimeDlgClass, FirstTimeDlg);
@@ -226,8 +225,6 @@ void UMenuScreen::Setup()
 
     EnsureDialog<ULoadDlg>(LoadDlgClass, LoadDlg);
     EnsureDialog<UTacRefDlg>(TacRefDlgClass, TacRefDlg);
-
-    EnsureDialog<UOptionsScreen>(OptionsScreenClass, OptionsScreen);
 
     ShowMenuDlg();
 }
@@ -621,17 +618,51 @@ void UMenuScreen::HideLoadDlg()
 
 void UMenuScreen::ShowOptionsScreen()
 {
-    HideAll();
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] ShowOptionsScreen: BEGIN"));
+
+    // DO NOT HideAll yet — if creation fails you'll blank the UI.
+
+    if (!OptionsScreenClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowOptionsScreen: OptionsScreenClass is NULL"));
+        // Keep whatever is currently visible:
+        return;
+    }
+
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowOptionsScreen: OwningPlayer is NULL"));
+        return;
+    }
 
     EnsureDialog<UOptionsScreen>(OptionsScreenClass, OptionsScreen);
     if (!OptionsScreen)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowOptionsScreen: EnsureDialog failed (OptionsScreen is NULL)"));
         return;
+    }
+
+    // Now that we know we have a valid widget, we can hide everything else:
+    HideAll();
 
     OptionsScreen->SetMenuManager(this);
-    ShowDialog(OptionsScreen, true);
 
-    // Default tab/page:
-    OptionsScreen->ShowOptDlg();
+    // HARD FORCE visibility + viewport, bypass any weird state:
+    if (OptionsScreen->IsInViewport())
+        OptionsScreen->RemoveFromParent();
+
+    OptionsScreen->AddToViewport(200);                 // force top
+    OptionsScreen->SetVisibility(ESlateVisibility::Visible);
+    OptionsScreen->SetIsEnabled(true);
+    OptionsScreen->SetIsFocusable(true);
+    OptionsScreen->SetDialogInputEnabled(true);
+
+    CurrentDialog = OptionsScreen;
+
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] ShowOptionsScreen: SHOWN InViewport=%d Vis=%d"),
+        OptionsScreen->IsInViewport() ? 1 : 0,
+        (int32)OptionsScreen->GetVisibility());
 }
 
 void UMenuScreen::HideOptionsScreen()

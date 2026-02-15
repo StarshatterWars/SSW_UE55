@@ -1,19 +1,25 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
     All Rights Reserved.
 
-    SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         ControlOptionsDlg.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    FILE:           ControlOptionsDlg.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
     UControlOptionsDlg
-    - UE-only controls options dialog.
+    - UE-only controls options dialog (OptionsScreen subpage).
     - UI reads/writes ONLY UStarshatterControlsSettings (config-backed CDO).
-    - Runtime apply is delegated to UStarshatterControlsSettings::ApplyToRuntimeControls(...)
-*/
+    - Runtime apply delegated to UStarshatterControlsSettings::ApplyToRuntimeControls(...)
+
+    NOTES
+    =====
+    - Uses AddUniqueDynamic bindings (no RemoveAll) to prevent delegate ensure crashes.
+    - Routes tabs through UOptionsScreen (Audio/Video/Game/Controls/Mods).
+=============================================================================*/
 
 #pragma once
 
@@ -37,15 +43,20 @@ class STARSHATTERWARS_API UControlOptionsDlg : public UBaseScreen
 public:
     UControlOptionsDlg(const FObjectInitializer& ObjectInitializer);
 
-    void SetManager(UOptionsScreen* InManager) { Manager = InManager; }
-    UOptionsScreen* GetManager() const { return Manager; }
+    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
+    UOptionsScreen* GetOptionsManager() const { return OptionsManager; }
 
     virtual void Show();
-    virtual void ExecFrame();
-    virtual void Apply();
-    virtual void Cancel();
+    virtual void ExecFrame(double DeltaTime) override;
+
+    void Apply();
+    void Cancel();
+
+    // Manager:
+    void SetManager(UOptionsScreen* InManager);
 
 protected:
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
@@ -55,6 +66,8 @@ protected:
     virtual void HandleCancel() override;
 
 private:
+    void BindDelegates();
+
     UStarshatterControlsSettings* GetControlsSettings() const;
 
     void RefreshFromModel();
@@ -64,6 +77,7 @@ private:
     static float IntToSlider(int32 V, int32 MinV, int32 MaxV);
 
 private:
+    // Model change handlers
     UFUNCTION() void OnControlModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
     UFUNCTION() void OnJoystickIndexChanged(float NormalizedValue);
@@ -74,20 +88,23 @@ private:
     UFUNCTION() void OnMouseSensitivityChanged(float NormalizedValue);
     UFUNCTION() void OnMouseInvertChanged(bool bIsChecked);
 
+    // Apply/Cancel
     UFUNCTION() void OnApplyClicked();
     UFUNCTION() void OnCancelClicked();
 
     // Tabs
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnOptionsClicked();
+    UFUNCTION() void OnGameClicked();     // NEW: replaces OnOptionsClicked/ShowOptDlg
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
 
+    UPROPERTY(Transient)
+    TObjectPtr<UOptionsScreen> Manager = nullptr;
 private:
-    UPROPERTY(Transient) TObjectPtr<UOptionsScreen> Manager = nullptr;
 
     bool bClosed = true;
+    bool bDelegatesBound = false;
 
     // Snapshot (mirrors FStarshatterControlsConfig)
     int32 control_model = 1; // FlightSim default
@@ -101,24 +118,50 @@ private:
     bool  b_mouse_invert = false;
 
 protected:
-    // UMG bindings
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* control_model_combo = nullptr;
+    // ------------------------------------------------------------
+    // UMG bindings (names must match BP variables)
+    // ------------------------------------------------------------
 
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* joystick_index_slider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* throttle_axis_slider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* rudder_axis_slider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* joystick_sensitivity_slider = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UComboBoxString> control_model_combo;
 
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* mouse_sensitivity_slider = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UCheckBox* mouse_invert_checkbox = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USlider> joystick_index_slider;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USlider> throttle_axis_slider;
 
-    // Tabs
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* vid_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* aud_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ctl_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* opt_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* mod_btn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USlider> rudder_axis_slider;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USlider> joystick_sensitivity_slider;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<USlider> mouse_sensitivity_slider;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UCheckBox> mouse_invert_checkbox;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> ApplyBtn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> CancelBtn;
+
+    // Tabs (optional if embedded in subpage BP)
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> vid_btn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> aud_btn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> ctl_btn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> opt_btn;  // "GAME" tab in new layout
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> mod_btn;
 };

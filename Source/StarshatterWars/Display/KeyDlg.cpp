@@ -1,11 +1,13 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+    All Rights Reserved.
 
-    SUBSYSTEM:    StarshatterWars (Unreal Engine)
-    FILE:         KeyDlg.cpp
-    AUTHOR:       Carlos Bott
-*/
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    FILE:           KeyDlg.cpp
+    AUTHOR:         Carlos Bott
+=============================================================================*/
 
 #include "KeyDlg.h"
 
@@ -33,36 +35,22 @@ void UKeyDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    // If BaseScreen exposes ApplyButton/CancelButton pointers, wire them:
+    // BaseScreen Enter/Escape routing (if BaseScreen uses these):
     ApplyButton = ApplyBtn;
     CancelButton = CancelBtn;
 
-    if (ClearButton)
-    {
-        ClearButton->OnClicked.RemoveAll(this);
-        ClearButton->OnClicked.AddDynamic(this, &UKeyDlg::OnClearClicked);
-    }
-
-    if (ApplyButton)
-    {
-        ApplyButton->OnClicked.RemoveAll(this);
-        ApplyButton->OnClicked.AddDynamic(this, &UKeyDlg::OnApplyClicked);
-    }
-
-    if (CancelButton)
-    {
-        CancelButton->OnClicked.RemoveAll(this);
-        CancelButton->OnClicked.AddDynamic(this, &UKeyDlg::OnCancelClicked);
-    }
+    BindDelegatesOnce();
 }
 
 void UKeyDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    // Safe to call; guarded:
+    BindDelegatesOnce();
+
     bKeyClear = false;
     BeginCapture();
-
     RefreshDisplayFromSettings();
 
     if (NewKeyText)
@@ -77,30 +65,46 @@ void UKeyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     (void)MyGeometry;
     (void)InDeltaTime;
 
-    // UE-only: no polling required. Keep ExecFrame for legacy signature parity.
     ExecFrame();
+}
+
+void UKeyDlg::BindDelegatesOnce()
+{
+    if (bDelegatesBound)
+        return;
+
+    if (ClearButton)
+        ClearButton->OnClicked.AddUniqueDynamic(this, &UKeyDlg::OnClearClicked);
+
+    if (ApplyBtn)
+        ApplyBtn->OnClicked.AddUniqueDynamic(this, &UKeyDlg::OnApplyClicked);
+
+    if (CancelBtn)
+        CancelBtn->OnClicked.AddUniqueDynamic(this, &UKeyDlg::OnCancelClicked);
+
+    bDelegatesBound = true;
 }
 
 FReply UKeyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
     (void)InGeometry;
 
-    if (!bCapturing)
-        return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
-
     const FKey PressedKey = InKeyEvent.GetKey();
 
-    // Escape cancels capture + returns
-    if (PressedKey == EKeys::Escape)
+    // ESC always returns (Cancel)
+    if (PressedKey == EKeys::Escape || PressedKey == EKeys::Virtual_Back)
     {
         OnCancelClicked();
         return FReply::Handled();
     }
 
+    if (!bCapturing)
+        return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+
     if (!PressedKey.IsValid())
         return FReply::Handled();
 
-    // Ignore pure modifier keys
+    // Ignore pure modifiers
     if (PressedKey == EKeys::LeftShift || PressedKey == EKeys::RightShift ||
         PressedKey == EKeys::LeftControl || PressedKey == EKeys::RightControl ||
         PressedKey == EKeys::LeftAlt || PressedKey == EKeys::RightAlt ||
@@ -121,12 +125,12 @@ FReply UKeyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& In
 
 void UKeyDlg::ExecFrame()
 {
-    // UE-only: do nothing.
+    // UE-only: no polling.
 }
 
-void UKeyDlg::SetManager(UOptionsScreen* InManager)
+void UKeyDlg::SetOptionsManager(UOptionsScreen* InManager)
 {
-    Manager = InManager;
+    OptionsManager = InManager;
 }
 
 void UKeyDlg::BeginCapture()
@@ -165,6 +169,9 @@ void UKeyDlg::SetKeyMapIndex(int i)
     SetKeyboardFocus();
 }
 
+void UKeyDlg::HandleAccept() { OnApplyClicked(); }
+void UKeyDlg::HandleCancel() { OnCancelClicked(); }
+
 void UKeyDlg::OnClearClicked()
 {
     bKeyClear = true;
@@ -186,25 +193,27 @@ void UKeyDlg::OnApplyClicked()
         CommitPendingToSettings();
     }
 
-    SetVisibility(ESlateVisibility::Collapsed);
-
-    if (Manager)
+    // OptionsScreen owns routing; we just ask to return:
+    if (OptionsManager)
     {
-        Manager->SetVisibility(ESlateVisibility::Visible);
-        Manager->ShowOptDlg();
-        Manager->SetKeyboardFocus();
+        OptionsManager->ReturnFromKeyDlg();
+    }
+    else
+    {
+        SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
 void UKeyDlg::OnCancelClicked()
 {
-    SetVisibility(ESlateVisibility::Collapsed);
-
-    if (Manager)
+    // No commits; just return
+    if (OptionsManager)
     {
-        Manager->SetVisibility(ESlateVisibility::Visible);
-        Manager->ShowOptDlg();
-        Manager->SetKeyboardFocus();
+        OptionsManager->ReturnFromKeyDlg();
+    }
+    else
+    {
+        SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -227,6 +236,7 @@ void UKeyDlg::CommitPendingToSettings()
 
     CurrentKey = PendingKey;
     PendingKey = FKey();
+    bKeyClear = false;
 }
 
 void UKeyDlg::ClearFromSettings()
@@ -281,21 +291,19 @@ FString UKeyDlg::ActionToDisplayString(EStarshatterInputAction Action)
     if (Enum)
         return Enum->GetDisplayNameTextByValue((int64)Action).ToString();
 
-    return FString(TEXT("ACTION"));
+    return TEXT("ACTION");
 }
 
 FString UKeyDlg::KeyToDisplayString(const FKey& Key)
 {
     if (!Key.IsValid())
-        return FString(TEXT("UNBOUND"));
+        return TEXT("UNBOUND");
 
     return Key.GetDisplayName().ToString();
 }
 
 void UKeyDlg::SetTextBlock(UTextBlock* Block, const FString& Text)
 {
-    if (!Block)
-        return;
-
-    Block->SetText(FText::FromString(Text));
+    if (Block)
+        Block->SetText(FText::FromString(Text));
 }

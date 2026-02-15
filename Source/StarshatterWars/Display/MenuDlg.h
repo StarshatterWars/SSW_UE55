@@ -1,17 +1,26 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe
-    FILE:         MenuDlg.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      Stars.exe
+    FILE:           MenuDlg.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
     Main Menu dialog (legacy MenuDlg) implementation for Unreal UMG.
-    - 100% UMG-driven input (OnClicked/OnHovered)
-    - UFUNCTION bindings for dynamic delegates
-*/
+
+    CHANGE NOTE (OPTIONS HUB)
+    =========================
+    Audio/Video/Controls/Keyboard/Joystick/Mods are now managed exclusively by
+    UOptionsScreen via a WidgetSwitcher. Therefore:
+
+      - MenuDlg no longer binds or routes any "Video", "Controls", or "Mod" buttons.
+      - MenuDlg exposes ONLY one Options entry point: ShowOptionsScreen().
+      - Sub-option navigation is handled entirely within OptionsScreen.
+
+=============================================================================*/
 
 #pragma once
 
@@ -73,17 +82,9 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> BtnMulti;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> BtnVideo;
-
+    // SINGLE entry point for all settings (OptionsScreen hub):
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> BtnOptions;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> BtnControls;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> BtnMod;
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> BtnTac;
@@ -97,6 +98,7 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> VersionText;
 
+protected:
     // ------------------------------------------------------------
     // Runtime state
     // ------------------------------------------------------------
@@ -125,52 +127,31 @@ protected:
 
     void BindUMGDelegates();
 
-
     void SetButtonEnabled(UButton* Button, bool bEnable);
     void Show();
 
     void ClearDescription();
     void SetDescription(const FString& Text);
 
+protected:
     // ------------------------------------------------------------
-    // Click handlers (MUST be UFUNCTION for AddDynamic)
+    // Click handlers (MUST be UFUNCTION for AddDynamic/AddUniqueDynamic)
     // ------------------------------------------------------------
 
-    UFUNCTION()
-    void OnStart();
+    UFUNCTION() void OnStart();
+    UFUNCTION() void OnCampaign();
+    UFUNCTION() void OnMission();
+    UFUNCTION() void OnPlayer();
+    UFUNCTION() void OnMultiplayer();
 
-    UFUNCTION()
-    void OnCampaign();
+    // SINGLE entry point:
+    UFUNCTION() void OnOptions();
 
-    UFUNCTION()
-    void OnMission();
-
-    UFUNCTION()
-    void OnPlayer();
-
-    UFUNCTION()
-    void OnMultiplayer();
-
-    UFUNCTION()
-    void OnMod();
-
-    UFUNCTION()
-    void OnVideo();
-
-    UFUNCTION()
-    void OnOptions();
-
-    UFUNCTION()
-    void OnControls();
-
-    UFUNCTION()
-    void OnTacReference();
-
-    UFUNCTION()
-    void OnQuit();
+    UFUNCTION() void OnTacReference();
+    UFUNCTION() void OnQuit();
 
     // ------------------------------------------------------------
-    // Hover handlers (MUST be UFUNCTION for AddDynamic)
+    // Hover handlers (MUST be UFUNCTION for AddDynamic/AddUniqueDynamic)
     // ------------------------------------------------------------
 
     UFUNCTION() void OnButtonEnter_Start();

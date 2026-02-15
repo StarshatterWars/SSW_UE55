@@ -144,10 +144,13 @@ void USSWGameInstance::ShowMainMenuScreen()
 	Screen->AddToViewport(100);
 	Screen->SetVisibility(ESlateVisibility::Visible);
 
-	// Create dialogs (do NOT route inside Setup)
+	// *** THIS IS THE MISSING PIECE ***
+	Screen->Initialize(this);
+
+	// Create dialogs AFTER Initialize resolved classes
 	Screen->Setup();
 
-	// SINGLE source of truth: MenuScreen decides Menu vs FirstRun
+	// MenuScreen decides Menu vs FirstRun
 	Screen->Show();
 
 	// Focus whatever MenuScreen decided is current
@@ -158,24 +161,12 @@ void USSWGameInstance::ShowMainMenuScreen()
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		PC->SetInputMode(InputMode);
 		PC->SetShowMouseCursor(true);
+		PC->bEnableClickEvents = true;
+		PC->bEnableMouseOverEvents = true;
 	}
 	else
 	{
-		// fallback
-		if (UUserWidget* Fallback = Screen->GetMenuDlg())
-		{
-			FInputModeUIOnly InputMode;
-			InputMode.SetWidgetToFocus(Fallback->TakeWidget());
-			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PC->SetInputMode(InputMode);
-			PC->SetShowMouseCursor(true);
-			PC->bEnableClickEvents = true;
-			PC->bEnableMouseOverEvents = true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ShowMainMenuScreen: No CurrentDialog and MenuDlg is null"));
-		}
+		UE_LOG(LogTemp, Warning, TEXT("ShowMainMenuScreen: No CurrentDialog after Show()"));
 	}
 }
 
