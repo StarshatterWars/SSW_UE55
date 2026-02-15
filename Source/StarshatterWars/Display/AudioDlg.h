@@ -114,6 +114,8 @@ private:
 
     void BuildAudioRows();
 
+    void BuildQualityListIfNeeded();
+
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
     UFUNCTION() void OnOptionsClicked();

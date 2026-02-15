@@ -93,7 +93,7 @@ void UAudioDlg::NativeConstruct()
     }
 
     VBox->SetVisibility(ESlateVisibility::Visible);
-
+    BuildQualityListIfNeeded();
     // IMPORTANT: build rows AFTER widgets are bound
     BuildAudioRows();
 
@@ -344,6 +344,25 @@ void UAudioDlg::BuildAudioRows()
     AddLabeledRow(TEXT("SOUND QUALITY"), QualityCombo, 520.f);
 }
 
+void UAudioDlg::BuildQualityListIfNeeded()
+{
+    if (!QualityCombo)
+        return;
+
+    // If it already has items (BP or previous construct), don’t duplicate:
+    if (QualityCombo->GetOptionCount() > 0)
+        return;
+
+    QualityCombo->ClearOptions();
+
+    // Keep it simple (blue/grey UI is fine; labels can be whatever you want):
+    QualityCombo->AddOption(TEXT("LOW"));
+    QualityCombo->AddOption(TEXT("MEDIUM"));
+    QualityCombo->AddOption(TEXT("HIGH"));
+
+    // Optional: default selection so it shows something even before RefreshFromModel:
+    QualityCombo->SetSelectedIndex(1);
+}
 
 // Optional local tabs -> route to OptionsScreen hub
 void UAudioDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
