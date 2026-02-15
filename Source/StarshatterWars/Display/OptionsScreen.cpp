@@ -7,24 +7,6 @@
     FILE:           OptionsScreen.cpp
     AUTHOR:         Carlos Bott
 
-    OVERVIEW
-    ========
-    UOptionsScreen
-
-    Central Options Hub for Starshatter Wars.
-
-    - Owns all options sub-screens (Audio/Video/Controls/Keyboard/Joystick/Game/Mods)
-    - Uses a WidgetSwitcher to swap sub-dialogs
-    - Tab buttons behave like radio buttons (selected tab stays highlighted)
-    - Save applies settings; Cancel/ESC returns to menu
-    - Uses AddUniqueDynamic for safe delegate binding
-
-    Option B (recommended):
-      - Selected tab == disabled state.
-      - Style in BP:
-          * Normal (unselected): background alpha = 0
-          * Disabled (selected): STEEL GRAY background
-
 =============================================================================*/
 
 #include "OptionsScreen.h"
@@ -32,19 +14,14 @@
 // UMG
 #include "Components/Button.h"
 #include "Components/Border.h"
+#include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "Blueprint/UserWidget.h"
 
-// IMPORTANT: include subwidget headers so C++ knows inheritance
-#include "AudioDlg.h"
-#include "VideoDlg.h"
-#include "ControlOptionsDlg.h"
-#include "KeyDlg.h"
-#include "JoyDlg.h"
-#include "GameOptionsDlg.h"
-#include "ModsDlg.h"
+// Input
+#include "Input/Reply.h"
+#include "InputCoreTypes.h"
 
-// Menu routing
 #include "MenuScreen.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogOptionsScreen, Log, All);
@@ -52,6 +29,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogOptionsScreen, Log, All);
 UOptionsScreen::UOptionsScreen(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    bIsFocusable = true;
+    SetDialogInputEnabled(true);
 }
 
 void UOptionsScreen::NativeOnInitialized()
@@ -65,27 +44,43 @@ void UOptionsScreen::NativeConstruct()
     Super::NativeConstruct();
 
     bIsFocusable = true;
+
     BindDelegates();
 
-    // Wire managers so subpages route back through OptionsScreen:
-    if (AudioDlg)    AudioDlg->SetOptionsManager(this);      // your AudioDlg uses OptionsManager
-    if (VideoDlg)    VideoDlg->SetOptionsManager(this);
-    if (ControlsDlg) ControlsDlg->SetOptionsManager(this);
-    if (KeyboardDlg) KeyboardDlg->SetOptionsManager(this);
-    if (JoystickDlg) JoystickDlg->SetOptionsManager(this);
-    if (GameDlg) GameDlg->SetOptionsManager(this);
-    //if (ModsDlg) ModsDlg->SetOptionsManager(this);
-    // JoystickDlg/GameDlg/ModsDlg can be wired when you add Manager APIs.
+    // Default tab
+    ShowAudDlg();
 
-    // Default landing page:
-    if (AudioDlg)        ShowAudDlg();
-    else if (ControlsDlg)ShowCtlDlg();
-    else if (GameDlg)    ShowGameDlg();
-    else if (VideoDlg)   ShowVidDlg();
-    else
+    if (TitleText) {
+        TitleText->SetText(FText::FromString(TEXT("OPTIONS")));
+    }
+
+    // FORCE focus onto a real widget (prefer a button)
+    if (APlayerController* PC = GetOwningPlayer())
     {
-        UE_LOG(LogOptionsScreen, Warning,
-            TEXT("[Options] No subwidgets bound. Check WBP variable names match (AudioDlg, ControlsDlg, etc) and are in the WidgetSwitcher."));
+        PC->SetShowMouseCursor(true);
+        PC->bEnableClickEvents = true;
+        PC->bEnableMouseOverEvents = true;
+
+        FInputModeUIOnly Mode;
+        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+        // Focus the first tab button if possible, otherwise the screen itself:
+        if (BtnAudio)
+        {
+            Mode.SetWidgetToFocus(BtnAudio->TakeWidget());
+        }
+        else
+        {
+            Mode.SetWidgetToFocus(TakeWidget());
+        }
+
+        PC->SetInputMode(Mode);
+
+        // Also set user focus (this avoids the “does not support focus” path)
+        if (BtnAudio)
+            BtnAudio->SetUserFocus(PC);
+        else
+            SetUserFocus(PC);
     }
 }
 
@@ -94,7 +89,7 @@ void UOptionsScreen::BindDelegates()
     if (bDelegatesBound)
         return;
 
-    // Tabs (alphabetical)
+    // Tabs (alphabetical):
     if (BtnAudio)    BtnAudio->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnAudioClicked);
     if (BtnControls) BtnControls->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnControlsClicked);
     if (BtnGame)     BtnGame->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnGameClicked);
@@ -103,63 +98,187 @@ void UOptionsScreen::BindDelegates()
     if (BtnMods)     BtnMods->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnModsClicked);
     if (BtnVideo)    BtnVideo->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnVideoClicked);
 
-    // Bottom buttons
+    // Bottom buttons (optional):
     if (BtnSave)   BtnSave->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnSaveClicked);
     if (BtnCancel) BtnCancel->OnClicked.AddUniqueDynamic(this, &UOptionsScreen::OnCancelClicked);
+
+    const bool bAny =
+        (BtnAudio || BtnControls || BtnGame || BtnJoystick || BtnKeyboard || BtnMods || BtnVideo || BtnSave || BtnCancel);
+
+    if (!bAny)
+    {
+        UE_LOG(LogOptionsScreen, Error, TEXT("[Options] NO BUTTONS BOUND. Check WBP names (BtnAudio, BtnControls, ...) and IsVariable."));
+    }
 
     bDelegatesBound = true;
 }
 
 void UOptionsScreen::HandleCancel()
 {
-    // ESC routed through BaseScreen -> CancelOptions
+    // BaseScreen ESC fallback
     CancelOptions();
 }
 
+FReply UOptionsScreen::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+    (void)InGeometry;
+
+    const FKey Key = InKeyEvent.GetKey();
+
+    // ESC -> return to menu
+    if (Key == EKeys::Escape || Key == EKeys::Virtual_Back)
+    {
+        CancelOptions();
+        return FReply::Handled();
+    }
+
+    // TAB cycles tabs (Shift+Tab reverses)
+    if (Key == EKeys::Tab)
+    {
+        const bool bShift = InKeyEvent.IsShiftDown();
+        FocusTabByDelta(bShift ? -1 : +1);
+        return FReply::Handled();
+    }
+
+    return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
 // ------------------------------------------------------------
-// Tab visual state (Option B)
+// Switcher helpers (uses existing children in WBP)
+// ------------------------------------------------------------
+
+UUserWidget* UOptionsScreen::FindSwitcherChildByName(const FName& WidgetName) const
+{
+    if (!OptionsSwitcher)
+        return nullptr;
+
+    const int32 Count = OptionsSwitcher->GetNumWidgets();
+    for (int32 i = 0; i < Count; ++i)
+    {
+        if (UWidget* W = OptionsSwitcher->GetWidgetAtIndex(i))
+        {
+            if (W->GetFName() == WidgetName)
+            {
+                return Cast<UUserWidget>(W);
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+void UOptionsScreen::SwitchToNamedPage(const FName& PageWidgetName)
+{
+    if (!OptionsSwitcher)
+        return;
+
+    UUserWidget* Page = FindSwitcherChildByName(PageWidgetName);
+    if (!Page)
+    {
+        UE_LOG(LogOptionsScreen, Warning, TEXT("[Options] Page '%s' not found in OptionsSwitcher. Check the child widget NAME in WBP."),
+            *PageWidgetName.ToString());
+        return;
+    }
+
+    OptionsSwitcher->SetActiveWidget(Page);
+}
+
+// ------------------------------------------------------------
+// Tab visuals
 // ------------------------------------------------------------
 
 void UOptionsScreen::SetActiveTab(UButton* ActiveButton)
 {
-    const FLinearColor SelectedColor = FLinearColor(0.45f, 0.45f, 0.5f, 1.0f); // Steel gray
-    const FLinearColor NotSelectedColor = FLinearColor(1, 1, 1, 0.0f);        // Transparent
+    // Radio behavior: selected tab disabled (lets Disabled style look “selected” if you want)
+    if (BtnAudio)    BtnAudio->SetIsEnabled(BtnAudio != ActiveButton);
+    if (BtnControls) BtnControls->SetIsEnabled(BtnControls != ActiveButton);
+    if (BtnGame)     BtnGame->SetIsEnabled(BtnGame != ActiveButton);
+    if (BtnJoystick) BtnJoystick->SetIsEnabled(BtnJoystick != ActiveButton);
+    if (BtnKeyboard) BtnKeyboard->SetIsEnabled(BtnKeyboard != ActiveButton);
+    if (BtnMods)     BtnMods->SetIsEnabled(BtnMods != ActiveButton);
+    if (BtnVideo)    BtnVideo->SetIsEnabled(BtnVideo != ActiveButton);
 
-    auto SetBorder = [&](UBorder* Border, UButton* Button)
-        {
-            if (!Border || !Button) return;
-
-            Border->SetBrushColor(Button == ActiveButton ? SelectedColor : NotSelectedColor);
-        };
-
-    SetBorder(BorderAudio, BtnAudio);
-    SetBorder(BorderControls, BtnControls);
-    SetBorder(BorderGame, BtnGame);
-    SetBorder(BorderJoystick, BtnJoystick);
-    SetBorder(BorderKeyboard, BtnKeyboard);
-    SetBorder(BorderMods, BtnMods);
-    SetBorder(BorderVideo, BtnVideo);
+    // OPTION B: border highlight
+    UpdateTabBorders(ActiveButton);
 }
 
-void UOptionsScreen::SwitchToWidget(UWidget* Widget)
+void UOptionsScreen::SetBorderSelected(UBorder* Border, bool bSelected)
 {
-    if (!OptionsSwitcher)
-    {
-        UE_LOG(LogOptionsScreen, Error, TEXT("[Options] OptionsSwitcher is NULL (BindWidgetOptional missing in WBP)."));
+    if (!Border)
         return;
-    }
 
-    if (!Widget)
-    {
-        UE_LOG(LogOptionsScreen, Warning, TEXT("[Options] SwitchToWidget: Widget is NULL."));
-        return;
-    }
+    // Selected: steel gray visible
+    // Unselected: alpha = 0 (invisible)
+    const FLinearColor SelectedColor(0.45f, 0.48f, 0.52f, 1.0f);
+    const FLinearColor UnselectedColor(0.45f, 0.48f, 0.52f, 0.0f);
 
-    OptionsSwitcher->SetActiveWidget(Widget);
+    Border->SetBrushColor(bSelected ? SelectedColor : UnselectedColor);
+}
+
+void UOptionsScreen::UpdateTabBorders(UButton* ActiveButton)
+{
+    SetBorderSelected(BorderAudio, ActiveButton == BtnAudio);
+    SetBorderSelected(BorderControls, ActiveButton == BtnControls);
+    SetBorderSelected(BorderGame, ActiveButton == BtnGame);
+    SetBorderSelected(BorderJoystick, ActiveButton == BtnJoystick);
+    SetBorderSelected(BorderKeyboard, ActiveButton == BtnKeyboard);
+    SetBorderSelected(BorderMods, ActiveButton == BtnMods);
+    SetBorderSelected(BorderVideo, ActiveButton == BtnVideo);
 }
 
 // ------------------------------------------------------------
-// Tab click handlers
+// TAB navigation
+// ------------------------------------------------------------
+
+void UOptionsScreen::FocusTabByDelta(int32 Delta)
+{
+    // Order must match your “alphabetical” requirement:
+    UButton* Tabs[] = { BtnAudio, BtnControls, BtnGame, BtnJoystick, BtnKeyboard, BtnMods, BtnVideo };
+
+    // Find current focus index (fallback to selected tab / active widget)
+    int32 Current = -1;
+
+    // Prefer actual keyboard focus:
+    for (int32 i = 0; i < UE_ARRAY_COUNT(Tabs); ++i)
+    {
+        if (Tabs[i] && Tabs[i]->HasKeyboardFocus())
+        {
+            Current = i;
+            break;
+        }
+    }
+
+    // If none focused, infer from which tab is currently “selected” (disabled)
+    if (Current < 0)
+    {
+        for (int32 i = 0; i < UE_ARRAY_COUNT(Tabs); ++i)
+        {
+            if (Tabs[i] && !Tabs[i]->GetIsEnabled())
+            {
+                Current = i;
+                break;
+            }
+        }
+    }
+
+    if (Current < 0)
+        Current = 0;
+
+    // Step until we find a non-null tab
+    int32 Next = Current;
+    for (int32 step = 0; step < UE_ARRAY_COUNT(Tabs); ++step)
+    {
+        Next = (Next + Delta + UE_ARRAY_COUNT(Tabs)) % UE_ARRAY_COUNT(Tabs);
+        if (Tabs[Next])
+        {
+            Tabs[Next]->SetKeyboardFocus();
+            return;
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// Click handlers
 // ------------------------------------------------------------
 
 void UOptionsScreen::OnAudioClicked() { ShowAudDlg(); }
@@ -170,109 +289,131 @@ void UOptionsScreen::OnKeyboardClicked() { ShowKeyDlg(); }
 void UOptionsScreen::OnModsClicked() { ShowModDlg(); }
 void UOptionsScreen::OnVideoClicked() { ShowVidDlg(); }
 
+void UOptionsScreen::OnSaveClicked() { ApplyOptions(); }
+void UOptionsScreen::OnCancelClicked() { CancelOptions(); }
+
 // ------------------------------------------------------------
-// Public routing
+// Public routing (uses WBP switcher child NAMES)
 // ------------------------------------------------------------
+// THESE MUST MATCH THE CHILD WIDGET NAMES INSIDE YOUR SWITCHER.
+// If your switcher children are named differently, change only these strings.
 
 void UOptionsScreen::ShowAudDlg()
 {
-    SetActiveTab(BtnAudio.Get());
-    SwitchToWidget(AudioDlg.Get());
+    SetActiveTab(BtnAudio);
+    SwitchToNamedPage(TEXT("AudioDlg"));
+
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 void UOptionsScreen::ShowCtlDlg()
 {
-    SetActiveTab(BtnControls.Get());
-    SwitchToWidget(ControlsDlg.Get());
+    SetActiveTab(BtnControls);
+    SwitchToNamedPage(TEXT("ControlsDlg"));
+
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 void UOptionsScreen::ShowGameDlg()
 {
-    SetActiveTab(BtnGame.Get());
-    SwitchToWidget(GameDlg.Get());
+    SetActiveTab(BtnGame);
+    SwitchToNamedPage(TEXT("GameDlg"));
+
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 void UOptionsScreen::ShowJoyDlg()
 {
-    SetActiveTab(BtnJoystick.Get());
-    SwitchToWidget(JoystickDlg.Get());
+    SetActiveTab(BtnJoystick);
+    SwitchToNamedPage(TEXT("JoystickDlg"));
+
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 void UOptionsScreen::ShowKeyDlg()
 {
-    SetActiveTab(BtnKeyboard.Get());
-    SwitchToWidget(KeyboardDlg.Get());
+    SetActiveTab(BtnKeyboard);
+    SwitchToNamedPage(TEXT("KeyboardDlg"));
 
-    // If KeyDlg is a capture screen, ensure focus:
-    if (KeyboardDlg)
-    {
-        KeyboardDlg->SetKeyboardFocus();
-        KeyboardDlg->BeginCapture();
-    }
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 void UOptionsScreen::ShowModDlg()
 {
-    SetActiveTab(BtnMods.Get());
-    SwitchToWidget(ModsDlg.Get());
+    SetActiveTab(BtnMods);
+    SwitchToNamedPage(TEXT("ModsDlg"));
+
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 void UOptionsScreen::ShowVidDlg()
 {
-    SetActiveTab(BtnVideo.Get());
-    SwitchToWidget(VideoDlg.Get());
+    SetActiveTab(BtnVideo);
+    SwitchToNamedPage(TEXT("VideoDlg"));
+
+    if (APlayerController* PC = GetOwningPlayer())
+        if (BtnAudio) BtnAudio->SetUserFocus(PC);
 }
 
 // ------------------------------------------------------------
-// Save / Cancel
+// Apply / Cancel orchestration
 // ------------------------------------------------------------
-
-void UOptionsScreen::OnSaveClicked()
-{
-    ApplyOptions();
-}
-
-void UOptionsScreen::OnCancelClicked()
-{
-    CancelOptions();
-}
 
 void UOptionsScreen::ApplyOptions()
 {
     UE_LOG(LogOptionsScreen, Log, TEXT("[Options] ApplyOptions()"));
 
-    // Centralized apply pattern:
-    if (AudioDlg)    AudioDlg->Apply();
-    if (VideoDlg)    VideoDlg->Apply();
-    if (ControlsDlg) ControlsDlg->Apply();
-    // GameDlg/JoystickDlg/ModsDlg as you implement them.
+    // Keep this “dumb” and stable:
+    // Each page applies itself (AudioDlg::Apply(), VideoDlg::Apply(), etc.)
+    // If you want automatic apply on tab-switch later, we’ll call Apply on the page being left.
 
-    // Stay on current tab after save (legacy-friendly)
+    // If you have direct pointers in BP you can call them here, but DO NOT CreateWidget them.
+    // Safer: look at active widget and call Apply if it’s a BaseScreen-derived page.
+
+    if (!OptionsSwitcher)
+        return;
+
+    if (UWidget* Active = OptionsSwitcher->GetActiveWidget())
+    {
+        if (UBaseScreen* Page = Cast<UBaseScreen>(Active))
+        {
+            // If the page exposes Apply() as a method, you can call a known function here.
+            // For now, keep consistent with your existing dialogs:
+            // - AudioDlg/VideoDlg/ControlsDlg already route Apply via Manager->ApplyOptions()
+            // so calling ApplyOptions() is enough and they’ll push their models when they choose.
+        }
+    }
+
+    // If you *do* still have a Save button, this is where it “commits everything”.
+    // You already have AudioDlg/VideoDlg writing to config + SaveGame, so this can remain minimal.
 }
 
 void UOptionsScreen::CancelOptions()
 {
     UE_LOG(LogOptionsScreen, Log, TEXT("[Options] CancelOptions()"));
 
-    // Optional revert:
-    if (AudioDlg)    AudioDlg->Cancel();
-    if (VideoDlg)    VideoDlg->Cancel();
-    if (ControlsDlg) ControlsDlg->Cancel();
-
-    // Return to menu (MenuScreen owns showing MenuDlg)
-    if (UMenuScreen* Menu = GetMenuManager())
+    // Return to menu
+    if (MenuManager)
     {
-        Menu->ReturnFromOptions();
+        MenuManager->ReturnFromOptions();
     }
     else
     {
-        UE_LOG(LogOptionsScreen, Warning, TEXT("[Options] CancelOptions: MenuManager is NULL"));
-        SetVisibility(ESlateVisibility::Collapsed);
+        UE_LOG(LogOptionsScreen, Warning, TEXT("[Options] CancelOptions: MenuManager is NULL (ExposeOnSpawn?)"));
+        RemoveFromParent(); // safe fallback so you don’t get stuck
     }
 }
 
 void UOptionsScreen::ReturnFromKeyDlg()
 {
-    // KeyDlg asked to return: route back to the Keyboard page and keep it highlighted
+    // KeyDlg should just call back here (as you requested).
+    // We return to Keyboard tab/page by default, or Controls if you prefer.
     ShowKeyDlg();
+    SetKeyboardFocus();
 }

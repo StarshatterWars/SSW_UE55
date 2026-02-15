@@ -14,12 +14,12 @@
     Central Options Hub for Starshatter Wars.
 
     Responsibilities:
-      - Owns all options sub-screens
+      - Owns all options sub-screens (already placed in WBP)
       - Uses a WidgetSwitcher to swap sub-dialogs
-      - Manages tab buttons (radio-style behavior)
-      - Handles Save / Cancel
+      - Manages tab buttons (radio-style behavior + highlight)
+      - Handles Apply / Cancel routing
       - ESC returns to MenuScreen
-      - No routing logic lives in MenuDlg anymore
+      - TAB / SHIFT+TAB cycles tabs
 
     Tabs (alphabetical order):
       - Audio
@@ -40,17 +40,10 @@
 
 class UButton;
 class UBorder;
-class UWidget;
+class UTextBlock;
 class UWidgetSwitcher;
-
-// Sub-widgets
-class UAudioDlg;
-class UVideoDlg;
-class UControlOptionsDlg;
-class UKeyDlg;
-class UJoyDlg;
-class UGameOptionsDlg;
-class UModsDlg;
+class UUserWidget;
+class UMenuScreen;
 
 UCLASS()
 class STARSHATTERWARS_API UOptionsScreen : public UBaseScreen
@@ -64,18 +57,20 @@ protected:
     virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
 
+    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
 public:
-    // ESC should behave like Cancel (return to menu)
+    // BaseScreen ESC fallback:
     virtual void HandleCancel() override;
 
-    // Apply / Cancel orchestration
+    // Public API used by subdialogs:
     void ApplyOptions();
     void CancelOptions();
 
-    // KeyDlg returns here (KeyDlg does NOT route itself)
+    // KeyDlg returns here:
     void ReturnFromKeyDlg();
 
-    // Sub-screen routing (legacy compatibility)
+    // Legacy-compatible routing names:
     void ShowAudDlg();
     void ShowCtlDlg();
     void ShowGameDlg();
@@ -86,77 +81,66 @@ public:
 
 protected:
     // ------------------------------------------------------------
-    // Core container
+    // Core container (must exist in WBP)
     // ------------------------------------------------------------
-
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UWidgetSwitcher> OptionsSwitcher;
+    TObjectPtr<UWidgetSwitcher> OptionsSwitcher = nullptr;
 
     // ------------------------------------------------------------
     // Tab Buttons (alphabetical)
     // ------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnAudio = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnControls = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnGame = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnJoystick = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnKeyboard = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnMods = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnVideo = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnAudio;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnControls;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnGame;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnJoystick;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnKeyboard;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnMods;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnVideo;
+    // Optional bottom buttons (if you still have them in WBP)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnSave = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnCancel = nullptr;
 
-    // ------------------------------------------------------------
-    // Bottom Buttons
-    // ------------------------------------------------------------
-
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnSave;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> BtnCancel;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> TitleText = nullptr;
 
     // ------------------------------------------------------------
-    // Sub Widgets (must be in the WidgetSwitcher and named exactly)
+    // Tab highlight borders (OPTION B)
+    // Add these Borders in WBP wrapping each tab button.
+    // Name them exactly: BorderAudio, BorderControls, etc.
     // ------------------------------------------------------------
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderAudio = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderControls = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderGame = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderJoystick = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderKeyboard = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderMods = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderVideo = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UAudioDlg>         AudioDlg;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UControlOptionsDlg> ControlsDlg;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UGameOptionsDlg>   GameDlg;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UJoyDlg>           JoystickDlg;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UKeyDlg>           KeyboardDlg;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UModsDlg>          ModsDlg;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UVideoDlg>         VideoDlg;
-
-    // Borders (for highlight)
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderAudio;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderControls;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderGame;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderJoystick;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderKeyboard;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderMods;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBorder> BorderVideo;
-
-protected:
+private:
+    // ------------------------------------------------------------
+    // Delegate binding
+    // ------------------------------------------------------------
     void BindDelegates();
     bool bDelegatesBound = false;
 
-    // Option B: selected tab = disabled state (BP Disabled style = STEEL GRAY)
+    // ------------------------------------------------------------
+    // Switcher helpers (CRITICAL FIX)
+    // We do NOT CreateWidget pages. We use the instances already in the WBP switcher.
+    // ------------------------------------------------------------
+    UUserWidget* FindSwitcherChildByName(const FName& WidgetName) const;
+    void SwitchToNamedPage(const FName& PageWidgetName);
+
     void SetActiveTab(UButton* ActiveButton);
 
-    // FIX: take UWidget* (WidgetSwitcher uses UWidget)
-    void SwitchToWidget(UWidget* Widget);
+    // OPTION B: border highlight (steel gray when selected, alpha 0 when not)
+    void UpdateTabBorders(UButton* ActiveButton);
+    static void SetBorderSelected(UBorder* Border, bool bSelected);
 
-protected:
-    // Tab handlers
+    // TAB navigation
+    void FocusTabByDelta(int32 Delta);
+
+private:
+    // Button handlers:
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnGameClicked();
@@ -165,7 +149,6 @@ protected:
     UFUNCTION() void OnModsClicked();
     UFUNCTION() void OnVideoClicked();
 
-    // Bottom handlers
     UFUNCTION() void OnSaveClicked();
     UFUNCTION() void OnCancelClicked();
 };
