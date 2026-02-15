@@ -2,9 +2,8 @@
     Project:        Starshatter Wars
     Studio:         Fractal Dev Studios
     Copyright:      (c) 2025-2026.
-    All Rights Reserved.
 
-    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    SUBSYSTEM:      Stars.exe (Unreal Port)
     FILE:           GameOptionsDlg.h
     AUTHOR:         Carlos Bott
 
@@ -12,14 +11,10 @@
     ========
     UGameOptionsDlg
     - Gameplay options subpage hosted by UOptionsScreen.
-    - Replaces legacy "Options" page from Starshatter OptionsScreen.
-    - Reads/writes PlayerCharacter + Ship + HUDView (legacy globals).
-    - Apply/Cancel is orchestrated by UOptionsScreen (single source of truth).
+    - AutoVBox runtime layout (RootCanvas -> AutoVBox).
+    - Reads/writes legacy globals: PlayerCharacter + Ship + HUDView.
+    - Apply/Cancel orchestrated by UOptionsScreen, but page supports standalone Apply/Cancel.
 
-    NOTES
-    =====
-    - Uses AddUniqueDynamic to avoid duplicate delegate ensures.
-    - Tab buttons route back to UOptionsScreen to switch pages.
 =============================================================================*/
 
 #pragma once
@@ -27,13 +22,16 @@
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 
-// Needed for ESelectInfo::Type in UFUNCTION signatures:
+// Needed for ESelectInfo::Type
 #include "Components/ComboBoxString.h"
 
 #include "GameOptionsDlg.generated.h"
 
 class UButton;
 class UTextBlock;
+class UComboBoxString;
+class UVerticalBox;
+
 class UOptionsScreen;
 
 UCLASS()
@@ -43,10 +41,6 @@ class STARSHATTERWARS_API UGameOptionsDlg : public UBaseScreen
 
 public:
     UGameOptionsDlg(const FObjectInitializer& ObjectInitializer);
-
-    // Standardized across subscreens:
-    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
-    UOptionsScreen* GetOptionsManager() const { return OptionsManager.Get(); }
 
     void Show();
     virtual void ExecFrame(double DeltaTime) override;
@@ -58,8 +52,11 @@ public:
 
 protected:
     virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+protected:
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
 
@@ -72,6 +69,19 @@ private:
     void RefreshFromModel();
     void PushToModel();
 
+    void BuildGameRows();
+    void BuildListsIfNeeded();
+
+    void BuildFlightModelListIfNeeded();
+    void BuildLandingModelListIfNeeded();
+    void BuildFlyingStartListIfNeeded();
+    void BuildAIDifficultyListIfNeeded();
+    void BuildHudModeListIfNeeded();
+    void BuildHudColorListIfNeeded();
+    void BuildFriendlyFireListIfNeeded();
+    void BuildGridModeListIfNeeded();
+    void BuildGunsightListIfNeeded();
+
 private:
     bool bClosed = true;
     bool bDelegatesBound = false;
@@ -79,10 +89,10 @@ private:
     UPROPERTY(Transient)
     bool bDirty = false;
 
-    // Snapshot (kept simple; we re-pull on RefreshFromModel)
-    int32 FlightModel = 0;
-    int32 LandingModel = 0;
-    int32 FlyingStart = 0;
+    // Snapshot (pulled on RefreshFromModel)
+    int32 FlightModelIndex = 0;
+    int32 LandingModelIndex = 0;
+    int32 FlyingStartIndex = 0;
     int32 AIDifficultyIndex = 0;
     int32 HudModeIndex = 0;
     int32 HudColorIndex = 0;
@@ -91,31 +101,30 @@ private:
     int32 GunsightIndex = 0;
 
 protected:
-    // ------------------------------------------------------------
-    // UMG bindings (optional)
-    // ------------------------------------------------------------
+    // Optional description label (if present in BP)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> DescriptionText;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> description = nullptr;
+    // Combos (bound from BP; moved into AutoVBox rows at runtime)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> FlightModelCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> FlyingStartCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> LandingsCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> AIDifficultyCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> HudModeCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> HudColorCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> FriendlyFireCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> GridModeCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> GunsightCombo;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> flight_model = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> flying_start = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> landings = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ai_difficulty = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> hud_mode = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> hud_color = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ff_mode = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> grid_mode = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> gunsight = nullptr;
+    // Apply/Cancel
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn = nullptr;
-
-    // Tabs
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> vid_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> aud_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ctl_btn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> opt_btn = nullptr; // GAME tab (this page)
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> mod_btn = nullptr;
+    // Tabs (optional)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> VidTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AudTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CtlTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> OptTabButton; // this page
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ModTabButton;
 
 private:
     // Apply/Cancel
@@ -129,14 +138,14 @@ private:
     UFUNCTION() void OnGameClicked();
     UFUNCTION() void OnModClicked();
 
-    // Combos
+    // Combo handlers
     UFUNCTION() void OnFlightModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnFlyingStartChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnLandingsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnAIDifficultyChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnHudModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnHudColorChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-    UFUNCTION() void OnFfModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void OnFriendlyFireChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnGridModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnGunsightChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 };
