@@ -2,23 +2,19 @@
     Project:        Starshatter Wars
     Studio:         Fractal Dev Studios
     Copyright:      (c) 2025-2026.
-    All Rights Reserved.
 
-    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    SUBSYSTEM:      Stars.exe (Unreal Port)
     FILE:           ControlOptionsDlg.h
     AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
     UControlOptionsDlg
-    - UE-only controls options dialog (OptionsScreen subpage).
-    - UI reads/writes ONLY UStarshatterControlsSettings (config-backed CDO).
-    - Runtime apply delegated to UStarshatterControlsSettings::ApplyToRuntimeControls(...)
+    - Controls settings subpage hosted by UOptionsScreen.
+    - Auto-injects an "AutoVBox" into RootCanvas with standard margins:
+        Top = 64, Left/Right/Bottom = 32, fills panel.
+    - Builds runtime rows (label + control) using BaseScreen::AddLabeledRow(...)
 
-    NOTES
-    =====
-    - Uses AddUniqueDynamic bindings (no RemoveAll) to prevent delegate ensure crashes.
-    - Routes tabs through UOptionsScreen (Audio/Video/Game/Controls/Mods).
 =============================================================================*/
 
 #pragma once
@@ -27,6 +23,7 @@
 #include "BaseScreen.h"
 #include "ControlOptionsDlg.generated.h"
 
+// UMG
 class UButton;
 class UComboBoxString;
 class USlider;
@@ -43,25 +40,24 @@ class STARSHATTERWARS_API UControlOptionsDlg : public UBaseScreen
 public:
     UControlOptionsDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Standardized across subscreens:
-    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
-    UOptionsScreen* GetOptionsManager() const { return OptionsManager.Get(); }
-
-    virtual void Show();
+    void Show();
     virtual void ExecFrame(double DeltaTime) override;
 
     void Apply();
     void Cancel();
 
-    bool IsDirty() const { return bDirty; }
+    void PushToModel(bool bApplyRuntimeToo);
 
 protected:
     virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+protected:
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
+
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
@@ -71,98 +67,72 @@ private:
     UStarshatterControlsSettings* GetControlsSettings() const;
 
     void RefreshFromModel();
-    void PushToModel(bool bApplyRuntimeToo);
+
+    void BuildControlRows();
+    void BuildControlModelListIfNeeded();
 
     static int32 SliderToInt(float Normalized, int32 MinV, int32 MaxV);
     static float IntToSlider(int32 V, int32 MinV, int32 MaxV);
 
 private:
+    bool bClosed = true;
+    bool bDelegatesBound = false;
+    bool bDirty = false;
+
+    // Snapshot mirrors FStarshatterControlsConfig
+    int32 ControlModel = 1; // FlightSim default
+
+    int32 JoystickIndex = 0;
+    int32 ThrottleAxis = 0;
+    int32 RudderAxis = 0;
+    int32 JoystickSensitivity = 5;
+
+    int32 MouseSensitivity = 25;
+    bool  bMouseInvert = false;
+
+protected:
+    // ------------------------------------------------------------
+    // Controls (bound from BP, inserted into runtime rows)
+    // ------------------------------------------------------------
+
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ControlModelCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> JoystickIndexSlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> ThrottleAxisSlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> RudderAxisSlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> JoystickSensitivitySlider;
+
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> MouseSensitivitySlider;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UCheckBox> MouseInvertCheck;
+
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
+
+    // Optional local tabs (only if present in the page WBP)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> VidTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AudTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CtlTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> OptTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ModTabButton;
+
+private:
     // Model change handlers
     UFUNCTION() void OnControlModelChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
-    UFUNCTION() void OnJoystickIndexChanged(float NormalizedValue);
-    UFUNCTION() void OnThrottleAxisChanged(float NormalizedValue);
-    UFUNCTION() void OnRudderAxisChanged(float NormalizedValue);
-    UFUNCTION() void OnJoystickSensitivityChanged(float NormalizedValue);
+    UFUNCTION() void OnJoystickIndexChanged(float V);
+    UFUNCTION() void OnThrottleAxisChanged(float V);
+    UFUNCTION() void OnRudderAxisChanged(float V);
+    UFUNCTION() void OnJoystickSensitivityChanged(float V);
 
-    UFUNCTION() void OnMouseSensitivityChanged(float NormalizedValue);
+    UFUNCTION() void OnMouseSensitivityChanged(float V);
     UFUNCTION() void OnMouseInvertChanged(bool bIsChecked);
 
-    // Apply/Cancel
     UFUNCTION() void OnApplyClicked();
     UFUNCTION() void OnCancelClicked();
 
     // Tabs
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnGameClicked();
+    UFUNCTION() void OnOptionsClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
-
-private:
-
-    bool bClosed = true;
-    bool bDelegatesBound = false;
-
-    UPROPERTY(Transient)
-    bool bDirty = false;
-
-    // Snapshot (mirrors FStarshatterControlsConfig)
-    int32 control_model = 1; // FlightSim default
-
-    int32 joystick_index = 0;
-    int32 throttle_axis = 0;
-    int32 rudder_axis = 0;
-    int32 joystick_sensitivity = 5;
-
-    int32 mouse_sensitivity = 25;
-    bool  b_mouse_invert = false;
-
-protected:
-    // ------------------------------------------------------------
-    // UMG bindings (names must match BP variables)
-    // ------------------------------------------------------------
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UComboBoxString> control_model_combo = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> joystick_index_slider = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> throttle_axis_slider = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> rudder_axis_slider = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> joystick_sensitivity_slider = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> mouse_sensitivity_slider = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UCheckBox> mouse_invert_checkbox = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> ApplyBtn = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> CancelBtn = nullptr;
-
-    // Tabs (optional if embedded in subpage BP)
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> vid_btn = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> aud_btn = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> ctl_btn = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> opt_btn = nullptr;  // "GAME" tab in new layout
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> mod_btn = nullptr;
 };

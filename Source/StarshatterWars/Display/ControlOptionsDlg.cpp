@@ -2,26 +2,35 @@
     Project:        Starshatter Wars
     Studio:         Fractal Dev Studios
     Copyright:      (c) 2025-2026.
-    All Rights Reserved.
 
-    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    SUBSYSTEM:      Stars.exe (Unreal Port)
     FILE:           ControlOptionsDlg.cpp
     AUTHOR:         Carlos Bott
 
     IMPLEMENTATION
     ==============
     UControlOptionsDlg
+
+    Notes:
+    - Delegates are bound once via AddUniqueDynamic (no RemoveAll needed).
+    - AutoVBox runtime layout (EnsureAutoVerticalBox + AddLabeledRow).
+    - OptionsScreen is the router; this page forwards if OptionsManager exists.
 =============================================================================*/
 
 #include "ControlOptionsDlg.h"
 
+// UMG
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/Slider.h"
 #include "Components/CheckBox.h"
+#include "Components/VerticalBox.h"
 
-#include "OptionsScreen.h"
+// Model
 #include "StarshatterControlsSettings.h"
+
+// Router
+#include "OptionsScreen.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogControlOptionsDlg, Log, All);
 
@@ -34,18 +43,43 @@ UControlOptionsDlg::UControlOptionsDlg(const FObjectInitializer& ObjectInitializ
 void UControlOptionsDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
+
+    // Enter/Escape routing (AudioDlg pattern)
+    ApplyButton = ApplyBtn;
+    CancelButton = CancelBtn;
+
     BindDelegates();
+}
+
+void UControlOptionsDlg::NativePreConstruct()
+{
+    Super::NativePreConstruct();
+
+    EnsureAutoVerticalBox();
+    if (AutoVBox)
+        AutoVBox->ClearChildren();
 }
 
 void UControlOptionsDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // BaseScreen Enter/Escape routing
-    ApplyButton = ApplyBtn;
-    CancelButton = CancelBtn;
-
     BindDelegates();
+
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+    {
+        UE_LOG(LogControlOptionsDlg, Error, TEXT("[ControlOptionsDlg] BuildRows FAILED: AutoVBox is NULL"));
+        return;
+    }
+
+    VBox->SetVisibility(ESlateVisibility::Visible);
+
+    BuildControlModelListIfNeeded();
+    BuildControlRows();
+
+    UE_LOG(LogControlOptionsDlg, Warning, TEXT("[ControlOptionsDlg] AutoVBox children after BuildControlRows: %d"),
+        VBox->GetChildrenCount());
 
     if (bClosed)
     {
@@ -60,41 +94,38 @@ void UControlOptionsDlg::BindDelegates()
     if (bDelegatesBound)
         return;
 
-    // Model controls
-    if (control_model_combo)
-        control_model_combo->OnSelectionChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnControlModelChanged);
-
-    if (joystick_index_slider)
-        joystick_index_slider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnJoystickIndexChanged);
-
-    if (throttle_axis_slider)
-        throttle_axis_slider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnThrottleAxisChanged);
-
-    if (rudder_axis_slider)
-        rudder_axis_slider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnRudderAxisChanged);
-
-    if (joystick_sensitivity_slider)
-        joystick_sensitivity_slider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnJoystickSensitivityChanged);
-
-    if (mouse_sensitivity_slider)
-        mouse_sensitivity_slider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnMouseSensitivityChanged);
-
-    if (mouse_invert_checkbox)
-        mouse_invert_checkbox->OnCheckStateChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnMouseInvertChanged);
-
     // Apply/Cancel
-    if (ApplyBtn)
-        ApplyBtn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnApplyClicked);
+    if (ApplyBtn)  ApplyBtn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnApplyClicked);
+    if (CancelBtn) CancelBtn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnCancelClicked);
 
-    if (CancelBtn)
-        CancelBtn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnCancelClicked);
+    // Optional local tabs
+    if (AudTabButton) AudTabButton->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnAudioClicked);
+    if (VidTabButton) VidTabButton->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnVideoClicked);
+    if (CtlTabButton) CtlTabButton->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnControlsClicked);
+    if (OptTabButton) OptTabButton->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnOptionsClicked);
+    if (ModTabButton) ModTabButton->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnModClicked);
 
-    // Tabs (route to OptionsScreen)
-    if (vid_btn) vid_btn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnVideoClicked);
-    if (aud_btn) aud_btn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnAudioClicked);
-    if (ctl_btn) ctl_btn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnControlsClicked);
-    if (opt_btn) opt_btn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnGameClicked);
-    if (mod_btn) mod_btn->OnClicked.AddUniqueDynamic(this, &UControlOptionsDlg::OnModClicked);
+    // Model controls
+    if (ControlModelCombo)
+        ControlModelCombo->OnSelectionChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnControlModelChanged);
+
+    if (JoystickIndexSlider)
+        JoystickIndexSlider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnJoystickIndexChanged);
+
+    if (ThrottleAxisSlider)
+        ThrottleAxisSlider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnThrottleAxisChanged);
+
+    if (RudderAxisSlider)
+        RudderAxisSlider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnRudderAxisChanged);
+
+    if (JoystickSensitivitySlider)
+        JoystickSensitivitySlider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnJoystickSensitivityChanged);
+
+    if (MouseSensitivitySlider)
+        MouseSensitivitySlider->OnValueChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnMouseSensitivityChanged);
+
+    if (MouseInvertCheck)
+        MouseInvertCheck->OnCheckStateChanged.AddUniqueDynamic(this, &UControlOptionsDlg::OnMouseInvertChanged);
 
     bDelegatesBound = true;
 }
@@ -102,21 +133,19 @@ void UControlOptionsDlg::BindDelegates()
 void UControlOptionsDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-    (void)MyGeometry;
     ExecFrame((double)InDeltaTime);
 }
 
-// UBaseScreen overrides
+void UControlOptionsDlg::ExecFrame(double /*DeltaTime*/)
+{
+    // UE-only: no polling required.
+}
+
 void UControlOptionsDlg::BindFormWidgets() {}
 FString UControlOptionsDlg::GetLegacyFormText() const { return FString(); }
 
 void UControlOptionsDlg::HandleAccept() { OnApplyClicked(); }
 void UControlOptionsDlg::HandleCancel() { OnCancelClicked(); }
-
-UStarshatterControlsSettings* UControlOptionsDlg::GetControlsSettings() const
-{
-    return UStarshatterControlsSettings::Get();
-}
 
 void UControlOptionsDlg::Show()
 {
@@ -128,77 +157,79 @@ void UControlOptionsDlg::Show()
         bClosed = false;
         bDirty = false;
     }
-
-    SetKeyboardFocus();
 }
 
-void UControlOptionsDlg::ExecFrame(double /*DeltaTime*/)
+// ---------------- Model ----------------
+
+UStarshatterControlsSettings* UControlOptionsDlg::GetControlsSettings() const
 {
-    // No polling. BaseScreen handles input routing.
+    return UStarshatterControlsSettings::Get();
 }
 
 void UControlOptionsDlg::RefreshFromModel()
 {
-    UStarshatterControlsSettings* S = GetControlsSettings();
-    if (!S)
+    UStarshatterControlsSettings* Settings = GetControlsSettings();
+    if (!Settings)
         return;
 
-    S->Load();
-    const FStarshatterControlsConfig& C = S->GetControlsConfig();
+    Settings->Load();
+    const FStarshatterControlsConfig& C = Settings->GetControlsConfig();
 
-    control_model = (int32)C.ControlModel;
+    ControlModel = (int32)C.ControlModel;
 
-    joystick_index = C.JoystickIndex;
-    throttle_axis = C.ThrottleAxis;
-    rudder_axis = C.RudderAxis;
-    joystick_sensitivity = C.JoystickSensitivity;
+    JoystickIndex = C.JoystickIndex;
+    ThrottleAxis = C.ThrottleAxis;
+    RudderAxis = C.RudderAxis;
+    JoystickSensitivity = C.JoystickSensitivity;
 
-    mouse_sensitivity = C.MouseSensitivity;
-    b_mouse_invert = C.bMouseInvert;
+    MouseSensitivity = C.MouseSensitivity;
+    bMouseInvert = C.bMouseInvert;
 
-    if (control_model_combo)
-        control_model_combo->SetSelectedIndex(FMath::Clamp(control_model, 0, 2));
+    if (ControlModelCombo)
+        ControlModelCombo->SetSelectedIndex(FMath::Clamp(ControlModel, 0, 2));
 
-    if (joystick_index_slider) joystick_index_slider->SetValue(IntToSlider(joystick_index, 0, 8));
-    if (throttle_axis_slider) throttle_axis_slider->SetValue(IntToSlider(throttle_axis, 0, 16));
-    if (rudder_axis_slider) rudder_axis_slider->SetValue(IntToSlider(rudder_axis, 0, 16));
-    if (joystick_sensitivity_slider) joystick_sensitivity_slider->SetValue(IntToSlider(joystick_sensitivity, 0, 10));
+    if (JoystickIndexSlider)       JoystickIndexSlider->SetValue(IntToSlider(JoystickIndex, 0, 8));
+    if (ThrottleAxisSlider)        ThrottleAxisSlider->SetValue(IntToSlider(ThrottleAxis, 0, 16));
+    if (RudderAxisSlider)          RudderAxisSlider->SetValue(IntToSlider(RudderAxis, 0, 16));
+    if (JoystickSensitivitySlider) JoystickSensitivitySlider->SetValue(IntToSlider(JoystickSensitivity, 0, 10));
 
-    if (mouse_sensitivity_slider) mouse_sensitivity_slider->SetValue(IntToSlider(mouse_sensitivity, 0, 50));
-    if (mouse_invert_checkbox) mouse_invert_checkbox->SetIsChecked(b_mouse_invert);
+    if (MouseSensitivitySlider) MouseSensitivitySlider->SetValue(IntToSlider(MouseSensitivity, 0, 50));
+    if (MouseInvertCheck)       MouseInvertCheck->SetIsChecked(bMouseInvert);
 }
 
 void UControlOptionsDlg::PushToModel(bool bApplyRuntimeToo)
 {
-    UStarshatterControlsSettings* S = GetControlsSettings();
-    if (!S)
+    UStarshatterControlsSettings* Settings = GetControlsSettings();
+    if (!Settings)
         return;
 
-    FStarshatterControlsConfig C = S->GetControlsConfig();
+    FStarshatterControlsConfig C = Settings->GetControlsConfig();
 
-    C.ControlModel = (EStarshatterControlModel)FMath::Clamp(control_model, 0, 2);
+    C.ControlModel = (EStarshatterControlModel)FMath::Clamp(ControlModel, 0, 2);
 
-    C.JoystickIndex = FMath::Max(0, joystick_index);
-    C.ThrottleAxis = FMath::Max(0, throttle_axis);
-    C.RudderAxis = FMath::Max(0, rudder_axis);
-    C.JoystickSensitivity = FMath::Clamp(joystick_sensitivity, 0, 10);
+    C.JoystickIndex = FMath::Max(0, JoystickIndex);
+    C.ThrottleAxis = FMath::Max(0, ThrottleAxis);
+    C.RudderAxis = FMath::Max(0, RudderAxis);
+    C.JoystickSensitivity = FMath::Clamp(JoystickSensitivity, 0, 10);
 
-    C.MouseSensitivity = FMath::Clamp(mouse_sensitivity, 0, 50);
-    C.bMouseInvert = b_mouse_invert;
+    C.MouseSensitivity = FMath::Clamp(MouseSensitivity, 0, 50);
+    C.bMouseInvert = bMouseInvert;
 
-    S->SetControlsConfig(C);
-    S->Sanitize();
-    S->Save();
+    Settings->SetControlsConfig(C);
+    Settings->Sanitize();
+    Settings->Save();
 
     if (bApplyRuntimeToo)
-        S->ApplyToRuntimeControls(this);
+        Settings->ApplyToRuntimeControls(this);
 
     bDirty = false;
 }
 
+// ---------------- Apply / Cancel ----------------
+
 void UControlOptionsDlg::Apply()
 {
-    if (!bDirty)
+    if (bClosed)
         return;
 
     PushToModel(true);
@@ -208,85 +239,155 @@ void UControlOptionsDlg::Apply()
 void UControlOptionsDlg::Cancel()
 {
     RefreshFromModel();
-    bClosed = true;
     bDirty = false;
+    bClosed = true;
 }
 
-// -------------------- Handlers --------------------
+// ---------------- Runtime rows ----------------
 
-void UControlOptionsDlg::OnControlModelChanged(FString, ESelectInfo::Type)
+void UControlOptionsDlg::BuildControlRows()
 {
-    if (control_model_combo)
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+        return;
+
+    VBox->ClearChildren();
+
+    auto Require = [&](UWidget* W, const TCHAR* Name) -> bool
+        {
+            if (!W)
+            {
+                UE_LOG(LogControlOptionsDlg, Error,
+                    TEXT("[ControlOptionsDlg] Widget '%s' is NULL (BP name mismatch or not IsVariable)."), Name);
+                return false;
+            }
+            return true;
+        };
+
+    const bool bOK =
+        Require(ControlModelCombo, TEXT("ControlModelCombo")) &
+        Require(JoystickIndexSlider, TEXT("JoystickIndexSlider")) &
+        Require(ThrottleAxisSlider, TEXT("ThrottleAxisSlider")) &
+        Require(RudderAxisSlider, TEXT("RudderAxisSlider")) &
+        Require(JoystickSensitivitySlider, TEXT("JoystickSensitivitySlider")) &
+        Require(MouseSensitivitySlider, TEXT("MouseSensitivitySlider")) &
+        Require(MouseInvertCheck, TEXT("MouseInvertCheck"));
+
+    if (!bOK)
     {
-        control_model = control_model_combo->GetSelectedIndex();
+        UE_LOG(LogControlOptionsDlg, Error, TEXT("[ControlOptionsDlg] BuildControlRows aborted due to NULL controls."));
+        return;
+    }
+
+    constexpr float W = 520.f;
+
+    AddLabeledRow(TEXT("CONTROL MODEL"), ControlModelCombo, W);
+    AddLabeledRow(TEXT("JOYSTICK INDEX"), JoystickIndexSlider, W);
+    AddLabeledRow(TEXT("THROTTLE AXIS"), ThrottleAxisSlider, W);
+    AddLabeledRow(TEXT("RUDDER AXIS"), RudderAxisSlider, W);
+    AddLabeledRow(TEXT("JOYSTICK SENSITIVITY"), JoystickSensitivitySlider, W);
+    AddLabeledRow(TEXT("MOUSE SENSITIVITY"), MouseSensitivitySlider, W);
+
+    // Checkbox reads better narrower than a slider
+    AddLabeledRow(TEXT("INVERT MOUSE"), MouseInvertCheck, 200.f);
+}
+
+void UControlOptionsDlg::BuildControlModelListIfNeeded()
+{
+    if (!ControlModelCombo)
+        return;
+
+    if (ControlModelCombo->GetOptionCount() > 0)
+        return;
+
+    ControlModelCombo->ClearOptions();
+
+    // Must match your clamp 0..2 and enum order:
+    ControlModelCombo->AddOption(TEXT("ARCADE"));
+    ControlModelCombo->AddOption(TEXT("FLIGHTSIM"));
+    ControlModelCombo->AddOption(TEXT("EXPERT"));
+
+    ControlModelCombo->SetSelectedIndex(1);
+}
+
+// ---------------- Handlers ----------------
+
+void UControlOptionsDlg::OnControlModelChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
+{
+    if (ControlModelCombo)
+    {
+        ControlModel = ControlModelCombo->GetSelectedIndex();
         bDirty = true;
         bClosed = false;
     }
 }
 
-void UControlOptionsDlg::OnJoystickIndexChanged(float NormalizedValue)
+void UControlOptionsDlg::OnJoystickIndexChanged(float V)
 {
-    joystick_index = SliderToInt(NormalizedValue, 0, 8);
+    JoystickIndex = SliderToInt(V, 0, 8);
     bDirty = true;
     bClosed = false;
 }
 
-void UControlOptionsDlg::OnThrottleAxisChanged(float NormalizedValue)
+void UControlOptionsDlg::OnThrottleAxisChanged(float V)
 {
-    throttle_axis = SliderToInt(NormalizedValue, 0, 16);
+    ThrottleAxis = SliderToInt(V, 0, 16);
     bDirty = true;
     bClosed = false;
 }
 
-void UControlOptionsDlg::OnRudderAxisChanged(float NormalizedValue)
+void UControlOptionsDlg::OnRudderAxisChanged(float V)
 {
-    rudder_axis = SliderToInt(NormalizedValue, 0, 16);
+    RudderAxis = SliderToInt(V, 0, 16);
     bDirty = true;
     bClosed = false;
 }
 
-void UControlOptionsDlg::OnJoystickSensitivityChanged(float NormalizedValue)
+void UControlOptionsDlg::OnJoystickSensitivityChanged(float V)
 {
-    joystick_sensitivity = SliderToInt(NormalizedValue, 0, 10);
+    JoystickSensitivity = SliderToInt(V, 0, 10);
     bDirty = true;
     bClosed = false;
 }
 
-void UControlOptionsDlg::OnMouseSensitivityChanged(float NormalizedValue)
+void UControlOptionsDlg::OnMouseSensitivityChanged(float V)
 {
-    mouse_sensitivity = SliderToInt(NormalizedValue, 0, 50);
+    MouseSensitivity = SliderToInt(V, 0, 50);
     bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnMouseInvertChanged(bool bIsChecked)
 {
-    b_mouse_invert = bIsChecked;
+    bMouseInvert = bIsChecked;
     bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnApplyClicked()
 {
-    // If you still have Apply buttons inside subpages:
-    if (OptionsManager) OptionsManager->ApplyOptions();
-    else Apply();
+    if (OptionsManager)
+        OptionsManager->ApplyOptions();
+    else
+        Apply();
 }
 
 void UControlOptionsDlg::OnCancelClicked()
 {
-    if (OptionsManager) OptionsManager->CancelOptions();
-    else Cancel();
+    if (OptionsManager)
+        OptionsManager->CancelOptions();
+    else
+        Cancel();
 }
 
-// Tabs (route to OptionsScreen)
+// Tabs -> route to OptionsScreen hub
 void UControlOptionsDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
 void UControlOptionsDlg::OnVideoClicked() { if (OptionsManager) OptionsManager->ShowVidDlg(); }
-void UControlOptionsDlg::OnGameClicked() { if (OptionsManager) OptionsManager->ShowGameDlg(); }
-void UControlOptionsDlg::OnControlsClicked() { /* already here */ }
+void UControlOptionsDlg::OnControlsClicked() { if (OptionsManager) OptionsManager->ShowCtlDlg(); }
+void UControlOptionsDlg::OnOptionsClicked() { if (OptionsManager) OptionsManager->ShowGameDlg(); }
 void UControlOptionsDlg::OnModClicked() { if (OptionsManager) OptionsManager->ShowModDlg(); }
 
-// -------------------- Slider helpers --------------------
+// ---------------- Slider helpers ----------------
 
 int32 UControlOptionsDlg::SliderToInt(float Normalized, int32 MinV, int32 MaxV)
 {
