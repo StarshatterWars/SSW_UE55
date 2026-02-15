@@ -4,13 +4,19 @@
     Copyright:      (c) 2025-2026.
     All Rights Reserved.
 
-    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    SUBSYSTEM:      Stars.exe (Unreal Port)
     FILE:           JoyDlg.cpp
     AUTHOR:         Carlos Bott
 
     IMPLEMENTATION
     ==============
-    UJoyDlg - joystick axis mapping dialog.
+    UJoyDlg - joystick axis mapping dialog (AutoVBox formatted).
+
+    Notes:
+    - Uses BaseScreen AutoVBox row building (like Audio/Game/Controls).
+    - Delegates bound once via AddUniqueDynamic (no RemoveAll).
+    - Enter/Escape routing handled via UBaseScreen ApplyButton/CancelButton.
+    - Fixes axis detection warm-up gate so detection triggers reliably.
 =============================================================================*/
 
 #include "JoyDlg.h"
@@ -19,6 +25,13 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/CheckBox.h"
+
+// Layout helpers
+#include "Blueprint/WidgetTree.h"
+#include "Components/VerticalBox.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/SizeBox.h"
 
 // Router
 #include "OptionsScreen.h"
@@ -44,6 +57,20 @@ static const char* JoyAxisNames[] =
     "JoyDlg.axis.7"
 };
 
+static void ForceTextIntoButton(UButton* Button, UTextBlock* TextWidget)
+{
+    if (!Button || !TextWidget)
+        return;
+
+    // If the text is currently parented somewhere else (like RootCanvas at 0,0), detach it:
+    if (UPanelWidget* OldParent = Cast<UPanelWidget>(TextWidget->GetParent()))
+        OldParent->RemoveChild(TextWidget);
+
+    // UButton is a ContentWidget: it can only have ONE child.
+    // If it already has something, you must replace it.
+    Button->SetContent(TextWidget);
+}
+
 UJoyDlg::UJoyDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -53,21 +80,40 @@ UJoyDlg::UJoyDlg(const FObjectInitializer& ObjectInitializer)
 void UJoyDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
+
+    // BaseScreen Enter/Escape routing (works even if ApplyBtn/CancelBtn are null)
+    ApplyButton = ApplyBtn;
+    CancelButton = CancelBtn;
+
     BindDelegates();
+}
+
+void UJoyDlg::NativePreConstruct()
+{
+    Super::NativePreConstruct();
+
+    // Match AudioDlg pattern: ensure AutoVBox exists and clear runtime rows.
+    if (UVerticalBox* VBox = EnsureAutoVerticalBox())
+    {
+        VBox->ClearChildren();
+        VBox->SetVisibility(ESlateVisibility::Visible);
+    }
 }
 
 void UJoyDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // BaseScreen Enter/Escape routing:
+    // Re-assign in case BP bindings weren’t ready at OnInitialized time:
     ApplyButton = ApplyBtn;
     CancelButton = CancelBtn;
 
     BindDelegates();
 
-    RefreshAxisUIFromCurrentBindings();
+    // Build standardized rows into AutoVBox:
+    BuildJoyRows();
 
+    // Reset state
     SelectedAxis = -1;
     SampleAxis = -1;
 
@@ -77,22 +123,8 @@ void UJoyDlg::NativeConstruct()
 
     if (MessageText)
         MessageText->SetText(FText::FromString(TEXT("SELECT AN AXIS SLOT, THEN MOVE A JOYSTICK AXIS")));
-}
 
-void UJoyDlg::BindDelegates()
-{
-    if (bDelegatesBound)
-        return;
-
-    if (ApplyBtn)  ApplyBtn->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnApplyClicked);
-    if (CancelBtn) CancelBtn->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnCancelClicked);
-
-    if (AxisButton0) AxisButton0->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis0Clicked);
-    if (AxisButton1) AxisButton1->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis1Clicked);
-    if (AxisButton2) AxisButton2->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis2Clicked);
-    if (AxisButton3) AxisButton3->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis3Clicked);
-
-    bDelegatesBound = true;
+    RefreshAxisUIFromCurrentBindings();
 }
 
 void UJoyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -122,8 +154,8 @@ void UJoyDlg::ExecFrame(double /*DeltaTime*/)
         const int32 Raw = Joystick::ReadRawAxis(i + KEY_JOY_AXIS_X);
         const int32 Delta = FMath::Abs(Raw - Samples[i]);
 
-        // Ignore the initial warm-up window:
-        if (Delta > BestDelta && Samples[i] < 1000000)
+        // FIX: warm-up gate must match initialization sentinel (10,000,000)
+        if (Delta > BestDelta && Samples[i] < 10000000)
         {
             BestDelta = Delta;
             BestAxis = i;
@@ -137,11 +169,11 @@ void UJoyDlg::ExecFrame(double /*DeltaTime*/)
         SampleAxis = BestAxis;
         MapAxis[SelectedAxis] = BestAxis;
 
-        // Update label to the detected axis name:
+        // Update label to detected axis name:
         const Text T = Game::GetText(JoyAxisNames[BestAxis]);
         SetAxisLabel(SelectedAxis, UTF8_TO_TCHAR(T.data()));
 
-        // Stop capture after a successful detect:
+        // Stop capture after success:
         SelectedAxis = -1;
 
         if (MessageText)
@@ -149,10 +181,24 @@ void UJoyDlg::ExecFrame(double /*DeltaTime*/)
     }
 }
 
+void UJoyDlg::BindFormWidgets() {}
+FString UJoyDlg::GetLegacyFormText() const { return FString(); }
+
+void UJoyDlg::HandleAccept() { OnApplyClicked(); }
+void UJoyDlg::HandleCancel() { OnCancelClicked(); }
+
+// ------------------------------------------------------------
+// Show / Apply / Cancel
+// ------------------------------------------------------------
+
 void UJoyDlg::Show()
 {
     SetVisibility(ESlateVisibility::Visible);
+
+    // Rebuild rows if needed (safe) and refresh from current bindings:
+    BuildJoyRows();
     RefreshAxisUIFromCurrentBindings();
+
     SetKeyboardFocus();
 }
 
@@ -163,8 +209,166 @@ void UJoyDlg::Apply()
 
 void UJoyDlg::Cancel()
 {
-    // Restore UI from current stored bindings:
+    SelectedAxis = -1;
     RefreshAxisUIFromCurrentBindings();
+
+    if (MessageText)
+        MessageText->SetText(FText::FromString(TEXT("CHANGES CANCELLED.")));
+}
+
+// ------------------------------------------------------------
+// Delegate wiring
+// ------------------------------------------------------------
+
+void UJoyDlg::BindDelegates()
+{
+    if (bDelegatesBound)
+        return;
+
+    // Apply/Cancel
+    if (ApplyBtn)  ApplyBtn->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnApplyClicked);
+    if (CancelBtn) CancelBtn->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnCancelClicked);
+
+    // Axis slot clicks
+    if (AxisButton0) AxisButton0->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis0Clicked);
+    if (AxisButton1) AxisButton1->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis1Clicked);
+    if (AxisButton2) AxisButton2->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis2Clicked);
+    if (AxisButton3) AxisButton3->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis3Clicked);
+
+    // Tabs (optional; only if present in WBP)
+    if (AudTabButton) AudTabButton->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAudioClicked);
+    if (VidTabButton) VidTabButton->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnVideoClicked);
+    if (CtlTabButton) CtlTabButton->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnControlsClicked);
+    if (OptTabButton) OptTabButton->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnOptionsClicked);
+    if (ModTabButton) ModTabButton->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnModClicked);
+
+    bDelegatesBound = true;
+}
+
+// ------------------------------------------------------------
+// AutoVBox row building (standardized formatting)
+// ------------------------------------------------------------
+
+void UJoyDlg::BuildJoyRows()
+{
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox || !WidgetTree)
+    {
+        UE_LOG(LogJoyDlg, Warning, TEXT("[JoyDlg] BuildJoyRows: AutoVBox/WidgetTree missing."));
+        return;
+    }
+
+    VBox->ClearChildren();
+
+    // -----------------------------
+    // FIX: Move axis text into buttons
+    // -----------------------------
+    AttachTextToButton(AxisButton0, AxisText0);
+    AttachTextToButton(AxisButton1, AxisText1);
+    AttachTextToButton(AxisButton2, AxisText2);
+    AttachTextToButton(AxisButton3, AxisText3);
+
+    // Status row
+    if (MessageText)
+    {
+        UHorizontalBox* MsgRow = AddRow(TEXT("JoyMsgRow"));
+        if (MsgRow)
+        {
+            MsgRow->AddChildToHorizontalBox(MessageText);
+        }
+    }
+
+    // Axis rows
+    BuildAxisRow(TEXT("YAW AXIS"), AxisButton0, Invert0, TEXT("JoyAxisRow0"));
+    BuildAxisRow(TEXT("PITCH AXIS"), AxisButton1, Invert1, TEXT("JoyAxisRow1"));
+    BuildAxisRow(TEXT("ROLL AXIS"), AxisButton2, Invert2, TEXT("JoyAxisRow2"));
+    BuildAxisRow(TEXT("THROTTLE AXIS"), AxisButton3, Invert3, TEXT("JoyAxisRow3"));
+
+    // Buttons row
+    if (ApplyBtn || CancelBtn)
+    {
+        UHorizontalBox* BtnRow = AddRow(TEXT("JoyButtonsRow"));
+        if (BtnRow)
+        {
+            if (ApplyBtn)  BtnRow->AddChildToHorizontalBox(ApplyBtn);
+            if (CancelBtn) BtnRow->AddChildToHorizontalBox(CancelBtn);
+        }
+    }
+}
+
+void UJoyDlg::AttachTextToButton(UButton* Button, UTextBlock* TextWidget)
+{
+    if (!Button || !TextWidget)
+        return;
+
+    // If the text is currently sitting on the canvas (or anywhere else),
+    // remove it from its old parent.
+    if (UPanelWidget* OldParent = Cast<UPanelWidget>(TextWidget->GetParent()))
+    {
+        OldParent->RemoveChild(TextWidget);
+    }
+
+    // UButton is a ContentWidget (single child)
+    Button->SetContent(TextWidget);
+}
+
+void UJoyDlg::BuildAxisRow(const FString& LabelText, UButton* AxisButton, UCheckBox* InvertCheck, const FName& RowName)
+{
+    if (!WidgetTree || !AxisButton)
+        return;
+
+    // Build a small "control group": [AxisButton][Invert]
+    UHorizontalBox* ControlGroup = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass());
+    if (!ControlGroup)
+        return;
+
+    // Button wrapper (stable width)
+    {
+        USizeBox* BtnSize = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+        if (BtnSize)
+        {
+            BtnSize->SetWidthOverride(360.f);   // tweak if you want a wider/narrower button
+            BtnSize->SetHeightOverride(0.f);
+            BtnSize->AddChild(AxisButton);
+
+            if (UHorizontalBoxSlot* S = ControlGroup->AddChildToHorizontalBox(BtnSize))
+            {
+                S->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+                S->SetHorizontalAlignment(HAlign_Left);
+                S->SetVerticalAlignment(VAlign_Center);
+                S->SetPadding(FMargin(0.f, 0.f, 12.f, 0.f));
+            }
+        }
+        else
+        {
+            // Fallback: add button directly
+            ControlGroup->AddChildToHorizontalBox(AxisButton);
+        }
+    }
+
+    // Invert checkbox
+    if (InvertCheck)
+    {
+        USizeBox* InvSize = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+        if (InvSize)
+        {
+            InvSize->SetWidthOverride(120.f);
+            InvSize->AddChild(InvertCheck);
+            if (UHorizontalBoxSlot* S = ControlGroup->AddChildToHorizontalBox(InvSize))
+            {
+                S->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+                S->SetHorizontalAlignment(HAlign_Right);
+                S->SetVerticalAlignment(VAlign_Center);
+            }
+        }
+        else
+        {
+            ControlGroup->AddChildToHorizontalBox(InvertCheck);
+        }
+    }
+
+    // Add the labeled row using BaseScreen helper (consistent typography + spacing)
+    AddLabeledRow(LabelText, ControlGroup, 520.f);
 }
 
 // ------------------------------------------------------------
@@ -193,11 +397,9 @@ void UJoyDlg::HandleAxisClicked(int32 AxisIndex)
         return;
     }
 
-    // Start capture on this slot:
     SelectedAxis = AxisIndex;
     SampleAxis = -1;
 
-    // Refresh labels so we show "SELECT" on active slot:
     RefreshAxisUIFromCurrentBindings();
     SetAxisLabel(AxisIndex, TEXT("SELECT… THEN MOVE AXIS"));
 
@@ -227,24 +429,86 @@ void UJoyDlg::OnCancelClicked()
 }
 
 // ------------------------------------------------------------
+// Tabs (route to OptionsScreen hub)
+// ------------------------------------------------------------
+
+void UJoyDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
+void UJoyDlg::OnVideoClicked() { if (OptionsManager) OptionsManager->ShowVidDlg(); }
+void UJoyDlg::OnControlsClicked() { if (OptionsManager) OptionsManager->ShowCtlDlg(); }
+void UJoyDlg::OnOptionsClicked() { if (OptionsManager) OptionsManager->ShowGameDlg(); }
+void UJoyDlg::OnModClicked() { if (OptionsManager) OptionsManager->ShowModDlg(); }
+
+// ------------------------------------------------------------
 // UI helpers
 // ------------------------------------------------------------
 
-void UJoyDlg::SetAxisLabel(int32 AxisIndex, const TCHAR* Text)
+void UJoyDlg::SetAxisLabel(int32 AxisIndex, const TCHAR* InText)
 {
-    UTextBlock* Target = nullptr;
+    const FString TextStr = InText ? FString(InText) : FString();
+
+    // Preferred targets (explicit bindings)
+    UTextBlock* TargetText = nullptr;
+    UButton* TargetBtn = nullptr;
+
     switch (AxisIndex)
     {
-    case 0: Target = AxisText0; break;
-    case 1: Target = AxisText1; break;
-    case 2: Target = AxisText2; break;
-    case 3: Target = AxisText3; break;
-    default: break;
+    case 0: TargetText = AxisText0; TargetBtn = AxisButton0; break;
+    case 1: TargetText = AxisText1; TargetBtn = AxisButton1; break;
+    case 2: TargetText = AxisText2; TargetBtn = AxisButton2; break;
+    case 3: TargetText = AxisText3; TargetBtn = AxisButton3; break;
+    default: return;
     }
 
-    if (Target)
-        Target->SetText(FText::FromString(Text ? Text : TEXT("")));
+    // 1) If the bound text block exists, set it.
+    if (TargetText)
+    {
+        TargetText->SetText(FText::FromString(TextStr));
+        return;
+    }
+
+    // 2) Fallback: if the button exists, try to find a TextBlock inside it (common pattern).
+    if (TargetBtn)
+    {
+        if (UWidget* Child = TargetBtn->GetChildAt(0))
+        {
+            if (UTextBlock* BtnText = Cast<UTextBlock>(Child))
+            {
+                BtnText->SetText(FText::FromString(TextStr));
+                return;
+            }
+        }
+
+        // 3) Last resort: search down the button widget tree for any TextBlock.
+        // (Works if the button contains a panel with a text block.)
+        TArray<UWidget*> Stack;
+        Stack.Reserve(8);
+        Stack.Add(TargetBtn);
+
+        while (Stack.Num() > 0)
+        {
+            UWidget* W = Stack.Pop(false);
+            if (!W) continue;
+
+            if (UTextBlock* Found = Cast<UTextBlock>(W))
+            {
+                Found->SetText(FText::FromString(TextStr));
+                return;
+            }
+
+            if (UPanelWidget* Panel = Cast<UPanelWidget>(W))
+            {
+                const int32 N = Panel->GetChildrenCount();
+                for (int32 i = 0; i < N; ++i)
+                    Stack.Add(Panel->GetChildAt(i));
+            }
+        }
+    }
+
+    // If we get here: you have no AxisText binding and the button has no text child.
+    UE_LOG(LogJoyDlg, Warning, TEXT("[JoyDlg] SetAxisLabel: No target for Axis %d (Text='%s'). Check WBP AxisText%d binding or Button child text."),
+        AxisIndex, *TextStr, AxisIndex);
 }
+
 
 void UJoyDlg::RefreshAxisUIFromCurrentBindings()
 {
