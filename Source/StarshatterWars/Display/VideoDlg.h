@@ -31,6 +31,7 @@
 class UButton;
 class UComboBoxString;
 class USlider;
+class UScrollBox;
 
 class UOptionsScreen;
 class UStarshatterVideoSettings;
@@ -93,6 +94,8 @@ private:
     // Buttons
     UFUNCTION() void OnApplyClicked();
     UFUNCTION() void OnCancelClicked();
+
+    UScrollBox* EnsureContentScrollBox();
 
     // Tabs
     UFUNCTION() void OnAudioClicked();
@@ -178,4 +181,7 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CtlTabButton;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> OptTabButton; // GAME
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ModTabButton;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UScrollBox> ContentScroll = nullptr;
 };

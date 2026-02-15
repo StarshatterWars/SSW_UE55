@@ -32,6 +32,9 @@
 #include "Components/VerticalBox.h"
 #include "Blueprint/WidgetTree.h"
 
+#include "Components/ScrollBox.h"
+#include "Components/CanvasPanelSlot.h"
+
 // Model
 #include "StarshatterVideoSettings.h"
 
@@ -68,9 +71,24 @@ void UVideoDlg::NativePreConstruct()
         RootCanvas ? TEXT("VALID") : TEXT("NULL"),
         WidgetTree ? TEXT("VALID") : TEXT("NULL"));
 
-    EnsureAutoVerticalBox();
-    if (AutoVBox)
-        AutoVBox->ClearChildren();
+    // Build/ensure AutoVBox (BaseScreen helper)
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+
+    // Ensure runtime scroll container (no BP requirement)
+    UScrollBox* Scroll = EnsureContentScrollBox();
+
+    // Make Scroll host AutoVBox
+    if (Scroll && VBox)
+    {
+        if (VBox->GetParent())
+            VBox->RemoveFromParent();
+
+        Scroll->ClearChildren();
+        Scroll->AddChild(VBox);
+    }
+
+    if (VBox)
+        VBox->ClearChildren();
 }
 
 void UVideoDlg::NativeConstruct()
@@ -79,13 +97,23 @@ void UVideoDlg::NativeConstruct()
 
     BindDelegates();
 
-    // Ensure VBox exists and is visible
     UVerticalBox* VBox = EnsureAutoVerticalBox();
-    if (!VBox)
+    UScrollBox* Scroll = EnsureContentScrollBox();
+
+    if (!VBox || !Scroll)
     {
-        UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] BuildRows FAILED: AutoVBox is NULL"));
+        UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] Missing VBox or Scroll after Ensure. VBox=%s Scroll=%s"),
+            VBox ? TEXT("VALID") : TEXT("NULL"),
+            Scroll ? TEXT("VALID") : TEXT("NULL"));
         return;
     }
+
+    // Ensure Scroll owns VBox (in case Construct runs again)
+    if (VBox->GetParent())
+        VBox->RemoveFromParent();
+
+    Scroll->ClearChildren();
+    Scroll->AddChild(VBox);
 
     VBox->SetVisibility(ESlateVisibility::Visible);
 
@@ -553,6 +581,47 @@ void UVideoDlg::OnCancelClicked()
         OptionsManager->CancelOptions();
     else
         Cancel();
+}
+
+UScrollBox* UVideoDlg::EnsureContentScrollBox()
+{
+    if (ContentScroll)
+        return ContentScroll;
+
+    if (!WidgetTree || !RootCanvas)
+    {
+        UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] EnsureContentScrollBox failed: WidgetTree or RootCanvas is NULL"));
+        return nullptr;
+    }
+
+    ContentScroll = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("ContentScroll_Auto"));
+    if (!ContentScroll)
+        return nullptr;
+
+    // Basic scroll behavior (safe defaults)
+    ContentScroll->SetConsumeMouseWheel(EConsumeMouseWheel::WhenScrollingPossible);
+    ContentScroll->SetScrollBarVisibility(ESlateVisibility::Visible);
+    ContentScroll->SetAnimateWheelScrolling(true);
+
+    // Add to RootCanvas and ANCHOR IT so it doesn't sit at 0,0 with no layout
+    UCanvasPanelSlot* CSlot = RootCanvas->AddChildToCanvas(ContentScroll);
+    if (!CSlot)
+    {
+        UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] EnsureContentScrollBox failed: could not create CanvasPanelSlot"));
+        return ContentScroll;
+    }
+
+    // Full-stretch anchors
+    CSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+    CSlot->SetAlignment(FVector2D(0.f, 0.f));
+
+    // Offsets: LEFT, TOP, RIGHT, BOTTOM margins.
+    // Tune these to match your other options pages.
+    // If your tabs/header are at the top, give TOP a bigger margin.
+    CSlot->SetOffsets(FMargin(24.f, 96.f, 24.f, 96.f));
+
+    CSlot->SetAutoSize(false);
+    return ContentScroll;
 }
 
 void UVideoDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
