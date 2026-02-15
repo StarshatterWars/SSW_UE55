@@ -1,107 +1,107 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe (Unreal Port)
-    FILE:         VideoDlg.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      Stars.exe (Unreal Port)
+    FILE:           VideoDlg.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
     UVideoDlg
-    - Video options dialog (UMG + legacy-form bridge via UBaseScreen).
-    - Dialog reads/writes ONLY UStarshatterVideoSettings (config model).
-    - Runtime apply is delegated to UStarshatterVideoSubsystem::ApplySettingsToRuntime()
-      to avoid signature drift.
-    - Subscreen routing goes through UOptionsScreen (NOT MenuDlg).
-    - Implements UOptionsPage so OptionsScreen can Apply/Cancel uniformly.
-*/
+    - Video options subpage hosted by UOptionsScreen.
+    - AutoVBox runtime layout (RootCanvas -> AutoVBox) via UBaseScreen helpers.
+    - Reads/writes ONLY UStarshatterVideoSettings (config model).
+    - Runtime apply is delegated to UStarshatterVideoSubsystem::ApplySettingsToRuntime().
+    - Tab routing goes through UOptionsScreen (router), identical to AudioDlg/GameOptionsDlg.
+
+=============================================================================*/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "OptionsPage.h"
+
+// Needed for ESelectInfo::Type
+#include "Components/ComboBoxString.h"
 
 #include "VideoDlg.generated.h"
 
-// UMG:
+class UButton;
 class UComboBoxString;
 class USlider;
-class UButton;
 
-// Host/router:
 class UOptionsScreen;
-
-// Model:
 class UStarshatterVideoSettings;
-
-// Runtime apply:
 class UStarshatterVideoSubsystem;
 
 UCLASS()
-class STARSHATTERWARS_API UVideoDlg : public UBaseScreen, public IOptionsPage
+class STARSHATTERWARS_API UVideoDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UVideoDlg(const FObjectInitializer& ObjectInitializer);
 
-    // Host/router:
     void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
-    UOptionsScreen* GetOptionsManager() const { return OptionsManager.Get(); }
+    UOptionsScreen* GetOptionsManager() const { return OptionsManager; }
 
     void Show();
-
     virtual void ExecFrame(double DeltaTime) override;
 
-    // Legacy callsites:
     void Apply();
     void Cancel();
 
-    // UI -> Settings (Save + optional runtime apply):
-    void PushToModel(bool bApplyRuntimeToo);
+    bool IsDirty() const { return bDirty; }
 
 protected:
+    virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
-    // UBaseScreen overrides:
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
 
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
-public:
-    // ------------------------------------------------------------
-    // IOptionsPage (OptionsScreen orchestration)
-    // ------------------------------------------------------------
-    virtual void LoadFromSettings_Implementation() override;
-    virtual void ApplySettings_Implementation() override;
-    virtual void SaveSettings_Implementation() override;
-    virtual void CancelChanges_Implementation() override;
-
 private:
+    void BindDelegates();
+
     UStarshatterVideoSettings* GetVideoSettings() const;
     UStarshatterVideoSubsystem* GetVideoSubsystem() const;
 
     void BuildListsIfNeeded();
-    void RefreshFromModel();
+    void BuildVideoRows();
 
-    // Helpers:
+    void RefreshFromModel();
+    void PushToModel(bool bApplyRuntimeToo);
+
+    // Helpers
     static int32 ClampGammaLevel(int32 InGamma) { return FMath::Clamp(InGamma, 32, 224); }
-    static float Gamma01FromLevel(int32 GammaLevel);
+    static float Gamma01FromLevel(int32 InGammaLevel);
     static int32 GammaLevelFrom01(float V01);
 
-    // Tex sizes:
     static const TArray<int32>& GetTexSizeOptions();
     static int32 TexSizeIndexFromPow2(int32 Pow2);
     static int32 TexSizePow2FromIndex(int32 Index);
 
 private:
-    // Combo handlers:
+    // Buttons
+    UFUNCTION() void OnApplyClicked();
+    UFUNCTION() void OnCancelClicked();
+
+    // Tabs
+    UFUNCTION() void OnAudioClicked();
+    UFUNCTION() void OnVideoClicked();
+    UFUNCTION() void OnControlsClicked();
+    UFUNCTION() void OnGameClicked();
+    UFUNCTION() void OnModClicked();
+
+    // Combos / Slider
     UFUNCTION() void OnModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnTexSizeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnDetailChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
@@ -117,23 +117,18 @@ private:
     UFUNCTION() void OnSpecMapsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void OnBumpMapsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
-    // Buttons:
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
-
-    // Tabs:
-    UFUNCTION() void OnAudioClicked();
-    UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnGameClicked();
-    UFUNCTION() void OnControlsClicked();
-    UFUNCTION() void OnModClicked();
-
 private:
+    // Router (not UPROPERTY; OptionsScreen owns pages)
+    UOptionsScreen* OptionsManager = nullptr;
 
     bool bClosed = true;
+    bool bDelegatesBound = false;
     bool bListsBuilt = false;
 
-    // Cached dialog state (mirrors FStarshatterVideoConfig):
+    UPROPERTY(Transient)
+    bool bDirty = false;
+
+    // Cached dialog state (mirrors FStarshatterVideoConfig)
     int32 Width = 1920;
     int32 Height = 1080;
     bool  bFullscreen = false;
@@ -154,33 +149,33 @@ private:
     bool  bTerrainTextures = true;
 
 protected:
-    // Main combos:
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ModeCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TexSizeCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DetailCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TextureCombo = nullptr;
+    // Main combos
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ModeCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> TexSizeCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> DetailCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> TextureCombo;
 
-    // Effects/toggles:
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* LensFlareCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CoronaCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* NebulaCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DustCombo = nullptr;
+    // Effects/toggles
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> LensFlareCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> CoronaCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> NebulaCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> DustCombo;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShadowsCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SpecMapsCombo = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* BumpMapsCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ShadowsCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> SpecMapsCombo;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> BumpMapsCombo;
 
-    // Slider:
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* GammaSlider = nullptr;
+    // Slider
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<USlider> GammaSlider;
 
-    // Apply/Cancel:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
+    // Apply/Cancel
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
 
-    // Tabs:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr; // GAME
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;
+    // Tabs
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> VidTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AudTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CtlTabButton;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> OptTabButton; // GAME
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ModTabButton;
 };

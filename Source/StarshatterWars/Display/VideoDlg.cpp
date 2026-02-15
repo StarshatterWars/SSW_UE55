@@ -1,34 +1,47 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
 
-    SUBSYSTEM:    Stars.exe (Unreal Port)
-    FILE:         VideoDlg.cpp
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      Stars.exe (Unreal Port)
+    FILE:           VideoDlg.cpp
+    AUTHOR:         Carlos Bott
 
     IMPLEMENTATION
     ==============
     UVideoDlg
-    - Video options subpage for OptionsScreen.
-    - Routes tabs through OptionsScreen.
-    - Implements OptionsPage so OptionsScreen can Apply/Cancel uniformly.
-*/
+
+    Notes:
+    - Delegates are bound once via AddUniqueDynamic (no RemoveAll needed).
+    - OptionsScreen is the router; this page forwards if OptionsManager exists.
+    - Enter/Escape routing is handled via UBaseScreen (ApplyButton/CancelButton)
+      plus HandleAccept/HandleCancel overrides.
+    - AutoVBox labeled rows are built using UBaseScreen helpers (AddLabeledRow).
+
+=============================================================================*/
 
 #include "VideoDlg.h"
 
-// UMG:
+// UMG
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/Slider.h"
 
-// Model:
+// UMG layout helpers
+#include "Components/CanvasPanel.h"
+#include "Components/VerticalBox.h"
+#include "Blueprint/WidgetTree.h"
+
+// Model
 #include "StarshatterVideoSettings.h"
 
-// Runtime apply:
+// Runtime apply
 #include "StarshatterVideoSubsystem.h"
 
-// Host/router:
+// Router (cpp-only include to avoid header coupling)
 #include "OptionsScreen.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogVideoDlg, Log, All);
 
 UVideoDlg::UVideoDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -36,58 +49,95 @@ UVideoDlg::UVideoDlg(const FObjectInitializer& ObjectInitializer)
     SetDialogInputEnabled(true);
 }
 
+void UVideoDlg::NativeOnInitialized()
+{
+    Super::NativeOnInitialized();
+
+    // If UBaseScreen supports these pointers, set them once:
+    ApplyButton = ApplyBtn;
+    CancelButton = CancelBtn;
+
+    BindDelegates();
+}
+
+void UVideoDlg::NativePreConstruct()
+{
+    Super::NativePreConstruct();
+
+    UE_LOG(LogVideoDlg, Warning, TEXT("[VideoDlg] PreConstruct RootCanvas=%s WidgetTree=%s"),
+        RootCanvas ? TEXT("VALID") : TEXT("NULL"),
+        WidgetTree ? TEXT("VALID") : TEXT("NULL"));
+
+    EnsureAutoVerticalBox();
+    if (AutoVBox)
+        AutoVBox->ClearChildren();
+}
+
 void UVideoDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (ApplyBtn)
+    BindDelegates();
+
+    // Ensure VBox exists and is visible
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
     {
-        ApplyBtn->OnClicked.RemoveAll(this);
-        ApplyBtn->OnClicked.AddDynamic(this, &UVideoDlg::OnApplyClicked);
+        UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] BuildRows FAILED: AutoVBox is NULL"));
+        return;
     }
 
-    if (CancelBtn)
-    {
-        CancelBtn->OnClicked.RemoveAll(this);
-        CancelBtn->OnClicked.AddDynamic(this, &UVideoDlg::OnCancelClicked);
-    }
-
-    // Tabs:
-    if (AudTabButton) { AudTabButton->OnClicked.RemoveAll(this); AudTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnAudioClicked); }
-    if (VidTabButton) { VidTabButton->OnClicked.RemoveAll(this); VidTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnVideoClicked); }
-    if (CtlTabButton) { CtlTabButton->OnClicked.RemoveAll(this); CtlTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnControlsClicked); }
-    if (OptTabButton) { OptTabButton->OnClicked.RemoveAll(this); OptTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnGameClicked); } // NOW = GAME
-    if (ModTabButton) { ModTabButton->OnClicked.RemoveAll(this); ModTabButton->OnClicked.AddDynamic(this, &UVideoDlg::OnModClicked); }
-
-    // Combos:
-    if (ModeCombo) { ModeCombo->OnSelectionChanged.RemoveAll(this);       ModeCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnModeChanged); }
-    if (TexSizeCombo) { TexSizeCombo->OnSelectionChanged.RemoveAll(this);    TexSizeCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnTexSizeChanged); }
-    if (DetailCombo) { DetailCombo->OnSelectionChanged.RemoveAll(this);     DetailCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnDetailChanged); }
-    if (TextureCombo) { TextureCombo->OnSelectionChanged.RemoveAll(this);    TextureCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnTextureChanged); }
-
-    if (LensFlareCombo) { LensFlareCombo->OnSelectionChanged.RemoveAll(this);  LensFlareCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnLensFlareChanged); }
-    if (CoronaCombo) { CoronaCombo->OnSelectionChanged.RemoveAll(this);     CoronaCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnCoronaChanged); }
-    if (NebulaCombo) { NebulaCombo->OnSelectionChanged.RemoveAll(this);     NebulaCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnNebulaChanged); }
-    if (DustCombo) { DustCombo->OnSelectionChanged.RemoveAll(this);       DustCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnDustChanged); }
-
-    if (ShadowsCombo) { ShadowsCombo->OnSelectionChanged.RemoveAll(this);    ShadowsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnShadowsChanged); }
-    if (SpecMapsCombo) { SpecMapsCombo->OnSelectionChanged.RemoveAll(this);   SpecMapsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnSpecMapsChanged); }
-    if (BumpMapsCombo) { BumpMapsCombo->OnSelectionChanged.RemoveAll(this);   BumpMapsCombo->OnSelectionChanged.AddDynamic(this, &UVideoDlg::OnBumpMapsChanged); }
-
-    // Slider:
-    if (GammaSlider)
-    {
-        GammaSlider->OnValueChanged.RemoveAll(this);
-        GammaSlider->OnValueChanged.AddDynamic(this, &UVideoDlg::OnGammaChanged);
-    }
+    VBox->SetVisibility(ESlateVisibility::Visible);
 
     BuildListsIfNeeded();
+    BuildVideoRows();
+
+    UE_LOG(LogVideoDlg, Warning, TEXT("[VideoDlg] AutoVBox children after BuildVideoRows: %d"),
+        VBox->GetChildrenCount());
 
     if (bClosed)
     {
         RefreshFromModel();
         bClosed = false;
+        bDirty = false;
     }
+}
+
+void UVideoDlg::BindDelegates()
+{
+    if (bDelegatesBound)
+        return;
+
+    // Apply/Cancel
+    if (ApplyBtn)  ApplyBtn->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnApplyClicked);
+    if (CancelBtn) CancelBtn->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnCancelClicked);
+
+    // Tabs (optional)
+    if (AudTabButton) AudTabButton->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnAudioClicked);
+    if (VidTabButton) VidTabButton->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnVideoClicked);
+    if (CtlTabButton) CtlTabButton->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnControlsClicked);
+    if (OptTabButton) OptTabButton->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnGameClicked);
+    if (ModTabButton) ModTabButton->OnClicked.AddUniqueDynamic(this, &UVideoDlg::OnModClicked);
+
+    // Combos
+    if (ModeCombo)       ModeCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnModeChanged);
+    if (TexSizeCombo)    TexSizeCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnTexSizeChanged);
+    if (DetailCombo)     DetailCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnDetailChanged);
+    if (TextureCombo)    TextureCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnTextureChanged);
+
+    if (LensFlareCombo)  LensFlareCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnLensFlareChanged);
+    if (CoronaCombo)     CoronaCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnCoronaChanged);
+    if (NebulaCombo)     NebulaCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnNebulaChanged);
+    if (DustCombo)       DustCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnDustChanged);
+
+    if (ShadowsCombo)    ShadowsCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnShadowsChanged);
+    if (SpecMapsCombo)   SpecMapsCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnSpecMapsChanged);
+    if (BumpMapsCombo)   BumpMapsCombo->OnSelectionChanged.AddUniqueDynamic(this, &UVideoDlg::OnBumpMapsChanged);
+
+    // Slider
+    if (GammaSlider)     GammaSlider->OnValueChanged.AddUniqueDynamic(this, &UVideoDlg::OnGammaChanged);
+
+    bDelegatesBound = true;
 }
 
 void UVideoDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -98,7 +148,7 @@ void UVideoDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UVideoDlg::ExecFrame(double /*DeltaTime*/)
 {
-    // Optional per-frame UI logic
+    // UE-only: no polling required.
 }
 
 void UVideoDlg::BindFormWidgets() {}
@@ -111,46 +161,15 @@ void UVideoDlg::Show()
 {
     SetVisibility(ESlateVisibility::Visible);
 
-    BuildListsIfNeeded();
-
     if (bClosed)
     {
         RefreshFromModel();
         bClosed = false;
+        bDirty = false;
     }
 }
 
-// ------------------------------------------------------------
-// IOptionsPage (OptionsScreen orchestration)
-// ------------------------------------------------------------
-
-void UVideoDlg::LoadFromSettings_Implementation()
-{
-    BuildListsIfNeeded();
-    RefreshFromModel();
-    bClosed = false;
-}
-
-void UVideoDlg::ApplySettings_Implementation()
-{
-    // “Apply” meaning runtime apply too:
-    if (!bClosed)
-        Apply();
-}
-
-void UVideoDlg::SaveSettings_Implementation()
-{
-    // Settings already saved in Apply(). Keep as no-op or call Apply(false) if you split semantics later.
-}
-
-void UVideoDlg::CancelChanges_Implementation()
-{
-    Cancel();
-}
-
-// -------------------------
-// Settings / subsystem access
-// -------------------------
+// ---------------- Model ----------------
 
 UStarshatterVideoSettings* UVideoDlg::GetVideoSettings() const
 {
@@ -162,9 +181,116 @@ UStarshatterVideoSubsystem* UVideoDlg::GetVideoSubsystem() const
     return UStarshatterVideoSubsystem::Get(this);
 }
 
-// -------------------------
-// Lists
-// -------------------------
+static bool ComboOn(UComboBoxString* Combo)
+{
+    return Combo && Combo->GetSelectedIndex() == 1;
+}
+
+void UVideoDlg::RefreshFromModel()
+{
+    UStarshatterVideoSettings* S = GetVideoSettings();
+    if (!S)
+        return;
+
+    S->Load();
+    const FStarshatterVideoConfig& C = S->GetConfig();
+
+    Width = C.Width;
+    Height = C.Height;
+    bFullscreen = C.bFullscreen;
+
+    MaxTextureSize = C.MaxTextureSize;
+    GammaLevel = C.GammaLevel;
+
+    bShadows = C.bShadows;
+    bSpecularMaps = C.bSpecularMaps;
+    bBumpMaps = C.bBumpMaps;
+
+    bLensFlare = C.bLensFlare;
+    bCorona = C.bCorona;
+    bNebula = C.bNebula;
+
+    DustLevel = C.DustLevel;
+    TerrainDetailIndex = C.TerrainDetailIndex;
+    bTerrainTextures = C.bTerrainTextures;
+
+    if (GammaSlider)  GammaSlider->SetValue(Gamma01FromLevel(GammaLevel));
+    if (TexSizeCombo) TexSizeCombo->SetSelectedIndex(TexSizeIndexFromPow2(MaxTextureSize));
+    if (DetailCombo)  DetailCombo->SetSelectedIndex(FMath::Clamp(TerrainDetailIndex, 0, 3));
+    if (TextureCombo) TextureCombo->SetSelectedIndex(bTerrainTextures ? 1 : 0);
+
+    if (ShadowsCombo)  ShadowsCombo->SetSelectedIndex(bShadows ? 1 : 0);
+    if (SpecMapsCombo) SpecMapsCombo->SetSelectedIndex(bSpecularMaps ? 1 : 0);
+    if (BumpMapsCombo) BumpMapsCombo->SetSelectedIndex(bBumpMaps ? 1 : 0);
+
+    if (LensFlareCombo) LensFlareCombo->SetSelectedIndex(bLensFlare ? 1 : 0);
+    if (CoronaCombo)    CoronaCombo->SetSelectedIndex(bCorona ? 1 : 0);
+    if (NebulaCombo)    NebulaCombo->SetSelectedIndex(bNebula ? 1 : 0);
+
+    if (DustCombo) DustCombo->SetSelectedIndex(FMath::Clamp(DustLevel, 0, 3));
+
+    if (ModeCombo)
+        ModeCombo->SetSelectedOption(FString::Printf(TEXT("%dx%d"), Width, Height));
+}
+
+void UVideoDlg::PushToModel(bool bApplyRuntimeToo)
+{
+    UStarshatterVideoSettings* S = GetVideoSettings();
+    if (!S)
+        return;
+
+    FStarshatterVideoConfig C = S->GetConfig();
+
+    C.Width = Width;
+    C.Height = Height;
+    C.bFullscreen = bFullscreen;
+
+    C.MaxTextureSize = MaxTextureSize;
+    C.GammaLevel = ClampGammaLevel(GammaLevel);
+
+    C.bShadows = bShadows;
+    C.bSpecularMaps = bSpecularMaps;
+    C.bBumpMaps = bBumpMaps;
+
+    C.bLensFlare = bLensFlare;
+    C.bCorona = bCorona;
+    C.bNebula = bNebula;
+
+    C.DustLevel = FMath::Clamp(DustLevel, 0, 3);
+    C.TerrainDetailIndex = FMath::Clamp(TerrainDetailIndex, 0, 3);
+    C.bTerrainTextures = bTerrainTextures;
+
+    S->SetConfig(C);
+    S->Save();
+
+    if (bApplyRuntimeToo)
+    {
+        if (UStarshatterVideoSubsystem* VideoSS = GetVideoSubsystem())
+            VideoSS->ApplySettingsToRuntime();
+    }
+
+    bDirty = false;
+}
+
+// ---------------- Apply / Cancel ----------------
+
+void UVideoDlg::Apply()
+{
+    if (bClosed)
+        return;
+
+    PushToModel(true);
+    bClosed = true;
+}
+
+void UVideoDlg::Cancel()
+{
+    RefreshFromModel();
+    bDirty = false;
+    bClosed = true;
+}
+
+// ---------------- Lists ----------------
 
 const TArray<int32>& UVideoDlg::GetTexSizeOptions()
 {
@@ -180,7 +306,7 @@ int32 UVideoDlg::TexSizeIndexFromPow2(int32 Pow2)
         if (Opt[i] == Pow2) return i;
     }
 
-    // Fallback: closest
+    // fallback closest
     int32 BestIdx = 0;
     int32 BestDist = INT32_MAX;
     for (int32 i = 0; i < Opt.Num(); ++i)
@@ -215,32 +341,6 @@ void UVideoDlg::BuildListsIfNeeded()
     if (bListsBuilt)
         return;
 
-    // Tex sizes:
-    if (TexSizeCombo)
-    {
-        TexSizeCombo->ClearOptions();
-        for (int32 Pow2 : GetTexSizeOptions())
-            TexSizeCombo->AddOption(FString::FromInt(Pow2));
-    }
-
-    // Detail levels:
-    if (DetailCombo)
-    {
-        DetailCombo->ClearOptions();
-        DetailCombo->AddOption(TEXT("LOW"));
-        DetailCombo->AddOption(TEXT("MEDIUM"));
-        DetailCombo->AddOption(TEXT("HIGH"));
-        DetailCombo->AddOption(TEXT("ULTRA"));
-    }
-
-    // Terrain textures:
-    if (TextureCombo)
-    {
-        TextureCombo->ClearOptions();
-        TextureCombo->AddOption(TEXT("OFF"));
-        TextureCombo->AddOption(TEXT("ON"));
-    }
-
     auto FillOnOff = [](UComboBoxString* Combo)
         {
             if (!Combo) return;
@@ -249,6 +349,49 @@ void UVideoDlg::BuildListsIfNeeded()
             Combo->AddOption(TEXT("ON"));
         };
 
+    // Mode list (keep minimal/stable)
+    if (ModeCombo)
+    {
+        if (ModeCombo->GetOptionCount() == 0)
+        {
+            ModeCombo->ClearOptions();
+            ModeCombo->AddOption(TEXT("1920x1080"));
+            ModeCombo->AddOption(TEXT("2560x1440"));
+            ModeCombo->AddOption(TEXT("3840x2160"));
+            ModeCombo->SetSelectedIndex(0);
+        }
+    }
+
+    // Tex sizes
+    if (TexSizeCombo)
+    {
+        if (TexSizeCombo->GetOptionCount() == 0)
+        {
+            TexSizeCombo->ClearOptions();
+            for (int32 Pow2 : GetTexSizeOptions())
+                TexSizeCombo->AddOption(FString::FromInt(Pow2));
+            TexSizeCombo->SetSelectedIndex(3); // 2048
+        }
+    }
+
+    // Detail levels
+    if (DetailCombo)
+    {
+        if (DetailCombo->GetOptionCount() == 0)
+        {
+            DetailCombo->ClearOptions();
+            DetailCombo->AddOption(TEXT("LOW"));
+            DetailCombo->AddOption(TEXT("MEDIUM"));
+            DetailCombo->AddOption(TEXT("HIGH"));
+            DetailCombo->AddOption(TEXT("ULTRA"));
+            DetailCombo->SetSelectedIndex(1);
+        }
+    }
+
+    // Terrain textures
+    if (TextureCombo)
+        FillOnOff(TextureCombo);
+
     FillOnOff(LensFlareCombo);
     FillOnOff(CoronaCombo);
     FillOnOff(NebulaCombo);
@@ -256,147 +399,82 @@ void UVideoDlg::BuildListsIfNeeded()
     FillOnOff(SpecMapsCombo);
     FillOnOff(BumpMapsCombo);
 
-    // Dust:
+    // Dust
     if (DustCombo)
     {
-        DustCombo->ClearOptions();
-        DustCombo->AddOption(TEXT("0"));
-        DustCombo->AddOption(TEXT("1"));
-        DustCombo->AddOption(TEXT("2"));
-        DustCombo->AddOption(TEXT("3"));
-    }
-
-    // Mode list (keep minimal/stable):
-    if (ModeCombo)
-    {
-        ModeCombo->ClearOptions();
-        ModeCombo->AddOption(TEXT("1920x1080"));
-        ModeCombo->AddOption(TEXT("2560x1440"));
-        ModeCombo->AddOption(TEXT("3840x2160"));
+        if (DustCombo->GetOptionCount() == 0)
+        {
+            DustCombo->ClearOptions();
+            DustCombo->AddOption(TEXT("0"));
+            DustCombo->AddOption(TEXT("1"));
+            DustCombo->AddOption(TEXT("2"));
+            DustCombo->AddOption(TEXT("3"));
+            DustCombo->SetSelectedIndex(1);
+        }
     }
 
     bListsBuilt = true;
 }
 
-// -------------------------
-// Model -> UI
-// -------------------------
+// ---------------- Rows ----------------
 
-void UVideoDlg::RefreshFromModel()
+void UVideoDlg::BuildVideoRows()
 {
-    UStarshatterVideoSettings* S = GetVideoSettings();
-    if (!S) return;
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+        return;
 
-    S->Load();
-    const FStarshatterVideoConfig& C = S->GetConfig();
+    VBox->ClearChildren();
 
-    Width = C.Width;
-    Height = C.Height;
-    bFullscreen = C.bFullscreen;
-
-    MaxTextureSize = C.MaxTextureSize;
-    GammaLevel = C.GammaLevel;
-
-    bShadows = C.bShadows;
-    bSpecularMaps = C.bSpecularMaps;
-    bBumpMaps = C.bBumpMaps;
-
-    bLensFlare = C.bLensFlare;
-    bCorona = C.bCorona;
-    bNebula = C.bNebula;
-
-    DustLevel = C.DustLevel;
-    TerrainDetailIndex = C.TerrainDetailIndex;
-    bTerrainTextures = C.bTerrainTextures;
-
-    if (GammaSlider)
-        GammaSlider->SetValue(Gamma01FromLevel(GammaLevel));
-
-    if (TexSizeCombo)
-        TexSizeCombo->SetSelectedIndex(TexSizeIndexFromPow2(MaxTextureSize));
-
-    if (DetailCombo)
-        DetailCombo->SetSelectedIndex(FMath::Clamp(TerrainDetailIndex, 0, 3));
-
-    if (TextureCombo)
-        TextureCombo->SetSelectedIndex(bTerrainTextures ? 1 : 0);
-
-    auto SetOnOff = [](UComboBoxString* Combo, bool bOn)
+    auto Require = [&](UWidget* W, const TCHAR* Name) -> bool
         {
-            if (Combo) Combo->SetSelectedIndex(bOn ? 1 : 0);
+            if (!W)
+            {
+                UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] Widget '%s' is NULL (BP name mismatch or not IsVariable)."), Name);
+                return false;
+            }
+            return true;
         };
 
-    SetOnOff(ShadowsCombo, bShadows);
-    SetOnOff(SpecMapsCombo, bSpecularMaps);
-    SetOnOff(BumpMapsCombo, bBumpMaps);
+    // These are the core controls we expect for the page to look correct:
+    const bool bOK =
+        Require(ModeCombo, TEXT("ModeCombo")) &
+        Require(TexSizeCombo, TEXT("TexSizeCombo")) &
+        Require(DetailCombo, TEXT("DetailCombo")) &
+        Require(TextureCombo, TEXT("TextureCombo")) &
+        Require(GammaSlider, TEXT("GammaSlider")) &
+        Require(LensFlareCombo, TEXT("LensFlareCombo")) &
+        Require(CoronaCombo, TEXT("CoronaCombo")) &
+        Require(NebulaCombo, TEXT("NebulaCombo")) &
+        Require(DustCombo, TEXT("DustCombo")) &
+        Require(ShadowsCombo, TEXT("ShadowsCombo")) &
+        Require(SpecMapsCombo, TEXT("SpecMapsCombo")) &
+        Require(BumpMapsCombo, TEXT("BumpMapsCombo"));
 
-    SetOnOff(LensFlareCombo, bLensFlare);
-    SetOnOff(CoronaCombo, bCorona);
-    SetOnOff(NebulaCombo, bNebula);
-
-    if (DustCombo)
-        DustCombo->SetSelectedIndex(FMath::Clamp(DustLevel, 0, 3));
-
-    if (ModeCombo)
-        ModeCombo->SetSelectedOption(FString::Printf(TEXT("%dx%d"), Width, Height));
-}
-
-// -------------------------
-// UI -> Model
-// -------------------------
-
-void UVideoDlg::PushToModel(bool bApplyRuntimeToo)
-{
-    UStarshatterVideoSettings* S = GetVideoSettings();
-    if (!S) return;
-
-    FStarshatterVideoConfig C = S->GetConfig();
-
-    C.Width = Width;
-    C.Height = Height;
-    C.bFullscreen = bFullscreen;
-
-    C.MaxTextureSize = MaxTextureSize;
-    C.GammaLevel = ClampGammaLevel(GammaLevel);
-
-    C.bShadows = bShadows;
-    C.bSpecularMaps = bSpecularMaps;
-    C.bBumpMaps = bBumpMaps;
-
-    C.bLensFlare = bLensFlare;
-    C.bCorona = bCorona;
-    C.bNebula = bNebula;
-
-    C.DustLevel = FMath::Clamp(DustLevel, 0, 3);
-    C.TerrainDetailIndex = FMath::Clamp(TerrainDetailIndex, 0, 3);
-    C.bTerrainTextures = bTerrainTextures;
-
-    S->SetConfig(C);
-    S->Save();
-
-    if (bApplyRuntimeToo)
+    if (!bOK)
     {
-        if (UStarshatterVideoSubsystem* VideoSS = GetVideoSubsystem())
-            VideoSS->ApplySettingsToRuntime();
+        UE_LOG(LogVideoDlg, Error, TEXT("[VideoDlg] BuildVideoRows aborted due to NULL controls."));
+        return;
     }
+
+    // Match AudioDlg label pattern:
+    AddLabeledRow(TEXT("DISPLAY MODE"), ModeCombo, 520.f);
+    AddLabeledRow(TEXT("MAX TEXTURE SIZE"), TexSizeCombo, 520.f);
+    AddLabeledRow(TEXT("TERRAIN DETAIL"), DetailCombo, 520.f);
+    AddLabeledRow(TEXT("TERRAIN TEXTURES"), TextureCombo, 520.f);
+    AddLabeledRow(TEXT("GAMMA"), GammaSlider, 520.f);
+
+    AddLabeledRow(TEXT("LENS FLARE"), LensFlareCombo, 520.f);
+    AddLabeledRow(TEXT("CORONA"), CoronaCombo, 520.f);
+    AddLabeledRow(TEXT("NEBULA"), NebulaCombo, 520.f);
+    AddLabeledRow(TEXT("DUST"), DustCombo, 520.f);
+
+    AddLabeledRow(TEXT("SHADOWS"), ShadowsCombo, 520.f);
+    AddLabeledRow(TEXT("SPECULAR MAPS"), SpecMapsCombo, 520.f);
+    AddLabeledRow(TEXT("BUMP MAPS"), BumpMapsCombo, 520.f);
 }
 
-void UVideoDlg::Apply()
-{
-    if (bClosed) return;
-    PushToModel(true);
-    bClosed = true;
-}
-
-void UVideoDlg::Cancel()
-{
-    RefreshFromModel();
-    bClosed = true;
-}
-
-// -------------------------
-// Handlers
-// -------------------------
+// ---------------- Handlers ----------------
 
 void UVideoDlg::OnModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
@@ -408,6 +486,8 @@ void UVideoDlg::OnModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*Sele
     {
         Width = FCString::Atoi(*L);
         Height = FCString::Atoi(*R);
+        bDirty = true;
+        bClosed = false;
     }
 }
 
@@ -415,59 +495,68 @@ void UVideoDlg::OnTexSizeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*S
 {
     if (!TexSizeCombo) return;
     MaxTextureSize = TexSizePow2FromIndex(TexSizeCombo->GetSelectedIndex());
+    bDirty = true;
+    bClosed = false;
 }
 
 void UVideoDlg::OnDetailChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!DetailCombo) return;
     TerrainDetailIndex = DetailCombo->GetSelectedIndex();
+    bDirty = true;
+    bClosed = false;
 }
 
 void UVideoDlg::OnTextureChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
-    if (!TextureCombo) return;
-    bTerrainTextures = (TextureCombo->GetSelectedIndex() == 1);
+    bTerrainTextures = ComboOn(TextureCombo);
+    bDirty = true;
+    bClosed = false;
 }
 
 void UVideoDlg::OnGammaChanged(float Value)
 {
     GammaLevel = GammaLevelFrom01(Value);
+    bDirty = true;
+    bClosed = false;
 }
 
-static bool ComboOn(UComboBoxString* Combo)
-{
-    return Combo && Combo->GetSelectedIndex() == 1;
-}
+void UVideoDlg::OnLensFlareChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bLensFlare = ComboOn(LensFlareCombo); bDirty = true; bClosed = false; }
+void UVideoDlg::OnCoronaChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bCorona = ComboOn(CoronaCombo); bDirty = true; bClosed = false; }
+void UVideoDlg::OnNebulaChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bNebula = ComboOn(NebulaCombo); bDirty = true; bClosed = false; }
 
-void UVideoDlg::OnLensFlareChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bLensFlare = ComboOn(LensFlareCombo); }
-void UVideoDlg::OnCoronaChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bCorona = ComboOn(CoronaCombo); }
-void UVideoDlg::OnNebulaChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bNebula = ComboOn(NebulaCombo); }
-void UVideoDlg::OnShadowsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bShadows = ComboOn(ShadowsCombo); }
-void UVideoDlg::OnSpecMapsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bSpecularMaps = ComboOn(SpecMapsCombo); }
-void UVideoDlg::OnBumpMapsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bBumpMaps = ComboOn(BumpMapsCombo); }
+void UVideoDlg::OnShadowsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bShadows = ComboOn(ShadowsCombo); bDirty = true; bClosed = false; }
+void UVideoDlg::OnSpecMapsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bSpecularMaps = ComboOn(SpecMapsCombo); bDirty = true; bClosed = false; }
+void UVideoDlg::OnBumpMapsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bBumpMaps = ComboOn(BumpMapsCombo); bDirty = true; bClosed = false; }
 
 void UVideoDlg::OnDustChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/)
 {
     if (!DustCombo) return;
     DustLevel = FMath::Clamp(DustCombo->GetSelectedIndex(), 0, 3);
+    bDirty = true;
+    bClosed = false;
 }
 
-// Buttons:
+// ---------------- Buttons / Tabs ----------------
+
 void UVideoDlg::OnApplyClicked()
 {
-    if (OptionsManager) OptionsManager->ApplyOptions();
-    else Apply();
+    if (OptionsManager)
+        OptionsManager->ApplyOptions();
+    else
+        Apply();
 }
 
 void UVideoDlg::OnCancelClicked()
 {
-    if (OptionsManager) OptionsManager->CancelOptions();
-    else Cancel();
+    if (OptionsManager)
+        OptionsManager->CancelOptions();
+    else
+        Cancel();
 }
 
-// Tabs (route to OptionsScreen):
 void UVideoDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }
 void UVideoDlg::OnVideoClicked() { if (OptionsManager) OptionsManager->ShowVidDlg(); }
 void UVideoDlg::OnControlsClicked() { if (OptionsManager) OptionsManager->ShowCtlDlg(); }
-void UVideoDlg::OnGameClicked() { if (OptionsManager) OptionsManager->ShowGameDlg(); } // NEW
+void UVideoDlg::OnGameClicked() { if (OptionsManager) OptionsManager->ShowGameDlg(); }
 void UVideoDlg::OnModClicked() { if (OptionsManager) OptionsManager->ShowModDlg(); }
