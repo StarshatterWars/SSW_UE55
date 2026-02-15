@@ -372,6 +372,7 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("UI.MenuScreenClass"),
     TEXT("UI.ExitDlgClass"),
     TEXT("UI.FirstRunDlgClass"),
+    TEXT("UI.OptionsScreenClass"),
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))

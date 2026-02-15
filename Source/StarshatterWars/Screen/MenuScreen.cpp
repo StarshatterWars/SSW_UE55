@@ -38,9 +38,28 @@ void UMenuScreen::Initialize(UGameInstance* InGI)
     if (!ensure(Assets)) return;
 
     // ? Put your three lines here:
-    MenuScreenWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.MenuScreenClass"));
-    FirstTimeDlgWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.FirstRunDlgClass"));
-    QuitDlgWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.ExitDlgClass"));
+    //MenuScreenWidgetClass = ResolveWidgetOrLog(Assets, TEXT("UI.MenuScreenClass"));
+    MenuDlgClass = ResolveWidgetOrLog<UMenuDlg>(Assets, TEXT("UI.MenuScreenClass"));
+
+    FirstTimeDlgClass = ResolveWidgetOrLog<UFirstTimeDlg>(Assets, TEXT("UI.FirstRunDlgClass"));
+    ExitDlgClass = ResolveWidgetOrLog<UExitDlg>(Assets, TEXT("UI.ExitDlgClass"));
+
+    PlayerDlgClass = ResolveWidgetOrLog<UPlayerDlg>(Assets, TEXT("UI.PlayerDlgClass"));
+    AwardDlgClass = ResolveWidgetOrLog<UAwardShowDlg>(Assets, TEXT("UI.AwardDlgClass"));
+
+    MsnSelectDlgClass = ResolveWidgetOrLog<UMissionSelectDlg>(Assets, TEXT("UI.MissionSelectDlgClass"));
+    CmpSelectDlgClass = ResolveWidgetOrLog<UCampaignSelectDlg>(Assets, TEXT("UI.CampaignSelectDlgClass"));
+
+    MsnEditDlgClass = ResolveWidgetOrLog<UMissionEditorDlg>(Assets, TEXT("UI.MissionEditorDlgClass"));
+    MsnElemDlgClass = ResolveWidgetOrLog<UMissionElementDlg>(Assets, TEXT("UI.MissionElementDlgClass"));
+    MsnEventDlgClass = ResolveWidgetOrLog<UMissionEventDlg>(Assets, TEXT("UI.MissionEventDlgClass"));
+    MsnEditNavDlgClass = ResolveWidgetOrLog<UMissionEditorNavDlg>(Assets, TEXT("UI.MissionEditorNavDlgClass"));
+
+    LoadDlgClass = ResolveWidgetOrLog<ULoadDlg>(Assets, TEXT("UI.LoadDlgClass"));
+    TacRefDlgClass = ResolveWidgetOrLog<UTacRefDlg>(Assets, TEXT("UI.TacRefDlgClass"));
+
+    // THE ONE YOU ASKED FOR:
+    OptionsScreenClass = ResolveWidgetOrLog<UOptionsScreen>(Assets, TEXT("UI.OptionsScreenClass"));
 }
 
 static void ApplyUIFocus(APlayerController* PC, UUserWidget* FocusWidget)
@@ -209,10 +228,6 @@ void UMenuScreen::Setup()
     EnsureDialog<UTacRefDlg>(TacRefDlgClass, TacRefDlg);
 
     EnsureDialog<UOptionsScreen>(OptionsScreenClass, OptionsScreen);
-    if (OptionsScreen)
-    {
-        OptionsScreen->SetMenuManager(this);
-    }
 
     ShowMenuDlg();
 }
@@ -652,19 +667,5 @@ void UMenuScreen::HandleCancel()
     Super::HandleCancel();
 }
 
-TSubclassOf<UUserWidget> UMenuScreen::ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id)
-{
-    if (!Assets)
-        return nullptr;
-
-    TSubclassOf<UUserWidget> Cls = Assets->GetWidgetClass(Id, true);
-    if (!Cls)
-    {
-        UE_LOG(LogStarshatterAssetRegistry, Error,
-            TEXT("[UI] ResolveWidgetOrLog failed for AssetId=%s (check Project Settings -> Asset Registry)"),
-            *Id.ToString());
-    }
-    return Cls;
-}
 
 

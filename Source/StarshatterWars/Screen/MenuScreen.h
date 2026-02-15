@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 #include "MenuScreen.generated.h"
+
 
 // ------------------------------------------------------------
 // Forward declarations (dialogs)
@@ -28,8 +30,6 @@ class ULoadDlg;
 class UTacRefDlg;
 
 class UOptionsScreen;
-
-class UStarshatterAssetRegistrySubsystem;
 
 // ------------------------------------------------------------
 
@@ -176,7 +176,35 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Menu|Classes")
     TSubclassOf<UOptionsScreen> OptionsScreenClass;
     
-    TSubclassOf<UUserWidget> ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id);
+    //TSubclassOf<UUserWidget> ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id);
+    template<typename TWidget>
+    TSubclassOf<TWidget> ResolveWidgetOrLog(UStarshatterAssetRegistrySubsystem* Assets, FName Id)
+    {
+        if (!Assets)
+            return nullptr;
+
+        TSubclassOf<UUserWidget> Raw = Assets->GetWidgetClass(Id, true);
+        if (!Raw)
+        {
+            UE_LOG(LogTemp, Error,
+                TEXT("[UI] ResolveWidgetOrLog failed for AssetId=%s"),
+                *Id.ToString());
+            return nullptr;
+        }
+
+        // Typed cast (safe runtime check):
+        TSubclassOf<TWidget> Typed = Raw.Get();
+        if (!Typed)
+        {
+            UE_LOG(LogTemp, Error,
+                TEXT("[UI] AssetId=%s resolved to %s but is not a %s"),
+                *Id.ToString(),
+                *GetNameSafe(Raw.Get()),
+                *TWidget::StaticClass()->GetName());
+        }
+
+        return Typed;
+    }
 
 protected:
     // ------------------------------------------------------------
@@ -241,9 +269,9 @@ protected:
     int32 ZCounter = 0;
     bool  bIsShown = false;
 
-    TSubclassOf<UUserWidget> MenuScreenWidgetClass;
-    TSubclassOf<UUserWidget> FirstTimeDlgWidgetClass;
-    TSubclassOf<UUserWidget> QuitDlgWidgetClass;
+    //TSubclassOf<UUserWidget> MenuScreenWidgetClass;
+    //TSubclassOf<UUserWidget> FirstTimeDlgWidgetClass;
+    //TSubclassOf<UUserWidget> QuitDlgWidgetClass;
 };
 
 

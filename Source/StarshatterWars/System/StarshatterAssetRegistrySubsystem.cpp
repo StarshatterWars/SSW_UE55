@@ -326,6 +326,24 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
         }
     }
 
+    // UI.MenuScreenClass
+    if (!Cache.Contains(TEXT("UI.OptionsScreenClass")))
+    {
+        if (!Settings->OptionsScreenClass.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->OptionsScreenClass.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.OptionsScreenClass"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.OptionsScreenClass -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] OptionsScreenClass is not set in Project Settings"));
+        }
+    }
+
     // UI.FirstRunDlgClass (property name: FirstRunScreenClass)
     if (!Cache.Contains(TEXT("UI.FirstTimeDlgClass")))
     {
