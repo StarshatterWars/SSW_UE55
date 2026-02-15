@@ -1,24 +1,37 @@
-#include "JoyDlg.h"
+/*=============================================================================
+    Project:        Starshatter Wars
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+    All Rights Reserved.
 
-// Unreal
-#include "Logging/LogMacros.h"
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
+    FILE:           JoyDlg.cpp
+    AUTHOR:         Carlos Bott
+
+    IMPLEMENTATION
+    ==============
+    UJoyDlg - joystick axis mapping dialog.
+=============================================================================*/
+
+#include "JoyDlg.h"
 
 // UMG
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/CheckBox.h"
 
-// Starshatter
+// Router
+#include "OptionsScreen.h"
+
+// Starshatter legacy
 #include "Starshatter.h"
 #include "KeyMap.h"
 #include "Joystick.h"
 #include "Game.h"
 
-// Manager:
-#include "ControlOptionsDlg.h"
-
 DEFINE_LOG_CATEGORY_STATIC(LogJoyDlg, Log, All);
 
-// Legacy axis name tokens
+// Legacy axis name tokens (for Game::GetText)
 static const char* JoyAxisNames[] =
 {
     "JoyDlg.axis.0",
@@ -34,49 +47,64 @@ static const char* JoyAxisNames[] =
 UJoyDlg::UJoyDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    SetDialogInputEnabled(true);
 }
 
 void UJoyDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
-
-    if (ApplyButton)
-        ApplyButton->OnClicked.AddDynamic(this, &UJoyDlg::OnApplyClicked);
-
-    if (CancelButton)
-        CancelButton->OnClicked.AddDynamic(this, &UJoyDlg::OnCancelClicked);
-
-    if (AxisButton0) AxisButton0->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis0Clicked);
-    if (AxisButton1) AxisButton1->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis1Clicked);
-    if (AxisButton2) AxisButton2->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis2Clicked);
-    if (AxisButton3) AxisButton3->OnClicked.AddDynamic(this, &UJoyDlg::OnAxis3Clicked);
+    BindDelegates();
 }
 
 void UJoyDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    RefreshAxisButtonsFromCurrentBindings();
+    // BaseScreen Enter/Escape routing:
+    ApplyButton = ApplyBtn;
+    CancelButton = CancelBtn;
+
+    BindDelegates();
+
+    RefreshAxisUIFromCurrentBindings();
 
     SelectedAxis = -1;
     SampleAxis = -1;
-    for (int i = 0; i < 8; ++i)
+
+    // Warm-up samples so first delta doesn't instantly "win"
+    for (int32 i = 0; i < 8; ++i)
         Samples[i] = 10000000;
+
+    if (MessageText)
+        MessageText->SetText(FText::FromString(TEXT("SELECT AN AXIS SLOT, THEN MOVE A JOYSTICK AXIS")));
+}
+
+void UJoyDlg::BindDelegates()
+{
+    if (bDelegatesBound)
+        return;
+
+    if (ApplyBtn)  ApplyBtn->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnApplyClicked);
+    if (CancelBtn) CancelBtn->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnCancelClicked);
+
+    if (AxisButton0) AxisButton0->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis0Clicked);
+    if (AxisButton1) AxisButton1->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis1Clicked);
+    if (AxisButton2) AxisButton2->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis2Clicked);
+    if (AxisButton3) AxisButton3->OnClicked.AddUniqueDynamic(this, &UJoyDlg::OnAxis3Clicked);
+
+    bDelegatesBound = true;
 }
 
 void UJoyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-    ExecFrame();
+    (void)MyGeometry;
+    ExecFrame((double)InDeltaTime);
 }
 
-void UJoyDlg::SetManager(UControlOptionsDlg* InManager)
+void UJoyDlg::ExecFrame(double /*DeltaTime*/)
 {
-    Manager = InManager;
-}
-
-void UJoyDlg::ExecFrame()
-{
+    // Only sample while user is selecting a slot:
     if (SelectedAxis < 0 || SelectedAxis >= 4)
         return;
 
@@ -86,14 +114,15 @@ void UJoyDlg::ExecFrame()
 
     Js->Acquire();
 
-    int BestDelta = 1000;
-    int BestAxis = -1;
+    int32 BestDelta = 1000;
+    int32 BestAxis = -1;
 
-    for (int i = 0; i < 8; ++i)
+    for (int32 i = 0; i < 8; ++i)
     {
-        const int Raw = Joystick::ReadRawAxis(i + KEY_JOY_AXIS_X);
-        const int Delta = FMath::Abs(Raw - Samples[i]);
+        const int32 Raw = Joystick::ReadRawAxis(i + KEY_JOY_AXIS_X);
+        const int32 Delta = FMath::Abs(Raw - Samples[i]);
 
+        // Ignore the initial warm-up window:
         if (Delta > BestDelta && Samples[i] < 1000000)
         {
             BestDelta = Delta;
@@ -107,141 +136,184 @@ void UJoyDlg::ExecFrame()
     {
         SampleAxis = BestAxis;
         MapAxis[SelectedAxis] = BestAxis;
-        UpdateAxisButtonText(SelectedAxis, JoyAxisNames[BestAxis]);
+
+        // Update label to the detected axis name:
+        const Text T = Game::GetText(JoyAxisNames[BestAxis]);
+        SetAxisLabel(SelectedAxis, UTF8_TO_TCHAR(T.data()));
+
+        // Stop capture after a successful detect:
+        SelectedAxis = -1;
+
+        if (MessageText)
+            MessageText->SetText(FText::FromString(TEXT("AXIS DETECTED. SELECT ANOTHER SLOT OR APPLY.")));
     }
 }
+
+void UJoyDlg::Show()
+{
+    SetVisibility(ESlateVisibility::Visible);
+    RefreshAxisUIFromCurrentBindings();
+    SetKeyboardFocus();
+}
+
+void UJoyDlg::Apply()
+{
+    CommitToKeyMap();
+}
+
+void UJoyDlg::Cancel()
+{
+    // Restore UI from current stored bindings:
+    RefreshAxisUIFromCurrentBindings();
+}
+
+// ------------------------------------------------------------
+// Click handlers
+// ------------------------------------------------------------
 
 void UJoyDlg::OnAxis0Clicked() { HandleAxisClicked(0); }
 void UJoyDlg::OnAxis1Clicked() { HandleAxisClicked(1); }
 void UJoyDlg::OnAxis2Clicked() { HandleAxisClicked(2); }
 void UJoyDlg::OnAxis3Clicked() { HandleAxisClicked(3); }
 
-void UJoyDlg::HandleAxisClicked(int AxisIndex)
+void UJoyDlg::HandleAxisClicked(int32 AxisIndex)
 {
     if (AxisIndex < 0 || AxisIndex >= 4)
         return;
 
+    // Clicking the same slot toggles capture off:
     if (SelectedAxis == AxisIndex)
     {
         SelectedAxis = -1;
+        RefreshAxisUIFromCurrentBindings();
 
-        const int Map = MapAxis[AxisIndex];
-        if (Map >= 0 && Map < 8)
-            UpdateAxisButtonText(AxisIndex, JoyAxisNames[Map]);
-        else
-            UpdateAxisButtonText(AxisIndex, "JoyDlg.unmapped");
+        if (MessageText)
+            MessageText->SetText(FText::FromString(TEXT("CAPTURE CANCELLED.")));
+
+        return;
     }
-    else
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            const int Map = MapAxis[i];
-            if (Map >= 0 && Map < 8)
-                UpdateAxisButtonText(i, JoyAxisNames[Map]);
-            else
-                UpdateAxisButtonText(i, "JoyDlg.unmapped");
-        }
 
-        SelectedAxis = AxisIndex;
-        SampleAxis = -1;
-        UpdateAxisButtonText(AxisIndex, "JoyDlg.select");
+    // Start capture on this slot:
+    SelectedAxis = AxisIndex;
+    SampleAxis = -1;
 
-        for (int i = 0; i < 8; ++i)
-            Samples[i] = 10000000;
-    }
+    // Refresh labels so we show "SELECT" on active slot:
+    RefreshAxisUIFromCurrentBindings();
+    SetAxisLabel(AxisIndex, TEXT("SELECT… THEN MOVE AXIS"));
+
+    // Reset sampling window:
+    for (int32 i = 0; i < 8; ++i)
+        Samples[i] = 10000000;
+
+    if (MessageText)
+        MessageText->SetText(FText::FromString(TEXT("MOVE THE AXIS YOU WANT TO BIND…")));
 }
 
 void UJoyDlg::OnApplyClicked()
 {
-    Starshatter* Stars = Starshatter::GetInstance();
-    if (Stars)
-    {
-        KeyMap& KM = Stars->GetKeyMap();
-
-        KM.Bind(KEY_AXIS_YAW, MapAxis[0] + KEY_JOY_AXIS_X, 0);
-        KM.Bind(KEY_AXIS_PITCH, MapAxis[1] + KEY_JOY_AXIS_X, 0);
-        KM.Bind(KEY_AXIS_ROLL, MapAxis[2] + KEY_JOY_AXIS_X, 0);
-        KM.Bind(KEY_AXIS_THROTTLE, MapAxis[3] + KEY_JOY_AXIS_X, 0);
-
-        KM.Bind(KEY_AXIS_YAW_INVERT, GetInvertButtonState(Invert0) ? 1 : 0, 0);
-        KM.Bind(KEY_AXIS_PITCH_INVERT, GetInvertButtonState(Invert1) ? 1 : 0, 0);
-        KM.Bind(KEY_AXIS_ROLL_INVERT, GetInvertButtonState(Invert2) ? 1 : 0, 0);
-        KM.Bind(KEY_AXIS_THROTTLE_INVERT, GetInvertButtonState(Invert3) ? 1 : 0, 0);
-
-        KM.SaveKeyMap("key.cfg", 256);
-        Stars->MapKeys();
-    }
-
-    // Return to Control Options (not MenuScreen):
-    if (Manager)
-        Manager->Show();   // or Manager->SetVisibility(Visible) if you prefer
-    SetVisibility(ESlateVisibility::Collapsed);
+    // Let OptionsScreen orchestrate if present:
+    if (OptionsManager)
+        OptionsManager->ApplyOptions();
+    else
+        Apply();
 }
 
 void UJoyDlg::OnCancelClicked()
 {
-    if (Manager)
-        Manager->Show();
-    SetVisibility(ESlateVisibility::Collapsed);
+    if (OptionsManager)
+        OptionsManager->CancelOptions();
+    else
+        Cancel();
 }
 
-void UJoyDlg::RefreshAxisButtonsFromCurrentBindings()
+// ------------------------------------------------------------
+// UI helpers
+// ------------------------------------------------------------
+
+void UJoyDlg::SetAxisLabel(int32 AxisIndex, const TCHAR* Text)
 {
-    for (int i = 0; i < 4; ++i)
-    {
-        const int Map = Joystick::GetAxisMap(i) - KEY_JOY_AXIS_X;
-        const int Inv = Joystick::GetAxisInv(i);
-
-        if (Map >= 0 && Map < 8)
-        {
-            MapAxis[i] = Map;
-            UpdateAxisButtonText(i, JoyAxisNames[Map]);
-        }
-        else
-        {
-            MapAxis[i] = -1;
-            UpdateAxisButtonText(i, "JoyDlg.unmapped");
-        }
-
-        if (i == 0) SetInvertButtonState(Invert0, Inv != 0);
-        if (i == 1) SetInvertButtonState(Invert1, Inv != 0);
-        if (i == 2) SetInvertButtonState(Invert2, Inv != 0);
-        if (i == 3) SetInvertButtonState(Invert3, Inv != 0);
-    }
-}
-
-void UJoyDlg::UpdateAxisButtonText(int AxisIndex, const char* TextId)
-{
-    UButton* Target = nullptr;
+    UTextBlock* Target = nullptr;
     switch (AxisIndex)
     {
-    case 0: Target = AxisButton0; break;
-    case 1: Target = AxisButton1; break;
-    case 2: Target = AxisButton2; break;
-    case 3: Target = AxisButton3; break;
+    case 0: Target = AxisText0; break;
+    case 1: Target = AxisText1; break;
+    case 2: Target = AxisText2; break;
+    case 3: Target = AxisText3; break;
     default: break;
     }
 
-    if (!Target || !TextId)
-        return;
-
-    // NOTE: This assumes TextBlock is child(0). If your UMG hierarchy differs,
-    // bind a UTextBlock* instead (recommended).
-    UTextBlock* Label = Cast<UTextBlock>(Target->GetChildAt(0));
-    if (!Label)
-        return;
-
-    const Text T = Game::GetText(TextId);
-    Label->SetText(FText::FromString(UTF8_TO_TCHAR(T.data())));
+    if (Target)
+        Target->SetText(FText::FromString(Text ? Text : TEXT("")));
 }
 
-void UJoyDlg::SetInvertButtonState(UButton* Button, bool bChecked)
+void UJoyDlg::RefreshAxisUIFromCurrentBindings()
 {
-    if (Button)
-        Button->SetIsEnabled(bChecked);
+    // Pull from joystick legacy mapping:
+    for (int32 i = 0; i < 4; ++i)
+    {
+        const int32 Map = Joystick::GetAxisMap(i) - KEY_JOY_AXIS_X;
+        const int32 Inv = Joystick::GetAxisInv(i);
+
+        if (Map >= 0 && Map < 8)
+            MapAxis[i] = Map;
+        else
+            MapAxis[i] = -1;
+
+        // Axis label:
+        if (MapAxis[i] >= 0 && MapAxis[i] < 8)
+        {
+            const Text T = Game::GetText(JoyAxisNames[MapAxis[i]]);
+            SetAxisLabel(i, UTF8_TO_TCHAR(T.data()));
+        }
+        else
+        {
+            SetAxisLabel(i, TEXT("UNMAPPED"));
+        }
+
+        // Invert:
+        const bool bInv = (Inv != 0);
+        if (i == 0 && Invert0) Invert0->SetIsChecked(bInv);
+        if (i == 1 && Invert1) Invert1->SetIsChecked(bInv);
+        if (i == 2 && Invert2) Invert2->SetIsChecked(bInv);
+        if (i == 3 && Invert3) Invert3->SetIsChecked(bInv);
+    }
 }
 
-bool UJoyDlg::GetInvertButtonState(const UButton* Button) const
+// ------------------------------------------------------------
+// Commit to legacy KeyMap
+// ------------------------------------------------------------
+
+void UJoyDlg::CommitToKeyMap()
 {
-    return Button && Button->GetIsEnabled();
+    Starshatter* Stars = Starshatter::GetInstance();
+    if (!Stars)
+        return;
+
+    KeyMap& KM = Stars->GetKeyMap();
+
+    // Axis binds (slot->mapped axis)
+    const int32 YawAxis = (MapAxis[0] >= 0) ? (MapAxis[0] + KEY_JOY_AXIS_X) : 0;
+    const int32 PitchAxis = (MapAxis[1] >= 0) ? (MapAxis[1] + KEY_JOY_AXIS_X) : 0;
+    const int32 RollAxis = (MapAxis[2] >= 0) ? (MapAxis[2] + KEY_JOY_AXIS_X) : 0;
+    const int32 ThrottleAxis = (MapAxis[3] >= 0) ? (MapAxis[3] + KEY_JOY_AXIS_X) : 0;
+
+    KM.Bind(KEY_AXIS_YAW, YawAxis, 0);
+    KM.Bind(KEY_AXIS_PITCH, PitchAxis, 0);
+    KM.Bind(KEY_AXIS_ROLL, RollAxis, 0);
+    KM.Bind(KEY_AXIS_THROTTLE, ThrottleAxis, 0);
+
+    const bool bInvYaw = Invert0 ? Invert0->IsChecked() : false;
+    const bool bInvPitch = Invert1 ? Invert1->IsChecked() : false;
+    const bool bInvRoll = Invert2 ? Invert2->IsChecked() : false;
+    const bool bInvThrottle = Invert3 ? Invert3->IsChecked() : false;
+
+    KM.Bind(KEY_AXIS_YAW_INVERT, bInvYaw ? 1 : 0, 0);
+    KM.Bind(KEY_AXIS_PITCH_INVERT, bInvPitch ? 1 : 0, 0);
+    KM.Bind(KEY_AXIS_ROLL_INVERT, bInvRoll ? 1 : 0, 0);
+    KM.Bind(KEY_AXIS_THROTTLE_INVERT, bInvThrottle ? 1 : 0, 0);
+
+    KM.SaveKeyMap("key.cfg", 256);
+    Stars->MapKeys();
+
+    UE_LOG(LogJoyDlg, Log, TEXT("[JoyDlg] Saved joystick bindings to key.cfg and remapped keys."));
 }

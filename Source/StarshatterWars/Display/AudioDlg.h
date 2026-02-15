@@ -6,20 +6,16 @@
     SUBSYSTEM:      Stars.exe (Unreal Port)
     FILE:           AudioDlg.h
     AUTHOR:         Carlos Bott
-
-    OVERVIEW
-    ========
-    Audio settings subpage used inside OptionsScreen hub.
-    - Config-backed model (UStarshatterAudioSettings CDO)
-    - Unified SaveGame persistence
-    - Runtime apply via AudioSettings
-    - Routed through OptionsScreen (Apply/Cancel/Tabs)
 =============================================================================*/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
+// MUST be before generated.h:
+#include "OptionsManagedPage.h"
+
 #include "AudioDlg.generated.h"
 
 class UComboBoxString;
@@ -32,12 +28,15 @@ class UStarshatterSettingsSaveSubsystem;
 class UStarshatterSettingsSaveGame;
 
 UCLASS()
-class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
+class STARSHATTERWARS_API UAudioDlg : public UBaseScreen, public IOptionsManagedPage
 {
     GENERATED_BODY()
 
 public:
     UAudioDlg(const FObjectInitializer& ObjectInitializer);
+
+    // IOptionsManagedPage
+    virtual void SetOptionsManager_Implementation(UOptionsScreen* InManager);
 
     void Show();
     virtual void ExecFrame(double DeltaTime) override;
@@ -45,8 +44,6 @@ public:
     void Apply();
     void Cancel();
     void PushToModel(bool bApplyRuntimeToo);
-
-    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
 
 protected:
     virtual void NativeOnInitialized() override;
@@ -68,7 +65,6 @@ private:
     void RefreshFromModel();
 
 private:
-
     bool bClosed = true;
     bool bDelegatesBound = false;
 
@@ -108,7 +104,10 @@ private:
 
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnOptionsClicked();   // maps to Game tab now
+    UFUNCTION() void OnOptionsClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
+
+    UPROPERTY(Transient)
+    bool bDirty = false;
 };

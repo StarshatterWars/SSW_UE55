@@ -41,17 +41,17 @@ void UControlOptionsDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // BaseScreen Enter/Escape routing (your pattern)
+    // BaseScreen Enter/Escape routing
     ApplyButton = ApplyBtn;
     CancelButton = CancelBtn;
 
-    // Safe even if BP reconstructs:
     BindDelegates();
 
     if (bClosed)
     {
         RefreshFromModel();
         bClosed = false;
+        bDirty = false;
     }
 }
 
@@ -126,6 +126,7 @@ void UControlOptionsDlg::Show()
     {
         RefreshFromModel();
         bClosed = false;
+        bDirty = false;
     }
 
     SetKeyboardFocus();
@@ -191,11 +192,13 @@ void UControlOptionsDlg::PushToModel(bool bApplyRuntimeToo)
 
     if (bApplyRuntimeToo)
         S->ApplyToRuntimeControls(this);
+
+    bDirty = false;
 }
 
 void UControlOptionsDlg::Apply()
 {
-    if (bClosed)
+    if (!bDirty)
         return;
 
     PushToModel(true);
@@ -204,9 +207,9 @@ void UControlOptionsDlg::Apply()
 
 void UControlOptionsDlg::Cancel()
 {
-    // Restore from model, but keep behavior consistent with AudioDlg:
     RefreshFromModel();
     bClosed = true;
+    bDirty = false;
 }
 
 // -------------------- Handlers --------------------
@@ -216,6 +219,7 @@ void UControlOptionsDlg::OnControlModelChanged(FString, ESelectInfo::Type)
     if (control_model_combo)
     {
         control_model = control_model_combo->GetSelectedIndex();
+        bDirty = true;
         bClosed = false;
     }
 }
@@ -223,41 +227,48 @@ void UControlOptionsDlg::OnControlModelChanged(FString, ESelectInfo::Type)
 void UControlOptionsDlg::OnJoystickIndexChanged(float NormalizedValue)
 {
     joystick_index = SliderToInt(NormalizedValue, 0, 8);
+    bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnThrottleAxisChanged(float NormalizedValue)
 {
     throttle_axis = SliderToInt(NormalizedValue, 0, 16);
+    bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnRudderAxisChanged(float NormalizedValue)
 {
     rudder_axis = SliderToInt(NormalizedValue, 0, 16);
+    bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnJoystickSensitivityChanged(float NormalizedValue)
 {
     joystick_sensitivity = SliderToInt(NormalizedValue, 0, 10);
+    bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnMouseSensitivityChanged(float NormalizedValue)
 {
     mouse_sensitivity = SliderToInt(NormalizedValue, 0, 50);
+    bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnMouseInvertChanged(bool bIsChecked)
 {
     b_mouse_invert = bIsChecked;
+    bDirty = true;
     bClosed = false;
 }
 
 void UControlOptionsDlg::OnApplyClicked()
 {
+    // If you still have Apply buttons inside subpages:
     if (OptionsManager) OptionsManager->ApplyOptions();
     else Apply();
 }

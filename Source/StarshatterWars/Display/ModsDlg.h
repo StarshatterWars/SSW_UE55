@@ -2,8 +2,9 @@
     Project:        Starshatter Wars
     Studio:         Fractal Dev Studios
     Copyright:      (c) 2025-2026.
+    All Rights Reserved.
 
-    SUBSYSTEM:      Stars.exe
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
     FILE:           ModsDlg.h
     AUTHOR:         Carlos Bott
 
@@ -13,7 +14,7 @@
 
     Placeholder Mods subpage for the OptionsScreen hub.
 
-    - Intended to live inside UOptionsScreen via WidgetSwitcher.
+    - Lives inside UOptionsScreen via WidgetSwitcher.
     - Currently does nothing (stub) while mods system is implemented.
     - Implements IOptionsPage so OptionsScreen can call Load/Apply/Save/Cancel
       without special cases.
@@ -24,7 +25,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 
-#include "OptionsPage.h"        // <-- correct interface include
+#include "OptionsPage.h"
 #include "ModsDlg.generated.h"
 
 class UTextBlock;
@@ -44,7 +45,6 @@ public:
     // ------------------------------------------------------------
     // IOptionsPage (stub implementations)
     // ------------------------------------------------------------
-
     virtual void LoadFromSettings_Implementation() override;
     virtual void ApplySettings_Implementation() override;
     virtual void SaveSettings_Implementation() override;

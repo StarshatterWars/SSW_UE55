@@ -26,12 +26,14 @@
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+
+// Needed for ESelectInfo::Type in UFUNCTION signatures:
+#include "Components/ComboBoxString.h"
+
 #include "GameOptionsDlg.generated.h"
 
 class UButton;
-class UComboBoxString;
 class UTextBlock;
-
 class UOptionsScreen;
 
 UCLASS()
@@ -42,14 +44,17 @@ class STARSHATTERWARS_API UGameOptionsDlg : public UBaseScreen
 public:
     UGameOptionsDlg(const FObjectInitializer& ObjectInitializer);
 
+    // Standardized across subscreens:
     void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
-    UOptionsScreen* GetOptionsManager() const { return OptionsManager; }
+    UOptionsScreen* GetOptionsManager() const { return OptionsManager.Get(); }
 
     void Show();
     virtual void ExecFrame(double DeltaTime) override;
 
     void Apply();
     void Cancel();
+
+    bool IsDirty() const { return bDirty; }
 
 protected:
     virtual void NativeOnInitialized() override;
@@ -68,9 +73,11 @@ private:
     void PushToModel();
 
 private:
-
     bool bClosed = true;
     bool bDelegatesBound = false;
+
+    UPROPERTY(Transient)
+    bool bDirty = false;
 
     // Snapshot (kept simple; we re-pull on RefreshFromModel)
     int32 FlightModel = 0;
@@ -88,27 +95,27 @@ protected:
     // UMG bindings (optional)
     // ------------------------------------------------------------
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> description;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> description = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> flight_model;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> flying_start;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> landings;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ai_difficulty;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> hud_mode;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> hud_color;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ff_mode;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> grid_mode;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> gunsight;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> flight_model = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> flying_start = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> landings = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ai_difficulty = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> hud_mode = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> hud_color = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> ff_mode = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> grid_mode = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UComboBoxString> gunsight = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn = nullptr;
 
     // Tabs
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> vid_btn;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> aud_btn;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ctl_btn;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> opt_btn; // GAME tab (this page)
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> mod_btn;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> vid_btn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> aud_btn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ctl_btn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> opt_btn = nullptr; // GAME tab (this page)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> mod_btn = nullptr;
 
 private:
     // Apply/Cancel

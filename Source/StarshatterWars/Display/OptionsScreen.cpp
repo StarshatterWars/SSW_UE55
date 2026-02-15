@@ -34,6 +34,7 @@
 #include "Components/Button.h"
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
+#include "OptionsManagedPage.h"
 #include "Components/WidgetSwitcher.h"
 #include "Blueprint/UserWidget.h"
 
@@ -66,6 +67,21 @@ void UOptionsScreen::NativeConstruct()
     bIsFocusable = true;
 
     BindDelegates();
+    // Wire the manager into EVERY page sitting in the switcher:
+    if (OptionsSwitcher)
+    {
+        const int32 Count = OptionsSwitcher->GetNumWidgets();
+        for (int32 i = 0; i < Count; ++i)
+        {
+            if (UWidget* W = OptionsSwitcher->GetWidgetAtIndex(i))
+            {
+                if (W->Implements<UOptionsManagedPage>())
+                {
+                    IOptionsManagedPage::Execute_SetOptionsManager(W, this);
+                }
+            }
+        }
+    }
 
     // Default tab
     ShowAudDlg();

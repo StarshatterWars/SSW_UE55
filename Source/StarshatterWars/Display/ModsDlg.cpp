@@ -2,8 +2,9 @@
     Project:        Starshatter Wars
     Studio:         Fractal Dev Studios
     Copyright:      (c) 2025-2026.
+    All Rights Reserved.
 
-    SUBSYSTEM:      Stars.exe
+    SUBSYSTEM:      StarshatterWars (Unreal Engine)
     FILE:           ModsDlg.cpp
     AUTHOR:         Carlos Bott
 
@@ -14,6 +15,10 @@
 
 #include "ModsDlg.h"
 
+// Core
+#include "Logging/LogMacros.h"
+
+// UMG
 #include "Components/TextBlock.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogModsDlg, Log, All);

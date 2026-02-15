@@ -11,14 +11,18 @@
 
 #include "KeyDlg.h"
 
+// UMG
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
-#include "Engine/GameInstance.h"
+
+// Input
 #include "Input/Reply.h"
 #include "InputCoreTypes.h"
 
+// Router
 #include "OptionsScreen.h"
 
+// Model + runtime
 #include "StarshatterKeyboardSettings.h"
 #include "StarshatterKeyboardSubsystem.h"
 
@@ -50,6 +54,7 @@ void UKeyDlg::NativeConstruct()
     BindDelegatesOnce();
 
     bKeyClear = false;
+
     BeginCapture();
     RefreshDisplayFromSettings();
 
@@ -63,9 +68,12 @@ void UKeyDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
     (void)MyGeometry;
-    (void)InDeltaTime;
+    ExecFrame((double)InDeltaTime);
+}
 
-    ExecFrame();
+void UKeyDlg::ExecFrame(double /*DeltaTime*/)
+{
+    // UE-only: no polling.
 }
 
 void UKeyDlg::BindDelegatesOnce()
@@ -121,11 +129,6 @@ FReply UKeyDlg::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& In
         SetTextBlock(NewKeyText, KeyToDisplayString(PendingKey));
 
     return FReply::Handled();
-}
-
-void UKeyDlg::ExecFrame()
-{
-    // UE-only: no polling.
 }
 
 void UKeyDlg::SetOptionsManager(UOptionsScreen* InManager)
@@ -195,26 +198,18 @@ void UKeyDlg::OnApplyClicked()
 
     // OptionsScreen owns routing; we just ask to return:
     if (OptionsManager)
-    {
         OptionsManager->ReturnFromKeyDlg();
-    }
     else
-    {
         SetVisibility(ESlateVisibility::Collapsed);
-    }
 }
 
 void UKeyDlg::OnCancelClicked()
 {
     // No commits; just return
     if (OptionsManager)
-    {
         OptionsManager->ReturnFromKeyDlg();
-    }
     else
-    {
         SetVisibility(ESlateVisibility::Collapsed);
-    }
 }
 
 void UKeyDlg::CommitPendingToSettings()

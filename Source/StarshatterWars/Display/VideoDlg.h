@@ -25,8 +25,6 @@
 
 #include "VideoDlg.generated.h"
 
-// Options hub page interface (used by OptionsScreen Apply/Cancel orchestration):
-
 // UMG:
 class UComboBoxString;
 class USlider;
@@ -55,7 +53,6 @@ public:
 
     void Show();
 
-    // IMPORTANT: match UBaseScreen signature (same as AudioDlg)
     virtual void ExecFrame(double DeltaTime) override;
 
     // Legacy callsites:
@@ -127,7 +124,7 @@ private:
     // Tabs:
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnGameClicked();     // was OnOptionsClicked
+    UFUNCTION() void OnGameClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
 
@@ -158,32 +155,32 @@ private:
 
 protected:
     // Main combos:
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ModeCombo = nullptr;      // frm id 203
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TexSizeCombo = nullptr;  // frm id 204
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DetailCombo = nullptr;   // frm id 205
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TextureCombo = nullptr;  // frm id 206
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ModeCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TexSizeCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DetailCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* TextureCombo = nullptr;
 
     // Effects/toggles:
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* LensFlareCombo = nullptr; // 211
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CoronaCombo = nullptr;    // 212
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* NebulaCombo = nullptr;    // 213
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DustCombo = nullptr;      // 214
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* LensFlareCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* CoronaCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* NebulaCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* DustCombo = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShadowsCombo = nullptr;   // 222
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SpecMapsCombo = nullptr;  // 223
-    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* BumpMapsCombo = nullptr;  // 224
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShadowsCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* SpecMapsCombo = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* BumpMapsCombo = nullptr;
 
     // Slider:
-    UPROPERTY(meta = (BindWidgetOptional)) USlider* GammaSlider = nullptr;            // 215
+    UPROPERTY(meta = (BindWidgetOptional)) USlider* GammaSlider = nullptr;
 
     // Apply/Cancel:
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;               // id 1
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;              // id 2
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ApplyBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CancelBtn = nullptr;
 
-    // Tabs (legacy IDs kept, but routed to new OptionsScreen tabs):
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;           // 901
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;           // 902
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;           // 903
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr;           // 904 (NOW = GAME)
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;           // 905
+    // Tabs:
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* VidTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* AudTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* CtlTabButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* OptTabButton = nullptr; // GAME
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ModTabButton = nullptr;
 };

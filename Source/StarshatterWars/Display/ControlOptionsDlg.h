@@ -43,8 +43,9 @@ class STARSHATTERWARS_API UControlOptionsDlg : public UBaseScreen
 public:
     UControlOptionsDlg(const FObjectInitializer& ObjectInitializer);
 
+    // Standardized across subscreens:
     void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
-    UOptionsScreen* GetOptionsManager() const { return OptionsManager; }
+    UOptionsScreen* GetOptionsManager() const { return OptionsManager.Get(); }
 
     virtual void Show();
     virtual void ExecFrame(double DeltaTime) override;
@@ -52,8 +53,7 @@ public:
     void Apply();
     void Cancel();
 
-    // Manager:
-    void SetManager(UOptionsScreen* InManager);
+    bool IsDirty() const { return bDirty; }
 
 protected:
     virtual void NativeOnInitialized() override;
@@ -95,16 +95,17 @@ private:
     // Tabs
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
-    UFUNCTION() void OnGameClicked();     // NEW: replaces OnOptionsClicked/ShowOptDlg
+    UFUNCTION() void OnGameClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
 
-    UPROPERTY(Transient)
-    TObjectPtr<UOptionsScreen> Manager = nullptr;
 private:
 
     bool bClosed = true;
     bool bDelegatesBound = false;
+
+    UPROPERTY(Transient)
+    bool bDirty = false;
 
     // Snapshot (mirrors FStarshatterControlsConfig)
     int32 control_model = 1; // FlightSim default
@@ -123,45 +124,45 @@ protected:
     // ------------------------------------------------------------
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UComboBoxString> control_model_combo;
+    TObjectPtr<UComboBoxString> control_model_combo = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> joystick_index_slider;
+    TObjectPtr<USlider> joystick_index_slider = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> throttle_axis_slider;
+    TObjectPtr<USlider> throttle_axis_slider = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> rudder_axis_slider;
+    TObjectPtr<USlider> rudder_axis_slider = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> joystick_sensitivity_slider;
+    TObjectPtr<USlider> joystick_sensitivity_slider = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<USlider> mouse_sensitivity_slider;
+    TObjectPtr<USlider> mouse_sensitivity_slider = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UCheckBox> mouse_invert_checkbox;
+    TObjectPtr<UCheckBox> mouse_invert_checkbox = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> ApplyBtn;
+    TObjectPtr<UButton> ApplyBtn = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> CancelBtn;
+    TObjectPtr<UButton> CancelBtn = nullptr;
 
     // Tabs (optional if embedded in subpage BP)
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> vid_btn;
+    TObjectPtr<UButton> vid_btn = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> aud_btn;
+    TObjectPtr<UButton> aud_btn = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> ctl_btn;
+    TObjectPtr<UButton> ctl_btn = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> opt_btn;  // "GAME" tab in new layout
+    TObjectPtr<UButton> opt_btn = nullptr;  // "GAME" tab in new layout
 
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UButton> mod_btn;
+    TObjectPtr<UButton> mod_btn = nullptr;
 };

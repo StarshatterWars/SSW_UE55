@@ -52,6 +52,7 @@ void UGameOptionsDlg::NativeConstruct()
     {
         RefreshFromModel();
         bClosed = false;
+        bDirty = false;
     }
 }
 
@@ -92,6 +93,7 @@ void UGameOptionsDlg::Show()
     {
         RefreshFromModel();
         bClosed = false;
+        bDirty = false;
     }
 
     SetKeyboardFocus();
@@ -123,8 +125,7 @@ void UGameOptionsDlg::RefreshFromModel()
     if (PlayerCharacter* Player = PlayerCharacter::GetCurrentPlayer())
     {
         FlyingStart = Player->FlyingStart();
-        // Legacy logic: combo is reversed (easy at top), so selection index:
-        // SelectedIndex = optionCount - AILevel - 1
+
         if (ai_difficulty)
             AIDifficultyIndex = ai_difficulty->GetOptionCount() - Player->AILevel() - 1;
 
@@ -173,19 +174,21 @@ void UGameOptionsDlg::PushToModel()
     if (flight_model) Ship::SetFlightModel(flight_model->GetSelectedIndex());
     if (landings)     Ship::SetLandingModel(landings->GetSelectedIndex());
 
-    if (hud_mode)     HUDView::SetArcade(hud_mode->GetSelectedIndex() > 0);
-    if (hud_color)    HUDView::SetDefaultColorSet(hud_color->GetSelectedIndex());
+    if (hud_mode)  HUDView::SetArcade(hud_mode->GetSelectedIndex() > 0);
+    if (hud_color) HUDView::SetDefaultColorSet(hud_color->GetSelectedIndex());
 
     if (ff_mode)
         Ship::SetFriendlyFireLevel((float)ff_mode->GetSelectedIndex() / 4.0f);
 
     if (HUDView* Hud = HUDView::GetInstance())
         if (hud_color) Hud->SetHUDColorSet(hud_color->GetSelectedIndex());
+
+    bDirty = false;
 }
 
 void UGameOptionsDlg::Apply()
 {
-    if (bClosed)
+    if (!bDirty)
         return;
 
     PushToModel();
@@ -196,6 +199,7 @@ void UGameOptionsDlg::Cancel()
 {
     RefreshFromModel();
     bClosed = true;
+    bDirty = false;
 }
 
 // ------------------------------------------------------------
@@ -228,12 +232,12 @@ void UGameOptionsDlg::OnModClicked() { if (OptionsManager) OptionsManager->ShowM
 // Combo handlers (mark dirty)
 // ------------------------------------------------------------
 
-void UGameOptionsDlg::OnFlightModelChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnFlyingStartChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnLandingsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnAIDifficultyChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnHudModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnHudColorChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnFfModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnGridModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
-void UGameOptionsDlg::OnGunsightChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bClosed = false; }
+void UGameOptionsDlg::OnFlightModelChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnFlyingStartChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnLandingsChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnAIDifficultyChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnHudModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnHudColorChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnFfModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnGridModeChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }
+void UGameOptionsDlg::OnGunsightChanged(FString /*SelectedItem*/, ESelectInfo::Type /*SelectionType*/) { bDirty = true; bClosed = false; }

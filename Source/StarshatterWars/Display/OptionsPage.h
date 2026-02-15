@@ -2,6 +2,7 @@
     Project:        Starshatter Wars
     Studio:         Fractal Dev Studios
     Copyright:      (c) 2025-2026.
+    All Rights Reserved.
 
     SUBSYSTEM:      StarshatterWars (Unreal Engine)
     FILE:           OptionsPage.h
@@ -9,14 +10,20 @@
 
     OVERVIEW
     ========
-    OptionsPage interface for OptionsScreen subpages.
+    IOptionsPage
 
-    Purpose:
-    - Allows UOptionsScreen to treat all subpages uniformly:
-      LoadFromSettings(), ApplySettings(), SaveSettings(), CancelChanges()
+    Optional interface for OptionsScreen subpages.
 
-    Notes:
-    - These are BlueprintNativeEvents so subpages can implement in C++ or BP.
+    Allows OptionsScreen to call:
+      - LoadFromSettings
+      - ApplySettings
+      - SaveSettings
+      - CancelChanges
+
+    NOTES
+    =====
+    - Use BlueprintNativeEvent so C++ pages can implement *_Implementation
+    - Keep this interface "thin" and stable (no UI types in signatures)
 =============================================================================*/
 
 #pragma once
@@ -48,4 +55,3 @@ public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Options")
     void CancelChanges();
 };
-#pragma once

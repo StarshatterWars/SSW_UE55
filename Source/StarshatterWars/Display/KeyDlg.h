@@ -50,8 +50,8 @@ public:
     // Key capture:
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
-    // Legacy parity:
-    void ExecFrame();
+    // BaseScreen polling hook (kept for signature parity; no polling required)
+    virtual void ExecFrame(double DeltaTime) override;
 
     // Compatibility: treat this as enum index for EStarshatterInputAction
     int  GetKeyMapIndex() const { return KeyIndex; }
@@ -82,11 +82,10 @@ private:
     void ClearFromSettings();
 
 private:
-
     bool bDelegatesBound = false;
 
     // Compatibility:
-    int KeyIndex = 0;
+    int32 KeyIndex = 0;
 
     // UE-only binding state:
     EStarshatterInputAction EditingAction = EStarshatterInputAction::Pause;
