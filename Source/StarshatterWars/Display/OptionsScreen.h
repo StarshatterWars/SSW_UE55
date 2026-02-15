@@ -21,14 +21,23 @@
       - ESC returns to MenuScreen
       - TAB / SHIFT+TAB cycles tabs
 
-    Tabs (alphabetical order):
-      - Audio
-      - Controls
-      - Game
-      - Joystick
-      - Keyboard
-      - Mods
-      - Video
+    NOTES
+    =====
+    - This class does NOT CreateWidget() subpages. Subpages are instances already
+      placed inside the WBP WidgetSwitcher.
+    - Focus: UButton does not support SetIsFocusable(). Instead:
+        * UOptionsScreen is focusable (bIsFocusable = true)
+        * We set UI input mode focus to a real widget (BtnAudio slate widget)
+        * NativeOnKeyDown handles TAB/ESC cycling/routing
+
+    TAB HIGHLIGHT (OPTION B)
+    ========================
+    - Add Borders in WBP wrapping each tab button.
+    - Name them exactly:
+        BorderAudio, BorderControls, BorderGame, BorderJoystick,
+        BorderKeyboard, BorderMods, BorderVideo
+    - Selected: steel gray (alpha 1)
+    - Unselected: same RGB but alpha 0 (invisible)
 
 =============================================================================*/
 
@@ -42,6 +51,7 @@ class UButton;
 class UBorder;
 class UTextBlock;
 class UWidgetSwitcher;
+class UWidget;
 class UUserWidget;
 class UMenuScreen;
 
@@ -54,9 +64,13 @@ public:
     UOptionsScreen(const FObjectInitializer& ObjectInitializer);
 
 protected:
+    // ------------------------------------------------------------
+    // Lifecycle
+    // ------------------------------------------------------------
     virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
 
+    // Keyboard routing (TAB/SHIFT+TAB, ESC)
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
 public:
@@ -104,9 +118,19 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> TitleText = nullptr;
 
     // ------------------------------------------------------------
+    // Sub Widgets (instances placed in WBP switcher)
+    // ------------------------------------------------------------
+    // IMPORTANT: these must be the ACTUAL instances inside the WBP, not classes.
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> AudioDlg = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> ControlsDlg = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> GameDlg = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> JoystickDlg = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> KeyboardDlg = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> ModsDlg = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UUserWidget> VideoDlg = nullptr;
+
+    // ------------------------------------------------------------
     // Tab highlight borders (OPTION B)
-    // Add these Borders in WBP wrapping each tab button.
-    // Name them exactly: BorderAudio, BorderControls, etc.
     // ------------------------------------------------------------
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderAudio = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UBorder> BorderControls = nullptr;
@@ -124,23 +148,29 @@ private:
     bool bDelegatesBound = false;
 
     // ------------------------------------------------------------
-    // Switcher helpers (CRITICAL FIX)
-    // We do NOT CreateWidget pages. We use the instances already in the WBP switcher.
+    // Switcher helpers (uses existing children in WBP)
     // ------------------------------------------------------------
-    UUserWidget* FindSwitcherChildByName(const FName& WidgetName) const;
-    void SwitchToNamedPage(const FName& PageWidgetName);
+    void SwitchToWidget(UWidget* Widget);
 
+    // ------------------------------------------------------------
+    // Tab visuals
+    // ------------------------------------------------------------
     void SetActiveTab(UButton* ActiveButton);
 
     // OPTION B: border highlight (steel gray when selected, alpha 0 when not)
     void UpdateTabBorders(UButton* ActiveButton);
     static void SetBorderSelected(UBorder* Border, bool bSelected);
 
+    // ------------------------------------------------------------
     // TAB navigation
+    // ------------------------------------------------------------
+    int32 GetCurrentTabIndex() const;
     void FocusTabByDelta(int32 Delta);
 
 private:
-    // Button handlers:
+    // ------------------------------------------------------------
+    // Button handlers
+    // ------------------------------------------------------------
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnGameClicked();
