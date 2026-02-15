@@ -4178,54 +4178,189 @@ struct FStarshatterControlsConfig
 UENUM(BlueprintType)
 enum class EStarshatterInputAction : uint8
 {
-	// Core
-	ExitGame            UMETA(DisplayName = "Exit Game"),
-	Pause               UMETA(DisplayName = "Pause"),
+	// ------------------------------------------------------------
+	// CORE / META
+	// ------------------------------------------------------------
+	ExitGame                UMETA(DisplayName = "Exit Game"),            // legacy KEY_EXIT
+	Pause                   UMETA(DisplayName = "Pause"),               // legacy KEY_PAUSE
 
-	// Time
-	TimeCompress        UMETA(DisplayName = "Time Compress"),
-	TimeExpand          UMETA(DisplayName = "Time Expand"),
-	TimeSkip            UMETA(DisplayName = "Time Skip"),
+	// ------------------------------------------------------------
+	// TIME
+	// ------------------------------------------------------------
+	TimeCompress            UMETA(DisplayName = "Time Compress"),        // legacy KEY_TIME_COMPRESS
+	TimeExpand              UMETA(DisplayName = "Time Expand"),          // legacy KEY_TIME_EXPAND
+	TimeSkip                UMETA(DisplayName = "Time Skip"),            // legacy KEY_TIME_SKIP
 
-	// Flight
-	ThrottleUp          UMETA(DisplayName = "Throttle Up"),
-	ThrottleDown        UMETA(DisplayName = "Throttle Down"),
-	ThrottleZero        UMETA(DisplayName = "Throttle Zero"),
-	ThrottleFull        UMETA(DisplayName = "Throttle Full"),
+	// ------------------------------------------------------------
+	// FLIGHT / MOTION
+	// ------------------------------------------------------------
+	PitchUp                 UMETA(DisplayName = "Pitch Up"),             // legacy KEY_PITCH_UP
+	PitchDown               UMETA(DisplayName = "Pitch Down"),           // legacy KEY_PITCH_DOWN
+	YawLeft                 UMETA(DisplayName = "Yaw Left"),             // legacy KEY_YAW_LEFT
+	YawRight                UMETA(DisplayName = "Yaw Right"),            // legacy KEY_YAW_RIGHT
+	RollLeft                UMETA(DisplayName = "Roll Left"),            // legacy KEY_ROLL_LEFT
+	RollRight               UMETA(DisplayName = "Roll Right"),           // legacy KEY_ROLL_RIGHT
 
-	// Weapons
-	CyclePrimary        UMETA(DisplayName = "Cycle Primary Weapon"),
-	CycleSecondary      UMETA(DisplayName = "Cycle Secondary Weapon"),
-	FirePrimary         UMETA(DisplayName = "Fire Primary"),
-	FireSecondary       UMETA(DisplayName = "Fire Secondary"),
+	// Translational thrusters / strafe (legacy PLUS/MINUS axes)
+	PlusX                   UMETA(DisplayName = "Translate +X"),         // legacy KEY_PLUS_X
+	MinusX                  UMETA(DisplayName = "Translate -X"),         // legacy KEY_MINUS_X
+	PlusY                   UMETA(DisplayName = "Translate +Y"),         // legacy KEY_PLUS_Y
+	MinusY                  UMETA(DisplayName = "Translate -Y"),         // legacy KEY_MINUS_Y
+	PlusZ                   UMETA(DisplayName = "Translate +Z"),         // legacy KEY_PLUS_Z
+	MinusZ                  UMETA(DisplayName = "Translate -Z"),         // legacy KEY_MINUS_Z
 
-	// Targeting
-	LockTarget          UMETA(DisplayName = "Lock Target"),
-	LockThreat          UMETA(DisplayName = "Lock Threat"),
-	TargetNext          UMETA(DisplayName = "Target Next"),
-	TargetPrevious      UMETA(DisplayName = "Target Previous"),
+	// Primary “actions” (legacy KEY_ACTION_0/1)
+	Action0                 UMETA(DisplayName = "Action 0"),
+	Action1                 UMETA(DisplayName = "Action 1"),
 
-	// Camera
-	CameraNextView      UMETA(DisplayName = "Next Camera View"),
-	CameraChase         UMETA(DisplayName = "Chase Camera"),
-	CameraExternal      UMETA(DisplayName = "External Camera"),
-	CameraZoomIn        UMETA(DisplayName = "Zoom In"),
-	CameraZoomOut       UMETA(DisplayName = "Zoom Out"),
+	// Throttle
+	ThrottleUp              UMETA(DisplayName = "Throttle Up"),          // legacy KEY_THROTTLE_UP
+	ThrottleDown            UMETA(DisplayName = "Throttle Down"),        // legacy KEY_THROTTLE_DOWN
+	ThrottleZero            UMETA(DisplayName = "Throttle Zero"),        // legacy KEY_THROTTLE_ZERO
+	ThrottleFull            UMETA(DisplayName = "Throttle Full"),        // legacy KEY_THROTTLE_FULL
+	Augmenter               UMETA(DisplayName = "Augmenter"),            // legacy KEY_AUGMENTER
+	FlcsModeAuto            UMETA(DisplayName = "FLCS Mode Auto"),       // legacy KEY_FLCS_MODE_AUTO
+	CommandMode             UMETA(DisplayName = "Command Mode"),         // legacy KEY_COMMAND_MODE
 
-	// UI
-	NavDialog           UMETA(DisplayName = "Navigation Dialog"),
-	WeaponDialog        UMETA(DisplayName = "Weapon Dialog"),
-	FlightDialog        UMETA(DisplayName = "Flight Dialog"),
-	EngineDialog        UMETA(DisplayName = "Engine Dialog"),
+	// ------------------------------------------------------------
+	// WEAPONS / COMBAT
+	// ------------------------------------------------------------
+	CyclePrimary            UMETA(DisplayName = "Cycle Primary Weapon"),   // legacy KEY_CYCLE_PRIMARY
+	CycleSecondary          UMETA(DisplayName = "Cycle Secondary Weapon"), // legacy KEY_CYCLE_SECONDARY
 
-	// Comms
-	RadioMenu           UMETA(DisplayName = "Radio Menu"),
-	CommandMode         UMETA(DisplayName = "Command Mode"),
+	// If you actually support these in gameplay, keep them:
+	FirePrimary             UMETA(DisplayName = "Fire Primary"),
+	FireSecondary           UMETA(DisplayName = "Fire Secondary"),
 
-	// Debug
-	IncStardate         UMETA(DisplayName = "Increase Stardate"),
-	DecStardate         UMETA(DisplayName = "Decrease Stardate")
+	Decoy                   UMETA(DisplayName = "Decoy / Countermeasure"),// legacy KEY_DECOY
+
+	// ------------------------------------------------------------
+	// TARGETING
+	// ------------------------------------------------------------
+	LockTarget              UMETA(DisplayName = "Lock Target"),           // legacy KEY_LOCK_TARGET
+	LockThreat              UMETA(DisplayName = "Lock Threat"),           // legacy KEY_LOCK_THREAT
+	LockClosestShip         UMETA(DisplayName = "Lock Closest Ship"),     // legacy KEY_LOCK_CLOSEST_SHIP
+	LockClosestThreat       UMETA(DisplayName = "Lock Closest Threat"),   // legacy KEY_LOCK_CLOSEST_THREAT
+	LockHostileShip         UMETA(DisplayName = "Lock Hostile Ship"),     // legacy KEY_LOCK_HOSTILE_SHIP
+	LockHostileThreat       UMETA(DisplayName = "Lock Hostile Threat"),   // legacy KEY_LOCK_HOSTILE_THREAT
+
+	TargetNext              UMETA(DisplayName = "Target Next"),
+	TargetPrevious          UMETA(DisplayName = "Target Previous"),
+
+	CycleSubtarget          UMETA(DisplayName = "Cycle Subtarget"),       // legacy KEY_CYCLE_SUBTARGET
+	PrevSubtarget           UMETA(DisplayName = "Previous Subtarget"),    // legacy KEY_PREV_SUBTARGET
+
+	TargetPadlock           UMETA(DisplayName = "Target Padlock"),        // legacy KEY_TARGET_PADLOCK
+
+	// ------------------------------------------------------------
+	// NAV / SHIP SYSTEMS
+	// ------------------------------------------------------------
+	GearToggle              UMETA(DisplayName = "Gear Toggle"),           // legacy KEY_GEAR_TOGGLE
+	NavlightToggle          UMETA(DisplayName = "Nav Light Toggle"),      // legacy KEY_NAVLIGHT_TOGGLE
+	AutoNav                 UMETA(DisplayName = "Auto Nav"),              // legacy KEY_AUTO_NAV
+	DropOrbit               UMETA(DisplayName = "Drop Orbit"),            // legacy KEY_DROP_ORBIT
+
+	ShieldsUp               UMETA(DisplayName = "Shields Up"),            // legacy KEY_SHIELDS_UP
+	ShieldsDown             UMETA(DisplayName = "Shields Down"),          // legacy KEY_SHIELDS_DOWN
+	ShieldsFull             UMETA(DisplayName = "Shields Full"),          // legacy KEY_SHIELDS_FULL
+	ShieldsZero             UMETA(DisplayName = "Shields Zero"),          // legacy KEY_SHIELDS_ZERO
+
+	// ------------------------------------------------------------
+	// SENSORS / EMCON
+	// ------------------------------------------------------------
+	SensorMode              UMETA(DisplayName = "Sensor Mode"),           // legacy KEY_SENSOR_MODE
+	SensorGroundMode        UMETA(DisplayName = "Sensor Ground Mode"),    // legacy KEY_SENSOR_GROUND_MODE
+	LaunchProbe             UMETA(DisplayName = "Launch Probe"),          // legacy KEY_LAUNCH_PROBE
+	SensorRangeMinus        UMETA(DisplayName = "Sensor Range -"),        // legacy KEY_SENSOR_RANGE_MINUS
+	SensorRangePlus         UMETA(DisplayName = "Sensor Range +"),        // legacy KEY_SENSOR_RANGE_PLUS
+	EmconMinus              UMETA(DisplayName = "EMCON -"),               // legacy KEY_EMCON_MINUS
+	EmconPlus               UMETA(DisplayName = "EMCON +"),               // legacy KEY_EMCON_PLUS
+
+	// ------------------------------------------------------------
+	// CAMERA
+	// ------------------------------------------------------------
+	CameraNextView          UMETA(DisplayName = "Next Camera View"),
+
+	CamBridge               UMETA(DisplayName = "Bridge Camera"),         // legacy KEY_CAM_BRIDGE
+	CamVirt                 UMETA(DisplayName = "Virtual Camera"),        // legacy KEY_CAM_VIRT
+	CamChase                UMETA(DisplayName = "Chase Camera"),          // legacy KEY_CAM_CHASE
+	CamDrop                 UMETA(DisplayName = "Drop Camera"),           // legacy KEY_CAM_DROP
+	CamExtern               UMETA(DisplayName = "External Camera"),       // legacy KEY_CAM_EXTERN
+
+	CameraChase             UMETA(DisplayName = "Chase Camera (Alt)"),
+	CameraExternal          UMETA(DisplayName = "External Camera (Alt)"),
+	CameraZoomIn            UMETA(DisplayName = "Zoom In"),
+	CameraZoomOut           UMETA(DisplayName = "Zoom Out"),
+	ZoomWide                UMETA(DisplayName = "Zoom Wide"),             // legacy KEY_ZOOM_WIDE
+
+	// Optional: external camera manipulation (legacy had these)
+	CamCycleObject          UMETA(DisplayName = "Cycle Camera Object"),   // legacy KEY_CAM_CYCLE_OBJECT
+	CamExtPlusAz            UMETA(DisplayName = "External Cam +Az"),      // legacy KEY_CAM_EXT_PLUS_AZ
+	CamExtMinusAz           UMETA(DisplayName = "External Cam -Az"),      // legacy KEY_CAM_EXT_MINUS_AZ
+	CamExtPlusEl            UMETA(DisplayName = "External Cam +El"),      // legacy KEY_CAM_EXT_PLUS_EL
+	CamExtMinusEl           UMETA(DisplayName = "External Cam -El"),      // legacy KEY_CAM_EXT_MINUS_EL
+	CamExtPlusRange         UMETA(DisplayName = "External Cam +Range"),   // legacy KEY_CAM_EXT_PLUS_RANGE
+	CamExtMinusRange        UMETA(DisplayName = "External Cam -Range"),   // legacy KEY_CAM_EXT_MINUS_RANGE
+	CamViewSelection        UMETA(DisplayName = "Camera View Selection"), // legacy KEY_CAM_VIEW_SELECTION
+	CamVirtPlusAz           UMETA(DisplayName = "Virtual Cam +Az"),       // legacy KEY_CAM_VIRT_PLUS_AZ
+	CamVirtMinusAz          UMETA(DisplayName = "Virtual Cam -Az"),       // legacy KEY_CAM_VIRT_MINUS_AZ
+	CamVirtPlusEl           UMETA(DisplayName = "Virtual Cam +El"),       // legacy KEY_CAM_VIRT_PLUS_EL
+	CamVirtMinusEl          UMETA(DisplayName = "Virtual Cam -El"),       // legacy KEY_CAM_VIRT_MINUS_EL
+
+	// ------------------------------------------------------------
+	// HUD / UI / DIALOGS
+	// ------------------------------------------------------------
+	HudMode                 UMETA(DisplayName = "HUD Mode"),              // legacy KEY_HUD_MODE
+	HudColor                UMETA(DisplayName = "HUD Color"),             // legacy KEY_HUD_COLOR
+	HudWarn                 UMETA(DisplayName = "HUD Warnings"),          // legacy KEY_HUD_WARN
+	HudInst                 UMETA(DisplayName = "HUD Instrumentation"),   // legacy KEY_HUD_INST
+
+	NavDialog               UMETA(DisplayName = "Navigation Dialog"),     // legacy KEY_NAV_DLG
+	WeaponDialog            UMETA(DisplayName = "Weapon Dialog"),         // legacy KEY_WEP_DLG
+	FlightDialog            UMETA(DisplayName = "Flight Dialog"),         // legacy KEY_FLT_DLG
+	EngineDialog            UMETA(DisplayName = "Engine Dialog"),         // legacy KEY_ENG_DLG
+	RadioMenu               UMETA(DisplayName = "Radio Menu"),            // legacy KEY_RADIO_MENU
+	QuantumMenu             UMETA(DisplayName = "Quantum Menu"),          // legacy KEY_QUANTUM_MENU
+
+	// MFD
+	MFD1                    UMETA(DisplayName = "MFD 1"),                 // legacy KEY_MFD1
+	MFD2                    UMETA(DisplayName = "MFD 2"),                 // legacy KEY_MFD2
+
+	// ------------------------------------------------------------
+	// MISC / SAFETY / SPECIAL
+	// ------------------------------------------------------------
+	SelfDestruct            UMETA(DisplayName = "Self Destruct"),          // legacy KEY_SELF_DESTRUCT
+	SwapRollYaw             UMETA(DisplayName = "Swap Roll / Yaw"),        // legacy KEY_SWAP_ROLL_YAW
+
+	// ------------------------------------------------------------
+	// COMMS
+	// ------------------------------------------------------------
+	CommAttackTgt           UMETA(DisplayName = "Comm: Attack Target"),    // legacy KEY_COMM_ATTACK_TGT
+	CommEscortTgt           UMETA(DisplayName = "Comm: Escort Target"),    // legacy KEY_COMM_ESCORT_TGT
+	CommWepFree             UMETA(DisplayName = "Comm: Weapons Free"),     // legacy KEY_COMM_WEP_FREE
+	CommWepHold             UMETA(DisplayName = "Comm: Weapons Hold"),     // legacy KEY_COMM_WEP_HOLD
+	CommCoverMe             UMETA(DisplayName = "Comm: Cover Me"),         // legacy KEY_COMM_COVER_ME
+	CommSkipNav             UMETA(DisplayName = "Comm: Skip Nav"),         // legacy KEY_COMM_SKIP_NAV
+	CommReturnToBase        UMETA(DisplayName = "Comm: Return To Base"),   // legacy KEY_COMM_RETURN_TO_BASE
+	CommCallInbound         UMETA(DisplayName = "Comm: Call Inbound"),     // legacy KEY_COMM_CALL_INBOUND
+	CommRequestPicture      UMETA(DisplayName = "Comm: Request Picture"),  // legacy KEY_COMM_REQUEST_PICTURE
+	CommRequestSupport      UMETA(DisplayName = "Comm: Request Support"),  // legacy KEY_COMM_REQUEST_SUPPORT
+
+	// ------------------------------------------------------------
+	// CHAT
+	// ------------------------------------------------------------
+	ChatBroadcast           UMETA(DisplayName = "Chat: Broadcast"),        // legacy KEY_CHAT_BROADCAST
+	ChatTeam                UMETA(DisplayName = "Chat: Team"),             // legacy KEY_CHAT_TEAM
+	ChatWing                UMETA(DisplayName = "Chat: Wing"),             // legacy KEY_CHAT_WING
+	ChatUnit                UMETA(DisplayName = "Chat: Unit"),             // legacy KEY_CHAT_UNIT
+
+	// ------------------------------------------------------------
+	// DEBUG
+	// ------------------------------------------------------------
+	IncStardate             UMETA(DisplayName = "Increase Stardate"),      // legacy KEY_INC_STARDATE
+	DecStardate             UMETA(DisplayName = "Decrease Stardate")       // legacy KEY_DEC_STARDATE
 };
+
 
 USTRUCT(BlueprintType)
 struct FStarshatterKeyboardConfig

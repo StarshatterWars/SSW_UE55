@@ -10,16 +10,18 @@
 
     OVERVIEW
     ========
-    UE-only key binding dialog.
-    - Captures a key via NativeOnKeyDown.
-    - Writes to UStarshatterKeyboardSettings (config-backed CDO).
-    - Runtime apply via UStarshatterKeyboardSubsystem.
-    - Routes back to UOptionsScreen (Manager) on apply/cancel.
+    UKeyDlg
+    - Full keybind list view INSIDE KeyDlg (scrollable).
+    - AutoVBox-driven layout (like Audio/Game/Controls).
+    - Click a row to select an action, then press a key to stage a new bind.
+    - Apply commits ALL pending changes to UStarshatterKeyboardSettings (config-backed CDO)
+      and applies to runtime via UStarshatterKeyboardSubsystem.
+    - Clear removes the CURRENT selected action binding (staged until Apply).
 
     IMPORTANT
     =========
-    - Uses AddUniqueDynamic (NO RemoveAll) to prevent delegate ensure failures.
-    - KeyDlg never manipulates page visibility directly; OptionsScreen owns routing.
+    - Uses AddUniqueDynamic (NO RemoveAll) to prevent ensure failures.
+    - Everything is built into AutoVBox (no floating widgets at 0,0).
 =============================================================================*/
 
 #pragma once
@@ -33,6 +35,9 @@
 
 class UButton;
 class UTextBlock;
+class UScrollBox;
+class UVerticalBox;
+class UHorizontalBox;
 class UOptionsScreen;
 
 UCLASS()
@@ -44,69 +49,88 @@ public:
     UKeyDlg(const FObjectInitializer& ObjectInitializer);
 
     virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
     // Key capture:
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
-    // BaseScreen polling hook (kept for signature parity; no polling required)
+    // BaseScreen polling hook (kept for parity; no polling required)
     virtual void ExecFrame(double DeltaTime) override;
 
-    // Compatibility: treat this as enum index for EStarshatterInputAction
-    int  GetKeyMapIndex() const { return KeyIndex; }
-    void SetKeyMapIndex(int i);
-
-    // Preferred:
-    void SetEditingAction(EStarshatterInputAction InAction);
-
-    // Manager:
-    void SetOptionsManager(UOptionsScreen* InManager);
-
-    // Capture flow:
-    void BeginCapture();
+    void SetOptionsManager(UOptionsScreen* InManager) { OptionsManager = InManager; }
 
 protected:
+    virtual void BindFormWidgets() override {}
+    virtual FString GetLegacyFormText() const override { return FString(); }
+
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
 private:
     void BindDelegatesOnce();
-    void RefreshDisplayFromSettings();
-    void SetTextBlock(UTextBlock* Block, const FString& Text);
 
+    // Layout/build
+    void BuildKeyRows();
+    void BuildKeyList();
+
+    // Model/UI
+    void RefreshDisplayFromSettings();
+    void CommitPendingToSettings();
+
+    // Selection/capture
+    void SelectAction(EStarshatterInputAction Action);
+    void BeginCaptureForSelected();
+
+    // Styling
+    void ApplyStandardValueTextStyle(UTextBlock* Block) const;
+
+    // Helpers
     static FString ActionToDisplayString(EStarshatterInputAction Action);
     static FString KeyToDisplayString(const FKey& Key);
+    static bool IsModifierKey(const FKey& Key);
 
-    void CommitPendingToSettings();
-    void ClearFromSettings();
+private:
+    // One handler for all row buttons (pressed is deterministic via IsPressed())
+    UFUNCTION() void OnRowButtonPressed();
+
+    // Buttons
+    UFUNCTION() void OnApplyClicked();
+    UFUNCTION() void OnCancelClicked();
+    UFUNCTION() void OnClearClicked();
 
 private:
     bool bDelegatesBound = false;
 
-    // Compatibility:
-    int32 KeyIndex = 0;
-
-    // UE-only binding state:
-    EStarshatterInputAction EditingAction = EStarshatterInputAction::Pause;
-
-    FKey CurrentKey;
-    FKey PendingKey;
-
     bool bCapturing = false;
-    bool bKeyClear = false;
+
+    EStarshatterInputAction SelectedAction = EStarshatterInputAction::Pause;
+    bool bHasSelection = false;
+
+    // Pending edits staged until Apply:
+    TMap<EStarshatterInputAction, FKey> PendingRemaps;
+    TSet<EStarshatterInputAction> PendingClears;
+
+    // Scroll list widgets we construct
+    UPROPERTY(Transient) TObjectPtr<UScrollBox>  KeyScrollBox = nullptr;
+    UPROPERTY(Transient) TObjectPtr<UVerticalBox> KeyListVBox = nullptr;
+
+    struct FKeyRowWidgets
+    {
+        TObjectPtr<UButton>    RowButton = nullptr;
+        TObjectPtr<UTextBlock> ActionText = nullptr;
+        TObjectPtr<UTextBlock> KeyText = nullptr;
+    };
+
+    TMap<EStarshatterInputAction, FKeyRowWidgets> RowMap;
+    TMap<TWeakObjectPtr<UButton>, EStarshatterInputAction> ButtonToAction;
+
+    TWeakObjectPtr<UButton> SelectedRowButton;
 
 protected:
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> CommandText;     // 201
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> CurrentKeyText; // 202
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UTextBlock> NewKeyText;     // 203
-
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ClearButton;       // 300
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
-
-private:
-    UFUNCTION() void OnApplyClicked();
-    UFUNCTION() void OnCancelClicked();
-    UFUNCTION() void OnClearClicked();
+    // Optional BP buttons (recommended)
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ClearButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn = nullptr;
 };
