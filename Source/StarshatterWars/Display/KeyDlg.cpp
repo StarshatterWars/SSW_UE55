@@ -98,6 +98,8 @@ static bool GetDefaultKeyForAction(
         // Weapons/targeting
     case EStarshatterInputAction::CyclePrimary:   OutKey = EKeys::BackSpace; bOutShift = true; return true; // VK_BACK + SHIFT
     case EStarshatterInputAction::CycleSecondary: OutKey = EKeys::BackSpace;      return true; // VK_BACK
+    case EStarshatterInputAction::FirePrimary:    OutKey = EKeys::LeftControl;    return true;
+    case EStarshatterInputAction::FireSecondary:  OutKey = EKeys::SpaceBar;       return true;
 
     case EStarshatterInputAction::LockTarget:     OutKey = EKeys::T;             return true; // 'T'
     case EStarshatterInputAction::LockThreat:     OutKey = EKeys::T; bOutShift = true; return true; // 'T' + SHIFT

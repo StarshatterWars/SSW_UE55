@@ -98,6 +98,10 @@ namespace StarshatterInputDefaults
             { EStarshatterInputAction::CyclePrimary,   { EKeys::BackSpace, true } }, // VK_BACK+SHIFT
             { EStarshatterInputAction::CycleSecondary, { EKeys::BackSpace } },       // VK_BACK
 
+            // Weapons/targeting
+            { EStarshatterInputAction::FirePrimary,    { EKeys::LeftControl } },     // VK_ACTION_ZERO
+            { EStarshatterInputAction::FireSecondary,  { EKeys::SpaceBar  } },       // VK_BACK
+
             { EStarshatterInputAction::LockTarget,         { EKeys::T } },            // 'T'
             { EStarshatterInputAction::LockThreat,         { EKeys::T, true } },      // 'T'+SHIFT
             { EStarshatterInputAction::LockClosestShip,    { EKeys::U } },            // 'U'
