@@ -26,6 +26,15 @@
 #include "Components/ComboBoxString.h"
 #include "Components/Slider.h"
 
+// UMG layout helpers
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/VerticalBox.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/TextBlock.h"
+#include "Components/VerticalBoxSlot.h"
+#include "Components/HorizontalBoxSlot.h"
+
 // Model
 #include "StarshatterAudioSettings.h"
 
@@ -58,11 +67,39 @@ void UAudioDlg::NativeOnInitialized()
     BindDelegates();
 }
 
+void UAudioDlg::NativePreConstruct()
+{
+    Super::NativePreConstruct();
+
+    UE_LOG(LogAudioDlg, Warning, TEXT("[AudioDlg] PreConstruct RootCanvas=%s WidgetTree=%s"),
+        RootCanvas ? TEXT("VALID") : TEXT("NULL"),
+        WidgetTree ? TEXT("VALID") : TEXT("NULL"));
+    EnsureAutoVerticalBox();
+    AutoVBox->ClearChildren();
+}
+
 void UAudioDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
     BindDelegates();
+
+    // Ensure VBox exists and is visible:
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+    {
+        UE_LOG(LogAudioDlg, Error, TEXT("[AudioDlg] BuildRows FAILED: AutoVBox is NULL"));
+        return;
+    }
+
+    VBox->SetVisibility(ESlateVisibility::Visible);
+
+    // IMPORTANT: build rows AFTER widgets are bound
+    BuildAudioRows();
+
+    // Sanity log
+    UE_LOG(LogAudioDlg, Warning, TEXT("[AudioDlg] AutoVBox children after BuildAudioRows: %d"),
+        VBox->GetChildrenCount());
 
     if (bClosed)
     {
@@ -253,21 +290,60 @@ void UAudioDlg::OnSoundQualityChanged(FString /*SelectedItem*/, ESelectInfo::Typ
 
 void UAudioDlg::OnApplyClicked()
 {
-    // OptionsScreen owns orchestration; pages forward when embedded.
-    if (OptionsManager) OptionsManager->ApplyOptions();
-    else Apply();
+    if (OptionsManager)
+        OptionsManager->ApplyOptions();
+    else
+        Apply();
 }
 
 void UAudioDlg::OnCancelClicked()
 {
-    if (OptionsManager) OptionsManager->CancelOptions();
-    else Cancel();
+    if (OptionsManager)
+        OptionsManager->ApplyOptions();
+    else 
+        Cancel();
 }
 
-void UAudioDlg::SetOptionsManager_Implementation(UOptionsScreen* InManager)
+void UAudioDlg::BuildAudioRows()
 {
-    OptionsManager = InManager;
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+        return;
+
+    // Clear any previous runtime rows (optional, but avoids duplicates if Construct fires again)
+    VBox->ClearChildren();
+
+    auto Require = [&](UWidget* W, const TCHAR* Name) -> bool
+        {
+            if (!W)
+            {
+                UE_LOG(LogAudioDlg, Error, TEXT("[AudioDlg] Widget '%s' is NULL (BP name mismatch or not IsVariable)."), Name);
+                return false;
+            }
+            return true;
+        };
+
+    // If any control is null, your rows will be empty/no-op:
+    const bool bOK =
+        Require(MasterSlider, TEXT("MasterSlider")) &
+        Require(MusicSlider, TEXT("MusicSlider")) &
+        Require(EffectsSlider, TEXT("EffectsSlider")) &
+        Require(VoiceSlider, TEXT("VoiceSlider")) &
+        Require(QualityCombo, TEXT("QualityCombo"));
+
+    if (!bOK)
+    {
+        UE_LOG(LogAudioDlg, Error, TEXT("[AudioDlg] BuildAudioRows aborted due to NULL controls."));
+        return;
+    }
+
+    AddLabeledRow(TEXT("MASTER VOLUME"), MasterSlider, 520.f);
+    AddLabeledRow(TEXT("MUSIC VOLUME"), MusicSlider, 520.f);
+    AddLabeledRow(TEXT("EFFECTS VOLUME"), EffectsSlider, 520.f);
+    AddLabeledRow(TEXT("VOICE VOLUME"), VoiceSlider, 520.f);
+    AddLabeledRow(TEXT("SOUND QUALITY"), QualityCombo, 520.f);
 }
+
 
 // Optional local tabs -> route to OptionsScreen hub
 void UAudioDlg::OnAudioClicked() { if (OptionsManager) OptionsManager->ShowAudDlg(); }

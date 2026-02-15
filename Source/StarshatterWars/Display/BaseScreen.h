@@ -43,6 +43,13 @@
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
 
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/SizeBox.h"
+#include "Components/VerticalBox.h"
+#include "Components/HorizontalBox.h"
+#include "Components/VerticalBoxSlot.h"
+
 #include "BaseScreen.generated.h"
 
 // ====================================================================
@@ -442,6 +449,7 @@ protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
     
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Screen")
     TObjectPtr<class UMenuScreen> MenuManager;
@@ -465,17 +473,72 @@ public:
     }
 
     UFUNCTION(BlueprintCallable, Category = "Screen")
-    void SetOptionsManager(class UOptionsScreen* InManager)
-    {
-        OptionsManager = InManager;
-    }
-
-    UFUNCTION(BlueprintCallable, Category = "Screen")
     void SetGameManager(class UGameScreen* InManager)
     {
         GameManager = InManager;
     }
 
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Starshatter|Options")
+    void SetOptionsManager(UOptionsScreen* InManager);
+
+    virtual void SetOptionsManager_Implementation(UOptionsScreen* InManager);
+
+    static UVerticalBox* EnsureAutoVBoxFill(
+        UUserWidget* Owner,
+        UCanvasPanel* RootCanvas,
+        const FName SizeBoxName = TEXT("AutoRootSizeBox"),
+        const FName VBoxName = TEXT("AutoRootVBox"))
+    {
+        if (!Owner || !RootCanvas)
+            return nullptr;
+
+        // Correct lookup (WidgetTree owns named widgets)
+        if (UWidget* Existing = Owner->WidgetTree->FindWidget(VBoxName))
+        {
+            return Cast<UVerticalBox>(Existing);
+        }
+
+        // Create SizeBox + VBox
+        USizeBox* SizeBox = Owner->WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), SizeBoxName);
+        UVerticalBox* VBox = Owner->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), VBoxName);
+
+        SizeBox->AddChild(VBox);
+        RootCanvas->AddChild(SizeBox);
+
+        if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(SizeBox->Slot))
+        {
+            CanvasSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+            CanvasSlot->SetOffsets(FMargin(0.f, 0.f, 0.f, 0.f));
+            CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+        }
+
+        return VBox;
+    }
+
+    static void ApplyVBoxSpacing(UVerticalBox* VBox, float TopPad = 64.f, float BetweenPad = 32.f)
+    {
+        if (!VBox) return;
+
+        const int32 Count = VBox->GetChildrenCount();
+        for (int32 i = 0; i < Count; ++i)
+        {
+            UWidget* Child = VBox->GetChildAt(i);
+            if (!Child) continue;
+
+            if (UVerticalBoxSlot* Slot = Cast<UVerticalBoxSlot>(Child->Slot))
+            {
+                const float ThisTop = (i == 0) ? TopPad : BetweenPad;
+
+                FMargin P = Slot->GetPadding();
+                P.Top = ThisTop;
+
+                Slot->SetPadding(P);
+                Slot->SetHorizontalAlignment(HAlign_Fill);
+                // Only set Fill if you truly want each row to expand vertically:
+                // Slot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+            }
+        }
+    }
     /* ----------------------------------------------------------------
        Getters (optional)
        ---------------------------------------------------------------- */
@@ -511,6 +574,51 @@ protected:
     // If you need the old "exit latch" behavior, flip true on show and clear next tick.
     UPROPERTY(Transient)
     bool bExitLatch = false;
+
+protected:
+    // ----------------------------------------------------------------
+    // Sub Panel Setup
+    // ----------------------------------------------------------------
+
+    // Root canvas in each dialog (BindWidgetOptional so old pages don’t explode)
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UCanvasPanel> RootCanvas = nullptr;
+
+    // Cached runtime container (not serialized)
+    UPROPERTY(Transient)
+    TObjectPtr<UVerticalBox> AutoVBox = nullptr;
+
+    // Creates/reuses a VBox named "AutoVBox" attached to RootCanvas.
+    // Returns nullptr if RootCanvas/WidgetTree are missing.
+    UVerticalBox* EnsureAutoVerticalBox();
+
+    // Optional: tweak margins per screen if needed
+    UVerticalBox* EnsureAutoVerticalBoxWithOffsets(const FMargin& Offsets);
+
+    UHorizontalBox* AddRow(const FName& RowName);
+
+    UHorizontalBox* AddLabeledControlRow(
+        const FName& RowName,
+        const FText& LabelText,
+        UWidget* ControlWidget,
+        UTextBlock** OutLabel = nullptr,
+        float LabelMinWidth = 260.0f,
+        float RowHeight = 0.0f
+    );
+
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|UI")
+    UHorizontalBox* AddLabeledRow(
+        const FString& LabelText,
+        UWidget* Control,
+        float ControlWidth = 500.f,
+        float ControlHeight = 32.f,
+        float RowPaddingY = 8.f,
+        float LabelRightPad = 16.f
+    );
+
+    // Utility to create a TextBlock (so you don’t have to include TextBlock in every dlg)
+    UTextBlock* MakeLabelText(const FName& Name, const FText& Text) const;
+
 
 protected:
     // ----------------------------------------------------------------

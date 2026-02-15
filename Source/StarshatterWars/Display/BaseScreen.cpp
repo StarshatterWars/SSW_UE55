@@ -29,6 +29,13 @@
 #include "Components/ListView.h"
 #include "Components/Slider.h"
 
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/VerticalBox.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+
 // Slate styling:
 #include "Styling/SlateColor.h"
 #include "Fonts/SlateFontInfo.h"
@@ -1299,4 +1306,259 @@ void UBaseScreen::SetDialogInputEnabled(bool bEnable)
     // Focus should track interactivity
     SetIsFocusable(bEnable);
 }
+
+void UBaseScreen::SetOptionsManager_Implementation(UOptionsScreen* InManager)
+{
+    OptionsManager = InManager;
+}
+
+UVerticalBox* UBaseScreen::EnsureAutoVerticalBox()
+{
+    // Top = 64, Left/Right/Bottom = 32
+    return EnsureAutoVerticalBoxWithOffsets(FMargin(32.f, 64.f, 32.f, 32.f));
+}
+
+UVerticalBox* UBaseScreen::EnsureAutoVerticalBoxWithOffsets(const FMargin& Offsets)
+{
+    if (IsValid(AutoVBox))
+        return AutoVBox;
+
+    if (!WidgetTree)
+        return nullptr;
+
+    // If RootCanvas isn't bound, try to recover it:
+    if (!RootCanvas)
+    {
+        // Option A: root widget is the canvas
+        RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
+
+        // Option B: find a widget literally named "RootCanvas" in the BP
+        if (!RootCanvas)
+            RootCanvas = Cast<UCanvasPanel>(WidgetTree->FindWidget(TEXT("RootCanvas")));
+    }
+
+    if (!RootCanvas)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] EnsureAutoVerticalBox: RootCanvas is NULL (BindWidgetOptional name mismatch or not a CanvasPanel)."),
+            *GetName());
+        return nullptr;
+    }
+
+    static const FName VBoxName(TEXT("AutoVBox"));
+
+    if (UWidget* Existing = WidgetTree->FindWidget(VBoxName))
+    {
+        AutoVBox = Cast<UVerticalBox>(Existing);
+        if (AutoVBox)
+        {
+            AutoVBox->SetVisibility(ESlateVisibility::Visible);
+        }
+        return AutoVBox;
+    }
+
+    UVerticalBox* VBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), VBoxName);
+    if (!VBox)
+        return nullptr;
+
+    VBox->SetVisibility(ESlateVisibility::Visible);
+
+    // IMPORTANT: AddChildToCanvas gives you a CanvasPanelSlot
+    if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(VBox))
+    {
+        CanvasSlot->SetAutoSize(false);
+        CanvasSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+        CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+        CanvasSlot->SetOffsets(Offsets);
+
+        // CRITICAL: keep it above any BP content on the canvas
+        CanvasSlot->SetZOrder(100);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] EnsureAutoVerticalBox: AddChildToCanvas failed."), *GetName());
+        return nullptr;
+    }
+
+    AutoVBox = VBox;
+    return AutoVBox;
+}
+
+UHorizontalBox* UBaseScreen::AddLabeledRow(
+    const FString& LabelText,
+    UWidget* Control,
+    float ControlWidth,
+    float ControlHeight,
+    float RowPaddingY,
+    float LabelRightPad
+)
+{
+    if (!Control || !WidgetTree)
+        return nullptr;
+
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+        return nullptr;
+
+    // -----------------------------
+    // Horizontal row container
+    // -----------------------------
+    UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass());
+    if (!Row)
+        return nullptr;
+
+    // Add row to VBox:
+    if (UVerticalBoxSlot* RowSlot = VBox->AddChildToVerticalBox(Row))
+    {
+        RowSlot->SetHorizontalAlignment(HAlign_Fill);
+        RowSlot->SetVerticalAlignment(VAlign_Fill);
+        // Optional: you can also set per-row padding here if you want:
+        // RowSlot->SetPadding(FMargin(0.f, RowPaddingY));
+    }
+
+    // -----------------------------
+    // LEFT: Label (fills remaining space)
+    // -----------------------------
+    UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+    if (Label)
+    {
+        Label->SetText(FText::FromString(LabelText));
+        Label->SetJustification(ETextJustify::Left);
+
+        if (UHorizontalBoxSlot* LabelSlot = Row->AddChildToHorizontalBox(Label))
+        {
+            LabelSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+            LabelSlot->SetHorizontalAlignment(HAlign_Left);
+            LabelSlot->SetVerticalAlignment(VAlign_Center);
+            LabelSlot->SetPadding(FMargin(0.f, RowPaddingY, LabelRightPad, RowPaddingY));
+        }
+    }
+
+    // -----------------------------
+    // RIGHT: SizeBox wrapper (fixed width)
+    // -----------------------------
+    USizeBox* SizeWrapper = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+    if (!SizeWrapper)
+        return Row;
+
+    SizeWrapper->SetWidthOverride(ControlWidth);
+    if (ControlHeight > 0.f)
+        SizeWrapper->SetHeightOverride(ControlHeight);
+
+    SizeWrapper->AddChild(Control);
+
+    if (UHorizontalBoxSlot* ControlSlot = Row->AddChildToHorizontalBox(SizeWrapper))
+    {
+        ControlSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+        ControlSlot->SetHorizontalAlignment(HAlign_Right);
+        ControlSlot->SetVerticalAlignment(VAlign_Center);
+        ControlSlot->SetPadding(FMargin(0.f, RowPaddingY, 0.f, RowPaddingY));
+    }
+
+    return Row;
+}
+
+// ------------------------------------------------------------
+// Row helpers
+// ------------------------------------------------------------
+
+UTextBlock* UBaseScreen::MakeLabelText(const FName& Name, const FText& Text) const
+{
+    if (!WidgetTree)
+        return nullptr;
+
+    UTextBlock* Label = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), Name);
+    if (!Label)
+        return nullptr;
+
+    Label->SetText(Text);
+    Label->SetJustification(ETextJustify::Left);
+
+    return Label;
+}
+
+UHorizontalBox* UBaseScreen::AddRow(const FName& RowName)
+{
+    if (!WidgetTree)
+        return nullptr;
+
+    UVerticalBox* VBox = EnsureAutoVerticalBox();
+    if (!VBox)
+        return nullptr;
+
+    UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), RowName);
+    if (!Row)
+        return nullptr;
+
+    if (UVerticalBoxSlot* RowSlot = VBox->AddChildToVerticalBox(Row))
+    {
+        RowSlot->SetPadding(FMargin(0.f, 6.f, 0.f, 6.f));
+        RowSlot->SetHorizontalAlignment(HAlign_Fill);
+    }
+
+    return Row;
+}
+
+UHorizontalBox* UBaseScreen::AddLabeledControlRow(
+    const FName& RowName,
+    const FText& LabelText,
+    UWidget* ControlWidget,
+    UTextBlock** OutLabel,
+    float LabelMinWidth,
+    float RowHeight
+)
+{
+    if (!ControlWidget || !WidgetTree)
+        return nullptr;
+
+    UHorizontalBox* Row = AddRow(RowName);
+    if (!Row)
+        return nullptr;
+
+    // LEFT: label
+    const FName LabelName(*FString::Printf(TEXT("%s_Label"), *RowName.ToString()));
+    UTextBlock* Label = MakeLabelText(LabelName, LabelText);
+    if (!Label)
+        return Row;
+
+    if (UHorizontalBoxSlot* LSlot = Row->AddChildToHorizontalBox(Label))
+    {
+        LSlot->SetPadding(FMargin(0.f, 0.f, 12.f, 0.f));
+        LSlot->SetHorizontalAlignment(HAlign_Left);
+        LSlot->SetVerticalAlignment(VAlign_Center);
+
+        // Keep label stable so controls line up nicely
+        LSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+    }
+
+    // Optional: enforce a minimum label width so right controls line up
+    // (This is done by wrapping the label in a SizeBox if you want strict width,
+    // but “minimum width” on TextBlock itself isn’t a thing.)
+    // If you need strict label width, tell me and I’ll add a SizeBox wrapper.
+
+    // SPACER / FILL: gives right side room
+    // We’ll instead set the CONTROL slot to Fill and align right, which is simplest.
+
+    // RIGHT: control
+    if (UHorizontalBoxSlot* CSlot = Row->AddChildToHorizontalBox(ControlWidget))
+    {
+        // Fill takes remaining space; Right alignment pushes the control to the right edge
+        CSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+        CSlot->SetHorizontalAlignment(HAlign_Right);
+        CSlot->SetVerticalAlignment(VAlign_Center);
+        CSlot->SetPadding(FMargin(12.f, 0.f, 0.f, 0.f));
+    }
+
+    // Optional row height (if you want consistent row sizing)
+    if (RowHeight > 0.0f)
+    {
+        // If you want strict row height, wrap Row in a SizeBox.
+        // Keeping it simple here; ask and I’ll add a "SizeBoxRowHeight" path.
+    }
+
+    if (OutLabel)
+        *OutLabel = Label;
+
+    return Row;
+}
+
 

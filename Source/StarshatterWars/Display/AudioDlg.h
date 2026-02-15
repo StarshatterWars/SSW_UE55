@@ -6,53 +6,59 @@
     SUBSYSTEM:      Stars.exe (Unreal Port)
     FILE:           AudioDlg.h
     AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    UAudioDlg
+    - Audio settings subpage hosted by UOptionsScreen.
+    - Auto-injects an "AutoVBox" into RootCanvas with standard margins:
+        Top = 64, Left/Right/Bottom = 32, fills panel.
+
 =============================================================================*/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-
-// MUST be before generated.h:
-#include "OptionsManagedPage.h"
-
 #include "AudioDlg.generated.h"
 
+// UMG forward declarations:
+class UButton;
 class UComboBoxString;
 class USlider;
-class UButton;
-class UOptionsScreen;
+class UVerticalBox;
+class UCanvasPanel;
 
+class UOptionsScreen;
 class UStarshatterAudioSettings;
 class UStarshatterSettingsSaveSubsystem;
-class UStarshatterSettingsSaveGame;
 
 UCLASS()
-class STARSHATTERWARS_API UAudioDlg : public UBaseScreen, public IOptionsManagedPage
+class STARSHATTERWARS_API UAudioDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
     UAudioDlg(const FObjectInitializer& ObjectInitializer);
 
-    // IOptionsManagedPage
-    virtual void SetOptionsManager_Implementation(UOptionsScreen* InManager);
-
     void Show();
     virtual void ExecFrame(double DeltaTime) override;
 
     void Apply();
     void Cancel();
+
     void PushToModel(bool bApplyRuntimeToo);
 
 protected:
     virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
     virtual void BindFormWidgets() override;
     virtual FString GetLegacyFormText() const override;
+
     virtual void HandleAccept() override;
     virtual void HandleCancel() override;
 
@@ -61,12 +67,17 @@ private:
 
     UStarshatterAudioSettings* GetAudioSettings() const;
     UStarshatterSettingsSaveSubsystem* GetSettingsSaveSubsystem() const;
+
     void SaveAudioToUnifiedSettings(UStarshatterAudioSettings* Settings);
     void RefreshFromModel();
 
 private:
+
+
     bool bClosed = true;
     bool bDelegatesBound = false;
+
+    bool bDirty = false;
 
     float MasterVolume = 1.0f;
     float MusicVolume = 1.0f;
@@ -85,7 +96,6 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyBtn;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelBtn;
 
-    // Optional legacy tab buttons (safe if present in BP)
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> VidTabButton;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AudTabButton;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CtlTabButton;
@@ -102,12 +112,11 @@ private:
     UFUNCTION() void OnApplyClicked();
     UFUNCTION() void OnCancelClicked();
 
+    void BuildAudioRows();
+
     UFUNCTION() void OnAudioClicked();
     UFUNCTION() void OnVideoClicked();
     UFUNCTION() void OnOptionsClicked();
     UFUNCTION() void OnControlsClicked();
     UFUNCTION() void OnModClicked();
-
-    UPROPERTY(Transient)
-    bool bDirty = false;
 };
