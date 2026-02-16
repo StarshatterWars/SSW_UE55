@@ -93,7 +93,13 @@ void UPlayerDlg::NativeConstruct()
     ApplyButton->OnClicked.RemoveAll(this);
     ApplyButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnApply);
     CancelButton->OnClicked.RemoveAll(this);
-    CancelButton->OnClicked.AddDynamic(this, &UPlayerDlg::OnCancel);
+    CancelButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnCancel);
+
+    AddPlayerButton->OnClicked.RemoveAll(this);
+    AddPlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnAdd);
+
+    DeletePlayerButton->OnClicked.RemoveAll(this);
+    DeletePlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnDel);
 
 
     EnsureLayout();
@@ -111,8 +117,8 @@ void UPlayerDlg::NativeDestruct()
     if (lst_roster)
         lst_roster->OnItemSelectionChanged().RemoveAll(this);
 
-    if (btn_add) btn_add->OnClicked.RemoveAll(this);
-    if (btn_del) btn_del->OnClicked.RemoveAll(this);
+    if (AddPlayerButton) AddPlayerButton->OnClicked.RemoveAll(this);
+    if (DeletePlayerButton) DeletePlayerButton->OnClicked.RemoveAll(this);
     if (ApplyButton) ApplyButton->OnClicked.RemoveAll(this);
     if (CancelButton) CancelButton->OnClicked.RemoveAll(this);
 
@@ -319,10 +325,8 @@ void UPlayerDlg::BuildRosterPanel()
 
     // Roster list
     lst_roster = WidgetTree->ConstructWidget<UListView>(UListView::StaticClass(), TEXT("RosterList"));
-    btn_add = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("BtnCreate"));
-    btn_del = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("BtnDelete"));
-
-    if (!lst_roster || !btn_add || !btn_del)
+  
+    if (!lst_roster)
         return;
 
     // Simple button text
@@ -332,9 +336,7 @@ void UPlayerDlg::BuildRosterPanel()
             if (T) T->SetText(FText::FromString(Txt));
             if (T) B->AddChild(T);
         };
-    MakeBtnLabel(btn_add, TEXT("CREATE"));
-    MakeBtnLabel(btn_del, TEXT("DELETE"));
-
+  
     // List slot
     if (UVerticalBoxSlot* S = LeftPanel->AddChildToVerticalBox(lst_roster))
     {
@@ -343,38 +345,9 @@ void UPlayerDlg::BuildRosterPanel()
         S->SetPadding(FMargin(0.f, 0.f, 0.f, 10.f));
     }
 
-    // Buttons row
-    UHorizontalBox* BtnRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("RosterBtnRow"));
-    if (BtnRow)
-    {
-        if (UVerticalBoxSlot* VS = LeftPanel->AddChildToVerticalBox(BtnRow))
-        {
-            VS->SetHorizontalAlignment(HAlign_Fill);
-            VS->SetVerticalAlignment(VAlign_Top);
-        }
-
-        if (UHorizontalBoxSlot* A = BtnRow->AddChildToHorizontalBox(btn_add))
-        {
-            A->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
-            A->SetPadding(FMargin(0.f, 0.f, 6.f, 0.f));
-        }
-
-        if (UHorizontalBoxSlot* D = BtnRow->AddChildToHorizontalBox(btn_del))
-        {
-            D->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
-            D->SetPadding(FMargin(6.f, 0.f, 0.f, 0.f));
-        }
-    }
-
     // Bind delegates once
     lst_roster->OnItemSelectionChanged().RemoveAll(this);
     lst_roster->OnItemSelectionChanged().AddUObject(this, &UPlayerDlg::OnRosterSelectionChanged);
-
-    btn_add->OnClicked.RemoveAll(this);
-    btn_add->OnClicked.AddDynamic(this, &UPlayerDlg::OnAdd);
-
-    btn_del->OnClicked.RemoveAll(this);
-    btn_del->OnClicked.AddDynamic(this, &UPlayerDlg::OnDel);
 }
 
 // ------------------------------------------------------------------------

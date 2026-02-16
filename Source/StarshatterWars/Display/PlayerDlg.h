@@ -114,12 +114,6 @@ protected:
     UPROPERTY()
     TObjectPtr<UListView> lst_roster = nullptr;
 
-    UPROPERTY()
-    TObjectPtr<UButton> btn_add = nullptr;
-
-    UPROPERTY()
-    TObjectPtr<UButton> btn_del = nullptr;
-
     // -------- Stats widgets (right side) --------
     UPROPERTY()
     TObjectPtr<UEditableTextBox> edt_name = nullptr;
