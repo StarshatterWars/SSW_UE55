@@ -90,6 +90,12 @@ void UPlayerDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    ApplyButton->OnClicked.RemoveAll(this);
+    ApplyButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnApply);
+    CancelButton->OnClicked.RemoveAll(this);
+    CancelButton->OnClicked.AddDynamic(this, &UPlayerDlg::OnCancel);
+
+
     EnsureLayout();
     EnsureScrollHostsStats();
 
@@ -107,8 +113,8 @@ void UPlayerDlg::NativeDestruct()
 
     if (btn_add) btn_add->OnClicked.RemoveAll(this);
     if (btn_del) btn_del->OnClicked.RemoveAll(this);
-    if (BtnApply) BtnApply->OnClicked.RemoveAll(this);
-    if (BtnCancel) BtnCancel->OnClicked.RemoveAll(this);
+    if (ApplyButton) ApplyButton->OnClicked.RemoveAll(this);
+    if (CancelButton) CancelButton->OnClicked.RemoveAll(this);
 
     Super::NativeDestruct();
 }
@@ -471,64 +477,6 @@ void UPlayerDlg::BuildStatsRows()
         }
 
         BuildChatMacrosRows();
-    }
-
-    // Bottom Apply/Cancel
-    {
-        UHorizontalBox* Bottom = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("BottomButtons"));
-        if (Bottom)
-        {
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(Bottom))
-            {
-                S->SetPadding(FMargin(0.f, 18.f, 0.f, 0.f));
-                S->SetHorizontalAlignment(HAlign_Fill);
-            }
-
-            BtnApply = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("BtnApply"));
-            BtnCancel = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("BtnCancel"));
-
-            if (BtnApply)
-            {
-                UTextBlock* T = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-                if (T) T->SetText(FText::FromString(TEXT("APPLY")));
-                if (T) BtnApply->AddChild(T);
-
-                BtnApply->OnClicked.RemoveAll(this);
-                BtnApply->OnClicked.AddDynamic(this, &UPlayerDlg::OnApply);
-            }
-
-            if (BtnCancel)
-            {
-                UTextBlock* T = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-                if (T) T->SetText(FText::FromString(TEXT("CANCEL")));
-                if (T) BtnCancel->AddChild(T);
-
-                BtnCancel->OnClicked.RemoveAll(this);
-                BtnCancel->OnClicked.AddDynamic(this, &UPlayerDlg::OnCancel);
-            }
-
-            // Hook BaseScreen routing to these
-            ApplyButton = BtnApply;
-            CancelButton = BtnCancel;
-
-            if (BtnApply)
-            {
-                if (UHorizontalBoxSlot* A = Bottom->AddChildToHorizontalBox(BtnApply))
-                {
-                    A->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
-                    A->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
-                }
-            }
-
-            if (BtnCancel)
-            {
-                if (UHorizontalBoxSlot* C = Bottom->AddChildToHorizontalBox(BtnCancel))
-                {
-                    C->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
-                    C->SetPadding(FMargin(8.f, 0.f, 0.f, 0.f));
-                }
-            }
-        }
     }
 }
 

@@ -354,7 +354,9 @@ public:
 
     // Used by HandleAccept / HandleCancel (optional)
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyButton = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelButton = nullptr; 
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AddButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> DeleteButton = nullptr;
 
     // ----------------------------------------------------------------
     // FORM-style API (override per-screen as needed)

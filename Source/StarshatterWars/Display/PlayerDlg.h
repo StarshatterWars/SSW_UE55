@@ -120,13 +120,6 @@ protected:
     UPROPERTY()
     TObjectPtr<UButton> btn_del = nullptr;
 
-    // -------- Apply/Cancel --------
-    UPROPERTY()
-    TObjectPtr<UButton> BtnApply = nullptr;
-
-    UPROPERTY()
-    TObjectPtr<UButton> BtnCancel = nullptr;
-
     // -------- Stats widgets (right side) --------
     UPROPERTY()
     TObjectPtr<UEditableTextBox> edt_name = nullptr;
