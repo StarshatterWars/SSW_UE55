@@ -1,23 +1,4 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026.
-    All Rights Reserved.
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         PlayerDlg.h
-    AUTHOR:       Carlos Bott
-
-    OVERVIEW
-    ========
-    Player Logbook dialog (UE port)
-    - Uses BaseScreen "Options-subpanel" pattern:
-      AutoVBox + AddLabeledRow() for label-left / control-right rows.
-    - Builds full legacy PlayerDlg.frm control set (UI side).
-*/
+// PlayerDlg.h
 
 #pragma once
 
@@ -30,7 +11,11 @@ class UEditableTextBox;
 class UImage;
 class UListView;
 class UTextBlock;
+class UScrollBox;
+class UHorizontalBox;
+class UVerticalBox;
 class UUniformGridPanel;
+class UBorder;
 
 class UPlayerRosterItem;
 class PlayerCharacter;
@@ -46,32 +31,36 @@ public:
 
     void InitializeDlg(UMenuScreen* InManager);
 
+    virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
 
-    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+    virtual void HandleAccept() override;
+    virtual void HandleCancel() override;
 
     void ShowDlg();
     void HideDlg();
 
 protected:
-    // ------------------------------------------------------------
-    // UI build + wiring
-    // ------------------------------------------------------------
-    void RegisterControls();
+    // -------- Layout (runtime) --------
+    void EnsureLayout();
+    void EnsureScrollHostsStats();
 
+    // -------- Build UI rows (Options-style) --------
+    void BuildRosterPanel();
+    void BuildStatsRows();     // Name/Password/Squad/Signature/Created/Flight/Missions/Kills/Losses/Points/Rank + insignia + medals + macros
+
+    // -------- Model <-> UI --------
     void BuildRoster();
     void RefreshRoster();
 
-    void BuildFormRows();      // creates all rows/controls into BaseScreen AutoVBox
-    void RebuildFromModel();   // model -> UI
-    void CommitToModel();      // UI -> model
+    void UpdatePlayerFromUI();   // commit edits to model (best-effort, gated by concept checks)
+    void RefreshUIFromPlayer();  // model -> UI
 
     PlayerCharacter* GetSelectedPlayer() const;
 
-    // ------------------------------------------------------------
-    // Events
-    // ------------------------------------------------------------
+    // -------- Events --------
     UFUNCTION()
     void OnRosterSelectionChanged(UObject* SelectedItem);
 
@@ -87,96 +76,104 @@ protected:
     UFUNCTION()
     void OnCancel();
 
-    // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
+    // -------- Helpers --------
     static FString FormatTimeHMS(double Seconds);
     static FString FormatDateFromUnixSeconds(int64 UnixSeconds);
 
+    // Options-style row helpers (local to PlayerDlg)
+    UHorizontalBox* AddStatRow(const FText& Label, UWidget* RightWidget, float RightWidth = 420.f, float RowPadY = 6.f);
+    UTextBlock* MakeValueText();
+    UEditableTextBox* MakeEditBox(bool bPassword = false);
+
+    void BuildMedalsGrid(int32 Columns = 5, int32 Rows = 3);
+    void BuildChatMacrosRows();
+
 protected:
-    // ------------------------------------------------------------
-    // Manager
-    // ------------------------------------------------------------
+    // -------- Manager --------
     UPROPERTY()
-    UMenuScreen* manager = nullptr;
+    TObjectPtr<UMenuScreen> manager = nullptr;
 
-    // ------------------------------------------------------------
-    // LEFT: roster + Create/Delete (bound from UMG if present)
-    // ------------------------------------------------------------
+    // -------- Root containers (optional BP binds) --------
     UPROPERTY(meta = (BindWidgetOptional))
-    UListView* lst_roster = nullptr;
+    UCanvasPanel* RootCanvasPlayer = nullptr; // if your BP uses a different canvas name than BaseScreen::RootCanvas
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UButton* btn_add = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UButton* btn_del = nullptr;
-
-    // Optional local Save/Cancel buttons (if your WBP has them).
-    // Otherwise BaseScreen::ApplyButton / CancelButton are used.
-    UPROPERTY(meta = (BindWidgetOptional))
-    UButton* BtnSave = nullptr;
-
-    UPROPERTY(meta = (BindWidgetOptional))
-    UButton* BtnCancel = nullptr;
-
-    // ------------------------------------------------------------
-    // RIGHT: controls built in code (legacy form content)
-    // ------------------------------------------------------------
-
-    // Edits:
+    // -------- Runtime-built layout --------
     UPROPERTY()
-    UEditableTextBox* edt_name = nullptr;
+    TObjectPtr<UHorizontalBox> MainRow = nullptr;
 
     UPROPERTY()
-    UEditableTextBox* edt_password = nullptr;
+    TObjectPtr<UVerticalBox> LeftPanel = nullptr;
 
     UPROPERTY()
-    UEditableTextBox* edt_squadron = nullptr;
+    TObjectPtr<UScrollBox> StatsScroll = nullptr;
 
     UPROPERTY()
-    UEditableTextBox* edt_signature = nullptr;
+    TObjectPtr<UVerticalBox> StatsVBox = nullptr; // will be used as "AutoVBox" for AddLabeledRow-like behavior
 
-    // Read-only stats labels:
+    // -------- Left / roster --------
     UPROPERTY()
-    UTextBlock* txt_created = nullptr;
-
-    UPROPERTY()
-    UTextBlock* txt_flighttime = nullptr;
+    TObjectPtr<UListView> lst_roster = nullptr;
 
     UPROPERTY()
-    UTextBlock* txt_missions = nullptr;
+    TObjectPtr<UButton> btn_add = nullptr;
 
     UPROPERTY()
-    UTextBlock* txt_kills = nullptr;
+    TObjectPtr<UButton> btn_del = nullptr;
+
+    // -------- Apply/Cancel --------
+    UPROPERTY()
+    TObjectPtr<UButton> BtnApply = nullptr;
 
     UPROPERTY()
-    UTextBlock* txt_losses = nullptr;
+    TObjectPtr<UButton> BtnCancel = nullptr;
+
+    // -------- Stats widgets (right side) --------
+    UPROPERTY()
+    TObjectPtr<UEditableTextBox> edt_name = nullptr;
 
     UPROPERTY()
-    UTextBlock* txt_points = nullptr;
+    TObjectPtr<UEditableTextBox> edt_password = nullptr;
 
     UPROPERTY()
-    UTextBlock* txt_rankname = nullptr;
-
-    // Rank insignia:
-    UPROPERTY()
-    UImage* img_rank = nullptr;
-
-    // Medals grid (3x5):
-    UPROPERTY()
-    UUniformGridPanel* medals_grid = nullptr;
+    TObjectPtr<UEditableTextBox> edt_squadron = nullptr;
 
     UPROPERTY()
-    TArray<TObjectPtr<UImage>> MedalImages; // 15
+    TObjectPtr<UEditableTextBox> edt_signature = nullptr;
 
-    // Chat macros 1..9,0:
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_created = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_flighttime = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_missions = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_kills = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_losses = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_points = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_rank = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UImage> img_rank = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UUniformGridPanel> medals_grid = nullptr;
+
+    UPROPERTY()
+    TArray<TObjectPtr<UImage>> MedalImages;
+
     UPROPERTY()
     TArray<TObjectPtr<UEditableTextBox>> MacroEdits; // 10
 
-    // ------------------------------------------------------------
-    // State
-    // ------------------------------------------------------------
+    // -------- Selection --------
     UPROPERTY()
     TObjectPtr<UPlayerRosterItem> selected_item = nullptr;
 

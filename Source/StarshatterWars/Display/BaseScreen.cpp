@@ -1561,4 +1561,54 @@ UHorizontalBox* UBaseScreen::AddLabeledControlRow(
     return Row;
 }
 
+UCanvasPanel* UBaseScreen::ResolveRootCanvas()
+{
+    if (RootCanvas)
+        return RootCanvas;
+
+    if (!WidgetTree)
+        return nullptr;
+
+    // 1) If the root widget itself is a canvas:
+    if (UCanvasPanel* AsCanvas = Cast<UCanvasPanel>(GetRootWidget()))
+    {
+        RootCanvas = AsCanvas;
+        return RootCanvas;
+    }
+
+    // 2) If there is a widget literally named RootCanvas:
+    if (UCanvasPanel* Named = Cast<UCanvasPanel>(WidgetTree->FindWidget(TEXT("RootCanvas"))))
+    {
+        RootCanvas = Named;
+        return RootCanvas;
+    }
+
+    // 3) Walk the widget tree: first CanvasPanel found wins.
+    if (UWidget* Root = WidgetTree->RootWidget)
+    {
+        TArray<UWidget*> Stack;
+        Stack.Add(Root);
+
+        while (Stack.Num() > 0)
+        {
+            UWidget* W = Stack.Pop(false);
+
+            if (UCanvasPanel* C = Cast<UCanvasPanel>(W))
+            {
+                RootCanvas = C;
+                return RootCanvas;
+            }
+
+            if (UPanelWidget* P = Cast<UPanelWidget>(W))
+            {
+                const int32 N = P->GetChildrenCount();
+                for (int32 i = 0; i < N; ++i)
+                    Stack.Add(P->GetChildAt(i));
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 

@@ -406,6 +406,7 @@ protected:
     void SetEditText(int32 Id, const FText& Text);
     void SetVisible(int32 Id, bool bVisible);
     void SetEnabled(int32 Id, bool bEnabled);
+   
 
 protected:
     // ----------------------------------------------------------------
@@ -419,6 +420,7 @@ protected:
     UComboBoxString* GetCombo(int32 Id) const;
     UListView* GetList(int32 Id) const;
     USlider* GetSlider(int32 Id) const;
+    UCanvasPanel* ResolveRootCanvas();
 
 protected:
     // ----------------------------------------------------------------
