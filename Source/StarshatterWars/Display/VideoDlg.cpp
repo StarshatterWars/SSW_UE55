@@ -46,6 +46,15 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogVideoDlg, Log, All);
 
+static void EnsureSelected(UComboBoxString* Combo, int32 DefaultIndex = 0)
+{
+    if (!Combo) return;
+    if (Combo->GetOptionCount() <= 0) return;
+
+    if (Combo->GetSelectedIndex() < 0)
+        Combo->SetSelectedIndex(FMath::Clamp(DefaultIndex, 0, Combo->GetOptionCount() - 1));
+}
+
 UVideoDlg::UVideoDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -372,22 +381,44 @@ void UVideoDlg::BuildListsIfNeeded()
     auto FillOnOff = [](UComboBoxString* Combo)
         {
             if (!Combo) return;
+
+            const int32 PrevIdx = Combo->GetSelectedIndex(); // may be -1
             Combo->ClearOptions();
             Combo->AddOption(TEXT("OFF"));
             Combo->AddOption(TEXT("ON"));
+
+            // Preserve selection if valid, else default to OFF:
+            Combo->SetSelectedIndex(PrevIdx >= 0 ? PrevIdx : 0);
         };
 
     // Mode list (keep minimal/stable)
     if (ModeCombo)
     {
-        if (ModeCombo->GetOptionCount() == 0)
-        {
-            ModeCombo->ClearOptions();
-            ModeCombo->AddOption(TEXT("1920x1080"));
-            ModeCombo->AddOption(TEXT("2560x1440"));
-            ModeCombo->AddOption(TEXT("3840x2160"));
-            ModeCombo->SetSelectedIndex(0);
-        }
+        // 16:9 – standard
+        ModeCombo->AddOption(TEXT("1280x720"));    // HD
+        ModeCombo->AddOption(TEXT("1600x900"));    // HD+
+        ModeCombo->AddOption(TEXT("1920x1080"));   // Full HD
+        ModeCombo->AddOption(TEXT("2560x1440"));   // QHD
+        ModeCombo->AddOption(TEXT("3200x1800"));   // QHD+
+        ModeCombo->AddOption(TEXT("3840x2160"));   // 4K UHD
+
+        // 16:10
+        ModeCombo->AddOption(TEXT("1280x800"));
+        ModeCombo->AddOption(TEXT("1680x1050"));
+        ModeCombo->AddOption(TEXT("1920x1200"));
+        ModeCombo->AddOption(TEXT("2560x1600"));
+
+        // Ultrawide 21:9
+        ModeCombo->AddOption(TEXT("2560x1080"));
+        ModeCombo->AddOption(TEXT("3440x1440"));
+        ModeCombo->AddOption(TEXT("3840x1600"));
+
+        // Super ultrawide 32:9
+        ModeCombo->AddOption(TEXT("5120x1440"));
+        ModeCombo->AddOption(TEXT("7680x2160"));   // Dual 4K wide
+
+        // Set sane default
+        ModeCombo->SetSelectedOption(TEXT("1920x1080"));
     }
 
     // Tex sizes
@@ -418,14 +449,14 @@ void UVideoDlg::BuildListsIfNeeded()
 
     // Terrain textures
     if (TextureCombo)
-        FillOnOff(TextureCombo);
+        FillOnOff(TextureCombo);   EnsureSelected(TextureCombo, bTerrainTextures ? 1 : 0);
 
-    FillOnOff(LensFlareCombo);
-    FillOnOff(CoronaCombo);
-    FillOnOff(NebulaCombo);
-    FillOnOff(ShadowsCombo);
-    FillOnOff(SpecMapsCombo);
-    FillOnOff(BumpMapsCombo);
+    FillOnOff(LensFlareCombo); EnsureSelected(LensFlareCombo, 1);
+    FillOnOff(CoronaCombo);    EnsureSelected(CoronaCombo, 1);
+    FillOnOff(NebulaCombo);    EnsureSelected(NebulaCombo, 1);
+    FillOnOff(ShadowsCombo);   EnsureSelected(ShadowsCombo, 1);
+    FillOnOff(SpecMapsCombo);  EnsureSelected(SpecMapsCombo, 1);
+    FillOnOff(BumpMapsCombo);  EnsureSelected(BumpMapsCombo, 1);
 
     // Dust
     if (DustCombo)
