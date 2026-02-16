@@ -984,3 +984,9 @@ bool PlayerCharacter::ShowAward() const
     return PendingAwardId != 0;
 }
 
+bool PlayerCharacter::EarnedAward(int32 AwardId, bool bIsRank, ShipStats* InShipStats)
+{
+    // Registry-driven award eligibility not implemented yet.
+    return false;
+}
+

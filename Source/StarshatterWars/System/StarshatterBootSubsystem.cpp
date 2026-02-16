@@ -373,6 +373,8 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("UI.ExitDlgClass"),
     TEXT("UI.FirstRunDlgClass"),
     TEXT("UI.OptionsScreenClass"),
+    TEXT("UI.PlayerLogbookScreenClass"),
+  
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))

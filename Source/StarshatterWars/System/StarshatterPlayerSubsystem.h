@@ -37,6 +37,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "PlayerSaveGame.h"
 #include "GameStructs.h"
+
+#include "StarshatterPlayerCharacter.h"
 #include "StarshatterPlayerSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSaveLoaded, bool, bSuccess);
@@ -107,6 +109,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Starshatter|PlayerSave")
     FOnPlayerSaveLoaded OnPlayerSaveLoaded;
 
+    UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
+    UStarshatterPlayerCharacter* GetPlayerObject() const { return PlayerObject; }
+
 private:
     // ------------------------------------------------------------------
     // Internal helpers
@@ -115,6 +120,11 @@ private:
     bool LoadGameInternal(const FString& InSlotName, int32 InUserIndex, FS_PlayerGameInfo& OutPlayerData, int32& OutSaveVersion);
 
     bool MigratePlayerSave(int32 FromVersion, int32 ToVersion, FS_PlayerGameInfo& InOutPlayerInfo);
+
+    UPROPERTY(Transient)
+    TObjectPtr<UStarshatterPlayerCharacter> PlayerObject = nullptr;
+    
+    void RebuildPlayerObject();
 
 private:
     // ------------------------------------------------------------------

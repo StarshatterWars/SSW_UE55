@@ -359,6 +359,7 @@ void UMenuDlg::ApplyMenuGating()
     {
         EnableMenuButtons(false);
 
+        SetButtonEnabled(BtnPlayer, true);
         SetButtonEnabled(BtnCampaign, true);
         SetButtonEnabled(BtnMission, true);
 

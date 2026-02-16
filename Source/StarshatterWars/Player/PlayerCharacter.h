@@ -208,7 +208,7 @@ public:
 
     int GetMissionPoints(ShipStats* stats, uint32 start_time);
     void ProcessStats(ShipStats* stats, uint32 start_time);
-    bool EarnedAward(AwardInfo* a, ShipStats* s);
+    bool EarnedAward(int32 AwardId, bool bIsRank, ShipStats* InShipStats);
 
 private:
     void CreateUniqueID();

@@ -344,6 +344,23 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
         }
     }
 
+    // UI.MenuScreenClass
+    if (!Cache.Contains(TEXT("UI.PlayerLogbookScreenClass")))
+    {
+        if (!Settings->PlayerLogbookScreenClass.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->PlayerLogbookScreenClass.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.PlayerLogbookScreenClass"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.PlayerLogbookScreenClass -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] PlayerLogbookScreenClass is not set in Project Settings"));
+        }
+    }
     // UI.FirstRunDlgClass (property name: FirstRunScreenClass)
     if (!Cache.Contains(TEXT("UI.FirstTimeDlgClass")))
     {
