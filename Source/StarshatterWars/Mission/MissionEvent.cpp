@@ -620,7 +620,11 @@ MissionEvent::Execute(bool silent)
 						CombatGroup* group = campaign->GetPlayerGroup();
 
 						if (user) {
-							event_message = FormatTextReplace(event_message, "$NAME", user->Name().data());
+							event_message = FormatTextReplace(
+								event_message,
+								"$NAME",
+								TCHAR_TO_UTF8(*user->Name())
+							);
 							event_message = FormatTextReplace(event_message, "$RANK", PlayerCharacter::RankName(user->GetRank()));
 						}
 

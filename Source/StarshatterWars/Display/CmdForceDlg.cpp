@@ -611,7 +611,7 @@ void UCmdForceDlg::OnTransferClicked()
             TransferInfo = FString::Printf(
                 TEXT("Your transfer request has been approved, %s %s.  You are now assigned to the %s.  Good luck.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
                 UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->GetRank())),
-                UTF8_TO_TCHAR(PlayerPtr->Name().data()),
+                UTF8_TO_TCHAR(*PlayerPtr->Name()),
                 UTF8_TO_TCHAR(CurrentUnit->GetDescription()));
         }
         else
@@ -620,7 +620,7 @@ void UCmdForceDlg::OnTransferClicked()
             TransferInfo = FString::Printf(
                 TEXT("Your transfer request has been approved, %s %s.  You are now assigned to the %s.  Good luck.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
                 UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->GetRank())),
-                UTF8_TO_TCHAR(PlayerPtr->Name().data()),
+                UTF8_TO_TCHAR(*PlayerPtr->Name()),
                 UTF8_TO_TCHAR(CurrentGroup->GetDescription()));
         }
 
@@ -638,7 +638,7 @@ void UCmdForceDlg::OnTransferClicked()
         TransferInfo = FString::Printf(
             TEXT("Your transfer request has been denied, %s %s.  The %s requires a command rank of %s.  Please return to your unit and your duties.\n\nFleet Admiral A. Evars FORCOM\nCommanding"),
             UTF8_TO_TCHAR(PlayerCharacter::RankName(PlayerPtr->GetRank())),
-            UTF8_TO_TCHAR(PlayerPtr->Name().data()),
+            UTF8_TO_TCHAR(*PlayerPtr->Name()),
             UTF8_TO_TCHAR(CurrentGroup->GetDescription()),
             UTF8_TO_TCHAR(Required));
 

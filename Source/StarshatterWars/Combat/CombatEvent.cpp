@@ -191,7 +191,7 @@ void CombatEvent::Load()
         if (Player)
         {
             // These look legacy-returning const char*; convert as needed:
-            InfoText.ReplaceInline(TEXT("$NAME"), UTF8_TO_TCHAR(Player->Name().data()));
+            InfoText.ReplaceInline(TEXT("$NAME"), UTF8_TO_TCHAR(*Player->Name()));
             InfoText.ReplaceInline(TEXT("$RANK"), UTF8_TO_TCHAR(PlayerCharacter::RankName(Player->GetRank())));
         }
 

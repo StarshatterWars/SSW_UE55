@@ -1,36 +1,31 @@
 /*
-    Project Starshatter 4.5
-    Destroyer Studios LLC
-    Copyright © 1997-2004.
-    All Rights Reserved.
+    Project:        Starshatter Wars (nGenEx Unreal Port)
+    Studio:         Fractal Dev Games
+    Copyright:      (C) 2024–2026. All Rights Reserved.
 
-    SUBSYSTEM:    Stars.exe
-    FILE:         PlayerCharacter.h
-    AUTHOR:       Carlos Bott
+    SUBSYSTEM:      Player / Logbook (Legacy-compatible facade)
+    FILE:           PlayerCharacter.h
+    AUTHOR:         Carlos Bott
 
     OVERVIEW
     ========
-    Player / Logbook class (renamed for Unreal compatibility)
+    PlayerCharacter is a legacy-compatible non-UObject façade that:
+    - Keeps the legacy static roster using List<>
+    - Stores player state using UE types exclusively
+    - Persists via UStarshatterPlayerSubsystem (no player.cfg)
 */
 
 #pragma once
 
-#include "Types.h"
-#include "List.h"
-#include "Text.h"
-#include "DataLoader.h"
-#include "Encrypt.h"
-#include "ParseUtil.h"
-#include "GameStructs.h"
-#include <cstring>
+#include "CoreMinimal.h"
 
+#include "List.h"                // legacy container (kept per request)
+#include "GameStructs.h"         // FS_PlayerGameInfo, EMFDMode, etc.
 
-// +-------------------------------------------------------------------+
-
-class Bitmap;
-class ShipStats;
-class AwardInfo;
-class USound;
+class ShipStats;                 // legacy forward
+class AwardInfo;                 // legacy forward
+class USound;                    // UE forward
+class UObject;
 
 // +-------------------------------------------------------------------+
 
@@ -39,255 +34,242 @@ class PlayerCharacter
 public:
     static const char* TYPENAME() { return "PlayerCharacter"; }
 
-    PlayerCharacter(const char* name);
+    PlayerCharacter();
+    explicit PlayerCharacter(const FString& InPlayerName);
     virtual ~PlayerCharacter();
 
-    int operator == (const PlayerCharacter& u) const { return name == u.name; }
+    // Legacy equality operator (name compare)
+    int operator==(const PlayerCharacter& Other) const { return PlayerName.Equals(Other.PlayerName, ESearchCase::IgnoreCase); }
 
-    int            Identity()        const { return uid; }
-    const Text& Name()            const { return name; }
-    const Text& Password()        const { return pass; }
-    const Text& Squadron()        const { return squadron; }
-    const Text& Signature()       const { return signature; }
-    const Text& ChatMacro(int n)  const;
-    int            CreateDate()      const { return create_date; }
-    int            GetRank()         const;
-    int            Medal(int n)      const;
-    int            Points()          const { return points; }
-    int            Medals()          const { return medals; }
-    int            FlightTime()      const { return flight_time; }
-    int            Missions()        const { return missions; }
-    int            Kills()           const { return kills; }
-    int            Deaths()          const { return deaths; }
-    int            Losses()          const { return losses; }
-    int            Campaigns()       const { return campaigns; }
-    int            Trained()         const { return trained; }
+    // ------------------------------------------------------------------
+    // Identity / strings (UE types)
+    // ------------------------------------------------------------------
+    int32 GetIdentity() const { return PlayerId; }               // <- fixes “GetIdentity” call sites
+    int32 Identity()    const { return PlayerId; }               // legacy alias
 
-    int            FlightModel()     const { return flight_model; }
-    int            FlyingStart()     const { return flying_start; }
-    int            LandingModel()    const { return landing_model; }
-    int            AILevel()         const { return ai_level; }
-    int            HUDMode()         const { return hud_mode; }
-    int            HUDColor()        const { return hud_color; }
-    int            FriendlyFire()    const { return ff_level; }
-    int            GridMode()        const { return grid; }
-    int            Gunsight()        const { return gunsight; }
+    const FString& Name()      const { return PlayerName; }      // <- fixes “Name is not a member”
+    const FString& Password()  const { return PlayerPassword; }
+    const FString& Squadron()  const { return PlayerSquadron; }
+    const FString& Signature() const { return PlayerSignature; }
 
-    bool           ShowAward()       const { return award != 0; }
-    Text           AwardName()       const;
-    Text           AwardDesc()       const;
-    Bitmap*        AwardImage()      const;
-    USound*         AwardSound()      const;
+    const FString& ChatMacro(int32 Index) const;
 
-    bool           CanCommand(int ship_class);
+    int32 CreateDate() const { return CreateDateUtc; }
 
-    void           SetName(const char* n);
-    void           SetPassword(const char* p);
-    void           SetSquadron(const char* s);
-    void           SetSignature(const char* s);
-    void           SetChatMacro(int n, const char* m);
-    void           SetCreateDate(int d);
-    void           SetRank(int r);
-    void           SetPoints(int p);
-    void           SetMedals(int m);
-    void           SetCampaigns(int n);
-    void           SetTrained(int n);
-    void           SetFlightTime(int t);
-    void           SetMissions(int m);
-    void           SetKills(int k);
-    void           SetDeaths(int d);
-    void           SetLosses(int l);
+    // ------------------------------------------------------------------
+    // Rank / medals / points (legacy-compatible)
+    // ------------------------------------------------------------------
+    int32 GetRank() const;                                      // derived or cached
+    int32 Medal(int32 N) const;                                 // nth medal bit in 16-bit field
+    int32 Points()  const { return PlayerPoints; }
+    int32 Medals()  const { return MedalsMask; }
 
-    void           AddFlightTime(int t);
-    void           AddPoints(int p);
-    void           AddMedal(int m);
-    void           AddMissions(int m);
-    void           AddKills(int k);
-    void           AddDeaths(int d);
-    void           AddLosses(int l);
+    // Stats
+    int32 FlightTime() const { return FlightTimeSeconds; }
+    int32 Missions()   const { return MissionCount; }
+    int32 Kills()      const { return KillCount; }
+    int32 Deaths()     const { return DeathCount; }
+    int32 Losses()     const { return LossCount; }
 
-    bool           HasTrained(int n)            const;
-    bool           HasCompletedCampaign(int id) const;
-    void           SetCampaignComplete(int id);
+    // Campaign/training (modernized storage)
+    int64 Campaigns() const { return CampaignCompleteMask; }     // legacy name kept
+    int32 Trained()   const { return HighestTrainingMission; }   // legacy name kept
 
-    void           SetFlightModel(int n);
-    void           SetFlyingStart(int n);
-    void           SetLandingModel(int n);
-    void           SetAILevel(int n);
-    void           SetHUDMode(int n);
-    void           SetHUDColor(int n);
-    void           SetFriendlyFire(int n);
-    void           SetGridMode(int n);
-    void           SetGunsight(int n);
+    // ------------------------------------------------------------------
+    // Gameplay options (legacy names kept, UE-backed)
+    // ------------------------------------------------------------------
+    int32 FlightModel()  const { return FlightModelMode; }
+    int32 FlyingStart()  const { return bFlyingStart ? 1 : 0; }
+    int32 LandingModel() const { return LandingMode; }
+    int32 AILevel()      const { return AiDifficulty; }
+    int32 HUDMode()      const { return HudMode; }
+    int32 HUDColor()     const { return HudColor; }
+    int32 FriendlyFire() const { return ForceFeedbackLevel; }    // legacy getter name
+    int32 GridMode()     const { return bGridMode ? 1 : 0; }
+    int32 Gunsight()     const { return bGunSight ? 1 : 0; }
 
-    void           ClearShowAward();
+    // ------------------------------------------------------------------
+    // Awards (safe stubs; hook later)
+    // ------------------------------------------------------------------
+    bool   ShowAward() const;
+    FString AwardName() const;
+    FString AwardDesc() const;
+    USound* AwardSound() const;
 
-    Text           EncodeStats();
-    void           DecodeStats(const char* stats);
+    bool CanCommand(int32 ShipClassMask) const;
 
-    int            GetMissionPoints(ShipStats* stats, DWORD start_time);
-    void           ProcessStats(ShipStats* stats, DWORD start_time);
-    bool           EarnedAward(AwardInfo* a, ShipStats* s);
+    // ------------------------------------------------------------------
+    // Mutators (keep legacy signatures but UE implementation)
+    // ------------------------------------------------------------------
+    void SetName(const char* InNameAnsi);                        // legacy call sites
+    void SetName(const FString& InName);
 
-    static const char* RankName(int rank);
-    static const char* RankAbrv(int rank);
-    static int         RankFromName(const char* name);
-    static Bitmap*     RankInsignia(int rank, int size);
-    static const char* RankDescription(int rank);
-    static const char* MedalName(int medal);
-    static Bitmap*     MedalInsignia(int medal, int size);
-    static const char* MedalDescription(int medal);
-    static int           CommandRankRequired(int ship_class);
+    void SetPassword(const char* InPassAnsi);
+    void SetPassword(const FString& InPass);
 
+    void SetSquadron(const char* InSquadAnsi);
+    void SetSquadron(const FString& InSquad);
+
+    void SetSignature(const char* InSigAnsi);
+    void SetSignature(const FString& InSig);
+
+    void SetChatMacro(int32 Index, const char* InMacroAnsi);
+    void SetChatMacro(int32 Index, const FString& InMacro);
+
+    void SetCreateDate(int32 InUtcSeconds);
+    void SetRank(int32 RankId);
+    void SetPoints(int32 InPoints);
+    void SetMedals(int32 InMask);
+
+    void SetCampaigns(int64 InMask);
+    void SetTrained(int32 InHighestTrainingMission);
+
+    void SetFlightTime(int32 InSeconds);
+    void SetMissions(int32 InCount);
+    void SetKills(int32 InCount);
+    void SetDeaths(int32 InCount);
+    void SetLosses(int32 InCount);
+
+    // Accumulators
+    void AddFlightTime(int32 InSeconds);
+    void AddPoints(int32 InPoints);
+    void AddMedal(int32 MedalBit);
+    void AddMissions(int32 InCount);
+    void AddKills(int32 InCount);
+    void AddDeaths(int32 InCount);
+    void AddLosses(int32 InCount);
+
+    // Campaign/training helpers (legacy names retained)
+    bool HasTrained(int32 MissionId1Based) const;
+    bool HasCompletedCampaign(int32 CampaignId) const;
+    void SetCampaignComplete(int32 CampaignId);                  // <- fixes missing symbol
+
+    // Options
+    void SetFlightModel(int32 InMode);
+    void SetFlyingStart(int32 InOnOff);
+    void SetLandingModel(int32 InMode);
+    void SetAILevel(int32 InLevel);
+    void SetHUDMode(int32 InMode);
+    void SetHUDColor(int32 InColorIndex);
+    void SetFriendlyFire(int32 InLevel);
+    void SetGridMode(int32 InOnOff);
+    void SetGunsight(int32 InOnOff);
+
+    void ClearShowAward();
+
+    // ------------------------------------------------------------------
+    // Legacy static rank/medal helpers (stubs but compile-safe)
+    // ------------------------------------------------------------------
+    static const char* RankName(int32 RankId);
+    static const char* RankAbrv(int32 RankId);
+    static int32       RankFromName(const char* InNameAnsi);     // <- fixes Campaign.cpp errors
+    static int32       RankFromName(const FString& InName);
+
+    static const char* RankDescription(int32 RankId);
+    static const char* MedalName(int32 MedalBit);
+    static const char* MedalDescription(int32 MedalBit);
+
+    static int32 CommandRankRequired(int32 ShipClassMask);
+
+    // ------------------------------------------------------------------
+    // Roster + persistence (List<> kept)
+    // ------------------------------------------------------------------
     static List<PlayerCharacter>& GetRoster();
-    static PlayerCharacter*       GetCurrentPlayer();
-    static void                   SelectPlayer(PlayerCharacter* p);
-    static void                   SetCurrentPlayer(PlayerCharacter* NewPlayer);
+    static PlayerCharacter* GetCurrentPlayer();
+    static void                   SelectPlayer(PlayerCharacter* InPlayer);
+    static void                   SetCurrentPlayer(PlayerCharacter* InPlayer);
+    static PlayerCharacter* EnsureCurrentPlayer();
 
-    static PlayerCharacter*       EnsureCurrentPlayer();
-
-    static PlayerCharacter* Create(const char* name);
-    static void                   Destroy(PlayerCharacter* p);
-    static PlayerCharacter* Find(const char* name);
-    static void                   Initialize();
+    static PlayerCharacter* Create(const char* InNameAnsi);
+    static void                   Destroy(PlayerCharacter* InPlayer);
+    static PlayerCharacter* Find(const char* InNameAnsi);
+    static void                   Initialize();                  // safe default
+    static void                   Initialize(UObject* WorldContext);
     static void                   Close();
-    bool                          ConfigExists() const;
-    static void                   Load();
-    static void                   Save();
+
+    bool                          ConfigExists() const { return bHadSubsystemSave; }
+
+    static void                   Load();                        // no-op safe
+    static void                   Load(UObject* WorldContext);   // loads from subsystem
+    static void                   Save();                        // saves to subsystem if context set
     static bool                   SaveToSubsystem(UObject* WorldContext);
 
+    static void                   SetWorldContext(UObject* WorldContext);
+
     static PlayerCharacter* CreateDefault();
-    static void AddToRoster(PlayerCharacter* P);
-    static void RemoveFromRoster(PlayerCharacter* P);
+    static void                   AddToRoster(PlayerCharacter* InPlayer);
+    static void                   RemoveFromRoster(PlayerCharacter* InPlayer);
 
-protected:
-    PlayerCharacter();
+    // ------------------------------------------------------------------
+    // Conversion to/from subsystem struct
+    // ------------------------------------------------------------------
+    void FromPlayerInfo(const FS_PlayerGameInfo& InInfo);
+    void ToPlayerInfo(FS_PlayerGameInfo& OutInfo) const;
 
-    void           CreateUniqueID();
+    int GetMissionPoints(ShipStats* stats, uint32 start_time);
+    void ProcessStats(ShipStats* stats, uint32 start_time);
+    bool EarnedAward(AwardInfo* a, ShipStats* s);
 
+private:
+    void CreateUniqueID();
 
-    int            uid;
-    Text           name;
-    Text           pass;
-    Text           squadron;
-    Text           signature;
-    Text           chat_macros[10];
-   
-    TArray<EMFDMode> mfd;
+private:
+    // UE identity/profile
+    int32   PlayerId = 0;
+    FString PlayerName;
+    FString PlayerPassword;
+    FString PlayerSquadron;
+    FString PlayerSignature;
 
-    // stats:
-    int            create_date;
-    int            points;
-    int            medals;        // bitmap of earned medals
-    int            flight_time;
-    int            missions;
-    int            kills;
-    int            deaths;
-    int            losses;
-    int            campaigns;     // bitmap of completed campaigns
-    int            trained;       // id of highest training mission completed
-    int            rank;
-    // gameplay options:
-    int            flight_model;
-    int            flying_start;
-    int            landing_model;
-    int            ai_level;
-    int            hud_mode;
-    int            hud_color;
-    int            ff_level;
-    int            grid;
-    int            gunsight;
+    // Chat macros (10)
+    TArray<FString> ChatMacros;
 
-    // transient:
-    AwardInfo* award;
+    // MFD modes (keep numeric for legacy UI until fully ported)
+    TArray<int32> MfdModes;
+
+    // Stats
+    int32 CreateDateUtc = 0;
+    int32 PlayerPoints = 0;
+    int32 MedalsMask = 0;    // bitmask
+    int32 FlightTimeSeconds = 0;
+    int32 MissionCount = 0;
+    int32 KillCount = 0;
+    int32 DeathCount = 0;
+    int32 LossCount = 0;
+
+    // Campaign/training modern storage
+    int64 CampaignCompleteMask = 0;  // up to 64 campaigns
+    int64 TrainingMask = 0;  // up to 64 trainings
+    int32 HighestTrainingMission = 0;
+
+    // Cached/explicit rank id (optional)
+    int32 CachedRankId = 0;
+
+    // Gameplay options
+    int32 FlightModelMode = 0;
+    bool  bFlyingStart = false;
+    int32 LandingMode = 0;
+    int32 AiDifficulty = 1;
+    int32 HudMode = 0;
+    int32 HudColor = 1;
+    int32 ForceFeedbackLevel = 4;
+    bool  bGridMode = true;
+    bool  bGunSight = false;
+
+    // Transient award pointer (stubbed)
+    AwardInfo* CurrentAward = nullptr;
+
+    // Dirty tracking
+    bool bDirty = false;
+
+    int32 Rank = 0;           // current rank id (legacy)
+    int32 PendingAwardId = 0;
+    bool  bPendingAwardIsRank = false;
+
+    // “ConfigExists” legacy behavior now means “had a SaveGame on load”
+    bool bHadSubsystemSave = false;
+
+private:
+    // Shared static world context for Save()/Load() convenience
+    static UObject* GWorldContextForSave;
 };
-
-// ------------------------------------------------------------
-// Inline DEF helpers (Starshatter-compatible, UE-safe)
-// ------------------------------------------------------------
-
-inline bool DefNameEquals(const TermDef* Def, const char* Key)
-{
-    if (!Def || !Def->name() || !Key)
-        return false;
-
-    // TermText::value() appears to be legacy Text (not std::string).
-    // Avoid operator== (may return int), compare raw C-strings:
-    const Text NameText = Def->name()->value();
-    const char* Name = NameText.data();
-
-    return Name && (::strcmp(Name, Key) == 0);
-}
-
-inline void DefReadBool(bool& Out, TermDef* Def, const char* Filename)
-{
-    // Legacy helpers typically return int; we don't use the return value as bool.
-    GetDefBool(Out, Def, Filename);
-
-    // Normalize to strict bool (optional but safe):
-    Out = Out ? true : false;
-}
-
-inline void DefReadInt(int& Out, TermDef* Def, const char* Filename)
-{
-    GetDefNumber(Out, Def, Filename);
-}
-
-inline void DefReadText(Text& Out, TermDef* Def, const char* Filename)
-{
-    GetDefText(Out, Def, Filename);
-}
-
-// Enum helper: read numeric value, cast to enum
-template<typename TEnum>
-inline void DefReadEnum(TEnum& Out, TermDef* Def, const char* Filename)
-{
-    int Temp = static_cast<int>(Out);
-    GetDefNumber(Temp, Def, Filename);
-    Out = static_cast<TEnum>(Temp);
-}
-
-// ------------------------------------------------------------
-// Inline Text helpers (avoid C4800 int->bool)
-// ------------------------------------------------------------
-
-inline bool TextStartsWith(const Text& S, const char* Prefix)
-{
-    const char* Str = S.data();
-    if (!Str || !Prefix)
-        return false;
-
-    const size_t N = ::strlen(Prefix);
-    return ::strncmp(Str, Prefix, N) == 0;
-}
-
-inline bool TextContains(const Text& S, const char* Needle)
-{
-    const char* Str = S.data();
-    if (!Str || !Needle)
-        return false;
-
-    // strstr returns pointer or null; convert explicitly to bool:
-    return (::strstr(Str, Needle) != nullptr);
-}
-
-// Optional: parse "chat_0".."chat_9" key
-inline bool TryParseChatIndex(const Text& Key, int& OutIndex)
-{
-    OutIndex = -1;
-
-    const char* Str = Key.data();
-    if (!Str)
-        return false;
-
-    // Expect "chat_X"
-    if (::strncmp(Str, "chat_", 5) != 0)
-        return false;
-
-    const char c = Str[5];
-    if (c < '0' || c > '9')
-        return false;
-
-    OutIndex = (c - '0');
-    return true;
-}

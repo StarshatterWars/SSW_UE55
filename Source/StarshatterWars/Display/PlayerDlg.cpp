@@ -257,7 +257,7 @@ void UPlayerDlg::ShowPlayer()
     }
 
     if (edt_name)
-        edt_name->SetText(FText::FromString(ANSI_TO_TCHAR(player->Name())));
+        edt_name->SetText(FText::FromString(*player->Name()));
 
     if (lbl_rank)
     {

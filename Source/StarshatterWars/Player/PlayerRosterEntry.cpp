@@ -50,7 +50,7 @@ void UPlayerRosterEntry::RefreshFromPlayer(PlayerCharacter* player)
     // DO NOT use StringCast on ints. Convert explicitly.
 
     if (txt_name)
-        txt_name->SetText(FText::FromString(ANSI_TO_TCHAR(player->Name())));
+        txt_name->SetText(FText::FromString(*player->Name()));
 
     if (txt_rank)
     {

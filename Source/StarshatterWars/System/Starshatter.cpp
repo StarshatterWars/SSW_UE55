@@ -1897,12 +1897,12 @@ Starshatter::DoChatMode()
 		name = player_ship->Name();
 
 	if (p)
-		name = p->Name();
+		name = Text(TCHAR_TO_UTF8(*p->Name()));
 
 	if (chat_text.length()) {
 		if (chat_text[0] >= '0' && chat_text[0] <= '9') {
 			if (p) {
-				chat_text = p->ChatMacro(chat_text[0] - '0');
+				chat_text = Text(TCHAR_TO_UTF8(*p->ChatMacro(chat_text[0] - '0')));
 				send_chat = true;
 			}
 		}

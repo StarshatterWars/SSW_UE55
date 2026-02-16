@@ -292,18 +292,24 @@ CampaignSituationReport::MissionSituation()
 		sitrep += "\n\n";
 	}
 
-	Text rank;
-	Text name;
+	Text RankText;
+	Text NameText;
 
-	PlayerCharacter* p = PlayerCharacter::GetCurrentPlayer();
+	PlayerCharacter* PlayerPtr = PlayerCharacter::GetCurrentPlayer();
 
-	if (p) {
-		if (p->GetRank() > 6)
-			rank = ", Admiral";
+	if (PlayerPtr)
+	{
+		if (PlayerPtr->GetRank() > 6)
+		{
+			RankText = ", Admiral";
+		}
 		else
-			rank = Text(", ") + PlayerCharacter::RankName(p->GetRank());
+		{
+			RankText = Text(", ") + PlayerCharacter::RankName(PlayerPtr->GetRank());
+		}
 
-		name = Text(", ") + p->Name();
+		// PlayerPtr->Name() is now FString (UE-side), so convert it to legacy Text:
+		NameText = Text(", ") + Text(TCHAR_TO_UTF8(*PlayerPtr->Name()));
 	}
 
 	sitrep += "You have a mission to perform.  ";
@@ -316,14 +322,14 @@ CampaignSituationReport::MissionSituation()
 	case  4: sitrep += "Don't lose your focus.";                         break;
 	case  5: sitrep += "Good luck out there.";                           break;
 	case  6: sitrep += "What are you waiting for, cocktail hour?";       break;
-	case  7: sitrep += Text("Godspeed") + rank + "!";                    break;
-	case  8: sitrep += Text("Good luck") + rank + "!";                   break;
-	case  9: sitrep += Text("Good luck") + name + "!";                   break;
+	case  7: sitrep += Text("Godspeed") + RankText + "!";                break;
+	case  8: sitrep += Text("Good luck") + NameText + "!";               break;
+	case  9: sitrep += Text("Good luck") + NameText + "!";               break;
 	case 10: sitrep += "If everything is clear, get your team ready and get underway."; break;
-	case 11: sitrep += Text("Go get to it") + rank + "!";                break;
+	case 11: sitrep += Text("Go get to it") + RankText + "!";            break;
 	case 12: sitrep += "The clock is ticking, so let's move it!";        break;
 	case 13: sitrep += "Stay sharp out there!";                          break;
-	case 14: sitrep += Text("Go get 'em") + rank + "!";                  break;
+	case 14: sitrep += Text("Go get 'em") + RankText + "!";              break;
 	case 15: sitrep += "Now get out of here and get to work!";           break;
 	}
 }
