@@ -9,14 +9,12 @@
 
 #include "PlayerCharacter.h"
 
-#include "Engine/World.h"
-#include "Game.h"
-#include "Ship.h"
-#include "SimEvent.h"
 #include "AwardInfoRegistry.h"
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
+#include "Game.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "SimEvent.h"
 #include "StarshatterPlayerSubsystem.h"
 
 // ------------------------------------------------------------------
@@ -36,17 +34,12 @@ PlayerCharacter::PlayerCharacter()
 {
     ChatMacros.SetNum(10);
     for (int32 i = 0; i < ChatMacros.Num(); ++i)
-    {
         ChatMacros[i] = TEXT("");
-    }
 
-    // legacy uses 3 MFDs in many places; your file had 4 at one point.
-    // Keep 3 for typical loops, but you can bump to 4 if needed.
+    // legacy uses 3 MFDs in many places
     MfdModes.SetNum(3);
     for (int32 i = 0; i < MfdModes.Num(); ++i)
-    {
         MfdModes[i] = -1;
-    }
 }
 
 PlayerCharacter::PlayerCharacter(const FString& InPlayerName)
@@ -75,7 +68,7 @@ const FString& PlayerCharacter::ChatMacro(int32 Index) const
 int32 PlayerCharacter::GetRank() const
 {
     // If you have real rank table logic, hook it here.
-    // For now: use cached value, or derive trivially from points.
+    // For now: use cached value.
     return CachedRankId;
 }
 
@@ -100,7 +93,7 @@ int32 PlayerCharacter::Medal(int32 N) const
 }
 
 // ------------------------------------------------------------------
-// Award stubs
+// Awards (registry-backed presentation)
 // ------------------------------------------------------------------
 
 FString PlayerCharacter::AwardName() const
@@ -108,9 +101,11 @@ FString PlayerCharacter::AwardName() const
     if (PendingAwardId == 0)
         return FString();
 
-    return bPendingAwardIsRank
-        ? FString(UAwardInfoRegistry::RankName(PendingAwardId))
-        : FString(UAwardInfoRegistry::MedalName(PendingAwardId));
+    const TCHAR* T = bPendingAwardIsRank
+        ? UAwardInfoRegistry::RankName(PendingAwardId)
+        : UAwardInfoRegistry::MedalName(PendingAwardId);
+
+    return FString(T ? T : TEXT(""));
 }
 
 FString PlayerCharacter::AwardDesc() const
@@ -118,9 +113,11 @@ FString PlayerCharacter::AwardDesc() const
     if (PendingAwardId == 0)
         return FString();
 
-    return bPendingAwardIsRank
-        ? FString(UAwardInfoRegistry::RankDescription(PendingAwardId))
-        : FString(UAwardInfoRegistry::MedalDescription(PendingAwardId));
+    const TCHAR* T = bPendingAwardIsRank
+        ? UAwardInfoRegistry::RankDescription(PendingAwardId)
+        : UAwardInfoRegistry::MedalDescription(PendingAwardId);
+
+    return FString(T ? T : TEXT(""));
 }
 
 USound* PlayerCharacter::AwardSound() const
@@ -130,8 +127,18 @@ USound* PlayerCharacter::AwardSound() const
 
 bool PlayerCharacter::CanCommand(int32 /*ShipClassMask*/) const
 {
-    // Hook real rule system later
     return true;
+}
+
+bool PlayerCharacter::ShowAward() const
+{
+    return PendingAwardId != 0;
+}
+
+void PlayerCharacter::ClearShowAward()
+{
+    PendingAwardId = 0;
+    bPendingAwardIsRank = false;
 }
 
 // ------------------------------------------------------------------
@@ -145,9 +152,10 @@ void PlayerCharacter::SetName(const char* InNameAnsi)
 
 void PlayerCharacter::SetName(const FString& InName)
 {
-    if (!InName.IsEmpty())
+    const FString Trimmed = InName.TrimStartAndEnd();
+    if (!Trimmed.IsEmpty())
     {
-        PlayerName = InName;
+        PlayerName = Trimmed;
         bDirty = true;
     }
 }
@@ -233,9 +241,8 @@ void PlayerCharacter::SetTrained(int32 InHighestTrainingMission)
 {
     HighestTrainingMission = FMath::Max(0, InHighestTrainingMission);
     if (HighestTrainingMission > 0 && HighestTrainingMission <= 64)
-    {
         TrainingMask |= (int64(1) << (HighestTrainingMission - 1));
-    }
+
     bDirty = true;
 }
 
@@ -281,9 +288,10 @@ void PlayerCharacter::AddFlightTime(int32 InSeconds)
 
 void PlayerCharacter::AddPoints(int32 InPoints)
 {
-    if (InPoints > 0)
+    // NOTE: legacy typically only adds positive points
+    if (InPoints != 0)
     {
-        PlayerPoints += InPoints;
+        PlayerPoints = FMath::Max(0, PlayerPoints + InPoints);
         bDirty = true;
     }
 }
@@ -363,76 +371,25 @@ void PlayerCharacter::SetCampaignComplete(int32 CampaignId)
     CampaignCompleteMask |= (int64(1) << CampaignId);
     bDirty = true;
 
-    // legacy behavior was “save immediately”
-    Save();
+    Save(); // legacy behavior
 }
 
 // ------------------------------------------------------------------
 // Options
 // ------------------------------------------------------------------
 
-void PlayerCharacter::SetFlightModel(int32 InMode)
-{
-    FlightModelMode = InMode;
-    bDirty = true;
-}
-
-void PlayerCharacter::SetFlyingStart(int32 InOnOff)
-{
-    bFlyingStart = (InOnOff != 0);
-    bDirty = true;
-}
-
-void PlayerCharacter::SetLandingModel(int32 InMode)
-{
-    LandingMode = InMode;
-    bDirty = true;
-}
-
-void PlayerCharacter::SetAILevel(int32 InLevel)
-{
-    AiDifficulty = InLevel;
-    bDirty = true;
-}
-
-void PlayerCharacter::SetHUDMode(int32 InMode)
-{
-    HudMode = InMode;
-    bDirty = true;
-}
-
-void PlayerCharacter::SetHUDColor(int32 InColorIndex)
-{
-    HudColor = InColorIndex;
-    bDirty = true;
-}
-
-void PlayerCharacter::SetFriendlyFire(int32 InLevel)
-{
-    ForceFeedbackLevel = InLevel;
-    bDirty = true;
-}
-
-void PlayerCharacter::SetGridMode(int32 InOnOff)
-{
-    bGridMode = (InOnOff != 0);
-    bDirty = true;
-}
-
-void PlayerCharacter::SetGunsight(int32 InOnOff)
-{
-    bGunSight = (InOnOff != 0);
-    bDirty = true;
-}
-
-void PlayerCharacter::ClearShowAward()
-{
-    PendingAwardId = 0;
-    bPendingAwardIsRank = false;
-}
+void PlayerCharacter::SetFlightModel(int32 InMode) { FlightModelMode = InMode; bDirty = true; }
+void PlayerCharacter::SetFlyingStart(int32 InOnOff) { bFlyingStart = (InOnOff != 0); bDirty = true; }
+void PlayerCharacter::SetLandingModel(int32 InMode) { LandingMode = InMode; bDirty = true; }
+void PlayerCharacter::SetAILevel(int32 InLevel) { AiDifficulty = InLevel; bDirty = true; }
+void PlayerCharacter::SetHUDMode(int32 InMode) { HudMode = InMode; bDirty = true; }
+void PlayerCharacter::SetHUDColor(int32 InColorIndex) { HudColor = InColorIndex; bDirty = true; }
+void PlayerCharacter::SetFriendlyFire(int32 InLevel) { ForceFeedbackLevel = InLevel; bDirty = true; }
+void PlayerCharacter::SetGridMode(int32 InOnOff) { bGridMode = (InOnOff != 0); bDirty = true; }
+void PlayerCharacter::SetGunsight(int32 InOnOff) { bGunSight = (InOnOff != 0); bDirty = true; }
 
 // ------------------------------------------------------------------
-// Static rank/medal helpers (compile-safe stubs)
+// Legacy static rank/medal helpers (compile-safe stubs)
 // ------------------------------------------------------------------
 
 const char* PlayerCharacter::RankName(int32 RankId)
@@ -470,34 +427,19 @@ int32 PlayerCharacter::RankFromName(const FString& InName)
 {
     const FString N = InName.TrimStartAndEnd();
 
-    if (N.Equals(TEXT("Conscript"), ESearchCase::IgnoreCase))  return 0;
-    if (N.Equals(TEXT("Ensign"), ESearchCase::IgnoreCase))  return 1;
-    if (N.Equals(TEXT("Lieutenant"), ESearchCase::IgnoreCase))return 2;
+    if (N.Equals(TEXT("Conscript"), ESearchCase::IgnoreCase)) return 0;
+    if (N.Equals(TEXT("Ensign"), ESearchCase::IgnoreCase)) return 1;
+    if (N.Equals(TEXT("Lieutenant"), ESearchCase::IgnoreCase)) return 2;
     if (N.Equals(TEXT("Commander"), ESearchCase::IgnoreCase)) return 3;
-    if (N.Equals(TEXT("Captain"), ESearchCase::IgnoreCase))   return 4;
+    if (N.Equals(TEXT("Captain"), ESearchCase::IgnoreCase)) return 4;
 
     return 0;
 }
 
-const char* PlayerCharacter::RankDescription(int32 /*RankId*/)
-{
-    return "";
-}
-
-const char* PlayerCharacter::MedalName(int32 /*MedalBit*/)
-{
-    return "";
-}
-
-const char* PlayerCharacter::MedalDescription(int32 /*MedalBit*/)
-{
-    return "";
-}
-
-int32 PlayerCharacter::CommandRankRequired(int32 /*ShipClassMask*/)
-{
-    return 0;
-}
+const char* PlayerCharacter::RankDescription(int32 /*RankId*/) { return ""; }
+const char* PlayerCharacter::MedalName(int32 /*MedalBit*/) { return ""; }
+const char* PlayerCharacter::MedalDescription(int32 /*MedalBit*/) { return ""; }
+int32       PlayerCharacter::CommandRankRequired(int32 /*Mask*/) { return 0; }
 
 // ------------------------------------------------------------------
 // Roster
@@ -529,7 +471,7 @@ void PlayerCharacter::SelectPlayer(PlayerCharacter* InPlayer)
     if (GPlayerRoster.contains(InPlayer))
     {
         GSelectedPlayer = InPlayer;
-        Save(); // capture selection in save data if you want
+        Save();
     }
 }
 
@@ -573,12 +515,9 @@ void PlayerCharacter::Destroy(PlayerCharacter* InPlayer)
     GPlayerRoster.remove(InPlayer);
 
     if (InPlayer == GSelectedPlayer)
-    {
         GSelectedPlayer = (GPlayerRoster.size() > 0) ? GPlayerRoster.at(0) : nullptr;
-    }
 
     delete InPlayer;
-
     Save();
 }
 
@@ -608,6 +547,7 @@ void PlayerCharacter::RemoveFromRoster(PlayerCharacter* InPlayer)
         return;
 
     GPlayerRoster.remove(InPlayer);
+
     if (InPlayer == GSelectedPlayer)
         GSelectedPlayer = (GPlayerRoster.size() > 0) ? GPlayerRoster.at(0) : nullptr;
 
@@ -665,12 +605,8 @@ void PlayerCharacter::Initialize(UObject* WorldContext)
 
 void PlayerCharacter::Close()
 {
-    // If roster owns pointers, destroy them
     for (int32 i = 0; i < GPlayerRoster.size(); ++i)
-    {
-        PlayerCharacter* P = GPlayerRoster.at(i);
-        delete P;
-    }
+        delete GPlayerRoster.at(i);
 
     GPlayerRoster.destroy();
     GSelectedPlayer = nullptr;
@@ -683,7 +619,6 @@ void PlayerCharacter::Close()
 
 void PlayerCharacter::Load()
 {
-    // No-op safe fallback
     Initialize();
 }
 
@@ -718,9 +653,8 @@ void PlayerCharacter::Load(UObject* WorldContext)
 
     // Clear roster
     for (int32 i = 0; i < GPlayerRoster.size(); ++i)
-    {
         delete GPlayerRoster.at(i);
-    }
+
     GPlayerRoster.destroy();
     GSelectedPlayer = nullptr;
 
@@ -770,7 +704,7 @@ bool PlayerCharacter::SaveToSubsystem(UObject* WorldContext)
     FS_PlayerGameInfo& Info = PlayerSS->GetMutablePlayerInfo();
     P->ToPlayerInfo(Info);
 
-    // Persist
+    // Persist (force because legacy often expects immediate write)
     const bool bOk = PlayerSS->SavePlayer(true);
     if (bOk)
         P->bDirty = false;
@@ -788,7 +722,7 @@ void PlayerCharacter::FromPlayerInfo(const FS_PlayerGameInfo& InInfo)
     PlayerName = InInfo.Name;
     PlayerSignature = InInfo.Signature;
 
-    // If you want “squadron/callsign” mapped to Nickname:
+    // map “squadron/callsign” -> Nickname for now
     PlayerSquadron = InInfo.Nickname;
 
     CachedRankId = InInfo.Rank;
@@ -840,8 +774,6 @@ void PlayerCharacter::ToPlayerInfo(FS_PlayerGameInfo& OutInfo) const
     OutInfo.Id = PlayerId;
     OutInfo.Name = PlayerName;
     OutInfo.Signature = PlayerSignature;
-
-    // map “squadron/callsign” into Nickname for now
     OutInfo.Nickname = PlayerSquadron;
 
     OutInfo.Rank = CachedRankId;
@@ -913,19 +845,22 @@ PlayerCharacter* PlayerCharacter::EnsureCurrentPlayer()
     return P;
 }
 
-int32 PlayerCharacter::GetMissionPoints(ShipStats* ShipStatsPtr, uint32 StartTimeMs)
+// ------------------------------------------------------------------
+// Mission stats (legacy-ish, compile-safe)
+// ------------------------------------------------------------------
+
+int32 PlayerCharacter::GetMissionPoints(ShipStats* Stats, uint32 StartTimeMs)
 {
     int32 MissionPoints = 0;
 
-    if (ShipStatsPtr)
+    if (Stats)
     {
-        MissionPoints = ShipStatsPtr->GetPoints();
+        MissionPoints = Stats->GetPoints();
 
-        // FIX: don't hide class member names
         const int32 FlightTimeSecondsLocal = (Game::GameTime() - StartTimeMs) / 1000;
 
         // If player survived the mission, award experience based on time in action
-        if (!ShipStatsPtr->GetDeaths() && !ShipStatsPtr->GetColls())
+        if (!Stats->GetDeaths() && !Stats->GetColls())
         {
             int32 MinutesInAction = FlightTimeSecondsLocal / 60;
             MinutesInAction /= 10;
@@ -933,37 +868,35 @@ int32 PlayerCharacter::GetMissionPoints(ShipStats* ShipStatsPtr, uint32 StartTim
 
             MissionPoints += MinutesInAction;
 
-            if (ShipStatsPtr->HasEvent(SimEvent::DOCK))
+            if (Stats->HasEvent(SimEvent::DOCK))
                 MissionPoints += 100;
         }
         else
         {
-            // FIX: Ship::Value not available in this TU; apply a simple penalty instead
-            // (keeps behavior: deaths/colls reduce points, never below 0)
+            // Keep behavior: deaths/colls reduce points, never below 0
             MissionPoints -= 250;
         }
 
-        if (MissionPoints < 0)
-            MissionPoints = 0;
+        MissionPoints = FMath::Max(0, MissionPoints);
     }
 
     return MissionPoints;
 }
 
-void PlayerCharacter::ProcessStats(ShipStats* ShipStatsPtr, uint32 StartTimeMs)
+void PlayerCharacter::ProcessStats(ShipStats* Stats, uint32 StartTimeMs)
 {
-    if (!ShipStatsPtr)
+    if (!Stats)
         return;
 
     const int32 OldRankId = GetRank();
-    const int32 EarnedMissionPoints = GetMissionPoints(ShipStatsPtr, StartTimeMs);
+    const int32 EarnedMissionPoints = GetMissionPoints(Stats, StartTimeMs);
 
     AddPoints(EarnedMissionPoints);
-    AddPoints(ShipStatsPtr->GetCommandPoints());
-    AddKills(ShipStatsPtr->GetGunKills());
-    AddKills(ShipStatsPtr->GetMissileKills());
-    AddLosses(ShipStatsPtr->GetDeaths());
-    AddLosses(ShipStatsPtr->GetColls());
+    AddPoints(Stats->GetCommandPoints());
+    AddKills(Stats->GetGunKills());
+    AddKills(Stats->GetMissileKills());
+    AddLosses(Stats->GetDeaths());
+    AddLosses(Stats->GetColls());
     AddMissions(1);
     AddFlightTime((Game::GameTime() - StartTimeMs) / 1000);
 
@@ -979,14 +912,8 @@ void PlayerCharacter::ProcessStats(ShipStats* ShipStatsPtr, uint32 StartTimeMs)
     Save();
 }
 
-bool PlayerCharacter::ShowAward() const
-{
-    return PendingAwardId != 0;
-}
-
-bool PlayerCharacter::EarnedAward(int32 AwardId, bool bIsRank, ShipStats* InShipStats)
+bool PlayerCharacter::EarnedAward(int32 /*AwardId*/, bool /*bIsRank*/, ShipStats* /*InShipStats*/)
 {
     // Registry-driven award eligibility not implemented yet.
     return false;
 }
-

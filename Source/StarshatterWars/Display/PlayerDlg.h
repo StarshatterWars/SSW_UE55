@@ -113,10 +113,10 @@ protected:
     // Local Apply/Cancel buttons in the dialog (optional).
     // If null, we fall back to UBaseScreen::ApplyButton/CancelButton.
     UPROPERTY(meta = (BindWidgetOptional))
-    UButton* apply = nullptr;
+    UButton* BtnSave = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
-    UButton* cancel = nullptr;
+    UButton* BtnCancel = nullptr;
 
     // Editable fields:
     UPROPERTY(meta = (BindWidgetOptional))

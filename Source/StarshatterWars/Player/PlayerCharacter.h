@@ -1,4 +1,4 @@
-/*
+/*=============================================================================
     Project:        Starshatter Wars (nGenEx Unreal Port)
     Studio:         Fractal Dev Games
     Copyright:      (C) 2024–2026. All Rights Reserved.
@@ -13,18 +13,25 @@
     - Keeps the legacy static roster using List<>
     - Stores player state using UE types exclusively
     - Persists via UStarshatterPlayerSubsystem (no player.cfg)
-*/
+
+    NOTES / FIXES APPLIED
+    =====================
+    - Removed legacy AwardInfo dependency from this façade (AwardInfo is separate now).
+    - AwardName/AwardDesc return FString (registry returns TCHAR*).
+    - Signature cleanup: GetMissionPoints returns int32 consistently.
+    - EarnedAward signature matches header/cpp and no longer depends on AwardInfo*.
+    - WorldContext save pointer remains, but all access is null-safe.
+=============================================================================*/
 
 #pragma once
 
 #include "CoreMinimal.h"
 
-#include "List.h"                // legacy container (kept per request)
-#include "GameStructs.h"         // FS_PlayerGameInfo, EMFDMode, etc.
+#include "List.h"        // legacy container (kept per request)
+#include "GameStructs.h" // FS_PlayerGameInfo, etc.
 
-class ShipStats;                 // legacy forward
-class AwardInfo;                 // legacy forward
-class USound;                    // UE forward
+class ShipStats; // legacy forward
+class USound;    // UE forward
 class UObject;
 
 // +-------------------------------------------------------------------+
@@ -39,15 +46,18 @@ public:
     virtual ~PlayerCharacter();
 
     // Legacy equality operator (name compare)
-    int operator==(const PlayerCharacter& Other) const { return PlayerName.Equals(Other.PlayerName, ESearchCase::IgnoreCase); }
+    int operator==(const PlayerCharacter& Other) const
+    {
+        return PlayerName.Equals(Other.PlayerName, ESearchCase::IgnoreCase);
+    }
 
     // ------------------------------------------------------------------
     // Identity / strings (UE types)
     // ------------------------------------------------------------------
-    int32 GetIdentity() const { return PlayerId; }               // <- fixes “GetIdentity” call sites
-    int32 Identity()    const { return PlayerId; }               // legacy alias
+    int32 GetIdentity() const { return PlayerId; }
+    int32 Identity()    const { return PlayerId; } // legacy alias
 
-    const FString& Name()      const { return PlayerName; }      // <- fixes “Name is not a member”
+    const FString& Name()      const { return PlayerName; }
     const FString& Password()  const { return PlayerPassword; }
     const FString& Squadron()  const { return PlayerSquadron; }
     const FString& Signature() const { return PlayerSignature; }
@@ -59,10 +69,10 @@ public:
     // ------------------------------------------------------------------
     // Rank / medals / points (legacy-compatible)
     // ------------------------------------------------------------------
-    int32 GetRank() const;                                      // derived or cached
-    int32 Medal(int32 N) const;                                 // nth medal bit in 16-bit field
-    int32 Points()  const { return PlayerPoints; }
-    int32 Medals()  const { return MedalsMask; }
+    int32 GetRank() const;      // derived or cached
+    int32 Medal(int32 N) const; // nth medal bit in 16-bit field
+    int32 Points() const { return PlayerPoints; }
+    int32 Medals() const { return MedalsMask; }
 
     // Stats
     int32 FlightTime() const { return FlightTimeSeconds; }
@@ -72,8 +82,8 @@ public:
     int32 Losses()     const { return LossCount; }
 
     // Campaign/training (modernized storage)
-    int64 Campaigns() const { return CampaignCompleteMask; }     // legacy name kept
-    int32 Trained()   const { return HighestTrainingMission; }   // legacy name kept
+    int64 Campaigns() const { return CampaignCompleteMask; }
+    int32 Trained()   const { return HighestTrainingMission; }
 
     // ------------------------------------------------------------------
     // Gameplay options (legacy names kept, UE-backed)
@@ -84,24 +94,26 @@ public:
     int32 AILevel()      const { return AiDifficulty; }
     int32 HUDMode()      const { return HudMode; }
     int32 HUDColor()     const { return HudColor; }
-    int32 FriendlyFire() const { return ForceFeedbackLevel; }    // legacy getter name
+    int32 FriendlyFire() const { return ForceFeedbackLevel; }
     int32 GridMode()     const { return bGridMode ? 1 : 0; }
     int32 Gunsight()     const { return bGunSight ? 1 : 0; }
 
     // ------------------------------------------------------------------
-    // Awards (safe stubs; hook later)
+    // Awards (registry-backed presentation)
     // ------------------------------------------------------------------
-    bool   ShowAward() const;
+    bool    ShowAward() const;
     FString AwardName() const;
     FString AwardDesc() const;
     USound* AwardSound() const;
 
     bool CanCommand(int32 ShipClassMask) const;
 
+    void ClearShowAward();
+
     // ------------------------------------------------------------------
     // Mutators (keep legacy signatures but UE implementation)
     // ------------------------------------------------------------------
-    void SetName(const char* InNameAnsi);                        // legacy call sites
+    void SetName(const char* InNameAnsi);
     void SetName(const FString& InName);
 
     void SetPassword(const char* InPassAnsi);
@@ -142,7 +154,7 @@ public:
     // Campaign/training helpers (legacy names retained)
     bool HasTrained(int32 MissionId1Based) const;
     bool HasCompletedCampaign(int32 CampaignId) const;
-    void SetCampaignComplete(int32 CampaignId);                  // <- fixes missing symbol
+    void SetCampaignComplete(int32 CampaignId);
 
     // Options
     void SetFlightModel(int32 InMode);
@@ -155,14 +167,12 @@ public:
     void SetGridMode(int32 InOnOff);
     void SetGunsight(int32 InOnOff);
 
-    void ClearShowAward();
-
     // ------------------------------------------------------------------
     // Legacy static rank/medal helpers (stubs but compile-safe)
     // ------------------------------------------------------------------
     static const char* RankName(int32 RankId);
     static const char* RankAbrv(int32 RankId);
-    static int32       RankFromName(const char* InNameAnsi);     // <- fixes Campaign.cpp errors
+    static int32       RankFromName(const char* InNameAnsi);
     static int32       RankFromName(const FString& InName);
 
     static const char* RankDescription(int32 RankId);
@@ -183,15 +193,15 @@ public:
     static PlayerCharacter* Create(const char* InNameAnsi);
     static void                   Destroy(PlayerCharacter* InPlayer);
     static PlayerCharacter* Find(const char* InNameAnsi);
-    static void                   Initialize();                  // safe default
+    static void                   Initialize();                 // safe default
     static void                   Initialize(UObject* WorldContext);
     static void                   Close();
 
     bool                          ConfigExists() const { return bHadSubsystemSave; }
 
-    static void                   Load();                        // no-op safe
-    static void                   Load(UObject* WorldContext);   // loads from subsystem
-    static void                   Save();                        // saves to subsystem if context set
+    static void                   Load();                       // no-op safe
+    static void                   Load(UObject* WorldContext);  // loads from subsystem
+    static void                   Save();                       // saves to subsystem if context set
     static bool                   SaveToSubsystem(UObject* WorldContext);
 
     static void                   SetWorldContext(UObject* WorldContext);
@@ -206,9 +216,11 @@ public:
     void FromPlayerInfo(const FS_PlayerGameInfo& InInfo);
     void ToPlayerInfo(FS_PlayerGameInfo& OutInfo) const;
 
-    int GetMissionPoints(ShipStats* stats, uint32 start_time);
-    void ProcessStats(ShipStats* stats, uint32 start_time);
-    bool EarnedAward(int32 AwardId, bool bIsRank, ShipStats* InShipStats);
+    int32 GetMissionPoints(ShipStats* Stats, uint32 StartTimeMs);
+    void  ProcessStats(ShipStats* Stats, uint32 StartTimeMs);
+
+    // Registry-driven medal/rank eligibility (placeholder)
+    bool  EarnedAward(int32 AwardId, bool bIsRank, ShipStats* InShipStats);
 
 private:
     void CreateUniqueID();
@@ -230,7 +242,7 @@ private:
     // Stats
     int32 CreateDateUtc = 0;
     int32 PlayerPoints = 0;
-    int32 MedalsMask = 0;    // bitmask
+    int32 MedalsMask = 0; // bitmask
     int32 FlightTimeSeconds = 0;
     int32 MissionCount = 0;
     int32 KillCount = 0;
@@ -238,8 +250,8 @@ private:
     int32 LossCount = 0;
 
     // Campaign/training modern storage
-    int64 CampaignCompleteMask = 0;  // up to 64 campaigns
-    int64 TrainingMask = 0;  // up to 64 trainings
+    int64 CampaignCompleteMask = 0; // up to 64 campaigns
+    int64 TrainingMask = 0;         // up to 64 trainings
     int32 HighestTrainingMission = 0;
 
     // Cached/explicit rank id (optional)
@@ -256,13 +268,13 @@ private:
     bool  bGridMode = true;
     bool  bGunSight = false;
 
-    // Transient award pointer (stubbed)
-    AwardInfo* CurrentAward = nullptr;
-
     // Dirty tracking
     bool bDirty = false;
 
-    int32 Rank = 0;           // current rank id (legacy)
+    // Presentation-only rank tracking (legacy field used by some call sites)
+    int32 Rank = 0;
+
+    // Pending award presentation
     int32 PendingAwardId = 0;
     bool  bPendingAwardIsRank = false;
 

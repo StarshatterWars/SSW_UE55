@@ -46,6 +46,8 @@ void UMenuScreen::Initialize(UGameInstance* InGI)
     if (!ExitDlgClass)
         ExitDlgClass = Assets->GetWidgetClass(TEXT("UI.ExitDlgClass"), true);
 
+    if (!PlayerDlgClass)
+        PlayerDlgClass = Assets->GetWidgetClass(TEXT("UI.PlayerLogbookScreenClass"), true);
     // IMPORTANT: do NOT touch MenuDlgClass unless you actually bind it in registry:
     // if (!MenuDlgClass)
     //     MenuDlgClass = Assets->GetWidgetClass(TEXT("UI.MenuDlgClass"), true);
@@ -548,9 +550,54 @@ void UMenuScreen::ShowFirstTimeDlg()
 
 void UMenuScreen::ShowPlayerDlg()
 {
-    HideAll();
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] ShowPlayerDlg: BEGIN"));
+
+    if (!PlayerDlgClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowPlayerDlg: PlayerDlgClass is NULL"));
+        return;
+    }
+
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowPlayerDlg: OwningPlayer is NULL"));
+        return;
+    }
+
     EnsureDialog<UPlayerDlg>(PlayerDlgClass, PlayerDlg);
-    ShowDialog(PlayerDlg, true);
+    if (!PlayerDlg)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowPlayerDlg: EnsureDialog failed (PlayerDlg is NULL)"));
+        return;
+    }
+
+    HideAll();
+
+    PlayerDlg->SetMenuManager(this);
+    PlayerDlg->InitializeDlg(this);
+
+    if (PlayerDlg->IsInViewport())
+        PlayerDlg->RemoveFromParent();
+
+ 
+    PlayerDlg->AddToViewport(200);
+
+    PlayerDlg->SetVisibility(ESlateVisibility::Visible);
+    PlayerDlg->SetIsEnabled(true);
+    PlayerDlg->SetIsFocusable(true);
+    PlayerDlg->SetDialogInputEnabled(true);
+
+    CurrentDialog = PlayerDlg;
+
+    ApplyUIFocus(PC, PlayerDlg);
+
+    // TEMP: comment this out if you still see "nothing shows"
+    // PlayerDlg->ShowDlg();
+
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] ShowPlayerDlg: SHOWN InViewport=%d Vis=%d"),
+        PlayerDlg->IsInViewport() ? 1 : 0,
+        (int32)PlayerDlg->GetVisibility());
 }
 
 void UMenuScreen::ShowTacRefDlg()
@@ -671,6 +718,11 @@ void UMenuScreen::HideOptionsScreen()
 }
 
 void UMenuScreen::ReturnFromOptions()
+{
+    ShowMenuDlg();
+}
+
+void UMenuScreen::ReturnFromPlayerDlg()
 {
     ShowMenuDlg();
 }

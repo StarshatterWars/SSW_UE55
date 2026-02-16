@@ -37,6 +37,7 @@ UPlayerDlg::UPlayerDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     // defaults only
+    SelectedPlayer = nullptr;
 }
 
 void UPlayerDlg::InitializeDlg(UMenuScreen* InManager)
@@ -55,15 +56,15 @@ void UPlayerDlg::NativeConstruct()
 
 void UPlayerDlg::NativeDestruct()
 {
-    // Unbind to be safe (optional)
+    // Unbind to be safe
     if (lst_roster)
         lst_roster->OnItemSelectionChanged().RemoveAll(this);
 
     if (btn_add) btn_add->OnClicked.RemoveAll(this);
     if (btn_del) btn_del->OnClicked.RemoveAll(this);
 
-    if (apply) apply->OnClicked.RemoveAll(this);
-    if (cancel) cancel->OnClicked.RemoveAll(this);
+    if (BtnSave) BtnSave->OnClicked.RemoveAll(this);
+    if (BtnCancel) BtnCancel->OnClicked.RemoveAll(this);
 
     if (ApplyButton) ApplyButton->OnClicked.RemoveAll(this);
     if (CancelButton) CancelButton->OnClicked.RemoveAll(this);
@@ -129,10 +130,10 @@ void UPlayerDlg::RegisterControls()
     }
 
     // Apply/Cancel (prefer local; fall back to BaseScreen buttons):
-    if (apply)
+    if (BtnSave)
     {
-        apply->OnClicked.RemoveAll(this);
-        apply->OnClicked.AddDynamic(this, &UPlayerDlg::OnApply);
+        BtnSave->OnClicked.RemoveAll(this);
+        BtnSave->OnClicked.AddDynamic(this, &UPlayerDlg::OnApply);
     }
     else if (ApplyButton)
     {
@@ -140,10 +141,10 @@ void UPlayerDlg::RegisterControls()
         ApplyButton->OnClicked.AddDynamic(this, &UPlayerDlg::OnApply);
     }
 
-    if (cancel)
+    if (BtnCancel)
     {
-        cancel->OnClicked.RemoveAll(this);
-        cancel->OnClicked.AddDynamic(this, &UPlayerDlg::OnCancel);
+        BtnCancel->OnClicked.RemoveAll(this);
+        BtnCancel->OnClicked.AddDynamic(this, &UPlayerDlg::OnCancel);
     }
     else if (CancelButton)
     {
@@ -161,15 +162,24 @@ void UPlayerDlg::BuildRoster()
     if (!lst_roster)
         return;
 
+    // Preserve selection by PlayerId if possible:
+    const int32 PrevId = (selected_item && selected_item->GetPlayer())
+        ? selected_item->GetPlayer()->GetIdentity()
+        : 0;
+
     lst_roster->ClearListItems();
+    selected_item = nullptr;
+    SelectedPlayer = nullptr;
 
     List<PlayerCharacter>& roster = PlayerCharacter::GetRoster();
     if (roster.size() < 1)
     {
-        selected_item = nullptr;
         ShowPlayer();
         return;
     }
+
+    UPlayerRosterItem* FirstItem = nullptr;
+    UPlayerRosterItem* MatchItem = nullptr;
 
     for (int i = 0; i < roster.size(); ++i)
     {
@@ -180,42 +190,60 @@ void UPlayerDlg::BuildRoster()
         UPlayerRosterItem* item = NewObject<UPlayerRosterItem>(this);
         item->Initialize(player);
 
-        lst_roster->AddItem(item);
+        if (!FirstItem)
+            FirstItem = item;
 
-        // Default selection: first item if none selected:
-        if (!selected_item)
-            selected_item = item;
+        if (PrevId != 0 && player->GetIdentity() == PrevId)
+            MatchItem = item;
+
+        lst_roster->AddItem(item);
     }
 
+    // Select preserved item if present; else first:
+    selected_item = MatchItem ? MatchItem : FirstItem;
+
     if (selected_item)
+    {
         lst_roster->SetSelectedItem(selected_item);
+        SelectedPlayer = selected_item->GetPlayer();
+
+        // Keep legacy selection in sync if you want:
+        if (SelectedPlayer)
+            PlayerCharacter::SetCurrentPlayer(SelectedPlayer);
+    }
+
+    ShowPlayer();
 }
 
 void UPlayerDlg::RefreshRoster()
 {
-    // Simple approach (safe): rebuild.
+    // Safe approach: rebuild
     BuildRoster();
 }
 
 void UPlayerDlg::OnRosterSelectionChanged(UObject* SelectedItem)
 {
-    // If you are using a UObject item wrapper:
     UPlayerRosterItem* Item = Cast<UPlayerRosterItem>(SelectedItem);
     PlayerCharacter* player = Item ? Item->GetPlayer() : nullptr;
 
-    // Store selection however you do it:
+    // Update our selection pointers (IMPORTANT):
+    selected_item = Item;
     SelectedPlayer = player;
 
-    UpdatePlayer();
+    if (player)
+        PlayerCharacter::SetCurrentPlayer(player);
+
+    // IMPORTANT: do NOT call UpdatePlayer() here — selection change should not overwrite data.
+    // Just show selected record:
     ShowPlayer();
 }
 
 PlayerCharacter* UPlayerDlg::GetSelectedPlayer() const
 {
-    if (!selected_item)
-        return nullptr;
+    if (selected_item)
+        return selected_item->GetPlayer();
 
-    return selected_item->GetPlayer();
+    return nullptr;
 }
 
 // +--------------------------------------------------------------------+
@@ -228,22 +256,18 @@ void UPlayerDlg::UpdatePlayer()
     if (!player)
         return;
 
-    // Name:
     if (edt_name)
     {
         const FString NewName = edt_name->GetText().ToString();
         if (!NewName.IsEmpty())
-            player->SetName(TCHAR_TO_ANSI(*NewName));
+            player->SetName(NewName);
     }
-
-    // Add more fields here if you expose them in UMG.
 }
 
 void UPlayerDlg::ShowPlayer()
 {
     PlayerCharacter* player = GetSelectedPlayer();
 
-    // Clear UI if no selection:
     if (!player)
     {
         if (edt_name)        edt_name->SetText(FText::GetEmpty());
@@ -257,13 +281,10 @@ void UPlayerDlg::ShowPlayer()
     }
 
     if (edt_name)
-        edt_name->SetText(FText::FromString(*player->Name()));
+        edt_name->SetText(FText::FromString(player->Name()));   // FIXED
 
     if (lbl_rank)
-    {
-        const int32 RankVal = (int32)player->   GetRank();
-        lbl_rank->SetText(FText::AsNumber(RankVal));
-    }
+        lbl_rank->SetText(FText::AsNumber(player->GetRank()));
 
     if (lbl_flighttime)
         lbl_flighttime->SetText(FText::FromString(FormatTimeHMS(player->FlightTime())));
@@ -272,17 +293,13 @@ void UPlayerDlg::ShowPlayer()
         lbl_createdate->SetText(FText::FromString(FormatDateFromUnixSeconds((int64)player->CreateDate())));
 
     if (lbl_kills)
-        lbl_kills->SetText(FText::AsNumber((int32)player->Kills()));
+        lbl_kills->SetText(FText::AsNumber(player->Kills()));
 
     if (lbl_deaths)
-        lbl_deaths->SetText(FText::AsNumber((int32)player->Deaths()));
+        lbl_deaths->SetText(FText::AsNumber(player->Deaths()));
 
     if (lbl_missions)
-        lbl_missions->SetText(FText::AsNumber((int32)player->Missions()));
-
-    // Rank/medal images: assign brushes here when your texture pipeline is ready.
-    // img_rank->SetBrushFromTexture(...)
-    // img_medal->SetBrushFromTexture(...)
+        lbl_missions->SetText(FText::AsNumber(player->Missions()));
 }
 
 // +--------------------------------------------------------------------+
@@ -291,7 +308,7 @@ void UPlayerDlg::ShowPlayer()
 
 void UPlayerDlg::OnAdd()
 {
-    // Commit current edits:
+    // Commit current edits first:
     UpdatePlayer();
 
     PlayerCharacter* new_player = PlayerCharacter::CreateDefault();
@@ -299,8 +316,11 @@ void UPlayerDlg::OnAdd()
         return;
 
     PlayerCharacter::AddToRoster(new_player);
+    PlayerCharacter::SetCurrentPlayer(new_player);
     PlayerCharacter::Save();
-
+    
+    // Force selection to new player by setting selected_item after rebuild:
+    selected_item = nullptr;
     RefreshRoster();
 }
 
@@ -314,6 +334,7 @@ void UPlayerDlg::OnDel()
     PlayerCharacter::Save();
 
     selected_item = nullptr;
+    SelectedPlayer = nullptr;
     RefreshRoster();
 }
 
@@ -323,24 +344,24 @@ void UPlayerDlg::OnApply()
     PlayerCharacter::Save();
 
     if (manager)
-        manager->ShowMenuDlg(); // adjust to your actual API
+        manager->ShowMenuDlg();
     else
         HideDlg();
 }
 
 void UPlayerDlg::OnCancel()
 {
-    // Discard UI edits by reloading selected player state:
+    // Discard UI edits by re-showing current model:
     ShowPlayer();
 
     if (manager)
-        manager->ShowMenuDlg(); // adjust to your actual API
+        manager->ShowMenuDlg();
     else
         HideDlg();
 }
 
 // +--------------------------------------------------------------------+
-// Formatting helpers (replaces missing FormatTime / FormatTimeString)
+// Formatting helpers
 // +--------------------------------------------------------------------+
 
 FString UPlayerDlg::FormatTimeHMS(double Seconds)
@@ -358,7 +379,7 @@ FString UPlayerDlg::FormatTimeHMS(double Seconds)
 
 FString UPlayerDlg::FormatDateFromUnixSeconds(int64 UnixSeconds)
 {
-    // If legacy CreateDate() is not Unix seconds, replace this mapping here.
+    // If CreateDate() is not Unix seconds in your legacy model, map it here.
     if (UnixSeconds <= 0)
         return TEXT("");
 

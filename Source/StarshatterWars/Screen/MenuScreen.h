@@ -99,6 +99,8 @@ public:
     void HideOptionsScreen();
     void ReturnFromOptions();
 
+    void ReturnFromPlayerDlg();
+
     UTacRefDlg* GetTacRefDlg() const { return TacRefDlg; }
     UOptionsScreen* GetOptionsScreen() const { return OptionsScreen; }
     UMissionEditorDlg* GetMsnEditDlg() const { return MsnEditDlg; }
