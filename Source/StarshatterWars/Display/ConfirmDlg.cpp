@@ -118,7 +118,7 @@ void UConfirmDlg::SetTitle(const FString& InTitle)
         lbl_title->SetText(FText::FromString(InTitle));
 }
 
-FString UConfirmDlg::GetMessage() const
+FString UConfirmDlg::GetDialogMessage() const
 {
     return lbl_message ? lbl_message->GetText().ToString() : FString();
 }

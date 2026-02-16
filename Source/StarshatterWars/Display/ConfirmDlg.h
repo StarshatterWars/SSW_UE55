@@ -63,7 +63,7 @@ public:
     void SetTitle(const FString& InTitle);
 
     UFUNCTION(BlueprintCallable, Category = "ConfirmDlg")
-    FString GetMessage() const;
+    FString GetDialogMessage() const;
 
     UFUNCTION(BlueprintCallable, Category = "ConfirmDlg")
     void SetMessage(const FString& InMessage);
