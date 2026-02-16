@@ -13,33 +13,28 @@
 
     OVERVIEW
     ========
-    Player dialog (UE port)
-    - BaseScreen-style dialog with Apply/Cancel
-    - Displays and edits PlayerCharacter roster entries
-    - Uses UListView with UObject list items (UPlayerRosterItem)
-    - List row visuals handled by UPlayerRosterEntry
+    Player Logbook dialog (UE port)
+    - Uses BaseScreen "Options-subpanel" pattern:
+      AutoVBox + AddLabeledRow() for label-left / control-right rows.
+    - Builds full legacy PlayerDlg.frm control set (UI side).
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
-
 #include "BaseScreen.h"
+#include "PlayerDlg.generated.h"
 
 class UButton;
 class UEditableTextBox;
 class UImage;
 class UListView;
 class UTextBlock;
+class UUniformGridPanel;
 
 class UPlayerRosterItem;
-
 class PlayerCharacter;
 class UMenuScreen;
-
-#include "PlayerDlg.generated.h"
-
-// +--------------------------------------------------------------------+
 
 UCLASS()
 class STARSHATTERWARS_API UPlayerDlg : public UBaseScreen
@@ -60,16 +55,23 @@ public:
     void HideDlg();
 
 protected:
+    // ------------------------------------------------------------
+    // UI build + wiring
+    // ------------------------------------------------------------
     void RegisterControls();
 
     void BuildRoster();
     void RefreshRoster();
 
-    void UpdatePlayer();   // commit UI -> player
-    void ShowPlayer();     // player -> UI
+    void BuildFormRows();      // creates all rows/controls into BaseScreen AutoVBox
+    void RebuildFromModel();   // model -> UI
+    void CommitToModel();      // UI -> model
 
     PlayerCharacter* GetSelectedPlayer() const;
 
+    // ------------------------------------------------------------
+    // Events
+    // ------------------------------------------------------------
     UFUNCTION()
     void OnRosterSelectionChanged(UObject* SelectedItem);
 
@@ -85,22 +87,22 @@ protected:
     UFUNCTION()
     void OnCancel();
 
-    // Helpers:
+    // ------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------
     static FString FormatTimeHMS(double Seconds);
     static FString FormatDateFromUnixSeconds(int64 UnixSeconds);
 
 protected:
-    // -----------------------------------------------------------------
+    // ------------------------------------------------------------
     // Manager
-    // -----------------------------------------------------------------
-
+    // ------------------------------------------------------------
     UPROPERTY()
     UMenuScreen* manager = nullptr;
 
-    // -----------------------------------------------------------------
-    // Widgets (BindWidgetOptional lets you author in UMG or pure C++)
-    // -----------------------------------------------------------------
-
+    // ------------------------------------------------------------
+    // LEFT: roster + Create/Delete (bound from UMG if present)
+    // ------------------------------------------------------------
     UPROPERTY(meta = (BindWidgetOptional))
     UListView* lst_roster = nullptr;
 
@@ -110,51 +112,73 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     UButton* btn_del = nullptr;
 
-    // Local Apply/Cancel buttons in the dialog (optional).
-    // If null, we fall back to UBaseScreen::ApplyButton/CancelButton.
+    // Optional local Save/Cancel buttons (if your WBP has them).
+    // Otherwise BaseScreen::ApplyButton / CancelButton are used.
     UPROPERTY(meta = (BindWidgetOptional))
     UButton* BtnSave = nullptr;
 
     UPROPERTY(meta = (BindWidgetOptional))
     UButton* BtnCancel = nullptr;
 
-    // Editable fields:
-    UPROPERTY(meta = (BindWidgetOptional))
+    // ------------------------------------------------------------
+    // RIGHT: controls built in code (legacy form content)
+    // ------------------------------------------------------------
+
+    // Edits:
+    UPROPERTY()
     UEditableTextBox* edt_name = nullptr;
 
-    // Labels:
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* lbl_rank = nullptr;
+    UPROPERTY()
+    UEditableTextBox* edt_password = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* lbl_flighttime = nullptr;
+    UPROPERTY()
+    UEditableTextBox* edt_squadron = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* lbl_createdate = nullptr;
+    UPROPERTY()
+    UEditableTextBox* edt_signature = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* lbl_kills = nullptr;
+    // Read-only stats labels:
+    UPROPERTY()
+    UTextBlock* txt_created = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* lbl_deaths = nullptr;
+    UPROPERTY()
+    UTextBlock* txt_flighttime = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UTextBlock* lbl_missions = nullptr;
+    UPROPERTY()
+    UTextBlock* txt_missions = nullptr;
 
-    // Images (rank/medal). In UMG, wrap with a transparent button if you want click handling.
-    UPROPERTY(meta = (BindWidgetOptional))
+    UPROPERTY()
+    UTextBlock* txt_kills = nullptr;
+
+    UPROPERTY()
+    UTextBlock* txt_losses = nullptr;
+
+    UPROPERTY()
+    UTextBlock* txt_points = nullptr;
+
+    UPROPERTY()
+    UTextBlock* txt_rankname = nullptr;
+
+    // Rank insignia:
+    UPROPERTY()
     UImage* img_rank = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    UImage* img_medal = nullptr;
+    // Medals grid (3x5):
+    UPROPERTY()
+    UUniformGridPanel* medals_grid = nullptr;
 
-    // -----------------------------------------------------------------
+    UPROPERTY()
+    TArray<TObjectPtr<UImage>> MedalImages; // 15
+
+    // Chat macros 1..9,0:
+    UPROPERTY()
+    TArray<TObjectPtr<UEditableTextBox>> MacroEdits; // 10
+
+    // ------------------------------------------------------------
     // State
-    // -----------------------------------------------------------------
-
+    // ------------------------------------------------------------
     UPROPERTY()
     TObjectPtr<UPlayerRosterItem> selected_item = nullptr;
 
-    PlayerCharacter*              SelectedPlayer;
-
+    PlayerCharacter* SelectedPlayer = nullptr;
 };
