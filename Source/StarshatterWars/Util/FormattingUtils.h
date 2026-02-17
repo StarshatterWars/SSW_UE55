@@ -120,5 +120,9 @@ public:
     static FString SanitizeEnumToken(const FString& In);
 
     static bool GetRegionTypeFromString(const FString& InString, EOrbitalType& OutValue);
+
+    static FString FormatDateFromUnixSeconds(int64 UnixSeconds);
+
+    static FString FormatTimeHMS(double Seconds);
 };
 

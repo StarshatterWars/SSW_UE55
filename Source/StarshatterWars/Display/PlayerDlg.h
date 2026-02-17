@@ -1,5 +1,3 @@
-// PlayerDlg.h
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,17 +7,16 @@
 class UButton;
 class UEditableTextBox;
 class UImage;
-class UListView;
 class UTextBlock;
 class UScrollBox;
 class UHorizontalBox;
 class UVerticalBox;
 class UUniformGridPanel;
-class UBorder;
 
-class UPlayerRosterItem;
-class PlayerCharacter;
 class UMenuScreen;
+
+// NEW
+class UStarshatterPlayerSubsystem;
 
 UCLASS()
 class STARSHATTERWARS_API UPlayerDlg : public UBaseScreen
@@ -47,23 +44,17 @@ protected:
     void EnsureLayout();
     void EnsureScrollHostsStats();
 
-    // -------- Build UI rows (Options-style) --------
+    // -------- Build UI rows --------
     void BuildRosterPanel();
-    void BuildStatsRows();     // Name/Password/Squad/Signature/Created/Flight/Missions/Kills/Losses/Points/Rank + insignia + medals + macros
+    void BuildStatsRows();
 
-    // -------- Model <-> UI --------
-    void BuildRoster();
-    void RefreshRoster();
+    // -------- Model <-> UI (SUBSYSTEM) --------
+    void UpdatePlayerFromUI_Subsystem();   // UI -> PlayerInfo + Save
+    void RefreshUIFromSubsystem();         // PlayerInfo -> UI
 
-    void UpdatePlayerFromUI();   // commit edits to model (best-effort, gated by concept checks)
-    void RefreshUIFromPlayer();  // model -> UI
-
-    PlayerCharacter* GetSelectedPlayer() const;
+    UStarshatterPlayerSubsystem* GetPlayerSS() const;
 
     // -------- Events --------
-    UFUNCTION()
-    void OnRosterSelectionChanged(UObject* SelectedItem);
-
     UFUNCTION()
     void OnAdd();
 
@@ -76,11 +67,6 @@ protected:
     UFUNCTION()
     void OnCancel();
 
-    // -------- Helpers --------
-    static FString FormatTimeHMS(double Seconds);
-    static FString FormatDateFromUnixSeconds(int64 UnixSeconds);
-
-    // Options-style row helpers (local to PlayerDlg)
     UHorizontalBox* AddStatRow(const FText& Label, UWidget* RightWidget, float RightWidth = 420.f, float RowPadY = 6.f);
     UTextBlock* MakeValueText();
     UEditableTextBox* MakeEditBox(bool bPassword = false);
@@ -93,11 +79,11 @@ protected:
     UPROPERTY()
     TObjectPtr<UMenuScreen> manager = nullptr;
 
-    // -------- Root containers (optional BP binds) --------
+    // Optional BP bind if your canvas name differs:
     UPROPERTY(meta = (BindWidgetOptional))
-    UCanvasPanel* RootCanvasPlayer = nullptr; // if your BP uses a different canvas name than BaseScreen::RootCanvas
+    UCanvasPanel* RootCanvasPlayer = nullptr;
 
-    // -------- Runtime-built layout --------
+    // -------- Runtime layout --------
     UPROPERTY()
     TObjectPtr<UHorizontalBox> MainRow = nullptr;
 
@@ -108,13 +94,13 @@ protected:
     TObjectPtr<UScrollBox> StatsScroll = nullptr;
 
     UPROPERTY()
-    TObjectPtr<UVerticalBox> StatsVBox = nullptr; // will be used as "AutoVBox" for AddLabeledRow-like behavior
+    TObjectPtr<UVerticalBox> StatsVBox = nullptr;
 
-    // -------- Left / roster --------
+    // Left panel label (single profile)
     UPROPERTY()
-    TObjectPtr<UListView> lst_roster = nullptr;
+    TObjectPtr<UTextBlock> txt_profile_name = nullptr;
 
-    // -------- Stats widgets (right side) --------
+    // -------- Stats widgets --------
     UPROPERTY()
     TObjectPtr<UEditableTextBox> edt_name = nullptr;
 
@@ -159,10 +145,4 @@ protected:
 
     UPROPERTY()
     TArray<TObjectPtr<UEditableTextBox>> MacroEdits; // 10
-
-    // -------- Selection --------
-    UPROPERTY()
-    TObjectPtr<UPlayerRosterItem> selected_item = nullptr;
-
-    PlayerCharacter* SelectedPlayer = nullptr;
 };

@@ -404,3 +404,25 @@ bool UFormattingUtils::GetRegionTypeFromString(const FString& InString, EOrbital
 
     return false;
 }
+
+FString UFormattingUtils::FormatTimeHMS(double Seconds)
+{
+    if (Seconds < 0.0)
+        Seconds = 0.0;
+
+    const int64 TotalSeconds = (int64)Seconds;
+    const int64 H = TotalSeconds / 3600;
+    const int64 M = (TotalSeconds % 3600) / 60;
+    const int64 S = (TotalSeconds % 60);
+
+    return FString::Printf(TEXT("%lld:%02lld:%02lld"), H, M, S);
+}
+
+FString UFormattingUtils::FormatDateFromUnixSeconds(int64 UnixSeconds)
+{
+    if (UnixSeconds <= 0)
+        return TEXT("");
+
+    const FDateTime DT = FDateTime::FromUnixTimestamp(UnixSeconds);
+    return DT.ToString(TEXT("%Y-%m-%d"));
+}

@@ -1,5 +1,3 @@
-// PlayerDlg.cpp
-
 #include "PlayerDlg.h"
 
 // UMG
@@ -11,60 +9,27 @@
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/ScrollBox.h"
-#include "Components/Border.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/EditableTextBox.h"
-#include "Components/ListView.h"
 #include "Components/SizeBox.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
-#include "Components/Spacer.h"
+#include "Components/Image.h"
+#include "FormattingUtils.h"
 
-// Input
-#include "Input/Reply.h"
-
-// Model
-#include "PlayerRosterItem.h"
-#include "PlayerCharacter.h"
+// Manager
 #include "MenuScreen.h"
 
+// NEW: subsystem + struct
+#include "StarshatterPlayerSubsystem.h"
+#include "GameStructs.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogPlayerDlg, Log, All);
-
-// -------------------- compile-time “feature detection” --------------------
-template<typename T>
-concept HasPasswordGet = requires(T * p) { { p->Password() }; };
-
-template<typename T>
-concept HasPasswordSet = requires(T * p, const FString & s) { p->SetPassword(s); };
-
-template<typename T>
-concept HasSquadGet = requires(T * p) { { p->Squadron() }; };
-
-template<typename T>
-concept HasSquadSet = requires(T * p, const FString & s) { p->SetSquadron(s); };
-
-template<typename T>
-concept HasSignatureGet = requires(T * p) { { p->Signature() }; };
-
-template<typename T>
-concept HasSignatureSet = requires(T * p, const FString & s) { p->SetSignature(s); };
-
-template<typename T>
-concept HasPointsGet = requires(T * p) { { p->Points() }; };
-
-template<typename T>
-concept HasChatMacroGet = requires(T * p, int32 i) { { p->GetChatMacro(i) }; };
-
-template<typename T>
-concept HasChatMacroSet = requires(T * p, int32 i, const FString & s) { p->SetChatMacro(i, s); };
-
-// ------------------------------------------------------------------------
 
 UPlayerDlg::UPlayerDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    SelectedPlayer = nullptr;
     SetDialogInputEnabled(true);
 }
 
@@ -90,17 +55,31 @@ void UPlayerDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    ApplyButton->OnClicked.RemoveAll(this);
-    ApplyButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnApply);
-    CancelButton->OnClicked.RemoveAll(this);
-    CancelButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnCancel);
+    // Bind base buttons
+    if (ApplyButton)
+    {
+        ApplyButton->OnClicked.RemoveAll(this);
+        ApplyButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnApply);
+    }
 
-    AddPlayerButton->OnClicked.RemoveAll(this);
-    AddPlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnAdd);
+    if (CancelButton)
+    {
+        CancelButton->OnClicked.RemoveAll(this);
+        CancelButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnCancel);
+    }
 
-    DeletePlayerButton->OnClicked.RemoveAll(this);
-    DeletePlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnDel);
+    // Optional legacy buttons: keep but make them safe no-ops for now
+    if (AddPlayerButton)
+    {
+        AddPlayerButton->OnClicked.RemoveAll(this);
+        AddPlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnAdd);
+    }
 
+    if (DeletePlayerButton)
+    {
+        DeletePlayerButton->OnClicked.RemoveAll(this);
+        DeletePlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnDel);
+    }
 
     EnsureLayout();
     EnsureScrollHostsStats();
@@ -108,15 +87,11 @@ void UPlayerDlg::NativeConstruct()
     BuildRosterPanel();
     BuildStatsRows();
 
-    BuildRoster();
-    RefreshUIFromPlayer();
+    RefreshUIFromSubsystem();
 }
 
 void UPlayerDlg::NativeDestruct()
 {
-    if (lst_roster)
-        lst_roster->OnItemSelectionChanged().RemoveAll(this);
-
     if (AddPlayerButton) AddPlayerButton->OnClicked.RemoveAll(this);
     if (DeletePlayerButton) DeletePlayerButton->OnClicked.RemoveAll(this);
     if (ApplyButton) ApplyButton->OnClicked.RemoveAll(this);
@@ -125,15 +100,13 @@ void UPlayerDlg::NativeDestruct()
     Super::NativeDestruct();
 }
 
-// BaseScreen central Enter/Escape routes here:
 void UPlayerDlg::HandleAccept() { OnApply(); }
 void UPlayerDlg::HandleCancel() { OnCancel(); }
 
 void UPlayerDlg::ShowDlg()
 {
     SetVisibility(ESlateVisibility::Visible);
-    BuildRoster();
-    RefreshUIFromPlayer();
+    RefreshUIFromSubsystem();
 }
 
 void UPlayerDlg::HideDlg()
@@ -142,7 +115,19 @@ void UPlayerDlg::HideDlg()
 }
 
 // ------------------------------------------------------------------------
-// Layout (Runtime)
+// Subsystem access
+// ------------------------------------------------------------------------
+
+UStarshatterPlayerSubsystem* UPlayerDlg::GetPlayerSS() const
+{
+    if (!GetGameInstance())
+        return nullptr;
+
+    return GetGameInstance()->GetSubsystem<UStarshatterPlayerSubsystem>();
+}
+
+// ------------------------------------------------------------------------
+// Layout
 // ------------------------------------------------------------------------
 
 void UPlayerDlg::EnsureLayout()
@@ -169,7 +154,6 @@ void UPlayerDlg::EnsureLayout()
     if (MainRow)
         return;
 
-    // Main horizontal split
     MainRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("MainRow"));
     if (!MainRow)
         return;
@@ -183,16 +167,13 @@ void UPlayerDlg::EnsureLayout()
         S->SetZOrder(100);
     }
 
-    // Left panel (roster)
     LeftPanel = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("LeftPanel"));
-    // Right scroll (stats)
     StatsScroll = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("StatsScroll"));
     StatsVBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("StatsVBox"));
 
     if (!LeftPanel || !StatsScroll || !StatsVBox)
         return;
 
-    // Slot left (fixed-ish)
     if (UHorizontalBoxSlot* L = MainRow->AddChildToHorizontalBox(LeftPanel))
     {
         L->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
@@ -201,7 +182,6 @@ void UPlayerDlg::EnsureLayout()
         L->SetPadding(FMargin(0.f, 0.f, 20.f, 0.f));
     }
 
-    // Slot right (fills)
     if (UHorizontalBoxSlot* R = MainRow->AddChildToHorizontalBox(StatsScroll))
     {
         R->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
@@ -210,13 +190,11 @@ void UPlayerDlg::EnsureLayout()
         R->SetPadding(FMargin(0.f));
     }
 
-    // Scroll behavior like Options pages
     StatsScroll->SetConsumeMouseWheel(EConsumeMouseWheel::WhenScrollingPossible);
     StatsScroll->SetAnimateWheelScrolling(true);
     StatsScroll->SetScrollBarVisibility(ESlateVisibility::Visible);
 
-    // IMPORTANT:
-    // Use StatsVBox as the "AutoVBox" target so we can do Options-style rows
+    // Use StatsVBox as AutoVBox (BaseScreen helper target)
     AutoVBox = StatsVBox;
 }
 
@@ -235,7 +213,7 @@ void UPlayerDlg::EnsureScrollHostsStats()
 }
 
 // ------------------------------------------------------------------------
-// Options-style row builders (local)
+// Options-style row builders
 // ------------------------------------------------------------------------
 
 UTextBlock* UPlayerDlg::MakeValueText()
@@ -278,7 +256,6 @@ UHorizontalBox* UPlayerDlg::AddStatRow(const FText& Label, UWidget* RightWidget,
         VSlot->SetPadding(FMargin(0.f, RowPadY, 0.f, RowPadY));
     }
 
-    // Label (left)
     UTextBlock* Lbl = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
     if (Lbl)
     {
@@ -294,7 +271,6 @@ UHorizontalBox* UPlayerDlg::AddStatRow(const FText& Label, UWidget* RightWidget,
         }
     }
 
-    // Right side (fixed width wrapper like Options)
     USizeBox* Wrap = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
     if (Wrap)
     {
@@ -313,7 +289,7 @@ UHorizontalBox* UPlayerDlg::AddStatRow(const FText& Label, UWidget* RightWidget,
 }
 
 // ------------------------------------------------------------------------
-// Left panel (roster)
+// Left panel (single “current profile” label)
 // ------------------------------------------------------------------------
 
 void UPlayerDlg::BuildRosterPanel()
@@ -323,35 +299,25 @@ void UPlayerDlg::BuildRosterPanel()
 
     LeftPanel->ClearChildren();
 
-    // Roster list
-    lst_roster = WidgetTree->ConstructWidget<UListView>(UListView::StaticClass(), TEXT("RosterList"));
-  
-    if (!lst_roster)
-        return;
-
-    // Simple button text
-    auto MakeBtnLabel = [&](UButton* B, const TCHAR* Txt)
-        {
-            UTextBlock* T = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-            if (T) T->SetText(FText::FromString(Txt));
-            if (T) B->AddChild(T);
-        };
-  
-    // List slot
-    if (UVerticalBoxSlot* S = LeftPanel->AddChildToVerticalBox(lst_roster))
+    UTextBlock* Hdr = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ProfileHdr"));
+    if (Hdr)
     {
-        S->SetHorizontalAlignment(HAlign_Fill);
-        S->SetVerticalAlignment(VAlign_Fill);
-        S->SetPadding(FMargin(0.f, 0.f, 0.f, 10.f));
+        Hdr->SetText(FText::FromString(TEXT("CURRENT PROFILE")));
+        if (UVerticalBoxSlot* S = LeftPanel->AddChildToVerticalBox(Hdr))
+            S->SetPadding(FMargin(0.f, 0.f, 0.f, 8.f));
     }
 
-    // Bind delegates once
-    lst_roster->OnItemSelectionChanged().RemoveAll(this);
-    lst_roster->OnItemSelectionChanged().AddUObject(this, &UPlayerDlg::OnRosterSelectionChanged);
+    txt_profile_name = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ProfileName"));
+    if (txt_profile_name)
+    {
+        txt_profile_name->SetText(FText::FromString(TEXT("")));
+        if (UVerticalBoxSlot* S = LeftPanel->AddChildToVerticalBox(txt_profile_name))
+            S->SetPadding(FMargin(0.f, 0.f, 0.f, 12.f));
+    }
 }
 
 // ------------------------------------------------------------------------
-// Right panel (stats) — everything inside scroll, rows like Options
+// Right panel (stats rows)
 // ------------------------------------------------------------------------
 
 void UPlayerDlg::BuildStatsRows()
@@ -371,7 +337,7 @@ void UPlayerDlg::BuildStatsRows()
             TitleText->SetText(FText::FromString(TEXT("PLAYER LOGBOOK")));
             TitleText->SetJustification(ETextJustify::Left);
 
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(Title))
+            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(TitleText))
             {
                 S->SetPadding(FMargin(0.f, 0.f, 0.f, 14.f));
                 S->SetHorizontalAlignment(HAlign_Left);
@@ -379,9 +345,8 @@ void UPlayerDlg::BuildStatsRows()
         }
     }
 
-    // Editable fields
     edt_name = MakeEditBox(false);
-    edt_password = MakeEditBox(true);
+    edt_password = MakeEditBox(true);   // not persisted yet unless you add it to FS_PlayerGameInfo
     edt_squadron = MakeEditBox(false);
     edt_signature = MakeEditBox(false);
 
@@ -390,7 +355,6 @@ void UPlayerDlg::BuildStatsRows()
     AddStatRow(FText::FromString(TEXT("SQUADRON")), edt_squadron);
     AddStatRow(FText::FromString(TEXT("SIGNATURE")), edt_signature);
 
-    // Read-only stats
     txt_created = MakeValueText();
     txt_flighttime = MakeValueText();
     txt_missions = MakeValueText();
@@ -407,22 +371,16 @@ void UPlayerDlg::BuildStatsRows()
     AddStatRow(FText::FromString(TEXT("POINTS")), txt_points);
     AddStatRow(FText::FromString(TEXT("RANK")), txt_rank);
 
-    // Rank insignia image row (right aligned)
     img_rank = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("RankImage"));
     if (img_rank)
-    {
-        // Add as its own row, label on left, image on right
         AddStatRow(FText::FromString(TEXT("INSIGNIA")), img_rank, 160.f);
-    }
 
-    // Medals grid
+    // Medals
     {
         UTextBlock* MedalsHdr = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("MedalsHdr"));
         if (MedalsHdr)
         {
             MedalsHdr->SetText(FText::FromString(TEXT("MEDALS")));
-            MedalsHdr->SetJustification(ETextJustify::Left);
-
             if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(MedalsHdr))
                 S->SetPadding(FMargin(0.f, 18.f, 0.f, 8.f));
         }
@@ -443,8 +401,6 @@ void UPlayerDlg::BuildStatsRows()
         if (MacroHdr)
         {
             MacroHdr->SetText(FText::FromString(TEXT("CHAT MACROS")));
-            MacroHdr->SetJustification(ETextJustify::Left);
-
             if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(MacroHdr))
                 S->SetPadding(FMargin(0.f, 8.f, 0.f, 8.f));
         }
@@ -473,7 +429,6 @@ void UPlayerDlg::BuildMedalsGrid(int32 Columns, int32 Rows)
             *FString::Printf(TEXT("Medal_%02d"), idx)
         );
 
-        // Wrap (fixed cell size like legacy: 82x21-ish)
         USizeBox* Wrap = WidgetTree->ConstructWidget<USizeBox>(
             USizeBox::StaticClass(),
             *FString::Printf(TEXT("MedalWrap_%02d"), idx)
@@ -503,14 +458,12 @@ void UPlayerDlg::BuildChatMacrosRows()
 
     MacroEdits.SetNum(10);
 
-    // Legacy labels are 1..9 and 0
     auto LabelFor = [](int32 i) -> FString
         {
             if (i >= 1 && i <= 9) return FString::FromInt(i);
             return TEXT("0");
         };
 
-    // Build rows 1..9 then 0 (to match legacy visual order)
     for (int32 ui = 1; ui <= 9; ++ui)
     {
         UEditableTextBox* E = MakeEditBox(false);
@@ -526,235 +479,103 @@ void UPlayerDlg::BuildChatMacrosRows()
 }
 
 // ------------------------------------------------------------------------
-// Roster list population
+// Model <-> UI (SUBSYSTEM)
 // ------------------------------------------------------------------------
 
-void UPlayerDlg::BuildRoster()
+void UPlayerDlg::UpdatePlayerFromUI_Subsystem()
 {
-    if (!lst_roster)
+    UStarshatterPlayerSubsystem* SS = GetPlayerSS();
+    if (!SS)
         return;
 
-    const int32 PrevId =
-        (selected_item && selected_item->GetPlayer())
-        ? selected_item->GetPlayer()->GetIdentity()
-        : 0;
+    // This marks dirty automatically in your subsystem accessor
+    FS_PlayerGameInfo& Info = SS->GetMutablePlayerInfo();
 
-    lst_roster->ClearListItems();
-    selected_item = nullptr;
-    SelectedPlayer = nullptr;
-
-    List<PlayerCharacter>& roster = PlayerCharacter::GetRoster();
-    if (roster.size() < 1)
-    {
-        RefreshUIFromPlayer();
-        return;
-    }
-
-    UPlayerRosterItem* FirstItem = nullptr;
-    UPlayerRosterItem* MatchItem = nullptr;
-
-    for (int i = 0; i < roster.size(); ++i)
-    {
-        PlayerCharacter* player = roster[i];
-        if (!player)
-            continue;
-
-        UPlayerRosterItem* item = NewObject<UPlayerRosterItem>(this);
-        item->Initialize(player);
-
-        if (!FirstItem)
-            FirstItem = item;
-
-        if (PrevId != 0 && player->GetIdentity() == PrevId)
-            MatchItem = item;
-
-        lst_roster->AddItem(item);
-    }
-
-    selected_item = MatchItem ? MatchItem : FirstItem;
-
-    if (selected_item)
-    {
-        lst_roster->SetSelectedItem(selected_item);
-        SelectedPlayer = selected_item->GetPlayer();
-
-        if (SelectedPlayer)
-            PlayerCharacter::SetCurrentPlayer(SelectedPlayer);
-    }
-
-    RefreshUIFromPlayer();
-}
-
-void UPlayerDlg::RefreshRoster()
-{
-    BuildRoster();
-}
-
-void UPlayerDlg::OnRosterSelectionChanged(UObject* SelectedItem)
-{
-    UPlayerRosterItem* Item = Cast<UPlayerRosterItem>(SelectedItem);
-    PlayerCharacter* player = Item ? Item->GetPlayer() : nullptr;
-
-    selected_item = Item;
-    SelectedPlayer = player;
-
-    if (player)
-        PlayerCharacter::SetCurrentPlayer(player);
-
-    RefreshUIFromPlayer();
-}
-
-PlayerCharacter* UPlayerDlg::GetSelectedPlayer() const
-{
-    if (selected_item)
-        return selected_item->GetPlayer();
-    return nullptr;
-}
-
-// ------------------------------------------------------------------------
-// Model <-> UI
-// ------------------------------------------------------------------------
-
-void UPlayerDlg::UpdatePlayerFromUI()
-{
-    PlayerCharacter* player = GetSelectedPlayer();
-    if (!player)
-        return;
-
-    // Name
     if (edt_name)
     {
         const FString NewName = edt_name->GetText().ToString();
         if (!NewName.IsEmpty())
-            player->SetName(NewName);
+            Info.Name = NewName;
     }
 
-    // Password (only if your PlayerCharacter supports it)
-    if constexpr (HasPasswordSet<PlayerCharacter>)
-    {
-        if (edt_password)
-            player->SetPassword(edt_password->GetText().ToString());
-    }
+    // If you actually want these persisted, they must exist in FS_PlayerGameInfo.
+    // You DO have Nickname + Signature already:
+    if (edt_squadron)
+        Info.Nickname = edt_squadron->GetText().ToString();
 
-    // Squadron
-    if constexpr (HasSquadSet<PlayerCharacter>)
-    {
-        if (edt_squadron)
-            player->SetSquadron(edt_squadron->GetText().ToString());
-    }
+    if (edt_signature)
+        Info.Signature = edt_signature->GetText().ToString();
 
-    // Signature
-    if constexpr (HasSignatureSet<PlayerCharacter>)
+    // Chat macros (10)
+    if (MacroEdits.Num() == 10)
     {
-        if (edt_signature)
-            player->SetSignature(edt_signature->GetText().ToString());
-    }
-
-    // Chat macros (only if available)
-    if constexpr (HasChatMacroSet<PlayerCharacter>)
-    {
-        if (MacroEdits.Num() == 10)
+        Info.ChatMacros.SetNum(10);
+        for (int32 i = 0; i < 10; ++i)
         {
-            for (int32 i = 0; i < 10; ++i)
-            {
-                if (MacroEdits[i])
-                    player->SetChatMacro(i, MacroEdits[i]->GetText().ToString());
-            }
+            if (MacroEdits[i])
+                Info.ChatMacros[i] = MacroEdits[i]->GetText().ToString();
         }
     }
+
+    // Save now (Apply does it too, but this keeps edits durable)
+    SS->SavePlayer(true);
 }
 
-void UPlayerDlg::RefreshUIFromPlayer()
+void UPlayerDlg::RefreshUIFromSubsystem()
 {
-    PlayerCharacter* player = GetSelectedPlayer();
-
-    if (!player)
+    UStarshatterPlayerSubsystem* SS = GetPlayerSS();
+    if (!SS)
     {
-        if (edt_name)      edt_name->SetText(FText::GetEmpty());
-        if (edt_password)  edt_password->SetText(FText::GetEmpty());
-        if (edt_squadron)  edt_squadron->SetText(FText::GetEmpty());
-        if (edt_signature) edt_signature->SetText(FText::GetEmpty());
-
-        if (txt_created)    txt_created->SetText(FText::GetEmpty());
-        if (txt_flighttime) txt_flighttime->SetText(FText::GetEmpty());
-        if (txt_missions)   txt_missions->SetText(FText::GetEmpty());
-        if (txt_kills)      txt_kills->SetText(FText::GetEmpty());
-        if (txt_losses)     txt_losses->SetText(FText::GetEmpty());
-        if (txt_points)     txt_points->SetText(FText::GetEmpty());
-        if (txt_rank)       txt_rank->SetText(FText::GetEmpty());
-
-        if (MacroEdits.Num() == 10)
-            for (UEditableTextBox* E : MacroEdits) if (E) E->SetText(FText::GetEmpty());
-
+        UE_LOG(LogPlayerDlg, Warning, TEXT("[PlayerDlg] RefreshUIFromSubsystem: PlayerSubsystem is NULL"));
         return;
     }
 
-    if (edt_name)
-        edt_name->SetText(FText::FromString(player->Name()));
-
-    if constexpr (HasPasswordGet<PlayerCharacter>)
+    // Ensure it has loaded at least once
+    if (!SS->HasLoaded())
     {
-        if (edt_password)
-            edt_password->SetText(FText::FromString(player->Password()));
+        SS->LoadPlayer();
     }
 
-    if constexpr (HasSquadGet<PlayerCharacter>)
+    const FS_PlayerGameInfo& Info = SS->GetPlayerInfo();
+
+    // Left panel
+    if (txt_profile_name)
     {
-        if (edt_squadron)
-            edt_squadron->SetText(FText::FromString(player->Squadron()));
+        txt_profile_name->SetText(
+            FText::FromString(Info.Name.IsEmpty() ? TEXT("<UNNAMED>") : Info.Name)
+        );
     }
 
-    if constexpr (HasSignatureGet<PlayerCharacter>)
+    // Editable
+    if (edt_name)      edt_name->SetText(FText::FromString(Info.Name));
+    if (edt_squadron)  edt_squadron->SetText(FText::FromString(Info.Nickname));
+    if (edt_signature) edt_signature->SetText(FText::FromString(Info.Signature));
+
+    // Password isn’t in FS_PlayerGameInfo (ignore / blank for now)
+    if (edt_password) edt_password->SetText(FText::GetEmpty());
+
+    // Read-only fields from struct
+    if (txt_created)    txt_created->SetText(FText::FromString(UFormattingUtils::FormatDateFromUnixSeconds(Info.CreateTime)));
+    if (txt_flighttime) txt_flighttime->SetText(FText::FromString(UFormattingUtils::FormatTimeHMS((double)Info.FlightTime)));
+    if (txt_missions)   txt_missions->SetText(FText::AsNumber(Info.PlayerMissions));
+    if (txt_kills)      txt_kills->SetText(FText::AsNumber(Info.PlayerKills));
+    if (txt_losses)     txt_losses->SetText(FText::AsNumber(Info.PlayerLosses));
+    if (txt_points)     txt_points->SetText(FText::AsNumber(Info.PlayerPoints));
+    if (txt_rank)       txt_rank->SetText(FText::AsNumber(Info.Rank));
+
+    // Macros
+    if (MacroEdits.Num() == 10)
     {
-        if (edt_signature)
-            edt_signature->SetText(FText::FromString(player->Signature()));
-    }
-
-    if (txt_rank)
-        txt_rank->SetText(FText::AsNumber(player->GetRank()));
-
-    if (txt_flighttime)
-        txt_flighttime->SetText(FText::FromString(FormatTimeHMS(player->FlightTime())));
-
-    if (txt_created)
-        txt_created->SetText(FText::FromString(FormatDateFromUnixSeconds((int64)player->CreateDate())));
-
-    if (txt_kills)
-        txt_kills->SetText(FText::AsNumber(player->Kills()));
-
-    // legacy "Losses" maps cleanly to Deaths() in your port
-    if (txt_losses)
-        txt_losses->SetText(FText::AsNumber(player->Deaths()));
-
-    if (txt_missions)
-        txt_missions->SetText(FText::AsNumber(player->Missions()));
-
-    if constexpr (HasPointsGet<PlayerCharacter>)
-    {
-        if (txt_points)
-            txt_points->SetText(FText::AsNumber(player->Points()));
-    }
-    else
-    {
-        if (txt_points)
-            txt_points->SetText(FText::GetEmpty());
-    }
-
-    if constexpr (HasChatMacroGet<PlayerCharacter>)
-    {
-        if (MacroEdits.Num() == 10)
+        for (int32 i = 0; i < 10; ++i)
         {
-            for (int32 i = 0; i < 10; ++i)
-            {
-                //if (MacroEdits[i])
-                //    MacroEdits[i]->SetText(FText::FromString(player->GetChatMacro(i)));
-            }
+            if (!MacroEdits[i]) continue;
+
+            const FString V = Info.ChatMacros.IsValidIndex(i) ? Info.ChatMacros[i] : FString();
+            MacroEdits[i]->SetText(FText::FromString(V));
         }
     }
 
-    // Rank/medal imagery: hook your texture pipeline here later.
-    // img_rank->SetBrushFromTexture(...)
-    // MedalImages[idx]->SetBrushFromTexture(...)
+    // Rank/medal imagery hooks later (Info.MedalsMask, Info.Rank)
 }
 
 // ------------------------------------------------------------------------
@@ -763,38 +584,19 @@ void UPlayerDlg::RefreshUIFromPlayer()
 
 void UPlayerDlg::OnAdd()
 {
-    UpdatePlayerFromUI();
-
-    PlayerCharacter* NewPlayer = PlayerCharacter::CreateDefault();
-    if (!NewPlayer)
-        return;
-
-    PlayerCharacter::AddToRoster(NewPlayer);
-    PlayerCharacter::SetCurrentPlayer(NewPlayer);
-    PlayerCharacter::Save();
-
-    selected_item = nullptr;
-    RefreshRoster();
+    // For now: either no-op or re-run “first run” flow later.
+    UE_LOG(LogPlayerDlg, Warning, TEXT("[PlayerDlg] Add is disabled for single-profile subsystem flow."));
 }
 
 void UPlayerDlg::OnDel()
 {
-    PlayerCharacter* player = GetSelectedPlayer();
-    if (!player)
-        return;
-
-    PlayerCharacter::RemoveFromRoster(player);
-    PlayerCharacter::Save();
-
-    selected_item = nullptr;
-    SelectedPlayer = nullptr;
-    RefreshRoster();
+    // For now: no-op (single profile). Later you can add delete/slot reset.
+    UE_LOG(LogPlayerDlg, Warning, TEXT("[PlayerDlg] Delete is disabled for single-profile subsystem flow."));
 }
 
 void UPlayerDlg::OnApply()
 {
-    UpdatePlayerFromUI();
-    PlayerCharacter::Save();
+    UpdatePlayerFromUI_Subsystem();
 
     if (manager)
         manager->ShowMenuDlg();
@@ -804,7 +606,7 @@ void UPlayerDlg::OnApply()
 
 void UPlayerDlg::OnCancel()
 {
-    RefreshUIFromPlayer();
+    RefreshUIFromSubsystem();
 
     if (manager)
         manager->ShowMenuDlg();
@@ -812,28 +614,4 @@ void UPlayerDlg::OnCancel()
         HideDlg();
 }
 
-// ------------------------------------------------------------------------
-// Formatting helpers
-// ------------------------------------------------------------------------
 
-FString UPlayerDlg::FormatTimeHMS(double Seconds)
-{
-    if (Seconds < 0.0)
-        Seconds = 0.0;
-
-    const int64 TotalSeconds = (int64)Seconds;
-    const int64 H = TotalSeconds / 3600;
-    const int64 M = (TotalSeconds % 3600) / 60;
-    const int64 S = (TotalSeconds % 60);
-
-    return FString::Printf(TEXT("%lld:%02lld:%02lld"), H, M, S);
-}
-
-FString UPlayerDlg::FormatDateFromUnixSeconds(int64 UnixSeconds)
-{
-    if (UnixSeconds <= 0)
-        return TEXT("");
-
-    const FDateTime DT = FDateTime::FromUnixTimestamp(UnixSeconds);
-    return DT.ToString(TEXT("%Y-%m-%d"));
-}
