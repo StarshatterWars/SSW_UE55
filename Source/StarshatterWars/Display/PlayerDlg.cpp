@@ -329,24 +329,8 @@ void UPlayerDlg::BuildStatsRows()
     MedalImages.Reset();
     MacroEdits.Reset();
 
-    // Title
-    {
-        UTextBlock* TitleText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title"));
-        if (TitleText)
-        {
-            TitleText->SetText(FText::FromString(TEXT("PLAYER LOGBOOK")));
-            TitleText->SetJustification(ETextJustify::Left);
-
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(TitleText))
-            {
-                S->SetPadding(FMargin(0.f, 0.f, 0.f, 14.f));
-                S->SetHorizontalAlignment(HAlign_Left);
-            }
-        }
-    }
-
     edt_name = MakeEditBox(false);
-    edt_password = MakeEditBox(true);   // not persisted yet unless you add it to FS_PlayerGameInfo
+    edt_password = MakeEditBox(true);  
     edt_squadron = MakeEditBox(false);
     edt_signature = MakeEditBox(false);
 

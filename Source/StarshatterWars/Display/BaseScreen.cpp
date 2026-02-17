@@ -1315,7 +1315,7 @@ void UBaseScreen::SetOptionsManager_Implementation(UOptionsScreen* InManager)
 UVerticalBox* UBaseScreen::EnsureAutoVerticalBox()
 {
     // Top = 64, Left/Right/Bottom = 32
-    return EnsureAutoVerticalBoxWithOffsets(FMargin(32.f, 64.f, 32.f, 32.f));
+    return EnsureAutoVerticalBoxWithOffsets(FMargin(32.f, 32.f, 32.f, 32.f));
 }
 
 UVerticalBox* UBaseScreen::EnsureAutoVerticalBoxWithOffsets(const FMargin& Offsets)
