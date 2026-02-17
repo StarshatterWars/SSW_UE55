@@ -32,6 +32,7 @@
 #include "Fonts/SlateFontInfo.h"
 #include "Styling/SlateTypes.h"
 #include "Engine/Font.h"
+#include "Styling/SlateBrush.h"
 
 // UMG:
 #include "Components/Button.h"
@@ -49,6 +50,7 @@
 #include "Components/VerticalBox.h"
 #include "Components/HorizontalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Components/ContentWidget.h"
 
 #include "BaseScreen.generated.h"
 
@@ -57,6 +59,14 @@
 // ====================================================================
 
 class UMenuScreen;
+
+UENUM(BlueprintType)
+enum class ESSWThemeFont : uint8
+{
+    LimerickBold,
+    VerdanaItalic,
+    Serpntb
+};
 
 USTRUCT(BlueprintType)
 struct FFormFontMapEntry
@@ -387,6 +397,55 @@ public:
     UPROPERTY(EditAnywhere, Category = "FORM|Fonts")
     int32 DefaultFontSize = 12;
 
+
+
+protected:
+    // Font setup (load *_Font assets)
+    void EnsureThemeFontsLoaded();
+    UFont* GetThemeFont(ESSWThemeFont Which) const;
+
+    void ApplyGlobalTheme(bool bStyleButtons, bool bStyleText, bool bStyleEdits);
+
+    void StyleButton_Default(UButton* Button, int32 FontSize);
+    void StyleText_Default(UTextBlock* Text, int32 FontSize);
+
+    void StyleEdit_Default(UEditableTextBox* Edit, int32 FontSize = 18);
+    void ApplyDefaultEditBoxStyle(UEditableTextBox* Edit, int32 FontSize = 18) const;
+
+    // Widget tree traversal (no lambdas)
+    void GatherButtonsRecursive(UWidget* Root, TArray<UButton*>& OutButtons);
+    void GatherTextBlocksRecursive(UWidget* Root, TArray<UTextBlock*>& OutTexts);
+    void GatherEditableTextBoxesRecursive(UWidget* Root, TArray<UEditableTextBox*>& OutEdits);
+    UTextBlock* FindFirstTextBlockRecursive(UWidget* Root) const;
+
+protected:
+    // Fonts (loaded from /Game/Font/*_Font assets)
+    UPROPERTY(Transient) TObjectPtr<UFont> Font_LimerickBold = nullptr;
+    UPROPERTY(Transient) TObjectPtr<UFont> Font_VerdanaItalic = nullptr;
+    UPROPERTY(Transient) TObjectPtr<UFont> Font_Serpntb = nullptr;
+public:
+    // Theme knobs (general defaults)
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    ESSWThemeFont DefaultUIFont = ESSWThemeFont::LimerickBold;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    FLinearColor UIButtonFill = FLinearColor(0.18f, 0.18f, 0.18f, 1.f);
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    FLinearColor UIButtonFillHover = FLinearColor(0.22f, 0.22f, 0.22f, 1.f);
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    FLinearColor UIButtonFillPressed = FLinearColor(0.14f, 0.14f, 0.14f, 1.f);
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    FLinearColor UIButtonBorder = FLinearColor::White;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    float UIButtonBorderWidth = 1.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
+    FLinearColor UITextColor = FLinearColor::White;
+
 protected:
     // ----------------------------------------------------------------
     // Binding helpers (call from BindFormWidgets)
@@ -465,6 +524,34 @@ protected:
     TObjectPtr<class UGameScreen> GameManager;
 
 
+    protected:
+        // ====================================================================
+        //  UI STYLE / FONT CACHE (UMG-friendly *_Font assets)
+        // ====================================================================
+
+        // Call once (NativeConstruct does it) — safe to call multiple times
+        void EnsureUiFontsLoaded();
+
+        // Accessors (optional)
+        UFont* GetFont_LimerickBold() const { return Font_LimerickBold; }
+        UFont* GetFont_VerdanaItalic() const { return Font_VerdanaItalic; }
+        UFont* GetFont_SerpentBold() const { return Font_Serpntb; }
+
+        // Styling helpers (standard method calls; no lambdas)
+        void ApplyDefaultTextStyle(UTextBlock* Text, int32 FontSize = 18) const;
+        void ApplyTitleTextStyle(UTextBlock* Text, int32 FontSize = 26) const;
+
+        // Convenience: apply to all TextBlocks under this widget tree
+        void ApplyDefaultTextStyle_AllTextBlocks(int32 FontSize = 18) const;
+        void ApplyDefaultButtonStyle(UButton* Button, int32 FontSize = 20) const;
+
+protected:
+    // --------------------------------------------------------------------
+    // Font asset references (MUST be /Game/ paths; use "Copy Reference")
+    // --------------------------------------------------------------------
+    static const TCHAR* PATH_Font_LimerickBold;
+    static const TCHAR* PATH_Font_VerdanaItalic;
+    static const TCHAR* PATH_Font_SerpentBold;
 public:
     /* ----------------------------------------------------------------
        Setters

@@ -246,6 +246,7 @@ void UKeyDlg::NativeOnInitialized()
 void UKeyDlg::NativePreConstruct()
 {
     Super::NativePreConstruct();
+    ApplyGlobalTheme(true, true, false); // buttons + text, no edits
 
     EnsureAutoVerticalBox();
     if (AutoVBox)

@@ -28,20 +28,24 @@
 #include "Components/ComboBoxString.h"
 #include "Components/ListView.h"
 #include "Components/Slider.h"
-
+#include "Components/PanelWidget.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/VerticalBox.h"
-#include "Blueprint/WidgetTree.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 
+#include "Blueprint/WidgetTree.h"
+
 // Slate styling:
+#include "Styling/SlateTypes.h"
+#include "Styling/SlateBrush.h"
 #include "Styling/SlateColor.h"
 #include "Fonts/SlateFontInfo.h"
-#include "Styling/SlateTypes.h"
+#include "Engine/Font.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseScreen, Log, All);
+
 
 namespace
 {
@@ -905,6 +909,22 @@ namespace
 // UBaseScreen lifecycle
 // --------------------------------------------------------------------
 
+// --------------------------------------------------------------------
+// Font paths (UMG-friendly *_Font assets)
+// --------------------------------------------------------------------
+const TCHAR* UBaseScreen::PATH_Font_LimerickBold = TEXT("/Game/Font/Limerick-Serial_Bold_Font.Limerick-Serial_Bold_Font");
+const TCHAR* UBaseScreen::PATH_Font_VerdanaItalic = TEXT("/Game/Font/VERDANAI_Font.VERDANAI_Font");
+const TCHAR* UBaseScreen::PATH_Font_SerpentBold = TEXT("/Game/Font/SERPNTB_Font.SERPNTB_Font");
+
+static FSlateBrush MakeTintBrushBox(const FLinearColor& Tint)
+{
+    FSlateBrush B;
+    B.DrawAs = ESlateBrushDrawType::Box;
+    B.TintColor = FSlateColor(Tint);
+    B.Margin = FMargin(4.f / 16.f);
+    return B;
+}
+
 UBaseScreen::UBaseScreen(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -918,6 +938,7 @@ void UBaseScreen::NativeOnInitialized()
     BindFormWidgets();
 
     ApplyFormDefaults();
+    EnsureUiFontsLoaded();
 
     const FString Frm = GetLegacyFormText();
     if (!Frm.IsEmpty())
@@ -1611,4 +1632,463 @@ UCanvasPanel* UBaseScreen::ResolveRootCanvas()
     return nullptr;
 }
 
+void UBaseScreen::EnsureUiFontsLoaded()
+{
+    // Safe to call repeatedly
+    if (!Font_LimerickBold)
+    {
+        Font_LimerickBold = LoadObject<UFont>(nullptr, PATH_Font_LimerickBold);
+        UE_LOG(LogBaseScreen, Log, TEXT("[BaseScreen] Load Font_LimerickBold: %s -> %s"),
+            PATH_Font_LimerickBold, Font_LimerickBold ? TEXT("OK") : TEXT("FAILED"));
+    }
+
+    if (!Font_VerdanaItalic)
+    {
+        Font_VerdanaItalic = LoadObject<UFont>(nullptr, PATH_Font_VerdanaItalic);
+        UE_LOG(LogBaseScreen, Log, TEXT("[BaseScreen] Load Font_VerdanaItalic: %s -> %s"),
+            PATH_Font_VerdanaItalic, Font_VerdanaItalic ? TEXT("OK") : TEXT("FAILED"));
+    }
+
+    if (!Font_Serpntb)
+    {
+        Font_Serpntb = LoadObject<UFont>(nullptr, PATH_Font_SerpentBold);
+        UE_LOG(LogBaseScreen, Log, TEXT("[BaseScreen] Load Font_SerpentBold: %s -> %s"),
+            PATH_Font_SerpentBold, Font_Serpntb ? TEXT("OK") : TEXT("FAILED"));
+    }
+}
+
+void UBaseScreen::ApplyDefaultEditBoxStyle(UEditableTextBox* Edit, int32 FontSize) const
+{
+    if (!Edit)
+        return;
+
+    // Ensure fonts are loaded (const_cast ok for cache loaders)
+    const_cast<UBaseScreen*>(this)->EnsureThemeFontsLoaded();
+
+    UFont* FontObj = DefaultFont ? DefaultFont : Font_LimerickBold;
+
+    // ------------------------------------------------------------
+    // Modify WidgetStyle directly (UE versions without SetStyle())
+    // ------------------------------------------------------------
+    FEditableTextBoxStyle& Style = Edit->WidgetStyle;
+
+    // Text Style (typed text)
+    if (FontObj)
+    {
+        // NOTE: In your UE headers, HintTextStyle doesn't exist.
+        // So we only update TextStyle.
+        Style.TextStyle.SetFont(FSlateFontInfo(FontObj, FontSize));
+        Style.TextStyle.SetColorAndOpacity(FSlateColor(FLinearColor::White));
+    }
+
+    // ------------------------------------------------------------
+    // Background styling (UMG way)
+    // ------------------------------------------------------------
+    FSlateBrush BackgroundBrush;
+    BackgroundBrush.DrawAs = ESlateBrushDrawType::Box;
+    BackgroundBrush.TintColor = FSlateColor(FLinearColor(0.18f, 0.18f, 0.18f, 1.f));
+    BackgroundBrush.Margin = FMargin(4.f / 16.f);
+
+    Style.SetBackgroundImageNormal(BackgroundBrush);
+    Style.SetBackgroundImageHovered(BackgroundBrush);
+    Style.SetBackgroundImageFocused(BackgroundBrush);
+    Style.SetBackgroundImageReadOnly(BackgroundBrush);
+
+    // Optional: caret / selection are not exposed reliably via UMG
+
+    // ------------------------------------------------------------
+    // Push changes to Slate (UE versions without SetStyle)
+    // ------------------------------------------------------------
+    Edit->SynchronizeProperties();
+}
+
+// ------------------------------------------------------------
+// Traversal (no lambdas)
+// ------------------------------------------------------------
+
+void UBaseScreen::ApplyDefaultTextStyle(UTextBlock* Text, int32 FontSize) const
+{
+    if (!Text)
+        return;
+
+    // Ensure your font assets are loaded/assigned (your setup code)
+    // EnsureUiFontsLoaded();  // call this if you have it
+
+    if (Font_LimerickBold)
+    {
+        FSlateFontInfo FontInfo;
+        FontInfo.FontObject = Font_LimerickBold;
+        FontInfo.Size = FontSize;
+
+        Text->SetFont(FontInfo);
+    }
+
+    // Common default
+    Text->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+}
+
+void UBaseScreen::ApplyDefaultTextStyle_AllTextBlocks(int32 FontSize) const
+{
+    if (!WidgetTree)
+        return;
+
+    TArray<UWidget*> AllWidgets;
+    WidgetTree->GetAllWidgets(AllWidgets);
+
+    for (UWidget* W : AllWidgets)
+    {
+        UTextBlock* TB = Cast<UTextBlock>(W);
+        if (TB)
+        {
+            ApplyDefaultTextStyle(TB, FontSize);
+        }
+    }
+}
+
+void UBaseScreen::ApplyTitleTextStyle(UTextBlock* Text, int32 FontSize) const
+{
+    if (!Text)
+        return;
+
+    // Title: Serpent Bold if available, else Limerick
+    if (Font_Serpntb)
+        Text->SetFont(FSlateFontInfo(Font_Serpntb, FontSize));
+    else if (Font_LimerickBold)
+        Text->SetFont(FSlateFontInfo(Font_Serpntb, FontSize));
+
+    Text->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+}
+
+void UBaseScreen::ApplyDefaultButtonStyle(UButton* Button, int32 FontSize) const
+{
+    if (!Button)
+        return;
+
+    // ------------------------------------------------------------
+    // Ensure theme fonts are loaded (safe if already loaded)
+    // ------------------------------------------------------------
+    const_cast<UBaseScreen*>(this)->EnsureThemeFontsLoaded();
+
+    // ------------------------------------------------------------
+    // Build Button Style
+    // ------------------------------------------------------------
+    FButtonStyle Style = Button->WidgetStyle;
+
+    // Normal
+    FSlateBrush NormalBrush;
+    NormalBrush.DrawAs = ESlateBrushDrawType::Box;
+    NormalBrush.TintColor = FSlateColor(UIButtonFill);
+    NormalBrush.Margin = FMargin(4.f / 16.f);
+
+    // Hovered
+    FSlateBrush HoverBrush;
+    HoverBrush.DrawAs = ESlateBrushDrawType::Box;
+    HoverBrush.TintColor = FSlateColor(UIButtonFillHover);
+    HoverBrush.Margin = FMargin(4.f / 16.f);
+
+    // Pressed
+    FSlateBrush PressedBrush;
+    PressedBrush.DrawAs = ESlateBrushDrawType::Box;
+    PressedBrush.TintColor = FSlateColor(UIButtonFillPressed);
+    PressedBrush.Margin = FMargin(4.f / 16.f);
+
+    Style.SetNormal(NormalBrush);
+    Style.SetHovered(HoverBrush);
+    Style.SetPressed(PressedBrush);
+
+    // Border / Outline
+    Style.Normal.OutlineSettings.Width = UIButtonBorderWidth;
+    Style.Normal.OutlineSettings.Color = UIButtonBorder;
+
+    Style.Hovered.OutlineSettings.Width = UIButtonBorderWidth;
+    Style.Hovered.OutlineSettings.Color = UIButtonBorder;
+
+    Style.Pressed.OutlineSettings.Width = UIButtonBorderWidth;
+    Style.Pressed.OutlineSettings.Color = UIButtonBorder;
+
+    Button->SetStyle(Style);
+
+    // ------------------------------------------------------------
+    // Style Text Inside Button
+    // ------------------------------------------------------------
+    UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
+    if (!TextChild)
+        return;
+
+    // Set text color
+    TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
+    TextChild->SetJustification(ETextJustify::Center);
+
+    // Apply theme font
+    UFont* FontObj = GetThemeFont(DefaultUIFont);
+    if (FontObj)
+    {
+        FSlateFontInfo FontInfo = TextChild->GetFont();
+        FontInfo.FontObject = FontObj;
+        FontInfo.Size = FontSize;
+        TextChild->SetFont(FontInfo);
+    }
+}
+
+void UBaseScreen::EnsureThemeFontsLoaded()
+{
+    if (Font_LimerickBold && Font_VerdanaItalic && Font_Serpntb)
+        return;
+
+    // Replace with your exact Copy Reference strings if different:
+    const FSoftObjectPath LimerickPath(TEXT("/Game/Font/Limerick-Serial_Bold_Font.Limerick-Serial_Bold_Font"));
+    const FSoftObjectPath VerdanaPath(TEXT("/Game/Font/VERDANAI_Font.VERDANAI_Font"));
+    const FSoftObjectPath SerpntbPath(TEXT("/Game/Font/SERPNTB_Font.SERPNTB_Font"));
+
+    if (!Font_LimerickBold)  Font_LimerickBold = Cast<UFont>(LimerickPath.TryLoad());
+    if (!Font_VerdanaItalic) Font_VerdanaItalic = Cast<UFont>(VerdanaPath.TryLoad());
+    if (!Font_Serpntb)       Font_Serpntb = Cast<UFont>(SerpntbPath.TryLoad());
+}
+
+UFont* UBaseScreen::GetThemeFont(ESSWThemeFont Which) const
+{
+    switch (Which)
+    {
+    default:
+    case ESSWThemeFont::LimerickBold:  return Font_LimerickBold;
+    case ESSWThemeFont::VerdanaItalic: return Font_VerdanaItalic;
+    case ESSWThemeFont::Serpntb:       return Font_Serpntb;
+    }
+}
+
+void UBaseScreen::ApplyGlobalTheme(bool bStyleButtons, bool bStyleText, bool bStyleEdits)
+{
+    EnsureThemeFontsLoaded();
+
+    if (!WidgetTree)
+        return;
+
+    UWidget* Root = GetRootWidget();
+    if (!Root)
+        return;
+
+    if (bStyleButtons)
+    {
+        TArray<UButton*> Buttons;
+        GatherButtonsRecursive(Root, Buttons);
+
+        for (int32 i = 0; i < Buttons.Num(); ++i)
+        {
+            StyleButton_Default(Buttons[i], 20);
+        }
+    }
+
+    if (bStyleText)
+    {
+        TArray<UTextBlock*> Texts;
+        GatherTextBlocksRecursive(Root, Texts);
+
+        for (int32 i = 0; i < Texts.Num(); ++i)
+        {
+            StyleText_Default(Texts[i], 18);
+        }
+    }
+
+    if (bStyleEdits)
+    {
+        TArray<UEditableTextBox*> Edits;
+        GatherEditableTextBoxesRecursive(Root, Edits);
+
+        for (int32 i = 0; i < Edits.Num(); ++i)
+        {
+            StyleEdit_Default(Edits[i], 18);
+        }
+    }
+}
+
+void UBaseScreen::StyleButton_Default(UButton* Button, int32 FontSize)
+{
+    if (!Button)
+        return;
+
+    // Button brush styling
+    FButtonStyle Style = Button->WidgetStyle;
+
+    FSlateBrush Normal;
+    Normal.DrawAs = ESlateBrushDrawType::Box;
+    Normal.TintColor = FSlateColor(UIButtonFill);
+
+    FSlateBrush Hovered;
+    Hovered.DrawAs = ESlateBrushDrawType::Box;
+    Hovered.TintColor = FSlateColor(UIButtonFillHover);
+
+    FSlateBrush Pressed;
+    Pressed.DrawAs = ESlateBrushDrawType::Box;
+    Pressed.TintColor = FSlateColor(UIButtonFillPressed);
+
+    Style.SetNormal(Normal);
+    Style.SetHovered(Hovered);
+    Style.SetPressed(Pressed);
+
+    // Border outline
+    Style.Normal.OutlineSettings.Width = UIButtonBorderWidth;
+    Style.Normal.OutlineSettings.Color = UIButtonBorder;
+
+    Style.Hovered.OutlineSettings.Width = UIButtonBorderWidth;
+    Style.Hovered.OutlineSettings.Color = UIButtonBorder;
+
+    Style.Pressed.OutlineSettings.Width = UIButtonBorderWidth;
+    Style.Pressed.OutlineSettings.Color = UIButtonBorder;
+
+    Button->SetStyle(Style);
+
+    // Text inside button (first TextBlock descendant)
+    UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
+    if (TextChild)
+    {
+        TextChild->SetJustification(ETextJustify::Center);
+        TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
+
+        UFont* FontObj = GetThemeFont(DefaultUIFont);
+        if (FontObj)
+        {
+            FSlateFontInfo FontInfo = TextChild->GetFont();
+            FontInfo.FontObject = FontObj;
+            FontInfo.Size = FontSize;
+            TextChild->SetFont(FontInfo);
+        }
+    }
+}
+
+void UBaseScreen::StyleText_Default(UTextBlock* Text, int32 FontSize)
+{
+    if (!Text)
+        return;
+
+    Text->SetColorAndOpacity(FSlateColor(UITextColor));
+
+    UFont* FontObj = GetThemeFont(DefaultUIFont);
+    if (FontObj)
+    {
+        FSlateFontInfo FontInfo = Text->GetFont();
+        FontInfo.FontObject = FontObj;
+        FontInfo.Size = FontSize;
+        Text->SetFont(FontInfo);
+    }
+}
+
+void UBaseScreen::StyleEdit_Default(UEditableTextBox* Edit, int32 FontSize)
+{
+    if (!Edit)
+        return;
+
+    EnsureThemeFontsLoaded();
+
+    UFont* FontObj = GetThemeFont(DefaultUIFont);
+
+    // Modify the live style directly (your UE version has no SetStyle)
+    FEditableTextBoxStyle& Style = Edit->WidgetStyle;
+
+    if (FontObj)
+    {
+        Style.TextStyle.SetFont(FSlateFontInfo(FontObj, FontSize));
+        Style.TextStyle.SetColorAndOpacity(FSlateColor(UITextColor));
+    }
+
+    // Optional: set a consistent dark background for all states
+    FSlateBrush Bg;
+    Bg.DrawAs = ESlateBrushDrawType::Box;
+    Bg.TintColor = FSlateColor(FLinearColor(0.18f, 0.18f, 0.18f, 1.f));
+    Bg.Margin = FMargin(4.f / 16.f);
+
+    Style.SetBackgroundImageNormal(Bg);
+    Style.SetBackgroundImageHovered(Bg);
+    Style.SetBackgroundImageFocused(Bg);
+    Style.SetBackgroundImageReadOnly(Bg);
+
+    // Push the updated style into the underlying Slate widget
+    Edit->SynchronizeProperties();
+}
+
+void UBaseScreen::GatherButtonsRecursive(UWidget* Root, TArray<UButton*>& OutButtons)
+{
+    if (!Root) return;
+
+    if (UButton* AsButton = Cast<UButton>(Root))
+        OutButtons.Add(AsButton);
+
+    if (UPanelWidget* Panel = Cast<UPanelWidget>(Root))
+    {
+        const int32 Count = Panel->GetChildrenCount();
+        for (int32 i = 0; i < Count; ++i)
+            GatherButtonsRecursive(Panel->GetChildAt(i), OutButtons);
+    }
+    else if (UContentWidget* Content = Cast<UContentWidget>(Root))
+    {
+        if (UWidget* Child = Content->GetContent())
+            GatherButtonsRecursive(Child, OutButtons);
+    }
+}
+
+void UBaseScreen::GatherTextBlocksRecursive(UWidget* Root, TArray<UTextBlock*>& OutTexts)
+{
+    if (!Root) return;
+
+    if (UTextBlock* AsText = Cast<UTextBlock>(Root))
+        OutTexts.Add(AsText);
+
+    if (UPanelWidget* Panel = Cast<UPanelWidget>(Root))
+    {
+        const int32 Count = Panel->GetChildrenCount();
+        for (int32 i = 0; i < Count; ++i)
+            GatherTextBlocksRecursive(Panel->GetChildAt(i), OutTexts);
+    }
+    else if (UContentWidget* Content = Cast<UContentWidget>(Root))
+    {
+        if (UWidget* Child = Content->GetContent())
+            GatherTextBlocksRecursive(Child, OutTexts);
+    }
+}
+
+void UBaseScreen::GatherEditableTextBoxesRecursive(UWidget* Root, TArray<UEditableTextBox*>& OutEdits)
+{
+    if (!Root) return;
+
+    if (UEditableTextBox* AsEdit = Cast<UEditableTextBox>(Root))
+        OutEdits.Add(AsEdit);
+
+    if (UPanelWidget* Panel = Cast<UPanelWidget>(Root))
+    {
+        const int32 Count = Panel->GetChildrenCount();
+        for (int32 i = 0; i < Count; ++i)
+            GatherEditableTextBoxesRecursive(Panel->GetChildAt(i), OutEdits);
+    }
+    else if (UContentWidget* Content = Cast<UContentWidget>(Root))
+    {
+        if (UWidget* Child = Content->GetContent())
+            GatherEditableTextBoxesRecursive(Child, OutEdits);
+    }
+}
+
+UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(UWidget* Root) const
+{
+    if (!Root)
+        return nullptr;
+
+    if (UTextBlock* AsText = Cast<UTextBlock>(Root))
+        return AsText;
+
+    if (UPanelWidget* Panel = Cast<UPanelWidget>(Root))
+    {
+        const int32 Count = Panel->GetChildrenCount();
+        for (int32 i = 0; i < Count; ++i)
+        {
+            UTextBlock* Found = FindFirstTextBlockRecursive(Panel->GetChildAt(i));
+            if (Found)
+                return Found;
+        }
+    }
+    else if (UContentWidget* Content = Cast<UContentWidget>(Root))
+    {
+        if (UWidget* Child = Content->GetContent())
+            return FindFirstTextBlockRecursive(Child);
+    }
+
+    return nullptr;
+}
 
