@@ -16,13 +16,14 @@
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Components/Image.h"
+
 #include "FormattingUtils.h"
 #include "AwardInfoRegistry.h"
 
 // Manager
 #include "MenuScreen.h"
 
-// NEW: subsystem + struct
+// Authoritative subsystem
 #include "StarshatterPlayerSubsystem.h"
 #include "GameStructs.h"
 
@@ -69,7 +70,7 @@ void UPlayerDlg::NativeConstruct()
         CancelButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnCancel);
     }
 
-    // Optional legacy buttons: keep but make them safe no-ops for now
+    // Optional legacy buttons: safe no-ops
     if (AddPlayerButton)
     {
         AddPlayerButton->OnClicked.RemoveAll(this);
@@ -290,7 +291,7 @@ UHorizontalBox* UPlayerDlg::AddStatRow(const FText& Label, UWidget* RightWidget,
 }
 
 // ------------------------------------------------------------------------
-// Left panel (single “current profile” label)
+// Left panel
 // ------------------------------------------------------------------------
 
 void UPlayerDlg::BuildRosterPanel()
@@ -318,7 +319,7 @@ void UPlayerDlg::BuildRosterPanel()
 }
 
 // ------------------------------------------------------------------------
-// Right panel (stats rows)
+// Right panel
 // ------------------------------------------------------------------------
 
 void UPlayerDlg::BuildStatsRows()
@@ -330,8 +331,10 @@ void UPlayerDlg::BuildStatsRows()
     MedalImages.Reset();
     MacroEdits.Reset();
 
+    // FIX: callsign edit MUST be created
     edt_name = MakeEditBox(false);
-    edt_password = MakeEditBox(true);  
+    edt_password = MakeEditBox(true);
+    edt_callsign = MakeEditBox(false);
     edt_squadron = MakeEditBox(false);
     edt_signature = MakeEditBox(false);
 
@@ -357,44 +360,42 @@ void UPlayerDlg::BuildStatsRows()
     AddStatRow(FText::FromString(TEXT("LOSSES")), txt_losses);
     AddStatRow(FText::FromString(TEXT("POINTS")), txt_points);
     AddStatRow(FText::FromString(TEXT("RANK")), txt_rank);
-    AddStatRow(FText::FromString(TEXT("EMPIRE")), txt_rank);
+
+    // FIX: EMPIRE row must use txt_empire (you had txt_rank)
+    AddStatRow(FText::FromString(TEXT("EMPIRE")), txt_empire);
 
     img_rank = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("RankImage"));
     if (img_rank)
         AddStatRow(FText::FromString(TEXT("INSIGNIA")), img_rank, 160.f);
 
-    // Medals
+    // Medals section
+    UTextBlock* MedalsHdr = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("MedalsHdr"));
+    if (MedalsHdr)
     {
-        UTextBlock* MedalsHdr = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("MedalsHdr"));
-        if (MedalsHdr)
-        {
-            MedalsHdr->SetText(FText::FromString(TEXT("MEDALS")));
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(MedalsHdr))
-                S->SetPadding(FMargin(0.f, 18.f, 0.f, 8.f));
-        }
-
-        medals_grid = WidgetTree->ConstructWidget<UUniformGridPanel>(UUniformGridPanel::StaticClass(), TEXT("MedalsGrid"));
-        if (medals_grid)
-        {
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(medals_grid))
-                S->SetPadding(FMargin(0.f, 0.f, 0.f, 18.f));
-        }
-
-        BuildMedalsGrid(5, 3);
+        MedalsHdr->SetText(FText::FromString(TEXT("MEDALS")));
+        if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(MedalsHdr))
+            S->SetPadding(FMargin(0.f, 18.f, 0.f, 8.f));
     }
 
-    // Chat macros
+    medals_grid = WidgetTree->ConstructWidget<UUniformGridPanel>(UUniformGridPanel::StaticClass(), TEXT("MedalsGrid"));
+    if (medals_grid)
     {
-        UTextBlock* MacroHdr = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("MacroHdr"));
-        if (MacroHdr)
-        {
-            MacroHdr->SetText(FText::FromString(TEXT("CHAT MACROS")));
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(MacroHdr))
-                S->SetPadding(FMargin(0.f, 8.f, 0.f, 8.f));
-        }
-
-        BuildChatMacrosRows();
+        if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(medals_grid))
+            S->SetPadding(FMargin(0.f, 0.f, 0.f, 18.f));
     }
+
+    BuildMedalsGrid(5, 3);
+
+    // Chat macros section
+    UTextBlock* MacroHdr = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("MacroHdr"));
+    if (MacroHdr)
+    {
+        MacroHdr->SetText(FText::FromString(TEXT("CHAT MACROS")));
+        if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(MacroHdr))
+            S->SetPadding(FMargin(0.f, 8.f, 0.f, 8.f));
+    }
+
+    BuildChatMacrosRows();
 }
 
 void UPlayerDlg::BuildMedalsGrid(int32 Columns, int32 Rows)
@@ -414,13 +415,11 @@ void UPlayerDlg::BuildMedalsGrid(int32 Columns, int32 Rows)
 
         UImage* Img = WidgetTree->ConstructWidget<UImage>(
             UImage::StaticClass(),
-            *FString::Printf(TEXT("Medal_%02d"), idx)
-        );
+            *FString::Printf(TEXT("Medal_%02d"), idx));
 
         USizeBox* Wrap = WidgetTree->ConstructWidget<USizeBox>(
             USizeBox::StaticClass(),
-            *FString::Printf(TEXT("MedalWrap_%02d"), idx)
-        );
+            *FString::Printf(TEXT("MedalWrap_%02d"), idx));
 
         if (!Img || !Wrap)
             continue;
@@ -439,6 +438,15 @@ void UPlayerDlg::BuildMedalsGrid(int32 Columns, int32 Rows)
     }
 }
 
+FString UPlayerDlg::MacroLabelForIndex(int32 Index) const
+{
+    // Legacy UI shows 1..9 and 0
+    if (Index >= 1 && Index <= 9)
+        return FString::FromInt(Index);
+
+    return TEXT("0");
+}
+
 void UPlayerDlg::BuildChatMacrosRows()
 {
     if (!WidgetTree || !StatsVBox)
@@ -446,23 +454,19 @@ void UPlayerDlg::BuildChatMacrosRows()
 
     MacroEdits.SetNum(10);
 
-    auto LabelFor = [](int32 i) -> FString
-        {
-            if (i >= 1 && i <= 9) return FString::FromInt(i);
-            return TEXT("0");
-        };
-
+    // 1..9
     for (int32 ui = 1; ui <= 9; ++ui)
     {
         UEditableTextBox* E = MakeEditBox(false);
         MacroEdits[ui] = E;
-        AddStatRow(FText::FromString(LabelFor(ui)), E);
+        AddStatRow(FText::FromString(MacroLabelForIndex(ui)), E);
     }
 
+    // 0
     {
         UEditableTextBox* E = MakeEditBox(false);
         MacroEdits[0] = E;
-        AddStatRow(FText::FromString(LabelFor(0)), E);
+        AddStatRow(FText::FromString(MacroLabelForIndex(0)), E);
     }
 }
 
@@ -476,18 +480,15 @@ void UPlayerDlg::UpdatePlayerFromUI_Subsystem()
     if (!SS)
         return;
 
-    // This marks dirty automatically in your subsystem accessor
     FS_PlayerGameInfo& Info = SS->GetMutablePlayerInfo();
 
     if (edt_name)
     {
-        const FString NewName = edt_name->GetText().ToString();
+        const FString NewName = edt_name->GetText().ToString().TrimStartAndEnd();
         if (!NewName.IsEmpty())
             Info.Name = NewName;
     }
 
-    // If you actually want these persisted, they must exist in FS_PlayerGameInfo.
-    // You DO have Nickname + Signature already:
     if (edt_callsign)
         Info.Callsign = edt_callsign->GetText().ToString();
 
@@ -497,7 +498,6 @@ void UPlayerDlg::UpdatePlayerFromUI_Subsystem()
     if (edt_signature)
         Info.Signature = edt_signature->GetText().ToString();
 
-    // Chat macros (10)
     if (MacroEdits.Num() == 10)
     {
         Info.ChatMacros.SetNum(10);
@@ -508,8 +508,11 @@ void UPlayerDlg::UpdatePlayerFromUI_Subsystem()
         }
     }
 
-    // Save now (Apply does it too, but this keeps edits durable)
     SS->SavePlayer(true);
+
+    UE_LOG(LogPlayerDlg, Warning,
+        TEXT("[PlayerDlg] Saved UI -> PlayerInfo: Name='%s' Callsign='%s' Empire=%d"),
+        *Info.Name, *Info.Callsign, Info.Empire);
 }
 
 void UPlayerDlg::RefreshUIFromSubsystem()
@@ -521,7 +524,6 @@ void UPlayerDlg::RefreshUIFromSubsystem()
         return;
     }
 
-    // Ensure it has loaded at least once
     if (!SS->HasLoaded())
     {
         SS->LoadPlayer();
@@ -529,7 +531,10 @@ void UPlayerDlg::RefreshUIFromSubsystem()
 
     const FS_PlayerGameInfo& Info = SS->GetPlayerInfo();
 
-    // Left panel
+    UE_LOG(LogPlayerDlg, Warning,
+        TEXT("[PlayerDlg] Refresh from PlayerInfo: Name='%s' Callsign='%s' Empire=%d Rank=%d"),
+        *Info.Name, *Info.Callsign, Info.Empire, Info.Rank);
+
     if (txt_profile_name)
     {
         txt_profile_name->SetText(
@@ -540,13 +545,16 @@ void UPlayerDlg::RefreshUIFromSubsystem()
     // Editable
     if (edt_name)      edt_name->SetText(FText::FromString(Info.Name));
     if (edt_squadron)  edt_squadron->SetText(FText::FromString(Info.Squadron));
-    if (edt_callsign)  edt_squadron->SetText(FText::FromString(Info.Callsign));
+
+    // FIX: Callsign must go to edt_callsign (you had edt_squadron)
+    if (edt_callsign)  edt_callsign->SetText(FText::FromString(Info.Callsign));
+
     if (edt_signature) edt_signature->SetText(FText::FromString(Info.Signature));
 
-    // Password isn’t in FS_PlayerGameInfo (ignore / blank for now)
+    // Password not in FS_PlayerGameInfo
     if (edt_password) edt_password->SetText(FText::GetEmpty());
 
-    // Read-only fields from struct
+    // Read-only
     if (txt_created)    txt_created->SetText(FText::FromString(UFormattingUtils::FormatDateFromUnixSeconds(Info.CreateTime)));
     if (txt_flighttime) txt_flighttime->SetText(FText::FromString(UFormattingUtils::FormatTimeHMS((double)Info.FlightTime)));
     if (txt_missions)   txt_missions->SetText(FText::AsNumber(Info.PlayerMissions));
@@ -556,7 +564,7 @@ void UPlayerDlg::RefreshUIFromSubsystem()
 
     if (txt_rank)
     {
-        const int32 RankId = Info.Rank; // or player->GetRank()
+        const int32 RankId = Info.Rank;
         const TCHAR* RankName = UAwardInfoRegistry::RankName(RankId);
 
         txt_rank->SetText(
@@ -569,18 +577,16 @@ void UPlayerDlg::RefreshUIFromSubsystem()
     if (txt_empire)
     {
         const UEnum* Enum = StaticEnum<EEMPIRE_NAME>();
-
         if (Enum && Enum->IsValidEnumValue(Info.Empire))
         {
-            txt_empire->SetText(
-                Enum->GetDisplayNameTextByValue((int64)Info.Empire)
-            );
+            txt_empire->SetText(Enum->GetDisplayNameTextByValue((int64)Info.Empire));
         }
         else
         {
             txt_empire->SetText(FText::FromString(TEXT("UNKNOWN EMPIRE")));
         }
     }
+
     // Macros
     if (MacroEdits.Num() == 10)
     {
@@ -592,8 +598,6 @@ void UPlayerDlg::RefreshUIFromSubsystem()
             MacroEdits[i]->SetText(FText::FromString(V));
         }
     }
-
-    // Rank/medal imagery hooks later (Info.MedalsMask, Info.Rank)
 }
 
 // ------------------------------------------------------------------------
@@ -602,13 +606,11 @@ void UPlayerDlg::RefreshUIFromSubsystem()
 
 void UPlayerDlg::OnAdd()
 {
-    // For now: either no-op or re-run “first run” flow later.
     UE_LOG(LogPlayerDlg, Warning, TEXT("[PlayerDlg] Add is disabled for single-profile subsystem flow."));
 }
 
 void UPlayerDlg::OnDel()
 {
-    // For now: no-op (single profile). Later you can add delete/slot reset.
     UE_LOG(LogPlayerDlg, Warning, TEXT("[PlayerDlg] Delete is disabled for single-profile subsystem flow."));
 }
 
@@ -631,5 +633,3 @@ void UPlayerDlg::OnCancel()
     else
         HideDlg();
 }
-
-

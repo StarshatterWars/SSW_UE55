@@ -10,19 +10,17 @@
     ========
     First-time player setup dialog.
 
-    Unreal UMG replacement for legacy FirstTimeDlg.frm.
-    Handles:
-      - Player name creation
-      - Play style selection (Arcade / Standard)
-      - Experience level (Cadet / Admiral)
-      - Initial key bindings
-      - Player save
+    Authoritative-only implementation:
+      - Reads/writes FS_PlayerGameInfo via UStarshatterPlayerSubsystem
+      - Saves via UStarshatterPlayerSubsystem::SavePlayer(true)
+      - Does NOT touch legacy PlayerCharacter or player.cfg
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
+#include "GameStructs.h"                 // FS_PlayerGameInfo + EEMPIRE_NAME
 #include "FirstTimeDlg.generated.h"
 
 // UMG forward declarations:
@@ -30,10 +28,8 @@ class UButton;
 class UEditableTextBox;
 class UComboBoxString;
 
-/**
- * UFirstTimeDlg
- * Unreal UMG replacement for legacy FirstTimeDlg (FirstTimeDlg.frm + OnApply).
- */
+class UStarshatterPlayerSubsystem;
+
 UCLASS(BlueprintType, Blueprintable)
 class STARSHATTERWARS_API UFirstTimeDlg : public UBaseScreen
 {
@@ -43,32 +39,43 @@ public:
     UFirstTimeDlg(const FObjectInitializer& ObjectInitializer);
 
 protected:
-    /* --------------------------------------------------------------------
-       UUserWidget
-       -------------------------------------------------------------------- */
-
     virtual void NativeConstruct() override;
-
-    /* --------------------------------------------------------------------
-       Events
-       -------------------------------------------------------------------- */
 
     UFUNCTION()
     void OnAcceptClicked();
 
-    /* --------------------------------------------------------------------
-       Helpers
-       -------------------------------------------------------------------- */
+    UFUNCTION()
+    void OnCancelClicked();
+
+private:
+    // Helpers
+    UStarshatterPlayerSubsystem* GetPlayerSubsystem() const;
 
     void PopulateDefaultsIfNeeded();
+    void PopulateEmpireOptionsIfNeeded();
 
-protected:
-    /* --------------------------------------------------------------------
-       BindWidget controls (must match names in WBP_FirstTimeDlg)
-       -------------------------------------------------------------------- */
+    // Apply UI -> PlayerInfo (authoritative)
+    void ApplyUiToPlayerInfo(FS_PlayerGameInfo& Info) const;
+
+    // Optional: ensure a save exists on first run
+    void EnsureMinimalFirstRunDefaults(FS_PlayerGameInfo& Info) const;
+
+    // Map empire combobox index -> EEMPIRE_NAME
+    EEMPIRE_NAME EmpireFromComboIndex(int32 Index) const;
+
+private:
+    // ------------------------------------------------------------
+    // BindWidget controls (must match names in WBP_FirstTimeDlg)
+    // ------------------------------------------------------------
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UEditableTextBox> NameEdit;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UEditableTextBox> CallsignEdit;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UComboBoxString> EmpireCombo;
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UComboBoxString> PlayStyleCombo;
@@ -78,4 +85,7 @@ protected:
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UButton> AcceptBtn;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> CancelBtn;
 };

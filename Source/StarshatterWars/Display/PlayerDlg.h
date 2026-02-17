@@ -14,8 +14,6 @@ class UVerticalBox;
 class UUniformGridPanel;
 
 class UMenuScreen;
-
-// NEW
 class UStarshatterPlayerSubsystem;
 
 UCLASS()
@@ -67,12 +65,16 @@ protected:
     UFUNCTION()
     void OnCancel();
 
+    // -------- Row builders --------
     UHorizontalBox* AddStatRow(const FText& Label, UWidget* RightWidget, float RightWidth = 420.f, float RowPadY = 6.f);
     UTextBlock* MakeValueText();
     UEditableTextBox* MakeEditBox(bool bPassword = false);
 
     void BuildMedalsGrid(int32 Columns = 5, int32 Rows = 3);
     void BuildChatMacrosRows();
+
+    // No lambdas:
+    FString MacroLabelForIndex(int32 Index) const;
 
 protected:
     // -------- Manager --------
