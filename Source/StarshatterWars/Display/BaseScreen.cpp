@@ -1906,26 +1906,36 @@ void UBaseScreen::StyleButton_Default(UButton* Button, int32 FontSize)
     if (!Button)
         return;
 
-    // Button brush styling
+    EnsureThemeFontsLoaded();
+
+    // ------------------------------------------------------------
+    // Build Button Style
+    // ------------------------------------------------------------
     FButtonStyle Style = Button->WidgetStyle;
 
+    // Normal
     FSlateBrush Normal;
     Normal.DrawAs = ESlateBrushDrawType::Box;
     Normal.TintColor = FSlateColor(UIButtonFill);
+    Normal.Margin = FMargin(4.f / 16.f);
 
+    // Hovered
     FSlateBrush Hovered;
     Hovered.DrawAs = ESlateBrushDrawType::Box;
     Hovered.TintColor = FSlateColor(UIButtonFillHover);
+    Hovered.Margin = FMargin(4.f / 16.f);
 
+    // Pressed
     FSlateBrush Pressed;
     Pressed.DrawAs = ESlateBrushDrawType::Box;
     Pressed.TintColor = FSlateColor(UIButtonFillPressed);
+    Pressed.Margin = FMargin(4.f / 16.f);
 
     Style.SetNormal(Normal);
     Style.SetHovered(Hovered);
     Style.SetPressed(Pressed);
 
-    // Border outline
+    // Border
     Style.Normal.OutlineSettings.Width = UIButtonBorderWidth;
     Style.Normal.OutlineSettings.Color = UIButtonBorder;
 
@@ -1935,23 +1945,26 @@ void UBaseScreen::StyleButton_Default(UButton* Button, int32 FontSize)
     Style.Pressed.OutlineSettings.Width = UIButtonBorderWidth;
     Style.Pressed.OutlineSettings.Color = UIButtonBorder;
 
-    Button->SetStyle(Style);
+    Button->WidgetStyle = Style;
+    Button->SynchronizeProperties();
 
-    // Text inside button (first TextBlock descendant)
+    // ------------------------------------------------------------
+    // Style Text Inside Button
+    // ------------------------------------------------------------
     UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
-    if (TextChild)
-    {
-        TextChild->SetJustification(ETextJustify::Center);
-        TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
+    if (!TextChild)
+        return;
 
-        UFont* FontObj = GetThemeFont(DefaultUIFont);
-        if (FontObj)
-        {
-            FSlateFontInfo FontInfo = TextChild->GetFont();
-            FontInfo.FontObject = FontObj;
-            FontInfo.Size = FontSize;
-            TextChild->SetFont(FontInfo);
-        }
+    TextChild->SetJustification(ETextJustify::Center);
+    TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
+
+    UFont* FontObj = GetThemeFont(DefaultUIFont);
+    if (FontObj)
+    {
+        FSlateFontInfo FontInfo = TextChild->GetFont();
+        FontInfo.FontObject = FontObj;
+        FontInfo.Size = FontSize;
+        TextChild->SetFont(FontInfo);
     }
 }
 

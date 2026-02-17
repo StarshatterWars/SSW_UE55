@@ -416,6 +416,7 @@ void UKeyDlg::BuildKeyList()
         if (!Row)
             continue;
 
+       
         // -----------------------------
         // LEFT: Action Button (50%)
         // -----------------------------
@@ -424,7 +425,7 @@ void UKeyDlg::BuildKeyList()
 
         if (!RowBtn || !ActionText)
             continue;
-
+        StyleButton_Default(RowBtn, 22);
         ActionText->SetText(FText::FromString(ActionToDisplayString(Action)));
         ActionText->SetJustification(ETextJustify::Left);
 
