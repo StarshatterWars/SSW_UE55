@@ -108,6 +108,9 @@ protected:
     TObjectPtr<UEditableTextBox> edt_password = nullptr;
 
     UPROPERTY()
+    TObjectPtr<UEditableTextBox> edt_callsign = nullptr;
+
+    UPROPERTY()
     TObjectPtr<UEditableTextBox> edt_squadron = nullptr;
 
     UPROPERTY()
@@ -130,6 +133,9 @@ protected:
 
     UPROPERTY()
     TObjectPtr<UTextBlock> txt_points = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<UTextBlock> txt_empire = nullptr;
 
     UPROPERTY()
     TObjectPtr<UTextBlock> txt_rank = nullptr;

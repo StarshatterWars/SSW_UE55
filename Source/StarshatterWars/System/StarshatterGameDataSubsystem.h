@@ -302,6 +302,9 @@ public:
     List<CombatEvent>    events;
 
     bool                 bClearTables;
+    
+    UPROPERTY(Transient)
+    bool bAwardTablesLoaded = false;
 
 protected:
     // =====================================================================
@@ -344,7 +347,6 @@ protected:
     
     FShipDesign        ShipDesignData;
 
-    FS_AwardInfo       AwardData;
     FS_CombatGroupUnit CombatGroupUnit;
     FS_CombatGroup     CombatGroupData;
     FS_OOBForce        ForceData;

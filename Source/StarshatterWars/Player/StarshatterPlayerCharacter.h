@@ -35,7 +35,9 @@ public:
     // ------------------------------------------------------------
     UPROPERTY() int32 Id = 0;
     UPROPERTY() FString Name;
-    UPROPERTY() FString Nickname;
+    UPROPERTY() FString Callsign;
+
+    UPROPERTY() FString Squadron;
     UPROPERTY() FString Signature;
     UPROPERTY() int32 Avatar = -1;
 

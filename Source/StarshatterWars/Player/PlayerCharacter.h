@@ -62,6 +62,12 @@ public:
     const FString& Squadron()  const { return PlayerSquadron; }
     const FString& Signature() const { return PlayerSignature; }
 
+    void SetEmpire(EEMPIRE_NAME InEmpire);
+    EEMPIRE_NAME GetEmpire() const { return PlayerEmpire; };
+
+    void SetCallsign(const FString& InCallsign);
+    const FString& GetCallsign() const { return PlayerCallsign; };
+
     const FString& ChatMacro(int32 Index) const;
 
     int32 CreateDate() const { return CreateDateUtc; }
@@ -228,7 +234,9 @@ private:
 private:
     // UE identity/profile
     int32   PlayerId = 0;
+    EEMPIRE_NAME   PlayerEmpire = EEMPIRE_NAME::Terellian;
     FString PlayerName;
+    FString PlayerCallsign;
     FString PlayerPassword;
     FString PlayerSquadron;
     FString PlayerSignature;

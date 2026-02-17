@@ -37,7 +37,8 @@ void UStarshatterPlayerCharacter::FromPlayerInfo(const FS_PlayerGameInfo& InInfo
 {
     Id = InInfo.Id;
     Name = InInfo.Name;
-    Nickname = InInfo.Nickname;
+    Callsign = InInfo.Callsign;
+    Squadron = InInfo.Squadron;
     Signature = InInfo.Signature;
     Avatar = InInfo.Avatar;
 
@@ -109,7 +110,8 @@ void UStarshatterPlayerCharacter::ToPlayerInfo(FS_PlayerGameInfo& OutInfo) const
 {
     OutInfo.Id = Id;
     OutInfo.Name = Name;
-    OutInfo.Nickname = Nickname;
+    OutInfo.Callsign = Callsign;
+    OutInfo.Squadron = Squadron;
     OutInfo.Signature = Signature;
     OutInfo.Avatar = Avatar;
 
@@ -193,7 +195,8 @@ void UStarshatterPlayerCharacter::LoadFromPlayerInfo(const FS_PlayerGameInfo& In
     // ------------------------------------------------------------
     Id = Info.Id;
     Name = Info.Name;
-    Nickname = Info.Nickname;
+    Callsign = Info.Callsign;
+    Squadron = Info.Squadron;
     Signature = Info.Signature;
     Avatar = Info.Avatar;
 

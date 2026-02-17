@@ -337,6 +337,7 @@ void UPlayerDlg::BuildStatsRows()
 
     AddStatRow(FText::FromString(TEXT("NAME")), edt_name);
     AddStatRow(FText::FromString(TEXT("PASSWORD")), edt_password);
+    AddStatRow(FText::FromString(TEXT("CALLSIGN")), edt_callsign);
     AddStatRow(FText::FromString(TEXT("SQUADRON")), edt_squadron);
     AddStatRow(FText::FromString(TEXT("SIGNATURE")), edt_signature);
 
@@ -347,6 +348,7 @@ void UPlayerDlg::BuildStatsRows()
     txt_losses = MakeValueText();
     txt_points = MakeValueText();
     txt_rank = MakeValueText();
+    txt_empire = MakeValueText();
 
     AddStatRow(FText::FromString(TEXT("CREATED")), txt_created);
     AddStatRow(FText::FromString(TEXT("FLIGHT TIME")), txt_flighttime);
@@ -355,6 +357,7 @@ void UPlayerDlg::BuildStatsRows()
     AddStatRow(FText::FromString(TEXT("LOSSES")), txt_losses);
     AddStatRow(FText::FromString(TEXT("POINTS")), txt_points);
     AddStatRow(FText::FromString(TEXT("RANK")), txt_rank);
+    AddStatRow(FText::FromString(TEXT("EMPIRE")), txt_rank);
 
     img_rank = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("RankImage"));
     if (img_rank)
@@ -485,8 +488,11 @@ void UPlayerDlg::UpdatePlayerFromUI_Subsystem()
 
     // If you actually want these persisted, they must exist in FS_PlayerGameInfo.
     // You DO have Nickname + Signature already:
+    if (edt_callsign)
+        Info.Callsign = edt_callsign->GetText().ToString();
+
     if (edt_squadron)
-        Info.Nickname = edt_squadron->GetText().ToString();
+        Info.Squadron = edt_squadron->GetText().ToString();
 
     if (edt_signature)
         Info.Signature = edt_signature->GetText().ToString();
@@ -533,7 +539,8 @@ void UPlayerDlg::RefreshUIFromSubsystem()
 
     // Editable
     if (edt_name)      edt_name->SetText(FText::FromString(Info.Name));
-    if (edt_squadron)  edt_squadron->SetText(FText::FromString(Info.Nickname));
+    if (edt_squadron)  edt_squadron->SetText(FText::FromString(Info.Squadron));
+    if (edt_callsign)  edt_squadron->SetText(FText::FromString(Info.Callsign));
     if (edt_signature) edt_signature->SetText(FText::FromString(Info.Signature));
 
     // Password isn’t in FS_PlayerGameInfo (ignore / blank for now)
@@ -559,6 +566,21 @@ void UPlayerDlg::RefreshUIFromSubsystem()
         );
     }
 
+    if (txt_empire)
+    {
+        const UEnum* Enum = StaticEnum<EEMPIRE_NAME>();
+
+        if (Enum && Enum->IsValidEnumValue(Info.Empire))
+        {
+            txt_empire->SetText(
+                Enum->GetDisplayNameTextByValue((int64)Info.Empire)
+            );
+        }
+        else
+        {
+            txt_empire->SetText(FText::FromString(TEXT("UNKNOWN EMPIRE")));
+        }
+    }
     // Macros
     if (MacroEdits.Num() == 10)
     {

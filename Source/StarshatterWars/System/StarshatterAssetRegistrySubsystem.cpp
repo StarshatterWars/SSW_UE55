@@ -237,9 +237,9 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
     // Data.AwardsTable
     if (!Cache.Contains(TEXT("Data.MedalsTable")))
     {
-        if (!Settings->AwardsTable.IsNull())
+        if (!Settings->MedalsTable.IsNull())
         {
-            const FSoftObjectPath Path = Settings->AwardsTable.ToSoftObjectPath();
+            const FSoftObjectPath Path = Settings->MedalsTable.ToSoftObjectPath();
             Cache.Add(TEXT("Data.MedalsTable"), TSoftObjectPtr<UObject>(Path));
             UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind Data.MedalsTable -> %s"), *Path.ToString());
         }

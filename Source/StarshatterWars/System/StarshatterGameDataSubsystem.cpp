@@ -6289,6 +6289,16 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 	UE_LOG(LogTemp, Log, TEXT("UStarshatterGameDataSubsystem::LoadAwardTables()"));
 
 	// ------------------------------------------------------------
+	// Load-once guard (prevents second-run DT mutation crashes)
+	// ------------------------------------------------------------
+	if (bAwardTablesLoaded)
+	{
+		UE_LOG(LogTemp, Log, TEXT("LoadAwardTables: already loaded; skipping."));
+		return;
+	}
+	bAwardTablesLoaded = true;
+
+	// ------------------------------------------------------------
 	// Resolve file path
 	// ------------------------------------------------------------
 	FString AwardsPath = FPaths::ProjectContentDir();
@@ -6311,15 +6321,36 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 	// Optional safety: verify row structs are correct
 	if (RanksDataTable->GetRowStruct() != FRankInfo::StaticStruct())
 	{
-		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: RanksDataTable RowStruct mismatch (expected FS_RankInfo)."));
+		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: RanksDataTable RowStruct mismatch (expected FRankInfo)."));
 		return;
 	}
 
 	if (MedalsDataTable->GetRowStruct() != FMedalInfo::StaticStruct())
 	{
-		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: MedalsDataTable RowStruct mismatch (expected FS_MedalInfo)."));
+		UE_LOG(LogTemp, Error, TEXT("LoadAwardTables: MedalsDataTable RowStruct mismatch (expected FMedalInfo)."));
 		return;
 	}
+
+#if !WITH_EDITOR
+	// Strong recommendation: do not mutate asset DataTables at runtime in packaged builds.
+	UE_LOG(LogTemp, Warning, TEXT("LoadAwardTables: DataTable mutation disabled outside editor builds."));
+	return;
+#endif
+
+	// ------------------------------------------------------------
+	// Optional: full rebuild (clear DTs once)
+	// ------------------------------------------------------------
+	auto ClearDataTable = [](UDataTable* DT)
+		{
+			if (!DT) return;
+			const TArray<FName> Names = DT->GetRowNames();
+			for (const FName& RN : Names)
+				DT->RemoveRow(RN);
+		};
+
+	// If you want a clean rebuild each editor run, uncomment:
+	// ClearDataTable(RanksDataTable);
+	// ClearDataTable(MedalsDataTable);
 
 	// ------------------------------------------------------------
 	// Load file bytes (UE-native)
@@ -6353,10 +6384,13 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 
 	UE_LOG(LogTemp, Log, TEXT("Parsing awards.def into Rank + Medal tables..."));
 
+	int32 RankCount = 0;
+	int32 MedalCount = 0;
+
 	// ------------------------------------------------------------
 	// Parse entries
 	// ------------------------------------------------------------
-	do
+	while (true)
 	{
 		delete TermPtr;
 		TermPtr = ParserObj.ParseTerm();
@@ -6367,56 +6401,36 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 		if (!Def || Def->name()->value() != "award")
 			continue;
 
-		if (!Def->term() || !Def->term()->isStruct())
+		TermStruct* Val = (Def->term() ? Def->term()->isStruct() : nullptr);
+		if (!Val)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("WARNING: award structure missing in '%s'"), *AwardsPath);
 			continue;
 		}
 
-		TermStruct* Val = Def->term()->isStruct();
-
-		// --------------------------------------------------------
-		// Local scratch (full schema)
-		// --------------------------------------------------------
+		// Scratch
 		Text   LocalType = "";
 		Text   LocalName = "";
 		Text   LocalAbrv = "";
 		Text   LocalDesc = "";
 		Text   LocalAwardText = "";
 
-		Text   LocalDescSound = "";
 		Text   LocalGrantSound = "";
 		Text   LocalSmall = "";
 		Text   LocalLarge = "";
 
 		int32  LocalId = 0;
-
-		int32  LocalGrant = 0;              // rank: grant bitmask
-		int32  LocalGrantedShipClasses = 0; // rank: (you may want to map grant->this)
-		int32  LocalTotalPoints = 0;         // rank threshold
-
-		int32  LocalMissionPoints = 0;
-		int32  LocalTotalMissions = 0;
-		int32  LocalKills = 0;
-		int32  LocalLost = 0;
-		int32  LocalCollision = 0;
+		int32  LocalGrant = 0;
+		int32  LocalTotalPoints = 0;
 
 		int32  LocalCampaignId = 0;
 		bool   bLocalCampaignComplete = false;
 		bool   bLocalDynamicCampaign = false;
 		bool   bLocalCeremony = true;
 
-		int32  LocalRequiredAwards = 0;
-		int32  LocalLottery = 0;
-
-		int32  LocalMinRank = 0;
-		int32  LocalMaxRank = 0;
 		int32  LocalMinShipClass = 0;
 		int32  LocalMaxShipClass = 0;
 
-		// --------------------------------------------------------
-		// Field parsing
-		// --------------------------------------------------------
 		for (int32 i = 0; i < (int32)Val->elements()->size(); ++i)
 		{
 			TermDef* PDef = Val->elements()->at(i)->isDef();
@@ -6432,21 +6446,18 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 			else if (Key == "desc") { GetDefText(LocalDesc, PDef, FileNameAnsi); }
 			else if (Key == "award") { GetDefText(LocalAwardText, PDef, FileNameAnsi); }
 
-			else if (Key == "desc_sound") { GetDefText(LocalDescSound, PDef, FileNameAnsi); }
 			else if (Key == "award_sound") { GetDefText(LocalGrantSound, PDef, FileNameAnsi); }
 
 			else if (Key == "small") { GetDefText(LocalSmall, PDef, FileNameAnsi); }
 			else if (Key == "large") { GetDefText(LocalLarge, PDef, FileNameAnsi); }
 
-			// Rank fields
 			else if (Key == "grant") { GetDefNumber(LocalGrant, PDef, FileNameAnsi); }
 			else if (Key == "total_points") { GetDefNumber(LocalTotalPoints, PDef, FileNameAnsi); }
 
-			// Medal / generic award gating fields (some may appear on both)
-			else if (Key == "required_awards") { GetDefNumber(LocalRequiredAwards, PDef, FileNameAnsi); }
-			else if (Key == "lottery") { GetDefNumber(LocalLottery, PDef, FileNameAnsi); }
-			else if (Key == "min_rank") { GetDefNumber(LocalMinRank, PDef, FileNameAnsi); }
-			else if (Key == "max_rank") { GetDefNumber(LocalMaxRank, PDef, FileNameAnsi); }
+			else if (Key == "campaign_id") { GetDefNumber(LocalCampaignId, PDef, FileNameAnsi); }
+			else if (Key == "campaign_complete") { GetDefBool(bLocalCampaignComplete, PDef, FileNameAnsi); }
+			else if (Key == "dynamic_campaign") { GetDefBool(bLocalDynamicCampaign, PDef, FileNameAnsi); }
+			else if (Key == "ceremony") { GetDefBool(bLocalCeremony, PDef, FileNameAnsi); }
 
 			else if (Key == "min_ship_class")
 			{
@@ -6460,69 +6471,58 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 				GetDefText(ClassName, PDef, FileNameAnsi);
 				LocalMaxShipClass = Ship::ClassForName(ClassName);
 			}
-
-			else if (Key == "mission_points") { GetDefNumber(LocalMissionPoints, PDef, FileNameAnsi); }
-			else if (Key == "total_missions") { GetDefNumber(LocalTotalMissions, PDef, FileNameAnsi); }
-			else if (Key == "kills") { GetDefNumber(LocalKills, PDef, FileNameAnsi); }
-			else if (Key == "lost") { GetDefNumber(LocalLost, PDef, FileNameAnsi); }
-			else if (Key == "collision") { GetDefNumber(LocalCollision, PDef, FileNameAnsi); }
-
-			else if (Key == "campaign_id") { GetDefNumber(LocalCampaignId, PDef, FileNameAnsi); }
-			else if (Key == "campaign_complete") { GetDefBool(bLocalCampaignComplete, PDef, FileNameAnsi); }
-			else if (Key == "dynamic_campaign") { GetDefBool(bLocalDynamicCampaign, PDef, FileNameAnsi); }
-			else if (Key == "ceremony") { GetDefBool(bLocalCeremony, PDef, FileNameAnsi); }
 		}
 
-		// Normalize
 		LocalType.setSensitive(false);
 		LocalName.setSensitive(false);
 
-		const FString TypeStr = FString(LocalType).ToLower();
-		const FString NameStr = FString(LocalName);
+		FString TypeStr = FString(LocalType).ToLower();
+
+		FString NameStr = FString(LocalName);
+		NameStr.ReplaceInline(TEXT("\r"), TEXT(""));
+		NameStr.ReplaceInline(TEXT("\n"), TEXT(""));
+		NameStr = NameStr.TrimStartAndEnd();
 
 		if (NameStr.IsEmpty())
 			continue;
 
 		const FName RowName(*NameStr);
 
-		// --------------------------------------------------------
-		// Route -> Rank table
-		// --------------------------------------------------------
 		if (TypeStr == TEXT("rank"))
 		{
 			FRankInfo RankRow;
 			RankRow.RankId = LocalId;
-			RankRow.RankName = NameStr;
-			RankRow.RankAbrv = FString(LocalAbrv);
-			RankRow.RankDesc = FString(LocalDesc);
-			RankRow.RankAwardText = FString(LocalAwardText);
+			RankRow.Name = NameStr;
+			RankRow.Abrv = FString(LocalAbrv);
+			RankRow.Desc = FString(LocalDesc);
+			RankRow.AwardText = FString(LocalAwardText);
 
 			RankRow.SmallImage = FString(LocalSmall);
 			RankRow.LargeImage = FString(LocalLarge);
 			RankRow.GrantSound = FString(LocalGrantSound);
 
-			// Legacy: "grant" is the granted ship classes bitmask
 			RankRow.GrantedShipClasses = LocalGrant;
 			RankRow.TotalPoints = LocalTotalPoints;
 
-			// Upsert
-			if (RanksDataTable->FindRow<FRankInfo>(RowName, TEXT("LoadAwardTables"), false))
-				RanksDataTable->RemoveRow(RowName);
-
-			RanksDataTable->AddRow(RowName, RankRow);
+			if (FRankInfo* Existing = RanksDataTable->FindRow<FRankInfo>(RowName, TEXT("LoadAwardTables"), false))
+			{
+				*Existing = RankRow;
+			}
+			else
+			{
+				RanksDataTable->AddRow(RowName, RankRow);
+			}
+			++RankCount;
 			continue;
 		}
 
-		// --------------------------------------------------------
-		// Route -> Medal table
-		// --------------------------------------------------------
 		if (TypeStr == TEXT("medal"))
 		{
 			FMedalInfo MedalRow;
-			MedalRow.MedalId = LocalId; // bitmask id
-			MedalRow.MedalName = NameStr;
-			MedalRow.MedalDesc = FString(LocalDesc);
-			MedalRow.MedalAwardText = FString(LocalAwardText);
+			MedalRow.MedalId = LocalId;
+			MedalRow.Name = NameStr;
+			MedalRow.Desc = FString(LocalDesc);
+			MedalRow.AwardText = FString(LocalAwardText);
 
 			MedalRow.SmallImage = FString(LocalSmall);
 			MedalRow.LargeImage = FString(LocalLarge);
@@ -6533,18 +6533,25 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 			MedalRow.bDynamicCampaignOnly = bLocalDynamicCampaign;
 			MedalRow.bCeremony = bLocalCeremony;
 
-			if (MedalsDataTable->FindRow<FMedalInfo>(RowName, TEXT("LoadAwardTables"), false))
-				MedalsDataTable->RemoveRow(RowName);
+			// If your struct has these fields, set them; otherwise remove:
+			// MedalRow.MinShipClass = LocalMinShipClass;
+			// MedalRow.MaxShipClass = LocalMaxShipClass;
 
-			MedalsDataTable->AddRow(RowName, MedalRow);
+			if (FMedalInfo* Existing = MedalsDataTable->FindRow<FMedalInfo>(RowName, TEXT("LoadAwardTables"), false))
+			{
+				*Existing = MedalRow;   // overwrite row data in place
+			}
+			else
+			{
+				MedalsDataTable->AddRow(RowName, MedalRow);
+			}
+			++MedalCount;
 			continue;
 		}
 
-		// Unknown type
 		UE_LOG(LogTemp, Warning, TEXT("LoadAwardTables: unknown award type '%s' for '%s'"),
 			*TypeStr, *NameStr);
-
-	} while (TermPtr);
+	}
 
 	if (TermPtr)
 	{
@@ -6553,6 +6560,5 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("LoadAwardTables: complete. Ranks=%d Medals=%d"),
-		RanksDataTable ? RanksDataTable->GetRowMap().Num() : 0,
-		MedalsDataTable ? MedalsDataTable->GetRowMap().Num() : 0);
+		RankCount, MedalCount);
 }

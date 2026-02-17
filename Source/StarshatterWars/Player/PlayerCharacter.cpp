@@ -56,6 +56,26 @@ PlayerCharacter::~PlayerCharacter()
 // Accessors
 // ------------------------------------------------------------------
 
+void PlayerCharacter::SetEmpire(EEMPIRE_NAME InEmpire)
+{
+    if (PlayerEmpire != InEmpire)
+    {
+        PlayerEmpire = InEmpire;
+        bDirty = true;
+    }
+}
+
+void PlayerCharacter::SetCallsign(const FString& InCallsign)
+{
+    const FString Trimmed = InCallsign.TrimStartAndEnd();
+
+    if (!PlayerCallsign.Equals(Trimmed, ESearchCase::CaseSensitive))
+    {
+        PlayerCallsign = Trimmed;
+        bDirty = true;
+    }
+}
+
 const FString& PlayerCharacter::ChatMacro(int32 Index) const
 {
     if (ChatMacros.IsValidIndex(Index))
@@ -723,7 +743,8 @@ void PlayerCharacter::FromPlayerInfo(const FS_PlayerGameInfo& InInfo)
     PlayerSignature = InInfo.Signature;
 
     // map “squadron/callsign” -> Nickname for now
-    PlayerSquadron = InInfo.Nickname;
+    PlayerSquadron = InInfo.Squadron;
+    PlayerCallsign = InInfo.Callsign;
 
     CachedRankId = InInfo.Rank;
 
@@ -774,7 +795,8 @@ void PlayerCharacter::ToPlayerInfo(FS_PlayerGameInfo& OutInfo) const
     OutInfo.Id = PlayerId;
     OutInfo.Name = PlayerName;
     OutInfo.Signature = PlayerSignature;
-    OutInfo.Nickname = PlayerSquadron;
+    OutInfo.Callsign = PlayerCallsign;
+    OutInfo.Squadron = PlayerSquadron;
 
     OutInfo.Rank = CachedRankId;
 
