@@ -35,6 +35,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+
 #include "PlayerSaveGame.h"
 #include "GameStructs.h"
 
@@ -79,9 +80,15 @@ public:
     UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
     bool HasLoaded() const { return bLoaded; }
 
-    // Did a save exist at the moment LoadPlayer() ran?
     UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
     bool HadExistingSaveOnLoad() const { return bHadExistingSave; }
+
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|PlayerSave")
+    void MarkDirty() { bDirty = true; }
+
+    // Optional: nuke runtime state to defaults (does NOT save unless you call SavePlayer)
+    UFUNCTION(BlueprintCallable, Category = "Starshatter|PlayerSave")
+    void ResetToDefaults();
 
     // ------------------------------------------------------------------
     // Player data access
@@ -92,7 +99,12 @@ public:
     UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
     FS_PlayerGameInfo GetPlayerInfoCopy() const { return PlayerInfo; }
 
+    UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
     bool DoesSaveExistNow() const;
+
+    // Convenience view-model object (optional, but useful for UI)
+    UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
+    UStarshatterPlayerCharacter* GetPlayerObject() const { return PlayerObject; }
 
     // ------------------------------------------------------------------
     // Save / Load
@@ -109,22 +121,21 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Starshatter|PlayerSave")
     FOnPlayerSaveLoaded OnPlayerSaveLoaded;
 
-    UFUNCTION(BlueprintPure, Category = "Starshatter|PlayerSave")
-    UStarshatterPlayerCharacter* GetPlayerObject() const { return PlayerObject; }
-
 private:
     // ------------------------------------------------------------------
     // Internal helpers
     // ------------------------------------------------------------------
-    bool SaveGameInternal(const FString& InSlotName, int32 InUserIndex, const FS_PlayerGameInfo& InPlayerData, int32 InSaveVersion);
-    bool LoadGameInternal(const FString& InSlotName, int32 InUserIndex, FS_PlayerGameInfo& OutPlayerData, int32& OutSaveVersion);
+    bool SaveGameInternal(const FString& InSlotName, int32 InUserIndex,
+        const FS_PlayerGameInfo& InPlayerData, int32 InSaveVersion);
+
+    bool LoadGameInternal(const FString& InSlotName, int32 InUserIndex,
+        FS_PlayerGameInfo& OutPlayerData, int32& OutSaveVersion);
 
     bool MigratePlayerSave(int32 FromVersion, int32 ToVersion, FS_PlayerGameInfo& InOutPlayerInfo);
 
-    UPROPERTY(Transient)
-    TObjectPtr<UStarshatterPlayerCharacter> PlayerObject = nullptr;
-    
     void RebuildPlayerObject();
+    void SyncPlayerObjectFromInfo();
+    void SyncInfoFromPlayerObject();
 
 private:
     // ------------------------------------------------------------------
@@ -138,13 +149,16 @@ private:
     // ------------------------------------------------------------------
     FS_PlayerGameInfo PlayerInfo;
 
+    // Optional convenience UObject mirror for UI/Blueprints
+    UPROPERTY(Transient)
+    TObjectPtr<UStarshatterPlayerCharacter> PlayerObject = nullptr;
+
     // ------------------------------------------------------------------
     // Flags
     // ------------------------------------------------------------------
     bool bLoaded = false;
     bool bDirty = false;
 
-    // First-run detection:
     bool bHadExistingSave = false;
 
 private:

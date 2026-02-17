@@ -35,14 +35,19 @@ void UStarshatterPlayerSubsystem::Initialize(FSubsystemCollectionBase& Collectio
     bDirty = false;
     bHadExistingSave = false;
 
-    // PlayerInfo stays default-constructed (FS_PlayerGameInfo default ctor).
+    // PlayerInfo stays default-constructed.
     UE_LOG(LogStarshatterPlayerSubsystem, Log, TEXT("[PlayerSubsystem] Initialize. Slot=%s UserIndex=%d"),
         *SlotName, UserIndex);
+
+    // Build PlayerObject early so UI can bind even before load.
+    RebuildPlayerObject();
+    SyncPlayerObjectFromInfo();
 }
 
 void UStarshatterPlayerSubsystem::Deinitialize()
 {
     UE_LOG(LogStarshatterPlayerSubsystem, Log, TEXT("[PlayerSubsystem] Deinitialize."));
+    PlayerObject = nullptr;
     Super::Deinitialize();
 }
 
@@ -65,6 +70,28 @@ bool UStarshatterPlayerSubsystem::LoadFromBoot()
 bool UStarshatterPlayerSubsystem::DoesSaveExistNow() const
 {
     return UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex);
+}
+
+void UStarshatterPlayerSubsystem::ResetToDefaults()
+{
+    PlayerInfo = FS_PlayerGameInfo();
+    bDirty = true;
+
+    RebuildPlayerObject();
+    SyncPlayerObjectFromInfo();
+
+    UE_LOG(LogStarshatterPlayerSubsystem, Log, TEXT("[PlayerSubsystem] ResetToDefaults (in-memory only)."));
+}
+
+const FS_PlayerGameInfo& UStarshatterPlayerSubsystem::GetPlayerInfo() const
+{
+    return PlayerInfo;
+}
+
+FS_PlayerGameInfo& UStarshatterPlayerSubsystem::GetMutablePlayerInfo()
+{
+    bDirty = true;
+    return PlayerInfo;
 }
 
 bool UStarshatterPlayerSubsystem::LoadPlayer()
@@ -120,9 +147,8 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
         }
         else if (LoadedSaveVersion > CURRENT_SAVE_VERSION)
         {
-            // Allow loading newer saves (best-effort forward compatibility)
             UE_LOG(LogStarshatterPlayerSubsystem, Warning,
-                TEXT("[PlayerSubsystem] SaveVersion v%d is newer than build supports (v%d). Loading anyway."),
+                TEXT("[PlayerSubsystem] SaveVersion v%d newer than build supports (v%d). Loading anyway."),
                 LoadedSaveVersion, CURRENT_SAVE_VERSION);
 
             PlayerInfo = LoadedPlayerInfo;
@@ -136,18 +162,26 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
             bDirty = false;
         }
 
+        // Ensure PlayerObject exists + is synced
+        RebuildPlayerObject();
+        SyncPlayerObjectFromInfo();
+
         UE_LOG(LogStarshatterPlayerSubsystem, Log,
-            TEXT("[PlayerSubsystem] Player loaded: Name='%s' (SaveVersion=%d)"),
+            TEXT("[PlayerSubsystem] Player loaded: Name='%s' Id=%d Rank=%d (SaveVersion=%d)"),
             *PlayerInfo.Name,
+            PlayerInfo.Id,
+            PlayerInfo.Rank,
             FMath::Max(LoadedSaveVersion, CURRENT_SAVE_VERSION));
 
         return true;
     }
 
-    // No save exists: keep default-constructed PlayerInfo in memory.
-    // DO NOT auto-create a save here; FirstRun is expected to do that.
+    // No save exists: keep defaults in memory; FirstRun is expected to save.
     bLoaded = true;
     bDirty = true;
+
+    RebuildPlayerObject();
+    SyncPlayerObjectFromInfo();
 
     UE_LOG(LogStarshatterPlayerSubsystem, Log,
         TEXT("[PlayerSubsystem] No player save found. FirstRun required. Slot=%s UserIndex=%d"),
@@ -158,11 +192,12 @@ bool UStarshatterPlayerSubsystem::LoadPlayer()
 
 bool UStarshatterPlayerSubsystem::SavePlayer(bool bForce)
 {
+    // If you allow UI to edit PlayerObject directly, pull it back before saving.
+    // If you never edit PlayerObject, this is harmless.
+    SyncInfoFromPlayerObject();
+
     if (!bForce && !bDirty)
-    {
-        // Nothing to do
         return true;
-    }
 
     const bool bOk = SaveGameInternal(SlotName, UserIndex, PlayerInfo, CURRENT_SAVE_VERSION);
     if (bOk)
@@ -170,8 +205,8 @@ bool UStarshatterPlayerSubsystem::SavePlayer(bool bForce)
         bDirty = false;
 
         UE_LOG(LogStarshatterPlayerSubsystem, Log,
-            TEXT("[PlayerSubsystem] SavePlayer OK. Slot=%s UserIndex=%d Version=%d"),
-            *SlotName, UserIndex, CURRENT_SAVE_VERSION);
+            TEXT("[PlayerSubsystem] SavePlayer OK. Slot=%s UserIndex=%d Version=%d Name='%s'"),
+            *SlotName, UserIndex, CURRENT_SAVE_VERSION, *PlayerInfo.Name);
     }
     else
     {
@@ -183,15 +218,52 @@ bool UStarshatterPlayerSubsystem::SavePlayer(bool bForce)
     return bOk;
 }
 
-const FS_PlayerGameInfo& UStarshatterPlayerSubsystem::GetPlayerInfo() const
+// ------------------------------------------------------------------
+// PlayerObject sync
+// ------------------------------------------------------------------
+
+void UStarshatterPlayerSubsystem::RebuildPlayerObject()
 {
-    return PlayerInfo;
+    if (PlayerObject)
+        return;
+
+    // Outer = subsystem (safe; transient)
+    PlayerObject = NewObject<UStarshatterPlayerCharacter>(this, UStarshatterPlayerCharacter::StaticClass(), TEXT("PlayerObject"));
+    if (!PlayerObject)
+    {
+        UE_LOG(LogStarshatterPlayerSubsystem, Error, TEXT("[PlayerSubsystem] RebuildPlayerObject FAILED (NewObject returned null)."));
+        return;
+    }
+
+    // So Commit() can call back into the subsystem
+    PlayerObject->Initialize(this);
+
+    UE_LOG(LogStarshatterPlayerSubsystem, Log, TEXT("[PlayerSubsystem] PlayerObject created."));
 }
 
-FS_PlayerGameInfo& UStarshatterPlayerSubsystem::GetMutablePlayerInfo()
+void UStarshatterPlayerSubsystem::SyncPlayerObjectFromInfo()
 {
+    if (!PlayerObject)
+        return;
+
+    // Full-field mirror if you implement it inside PlayerCharacter.
+    // If your PlayerCharacter currently only mirrors a subset, that’s fine too,
+    // but for “logbook correctness” you want ALL the fields.
+    PlayerObject->FromPlayerInfo(PlayerInfo);
+}
+
+void UStarshatterPlayerSubsystem::SyncInfoFromPlayerObject()
+{
+    if (!PlayerObject)
+        return;
+
+    // If PlayerCharacter is used as a view-model with edits,
+    // mirror it back into PlayerInfo.
+    PlayerObject->ToPlayerInfo(PlayerInfo);
+
+    // If ToPlayerInfo modifies, we consider it dirty
+    // (PlayerCharacter can also track its own bDirty, but subsystem owns persistence)
     bDirty = true;
-    return PlayerInfo;
 }
 
 // ------------------------------------------------------------------
@@ -257,8 +329,6 @@ bool UStarshatterPlayerSubsystem::MigratePlayerSave(
     int32 ToVersion,
     FS_PlayerGameInfo& InOutPlayerInfo)
 {
-    // Stepwise migration framework:
-    // Implement each step as CURRENT_SAVE_VERSION increments.
     if (FromVersion <= 0)
         FromVersion = 1;
 
@@ -267,12 +337,7 @@ bool UStarshatterPlayerSubsystem::MigratePlayerSave(
         switch (FromVersion)
         {
         case 1:
-            // v1 -> v2 example (inactive until you set CURRENT_SAVE_VERSION=2):
-            // - Add defaults for new fields
-            // - Convert deprecated fields
-            // Example:
-            // if (InOutPlayerInfo.CampaignRowName.IsNone())
-            //     InOutPlayerInfo.CampaignRowName = FName(TEXT("Operation Live Fire"));
+            // v1 -> v2 example (inactive until you set CURRENT_SAVE_VERSION=2)
             FromVersion = 2;
             break;
 
