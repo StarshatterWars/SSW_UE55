@@ -17,6 +17,7 @@
 #include "Components/UniformGridSlot.h"
 #include "Components/Image.h"
 #include "FormattingUtils.h"
+#include "AwardInfoRegistry.h"
 
 // Manager
 #include "MenuScreen.h"
@@ -545,7 +546,18 @@ void UPlayerDlg::RefreshUIFromSubsystem()
     if (txt_kills)      txt_kills->SetText(FText::AsNumber(Info.PlayerKills));
     if (txt_losses)     txt_losses->SetText(FText::AsNumber(Info.PlayerLosses));
     if (txt_points)     txt_points->SetText(FText::AsNumber(Info.PlayerPoints));
-    if (txt_rank)       txt_rank->SetText(FText::AsNumber(Info.Rank));
+
+    if (txt_rank)
+    {
+        const int32 RankId = Info.Rank; // or player->GetRank()
+        const TCHAR* RankName = UAwardInfoRegistry::RankName(RankId);
+
+        txt_rank->SetText(
+            (RankName && FCString::Strlen(RankName) > 0)
+            ? FText::FromString(RankName)
+            : FText::FromString(TEXT("UNKNOWN RANK"))
+        );
+    }
 
     // Macros
     if (MacroEdits.Num() == 10)
