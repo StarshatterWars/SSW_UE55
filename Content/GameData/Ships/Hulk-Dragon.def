@@ -3,7 +3,7 @@ SHIP
 name:          "Hulk-Dragon"
 display_name:  Dragon
 abrv:          Cv
-class:         Carrier
+class:         Hulk
 
 hud_icon:   "DragonHud.pcx"
 

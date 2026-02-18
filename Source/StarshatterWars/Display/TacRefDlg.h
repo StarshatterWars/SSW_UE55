@@ -1,8 +1,47 @@
+/*=============================================================================
+    Project:        Starshatter Wars (Unreal Port)
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+
+    SUBSYSTEM:      UI / Tactical Reference
+    FILE:           TacRefDlg.h
+    AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    UTacRefDlg implements the Tactical Reference screen.
+
+    KEY FEATURES
+    ============
+    - Single shared dropdown (ComboBoxString: ShipCombo)
+    - Category buttons filter the dropdown contents:
+        STATION   -> EShipCategory::Station
+        SHIP      -> EShipCategory::CapitalShip
+        FIGHTER   -> EShipCategory::Fighter
+        TRANSPORT -> EShipCategory::Transport
+        FACILITY  -> EShipCategory::Building
+    - Weapon button switches to weapon reference placeholder (existing behavior)
+
+    IMPORTANT
+    =========
+    - CancelButton is provided by UBaseScreen (not declared here).
+    - This class expects EShipCategory and DeriveShipCategoryFromClass() to live in
+      GameStructs_System.h (as you described).
+    - BindWidgetOptional names MUST match your WBP widget names exactly:
+        ShipCombo, StationButton, ShipButton, FighterButton, TransportButton,
+        BuildingButton, WeaponButton, TitleText, TxtCaption, TxtStats, TxtDescription
+
+=============================================================================*/
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
 #include "Engine/DataTable.h"
+
+// EShipCategory + DeriveShipCategoryFromClass(...)
+#include "GameStructs_System.h"
+
 #include "TacRefDlg.generated.h"
 
 class UButton;
@@ -22,9 +61,11 @@ class STARSHATTERWARS_API UTacRefDlg : public UBaseScreen
 public:
     UTacRefDlg(const FObjectInitializer& ObjectInitializer);
 
+    // Menu manager hookup (matches your existing pattern)
     virtual void SetMenuManager(UMenuScreen* InManager);
     virtual void InitializeDlg(UMenuScreen* InManager);
 
+    // Screen lifecycle
     void Show();
     void ExecFrame();
 
@@ -33,68 +74,75 @@ protected:
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
-    // ------------------------------------------------------------
+    // ---------------------------------------------------------------------
     // Data
-    // ------------------------------------------------------------
+    // ---------------------------------------------------------------------
     UPROPERTY(EditDefaultsOnly, Category = "TacRef|Data")
     TObjectPtr<UDataTable> ShipDesignTable = nullptr;
 
-    // Dropdown option index -> RowName mapping
+    // Dropdown option index -> DataTable RowName mapping (FILTERED list)
     UPROPERTY(Transient)
     TArray<FName> ShipRowNames;
 
     UPROPERTY(Transient)
     int32 SelectedShipIndex = INDEX_NONE;
 
-protected:
-    // ------------------------------------------------------------
-    // Widgets (these names MUST match your WBP_* widget names)
-    // ------------------------------------------------------------
+    // Current category filter for ShipCombo
+    UPROPERTY(Transient)
+    EShipCategory ActiveCategory = EShipCategory::Unknown;
 
-    // Title at top ("TACTICAL REFERENCE") - optional
+    // 0 = ship/facility/etc pages, 1 = weapon page
+    int32 Mode = 0;
+
+protected:
+    // ---------------------------------------------------------------------
+    // Widgets (BindWidgetOptional names MUST match the WBP)
+    // ---------------------------------------------------------------------
+
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TitleText = nullptr;
 
-    // Dropdown list (you already have this)
+    // Shared dropdown for ships/facilities/etc
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShipCombo = nullptr;
 
+    // Category buttons
     UPROPERTY(meta = (BindWidgetOptional)) UButton* StationButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* ShipButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* FighterButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* TransportButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* BuildingButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UButton* WeaponButton = nullptr;
 
-    // These are NOT shown in your snippet; make sure they exist in the WBP
-    // and are named exactly like this, OR rename these fields to match your WBP.
+    // Output fields (optional; only used if present in WBP)
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TxtCaption = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtStats = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtDescription = nullptr;
 
 protected:
-    // ------------------------------------------------------------
+    // ---------------------------------------------------------------------
     // Events
-    // ------------------------------------------------------------
+    // ---------------------------------------------------------------------
     UFUNCTION() void HandleCloseClicked();
 
     UFUNCTION() void HandleStationModeClicked();
     UFUNCTION() void HandleShipModeClicked();
     UFUNCTION() void HandleFighterModeClicked();
-    UFUNCTION() void HandleWeaponModeClicked();
+    UFUNCTION() void HandleTransportModeClicked();
+    UFUNCTION() void HandleBuildingModeClicked();
 
+    UFUNCTION() void HandleWeaponModeClicked();
     UFUNCTION() void HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 protected:
-    // ------------------------------------------------------------
+    // ---------------------------------------------------------------------
     // Internals
-    // ------------------------------------------------------------
+    // ---------------------------------------------------------------------
     void PopulateShipDropdown();
+    bool PassesCategoryFilter(const FShipDesign& Row) const;
+
     void SelectShipByIndex(int32 Index);
     void BuildShipTexts(const FShipDesign& Dsn, FString& OutCaption, FString& OutStats, FString& OutDesc) const;
-
-    // NEW: filter predicate used by PopulateShipDropdown()
-    bool PassShipFilter(const FShipDesign& Row) const;
 
 protected:
     UPROPERTY(Transient)
     TObjectPtr<UMenuScreen> manager = nullptr;
-
-    int32 Mode = 0; // 0=ship, 1=weapon, 2=fighter, 3=station
 };

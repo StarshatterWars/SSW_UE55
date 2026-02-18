@@ -1,10 +1,39 @@
+/*=============================================================================
+    Project:        Starshatter Wars (Unreal Port)
+    Studio:         Fractal Dev Studios
+    Copyright:      (c) 2025-2026.
+
+    SUBSYSTEM:      UI / Tactical Reference
+    FILE:           TacRefDlg.cpp
+    AUTHOR:         Carlos Bott
+
+    OVERVIEW
+    ========
+    Implements UTacRefDlg.
+
+    FILTERING MODEL
+    ===============
+    - All category buttons re-use the same dropdown (ShipCombo).
+    - The dropdown is repopulated from ShipDesignTable each time the category
+      changes, filtering rows by:
+          DeriveShipCategoryFromClass(FShipDesign::ShipClass)
+
+    NOTES
+    =====
+    - CancelButton is owned by UBaseScreen; this file binds to it safely.
+    - This preserves your existing workflow:
+        Show() -> PopulateShipDropdown() -> SelectShipByIndex()
+    - Weapon mode currently shows placeholder text (as before).
+
+=============================================================================*/
+
 #include "TacRefDlg.h"
 
 #include "MenuScreen.h"
 #include "GameStructs.h"
 #include "GameStructs_System.h"
 
-// UMG:
+// UMG
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/RichTextBlock.h"
@@ -12,9 +41,9 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogTacRefDlg, Log, All);
 
-// ------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // Minimal weapon grouping helpers (optional)
-// ------------------------------------------------------------
+// -----------------------------------------------------------------------------
 static FString NormalizeWeaponGroupLabel(const FShipWeapon& W)
 {
     if (!W.GroupName.IsEmpty())
@@ -35,39 +64,14 @@ static FString NormalizeWeaponGroupLabel(const FShipWeapon& W)
     return TEXT("WEAPON");
 }
 
-// ------------------------------------------------------------
-// NEW: classification derived from ShipClass string
-// No DataTable/DEF changes needed.
-// ------------------------------------------------------------
-static bool ContainsAnyLower(const FString& Lower, std::initializer_list<const TCHAR*> Keys)
-{
-    for (const TCHAR* K : Keys)
-    {
-        if (Lower.Contains(K))
-            return true;
-    }
-    return false;
-}
-
-static bool IsFighterClass(const FString& ShipClass)
-{
-    const FString C = ShipClass.TrimStartAndEnd().ToLower();
-    return ContainsAnyLower(C, { TEXT("fighter"), TEXT("interceptor"), TEXT("bomber"), TEXT("strike") });
-}
-
-static bool IsStationClass(const FString& ShipClass)
-{
-    const FString C = ShipClass.TrimStartAndEnd().ToLower();
-    return ContainsAnyLower(C, { TEXT("station"), TEXT("platform"), TEXT("outpost"), TEXT("base") });
-}
-
-// ------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 UTacRefDlg::UTacRefDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     Mode = 0;
     SelectedShipIndex = INDEX_NONE;
+    ActiveCategory = EShipCategory::Unknown;
 }
 
 void UTacRefDlg::SetMenuManager(UMenuScreen* InManager)
@@ -89,17 +93,23 @@ void UTacRefDlg::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    // Buttons (your WBP names)
-    if (CancelButton)   CancelButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleCloseClicked);
+    // CancelButton is inherited from BaseScreen:
+    if (CancelButton)     CancelButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleCloseClicked);
 
-    if (StationButton)  StationButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleStationModeClicked);
-    if (ShipButton)     ShipButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleShipModeClicked);
-    if (FighterButton)  FighterButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleFighterModeClicked);
-    if (WeaponButton)   WeaponButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleWeaponModeClicked);
+    // Category buttons (names match your WBP)
+    if (StationButton)    StationButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleStationModeClicked);
+    if (ShipButton)       ShipButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleShipModeClicked);
+    if (FighterButton)    FighterButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleFighterModeClicked);
+    if (TransportButton)  TransportButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleTransportModeClicked);
+    if (BuildingButton)   BuildingButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleBuildingModeClicked);
+
+    if (WeaponButton)     WeaponButton->OnClicked.AddDynamic(this, &UTacRefDlg::HandleWeaponModeClicked);
 
     // Dropdown
     if (ShipCombo)
         ShipCombo->OnSelectionChanged.AddDynamic(this, &UTacRefDlg::HandleShipComboChanged);
+
+    UE_LOG(LogTacRefDlg, Log, TEXT("[TacRefDlg] NativeOnInitialized: Bound buttons/combobox (where available)"));
 }
 
 void UTacRefDlg::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -112,7 +122,9 @@ void UTacRefDlg::Show()
 {
     UE_LOG(LogTacRefDlg, Warning, TEXT("[TacRefDlg] Show: BEGIN"));
 
-    Mode = 0; // ships by default
+    // Default to SHIP category (capital ships) on open:
+    Mode = 0;
+    ActiveCategory = EShipCategory::CapitalShip;
 
     PopulateShipDropdown();
 
@@ -121,44 +133,27 @@ void UTacRefDlg::Show()
 
     SelectShipByIndex(SelectedShipIndex);
 
-    UE_LOG(LogTacRefDlg, Warning, TEXT("[TacRefDlg] Show: DONE ships=%d sel=%d"), ShipRowNames.Num(), SelectedShipIndex);
+    UE_LOG(LogTacRefDlg, Warning, TEXT("[TacRefDlg] Show: DONE options=%d sel=%d cat=%d"),
+        ShipRowNames.Num(), SelectedShipIndex, (int32)ActiveCategory);
 }
 
 void UTacRefDlg::ExecFrame()
 {
-    // Per-frame logic optional
+    // Optional per-frame logic
 }
 
-// ------------------------------------------------------------
-// NEW: filter predicate used by PopulateShipDropdown()
-// Mode meanings:
-// 0=ship, 1=weapon, 2=fighter, 3=station
-// ------------------------------------------------------------
-bool UTacRefDlg::PassShipFilter(const FShipDesign& Row) const
+bool UTacRefDlg::PassesCategoryFilter(const FShipDesign& Row) const
 {
-    // Weapon mode doesn't display ships (we'll still let ship list show ships if you want,
-    // but per your request, Weapon button should NOT show ships).
-    // We'll handle weapon mode by just changing the text panel for now (since your weapon mode isn't wired).
-    if (Mode == 1)
-        return false;
+    // Unknown means "no filter"
+    if (ActiveCategory == EShipCategory::Unknown)
+        return true;
 
-    const bool bIsFighter = IsFighterClass(Row.ShipClass);
-    const bool bIsStation = IsStationClass(Row.ShipClass);
-
-    if (Mode == 2) // fighters only
-        return bIsFighter;
-
-    if (Mode == 3) // stations only
-        return bIsStation;
-
-    // Mode 0 (ships): ships only = NOT fighter AND NOT station
-    return (!bIsFighter && !bIsStation);
+    return (Row.Category == ActiveCategory);
 }
 
-// ------------------------------------------------------------
-// Dropdown population (MODIFIED to apply filter, otherwise same)
-// ------------------------------------------------------------
-
+// -----------------------------------------------------------------------------
+// Dropdown population (filtered by ActiveCategory)
+// -----------------------------------------------------------------------------
 void UTacRefDlg::PopulateShipDropdown()
 {
     ShipRowNames.Reset();
@@ -184,7 +179,7 @@ void UTacRefDlg::PopulateShipDropdown()
         return;
     }
 
-    // Sort by DisplayName (unchanged)
+    // Sort by DisplayName (preserves your current behavior)
     RowNames.Sort([this](const FName& A, const FName& B)
         {
             const FShipDesign* RA = ShipDesignTable->FindRow<FShipDesign>(A, TEXT("Sort"), false);
@@ -195,17 +190,17 @@ void UTacRefDlg::PopulateShipDropdown()
             return SA < SB;
         });
 
+    // Build filtered options
     for (const FName& RowName : RowNames)
     {
         const FShipDesign* Row = ShipDesignTable->FindRow<FShipDesign>(RowName, TEXT("PopulateShipDropdown"), false);
         if (!Row)
             continue;
 
-        // NEW: apply filter based on Mode and ShipClass
-        if (!PassShipFilter(*Row))
+        if (!PassesCategoryFilter(*Row))
             continue;
 
-        // Label format: "CR COURAGEOUS"
+        // Label format: "CR COURAGEOUS" (or just DisplayName)
         const FString Label =
             Row->Abrv.IsEmpty()
             ? Row->DisplayName
@@ -215,9 +210,9 @@ void UTacRefDlg::PopulateShipDropdown()
         ShipRowNames.Add(RowName);
     }
 
+    // Ensure selection valid
     if (ShipRowNames.Num() > 0)
     {
-        // If current index is out of range, snap to 0
         if (!ShipRowNames.IsValidIndex(SelectedShipIndex))
             SelectedShipIndex = 0;
 
@@ -228,7 +223,8 @@ void UTacRefDlg::PopulateShipDropdown()
         SelectedShipIndex = INDEX_NONE;
     }
 
-    UE_LOG(LogTacRefDlg, Log, TEXT("[TacRefDlg] PopulateShipDropdown: %d entries (Mode=%d)"), ShipRowNames.Num(), Mode);
+    UE_LOG(LogTacRefDlg, Log, TEXT("[TacRefDlg] PopulateShipDropdown: cat=%d options=%d"),
+        (int32)ActiveCategory, ShipRowNames.Num());
 }
 
 void UTacRefDlg::HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
@@ -239,17 +235,14 @@ void UTacRefDlg::HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type 
     if (!ShipCombo)
         return;
 
+    // Resolve index from the selected option label
     const FString Current = ShipCombo->GetSelectedOption();
     const int32 Index = ShipCombo->FindOptionIndex(Current);
-
     if (Index == INDEX_NONE)
         return;
 
     SelectedShipIndex = Index;
-
-    // In weapon mode, we don't drive ship selection (since it is not wired)
-    if (Mode != 1)
-        SelectShipByIndex(Index);
+    SelectShipByIndex(Index);
 }
 
 void UTacRefDlg::SelectShipByIndex(int32 Index)
@@ -279,7 +272,9 @@ void UTacRefDlg::BuildShipTexts(const FShipDesign& Dsn, FString& OutCaption, FSt
         ? Dsn.DisplayName
         : FString::Printf(TEXT("%s %s"), *Dsn.Abrv, *Dsn.DisplayName);
 
-    OutDesc = !Dsn.Description.IsEmpty() ? Dsn.Description : TEXT("NO DESCRIPTION AVAILABLE.");
+    OutDesc = !Dsn.Description.IsEmpty()
+        ? Dsn.Description
+        : TEXT("NO DESCRIPTION AVAILABLE.");
 
     auto Num0 = [](double V) { return FString::Printf(TEXT("%.0f"), V); };
     auto Num1 = [](double V) { return FString::Printf(TEXT("%.1f"), V); };
@@ -314,79 +309,61 @@ void UTacRefDlg::BuildShipTexts(const FShipDesign& Dsn, FString& OutCaption, FSt
     OutStats = MoveTemp(S);
 }
 
-// ------------------------------------------------------------
-// Mode buttons (MODIFIED: ship/fighter/station all repopulate)
-// ------------------------------------------------------------
-
+// -----------------------------------------------------------------------------
+// Mode / Category buttons
+// -----------------------------------------------------------------------------
 void UTacRefDlg::HandleStationModeClicked()
 {
-    Mode = 3; // station
-    SelectedShipIndex = 0;
+    Mode = 0;
+    ActiveCategory = EShipCategory::Station;
     PopulateShipDropdown();
-
-    if (ShipRowNames.Num() > 0)
-        SelectShipByIndex(0);
-    else
-    {
-        if (TxtCaption)     TxtCaption->SetText(FText::FromString(TEXT("STATION REFERENCE")));
-        if (TxtStats)       TxtStats->SetText(FText::FromString(TEXT("NO STATIONS FOUND.")));
-        if (TxtDescription) TxtDescription->SetText(FText::GetEmpty());
-    }
+    SelectShipByIndex(SelectedShipIndex);
 }
 
 void UTacRefDlg::HandleShipModeClicked()
 {
-    Mode = 0; // ships
-    SelectedShipIndex = 0;
+    Mode = 0;
+    ActiveCategory = EShipCategory::CapitalShip;
     PopulateShipDropdown();
-
-    if (ShipRowNames.Num() > 0)
-        SelectShipByIndex(0);
-    else
-    {
-        if (TxtCaption)     TxtCaption->SetText(FText::FromString(TEXT("SHIP REFERENCE")));
-        if (TxtStats)       TxtStats->SetText(FText::FromString(TEXT("NO SHIPS FOUND.")));
-        if (TxtDescription) TxtDescription->SetText(FText::GetEmpty());
-    }
+    SelectShipByIndex(SelectedShipIndex);
 }
 
 void UTacRefDlg::HandleFighterModeClicked()
 {
-    Mode = 2; // fighters
-    SelectedShipIndex = 0;
+    Mode = 0;
+    ActiveCategory = EShipCategory::Fighter;
     PopulateShipDropdown();
+    SelectShipByIndex(SelectedShipIndex);
+}
 
-    if (ShipRowNames.Num() > 0)
-        SelectShipByIndex(0);
-    else
-    {
-        if (TxtCaption)     TxtCaption->SetText(FText::FromString(TEXT("FIGHTER REFERENCE")));
-        if (TxtStats)       TxtStats->SetText(FText::FromString(TEXT("NO FIGHTERS FOUND.")));
-        if (TxtDescription) TxtDescription->SetText(FText::GetEmpty());
-    }
+void UTacRefDlg::HandleTransportModeClicked()
+{
+    Mode = 0;
+    ActiveCategory = EShipCategory::Transport;
+    PopulateShipDropdown();
+    SelectShipByIndex(SelectedShipIndex);
+}
+
+void UTacRefDlg::HandleBuildingModeClicked()
+{
+    Mode = 0;
+    ActiveCategory = EShipCategory::Building;
+    PopulateShipDropdown();
+    SelectShipByIndex(SelectedShipIndex);
 }
 
 void UTacRefDlg::HandleWeaponModeClicked()
 {
-    Mode = 1; // weapon
-
-    // Per your request: Weapon button should list weapons only.
-    // Your weapon mode isn't wired yet; we keep behavior stable and simply:
-    // - clear the dropdown
-    // - show a placeholder in the panel
-    if (ShipCombo)
-        ShipCombo->ClearOptions();
-
-    ShipRowNames.Reset();
-    SelectedShipIndex = INDEX_NONE;
+    Mode = 1;
 
     if (TxtCaption)     TxtCaption->SetText(FText::FromString(TEXT("WEAPON REFERENCE")));
-    if (TxtStats)       TxtStats->SetText(FText::FromString(TEXT("WEAPON DROPDOWN NOT WIRED YET.")));
+    if (TxtStats)       TxtStats->SetText(FText::FromString(TEXT("WEAPON MODE NOT WIRED YET.")));
     if (TxtDescription) TxtDescription->SetText(FText::GetEmpty());
 }
 
-// ------------------------------------------------------------
-
+// -----------------------------------------------------------------------------
+// Close
+// -----------------------------------------------------------------------------
 void UTacRefDlg::HandleCloseClicked()
 {
     if (manager)

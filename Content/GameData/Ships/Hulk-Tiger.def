@@ -2,7 +2,7 @@ SHIP
 
 name:          "Hulk-Tiger"
 display_name:  Tiger
-class:         Frigate
+class:         Hulk
 abrv:          FF
 
 hud_icon:   "TigerHud.pcx"

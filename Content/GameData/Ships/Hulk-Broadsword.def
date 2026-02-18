@@ -2,7 +2,7 @@ SHIP
 
 name:          "Hulk-Broadsword"
 display_name:  Broadsword
-class:         Destroyer
+class:         Hulk
 abrv:          DD
 
 hud_icon:   "BroadHud.pcx"

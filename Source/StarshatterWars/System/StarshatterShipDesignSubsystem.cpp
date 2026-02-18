@@ -77,6 +77,8 @@ static EShipCategory DeriveShipCategoryFromClass(const FString& InShipClass)
 		return EShipCategory::Building;
 	if (C.Contains(TEXT("sam")) || C.Contains(TEXT("mine")) || C.Contains(TEXT("comsat")) || C.Contains(TEXT("drone")))
 		return EShipCategory::Platform;
+	if (C.Contains(TEXT("hulk")))
+		return EShipCategory::Hulk;
 	if (C.Contains(TEXT("freighter")) || C.Contains(TEXT("courier")) || C.Contains(TEXT("transport")) || C.Contains(TEXT("cargo")))
 		return EShipCategory::Transport;
 	// Capital ships / big hulls:

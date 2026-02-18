@@ -98,6 +98,7 @@ enum class EShipCategory : uint8
 	Shuttle     UMETA(DisplayName = "Shuttle"),
 	Transport   UMETA(DisplayName = "Transport"),
 	Platform    UMETA(DisplayName = "Platform"),
+	Hulk        UMETA(DisplayName = "Destroyed"),
 };
 
 USTRUCT(BlueprintType)
