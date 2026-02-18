@@ -5,7 +5,7 @@ class:        Building
 display_name: Deserted Building
 abrv:		  BLDG
 hud_icon:     "hud_dsrt02"
-description:  The Deserted Building is an abandoned colonial structure left behind after failed expansion or evacuation. Though officially inactive, such ruins often conceal salvageable technology, hidden supply caches, or unexpected tactical hazards.
+description:  "A Deserted Building is an abandoned colonial structure left behind after failed expansion or evacuation. Though officially inactive, such ruins often conceal salvageable technology, hidden supply caches, or unexpected tactical hazards."
 empire:       All
 
 hud_icon:     "hud_dsrt02.pcx"

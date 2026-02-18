@@ -4,8 +4,9 @@ name:          ZZCA
 display_name:  Zolon
 class:         Cruiser
 abrv:          ZCA
-secret:        true
 empire:        Zolon
+description:   "The ZZCA Zolon Cruiser is a mid-range warship built to enforce Zolon dominance across contested space. Equipped with heavy beam arrays and layered shielding, it serves as both a fleet escort and an independent strike platform in extended campaigns."
+secret:        true
 
 detail_0:   "ZolonB1opt.mag"
 feature_0:  1000

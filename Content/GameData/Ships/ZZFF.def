@@ -4,8 +4,9 @@ name:          ZZFF
 display_name:  Zolon
 class:         Frigate
 abrv:          ZFF
-secret:        true
 empire:        Zolon
+description:   "The ZZFF Zolon Frigate is a versatile escort vessel designed to screen larger warships and patrol contested corridors. Combining moderate firepower with durable shielding, it forms the backbone of Zolon mid-range fleet operations."
+secret:        true
 
 detail_0:   "ZolonD1opt.mag"
 feature_0:  1000

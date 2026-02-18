@@ -5,7 +5,7 @@ class:        Building
 abrv:         BLDG
 display_name: "Advanced Fabrication Center"
 hud_icon:     "hud_fact02"
-description: The Advanced Fabrication Center (BLDG) produces precision components and specialized hardware for military and aerospace applications. Its automated lines and controlled environments enable the construction of high-tolerance systems.
+description:  "The Advanced Fabrication Center (BLDG) produces precision components and specialized hardware for military and aerospace applications. Its automated lines and controlled environments enable the construction of high-tolerance systems."
 empire:     All
 
 detail_0:   "Fact02-0.mag"

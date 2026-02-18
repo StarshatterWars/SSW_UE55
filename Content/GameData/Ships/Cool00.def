@@ -4,7 +4,7 @@ name:         Cool00
 class:        Building
 abrv:         BLDG
 display_name: "Cooling Tower"
-description:  The Cooling Tower is an industrial support structure responsible for thermal regulation of planetary power plants and heavy manufacturing facilities. While not a combat installation, its destruction can cripple energy production and destabilize critical infrastructure across the colony.
+description:  "The Cooling Tower is an industrial support structure responsible for thermal regulation of planetary power plants and heavy manufacturing facilities. While not a combat installation, its destruction can cripple energy production and destabilize critical infrastructure across the colony."
 empire:       All
 hud_icon:     "hud_cool00"
 

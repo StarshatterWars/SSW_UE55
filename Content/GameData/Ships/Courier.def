@@ -6,7 +6,7 @@ class:      Courier
 abrv:       TRANS
 hud_icon:   "BRHud"
 empire:      All
-description: The Courier-class Blockade Runner is a fast-response transport designed to slip through contested space under minimal escort. Built for endurance and discretion rather than firepower, it excels at moving critical personnel, intelligence, and high-value cargo through unstable frontier sectors
+description: "The Courier-class Blockade Runner is a fast-response transport designed to slip through contested space under minimal escort. Built for endurance and discretion rather than firepower, it excels at moving critical personnel, intelligence, and high-value cargo through unstable frontier sectors."
 model:      "Corvette_2opt.mag"
 
 mass:       15.3e3

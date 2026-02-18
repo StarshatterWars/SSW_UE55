@@ -1,10 +1,12 @@
 SHIP
 
 name:          Station5
-display_name:  Station
+display_name:  "Orbital Station"
 class:         STATION
 abrv:          STN
-hud_icon:      "S5map.pcx"
+empire:        Marakan
+description:   "The Marakan Orbital Station functions as a regional logistics and command hub, coordinating fleet traffic and resource distribution throughout nearby sectors. While less fortified than a fortress installation, it maintains sufficient defenses to deter opportunistic strikes."
+hud_icon:      "S5map"
 
 model:      "S5opt.mag"
 

@@ -1,9 +1,11 @@
 SHIP
 
 name:          Airbase1
-display_name:  Starbase
+display_name:  "Janek Station"
 class:         STARBASE
 abrv:		   SB
+empire:        Terellian
+description:   "Janek Station is a Terellian frontier starbase serving as a forward staging ground for fighter wings and patrol flotillas. Its expansive hangar bays and hardened defensive grid make it a critical anchor point along the Alliance’s outer perimeter."
 hud_icon:      "hud_icon"
 
 detail_0:   "Base1-0.mag"

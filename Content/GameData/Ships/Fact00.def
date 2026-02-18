@@ -5,7 +5,7 @@ class:        Building
 display_name: "Assembly Works"
 abrv:		  BLDG
 hud_icon:     "hud_fact00"
-description: The Assembly Works specializes in modular fabrication and rapid component integration for vehicles and structural systems. Optimized for efficiency, it supports frontline logistics through high-volume standardized production.
+description: "The Assembly Works specializes in modular fabrication and rapid component integration for vehicles and structural systems. Optimized for efficiency, it supports frontline logistics through high-volume standardized production."
 empire:     All
 
 detail_0:   "Fact00-0.mag"

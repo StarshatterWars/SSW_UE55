@@ -4,8 +4,10 @@ name:          ZZDD
 display_name:  Zolon
 class:         Destroyer
 abrv:          ZDA
-secret:        true
 empire:        Zolon
+description:   "The ZZDD Zolon Destroyer is a fast-attack capital ship engineered for aggressive forward operations. Armed with concentrated strike batteries and reinforced hull plating, it excels at flanking maneuvers and rapid assault engagements in support of larger Zolon formations."
+secret:        true
+
 
 detail_0:   "ZolonA1opt.mag"
 feature_0:  1000

@@ -4,7 +4,9 @@ name:       Transport
 display_name: Transport
 class:      Courier
 abrv:       TRANS
-hud_icon:   "TRHud.pcx"
+empire:     All
+description: "The Transport Courier is a compact multi-role vessel used for personnel transfer, priority cargo delivery, and diplomatic movement between systems. Lightly armed but highly reliable, it serves as a dependable utility craft for both military and civilian operations."
+hud_icon:   "TRHud"
 
 model:      "Transport_2opt.mag"
 

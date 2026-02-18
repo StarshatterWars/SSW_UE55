@@ -6,7 +6,7 @@ abrv:         BLDG
 display_name: "Heavy Manufacturing Plant"
 hud_icon:     "hud_fact04"
 
-description: The Factory is a large-scale industrial installation dedicated to the fabrication of armored hull sections, propulsion assemblies, and heavy equipment. Its reinforced infrastructure and continuous-output production lines make it a strategic cornerstone for sustaining fleet and ground operations.
+description: "The Factory is a large-scale industrial installation dedicated to the fabrication of armored hull sections, propulsion assemblies, and heavy equipment. Its reinforced infrastructure and continuous-output production lines make it a strategic cornerstone for sustaining fleet and ground operations."
 empire:     All
 detail_0:   "Fact04-0.mag"
 feature_0:  1000

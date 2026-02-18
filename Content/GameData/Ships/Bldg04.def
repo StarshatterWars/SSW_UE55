@@ -4,7 +4,7 @@ name:         Bldg04
 class:        Building
 display_name: "Office Tower"
 abrv:		  BLDG
-description: The Office Tower stands as a prominent administrative and commercial structure within the colony’s urban district. Beyond its civilian façade, its communications relays and data centers make it a strategically valuable objective during regional conflicts.
+description: "The Office Tower stands as a prominent administrative and commercial structure within the colony’s urban district. Beyond its civilian façade, its communications relays and data centers make it a strategically valuable objective during regional conflicts."
 empire:      All
 hud_icon:     "hud_bldg04"
 

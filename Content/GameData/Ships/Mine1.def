@@ -4,7 +4,9 @@ name:         "Blockade Mine"
 display_name:  Mine
 class:         Mine
 abrv:          MINE
-hud_icon:   "MineHud"
+empire:        Dantari
+description:   "The Blockade Mine is a concealed proximity explosive deployed to deny access to strategic corridors and orbital approaches. Triggered by hostile signatures, it delivers a devastating detonation capable of crippling even heavily armored vessels."
+hud_icon:      "MineHud"
 
 detail_0:   "Mine1.mag"
 feature_0:  1000

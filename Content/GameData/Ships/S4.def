@@ -5,7 +5,7 @@ display_name:  Fortress
 class:         STATION
 abrv:          STN
 empire:        Marakan
-description: The Marakan Fortress Station is a heavily fortified orbital stronghold designed to project authority across strategic corridors. Bristling with defensive batteries and layered shielding, it anchors Marakan territorial claims and serves as a rally point for regional fleets.
+description:   "The Marakan Fortress Station is a heavily fortified orbital stronghold designed to project authority across strategic corridors. Bristling with defensive batteries and layered shielding, it anchors Marakan territorial claims and serves as a rally point for regional fleets."
 hud_icon:      "S4hud"
 
 model:      "S4opt.mag"

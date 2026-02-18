@@ -4,8 +4,9 @@ name:          ZZCS
 display_name:  "Zolon Consul"
 class:         Cruiser
 abrv:          ZCS
+empire:        Zolon     
+description:   "The ZZCS Zolon Consul is a command-grade cruiser that serves as both diplomatic envoy and battle leader within Zolon task forces. Outfitted with advanced sensor suites and reinforced defensive systems, it coordinates fleet actions while projecting Zolon authority across disputed systems."
 secret:        true
-empire:        Zolon
 detail_0:   "ZolonC1opt.mag"
 feature_0:  1000
 detail_1:   "ZolonC2opt.mag"

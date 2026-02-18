@@ -5,7 +5,7 @@ display_name:  "Fortress"
 abrv:          STN
 class:         STATION
 hud_icon:      "Fort1hud"
-description: The Fortress is a heavily fortified orbital stronghold operated by the Terellian Alliance. Equipped with layered defensive grids, interceptor bays, and long-range sensor arrays, it serves as both regional command center and immovable bastion guarding critical trade corridors. 
+description:   "The Fortress is a heavily fortified orbital stronghold operated by the Terellian Alliance. Equipped with layered defensive grids, interceptor bays, and long-range sensor arrays, it serves as both regional command center and immovable bastion guarding critical trade corridors."
 empire:        Terellian
 
 model: "Fort1opt.mag"
