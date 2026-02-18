@@ -35,7 +35,7 @@ enum class EShipEmpire : uint8
 	Independent UMETA(DisplayName = "Independent Systems"),
 	Dantari		UMETA(DisplayName = "Dantari Separatists"),
 	Zolon		UMETA(DisplayName = "Zolon Empire"),
-	Other		UMETA(DisplayName = "Other"),
+	Civilian	UMETA(DisplayName = "Civilian"),
 	Pirate		UMETA(DisplayName = "Pirate"),
 	Neutral     UMETA(DisplayName = "Neutral"),
 	All         UMETA(DisplayName = "All"),

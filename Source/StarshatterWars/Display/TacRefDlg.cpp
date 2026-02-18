@@ -409,7 +409,7 @@ bool UTacRefDlg::PassesEmpireFilter(const FShipDesign& Row) const
         return true;
 
     // Ships marked as All are visible to every empire filter
-    if (Row.ShipEmpire == EShipEmpire::Other || Row.ShipEmpire == EShipEmpire::Neutral)
+    if (Row.ShipEmpire == EShipEmpire::Civilian || Row.ShipEmpire == EShipEmpire::Neutral)
         return true;
 
     if (Row.ShipEmpire == EShipEmpire::All)
