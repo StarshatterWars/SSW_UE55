@@ -122,6 +122,8 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) UButton* WeaponButton = nullptr;
 
     // Output fields (optional; only used if present in WBP)
+
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TxtDisplayName = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TxtCaption = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtStats = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtDescription = nullptr;

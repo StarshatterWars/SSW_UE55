@@ -272,7 +272,18 @@ void UTacRefDlg::SelectShipByIndex(int32 Index)
 
     FString Caption, Stats, Desc;
     BuildShipTexts(*Row, Caption, Stats, Desc);
+    
+    FString FullName;
 
+    if (Row->Abrv.IsEmpty())
+    {
+        FullName = Row->DisplayName;
+    }
+    else
+    {
+        FullName = FString::Printf(TEXT("%s-%s"), *Row->Abrv, *Row->DisplayName);
+    }
+    if (TxtDisplayName) TxtDisplayName->SetText(FText::FromString(FullName));
     if (TxtCaption)     TxtCaption->SetText(FText::FromString(Caption));
     if (TxtStats)       TxtStats->SetText(FText::FromString(Stats));
     if (TxtDescription) TxtDescription->SetText(FText::FromString(Desc));
