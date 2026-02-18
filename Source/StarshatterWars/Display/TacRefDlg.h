@@ -73,8 +73,12 @@ protected:
     // Events
     // ------------------------------------------------------------
     UFUNCTION() void HandleCloseClicked();
+
+    UFUNCTION() void HandleStationModeClicked();
     UFUNCTION() void HandleShipModeClicked();
+    UFUNCTION() void HandleFighterModeClicked();
     UFUNCTION() void HandleWeaponModeClicked();
+
     UFUNCTION() void HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 protected:
@@ -85,9 +89,12 @@ protected:
     void SelectShipByIndex(int32 Index);
     void BuildShipTexts(const FShipDesign& Dsn, FString& OutCaption, FString& OutStats, FString& OutDesc) const;
 
+    // NEW: filter predicate used by PopulateShipDropdown()
+    bool PassShipFilter(const FShipDesign& Row) const;
+
 protected:
     UPROPERTY(Transient)
     TObjectPtr<UMenuScreen> manager = nullptr;
 
-    int32 Mode = 0; // 0=ship, 1=weapon
+    int32 Mode = 0; // 0=ship, 1=weapon, 2=fighter, 3=station
 };
