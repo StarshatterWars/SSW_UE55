@@ -117,11 +117,15 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtStats = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtDescription = nullptr;
 
+    UPROPERTY(EditAnywhere, Category = "TacRef|Filters")
+    bool bShowSecretDesigns = false;   // dev/debug toggle
 protected:
     // ---------------------------------------------------------------------
     // Events
     // ---------------------------------------------------------------------
     UFUNCTION() void HandleCloseClicked();
+
+    UFUNCTION() bool PassesSecretFilter(const FShipDesign& Row) const;
 
     UFUNCTION() void HandleStationModeClicked();
     UFUNCTION() void HandleShipModeClicked();
@@ -132,6 +136,7 @@ protected:
     UFUNCTION() void HandleWeaponModeClicked();
     UFUNCTION() void HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
+   
 protected:
     // ---------------------------------------------------------------------
     // Internals

@@ -200,6 +200,9 @@ void UTacRefDlg::PopulateShipDropdown()
         if (!PassesCategoryFilter(*Row))
             continue;
 
+        if (!PassesSecretFilter(*Row))
+            continue;
+
         // Label format: "CR COURAGEOUS" (or just DisplayName)
         const FString Label =
             Row->Abrv.IsEmpty()
@@ -373,4 +376,17 @@ void UTacRefDlg::HandleCloseClicked()
     }
 
     RemoveFromParent();
+}
+
+bool UTacRefDlg::PassesSecretFilter(const FShipDesign& Row) const
+{
+    // Non-secret rows always show
+    if (!Row.Secret)          // <-- use your actual bool name
+        return true;
+
+    // For now: hide all secret designs unless debug toggle enabled
+    return bShowSecretDesigns;
+
+    // Later:
+    // return bShowSecretDesigns || IsShipClassDiscovered(Row);
 }

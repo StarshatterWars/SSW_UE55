@@ -318,6 +318,7 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 	float LocalEFactor[3] = { 0.1f, 0.3f, 1.0f };
 
 	bool bLocalRepairAuto = true;
+	bool bLocalSecret = false;
 	bool bLocalRepairScreen = true;
 	bool bLocalWepScreen = true;
 	bool bLocalDegrees = false;
@@ -413,6 +414,11 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 		{
 			GetDefText(LocalAbrv, Def, fn);
 			NewShipDesign.Abrv = FString(LocalAbrv);
+		}
+		else if (Key == "secret")
+		{
+			GetDefBool(bLocalSecret, Def, fn);
+			NewShipDesign.Secret = bLocalSecret;
 		}
 		else if (Key == "pcs")
 		{
