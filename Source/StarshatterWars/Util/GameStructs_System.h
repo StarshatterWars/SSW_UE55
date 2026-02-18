@@ -87,6 +87,19 @@ enum class EWeaponType : uint8
 	Unknown UMETA(DisplayName = "UNKNOWN")
 };
 
+UENUM(BlueprintType)
+enum class EShipCategory : uint8
+{
+	Unknown     UMETA(DisplayName = "Unknown"),
+	Station     UMETA(DisplayName = "Station"),
+	Building    UMETA(DisplayName = "Building"),
+	CapitalShip UMETA(DisplayName = "Capital Ship"),
+	Fighter     UMETA(DisplayName = "Fighter"),
+	Shuttle     UMETA(DisplayName = "Shuttle"),
+	Transport   UMETA(DisplayName = "Transport"),
+	Platform    UMETA(DisplayName = "Platform"),
+};
+
 USTRUCT(BlueprintType)
 struct FWeaponDesign : public FTableRowBase
 {
@@ -1361,6 +1374,10 @@ struct FShipDesign : public FTableRowBase {
 	FString	DetailName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString	ShipClass;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EShipCategory Category = EShipCategory::Unknown;
+	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString	CockpitName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)

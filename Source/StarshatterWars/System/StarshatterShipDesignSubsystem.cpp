@@ -61,6 +61,33 @@
 #include "FormattingUtils.h"
 #include "StarshatterAssetRegistrySubsystem.h"
 
+static EShipCategory DeriveShipCategoryFromClass(const FString& InShipClass)
+{
+	const FString C = InShipClass.TrimStartAndEnd().ToLower();
+
+	// Station-like:
+	if (C.Contains(TEXT("station")) || C.Contains(TEXT("base")) || C.Contains(TEXT("farcaster")))
+		return EShipCategory::Station;
+
+	// Fighter-like:
+	if (C.Contains(TEXT("fighter")) || C.Contains(TEXT("interceptor")) || C.Contains(TEXT("strike")) || C.Contains(TEXT("lca")) || C.Contains(TEXT("attack")))
+		return EShipCategory::Fighter;
+
+	if (C.Contains(TEXT("building")) || C.Contains(TEXT("factory")))
+		return EShipCategory::Building;
+	if (C.Contains(TEXT("sam")) || C.Contains(TEXT("mine")) || C.Contains(TEXT("comsat")) || C.Contains(TEXT("drone")))
+		return EShipCategory::Platform;
+	if (C.Contains(TEXT("freighter")) || C.Contains(TEXT("courier")) || C.Contains(TEXT("transport")) || C.Contains(TEXT("cargo")))
+		return EShipCategory::Transport;
+	// Capital ships / big hulls:
+	if (C.Contains(TEXT("cruiser")) || C.Contains(TEXT("destroyer")) || C.Contains(TEXT("carrier")) || 
+		C.Contains(TEXT("dreadnought")) || C.Contains(TEXT("battleship")) || C.Contains(TEXT("frigate")) ||
+		C.Contains(TEXT("corvette")))
+		return EShipCategory::CapitalShip;
+
+	return EShipCategory::Unknown;
+}
+
 void UStarshatterShipDesignSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -358,6 +385,7 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 				bLocalWepScreen = false;
 			}
 
+			NewShipDesign.Category = DeriveShipCategoryFromClass(NewShipDesign.ShipClass);
 			NewShipDesign.ShipType = LocalShipType;
 			NewShipDesign.RepairAuto = bLocalRepairAuto;
 			NewShipDesign.RepairScreen = bLocalRepairScreen;
