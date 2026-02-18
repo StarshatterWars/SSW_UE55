@@ -109,6 +109,12 @@ void UTacRefDlg::NativeOnInitialized()
     if (ShipCombo)
         ShipCombo->OnSelectionChanged.AddDynamic(this, &UTacRefDlg::HandleShipComboChanged);
 
+    if (EmpireCombo)
+    {
+        PopulateEmpireDropdown();
+        EmpireCombo->OnSelectionChanged.AddDynamic(this, &UTacRefDlg::HandleEmpireComboChanged);
+    }
+
     UE_LOG(LogTacRefDlg, Log, TEXT("[TacRefDlg] NativeOnInitialized: Bound buttons/combobox (where available)"));
 }
 
@@ -201,6 +207,9 @@ void UTacRefDlg::PopulateShipDropdown()
             continue;
 
         if (!PassesSecretFilter(*Row))
+            continue;
+
+        if (!PassesEmpireFilter(*Row))     // if you already added empire filtering
             continue;
 
         // Label format: "CR COURAGEOUS" (or just DisplayName)
@@ -389,4 +398,88 @@ bool UTacRefDlg::PassesSecretFilter(const FShipDesign& Row) const
 
     // Later:
     // return bShowSecretDesigns || IsShipClassDiscovered(Row);
+}
+
+// -----------------------------------------------------------------------------
+// Empire Filtering
+// -----------------------------------------------------------------------------
+bool UTacRefDlg::PassesEmpireFilter(const FShipDesign& Row) const
+{
+    if (ActiveEmpire == EShipEmpire::NONE)
+        return true;
+
+    // Ships marked as All are visible to every empire filter
+    if (Row.ShipEmpire == EShipEmpire::Other || Row.ShipEmpire == EShipEmpire::Neutral)
+        return true;
+
+    if (Row.ShipEmpire == EShipEmpire::All)
+        return true;
+
+    return (Row.ShipEmpire == ActiveEmpire);
+}
+
+// -----------------------------------------------------------------------------
+// Empire Combo Population
+// -----------------------------------------------------------------------------
+void UTacRefDlg::PopulateEmpireDropdown()
+{
+    if (!EmpireCombo)
+        return;
+
+    EmpireCombo->ClearOptions();
+
+    // First entry = ALL (no filter)
+    EmpireCombo->AddOption(TEXT("ALL"));
+    ActiveEmpire = EShipEmpire::NONE;
+
+    // Pull enum values dynamically
+    const UEnum* EnumPtr = StaticEnum<EShipEmpire>();
+    if (!EnumPtr)
+        return;
+
+    const int32 NumEnums = EnumPtr->NumEnums();
+
+    for (int32 i = 0; i < NumEnums - 1; ++i) // -1 skips _MAX
+    {
+        const EShipEmpire Value = static_cast<EShipEmpire>(EnumPtr->GetValueByIndex(i));
+
+        if (Value == EShipEmpire::NONE)
+            continue;
+
+        const FString DisplayName = EnumPtr->GetDisplayNameTextByIndex(i).ToString();
+        EmpireCombo->AddOption(DisplayName);
+    }
+
+    EmpireCombo->SetSelectedIndex(0);
+}
+
+void UTacRefDlg::HandleEmpireComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+    (void)SelectionType;
+
+    if (!EmpireCombo)
+        return;
+
+    if (SelectedItem.Equals(TEXT("ALL"), ESearchCase::IgnoreCase))
+    {
+        ActiveEmpire = EShipEmpire::NONE;
+    }
+    else
+    {
+        const UEnum* EnumPtr = StaticEnum<EShipEmpire>();
+        if (!EnumPtr)
+            return;
+
+        for (int32 i = 0; i < EnumPtr->NumEnums() - 1; ++i)
+        {
+            const FString DisplayName = EnumPtr->GetDisplayNameTextByIndex(i).ToString();
+            if (DisplayName == SelectedItem)
+            {
+                ActiveEmpire = static_cast<EShipEmpire>(EnumPtr->GetValueByIndex(i));
+                break;
+            }
+        }
+    }
+
+    PopulateShipDropdown();   // refresh list
 }

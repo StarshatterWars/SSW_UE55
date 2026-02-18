@@ -90,6 +90,9 @@ protected:
     // Current category filter for ShipCombo
     UPROPERTY(Transient)
     EShipCategory ActiveCategory = EShipCategory::Unknown;
+    
+    UPROPERTY(Transient)
+    EShipEmpire ActiveEmpire = EShipEmpire::NONE;
 
     // 0 = ship/facility/etc pages, 1 = weapon page
     int32 Mode = 0;
@@ -103,6 +106,8 @@ protected:
 
     // Shared dropdown for ships/facilities/etc
     UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShipCombo = nullptr;
+
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* EmpireCombo = nullptr;
 
     // Category buttons
     UPROPERTY(meta = (BindWidgetOptional)) UButton* StationButton = nullptr;
@@ -127,6 +132,10 @@ protected:
 
     UFUNCTION() bool PassesSecretFilter(const FShipDesign& Row) const;
 
+    UFUNCTION() bool PassesEmpireFilter(const FShipDesign& Row) const;
+
+    void PopulateEmpireDropdown();
+
     UFUNCTION() void HandleStationModeClicked();
     UFUNCTION() void HandleShipModeClicked();
     UFUNCTION() void HandleFighterModeClicked();
@@ -135,6 +144,7 @@ protected:
 
     UFUNCTION() void HandleWeaponModeClicked();
     UFUNCTION() void HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void HandleEmpireComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
    
 protected:
