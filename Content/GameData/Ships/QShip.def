@@ -4,7 +4,8 @@ name:          QShip
 display_name:  Freighter
 class:         Freighter
 abrv:          FREIGHT
-empire:        All
+description: The Q-Ship masquerades as a standard civilian freighter, concealing reinforced hull plating and hidden weapon emplacements beneath its commercial facade. Favored by pirate raiders and covert operators alike, it lures hostile forces into close range before revealing its true, heavily armed nature.
+empire:        Pirate
 hud_icon:      "CBHud"
 
 detail_0:   "QShip_1opt.mag"

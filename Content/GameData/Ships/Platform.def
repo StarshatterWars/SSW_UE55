@@ -4,6 +4,7 @@ name:         Platform
 class:        Building
 display_name: Platform
 abrv:         BLDG
+description:  A platform is a reinforced surface installation used as a modular support structure for sensors, light weapons, or cargo operations. Though modest in profile, it serves as a critical tactical foothold in contested zones and developing colonies.
 empire:       All
 hud_icon:     "hud_platform"
 

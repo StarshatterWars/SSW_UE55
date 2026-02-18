@@ -4,7 +4,8 @@ name:         "SAM 1"
 display_name: SAM
 class:        SAM
 abrv:         SAM
-hud_icon:     "hud_sam.pcx"
+description: The Surface-to-Air Missile Battery is a rapid-response air defense platform designed to engage hostile fighters and inbound strike craft at medium range. Equipped with autonomous tracking and salvo-launch capability, it provides layered protection for installations and fleet staging areas.
+hud_icon:     "hud_sam"
 
 model:        "SAMBase.mag"
 
