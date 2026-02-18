@@ -4,8 +4,9 @@ name:       IM4300
 display_name: "IM4300 Hauler"
 class:      Freighter
 abrv:		FREIGHT
-hud_icon:   "CBHud.pcx"
-
+hud_icon:   "CBHud"
+description: The IM4300 Hauler is a mid-capacity transport optimized for regional supply distribution and frontier logistics. More maneuverable than larger freight platforms, it balances cargo volume with operational flexibility across unstable trade corridors.
+empire:     Neutral
 detail_0:   "CargoB_0opt.mag"
 feature_0:  1000
 detail_1:   "CargoB_1opt.mag"

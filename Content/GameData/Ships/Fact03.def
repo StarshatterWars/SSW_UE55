@@ -3,8 +3,10 @@ SHIP
 name:         Fact03
 class:        Building
 abrv:         BLDG
-display_name: "Factory"
-hud_icon:     "hud_fact03.pcx"
+display_name: "Fleet Support Foundry"
+hud_icon:     "hud_fact03"
+description: The Fleet Support Foundry (BLDG) manufactures reinforced hull plating, structural frames, and heavy ship components for orbital deployment. As a strategic industrial node, its output directly enhances regional fleet readiness.
+empire:     All
 
 detail_0:   "Fact03-0.mag"
 feature_0:  1000

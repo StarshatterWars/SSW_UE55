@@ -4,7 +4,9 @@ name:         Barracks
 class:        Building
 display_name: Barracks
 abrv:		  BLDG
-hud_icon:     "hud_bldg05.pcx"
+empire:        All
+description:  The Barracks Facility is a hardened surface installation responsible for housing and coordinating ground security forces within contested sectors. Though lightly defended, it serves as a strategic anchor point for planetary operations, reinforcing stability and projecting imperial authority across the region.
+hud_icon:     "hud_bldg05"
 
 detail_0:   "Barracks-0.mag"
 feature_0:  1000

@@ -4,7 +4,7 @@ name:          Airbase1
 display_name:  Starbase
 class:         STARBASE
 abrv:		   SB
-hud_icon:      "hud_icon.pcx"
+hud_icon:      "hud_icon"
 
 detail_0:   "Base1-0.mag"
 feature_0:  1000

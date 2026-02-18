@@ -2,10 +2,11 @@ SHIP
 
 name:         Dsrt01
 class:        Building
-display_name: Building
+display_name: Deserted Building
 abrv:		  BLDG
-hud_icon:     "hud_dsrt01.pcx"
-
+hud_icon:     "hud_dsrt01"
+description:  The Deserted Building is an abandoned colonial structure left behind after failed expansion or evacuation. Though officially inactive, such ruins often conceal salvageable technology, hidden supply caches, or unexpected tactical hazards.
+empire:       All
 detail_0:   "Dsrt01-0.mag"
 feature_0:  1000
 detail_1:   "Dsrt01-6.mag"

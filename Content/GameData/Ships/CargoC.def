@@ -4,8 +4,9 @@ name:       IM2800
 display_name: "IM2800 Cargo"
 class:      Cargo
 abrv:		CARGO
-hud_icon:   "CCHud.pcx"
-
+hud_icon:   "CCHud"
+description: The IM2800 Cargo Hauler is a compact commercial transport built for short-range freight delivery and orbital resupply operations. Designed for efficiency and low operating cost, it is a common sight along established trade lanes and developing colony routes.
+empire:     Neutral
 detail_0:   "CargoC_0opt.mag"
 feature_0:  1000
 detail_1:   "CargoC_1opt.mag"

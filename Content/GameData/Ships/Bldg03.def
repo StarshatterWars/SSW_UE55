@@ -4,7 +4,9 @@ name:         Bldg03
 class:        Building
 display_name: Building
 abrv:		  BLDG
-hud_icon:     "hud_bldg03.pcx"
+description: This facility is a prefabricated support structure used to reinforce developing settlements and industrial outposts. Designed for rapid deployment and low maintenance, it quietly sustains the operational backbone of frontier expansion.
+empire:     All
+hud_icon:     "hud_bldg03"
 
 detail_0:   "Bldg03-0.mag"
 feature_0:  1000

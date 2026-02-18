@@ -4,8 +4,9 @@ name:         Bldg02
 class:        Building
 display_name: Building
 abrv:		  BLDG
-hud_icon:     "hud_bldg02.pcx"
-
+hud_icon:     "hud_bldg02"
+description: This facility is a standard modular structure commonly deployed in expanding colony zones. Adaptable to multiple civil or logistical roles, it provides essential infrastructure support while maintaining a compact defensive footprint.
+empire:     All
 detail_0:   "Bldg02-0.mag"
 feature_0:  1000
 detail_1:   "Bldg02-6.mag"

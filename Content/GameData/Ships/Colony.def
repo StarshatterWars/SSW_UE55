@@ -3,9 +3,11 @@ SHIP
 name:       Colony
 display_name: "Colony Ship"
 class:      Station
+empire:     Zolon
+description: The Colony Ship is a massive interstellar ark designed to transport settlers, equipment, and prefabricated infrastructure to distant worlds. Though lightly armed and slow to maneuver, it carries the promise of expansion—its survival often shaping the fate of entire frontier systems.
 abrv:       CLN
 secret:     true
-hud_icon:   "Colony_hud.pcx"
+hud_icon:   "Colony_hud"
 
 detail_0:   "Colony1e.mag"
 feature_0:  1000
