@@ -48,6 +48,9 @@ void UMenuScreen::Initialize(UGameInstance* InGI)
 
     if (!PlayerDlgClass)
         PlayerDlgClass = Assets->GetWidgetClass(TEXT("UI.PlayerLogbookScreenClass"), true);
+
+    if (!TacRefDlgClass)
+        TacRefDlgClass = Assets->GetWidgetClass(TEXT("UI.TacRefScreenClass"), true);
     // IMPORTANT: do NOT touch MenuDlgClass unless you actually bind it in registry:
     // if (!MenuDlgClass)
     //     MenuDlgClass = Assets->GetWidgetClass(TEXT("UI.MenuDlgClass"), true);
@@ -602,9 +605,54 @@ void UMenuScreen::ShowPlayerDlg()
 
 void UMenuScreen::ShowTacRefDlg()
 {
-    HideAll();
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] ShowTacRefDlg: BEGIN"));
+
+    if (!TacRefDlgClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowTacRefDlg: TacRefDlgClass is NULL"));
+        return;
+    }
+
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowTacRefDlg: OwningPlayer is NULL"));
+        return;
+    }
+
     EnsureDialog<UTacRefDlg>(TacRefDlgClass, TacRefDlg);
-    ShowDialog(TacRefDlg, true);
+    if (!TacRefDlg)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[MenuScreen] ShowTacRefDlg: EnsureDialog failed (TacRefDlg is NULL)"));
+        return;
+    }
+
+    HideAll();
+
+    TacRefDlg->SetMenuManager(this);
+    TacRefDlg->InitializeDlg(this);
+
+    if (TacRefDlg->IsInViewport())
+        TacRefDlg->RemoveFromParent();
+
+    // Pick a Z-order consistent with your other screens:
+    TacRefDlg->AddToViewport(200);
+
+    TacRefDlg->SetVisibility(ESlateVisibility::Visible);
+    TacRefDlg->SetIsEnabled(true);
+    TacRefDlg->SetIsFocusable(true);
+    TacRefDlg->SetDialogInputEnabled(true);
+
+    CurrentDialog = TacRefDlg;
+
+    ApplyUIFocus(PC, TacRefDlg);
+
+    // If your dialogs require a manual "ShowDlg" or "Show" call:
+    TacRefDlg->Show();
+
+    UE_LOG(LogTemp, Warning, TEXT("[MenuScreen] ShowTacRefDlg: SHOWN InViewport=%d Vis=%d"),
+        TacRefDlg->IsInViewport() ? 1 : 0,
+        (int32)TacRefDlg->GetVisibility());
 }
 
 void UMenuScreen::ShowAwardDlg()

@@ -254,10 +254,10 @@ void UMenuDlg::OnTacReference()
     ClearDescription();
     UE_LOG(LogMenuDlg, Log, TEXT("OnTacReference()"));
 
-    if (Stars)
-        Stars->OpenTacticalReference();
+    if (Manager)
+        Manager->ShowTacRefDlg();
     else
-        UE_LOG(LogMenuDlg, Warning, TEXT("Stars is null in OnTacReference()."));
+        UE_LOG(LogMenuDlg, Warning, TEXT("Manager is null in OnTacReference()."));
 }
 
 void UMenuDlg::OnQuit()

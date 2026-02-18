@@ -1,159 +1,93 @@
-/*  Project Starshatter Wars
-    Fractal Dev Studios
-    Copyright (c) 2025-2026. All Rights Reserved.
-
-    SUBSYSTEM:    Stars.exe
-    FILE:         TacRefDlg.h
-    AUTHOR:       Carlos Bott
-
-    ORIGINAL AUTHOR AND STUDIO
-    ==========================
-    John DiCamillo / Destroyer Studios LLC
-
-    OVERVIEW
-    ========
-    Tactical Reference / Mission Briefing screen (UMG UserWidget) — Unreal port of the legacy
-    tactical reference dialog.
-*/
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "BaseScreen.h"
-#include "MenuScreen.h"
-
-// Minimal Unreal includes requested for headers:
-#include "Math/Vector.h"              // FVector
-#include "Math/Color.h"               // FColor
-#include "Math/UnrealMathUtility.h"   // Math
-
+#include "Engine/DataTable.h"
 #include "TacRefDlg.generated.h"
 
-// Forward declarations (UMG):
 class UButton;
-class UListView;
-class UListViewBase;
 class UTextBlock;
 class URichTextBlock;
-class UImage;
+class UComboBoxString;
+class UMenuScreen;
 
-class ShipDesign;
-class WeaponDesign;
+struct FShipDesign;
+struct FShipWeapon;
 
-// NOTE: legacy types renamed per your rules:
-// Scene* -> SimScene*
-// CameraDirector* -> CameraManager*
-// Font* -> SystemFont*
-// (this header intentionally does NOT expose non-UObject types to reflection)
-
-/**
- * Tactical reference screen.
- * Replaces FormWindow-based TacRefDlg with a UBaseScreen-derived UUserWidget.
- */
 UCLASS()
 class STARSHATTERWARS_API UTacRefDlg : public UBaseScreen
 {
     GENERATED_BODY()
 
 public:
-    enum MODES { MODE_NONE, MODE_SHIPS, MODE_WEAPONS };
-
-public:
     UTacRefDlg(const FObjectInitializer& ObjectInitializer);
 
-public:
-    // ---- Legacy-style API (native-only; NOT BlueprintCallable) --------
+    virtual void SetMenuManager(UMenuScreen* InManager);
+    virtual void InitializeDlg(UMenuScreen* InManager);
 
     void Show();
     void ExecFrame();
 
-    // Operations (native-only):
-    void OnClose(void* Event);
-    void OnMode(void* Event);
-    void OnSelect(void* Event);
-    void OnCamRButtonDown(void* Event);
-    void OnCamRButtonUp(void* Event);
-    void OnCamMove(void* Event);
-    void OnCamZoom(void* Event);
-
 protected:
-    // ---- UBaseScreen --------------------------------------------------
-
-    virtual void BindFormWidgets() override;
-
-protected:
-    // ---- UUserWidget lifecycle ---------------------------------------
-
     virtual void NativeOnInitialized() override;
-    virtual void NativeConstruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
-    // ---- Internal operations -----------------------------------------
+    // ------------------------------------------------------------
+    // Data
+    // ------------------------------------------------------------
+    UPROPERTY(EditDefaultsOnly, Category = "TacRef|Data")
+    TObjectPtr<UDataTable> ShipDesignTable = nullptr;
 
-    void SelectShip(const ShipDesign* dsn);
-    void SelectWeapon(const WeaponDesign* dsn);
+    // Dropdown option index -> RowName mapping
+    UPROPERTY(Transient)
+    TArray<FName> ShipRowNames;
 
-    void UpdateZoom(double r);
-    void UpdateAzimuth(double a);
-    void UpdateElevation(double e);
-    void UpdateCamera();
-    bool SetCaptureBeauty();
-    bool ReleaseCaptureBeauty();
-
-protected:
-    // ---- Widget event handlers ---------------------------------------
-
-    UFUNCTION() void HandleCloseClicked();
-    UFUNCTION() void HandleShipsClicked();
-    UFUNCTION() void HandleWeaponsClicked();
+    UPROPERTY(Transient)
+    int32 SelectedShipIndex = INDEX_NONE;
 
 protected:
-    // ---- External/legacy manager -------------------------------------
+    // ------------------------------------------------------------
+    // Widgets (these names MUST match your WBP_* widget names)
+    // ------------------------------------------------------------
 
-    // Legacy MenuScreen manager (non-UObject):
-    UMenuScreen* manager = nullptr;
+    // Title at top ("TACTICAL REFERENCE") - optional
+    UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TitleText = nullptr;
 
-protected:
-    // ---- UMG widgets --------------------------------------------------
+    // Dropdown list (you already have this)
+    UPROPERTY(meta = (BindWidgetOptional)) UComboBoxString* ShipCombo = nullptr;
 
-    // These are UMG equivalents of the legacy ActiveWindow/Form controls.
-    // You can bind them in the widget blueprint.
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* StationButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* ShipButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* FighterButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) UButton* WeaponButton = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UImage* Beauty = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UListView* LstDesigns = nullptr;
-
+    // These are NOT shown in your snippet; make sure they exist in the WBP
+    // and are named exactly like this, OR rename these fields to match your WBP.
     UPROPERTY(meta = (BindWidgetOptional)) UTextBlock* TxtCaption = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtStats = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) URichTextBlock* TxtDescription = nullptr;
 
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnShips = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnWeaps = nullptr;
-    UPROPERTY(meta = (BindWidgetOptional)) UButton* BtnClose = nullptr;
+protected:
+    // ------------------------------------------------------------
+    // Events
+    // ------------------------------------------------------------
+    UFUNCTION() void HandleCloseClicked();
+    UFUNCTION() void HandleShipModeClicked();
+    UFUNCTION() void HandleWeaponModeClicked();
+    UFUNCTION() void HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 protected:
-    // ---- Legacy camera/scene state (kept as plain C++ members) --------
+    // ------------------------------------------------------------
+    // Internals
+    // ------------------------------------------------------------
+    void PopulateShipDropdown();
+    void SelectShipByIndex(int32 Index);
+    void BuildShipTexts(const FShipDesign& Dsn, FString& OutCaption, FString& OutStats, FString& OutDesc) const;
 
-    // NOTE: These are *not* UObjects. They should remain Starshatter core types.
-    // Implement rendering/preview either via:
-    // - a 3D preview actor + SceneCaptureComponent2D feeding Beauty image, or
-    // - your existing panel render pipeline.
+protected:
+    UPROPERTY(Transient)
+    TObjectPtr<UMenuScreen> manager = nullptr;
 
-    // Per your mapping rules:
-    // Scene -> SimScene, Camera -> your camera struct/class (kept core-side).
-    // Forward declare / include in .cpp only, to keep header light.
-
-    int    mode = MODE_NONE;
-    double radius = 0.0;
-    double cam_zoom = 0.0;
-    double cam_az = 0.0;
-    double cam_el = 0.0;
-    int    mouse_x = 0;
-    int    mouse_y = 0;
-    bool   update_scene = false;
-    bool   captured = false;
-
-    int ship_index = -1;
-    int weap_index = -1;
+    int32 Mode = 0; // 0=ship, 1=weapon
 };
-
