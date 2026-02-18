@@ -38,6 +38,7 @@ enum class EShipEmpire : uint8
 	Other		UMETA(DisplayName = "Other"),
 	Pirate		UMETA(DisplayName = "Pirate"),
 	Neutral     UMETA(DisplayName = "Neutral"),
+	All         UMETA(DisplayName = "All"),
 };
 
 
