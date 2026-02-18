@@ -397,6 +397,24 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
         }
     }
 
+    // UI.MenuScreenClass
+    if (!Cache.Contains(TEXT("UI.TacRefScreenClass")))
+    {
+        if (!Settings->TacRefScreenClass.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->TacRefScreenClass.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.TacRefScreenClass"), TSoftObjectPtr<UObject>(Path));
+
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.TacRefScreenClass -> %s"),
+                *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning,
+                TEXT("[ASSETS] TacRefScreenClass is not set in Project Settings"));
+        }
+    }
+
     UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] InitRegistry: Loaded %d entries"), Cache.Num());
 
     bReady = true;

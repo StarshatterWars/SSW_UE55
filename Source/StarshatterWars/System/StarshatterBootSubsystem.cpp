@@ -374,7 +374,7 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("UI.FirstRunDlgClass"),
     TEXT("UI.OptionsScreenClass"),
     TEXT("UI.PlayerLogbookScreenClass"),
-  
+    TEXT("UI.TacRefScreenClass"),
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))

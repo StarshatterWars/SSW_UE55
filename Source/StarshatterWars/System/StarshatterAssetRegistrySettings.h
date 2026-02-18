@@ -143,5 +143,8 @@ public:
     TSoftClassPtr<UUserWidget> FirstTimeScreenClass;
 
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
-    TSoftClassPtr<UUserWidget> ExitDlgClass;;
+    TSoftClassPtr<UUserWidget> ExitDlgClass;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
+    TSoftClassPtr<UUserWidget> TacRefScreenClass;
 };
