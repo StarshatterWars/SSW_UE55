@@ -5,7 +5,7 @@ display_name:  Tiger
 class:         Hulk
 abrv:          FF
 
-hud_icon:   "TigerHud.pcx"
+hud_icon:   "TigerHud"
 
 model: "Hulk-Frigate.mag"
 

@@ -5,6 +5,7 @@ display_name:  Zolon
 class:         Fighter
 abrv:          ZF
 secret:        true
+empire:        Zolon
 
 detail_0:   "ZFighter_1.mag"
 feature_0:  1000

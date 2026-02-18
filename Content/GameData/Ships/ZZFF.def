@@ -5,6 +5,7 @@ display_name:  Zolon
 class:         Frigate
 abrv:          ZFF
 secret:        true
+empire:        Zolon
 
 detail_0:   "ZolonD1opt.mag"
 feature_0:  1000

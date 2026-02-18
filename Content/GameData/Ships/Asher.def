@@ -9,7 +9,7 @@ description:   "The DD/E-708 ASHER class of destroyer/escorts represents a light
 
 degrees:    true
 beauty:     (-15, 6, 1.2)
-hud_icon:   "AsherHud.pcx"
+hud_icon:   "AsherHud"
 
 detail_0:   "Destroyer_0opt.mag"
 feature_0:  1000

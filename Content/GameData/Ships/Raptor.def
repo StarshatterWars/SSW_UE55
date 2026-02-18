@@ -4,9 +4,10 @@ name:           Raptor
 display_name:   Raptor
 class:          fighter
 abrv:           "F5A"
+empire:         Marakan
 description:   "The F5A RAPTOR is a swept-delta configuration multi-role fighter spacecraft commonly used by the Marakan Hegemony.  It is fast and sturdy and has proven itself in spaceborne and airborne combat as well as in surface attack missions. The Raptor is armed with twin Alpha particle cannon, along with eight underwing hard points capable of mounting several types of anti-fighter ordnance.  The Razor's heavy delta wing design also gives it the capacity to mount a variety of air-to-ground and antiship weapons."
 
-hud_icon:       "RaptorHud.pcx"
+hud_icon:       "RaptorHud"
 
 detail_0:       "Raptor_1opt.mag"
 feature_0:      25

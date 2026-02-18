@@ -4,6 +4,7 @@ name:          ZZA
 display_name:  Zolon
 class:         Attack
 abrv:          ZA
+empire:        Zolon
 secret:        true
 
 detail_0:   "ZAttack_1.mag"

@@ -7,7 +7,7 @@ abrv:          "F-19"
 empire:        Pirate
 description:   "Small, stealthy, and highly maneuverable, the CUTLASS pirate fighter is commonly used by the Brotherhood of Iron criminal organization as both a commerce raider and escort for their larger vessels.  The Cutlass features four widely spread Alpha cannon, and has even been known to mount stolen antiship missiles for some engagements."
 
-hud_icon:      "CutlassHud.pcx"
+hud_icon:      "CutlassHud"
 
 detail_0:   "Cutlass_0.mag"
 feature_0:  25

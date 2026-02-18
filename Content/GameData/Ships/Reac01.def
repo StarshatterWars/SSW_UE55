@@ -4,7 +4,8 @@ name:       Reac01
 class:      Building
 abrv:       BLDG
 display_name: Generator
-hud_icon:     "hud_reac01.pcx"
+empire:      All
+hud_icon:     "hud_reac01"
 
 detail_0:   "Reactor-0.mag"
 feature_0:  1000

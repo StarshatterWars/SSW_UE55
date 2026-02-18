@@ -4,7 +4,8 @@ name:          QShip
 display_name:  Freighter
 class:         Freighter
 abrv:          FREIGHT
-hud_icon:      "CBHud.pcx"
+empire:        All
+hud_icon:      "CBHud"
 
 detail_0:   "QShip_1opt.mag"
 feature_0:  32

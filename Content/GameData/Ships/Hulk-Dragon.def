@@ -5,7 +5,7 @@ display_name:  Dragon
 abrv:          Cv
 class:         Hulk
 
-hud_icon:   "DragonHud.pcx"
+hud_icon:   "DragonHud"
 
 model:      "Hulk-Dragon.mag"
 

@@ -5,6 +5,7 @@ display_name:  Zolon
 class:         Cruiser
 abrv:          ZCA
 secret:        true
+empire:        Zolon
 
 detail_0:   "ZolonB1opt.mag"
 feature_0:  1000

@@ -5,6 +5,7 @@ display_name:  Zolon
 class:         Destroyer
 abrv:          ZDA
 secret:        true
+empire:        Zolon
 
 detail_0:   "ZolonA1opt.mag"
 feature_0:  1000

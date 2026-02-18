@@ -5,7 +5,7 @@ display_name:  "Zolon Consul"
 class:         Cruiser
 abrv:          ZCS
 secret:        true
-
+empire:        Zolon
 detail_0:   "ZolonC1opt.mag"
 feature_0:  1000
 detail_1:   "ZolonC2opt.mag"

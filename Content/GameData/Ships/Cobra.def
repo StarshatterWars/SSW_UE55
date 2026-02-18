@@ -4,10 +4,11 @@ name:          Cobra
 display_name:  Cobra
 class:         Attack
 abrv:          "F-MK3"
+empire:        Marakan
 description:   "The MARK-3 COBRA is a mid-wing configuration multi-role fighter spacecraft that was once commonly used by the Marakan Hegemony but now is mainly used by its client states. The Cobra is a tough and effective single-engine spacecraft that is frequently employed against all types of hardened ground targets, and may also fulfill a secondary role killing spaceborne platforms and starships. The Cobra is armed with twin nose-mounted Alpha particle cannon, along with eight underwing hard points capable of mounting several types of anti-fighter, antiship, and ground-attack weapon systems."
 
 
-hud_icon:      "CobraHud.pcx"
+hud_icon:      "CobraHud"
 
 detail_0:   "Cobra_0opt.mag"
 feature_0:  0.1

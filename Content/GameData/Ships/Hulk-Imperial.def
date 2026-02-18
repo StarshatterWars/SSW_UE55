@@ -5,7 +5,7 @@ display_name:  Imperial
 class:         Hulk
 abrv:          CA
 
-hud_icon:   "ImperialHud.pcx"
+hud_icon:   "ImperialHud"
 
 model:      "Hulk-Imperial.mag"
 

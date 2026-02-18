@@ -4,8 +4,8 @@ name:          Falcon
 display_name:  Falcon
 class:         Fighter
 abrv:          "F-32"
-
-hud_icon:      "FalconHud.pcx"
+empire:        Terellian
+hud_icon:      "FalconHud"
 description:   "The F-32 FALCON is the premier single-seat intercept fighter craft for the Alliance FORCE:Space.  Designed to be lightweight, low cost and easy to maintain, the Falcon is a respected highly maneuverable and versatile tactical fighter.  It is armed with twin Delta particle cannon, and four underwing hard points capable of mounting a variety of anti-fighter ordnance.  The Falcon is routinely tasked with patrol, escort, and intercept mission profiles."
 
 detail_0:   "falcon6_0.mag"

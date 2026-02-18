@@ -5,7 +5,7 @@ display_name:  Broadsword
 class:         Hulk
 abrv:          DD
 
-hud_icon:   "BroadHud.pcx"
+hud_icon:   "BroadHud"
 
 model:      "Hulk-Broadsword.mag"
 

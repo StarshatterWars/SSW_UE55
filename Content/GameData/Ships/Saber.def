@@ -4,8 +4,8 @@ name:          Saber
 display_name:  Saber
 class:         Fighter
 abrv:          "F-22"
-
-hud_icon:      "SaberHud.pcx"
+empire:        Marakan
+hud_icon:      "SaberHud"
 
 model:      "Saber_2opt.mag"
 

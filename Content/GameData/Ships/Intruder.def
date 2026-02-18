@@ -4,9 +4,10 @@ name:           Intruder
 display_name:   Intruder
 class:          fighter
 abrv:           "F4F"
+empire:         Marakan
 description:   "The F4F INTRUDER is the latest edition single-seat intercept fighter craft used by the Marakan Hegemony.  More expensive than the older Viper models, the Intruder remains a lightweight and highly maneuverable tactical fighter.  It is armed with twin Alpha particle cannon, and four underwing hard points capable of mounting a variety of antiship and anti-fighter ordnance.  The Intruder is usually tasked with patrol, intercept, and escort mission profiles, but may also serve as a strike fighter in a pinch."
 
-hud_icon:       "IntruderHud.pcx"
+hud_icon:       "IntruderHud"
 
 detail_0:       "Interceptor_1opt.mag"
 feature_0:      25

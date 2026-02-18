@@ -5,7 +5,7 @@ display_name:  Vendetta
 class:         Hulk
 abrv:          CA
 
-hud_icon:   "VendettaHud.pcx"
+hud_icon:   "VendettaHud"
 
 model: "Hulk-Vendetta.mag"
 

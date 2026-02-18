@@ -4,7 +4,8 @@ name:          Relay1
 display_name:  Relay
 abrv:          COMSSAT
 class:         COMSAT
-hud_icon:      "hud_relay.pcx"
+empire:        All
+hud_icon:      "hud_relay"
 
 model:      "Relay1.mag"
 

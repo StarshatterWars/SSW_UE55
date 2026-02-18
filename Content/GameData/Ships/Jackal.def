@@ -4,9 +4,10 @@ name:          Jackal
 display_name:  Jackal
 class:         LCA
 abrv:          LCA
+empire:        Marakan
 description:   "The JACKAL armored landing craft (LCA) is the mainstay of Hegemony heavy-lift capacity, and the only Marakan craft capable of atmospheric VTOL.  The Jackal is commonly used to ferry personnel and equipment between groundside bases and spaceborne platforms, and also serves a secondary role in heavy assault profiles.  The Jackal is armed with twin heavy Vulcan cannon, but is limited to standard decoy launchers for self-defense."
 
-hud_icon:   "JackalHud.pcx"
+hud_icon:   "JackalHud"
 
 detail_0:   "LCA_1opt.mag"
 feature_0:  100

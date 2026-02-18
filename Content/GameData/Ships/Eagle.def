@@ -4,8 +4,8 @@ name:          Eagle
 display_name:  Eagle
 class:         Fighter
 abrv:          "F-34D"
-
-hud_icon:      "EagleHud.pcx"
+empire:        Terellian
+hud_icon:      "EagleHud"
 description:   "The F-34D EAGLE is a compact, multi-role fighter spacecraft. It is highly maneuverable and has proven itself in spaceborne and airborne combat as well as in surface attack missions. It provides a relatively low-cost, high-performance weapon system for Alliance forces.   Like the F-32 Falcon, the Eagle is armed with twin Delta particle cannon, along with four underwing hard points capable of mounting a variety of anti-fighter ordnance.  The Eagle's heavier structure also provides support for air-to-ground and antiship weapons and increased survivability at some cost in overall maneuverability."
 
 detail_0:   "Eagle_0.mag"

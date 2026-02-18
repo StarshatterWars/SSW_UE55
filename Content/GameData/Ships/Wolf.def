@@ -4,11 +4,12 @@ name:          Wolf
 display_name:  Wolf
 class:         Destroyer
 abrv:          DD
+empire:        Marakan
 description:   "The DD-305 WOLF class of medium destroyers are an older type of Hegemony warship now mainly used by client states and guerilla groups such as the Dantari Separatists.  The Wolf class features a pair of internally-mounted heavy XRay Laser batteries and a full complement of Orca point defense batteries for protection from inbound threats.  Due to design limitations, the Orca PDBs tend to provide better coverage for the dorsal hemisphere, leaving the Wolf class with a vulnerable underbelly."
 
 degrees:    true
 beauty:     (-7, 4, 1.1)
-hud_icon:   "WolfHud.pcx"
+hud_icon:   "WolfHud"
 
 detail_0:   "Destroyer_0opt.mag"
 feature_0:  1000

@@ -4,7 +4,7 @@ name:          Station3
 display_name:  "Fortress"
 abrv:          STN
 class:         STATION
-hud_icon:      "Fort1hud.pcx"
+hud_icon:      "Fort1hud"
 
 model: "Fort1opt.mag"
 

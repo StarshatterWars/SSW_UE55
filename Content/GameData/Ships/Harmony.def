@@ -4,7 +4,7 @@ name:          Station2
 display_name:  Station
 abrv:          STN
 class:         STATION
-hud_icon:      "s5hud.pcx"
+hud_icon:      "s5hud"
 
 model:      "S5opt.mag"
 

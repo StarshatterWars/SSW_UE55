@@ -7,7 +7,7 @@ abrv:		   CV
 empire:        Marakan
 description:   "The CV-7A1 DRAGON class carriers represent the pinnacle of Hegemony military starship design. Though somewhat slow and unweildy, the Dragons are nevertheless enormously powerful.  Their huge complement of embarked fighter craft give them unparalleled force projection capability; a single Dragon-class carrier battle group could easily conquer a colonial world."
 
-hud_icon:   "DragonHud.pcx"
+hud_icon:   "DragonHud"
 
 detail_0:   "Dragon_0opt.mag"
 feature_0:  1000

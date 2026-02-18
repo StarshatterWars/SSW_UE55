@@ -4,7 +4,7 @@ name:          Observatory
 display_name:  Observatory
 class:         STATION
 abrv:          STN
-hud_icon:      "Obs_hud.pcx"
+hud_icon:      "Obs_hud"
 
 model:      "S0opt.mag"
 

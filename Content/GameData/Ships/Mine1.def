@@ -4,7 +4,7 @@ name:         "Blockade Mine"
 display_name:  Mine
 class:         Mine
 abrv:          MINE
-hud_icon:   "MineHud.pcx"
+hud_icon:   "MineHud"
 
 detail_0:   "Mine1.mag"
 feature_0:  1000

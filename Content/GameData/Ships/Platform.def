@@ -4,7 +4,8 @@ name:         Platform
 class:        Building
 display_name: Platform
 abrv:         BLDG
-hud_icon:     "hud_platform.pcx"
+empire:       All
+hud_icon:     "hud_platform"
 
 detail_0:   "Platform-0.mag"
 feature_0:  1000

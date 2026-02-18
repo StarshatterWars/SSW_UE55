@@ -9,7 +9,7 @@ description:   "The CA-400 DEVASTATOR class of heavy cruisers forms the backbone
 
 degrees:    true
 beauty:     (-9, 3.5, 1.27)
-hud_icon:   "DevastatorHud.pcx"
+hud_icon:   "DevastatorHud"
 
 detail_0:   "Devastator_0.mag"
 feature_0:  1000

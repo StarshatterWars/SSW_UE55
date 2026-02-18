@@ -5,7 +5,7 @@ display_name:  Volnaris
 class:         Hulk
 abrv:          DD
 
-hud_icon:   "VolnarisHud.pcx"
+hud_icon:   "VolnarisHud"
 
 model:      "Hulk-Volnaris.mag"
 

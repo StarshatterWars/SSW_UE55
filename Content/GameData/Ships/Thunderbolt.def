@@ -2,10 +2,10 @@ SHIP
 
 name:           Thunderbolt
 display_name:   Thunderbolt
-class:          attack
+class:          Attack
 abrv:           "F/A-38D"
-
-hud_icon:      "ThunderboltHud.pcx"
+empire:        Terellian
+hud_icon:      "ThunderboltHud"
 description:   "The F/A-38D THUNDERBOLT is the primary Alliance attack craft, and the first specially designed for close air support of ground forces. They are tough, effective and powerful four-engine spacecraft that can be used against all ground targets, as well as fulfilling a secondary role in killing spaceborne platforms and starships.  The 'Bolt has six underwing hardpoints for standard attack ordnance, as well as dual front-mounted Heavy Energy Cannon.  For rear protection from hostile fighters and high-speed threats, the Thunderbolt features an autonomous tail gun turret."
 
 detail_0:       "Thunderbolt_0a.mag"

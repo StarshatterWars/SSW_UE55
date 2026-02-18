@@ -4,9 +4,10 @@ name:          Viper
 display_name:  Viper
 class:         Fighter
 abrv:          "F-MK1"
+empire:        Marakan
 description:   "The MARK-1 VIPER is an older model single-seat intercept fighter craft used by the Marakan Hegemony and many of its client states.  Designed to be inexpensive, lightweight, and highly maneuverable, the Viper has become ubiquitous as a versatile tactical fighter.  It is armed with twin Alpha particle cannon, and six underwing hard points capable of mounting a variety of anti-fighter ordnance.  The Viper is often asked to perform patrol, intercept, and escort mission profiles."
 
-hud_icon:      "ViperHud.pcx"
+hud_icon:      "ViperHud"
 
 detail_0:   "Viper_1opt.mag"
 feature_0:  0.1
