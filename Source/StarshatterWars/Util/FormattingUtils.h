@@ -28,6 +28,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 #include "GameStructs.h" // ECOMBATGROUP_TYPE, ECOMBATUNIT_TYPE, EEMPIRE_NAME, CLASSIFICATION
+#include "GameStructs_System.h"
 #include "FormattingUtils.generated.h"
 
 // -----------------------------------------------------------------------------
@@ -122,6 +123,10 @@ public:
     static bool GetRegionTypeFromString(const FString& InString, EOrbitalType& OutValue);
 
     static FString FormatDateFromUnixSeconds(int64 UnixSeconds);
+
+    static EShipEmpire GetShipEmpireFromName(const char* InName);
+
+    static EShipEmpire GetShipEmpireFromString(const FString& InString);
 
     static FString FormatTimeHMS(double Seconds);
 };

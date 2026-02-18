@@ -13,7 +13,7 @@
 */
 
 #include "FormattingUtils.h"
-
+#include "GameStructs_System.h"
 #include "UObject/UnrealType.h" // UEnum
 #include "Logging/LogMacros.h"
 
@@ -425,4 +425,49 @@ FString UFormattingUtils::FormatDateFromUnixSeconds(int64 UnixSeconds)
 
     const FDateTime DT = FDateTime::FromUnixTimestamp(UnixSeconds);
     return DT.ToString(TEXT("%Y-%m-%d"));
+}
+
+EShipEmpire UFormattingUtils::GetShipEmpireFromString(const FString& InString)
+{
+    if (InString.IsEmpty())
+        return EShipEmpire::NONE;
+
+    const FString Normalized = InString.TrimStartAndEnd().ToLower();
+
+    UEnum* Enum = StaticEnum<EShipEmpire>();
+    if (!Enum)
+        return EShipEmpire::NONE;
+
+    const int32 NumEnums = Enum->NumEnums();
+
+    for (int32 i = 0; i < NumEnums; ++i)
+    {
+        // Skip hidden _MAX entry
+        if (Enum->HasMetaData(TEXT("Hidden"), i))
+            continue;
+
+        // Compare enum NAME (Terellian)
+        const FString NameString =
+            Enum->GetNameStringByIndex(i).ToLower();
+
+        if (NameString == Normalized)
+            return static_cast<EShipEmpire>(Enum->GetValueByIndex(i));
+
+        // Compare DisplayName ("Terellian Alliance")
+        const FString DisplayString =
+            Enum->GetDisplayNameTextByIndex(i).ToString().ToLower();
+
+        if (DisplayString == Normalized)
+            return static_cast<EShipEmpire>(Enum->GetValueByIndex(i));
+    }
+
+    return EShipEmpire::NONE;
+}
+
+EShipEmpire UFormattingUtils::GetShipEmpireFromName(const char* InName)
+{
+    if (!InName || !InName[0])
+        return EShipEmpire::NONE;
+
+    return GetShipEmpireFromString(FString(ANSI_TO_TCHAR(InName)));
 }

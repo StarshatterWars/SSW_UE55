@@ -25,6 +25,22 @@
 #define SSW_MAX_STORES 16
 #endif
 
+
+UENUM(BlueprintType)
+enum class EShipEmpire : uint8
+{
+	NONE		UMETA(DisplayName = "Unknown"),
+	Terellian	UMETA(DisplayName = "Terellian Alliance"),
+	Marakan		UMETA(DisplayName = "Marakan Hegemony"),
+	Independent UMETA(DisplayName = "Independent Systems"),
+	Dantari		UMETA(DisplayName = "Dantari Separatists"),
+	Zolon		UMETA(DisplayName = "Zolon Empire"),
+	Other		UMETA(DisplayName = "Other"),
+	Pirate		UMETA(DisplayName = "Pirate"),
+	Neutral     UMETA(DisplayName = "Neutral"),
+};
+
+
 UENUM(BlueprintType)
 enum class EPowerSource : uint8
 {
@@ -1375,6 +1391,9 @@ struct FShipDesign : public FTableRowBase {
 	FString	DetailName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString	ShipClass;
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	EShipEmpire	ShipEmpire = EShipEmpire::Terellian;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	EShipCategory Category = EShipCategory::Unknown;
@@ -1404,7 +1423,8 @@ struct FShipDesign : public FTableRowBase {
 	int RepairTeams;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int ShipType;
-
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool Hidden = false;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	float Scale;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)

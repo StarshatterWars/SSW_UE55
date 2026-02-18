@@ -4,6 +4,7 @@ name:           Avenger
 display_name:   Avenger
 class:          Attack
 abrv:           "F6F"
+empire:         Terellian
 description:    "The F6F AVENGER attack fighter is a highly competent assault platform, capable of meeting most any opponent on even ground and providing an edge over the majority of enemy starfighters in service.  The Avenger is the only Hegemony craft in current service that is optimized for the ground attack role in addition to supporting antiship mission profiles.  The Avenger features a four-barrel Alpha cannon and eight (8) missile hardpoints.  However, unlike the Alliance Thunderbolt, the Avenger does not have a gun turret for rear-quarter protection."
 
 hud_icon:       "AvengerHud.pcx"

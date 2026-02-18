@@ -269,6 +269,7 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 	Text LocalDetailName3 = "";
 
 	Text LocalShipClass = "";
+	Text LocalShipEmpire = "";
 	Text LocalCockpitName = "";
 	Text LocalBeautyName = "";
 	Text LocalHudIconName = "";
@@ -326,6 +327,10 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 	FVector LocalBeautyCam = FVector::ZeroVector;
 	FVector LocalChaseVec = FVector(0.f, -100.f, 20.f);
 	FVector LocalBridgeVec = FVector::ZeroVector;
+
+	EShipEmpire LocalEmpire = EShipEmpire::Terellian;
+
+	bool bLocalHidden = false; 
 
 	FShipDesign NewShipDesign;
 	NewShipPowerArray.Empty();
@@ -392,6 +397,12 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 			NewShipDesign.RepairAuto = bLocalRepairAuto;
 			NewShipDesign.RepairScreen = bLocalRepairScreen;
 			NewShipDesign.WepScreen = bLocalWepScreen;
+			NewShipDesign.Hidden = bLocalHidden;
+		}
+		else if (Key == "empire")
+		{
+			GetDefText(LocalShipEmpire, Def, fn);
+			NewShipDesign.ShipEmpire = UFormattingUtils::GetShipEmpireFromString(FString(LocalShipEmpire));
 		}
 		else if (Key == "description")
 		{
