@@ -111,8 +111,8 @@ void UTacRefDlg::NativeOnInitialized()
 
     if (EmpireCombo)
     {
-        PopulateEmpireDropdown();
         EmpireCombo->OnSelectionChanged.AddDynamic(this, &UTacRefDlg::HandleEmpireComboChanged);
+        PopulateEmpireDropdown_AutoDetect(true, true);
     }
 
     UE_LOG(LogTacRefDlg, Log, TEXT("[TacRefDlg] NativeOnInitialized: Bound buttons/combobox (where available)"));
@@ -328,6 +328,7 @@ void UTacRefDlg::HandleStationModeClicked()
 {
     Mode = 0;
     ActiveCategory = EShipCategory::Station;
+    PopulateEmpireDropdown_AutoDetect(true, true);
     PopulateShipDropdown();
     SelectShipByIndex(SelectedShipIndex);
 }
@@ -337,6 +338,7 @@ void UTacRefDlg::HandleShipModeClicked()
     Mode = 0;
     ActiveCategory = EShipCategory::CapitalShip;
     PopulateShipDropdown();
+    PopulateEmpireDropdown_AutoDetect(true, true);
     SelectShipByIndex(SelectedShipIndex);
 }
 
@@ -345,6 +347,7 @@ void UTacRefDlg::HandleFighterModeClicked()
     Mode = 0;
     ActiveCategory = EShipCategory::Fighter;
     PopulateShipDropdown();
+    PopulateEmpireDropdown_AutoDetect(true, true);
     SelectShipByIndex(SelectedShipIndex);
 }
 
@@ -353,6 +356,7 @@ void UTacRefDlg::HandleTransportModeClicked()
     Mode = 0;
     ActiveCategory = EShipCategory::Transport;
     PopulateShipDropdown();
+    PopulateEmpireDropdown_AutoDetect(true, true);
     SelectShipByIndex(SelectedShipIndex);
 }
 
@@ -361,6 +365,7 @@ void UTacRefDlg::HandleBuildingModeClicked()
     Mode = 0;
     ActiveCategory = EShipCategory::Building;
     PopulateShipDropdown();
+    PopulateEmpireDropdown_AutoDetect(true, true);
     SelectShipByIndex(SelectedShipIndex);
 }
 
@@ -455,31 +460,106 @@ void UTacRefDlg::PopulateEmpireDropdown()
 
 void UTacRefDlg::HandleEmpireComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+    (void)SelectedItem;
     (void)SelectionType;
 
     if (!EmpireCombo)
         return;
 
-    if (SelectedItem.Equals(TEXT("ALL"), ESearchCase::IgnoreCase))
-    {
-        ActiveEmpire = EShipEmpire::NONE;
-    }
-    else
-    {
-        const UEnum* EnumPtr = StaticEnum<EShipEmpire>();
-        if (!EnumPtr)
-            return;
+    const int32 Index = EmpireCombo->FindOptionIndex(EmpireCombo->GetSelectedOption());
+    if (!EmpireValues.IsValidIndex(Index))
+        return;
 
-        for (int32 i = 0; i < EnumPtr->NumEnums() - 1; ++i)
+    ActiveEmpire = EmpireValues[Index];
+
+    PopulateShipDropdown();       // ship list respects ActiveEmpire via PassesEmpireFilter
+    // Optionally: SelectShipByIndex(SelectedShipIndex);
+}
+
+// -----------------------------------------------------------------------------
+// Empire Combo (Auto-Detect)
+// -----------------------------------------------------------------------------
+void UTacRefDlg::PopulateEmpireDropdown_AutoDetect(bool bRespectCategory, bool bRespectSecret)
+{
+    if (!EmpireCombo || !ShipDesignTable)
+        return;
+
+    EmpireCombo->ClearOptions();
+    EmpireValues.Reset();
+
+    // Always provide ALL
+    EmpireCombo->AddOption(TEXT("ALL"));
+    EmpireValues.Add(EShipEmpire::NONE);
+
+    // Gather empires present in the table (optionally respecting other filters)
+    TSet<EShipEmpire> Present;
+
+    const TArray<FName> RowNames = ShipDesignTable->GetRowNames();
+    for (const FName& RowName : RowNames)
+    {
+        const FShipDesign* Row = ShipDesignTable->FindRow<FShipDesign>(RowName, TEXT("EmpireDetect"), false);
+        if (!Row)
+            continue;
+
+        // Respect secret/visibility if your struct has it:
+        if (bRespectSecret)
         {
-            const FString DisplayName = EnumPtr->GetDisplayNameTextByIndex(i).ToString();
-            if (DisplayName == SelectedItem)
-            {
-                ActiveEmpire = static_cast<EShipEmpire>(EnumPtr->GetValueByIndex(i));
-                break;
-            }
+            // If your field name differs, change this line:
+            if (Row->Secret) // legacy "secret" flag
+                continue;
+        }
+
+        // Respect category filter if requested:
+        if (bRespectCategory)
+        {
+            if (!PassesCategoryFilter(*Row))
+                continue;
+        }
+
+        // Pull the empire (assumes you added a real field in FShipDesign)
+        // If your field name differs, change this line:
+        const EShipEmpire Emp = Row->ShipEmpire;
+
+        if (Emp != EShipEmpire::NONE)
+            Present.Add(Emp);
+    }
+
+    // Sort by display name
+    const UEnum* EnumPtr = StaticEnum<EShipEmpire>();
+    TArray<EShipEmpire> Sorted = Present.Array();
+
+    Sorted.Sort([EnumPtr](const EShipEmpire A, const EShipEmpire B)
+        {
+            const int64 VA = (int64)A;
+            const int64 VB = (int64)B;
+
+            const FString SA = EnumPtr ? EnumPtr->GetDisplayNameTextByValue(VA).ToString() : FString::FromInt((int32)A);
+            const FString SB = EnumPtr ? EnumPtr->GetDisplayNameTextByValue(VB).ToString() : FString::FromInt((int32)B);
+            return SA < SB;
+        });
+
+    // Add options
+    for (const EShipEmpire Emp : Sorted)
+    {
+        const FString Label = EnumPtr
+            ? EnumPtr->GetDisplayNameTextByValue((int64)Emp).ToString()
+            : FString::Printf(TEXT("Empire %d"), (int32)Emp);
+
+        EmpireCombo->AddOption(Label);
+        EmpireValues.Add(Emp);
+    }
+
+    // Preserve selection if still valid, otherwise ALL
+    int32 SelectIndex = 0;
+    for (int32 i = 0; i < EmpireValues.Num(); ++i)
+    {
+        if (EmpireValues[i] == ActiveEmpire)
+        {
+            SelectIndex = i;
+            break;
         }
     }
 
-    PopulateShipDropdown();   // refresh list
+    EmpireCombo->SetSelectedIndex(SelectIndex);
 }
+

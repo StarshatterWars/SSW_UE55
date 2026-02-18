@@ -94,6 +94,10 @@ protected:
     UPROPERTY(Transient)
     EShipEmpire ActiveEmpire = EShipEmpire::NONE;
 
+    // Dropdown option index -> Empire value mapping
+    UPROPERTY(Transient)
+    TArray<EShipEmpire> EmpireValues;
+
     // 0 = ship/facility/etc pages, 1 = weapon page
     int32 Mode = 0;
 
@@ -145,8 +149,8 @@ protected:
     UFUNCTION() void HandleWeaponModeClicked();
     UFUNCTION() void HandleShipComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void HandleEmpireComboChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+    UFUNCTION() void PopulateEmpireDropdown_AutoDetect(bool bRespectCategory = true, bool bRespectSecret = true);
 
-   
 protected:
     // ---------------------------------------------------------------------
     // Internals
