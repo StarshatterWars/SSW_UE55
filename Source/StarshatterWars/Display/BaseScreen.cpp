@@ -1888,14 +1888,21 @@ void UBaseScreen::ApplyGlobalTheme(bool bStyleButtons, bool bStyleText, bool bSt
     }
 }
 
-void UBaseScreen::StyleButton_Default(UButton* Button, int32 FontSize)
+void UBaseScreen::StyleButton_Default(
+    UButton* Button,
+    int32 FontSize,
+    const FLinearColor* OverrideTextColor,
+    UFont* OverrideFont
+)
 {
     if (!Button)
         return;
 
     EnsureThemeFontsLoaded();
 
-    // Build Starshatter 4.5 brushes
+    // ------------------------------------------------------------
+    // Button chrome (Starshatter 4.5 art)
+    // ------------------------------------------------------------
     const FSlateBrush Normal = MakeStarshatterBrush(Btn_NormalTex, Btn_9SliceMargin, Btn_ImageSize);
     const FSlateBrush Hovered = MakeStarshatterBrush(Btn_HoverTex, Btn_9SliceMargin, Btn_ImageSize);
     const FSlateBrush Pressed = MakeStarshatterBrush(Btn_PressedTex, Btn_9SliceMargin, Btn_ImageSize);
@@ -1908,28 +1915,40 @@ void UBaseScreen::StyleButton_Default(UButton* Button, int32 FontSize)
     Style.SetPressed(Pressed);
     Style.SetDisabled(Disabled);
 
-    // Optional: if you still want an outline, keep it subtle; Starshatter art usually bakes borders in.
-    // Style.Normal.OutlineSettings.Width = 0.f; etc.
-
-    // Your UE variant: set WidgetStyle directly
+    // Prefer SetStyle if present; fallback to WidgetStyle
+#if ENGINE_MAJOR_VERSION >= 5
+    Button->SetStyle(Style);
+#else
     Button->WidgetStyle = Style;
     Button->SynchronizeProperties();
+#endif
 
-    // Text styling (classic 4.5 look: centered, bright)
+    // ------------------------------------------------------------
+    // Text styling (font + color)
+    // ------------------------------------------------------------
     UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
-    if (TextChild)
-    {
-        TextChild->SetJustification(ETextJustify::Center);
-        TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
+    if (!TextChild)
+        return;
 
-        if (UFont* FontObj = GetThemeFont(DefaultUIFont))
-        {
-            FSlateFontInfo FontInfo = TextChild->GetFont();
-            FontInfo.FontObject = FontObj;
-            FontInfo.Size = FontSize;
-            TextChild->SetFont(FontInfo);
-        }
+    TextChild->SetJustification(ETextJustify::Center);
+
+    const FLinearColor FinalColor = OverrideTextColor ? *OverrideTextColor : UITextColor;
+    TextChild->SetColorAndOpacity(FSlateColor(FinalColor));
+
+    UFont* FontObj = OverrideFont ? OverrideFont : GetThemeFont(DefaultUIFont);
+    if (!FontObj)
+        FontObj = Font_LimerickBold; // hard fallback
+
+    if (FontObj)
+    {
+        FSlateFontInfo FontInfo = TextChild->GetFont();
+        FontInfo.FontObject = FontObj;
+        FontInfo.Size = FontSize;
+        TextChild->SetFont(FontInfo);
     }
+
+    // Force UMG to repaint with new text style in some cases:
+    TextChild->SynchronizeProperties();
 }
 
 void UBaseScreen::StyleText_Default(UTextBlock* Text, int32 FontSize)
@@ -2047,17 +2066,15 @@ UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(const UWidget* Root) const
     if (!Root)
         return nullptr;
 
-    // Direct hit
-    if (const UTextBlock* AsText = Cast<UTextBlock>(Root))
-        return const_cast<UTextBlock*>(AsText);
+    if (const UTextBlock* TB = Cast<UTextBlock>(Root))
+        return const_cast<UTextBlock*>(TB);
 
-    // Content widgets (UButton, UBorder, USizeBox, etc.)
+    // UButton, UBorder, USizeBox, etc.
     if (const UContentWidget* Content = Cast<UContentWidget>(Root))
     {
         return FindFirstTextBlockRecursive(Content->GetContent());
     }
 
-    // Panel widgets (boxes, overlays, canvas, etc.)
     if (const UPanelWidget* Panel = Cast<UPanelWidget>(Root))
     {
         const int32 Count = Panel->GetChildrenCount();
@@ -2070,4 +2087,3 @@ UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(const UWidget* Root) const
 
     return nullptr;
 }
-

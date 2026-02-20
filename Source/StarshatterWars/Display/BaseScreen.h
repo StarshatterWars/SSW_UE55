@@ -406,7 +406,13 @@ protected:
 
     void ApplyGlobalTheme(bool bStyleButtons, bool bStyleText, bool bStyleEdits);
 
-    void StyleButton_Default(UButton* Button, int32 FontSize);
+    void StyleButton_Default(
+        UButton* Button,
+        int32 FontSize,
+        const FLinearColor* OverrideTextColor = nullptr,
+        UFont* OverrideFont = nullptr
+    );
+    
     void StyleText_Default(UTextBlock* Text, int32 FontSize);
 
     void StyleEdit_Default(UEditableTextBox* Edit, int32 FontSize = 18);

@@ -425,8 +425,9 @@ void UKeyDlg::BuildKeyList()
 
         if (!RowBtn || !ActionText)
             continue;
-        StyleButton_Default(RowBtn, 22);
-        ActionText->SetText(FText::FromString(ActionToDisplayString(Action)));
+        StyleButton_Default(RowBtn, 18);
+        ActionText->SetText(FText::FromString(ActionToDisplayString(Action).ToUpper()));
+        ActionText->SetColorAndOpacity(UITextColor);
         ActionText->SetJustification(ETextJustify::Left);
 
         RowBtn->SetContent(ActionText);
