@@ -416,13 +416,33 @@ protected:
     void GatherButtonsRecursive(UWidget* Root, TArray<UButton*>& OutButtons);
     void GatherTextBlocksRecursive(UWidget* Root, TArray<UTextBlock*>& OutTexts);
     void GatherEditableTextBoxesRecursive(UWidget* Root, TArray<UEditableTextBox*>& OutEdits);
-    UTextBlock* FindFirstTextBlockRecursive(UWidget* Root) const;
+    UTextBlock* FindFirstTextBlockRecursive(const UWidget* Root) const;
 
 protected:
     // Fonts (loaded from /Game/Font/*_Font assets)
     UPROPERTY(Transient) TObjectPtr<UFont> Font_LimerickBold = nullptr;
     UPROPERTY(Transient) TObjectPtr<UFont> Font_VerdanaItalic = nullptr;
     UPROPERTY(Transient) TObjectPtr<UFont> Font_Serpntb = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|ButtonSkin")
+    TObjectPtr<UTexture2D> Btn_NormalTex = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|ButtonSkin")
+    TObjectPtr<UTexture2D> Btn_HoverTex = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|ButtonSkin")
+    TObjectPtr<UTexture2D> Btn_PressedTex = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|ButtonSkin")
+    TObjectPtr<UTexture2D> Btn_DisabledTex = nullptr;
+
+    // 9-slice margin in normalized UV space (0..1). Start around 0.25 if your bevel is thick.
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|ButtonSkin")
+    FMargin Btn_9SliceMargin = FMargin(0.25f, 0.25f, 0.25f, 0.25f);
+
+    // Optional: fixed image size hint (can be zero; Slate can infer)
+    UPROPERTY(EditAnywhere, Category = "Starshatter|UI|ButtonSkin")
+    FVector2D Btn_ImageSize = FVector2D(0.f, 0.f);
 public:
     // Theme knobs (general defaults)
     UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")

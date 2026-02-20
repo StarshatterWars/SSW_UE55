@@ -34,6 +34,7 @@
 #include "Components/VerticalBox.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
+#include "Components/ContentWidget.h"
 
 #include "Blueprint/WidgetTree.h"
 
@@ -909,6 +910,29 @@ namespace
 // UBaseScreen lifecycle
 // --------------------------------------------------------------------
 
+static FSlateBrush MakeStarshatterBrush(UTexture2D* Tex, const FMargin& Margin, const FVector2D& ImageSize)
+{
+    FSlateBrush B;
+
+    if (Tex)
+    {
+        B.SetResourceObject(Tex);
+        B.DrawAs = ESlateBrushDrawType::Box;   // key for 9-slice
+        B.Margin = Margin;
+
+        if (!ImageSize.IsNearlyZero())
+            B.ImageSize = ImageSize;
+    }
+    else
+    {
+        // fallback: simple tinted box (won’t crash)
+        B.DrawAs = ESlateBrushDrawType::Box;
+        B.TintColor = FSlateColor(FLinearColor(0.18f, 0.18f, 0.18f, 1.f));
+        B.Margin = FMargin(4.f / 16.f);
+    }
+
+    return B;
+}
 // --------------------------------------------------------------------
 // Font paths (UMG-friendly *_Font assets)
 // --------------------------------------------------------------------
@@ -1764,63 +1788,24 @@ void UBaseScreen::ApplyDefaultButtonStyle(UButton* Button, int32 FontSize) const
     if (!Button)
         return;
 
-    // ------------------------------------------------------------
-    // Ensure theme fonts are loaded (safe if already loaded)
-    // ------------------------------------------------------------
-    const_cast<UBaseScreen*>(this)->EnsureThemeFontsLoaded();
+    // Style the button chrome first (your existing SetStyle code is fine)
+    // Button->SetStyle(...);
 
-    // ------------------------------------------------------------
-    // Build Button Style
-    // ------------------------------------------------------------
-    FButtonStyle Style = Button->WidgetStyle;
-
-    // Normal
-    FSlateBrush NormalBrush;
-    NormalBrush.DrawAs = ESlateBrushDrawType::Box;
-    NormalBrush.TintColor = FSlateColor(UIButtonFill);
-    NormalBrush.Margin = FMargin(4.f / 16.f);
-
-    // Hovered
-    FSlateBrush HoverBrush;
-    HoverBrush.DrawAs = ESlateBrushDrawType::Box;
-    HoverBrush.TintColor = FSlateColor(UIButtonFillHover);
-    HoverBrush.Margin = FMargin(4.f / 16.f);
-
-    // Pressed
-    FSlateBrush PressedBrush;
-    PressedBrush.DrawAs = ESlateBrushDrawType::Box;
-    PressedBrush.TintColor = FSlateColor(UIButtonFillPressed);
-    PressedBrush.Margin = FMargin(4.f / 16.f);
-
-    Style.SetNormal(NormalBrush);
-    Style.SetHovered(HoverBrush);
-    Style.SetPressed(PressedBrush);
-
-    // Border / Outline
-    Style.Normal.OutlineSettings.Width = UIButtonBorderWidth;
-    Style.Normal.OutlineSettings.Color = UIButtonBorder;
-
-    Style.Hovered.OutlineSettings.Width = UIButtonBorderWidth;
-    Style.Hovered.OutlineSettings.Color = UIButtonBorder;
-
-    Style.Pressed.OutlineSettings.Width = UIButtonBorderWidth;
-    Style.Pressed.OutlineSettings.Color = UIButtonBorder;
-
-    Button->SetStyle(Style);
-
-    // ------------------------------------------------------------
-    // Style Text Inside Button
-    // ------------------------------------------------------------
     UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
     if (!TextChild)
+    {
+        UE_LOG(LogBaseScreen, Warning, TEXT("[BaseScreen] Button '%s' has no TextBlock content."), *Button->GetName());
         return;
+    }
 
-    // Set text color
+    // Color
     TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
-    TextChild->SetJustification(ETextJustify::Center);
 
-    // Apply theme font
+    // Font
     UFont* FontObj = GetThemeFont(DefaultUIFont);
+    if (!FontObj)
+        FontObj = Font_LimerickBold; // fallback
+
     if (FontObj)
     {
         FSlateFontInfo FontInfo = TextChild->GetFont();
@@ -1828,6 +1813,8 @@ void UBaseScreen::ApplyDefaultButtonStyle(UButton* Button, int32 FontSize) const
         FontInfo.Size = FontSize;
         TextChild->SetFont(FontInfo);
     }
+
+    TextChild->SetJustification(ETextJustify::Center);
 }
 
 void UBaseScreen::EnsureThemeFontsLoaded()
@@ -1908,63 +1895,40 @@ void UBaseScreen::StyleButton_Default(UButton* Button, int32 FontSize)
 
     EnsureThemeFontsLoaded();
 
-    // ------------------------------------------------------------
-    // Build Button Style
-    // ------------------------------------------------------------
+    // Build Starshatter 4.5 brushes
+    const FSlateBrush Normal = MakeStarshatterBrush(Btn_NormalTex, Btn_9SliceMargin, Btn_ImageSize);
+    const FSlateBrush Hovered = MakeStarshatterBrush(Btn_HoverTex, Btn_9SliceMargin, Btn_ImageSize);
+    const FSlateBrush Pressed = MakeStarshatterBrush(Btn_PressedTex, Btn_9SliceMargin, Btn_ImageSize);
+    const FSlateBrush Disabled = MakeStarshatterBrush(Btn_DisabledTex ? Btn_DisabledTex : Btn_NormalTex,
+        Btn_9SliceMargin, Btn_ImageSize);
+
     FButtonStyle Style = Button->WidgetStyle;
-
-    // Normal
-    FSlateBrush Normal;
-    Normal.DrawAs = ESlateBrushDrawType::Box;
-    Normal.TintColor = FSlateColor(UIButtonFill);
-    Normal.Margin = FMargin(4.f / 16.f);
-
-    // Hovered
-    FSlateBrush Hovered;
-    Hovered.DrawAs = ESlateBrushDrawType::Box;
-    Hovered.TintColor = FSlateColor(UIButtonFillHover);
-    Hovered.Margin = FMargin(4.f / 16.f);
-
-    // Pressed
-    FSlateBrush Pressed;
-    Pressed.DrawAs = ESlateBrushDrawType::Box;
-    Pressed.TintColor = FSlateColor(UIButtonFillPressed);
-    Pressed.Margin = FMargin(4.f / 16.f);
-
     Style.SetNormal(Normal);
     Style.SetHovered(Hovered);
     Style.SetPressed(Pressed);
+    Style.SetDisabled(Disabled);
 
-    // Border
-    Style.Normal.OutlineSettings.Width = UIButtonBorderWidth;
-    Style.Normal.OutlineSettings.Color = UIButtonBorder;
+    // Optional: if you still want an outline, keep it subtle; Starshatter art usually bakes borders in.
+    // Style.Normal.OutlineSettings.Width = 0.f; etc.
 
-    Style.Hovered.OutlineSettings.Width = UIButtonBorderWidth;
-    Style.Hovered.OutlineSettings.Color = UIButtonBorder;
-
-    Style.Pressed.OutlineSettings.Width = UIButtonBorderWidth;
-    Style.Pressed.OutlineSettings.Color = UIButtonBorder;
-
+    // Your UE variant: set WidgetStyle directly
     Button->WidgetStyle = Style;
     Button->SynchronizeProperties();
 
-    // ------------------------------------------------------------
-    // Style Text Inside Button
-    // ------------------------------------------------------------
+    // Text styling (classic 4.5 look: centered, bright)
     UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
-    if (!TextChild)
-        return;
-
-    TextChild->SetJustification(ETextJustify::Center);
-    TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
-
-    UFont* FontObj = GetThemeFont(DefaultUIFont);
-    if (FontObj)
+    if (TextChild)
     {
-        FSlateFontInfo FontInfo = TextChild->GetFont();
-        FontInfo.FontObject = FontObj;
-        FontInfo.Size = FontSize;
-        TextChild->SetFont(FontInfo);
+        TextChild->SetJustification(ETextJustify::Center);
+        TextChild->SetColorAndOpacity(FSlateColor(UITextColor));
+
+        if (UFont* FontObj = GetThemeFont(DefaultUIFont))
+        {
+            FSlateFontInfo FontInfo = TextChild->GetFont();
+            FontInfo.FontObject = FontObj;
+            FontInfo.Size = FontSize;
+            TextChild->SetFont(FontInfo);
+        }
     }
 }
 
@@ -2078,28 +2042,30 @@ void UBaseScreen::GatherEditableTextBoxesRecursive(UWidget* Root, TArray<UEditab
     }
 }
 
-UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(UWidget* Root) const
+UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(const UWidget* Root) const
 {
     if (!Root)
         return nullptr;
 
-    if (UTextBlock* AsText = Cast<UTextBlock>(Root))
-        return AsText;
+    // Direct hit
+    if (const UTextBlock* AsText = Cast<UTextBlock>(Root))
+        return const_cast<UTextBlock*>(AsText);
 
-    if (UPanelWidget* Panel = Cast<UPanelWidget>(Root))
+    // Content widgets (UButton, UBorder, USizeBox, etc.)
+    if (const UContentWidget* Content = Cast<UContentWidget>(Root))
+    {
+        return FindFirstTextBlockRecursive(Content->GetContent());
+    }
+
+    // Panel widgets (boxes, overlays, canvas, etc.)
+    if (const UPanelWidget* Panel = Cast<UPanelWidget>(Root))
     {
         const int32 Count = Panel->GetChildrenCount();
         for (int32 i = 0; i < Count; ++i)
         {
-            UTextBlock* Found = FindFirstTextBlockRecursive(Panel->GetChildAt(i));
-            if (Found)
+            if (UTextBlock* Found = FindFirstTextBlockRecursive(Panel->GetChildAt(i)))
                 return Found;
         }
-    }
-    else if (UContentWidget* Content = Cast<UContentWidget>(Root))
-    {
-        if (UWidget* Child = Content->GetContent())
-            return FindFirstTextBlockRecursive(Child);
     }
 
     return nullptr;
