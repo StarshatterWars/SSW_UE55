@@ -302,31 +302,50 @@ void UTacRefDlg::BuildShipTexts(const FShipDesign& Dsn, FString& OutCaption, FSt
     auto Num0 = [](double V) { return FString::Printf(TEXT("%.0f"), V); };
     auto Num1 = [](double V) { return FString::Printf(TEXT("%.1f"), V); };
 
-    FString S;
-    S += FString::Printf(TEXT("CLASS:\t%s\n"), *Dsn.ShipClass);
-    S += FString::Printf(TEXT("MASS:\t%s\n"), *Num0(Dsn.Mass));
-    S += FString::Printf(TEXT("SCALE:\t%s\n"), *Num1(Dsn.Scale));
-    S += FString::Printf(TEXT("V LIMIT:\t%s\n"), *Num0(Dsn.Vlimit));
-    S += FString::Printf(TEXT("AGILITY:\t%s\n"), *Num1(Dsn.Agility));
-    S += FString::Printf(TEXT("DETECT:\t%s\n"), *Num0(Dsn.Detet));
-    S += FString::Printf(TEXT("REPAIR TEAMS:\t%d\n"), Dsn.RepairTeams);
+    OutCaption = Dsn.Abrv.IsEmpty()
+        ? Dsn.DisplayName
+        : FString::Printf(TEXT("%s %s"), *Dsn.Abrv, *Dsn.DisplayName);
 
-    // Weapons summary (optional)
+    // Description panel: keep simple but styled
+    OutDesc = !Dsn.Description.IsEmpty()
+        ? FString::Printf(TEXT("<Default>%s</>"), *Dsn.Description)
+        : TEXT("<HUD_Muted>NO DESCRIPTION AVAILABLE.</>");
+
+    // Stats panel
+    FString S;
+
+    // Big header
+    //S += FString::Printf(TEXT("<HUD_Title>%s</>\n\n"), *OutCaption);
+
+    // Overview
+    S += TEXT("<HUD_Section>OVERVIEW</>\n");
+    S += FString::Printf(TEXT("<HUD_Label>CLASS:</>      <HUD_Value>%s</>\n"), *Dsn.ShipClass);
+    S += FString::Printf(TEXT("<HUD_Label>MASS:</>       <HUD_Value>%s</>\n"), *Num0(Dsn.Mass));
+    S += FString::Printf(TEXT("<HUD_Label>SCALE:</>      <HUD_Value>%s</>\n"), *Num1(Dsn.Scale));
+    S += FString::Printf(TEXT("<HUD_Label>V LIMIT:</>    <HUD_Value>%s</>\n"), *Num0(Dsn.Vlimit));
+    S += FString::Printf(TEXT("<HUD_Label>AGILITY:</>    <HUD_Value>%s</>\n"), *Num1(Dsn.Agility));
+    S += FString::Printf(TEXT("<HUD_Label>DETECT:</>     <HUD_Value>%s</>\n"), *Num0(Dsn.Detet));
+    S += FString::Printf(TEXT("<HUD_Label>REPAIR:</>     <HUD_Value>%d TEAMS</>\n"), Dsn.RepairTeams);
+
+    // Weapons summary
     if (Dsn.Weapon.Num() > 0)
     {
         TMap<FString, int32> GroupCounts;
-
         for (const FShipWeapon& W : Dsn.Weapon)
         {
             const FString G = NormalizeWeaponGroupLabel(W);
             GroupCounts.FindOrAdd(G)++;
         }
 
-        S += TEXT("\nWEAPONS:\n");
+        S += TEXT("\n<HUD_Section>WEAPONS</>\n");
         for (const auto& KVP : GroupCounts)
         {
-            S += FString::Printf(TEXT("%s:\t%d\n"), *KVP.Key, KVP.Value);
+            S += FString::Printf(TEXT("<HUD_Indent>%s:</> <HUD_Value>%d</>\n"), *KVP.Key, KVP.Value);
         }
+    }
+    else
+    {
+        S += TEXT("\n<HUD_Muted>NO WEAPONS DATA.</>\n");
     }
 
     OutStats = MoveTemp(S);
