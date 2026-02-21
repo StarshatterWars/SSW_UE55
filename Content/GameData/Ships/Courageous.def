@@ -9,13 +9,9 @@ description:   "Modern Terrelian guided missile cruisers such as the CA-521 COUR
 
 degrees:    true
 beauty:     (-9, 3.5, 1.27)
-hud_icon:   "CourageousHud.pcx"
+hud_icon:   "CourageousHud"
 
-detail_0:   "Courageous_1opt.mag"
-feature_0:  1000
-detail_1:   "Courageous_2opt.mag"
-feature_1:  20
-
+model:     "Courageous"
 
 mass:       45.3e3
 agility:    1.3
@@ -131,7 +127,7 @@ shield: {
    design:           "Grav Shield"
    abrv:             "Shield"
    pcs:              100,
-   model:            "CourageousShield.mag",
+   model:            "CourageousShield",
    bolt_hit_sound:   "shield_hit4.wav"
    beam_hit_sound:   "shield_hit5.wav"
 
@@ -411,25 +407,25 @@ death_spiral: {
    explosion: { type: 13, final: true } // Nuke
    explosion: { type: 12, final: true } // Large burst
 
-   debris:    { model: "Debris1A.mag",          loc: (0,0,-550), mass: 17e3, count:  1, life: 350 }
-   debris:    { model: "Debris1B.mag",          loc: (320,0,10), mass:  4e3, count:  1, life: 380 }
-   debris:    { model: "CourageousDebris2.mag", loc: (0,0,400),  mass: 18e3, count:  1, life: 380 
+   debris:    { model: "Debris1A",          loc: (0,0,-550), mass: 17e3, count:  1, life: 350 }
+   debris:    { model: "Debris1B",          loc: (320,0,10), mass:  4e3, count:  1, life: 380 }
+   debris:    { model: "CourageousDebris2", loc: (0,0,400),  mass: 18e3, count:  1, life: 380 
                 fire:  (60,60,20), fire:  (-60,-30,-10) }
-   debris:    { model: "Debris0A.mag",          loc: (0,0,-50),  mass:  44, count: 25, life:  20 }
-   debris:    { model: "Debris0B.mag",          loc: (0,0,-50),  mass:  33, count: 20, life:  25 }
-   debris:    { model: "Debris0C.mag",          loc: (0,0,0),    mass:  22, count: 25, life:  30 }
+   debris:    { model: "Debris0A",          loc: (0,0,-50),  mass:  44, count: 25, life:  20 }
+   debris:    { model: "Debris0B",          loc: (0,0,-50),  mass:  33, count: 20, life:  25 }
+   debris:    { model: "Debris0C",          loc: (0,0,0),    mass:  22, count: 25, life:  30 }
 }
 
 
 map: {
-   sprite: "CourageousMap0.pcx",
-   sprite: "CourageousMap1.pcx",
-   sprite: "CourageousMap2.pcx",
-   sprite: "CourageousMap3.pcx",
-   sprite: "CourageousMap4.pcx",
-   sprite: "CourageousMap5.pcx",
-   sprite: "CourageousMap6.pcx",
-   sprite: "CourageousMap7.pcx"
+   sprite: "CourageousMap0",
+   sprite: "CourageousMap1",
+   sprite: "CourageousMap2",
+   sprite: "CourageousMap3",
+   sprite: "CourageousMap4",
+   sprite: "CourageousMap5",
+   sprite: "CourageousMap6",
+   sprite: "CourageousMap7"
 }
 
 

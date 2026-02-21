@@ -8,10 +8,7 @@ description:  "The City Block is a compact urban sector integrating housing, uti
 empire:       All
 hud_icon:     "hud_bldg01"
 
-detail_0:   "City02-0.mag"
-feature_0:  1000
-detail_1:   "City02-6.mag"
-feature_1:  6
+model:     "City02"
 
 mass:       50e3
 integrity:  500e3

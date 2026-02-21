@@ -8,10 +8,7 @@ description:   "The Office Complex serves as the administrative nerve center of 
 empire:       All
 hud_icon:     "hud_bldg00"
 
-detail_0:   "Bldg00-0.mag"
-feature_0:  1000
-detail_1:   "Bldg00-6.mag"
-feature_1:  6
+model:     "Bldg00-0"
 
 mass:       5e3
 integrity:  8e3

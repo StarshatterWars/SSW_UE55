@@ -6,7 +6,7 @@ class:         Drone
 abrv:		   DRN
 empire:        All
 description:   "The Archaelith-class Drone is an autonomous reconnaissance platform deployed for deep-space surveillance and perimeter control. Compact and lightly armed, it relies on advanced sensor suites and networked coordination to extend fleet awareness far beyond the main battle line."
-model:         "Archaelith.mag"
+model:         "Archaelith"
 
 mass:       14.5
 integrity:  4e12

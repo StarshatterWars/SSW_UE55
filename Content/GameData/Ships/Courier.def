@@ -7,7 +7,8 @@ abrv:       TRANS
 hud_icon:   "BRHud"
 empire:      All
 description: "The Courier-class Blockade Runner is a fast-response transport designed to slip through contested space under minimal escort. Built for endurance and discretion rather than firepower, it excels at moving critical personnel, intelligence, and high-value cargo through unstable frontier sectors."
-model:      "Corvette_2opt.mag"
+
+model:      "Courier"
 
 mass:       15.3e3
 agility:    1
@@ -160,19 +161,19 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     25,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     20,
    debris_life:      15,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C.",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,
@@ -181,13 +182,13 @@ death_spiral: {
    }
 
 map: {
-   sprite: "BRmap0.pcx",
-   sprite: "BRmap1.pcx",
-   sprite: "BRmap2.pcx",
-   sprite: "BRmap3.pcx",
-   sprite: "BRmap4.pcx",
-   sprite: "BRmap5.pcx",
-   sprite: "BRmap6.pcx",
-   sprite: "BRmap7.pcx",
+   sprite: "BRmap0",
+   sprite: "BRmap1",
+   sprite: "BRmap2",
+   sprite: "BRmap3",
+   sprite: "BRmap4",
+   sprite: "BRmap5",
+   sprite: "BRmap6",
+   sprite: "BRmap7",
 }
 

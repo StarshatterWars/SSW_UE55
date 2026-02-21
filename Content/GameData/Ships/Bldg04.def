@@ -8,10 +8,7 @@ description: "The Office Tower stands as a prominent administrative and commerci
 empire:      All
 hud_icon:     "hud_bldg04"
 
-detail_0:   "Bldg04-0.mag"
-feature_0:  1000
-detail_1:   "Bldg04-6.mag"
-feature_1:  6
+model:     "Bldg04-0"
 
 mass:       5e3
 integrity:  8e3

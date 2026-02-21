@@ -8,10 +8,7 @@ description:  "This facility is a prefabricated support structure used to reinfo
 empire:       All
 hud_icon:     "hud_bldg03"
 
-detail_0:   "Bldg03-0.mag"
-feature_0:  1000
-detail_1:   "Bldg03-6.mag"
-feature_1:  6
+model:     "Bldg03-0"
 
 mass:       5e3
 integrity:  8e3

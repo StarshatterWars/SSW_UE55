@@ -8,10 +8,7 @@ description:  "The City Block represents a dense urban sector composed of reside
 empire:       All
 hud_icon:     "hud_bldg01"
 
-detail_0:   "City00-0.mag"
-feature_0:  1000
-detail_1:   "City00-6.mag"
-feature_1:  6
+model:      "City00"
 
 mass:       50e3
 integrity:  500e3

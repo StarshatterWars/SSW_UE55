@@ -8,12 +8,9 @@ empire:        Terellian
 hud_icon:      "StormhawkHud"
 description:   "The F-36C STORMHAWK is a compact, multi-role fighter spacecraft. It is highly maneuverable and has proven itself in spaceborne and airborne combat as well as in surface attack missions. It provides a relatively low-cost, high-performance weapon system for Alliance forces.   Like the F-32 Falcon, the Stormhawk is armed with twin Delta particle cannon, along with four underwing hard points capable of mounting a variety of anti-fighter ordnance.  The Stormhawk's heavier structure also provides support for air-to-ground and antiship weapons and increased survivability at some cost in overall maneuverability."
 
-detail_0:   "Storm6_0.mag"
-feature_0:  25
-detail_1:   "Storm6_1.mag"
-feature_1:  1
+model:       "Stormhawk"
 
-cockpit_model: "StormPit2b.mag"
+cockpit_model: "StormPit2b"
 cockpit_scale: 0.02
 
 mass:       15.1
@@ -209,19 +206,19 @@ gear: {
    hull_factor: 0.5,
 
    gear: {
-      model: "GearNose1.mag",
+      model: "GearNose1",
       start: (0, -18, 100),
       end:   (0, -38, 130)
       },
 
    gear: {
-      model: "GearLeft1.mag",
+      model: "GearLeft1",
       start: (-20, -20, -74),
       end:   (-40, -50, -70)
       },
 
    gear: {
-      model: "GearRight1.mag",
+      model: "GearRight1",
       start: ( 20, -20, -74),
       end:   ( 40, -50, -70)
       },
@@ -301,7 +298,7 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, -32),
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,-2)
    debris_mass:      20
    debris_count:     4
@@ -311,7 +308,7 @@ death_spiral: {
    debris_drag:      0.3
    debris_speed:     190
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,3)
    debris_mass:      20
    debris_count:     3
@@ -323,13 +320,13 @@ death_spiral: {
 }
 
 map: {
-   sprite: "s_map0.pcx",
-   sprite: "s_map1.pcx",
-   sprite: "s_map2.pcx",
-   sprite: "s_map3.pcx",
-   sprite: "s_map4.pcx",
-   sprite: "s_map5.pcx",
-   sprite: "s_map6.pcx",
-   sprite: "s_map7.pcx"
+   sprite: "s_map0",
+   sprite: "s_map1",
+   sprite: "s_map2",
+   sprite: "s_map3",
+   sprite: "s_map4",
+   sprite: "s_map5",
+   sprite: "s_map6",
+   sprite: "s_map7"
 }
 

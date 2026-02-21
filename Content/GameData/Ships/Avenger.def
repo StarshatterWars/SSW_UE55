@@ -9,10 +9,7 @@ description:    "The F6F AVENGER attack fighter is a highly competent assault pl
 
 hud_icon:       "AvengerHud"
 
-detail_0:       "Avenger_1opt.mag"
-feature_0:      25
-detail_1:       "Avenger_2opt.mag"
-feature_1:      0.5
+detail_0:       "Avenger"
 
 mass:        	27.4
 integrity:   	3500
@@ -22,7 +19,7 @@ air_factor:  	0.25
 roll_rate:   	600
 scale:       	0.27
 acs:         	1.0
-detet:	 	50e3
+detet:	 	    50e3
 
 trans_x:     	2200
 trans_y:     	2200
@@ -348,14 +345,14 @@ death_spiral: {
 
 
 map: {
-   sprite: "AvengerMap0.pcx",
-   sprite: "AvengerMap1.pcx",
-   sprite: "AvengerMap2.pcx",
-   sprite: "AvengerMap3.pcx",
-   sprite: "AvengerMap4.pcx",
-   sprite: "AvengerMap5.pcx",
-   sprite: "AvengerMap6.pcx",
-   sprite: "AvengerMap7.pcx",
+   sprite: "AvengerMap0",
+   sprite: "AvengerMap1",
+   sprite: "AvengerMap2",
+   sprite: "AvengerMap3",
+   sprite: "AvengerMap4",
+   sprite: "AvengerMap5",
+   sprite: "AvengerMap6",
+   sprite: "AvengerMap7",
 }
 
 

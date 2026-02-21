@@ -9,10 +9,7 @@ abrv:       CLN
 secret:     true
 hud_icon:   "Colony_hud"
 
-detail_0:   "Colony1e.mag"
-feature_0:  1000
-detail_1:   "Colony2e.mag"
-feature_1:  32
+model:     "Colony"
 
 mass:       2.1e6
 agility:    0
@@ -84,7 +81,7 @@ death_spiral: {
    }
 
 
-map: { sprite: "Colony_map.pcx" }
+map: { sprite: "Colony_map" }
 
 
 

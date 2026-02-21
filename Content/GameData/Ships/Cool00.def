@@ -8,10 +8,7 @@ description:  "The Cooling Tower is an industrial support structure responsible 
 empire:       All
 hud_icon:     "hud_cool00"
 
-detail_0:   "Cool00-0.mag"
-feature_0:  1000
-detail_1:   "Cool00-6.mag"
-feature_1:  6
+model:     "Cool00"
 
 mass:       5e3
 integrity:  5e3

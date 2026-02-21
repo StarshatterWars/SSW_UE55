@@ -8,10 +8,7 @@ empire:        Pirate
 description:   "The Adventure-class Carrier serves as a mobile stronghold for pirate flotillas operating beyond recognized territorial space. Refitted from a civilian hull and reinforced with improvised flight decks and hangar bays, it acts as both raider command ship and strike carrier, projecting irregular power across vulnerable trade routes."
 hud_icon:      "CarrierHud"
 
-detail_0:   "Carrier_1opt.mag"
-feature_0:  1000
-detail_1:   "Carrier_2opt.mag"
-feature_1:  40
+model:      "Adventure"
 
 mass:       187.6e3
 agility:    1.3
@@ -336,14 +333,14 @@ nav:        {
 
 
 map: {
-   sprite: "cvmap0.pcx",
-   sprite: "cvmap1.pcx",
-   sprite: "cvmap2.pcx",
-   sprite: "cvmap3.pcx",
-   sprite: "cvmap4.pcx",
-   sprite: "cvmap5.pcx",
-   sprite: "cvmap6.pcx",
-   sprite: "cvmap7.pcx"
+   sprite: "cvmap0,
+   sprite: "cvmap1",
+   sprite: "cvmap2",
+   sprite: "cvmap3",
+   sprite: "cvmap4,
+   sprite: "cvmap5,
+   sprite: "cvmap6",
+   sprite: "cvmap7"
 }
 
 
@@ -372,31 +369,31 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "DebrisCarrier1.mag",
+   debris:           "DebrisCarrier1",
    debris_loc:       (0,0,450),
    debris_mass:      23e3,
    debris_count:     1,
    debris_life:      385,
 
-   debris:           "DebrisCarrier2.mag",
+   debris:           "DebrisCarrier2",
    debris_loc:       (0,0,-700),
    debris_mass:      19e3,
    debris_count:     1,
    debris_life:      425,
 
-   debris:           "Debris5.mag",
+   debris:           "Debris5",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     15,
    debris_life:      15,
 
-   debris:           "Debris6.mag",
+   debris:           "Debris6",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     15,
    debris_life:      25,
 
-   debris:           "Debris7.mag",
+   debris:           "Debris7",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,

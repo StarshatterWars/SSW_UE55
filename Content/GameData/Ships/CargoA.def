@@ -7,12 +7,7 @@ abrv:		FREIGHT
 hud_icon:   "CAHud"
 description: "The IM3500 Freighter is a heavy cargo hauler designed for sustained interstellar trade routes and bulk resource transport. Slow but resilient, it prioritizes capacity and range over combat capability, often operating under escort in volatile sectors."
 empire:     Neutral
-detail_0:   "CargoA_0opt.mag"
-feature_0:  1000
-detail_1:   "CargoA_1opt.mag"
-feature_1:  20
-detail_2:   "CargoA_2opt.mag"
-feature_2:  12
+model:     "CargoA_0opt"
 
 mass:       18.2e3
 agility:    1
@@ -163,25 +158,25 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "DebrisPod.mag",
+   debris:           "DebrisPod",
    debris_loc:       (-50,0,-20),
    debris_mass:      11e3,
    debris_count:     1,
    debris_life:      315,
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     15,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     10,
    debris_life:      15,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     8,
@@ -191,14 +186,14 @@ death_spiral: {
    }
 
 map: {
-   sprite: "CAmap0.pcx",
-   sprite: "CAmap1.pcx",
-   sprite: "CAmap2.pcx",
-   sprite: "CAmap3.pcx",
-   sprite: "CAmap4.pcx",
-   sprite: "CAmap5.pcx",
-   sprite: "CAmap6.pcx",
-   sprite: "CAmap7.pcx"
+   sprite: "CAmap0",
+   sprite: "CAmap1",
+   sprite: "CAmap2",
+   sprite: "CAmap3",
+   sprite: "CAmap4",
+   sprite: "CAmap5",
+   sprite: "CAmap6",
+   sprite: "CAmap7"
 }
 
 skin: {
@@ -211,10 +206,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D2.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G2.jpg"
+         tex_d: "MAIN_D2"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G2"
    }
 }
 
@@ -228,10 +223,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D3.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G3.jpg"
+         tex_d: "MAIN_D3"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G3"
    }
 }
 
@@ -245,9 +240,9 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D4.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G4.jpg"
+         tex_d: "MAIN_D4"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G4"
    }
 }

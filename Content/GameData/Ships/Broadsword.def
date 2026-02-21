@@ -8,13 +8,7 @@ empire:        Marakan
 description:   "The DD-3C21 BROADSWORD class of destroyers represents the pinnacle of Hegemony warship technology; big, fast, and ready to deliver punishing amounts of damage to all who stand in their way.  The Broadsword class ships extend the basic armament of the older Volnaris class by doubling the number of heavy x-ray laser batteries to four.  As with many Hegemony designs, these weapons are externally mounted and vulnerable to attack from the flanks."
 
 hud_icon:   "BroadHud"
-
-detail_0:   "Volnaris_0.mag"
-feature_0:  1000
-detail_1:   "Broadsword_1opt.mag"
-feature_1:  40
-detail_2:   "Broadsword_2opt.mag"
-feature_2:  20
+model:      "Broadsword"
 
 mass:       27.6e3
 agility:    2 //3.5
@@ -421,14 +415,14 @@ nav:        {
 
 
 map: {
-   sprite: "BroadMap0.pcx",
-   sprite: "BroadMap1.pcx",
-   sprite: "BroadMap2.pcx",
-   sprite: "BroadMap3.pcx",
-   sprite: "BroadMap4.pcx",
-   sprite: "BroadMap5.pcx",
-   sprite: "BroadMap6.pcx",
-   sprite: "BroadMap7.pcx"
+   sprite: "BroadMap0",
+   sprite: "BroadMap1",
+   sprite: "BroadMap2",
+   sprite: "BroadMap3",
+   sprite: "BroadMap4",
+   sprite: "BroadMap5",
+   sprite: "BroadMap6",
+   sprite: "BroadMap7"
 }
 
 
