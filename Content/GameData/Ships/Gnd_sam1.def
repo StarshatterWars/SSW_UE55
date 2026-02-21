@@ -7,7 +7,7 @@ abrv:         SAM
 description:  "The Surface-to-Air Missile Battery is a rapid-response air defense platform designed to engage hostile fighters and inbound strike craft at medium range. Equipped with autonomous tracking and salvo-launch capability, it provides layered protection for installations and fleet staging areas."
 hud_icon:     "hud_sam"
 
-model:        "SAMBase.mag"
+model:        "SAMBase"
 
 mass:       5e3
 integrity:  5e3
@@ -68,5 +68,5 @@ death_spiral: {
    final_loc:        (0, 64, 0),
    }
 
-map: { sprite: "map_sam1.pcx" }
+map: { sprite: "map_sam1" }
 

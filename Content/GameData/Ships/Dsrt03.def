@@ -8,10 +8,7 @@ hud_icon:     "hud_dsrt03"
 description:  "A Deserted Building is an abandoned colonial structure left behind after failed expansion or evacuation. Though officially inactive, such ruins often conceal salvageable technology, hidden supply caches, or unexpected tactical hazards."
 empire:       All
 
-detail_0:   "Dsrt03-0.mag"
-feature_0:  1000
-detail_1:   "Dsrt03-6.mag"
-feature_1:  6
+model:       "Dsrt03"
 
 mass:       5e3
 integrity:  8e3

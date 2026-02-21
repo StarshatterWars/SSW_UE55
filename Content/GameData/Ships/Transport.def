@@ -8,7 +8,7 @@ empire:     All
 description: "The Transport Courier is a compact multi-role vessel used for personnel transfer, priority cargo delivery, and diplomatic movement between systems. Lightly armed but highly reliable, it serves as a dependable utility craft for both military and civilian operations."
 hud_icon:   "TRHud"
 
-model:      "Transport_2opt.mag"
+model:      "Transport"
 
 mass:       19.3e3
 agility:    1
@@ -161,19 +161,19 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     25,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     20,
    debris_life:      15,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,
@@ -182,14 +182,14 @@ death_spiral: {
    }
 
 map: {
-   sprite: "TRmap0.pcx",
-   sprite: "TRmap1.pcx",
-   sprite: "TRmap2.pcx",
-   sprite: "TRmap3.pcx",
-   sprite: "TRmap4.pcx",
-   sprite: "TRmap5.pcx",
-   sprite: "TRmap6.pcx",
-   sprite: "TRmap7.pcx",
+   sprite: "TRmap0",
+   sprite: "TRmap1",
+   sprite: "TRmap2",
+   sprite: "TRmap3",
+   sprite: "TRmap4",
+   sprite: "TRmap5",
+   sprite: "TRmap6",
+   sprite: "TRmap7",
 }
 
 skin: {
@@ -202,10 +202,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D2.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G2.jpg"
+         tex_d: "MAIN_D2"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G2"
    }
 }
 
@@ -219,10 +219,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D3.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G3.jpg"
+         tex_d: "MAIN_D3"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G3"
    }
 }
 
@@ -236,9 +236,9 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D4.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G4.jpg"
+         tex_d: "MAIN_D4"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G4"
    }
 }

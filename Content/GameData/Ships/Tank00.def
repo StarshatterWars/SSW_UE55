@@ -8,10 +8,7 @@ empire:       All
 description:  "The Cryo Tank Facility stores volatile compounds and cryogenically preserved materials essential for industrial processing and fleet resupply. Its reinforced containment structures are designed to prevent catastrophic chain reactions in the event of attack."
 hud_icon:     "hud_tank00"
 
-detail_0:   "Tank00-0.mag"
-feature_0:  1000
-detail_1:   "Tank00-6.mag"
-feature_1:  6
+model:        "Tank00"
 
 mass:       5e3
 integrity:  5e3

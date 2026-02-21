@@ -8,7 +8,7 @@ description:  "The Quad AAA Gun is a four-barrel anti-aerospace defense system e
 empire:       All
 hud_icon:     "hud_aaa4"
 
-model:        "Tower3-6.mag"
+model:        "Tower3"
 
 mass:       5e3
 integrity:  5e3
@@ -62,5 +62,5 @@ death_spiral: {
    }
 
 
-map: { sprite: "map_aaa2.pcx" }
+map: { sprite: "map_aaa2" }
 

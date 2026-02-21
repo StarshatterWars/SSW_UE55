@@ -9,7 +9,7 @@ description:   "The Marakan Freight Transfer Station is a high-throughput cargo 
 
 hud_icon:      "s6hud"
 
-model: "S2opt.mag"
+model:         "MarakanXfer"
 
 mass:       5e6
 integrity:  5e5
@@ -183,7 +183,7 @@ sensor:     {
 
 
 map: {
-   sprite: "s6map.pcx"
+   sprite: "s6map"
 }
 
 death_spiral: {

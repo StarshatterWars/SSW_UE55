@@ -8,10 +8,7 @@ description:  "The Generator Complex provides primary power distribution for pla
 empire:      All
 hud_icon:     "hud_reac01"
 
-detail_0:   "Reactor-0.mag"
-feature_0:  1000
-detail_1:   "Reactor-6.mag"
-feature_1:  6
+model:       "Reactor"
 
 mass:       5e3
 integrity:  5e3

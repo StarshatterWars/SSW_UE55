@@ -8,10 +8,7 @@ empire:        Zolon
 description:   "The ZZCA Zolon Cruiser is a mid-range warship built to enforce Zolon dominance across contested space. Equipped with heavy beam arrays and layered shielding, it serves as both a fleet escort and an independent strike platform in extended campaigns."
 secret:        true
 
-detail_0:   "ZolonB1opt.mag"
-feature_0:  1000
-detail_1:   "ZolonB2opt.mag"
-feature_1:  30
+model:         "ZolonCA"
 
 mass:       218.1e3
 agility:    3
@@ -88,9 +85,9 @@ shield: {
    design:           "Hyper Shield",
    shield_bubble:    true,
    pcs:              100,
-   model:            "ZShieldB2.mag"
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   model:            "ZShieldB2"
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, 0),
    size:             32,
@@ -249,19 +246,19 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris5.mag",
+   debris:           "Debris5",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     15,
    debris_life:      15,
 
-   debris:           "Debris6.mag",
+   debris:           "Debris6",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     15,
    debris_life:      25,
 
-   debris:           "Debris7.mag",
+   debris:           "Debris7",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,

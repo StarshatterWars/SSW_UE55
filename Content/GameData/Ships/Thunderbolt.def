@@ -10,7 +10,7 @@ description:   "The F/A-38D THUNDERBOLT is the primary Alliance attack craft, an
 
 model:         "Thunderbolt"
 
-cockpit_model: "BoltPit2a.mag"
+cockpit_model: "ThunderboltPit"
 cockpit_scale: 0.02
 
 mass:        	29.7

@@ -1389,7 +1389,7 @@ struct FShipDesign : public FTableRowBase {
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString Description;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString	DetailName;
+	FString	Model;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString	ShipClass;
 	
@@ -1405,15 +1405,7 @@ struct FShipDesign : public FTableRowBase {
 	FString	BeautyName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString HudIconName;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString DetailName0;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString DetailName1;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString DetailName2;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	FString DetailName3;
-
+	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int PCS;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1497,8 +1489,6 @@ struct FShipDesign : public FTableRowBase {
 	bool Degrees;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
-	TArray<float> FeatureSize;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<float> EFactor;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -1558,11 +1548,7 @@ struct FShipDesign : public FTableRowBase {
 		Description = "";
 		Abrv = "";
 
-		DetailName0 = "";
-		DetailName1 = "";
-		DetailName2 = "";
-		DetailName3 = "";
-
+		Model = "";
 		ShipClass = "";
 		CockpitName = "";
 		BeautyName = "";
@@ -1613,7 +1599,6 @@ struct FShipDesign : public FTableRowBase {
 		Scuttle = 5e3f;
 		RepairSpeed = 1.0f;
 
-		FeatureSize.SetNum(4);
 		EFactor.SetNum(3);
 		Offset.SetNum(4);
 

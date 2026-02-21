@@ -8,8 +8,8 @@ empire:         Marakan
 description:    "The F6F AVENGER attack fighter is a highly competent assault platform, capable of meeting most any opponent on even ground and providing an edge over the majority of enemy starfighters in service.  The Avenger is the only Hegemony craft in current service that is optimized for the ground attack role in addition to supporting antiship mission profiles.  The Avenger features a four-barrel Alpha cannon and eight (8) missile hardpoints.  However, unlike the Alliance Thunderbolt, the Avenger does not have a gun turret for rear-quarter protection."
 
 hud_icon:       "AvengerHud"
-
-detail_0:       "Avenger"
+  
+model:         "Avenger"
 
 mass:        	27.4
 integrity:   	3500
@@ -249,19 +249,19 @@ gear: {
    hull_factor: 0.5,
 
    gear: {
-      model: "GearNose0.mag",
+      model: "GearNose0",
       start: (0, -25, 144),
       end:   (0, -45, 155)
    },
 
    gear: {
-      model: "GearLeft0.mag",
+      model: "GearLeft0",
       start: (-20, -25, -64),
       end:   (-42, -50, -64),
    },
 
    gear: {
-      model: "GearRight0.mag",
+      model: "GearRight0",
       start: ( 20, -25, -64),
       end:   ( 42, -50, -64),
    },
@@ -321,7 +321,7 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, -32),
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,-2)
    debris_mass:      20
    debris_count:     4
@@ -331,7 +331,7 @@ death_spiral: {
    debris_drag:      0.3
    debris_speed:     195
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,3)
    debris_mass:      20
    debris_count:     3

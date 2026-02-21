@@ -8,7 +8,7 @@ description:   "The Communications Relay Satellite serves as a long-range signal
 empire:        All
 hud_icon:      "hud_relay"
 
-model:      "Relay1.mag"
+model:      "Relay"
 
 mass:       500e3
 integrity:  50e3
@@ -21,7 +21,7 @@ bridge:     (0,    0,  0)
 
 
 map: {
-   sprite: "map_relay.pcx"
+   sprite: "map_relay"
 }
 
 death_spiral: {

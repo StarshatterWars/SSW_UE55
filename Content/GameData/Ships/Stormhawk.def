@@ -10,7 +10,7 @@ description:   "The F-36C STORMHAWK is a compact, multi-role fighter spacecraft.
 
 model:       "Stormhawk"
 
-cockpit_model: "StormPit2b"
+cockpit_model: "StormhawkPit"
 cockpit_scale: 0.02
 
 mass:       15.1

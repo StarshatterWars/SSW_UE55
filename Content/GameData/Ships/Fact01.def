@@ -6,12 +6,9 @@ abrv:         BLDG
 display_name: "Industrial Processing Plant"
 hud_icon:     "hud_fact01"
 description:  "The Industrial Processing Plant (BLDG) refines raw materials into usable alloys, composites, and mechanical subassemblies. Positioned near extraction hubs, it forms the first stage of large-scale planetary manufacturing."
-empire:     All
+empire:       All
 
-detail_0:   "Fact01-0.mag"
-feature_0:  1000
-detail_1:   "Fact01-6.mag"
-feature_1:  6
+model:        "Fact01"
 
 mass:       5e3
 integrity:  10e3

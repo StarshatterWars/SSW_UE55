@@ -9,14 +9,9 @@ description:   "The DD-350 SPECTRE class of destroyers represent the largest and
 
 degrees:    true
 beauty:     (-16, 4, 1.3)
-hud_icon:   "SpectreHud.pcx"
+hud_icon:   "SpectreHud"
 
-detail_0:   "Spectre_0opt.mag"
-feature_0:  1000
-detail_1:   "Spectre_1opt.mag"
-feature_1:  40
-detail_2:   "Spectre_3opt.mag"
-feature_2:  20
+model   :   "Spectre"
 
 mass:       22.5e3
 agility:    3
@@ -130,9 +125,9 @@ shield: {
    type:             2,
    design:           "Grav Shield",
    pcs:              100,
-   model:            "Spectre_Shield.mag",
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   model:            "Spectre_Shield",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, 0),
    size:             32,
@@ -368,31 +363,31 @@ death_spiral: {
    final_loc:        (0, 0, 0),
 
 
-   debris:           "Debris1A.mag",
+   debris:           "Debris1A",
    debris_loc:       (0,0,-450),
    debris_mass:      17e3,
    debris_count:     1,
    debris_life:      350,
 
-   debris:           "Debris1B.mag",
+   debris:           "Debris1B",
    debris_loc:       (220,0,10),
    debris_mass:      13e3,
    debris_count:     1,
    debris_life:      380,
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      54,
    debris_count:     25,
    debris_life:      45,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B ",
    debris_loc:       (0,0,60),
    debris_mass:      43,
    debris_count:     20,
    debris_life:      25,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      32,
    debris_count:     10,
@@ -401,14 +396,14 @@ death_spiral: {
 
 
 map: {
-   sprite: "SpectreMap0.pcx",
-   sprite: "SpectreMap1.pcx",
-   sprite: "SpectreMap2.pcx",
-   sprite: "SpectreMap3.pcx",
-   sprite: "SpectreMap4.pcx",
-   sprite: "SpectreMap5.pcx",
-   sprite: "SpectreMap6.pcx",
-   sprite: "SpectreMap7.pcx"
+   sprite: "SpectreMap0",
+   sprite: "SpectreMap1",
+   sprite: "SpectreMap2",
+   sprite: "SpectreMap3",
+   sprite: "SpectreMap4",
+   sprite: "SpectreMap5",
+   sprite: "SpectreMap6",
+   sprite: "SpectreMap7"
 }
 
 

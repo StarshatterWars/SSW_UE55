@@ -263,10 +263,7 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 	Text LocalDescription = "";
 	Text LocalAbrv = "";
 
-	Text LocalDetailName0 = "";
-	Text LocalDetailName1 = "";
-	Text LocalDetailName2 = "";
-	Text LocalDetailName3 = "";
+	Text LocalModelName = "";
 
 	Text LocalShipClass = "";
 	Text LocalShipEmpire = "";
@@ -314,7 +311,6 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 
 	int32 LocalRepairTeams = 2;
 
-	float LocalFeatureSize[4] = { 0,0,0,0 };
 	float LocalEFactor[3] = { 0.1f, 0.3f, 1.0f };
 
 	bool bLocalRepairAuto = true;
@@ -414,6 +410,11 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 		{
 			GetDefText(LocalAbrv, Def, fn);
 			NewShipDesign.Abrv = FString(LocalAbrv);
+		}
+		else if (Key == "model")
+		{
+			GetDefText(LocalModelName, Def, fn);
+			NewShipDesign.Model = FString(LocalModelName);
 		}
 		else if (Key == "secret")
 		{
@@ -580,26 +581,6 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 			GetDefText(LocalCockpitName, Def, fn);
 			NewShipDesign.CockpitName = FString(LocalCockpitName);
 		}
-		else if (Key == "model" || Key == "detail_0")
-		{
-			GetDefText(LocalDetailName0, Def, fn);
-			NewShipDesign.DetailName0 = FString(LocalDetailName0);
-		}
-		else if (Key == "detail_1")
-		{
-			GetDefText(LocalDetailName1, Def, fn);
-			NewShipDesign.DetailName1 = FString(LocalDetailName1);
-		}
-		else if (Key == "detail_2")
-		{
-			GetDefText(LocalDetailName2, Def, fn);
-			NewShipDesign.DetailName2 = FString(LocalDetailName2);
-		}
-		else if (Key == "detail_3")
-		{
-			GetDefText(LocalDetailName3, Def, fn);
-			NewShipDesign.DetailName3 = FString(LocalDetailName3);
-		}
 		else if (Key == "spin")
 		{
 			FVector V = FVector::ZeroVector;
@@ -657,26 +638,6 @@ void UStarshatterShipDesignSubsystem::LoadShipDesign(const char* InFilename)
 		{
 			GetDefText(LocalHudIconName, Def, fn);
 			NewShipDesign.HudIconName = FString(LocalHudIconName);
-		}
-		else if (Key == "feature_0")
-		{
-			GetDefNumber(LocalFeatureSize[0], Def, fn);
-			NewShipDesign.FeatureSize[0] = LocalFeatureSize[0];
-		}
-		else if (Key == "feature_1")
-		{
-			GetDefNumber(LocalFeatureSize[1], Def, fn);
-			NewShipDesign.FeatureSize[1] = LocalFeatureSize[1];
-		}
-		else if (Key == "feature_2")
-		{
-			GetDefNumber(LocalFeatureSize[2], Def, fn);
-			NewShipDesign.FeatureSize[2] = LocalFeatureSize[2];
-		}
-		else if (Key == "feature_3")
-		{
-			GetDefNumber(LocalFeatureSize[3], Def, fn);
-			NewShipDesign.FeatureSize[3] = LocalFeatureSize[3];
 		}
 		else if (Key == "emcon_1")
 		{

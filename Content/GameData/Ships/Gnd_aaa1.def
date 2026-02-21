@@ -8,7 +8,7 @@ description:  "The AAA Gun is a ground-based anti-aerospace defense platform des
 empire:       All
 hud_icon:     "hud_aaa2"
 
-model:      "Tower3-6.mag"
+model:      "Tower3"
 
 mass:       5e3
 integrity:  5e3
@@ -63,5 +63,5 @@ death_spiral: {
    final_loc:        (0, 64, 0),
    }
 
-map: { sprite: "map_aaa1.pcx" }
+map: { sprite: "map_aaa1" }
 

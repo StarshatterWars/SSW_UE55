@@ -8,7 +8,7 @@ empire:        Marakan
 description:   "The Marakan Orbital Station functions as a regional logistics and command hub, coordinating fleet traffic and resource distribution throughout nearby sectors. While less fortified than a fortress installation, it maintains sufficient defenses to deter opportunistic strikes."
 hud_icon:      "S5map"
 
-model:      "S5opt.mag"
+model:      "S5"
 
 mass:       5e6
 integrity:  1e6
@@ -253,7 +253,7 @@ navlight: {
 }
 
 map: {
-   sprite: "S5map.pcx"
+   sprite: "S5map"
 }
 
 death_spiral: {
@@ -263,11 +263,11 @@ death_spiral: {
    explosion: { type: 13, loc: (0, 100,0), final: true } // Nuke
    explosion: { type: 13, loc: (0,-300,0), final: true } // Nuke
 
-   debris:    { model: "DebrisS41.mag", loc: (-40,-20,900), mass: 68e3, count:  1, life: 560 }
-   debris:    { model: "DebrisS42.mag", loc: (0,0,-470),    mass: 78e3, count:  1, life: 575 }
-   debris:    { model: "Debris0A.mag",      loc: (0,0,0),   mass:   35, count: 20, life:  35 }
-   debris:    { model: "Debris0B.mag",      loc: (0,0,0),   mass:   44, count: 20, life:  45 }
-   debris:    { model: "Debris0C.mag",      loc: (0,0,0),   mass:   23, count: 15, life:  35 }
+   debris:    { model: "DebrisS41", loc: (-40,-20,900), mass: 68e3, count:  1, life: 560 }
+   debris:    { model: "DebrisS42", loc: (0,0,-470),    mass: 78e3, count:  1, life: 575 }
+   debris:    { model: "Debris0A",      loc: (0,0,0),   mass:   35, count: 20, life:  35 }
+   debris:    { model: "Debris0B",      loc: (0,0,0),   mass:   44, count: 20, life:  45 }
+   debris:    { model: "Debris0C",      loc: (0,0,0),   mass:   23, count: 15, life:  35 }
 
 }
 

@@ -7,7 +7,7 @@ abrv:          FF
 
 hud_icon:   "TigerHud"
 
-model: "Hulk-Frigate.mag"
+model: "Hulk-Frigate"
 
 mass:       4.53e3
 agility:    3.8
@@ -87,8 +87,8 @@ shield:     {
    abrv:             Shield
    factor:           0.03,
    consumption:      1500,
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    pcs:              100,
    loc:              (0, 0, 0),
@@ -235,23 +235,23 @@ death_spiral: {
    explosion: { type: 13, final: true } // Nuke
    explosion: { type: 12, final: true } // Large burst
 
-   debris:    { model: "FrigateDebris1.mag",    loc: (0,0,200),  mass:18e3, count:  1, life: 330, fire:  (30,60,20) }
-   debris:    { model: "FrigateDebris2.mag",    loc: (100,0,0),  mass:18e3, count:  1, life: 330 }
-   debris:    { model: "Debris0A.mag",          loc: (0,0,-20),  mass:  55, count: 15, life:  20 }
-   debris:    { model: "Debris0B.mag",          loc: (0,0,-20),  mass:  54, count: 10, life:  35 }
-   debris:    { model: "Debris0C.mag",          loc: (0,0,0),    mass:  53, count: 11, life:  30 }
+   debris:    { model: "FrigateDebris1",    loc: (0,0,200),  mass:18e3, count:  1, life: 330, fire:  (30,60,20) }
+   debris:    { model: "FrigateDebris2",    loc: (100,0,0),  mass:18e3, count:  1, life: 330 }
+   debris:    { model: "Debris0A",          loc: (0,0,-20),  mass:  55, count: 15, life:  20 }
+   debris:    { model: "Debris0B",          loc: (0,0,-20),  mass:  54, count: 10, life:  35 }
+   debris:    { model: "Debris0C",          loc: (0,0,0),    mass:  53, count: 11, life:  30 }
 
    }
 
 map: {
-   sprite: "TigerMap0.pcx",
-   sprite: "TigerMap1.pcx",
-   sprite: "TigerMap2.pcx",
-   sprite: "TigerMap3.pcx",
-   sprite: "TigerMap4.pcx",
-   sprite: "TigerMap5.pcx",
-   sprite: "TigerMap6.pcx",
-   sprite: "TigerMap7.pcx"
+   sprite: "TigerMap0",
+   sprite: "TigerMap1",
+   sprite: "TigerMap2",
+   sprite: "TigerMap3",
+   sprite: "TigerMap4",
+   sprite: "TigerMap5",
+   sprite: "TigerMap6",
+   sprite: "TigerMap7"
 }
 
 

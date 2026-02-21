@@ -6,12 +6,9 @@ class:         STARBASE
 abrv:		   SB
 empire:        Dantari
 description:   "Foothill Base is a Dantari forward-operating starbase constructed to support insurgent fleet movements and rapid strike operations. Built into a defensible orbital position, it combines concealed approach vectors with hardened hangars to sustain prolonged resistance campaigns."
-hud_icon:      "base2_hud.pcx"
+hud_icon:      "base2_hud"
 
-detail_0:   "Base2-0.mag"
-feature_0:  1000
-detail_1:   "Base2-6.mag"
-feature_1:  6
+model:         "Base2"
 
 mass:       5e6
 integrity:  240e3
@@ -119,5 +116,5 @@ death_spiral: {
    final_loc:        (0, 64, 0),
 }
 
-map: { sprite: "base2_map.pcx" }
+map: { sprite: "base2_map" }
 

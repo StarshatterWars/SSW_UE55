@@ -6,12 +6,9 @@ class:         STARBASE
 abrv:		   SB
 empire:        Dantari
 description:   "Tanis Base is a Dantari deep-space stronghold serving as a coordination hub for fleet patrols and supply convoys. Its reinforced superstructure and dispersed command sectors allow it to remain operational even under sustained assault."
-hud_icon:      "base2_hud.pcx"
+hud_icon:      "base2_hud"
 
-detail_0:   "Base3-0.mag"
-feature_0:  1000
-detail_1:   "Base3-6.mag"
-feature_1:  6
+model:         "Tanis"
 
 mass:       5e6
 integrity:  240e3
@@ -120,5 +117,5 @@ death_spiral: {
    final_loc:        (0, 64, 0),
 }
 
-map: { sprite: "base2_map.pcx" }
+map: { sprite: "base2_map" }
 

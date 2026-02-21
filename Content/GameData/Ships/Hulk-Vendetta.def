@@ -7,7 +7,7 @@ abrv:          CA
 
 hud_icon:   "VendettaHud"
 
-model: "Hulk-Vendetta.mag"
+model: "Hulk-Vendetta"
 
 mass:       568.1e3
 agility:    2
@@ -98,8 +98,8 @@ shield: {
    design:           "Grav Shield",
    abrv:             "Shield"
    pcs:              100,
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, -80),
    size:             48,
@@ -410,14 +410,14 @@ nav:        {
 
 
 map: {
-   sprite: "VendettaMap0.pcx",
-   sprite: "VendettaMap1.pcx",
-   sprite: "VendettaMap2.pcx",
-   sprite: "VendettaMap3.pcx",
-   sprite: "VendettaMap4.pcx",
-   sprite: "VendettaMap5.pcx",
-   sprite: "VendettaMap6.pcx",
-   sprite: "VendettaMap7.pcx"
+   sprite: "VendettaMap0",
+   sprite: "VendettaMap1",
+   sprite: "VendettaMap2",
+   sprite: "VendettaMap3",
+   sprite: "VendettaMap4",
+   sprite: "VendettaMap5",
+   sprite: "VendettaMap6",
+   sprite: "VendettaMap7"
 }
 
 
@@ -432,12 +432,12 @@ death_spiral: {
    explosion: { type: 13, final: true } // Nuke
    explosion: { type: 12, final: true } // Large burst
 
-   debris:    { model: "MussonDebris1.mag", loc: (0,0,400), mass: 98e3, count:  1, life: 380,
+   debris:    { model: "MussonDebris1", loc: (0,0,400), mass: 98e3, count:  1, life: 380,
                 fire:  (60,0,-200), fire:  (100,20,80) }
-   debris:    { model: "MussonDebris2.mag", loc: (140,-120,0), mass: 38e3, count:  1, life: 360 }
-   debris:    { model: "Debris0A.mag",      loc: (0,0,-50), mass:   95, count: 20, life:  20 }
-   debris:    { model: "Debris0B.mag",      loc: (0,0,-50), mass:   44, count: 15, life:  35 }
-   debris:    { model: "Debris0C.mag",      loc: (0,0,0),   mass:   23, count: 10, life:  30 }
+   debris:    { model: "MussonDebris2", loc: (140,-120,0), mass: 38e3, count:  1, life: 360 }
+   debris:    { model: "Debris0A",      loc: (0,0,-50), mass:   95, count: 20, life:  20 }
+   debris:    { model: "Debris0B",      loc: (0,0,-50), mass:   44, count: 15, life:  35 }
+   debris:    { model: "Debris0C",      loc: (0,0,0),   mass:   23, count: 10, life:  30 }
 
 }
 

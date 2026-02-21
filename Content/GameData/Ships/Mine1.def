@@ -8,10 +8,7 @@ empire:        Dantari
 description:   "The Blockade Mine is a concealed proximity explosive deployed to deny access to strategic corridors and orbital approaches. Triggered by hostile signatures, it delivers a devastating detonation capable of crippling even heavily armored vessels."
 hud_icon:      "MineHud"
 
-detail_0:   "Mine1.mag"
-feature_0:  1000
-detail_1:   "Mine2.mag"
-feature_1:  8
+model:         "Mine"
 
 mass:       100
 agility:    0
@@ -112,17 +109,17 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     7,
    debris_life:      27,
 
-   debris:           "Debris6.mag",
+   debris:           "Debris6",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     5,
    debris_life:      25,
 }
 
-map: { sprite: "MineMap.pcx" }
+map: { sprite: "MineMap" }

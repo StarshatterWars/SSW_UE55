@@ -8,10 +8,7 @@ description:   "The ZZF Zolon Fighter is a nimble interceptor craft deployed in 
 empire:        Zolon
 secret:        true
 
-detail_0:   "ZFighter_1.mag"
-feature_0:  1000
-detail_1:   "ZFighter_2.mag"
-feature_1:  20
+model:         "ZFighter"
 
 mass:       18
 integrity:  30e3
@@ -147,4 +144,4 @@ death_spiral: {
    final_loc:        (0, 0, -32),
 }
 
-map: { sprite: "zmap.pcx" }
+map: { sprite: "zmap" }
