@@ -120,6 +120,33 @@ static FMargin ToFMargin(const Insets& in)
 	return FMargin((float)in.left, (float)in.top, (float)in.right, (float)in.bottom);
 }
 
+void BuildRankCache(const UDataTable* RanksTable, TMap<int32, FRankInfo>& OutById)
+{
+	OutById.Reset();
+	if (!RanksTable) return;
+
+	static const FString Ctx(TEXT("BuildRankCache"));
+	TArray<FRankInfo*> Rows;
+	RanksTable->GetAllRows<FRankInfo>(Ctx, Rows);
+
+	for (const FRankInfo* Row : Rows)
+		if (Row && Row->RankId > 0)
+			OutById.Add(Row->RankId, *Row);
+}
+
+void BuildMedalCache(const UDataTable* MedalsTable, TMap<int32, FMedalInfo>& OutById)
+{
+	OutById.Reset();
+	if (!MedalsTable) return;
+
+	static const FString Ctx(TEXT("BuildMedalCache"));
+	TArray<FMedalInfo*> Rows;
+	MedalsTable->GetAllRows<FMedalInfo>(Ctx, Rows);
+
+	for (const FMedalInfo* Row : Rows)
+		if (Row && Row->MedalId > 0) // or AwardId
+			OutById.Add(Row->MedalId, *Row);
+}
 void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -1009,7 +1036,10 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 
 	LoadGalaxyMap();
 	LoadStarsystems();
-	LoadAwardTables();
+	//LoadAwardTables();
+
+	BuildRankCache(RanksDataTable, RankById);
+	BuildMedalCache(MedalsDataTable, MedalById);
 
 	InitializeCampaignData();
 	InitializeCombatRoster();
@@ -6497,9 +6527,9 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 			RankRow.Desc = FString(LocalDesc);
 			RankRow.AwardText = FString(LocalAwardText);
 
-			RankRow.SmallImage = FString(LocalSmall);
-			RankRow.LargeImage = FString(LocalLarge);
-			RankRow.GrantSound = FString(LocalGrantSound);
+			RankRow.SmallImageId = FString(LocalSmall);
+			RankRow.LargeImageId = FString(LocalLarge);
+			RankRow.GrantSoundId = FString(LocalGrantSound);
 
 			RankRow.GrantedShipClasses = LocalGrant;
 			RankRow.TotalPoints = LocalTotalPoints;
@@ -6523,10 +6553,9 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 			MedalRow.Name = NameStr;
 			MedalRow.Desc = FString(LocalDesc);
 			MedalRow.AwardText = FString(LocalAwardText);
-
-			MedalRow.SmallImage = FString(LocalSmall);
-			MedalRow.LargeImage = FString(LocalLarge);
-			MedalRow.GrantSound = FString(LocalGrantSound);
+			MedalRow.SmallImageId = FString(LocalSmall);
+			MedalRow.LargeImageId = FString(LocalLarge);
+			MedalRow.GrantSoundId = FString(LocalGrantSound);
 
 			MedalRow.CampaignId = LocalCampaignId;
 			MedalRow.bCampaignCompleteRequired = bLocalCampaignComplete;
@@ -6561,4 +6590,74 @@ void UStarshatterGameDataSubsystem::LoadAwardTables()
 
 	UE_LOG(LogTemp, Log, TEXT("LoadAwardTables: complete. Ranks=%d Medals=%d"),
 		RankCount, MedalCount);
+}
+
+bool UStarshatterGameDataSubsystem::FillRankInfoFromTable(const UDataTable* RanksTable, int32 RankId, FRankInfo& OutRank)
+{
+	if (!RanksTable || RankId <= 0)
+		return false;
+
+	static const FString Ctx(TEXT("FillRankInfoFromTable"));
+
+	TArray<FRankInfo*> Rows;
+	RanksTable->GetAllRows<FRankInfo>(Ctx, Rows);
+
+	for (const FRankInfo* Row : Rows)
+	{
+		if (!Row)
+			continue;
+
+		if (Row->RankId == RankId)
+		{
+			OutRank = *Row;   // COPY the whole struct (including your soft refs)
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool UStarshatterGameDataSubsystem::FillMedalInfoFromTable(const UDataTable* MedalsTable, int32 MedalId, FMedalInfo& OutMedal)
+{
+	if (!MedalsTable || MedalId <= 0)
+		return false;
+
+	static const FString Ctx(TEXT("FillMedalInfoFromTable"));
+
+	TArray<FMedalInfo*> Rows;
+	MedalsTable->GetAllRows<FMedalInfo>(Ctx, Rows);
+
+	for (const FMedalInfo* Row : Rows)
+	{
+		if (!Row)
+			continue;
+
+		if (Row->MedalId == MedalId) // <- change to AwardId if that’s what your struct uses
+		{
+			OutMedal = *Row;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool UStarshatterGameDataSubsystem::GetRankInfo(int32 RankId, FRankInfo& Out) const
+{
+	if (const FRankInfo* Found = RankById.Find(RankId))
+	{
+		Out = *Found;
+		return true;
+	}
+	return false;
+}
+
+bool UStarshatterGameDataSubsystem::GetMedalInfo(int32 MedalId, FMedalInfo& Out) const
+{
+	if (const FMedalInfo* Found = MedalById.Find(MedalId))
+	{
+		Out = *Found;
+		return true;
+	}
+	return false;
 }

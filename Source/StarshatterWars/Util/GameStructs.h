@@ -3832,13 +3832,24 @@ struct FRankInfo : public FTableRowBase
 	FString AwardText;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
-	FString GrantSound;
+	FString GrantSoundId;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
-	FString LargeImage;
+	FString LargeImageId;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
-	FString SmallImage;
+	FString SmallImageId;
+
+	// Sound should be a soft object pointer
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rank")
+	TSoftObjectPtr<USoundBase> GrantSound;
+
+	// UI images as soft refs
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rank")
+	TSoftObjectPtr<UTexture2D> LargeImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rank")
+	TSoftObjectPtr<UTexture2D> SmallImage;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Rank")
 	int32 GrantedShipClasses = 0;
@@ -3865,13 +3876,24 @@ struct FMedalInfo : public FTableRowBase
 	FString AwardText;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
-	FString LargeImage;
+	FString LargeImageId;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
-	FString SmallImage;
+	FString SmallImageId;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
-	FString GrantSound;
+	FString GrantSoundId;
+
+	// Sound should be a soft object pointer
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Medal")
+	TSoftObjectPtr<USoundBase> GranSound;
+
+	// UI images as soft refs
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Medal")
+	TSoftObjectPtr<UTexture2D> LargeImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Medal")
+	TSoftObjectPtr<UTexture2D> SmallImage;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Medal")
 	int32 CampaignId = 0;

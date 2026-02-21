@@ -65,12 +65,14 @@ protected:
     UFUNCTION()
     void OnCancel();
 
+    void ApplyMedalsMask(uint32 MedalsMask);
+
     // -------- Row builders --------
     UHorizontalBox* AddStatRow(const FText& Label, UWidget* RightWidget, float RightWidth = 420.f, float RowPadY = 6.f);
     UTextBlock* MakeValueText();
     UEditableTextBox* MakeEditBox(bool bPassword = false);
 
-    void BuildMedalsGrid(int32 Columns = 5, int32 Rows = 3);
+    void BuildMedalsGrid(int32 Columns = 4, int32 Rows = 4);
     void BuildChatMacrosRows();
 
     // No lambdas:
@@ -153,4 +155,11 @@ protected:
 
     UPROPERTY()
     TArray<TObjectPtr<UEditableTextBox>> MacroEdits; // 10
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<class UUniformGridPanel> grid_medals;
+
+    // Optional cached “empty slot” texture:
+    UPROPERTY(EditDefaultsOnly, Category = "Awards")
+    TSoftObjectPtr<UTexture2D> MedalEmptyTexture;
 };

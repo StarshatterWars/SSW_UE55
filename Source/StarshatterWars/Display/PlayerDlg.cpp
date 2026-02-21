@@ -49,9 +49,33 @@
 
 // Subsystem + data
 #include "StarshatterPlayerSubsystem.h"
+#include "StarshatterGameDataSubsystem.h"
 #include "GameStructs.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPlayerDlg, Log, All);
+
+static UStarshatterGameDataSubsystem* GetGameDataSS(const UObject* WorldContext)
+{
+    if (!WorldContext) return nullptr;
+    if (const UGameInstance* GI = WorldContext->GetWorld() ? WorldContext->GetWorld()->GetGameInstance() : nullptr)
+        return GI->GetSubsystem<UStarshatterGameDataSubsystem>();
+    return nullptr;
+}
+
+static void SetImageTextureFixed64(UImage* Img, UTexture2D* Tex)
+{
+    if (!Img) return;
+
+    FSlateBrush Brush = Img->GetBrush();
+
+    Brush.SetResourceObject(Tex);
+    Brush.DrawAs = ESlateBrushDrawType::Image;
+    Brush.ImageSize = FVector2D(64.f, 64.f);   // <- lock brush size
+
+    Img->SetBrush(Brush);
+
+    Img->SetDesiredSizeOverride(FVector2D(64.f, 64.f)); 
+}
 
 UPlayerDlg::UPlayerDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -106,6 +130,10 @@ void UPlayerDlg::NativeConstruct()
         DeletePlayerButton->OnClicked.RemoveAll(this);
         DeletePlayerButton->OnClicked.AddUniqueDynamic(this, &UPlayerDlg::OnDel);
     }
+
+    BuildMedalsGrid(4, 4); 
+
+    RefreshUIFromSubsystem(); 
 
     EnsureLayout();
     EnsureScrollHostsStats();
@@ -407,7 +435,7 @@ void UPlayerDlg::BuildStatsRows()
 
     img_rank = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("RankImage"));
     if (img_rank)
-        AddStatRow(FText::FromString(TEXT("INSIGNIA")), img_rank, 160.f);
+        AddStatRow(FText::FromString(TEXT("INSIGNIA")), img_rank, 64.0f);
 
     // MEDALS
     {
@@ -426,7 +454,7 @@ void UPlayerDlg::BuildStatsRows()
                 S->SetPadding(FMargin(0.f, 0.f, 0.f, 18.f));
         }
 
-        BuildMedalsGrid(5, 3);
+        BuildMedalsGrid(4, 4);
     }
 
     // CHAT MACROS
@@ -443,42 +471,50 @@ void UPlayerDlg::BuildStatsRows()
     }
 }
 
-void UPlayerDlg::BuildMedalsGrid(int32 Columns, int32 Rows)
+void UPlayerDlg::BuildMedalsGrid(int32 Rows, int32 Cols)
 {
-    if (!WidgetTree || !medals_grid)
+    MedalImages.Reset();
+
+    if (!medals_grid || !WidgetTree)
         return;
 
     medals_grid->ClearChildren();
-    MedalImages.Reset();
 
-    const int32 Total = Columns * Rows;
+    const int32 Total = Rows * Cols; // 16
 
-    for (int32 idx = 0; idx < Total; ++idx)
+    for (int32 i = 0; i < Total; ++i)
     {
-        const int32 r = idx / Columns;
-        const int32 c = idx % Columns;
+        const int32 R = i / Cols;
+        const int32 C = i % Cols;
 
-        UImage* Img = WidgetTree->ConstructWidget<UImage>(
-            UImage::StaticClass(),
-            *FString::Printf(TEXT("Medal_%02d"), idx)
-        );
+        // Create the image
+        UImage* Img = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(),
+            *FString::Printf(TEXT("img_medal_%02d"), i + 1));
 
-        USizeBox* Wrap = WidgetTree->ConstructWidget<USizeBox>(
-            USizeBox::StaticClass(),
-            *FString::Printf(TEXT("MedalWrap_%02d"), idx)
-        );
+        // Wrap in SizeBox to FORCE 64x64 and stop UniformGrid stretch
+        USizeBox* SB = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(),
+            *FString::Printf(TEXT("sb_medal_%02d"), i + 1));
 
-        if (!Img || !Wrap)
-            continue;
+        SB->SetWidthOverride(64.f);
+        SB->SetHeightOverride(64.f);
+        SB->AddChild(Img);
 
-        Wrap->SetWidthOverride(82.f);
-        Wrap->SetHeightOverride(21.f);
-        Wrap->AddChild(Img);
+        // Default brush setup
+        Img->SetOpacity(0.2f);
+        Img->SetVisibility(ESlateVisibility::HitTestInvisible);
 
-        if (UUniformGridSlot* CSlot = medals_grid->AddChildToUniformGrid(Wrap, r, c))
+        // Important: make the brush 64x64 too (prevents brush-resize weirdness)
         {
-            CSlot->SetHorizontalAlignment(HAlign_Center);
-            CSlot->SetVerticalAlignment(VAlign_Center);
+            FSlateBrush B = Img->GetBrush();
+            B.ImageSize = FVector2D(64.f, 64.f);
+            Img->SetBrush(B);
+        }
+
+        // Add to grid
+        if (UUniformGridSlot* GSlot = medals_grid->AddChildToUniformGrid(SB, R, C))
+        {
+            GSlot->SetHorizontalAlignment(HAlign_Center);
+            GSlot->SetVerticalAlignment(VAlign_Center);
         }
 
         MedalImages.Add(Img);
@@ -572,18 +608,21 @@ void UPlayerDlg::RefreshUIFromSubsystem()
     UE_LOG(LogPlayerDlg, Warning, TEXT("[PlayerDlg] Refresh: Name='%s' Callsign='%s' Empire=%d Rank=%d"),
         *Info.Name, *Info.Callsign, Info.Empire, Info.Rank);
 
+    // ------------------------------------------------------------
     // Left panel
+    // ------------------------------------------------------------
     if (txt_profile_name)
         txt_profile_name->SetText(FText::FromString(Info.Name.IsEmpty() ? TEXT("<UNNAMED>") : Info.Name));
 
-    // Editable fields (FIXED: callsign goes into edt_callsign)
+    // Editable fields
     if (edt_name)      edt_name->SetText(FText::FromString(Info.Name));
     if (edt_callsign)  edt_callsign->SetText(FText::FromString(Info.Callsign));
     if (edt_squadron)  edt_squadron->SetText(FText::FromString(Info.Squadron));
     if (edt_signature) edt_signature->SetText(FText::FromString(Info.Signature));
 
     // Password not in FS_PlayerGameInfo (leave blank)
-    if (edt_password) edt_password->SetText(FText::GetEmpty());
+    if (edt_password)
+        edt_password->SetText(FText::GetEmpty());
 
     // Read-only
     if (txt_created)    txt_created->SetText(FText::FromString(UFormattingUtils::FormatDateFromUnixSeconds(Info.CreateTime)));
@@ -593,19 +632,9 @@ void UPlayerDlg::RefreshUIFromSubsystem()
     if (txt_losses)     txt_losses->SetText(FText::AsNumber(Info.PlayerLosses));
     if (txt_points)     txt_points->SetText(FText::AsNumber(Info.PlayerPoints));
 
-    // Rank text
-    if (txt_rank)
-    {
-        const int32 RankId = Info.Rank;
-        const TCHAR* RankName = UAwardInfoRegistry::RankName(RankId);
-
-        if (RankName && FCString::Strlen(RankName) > 0)
-            txt_rank->SetText(FText::FromString(RankName));
-        else
-            txt_rank->SetText(FText::FromString(TEXT("UNKNOWN RANK")));
-    }
-
+    // ------------------------------------------------------------
     // Empire text
+    // ------------------------------------------------------------
     if (txt_empire)
     {
         const UEnum* Enum = StaticEnum<EEMPIRE_NAME>();
@@ -615,7 +644,80 @@ void UPlayerDlg::RefreshUIFromSubsystem()
             txt_empire->SetText(FText::FromString(TEXT("UNKNOWN EMPIRE")));
     }
 
+    // ------------------------------------------------------------
+    // GameData subsystem for Rank + Medals
+    // Rank is 0-based in save; tables are 1-based -> +1.
+    // ------------------------------------------------------------
+    const int32 RankId = Info.Rank + 1;
+
+    UStarshatterGameDataSubsystem* GD = nullptr;
+    if (UWorld* W = GetWorld())
+    {
+        if (UGameInstance* GI = W->GetGameInstance())
+            GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>();
+    }
+
+    if (GD)
+    {
+        // -------------------------
+        // RANK (text + 64x64 icon)
+        // -------------------------
+        FRankInfo RankRow;
+        const bool bHaveRank = GD->GetRankInfo(RankId, RankRow);
+
+        if (txt_rank)
+        {
+            const FString RankNameStr = bHaveRank ? RankRow.Name : FString();
+            txt_rank->SetText(!RankNameStr.IsEmpty()
+                ? FText::FromString(RankNameStr)
+                : FText::FromString(TEXT("UNKNOWN RANK")));
+        }
+
+        if (img_rank)
+        {
+            UTexture2D* Tex = nullptr;
+
+            if (bHaveRank)
+            {
+                // NOTE: adjust field name if your struct uses SmallRankTexture etc.
+                if (RankRow.SmallImage.IsValid())
+                    Tex = RankRow.SmallImage.Get();
+                else if (!RankRow.SmallImage.IsNull())
+                    Tex = RankRow.SmallImage.LoadSynchronous();
+            }
+
+            img_rank->SetBrushFromTexture(Tex, true);
+            SetImageTextureFixed64(img_rank, Tex); // ensure brush ImageSize=64x64 + desired size override
+            img_rank->SetVisibility(Tex ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+        }
+
+        // -------------------------
+        // MEDALS (fixed 16-slot 4x4 board)
+        // bit 0..15 => MedalId 1..16
+        // -------------------------
+        ApplyMedalsMask((uint32)Info.MedalsMask);
+    }
+    else
+    {
+        // Fallback: legacy registry for text only
+        if (txt_rank)
+        {
+            const TCHAR* RankName = UAwardInfoRegistry::RankName(RankId);
+            txt_rank->SetText((RankName && FCString::Strlen(RankName) > 0)
+                ? FText::FromString(RankName)
+                : FText::FromString(TEXT("UNKNOWN RANK")));
+        }
+
+        if (img_rank)
+            img_rank->SetVisibility(ESlateVisibility::Collapsed);
+
+        // If no GD, just dim/clear medals
+        ApplyMedalsMask((uint32)Info.MedalsMask);
+    }
+
+    // ------------------------------------------------------------
     // Macros
+    // ------------------------------------------------------------
     if (MacroEdits.Num() == 10)
     {
         for (int32 i = 0; i < 10; ++i)
@@ -627,8 +729,6 @@ void UPlayerDlg::RefreshUIFromSubsystem()
             MacroEdits[i]->SetText(FText::FromString(V));
         }
     }
-
-    // Medal imagery can be hooked later using Info.MedalsMask
 }
 
 // ------------------------------------------------------------------------
@@ -663,4 +763,59 @@ void UPlayerDlg::OnCancel()
         manager->ShowMenuDlg();
     else
         HideDlg();
+}
+
+void UPlayerDlg::ApplyMedalsMask(uint32 MedalsMask)
+{
+    const int32 Count = FMath::Min(MedalImages.Num(), 16);
+
+    // Get GD once
+    UStarshatterGameDataSubsystem* GD = nullptr;
+    if (UWorld* W = GetWorld())
+        if (UGameInstance* GI = W->GetGameInstance())
+            GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>();
+
+    for (int32 Bit = 0; Bit < Count; ++Bit)
+    {
+        UImage* Img = MedalImages[Bit];
+        if (!Img) continue;
+
+        const bool bHasMedal = ((MedalsMask >> Bit) & 1u) != 0;
+
+        // Always visible in a fixed board; just dim if not owned
+        Img->SetOpacity(bHasMedal ? 1.0f : 0.2f);
+
+        if (!bHasMedal)
+        {
+            Img->SetBrushFromTexture(nullptr, true);
+            // keep brush size 64
+            FSlateBrush B = Img->GetBrush();
+            B.ImageSize = FVector2D(64.f, 64.f);
+            Img->SetBrush(B);
+            continue;
+        }
+
+        const int32 MedalId = Bit + 1; // bit0->id1
+
+        UTexture2D* MedalTex = nullptr;
+        if (GD)
+        {
+            FMedalInfo MedalRow;
+            if (GD->GetMedalInfo(MedalId, MedalRow))
+            {
+                // adjust field name to your soft texture ptr
+                if (MedalRow.SmallImage.IsValid())
+                    MedalTex = MedalRow.SmallImage.Get();
+                else if (!MedalRow.SmallImage.IsNull())
+                    MedalTex = MedalRow.SmallImage.LoadSynchronous();
+            }
+        }
+
+        Img->SetBrushFromTexture(MedalTex, true);
+
+        // Force 64x64 brush size (prevents stretching)
+        FSlateBrush B = Img->GetBrush();
+        B.ImageSize = FVector2D(64.f, 64.f);
+        Img->SetBrush(B);
+    }
 }

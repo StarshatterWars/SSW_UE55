@@ -52,6 +52,9 @@
 #include "Components/VerticalBoxSlot.h"
 #include "Components/ContentWidget.h"
 
+#include "Components/UniformGridPanel.h"
+#include "Components/UniformGridSlot.h"
+
 #include "BaseScreen.generated.h"
 
 // ====================================================================
@@ -472,6 +475,8 @@ public:
     UPROPERTY(EditAnywhere, Category = "Starshatter|UI|Theme")
     FLinearColor UITextColor = FLinearColor::White;
 
+
+
 protected:
     // ----------------------------------------------------------------
     // Binding helpers (call from BindFormWidgets)
@@ -747,4 +752,5 @@ protected:
 private:
     UPROPERTY()
     bool  bIsShown;
+    
 };

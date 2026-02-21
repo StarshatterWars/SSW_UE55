@@ -45,6 +45,8 @@
 #include "Fonts/SlateFontInfo.h"
 #include "Engine/Font.h"
 
+#include "StarshatterGameDataSubsystem.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogBaseScreen, Log, All);
 
 
@@ -2087,3 +2089,6 @@ UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(const UWidget* Root) const
 
     return nullptr;
 }
+
+
+

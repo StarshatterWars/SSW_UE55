@@ -217,6 +217,12 @@ public:
     void LoadContentBundle();
     void LoadAwardTables();
 
+    bool GetRankInfo(int32 RankId, FRankInfo& Out) const;
+    bool GetMedalInfo(int32 MedalId, FMedalInfo& Out) const;
+
+    bool FillRankInfoFromTable(const UDataTable* RanksTable, int32 RankId, FRankInfo& OutRank);
+    bool FillMedalInfoFromTable(const UDataTable* MedalsTable, int32 MedalId, FMedalInfo& OutMedal);
+
     UFUNCTION(BlueprintPure, Category = "Starshatter|Awards")
     UDataTable* GetRanksTable() const { return DT_Ranks; }
 
@@ -226,6 +232,10 @@ public:
     // Optional: unified view
     UFUNCTION(BlueprintPure, Category = "Starshatter|Awards")
     UDataTable* GetAllAwardsTable() const { return DT_AwardsAll; }
+
+
+    TMap<int32, FRankInfo> RankById;
+    TMap<int32, FMedalInfo> MedalById;
 
     // =====================================================================
     // Lifetime / state
