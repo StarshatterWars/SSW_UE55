@@ -712,8 +712,8 @@ void UPlayerDlg::RefreshUIFromSubsystem()
         // MEDALS (fixed 16-slot 4x4 board)
         // bit 0..15 => MedalId 1..16
         // -------------------------
-        ApplyMedalsMask((uint32)Info.MedalsMask);
-        //ApplyMedalsMask(0xFFFF);
+        //ApplyMedalsMask((uint32)Info.MedalsMask);
+        ApplyMedalsMask(0xFFFF);
     }
     else
     {
