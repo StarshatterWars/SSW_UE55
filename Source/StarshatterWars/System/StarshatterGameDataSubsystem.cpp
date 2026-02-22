@@ -1040,6 +1040,7 @@ void UStarshatterGameDataSubsystem::LoadAll(bool bFull)
 
 	BuildRankCache(RanksDataTable, RankById);
 	BuildMedalCache(MedalsDataTable, MedalById);
+	BuildMedalCache_ByFlag(MedalsDataTable);
 
 	InitializeCampaignData();
 	InitializeCombatRoster();
@@ -6660,4 +6661,59 @@ bool UStarshatterGameDataSubsystem::GetMedalInfo(int32 MedalId, FMedalInfo& Out)
 		return true;
 	}
 	return false;
+}
+
+
+bool UStarshatterGameDataSubsystem::GetMedalInfoByFlag(uint32 MedalFlag, FMedalInfo& OutRow) const
+{
+	if (const FMedalInfo* Found = MedalByFlag.Find(MedalFlag))
+	{
+		OutRow = *Found;
+		return true;
+	}
+	return false;
+}
+
+// Key is MedalFlag (1,2,4,8...).
+void UStarshatterGameDataSubsystem::BuildMedalCache_ByFlag(const UDataTable* MedalsTable)
+{
+	MedalByFlag.Reset();
+
+	if (!MedalsTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[GameData] BuildMedalCache_ByFlag: MedalsTable is NULL"));
+		return;
+	}
+
+	static const FString Ctx(TEXT("BuildMedalCache_ByFlag"));
+	TArray<FMedalInfo*> Rows;
+	MedalsTable->GetAllRows<FMedalInfo>(Ctx, Rows);
+
+	UE_LOG(LogTemp, Warning, TEXT("[GameData] Medal rows found: %d"), Rows.Num());
+
+	for (const FMedalInfo* Row : Rows)
+	{
+		if (!Row)
+			continue;
+
+		const uint32 Flag = (uint32)Row->MedalId;
+
+		if (Flag == 0)
+			continue;
+
+		// Must be power-of-two (bit flag)
+		if ((Flag & (Flag - 1)) != 0)
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("[GameData] MedalId %u is not power-of-two; skipping."),
+				Flag);
+			continue;
+		}
+
+		MedalByFlag.Add(Flag, *Row);
+	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[GameData] MedalByFlag cache built: %d entries"),
+		MedalByFlag.Num());
 }

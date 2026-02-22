@@ -220,6 +220,10 @@ public:
     bool GetRankInfo(int32 RankId, FRankInfo& Out) const;
     bool GetMedalInfo(int32 MedalId, FMedalInfo& Out) const;
 
+    bool GetMedalInfoByFlag(uint32 MedalFlag, FMedalInfo& OutRow) const;
+
+    void BuildMedalCache_ByFlag(const UDataTable* MedalsTable);
+
     bool FillRankInfoFromTable(const UDataTable* RanksTable, int32 RankId, FRankInfo& OutRank);
     bool FillMedalInfoFromTable(const UDataTable* MedalsTable, int32 MedalId, FMedalInfo& OutMedal);
 
@@ -232,10 +236,10 @@ public:
     // Optional: unified view
     UFUNCTION(BlueprintPure, Category = "Starshatter|Awards")
     UDataTable* GetAllAwardsTable() const { return DT_AwardsAll; }
-
-
+    
     TMap<int32, FRankInfo> RankById;
     TMap<int32, FMedalInfo> MedalById;
+    TMap<uint32, FMedalInfo> MedalByFlag;
 
     // =====================================================================
     // Lifetime / state

@@ -67,6 +67,8 @@ protected:
 
     void ApplyMedalsMask(uint32 MedalsMask);
 
+    void Debug_ShowAllMedals();
+
     // -------- Row builders --------
     UHorizontalBox* AddStatRow(const FText& Label, UWidget* RightWidget, float RightWidth = 420.f, float RowPadY = 6.f);
     UTextBlock* MakeValueText();

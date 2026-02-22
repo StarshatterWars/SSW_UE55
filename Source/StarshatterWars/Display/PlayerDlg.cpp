@@ -77,6 +77,16 @@ static void SetImageTextureFixed64(UImage* Img, UTexture2D* Tex)
     Img->SetDesiredSizeOverride(FVector2D(64.f, 64.f)); 
 }
 
+static int32 MedalFlagToSlotIndex(uint32 MedalFlag)
+{
+    // MedalFlag must be power-of-two: 1,2,4,8...
+    if (MedalFlag == 0 || (MedalFlag & (MedalFlag - 1)) != 0)
+        return INDEX_NONE;
+
+    // log2 for power-of-two:
+    return FMath::CountTrailingZeros(MedalFlag); // 1->0, 2->1, 4->2, 8->3 ...
+}
+
 UPlayerDlg::UPlayerDlg(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -132,6 +142,8 @@ void UPlayerDlg::NativeConstruct()
     }
 
     BuildMedalsGrid(4, 4); 
+    Debug_ShowAllMedals();   // TEST: force show all 16
+
 
     RefreshUIFromSubsystem(); 
 
@@ -448,12 +460,23 @@ void UPlayerDlg::BuildStatsRows()
         }
 
         medals_grid = WidgetTree->ConstructWidget<UUniformGridPanel>(UUniformGridPanel::StaticClass(), TEXT("MedalsGrid"));
+
         if (medals_grid)
         {
-            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(medals_grid))
-                S->SetPadding(FMargin(0.f, 0.f, 0.f, 18.f));
-        }
+            // Wrap grid to prevent stretching
+            USizeBox* GridBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("MedalsGridBox"));
 
+            // 4 medals × 64px + spacing (let's assume 4px spacing)
+            GridBox->SetWidthOverride(4 * 64.f + 3 * 4.f);
+
+            GridBox->AddChild(medals_grid);
+
+            if (UVerticalBoxSlot* S = StatsVBox->AddChildToVerticalBox(GridBox))
+            {
+                S->SetHorizontalAlignment(HAlign_Right);  // prevents full width stretch
+                S->SetPadding(FMargin(0.f, 0.f, 0.f, 18.f));
+            }
+        }
         BuildMedalsGrid(4, 4);
     }
 
@@ -471,50 +494,44 @@ void UPlayerDlg::BuildStatsRows()
     }
 }
 
-void UPlayerDlg::BuildMedalsGrid(int32 Rows, int32 Cols)
+void UPlayerDlg::BuildMedalsGrid(int32 Cols, int32 Rows)
 {
-    MedalImages.Reset();
-
     if (!medals_grid || !WidgetTree)
         return;
 
     medals_grid->ClearChildren();
+    MedalImages.Reset();
 
-    const int32 Total = Rows * Cols; // 16
+    const int32 Total = Cols * Rows; // 16
 
     for (int32 i = 0; i < Total; ++i)
     {
-        const int32 R = i / Cols;
-        const int32 C = i % Cols;
+        USizeBox* SB = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+        UImage* Img = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
 
-        // Create the image
-        UImage* Img = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(),
-            *FString::Printf(TEXT("img_medal_%02d"), i + 1));
-
-        // Wrap in SizeBox to FORCE 64x64 and stop UniformGrid stretch
-        USizeBox* SB = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(),
-            *FString::Printf(TEXT("sb_medal_%02d"), i + 1));
+        if (!SB || !Img)
+            continue;
 
         SB->SetWidthOverride(64.f);
         SB->SetHeightOverride(64.f);
         SB->AddChild(Img);
 
-        // Default brush setup
+        // Optional: start dim/empty
         Img->SetOpacity(0.2f);
         Img->SetVisibility(ESlateVisibility::HitTestInvisible);
 
-        // Important: make the brush 64x64 too (prevents brush-resize weirdness)
-        {
-            FSlateBrush B = Img->GetBrush();
-            B.ImageSize = FVector2D(64.f, 64.f);
-            Img->SetBrush(B);
-        }
+        // Force brush size
+        FSlateBrush B = Img->GetBrush();
+        B.ImageSize = FVector2D(64.f, 64.f);
+        Img->SetBrush(B);
 
-        // Add to grid
-        if (UUniformGridSlot* GSlot = medals_grid->AddChildToUniformGrid(SB, R, C))
+        const int32 Row = i / Cols;
+        const int32 Col = i % Cols;
+
+        if (UUniformGridSlot* CSlot = medals_grid->AddChildToUniformGrid(SB, Row, Col))
         {
-            GSlot->SetHorizontalAlignment(HAlign_Center);
-            GSlot->SetVerticalAlignment(VAlign_Center);
+            CSlot->SetHorizontalAlignment(HAlign_Center);
+            CSlot->SetVerticalAlignment(VAlign_Center);
         }
 
         MedalImages.Add(Img);
@@ -696,6 +713,7 @@ void UPlayerDlg::RefreshUIFromSubsystem()
         // bit 0..15 => MedalId 1..16
         // -------------------------
         ApplyMedalsMask((uint32)Info.MedalsMask);
+        //ApplyMedalsMask(0xFFFF);
     }
     else
     {
@@ -767,55 +785,134 @@ void UPlayerDlg::OnCancel()
 
 void UPlayerDlg::ApplyMedalsMask(uint32 MedalsMask)
 {
-    const int32 Count = FMath::Min(MedalImages.Num(), 16);
+    // Safety
+    if (MedalImages.Num() == 0)
+        return;
 
-    // Get GD once
     UStarshatterGameDataSubsystem* GD = nullptr;
     if (UWorld* W = GetWorld())
         if (UGameInstance* GI = W->GetGameInstance())
             GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>();
 
-    for (int32 Bit = 0; Bit < Count; ++Bit)
+    // ------------------------------------------------------------
+    // Clear all 16 slots first
+    // ------------------------------------------------------------
+   // Clear all slots to transparent
+    for (int32 i = 0; i < MedalImages.Num(); ++i)
     {
-        UImage* Img = MedalImages[Bit];
-        if (!Img) continue;
-
-        const bool bHasMedal = ((MedalsMask >> Bit) & 1u) != 0;
-
-        // Always visible in a fixed board; just dim if not owned
-        Img->SetOpacity(bHasMedal ? 1.0f : 0.2f);
-
-        if (!bHasMedal)
+        if (UImage* Img = MedalImages[i])
         {
             Img->SetBrushFromTexture(nullptr, true);
-            // keep brush size 64
+            Img->SetOpacity(0.f);   // fully transparent
+            Img->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+            // Still force 64x64 so layout doesn't collapse
             FSlateBrush B = Img->GetBrush();
             B.ImageSize = FVector2D(64.f, 64.f);
             Img->SetBrush(B);
+        }
+    }
+
+    if (!GD)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[ApplyMedalsMask] GameDataSubsystem missing."));
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // For each of the 16 possible medal flags
+    // ------------------------------------------------------------
+    const int32 MaxSlots = FMath::Min(16, MedalImages.Num());
+
+    for (int32 XSlot = 0; XSlot < MaxSlots; ++XSlot)
+    {
+        const uint32 MedalFlag = (1u << XSlot);
+
+        // Player does not have this medal
+        if ((MedalsMask & MedalFlag) == 0)
+            continue;
+
+        FMedalInfo Row;
+        if (!GD->GetMedalInfoByFlag(MedalFlag, Row))
+        {
+            UE_LOG(LogTemp, Warning,
+                TEXT("[ApplyMedalsMask] Owned medal flag %u but no row found."),
+                MedalFlag);
             continue;
         }
 
-        const int32 MedalId = Bit + 1; // bit0->id1
+        UTexture2D* Tex = nullptr;
+
+        if (Row.SmallImage.IsValid())
+            Tex = Row.SmallImage.Get();
+        else if (!Row.SmallImage.IsNull())
+            Tex = Row.SmallImage.LoadSynchronous();
+
+        if (UImage* Img = MedalImages[XSlot])
+        {
+            Img->SetOpacity(1.0f);
+            Img->SetBrushFromTexture(Tex, true);
+
+            FSlateBrush B = Img->GetBrush();
+            B.ImageSize = FVector2D(64.f, 64.f);
+            Img->SetBrush(B);
+        }
+    }
+}
+
+void UPlayerDlg::Debug_ShowAllMedals()
+{
+    const int32 Count = FMath::Min(MedalImages.Num(), 16);
+
+    UStarshatterGameDataSubsystem* GD = nullptr;
+    if (UWorld* W = GetWorld())
+        if (UGameInstance* GI = W->GetGameInstance())
+            GD = GI->GetSubsystem<UStarshatterGameDataSubsystem>();
+
+    for (int32 i = 0; i < Count; ++i)
+    {
+        UImage* Img = MedalImages[i];
+        if (!Img) continue;
+
+        const int32 MedalId = i + 1;
 
         UTexture2D* MedalTex = nullptr;
+
         if (GD)
         {
-            FMedalInfo MedalRow;
-            if (GD->GetMedalInfo(MedalId, MedalRow))
+            FMedalInfo Row;
+            if (GD->GetMedalInfo(MedalId, Row))
             {
-                // adjust field name to your soft texture ptr
-                if (MedalRow.SmallImage.IsValid())
-                    MedalTex = MedalRow.SmallImage.Get();
-                else if (!MedalRow.SmallImage.IsNull())
-                    MedalTex = MedalRow.SmallImage.LoadSynchronous();
+                if (Row.SmallImage.IsValid())
+                {
+                    MedalTex = Row.SmallImage.Get();
+                }
+                else if (!Row.SmallImage.IsNull())
+                {
+                    MedalTex = Row.SmallImage.LoadSynchronous();
+                }
+
+                UE_LOG(LogTemp, Warning, TEXT("[MedalTest] MedalId=%d Soft=%s Tex=%s"),
+                    MedalId,
+                    *Row.SmallImage.ToSoftObjectPath().ToString(),
+                    MedalTex ? *MedalTex->GetName() : TEXT("NULL"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[MedalTest] MedalId=%d NOT FOUND in cache/table"), MedalId);
             }
         }
 
+        Img->SetVisibility(ESlateVisibility::HitTestInvisible);
+        Img->SetOpacity(1.0f);
         Img->SetBrushFromTexture(MedalTex, true);
 
-        // Force 64x64 brush size (prevents stretching)
+        // Enforce 64x64 brush size
         FSlateBrush B = Img->GetBrush();
         B.ImageSize = FVector2D(64.f, 64.f);
         Img->SetBrush(B);
     }
 }
+
+
+
