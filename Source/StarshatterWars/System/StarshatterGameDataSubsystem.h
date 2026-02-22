@@ -177,24 +177,10 @@ public:
     void ParseCallsign(TermStruct* val, const char* fn);
     void ParseOptional(TermStruct* val, const char* fn);
 
-    // =====================================================================
-    // Galaxy
-    // =====================================================================
-    void LoadGalaxyMap();
-    void ParseStar(TermStruct* val, const char* fn);
-    void ParsePlanet(TermStruct* val, const char* fn);
-    void ParseMoon(TermStruct* val, const char* fn);
-    void ParseRegion(TermStruct* val, const char* fn);
-    void ParseMoonMap(TermStruct* val, const char* fn);
-    void ParseStarMap(TermStruct* val, const char* fn);
-    void ParsePlanetMap(TermStruct* val, const char* fn);
-    void ParseTerrain(TermStruct* val, const char* fn);
 
     // =====================================================================
-    // Star systems / designs / OOB
+    // Designs / OOB
     // =====================================================================
-    void LoadStarsystems();
-    void ParseStarSystem(const char* FileName);
 
     void InitializeCampaignData();
     void InitializeCombatRoster();
@@ -342,7 +328,6 @@ protected:
     UDataTable* CombatGroupDataTable;
     UDataTable* OrderOfBattleDataTable;
     UDataTable* CampaignOOBDataTable;
-    UDataTable* GalaxyDataTable;
 
     // =====================================================================
     // DT row scratch + arrays (kept intact)
@@ -356,9 +341,6 @@ protected:
     TArray<TArray<uint8>> SystemDesignStringStorage;
 
     FS_Campaign        CampaignData;
-    FS_Galaxy          GalaxyData;
-    FS_StarSystem      StarSystemData;
-    
     FShipDesign        ShipDesignData;
 
     FS_CombatGroupUnit CombatGroupUnit;
@@ -390,27 +372,12 @@ protected:
 
     TArray<FS_CombatGroupUnit> NewCombatUnitArray;
 
-    TArray<FS_Star> StarDataArray;
-    TArray<FS_Planet> PlanetDataArray;
-    TArray<FS_Moon> MoonDataArray;
-    TArray<FS_Region> RegionDataArray;
-
-    TArray<FS_StarMap> StarMapArray;
-    TArray<FS_PlanetMap> PlanetMapArray;
-    TArray<FS_MoonMap> MoonMapArray;
-    TArray<FS_RegionMap> RegionMapArray;
-
     TArray<FS_TemplateMission> TemplateMissionArray;
     TArray<FS_TemplateMission> ScriptedMissionArray;
 
     FS_CampaignAction NewCampaignAction;
 
     // DataTables (additional)
-    UDataTable* StarSystemDataTable;
-    UDataTable* StarsDataTable;
-    UDataTable* PlanetsDataTable;
-    UDataTable* MoonsDataTable;
-    UDataTable* RegionsDataTable;
     UDataTable* ZonesDataTable;
     UDataTable* ShipDesignDataTable;
     UDataTable* SystemDesignDataTable;

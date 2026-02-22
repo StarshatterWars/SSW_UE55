@@ -42,6 +42,7 @@
 #include "StarshatterSystemDesignSubsystem.h"
 #include "StarshatterWeaponDesignSubsystem.h"
 #include "StarshatterAssetRegistrySubsystem.h"
+#include "StarshatterEnvironmentSubsystem.h"
 
 #include "Logging/LogMacros.h"
 
@@ -67,6 +68,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     Collection.InitializeDependency(UStarshatterShipDesignSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterSystemDesignSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterWeaponDesignSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterEnvironmentSubsystem::StaticClass());
 
     // Establish BOOT lifecycle state immediately
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
@@ -103,6 +105,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         BootSystemDesignLoader(Ctx);
         BootWeaponDesignLoader(Ctx);
         BootShipDesignLoader(Ctx);
+        BootGalaxyLoader(Ctx);
     }
 
     // Keep existing behavior
@@ -136,6 +139,14 @@ void UStarshatterBootSubsystem::BootShipDesignLoader(const FBootContext& Ctx)
         return;
 
     Ctx.ShipDesignSS->LoadAll(true);
+}
+
+void UStarshatterBootSubsystem::BootGalaxyLoader(const FBootContext& Ctx)
+{
+    if (!Ctx.EnvironmentSS)
+        return;
+
+    Ctx.EnvironmentSS->LoadAll(true);
 }
 
 void UStarshatterBootSubsystem::BootSystemDesignLoader(const FBootContext& Ctx)
@@ -177,6 +188,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.ShipDesignSS = OutCtx.GI->GetSubsystem<UStarshatterShipDesignSubsystem>();
     OutCtx.SystemDesignSS = OutCtx.GI->GetSubsystem<UStarshatterSystemDesignSubsystem>();
     OutCtx.WeaponDesignSS = OutCtx.GI->GetSubsystem<UStarshatterWeaponDesignSubsystem>();
+    OutCtx.EnvironmentSS = OutCtx.GI->GetSubsystem<UStarshatterEnvironmentSubsystem>();
    
     OutCtx.FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
 

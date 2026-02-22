@@ -62,6 +62,7 @@ class UStarshatterShipDesignSubsystem;
 class UStarshatterSystemDesignSubsystem;
 class UStarshatterWeaponDesignSubsystem;
 class UStarshatterAssetRegistrySubsystem;
+class UStarshatterEnvironmentSubsystem;
 
 // NEW: Player save subsystem
 class UStarshatterPlayerSubsystem;
@@ -115,6 +116,7 @@ private:
         UStarshatterShipDesignSubsystem* ShipDesignSS = nullptr;
         UStarshatterSystemDesignSubsystem* SystemDesignSS = nullptr;
         UStarshatterWeaponDesignSubsystem* WeaponDesignSS = nullptr;
+        UStarshatterEnvironmentSubsystem* EnvironmentSS = nullptr;
     };
 
     bool BuildContext(FBootContext& OutCtx);
@@ -127,6 +129,7 @@ private:
 
     //Game Data
     void BootShipDesignLoader(const FBootContext& Ctx);
+    void BootGalaxyLoader(const FBootContext& Ctx);
     void BootSystemDesignLoader(const FBootContext& Ctx);
     void BootWeaponDesignLoader(const FBootContext& Ctx);
 

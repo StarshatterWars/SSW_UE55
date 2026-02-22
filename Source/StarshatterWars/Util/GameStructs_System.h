@@ -1405,6 +1405,9 @@ struct FShipDesign : public FTableRowBase {
 	FString	BeautyName;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	FString HudIconName;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSoftObjectPtr<UStaticMesh> Mesh;
 	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	int PCS;

@@ -98,6 +98,7 @@ public:
 
 	bool                 bClearTables;
 
+
 private:
 	// ---------- current-ship scratch ----------
 	void BeginDesignParse(const char* Fn);
@@ -130,6 +131,7 @@ private:
 	void ResolveWeaponsForCurrentShip();
 	void ValidateLoadoutsForCurrentShip() const;
 
+	
 private:
 	// ---------- authoritative outputs ----------
 	UPROPERTY()
