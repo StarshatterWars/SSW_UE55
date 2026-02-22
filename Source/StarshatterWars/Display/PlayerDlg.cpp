@@ -467,7 +467,7 @@ void UPlayerDlg::BuildStatsRows()
             USizeBox* GridBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("MedalsGridBox"));
 
             // 4 medals × 64px + spacing (let's assume 4px spacing)
-            GridBox->SetWidthOverride(4 * 64.f + 3 * 4.f);
+            GridBox->SetWidthOverride(4 * 128.0f + 3 * 4.f);
 
             GridBox->AddChild(medals_grid);
 
@@ -512,7 +512,7 @@ void UPlayerDlg::BuildMedalsGrid(int32 Cols, int32 Rows)
         if (!SB || !Img)
             continue;
 
-        SB->SetWidthOverride(64.f);
+        SB->SetWidthOverride(128.0f);
         SB->SetHeightOverride(64.f);
         SB->AddChild(Img);
 
@@ -522,7 +522,7 @@ void UPlayerDlg::BuildMedalsGrid(int32 Cols, int32 Rows)
 
         // Force brush size
         FSlateBrush B = Img->GetBrush();
-        B.ImageSize = FVector2D(64.f, 64.f);
+        B.ImageSize = FVector2D(128.0f, 64.f);
         Img->SetBrush(B);
 
         const int32 Row = i / Cols;
