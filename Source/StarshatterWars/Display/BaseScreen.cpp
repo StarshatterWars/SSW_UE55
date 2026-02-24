@@ -50,6 +50,7 @@
 #include "Sound/SlateSound.h"
 
 #include "StarshatterGameDataSubsystem.h"
+#include "StarshatterUIStyleSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseScreen, Log, All);
 
@@ -994,6 +995,30 @@ void UBaseScreen::NativeOnInitialized()
 void UBaseScreen::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    if (UStarshatterUIStyleSubsystem* Style =
+        GetGameInstance()->GetSubsystem<UStarshatterUIStyleSubsystem>())
+    {
+        if (MenuButton)
+        {
+            Style->ApplyMenuButtonStyle(MenuButton);
+        }
+
+        if (ApplyButton)
+        {
+            Style->ApplyDefaultButtonStyle(ApplyButton, 20);
+        }
+
+        if (CancelButton)
+        {
+            Style->ApplyDefaultButtonStyle(CancelButton, 20);
+        }
+
+        if (Title)
+        {
+            Style->ApplyTitleTextStyle(Title, 28);
+        }
+    }
 }
 
 void UBaseScreen::NativeDestruct()

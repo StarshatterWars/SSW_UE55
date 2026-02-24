@@ -362,6 +362,7 @@ public:
 
     // Used by HandleAccept / HandleCancel (optional)
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> ApplyButton = nullptr;
+    UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> MenuButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> CancelButton = nullptr; 
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> AddPlayerButton = nullptr;
     UPROPERTY(meta = (BindWidgetOptional)) TObjectPtr<UButton> DeletePlayerButton = nullptr;

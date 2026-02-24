@@ -25,6 +25,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
 #include "UObject/SoftObjectPtr.h"
+#include "Sound/SoundBase.h"
 #include "StarshatterUIStyleSettings.generated.h"
 
 UCLASS(config = Game, defaultconfig, BlueprintType)
@@ -117,4 +118,16 @@ public:
 
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI|Buttons|Menu")
     FLinearColor MenuButtonTextColor = FLinearColor(1.f, 0.9f, 0.2f, 1.f);
+
+    // ----------------------------------------------------
+    // UI SFX
+    // ----------------------------------------------------
+    UPROPERTY(EditAnywhere, config, Category = "UI|Sounds")
+    TSoftObjectPtr<USoundBase> ButtonHoverSound;
+
+    UPROPERTY(EditAnywhere, config, Category = "UI|Sounds")
+    TSoftObjectPtr<USoundBase> ButtonClickSound;
+
+    UPROPERTY(EditAnywhere, config, Category = "UI|Sounds", meta = (ClampMin = "0.0"))
+    float ButtonSoundVolume = 1.0f;
 };

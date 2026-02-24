@@ -132,4 +132,16 @@ private:
         int32 FontSize,
         const FLinearColor& TextColor
     );
+
+    // Default UI sounds loaded from Project Settings
+    UPROPERTY(Transient)
+    TObjectPtr<USoundBase> ButtonHoverSound = nullptr;
+
+    UPROPERTY(Transient)
+    TObjectPtr<USoundBase> ButtonClickSound = nullptr;
+
+    UPROPERTY(Transient)
+    float ButtonSoundVolume = 1.0f; // NOTE: SlateSound ignores volume; kept for future manual playback.
 };
+
+

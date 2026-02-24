@@ -19,10 +19,113 @@
 #include "Components/PanelWidget.h"
 #include "Components/ContentWidget.h"
 
+#include "Kismet/GameplayStatics.h"
+
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
 
 DEFINE_LOG_CATEGORY(LogStarshatterUIStyle);
+
+static FSlateBrush MakeUIButtonBrush(UTexture2D* Tex, const FMargin& NineSliceMargin, const FVector2D& ImageSize)
+{
+    FSlateBrush B;
+
+    if (Tex)
+    {
+        B.SetResourceObject(Tex);
+        B.DrawAs = ESlateBrushDrawType::Box;     // nine-slice requires Box
+        B.Margin = NineSliceMargin;              // must be non-zero (0..1 normalized)
+
+        if (!ImageSize.IsNearlyZero())
+            B.ImageSize = ImageSize;
+    }
+    else
+    {
+        // Safe fallback
+        B.DrawAs = ESlateBrushDrawType::Box;
+        B.Margin = FMargin(4.f / 16.f);
+        B.TintColor = FSlateColor(FLinearColor(0.18f, 0.18f, 0.18f, 1.f));
+    }
+
+    return B;
+}
+
+void UStarshatterUIStyleSubsystem::ApplyButtonStyleInternal(
+    UButton* Button,
+    UTexture2D* NormalTex,
+    UTexture2D* HoverTex,
+    UTexture2D* PressedTex,
+    UTexture2D* DisabledTex,
+    const FMargin& NineSliceMargin,
+    const FVector2D& ImageSize,
+    UFont* Font,
+    int32 FontSize,
+    const FLinearColor& TextColor
+)
+{
+    if (!IsValid(Button))
+        return;
+
+    // --------------------------------------------------------------------
+    // 1) Build 9-slice brushes (DrawAs=Box + Margin)
+    // --------------------------------------------------------------------
+    const FSlateBrush Normal = MakeUIButtonBrush(NormalTex, NineSliceMargin, ImageSize);
+    const FSlateBrush Hovered = MakeUIButtonBrush(HoverTex, NineSliceMargin, ImageSize);
+    const FSlateBrush Pressed = MakeUIButtonBrush(PressedTex, NineSliceMargin, ImageSize);
+    const FSlateBrush Disabled = MakeUIButtonBrush(DisabledTex ? DisabledTex : NormalTex, NineSliceMargin, ImageSize);
+
+    // --------------------------------------------------------------------
+    // 2) Apply brushes + default sounds via SlateSound
+    //    (NO UButton delegates, no lambdas, no Clear())
+    // --------------------------------------------------------------------
+    FButtonStyle Style = Button->WidgetStyle;
+    Style.SetNormal(Normal);
+    Style.SetHovered(Hovered);
+    Style.SetPressed(Pressed);
+    Style.SetDisabled(Disabled);
+
+    // Default UI sounds (set these in Project Settings via your Settings object,
+    // loaded into this subsystem on boot; stored as USoundBase* here)
+    if (IsValid(ButtonHoverSound))
+    {
+        FSlateSound HoverSfx;
+        HoverSfx.SetResourceObject(ButtonHoverSound);
+        Style.SetHoveredSound(HoverSfx);
+    }
+
+    if (IsValid(ButtonClickSound))
+    {
+        FSlateSound ClickSfx;
+        ClickSfx.SetResourceObject(ButtonClickSound);
+        Style.SetPressedSound(ClickSfx);
+    }
+
+    Button->SetStyle(Style);
+
+    // Force UMG to push the new Slate style into the underlying SButton
+    Button->SynchronizeProperties();
+    Button->InvalidateLayoutAndVolatility();
+
+    // --------------------------------------------------------------------
+    // 3) Update the first text block under the button (if any)
+    // --------------------------------------------------------------------
+    UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
+    if (!TextChild)
+        return;
+
+    TextChild->SetJustification(ETextJustify::Center);
+    TextChild->SetColorAndOpacity(FSlateColor(TextColor));
+
+    if (IsValid(Font))
+    {
+        FSlateFontInfo FontInfo = TextChild->GetFont();
+        FontInfo.FontObject = Font;
+        FontInfo.Size = FontSize;
+        TextChild->SetFont(FontInfo);
+    }
+
+    TextChild->SynchronizeProperties();
+}
 
 void UStarshatterUIStyleSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -57,6 +160,20 @@ void UStarshatterUIStyleSubsystem::ReloadFromSettings(bool bLoadNow)
             if (Ptr.IsNull()) return nullptr;
             return bLoadNow ? Ptr.LoadSynchronous() : Ptr.Get();
         };
+
+    const UStarshatterUIStyleSettings* Settings =
+        GetDefault<UStarshatterUIStyleSettings>();
+
+    if (!Settings)
+        return;
+
+    if (bLoadNow)
+    {
+        ButtonHoverSound = Settings->ButtonHoverSound.LoadSynchronous();
+        ButtonClickSound = Settings->ButtonClickSound.LoadSynchronous();
+    }
+
+    ButtonSoundVolume = Settings->ButtonSoundVolume;
 
     DefaultUIFont = LoadFont(S->DefaultUIFont);
     DefaultTextColor = S->DefaultTextColor;
@@ -130,58 +247,6 @@ UTextBlock* UStarshatterUIStyleSubsystem::FindFirstTextBlockRecursive(const UWid
     return nullptr;
 }
 
-void UStarshatterUIStyleSubsystem::ApplyButtonStyleInternal(
-    UButton* Button,
-    UTexture2D* Normal,
-    UTexture2D* Hover,
-    UTexture2D* Pressed,
-    UTexture2D* Disabled,
-    const FMargin& SliceMargin,
-    const FVector2D& ImageSize,
-    UFont* Font,
-    int32 FontSize,
-    const FLinearColor& TextColor
-)
-{
-    if (!Button)
-        return;
-
-    const FSlateBrush NormalB = MakeBrush(Normal, SliceMargin, ImageSize);
-    const FSlateBrush HoverB = MakeBrush(Hover, SliceMargin, ImageSize);
-    const FSlateBrush PressB = MakeBrush(Pressed, SliceMargin, ImageSize);
-    const FSlateBrush DisableB = MakeBrush(Disabled ? Disabled : Normal, SliceMargin, ImageSize);
-
-    FButtonStyle Style = Button->WidgetStyle;
-    Style.SetNormal(NormalB);
-    Style.SetHovered(HoverB);
-    Style.SetPressed(PressB);
-    Style.SetDisabled(DisableB);
-
-#if ENGINE_MAJOR_VERSION >= 5
-    Button->SetStyle(Style);
-#else
-    Button->WidgetStyle = Style;
-    Button->SynchronizeProperties();
-#endif
-
-    UTextBlock* TextChild = FindFirstTextBlockRecursive(Button);
-    if (!TextChild)
-        return;
-
-    TextChild->SetJustification(ETextJustify::Center);
-    TextChild->SetColorAndOpacity(FSlateColor(TextColor));
-
-    if (Font)
-    {
-        FSlateFontInfo FI = TextChild->GetFont();
-        FI.FontObject = Font;
-        FI.Size = FontSize;
-        TextChild->SetFont(FI);
-    }
-
-    TextChild->SynchronizeProperties();
-}
-
 void UStarshatterUIStyleSubsystem::ApplyDefaultButtonStyle(UButton* Button, int32 FontSize)
 {
     ApplyButtonStyleInternal(
@@ -235,7 +300,7 @@ void UStarshatterUIStyleSubsystem::ApplyMenuButtonStyle(UButton* Button)
         MenuBtn_PressedTex,
         MenuBtn_DisabledTex,
         MenuBtn_9SliceMargin,
-        Btn_ImageSize,
+        FVector2D::ZeroVector,      // DO NOT force size for Box brushes
         FontToUse,
         MenuButtonFontSize,
         MenuButtonTextColor
@@ -295,3 +360,4 @@ void UStarshatterUIStyleSubsystem::ApplyDefaultEditBoxStyle(UEditableTextBox* Ed
 
     Edit->SynchronizeProperties();
 }
+

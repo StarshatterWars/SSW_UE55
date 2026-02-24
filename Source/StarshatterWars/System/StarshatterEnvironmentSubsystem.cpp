@@ -53,28 +53,6 @@ DEFINE_LOG_CATEGORY(LogStarshatterEnvironment);
 // UStarshatterEnvironmentSubsystem
 // -----------------------------------------------------------------------------
 
-
-template<typename TEnum>
-static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
-{
-	UEnum* Enum = StaticEnum<TEnum>();
-	if (!Enum)
-		return false;
-
-	for (int32 i = 0; i < Enum->NumEnums(); ++i)
-	{
-		const FString Name = Enum->GetNameStringByIndex(i);
-		if ((bCaseSensitive && Name == InString) ||
-			(!bCaseSensitive && Name.Equals(InString, ESearchCase::IgnoreCase)))
-		{
-			OutEnum = static_cast<TEnum>(Enum->GetValueByIndex(i));
-			return true;
-		}
-	}
-
-	return false;
-}
-
 template<typename TRowStruct>
 static void ReadTableToArray(
 	const UDataTable* Table,

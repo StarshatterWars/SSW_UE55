@@ -33,6 +33,7 @@
 #include "Campaign.h"
 #include "MenuScreen.h"
 #include "StarshatterPlayerSubsystem.h"
+#include "StarshatterUIStyleSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMenuDlg, Log, All);
 
@@ -65,6 +66,21 @@ void UMenuDlg::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    // APPLY UI THEME (OPTION A: already loaded from Project Settings during BOOT)
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        if (auto* StyleSS = GI->GetSubsystem<UStarshatterUIStyleSubsystem>())
+        {
+            StyleSS->ApplyMenuButtonStyle(BtnStart);
+            StyleSS->ApplyMenuButtonStyle(BtnCampaign);
+            StyleSS->ApplyMenuButtonStyle(BtnMission);
+            StyleSS->ApplyMenuButtonStyle(BtnPlayer);
+            StyleSS->ApplyMenuButtonStyle(BtnMulti);
+            StyleSS->ApplyMenuButtonStyle(BtnOptions);
+            StyleSS->ApplyMenuButtonStyle(BtnTac);
+            StyleSS->ApplyMenuButtonStyle(BtnQuit);
+        }
+    }
     // Cache legacy singletons (fine to do here)
     Stars = Starshatter::GetInstance();
     CampaignPtr = Campaign::GetCampaign();
