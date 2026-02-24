@@ -38,6 +38,8 @@
 
 #include "StarshatterAssetRegistrySubsystem.generated.h"
 
+class UTexture2D;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogStarshatterAssetRegistry, Log, All);
 
 UCLASS()
@@ -78,6 +80,8 @@ public:
     UDataTable* GetDataTable(FName AssetId, bool bLoadNow = true);
 
     TSubclassOf<UUserWidget> GetWidgetClass(FName AssetId, bool bLoadNow = true);
+
+    UTexture2D* GetTexture2D(FName AssetId, bool bLoadNow = true);
 
 private:
     // ------------------------------------------------------------------

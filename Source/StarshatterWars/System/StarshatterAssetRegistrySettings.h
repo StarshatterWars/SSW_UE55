@@ -34,6 +34,7 @@
 #include "Engine/DataTable.h"
 #include "UObject/SoftObjectPtr.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/Texture2D.h"
 
 #include "StarshatterAssetRegistrySettings.generated.h"
 
@@ -147,4 +148,20 @@ public:
 
     UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI", meta = (AllowAbstract = "false"))
     TSoftClassPtr<UUserWidget> TacRefScreenClass;
+
+    // ------------------------------------------------------------------
+// Optional UI Theme bindings (config-backed)
+// ------------------------------------------------------------------
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI Theme")
+    TSoftObjectPtr<UTexture2D> MenuButton_Normal;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI Theme")
+    TSoftObjectPtr<UTexture2D> MenuButton_Hover;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI Theme")
+    TSoftObjectPtr<UTexture2D> MenuButton_Pressed;
+
+    UPROPERTY(EditAnywhere, config, Category = "Starshatter|UI Theme")
+    TSoftObjectPtr<UTexture2D> MenuButton_Disabled;
 };

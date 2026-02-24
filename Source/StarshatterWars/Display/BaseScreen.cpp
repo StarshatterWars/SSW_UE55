@@ -45,6 +45,10 @@
 #include "Fonts/SlateFontInfo.h"
 #include "Engine/Font.h"
 
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
+#include "Sound/SlateSound.h"
+
 #include "StarshatterGameDataSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseScreen, Log, All);
@@ -1917,6 +1921,26 @@ void UBaseScreen::StyleButton_Default(
     Style.SetPressed(Pressed);
     Style.SetDisabled(Disabled);
 
+    // ------------------------------------------------------------
+// UI SFX via Slate (no delegate binding required)
+// ------------------------------------------------------------
+    if (bEnableButtonSfx)
+    {
+        if (ButtonHoverSfx)
+        {
+            FSlateSound HoverSound;
+            HoverSound.SetResourceObject(ButtonHoverSfx);
+            Style.SetHoveredSound(HoverSound);
+        }
+
+        if (ButtonClickSfx)
+        {
+            FSlateSound PressSound;
+            PressSound.SetResourceObject(ButtonClickSfx);
+            Style.SetPressedSound(PressSound);
+        }
+    }
+
     // Prefer SetStyle if present; fallback to WidgetStyle
 #if ENGINE_MAJOR_VERSION >= 5
     Button->SetStyle(Style);
@@ -2090,5 +2114,41 @@ UTextBlock* UBaseScreen::FindFirstTextBlockRecursive(const UWidget* Root) const
     return nullptr;
 }
 
+void UBaseScreen::PlayButtonSfx(USoundBase* Sound) const
+{
+    if (!Sound)
+        return;
+
+    // UI-only, non-spatialized, no attenuation concerns:
+    UGameplayStatics::PlaySound2D(this, Sound, ButtonSfxVolume);
+}
+
+void UBaseScreen::HookButtonSfx(UButton* Button)
+{
+    if (!bEnableButtonSfx || !Button)
+        return;
+
+    // Don’t bind twice (UMG can reconstruct widgets)
+    if (SfxBoundButtons.Contains(Button))
+        return;
+
+    // NOTE: no lambdas; use UFUNCTION-style binding via AddDynamic
+    // But these handlers must be UFUNCTIONs OR we use AddUObject with non-dynamic delegates.
+    //
+    // UButton delegates are dynamic multicast:
+    // - OnClicked, OnHovered, OnUnhovered are DECLARE_DYNAMIC_MULTICAST_DELEGATE
+    // So we need UFUNCTION handlers with no params.
+    //
+    // To keep this generic per-button, we’ll store “current button” at call time?
+    // That doesn’t work for multiple buttons.
+    //
+    // Solution: bind per-button to generic handlers using AddUniqueDynamic,
+    // then in handler identify sender? Dynamic delegates do NOT provide sender.
+    //
+    // Therefore, we do the robust approach:
+    // Create a tiny UObject “router” per button, or use Slate sound style.
+    //
+    // BUT simplest for your project: use button style sounds (Slate) OR create router objects.
+}
 
 

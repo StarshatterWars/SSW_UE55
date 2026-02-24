@@ -21,6 +21,7 @@
 
 // Game mode:
 #include "GameStructs.h"
+#include "GameStructs_UI.h"
 #include "SSWGameInstance.h"
 
 // Subsystems
@@ -43,6 +44,7 @@
 #include "StarshatterWeaponDesignSubsystem.h"
 #include "StarshatterAssetRegistrySubsystem.h"
 #include "StarshatterEnvironmentSubsystem.h"
+#include "StarshatterUIStyleSubsystem.h"
 
 #include "Logging/LogMacros.h"
 
@@ -69,6 +71,7 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     Collection.InitializeDependency(UStarshatterSystemDesignSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterWeaponDesignSubsystem::StaticClass());
     Collection.InitializeDependency(UStarshatterEnvironmentSubsystem::StaticClass());
+    Collection.InitializeDependency(UStarshatterUIStyleSubsystem::StaticClass());
 
     // Establish BOOT lifecycle state immediately
     if (USSWGameInstance* SSWGI = Cast<USSWGameInstance>(GetGameInstance()))
@@ -76,11 +79,22 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         SSWGI->SetGameMode(EGameMode::BOOT);
     }
 
-    // NEW: assets first (tables/widgets/etc.)
+    FBootContext Ctx;
+    if (!BuildContext(Ctx))
+    {
+        UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BuildContext failed; aborting boot"));
+        return;
+    }
+
     if (!BootAssets())
     {
         UE_LOG(LogStarshatterBoot, Error, TEXT("[BOOT] BootAssets failed; aborting boot"));
         return;
+    }
+
+    if (Ctx.UIStyleSS)
+    {
+        Ctx.UIStyleSS->ReloadFromSettings(true);
     }
 
     if (!BootUI())
@@ -89,7 +103,6 @@ void UStarshatterBootSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         return;
     }
 
-    FBootContext Ctx;
     if(BuildContext(Ctx))
     {
         BootLegacyDataLoader(Ctx);
@@ -189,6 +202,7 @@ bool UStarshatterBootSubsystem::BuildContext(FBootContext& OutCtx)
     OutCtx.SystemDesignSS = OutCtx.GI->GetSubsystem<UStarshatterSystemDesignSubsystem>();
     OutCtx.WeaponDesignSS = OutCtx.GI->GetSubsystem<UStarshatterWeaponDesignSubsystem>();
     OutCtx.EnvironmentSS = OutCtx.GI->GetSubsystem<UStarshatterEnvironmentSubsystem>();
+    OutCtx.UIStyleSS = OutCtx.GI->GetSubsystem<UStarshatterUIStyleSubsystem>();
    
     OutCtx.FormSS = OutCtx.GI->GetSubsystem<UStarshatterFormSubsystem>();
 
@@ -387,6 +401,11 @@ bool UStarshatterBootSubsystem::BootAssets()
     TEXT("UI.OptionsScreenClass"),
     TEXT("UI.PlayerLogbookScreenClass"),
     TEXT("UI.TacRefScreenClass"),
+
+    TEXT("UI.Theme.MenuButton.Normal"),
+    TEXT("UI.Theme.MenuButton.Hover"),
+    TEXT("UI.Theme.MenuButton.Pressed"),
+    TEXT("UI.Theme.MenuButton.Disabled"),
     };
 
     if (!Assets->ValidateRequired(Required, /*bLoadNow=*/true))
@@ -404,4 +423,14 @@ bool UStarshatterBootSubsystem::BootUI()
 
     SSWGI->InitializeScreens();
     return true;
+}
+
+void UStarshatterBootSubsystem::BootUIStyle(const FBootContext& Ctx)
+{
+    if (!Ctx.UIStyleSS)
+        return;
+
+    Ctx.UIStyleSS->ReloadFromSettings(true);
+
+    UE_LOG(LogStarshatterBoot, Log, TEXT("[BOOT] UIStyle loaded from Project Settings"));
 }

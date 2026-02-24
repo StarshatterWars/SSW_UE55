@@ -41,6 +41,19 @@ enum class EUIControlType : uint8
 	Background UMETA(DisplayName = "Background"),  
 };
 
+// -----------------------------------------------------------------------------
+// ESSWThemeFont
+// -----------------------------------------------------------------------------
+// Enumerates supported UI font families for Starshatter Wars.
+// -----------------------------------------------------------------------------
+UENUM(BlueprintType)
+enum class ESSWThemeFont : uint8
+{
+	LimerickBold      UMETA(DisplayName = "Limerick Bold"),
+	VerdanaItalic     UMETA(DisplayName = "Verdana Italic"),
+	Serpntb           UMETA(DisplayName = "Serpent Bold")
+};
+
 // ------------------------------------------------------------
 // Layout Def (frm "layout")
 // x_mins / cols, y_mins / rows, x_weights / col_wts, y_weights / row_wts

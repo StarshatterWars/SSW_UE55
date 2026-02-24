@@ -181,7 +181,7 @@ public:
     TArray<FS_Region> RegionDataArray;
 
     UPROPERTY()
-    TArray<FS_TerrainRegion> TerrainRegionDataArray;
+    TArray<FS_TerrainRegion> TerrainRegionsArray;
 
     UPROPERTY()
     TArray<FS_CampaignZone> ZoneDataArray;
@@ -237,5 +237,50 @@ protected:
     private:
         // Cached GI (kept)
         USSWGameInstance* SSWInstance = nullptr;
+
+            // ==================================================================== =
+            // DT -> runtime hydration
+            // =====================================================================
+            void HydrateAllFromTables();
+
+        void ReadGalaxyDataTable();
+        void ReadStarSystemsTable();
+        void ReadStarsTable();
+        void ReadPlanetsTable();
+        void ReadMoonsTable();
+        void ReadRegionsTable();
+        void ReadTerrainRegionsTable();
+
+        void BuildEnvironmentCaches();
+
+        void ClearRuntimeCaches();
+
+        // =====================================================================
+        // Lookup caches
+        // =====================================================================
+        UPROPERTY()
+        TMap<FString, FS_Galaxy> GalaxyByName;
+
+        UPROPERTY()
+        TMap<FString, FS_StarSystem> StarSystemByName;
+
+        UPROPERTY()
+        TMap<FString, FS_Star> StarByName;
+
+        UPROPERTY()
+        TMap<FString, FS_Planet> PlanetByName;
+
+        UPROPERTY()
+        TMap<FString, FS_Moon> MoonByName;
+
+        UPROPERTY()
+        TMap<FString, FS_Region> RegionByName;
+
+        UPROPERTY()
+        TMap<FString, FS_TerrainRegion> TerrainRegionByName;
+
+        UPROPERTY()
+        TMap<FString, FString> RegionParentByName;
+        TMap<FString, TArray<FString>> RegionChildrenByParent;
 };
 

@@ -32,6 +32,7 @@
 #include "StarshatterAssetRegistrySettings.h"
 
 #include "Engine/DataTable.h"
+#include "Engine/Texture2D.h"
 #include "Blueprint/UserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogStarshatterAssetRegistry);
@@ -415,6 +416,66 @@ bool UStarshatterAssetRegistrySubsystem::InitRegistry()
         }
     }
 
+    // ------------------------------------------------------------------
+    // 4) Inject typed UI Theme assets (do not overwrite explicit map entries)
+    // ------------------------------------------------------------------
+
+    if (!Cache.Contains(TEXT("UI.Theme.MenuButton.Normal")))
+    {
+        if (!Settings->MenuButton_Normal.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->MenuButton_Normal.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.Theme.MenuButton.Normal"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.Theme.MenuButton.Normal -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] MenuButton_Normal is not set in Project Settings"));
+        }
+    }
+
+    if (!Cache.Contains(TEXT("UI.Theme.MenuButton.Hover")))
+    {
+        if (!Settings->MenuButton_Hover.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->MenuButton_Hover.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.Theme.MenuButton.Hover"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.Theme.MenuButton.Hover -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] MenuButton_Hover is not set in Project Settings"));
+        }
+    }
+
+    if (!Cache.Contains(TEXT("UI.Theme.MenuButton.Pressed")))
+    {
+        if (!Settings->MenuButton_Pressed.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->MenuButton_Pressed.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.Theme.MenuButton.Pressed"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.Theme.MenuButton.Pressed -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] MenuButton_Pressed is not set in Project Settings"));
+        }
+    }
+
+    if (!Cache.Contains(TEXT("UI.Theme.MenuButton.Disabled")))
+    {
+        if (!Settings->MenuButton_Disabled.IsNull())
+        {
+            const FSoftObjectPath Path = Settings->MenuButton_Disabled.ToSoftObjectPath();
+            Cache.Add(TEXT("UI.Theme.MenuButton.Disabled"), TSoftObjectPtr<UObject>(Path));
+            UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] Bind UI.Theme.MenuButton.Disabled -> %s"), *Path.ToString());
+        }
+        else
+        {
+            UE_LOG(LogStarshatterAssetRegistry, Warning, TEXT("[ASSETS] MenuButton_Disabled is not set in Project Settings"));
+        }
+    }
+
     UE_LOG(LogStarshatterAssetRegistry, Log, TEXT("[ASSETS] InitRegistry: Loaded %d entries"), Cache.Num());
 
     bReady = true;
@@ -516,4 +577,9 @@ TSubclassOf<UUserWidget> UStarshatterAssetRegistrySubsystem::GetWidgetClass(FNam
     }
 
     return AsClass;
+}
+
+UTexture2D* UStarshatterAssetRegistrySubsystem::GetTexture2D(FName AssetId, bool bLoadNow)
+{
+    return Cast<UTexture2D>(GetAsset(AssetId, bLoadNow));
 }

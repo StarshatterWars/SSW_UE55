@@ -55,6 +55,8 @@
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 
+#include "GameStructs_UI.h"
+
 #include "BaseScreen.generated.h"
 
 // ====================================================================
@@ -62,14 +64,7 @@
 // ====================================================================
 
 class UMenuScreen;
-
-UENUM(BlueprintType)
-enum class ESSWThemeFont : uint8
-{
-    LimerickBold,
-    VerdanaItalic,
-    Serpntb
-};
+class USoundBase;
 
 USTRUCT(BlueprintType)
 struct FFormFontMapEntry
@@ -749,8 +744,39 @@ protected:
     UPROPERTY(Transient) FFormWidgetMap FormMap;
     UPROPERTY(Transient) FParsedForm ParsedForm;
 
+ protected:
+        // ----------------------------------------------------------------
+        // UI SFX (Hover/Click)
+        // ----------------------------------------------------------------
+        UPROPERTY(EditAnywhere, Category = "Starshatter|UI|SFX")
+        bool bEnableButtonSfx = true;
+
+        // Played when mouse goes over a button (OnHovered)
+        UPROPERTY(EditAnywhere, Category = "Starshatter|UI|SFX")
+        TObjectPtr<USoundBase> ButtonHoverSfx = nullptr;
+
+        // Played when button is clicked (OnClicked)
+        UPROPERTY(EditAnywhere, Category = "Starshatter|UI|SFX")
+        TObjectPtr<USoundBase> ButtonClickSfx = nullptr;
+
+        // Optional volume scalar for 2D playback (keeps tuning centralized)
+        UPROPERTY(EditAnywhere, Category = "Starshatter|UI|SFX", meta = (ClampMin = "0.0"))
+        float ButtonSfxVolume = 1.0f;
+
+protected:
+    void HookAllButtonSfx();
+    void HookButtonSfx(UButton* Button);
+    void PlayButtonSfx(USoundBase* Sound) const;
+
+private:
+    // Guards against double-binding during rebuilds
+    UPROPERTY(Transient)
+    TSet<TWeakObjectPtr<UButton>> SfxBoundButtons;
+
 private:
     UPROPERTY()
     bool  bIsShown;
     
 };
+
+

@@ -75,6 +75,40 @@ static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSen
 	return false;
 }
 
+template<typename TRowStruct>
+static void ReadTableToArray(
+	const UDataTable* Table,
+	TArray<TRowStruct>& OutArray,
+	const TCHAR* Label)
+{
+	OutArray.Reset();
+
+	if (!Table)
+	{
+		UE_LOG(LogStarshatterEnvironment, Error,
+			TEXT("[Environment] %s is null."), Label);
+		return;
+	}
+
+	const TMap<FName, uint8*>& Rows = Table->GetRowMap();
+	OutArray.Reserve(Rows.Num());
+
+	for (const TPair<FName, uint8*>& Pair : Rows)
+	{
+		if (!Pair.Value)
+			continue;
+
+		const TRowStruct* Row =
+			reinterpret_cast<const TRowStruct*>(Pair.Value);
+
+		OutArray.Add(*Row);
+	}
+
+	UE_LOG(LogStarshatterEnvironment, Log,
+		TEXT("[Environment] Read %d rows from %s."),
+		OutArray.Num(), Label);
+}
+
 static uint8 ToByteClamp(double v)
 {
 	// Legacy files sometimes store 0..255, sometimes 0..1.
@@ -117,7 +151,6 @@ void UStarshatterEnvironmentSubsystem::Initialize(FSubsystemCollectionBase& Coll
 
 	GalaxyDataTable = Assets->GetDataTable(TEXT("Data.GalaxyMapTable"), true);
 	RegionsDataTable = Assets->GetDataTable(TEXT("Data.RegionsTable"), true);
-	//ZonesDataTable = Assets->GetDataTable(TEXT("Data.ZonesTable"), true);
 
 	if (Assets)
 	{
@@ -141,34 +174,13 @@ void UStarshatterEnvironmentSubsystem::Deinitialize()
     UE_LOG(LogStarshatterEnvironment, Log, TEXT("[Environment] Deinitialize"));
 
     Unload();
-	ReleaseAssets();
     Super::Deinitialize();
 }
 
 void UStarshatterEnvironmentSubsystem::Unload()
 {
-	Clear();
+	ReleaseAssets();
 	bLoaded = false;
-}
-
-void UStarshatterEnvironmentSubsystem::Clear()
-{
-	// Arrays
-	GalaxyDataArray.Reset();
-	StarSystemDataArray.Reset();
-	StarDataArray.Reset();
-	PlanetDataArray.Reset();
-	MoonDataArray.Reset();
-	RegionDataArray.Reset();
-	TerrainRegionDataArray.Reset();
-	ZoneDataArray.Reset();
-
-	StarMapArray.Reset();
-	PlanetMapArray.Reset();
-	MoonMapArray.Reset();
-	RegionMapArray.Reset();
-
-	UE_LOG(LogStarshatterEnvironment, Verbose, TEXT("[Environment] Clear"));
 }
 
 void UStarshatterEnvironmentSubsystem::ReleaseAssets()
@@ -219,7 +231,7 @@ void UStarshatterEnvironmentSubsystem::LoadAll(bool bFull /*= false*/)
     UE_LOG(LogStarshatterEnvironment, Log, TEXT("[Environment] LoadAll (Full=%s)"), bFull ? TEXT("true") : TEXT("false"));
 
     // Always start clean for deterministic load
-    Clear();
+	ClearRuntimeCaches();
 
     // 1) Galaxy map (stars/planets/moons/regions/terrain)
     LoadGalaxyMap();
@@ -239,7 +251,7 @@ void UStarshatterEnvironmentSubsystem::LoadAll(bool bFull /*= false*/)
         PlanetDataArray.Num(),
         MoonDataArray.Num(),
         RegionDataArray.Num(),
-        TerrainRegionDataArray.Num(),
+		TerrainRegionsArray.Num(),
         ZoneDataArray.Num());
 }
 
@@ -250,6 +262,8 @@ void UStarshatterEnvironmentSubsystem::CreateEnvironmentTables()
 	// - Add rows based on arrays (DT-first approach)
 	UE_LOG(LogStarshatterEnvironment, Log, TEXT("[Environment] CreateEnvironmentTables (stub)"));
 
+	HydrateAllFromTables();
+	
 	// NOTE: If you are using UObjectPtr-managed DTs elsewhere, you can switch these
 	// raw pointers to TObjectPtr<UDataTable> in the header later.
 }
@@ -1874,3 +1888,142 @@ void UStarshatterEnvironmentSubsystem::ParseStarSystem(const char* fn)
 	}
 }
 
+void UStarshatterEnvironmentSubsystem::HydrateAllFromTables()
+{
+	ClearRuntimeCaches();
+
+	ReadGalaxyDataTable();
+	ReadStarSystemsTable();
+	ReadStarsTable();
+	ReadPlanetsTable();
+	ReadMoonsTable();
+	ReadRegionsTable();
+	ReadTerrainRegionsTable();
+
+	BuildEnvironmentCaches();
+}
+
+void UStarshatterEnvironmentSubsystem::ClearRuntimeCaches()
+{
+	GalaxyDataArray.Reset();
+	StarSystemDataArray.Reset();
+	StarDataArray.Reset();
+	PlanetDataArray.Reset();
+	MoonDataArray.Reset();
+	RegionDataArray.Reset();
+	TerrainRegionsArray.Reset();
+
+	GalaxyByName.Reset();
+	StarSystemByName.Reset();
+	StarByName.Reset();
+	PlanetByName.Reset();
+	MoonByName.Reset();
+	RegionByName.Reset();
+	TerrainRegionByName.Reset();
+
+	RegionParentByName.Reset();
+	RegionChildrenByParent.Reset();
+}
+
+void UStarshatterEnvironmentSubsystem::ReadGalaxyDataTable()
+{
+	ReadTableToArray<FS_Galaxy>(
+		GalaxyDataTable,
+		GalaxyDataArray,
+		TEXT("GalaxyDataTable (FS_Galaxy)"));
+}
+
+void UStarshatterEnvironmentSubsystem::ReadStarSystemsTable()
+{
+	ReadTableToArray<FS_StarSystem>(
+		StarSystemDataTable,
+		StarSystemDataArray,
+		TEXT("StarSystemDataTable (FS_StarSystem)"));
+}
+
+void UStarshatterEnvironmentSubsystem::ReadStarsTable()
+{
+	ReadTableToArray<FS_Star>(
+		StarsDataTable,
+		StarDataArray,
+		TEXT("StarsDataTable (FS_Star)"));
+}
+
+void UStarshatterEnvironmentSubsystem::ReadPlanetsTable()
+{
+	ReadTableToArray<FS_Planet>(
+		PlanetsDataTable,
+		PlanetDataArray,
+		TEXT("PlanetsDataTable (FS_Planet)"));
+}
+
+void UStarshatterEnvironmentSubsystem::ReadMoonsTable()
+{
+	ReadTableToArray<FS_Moon>(
+		MoonsDataTable,
+		MoonDataArray,
+		TEXT("MoonsDataTable (FS_Moon)"));
+}
+
+void UStarshatterEnvironmentSubsystem::ReadRegionsTable()
+{
+	ReadTableToArray<FS_Region>(
+		RegionsDataTable,
+		RegionDataArray,
+		TEXT("RegionsDataTable (FS_Region)"));
+}
+
+void UStarshatterEnvironmentSubsystem::ReadTerrainRegionsTable()
+{
+	ReadTableToArray<FS_TerrainRegion>(
+		TerrainRegionsDataTable,
+		TerrainRegionsArray,
+		TEXT("TerrainRegionsDataTable (FS_TerrainRegion)"));
+}
+
+void UStarshatterEnvironmentSubsystem::BuildEnvironmentCaches()
+{
+	for (const FS_Galaxy& G : GalaxyDataArray)
+		if (!G.Name.IsEmpty())
+			GalaxyByName.Add(G.Name, G);
+
+	for (const FS_StarSystem& S : StarSystemDataArray)
+		if (!S.SystemName.IsEmpty())
+			StarSystemByName.Add(S.SystemName, S);
+
+	for (const FS_Star& S : StarDataArray)
+		if (!S.Name.IsEmpty())
+			StarByName.Add(S.Name, S);
+
+	for (const FS_Planet& P : PlanetDataArray)
+		if (!P.Name.IsEmpty())
+			PlanetByName.Add(P.Name, P);
+
+	for (const FS_Moon& M : MoonDataArray)
+		if (!M.Name.IsEmpty())
+			MoonByName.Add(M.Name, M);
+
+	for (const FS_Region& R : RegionDataArray)
+	{
+		if (R.Name.IsEmpty())
+			continue;
+
+		RegionByName.Add(R.Name, R);
+		RegionParentByName.Add(R.Name, R.Parent);
+
+		if (!R.Parent.IsEmpty())
+		{
+			TArray<FString>& Children =
+				RegionChildrenByParent.FindOrAdd(R.Parent);
+
+			Children.Add(R.Name);
+		}
+	}
+
+	for (const FS_TerrainRegion& T : TerrainRegionsArray)
+		if (!T.Name.IsEmpty())
+			TerrainRegionByName.Add(T.Name, T);
+
+	UE_LOG(LogStarshatterEnvironment, Log,
+		TEXT("[Environment] Caches built."));
+}

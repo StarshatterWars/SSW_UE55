@@ -63,6 +63,8 @@ class UStarshatterSystemDesignSubsystem;
 class UStarshatterWeaponDesignSubsystem;
 class UStarshatterAssetRegistrySubsystem;
 class UStarshatterEnvironmentSubsystem;
+class UStarshatterUIStyleSubsystem;
+
 
 // NEW: Player save subsystem
 class UStarshatterPlayerSubsystem;
@@ -117,6 +119,7 @@ private:
         UStarshatterSystemDesignSubsystem* SystemDesignSS = nullptr;
         UStarshatterWeaponDesignSubsystem* WeaponDesignSS = nullptr;
         UStarshatterEnvironmentSubsystem* EnvironmentSS = nullptr;
+        UStarshatterUIStyleSubsystem* UIStyleSS = nullptr;
     };
 
     bool BuildContext(FBootContext& OutCtx);
@@ -146,6 +149,7 @@ private:
     bool BootAssets();
 
     bool BootUI();
+    void BootUIStyle(const FBootContext& Ctx);
 
 private:
     bool bBootComplete = false;
