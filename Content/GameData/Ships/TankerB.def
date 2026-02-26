@@ -4,14 +4,11 @@ name:       IM1912
 display_name: "IM1912 Tanker"
 class:      Freighter
 abrv:       FREIGHT
+empire:     All
+description: "The IM1912 Tanker is an upgraded deep-space refueling vessel optimized for rapid transfer operations under escort. Its modular containment systems allow it to transport refined propellants and volatile fuels safely across contested sectors."
 hud_icon:   "TBHud.pcx"
 
-detail_0:   "TankerB_0opt.mag"
-feature_0:  1000
-detail_1:   "TankerB_1opt.mag"
-feature_1:  20
-detail_2:   "TankerB_2opt.mag"
-feature_2:  12
+model:      "TankerB"
 
 mass:       28.7e3
 agility:    1
@@ -162,31 +159,31 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "DebrisPod.mag",
+   debris:           "DebrisPod",
    debris_loc:       (-50,0,-20),
    debris_mass:      11e3,
    debris_count:     1,
    debris_life:      345,
 
-   debris:           "DebrisTank.mag",
+   debris:           "DebrisTank",
    debris_loc:       (0,0,0),
    debris_mass:      7e3,
    debris_count:     3,
    debris_life:      325,
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     25,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     20,
    debris_life:      15,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,
@@ -195,14 +192,14 @@ death_spiral: {
    }
 
 map: {
-   sprite: "TBmap0.pcx",
-   sprite: "TBmap1.pcx",
-   sprite: "TBmap2.pcx",
-   sprite: "TBmap3.pcx",
-   sprite: "TBmap4.pcx",
-   sprite: "TBmap5.pcx",
-   sprite: "TBmap6.pcx",
-   sprite: "TBmap7.pcx"
+   sprite: "TBmap0",
+   sprite: "TBmap1",
+   sprite: "TBmap2",
+   sprite: "TBmap3",
+   sprite: "TBmap4",
+   sprite: "TBmap5",
+   sprite: "TBmap6",
+   sprite: "TBmap7"
 }
 
 skin: {
@@ -215,10 +212,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D2.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G2.jpg"
+         tex_d: "MAIN_D2"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G2"
    }
 }
 
@@ -232,10 +229,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D3.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G3.jpg"
+         tex_d: "MAIN_D3"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G3"
    }
 }
 
@@ -249,9 +246,9 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D4.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G4.jpg"
+         tex_d: "MAIN_D4"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G4"
    }
 }

@@ -6,9 +6,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
-#include "../Game/GalaxyManager.h"
-#include "../Foundation/StarUtils.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "GalaxyManager.h"
+#include "StarUtils.h"
+#include "SystemMapUtils.h"
 
 ACentralSunActor::ACentralSunActor()
 {
@@ -40,7 +40,13 @@ ACentralSunActor::ACentralSunActor()
 	SceneCapture->FOVAngle = 60.f;
 	
 	// Use final color with alpha
-	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	//SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	// HDR capture matches your RTF_RGBA16f render target and preserves emissive
+	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+
+	// Optional: keep PP off if you want “raw” emissive; turn on if you want bloom/tonemap in the thumbnail.
+	// SceneCapture->ShowFlags.SetPostProcessing(true);
+	SceneCapture->ShowFlags.SetPostProcessing(false);
 
 	// Flags to avoid black sky/background
 	SceneCapture->ShowFlags.SetAtmosphere(false);
@@ -83,10 +89,9 @@ ACentralSunActor* ACentralSunActor::SpawnWithSpectralClass(
 	NewActor->SpectralClass = InSpectralClass;
 	NewActor->Radius = InRadius;
 	NewActor->StarName = InName;
-	NewActor->ApplyStarVisuals(NewActor->SpectralClass);
-	
-	// Resume construction, now BeginPlay will see the correct value
+
 	NewActor->FinishSpawning(FTransform(Rotation, Location));
+	NewActor->ApplyStarVisuals(NewActor->SpectralClass);	
 
 	return NewActor;
 }
@@ -125,6 +130,10 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	// Use StarUtils for consistent visuals
 	StarColor = StarUtils::GetColor(Class);
 	float GlowStrength = StarUtils::GetGlowStrength(Class);
+
+	const float EmissiveStrength = StarUtils::GetEmissiveFromClass(Class);
+	//const float EmissiveStrength = GlowStrength;
+
 	float SunspotStrength = StarUtils::GetSunspotStrength(Class);
 
 	// Create dynamic material
@@ -144,7 +153,9 @@ void ACentralSunActor::ApplyStarVisuals(ESPECTRAL_CLASS Class)
 	SceneCapture->CaptureScene();
 
 	StarMaterialInstance->SetVectorParameterValue("StarColor", StarColor);
-	//StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
+	//StarMaterialInstance->SetVectorParameterValue("Main Color High", StarColor);
+	//StarMaterialInstance->SetVectorParameterValue("Main Color Low", StarColor);
+	StarMaterialInstance->SetScalarParameterValue("GlowStrength", GlowStrength/10);
 	//StarMaterialInstance->SetTextureParameterValue("Sunspots", SunspotTexture);
 	//StarMaterialInstance->SetScalarParameterValue("SunspotStrength", SunspotStrength);
 

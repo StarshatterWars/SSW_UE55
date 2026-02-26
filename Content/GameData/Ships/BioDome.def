@@ -4,14 +4,12 @@ name:          BioDome
 class:         Building
 display_name: "BioDome"
 abrv:		   BLDG
-hud_icon:     "hud_dome.pcx"
+empire:        All
+description:   "The BioDome is a self-contained ecological habitat engineered to sustain life in otherwise hostile environments. Serving as both agricultural hub and civilian sanctuary, it represents the fragile but persistent expansion of humanity into the frontier."
+hud_icon:     "hud_dome"
 secret:        false
 
-detail_0:   "A1-0.mag"
-feature_0:  1000
-detail_1:   "A1-6.mag"
-feature_1:  6
-
+model:   "A1-0"
 
 mass:       950e3
 integrity:  700e3

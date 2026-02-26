@@ -89,7 +89,7 @@ void UOOBLandingSquadronWidget::ToggleExpansion()
 void UOOBLandingSquadronWidget::BuildChildren(const FS_OOBLanding& FighterDataStruct)
 {
     if (!ElementListView) {
-        UE_LOG(LogTemp, Error, TEXT("Lanfing Squadron ListView is not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Lanfing Squadron ListView is notxvalid!"));
         return;
     }
 

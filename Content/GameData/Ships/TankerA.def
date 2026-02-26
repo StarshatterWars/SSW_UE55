@@ -4,14 +4,11 @@ name:       IM1906
 display_name: "IM1906 Tanker"
 class:      Freighter
 abrv:       FREIGHT
-hud_icon:   "TAHud.pcx"
+empire:     All
+description: "The IM1906 Tanker is a heavy-capacity fuel transport vessel engineered for long-haul logistics operations. Though lightly armed, its reinforced storage cells and extended range make it indispensable to sustained fleet deployments."
+hud_icon:   "TAHud"
 
-detail_0:   "TankerA_0opt.mag"
-feature_0:  1000
-detail_1:   "TankerA_1opt.mag"
-feature_1:  20
-detail_2:   "TankerA_2opt.mag"
-feature_2:  12
+model:      "TankerA"
 
 mass:       18.2e3
 agility:    1
@@ -162,31 +159,31 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "DebrisPod.mag",
+   debris:           "DebrisPod",
    debris_loc:       (-50,0,-20),
    debris_mass:      11e3,
    debris_count:     1,
    debris_life:      345,
 
-   debris:           "DebrisTank.mag",
+   debris:           "DebrisTank",
    debris_loc:       (0,0,0),
    debris_mass:      7e3,
    debris_count:     2,
    debris_life:      325,
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     25,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     20,
    debris_life:      15,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,
@@ -195,14 +192,14 @@ death_spiral: {
    }
 
 map: {
-   sprite: "TAmap0.pcx",
-   sprite: "TAmap1.pcx",
-   sprite: "TAmap2.pcx",
-   sprite: "TAmap3.pcx",
-   sprite: "TAmap4.pcx",
-   sprite: "TAmap5.pcx",
-   sprite: "TAmap6.pcx",
-   sprite: "TAmap7.pcx"
+   sprite: "TAmap0",
+   sprite: "TAmap1",
+   sprite: "TAmap2",
+   sprite: "TAmap3",
+   sprite: "TAmap4",
+   sprite: "TAmap5",
+   sprite: "TAmap6",
+   sprite: "TAmap7"
 }
 
 skin: {
@@ -215,10 +212,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D2.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G2.jpg"
+         tex_d: "MAIN_D2"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G2"
    }
 }
 
@@ -232,10 +229,10 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D3.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G3.jpg"
+         tex_d: "MAIN_D3"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G3"
    }
 }
 
@@ -249,9 +246,9 @@ skin: {
          Ke:    (1.0, 1.0, 1.0)
          power: 20
          bump:  3
-         tex_d: "MAIN_D4.jpg"
-         tex_s: "MAIN_S.jpg"
-         tex_b: "MAIN_B.jpg"
-         tex_e: "MAIN_G4.jpg"
+         tex_d: "MAIN_D4"
+         tex_s: "MAIN_S"
+         tex_b: "MAIN_B"
+         tex_e: "MAIN_G4"
    }
 }

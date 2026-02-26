@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
 #include "Engine/Texture2D.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "SystemMarker.generated.h"
 
 /**

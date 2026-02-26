@@ -4,9 +4,11 @@ name:         "AAA 1"
 display_name: "AAA Gun"
 abrv:         SAM
 class:        SAM
-hud_icon:     "hud_aaa2.pcx"
+description:  "The AAA Gun is a ground-based anti-aerospace defense platform designed to protect strategic installations from low-altitude strikes and orbital bombardment. Compact and rapid-tracking, it provides layered perimeter security against fighters, drones, and incoming munitions." 
+empire:       All
+hud_icon:     "hud_aaa2"
 
-model:      "Tower3-6.mag"
+model:      "Tower3"
 
 mass:       5e3
 integrity:  5e3
@@ -61,5 +63,5 @@ death_spiral: {
    final_loc:        (0, 64, 0),
    }
 
-map: { sprite: "map_aaa1.pcx" }
+map: { sprite: "map_aaa1" }
 

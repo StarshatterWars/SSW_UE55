@@ -62,10 +62,10 @@ private:
 	// Number of private connections
 	int NumPrivateConnections;
 
-	// Whether or not to search LAN
+	// Whether or notxto search LAN
 	bool bUseLAN;
 
-	// Whether or not to allow invites
+	// Whether or notxto allow invites
 	bool bAllowInvites;
 
 	// Whether this is a dedicated server or not

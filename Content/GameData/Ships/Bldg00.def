@@ -4,12 +4,11 @@ name:         Bldg00
 class:        Building
 abrv:		  BLDG
 display_name: "Office Complex"
-hud_icon:     "hud_bldg00.pcx"
+description:   "The Office Complex serves as the administrative nerve center of a planetary settlement, coordinating logistics, communications, and civil governance. While lightly fortified, its data networks and command infrastructure make it a vital asset in maintaining operational control across the sector."
+empire:       All
+hud_icon:     "hud_bldg00"
 
-detail_0:   "Bldg00-0.mag"
-feature_0:  1000
-detail_1:   "Bldg00-6.mag"
-feature_1:  6
+model:     "Bldg00-0"
 
 mass:       5e3
 integrity:  8e3

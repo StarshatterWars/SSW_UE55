@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_OOBForce definition
+#include "GameStructs.h" // FS_OOBForce definition
 #include "Blueprint/IUserObjectListEntry.h"
 #include "OOBElementWidget.generated.h"
 

@@ -4,16 +4,12 @@ name:          Volnaris
 display_name:  Volnaris
 class:         Destroyer
 abrv:          DD
+empire:        Marakan
 description:   "The DD/E-4D01 VOLNARIS class of destroyer/escorts are the predecessors of the heavier Broadsword destroyer class.  Originally intended as mainline destroyers, the Volnaris ships have now been relegated primarily to escort duty for the Hegemony battle groups.  The Volnaris features a pair of internally-mounted heavy x-ray laser batteries and three fusion torpedo launchers for offensive capability, along with a full complement of Orca point defense batteries for protection from inbound threats.  Due to design limitations, the Orca PDBs tend to provide better coverage for the dorsal hemisphere, leaving the Volnaris class with a vulnerable underbelly."
 
-hud_icon:   "VolnarisHud.pcx"
+hud_icon:   "VolnarisHud"
 
-detail_0:   "Volnaris_0.mag"
-feature_0:  1000
-detail_1:   "Volnaris_1opt.mag"
-feature_1:  40
-detail_2:   "Volnaris_2opt.mag"
-feature_2:  20
+model:       "Volnaris"
 
 mass:       21.1e3
 agility:    2 //3.1
@@ -76,8 +72,8 @@ shield: {
    type:             2,
    design:           "Grav Shield",
    pcs:              100,
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, -60),
    size:             48,
@@ -312,14 +308,14 @@ nav:        {
 
 
 map: {
-   sprite: "BroadMap0.pcx",
-   sprite: "BroadMap1.pcx",
-   sprite: "BroadMap2.pcx",
-   sprite: "BroadMap3.pcx",
-   sprite: "BroadMap4.pcx",
-   sprite: "BroadMap5.pcx",
-   sprite: "BroadMap6.pcx",
-   sprite: "BroadMap7.pcx"
+   sprite: "BroadMap0",
+   sprite: "BroadMap1",
+   sprite: "BroadMap2",
+   sprite: "BroadMap3",
+   sprite: "BroadMap4",
+   sprite: "BroadMap5",
+   sprite: "BroadMap6",
+   sprite: "BroadMap7"
 }
 
 
@@ -336,11 +332,11 @@ death_spiral: {
    explosion: { type: 12, final: true } // Large burst
 
 
-   debris:    { model: "VolnarisDebris1.mag",   loc: (0,0,-250), mass:25e3, count:  1, life: 365,
+   debris:    { model: "VolnarisDebris1",   loc: (0,0,-250), mass:25e3, count:  1, life: 365,
                 fire:  (30,20,170) }
-   debris:    { model: "Debris0A.mag",          loc: (0,0, 20),  mass:  45, count: 16, life:  20 }
-   debris:    { model: "Debris0B.mag",          loc: (0,0,-30),  mass:  24, count: 12, life:  35 }
-   debris:    { model: "Debris0C.mag",          loc: (0,0,0),    mass:  23, count: 10, life:  30 }
+   debris:    { model: "Debris0A",          loc: (0,0, 20),  mass:  45, count: 16, life:  20 }
+   debris:    { model: "Debris0B",          loc: (0,0,-30),  mass:  24, count: 12, life:  35 }
+   debris:    { model: "Debris0C",          loc: (0,0,0),    mass:  23, count: 10, life:  30 }
 }
 
 

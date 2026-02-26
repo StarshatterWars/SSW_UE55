@@ -1,24 +1,40 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
 
+	SUBSYSTEM:    Stars.exe
+	FILE:         RadioTraffic.cpp
+	AUTHOR:       Carlos Bott
+	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+
+
+	OVERVIEW
+	========
+	Radio message handler class implementation
+*/
 
 #include "RadioTraffic.h"
+
 #include "RadioMessage.h"
-#include "../Screen/W_RadioView.h"
+#include "RadioView.h"
 #include "RadioVox.h"
 #include "Instruction.h"
 #include "Ship.h"
-//#include "Contact.h"
-#include "Element.h"
+#include "SimContact.h"
+#include "SimElement.h"
 #include "Sim.h"
-//#include "NetGame.h"
-//#include "NetData.h"
+#include "Game.h"
+#include "Text.h"
 
-#include "../System/Game.h"
-#include "../Foundation/Text.h"
+// Unreal logging (replaces Print):
+#include "Logging/LogMacros.h"
+
+// Local log category for this translation unit:
+DEFINE_LOG_CATEGORY_STATIC(LogRadioTraffic, Log, All);
 
 // +----------------------------------------------------------------------+
 
-RadioTraffic* RadioTraffic::radio_traffic = 0;
+RadioTraffic* RadioTraffic::radio_traffic = nullptr;
 
 // +----------------------------------------------------------------------+
 
@@ -38,42 +54,42 @@ void
 RadioTraffic::Initialize()
 {
 	if (!radio_traffic)
-		radio_traffic = new RadioTraffic();
+		radio_traffic = new RadioTraffic;
 }
 
 void
 RadioTraffic::Close()
 {
 	delete radio_traffic;
-	radio_traffic = 0;
+	radio_traffic = nullptr;
 }
 
 // +--------------------------------------------------------------------+
 
 void
-RadioTraffic::SendQuickMessage(UShip* ship, int action)
+RadioTraffic::SendQuickMessage(Ship* ship, RadioMessageAction action)
 {
 	if (!ship) return;
 
-	Element* elem = ship->GetElement();
+	SimElement* elem = ship->GetElement();
 
 	if (elem) {
-		if (action >= RadioMessage::REQUEST_PICTURE) {
-			UShip* controller = ship->GetController();
+		if (action >= RadioMessageAction::REQUEST_PICTURE) {
+			Ship* controller = ship->GetController();
 
 			if (controller && !ship->IsStarship()) {
 				RadioMessage* msg = new RadioMessage(controller, ship, action);
 				Transmit(msg);
 			}
 		}
-		else if (action >= RadioMessage::SPLASH_1 && action <= RadioMessage::DISTRESS) {
-			RadioMessage* msg = new RadioMessage((Element*)0, ship, action);
+		else if (action >= RadioMessageAction::SPLASH_1 && action <= RadioMessageAction::DISTRESS) {
+			RadioMessage* msg = new RadioMessage((SimElement*)0, ship, action);
 			Transmit(msg);
 		}
 		else {
 			RadioMessage* msg = new RadioMessage(elem, ship, action);
 
-			if (action == RadioMessage::ATTACK || action == RadioMessage::ESCORT)
+			if (action == RadioMessageAction::ATTACK || action == RadioMessageAction::ESCORT)
 				msg->AddTarget(ship->GetTarget());
 
 			Transmit(msg);
@@ -87,26 +103,19 @@ void
 RadioTraffic::Transmit(RadioMessage* msg)
 {
 	if (msg && radio_traffic) {
-		//NetGame* net_game = NetGame::GetInstance();
-		//if (net_game) {
-		//	NetCommMsg net_msg;
-		//	net_msg.SetRadioMessage(msg);
-		//	net_game->SendData(&net_msg);
-		//}
-
-		radio_traffic->SendMessage(msg);
+		radio_traffic->SendRadioMessage(msg);
 	}
 }
 
 // +----------------------------------------------------------------------+
 
 void
-RadioTraffic::SendMessage(RadioMessage* msg)
+RadioTraffic::SendRadioMessage(RadioMessage* msg)
 {
 	if (!msg) return;
 
-	USim* sim = USim::GetSim();
-	UShip* player = sim->GetPlayerShip();
+	Sim* sim = Sim::GetSim();
+	Ship* player = sim ? sim->GetPlayerShip() : nullptr;
 	int   iff = 0;
 
 	if (player)
@@ -115,25 +124,23 @@ RadioTraffic::SendMessage(RadioMessage* msg)
 	if (msg->DestinationShip()) {
 		traffic.append(msg);
 
-		if (msg->Channel() == 0 || msg->Channel() == iff)
+		if (msg->GetChannel() == 0 || msg->GetChannel() == iff)
 			DisplayMessage(msg);
 
-		//if (!NetGame::IsNetGameClient())
 		msg->DestinationShip()->HandleRadioMessage(msg);
 	}
 
 	else if (msg->DestinationElem()) {
 		traffic.append(msg);
 
-		if (msg->Channel() == 0 || msg->Channel() == iff)
+		if (msg->GetChannel() == 0 || msg->GetChannel() == iff)
 			DisplayMessage(msg);
 
-		//if (!NetGame::IsNetGameClient())
 		msg->DestinationElem()->HandleRadioMessage(msg);
 	}
 
 	else {
-		if (msg->Channel() == 0 || msg->Channel() == iff)
+		if (msg->GetChannel() == 0 || msg->GetChannel() == iff)
 			DisplayMessage(msg);
 
 		delete msg;
@@ -151,7 +158,7 @@ RadioTraffic::TranslateVox(const char* phrase)
 	vox = Game::GetText(vox);
 
 	if (vox.contains("vox."))  // failed to translate
-		return Text(phrase);    // return the original text
+		return Text(phrase);   // return the original text
 
 	return vox;
 }
@@ -159,7 +166,7 @@ RadioTraffic::TranslateVox(const char* phrase)
 void
 RadioTraffic::DisplayMessage(RadioMessage* msg)
 {
-	/*if (!msg) return;
+	if (!msg) return;
 
 	char txt_buf[256];   txt_buf[0] = 0;
 	char msg_buf[128];   msg_buf[0] = 0;
@@ -168,17 +175,17 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 	char act_buf[64];    act_buf[0] = 0;
 	int  vox_channel = 0;
 
-	UShip* dst_ship = msg->DestinationShip();
-	Element* dst_elem = msg->DestinationElem();
+	Ship* dst_ship = msg->DestinationShip();
+	SimElement* dst_elem = msg->DestinationElem();
 
 	// BUILD SRC AND DST BUFFERS -------------------
 
-	if (msg->Sender()) {
-		const UShip* sender = msg->Sender();
+	if (msg->GetSender()) {
+		const Ship* sender = msg->GetSender();
 
 		// orders to self?
 		if (dst_elem && dst_elem->NumShips() == 1 && dst_elem->GetShip(1) == sender) {
-			if (msg->Action() >= RadioMessage::CALL_ENGAGING) {
+			if (msg->GetRadioAction() >= RadioMessageAction::CALL_ENGAGING) {
 				sprintf_s(src_buf, "%s", sender->Name());
 
 				if (sender->IsStarship())
@@ -195,7 +202,7 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 				vox_channel = sender->GetElementIndex();
 			}
 
-			if (msg->Action() >= RadioMessage::CALL_ENGAGING) {
+			if (msg->GetRadioAction() >= RadioMessageAction::CALL_ENGAGING) {
 				sprintf_s(src_buf, "%s", sender->Name());
 			}
 			else {
@@ -253,42 +260,41 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 
 	// BUILD ACTION AND TARGET BUFFERS -------------------
 
-	USimObject* target = 0;
+	SimObject* target = 0;
 
-	strcpy_s(act_buf, RadioMessage::ActionName(msg->Action()));
+	strcpy_s(act_buf, RadioMessage::ActionName(msg->GetRadioAction()));
 
 	if (msg->TargetList().size() > 0)
 		target = msg->TargetList()[0];
 
-	if (msg->Action() == RadioMessage::ACK ||
-		msg->Action() == RadioMessage::NACK) {
+	if (msg->GetRadioAction() == RadioMessageAction::ACK || msg->GetRadioAction() == RadioMessageAction::NACK) {
 
-		if (dst_ship == msg->Sender()) {
+		if (dst_ship == msg->GetSender()) {
 			src_buf[0] = 0;
 			dst_buf[0] = 0;
 
-			if (msg->Action() == RadioMessage::ACK)
+			if (msg->GetRadioAction() == RadioMessageAction::ACK)
 				sprintf_s(msg_buf, "%s.", TranslateVox("Acknowledged").data());
 			else
 				sprintf_s(msg_buf, "%s.", TranslateVox("Unable").data());
 		}
-		else if (msg->Sender()) {
+		else if (msg->GetSender()) {
 			dst_buf[0] = 0;
 
-			if (msg->Info().length()) {
+			if (msg->GetInfo().length()) {
 				sprintf_s(msg_buf, "%s. %s",
 					TranslateVox(act_buf).data(),
-					(const char*)msg->Info());
+					(const char*)msg->GetInfo());
 			}
 			else {
 				sprintf_s(msg_buf, "%s.", TranslateVox(act_buf).data());
 			}
 		}
 		else {
-			if (msg->Info().length()) {
+			if (msg->GetInfo().length()) {
 				sprintf_s(msg_buf, "%s. %s",
 					TranslateVox(act_buf).data(),
-					(const char*)msg->Info());
+					(const char*)msg->GetInfo());
 			}
 			else {
 				sprintf_s(msg_buf, "%s.", TranslateVox(act_buf).data());
@@ -296,14 +302,14 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 		}
 	}
 
-	else if (msg->Action() == RadioMessage::MOVE_PATROL) {
+	else if (msg->GetRadioAction() == RadioMessageAction::MOVE_PATROL) {
 		sprintf_s(msg_buf, TranslateVox("Move patrol.").data());
 	}
 
-	else if (target && dst_ship && msg->Sender()) {
-		Contact* c = msg->Sender()->FindContact(target);
+	else if (target && dst_ship && msg->GetSender()) {
+		SimContact* c = msg->GetSender()->FindContact(target);
 
-		if (c && c->GetIFF(msg->Sender()) > 10) {
+		if (c && c->GetIFF(msg->GetSender()) > 10) {
 			sprintf_s(msg_buf, "%s %s.", TranslateVox(act_buf).data(), TranslateVox("unknown contact").data());
 		}
 
@@ -320,19 +326,25 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 			target->Name());
 	}
 
-	else if (msg->Info().length()) {
+	else if (msg->GetInfo().length()) {
 		sprintf_s(msg_buf, "%s %s",
 			TranslateVox(act_buf).data(),
-			(const char*)msg->Info());
+			(const char*)msg->GetInfo());
 	}
 
 	else {
 		strcpy_s(msg_buf, TranslateVox(act_buf).data());
 	}
 
-	char last_char = msg_buf[strlen(msg_buf) - 1];
-	if (last_char != '!' && last_char != '.' && last_char != '?')
-		strcat_s(msg_buf, ".");
+	const size_t MsgLen = strlen(msg_buf);
+	if (MsgLen > 0) {
+		const char last_char = msg_buf[MsgLen - 1];
+		if (last_char != '!' && last_char != '.' && last_char != '?')
+			strcat_s(msg_buf, ".");
+	}
+	else {
+		strcpy_s(msg_buf, ".");
+	}
 
 	// final format:
 	if (dst_buf[0] && src_buf[0]) {
@@ -354,6 +366,9 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 		strcpy_s(txt_buf, msg_buf);
 	}
 
+	// Debug (replaces legacy Print):
+	UE_LOG(LogRadioTraffic, Verbose, TEXT("RADIO: %hs"), txt_buf);
+
 	// vox:
 	const char* path[8] = { "1", "1", "2", "3", "4", "5", "6", "7" };
 
@@ -368,7 +383,7 @@ RadioTraffic::DisplayMessage(RadioMessage* msg)
 			RadioView::Message(txt_buf);
 			delete vox;
 		}
-	}*/
+	}
 }
 
 // +----------------------------------------------------------------------+

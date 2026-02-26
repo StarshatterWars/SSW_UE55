@@ -4,14 +4,12 @@ name:          Razor
 display_name:  Razor
 class:         Fighter
 abrv:          "F-MK2"
+empire:        Marakan
 description:   "The MARK-2 RAZOR is a forward-delta configuration multi-role fighter spacecraft commonly used by the Marakan Hegemony and its client states. It is fast and sturdy and has proven itself in spaceborne and airborne combat as well as in surface attack missions. Like the Mark 1 Viper, the Razor is armed with twin Alpha particle cannon, along with eight underwing hard points capable of mounting several types of anti-fighter ordnance.  The Razor's heavy delta wing design also gives it the capacity to mount a variety of air-to-ground and antiship weapons."
 
-hud_icon:      "RazorHud.pcx"
+hud_icon:      "RazorHud"
 
-detail_0:   "Razor_1opt.mag"
-feature_0:  0.1
-detail_1:   "Razor_2opt.mag"
-feature_1:  1.5
+model:          "Razor"
 
 mass:       15
 integrity:  2550
@@ -226,19 +224,19 @@ gear: {
    hull_factor: 0.5,
 
    gear: {
-      model: "GearNose0.mag",
+      model: "GearNose0",
       start: (0, -14, 113),
       end:   (0, -40, 127)
    },
 
    gear: {
-      model: "GearLeft0.mag",
+      model: "GearLeft0",
       start: (-25, -20, 10),
       end:   (-45, -40, 10)
    },
 
    gear: {
-      model: "GearRight0.mag",
+      model: "GearRight0",
       start: ( 25, -20, 10),
       end:   ( 45, -40, 10)
    },
@@ -302,7 +300,7 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, -12),
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,-2)
    debris_mass:      20
    debris_count:     4
@@ -312,7 +310,7 @@ death_spiral: {
    debris_drag:      0.3
    debris_speed:     190
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,3)
    debris_mass:      20
    debris_count:     3
@@ -325,13 +323,13 @@ death_spiral: {
 
 
 map: {
-   sprite: "RazorMap0.pcx",
-   sprite: "RazorMap1.pcx",
-   sprite: "RazorMap2.pcx",
-   sprite: "RazorMap3.pcx",
-   sprite: "RazorMap4.pcx",
-   sprite: "RazorMap5.pcx",
-   sprite: "RazorMap6.pcx",
-   sprite: "RazorMap7.pcx",
+   sprite: "RazorMap0",
+   sprite: "RazorMap1",
+   sprite: "RazorMap2",
+   sprite: "RazorMap3",
+   sprite: "RazorMap4",
+   sprite: "RazorMap5",
+   sprite: "RazorMap6",
+   sprite: "RazorMap7",
 }
 

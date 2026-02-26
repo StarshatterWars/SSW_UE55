@@ -1,27 +1,41 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         RadioTraffic.h
+	AUTHOR:       Carlos Bott
+	ORIGINAL AUTHOR AND STUDIO: John DiCamillo / Destroyer Studios LLC
+
+
+	OVERVIEW
+	========
+	RadioTraffic maintains a history of all messages sent between ships
+	in the simulation.  This class also handles displaying relevant
+	traffic to the player.
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
-
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
+#include "Types.h"
 #include "SimObject.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
+#include "List.h"
+#include "Text.h"
+
+// Minimal Unreal include (Vec3/Point -> FVector conversion if needed by inline callers):
+#include "Math/Vector.h"
+#include "GameStructs.h"
 
 // +--------------------------------------------------------------------+
 
-class Element;
+class SimElement;
 class RadioMessage;
-class UShip;
-class USimObject;
+class Ship;
+class SimObject;
 
 // +--------------------------------------------------------------------+
-/**
- * 
- */
-class STARSHATTERWARS_API RadioTraffic
+
+class RadioTraffic
 {
 public:
 	RadioTraffic();
@@ -33,14 +47,13 @@ public:
 
 	static RadioTraffic* GetInstance() { return radio_traffic; }
 
-	static void          SendQuickMessage(UShip* ship, int msg);
+	static void          SendQuickMessage(Ship* ship, RadioMessageAction msg);
 	static void          Transmit(RadioMessage* msg);
 	static void          DiscardMessages();
 	static Text          TranslateVox(const char* phrase);
 
-	void                 SendMessage(RadioMessage* msg);
+	void                 SendRadioMessage(RadioMessage* msg);
 	void                 DisplayMessage(RadioMessage* msg);
-
 
 protected:
 	List<RadioMessage>   traffic;

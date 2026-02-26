@@ -4,12 +4,11 @@ name:          ZZF
 display_name:  Zolon
 class:         Fighter
 abrv:          ZF
+description:   "The ZZF Zolon Fighter is a nimble interceptor craft deployed in large numbers to overwhelm opposing squadrons. Compact and ruthlessly efficient, it relies on speed and coordinated attack patterns to secure local space superiority."
+empire:        Zolon
 secret:        true
 
-detail_0:   "ZFighter_1.mag"
-feature_0:  1000
-detail_1:   "ZFighter_2.mag"
-feature_1:  20
+model:         "ZFighter"
 
 mass:       18
 integrity:  30e3
@@ -145,4 +144,4 @@ death_spiral: {
    final_loc:        (0, 0, -32),
 }
 
-map: { sprite: "zmap.pcx" }
+map: { sprite: "zmap" }

@@ -4,16 +4,12 @@ name:          Imperial
 display_name:  Imperial
 class:         Cruiser
 abrv:          CA
+empire:        Marakan
 description:   "Marakan Hegemony guided missile cruisers such as the CA-5C44 IMPERIAL class are most often found leading small cruiser battle groups. These ships are devastating attack platforms, equally at home either support or leading space action groups. The Imperial class features a pair of Rostov high-speed missile turrets, which combined with a full battery of magnetic rail launchers, gives them excellent long range assault capability."
 
-hud_icon:   "ImperialHud.pcx"
+hud_icon:   "ImperialHud"
 
-detail_0:   "Musson_0opt.mag"
-feature_0:  1000
-detail_1:   "Musson_1opt.mag"
-feature_1:  32
-detail_2:   "Musson_2opt.mag"
-feature_2:  16
+model:      "Imperial"
 
 mass:       348.1e3
 agility:    2
@@ -83,8 +79,8 @@ shield: {
    type:             2,
    design:           "Grav Shield",
    pcs:              100,
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, 0),
    size:             48,
@@ -381,14 +377,14 @@ nav:        {
 
 
 map: {
-   sprite: "ImperialMap0.pcx",
-   sprite: "ImperialMap1.pcx",
-   sprite: "ImperialMap2.pcx",
-   sprite: "ImperialMap3.pcx",
-   sprite: "ImperialMap4.pcx",
-   sprite: "ImperialMap5.pcx",
-   sprite: "ImperialMap6.pcx",
-   sprite: "ImperialMap7.pcx"
+   sprite: "ImperialMap0",
+   sprite: "ImperialMap1",
+   sprite: "ImperialMap2",
+   sprite: "ImperialMap3",
+   sprite: "ImperialMap4",
+   sprite: "ImperialMap5",
+   sprite: "ImperialMap6",
+   sprite: "ImperialMap7"
 }
 
 
@@ -403,12 +399,12 @@ death_spiral: {
    explosion: { type: 13, final: true } // Nuke
    explosion: { type: 12, final: true } // Large burst
 
-   debris:    { model: "MussonDebris1.mag", loc: (0,0,400), mass: 98e3, count:  1, life: 380,
+   debris:    { model: "MussonDebris1", loc: (0,0,400), mass: 98e3, count:  1, life: 380,
                 fire:  (60,0,-200), fire:  (100,20,80) }
-   debris:    { model: "MussonDebris2.mag", loc: (140,-120,0), mass: 38e3, count:  1, life: 360 }
-   debris:    { model: "Debris0A.mag",      loc: (0,0,-50), mass:   95, count: 20, life:  20 }
-   debris:    { model: "Debris0B.mag",      loc: (0,0,-50), mass:   44, count: 15, life:  35 }
-   debris:    { model: "Debris0C.mag",      loc: (0,0,0),   mass:   23, count: 10, life:  30 }
+   debris:    { model: "MussonDebris2", loc: (140,-120,0), mass: 38e3, count:  1, life: 360 }
+   debris:    { model: "Debris0A",      loc: (0,0,-50), mass:   95, count: 20, life:  20 }
+   debris:    { model: "Debris0B",      loc: (0,0,-50), mass:   44, count: 15, life:  35 }
+   debris:    { model: "Debris0C",      loc: (0,0,0),   mass:   23, count: 10, life:  30 }
 
 }
 

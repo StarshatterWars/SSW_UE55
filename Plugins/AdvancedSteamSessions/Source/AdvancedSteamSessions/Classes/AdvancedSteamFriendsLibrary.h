@@ -344,7 +344,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Online|AdvancedFriends|SteamAPI")
 		static bool IsOverlayEnabled();
 
-	// Gets the level of a friends steam account, STEAM ONLY, Returns -1 if the steam level is not known, might need RequestSteamFriendInfo called first.
+	// Gets the level of a friends steam account, STEAM ONLY, Returns -1 if the steam level is notxknown, might need RequestSteamFriendInfo called first.
 	UFUNCTION(BlueprintCallable, Category = "Online|AdvancedFriends|SteamAPI")
 	static int32 GetFriendSteamLevel(const FBPUniqueNetId UniqueNetId);
 

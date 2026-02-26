@@ -4,14 +4,12 @@ name:           Intruder
 display_name:   Intruder
 class:          fighter
 abrv:           "F4F"
+empire:         Marakan
 description:   "The F4F INTRUDER is the latest edition single-seat intercept fighter craft used by the Marakan Hegemony.  More expensive than the older Viper models, the Intruder remains a lightweight and highly maneuverable tactical fighter.  It is armed with twin Alpha particle cannon, and four underwing hard points capable of mounting a variety of antiship and anti-fighter ordnance.  The Intruder is usually tasked with patrol, intercept, and escort mission profiles, but may also serve as a strike fighter in a pinch."
 
-hud_icon:       "IntruderHud.pcx"
+hud_icon:       "IntruderHud"
 
-detail_0:       "Interceptor_1opt.mag"
-feature_0:      25
-detail_1:       "Interceptor_2opt.mag"
-feature_1:      0.5
+model:          "Intruder"
  
 mass:        	25
 integrity:   	2500
@@ -21,7 +19,7 @@ air_factor:  	0.25
 roll_rate:   	600
 scale:       	0.25
 acs:         	1.0
-detet:	 	50e3
+detet:	 	    50e3
 
 trans_x:     	2200
 trans_y:     	2200
@@ -197,19 +195,19 @@ gear: {
    hull_factor: 0.5,
 
    gear: {
-      model: "GearNose0.mag",
+      model: "GearNose0",
       start: (0, -25, 134),
       end:   (0, -50, 148)
    },
 
    gear: {
-      model: "GearLeft0.mag",
+      model: "GearLeft0",
       start: (-20, -30, -64),
       end:   (-45, -60, -64),
    },
 
    gear: {
-      model: "GearRight0.mag",
+      model: "GearRight0",
       start: ( 20, -30, -64),
       end:   ( 45, -60, -64),
    },
@@ -272,7 +270,7 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, -32),
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,-2)
    debris_mass:      20
    debris_count:     4
@@ -282,7 +280,7 @@ death_spiral: {
    debris_drag:      0.3
    debris_speed:     190
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,3)
    debris_mass:      20
    debris_count:     3
@@ -295,14 +293,14 @@ death_spiral: {
 
 
 map: {
-   sprite: "IntruderMap0.pcx",
-   sprite: "IntruderMap1.pcx",
-   sprite: "IntruderMap2.pcx",
-   sprite: "IntruderMap3.pcx",
-   sprite: "IntruderMap4.pcx",
-   sprite: "IntruderMap5.pcx",
-   sprite: "IntruderMap6.pcx",
-   sprite: "IntruderMap7.pcx",
+   sprite: "IntruderMap0",
+   sprite: "IntruderMap1",
+   sprite: "IntruderMap2",
+   sprite: "IntruderMap3",
+   sprite: "IntruderMap4",
+   sprite: "IntruderMap5",
+   sprite: "IntruderMap6",
+   sprite: "IntruderMap7",
 }
 
 

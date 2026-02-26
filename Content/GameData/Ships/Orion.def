@@ -4,18 +4,14 @@ name:          Orion
 display_name:  Orion
 class:         Carrier
 abrv:          CV
+empire:        Terellian
 description:   "The CV-69 ORION class carriers are essentially spaceborne starports, capable of launching as many as four fighter craft every minute. The Orion's two launch rails and two arresting gear engines enable her to launch and recover ships both rapidly and simultaneously. The Orion class ship's embarked tactical fighter wing includes four different types of fighter and attack craft in addition to armored landing craft for a total complement of almost 80 ships."
 
 degrees:    true
 beauty:     (-9, 5, 1.33)
-hud_icon:   "OrionHud.pcx"
+hud_icon:   "OrionHud"
 
-detail_0:   "Orion0z.mag"
-feature_0:  1000
-detail_1:   "Orion1z.mag"
-feature_1:  40
-detail_2:   "Orion2z.mag"
-feature_2:  25
+model:      "Orion"
 
 mass:       957e3
 agility:    1
@@ -123,8 +119,8 @@ shield:     {
    design:           "Grav Shield",
    pcs:              100,
    model:            "OShield.mag",
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
    }
 
 
@@ -470,7 +466,7 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "OrionDebris1.mag",
+   debris:           "OrionDebris1",
    debris_loc:       (0,0,650),
    debris_mass:      40e3,
    debris_count:     1,
@@ -478,7 +474,7 @@ death_spiral: {
    debris_fire:      (-130, 0,-420),
    debris_fire:      ( 135,50,   0),
 
-   debris:           "OrionDebris2.mag",
+   debris:           "OrionDebris2",
    debris_loc:       (-20,20,-500),
    debris_mass:      40e3,
    debris_count:     1,
@@ -487,13 +483,13 @@ death_spiral: {
    debris_fire:      ( 105, 90,   0)
    debris_fire:      (-125,-10,-360)
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,120),
    debris_mass:      33,
    debris_count:     25,
    debris_life:      35,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (130,0,0),
    debris_mass:      34,
    debris_count:     22,
@@ -501,14 +497,14 @@ death_spiral: {
    }
 
 map: {
-   sprite: "OrionMap0.pcx",
-   sprite: "OrionMap1.pcx",
-   sprite: "OrionMap2.pcx",
-   sprite: "OrionMap3.pcx",
-   sprite: "OrionMap4.pcx",
-   sprite: "OrionMap5.pcx",
-   sprite: "OrionMap6.pcx",
-   sprite: "OrionMap7.pcx"
+   sprite: "OrionMap0",
+   sprite: "OrionMap1",
+   sprite: "OrionMap2",
+   sprite: "OrionMap3",
+   sprite: "OrionMap4",
+   sprite: "OrionMap5",
+   sprite: "OrionMap6",
+   sprite: "OrionMap7"
 }
 
 

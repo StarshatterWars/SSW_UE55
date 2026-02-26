@@ -2,14 +2,13 @@ SHIP
 
 name:         Dsrt05
 class:        Building
-display_name: Minehead
+display_name: Deserted Minehead
 abrv:		  BLDG
-hud_icon:     "hud_dsrt05.pcx"
+hud_icon:     "hud_dsrt05"
+description: "A Deserted Minehead is a surface extraction hub marking the primary access point to subterranean resource veins. Once vital to industrial output, it often becomes a contested objective when rare minerals or strategic materials are at stake."
+empire:      All
 
-detail_0:   "Dsrt05-0.mag"
-feature_0:  1000
-detail_1:   "Dsrt05-6.mag"
-feature_1:  6
+model:       "Dsrt05"
 
 mass:       512e3
 integrity:  320e3

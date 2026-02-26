@@ -4,12 +4,11 @@ name:         Bldg05
 class:        Building
 display_name: Building
 abrv:		  BLDG
-hud_icon:     "hud_bldg05.pcx"
+description:  "The Bldg05 Facility is a multipurpose colonial structure supporting logistics, storage, and essential services within developing settlements. Though architecturally modest, it plays a quiet but critical role in sustaining long-term planetary operations."
+empire:       All
+hud_icon:     "hud_bldg05"
 
-detail_0:   "Bldg05-0.mag"
-feature_0:  1000
-detail_1:   "Bldg05-6.mag"
-feature_1:  6
+model:     "Bldg05-0"
 
 mass:       5e3
 integrity:  8e3

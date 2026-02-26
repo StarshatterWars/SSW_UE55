@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -13,12 +13,12 @@
 #include "Components/Image.h"
 #include "Components/EditableTextBox.h"
 #include "Kismet/GameplayStatics.h"
-#include "../System/SSWGameInstance.h"
-
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
 #include "CampaignScreen.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
@@ -50,6 +50,9 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	class UTextBlock* LocationSystemText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* LocationRegionText;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* CampaignStartTimeText;
+
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* CampaignImage;
@@ -60,9 +63,13 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* PlayButtonText;
 	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* RestartButtonText;
+	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* CancelButtonText;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* PlayButton;
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UButton* RestartButton;
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* CancelButton;
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
@@ -71,20 +78,31 @@ class STARSHATTERWARS_API UCampaignScreen : public UUserWidget
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* AcceptSound;
 
-	
+
 protected:
 	void NativeConstruct() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float DeltaTime) override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
-	
+
+	// UI selection state
+	int32 Selected = 0;
+	FName PickedRowName = NAME_None;
+	TArray<FName> CampaignRowNamesByOptionIndex;
+	TArray<int32> CampaignIndexByOptionIndex;
+
 	UFUNCTION()
 	void OnPlayButtonClicked();
 	UFUNCTION()
 	void OnPlayButtonHovered();
 	UFUNCTION()
 	void OnPlayButtonUnHovered();
+	UFUNCTION()
+	void OnRestartButtonClicked();
+	UFUNCTION()
+	void OnRestartButtonHovered();
+	UFUNCTION()
+	void OnRestartButtonUnHovered();
 	UFUNCTION()
 	void OnCancelButtonClicked();
 	UFUNCTION()
@@ -105,11 +123,15 @@ protected:
 	void GetCampaignImageFile(int selected);
 	UFUNCTION()
 	void PlayUISound(UObject* WorldContext, USoundBase* UISound);
-	int Selected;
+	UFUNCTION()
+	bool DoesSelectedCampaignSaveExist() const;
+
+	UFUNCTION()
+	void UpdateCampaignButtons();
 
 	UPROPERTY()
 	FString ImagePath;
 
 private:
-	
+
 };

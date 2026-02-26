@@ -1,40 +1,52 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (C) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         RadioHandler.h
+	AUTHOR:       Carlos Bott
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios LLC
+
+
+	OVERVIEW
+	========
+	RadioHandler (radio comms) class declaration
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
-
-/**
- * 
- */
-#include "../Foundation/Types.h"
-#include "../Foundation/Geometry.h"
+#include "Types.h"
 #include "SimObject.h"
 
- // +--------------------------------------------------------------------+
+// Minimal Unreal include (Vec3/Point -> FVector conversion):
+#include "Math/Vector.h"
+#include "GameStructs.h"
+
+// +--------------------------------------------------------------------+
 
 class RadioMessage;
-class UShip;
+class Ship;
 
-// +-----------------------
+// +--------------------------------------------------------------------+
 
-class STARSHATTERWARS_API RadioHandler
+class RadioHandler
 {
 public:
 	RadioHandler();
-	~RadioHandler();
+	virtual ~RadioHandler();
 
-	virtual bool      ProcessMessage(RadioMessage* msg, UShip* s);
-	virtual void      AcknowledgeMessage(RadioMessage* msg, UShip* s);
+	virtual bool      ProcessMessage(RadioMessage* msg, Ship* s);
+	virtual void      AcknowledgeMessage(RadioMessage* msg, Ship* s);
 
 protected:
-	virtual bool      IsOrder(int action);
-	virtual bool      ProcessMessageOrders(RadioMessage* msg, UShip* s);
-	virtual bool      ProcessMessageAction(RadioMessage* msg, UShip* s);
+	virtual bool      IsOrder(RadioMessageAction action);
+	virtual bool      ProcessMessageOrders(RadioMessage* msg, Ship* s);
+	virtual bool      ProcessMessageAction(RadioMessage* msg, Ship* s);
 
-	virtual bool      Inbound(RadioMessage* msg, UShip* s);
-	virtual bool      Picture(RadioMessage* msg, UShip* s);
-	virtual bool      Support(RadioMessage* msg, UShip* s);
-	virtual bool      SkipNavpoint(RadioMessage* msg, UShip* s);
-	virtual bool      LaunchProbe(RadioMessage* msg, UShip* s);
+	virtual bool      Inbound(RadioMessage* msg, Ship* s);
+	virtual bool      Picture(RadioMessage* msg, Ship* s);
+	virtual bool      Support(RadioMessage* msg, Ship* s);
+	virtual bool      SkipNavpoint(RadioMessage* msg, Ship* s);
+	virtual bool      LaunchProbe(RadioMessage* msg, Ship* s);
 };

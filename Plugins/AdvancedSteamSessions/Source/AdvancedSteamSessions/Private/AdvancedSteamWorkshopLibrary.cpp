@@ -17,7 +17,7 @@ void UAdvancedSteamWorkshopLibrary::GetNumSubscribedWorkshopItems(int32 & Number
 	}
 	else
 	{
-		UE_LOG(AdvancedSteamWorkshopLog, Warning, TEXT("Error in GetNumSubscribedWorkshopItemCount : SteamAPI is not Inited!"));
+		UE_LOG(AdvancedSteamWorkshopLog, Warning, TEXT("Error in GetNumSubscribedWorkshopItemCount : SteamAPI is notxInited!"));
 		return;
 	}
 #else
@@ -40,7 +40,7 @@ TArray<FBPSteamWorkshopID> UAdvancedSteamWorkshopLibrary::GetSubscribedWorkshopI
 		if (NumItems == 0)
 			return outArray;
 
-		// Not using the actual variable above in case someone somehow goes past int32 limits
+		// notxusing the actual variable above in case someone somehow goes past int32 limits
 		// Don't want to go negative on the iteration.
 		NumberOfItems = NumItems;
 
@@ -59,7 +59,7 @@ TArray<FBPSteamWorkshopID> UAdvancedSteamWorkshopLibrary::GetSubscribedWorkshopI
 	}
 	else
 	{
-		UE_LOG(AdvancedSteamWorkshopLog, Warning, TEXT("Error in GetSubscribedWorkshopItemCount : SteamAPI is not Inited!"));
+		UE_LOG(AdvancedSteamWorkshopLog, Warning, TEXT("Error in GetSubscribedWorkshopItemCount : SteamAPI is notxInited!"));
 		return outArray;
 	}
 #else

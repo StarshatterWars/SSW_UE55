@@ -6,7 +6,8 @@
 #include "IntelListObject.h"
 #include "RosterTVElement.h"
 #include "Components/ListView.h"
-#include "../Foundation/MenuButton.h"
+#include "MenuButton.h"
+#include "FormattingUtils.h"
 
 #include "OOBForceItem.h"
 #include "OOBFleetItem.h"
@@ -27,10 +28,11 @@
 #include "GalaxyMap.h"
 #include "SystemMap.h"
 #include "SectorMap.h"
-#include "../Game/GalaxyManager.h"
+#include "GalaxyManager.h"
 
-#include "../Foundation/SelectableButtonGroup.h"
-#include "../Foundation/MenuButton.h"
+#include "SelectableButtonGroup.h"
+#include "MenuButton.h"
+#include "StarshatterPlayerSubsystem.h"
 #include "Components/PanelWidget.h"
 #include "Components/ScrollBox.h"
 #include "Components/CanvasPanel.h"
@@ -55,12 +57,65 @@ bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive 
 	return true;
 }
 
+static FString FormatTPlus(uint64 TPlusSeconds)
+{
+	const uint64 Days = TPlusSeconds / 86400ULL;
+	const uint64 Rem = TPlusSeconds % 86400ULL;
+	const uint64 Hours = Rem / 3600ULL;
+	const uint64 Minutes = (Rem % 3600ULL) / 60ULL;
+	const uint64 Seconds = Rem % 60ULL;
+
+	return FString::Printf(TEXT("T+ %02llu/%02llu:%02llu:%02llu"),
+		(unsigned long long)Days,
+		(unsigned long long)Hours,
+		(unsigned long long)Minutes,
+		(unsigned long long)Seconds);
+}
+
 void UOperationsScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->LoadGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot);
+	UGameInstance* GIBase = GetGameInstance();
+	if (!GIBase) return;
+
+	// Player profile (subsystem authoritative)
+	UStarshatterPlayerSubsystem* PlayerSS = GIBase->GetSubsystem<UStarshatterPlayerSubsystem>();
+	if (!PlayerSS) return;
+
+	// Campaign runtime / legacy routing (still on GI in current architecture)
+	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GIBase);
+	if (!SSWInstance) return;
+
+	// Boot should have loaded already; safe fallback:
+	if (!PlayerSS->HasLoaded())
+	{
+		PlayerSS->LoadPlayer();
+	}
+
+	const FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetPlayerInfo();
+
+	// -------------------------------
+	// PUB/SUB SUBSCRIBE
+	// -------------------------------
+	UTimerSubsystem* Timer = GIBase->GetSubsystem<UTimerSubsystem>();
+
+	if (Timer)
+	{
+		Timer->OnUniverseSecond.AddUObject(this, &UOperationsScreen::HandleUniverseSecondTick);
+		Timer->OnUniverseMinute.AddUObject(this, &UOperationsScreen::HandleUniverseMinuteTick);
+		Timer->OnCampaignTPlusChanged.AddUObject(this, &UOperationsScreen::HandleCampaignTPlusChanged);
+
+		// Initial push:
+		const uint64 Now = Timer->GetUniverseTimeSeconds();
+		HandleUniverseSecondTick(Now);
+
+		// If campaign T+ depends on universe seconds, keep this:
+		if (SSWInstance->CampaignSave)
+		{
+			HandleCampaignTPlusChanged(Now, SSWInstance->CampaignSave->GetTPlusSeconds(Now));
+		}
+	}
 
 	CombatantList = SSWInstance->GetCombatantList();
 
@@ -69,68 +124,79 @@ void UOperationsScreen::NativeConstruct()
 	if (TitleText)
 		TitleText->SetText(FText::FromString("Operational Command").ToUpper());
 
-	if (CancelButton) {
+	if (CancelButton)
+	{
 		CancelButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnCancelButtonClicked);
 		CancelButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnCancelButtonHovered);
 	}
 
-	if (CancelButtonText) {
+	if (CancelButtonText)
+	{
 		CancelButtonText->SetText(FText::FromString("BACK"));
 	}
-	
+
+	// Active campaign theater defaults (still stored on GI in your current flow)
 	SSWInstance->SelectedSystem = SSWInstance->GetActiveCampaign().System;
 	SSWInstance->SelectedSector.Name = SSWInstance->GetActiveCampaign().Region;
 
-	if (TheaterGalaxyButton) {
+	if (TheaterGalaxyButton)
+	{
 		TheaterGalaxyButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonSelected);
 		TheaterGalaxyButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterGalaxyButtonHovered);
-		// Optional: set a label
+
 		if (UTextBlock* Label = Cast<UTextBlock>(TheaterGalaxyButton->GetWidgetFromName("Label")))
 		{
 			Label->SetText(FText::FromString("GALAXY"));
 		}
 	}
 
-	if (TheaterSystemButton) {
+	if (TheaterSystemButton)
+	{
 		TheaterSystemButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonSelected);
 		TheaterSystemButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSystemButtonHovered);
-		// Optional: set a label
+
 		if (UTextBlock* Label = Cast<UTextBlock>(TheaterSystemButton->GetWidgetFromName("Label")))
 		{
 			Label->SetText(FText::FromString("SYSTEM"));
 		}
 	}
 
-	if (TheaterSectorButton) {
+	if (TheaterSectorButton)
+	{
 		TheaterSectorButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonSelected);
 		TheaterSectorButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnTheaterSectorButtonHovered);
-		// Optional: set a label
+
 		if (UTextBlock* Label = Cast<UTextBlock>(TheaterSectorButton->GetWidgetFromName("Label")))
 		{
 			Label->SetText(FText::FromString("SECTOR"));
 		}
 	}
-	
+
 	if (CurrentLocationText)
 	{
-		CurrentLocationText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().System + " System").ToUpper());
+		CurrentLocationText->SetText(
+			FText::FromString(SSWInstance->GetActiveCampaign().System + " System").ToUpper());
 	}
 
-	if (EmpireSelectionDD) {
-		
+	if (EmpireSelectionDD)
+	{
 		EmpireSelectionDD->ClearOptions();
 		EmpireSelectionDD->OnSelectionChanged.AddDynamic(this, &UOperationsScreen::OnSetEmpireSelected);
 	}
 
-	if (AudioButton) {
+	if (AudioButton)
+	{
 		AudioButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnAudioButtonClicked);
 	}
-	if (SelectButton) {
+
+	if (SelectButton)
+	{
 		SelectButton->OnClicked.AddDynamic(this, &UOperationsScreen::OnSelectButtonClicked);
 		SelectButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnSelectButtonHovered);
 	}
 
-	if (PlayButtonText) {
+	if (PlayButtonText)
+	{
 		PlayButtonText->SetText(FText::FromString("SELECT"));
 	}
 
@@ -141,77 +207,70 @@ void UOperationsScreen::NativeConstruct()
 		UMenuButton* NewButton = CreateWidget<UMenuButton>(this, MenuButtonClass);
 		if (!NewButton) continue;
 
-		// Optional: set a label
 		if (UTextBlock* Label = Cast<UTextBlock>(NewButton->GetWidgetFromName("Label")))
 		{
 			Label->SetText(FText::FromString(MenuItems[i]).ToUpper());
 		}
 		NewButton->MenuOption = MenuItems[i];
 
-		// Add to container and to toggle group
 		MenuButtonContainer->AddChild(NewButton);
 		MenuToggleGroup->RegisterButton(NewButton);
 
-		// Optional: listen for selection in this screen
 		NewButton->OnSelected.AddDynamic(this, &UOperationsScreen::OnMenuToggleSelected);
 		NewButton->OnHovered.AddDynamic(this, &UOperationsScreen::OnMenuToggleHovered);
 		AllMenuButtons.Add(NewButton);
 	}
 
-	if (PlayerNameText) {
-		PlayerNameText->SetText(FText::FromString(SSWInstance->PlayerInfo.Name));
+	// Player name from subsystem
+	if (PlayerNameText)
+	{
+		PlayerNameText->SetText(FText::FromString(PlayerInfo.Name));
 	}
 
-	if (OperationalSwitcher) {
+	if (OperationalSwitcher)
+	{
 		OperationalSwitcher->SetActiveWidgetIndex(0);
 	}
 
-	if (MapSwitcher) {
+	if (MapSwitcher)
+	{
 		MapSwitcher->SetActiveWidgetIndex(0);
 	}
-	if (OperationsModeText) {
+
+	if (OperationsModeText)
+	{
 		OperationsModeText->SetText(FText::FromString("ORDERS"));
 	}
 
 	ActiveCampaign = SSWInstance->GetActiveCampaign();
 
-	if (SSWInstance->GetActiveCampaign().Index == 0) {
-		if (TheaterButton) {
-			TheaterButton->SetIsEnabled(false);
-		}
-		if (ForcesButton) {
-			ForcesButton->SetIsEnabled(false);
-		}
-		if (IntelButton) {
-			IntelButton->SetIsEnabled(false);
-		}
+	if (SSWInstance->GetActiveCampaign().Index == 0)
+	{
+		if (TheaterButton)  TheaterButton->SetIsEnabled(false);
+		if (ForcesButton)   ForcesButton->SetIsEnabled(false);
+		if (IntelButton)    IntelButton->SetIsEnabled(false);
 	}
-	else {
-		if (TheaterButton) {
-			TheaterButton->SetIsEnabled(true);
-		}
-		if (ForcesButton) {
-			ForcesButton->SetIsEnabled(true);
-		}
-		if (IntelButton) {
-			IntelButton->SetIsEnabled(true);
-		}
+	else
+	{
+		if (TheaterButton)  TheaterButton->SetIsEnabled(true);
+		if (ForcesButton)   ForcesButton->SetIsEnabled(true);
+		if (IntelButton)    IntelButton->SetIsEnabled(true);
 	}
 
-	if (ForceListView) {
+	if (ForceListView)
+	{
 		ForceListView->ClearListItems();
-		
+
 		for (const FS_OOBForce& Force : LoadedForces)
 		{
 			UOOBForceItem* ForceItem = NewObject<UOOBForceItem>(this);
 			ForceItem->Data = Force;
 			ForceListView->AddItem(ForceItem);
-			//UE_LOG(LogTemp, Log, TEXT("Force Item Name: %s"), ForceItem->Data);
 		}
 	}
-	
+
 	SelectedMission = 0;
-	
+
 	if (AllMenuButtons.Num() > 0)
 	{
 		AllMenuButtons[0]->SetSelected(true);
@@ -219,7 +278,6 @@ void UOperationsScreen::NativeConstruct()
 
 	ScreenOffset.X = 600;
 	ScreenOffset.Y = 300;
-	
 
 	CreateGalaxyMap();
 	SetCampaignOrders();
@@ -227,7 +285,7 @@ void UOperationsScreen::NativeConstruct()
 	PopulateEmpireDDList();
 	PopulateIntelList();
 	SetCampaignMissions();
-	LoadForces(SSWInstance->GetEmpireTypeFromIndex(0));
+	LoadForces(UFormattingUtils::GetEmpireTypeFromIndex(0));
 	CreateSystemMap(SSWInstance->SelectedSystem.ToUpper());
 
 	const FS_OOBWing* Wing = FindWingForCarrierGroup(CurrentCarrierGroup, LoadedForces);
@@ -236,8 +294,8 @@ void UOperationsScreen::NativeConstruct()
 	{
 		CurrentUnitText->SetText(FText::FromString(Wing->Name).ToUpper());
 	}
-
 }
+
 
 void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
@@ -259,11 +317,15 @@ void UOperationsScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		HandleElementClicked();
 	}
 
-	if (GameTimeText) {
-		FString CustomDate = GetCampaignTime().ToString(TEXT("%Y-%m-%d %H:%M:%S"));
-		GameTimeText->SetText(FText::FromString(*CustomDate));
+	if (AudioButton)
+	{
+		AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
 	}
-	AudioButton->SetIsEnabled(!SSWInstance->IsSoundPlaying());
+}
+
+void UOperationsScreen::NativeDestruct()
+{
+	Super::NativeDestruct();
 }
 
 void UOperationsScreen::OnSelectButtonClicked()
@@ -380,7 +442,7 @@ void UOperationsScreen::OnCancelButtonClicked()
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
 	SSWInstance->PlayAcceptSound(this);
 
-	SSWInstance->LoadMainMenuScreen();
+	SSWInstance->ShowMainMenuScreen();
 }
 
 void UOperationsScreen::OnCancelButtonHovered()
@@ -493,6 +555,7 @@ void UOperationsScreen::PopulateIntelList()
 	for (int32 i = 0; i < SSWInstance->GetActiveCampaign().Action.Num(); ++i)
 	{
 		if (SSWInstance->GetActiveCampaign().Action[i].Type == "event") {
+			if (SSWInstance->GetActiveCampaign().Action[i].Date <= SSWInstance->GetCampaignTPlusString()) { // Show only Active Actions
 			UIntelListObject* ListItem = NewObject<UIntelListObject>();
 			FS_CampaignAction ActiveAction;
 
@@ -522,6 +585,7 @@ void UOperationsScreen::PopulateIntelList()
 			IntelList->GetIndexForItem(ListItem);
 			ActionList.Add(ActiveAction);
 			IntelList->AddItem(ListItem);
+			}
 		}
 	}
 }
@@ -532,71 +596,105 @@ FDateTime UOperationsScreen::GetCampaignTime()
 	return FDateTime::FromUnixTimestamp(SSWInstance->GetGameTime());
 }
 
-void UOperationsScreen::SetSelectedMissionData(int Selected)
+void UOperationsScreen::SetSelectedMissionData(int32 Selected)
 {
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	FString SelectedMissionName = SSWInstance->GetActiveCampaign().MissionList[Selected].Name;
+	UGameInstance* GIBase = GetGameInstance();
+	if (!GIBase)
+		return;
 
-	if (MissionNameText) {
-		MissionNameText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Name));
+	// Player persistence lives in PlayerSubsystem
+	UStarshatterPlayerSubsystem* PlayerSS = GIBase->GetSubsystem<UStarshatterPlayerSubsystem>();
+	if (!PlayerSS)
+		return;
+
+	// Campaign runtime currently lives on GI
+	USSWGameInstance* SSWInstance = Cast<USSWGameInstance>(GIBase);
+	if (!SSWInstance)
+		return;
+
+	// Rename local to avoid hiding class member ActiveCampaign
+	const auto& Campaign = SSWInstance->GetActiveCampaign();
+
+	if (!Campaign.MissionList.IsValidIndex(Selected))
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("SetSelectedMissionData: Invalid mission index %d (num=%d)"),
+			Selected, Campaign.MissionList.Num());
+		return;
 	}
-	if (MissionDescriptionText) {
-		MissionDescriptionText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Description));
-	}
-	if (MissionSitrepText) {
-		FString SitrepText = SSWInstance->GetActiveCampaign().MissionList[Selected].Sitrep;
+
+	const FString SelectedMissionName = Campaign.MissionList[Selected].Name;
+
+	if (MissionNameText)
+		MissionNameText->SetText(FText::FromString(Campaign.MissionList[Selected].Name));
+
+	if (MissionDescriptionText)
+		MissionDescriptionText->SetText(FText::FromString(Campaign.MissionList[Selected].Description));
+
+	if (MissionSitrepText)
+	{
+		FString SitrepText = Campaign.MissionList[Selected].Sitrep;
 		SitrepText = SitrepText.Replace(TEXT("\\n"), TEXT("\n"));
-
 		MissionSitrepText->SetText(FText::FromString(SitrepText));
 	}
-	if (MissionStartText) {
-		MissionStartText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Start));
+
+	if (MissionStartText)
+		MissionStartText->SetText(FText::FromString(Campaign.MissionList[Selected].Start));
+
+	if (MissionStatusText)
+	{
+		const EMISSIONSTATUS Status = Campaign.MissionList[Selected].Status;
+
+		if (Status == EMISSIONSTATUS::Active)     MissionStatusText->SetText(FText::FromString(TEXT("Active")));
+		else if (Status == EMISSIONSTATUS::Complete)   MissionStatusText->SetText(FText::FromString(TEXT("Complete")));
+		else if (Status == EMISSIONSTATUS::Ready)      MissionStatusText->SetText(FText::FromString(TEXT("Ready")));
+		else if (Status == EMISSIONSTATUS::Available)  MissionStatusText->SetText(FText::FromString(TEXT("Available")));
+		else if (Status == EMISSIONSTATUS::Pending)    MissionStatusText->SetText(FText::FromString(TEXT("Pending")));
+		else                                           MissionStatusText->SetText(FText::FromString(TEXT("Unknown")));
 	}
-	if (MissionStatusText) {
-		if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Active) {
-			MissionStatusText->SetText(FText::FromString("Active"));
-		}
-		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Complete) {
-			MissionStatusText->SetText(FText::FromString("Complete"));
-		}
-		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Ready) {
-			MissionStatusText->SetText(FText::FromString("Ready"));
-		}
-		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Available) {
-			MissionStatusText->SetText(FText::FromString("Available"));
-		}
-		else if (SSWInstance->GetActiveCampaign().MissionList[Selected].Status == EMISSIONSTATUS::Pending) {
-			MissionStatusText->SetText(FText::FromString("Pending"));
-		}
-	}
-	if (MissionTypeText) {
-		MissionTypeText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].TypeName));
-	}
-	if (MissionSystemText) {
-		MissionSystemText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].System));
-	}
-	if (MissionRegionText) {
-		MissionRegionText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Region));
-	}
-	if (MissionObjectiveText) {
-		MissionObjectiveText->SetText(FText::FromString(SSWInstance->GetActiveCampaign().MissionList[Selected].Objective));
-	}
+
+	if (MissionTypeText)
+		MissionTypeText->SetText(FText::FromString(Campaign.MissionList[Selected].TypeName));
+
+	if (MissionSystemText)
+		MissionSystemText->SetText(FText::FromString(Campaign.MissionList[Selected].System));
+
+	if (MissionRegionText)
+		MissionRegionText->SetText(FText::FromString(Campaign.MissionList[Selected].Region));
+
+	if (MissionObjectiveText)
+		MissionObjectiveText->SetText(FText::FromString(Campaign.MissionList[Selected].Objective));
 
 	GetMissionImageFile(Selected);
 
-	UTexture2D* LoadedTexture = LoadTextureFromFile();
-	if (LoadedTexture && MissionImage)
+	if (UTexture2D* LoadedTexture = LoadTextureFromFile())
 	{
-		FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
-		MissionImage->SetBrush(Brush);
+		if (MissionImage)
+		{
+			const FSlateBrush Brush =
+				CreateBrushFromTexture(
+					LoadedTexture,
+					FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+			MissionImage->SetBrush(Brush);
+		}
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Ops Mission Selected: %s"), *SelectedMissionName);
+
+	// Legacy flag still lives on GI
 	SSWInstance->MissionSelectionChanged = false;
 
-	SSWInstance->PlayerInfo.Mission = Selected;
-	SSWInstance->SaveGame(SSWInstance->PlayerSaveName, SSWInstance->PlayerSaveSlot, SSWInstance->PlayerInfo);
+	// Persist selected mission via PlayerSubsystem ONLY
+	if (!PlayerSS->HasLoaded())
+		PlayerSS->LoadPlayer();
+
+	{
+		FS_PlayerGameInfo& PlayerInfo = PlayerSS->GetMutablePlayerInfo();
+		PlayerInfo.Mission = Selected;
+		PlayerSS->SavePlayer(true);
+	}
 }
+
 
 void UOperationsScreen::SetSelectedIntelData(int Selected)
 {
@@ -786,7 +884,7 @@ void UOperationsScreen::HandleUnitClicked()
 
 	if (GroupTypeText)
 	{
-		GroupTypeText->SetText(FText::FromString(SSWInstance->GetNameFromType(Display.Type)));
+		GroupTypeText->SetText(FText::FromString(UFormattingUtils::GetGroupTypeDisplayName(Display.Type)));
 	}
 
 	if (GroupLocationText)
@@ -796,7 +894,7 @@ void UOperationsScreen::HandleUnitClicked()
 
 	if (GroupEmpireText)
 	{
-		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
+		GroupEmpireText->SetText(FText::FromString(UFormattingUtils::GetEmpireDisplayName(Display.Empire)));
 	}
 	SSWInstance->bIsDisplayUnitChanged = false;
 	SSWInstance->bIsDisplayElementChanged = false;
@@ -824,7 +922,7 @@ void UOperationsScreen::HandleElementClicked()
 
 	if (GroupTypeText)
 	{
-		GroupTypeText->SetText(FText::FromString(SSWInstance->GetUnitFromType(Display.Type)));
+		GroupTypeText->SetText(FText::FromString(UFormattingUtils::GetUnitTypeDisplayName(Display.Type)));
 	}
 
 	if (GroupLocationText)
@@ -834,7 +932,7 @@ void UOperationsScreen::HandleElementClicked()
 
 	if (GroupEmpireText)
 	{
-		GroupEmpireText->SetText(FText::FromString(SSWInstance->GetEmpireDisplayName(Display.Empire)));
+		GroupEmpireText->SetText(FText::FromString(UFormattingUtils::GetEmpireDisplayName(Display.Empire)));
 	}
 	SSWInstance->bIsDisplayUnitChanged = false;
 	SSWInstance->bIsDisplayElementChanged = false;
@@ -1343,7 +1441,7 @@ void UOperationsScreen::CreateSystemMap(FString Name) {
 	}
 	
 	if (!SystemMapClass) {
-		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Widget Not Creaed"));
+		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSystemMap() Widget notxCreaed"));
 		return;
 	}
 	
@@ -1364,7 +1462,6 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 	
 	UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Called %s"), *Name);
 	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-
 	if (!SectorMap)
 	{
 		SectorMap = CreateWidget<USectorMap>(this, SectorMapClass);
@@ -1377,7 +1474,7 @@ void UOperationsScreen::CreateSectorMap(FString Name) {
 	}
 
 	if (!SectorMapClass) {
-		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Widget Not Creaed"));
+		UE_LOG(LogTemp, Log, TEXT("UOperationsScreen::CreateSectorMap() Widget notxCreaed"));
 		return;
 	}
 
@@ -1413,14 +1510,14 @@ const FS_OOBWing* UOperationsScreen::FindWingForCarrierGroup(int CarrierGroupId,
 					}
 					else
 					{
-						UE_LOG(LogTemp, Log, TEXT("Selected carrier wing not found"));
+						UE_LOG(LogTemp, Log, TEXT("Selected carrier wing notxfound"));
 						return nullptr; // no wings attached
 					}
 				}
 			}
 		}
 	}
-	return nullptr; // carrier group not found
+	return nullptr; // carrier group notxfound
 }
 void UOperationsScreen::GetCurrentCarrierGroup() 
 {
@@ -1443,5 +1540,46 @@ void UOperationsScreen::GetCurrentCarrierGroup()
 	}
 }
 
+void UOperationsScreen::HandleUniverseSecondTick(uint64 UniverseSecondsNow)
+{
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI) return;
 
+	UTimerSubsystem* Timer = GI->GetSubsystem<UTimerSubsystem>();
+	if (!Timer) return;
+
+	if (GameTimeText)
+	{
+		GameTimeText->SetText(
+			FText::FromString(Timer->GetUniverseDateTimeString())
+		);
+	}
+}
+
+void UOperationsScreen::HandleUniverseMinuteTick(uint64 UniverseSecondsNow)
+{
+	USSWGameInstance* GI = Cast<USSWGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	// Refresh Intel only if Intel page is currently visible
+	// In your code Intel index appears to be 3 (OperationalSwitcher->SetActiveWidgetIndex(3) in LoadIntelInfo)
+	if (OperationalSwitcher && OperationalSwitcher->GetActiveWidgetIndex() == 3)
+	{
+		PopulateIntelList();
+
+		// If you want to keep selection stable:
+		const int32 Sel = GI->GetSelectedActionNr();
+		if (Sel >= 0 && Sel < ActionList.Num())
+		{
+			SetSelectedIntelData(Sel);
+		}
+	}
+}
+
+void UOperationsScreen::HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds)
+{
+	if (!CampaignTPlusText) return;
+
+	CampaignTPlusText->SetText(FText::FromString(FormatTPlus(TPlusSeconds)));
+}
 

@@ -4,14 +4,13 @@ name:          BioDome2
 class:         Building
 display_name: "Utility Dome"
 abrv:		  BLDG
-hud_icon:     "hud_util.pcx"
+description:  "The Utility Dome is a modular support installation designed to house power regulation, environmental processing, and logistical infrastructure for nearby settlements. Though unassuming in profile, it forms the operational backbone that keeps frontier colonies functioning under extreme conditions."
+
+empire:       All
+hud_icon:     "hud_util"
 secret:        true
 
-detail_0:   "A3-0.mag"
-feature_0:  1000
-detail_1:   "A3-6.mag"
-feature_1:  6
-
+model:     "A3-0"
 
 mass:       150e3
 integrity:  100e3

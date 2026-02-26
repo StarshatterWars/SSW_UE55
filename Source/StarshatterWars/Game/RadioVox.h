@@ -1,22 +1,35 @@
-// /*  Project nGenEx	Fractal Dev Games	Copyright (C) 2024. All Rights Reserved.	SUBSYSTEM:    SSW	FILE:         Game.cpp	AUTHOR:       Carlos Bott*/
+/*  Project Starshatter Wars
+	Fractal Dev Studios
+	Copyright (c) 2025-2026. All Rights Reserved.
+
+	SUBSYSTEM:    Stars.exe
+	FILE:         RadioVox.h
+	AUTHOR:       Carlos Bott
+
+	ORIGINAL AUTHOR: John DiCamillo
+	ORIGINAL STUDIO: Destroyer Studios LLC
+
+	OVERVIEW
+	========
+	View class for Radio Communications HUD Overlay
+*/
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/List.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "List.h"
+#include "Text.h"
 
 // +--------------------------------------------------------------------+
 
 class Element;
-class UShip;
+class Ship;
 class RadioMessage;
-class Sound;
+class USound;
 
 // +--------------------------------------------------------------------+
 
-class STARSHATTERWARS_API RadioVox
+class RadioVox
 {
 	friend class RadioVoxController;
 
@@ -24,7 +37,6 @@ public:
 	static const char* TYPENAME() { return "RadioVox"; }
 
 	RadioVox(int channel, const char* path, const char* message = 0);
-	RadioVox();
 	virtual ~RadioVox();
 
 	// Operations:
@@ -39,7 +51,7 @@ protected:
 
 	Text              path;
 	Text              message;
-	List<Sound>       sounds;
+	List<USound>      sounds;
 	int               index;
 	int               channel;
 };

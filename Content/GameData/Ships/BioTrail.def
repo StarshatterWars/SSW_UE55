@@ -4,13 +4,12 @@ name:       BioTrail
 class:      Building
 abrv:		  BLDG
 display_name: "Elevated Bridge"
-hud_icon:     "hud_trail.pcx"
+description:  "The Elevated Bridge is a reinforced transit structure spanning hazardous terrain to link critical installations across a colony zone. Built for durability rather than elegance, it enables secure troop movement, cargo transfer, and rapid response between strategic ground assets."
+empire:       All
+hud_icon:     "hud_trail"
 secret:        false
 
-detail_0:   "A2-0.mag"
-feature_0:  1000
-detail_1:   "A2-6.mag"
-feature_1:  6
+model:   "A2-0"
 
 mass:       10e3
 integrity:  10e3

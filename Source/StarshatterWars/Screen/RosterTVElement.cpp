@@ -21,7 +21,7 @@
 #include "Components/Button.h"
 
 #include "OperationsScreen.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 
 void URosterTVElement::NativeConstruct()
@@ -114,7 +114,7 @@ void URosterTVElement::NativeOnListItemObjectSet(UObject* ListItemObject)
     }
     else
     {
-        // Fallback if the type is not recognized
+        // Fallback if the type is notxrecognized
         NameText->SetText(FText::FromString(TEXT("Unknown Item")));
     }
 }

@@ -22,9 +22,5 @@ void AL_MainMenu::ShowMainMenu()
 	SSWInstance->ShowMainMenuScreen();
 }
 
-void AL_MainMenu::ShowQuitDlg()
-{
-	USSWGameInstance* SSWInstance = (USSWGameInstance*)GetGameInstance();
-	SSWInstance->ToggleQuitDlg(true);
-}
+
 

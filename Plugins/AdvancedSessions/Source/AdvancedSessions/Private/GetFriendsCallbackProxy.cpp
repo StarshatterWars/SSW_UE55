@@ -71,7 +71,7 @@ void UGetFriendsCallbackProxy::OnReadFriendsListCompleted(int32 LocalUserNum, bo
 		auto Friends = Helper.OnlineSub->GetFriendsInterface();
 		if (Friends.IsValid())
 		{
-			// Not actually needed anymore, plus was not being validated and causing a crash
+			// notxactually needed anymore, plus was notxbeing validated and causing a crash
 			//ULocalPlayer* Player = Cast<ULocalPlayer>(PlayerControllerWeakPtr->Player);
 
 			TArray<FBPFriendInfo> FriendsListOut;

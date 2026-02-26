@@ -4,17 +4,14 @@ name:          Zodiac
 display_name:  Zodiac
 class:         LCA
 abrv:          LCA
+empire:        Terellian
 description:   "The ZODIAC armored landing craft (LCA) is the standard Alliance millitary shuttle platform, and the only Force:Space craft capable of atmospheric VTOL.  The Zodiac is commonly used to ferry personnel and equipment between groundside bases and spaceborne platforms.  The Zodiac is armed with four (4) heavy Vulcan cannon, and an aft-mounted automated laser turret for self-defense."
 
 degrees:       true
 
-hud_icon:      "ZodiacHud.pcx"
+hud_icon:      "ZodiacHud"
 
-detail_0:   "Zodiac_1a.mag"
-feature_0:  100
-detail_1:   "Zodiac_2k.mag"
-feature_1:  4
-
+model:         "Zodiac"
 
 mass:       87
 integrity:  5250
@@ -95,25 +92,25 @@ gear: {
    hull_factor: 0.5,
 
    gear: {
-      model: "ZGearRight.mag",
+      model: "ZGearRight",
       start: (44, -25, -10),
       end:   (74, -60, -10)
       },
 
    gear: {
-      model: "ZGearLeft.mag",
+      model: "ZGearLeft",
       start: (-44, -25, -10),
       end:   (-74, -60, -10)
       },
 
    gear: {
-      model: "ZGearRight.mag",
+      model: "ZGearRight",
       start: (44, -25, -128),
       end:   (74, -60, -128)
       },
 
    gear: {
-      model: "ZGearLeft.mag",
+      model: "ZGearLeft",
       start: (-44, -25, -128),
       end:   (-74, -60, -128)
       },
@@ -216,14 +213,14 @@ death_spiral: {
    }
 
 map: {
-   sprite: "z_map0.pcx",
-   sprite: "z_map1.pcx",
-   sprite: "z_map2.pcx",
-   sprite: "z_map3.pcx",
-   sprite: "z_map4.pcx",
-   sprite: "z_map5.pcx",
-   sprite: "z_map6.pcx",
-   sprite: "z_map7.pcx",
+   sprite: "z_map0",
+   sprite: "z_map1",
+   sprite: "z_map2",
+   sprite: "z_map3",
+   sprite: "z_map4",
+   sprite: "z_map5",
+   sprite: "z_map6",
+   sprite: "z_map7",
 }
 
 skin: {
@@ -236,8 +233,8 @@ skin: {
          Ke:    (0.0, 0.0, 0.0)
          power: 20
          bump:  2
-         tex_d: "Zodiac_D2.jpg"
-         tex_s: "Zodiac_S.jpg"
-         tex_b: "Zodiac_B.jpg"
+         tex_d: "Zodiac_D2"
+         tex_s: "Zodiac_S"
+         tex_b: "Zodiac_B"
    }
 }

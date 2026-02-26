@@ -4,12 +4,11 @@ name:          ZZA
 display_name:  Zolon
 class:         Attack
 abrv:          ZA
+empire:        Zolon
+description:   "The ZZA Attack Craft is a compact Zolon assault fighter designed for high-velocity strike runs against capital targets. Though lightly shielded, its forward-mounted weapons and aggressive maneuver profile make it a dangerous adversary in close engagements."
 secret:        true
 
-detail_0:   "ZAttack_1.mag"
-feature_0:  1000
-detail_1:   "ZAttack_2.mag"
-feature_1:  20
+model:         "ZAttack"
 
 mass:       21
 integrity:  35e3
@@ -143,4 +142,4 @@ death_spiral: {
    final_loc:        (0, 0, -32),
 }
 
-map: { sprite: "zmap.pcx" }
+map: { sprite: "zmap" }

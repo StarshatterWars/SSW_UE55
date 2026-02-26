@@ -10,27 +10,38 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Foundation/Types.h"
-#include "../Foundation/Color.h"
-#include "../Foundation/Text.h"
+#include "Types.h"
+#include "Color.h"
+#include "Text.h"
 #include "SSWGameInstance.h"
+#include "UIAudioManager.h"
 
-//#include "Screen.h"
-//#include "Video.h"
+#include "Math/Color.h"
+
+#include "Screen.h"
+#include "Video.h"
 
 /**
  * 
  */
 
+void              FlushKeys();
+void              BufferKey(int vkey);
+int               GetKey();
+int               GetKeyPlus(int& key, int& shift);
+
+static inline FVector OtherHand(const FVector& V)
+{
+	// Starshatter used a handedness conversion helper. Preserve intent (Z flip) for now.
+	return FVector((float)V.X, (float)V.Y, (float)-V.Z);
+}
+
  // +--------------------------------------------------------------------+
 
-void Print(const char* fmt, ...);
-
-class AGameDataLoader;
+class UStarshatterGameDataSubsystem;
 class Locale;
-class Universe;
-class Sound;
-class SoundCard;
+class SimUniverse;
+class USound;
 class Video;
 class VideoFactory;
 class VideoSettings;
@@ -75,6 +86,8 @@ public:
 	static void       ResetGameTime();
 	static void       SkipGameTime(double seconds);
 
+	static bool       DisplayModeSupported(int w, int h, int bpp);
+
 	static double     FrameRate();
 	static double     FrameTime();
 	static double     GUITime();
@@ -83,10 +96,18 @@ public:
 	static double     GetMaxFrameLength() { return max_frame_length; }
 	static double     GetMinFrameLength() { return min_frame_length; }
 
-	static Game* GetInstance();
+	static void       SetMaxTexSize(int n);
+
+	static int        MaxTexSize();
+	static int        MaxTexAspect();
+
+	virtual bool      ResizeVideo();
+	virtual bool      ResetVideo();
+
+	static Game*	  GetInstance();
 	
-	static Color      GetScreenColor();
-	static void       SetScreenColor(Color c);
+	static FColor     GetScreenColor();
+	static void       SetScreenColor(FColor c);
 	static int        GetScreenWidth();
 	static int        GetScreenHeight();
 
@@ -100,6 +121,11 @@ public:
 	static Text       GetText(const char* key);
 
 	static FString	  GetGameVersion();
+
+	static Video*	  GetVideo();
+
+	static int        GammaLevel();
+	static void       SetGammaLevel(int g);
 
 	static const char* GetPanicMessage() { return panicbuf; }
 
@@ -123,15 +149,24 @@ public:
 	static const int TIME_NEVER = (int)1e9;
 	static const int ONE_DAY = (int)24 * 3600;
 
+	static int      DefaultTrackUpdate; // milliseconds
+	static int      DefaultTrackLength; // 10 seconds
+	static double   DefaultTrackAge; // 10 seconds
+	static double   SensorThreshold;
+
+	static FString VersionInfo;
+	static FString AppName;
+	static FString TitleText;
+
 protected:
 	friend  bool      ProfileGameLoop(void);
 	
-	AGameDataLoader* content;
-	Universe* world;
+	UStarshatterGameDataSubsystem* content;
+	SimUniverse* world;
 	VideoFactory* video_factory;
 	Video* video;
 	VideoSettings* video_settings;
-	SoundCard* soundcard;
+	UUIAudioManager* soundcard;
 	
 	int               gamma;
 	int               max_tex_size;
@@ -139,17 +174,11 @@ protected:
 	//RenderStats       stats;
 	DWORD             totaltime;
 
-	PALETTEENTRY      standard_palette[256];
-	BYTE              inverse_palette[32768];
-
 	DWORD             winstyle;
 
-	char* app_name;
-	char* title_text;
+	FString app_name;
+	FString title_text;
 	char* palette_name;
-
-
-	
 
 	// Internal variables for the state of the app
 	bool              is_windowed;
@@ -191,7 +220,7 @@ protected:
 
 	static char       panicbuf[256];
 
-	static FString    VersionInfo;
+
 };
 
 // +--------------------------------------------------------------------+

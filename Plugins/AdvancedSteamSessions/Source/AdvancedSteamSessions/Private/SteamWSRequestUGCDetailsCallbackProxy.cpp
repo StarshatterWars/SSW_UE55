@@ -94,7 +94,7 @@ void USteamWSRequestUGCDetailsCallbackProxy::OnUGCRequestUGCDetails(SteamUGCQuer
 		}
 	}
 
-	// Not needed, should never hit here
+	// notxneeded, should never hit here
 	//OnFailure.Broadcast(FBPSteamWorkshopItemDetails());
 }
 #endif

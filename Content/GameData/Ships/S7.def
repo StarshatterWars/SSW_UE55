@@ -4,9 +4,11 @@ name:          Station7
 display_name:  "Military Lab"
 class:         STATION
 abrv:          STN
-hud_icon:      "S7hud.pcx"
+empire:        Marakan
+description:   "The Marakan Military Research Station is a secured orbital laboratory dedicated to advanced weapons testing and prototype systems development. Shielded compartments and restricted access decks conceal experimental technologies intended to give the Hegemony a decisive battlefield advantage."
+hud_icon:      "S7hud"
 
-model:      "S7opt.mag"
+model:      "MarakanLab"
 
 mass:       7e6
 integrity:  5e5
@@ -205,13 +207,13 @@ death_spiral: {
    explosion: { type: 13, loc: (0,0, 200), final: true } // Nuke
    explosion: { type: 13, loc: (0,0,-200), final: true } // Nuke
 
-   debris:    { model: "DebrisS71.mag", loc: (-120,10,650), mass:  68e3, count:  1, life: 660 }
-   debris:    { model: "DebrisS72.mag", loc: (-100,0,-450), mass:  78e3, count:  1, life: 675 }
-   debris:    { model: "DebrisS73.mag", loc: ( 240,20,0),   mass: 300e3, count:  1, life: 660 }
+   debris:    { model: "DebrisS71", loc: (-120,10,650), mass:  68e3, count:  1, life: 660 }
+   debris:    { model: "DebrisS72", loc: (-100,0,-450), mass:  78e3, count:  1, life: 675 }
+   debris:    { model: "DebrisS73", loc: ( 240,20,0),   mass: 300e3, count:  1, life: 660 }
 
-   debris:    { model: "Debris0A.mag",      loc: (0,0,0),   mass:   35, count: 20, life:  35 }
-   debris:    { model: "Debris0B.mag",      loc: (0,0,0),   mass:   44, count: 20, life:  45 }
-   debris:    { model: "Debris0C.mag",      loc: (0,0,0),   mass:   23, count: 15, life:  35 }
+   debris:    { model: "Debris0A",      loc: (0,0,0),   mass:   35, count: 20, life:  35 }
+   debris:    { model: "Debris0B",      loc: (0,0,0),   mass:   44, count: 20, life:  45 }
+   debris:    { model: "Debris0C",      loc: (0,0,0),   mass:   23, count: 15, life:  35 }
 
 }
 

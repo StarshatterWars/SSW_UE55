@@ -4,9 +4,11 @@ name:          Relay1
 display_name:  Relay
 abrv:          COMSSAT
 class:         COMSAT
-hud_icon:      "hud_relay.pcx"
+description:   "The Communications Relay Satellite serves as a long-range signal repeater, extending fleet communications across contested sectors. Though lightly armored, its strategic value makes it a priority target in any system-wide engagement."
+empire:        All
+hud_icon:      "hud_relay"
 
-model:      "Relay1.mag"
+model:      "Relay"
 
 mass:       500e3
 integrity:  50e3
@@ -19,7 +21,7 @@ bridge:     (0,    0,  0)
 
 
 map: {
-   sprite: "map_relay.pcx"
+   sprite: "map_relay"
 }
 
 death_spiral: {

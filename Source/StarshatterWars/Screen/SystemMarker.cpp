@@ -64,7 +64,7 @@ void USystemMarker::Init(const FS_Galaxy& System)
         FSlateBrush Brush = CreateBrushFromTexture(LoadedTexture, FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
         
         if(!StarImage) {
-            UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() StarImage Not Found")); 
+            UE_LOG(LogTemp, Log, TEXT("USystemMarker::Init() StarImage notxFound")); 
         } else {
             StarImage->SetBrush(Brush);
         }

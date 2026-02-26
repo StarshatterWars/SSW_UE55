@@ -67,7 +67,7 @@ int32 UVisualStudioToolsCommandletBase::Main(const FString& Params)
 	if (FullPath.IsEmpty() && !FParse::Value(*Params, TEXT("output "), FullPath))
 	{
 		// VS:1678426 - Initial version was using `-output "path-to-file"` (POSIX style).
-		// However, that does not support paths with spaces, even when surrounded with
+		// However, that does notxsupport paths with spaces, even when surrounded with
 		// quotes because `FParse::Value` only handles that case when there's no space
 		// between the parameter name and quoted value.
 		// For back-compatibility reasons, parse that style by including the space in

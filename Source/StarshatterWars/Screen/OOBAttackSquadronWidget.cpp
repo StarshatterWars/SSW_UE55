@@ -92,7 +92,7 @@ void UOOBAttackSquadronWidget::ToggleExpansion()
 void UOOBAttackSquadronWidget::BuildChildren(const FS_OOBAttack& AttackDataStruct)
 {
     if (!ElementListView) {
-        UE_LOG(LogTemp, Error, TEXT("Attack Squadron ListView is not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Attack Squadron ListView is notxvalid!"));
         return;
     }
 

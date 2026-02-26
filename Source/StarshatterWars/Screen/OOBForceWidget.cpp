@@ -8,7 +8,7 @@
 #include "OperationsScreen.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "GameStructs.h" // FS_OOBFleet definition
 #include "Components/ListView.h" 
 
 void UOOBForceWidget::NativeConstruct()
@@ -101,7 +101,7 @@ void UOOBForceWidget::SetVisible(bool bIsVisible)
 void UOOBForceWidget::BuildChildren(const FS_OOBForce& ForceDataStruct)
 {
     if (!FleetListView || !BattalionListView) {
-        UE_LOG(LogTemp, Error, TEXT("Force ListViews are not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Force ListViews are notxvalid!"));
         return;
     }
 

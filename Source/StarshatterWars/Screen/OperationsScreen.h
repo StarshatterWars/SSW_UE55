@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -21,7 +21,8 @@
 #include "Components/ListView.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
 #include "OperationsScreen.generated.h"
 
 // Forward declarations
@@ -122,6 +123,9 @@ class STARSHATTERWARS_API UOperationsScreen : public UUserWidget
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GameTimeText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* CampaignTPlusText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* GalaxyNameText;
@@ -364,6 +368,7 @@ protected:
 
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UTexture2D* LoadTextureFromFile();
 	FSlateBrush CreateBrushFromTexture(UTexture2D* Texture, FVector2D ImageSize);
@@ -427,7 +432,6 @@ protected:
 	 // TSubclassOf must be set in UMG (or via C++)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Galaxy")
     TSubclassOf<USectorMap> SectorMapClass;
-    
 
 private:
 	FS_Campaign ActiveCampaign;
@@ -460,4 +464,10 @@ private:
 	TSubclassOf<UGalaxyMap> GalaxyMapClass;
 	USystemMap* SystemMap =	nullptr;
 	USectorMap* SectorMap = nullptr;
+
+	void HandleUniverseSecondTick(uint64 UniverseSecondsNow);
+	void HandleUniverseMinuteTick(uint64 UniverseSecondsNow);
+	void HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds);
 };
+
+static FString FormatTPlus(uint64 TPlusSeconds);

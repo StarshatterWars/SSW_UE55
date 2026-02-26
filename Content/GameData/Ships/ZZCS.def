@@ -4,12 +4,11 @@ name:          ZZCS
 display_name:  "Zolon Consul"
 class:         Cruiser
 abrv:          ZCS
+empire:        Zolon     
+description:   "The ZZCS Zolon Consul is a command-grade cruiser that serves as both diplomatic envoy and battle leader within Zolon task forces. Outfitted with advanced sensor suites and reinforced defensive systems, it coordinates fleet actions while projecting Zolon authority across disputed systems."
 secret:        true
-
-detail_0:   "ZolonC1opt.mag"
-feature_0:  1000
-detail_1:   "ZolonC2opt.mag"
-feature_1:  30
+   
+model:         "ZolonCS"
 
 mass:       218.1e3
 agility:    3
@@ -86,9 +85,9 @@ shield: {
    design:           "Hyper Shield",
    shield_bubble:    true,
    pcs:              100,
-   model:            "ZShieldC2.mag"
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   model:            "ZShieldC2"
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, 0),
    size:             32,
@@ -247,19 +246,19 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris5.mag",
+   debris:           "Debris5",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     15,
    debris_life:      15,
 
-   debris:           "Debris6.mag",
+   debris:           "Debris6",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     15,
    debris_life:      25,
 
-   debris:           "Debris7.mag",
+   debris:           "Debris7                                                                                                     ",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,

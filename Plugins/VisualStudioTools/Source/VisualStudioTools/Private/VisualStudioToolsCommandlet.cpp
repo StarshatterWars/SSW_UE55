@@ -136,7 +136,7 @@ struct FAssetIndex
 			for (TFieldIterator<UFunction> It(Parent, EFieldIteratorFlags::ExcludeSuper); It; ++It)
 			{
 				UFunction* Fn = BlueprintGeneratedClass->FindFunctionByName((*It)->GetFName(), EIncludeSuperFlag::ExcludeSuper);
-				// If the function not present in the BP class directly, it means it was implemented. Otherwise, ignore.
+				// If the function notxpresent in the BP class directly, it means it was implemented. Otherwise, ignore.
 				if (!Fn)
 				{
 					continue;
@@ -166,7 +166,7 @@ using JsonWriter = TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>;
 
 static bool ShouldSerializePropertyValue(FProperty* Property)
 {
-	if (Property->ArrayDim > 1) // Skip properties that are not scalars
+	if (Property->ArrayDim > 1) // Skip properties that are notxscalars
 	{
 		return false;
 	}
@@ -399,7 +399,7 @@ static void RunAssetScan(
 			{
 				for (const auto& PreviousName : PreviousNames)
 				{
-					// FString PreviousString = FObjectPropertyBase::GetExportPath(BaseClass->GetClass()->GetClassPathName(), PreviousName.ToString()); // Alternative way to add /Script/CoreUObject.Class'' wrapper - but not sure it makes sense to use the new class when referencing a previous name
+					// FString PreviousString = FObjectPropertyBase::GetExportPath(BaseClass->GetClass()->GetClassPathName(), PreviousName.ToString()); // Alternative way to add /Script/CoreUObject.Class'' wrapper - but notxsure it makes sense to use the new class when referencing a previous name
 					FString PreviousString = "/Script/CoreUObject.Class'" + PreviousName.ToString() + "'";
 					Filter.TagsAndValues.Add(FBlueprintTags::NativeParentClassPath, PreviousString);
 				}

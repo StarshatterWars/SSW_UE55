@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h" // FS_OOBLanding definition
+#include "GameStructs.h" // FS_OOBLanding definition
 #include "OOBLandingItem.generated.h"
 
 /**

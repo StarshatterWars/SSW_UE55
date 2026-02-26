@@ -4,12 +4,11 @@ name:          ZZFF
 display_name:  Zolon
 class:         Frigate
 abrv:          ZFF
+empire:        Zolon
+description:   "The ZZFF Zolon Frigate is a versatile escort vessel designed to screen larger warships and patrol contested corridors. Combining moderate firepower with durable shielding, it forms the backbone of Zolon mid-range fleet operations."
 secret:        true
 
-detail_0:   "ZolonD1opt.mag"
-feature_0:  1000
-detail_1:   "ZolonD2opt.mag"
-feature_1:  30
+model:         "ZolonFF"
 
 mass:       35.1e3
 agility:    3
@@ -86,9 +85,9 @@ shield: {
    design:           "Hyper Shield",
    shield_bubble:    true,
    pcs:              100,
-   model:            "ZShieldD2.mag",
-   bolt_hit_sound:   "shield_hit4.wav",
-   beam_hit_sound:   "shield_hit5.wav",
+   model:            "ZShieldD2",
+   bolt_hit_sound:   "shield_hit4",
+   beam_hit_sound:   "shield_hit5",
 
    loc:              (0, 0, 0),
    size:             32,
@@ -247,19 +246,19 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris5.mag",
+   debris:           "Debris5",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     15,
    debris_life:      15,
 
-   debris:           "Debris6.mag",
+   debris:           "Debris6",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     15,
    debris_life:      25,
 
-   debris:           "Debris7.mag",
+   debris:           "Debris7",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,

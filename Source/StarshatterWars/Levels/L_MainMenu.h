@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/LevelScriptActor.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 #include "Sound/SoundBase.h"
 #include "L_MainMenu.generated.h"
 
@@ -21,7 +21,6 @@ protected:
 
 public:	
 	void ShowMainMenu();
-	void ShowQuitDlg();
 	
 	UPROPERTY(EditAnywhere, Category = "UI Sound")
 	USoundBase* MenuMusic;

@@ -3,60 +3,49 @@
 
 #include "SSWGameInstance.h"
 #include "GameFramework/Actor.h"
-#include "../Space/Universe.h"
-#include "../Space/Galaxy.h"
-#include "../Foundation/DataLoader.h"
-#include "../Game/Sim.h"
-#include "../Game/GameDataLoader.h"
-#include "../Game/AwardInfoLoader.h"
+#include "SimUniverse.h"
+#include "Galaxy.h"
+#include "DataLoader.h"
+#include "Sim.h"
+#include "FormattingUtils.h"
 
-#include "../Screen/MenuDlg.h"
-#include "../Screen/QuitDlg.h"
-#include "../Screen/FirstRun.h"
-#include "../Screen/CampaignScreen.h"
-#include "../Screen/OperationsScreen.h"
-#include "../Screen/MissionLoading.h"
-#include "../Screen/CampaignLoading.h"
+#include "MenuDlg.h"
+#include "ExitDlg.h"
+#include "FirstTimeDlg.h"
+#include "CampaignScreen.h"
+#include "OperationsScreen.h"
+#include "MissionLoading.h"
+#include "CampaignLoading.h"
 
-#include "../Game/PlayerSaveGame.h"
+#include "PlayerSaveGame.h"
+#include "UniverseSaveGame.h" 
 #include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UObject/Package.h" // For data asset support
 
-#include "../Foundation/MusicController.h"
-#include "../Foundation/MusicControllerInit.h"
+#include "MusicController.h"
+#include "MusicControllerInit.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "Engine/TextureRenderTarget2D.h" 
-#include "../Space/SystemOverview.h"
+#include "SystemOverview.h"
+#include "FontManager.h"
+#include "StarshatterGameDataSubsystem.h"
+#include "StarshatterAssetRegistrySubsystem.h"
 
 #undef UpdateResource
 #undef PlaySound
 
-template <typename TEnum>
-FString EnumToDisplayString(TEnum EnumValue)
-{
-	static_assert(TIsEnum<TEnum>::Value, "EnumToDisplayNameString only works with UENUMS.");
-
-	UEnum* EnumPtr = StaticEnum<TEnum>();
-	if (!EnumPtr) return TEXT("Invalid");
-
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
-}
 
 USSWGameInstance::USSWGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
-	InitializeDT(ObjectInitializer);
-	InitializeMainMenuScreen(ObjectInitializer);
 	InitializeCampaignScreen(ObjectInitializer);
 	InitializeCampaignLoadingScreen(ObjectInitializer);
 	InitializeOperationsScreen(ObjectInitializer);
 	InitializeMissionBriefingScreen(ObjectInitializer);
-	InitializeQuitDlg(ObjectInitializer);
-	InitializeFirstRunDlg(ObjectInitializer);
 }
 
 void USSWGameInstance::SetProjectPath()
@@ -81,14 +70,21 @@ FString USSWGameInstance::GetProjectPath()
 	return ProjectPath;
 }
 
-void USSWGameInstance::Print(FString Msg, FString File)
+void USSWGameInstance::Print(const FString& A, const FString& B)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s :%s"), *Msg, *File);
+	const FString Msg = B.IsEmpty() ? A : (A + TEXT(" ") + B);
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *Msg);
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, Msg);
+	}
 }
 
 void USSWGameInstance::SpawnGalaxy()
 {
-	UWorld* World = GetWorld();
+	/*UWorld* World = GetWorld();
 
 	FVector location = FVector::ZeroVector;
 	FRotator rotate = FRotator::ZeroRotator;
@@ -114,40 +110,8 @@ void USSWGameInstance::SpawnGalaxy()
 	}
 
 	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
-	//}		
-}
-
-void USSWGameInstance::GetGameData()
-{
-	UWorld* World = GetWorld();
-
-	FVector location = FVector::ZeroVector;
-	FRotator rotate = FRotator::ZeroRotator;
-
-	FActorSpawnParameters SpawnInfo;
-	FName Name("Game Data");
-	SpawnInfo.Name = Name;
-
-	if (GameData == nullptr) {
-		GameData = GetWorld()->SpawnActor<AGameDataLoader>(AGameDataLoader::StaticClass(), location, rotate, SpawnInfo);
-
-
-		if (GameData)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Game Data Loader Spawned"));
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("Failed to Spawn Game Data Loader"));
-		}
-	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("Game Data Loader  already exists"));
-	}
-
-	//} else {
-	//	UE_LOG(LogTemp, Log, TEXT("World not found"));
-	//}		
+	//	UE_LOG(LogTemp, Log, TEXT("World notxfound"));
+	//}	*/	
 }
 
 void USSWGameInstance::StartGame()
@@ -156,19 +120,53 @@ void USSWGameInstance::StartGame()
 	//SpawnGalaxy();
 }
 
-void USSWGameInstance::LoadMainMenuScreen()
+void USSWGameInstance::ShowMainMenuScreen()
 {
+	RemoveScreens();
+
 	UWorld* World = GetWorld();
-	if (World)
+	if (!World) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: World is NULL")); return; }
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+	if (!PC) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: PC is NULL")); return; }
+
+	if (!MenuScreenWidgetClass)
 	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(false);
-			PlayerController->bShowMouseCursor = false; UGameplayStatics::OpenLevel(this, "MainMenu");
-		}
+		UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: MenuScreenWidgetClass is NULL"));
+		return;
+	}
+
+	MenuScreen = CreateWidget<UMenuScreen>(PC, MenuScreenWidgetClass);
+	if (!MenuScreen) { UE_LOG(LogTemp, Error, TEXT("ShowMainMenuScreen: Failed to create MenuScreen")); return; }
+
+	UMenuScreen* Screen = MenuScreen.Get();
+
+	Screen->AddToViewport(100);
+	Screen->SetVisibility(ESlateVisibility::Visible);
+
+	// *** THIS IS THE MISSING PIECE ***
+	Screen->Initialize(this);
+
+	// Create dialogs AFTER Initialize resolved classes
+	Screen->Setup();
+
+	// MenuScreen decides Menu vs FirstRun
+	Screen->Show();
+
+	// Focus whatever MenuScreen decided is current
+	if (UBaseScreen* Top = Screen->GetCurrentDialog())
+	{
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(Top->TakeWidget());
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(InputMode);
+		PC->SetShowMouseCursor(true);
+		PC->bEnableClickEvents = true;
+		PC->bEnableMouseOverEvents = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShowMainMenuScreen: No CurrentDialog after Show()"));
 	}
 }
 
@@ -266,15 +264,16 @@ void USSWGameInstance::Init()
 
 	PlayerSaveName = "PlayerSaveSlot";
 	PlayerSaveSlot = 0;
+	UniverseSaveSlotName = "Universe_Main";
+	UniverseSaveUserIndex = 0;
+	CampaignSaveSlotName = "Campaign";
+	CampaignSaveIndex = 0;
 
 	FDateTime GameDate(2228, 1, 1);
 	SetGameTime(GameDate.ToUnixTimestamp());
 	SetProjectPath();
 
 	CampaignData.SetNum(5); // number of campaigns
-
-	if (!DataLoader::GetLoader())
-		DataLoader::Initialize();
 
 	loader = DataLoader::GetLoader();
 
@@ -290,67 +289,24 @@ void USSWGameInstance::Init()
 		InitContent();
 	}
 
-	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
+	/*if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
 		LoadGame(PlayerSaveName, PlayerSaveSlot);
 		UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerInfo.Name);
 
 		if (PlayerInfo.Campaign >= 0) {
 			ReadCampaignData();
 		}
-	}
-	ReadCombatRosterData();
-	CreateOOBTable();
+	}*/
+
 	SetupMusicController();
 	//ExportDataTableToCSV(OrderOfBattleDataTable, TEXT("OOBExport.csv"));
-}
-
-void USSWGameInstance::ReadCampaignData()
-{
-	UE_LOG(LogTemp, Log, TEXT("USSWGameInstance::ReadCampaignData()"));
-	static const FString ContextString(TEXT("ReadDataTable"));
-	TArray<FS_Campaign*> AllRows;
-	CampaignDataTable->GetAllRows<FS_Campaign>(ContextString, AllRows);
-
-	int index = 0;
-	for (FS_Campaign* Row : AllRows)
+	if (UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>())
 	{
-		if (Row)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Campaign Name: %s"), *Row->Name);
-			UE_LOG(LogTemp, Log, TEXT("Campaign Available: %s"), (Row->bAvailable ? TEXT("true") : TEXT("false")));
-			CampaignData[index] = *Row;
-			CampaignData[index].Orders.SetNum(4);
-			index++;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to load Campaign!"));
-		}
+		Timer->OnUniverseMinute.AddUObject(this, &USSWGameInstance::HandleUniverseMinuteAutosave);
+		// optional: OnUniverseSecond for finer cadence, but minute is safer.
 	}
-	SetActiveCampaign(CampaignData[PlayerInfo.Campaign]);
-	FString NewCampaign = GetActiveCampaign().Name;
-	UE_LOG(LogTemp, Log, TEXT("Active Campaign: %s"), *NewCampaign);
-}
 
-void USSWGameInstance::ReadCombatRosterData() {
-	UE_LOG(LogTemp, Log, TEXT("USSWGameInstance::ReadCombatRosterData()"));
-	static const FString ContextString(TEXT("ReadDataTable"));
-	TArray<FS_CombatGroup*> AllRows;
-	CombatGroupDataTable->GetAllRows<FS_CombatGroup>(ContextString, AllRows);
-	CombatRosterData.Empty();
-	for (FS_CombatGroup* Row : AllRows)
-	{
-		if (Row)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Group Name: %s"), *Row->Name);
-			
-			CombatRosterData.Add(*Row);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to load Combat Roster!"));
-		}
-	}
+	FontManager::RegisterAllFonts(this);
 }
 
 void USSWGameInstance::SetActiveUnit(bool bShow, FString Name, EEMPIRE_NAME Empire, ECOMBATGROUP_TYPE Type, FString Loc)
@@ -408,21 +364,16 @@ bool USSWGameInstance::InitContent()
 {
 	List<Text>  bundles;
 	
-	ProjectPath = FPaths::ProjectDir();
+	FString ContentProjectPath = FPaths::ProjectDir();
 	ProjectPath.Append(TEXT("GameData/Content/"));
 
-	loader->SetDataPath(ProjectPath);
+	loader->SetDataPath(TCHAR_TO_ANSI(*ContentProjectPath));
 	//loader->ListFiles("content*", bundles);
 
-	ProjectPath = FPaths::ProjectDir();
-	ProjectPath.Append(TEXT("GameData/"));
-	loader->SetDataPath(ProjectPath);
-
-	/*if (!bUniverseLoaded) {
-		bUniverseLoaded = true;
-		NewObject<UUniverse>();
-		Sim = NewObject<USim>(); 
-	}*/
+	FString GameDataProjectPath = FPaths::ProjectDir(); 
+	GameDataProjectPath = FPaths::ProjectDir();
+	GameDataProjectPath.Append(TEXT("GameData/"));
+	loader->SetDataPath(TCHAR_TO_ANSI(*GameDataProjectPath));
 
 	return true;
 }
@@ -432,112 +383,45 @@ bool USSWGameInstance::InitGame()
 	return false;
 }
 
-
-FString
-USSWGameInstance::GetEmpireNameFromType(EEMPIRE_NAME emp)
+void USSWGameInstance::InitializeScreens()
 {
-	FString empire_name;
+	UStarshatterAssetRegistrySubsystem* Assets =
+		GetSubsystem<UStarshatterAssetRegistrySubsystem>();
 
-	switch (emp)
-	{
-	case EEMPIRE_NAME::Terellian:
-		empire_name = "Terellian Alliance";
-		break;
-	case EEMPIRE_NAME::Marakan:
-		empire_name = "Marakan Hegemony";
-		break;
-	case EEMPIRE_NAME::Independent:
-		empire_name = "Independent System";
-		break;
-	case EEMPIRE_NAME::Dantari:
-		empire_name = "Dantari Separatists";
-		break;
-	case EEMPIRE_NAME::Zolon:
-		empire_name = "Zolon Empire";
-		break;
-	case EEMPIRE_NAME::Other:
-		empire_name = "Other";
-		break;
-	case EEMPIRE_NAME::Pirate:
-		empire_name = "Brotherhood of Iron";
-		break;
-	case EEMPIRE_NAME::Neutral:
-		empire_name = "Neutral";
-		break;
-	case EEMPIRE_NAME::Unknown:
-		empire_name = "Unknown";
-		break;
-	case EEMPIRE_NAME::Silessian:
-		empire_name = "Silessian Confederacy";
-		break;
-	case EEMPIRE_NAME::Solus:
-		empire_name = "Independent System of Solus";
-		break;
-	case EEMPIRE_NAME::Haiche:
-		empire_name = "Haiche Protectorate";
-		break;
-	default:
-		empire_name = "Unknown";
-		break;
-	}
-	return empire_name;
-}
-
-void USSWGameInstance::InitializeDT(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignDataTableObject(TEXT("DataTable'/Game/Game/DT_Campaign.DT_Campaign'"));
-
-	if (CampaignDataTableObject.Succeeded())
-	{
-		CampaignDataTable = CampaignDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> CampaignOOBDataTableObject(TEXT("DataTable'/Game/Game/DT_CampaignOOB.DT_CampaignOOB'"));
-
-	if (CampaignOOBDataTableObject.Succeeded())
-	{
-		CampaignOOBDataTable = CampaignOOBDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> CombatGroupDataTableObject(TEXT("DataTable'/Game/Game/DT_CombatGroup.DT_CombatGroup'"));
-
-	if (CombatGroupDataTableObject.Succeeded())
-	{
-		CombatGroupDataTable = CombatGroupDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> GalaxyDataTableObject(TEXT("DataTable'/Game/Game/DT_GalaxyMap.DT_GalaxyMap'"));
-
-	if (GalaxyDataTableObject.Succeeded())
-	{
-		GalaxyDataTable = GalaxyDataTableObject.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> OrderOfBattleDataTableObject(TEXT("DataTable'/Game/Game/DT_OrderOfBattle.DT_OrderOfBattle'"));
-
-	if (OrderOfBattleDataTableObject.Succeeded())
-	{
-		OrderOfBattleDataTable = OrderOfBattleDataTableObject.Object;
-	}
-	
-	if (bClearTables) {
-		CampaignDataTable->EmptyTable();
-		CombatGroupDataTable->EmptyTable();
-		OrderOfBattleDataTable->EmptyTable();
-		GalaxyDataTable->EmptyTable();
-	}
-	GalaxyDataTable->EmptyTable();
-	//OrderOfBattleDataTable->EmptyTable();
-}
-
-void USSWGameInstance::InitializeMainMenuScreen(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FClassFinder<UMenuDlg> MainMenuScreenWidget(TEXT("/Game/Screens/WB_MainMenu"));
-	if (!ensure(MainMenuScreenWidget.Class != nullptr))
+	if (!ensure(Assets))
 	{
 		return;
 	}
-	MainMenuScreenWidgetClass = MainMenuScreenWidget.Class;
+
+	// MenuScreen
+	MenuScreenWidgetClass = Assets->GetWidgetClass(TEXT("UI.MenuScreenClass"), true);
+	if (!ensureMsgf(MenuScreenWidgetClass,
+		TEXT("[UI] UI.MenuScreenClass not bound or not a widget class")))
+	{
+		return;
+	}
+
+	// FirstRunDlg
+	FirstTimeDlgWidgetClass = Assets->GetWidgetClass(TEXT("UI.FirstTimeDlgClass"), true);
+	if (!ensureMsgf(FirstTimeDlgWidgetClass,
+		TEXT("[UI] UI.FirstTimeDlgClass not bound or not a widget class")))
+	{
+		return;
+	}
+
+	// Exit/Quit dialog
+	ExitDlgWidgetClass = Assets->GetWidgetClass(TEXT("UI.ExitDlgClass"), /*bLoadNow=*/true);
+
+	if (!ExitDlgWidgetClass)
+	{
+		// This is almost always because Project Settings is bound to WB_QuitDlg (WidgetBlueprint)
+		// instead of WB_QuitDlg_C (GeneratedClass).
+		UE_LOG(LogTemp, Error,
+			TEXT("[UI] UI.ExitDlgClass invalid. Bind the GENERATED CLASS (…_C) in Project Settings. "
+				"Example: /Game/Screens/WB_QuitDlg.WB_QuitDlg_C"));
+
+		return;
+	}
 }
 
 void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& ObjectInitializer)
@@ -547,7 +431,7 @@ void USSWGameInstance::InitializeOperationsScreen(const FObjectInitializer& Obje
 	{
 		return;
 	}
-	OperationsScreenWidgetClass = OperationsScreenWidget.Class;
+	OperationsScreenWidgetClass = OperationsScreenWidget.Class; 
 }
 
 void USSWGameInstance::InitializeMissionBriefingScreen(const FObjectInitializer& ObjectInitializer)
@@ -580,28 +464,15 @@ void USSWGameInstance::InitializeCampaignLoadingScreen(const FObjectInitializer&
 	CampaignLoadingWidgetClass = CampaignLoadingWidget.Class;
 }
 
-void USSWGameInstance::InitializeQuitDlg(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FClassFinder<UQuitDlg> QuitDlgWidget(TEXT("/Game/Screens/WB_QuitDlg"));
-	if (!ensure(QuitDlgWidget.Class != nullptr))
-	{
-		return;
-	}
-	QuitDlgWidgetClass = QuitDlgWidget.Class;
-}
-
-void USSWGameInstance::InitializeFirstRunDlg(const FObjectInitializer& ObjectInitializer)
-{
-	static ConstructorHelpers::FClassFinder<UFirstRun>FirstRunDlgWidget(TEXT("/Game/Screens/Main/WB_FirstRunDlg"));
-	if (!ensure(FirstRunDlgWidget.Class != nullptr))
-	{
-		return;
-	}
-	FirstRunDlgWidgetClass = FirstRunDlgWidget.Class;
-}
-
 void USSWGameInstance::RemoveScreens()
 {
+	if (MenuScreen)
+	{
+		MenuScreen->TearDown();
+		MenuScreen->RemoveFromParent();
+		MenuScreen = nullptr;
+	}
+	
 	if (CampaignScreen) {
 		//RemoveCampaignScreen();
 	}
@@ -624,41 +495,6 @@ void USSWGameInstance::OnGameTimerTick()
 	SetGameTime(GetGameTime() + 1);
 	SetCampaignTime(GetCampaignTime() + 1);
 	UE_LOG(LogTemp, Log, TEXT("Campaign Timer: %d"), GetCampaignTime());
-}
-
-void USSWGameInstance::ShowMainMenuScreen()
-{
-	//MusicController->PlayMusic(MenuMusic); 
-	RemoveScreens();
-
-	// Create widget
-	MainMenuDlg = CreateWidget<UMenuDlg>(this, MainMenuScreenWidgetClass);
-	// Add it to viewport
-	MainMenuDlg->AddToViewport(100);
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(MainMenuDlg->TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
-		}
-	}
-	ShowQuitDlg();
-	ShowFirstRunDlg();
-
-	if (UGameplayStatics::DoesSaveGameExist(PlayerSaveName, PlayerSaveSlot)) {
-		ToggleFirstRunDlg(false);
-	}
-	else
-	{
-		ToggleFirstRunDlg(true);
-	}
 }
 
 void USSWGameInstance::ShowCampaignScreen()
@@ -775,85 +611,6 @@ void USSWGameInstance::ShowMissionBriefingScreen()
 	ToggleMissionBriefingScreen(true);
 }
 
-void USSWGameInstance::ShowQuitDlg()
-{
-	// Create widget
-	QuitDlg = CreateWidget<UQuitDlg>(this, QuitDlgWidgetClass);
-	// Add it to viewport
-	QuitDlg->AddToViewport(101);
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(QuitDlg->TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
-		}
-	}
-	ToggleQuitDlg(false);
-}
-
-void USSWGameInstance::ShowFirstRunDlg()
-{
-	// Create widget
-	FirstRunDlg = CreateWidget<UFirstRun>(this, FirstRunDlgWidgetClass);
-	// Add it to viewport
-	FirstRunDlg->AddToViewport(102);
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeUIOnly InputModeData;
-			InputModeData.SetWidgetToFocus(FirstRunDlg->TakeWidget());
-			InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
-		}
-	}
-	ToggleFirstRunDlg(false);
-}
-
-void USSWGameInstance::ToggleQuitDlg(bool bVisible)
-{
-	if(QuitDlg) {
-		if(bVisible) {
-			QuitDlg->SetVisibility(ESlateVisibility::Visible);
-		} else {
-			QuitDlg->SetVisibility(ESlateVisibility::Collapsed);
-		}	
-	}
-}
-
-void USSWGameInstance::ToggleFirstRunDlg(bool bVisible)
-{
-	if (FirstRunDlg) {
-		if (bVisible) {
-			FirstRunDlg->SetVisibility(ESlateVisibility::Visible);
-		}
-		else {
-			FirstRunDlg->SetVisibility(ESlateVisibility::Collapsed);
-		}
-	}
-	//if (MainMenuDlg) {
-	//	MainMenuDlg->EnableMenuButtons(!bVisible);
-	//}
-}
-
-void USSWGameInstance::ToggleMenuButtons(bool bVisible)
-{
-	if (MainMenuDlg) {
-		MainMenuDlg->EnableMenuButtons(bVisible);
-	}
-}
-
 void USSWGameInstance::ToggleCampaignScreen(bool bVisible) {
 	if (CampaignScreen) {
 		if (bVisible) {
@@ -961,9 +718,14 @@ void USSWGameInstance::ToggleCampaignLoading(bool bVisible)
 	}
 }
 
-void USSWGameInstance::SetGameMode(EMODE gm)
+void USSWGameInstance::SetGameMode(EGameMode gm)
 {
+	GameMode = gm;
+}
 
+EGameMode USSWGameInstance::GetGameMode()
+{
+	return GameMode;
 }
 
 void USSWGameInstance::SetActiveCampaign(FS_Campaign campaign)
@@ -1046,26 +808,6 @@ int64 USSWGameInstance::GetCampaignTime()
 	return CampaignTime;
 }
 
-void USSWGameInstance::SaveGame(FString SlotName, int32 UserIndex, FS_PlayerGameInfo PlayerData)
-{
-	UPlayerSaveGame* SaveInstance = Cast<UPlayerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlayerSaveGame::StaticClass()));
-
-	if (SaveInstance)
-	{
-		SaveInstance->PlayerInfo = PlayerData;
-
-		UGameplayStatics::SaveGameToSlot(SaveInstance, SlotName, UserIndex);
-	}
-}
-
-void USSWGameInstance::LoadGame(FString SlotName, int32 UserIndex)
-{
-	if (UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
-	{
-		UPlayerSaveGame* LoadedGame = Cast<UPlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
-		PlayerInfo = LoadedGame->PlayerInfo;
-	}
-}
 
 UTexture2D* USSWGameInstance::LoadPNGTextureFromFile(const FString& Path)
 {
@@ -1142,14 +884,19 @@ void USSWGameInstance::PlaySoundFromFile(FString& AudioPath)
 		return;
 	}
 
-	if (AMusicController* Music = GetMusicController(this))
+	if (AMusicController* Music = GetMusicController())
 	{
 		Music->PlayUISound(Sound);
 	}
 }
 
-bool USSWGameInstance::IsSoundPlaying() {
-	return MusicController->IsSoundPlaying();
+bool USSWGameInstance::IsSoundPlaying()
+{
+	if (AMusicController* MC = GetMusicController())
+	{
+		return MC->IsSoundPlaying();
+	}
+	return false;
 }
 
 void USSWGameInstance::InitializeAudioSystem()
@@ -1184,779 +931,9 @@ void USSWGameInstance::PlayAcceptSound(UObject* Context)
 	PlayUISound(Context, AcceptSound);
 }
 
-FString USSWGameInstance::GetNameFromType(ECOMBATGROUP_TYPE nt)
-{
-	return EnumToDisplayString(nt);
-}
-
-FString USSWGameInstance::GetUnitFromType(ECOMBATUNIT_TYPE nt)
-{
-	return EnumToDisplayString(nt);
-}
-
-EEMPIRE_NAME USSWGameInstance::GetEmpireTypeFromIndex(int32 Index)
-{
-	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	if (EnumPtr && Index >= 0 && Index < EnumPtr->NumEnums())
-	{
-		int64 RawValue = EnumPtr->GetValueByIndex(Index);
-		return static_cast<EEMPIRE_NAME>(RawValue);
-	}
-
-	// Optional: Print a warning if index is invalid
-	UE_LOG(LogTemp, Warning, TEXT("Invalid index passed to GetEmpireTypeFromIndex: %d"), Index);
-
-	// Return NONE if out of range
-	return EEMPIRE_NAME::Terellian;
-}
-
-int32 USSWGameInstance::GetIndexFromEmpireType(EEMPIRE_NAME Type)
-{
-	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	int EmpireIndex = 8; 
-	if (EnumPtr)
-	{
-		int64 Value = static_cast<int64>(Type);
-		int32 Index = EnumPtr->GetIndexByValue(Value);
-		if (Index != INDEX_NONE)
-		{
-			EmpireIndex = Index;
-		}
-	}
-	return EmpireIndex;
-}
-
-FString USSWGameInstance::GetUnitPrefixFromType(ECOMBATUNIT_TYPE nt)
-{
-	FString Prefix;
-	switch (nt) {
-		case ECOMBATUNIT_TYPE::CRUISER: 
-			Prefix = "CA-";
-			break;
-		case ECOMBATUNIT_TYPE::CARRIER:
-			Prefix = "CV-";
-			break;
-		case ECOMBATUNIT_TYPE::FRIGATE:
-			Prefix = "FF-";
-			break;
-		case ECOMBATUNIT_TYPE::DESTROYER:
-			Prefix = "DD-";
-			break;
-		default:
-			Prefix = "UNK-";
-			break;
-	} 
-	return Prefix;
-}
-
-FString USSWGameInstance::GetEmpireTypeNameByIndex(int32 Index)
-{
-	UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	if (!EnumPtr) return FString("Invalid");
-
-	// Get value by index
-	int64 EnumValue = EnumPtr->GetValueByIndex(Index);
-
-	// Get display name from value
-	return EnumPtr->GetDisplayNameTextByValue(EnumValue).ToString();
-}
-
-FString USSWGameInstance::GetEmpireDisplayName(EEMPIRE_NAME EnumValue)
-{
-	const UEnum* EnumPtr = StaticEnum<EEMPIRE_NAME>();
-	if (!EnumPtr) return FString("Invalid");
-
-	return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
-}
-
 
 void USSWGameInstance::GetCampaignCombatant(int id, ECOMBATGROUP_TYPE Type) {
 // Filters Table by Active in campaign
-}
-
-void USSWGameInstance::CreateOOBTable() {
-	
-	OrderOfBattleDataTable->EmptyTable();
-
-	TArray<FS_OOBFleet> FleetArray;
-	TArray<FS_OOBCarrier> CarrierArray;
-	TArray<FS_OOBDestroyer> DestroyerArray;
-	TArray<FS_OOBBattle> BattleArray;
-	TArray<FS_OOBWing> WingArray;
-
-	TArray<FS_OOBFighter> FighterArray;
-	TArray<FS_OOBIntercept> InterceptorArray;
-	TArray<FS_OOBAttack> AttackArray;
-	TArray<FS_OOBLanding> LandingArray;
-
-	TArray<FS_OOBBattalion> BattalionArray;
-	TArray<FS_OOBBattery> BatteryArray;
-	TArray<FS_OOBStation> StationArray;
-	TArray<FS_OOBStarbase> StarbaseArray;
-
-	TArray<FS_OOBCivilian> CivilianArray;
-	TArray<FS_OOBMinefield> MinefieldArray;
-
-	FS_OOBForce NewForce;
-	FS_OOBForce* ForceRow;
-
-	FS_OOBFleet CurrentFleet;
-	
-	int ForceId;
-	EEMPIRE_NAME OldEmpire;
-	int OldIff;
-
-	int FleetId;
-	FName RowName;
-
-	for (FS_CombatGroup Item : CombatRosterData) // Make Initial Table
-	{
-		if (Item.Type == ECOMBATGROUP_TYPE::FORCE) {
-			
-			FleetArray.Empty();
-			BattalionArray.Empty();
-			CivilianArray.Empty();
-
-			NewForce.Id = Item.Id;
-			NewForce.Name = Item.DisplayName;
-			NewForce.Iff = Item.Iff;
-			NewForce.Location = Item.Region;
-			NewForce.Empire = Item.EmpireId;
-			NewForce.Intel = Item.Intel;
-			ForceId = Item.Id;
-			OldIff = Item.Iff;
-			OldEmpire = Item.EmpireId;
-			RowName = FName(NewForce.Name);
-			
-			if (NewForce.Iff > -1)
-			{
-				OrderOfBattleDataTable->AddRow(FName(NewForce.Name), NewForce);
-			}
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::FLEET) {
-			if(Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
-			{
-				FS_OOBFleet NewFleet;
-				
-				NewFleet.Id = Item.Id;
-				NewFleet.ParentId = Item.ParentId;
-				NewFleet.Name = Item.DisplayName;
-				NewFleet.Iff = Item.Iff;
-				NewFleet.Location = Item.Region;
-				NewFleet.Empire = Item.EmpireId;
-				NewFleet.Intel = Item.Intel;
-				FleetId = Item.Id;
-				FleetArray.Add(NewFleet);
-			}
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::STATION) {
-			FS_OOBStation NewStation;
-
-			NewStation.Id = Item.Id;
-			NewStation.ParentId = Item.ParentId;
-			NewStation.Name = Item.DisplayName;
-			NewStation.Iff = Item.Iff;
-			NewStation.Location = Item.Region;
-			NewStation.Empire = Item.EmpireId;
-			NewStation.Intel = Item.Intel;
-			NewStation.Id = Item.Id;
-			NewStation.Unit.SetNum(1);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewStation.Unit.IsValidIndex(Index))
-				{
-					NewStation.Unit[Index].Name = UnitItem.UnitName;
-					NewStation.Unit[Index].Count = UnitItem.UnitCount;
-					NewStation.Unit[Index].Location = Item.Region;
-					NewStation.Unit[Index].ParentId = Item.ParentId;
-					NewStation.Unit[Index].Empire = Item.EmpireId;
-					NewStation.Unit[Index].Type = ECOMBATUNIT_TYPE::STATION;
-					NewStation.Unit[Index].ParentType = ECOMBATGROUP_TYPE::STATION;
-					NewStation.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			StationArray.Add(NewStation);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::STARBASE) {
-			FS_OOBStarbase NewStarbase;
-
-			NewStarbase.Id = Item.Id;
-			NewStarbase.ParentId = Item.ParentId;
-			NewStarbase.Name = Item.DisplayName;
-			NewStarbase.Iff = Item.Iff;
-			NewStarbase.Location = Item.Region;
-			NewStarbase.Empire = Item.EmpireId;
-			NewStarbase.Intel = Item.Intel;
-			NewStarbase.Id = Item.Id;
-			NewStarbase.Unit.SetNum(1);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewStarbase.Unit.IsValidIndex(Index))
-				{
-					NewStarbase.Unit[Index].Name = UnitItem.UnitName;
-					NewStarbase.Unit[Index].Count = UnitItem.UnitCount;
-					NewStarbase.Unit[Index].Location = Item.Region;
-					NewStarbase.Unit[Index].ParentId = Item.ParentId;
-					NewStarbase.Unit[Index].Empire = Item.EmpireId;
-					NewStarbase.Unit[Index].Type = ECOMBATUNIT_TYPE::STARBASE;
-					NewStarbase.Unit[Index].ParentType = ECOMBATGROUP_TYPE::STARBASE;
-					NewStarbase.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			StarbaseArray.Add(NewStarbase);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::BATTERY) {
-			FS_OOBBattery NewBattery;
-
-			NewBattery.Id = Item.Id;
-			NewBattery.ParentId = Item.ParentId;
-			NewBattery.Name = Item.DisplayName;
-			NewBattery.Iff = Item.Iff;
-			NewBattery.Location = Item.Region;
-			NewBattery.Empire = Item.EmpireId;
-			NewBattery.Intel = Item.Intel;
-			NewBattery.Id = Item.Id;
-			NewBattery.Unit.SetNum(1);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewBattery.Unit.IsValidIndex(Index))
-				{
-					NewBattery.Unit[Index].Name = UnitItem.UnitName;
-					NewBattery.Unit[Index].Count = UnitItem.UnitCount;
-					NewBattery.Unit[Index].Location = Item.Region;
-					NewBattery.Unit[Index].ParentId = Item.ParentId;
-					NewBattery.Unit[Index].Empire = Item.EmpireId;
-					NewBattery.Unit[Index].Type = ECOMBATUNIT_TYPE::BATTERY;
-					NewBattery.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTERY;
-					NewBattery.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			BatteryArray.Add(NewBattery);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::BATTALION) {
-			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
-			{
-				FS_OOBBattalion NewBattalion;
-
-				NewBattalion.Id = Item.Id;
-				NewBattalion.ParentId = Item.ParentId;
-				NewBattalion.Name = Item.DisplayName;
-				NewBattalion.Iff = Item.Iff;
-				NewBattalion.Location = Item.Region;
-				NewBattalion.Empire = Item.EmpireId;
-				NewBattalion.Intel = Item.Intel;
-				NewBattalion.Id = Item.Id;
-				BattalionArray.Add(NewBattalion);
-			}
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::MINEFIELD) {
-			FS_OOBMinefield NewMinefield;
-
-			NewMinefield.Id = Item.Id;
-			NewMinefield.ParentId = Item.ParentId;
-			NewMinefield.Name = Item.DisplayName;
-			NewMinefield.Iff = Item.Iff;
-			NewMinefield.Location = Item.Region;
-			NewMinefield.Empire = Item.EmpireId;
-			NewMinefield.Intel = Item.Intel;
-			NewMinefield.Id = Item.Id;
-			NewMinefield.Unit.SetNum(1);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewMinefield.Unit.IsValidIndex(Index))
-				{
-					NewMinefield.Unit[Index].Name = UnitItem.UnitName;
-					NewMinefield.Unit[Index].Count = UnitItem.UnitCount;
-					NewMinefield.Unit[Index].Location = Item.Region;
-					NewMinefield.Unit[Index].ParentId = Item.ParentId;
-					NewMinefield.Unit[Index].Empire = Item.EmpireId;
-					NewMinefield.Unit[Index].Type = ECOMBATUNIT_TYPE::MINE;
-					NewMinefield.Unit[Index].ParentType = ECOMBATGROUP_TYPE::MINEFIELD;
-					NewMinefield.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			MinefieldArray.Add(NewMinefield);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::CIVILIAN) {
-			if (Item.ParentId == ForceId && Item.EmpireId == OldEmpire)
-			{
-				FS_OOBCivilian NewCivilian;
-
-				NewCivilian.Id = Item.Id;
-				NewCivilian.ParentId = Item.ParentId;
-				NewCivilian.Name = Item.DisplayName;
-				NewCivilian.Iff = Item.Iff;
-				NewCivilian.Location = Item.Region;
-				NewCivilian.Empire = Item.EmpireId;
-				NewCivilian.Intel = Item.Intel;
-				NewCivilian.Id = Item.Id;
-				CivilianArray.Add(NewCivilian);
-			}
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-			FS_OOBCarrier NewCarrier;
-
-			NewCarrier.Id = Item.Id;
-			NewCarrier.ParentId = Item.ParentId;
-			NewCarrier.Name = Item.DisplayName;
-			NewCarrier.Iff = Item.Iff;
-			NewCarrier.Location = Item.Region;
-			NewCarrier.Empire = Item.EmpireId;
-			NewCarrier.Intel = Item.Intel;
-			NewCarrier.Unit.SetNum(4);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (!NewCarrier.Unit.IsValidIndex(Index))
-					break;
-
-				NewCarrier.Unit[Index].Name = UnitItem.UnitName;
-				NewCarrier.Unit[Index].Count = 1;
-				NewCarrier.Unit[Index].ParentId = Item.ParentId;
-				NewCarrier.Unit[Index].Regnum = UnitItem.UnitRegnum;
-				NewCarrier.Unit[Index].Empire = Item.EmpireId;
-				NewCarrier.Unit[Index].Location = Item.Region;
-				NewCarrier.Unit[Index].ParentType = ECOMBATGROUP_TYPE::CARRIER_GROUP;
-
-				if (UnitItem.UnitClass == "Cruiser") {
-					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
-				}
-				else if (UnitItem.UnitClass == "Destroyer") {
-					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
-				}
-				else if (UnitItem.UnitClass == "Frigate") {
-					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
-				}
-				else if (UnitItem.UnitClass == "Carrier") {
-					NewCarrier.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
-				}
-				NewCarrier.Unit[Index].DisplayName = GetUnitPrefixFromType(NewCarrier.Unit[Index].Type) + UnitItem.UnitRegnum + " "+ UnitItem.UnitName;
-
-				NewCarrier.Unit[Index].Design = UnitItem.UnitDesign;
-				++Index;
-			}
-
-			CarrierArray.Add(NewCarrier);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::DESTROYER_SQUADRON) {
-			FS_OOBDestroyer NewDestroyer;
-
-			NewDestroyer.Id = Item.Id;
-			NewDestroyer.ParentId = Item.ParentId;
-			NewDestroyer.Name = Item.DisplayName;
-			NewDestroyer.Iff = Item.Iff;
-			NewDestroyer.Location = Item.Region;
-			NewDestroyer.Empire = Item.EmpireId;
-			NewDestroyer.Intel = Item.Intel;
-			NewDestroyer.Unit.SetNum(4);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (!NewDestroyer.Unit.IsValidIndex(Index))
-					break;
-
-				NewDestroyer.Unit[Index].Name = UnitItem.UnitName;
-				NewDestroyer.Unit[Index].Count = 1;
-				NewDestroyer.Unit[Index].ParentId = Item.ParentId;
-				NewDestroyer.Unit[Index].Empire = Item.EmpireId;
-				NewDestroyer.Unit[Index].Regnum = UnitItem.UnitRegnum;
-				NewDestroyer.Unit[Index].Location = Item.Region;
-				NewDestroyer.Unit[Index].ParentType = ECOMBATGROUP_TYPE::DESTROYER_SQUADRON;
-
-				if (UnitItem.UnitClass == "Cruiser") {
-					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
-				}
-				else if (UnitItem.UnitClass == "Destroyer") {
-					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
-				}
-				else if (UnitItem.UnitClass == "Frigate") {
-					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
-				}
-				else if (UnitItem.UnitClass == "Carrier") {
-					NewDestroyer.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
-				}
-
-				NewDestroyer.Unit[Index].DisplayName = GetUnitPrefixFromType(NewDestroyer.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
-
-				NewDestroyer.Unit[Index].Design = UnitItem.UnitDesign;
-				++Index;
-			}
-
-			DestroyerArray.Add(NewDestroyer);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::BATTLE_GROUP) {
-			FS_OOBBattle NewBattle;
-
-			NewBattle.Id = Item.Id;
-			NewBattle.ParentId = Item.ParentId;
-			NewBattle.Name = Item.DisplayName;
-			NewBattle.Iff = Item.Iff;
-			NewBattle.Location = Item.Region;
-			NewBattle.Empire = Item.EmpireId;
-			NewBattle.Intel = Item.Intel;
-			NewBattle.Unit.SetNum(4);
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (!NewBattle.Unit.IsValidIndex(Index))
-					break;
-
-				NewBattle.Unit[Index].Name = UnitItem.UnitName;
-				NewBattle.Unit[Index].Count = 1;
-				NewBattle.Unit[Index].ParentId = Item.ParentId;
-				NewBattle.Unit[Index].Regnum = UnitItem.UnitRegnum;
-				NewBattle.Unit[Index].Empire = Item.EmpireId;
-				NewBattle.Unit[Index].Location = Item.Region;
-				NewBattle.Unit[Index].ParentType = ECOMBATGROUP_TYPE::BATTLE_GROUP;
-
-				if (UnitItem.UnitClass == "Cruiser") {
-					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CRUISER;
-				}
-				else if (UnitItem.UnitClass == "Destroyer") {
-					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::DESTROYER;
-				}
-				else if (UnitItem.UnitClass == "Frigate") {
-					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::FRIGATE;
-				}
-				else if (UnitItem.UnitClass == "Carrier") {
-					NewBattle.Unit[Index].Type = ECOMBATUNIT_TYPE::CARRIER;
-				}
-
-				NewBattle.Unit[Index].DisplayName = GetUnitPrefixFromType(NewBattle.Unit[Index].Type) + UnitItem.UnitRegnum + " " + UnitItem.UnitName;
-
-				NewBattle.Unit[Index].Design = UnitItem.UnitDesign;
-				++Index;
-			}
-
-			BattleArray.Add(NewBattle);
-		}
-		else if (Item.Type == ECOMBATGROUP_TYPE::WING) {
-			FS_OOBWing NewWing;
-
-			NewWing.Id = Item.Id;
-			NewWing.ParentId = Item.ParentId;
-			NewWing.Name = Item.DisplayName;
-			NewWing.Iff = Item.Iff;
-			NewWing.Location = Item.Region;
-			NewWing.Empire = Item.EmpireId;
-			NewWing.Intel = Item.Intel;
-			WingArray.Add(NewWing);
-		}
-
-		else if (Item.Type == ECOMBATGROUP_TYPE::FIGHTER_SQUADRON) {
-			FS_OOBFighter NewFighter;
-
-			NewFighter.Id = Item.Id;
-			NewFighter.ParentId = Item.ParentId;
-			NewFighter.Name = Item.DisplayName;
-			NewFighter.Iff = Item.Iff;
-			NewFighter.Location = Item.Region;
-			NewFighter.ParentType = Item.ParentType;
-			NewFighter.Empire = Item.EmpireId;
-			NewFighter.Intel = Item.Intel;
-			NewFighter.Unit.SetNum(1);
-
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewFighter.Unit.IsValidIndex(Index))
-				{
-					NewFighter.Unit[Index].Name = UnitItem.UnitName;
-					NewFighter.Unit[Index].Count = UnitItem.UnitCount;
-					NewFighter.Unit[Index].Location = Item.Region;
-					NewFighter.Unit[Index].ParentId = Item.ParentId;
-					NewFighter.Unit[Index].Empire = Item.EmpireId;
-					NewFighter.Unit[Index].Type = ECOMBATUNIT_TYPE::FIGHTER;
-					NewFighter.Unit[Index].ParentType = ECOMBATGROUP_TYPE::FIGHTER_SQUADRON;
-					NewFighter.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			FighterArray.Add(NewFighter);
-		}
-
-		else if (Item.Type == ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON) {
-			FS_OOBIntercept NewIntercept;
-
-			NewIntercept.Id = Item.Id;
-			NewIntercept.ParentId = Item.ParentId;
-			NewIntercept.Name = Item.DisplayName;
-			NewIntercept.Iff = Item.Iff;
-			NewIntercept.Location = Item.Region;
-			NewIntercept.ParentType = Item.ParentType;
-			NewIntercept.Empire = Item.EmpireId;
-			NewIntercept.Intel = Item.Intel;
-			NewIntercept.Unit.SetNum(1);
-			
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewIntercept.Unit.IsValidIndex(Index))
-				{
-					NewIntercept.Unit[Index].Name = UnitItem.UnitName;
-					NewIntercept.Unit[Index].Count = UnitItem.UnitCount;
-					NewIntercept.Unit[Index].Location = Item.Region;
-					NewIntercept.Unit[Index].ParentId = Item.ParentId;
-					NewIntercept.Unit[Index].Empire = Item.EmpireId;
-					NewIntercept.Unit[Index].Type = ECOMBATUNIT_TYPE::INTERCEPT;
-					NewIntercept.Unit[Index].ParentType = ECOMBATGROUP_TYPE::INTERCEPT_SQUADRON;
-					NewIntercept.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			InterceptorArray.Add(NewIntercept);
-		}
-
-		else if (Item.Type == ECOMBATGROUP_TYPE::ATTACK_SQUADRON) {
-			FS_OOBAttack NewAttack;
-
-			NewAttack.Id = Item.Id;
-			NewAttack.ParentId = Item.ParentId;
-			NewAttack.Name = Item.DisplayName;
-			NewAttack.Iff = Item.Iff;
-			NewAttack.Location = Item.Region;
-			NewAttack.ParentType = Item.ParentType;
-			NewAttack.Empire = Item.EmpireId;
-			NewAttack.Intel = Item.Intel;
-			NewAttack.Unit.SetNum(1);
-			
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewAttack.Unit.IsValidIndex(Index))
-				{
-					NewAttack.Unit[Index].Name = UnitItem.UnitName;
-					NewAttack.Unit[Index].Count = UnitItem.UnitCount;
-					NewAttack.Unit[Index].Location = Item.Region;
-					NewAttack.Unit[Index].ParentId = Item.ParentId;
-					NewAttack.Unit[Index].Empire = Item.EmpireId;
-					NewAttack.Unit[Index].Type = ECOMBATUNIT_TYPE::ATTACK;
-					NewAttack.Unit[Index].ParentType = ECOMBATGROUP_TYPE::ATTACK_SQUADRON;
-					NewAttack.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			AttackArray.Add(NewAttack);
-		}
-
-		else if (Item.Type == ECOMBATGROUP_TYPE::LCA_SQUADRON) {
-			FS_OOBLanding NewLanding;
-
-			NewLanding.Id = Item.Id;
-			NewLanding.ParentId = Item.ParentId;
-			NewLanding.Name = Item.DisplayName;
-			NewLanding.Iff = Item.Iff;
-			NewLanding.Location = Item.Region;
-			NewLanding.ParentType = Item.ParentType;
-			NewLanding.Empire = Item.EmpireId;
-			NewLanding.Intel = Item.Intel;
-			NewLanding.Unit.SetNum(1);
-			
-			int32 Index = 0;
-			for (const auto& UnitItem : Item.Unit)
-			{
-				if (NewLanding.Unit.IsValidIndex(Index))
-				{
-					NewLanding.Unit[Index].Name = UnitItem.UnitName;
-					NewLanding.Unit[Index].Count = UnitItem.UnitCount;
-					NewLanding.Unit[Index].Location = Item.Region;
-					NewLanding.Unit[Index].ParentId = Item.ParentId;
-					NewLanding.Unit[Index].Empire = Item.EmpireId;
-					NewLanding.Unit[Index].Type = ECOMBATUNIT_TYPE::LCA;
-					NewLanding.Unit[Index].ParentType = ECOMBATGROUP_TYPE::LCA_SQUADRON;
-					NewLanding.Unit[Index].Design = UnitItem.UnitDesign;
-				}
-				++Index;
-			}
-			LandingArray.Add(NewLanding);
-		}
-		// Loop through each fleet and assign its carriers
-		for (FS_OOBBattalion& Battalion : BattalionArray)
-		{
-			Battalion.Battery.Empty(); // optional: clear old data
-			Battalion.Station.Empty(); // optional: clear old data
-			Battalion.Starbase.Empty(); // optional: clear old data
-
-			for (const FS_OOBBattery& Battery : BatteryArray)
-			{
-				if (Battery.ParentId == Battalion.Id && Battery.Empire == Battalion.Empire)
-				{
-					Battalion.Battery.Add(Battery);
-				}
-			}
-			for (const FS_OOBStation& Station : StationArray)
-			{
-				if (Station.ParentId == Battalion.Id && Station.Empire == Battalion.Empire)
-				{
-					Battalion.Station.Add(Station);
-				}
-			}
-			for (const FS_OOBStarbase& Starbase : StarbaseArray)
-			{
-				if (Starbase.ParentId == Battalion.Id && Starbase.Empire == Battalion.Empire)
-				{
-					Battalion.Starbase.Add(Starbase);
-				}
-			}
-		}
-
-		// Loop through each fleet and assign its carriers
-		for (FS_OOBFleet& Fleet : FleetArray)
-		{
-			Fleet.Carrier.Empty(); // optional: clear old data
-			Fleet.Destroyer.Empty(); // optional: clear old data
-			Fleet.Battle.Empty(); // optional: clear old data
-			Fleet.Minefield.Empty(); // optional: clear old data
-
-			for (FS_OOBCarrier& Carrier : CarrierArray)
-			{
-				Carrier.Wing.Empty(); 
-				Carrier.Fighter.Empty();
-				Carrier.Attack.Empty();
-				Carrier.Intercept.Empty();
-				Carrier.Landing.Empty();
-
-				if (Carrier.ParentId == Fleet.Id && Carrier.Empire == Fleet.Empire)
-				{
-					for (FS_OOBFighter& Fighter : FighterArray)
-					{
-						if (Fighter.ParentId == Carrier.Id && Fighter.Empire == Carrier.Empire && Fighter.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-							Carrier.Fighter.Add(Fighter);
-						}
-					}
-
-					for (FS_OOBAttack& Attack : AttackArray)
-					{
-						if (Attack.ParentId == Carrier.Id && Attack.Empire == Carrier.Empire && Attack.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-							Carrier.Attack.Add(Attack);
-						}
-					}
-
-					for (FS_OOBIntercept& Intercept : InterceptorArray)
-					{
-						if (Intercept.ParentId == Carrier.Id && Intercept.Empire == Carrier.Empire && Intercept.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-							Carrier.Intercept.Add(Intercept);
-						}
-					}
-					for (FS_OOBLanding& Landing : LandingArray)
-					{
-						if (Landing.ParentId == Carrier.Id && Landing.Empire == Carrier.Empire && Landing.ParentType == ECOMBATGROUP_TYPE::CARRIER_GROUP) {
-							Carrier.Landing.Add(Landing);
-						}
-					}
-					for (FS_OOBWing& Wing : WingArray)
-					{
-						Wing.Fighter.Empty();
-						Wing.Attack.Empty();
-						Wing.Intercept.Empty();
-						Wing.Landing.Empty();
-						
-						if (Wing.ParentId == Carrier.Id && Wing.Empire == Carrier.Empire) {
-							
-							for (FS_OOBFighter& Fighter : FighterArray)
-							{
-								if (Fighter.ParentId == Wing.Id && Fighter.Empire == Wing.Empire && Fighter.ParentType == ECOMBATGROUP_TYPE::WING) {
-									Wing.Fighter.Add(Fighter);
-								}
-							}
-
-							for (FS_OOBAttack& Attack : AttackArray)
-							{
-								if (Attack.ParentId == Wing.Id && Attack.Empire == Wing.Empire) {
-									Wing.Attack.Add(Attack);
-								}
-							}
-
-							for (FS_OOBIntercept& Intercept : InterceptorArray)
-							{
-								if (Intercept.ParentId == Wing.Id && Intercept.Empire == Wing.Empire) {
-									Wing.Intercept.Add(Intercept);
-								}
-							}
-
-							for (FS_OOBLanding& Landing : LandingArray)
-							{
-								if (Landing.ParentId == Wing.Id && Landing.Empire == Wing.Empire) {
-									Wing.Landing.Add(Landing);
-								}
-							}
-							Carrier.Wing.Add(Wing);
-						}
-					}
-					Fleet.Carrier.Add(Carrier);
-				}
-			}
-			
-			for (const FS_OOBBattle& Battle : BattleArray)
-			{
-				if (Battle.ParentId == Fleet.Id && Battle.Empire == Fleet.Empire)
-				{
-					Fleet.Battle.Add(Battle);
-				}
-			}
-
-			for (const FS_OOBDestroyer& Destroyer : DestroyerArray)
-			{
-				if (Destroyer.ParentId == Fleet.Id && Destroyer.Empire == Fleet.Empire)
-				{
-					Fleet.Destroyer.Add(Destroyer);
-				}
-			}
-
-			for (const FS_OOBMinefield& Minefield : MinefieldArray)
-			{
-				if (Minefield.ParentId == Fleet.Id && Minefield.Empire == Fleet.Empire)
-				{
-					Fleet.Minefield.Add(Minefield);
-				}
-			}
-		}
-
-		ForceRow = OrderOfBattleDataTable->FindRow<FS_OOBForce>(RowName, TEXT(""));
-
-		if (ForceRow) {
-			ForceRow->Fleet = FleetArray;
-			ForceRow->Battalion = BattalionArray;
-			ForceRow->Civilian = CivilianArray;
-		}
-	}	
-}
-
-void USSWGameInstance::ExportDataTableToCSV(UDataTable* DataTable, const FString& FileName)
-{
-	if (!DataTable)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Export failed: DataTable is null."));
-		return;
-	}
-
-	// You can use none or pretty names — make sure the flag is in scope
-	const FString CSVData = DataTable->GetTableAsCSV(EDataTableExportFlags::None);
-
-	const FString SavePath = FPaths::ProjectDir() + FileName;
-
-	if (FFileHelper::SaveStringToFile(CSVData, *SavePath))
-	{
-		UE_LOG(LogTemp, Log, TEXT("Successfully exported DataTable to: %s"), *SavePath);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to write DataTable CSV to file."));
-	}
 }
 
 TArray<FS_Combatant> USSWGameInstance::GetCombatantList()
@@ -2410,4 +1387,516 @@ void USSWGameInstance::EnsureSystemOverview(
 		LastOverviewSystemName = StarMap.Name;
 		RebuildSystemOverview(StarMap);
 	}
+}
+
+//void USSWGameInstance::SetTimeScale(double NewTimeScale)
+//{
+//	TimeScale = FMath::Clamp(NewTimeScale, 0.0, 1.0e7);
+//	UE_LOG(LogTemp, Warning, TEXT("TimeScale set to %.2f"), TimeScale);
+//}
+
+/*void USSWGameInstance::StartUniverseClock()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StartUniverseClock: World is null"));
+		return;
+	}
+
+	if (TimeStepSeconds <= 0.0)
+	{
+		TimeStepSeconds = 1.0;
+	}
+
+	FTimerManager& TM = World->GetTimerManager();
+
+	// Prevent duplicates
+	if (TM.IsTimerActive(UniverseTimerHandle))
+	{
+		TM.ClearTimer(UniverseTimerHandle);
+	}
+
+	TM.SetTimer(
+		UniverseTimerHandle,
+		this,
+		&USSWGameInstance::OnUniverseClockTick,
+		(float)TimeStepSeconds,
+		true
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("Universe clock started: Active=%s Step=%.3f TimeScale=%.2f"),
+		TM.IsTimerActive(UniverseTimerHandle) ? TEXT("TRUE") : TEXT("FALSE"),
+		TimeStepSeconds,
+		TimeScale);
+}
+
+void USSWGameInstance::StopUniverseClock()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(UniverseTimerHandle);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Universe clock stopped"));
+}
+
+void USSWGameInstance::OnUniverseClockTick()
+{
+	// Advance universe time
+	const double DeltaUniverse = TimeStepSeconds * TimeScale;
+	const uint64 AddSeconds = (uint64)FMath::Max(1.0, FMath::RoundToDouble(DeltaUniverse));
+	UniverseTimeSeconds += AddSeconds;
+
+	// ---------------------------------------------
+	// PUB-SUB BROADCASTS
+	// ---------------------------------------------
+
+	// 1) Per-second broadcast
+	if (UniverseTimeSeconds != LastBroadcastSecond)
+	{
+		LastBroadcastSecond = UniverseTimeSeconds;
+		OnUniverseSecond.Broadcast(UniverseTimeSeconds);
+	}
+
+	// 2) Per-minute broadcast (Intel refresh)
+	const uint64 CurrentMinute = UniverseTimeSeconds / 60ULL;
+	if (CurrentMinute != LastBroadcastMinute)
+	{
+		LastBroadcastMinute = CurrentMinute;
+		OnUniverseMinute.Broadcast(UniverseTimeSeconds);
+	}
+
+	// 3) Campaign T+ broadcast (only if campaign active)
+	if (CampaignSave)
+	{
+		const uint64 TPlus = CampaignSave->GetTPlusSeconds(UniverseTimeSeconds);
+		if (TPlus != LastBroadcastTPlus)
+		{
+			LastBroadcastTPlus = TPlus;
+			OnCampaignTPlusChanged.Broadcast(UniverseTimeSeconds, TPlus);
+		}
+	}*/
+
+	// ---------------------------------------------
+	// Autosave / playtime logic (unchanged)
+	// ---------------------------------------------
+	//PlayerPlaytimeSeconds += (int64)TimeStepSeconds;
+
+	//if (bUniverseAutosaveRequested)
+	//{
+	//	SaveUniverse();
+		//bUniverseAutosaveRequested = false;
+	//}
+//}
+
+/*void USSWGameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
+{
+	// Timers belong to the loaded UWorld, so restart the clock after travel
+	StartUniverseClock();
+
+	UE_LOG(LogTemp, Log, TEXT("HandlePostLoadMap: restarted universe clock for World=%s"),
+		*GetNameSafe(LoadedWorld));
+}*/
+
+void USSWGameInstance::SetUniverseSaveContext(const FString& SlotName, int32 UserIndex, UUniverseSaveGame* LoadedSave)
+{
+	UniverseSaveSlotName = SlotName;
+	UniverseSaveUserIndex = UserIndex;
+	CachedUniverseSave = LoadedSave;
+
+	UE_LOG(LogTemp, Log, TEXT("Universe save context set: Slot=%s UserIndex=%d SaveObj=%s"),
+		*UniverseSaveSlotName, UniverseSaveUserIndex, *GetNameSafe(CachedUniverseSave.Get()));
+}
+
+bool USSWGameInstance::SaveUniverse()
+{
+	const UTimerSubsystem* Timer = UGameInstance::GetSubsystem<UTimerSubsystem>();
+	UE_LOG(LogTemp, Error, TEXT("in USSWGameInstance::SaveUniverse()"));
+
+	// Guard: must have valid save context
+	if (UniverseId.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("SaveUniverse: UniverseId is empty (notxloaded?)"));
+		return false;
+	}
+
+	// Create a NEW object each time (no caching, no GC surprises)
+	UUniverseSaveGame* SaveObj = Cast<UUniverseSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UUniverseSaveGame::StaticClass())
+	);
+	if (!SaveObj)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SaveUniverse: CreateSaveGameObject failed"));
+		return false;
+	}
+
+	SaveObj->UniverseId = UniverseId;
+	SaveObj->UniverseSeed = UniverseSeed;
+	SaveObj->UniverseBaseUnixSeconds = Timer->UniverseBaseUnixSeconds;
+	SaveObj->UniverseTimeSeconds = Timer->UniverseTimeSeconds;
+
+	// Use slot saving first (simplest + safest)
+	const FString Slot = GetUniverseSlotName();   // MUST return a valid slot
+	constexpr int32 UserIndex = 0;
+
+	const bool bOK = UGameplayStatics::SaveGameToSlot(SaveObj, Slot, UserIndex);
+	UE_LOG(LogTemp, Warning, TEXT("SaveUniverse: slot=%s ok=%d time=%llu"),
+		*Slot, bOK ? 1 : 0, (unsigned long long)Timer->UniverseTimeSeconds);
+
+	return bOK;
+}
+
+void USSWGameInstance::RequestUniverseAutosave()
+{
+	bUniverseAutosaveRequested = true;
+}
+
+#include "CampaignSave.h"
+#include "Kismet/GameplayStatics.h"
+
+bool USSWGameInstance::SaveCampaign()
+{
+	if (!CampaignSave)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SaveCampaign: No CampaignSave loaded"));
+		return false;
+	}
+
+	if (CampaignSave->CampaignRowName.IsNone())
+	{
+		UE_LOG(LogTemp, Error, TEXT("SaveCampaign: CampaignRowName is None"));
+		return false;
+	}
+
+	const FString Slot =
+		UCampaignSave::MakeSlotNameFromRowName(CampaignSave->CampaignRowName);
+
+	constexpr int32 UserIndex = 0;
+
+	const bool bOK =
+		UGameplayStatics::SaveGameToSlot(CampaignSave, Slot, UserIndex);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("SaveCampaign: slot=%s ok=%d row=%s"),
+		*Slot,
+		bOK ? 1 : 0,
+		*CampaignSave->CampaignRowName.ToString());
+
+	return bOK;
+}
+
+UCampaignSave* USSWGameInstance::LoadOrCreateCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName)
+{
+	// Normalize
+	CampaignIndex = FMath::Max(1, CampaignIndex);
+
+	const FString Slot = UCampaignSave::MakeSlotNameFromRowName(RowName);
+	constexpr int32 UserIndex = 0;
+
+	UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>();
+
+	// Try load
+	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(Slot, UserIndex))
+	{
+		if (UCampaignSave* LoadedSave = Cast<UCampaignSave>(Loaded))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Campaign load attempt: Index=%d Slot=%s"),
+				CampaignIndex, *Slot);
+
+			UE_LOG(LogTemp, Warning, TEXT("Campaign load result: %s"),
+				Loaded ? TEXT("SUCCESS") : TEXT("FAIL"));
+
+			// Repair identity fields (optional)
+			if (LoadedSave->CampaignIndex != CampaignIndex)
+				LoadedSave->CampaignIndex = CampaignIndex;
+
+			if (LoadedSave->CampaignRowName.IsNone() && !RowName.IsNone())
+				LoadedSave->CampaignRowName = RowName;
+
+			if (LoadedSave->CampaignDisplayName.IsEmpty() && !DisplayName.IsEmpty())
+				LoadedSave->CampaignDisplayName = DisplayName;
+
+			CampaignSave = LoadedSave;
+
+			if (Timer)
+			{
+				// ---- One-time repair for older saves that never stored the anchor ----
+				if (!CampaignSave->bInitialized || CampaignSave->CampaignStartUniverseSeconds == 0)
+				{
+					const uint64 Now = Timer->GetUniverseTimeSeconds();
+					CampaignSave->InitializeCampaignClock(Now);
+
+					// Persist the repaired anchor so it doesn't "reset" next load:
+					UGameplayStatics::SaveGameToSlot(CampaignSave, Slot, UserIndex);
+				}
+
+				CampaignSave = LoadedSave;
+				UE_LOG(LogTemp, Warning,
+					TEXT("Loaded campaign from slot=%s  ObjName=%s  Row=%s  Index=%d  Start=%llu  Init=%d"),
+					*Slot,
+					*GetNameSafe(LoadedSave),
+					*LoadedSave->CampaignRowName.ToString(),
+					LoadedSave->CampaignIndex,
+					(unsigned long long)LoadedSave->CampaignStartUniverseSeconds,
+					LoadedSave->bInitialized ? 1 : 0);
+
+				Timer->SetCampaignSave(LoadedSave);  // explicitly LoadedSave
+			}
+
+			return CampaignSave;
+		}
+	}
+
+	// Create new
+	UCampaignSave* NewSave = Cast<UCampaignSave>(
+		UGameplayStatics::CreateSaveGameObject(UCampaignSave::StaticClass())
+	);
+	if (!NewSave)
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadOrCreateCampaignSave: Failed to create SaveGame object"));
+		return nullptr;
+	}
+
+	NewSave->CampaignIndex = CampaignIndex;
+	NewSave->CampaignRowName = RowName;
+	NewSave->CampaignDisplayName = DisplayName;
+
+	// Anchor campaign clock to CURRENT universe time (from subsystem)
+	const uint64 NowUniverse = Timer ? Timer->GetUniverseTimeSeconds() : 0ULL;
+	NewSave->InitializeCampaignClock(NowUniverse);
+
+	// Persist
+	if (!UGameplayStatics::SaveGameToSlot(NewSave, Slot, UserIndex))
+	{
+		UE_LOG(LogTemp, Error, TEXT("LoadOrCreateCampaignSave: SaveGameToSlot failed for %s"), *Slot);
+	}
+
+	// Assign + inject
+	CampaignSave = NewSave;
+
+	if (Timer)
+	{
+		Timer->SetCampaignSave(CampaignSave);
+	}
+
+	return CampaignSave;
+}
+
+UCampaignSave* USSWGameInstance::CreateNewCampaignSave(int32 CampaignIndex, FName RowName, const FString& DisplayName)
+{
+	// Normalize
+	CampaignIndex = FMath::Max(1, CampaignIndex);
+
+	if (RowName.IsNone())
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateNewCampaignSave: RowName is None"));
+		return nullptr;
+	}
+
+	const FString Slot = UCampaignSave::MakeSlotNameFromRowName(RowName);
+	constexpr int32 UserIndex = 0;
+
+	UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>();
+
+	// Create new save object
+	UCampaignSave* NewSave = Cast<UCampaignSave>(
+		UGameplayStatics::CreateSaveGameObject(UCampaignSave::StaticClass())
+	);
+
+	if (!NewSave)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateNewCampaignSave: Failed to create SaveGame object"));
+		return nullptr;
+	}
+
+	// Identity
+	NewSave->CampaignIndex = CampaignIndex;
+	NewSave->CampaignRowName = RowName;
+	NewSave->CampaignDisplayName = DisplayName;
+
+	// Reset campaign timeline by anchoring to current universe time
+	const uint64 NowUniverse = Timer ? Timer->GetUniverseTimeSeconds() : 0ULL;
+	NewSave->InitializeCampaignClock(NowUniverse);
+
+	// Persist (overwrites existing slot for this campaign row)
+	const bool bOK = UGameplayStatics::SaveGameToSlot(NewSave, Slot, UserIndex);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("CreateNewCampaignSave: slot=%s ok=%d row=%s index=%d start=%llu"),
+		*Slot,
+		bOK ? 1 : 0,
+		*RowName.ToString(),
+		CampaignIndex,
+		(unsigned long long)NewSave->CampaignStartUniverseSeconds);
+
+	// Assign + inject into timer subsystem so UI starts at T+ 00:00:00
+	CampaignSave = NewSave;
+
+	if (Timer)
+	{
+		Timer->SetCampaignSave(NewSave);
+	}
+
+	return NewSave;
+}
+
+UCampaignSave* USSWGameInstance::LoadOrCreateSelectedCampaignSave()
+{
+	return LoadOrCreateCampaignSave(SelectedCampaignIndex, SelectedCampaignRowName, SelectedCampaignDisplayName);
+}
+
+void USSWGameInstance::EnsureCampaignSaveLoaded()
+{
+	// If already loaded, nothing to do
+	if (CampaignSave)
+		return;
+
+	int32 UiIndex = PlayerInfo.Campaign;
+	if (UiIndex < 0)
+	{
+		UiIndex = 0;
+		PlayerInfo.Campaign = 0;
+	}
+
+	SelectedCampaignRowName = NAME_None;
+	SelectedCampaignDisplayName = TEXT("");
+
+	if (CampaignDataTable)
+	{
+		TArray<FName> RowNames = CampaignDataTable->GetRowNames();
+
+		struct FTempCampaignRef
+		{
+			int32 Index0 = 0;
+			FName RowName = NAME_None;
+			FString Name;
+			bool bAvailable = false;
+		};
+
+		TArray<FTempCampaignRef> Sorted;
+		Sorted.Reserve(RowNames.Num());
+
+		for (const FName& RN : RowNames)
+		{
+			const FS_Campaign* Row = CampaignDataTable->FindRow<FS_Campaign>(RN, TEXT("EnsureCampaignSaveLoaded"));
+			if (!Row) continue;
+
+			FTempCampaignRef Ref;
+			Ref.Index0 = Row->Index;
+			Ref.RowName = RN;
+			Ref.Name = Row->Name;
+			Ref.bAvailable = Row->bAvailable;
+			Sorted.Add(Ref);
+		}
+
+		Sorted.Sort([](const FTempCampaignRef& A, const FTempCampaignRef& B)
+			{
+				return A.Index0 < B.Index0;
+			});
+
+		UiIndex = FMath::Clamp(UiIndex, 0, Sorted.Num() - 1);
+
+		if (Sorted.IsValidIndex(UiIndex))
+		{
+			SelectedCampaignRowName = Sorted[UiIndex].RowName;
+			SelectedCampaignDisplayName = Sorted[UiIndex].Name;
+			SelectedCampaignIndex = Sorted[UiIndex].Index0 + 1;
+		}
+	}
+	else
+	{
+		if (CampaignData.Num() > 0)
+		{
+			UiIndex = FMath::Clamp(UiIndex, 0, CampaignData.Num() - 1);
+			SelectedCampaignDisplayName = CampaignData[UiIndex].Name;
+			SelectedCampaignIndex = UiIndex + 1;
+		}
+	}
+
+	if (SelectedCampaignIndex < 1)
+	{
+		ShowCampaignScreen();
+		return;
+	}
+
+	// ---- Load/Create the campaign save ----
+	LoadOrCreateSelectedCampaignSave();
+
+	// If load failed, do notxproceed to Operations (avoid crash)
+	if (!CampaignSave)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnsureCampaignSaveLoaded: Failed to load/create CampaignSave"));
+		ShowCampaignScreen();
+		return;
+	}
+
+	// ---------------------------------------------------------
+	// NEW: Inject the loaded campaign save into the TimerSubsystem
+	// ---------------------------------------------------------
+	if (UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>())
+	{
+		Timer->SetCampaignSave(CampaignSave);
+	}
+}
+
+AMusicController* USSWGameInstance::GetMusicController()
+{
+	if (MusicController && IsValid(MusicController))
+	{
+		return MusicController;
+	}
+
+	// Try to find an existing one in the world
+	if (UWorld* World = GetWorld())
+	{
+		for (TActorIterator<AMusicController> It(World); It; ++It)
+		{
+			MusicController = *It;
+			return MusicController;
+		}
+	}
+
+	// Optional: spawn if you have a class to spawn
+	// If you don’t have one, leave it null and just guard calls.
+	return nullptr;
+}
+
+FString USSWGameInstance::GetCampaignTPlusString() const
+{
+	const UTimerSubsystem* Timer = UGameInstance::GetSubsystem<UTimerSubsystem>();
+	if (CampaignSave)
+	{
+		// Uses CampaignSave anchor + UniverseTimeSeconds
+		return CampaignSave->GetTPlusDisplay(Timer->UniverseTimeSeconds);
+	}
+
+	// notxloaded yet
+	return TEXT("T+ --/--:--:--");
+}
+
+FString USSWGameInstance::GetCampaignAndUniverseTimeLine() const
+{
+	const UTimerSubsystem* Timer = GetSubsystem<UTimerSubsystem>();
+
+	const FString UniverseStr = Timer
+		? Timer->GetUniverseDateTimeString()
+		: TEXT("--");
+
+	const FString TPlusStr = GetCampaignTPlusString(); // your existing method, still fine
+
+	return FString::Printf(
+		TEXT("UNIVERSE: %s   |   T+ %s"),
+		*UniverseStr,
+		*TPlusStr
+	);
+}
+
+void USSWGameInstance::HandleUniverseMinuteAutosave(uint64 UniverseSecondsNow)
+{
+	// Universe autosave (your existing method)
+	SaveUniverse();
+
+	// Campaign autosave (only if you actually have mutable campaign state)
+	SaveCampaign();
 }

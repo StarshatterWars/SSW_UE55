@@ -224,7 +224,7 @@ int32 UVsBlueprintReferencesCommandlet::Run(
 	// 1. Use FindInBlueprints to get all candidate blueprints with calls to functions that match the requested symbol
 	// 2. Confirm the blueprints reference the requested function, by matching the target UFunction in their call graph.
 	// The first step acts as a filter to avoid loading too many blueprints to inspect their call graph.
-	// The second step is required because the FiB data does not always allow for searching with the function
+	// The second step is required because the FiB data does notxalways allow for searching with the function
 	// qualified with the owned class name, if the function is static.
 
 	FString ClassNameWithoutPrefix = StripClassPrefix(ClassNameNative);

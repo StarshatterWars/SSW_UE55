@@ -8,7 +8,7 @@
 #include "OOBUnitItem.h"
 #include "OOBStationItem.h"
 #include "OperationsScreen.h"
-#include "../Game/GameStructs.h" // FS_OOBFleet definition 
+#include "GameStructs.h" // FS_OOBFleet definition 
 
 void UOOBStationWidget::NativeConstruct()
 {

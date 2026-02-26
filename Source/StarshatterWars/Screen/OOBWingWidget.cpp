@@ -94,7 +94,7 @@ void UOOBWingWidget::ToggleExpansion()
 void UOOBWingWidget::BuildChildren(const FS_OOBWing& WingDataStruct)
 {
     if (!AttackListView || !FighterListView || !InterceptorListView || !LandingListView) {
-        UE_LOG(LogTemp, Error, TEXT("Wing ListViews are not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Wing ListViews are notxvalid!"));
         return;
     }
 

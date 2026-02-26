@@ -78,7 +78,7 @@ void UOOBBattalionWidget::ToggleExpansion()
 void UOOBBattalionWidget::BuildChildren(const FS_OOBBattalion& BattalionDataStruct)
 {
     if (!BatteryListView || !StarbaseListView || !StationListView) {
-        UE_LOG(LogTemp, Error, TEXT("Battalion ListViews are not valid!"));
+        UE_LOG(LogTemp, Error, TEXT("Battalion ListViews are notxvalid!"));
         return;
     }
 

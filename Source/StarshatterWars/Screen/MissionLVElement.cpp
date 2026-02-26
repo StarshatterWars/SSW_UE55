@@ -3,7 +3,7 @@
 
 #include "MissionLVElement.h"
 #include "OperationsScreen.h"
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
 
 void UMissionLVElement::NativeConstruct()
 {

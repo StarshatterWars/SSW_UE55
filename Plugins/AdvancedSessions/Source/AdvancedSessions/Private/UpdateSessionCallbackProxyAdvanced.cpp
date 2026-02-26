@@ -95,12 +95,12 @@ void UUpdateSessionCallbackProxyAdvanced::Activate()
 		}
 		else
 		{
-			FFrame::KismetExecutionMessage(TEXT("Sessions not supported by Online Subsystem"), ELogVerbosity::Warning);
+			FFrame::KismetExecutionMessage(TEXT("Sessions notxsupported by Online Subsystem"), ELogVerbosity::Warning);
 		}
 	}
 	// Fail immediately
 	OnFailure.Broadcast();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Sessions not supported"));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Sessions notxsupported"));
 }
 
 void UUpdateSessionCallbackProxyAdvanced::OnUpdateCompleted(FName SessionName, bool bWasSuccessful)
@@ -125,6 +125,6 @@ void UUpdateSessionCallbackProxyAdvanced::OnUpdateCompleted(FName SessionName, b
 	if (!bWasSuccessful)
 	{
 		OnFailure.Broadcast();
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("WAS NOT SUCCESSFUL"));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("WAS notxSUCCESSFUL"));
 	}
 }

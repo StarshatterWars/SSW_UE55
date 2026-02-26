@@ -1,12 +1,14 @@
 SHIP
 
 name:          Observatory
-display_name:  Observatory
+display_name:  "Tal Vesta Stellar Observatory"
 class:         STATION
 abrv:          STN
-hud_icon:      "Obs_hud.pcx"
+empire:        Terellian
+description:   "The Tal Vesta Stellar Observatory is a premier Terellian astrophysics station positioned in high orbit to monitor stellar activity and deep-space anomalies. Its expansive sensor lattice and quantum analysis suites make it a cornerstone of Alliance scientific research and early-warning defense networks."
+hud_icon:      "Obs_hud"
 
-model:      "S0opt.mag"
+model:      "Observatory"
 
 mass:       5e6
 integrity:  2e6
@@ -84,7 +86,7 @@ sensor:     {
    }
 
 map: {
-   sprite: "Obs_map.pcx"
+   sprite: "Obs_map"
 }
 
 death_spiral: {

@@ -4,14 +4,12 @@ name:          Cutlass
 display_name:  Cutlass
 class:         Fighter
 abrv:          "F-19"
+empire:        Pirate
 description:   "Small, stealthy, and highly maneuverable, the CUTLASS pirate fighter is commonly used by the Brotherhood of Iron criminal organization as both a commerce raider and escort for their larger vessels.  The Cutlass features four widely spread Alpha cannon, and has even been known to mount stolen antiship missiles for some engagements."
 
-hud_icon:      "CutlassHud.pcx"
+hud_icon:      "CutlassHud"
 
-detail_0:   "Cutlass_0.mag"
-feature_0:  25
-detail_1:   "Cutlass_1.mag"
-feature_1:  2
+model:         "Cutlass"
 
 mass:       14
 integrity:  2500
@@ -166,13 +164,13 @@ gear: {
    hull_factor: 0.5,
 
    gear: {
-      model: "LeftSkid.mag",
+      model: "LeftSkid",
       start: (-20, -16, 0),
       end:   (-48, -44, 0),
       },
 
    gear: {
-      model: "RightSkid.mag",
+      model: "RightSkid",
       start: ( 20, -16, 0),
       end:   ( 48, -44, 0),
       },
@@ -201,7 +199,7 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, -32),
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,-2)
    debris_mass:      20
    debris_count:     4
@@ -211,7 +209,7 @@ death_spiral: {
    debris_drag:      0.3
    debris_speed:     190
 
-   debris:           "DebrisX.mag"
+   debris:           "DebrisX"
    debris_loc:       (0,0,3)
    debris_mass:      20
    debris_count:     3
@@ -224,13 +222,13 @@ death_spiral: {
 
 
 map: {
-   sprite: "cmap0.pcx",
-   sprite: "cmap1.pcx",
-   sprite: "cmap2.pcx",
-   sprite: "cmap3.pcx",
-   sprite: "cmap4.pcx",
-   sprite: "cmap5.pcx",
-   sprite: "cmap6.pcx",
-   sprite: "cmap7.pcx"
+   sprite: "cmap0",
+   sprite: "cmap1",
+   sprite: "cmap2",
+   sprite: "cmap3",
+   sprite: "cmap4",
+   sprite: "cmap5",
+   sprite: "cmap6",
+   sprite: "cmap7"
 }
 

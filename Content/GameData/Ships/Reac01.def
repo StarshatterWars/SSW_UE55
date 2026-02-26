@@ -4,12 +4,11 @@ name:       Reac01
 class:      Building
 abrv:       BLDG
 display_name: Generator
-hud_icon:     "hud_reac01.pcx"
+description:  "The Generator Complex provides primary power distribution for planetary installations and orbital facilities alike. Hardened against bombardment and sabotage, its reactor core feeds surrounding structures with stable, high-output energy essential for sustained operations."
+empire:      All
+hud_icon:     "hud_reac01"
 
-detail_0:   "Reactor-0.mag"
-feature_0:  1000
-detail_1:   "Reactor-6.mag"
-feature_1:  6
+model:       "Reactor"
 
 mass:       5e3
 integrity:  5e3

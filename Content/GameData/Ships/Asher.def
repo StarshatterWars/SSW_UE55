@@ -4,18 +4,14 @@ name:          Asher
 display_name:  Asher
 class:         Destroyer
 abrv:		   DD
+empire:        Terellian
 description:   "The DD/E-708 ASHER class of destroyer/escorts represents a lighter, more maneuverable alternative to the heavy Spectre class destroyers that make up the majority of Alliance destroyer squadrons.  The Asher class is armed with a trio of nose-mounted XRay Laser batteries, and a pair of wing-mounted fusion torpedo launchers, as well as the usual complement of point defense turrets.  This combination of power and agility makes the Asher class well suited to the fleet carrier escort role they are asked to fulfill"
 
 degrees:    true
 beauty:     (-15, 6, 1.2)
-hud_icon:   "AsherHud.pcx"
+hud_icon:   "AsherHud"
 
-detail_0:   "Destroyer_0opt.mag"
-feature_0:  1000
-detail_1:   "Destroyer_1opt.mag"
-feature_1:  40
-detail_2:   "Destroyer_2opt.mag"
-feature_2:  20
+model:   "Asher"
 
 mass:       15.5e3
 agility:    3.5
@@ -356,25 +352,25 @@ death_spiral: {
    final_type:       12,   // LARGE_BURST
    final_loc:        (0, 0, 0),
 
-   debris:           "Debris1A.mag",
+   debris:           "Debris1A",
    debris_loc:       (0,0,-450),
    debris_mass:      15e3,
    debris_count:     1,
    debris_life:      150,
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      5,
    debris_count:     25,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      4,
    debris_count:     20,
    debris_life:      22,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      1,
    debris_count:     10,
@@ -383,14 +379,14 @@ death_spiral: {
 }
 
 map: {
-   sprite: "AsherMap0.pcx",
-   sprite: "AsherMap1.pcx",
-   sprite: "AsherMap2.pcx",
-   sprite: "AsherMap3.pcx",
-   sprite: "AsherMap4.pcx",
-   sprite: "AsherMap5.pcx",
-   sprite: "AsherMap6.pcx",
-   sprite: "AsherMap7.pcx"
+   sprite: "AsherMap0",
+   sprite: "AsherMap1",
+   sprite: "AsherMap2",
+   sprite: "AsherMap3",
+   sprite: "AsherMap4",
+   sprite: "AsherMap5",
+   sprite: "AsherMap6",
+   sprite: "AsherMap7"
 }
 
 

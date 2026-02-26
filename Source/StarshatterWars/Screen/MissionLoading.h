@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h"
+#include "GameStructs.h"
 
 #include "Engine/Texture2D.h"
 #include "Components/Image.h"
@@ -15,7 +15,8 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/ListView.h"
 
-#include "../System/SSWGameInstance.h"
+#include "SSWGameInstance.h"
+#include "TimerSubsystem.h"
 #include "MissionLoading.generated.h"
 
 /**
@@ -63,8 +64,11 @@ class STARSHATTERWARS_API UMissionLoading : public UUserWidget
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UButton* WeaponsButton;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* GameTimeText;
 
-
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* CampaignTPlusText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UWidgetSwitcher* MissionScreenSwitcher;
@@ -76,6 +80,7 @@ public:
 protected:
 	void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UFUNCTION()
 	void OnSelectButtonClicked();
@@ -122,4 +127,8 @@ protected:
 	int SelectedMission;
 	UPROPERTY()
 	int SelectedCampaign;
+private:
+	void HandleUniverseSecondTick(uint64 UniverseSecondsNow);
+	void HandleUniverseMinuteTick(uint64 UniverseSecondsNow);
+	void HandleCampaignTPlusChanged(uint64 UniverseSecondsNow, uint64 TPlusSeconds);
 };

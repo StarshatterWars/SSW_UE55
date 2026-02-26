@@ -4,12 +4,11 @@ name:         Bldg01
 class:        Building
 display_name: "Office Tower"
 abrv:		  BLDG
-hud_icon:     "hud_bldg01.pcx"
+hud_icon:     "hud_bldg01"
+description: "The Office Tower rises above the surrounding settlement as a centralized hub for commercial and administrative operations. Though not a military structure, its communications arrays and data archives make it strategically significant during periods of unrest or occupation."
+empire:     All
 
-detail_0:   "Bldg01-0.mag"
-feature_0:  1000
-detail_1:   "Bldg01-6.mag"
-feature_1:  6
+model:   "Bldg01-0.mag"
 
 mass:       5e3
 integrity:  8e3

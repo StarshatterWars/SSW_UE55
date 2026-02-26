@@ -5,9 +5,9 @@
 #include "Components/Image.h"
 #include "Components/Widget.h"
 #include "Components/CanvasPanelSlot.h"
-#include "../System/SSWGameInstance.h"
-#include "../Foundation/StarUtils.h"
-#include "../Foundation/SystemMapUtils.h"
+#include "SSWGameInstance.h"
+#include "StarUtils.h"
+#include "SystemMapUtils.h"
 
 void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 {
@@ -26,7 +26,7 @@ void UCentralSunWidget::InitializeFromSunActor(ACentralSunActor* SunActor)
 	}
 
 	StarSize = StarUtils::GetUISizeFromRadius(CentralStar->GetRadius()) / 2;
-	SetWidgetRenderTarget(RT);
+	SetWidgetRenderTarget(RT, EBodyUISizeClass::Star);
 	
 	float Scale = StarSize / 64.f; // assuming 64 is base size
 	FWidgetTransform Transform;
@@ -41,7 +41,7 @@ FReply UCentralSunWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 	return FReply::Handled();
 }
 
-void UCentralSunWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT)
+void UCentralSunWidget::SetWidgetRenderTarget(UTextureRenderTarget2D* InRT, EBodyUISizeClass SizeClass)
 {
 	if (InRT && SunImage && SunWidgetMaterial)
 	{

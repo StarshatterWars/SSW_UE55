@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "../Game/GameStructs.h" // FS_Galaxy struct
-#include "../System/SSWGameInstance.h"
+#include "GameStructs.h" // FS_Galaxy struct
+#include "SSWGameInstance.h"
 #include "JumpLinksWidget.generated.h"
 
 /**

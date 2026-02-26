@@ -1,12 +1,14 @@
 SHIP
 
 name:          Station2
-display_name:  Station
+display_name:  Harmony Station
 abrv:          STN
 class:         STATION
-hud_icon:      "s5hud.pcx"
+description:   "Harmony Station is a Terellian Alliance diplomatic and logistics outpost positioned along key commercial corridors. Designed as both a civilian sanctuary and fleet support node, it combines modular docking rings with defensive shielding to safeguard Alliance trade and regional stability."
+empire:        Terellian
+hud_icon:      "s5hud"
 
-model:      "S5opt.mag"
+model:      "Harmony"
 
 mass:       9e6
 integrity:  5e6
@@ -139,7 +141,7 @@ sensor:     {
 
 
 map: {
-   sprite: "s5map.pcx"
+   sprite: "s5map"
 }
 
 death_spiral: {

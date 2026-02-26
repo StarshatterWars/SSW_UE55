@@ -9,7 +9,7 @@
 	OVERVIEW
 	========
 	Loader and Parser class for initial generation of Galaxy Data Tables
-	Will not be used after Dable Table is Generated.
+	Will notxbe used after Dable Table is Generated.
 */
 
 #include "GalaxyDataLoader.h"

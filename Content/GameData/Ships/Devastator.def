@@ -4,18 +4,14 @@ name:          Devastator
 display_name:  Devastator
 class:         Cruiser
 abrv:          CA
+Other		   Terellian
 description:   "The CA-400 DEVASTATOR class of heavy cruisers forms the backbone of the Alliance heavy gun capability.  Big, slow, and very tough, each of these enormous vessels features a pair of heavy gamma ray laser batteries and four Athena missile launchers.  Together these weapons can bring down the largest starships and orbital stations.  For defense against strike ships and inbound missile weapons, the Devastator has full coverage from a set of Vanguard point defense batteries."
 
 degrees:    true
 beauty:     (-9, 3.5, 1.27)
-hud_icon:   "DevastatorHud.pcx"
+hud_icon:   "DevastatorHud"
 
-detail_0:   "Devastator_0.mag"
-feature_0:  1000
-detail_1:   "Devastator_1.mag"
-feature_1:  32
-detail_2:   "Devastator_2.mag"
-feature_2:  20
+model:      "Devastator"
 
 mass:       98.1e3
 agility:    2
@@ -138,7 +134,7 @@ shield: {
    design:           "Grav Shield"
    abrv:             Shield
    pcs:              100,
-   model:            "DevastatorShield.mag",
+   model:            "DevastatorShield",
    bolt_hit_sound:   "shield_hit4.wav"
    beam_hit_sound:   "shield_hit5.wav"
 
@@ -394,38 +390,38 @@ death_spiral: {
    final_loc:        (0, 0, 0),
 
 
-   debris:           "Debris1A.mag",
+   debris:           "Debris1A",
    debris_loc:       (0,0,-550),
    debris_mass:      17e3,
    debris_count:     1,
    debris_life:      350,
 
-   debris:           "Debris1B.mag",
+   debris:           "Debris1B",
    debris_loc:       (320,0,10),
    debris_mass:      13e3,
    debris_count:     1,
    debris_life:      380,
 
-   debris:           "CourageousDebris2.mag",
+   debris:           "CourageousDebris2",
    debris_loc:       (0,0,500),
    debris_mass:      18e3,
    debris_count:     1,
    debris_life:      380,
 
 
-   debris:           "Debris0A.mag",
+   debris:           "Debris0A",
    debris_loc:       (0,0,-50),
    debris_mass:      55,
    debris_count:     35,
    debris_life:      15,
 
-   debris:           "Debris0B.mag",
+   debris:           "Debris0B",
    debris_loc:       (0,0,60),
    debris_mass:      44,
    debris_count:     30,
    debris_life:      25,
 
-   debris:           "Debris0C.mag",
+   debris:           "Debris0C",
    debris_loc:       (0,0,0),
    debris_mass:      33,
    debris_count:     22,
@@ -434,14 +430,14 @@ death_spiral: {
 
 
 map: {
-   sprite: "DevastatorMap0.pcx",
-   sprite: "DevastatorMap1.pcx",
-   sprite: "DevastatorMap2.pcx",
-   sprite: "DevastatorMap3.pcx",
-   sprite: "DevastatorMap4.pcx",
-   sprite: "DevastatorMap5.pcx",
-   sprite: "DevastatorMap6.pcx",
-   sprite: "DevastatorMap7.pcx"
+   sprite: "DevastatorMap0",
+   sprite: "DevastatorMap1",
+   sprite: "DevastatorMap2",
+   sprite: "DevastatorMap3",
+   sprite: "DevastatorMap4",
+   sprite: "DevastatorMap5",
+   sprite: "DevastatorMap6",
+   sprite: "DevastatorMap7"
 }
 
 

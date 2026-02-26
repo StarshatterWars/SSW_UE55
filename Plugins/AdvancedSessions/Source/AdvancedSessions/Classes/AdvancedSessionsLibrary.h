@@ -38,7 +38,7 @@ public:
 		static bool KickPlayer(UObject* WorldContextObject, APlayerController* PlayerToKick, FText KickReason);
 
 		// Ban a player from the currently active game session, only available on the server
-		// Note that the default gamesession class does not implement an actual ban list and just kicks when this is called
+		// Note that the default gamesession class does notximplement an actual ban list and just kicks when this is called
 		UFUNCTION(BlueprintCallable, Category = "Online|AdvancedSessions", meta = (WorldContext = "WorldContextObject"))
 		static bool BanPlayer(UObject* WorldContextObject, APlayerController* PlayerToBan, FText BanReason);
 

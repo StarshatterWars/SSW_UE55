@@ -4,9 +4,12 @@ name:          Station6
 display_name:  "Freight Xfer"
 class:         STATION
 abrv:          STN
-hud_icon:      "s6hud.pcx"
+empire:        Marakan
+description:   "The Marakan Freight Transfer Station is a high-throughput cargo interchange positioned along major trade routes. Massive docking gantries and automated handling arrays allow it to rapidly offload, inspect, and redistribute materials to support sustained fleet operations."
 
-model: "S2opt.mag"
+hud_icon:      "s6hud"
+
+model:         "MarakanXfer"
 
 mass:       5e6
 integrity:  5e5
@@ -180,7 +183,7 @@ sensor:     {
 
 
 map: {
-   sprite: "s6map.pcx"
+   sprite: "s6map"
 }
 
 death_spiral: {

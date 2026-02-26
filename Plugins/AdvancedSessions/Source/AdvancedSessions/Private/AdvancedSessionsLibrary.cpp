@@ -143,7 +143,7 @@ void UAdvancedSessionsLibrary::AddOrModifyExtraSettings(UPARAM(ref) TArray<FSess
 			}
 		}
 
-		// If it was not found, add to the array instead
+		// If it was notxfound, add to the array instead
 		if (!bFoundSetting)
 		{
 			ModifiedSettingsArray.Add(Setting);

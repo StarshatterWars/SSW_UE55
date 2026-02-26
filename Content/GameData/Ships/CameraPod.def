@@ -4,8 +4,10 @@ name:          CameraPod
 display_name:  CameraPod
 class:         Drone
 abrv:		   DRN
-model:         "Invisible.mag"
-cockpit_model: "Invisible.mag"
+description:   "The CameraPod Drone is a compact autonomous observation unit deployed for perimeter surveillance and battlefield monitoring. Lightly armored and unarmed, it relays real-time visual and sensor telemetry to command elements, extending tactical awareness without risking crewed assets."
+empire:        All
+model:         "Invisible"
+cockpit_model: "Invisible"
 cockpit_scale: 1e-6
 
 mass:       14.5

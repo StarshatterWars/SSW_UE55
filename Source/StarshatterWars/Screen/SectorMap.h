@@ -9,20 +9,19 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 
-#include "../Game/GameStructs.h"
-#include "../System/SSWGameInstance.h"
-#include "../Foundation/SystemMapUtils.h"
-
+#include "GameStructs.h"
+#include "SSWGameInstance.h"
+#include "SystemMapUtils.h"
+#include "PlanetPanelActor.h"
+#include "PlanetMarkerWidget.h"
+#include "MoonMarkerWidget.h"
 #include "SectorMap.generated.h"
 
 class UCanvasPanel;
 class USizeBox;
 
-class UCentralPlanetWidget;
-class UMoonMarkerWidget;
 class USystemOrbitWidget;
 
-class ACentralPlanetActor;
 class AMoonPanelActor;
 class UOperationsScreen;
 
@@ -50,19 +49,22 @@ public:
 	// Single orbit scale helper (keep one name)
 	float GetDynamicOrbitScale(const TArray<FS_MoonMap>& Moons, float MaxPixelRadius) const;
 
+	void ClearSectorView();
+
 	UFUNCTION()
-	void HandleCentralPlanetClicked(const FString& PlanetName);
+	void HandlePlanetClicked(const FString& PlanetName);
 
 	void FocusAndZoomToMoon(UMoonMarkerWidget* Marker);
 
 	// UI lookup maps
-	TMap<FString, UCentralPlanetWidget*> PlanetMarkers;
+	TMap<FString, UPlanetMarkerWidget*> PlanetMarkers;
 	TMap<FString, UMoonMarkerWidget*> MoonMarkers;
 	TMap<FString, USystemOrbitWidget*> MoonOrbitMarkers;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UCanvasPanel* MapCanvas = nullptr;
 
+	UMoonMarkerWidget* LastSelectedMarker = nullptr;
 	// Holds per-moon orbit angle (randomized once per moon per session)
 	TMap<FString, float> MoonOrbitAngles;
 
@@ -87,24 +89,24 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	USizeBox* MapCanvasSize = nullptr;
 
-	// This is data, not a widget binding
+	// This is data, notxa widget binding
 	UPROPERTY()
 	FS_PlanetMap PlanetData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<ACentralPlanetActor> PlanetActorClass;
+	TSubclassOf<APlanetPanelActor> PlanetActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<AMoonPanelActor> MoonActorClass;
 
 	UPROPERTY()
-	TArray<ACentralPlanetActor*> SpawnedPlanetActors;
+	TArray<APlanetPanelActor*> SpawnedPlanetActors;
 
 	UPROPERTY()
 	TArray<AMoonPanelActor*> SpawnedMoonActors;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
-	TSubclassOf<UCentralPlanetWidget> PlanetMarkerClass;
+	TSubclassOf<UPlanetMarkerWidget> PlanetMarkerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System")
 	TSubclassOf<UMoonMarkerWidget> MoonMarkerClass;
@@ -113,10 +115,10 @@ protected:
 	TSubclassOf<USystemOrbitWidget> OrbitWidgetClass;
 
 	UPROPERTY()
-	ACentralPlanetActor* PlanetActor = nullptr;
+	APlanetPanelActor* PlanetActor = nullptr;
 
 	UPROPERTY()
-	UCentralPlanetWidget* PlanetMarker = nullptr;
+	UPlanetMarkerWidget* PlanetMarker = nullptr;
 
 	UFUNCTION()
 	void SetZoomLevel(float NewZoom);

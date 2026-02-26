@@ -32,6 +32,7 @@ region: Adonis
 index: 4
 available: false
 image: main
+date:  "01/00:00:00"
 
 /*******
 

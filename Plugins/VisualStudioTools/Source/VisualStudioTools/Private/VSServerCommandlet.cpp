@@ -82,7 +82,7 @@ void UVSServerCommandlet::ExecuteSubCommandlet(FString ueServerNamedPipe)
 			}
 			else
 			{
-				// If cannot find which sub-commandlet to run, then return error.
+				// If cannotxfind which sub-commandlet to run, then return error.
 				result = "1";
 			}
 

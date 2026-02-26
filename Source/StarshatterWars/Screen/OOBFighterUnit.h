@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "../Game/GameStructs.h" // FS_OOBFleet definition
+#include "GameStructs.h" // FS_OOBFleet definition
 #include "OOBFighterUnit.generated.h"
 
 /**
