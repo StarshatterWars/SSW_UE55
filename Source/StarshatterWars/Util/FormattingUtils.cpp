@@ -471,3 +471,15 @@ EShipEmpire UFormattingUtils::GetShipEmpireFromName(const char* InName)
 
     return GetShipEmpireFromString(FString(ANSI_TO_TCHAR(InName)));
 }
+
+uint8 UFormattingUtils::ToByteClamp(double v)
+{
+    // Legacy files sometimes store 0..255, sometimes 0..1.
+    // Heuristic: if <= 1.0, treat as normalized.
+    if (v <= 1.0)
+    {
+        v = v * 255.0;
+    }
+    v = FMath::Clamp(v, 0.0, 255.0);
+    return (uint8)FMath::RoundToInt(v);
+}

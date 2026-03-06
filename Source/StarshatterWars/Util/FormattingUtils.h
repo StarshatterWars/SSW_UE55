@@ -129,5 +129,8 @@ public:
     static EShipEmpire GetShipEmpireFromString(const FString& InString);
 
     static FString FormatTimeHMS(double Seconds);
+    
+    static uint8 ToByteClamp(double v);
+
 };
 

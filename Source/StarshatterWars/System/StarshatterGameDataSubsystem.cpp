@@ -54,18 +54,6 @@
 #include "StarshatterAssetRegistrySubsystem.h"
 
 
-static uint8 ToByteClamp(double v)
-{
-	// Legacy files sometimes store 0..255, sometimes 0..1.
-	// Heuristic: if <= 1.0, treat as normalized.
-	if (v <= 1.0)
-	{
-		v = v * 255.0;
-	}
-	v = FMath::Clamp(v, 0.0, 255.0);
-	return (uint8)FMath::RoundToInt(v);
-}
-
 template<typename TEnum>
 static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
 {

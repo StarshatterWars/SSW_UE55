@@ -87,21 +87,9 @@ static void ReadTableToArray(
 		OutArray.Num(), Label);
 }
 
-static uint8 ToByteClamp(double v)
-{
-	// Legacy files sometimes store 0..255, sometimes 0..1.
-	// Heuristic: if <= 1.0, treat as normalized.
-	if (v <= 1.0)
-	{
-		v = v * 255.0;
-	}
-	v = FMath::Clamp(v, 0.0, 255.0);
-	return (uint8)FMath::RoundToInt(v);
-}
-
 static FColor Vec3ToColor255(const Vec3& a)
 {
-	return FColor(ToByteClamp(a.X), ToByteClamp(a.Y), ToByteClamp(a.Z), 255);
+	return FColor(UFormattingUtils::ToByteClamp(a.X), UFormattingUtils::ToByteClamp(a.Y), UFormattingUtils::ToByteClamp(a.Z), 255);
 }
 
 void UStarshatterEnvironmentSubsystem::Initialize(FSubsystemCollectionBase& Collection)
