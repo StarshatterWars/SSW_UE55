@@ -28,6 +28,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 #include "GameStructs.h" // ECOMBATGROUP_TYPE, ECOMBATUNIT_TYPE, EEMPIRE_NAME, CLASSIFICATION
+#include "Color.h"
 #include "GameStructs_System.h"
 #include "FormattingUtils.generated.h"
 
@@ -131,6 +132,11 @@ public:
     static FString FormatTimeHMS(double Seconds);
     
     static uint8 ToByteClamp(double v);
+
+    static FColor Vec3ToColor255(const FVector& a);
+
+    static FColor ToFColor(const Color& c);
+
 
 };
 

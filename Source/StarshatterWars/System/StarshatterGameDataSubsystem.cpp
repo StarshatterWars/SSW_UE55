@@ -87,19 +87,6 @@ static FString EnumToDisplayNameString(TEnum EnumValue)
     return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
 }
 
-
-
-static FColor Vec3ToColor255(const Vec3& a)
-{
-	return FColor(ToByteClamp(a.X), ToByteClamp(a.Y), ToByteClamp(a.Z), 255);
-}
-
-static FColor ToFColor(const Color& c)
-{
-	// Assuming legacy Color uses 0..255 channels. Adjust if your Color is 0..1 floats.
-	return FColor((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), (uint8)c.Alpha());
-}
-
 static FIntRect ToFIntRect(const Rect& r)
 {
 	// Adjust if Rect is (x,y,w,h) instead of (l,t,r,b).

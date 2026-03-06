@@ -17,6 +17,7 @@
 #include "UObject/UnrealType.h" // UEnum
 #include "Logging/LogMacros.h"
 
+
 // -----------------------------------------------------------------------------
 // Legacy design class table (matches original Starshatter ordering)
 // -----------------------------------------------------------------------------
@@ -482,4 +483,15 @@ uint8 UFormattingUtils::ToByteClamp(double v)
     }
     v = FMath::Clamp(v, 0.0, 255.0);
     return (uint8)FMath::RoundToInt(v);
+}
+
+FColor UFormattingUtils::Vec3ToColor255(const FVector& a)
+{
+    return FColor(ToByteClamp(a.X), ToByteClamp(a.Y), ToByteClamp(a.Z), 255);
+}
+
+FColor UFormattingUtils::ToFColor(const Color& c)
+{
+    // Assuming legacy Color uses 0..255 channels. Adjust if your Color is 0..1 floats.
+    return FColor((uint8)c.Red(), (uint8)c.Green(), (uint8)c.Blue(), (uint8)c.Alpha());
 }
