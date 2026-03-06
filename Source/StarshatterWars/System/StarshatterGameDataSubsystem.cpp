@@ -53,6 +53,19 @@
 
 #include "StarshatterAssetRegistrySubsystem.h"
 
+
+static uint8 ToByteClamp(double v)
+{
+	// Legacy files sometimes store 0..255, sometimes 0..1.
+	// Heuristic: if <= 1.0, treat as normalized.
+	if (v <= 1.0)
+	{
+		v = v * 255.0;
+	}
+	v = FMath::Clamp(v, 0.0, 255.0);
+	return (uint8)FMath::RoundToInt(v);
+}
+
 template<typename TEnum>
 static bool FStringToEnum(const FString& InString, TEnum& OutEnum, bool bCaseSensitive = true)
 {
@@ -86,17 +99,7 @@ static FString EnumToDisplayNameString(TEnum EnumValue)
     return EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(EnumValue)).ToString();
 }
 
-static uint8 ToByteClamp(double v)
-{
-	// Legacy files sometimes store 0..255, sometimes 0..1.
-	// Heuristic: if <= 1.0, treat as normalized.
-	if (v <= 1.0)
-	{
-		v = v * 255.0;
-	}
-	v = FMath::Clamp(v, 0.0, 255.0);
-	return (uint8)FMath::RoundToInt(v);
-}
+
 
 static FColor Vec3ToColor255(const Vec3& a)
 {
@@ -191,8 +194,6 @@ void UStarshatterGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collect
 		// if (CampaignOOBDataTable)   CampaignOOBDataTable->EmptyTable();
 		// if (CombatGroupDataTable)   CombatGroupDataTable->EmptyTable();
 		// if (OrderOfBattleDataTable) OrderOfBattleDataTable->EmptyTable();
-		// if (GalaxyDataTable)        GalaxyDataTable->EmptyTable();
-		// if (ShipDesignDataTable)    ShipDesignDataTable->EmptyTable();
 	}
 #endif
 }
