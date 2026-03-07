@@ -1,26 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
-
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "TacticalReferenceActor.generated.h"
-
-UCLASS()
-class STARSHATTERWARS_API ATacticalReferenceActor : public AActor
-{
-	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	ATacticalReferenceActor();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-};
+version https://git-lfs.github.com/spec/v1
+oid sha256:1e97c2fb422d36e134ebcab01ad2fe97fd70f5842f065f325676b069d198b600
+size 564
